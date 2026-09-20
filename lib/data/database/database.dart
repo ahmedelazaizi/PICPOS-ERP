@@ -22,6 +22,7 @@ import '../../domain/models/asset_movement_types.dart';
 import '../../domain/models/journal_balance.dart';
 import '../../domain/models/purchase_line_discount.dart';
 import '../../domain/models/cheque_book_plan.dart';
+import '../../domain/models/asset_disposal_plan.dart';
 import '../../services/security_service.dart';
 import '../../domain/models/quick_sale_policy.dart'
     show kQuickSaleReceiptTemplateKey, quickSaleReceiptTemplateFile;
@@ -126,6 +127,7 @@ part 'daos/accounting_fiscal_dao.dart';
 part 'daos/accounting_audit_dao.dart';
 part 'daos/commercial_papers_dao.dart';
 part 'daos/cheque_books_dao.dart';
+part 'daos/asset_disposals_dao.dart';
 part 'daos/multi_currency_pricelist_dao.dart';
 part 'daos/manufacturing_dao.dart';
 part 'daos/fixed_assets_dao_ext.dart';
@@ -1401,6 +1403,8 @@ class AppDatabase extends _$AppDatabase {
     'fixed_assets', 'manufacturing_orders', 'bom_components',
     'op_expenses', 'asset_depreciations', 'mfg_order_costs',
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
+    // v175 / المرحلة ٧ — طلبُ استبعاد أصل.
+    'asset_disposals',
     // §٦‑٢ (v172)
     'purchase_returns',
     // v167 / المرحلة ٣ — الفئةُ التشغيليّة (كانت غائبةً هنا).

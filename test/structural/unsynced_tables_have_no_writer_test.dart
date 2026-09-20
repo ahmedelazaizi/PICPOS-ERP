@@ -33,7 +33,6 @@ import 'package:flutter_test/flutter_test.dart';
 /// وهي في القوائم الثماني، ثمّ كُتب أوّلُ كاتبٍ لها. وهذا بالضبط ما وُجد
 /// الحارسُ ليُجبِر عليه.
 const _pendingSync = <String>[
-  'AssetDisposals',
   'FloorPlanItems',
   'ImportPurchaseDetails',
 ];

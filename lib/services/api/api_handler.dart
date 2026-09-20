@@ -2717,6 +2717,9 @@ class ApiHandler {
     'fixed_assets', 'manufacturing_orders', 'bom_components',
     'op_expenses', 'asset_depreciations', 'mfg_order_costs',
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
+    // v175 / المرحلة ٧ — طلبُ استبعاد أصل. يقابل الإدراجَ نفسَه في
+    // [DeltaPullService.pullTables].
+    'asset_disposals',
     // §٦‑٢ (v172) — مستندُ مرتجع الشراء. يقابل الإدراجَ نفسَه في
     // [DeltaPullService.pullTables]؛ بدونه لا يسلّم الخادمُ صفوفَه فتُقارن
     // تسويةُ ض.ق.م على العميل أستاذاً كاملاً بمستنداتٍ ناقصة.
@@ -2851,6 +2854,9 @@ class ApiHandler {
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
     'fixed_assets', 'asset_depreciations', 'op_expenses',
     'manufacturing_orders', 'mfg_order_costs',
+    // v175 / المرحلة ٧ — طلبُ استبعاد أصل. تقابل الإدراجَ نفسَه في
+    // `DeltaPullService.branchScopedPullTables` حرفاً.
+    'asset_disposals',
 
     // v167 / المرحلة ٣ — الفئةُ التشغيليّة.
     //

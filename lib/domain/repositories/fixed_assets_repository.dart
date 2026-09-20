@@ -61,6 +61,51 @@ abstract class IFixedAssetsRepository {
   Future<void> revalueAsset(int assetId, {required double newFairValue, int? costCenterId});
   Future<void> disposeAsset(int assetId, {required double disposalValue, required DateTime disposalDate, int? costCenterId});
   
+  // ── طلبُ الاستبعاد (v175 / المرحلة ٧) ────────────────────────────────
+  //
+  // ⚠️ **مستندٌ له دورةُ حياةٍ بخلاف [disposeAsset]**: تلك تنفّذ فوراً بلا
+  //    مسوّدةٍ ولا مراجعة، وهذه تحفظ طلباً ثمّ يُعتمَد — والأثرُ المحاسبيُّ
+  //    عند الاعتماد وحدَه.
+
+  Stream<List<AssetDisposalData>> watchAssetDisposals();
+  Future<List<AssetDisposalListRow>> getAssetDisposalRows();
+  Future<AssetDisposalData?> getOpenDisposalForAsset(int assetId);
+
+  Future<int> createAssetDisposalRequest({
+    required int assetId,
+    required DateTime disposalDate,
+    required String method,
+    required double disposalValue,
+    required String collectionMethod,
+    required String reason,
+    int? buyerPartyId,
+    int? safeId,
+    int? costCenterId,
+    int? createdBy,
+  });
+
+  Future<void> updateAssetDisposalRequest({
+    required int id,
+    required DateTime disposalDate,
+    required String method,
+    required double disposalValue,
+    required String collectionMethod,
+    required String reason,
+    int? buyerPartyId,
+    int? safeId,
+    int? costCenterId,
+  });
+
+  Future<void> cancelAssetDisposalRequest(int id);
+
+  /// 🔴 الأثرُ المحاسبيُّ كلُّه هنا. [safeId] لازمٌ للبيع النقديِّ وحدَه.
+  Future<void> approveAssetDisposal(
+    int id, {
+    int? safeId,
+    int? approvedBy,
+    String? approvedByName,
+  });
+
   Future<List<AssetDepreciationData>> getAssetDepreciationSchedule(int assetId);
   Future<List<FixedAssetData>> getFixedAssetsList();
   Future<Map<String, double>> getAssetsSummary();

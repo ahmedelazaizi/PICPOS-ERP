@@ -41,11 +41,13 @@ import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
+import '../../../domain/models/asset_disposal_plan.dart';
 import '../../../domain/models/asset_movement_types.dart';
 import '../../../domain/models/depreciation_math.dart';
 import '../../../domain/repositories/accounting_repository.dart';
 import '../../../domain/repositories/fixed_assets_repository.dart';
 import 'asset_card_picpos.dart';
+import 'asset_disposal_request_picpos.dart';
 import 'fixed_assets_picpos_create_dialog.dart';
 import '../../picpos_shell/picpos_bar_list.dart';
 import '../../picpos_shell/picpos_content_card.dart';
@@ -106,6 +108,20 @@ final _categoriesProvider = StreamProvider.autoDispose<List<AssetCategory>>(
 final _depreciationsProvider =
     StreamProvider.autoDispose<List<AssetDepreciationData>>((ref) =>
         ref.watch(fixedAssetsRepositoryProvider).watchAllDepreciations());
+
+/// طلباتُ الاستبعاد مع بيانات أصولها — v175 / المرحلة ٧.
+final _disposalRequestsProvider =
+    FutureProvider.autoDispose<List<AssetDisposalListRow>>((ref) {
+  // يُبطَل بعد كلّ حفظٍ أو اعتماد.
+  return ref.watch(fixedAssetsRepositoryProvider).getAssetDisposalRows();
+});
+
+final _disposalSafesProvider = StreamProvider.autoDispose<List<SafeData>>(
+    (ref) => ref.watch(treasuryRepositoryProvider).watchSafes());
+
+final _disposalCostCentersProvider =
+    FutureProvider.autoDispose<List<CostCenter>>(
+        (ref) => ref.watch(accountingRepositoryProvider).getActiveCostCenters());
 
 final _accountsProvider = StreamProvider.autoDispose<List<Account>>(
     (ref) => ref.watch(accountingRepositoryProvider).watchAllAccounts());
@@ -214,6 +230,12 @@ class _FixedAssetsPicposScreenState
   /// من هنا.
   int? _openAssetId;
 
+  /// طلبُ استبعادٍ مفتوحٌ — إمّا جديدٌ لأصلٍ (`_disposalAssetId`) وإمّا
+  /// قائمٌ (`_disposalRequestId`). واللوحُ يحلّ محلَّ الشاشة كما البطاقة.
+  int? _disposalAssetId;
+  int? _disposalRequestId;
+  bool _disposalBusy = false;
+
   static DateTime _today() {
     final n = DateTime.now();
     return DateTime(n.year, n.month, n.day);
@@ -289,6 +311,11 @@ class _FixedAssetsPicposScreenState
         body: _assetCard(open, cats, deprs),
       );
     }
+
+    // لوحُ طلبِ الاستبعاد — يحلّ محلَّ الشاشة كما البطاقة. والتصميمُ يعطيه
+    // الصفحةَ كاملةً ومسارَه الخاصّ «الأصول الثابتة / طلب استبعاد أصل».
+    final disposalForm = _disposalFormOrNull(all);
+    if (disposalForm != null) return disposalForm;
 
     return PicPosScreenScaffold(
       title: 'الأصول الثابتة والإهلاك',
@@ -627,6 +654,7 @@ class _FixedAssetsPicposScreenState
                 flex: 1.2, align: PicPosCellAlign.end),
             PicPosTableColumn('الحالة', flex: 1.1),
             PicPosTableColumn('إجراءات', flex: 0.9),
+            PicPosTableColumn('استبعاد', flex: 1.0),
           ],
           emptyLabel: _query.isEmpty
               ? 'لا أصولَ تطابق المرشِّحات'
@@ -652,13 +680,29 @@ class _FixedAssetsPicposScreenState
                         : (a.status == 'sold' ? 'بيع' : 'مستبعد'),
                     _isActive(a) ? (_isNearEnd(a) ? _warn : _ok) : _idle,
                   ),
-                  // 👁 — البطاقة. والتصميمُ يضع معها ⋮ لقائمةٍ لم يُبنَ فيها
-                  //    فعلٌ بعد، وزرٌّ يفتح قائمةً فارغةً أسوأُ من غيابه.
+                  // 👁 — البطاقة.
                   PicPosButtonCell(
                     'البطاقة',
                     icon: PhosphorIconsBold.eye,
                     tint: AppColors.primary,
                     onPressed: () => setState(() => _openAssetId = a.id),
+                  ),
+                  // ⋮ في التصميم — وصار فيه فعلٌ واحدٌ حقيقيٌّ (v175)، فبُني
+                  // زرّاً مسمّى لا قائمةً بعنصرٍ واحد.
+                  //
+                  // ⚠️ **ويُعطَّل لأصلٍ غيرِ نشط**: استبعادٌ ثانٍ يقيّد التكلفةَ
+                  //    والمجمَّعَ مرّةً أخرى، والقيدُ متّزنٌ فلا فحصَ اتّزانٍ
+                  //    يمسكه.
+                  PicPosButtonCell(
+                    _isActive(a) ? 'طلب استبعاد' : '—',
+                    icon: PhosphorIconsBold.trash,
+                    tint: _isActive(a) ? _err : _idle,
+                    onPressed: _isActive(a)
+                        ? () => setState(() {
+                              _disposalRequestId = null;
+                              _disposalAssetId = a.id;
+                            })
+                        : null,
                   ),
                 ]);
               }(),
@@ -673,6 +717,7 @@ class _FixedAssetsPicposScreenState
                   _money0.format(cost),
                   _money0.format(accum),
                   _money0.format(cost - accum),
+                  '',
                   '',
                   '',
                 ],
@@ -1090,13 +1135,153 @@ class _FixedAssetsPicposScreenState
   // ٤ — الاستبعاد والبيع
   // ═════════════════════════════════════════════════════════════════════════
 
+  /// اللوحُ إن كان مفتوحاً — وإلّا `null`.
+  ///
+  /// ⚠️ **ويُغلَق من تلقائه إن ذهب أصلُه**: طلبٌ لأصلٍ حُذف يترك نموذجاً
+  ///    يعمل على ما لا يُرى، وأوّلُ حفظٍ منه يسقط برسالةِ محرّكٍ غامضة.
+  Widget? _disposalFormOrNull(List<FixedAssetData> all) {
+    if (_disposalAssetId == null && _disposalRequestId == null) return null;
+
+    final rows = ref.watch(_disposalRequestsProvider).value ??
+        const <AssetDisposalListRow>[];
+    final existing = _disposalRequestId == null
+        ? null
+        : rows.where((r) => r.request.id == _disposalRequestId).firstOrNull;
+
+    final assetId = existing?.request.assetId ?? _disposalAssetId;
+    final asset = all.where((a) => a.id == assetId).firstOrNull;
+    if (asset == null) {
+      if (!ref.watch(_assetsProvider).isLoading) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _closeDisposal();
+        });
+      }
+      return null;
+    }
+
+    final parties = ref.watch(allPartiesProvider).value ?? const <Party>[];
+    final safes = ref.watch(_disposalSafesProvider).value ?? const <SafeData>[];
+    final costCenters =
+        ref.watch(_disposalCostCentersProvider).value ?? const <CostCenter>[];
+
+    return PicPosScreenScaffold(
+      title: 'طلب استبعاد أصل',
+      subtitle: '${asset.code} · ${asset.name}',
+      icon: PhosphorIconsBold.trash,
+      bodyPadding: EdgeInsets.zero,
+      body: AssetDisposalRequestForm(
+        key: ValueKey('disposal_form_${existing?.request.id ?? 'new_$assetId'}'),
+        asset: (
+          id: asset.id,
+          code: asset.code,
+          name: asset.name,
+          originalCost: asset.purchasePrice,
+          accumulatedDepreciation: asset.accumulatedDepreciation,
+          status: asset.status,
+        ),
+        value: existing == null
+            ? null
+            : (
+                id: existing.request.id,
+                number: existing.request.disposalNumber,
+                status: existing.request.status,
+                disposalDate: existing.request.disposalDate,
+                method: existing.request.method,
+                disposalValue: existing.request.disposalValue,
+                collectionMethod: existing.request.collectionMethod,
+                buyerPartyId: existing.request.buyerPartyId,
+                costCenterId: existing.request.costCenterId,
+                reason: existing.request.notes ?? '',
+              ),
+        parties: [for (final p in parties) (id: p.id, name: p.name)],
+        safes: [
+          for (final s in safes)
+            if (s.isActive) (id: s.id, name: s.name),
+        ],
+        costCenters: [for (final c in costCenters) (id: c.id, name: c.name)],
+        busy: _disposalBusy,
+        onBack: _closeDisposal,
+        onSubmit: _submitDisposal,
+      ),
+    );
+  }
+
+  void _closeDisposal() => setState(() {
+        _disposalAssetId = null;
+        _disposalRequestId = null;
+      });
+
+  Future<void> _submitDisposal(DisposalSubmission v) async {
+    if (_disposalBusy) return;
+    setState(() => _disposalBusy = true);
+    final repo = ref.read(fixedAssetsRepositoryProvider);
+    final user = ref.read(authProvider).user;
+    try {
+      var id = v.requestId;
+      if (id == null) {
+        id = await repo.createAssetDisposalRequest(
+          assetId: v.assetId,
+          disposalDate: v.disposalDate,
+          method: v.method,
+          disposalValue: v.disposalValue,
+          collectionMethod: v.collectionMethod,
+          reason: v.reason,
+          buyerPartyId: v.buyerPartyId,
+          safeId: v.safeId,
+          costCenterId: v.costCenterId,
+          createdBy: user?.id,
+        );
+      } else {
+        await repo.updateAssetDisposalRequest(
+          id: id,
+          disposalDate: v.disposalDate,
+          method: v.method,
+          disposalValue: v.disposalValue,
+          collectionMethod: v.collectionMethod,
+          reason: v.reason,
+          buyerPartyId: v.buyerPartyId,
+          safeId: v.safeId,
+          costCenterId: v.costCenterId,
+        );
+      }
+
+      // 🔴 **الاعتمادُ خطوةٌ ثانيةٌ على مستندٍ محفوظ** — فلو سقط القيدُ بقيت
+      //    المسوّدةُ قائمةً يُعاد الاعتمادُ عليها بعد إصلاح السبب، ولم يضع
+      //    ما كتبه المستخدم.
+      if (v.approve) {
+        await repo.approveAssetDisposal(
+          id,
+          safeId: v.safeId,
+          approvedBy: user?.id,
+          approvedByName: user?.displayName,
+        );
+      }
+
+      ref.invalidate(_disposalRequestsProvider);
+      if (!mounted) return;
+      AppToast.show(
+          context, v.approve ? 'تم اعتماد الاستبعاد' : 'حُفظت المسودة');
+      _closeDisposal();
+    } catch (e) {
+      // 🔴 **ورسالةُ المحرّك كما هي**: هو وحدَه يعرف أيُّ حسابٍ غاب وأيُّ
+      //    فئةٍ بلا ربط.
+      if (!mounted) return;
+      AppToast.show(context, '$e', type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _disposalBusy = false);
+    }
+  }
+
   Widget _disposalTab(List<FixedAssetData> disposed) {
-    if (disposed.isEmpty) {
+    final requests = ref.watch(_disposalRequestsProvider).value ??
+        const <AssetDisposalListRow>[];
+
+    if (disposed.isEmpty && requests.isEmpty) {
       return const PicPosEmptyState(
         icon: PhosphorIconsBold.trash,
-        title: 'لا أصولَ مستبعدةً أو مباعة',
-        hint: 'عند الاستبعاد يُقفَل مجمعُ الإهلاك ويُقيَّد الفرقُ بين ثمن '
-            'البيع والقيمة الدفترية ربحاً أو خسارة.',
+        title: 'لا طلباتِ استبعادٍ ولا أصولَ مستبعدة',
+        hint: 'ابدأ من «طلب استبعاد» في جدول الأصول — والمسوّدةُ بلا أثرٍ '
+            'محاسبيّ حتى تُعتمَد.',
       );
     }
 
@@ -1116,6 +1301,17 @@ class _FixedAssetsPicposScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (requests.isNotEmpty) ...[
+          _disposalRequestsTable(requests),
+          const SizedBox(height: 12),
+        ],
+        if (disposed.isEmpty)
+          const PicPosEmptyState(
+            icon: PhosphorIconsBold.trash,
+            title: 'لا أصولَ خرجت من الدفاتر بعد',
+            hint: 'الطلباتُ أعلاه مسوّداتٌ — والاعتمادُ وحدَه يُخرج الأصل.',
+          )
+        else ...[
         _kpis([
           PicPosStatTile(
             label: 'أصول مستبعدة',
@@ -1219,6 +1415,71 @@ class _FixedAssetsPicposScreenState
                   '',
                 ],
         ),
+        ],
+      ],
+    );
+  }
+
+  /// جدولُ الطلبات — **والمسوّدةُ تُفتَح بالنقر**.
+  ///
+  /// ⚠️ بلا هذا الجدول تختفي المسوّدةُ لحظةَ إغلاق اللوح: لا مدخلَ يعيد
+  ///    فتحَها، والأصلُ يبقى ممنوعاً من طلبٍ ثانٍ بسببها.
+  Widget _disposalRequestsTable(List<AssetDisposalListRow> rows) {
+    return PicPosDataTable(
+      title: 'طلبات الاستبعاد',
+      subtitle: 'المسوّدةُ بلا أثرٍ محاسبيّ — والاعتمادُ يُخرج الأصلَ ويقيّد '
+          'الفرق',
+      minWidth: 1020,
+      emptyLabel: 'لا طلبات',
+      columns: const [
+        PicPosTableColumn('رقم الطلب', flex: 1.1),
+        PicPosTableColumn('الأصل', flex: 1.7),
+        PicPosTableColumn('التاريخ', flex: 1.1),
+        PicPosTableColumn('الطريقة', flex: 1.0),
+        PicPosTableColumn('القيمة', flex: 1.1, align: PicPosCellAlign.end),
+        PicPosTableColumn('التحصيل', flex: 1.1),
+        PicPosTableColumn('الحالة', flex: 1.0),
+      ],
+      rows: [
+        for (final r in rows)
+          PicPosTableRow(
+            selected: _disposalRequestId == r.request.id,
+            onTap: () => setState(() {
+              _disposalAssetId = null;
+              _disposalRequestId = r.request.id;
+            }),
+            cells: [
+              PicPosTextCell(r.request.disposalNumber,
+                  icon: PhosphorIconsBold.fileText),
+              PicPosTextCell(r.assetName, sub: r.assetCode),
+              PicPosTextCell(_dateFmt.format(r.request.disposalDate)),
+              PicPosTextCell(disposalMethodLabel(r.request.method)),
+              PicPosTextCell(
+                disposalCarriesProceeds(r.request.method)
+                    ? _money0.format(r.request.disposalValue)
+                    : '—',
+              ),
+              // ⚠️ «التحصيل» بلا معنًى لما لا ثمنَ له — وعرضُ «نقدي» على
+              //    تبرّعٍ يُقرأ أنّ مالاً قُبض.
+              PicPosTextCell(
+                disposalCarriesProceeds(r.request.method)
+                    ? disposalCollectionLabel(r.request.collectionMethod)
+                    : '—',
+              ),
+              PicPosPillCell(
+                switch (r.request.status) {
+                  'approved' => 'معتمد',
+                  'cancelled' => 'ملغى',
+                  _ => 'مسودة',
+                },
+                switch (r.request.status) {
+                  'approved' => _ok,
+                  'cancelled' => _idle,
+                  _ => _warn,
+                },
+              ),
+            ],
+          ),
       ],
     );
   }

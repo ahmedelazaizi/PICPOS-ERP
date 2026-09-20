@@ -127,6 +127,86 @@ class FixedAssetsRepositoryImpl implements IFixedAssetsRepository {
   Future<void> disposeAsset(int assetId, {required double disposalValue, required DateTime disposalDate, int? costCenterId}) =>
       _db.disposeAsset(assetId, disposalValue: disposalValue, disposalDate: disposalDate, costCenterId: costCenterId);
 
+  // ── طلبُ الاستبعاد (v175) — تمريرٌ خالصٌ، والقواعدُ في الـDAO ──────────
+
+  @override
+  Stream<List<AssetDisposalData>> watchAssetDisposals() =>
+      _db.watchAssetDisposals();
+
+  @override
+  Future<List<AssetDisposalListRow>> getAssetDisposalRows() =>
+      _db.getAssetDisposalRows();
+
+  @override
+  Future<AssetDisposalData?> getOpenDisposalForAsset(int assetId) =>
+      _db.getOpenDisposalForAsset(assetId);
+
+  @override
+  Future<int> createAssetDisposalRequest({
+    required int assetId,
+    required DateTime disposalDate,
+    required String method,
+    required double disposalValue,
+    required String collectionMethod,
+    required String reason,
+    int? buyerPartyId,
+    int? safeId,
+    int? costCenterId,
+    int? createdBy,
+  }) =>
+      _db.createAssetDisposalRequest(
+        assetId: assetId,
+        disposalDate: disposalDate,
+        method: method,
+        disposalValue: disposalValue,
+        collectionMethod: collectionMethod,
+        reason: reason,
+        buyerPartyId: buyerPartyId,
+        safeId: safeId,
+        costCenterId: costCenterId,
+        createdBy: createdBy,
+      );
+
+  @override
+  Future<void> updateAssetDisposalRequest({
+    required int id,
+    required DateTime disposalDate,
+    required String method,
+    required double disposalValue,
+    required String collectionMethod,
+    required String reason,
+    int? buyerPartyId,
+    int? safeId,
+    int? costCenterId,
+  }) =>
+      _db.updateAssetDisposalRequest(
+        id: id,
+        disposalDate: disposalDate,
+        method: method,
+        disposalValue: disposalValue,
+        collectionMethod: collectionMethod,
+        reason: reason,
+        buyerPartyId: buyerPartyId,
+        safeId: safeId,
+        costCenterId: costCenterId,
+      );
+
+  @override
+  Future<void> cancelAssetDisposalRequest(int id) =>
+      _db.cancelAssetDisposalRequest(id);
+
+  @override
+  Future<void> approveAssetDisposal(
+    int id, {
+    int? safeId,
+    int? approvedBy,
+    String? approvedByName,
+  }) =>
+      _db.approveAssetDisposal(id,
+          safeId: safeId,
+          approvedBy: approvedBy,
+          approvedByName: approvedByName);
+
   @override
   Future<List<AssetDepreciationData>> getAssetDepreciationSchedule(int assetId) =>
       _db.getAssetDepreciationSchedule(assetId);

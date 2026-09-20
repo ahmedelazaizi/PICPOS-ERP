@@ -129,7 +129,10 @@ const _unsyncedBaseline = <String>{
   //    `pullTables` و`deltaOnlyTables` و`_syncPullTables` و
   //    `namespacedTables` و`_syncHardenedTables`، ثمّ كُتب أوّلُ كاتبٍ لها.
   //    وهي **مرجعيّةٌ** فخارجَ قائمتَي المنع التعاملَيّتَين.
-  'AssetDisposals', 'FloorPlanItems',
+  // ✅ **و`AssetDisposals` سُدَّت 2026-09-20 (المرحلة ٧ / v175)** — نفسُ
+  //    القوائم الخمس، ثمّ كُتب أوّلُ كاتبٍ لها. وهي **بياناتُ عملٍ** فداخلَ
+  //    قائمتَي المنع التعاملَيّتَين: مستندٌ يحمل ثمنَ بيعٍ ومشترياً.
+  'FloorPlanItems',
   'ImportPurchaseDetails',
 
   // ═══ 🟡 قرارُ مالكٍ مؤجَّل ═══

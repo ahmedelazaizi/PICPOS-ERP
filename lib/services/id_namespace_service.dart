@@ -81,6 +81,8 @@ class IdNamespaceService {
     'fixed_assets', 'manufacturing_orders', 'bom_components',
     'op_expenses', 'asset_depreciations', 'mfg_order_costs',
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
+    // v175 / المرحلة ٧ — بلا أرضيّةِ ترقيمٍ يصطدم طلبُ العميل بطلب الخادم.
+    'asset_disposals',
 
     // ── v167 / المرحلة ٣ — الفئةُ التشغيليّة ──
     'employees',

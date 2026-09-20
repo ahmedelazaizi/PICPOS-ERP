@@ -117,6 +117,10 @@ class DeltaPullService {
     'bom_components',          // → bill_of_materials, products
     'op_expenses',             // → op_expense_categories, branches, cost_centers
     'asset_depreciations',     // → fixed_assets
+    // v175 / المرحلة ٧ — طلبُ استبعاد أصل. **موضعُه بعد `fixed_assets`
+    // إلزاميّ**: يشير إليه بمفتاحٍ خارجيّ، و`_upsertRow` يبتلع خطأَ المفتاح
+    // بـ`debugPrint` ويمضي — فطلبٌ يسبق أصلَه يُسقَط صامتاً.
+    'asset_disposals',         // → fixed_assets, parties, users, cost_centers
     'mfg_order_costs',         // → manufacturing_orders
     'landed_cost_sheets',      // → purchase_invoices, users
     'landed_cost_items',       // → landed_cost_sheets, parties
@@ -230,6 +234,10 @@ class DeltaPullService {
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
     'fixed_assets', 'asset_depreciations', 'op_expenses',
     'manufacturing_orders', 'mfg_order_costs',
+    // v175 / المرحلة ٧ — طلبُ استبعاد أصل. **بياناتُ عملٍ لا مرجعيّة**:
+    // يحمل ثمنَ بيعٍ ومشترياً وسببَ استبعاد، فلا يُسلَّم لمستدعٍ بلا هويّةٍ
+    // متحقَّقة. (وهو خلافُ `cheque_books` المرجعيّ في المرحلة ٦.)
+    'asset_disposals',
 
     // v167 / المرحلة ٣ — الفئةُ التشغيليّة.
     //
@@ -369,6 +377,11 @@ class DeltaPullService {
     'approval_workflows', 'approval_steps', 'approval_requests',
     'approval_decisions', 'sod_conflicts', 'sod_violations',
     'compliance_checks',
+
+    // v175 / المرحلة ٧ — طلبُ استبعاد أصل. بلا استراتيجيّةٍ في `fullSync`،
+    // فبذرُ علامتِه يعني جهازاً ثانياً لا يرى طلباً حُرِّر قبل إقلاعه — وهو
+    // مستندٌ يُراجَع ويُعتمَد من جهازٍ غيرِ الذي حرّره.
+    'asset_disposals',
 
     // v175 / المرحلة ٦ — دفترُ الشيكات. بلا استراتيجيّةٍ في `fullSync`،
     // فبذرُ علامتِه يعني جهازاً ثانياً **لا يرى دفتراً فُتح قبل إقلاعه** —
