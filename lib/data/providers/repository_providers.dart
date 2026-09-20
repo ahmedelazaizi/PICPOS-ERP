@@ -69,6 +69,8 @@ export '../../domain/repositories/cheque_books_repository.dart';
 import '../repositories/cheque_books_repository_impl.dart';
 import '../../domain/repositories/cycle_count_repository.dart';
 import '../repositories/cycle_count_repository_impl.dart';
+import '../../domain/repositories/import_purchases_repository.dart';
+import '../repositories/import_purchases_repository_impl.dart';
 import '../../domain/repositories/landed_cost_repository.dart';
 import '../repositories/landed_cost_repository_impl.dart';
 import '../../domain/repositories/fixed_assets_repository.dart';
@@ -299,6 +301,13 @@ final commercialPapersRepositoryProvider = Provider<ICommercialPapersRepository>
 /// دفاترُ الشيكات (v175 / المرحلة ٦) — أوّلُ كاتبٍ لجدولِ v174.
 final chequeBooksRepositoryProvider = Provider<IChequeBooksRepository>((ref) {
   return ChequeBooksRepositoryImpl(ref.watch(databaseProvider));
+});
+
+/// وسمُ الاستيراد (v174 / المرحلة ٨) — قراءةٌ وتحريرٌ لا إنشاء؛ الإنشاءُ
+/// يقع في معاملة الفاتورة نفسِها.
+final importPurchasesRepositoryProvider =
+    Provider<ImportPurchasesRepository>((ref) {
+  return ImportPurchasesRepositoryImpl(ref.watch(databaseProvider));
 });
 
 final cycleCountRepositoryProvider = Provider<ICycleCountRepository>((ref) {

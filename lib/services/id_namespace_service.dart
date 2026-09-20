@@ -59,6 +59,10 @@ class IdNamespaceService {
     // تشير إليه بمعرّفٍ صار يدلّ على دفترٍ آخر.
     'cheque_books',
     'sales_invoice_items', 'purchase_invoice_items', 'held_order_items',
+    // v174 / المرحلة ٨ — وسمُ الاستيراد. بلا أرضيّةِ ترقيمٍ يبدأ العميلُ
+    // من ١ فيصطدم وسمُه بوسمِ الخادم على نفس الرقم، ويُقرأ بيانُ فاتورةٍ
+    // جمركيٌّ تحت فاتورةٍ أخرى.
+    'import_purchase_details',
     'sales_order_items', 'purchase_order_items', 'quotation_items',
     'payment_allocations',
     // §٦‑٢ (v172) — مستندُ مرتجع الشراء. بلا أرضيّةِ ترقيمٍ يبدأ العميلُ من ١

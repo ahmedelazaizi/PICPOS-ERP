@@ -172,7 +172,15 @@ enum ScreenId {
   /// («مدير مالي»، ومديرُ النظام يملك ما ليس عمليّةً ماليّةً حرجة).
   /// و`treasury_manage` غيرُ ممنوحةٍ لأيّ دورٍ في
   /// `RoleGrantMatrix.defaultGrants` فكانت ستُخفي الأزرارَ عن الجميع.
-  chequeBooks(70);
+  chequeBooks(70),
+
+  /// «المشتريات الخارجيّة» — بندٌ أضافه المالك 2026-09-18، وأوّلُ كاتبٍ
+  /// لجدول v174 `ImportPurchaseDetails`.
+  ///
+  /// ⚠️ **وصلاحيّتُها `purchases_create`** — عينُ صلاحيّةِ «فواتير
+  /// المشتريات»: المستندُ فاتورةُ شراءٍ بأوراقٍ زائدة، لا نوعٌ آخرُ من
+  /// المستندات. وصلاحيّةٌ جديدةٌ كانت ستُخفي الشاشةَ عن كلّ دورٍ قائم.
+  importPurchases(71);
 
   const ScreenId(this.navigationIndex);
   final int navigationIndex;

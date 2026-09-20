@@ -243,6 +243,9 @@ class ScreenRegistry {
     ScreenId.paymentVoucher,
     // دفترُ الشيكات — نفسُ نطاقِ سندِ الصرف الذي يسحب منه.
     ScreenId.chequeBooks,
+    // المشتريات الخارجيّة — نطاقُ `purchaseOrders` بالضبط: `unified`
+    // وحدَه. الاستيرادُ مستندٌ مؤسّسيٌّ لا يقع في مطعمٍ ولا سوبرماركت.
+    ScreenId.importPurchases,
     ScreenId.generalLedger,
     ScreenId.bankReconciliation,
     ScreenId.salesOrders,
@@ -395,9 +398,17 @@ class ScreenRegistry {
   /// ⚠️ ولا يكفي إخفاءُ مدخلِ القائمة (`kPicPosRetiredNavIndexes`): الشاشةُ
   /// تُبلَغ بالفهرس المباشر من كلّ اختصارٍ ومن `onNavigate`، والنطاقُ هو
   /// البوّابةُ التي تسبق الصلاحيةَ نفسَها. فالموضعان معاً أو لا شيء.
+  /// ⚠️ **و«التكاليف المحمّلة» خرجت من هنا 2026-09-20 (المرحلة ٨)** بقرار
+  /// المالك: «تُفعَّل وتعيش داخلها وحدَها — لا مدخلَ جانبيَّ لها». فهي
+  /// الحالةُ الوحيدةُ التي **يُفترَق فيها الموضعان عمداً**:
+  ///   • خرجت من هنا ⇒ يبلغها `ScreenId.importPurchases` بالفهرس.
+  ///   • وبقي فهرسُها `41` في [kPicPosRetiredNavIndexes] ⇒ **لا مدخلَ
+  ///     جانبيَّ لها**.
+  ///
+  /// 🔴 ولا تُعَدْ إلى هنا «توحيداً»: النطاقُ يسبق الصلاحية، فإعادتُها
+  ///    تجعل زرَّ «التكاليف المحمّلة» داخلَ شاشة الاستيراد يفتح لا شيء.
   static const picposRetired = <ScreenId>{
     ScreenId.stockRequisitions, // طلبات الصرف
-    ScreenId.landedCost, // التكاليف المحملة
     ScreenId.cycleCounting, // الجرد الدوري
   };
 

@@ -2720,6 +2720,10 @@ class ApiHandler {
     // v175 / المرحلة ٧ — طلبُ استبعاد أصل. يقابل الإدراجَ نفسَه في
     // [DeltaPullService.pullTables].
     'asset_disposals',
+    // v174 / المرحلة ٨ — وسمُ الاستيراد. يقابل الإدراجَ نفسَه في
+    // [DeltaPullService.pullTables]؛ بدونه لا يسلّم الخادمُ صفوفَه فتظهر
+    // فاتورةُ الاستيراد محلّيّةً على كلّ جهازٍ لم يُنشئها.
+    'import_purchase_details',
     // §٦‑٢ (v172) — مستندُ مرتجع الشراء. يقابل الإدراجَ نفسَه في
     // [DeltaPullService.pullTables]؛ بدونه لا يسلّم الخادمُ صفوفَه فتُقارن
     // تسويةُ ض.ق.م على العميل أستاذاً كاملاً بمستنداتٍ ناقصة.
@@ -2857,6 +2861,10 @@ class ApiHandler {
     // v175 / المرحلة ٧ — طلبُ استبعاد أصل. تقابل الإدراجَ نفسَه في
     // `DeltaPullService.branchScopedPullTables` حرفاً.
     'asset_disposals',
+    // v174 / المرحلة ٨ — وسمُ الاستيراد. تقابل الإدراجَ نفسَه في
+    // `DeltaPullService.branchScopedPullTables` حرفاً (وحارسٌ يثبّت
+    // تطابقَ القائمتَين).
+    'import_purchase_details',
 
     // v167 / المرحلة ٣ — الفئةُ التشغيليّة.
     //

@@ -158,6 +158,11 @@ extension DatabaseStartup on AppDatabase {
       // ماليّة، وتسويتُها شغلُ محاسبٍ لا شغلُ إقلاع. وعلى بياناتٍ مزدوجةٍ
       // يفشل بصمتٍ ويبقى حارسُ `manualMatchStatement` قائماً.
       kCreateBankStatementMatchDedupIndexSql,
+      // المرحلة ٨: تفرّدُ وسمِ الاستيراد — صفٌّ واحدٌ لكلّ فاتورة.
+      // `onCreate` يبني كياناتِ drift وحدَها والفهارسُ الخامّةُ ليست منها،
+      // فتنصيبةٌ جديدةٌ كانت تخرج بلا الفهرس. والجدولُ فارغٌ في كلّ تنصيبةٍ
+      // قائمة (شُحن في v174 بلا كاتب) فلا تسويةَ تسبقه.
+      kCreateImportPurchaseDetailsUniqueIndexSql,
       // ٦‑١: `e_invoice_status_log` جدولٌ خامٌّ لا كيانُ drift، فتمريرةُ
       // `allSchemaEntities` أدناه لا تصله كذلك. وهو هنا شفاءٌ ذاتيٌّ لقاعدةٍ
       // نُصِّبت قبل هذا الإصلاح: تُنشئه بلا هجرةٍ وبلا فقدِ بيانات.
@@ -520,6 +525,30 @@ extension DatabaseStartup on AppDatabase {
             "SELECT 1 AS x FROM pg_indexes "
             "WHERE tablename = 'bank_statement_lines' "
             "  AND indexname = '$kBankStatementMatchDedupIndexName' "
+            "LIMIT 1",
+          ).get();
+          return rows.isNotEmpty;
+        } catch (_) {
+          return true; // fail-open كنظائره أعلاه
+        }
+      },
+    );
+
+    // 7. import_purchase_details: صفٌّ واحدٌ لكلّ فاتورةِ استيراد.
+    //
+    // المرحلة ٨ — نظيرُ السطر المضافِ في `ensureSchemaDefaults`، وPG لا
+    // يمرُّ بها إطلاقاً. والتسويةُ فارغةٌ لأنّ الجدولَ فارغٌ أصلاً: شُحن في
+    // v174 وأوّلُ كاتبٍ له هو هذه المرحلة.
+    await dedupAndAdd(
+      'import_purchase_details UNIQUE (purchase_invoice_id)',
+      '',
+      kCreateImportPurchaseDetailsUniqueIndexSql,
+      () async {
+        try {
+          final rows = await customSelect(
+            "SELECT 1 AS x FROM pg_indexes "
+            "WHERE tablename = 'import_purchase_details' "
+            "  AND indexname = '$kImportPurchaseDetailsUniqueIndexName' "
             "LIMIT 1",
           ).get();
           return rows.isNotEmpty;

@@ -110,6 +110,15 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           userId: params.userId,
           createdByUsername: params.createdByUsername,
           discount: params.discount,
+          // المرحلة ٨ — العملةُ ووسمُ الاستيراد يسافران مع **نفس** المستند.
+          //
+          // 🔴 ولا نقطةَ ثانية: لا دفعَ دلتا عامّاً من العميل إلى الخادم في
+          //    هذا المستودع (الكتابةُ تُرسَل مستنداً صريحاً)، فوسمٌ يُكتَب
+          //    محلّيّاً وحدَه لا يصل الخادمَ أبداً — وتُقرأ الفاتورةُ هناك
+          //    محلّيّةً، وتغيب عن شاشة الاستيراد على كلّ جهازٍ آخر.
+          currencyId: params.currencyId,
+          exchangeRate: params.exchangeRate,
+          importDetails: params.importDetails,
         ),
         tag: 'PURCHASE-SYNC',
       );
@@ -150,6 +159,9 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
         costCenterId: params.costCenterId,
         globalId: purchaseGlobalId,
         discount: params.discount,
+        currencyId: params.currencyId,
+        exchangeRate: params.exchangeRate,
+        importDetails: params.importDetails,
       );
     }
 
@@ -192,6 +204,9 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
         safeId: params.safeId,
         discount: params.discount,
         sourceOrderId: params.sourceOrderId,
+        currencyId: params.currencyId,
+        exchangeRate: params.exchangeRate,
+        importDetails: params.importDetails,
       );
     });
   }

@@ -6,6 +6,7 @@
 
 import '../../core/constants/payment_methods.dart';
 import '../../domain/models/purchase_return_settlement.dart';
+import '../../domain/models/import_purchase_plan.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show File, FileMode;
@@ -226,6 +227,38 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         throw Exception('Validation Error: supplierId or supplierGlobalId is required.');
       }
 
+      // ═══ المرحلة ٨ — وسمُ الاستيراد ولقطةُ عملته ═══
+      //
+      // 🔴 **والخادمُ هو مَن يكتبهما.** صفُّه هو المعتمَد، وسحبُ الدلتا
+      //    يستبدل صفَّ العميل به. فعملةٌ ووسمٌ يُكتبان على العميل وحدَه
+      //    يُمحيان عند أوّل سحب، فتُقرأ فاتورةُ الدولار محلّيّةً وتختفي
+      //    من شاشة الاستيراد — بلا أثرٍ يقول إنّ شيئاً ضاع.
+      ImportDocumentFields? importDetails;
+      final rawImport = data['importDetails'];
+      if (rawImport is Map) {
+        // وكيلُ التخليص يُحلّ بمعرِّفه العالميِّ لا برقمه المحلّيّ: رقمُ
+        // العميل قد يُطابِق طرفاً آخرَ تماماً هنا.
+        final agentId = await resolvePartyId(
+          clientPartyId: null,
+          partyGlobalId: data['clearingAgentGlobalId'] as String?,
+          isSupplier: true,
+          fallbackName: data['clearingAgentName'] as String?,
+        );
+        // ⚠️ **واسمُ الوكيل لا يضيع حين يتعذّر حلُّ الطرف.** التطبيعُ
+        //    يُسقط النصَّ متى وُجد معرِّفُ طرفٍ، فحمولةُ `importDetails`
+        //    تصل بلا اسم. ولو لم يُحَلَّ المعرِّفُ هنا (طرفٌ لم يُزامَن
+        //    بعدُ) كان الوكيلُ يُمحى من الوسم بلا أثر — فالاسمُ يُعاد من
+        //    المستوى الأعلى كبديلٍ حين لا طرفَ.
+        final doc = Map<String, dynamic>.from(rawImport);
+        if (agentId == null && doc['clearingAgentName'] == null) {
+          doc['clearingAgentName'] = data['clearingAgentName'];
+        }
+        importDetails = importDocumentFromJson(
+          doc,
+          clearingAgentPartyId: agentId,
+        );
+      }
+
       final serverId = await db.createPurchaseInvoice(
         supplierId: resolvedSupplierId,
         warehouseId: resolvedWhId,
@@ -239,6 +272,9 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         // client invoice, so the supplier kept a payable for the discount that
         // could never be settled.
         discount: parseDoubleNullable(data['discount']) ?? 0,
+        currencyId: parseIntNullable(data['currencyId']),
+        exchangeRate: parseDoubleNullable(data['exchangeRate']),
+        importDetails: importDetails,
       );
       broadcast('purchases');
       broadcast('products');

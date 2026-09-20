@@ -73,7 +73,6 @@ void main() {
         for (final id in const [
           ScreenId.cycleCounting,
           ScreenId.fieldAudit,
-          ScreenId.landedCost,
           ScreenId.stockRequisitions,
         ]) {
           expect(kept, isNot(contains(id.navigationIndex)),
@@ -83,13 +82,45 @@ void main() {
       }
     });
 
+    // ═══ 🔴 «التكاليفُ المحمّلة» — الموضعان مفترقان عمداً (المرحلة ٨) ═══
+    //
+    // قرارُ المالك 2026-09-18: «تُفعَّل وتعيش داخل المشتريات الخارجيّة
+    // وحدَها — لا مدخلَ جانبيَّ لها». فهذان توكيدان **متلازمان**، وسقوطُ
+    // أحدهما وحدَه عطبٌ مرئيّ:
+    //   • لو عادت إلى `picposRetired` ⇒ زرُّ «التكاليف المحمّلة» داخلَ
+    //     شاشة الاستيراد يفتح لا شيء (النطاقُ يسبق الصلاحية).
+    //   • ولو خرجت من `kPicPosRetiredNavIndexes` ⇒ عاد المدخلُ الجانبيُّ
+    //     الذي أسقطه المالك.
+    test('و«التكاليف المحمّلة» مبلوغةٌ بالنطاق ومخفيّةٌ من القائمة', () {
+      expect(
+        ScreenRegistry.withoutPicposRetired(ScreenRegistry.unified)
+            .map((s) => s.navigationIndex),
+        contains(ScreenId.landedCost.navigationIndex),
+        reason: 'أُسقطت من النطاق — فزرُّ التكاليف في شاشة الاستيراد '
+            'يفتح لا شيء',
+      );
+      expect(
+        kPicPosRetiredNavIndexes,
+        contains(ScreenId.landedCost.navigationIndex),
+        reason: 'عاد مدخلُها الجانبيُّ — والمالكُ أسقطه',
+      );
+      // وشاشةُ الاستيراد هي **المُبلِغُ الوحيد**: لا مدخلَ لها في القائمة.
+      expect(
+        kAllNavItemDefs
+            .where((n) => n.index == ScreenId.landedCost.navigationIndex)
+            .map((n) => n.label),
+        ['التكاليف المحملة'],
+        reason: 'المدخلُ محذوفٌ من القائمة المشتركة — وهو يخصّ الفورك الآخر',
+      );
+    });
+
     test('ولا يُسقط الترشيحُ شاشةً أخرى', () {
       // طفرةٌ تُوسّع السجلَّ أو تقارن بما لا ينبغي تُسقط شاشاتٍ سليمة.
       for (final scope in scopes.entries) {
         final before = scope.value.length;
         final after = ScreenRegistry.withoutPicposRetired(scope.value).length;
         final retiredHere = scope.value
-            .where((s) => const {38, 41, 42}.contains(s.navigationIndex))
+            .where((s) => const {38, 42}.contains(s.navigationIndex))
             .length;
         expect(before - after, retiredHere,
             reason: 'نطاق «${scope.key}» فقد شاشاتٍ غيرَ المتقاعدات');

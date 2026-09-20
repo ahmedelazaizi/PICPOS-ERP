@@ -46,6 +46,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
   Widget _hero(BuildContext context) {
     final t = state._totals;
     final kind = state.widget.kind;
+    final cur = state.widget.entryCurrency;
     String f0(double v) => v.toStringAsFixed(0);
 
     return ClipRRect(
@@ -131,7 +132,12 @@ class _PicPosMoneyPanel extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 4),
                         child: Text(
-                          AppConstants.currencySymbolEn,
+                          // 🔴 **الرمزُ يتبع عملةَ الإدخال.** الأرقامُ في
+                          //    النموذج بعملةِ المورّد حين تُختار، فطبعُ رمزِ
+                          //    العملةِ المحلّيّةِ تحتها يجعل «١٠٬٠٠٠ د.أ»
+                          //    وهي عشرةُ آلافِ دولار — رقمٌ صحيحٌ بوحدةٍ
+                          //    كاذبةٍ لا شيءَ يكشفها على الشاشة.
+                          cur?.symbol ?? AppConstants.currencySymbolEn,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -142,6 +148,29 @@ class _PicPosMoneyPanel extends StatelessWidget {
                     ],
                   ),
                 ),
+                // ═══ المقابلُ المحلّيُّ — **يُعرَض مع الأجنبيّ لا بدلَه** ═══
+                //
+                // الأعلى ما وقّع عليه المشتري، وهذا ما يدخل الذمّةَ
+                // والمخزونَ والقيد. وإخفاءُ أحدهما يُخفي نصفَ الصفقة:
+                // بلا الأجنبيِّ لا يُطابَق المستندُ بفاتورة المورّد، وبلا
+                // المحلّيِّ لا يُعرَف ما سيُقيَّد قبل الحفظ.
+                if (cur != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    '≈ ${foreignToLocal(foreign: t.net, localPerForeign: cur.localPerForeign).toStringAsFixed(AppConstants.decimalPlaces)}'
+                    ' ${AppConstants.currencySymbolEn}'
+                    '  ·  ${cur.code} 1 = ${cur.localPerForeign}',
+                    key: const Key('invoice_local_equivalent'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF9FB6DC),
+                      fontFeatures: [ui.FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 11),
                 Wrap(
                   spacing: 7,

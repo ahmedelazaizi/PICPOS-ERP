@@ -105,6 +105,7 @@ import 'presentation/screens/branch_performance_screen.dart';
 import 'presentation/screens/help_center_screen.dart';
 import 'presentation/screens/landed_cost_screen.dart';
 import 'presentation/landed_cost_picpos/screens/landed_cost_picpos_screen.dart';
+import 'presentation/import_purchases_picpos/screens/import_purchases_picpos_screen.dart';
 import 'presentation/screens/cycle_count_screen.dart';
 import 'presentation/cycle_count_picpos/screens/cycle_count_picpos_screen.dart';
 import 'presentation/screens/report_builder_screen.dart';
@@ -1116,6 +1117,13 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const ChequeBooksPicposScreen(),
         label: 'دفتر الشيكات',
         icon: PhosphorIconsBold.checkSquareOffset,
+      ),
+      // المشتريات الخارجيّة — وفيها وحدَها تُبلَغ «التكاليف المحمّلة».
+      ScreenConfig(
+        appScreen: AppScreen.importPurchases,
+        builder: (_) => const ImportPurchasesPicposScreen(),
+        label: 'المشتريات الخارجية',
+        icon: PhosphorIconsBold.globeHemisphereEast,
       ),
       ScreenConfig(
         appScreen: AppScreen.syncConflicts,

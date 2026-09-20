@@ -45,6 +45,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/number_utils.dart';
+import '../../domain/models/import_purchase_plan.dart';
 import '../../domain/models/invoice_due_date.dart';
 import '../../domain/models/picpos_invoice_draft.dart';
 
@@ -130,10 +131,19 @@ typedef PicPosInvoicePreviewCallback = Future<void> Function({
   required String notes,
 });
 
+/// عملةُ الإدخال المعروضةُ في [PicPosInvoiceForm.entryCurrency].
+typedef PicPosEntryCurrency = ({
+  int id,
+  String code,
+  String symbol,
+  double localPerForeign,
+});
+
 class PicPosInvoiceForm extends StatefulWidget {
   const PicPosInvoiceForm({
     super.key,
     required this.kind,
+    this.entryCurrency,
     required this.parties,
     required this.products,
     required this.warehouses,
@@ -231,6 +241,21 @@ class PicPosInvoiceForm extends StatefulWidget {
   /// ووجودُها يقلب تسميةَ الفعل إلى «حفظ التعديلات»: زرٌّ يقول «حفظ
   /// الفاتورة» على تحريرٍ يوهم بإنشاء ثانية.
   final PicPosInvoiceInitial? initial;
+
+  /// عملةُ **الإدخال** حين تخالف المحلّيّة — المشتريات الخارجيّة (المرحلة ٨).
+  ///
+  /// ⚠️ **ولا تُغيّر حساباً واحداً في هذا النموذج.** الأرقامُ تُجمَع وتُخصَم
+  ///    وتُضرَّب في الضريبة كما هي؛ وأثرُها **عرضيٌّ حصراً**: رمزُ العملة
+  ///    فوق الإجماليّ، وسطرُ المقابل المحلّيّ تحته.
+  ///
+  /// 🔴 **والتحويلُ يقع عند المنادي لا هنا** (‏`import_purchases_picpos`):
+  ///    لهذا النموذج ثلاثةُ منادين، ولمسار الشراء نفسِه مساران (محلّيٌّ
+  ///    وحمولةُ JSON إلى الخادم). فتحويلٌ داخلَ النموذج كان يجعل كلَّ منادٍ
+  ///    يرث سلوكاً لم يطلبه، ومسارَ الخادم يرى أرقاماً محوَّلةً مرّتَين أو
+  ///    غيرَ محوَّلةٍ أصلاً — بلا فرقٍ يظهر على الشاشة.
+  ///
+  /// و`null` ⇒ فاتورةٌ محلّيّة، وهو حالُ كلِّ منادٍ قائم.
+  final PicPosEntryCurrency? entryCurrency;
 
   bool get isEdit => initial != null;
 

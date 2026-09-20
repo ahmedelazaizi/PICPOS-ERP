@@ -607,7 +607,41 @@ extension PurchaseDao on AppDatabase {
     // header stored the GROSS total while the operator paid the NET, leaving
     // a permanent phantom payable on the supplier for the discount amount.
     double discount = 0,
+    // ═══ v174 / المرحلة ٨ — عملةُ الفاتورة ولقطةُ سعرِها ═══
+    //
+    // 🔴 **والمبالغُ الواصلةُ محلّيّةٌ بالفعل.** التحويلُ يقع مرّةً واحدةً في
+    //    النموذج (`import_purchase_plan.foreignToLocal`)، لأنّ للشراء
+    //    **مسارَين** — هذا، وحمولةُ JSON إلى الخادم في وضع العميل ثمّ
+    //    `insertPurchaseInvoiceWithoutStock` للنسخة المحلّيّة. فتحويلٌ هنا
+    //    يعني ثلاثةَ مواضعِ تحويلٍ يتفرّق بينها رقمُ الذمّة صامتاً.
+    //
+    //    فهاتان **لقطةٌ للسجلّ** لا مُعامِلٌ يُعاد تطبيقُه، ولا قارئَ يضرب
+    //    بهما. راجع [PurchaseInvoices.exchangeRate].
+    int? currencyId,
+    double? exchangeRate,
+    // وسمُ الاستيراد — يُكتَب **داخلَ هذه المعاملة**. راجع
+    // [ImportPurchasesDao._writeImportPurchaseDetails].
+    ImportDocumentFields? importDetails,
   }) async {
+    // 🔴 **الزوجُ يُفحَص قبل المعاملة.** عملةٌ بلا سعرٍ تُقرأ لاحقاً على
+    //    أنّها ١، فتُقيَّد ألفُ دولارٍ على المورّد بألفِ وحدةٍ محلّيّة —
+    //    والقيدُ متّزنٌ على الرقم الخاطئ فلا يمسكه فحصُ اتّزان. وسعرٌ بلا
+    //    عملةٍ مُعامِلٌ بلا وحدةٍ لا يُعرَف ما يصف.
+    final badRate = validateExchangeRate(
+      currencyId: currencyId,
+      localPerForeign: exchangeRate,
+    );
+    if (badRate != null) throw ArgumentError(badRate);
+    // ⚠️ **وطولُ الحقول المستنديّة لا يُفحَص هنا** — يفحصه
+    //    [ImportPurchasesDao._writeImportPurchaseDetails] قبل أن يكتب،
+    //    وهو يقع قبل حلقة السطور فلا تتحرّك بضاعةٌ ولا تُحسَب تكلفةٌ قبله،
+    //    ويرمي **نفسَ** `ArgumentError` بنفس الرسالة.
+    //
+    // 🔴 وكانت هنا نسخةٌ ثانيةٌ منه فنجت منها طفرةٌ تُسقطها: الاختبارُ
+    //    بقي أخضرَ لأنّ الفحصَ الداخليَّ يمسك عينَ الحالة. وحارسٌ لا
+    //    تُغيّر إزالتُه شيئاً **ليس حارساً** — هو نسخةٌ تُوهم بحمايةٍ
+    //    مضاعَفة وتنقسم عن أصلها عند أوّل تعديلٍ على أحدهما.
+
     return transaction(() async {
       // 0. Soft/Hard Period Closing Gating
       //
@@ -808,6 +842,8 @@ extension PurchaseDao on AppDatabase {
           notes: Value(notes),
           supplierInvoiceNumber: Value(supplierInvoiceNumber),
           costCenterId: Value(costCenterId),
+          currencyId: Value(currencyId),
+          exchangeRate: Value(exchangeRate),
           // UUID-First (Phase 1): carry the caller's globalId through, or
           // mint one so every purchase invoice has stable cross-install id.
           globalId: Value(
@@ -817,6 +853,17 @@ extension PurchaseDao on AppDatabase {
           ),
         ),
       );
+
+      // ═══ وسمُ الاستيراد — في معاملة الفاتورة لا بعدَها ═══
+      //
+      // 🔴 صفُّ `ImportPurchaseDetails` هو **الفارقُ الوحيد** بين فاتورةِ
+      //    استيرادٍ وفاتورةٍ محلّيّة. وكتابتُه بعد المعاملة تعني أنّ سقوطَه
+      //    يترك فاتورةً بذمّةٍ ومخزونٍ وقيدٍ **بلا وسم**: تبدو محلّيّةً إلى
+      //    الأبد، وتغيب عن الشاشة التي أُنشئت فيها، ولا شيءَ يقول إنّ شيئاً
+      //    سقط.
+      if (importDetails != null) {
+        await _writeImportPurchaseDetails(invoiceId, importDetails);
+      }
 
       for (var lineAt = 0; lineAt < items.length; lineAt++) {
         final item = items[lineAt];
@@ -1193,7 +1240,19 @@ extension PurchaseDao on AppDatabase {
     // ح-1: mirror the server's net total in the local cache row, otherwise the
     // mirror's invoice list shows a gross total the server never stored.
     double discount = 0,
+    // المرحلة ٨ — نفسُ لقطةِ العملة التي يخزّنها الخادم. بدونها يعرض
+    // العميلُ فاتورةَ استيرادٍ **بلا عملتها** حتى أوّل سحبٍ يصحّحها، ويقرأ
+    // المستخدمُ رقماً محلّيّاً بلا ما يقول إنّه كان بالدولار.
+    int? currencyId,
+    double? exchangeRate,
+    ImportDocumentFields? importDetails,
   }) async {
+    final badRate = validateExchangeRate(
+      currencyId: currencyId,
+      localPerForeign: exchangeRate,
+    );
+    if (badRate != null) throw ArgumentError(badRate);
+    // الطولُ يفحصه `_writeImportPurchaseDetails` — راجع `createPurchaseInvoice`.
     return transaction(() async {
       double taxTotal = 0;
       double total = 0;
@@ -1262,6 +1321,8 @@ extension PurchaseDao on AppDatabase {
           notes: Value(notes),
           supplierInvoiceNumber: Value(supplierInvoiceNumber),
           costCenterId: Value(costCenterId),
+          currencyId: Value(currencyId),
+          exchangeRate: Value(exchangeRate),
           globalId: Value(
             (globalId != null && globalId.isNotEmpty)
                 ? globalId
@@ -1269,6 +1330,11 @@ extension PurchaseDao on AppDatabase {
           ),
         ),
       );
+
+      // نفسُ حكمِ مسار الإنشاء: الوسمُ في المعاملة لا بعدَها.
+      if (importDetails != null) {
+        await _writeImportPurchaseDetails(invoiceId, importDetails);
+      }
 
       for (final item in items) {
         final hasLineGid = item.globalId.present &&
@@ -1443,6 +1509,26 @@ extension PurchaseDao on AppDatabase {
       // Get original invoice
       final oldInvoice = await getPurchaseInvoiceById(invoiceId);
       if (oldInvoice == null) throw Exception('Invoice not found');
+
+      // ═══ 🔴 فاتورةُ الاستيراد لا تُحرَّر من مسار الفاتورة المحلّيّة ═══
+      //
+      // هذا المسارُ يستقبل مبالغَ **محلّيّةً** ولا يعرف عملةً ولا سعراً، وهو
+      // لا يمسّ `currency_id`/`exchange_rate`. فتحريرُ فاتورةِ استيرادٍ هنا
+      // يُبقي اللقطةَ تقول «حُوِّلت من USD @ 0.71» فوق مبالغَ أُدخلت
+      // بالمحلّيّة — صفٌّ **يناقض نفسَه** ولا شيءَ يبدو معطوباً: القيدُ
+      // متّزنٌ والذمّةُ معقولة، والمستندُ وحدَه هو الذي صار يكذب.
+      //
+      // ⚠️ والمنعُ هنا لا في الشاشة: لهذا المسار مناديان (شاشةُ المشتريات
+      //    و`putPurchase` على الخادم)، وحارسٌ في أحدهما يترك الآخرَ مفتوحاً.
+      //
+      // (‏وأوراقُ الاستيراد نفسُها تُحرَّر من شاشتها عبر
+      //  `updateImportPurchaseDetails` — وهي لا تمسّ مالاً.)
+      if (oldInvoice.currencyId != null) {
+        throw StateError(
+          'فاتورةُ استيرادٍ بعملةٍ أجنبيّة — تُحرَّر من شاشة المشتريات '
+          'الخارجيّة، وتحريرُها هنا يُبقي سعرَ الصرف فوق مبالغَ محلّيّة',
+        );
+      }
 
       // ── Purchase-edit policy (supersedes ISS-04 / 062 D1-004) ────────────
       // Owner decision 2026-07-22: editing a purchase invoice is governed by

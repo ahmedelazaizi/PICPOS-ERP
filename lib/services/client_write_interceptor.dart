@@ -12,6 +12,7 @@ import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart';
 import '../data/database/sync_interceptor.dart';
 import '../domain/models/exchange_sync_payload.dart';
+import '../domain/models/import_purchase_plan.dart';
 
 part 'interceptor/cwi_commerce.dart';
 part 'interceptor/cwi_catalog.dart';
@@ -536,7 +537,7 @@ class ClientWriteInterceptor implements SyncInterceptor {
 
   static Future<bool> submitStockTransfer({required int fromWarehouseId, required int toWarehouseId, required List<Map<String, dynamic>> items, int? userId, String? notes, String? globalId}) => _CwiTrading.submitStockTransfer(fromWarehouseId: fromWarehouseId, toWarehouseId: toWarehouseId, items: items, userId: userId, notes: notes, globalId: globalId);
 
-  static Future<bool> submitPurchase({required int supplierId, required int warehouseId, required List<Map<String, dynamic>> items, required double paid, String paymentMethod = 'cash', String? supplierInvoiceNumber, String? notes, int? costCenterId, int? branchId, int? safeId, String? globalId, int? userId, String? createdByUsername, double discount = 0}) => _CwiTrading.submitPurchase(supplierId: supplierId, warehouseId: warehouseId, items: items, paid: paid, paymentMethod: paymentMethod, supplierInvoiceNumber: supplierInvoiceNumber, notes: notes, costCenterId: costCenterId, branchId: branchId, safeId: safeId, globalId: globalId, userId: userId, createdByUsername: createdByUsername, discount: discount);
+  static Future<bool> submitPurchase({required int supplierId, required int warehouseId, required List<Map<String, dynamic>> items, required double paid, String paymentMethod = 'cash', String? supplierInvoiceNumber, String? notes, int? costCenterId, int? branchId, int? safeId, String? globalId, int? userId, String? createdByUsername, double discount = 0, int? currencyId, double? exchangeRate, ImportDocumentFields? importDetails}) => _CwiTrading.submitPurchase(supplierId: supplierId, warehouseId: warehouseId, items: items, paid: paid, paymentMethod: paymentMethod, supplierInvoiceNumber: supplierInvoiceNumber, notes: notes, costCenterId: costCenterId, branchId: branchId, safeId: safeId, globalId: globalId, userId: userId, createdByUsername: createdByUsername, discount: discount, currencyId: currencyId, exchangeRate: exchangeRate, importDetails: importDetails);
 
   static Future<bool> submitPurchaseReturn(Map<String, dynamic> returnData) => _CwiTrading.submitPurchaseReturn(returnData);
   static Future<bool> submitPurchaseReturnEdit(Map<String, dynamic> editData) => _CwiTrading.submitPurchaseReturnEdit(editData);

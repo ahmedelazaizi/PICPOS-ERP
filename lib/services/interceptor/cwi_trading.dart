@@ -773,6 +773,10 @@ class _CwiTrading {
     // ح-1 (2026-07-25): invoice-level discount. Omitting it made the server
     // store the GROSS total for a discounted client invoice.
     double discount = 0,
+    // المرحلة ٨ — لقطةُ العملة ووسمُ الاستيراد.
+    int? currencyId,
+    double? exchangeRate,
+    ImportDocumentFields? importDetails,
   }) async {
     if (!SyncInterceptor.isClientMode) return false;
     debugPrint('[ClientInterceptor] Routing purchase to server');
@@ -798,7 +802,28 @@ class _CwiTrading {
       'userId': ?userId,
       if (createdByUsername != null && createdByUsername.isNotEmpty)
         'createdByUsername': createdByUsername,
+      // 🔴 **ولقطةُ العملة تسافر مع الفاتورة لا بعدَها.** الخادمُ هو مَن
+      //    يُنشئ الصفَّ المعتمَد، وسحبُ الدلتا يستبدل صفَّ العميل به. فعملةٌ
+      //    تُكتَب محلّيّاً ولا تصل الخادمَ **تُمحى عند أوّل سحب**، فتُقرأ
+      //    فاتورةُ الدولار على أنّها محلّيّةٌ ولا أثرَ يقول إنّها لم تكن.
+      'currencyId': ?currencyId,
+      'exchangeRate': ?exchangeRate,
     };
+    if (importDetails != null) {
+      // ⚠️ **ورقمُ وكيلِ التخليص لا يسافر — معرِّفُه العالميُّ يسافر.**
+      //    أرقامُ العميل والخادم تتباعد بالتصميم، فرقمٌ محلّيٌّ قد يُطابِق
+      //    طرفاً آخرَ تماماً على الخادم فيُنسَب التخليصُ إلى مورّدٍ لا
+      //    علاقةَ له. و`null` هنا ليس إهمالاً: طرفٌ لم يُزامَن بعدُ لا
+      //    معرِّفَ عالميَّ له، والخادمُ ينشئ بديلاً باسمه بدل أن يخمّن.
+      data['importDetails'] = importDocumentToJson(importDetails);
+      final agentId = importDetails.clearingAgentPartyId;
+      if (agentId != null) {
+        data['clearingAgentGlobalId'] =
+            await ClientWriteInterceptor._lookupPartyGlobalId(agentId);
+        data['clearingAgentName'] =
+            await ClientWriteInterceptor._lookupPartyName(agentId);
+      }
+    }
     await ClientWriteInterceptor._enrichItemsWithProductGlobalId(data);
     return ClientWriteInterceptor._tryOrQueueVoid(
       tableName: 'purchases',

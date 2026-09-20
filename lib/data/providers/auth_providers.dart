@@ -699,6 +699,9 @@ const kAllNavItemDefs = [
   NavItemDef(icon: PhosphorIconsBold.receipt, label: 'فواتير المشتريات', permission: 'purchases_create', index: 9, section: 'المشتريات', group: 'purchases'),
   NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'أوامر الشراء', permission: 'purchase_orders_view', index: 30, group: 'purchases'),
   NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مرتجع المشتريات', permission: 'purchases_return_view', index: 45, group: 'purchases'),
+  // 🆕 المشتريات الخارجيّة — بندُ المالك 2026-09-18، آخرُ مجموعةِ
+  // «المشتريات». وفيها وحدَها تُبلَغ «التكاليف المحمّلة».
+  NavItemDef(icon: PhosphorIconsBold.globeHemisphereEast, label: 'المشتريات الخارجية', permission: 'purchases_create', index: 71, group: 'purchases'),
 
   // ═══════════════════════════════════════════
   // 📦 الاصناف والمخزون
@@ -862,9 +865,16 @@ List<NavSearchEntry> navEntriesFromNavItems(List<NavItemDef> items) => [
 /// ⚠️ **ومحكومٌ بالعلامة**: [kAllNavItemDefs] قائمةٌ مشتركةٌ مع الفورك الآخر،
 /// فحذفُ السطر منها يسحب الشاشةَ من منتَجٍ آخرَ لم يطلب أحدٌ تغييرَه. وهو
 /// نفسُ عقدِ [kPicPosFoldedIntoAccountingHub].
+///
+/// ⚠️ **و`41` (التكاليفُ المحمّلة) بقيت هنا وخرجت من
+/// [ScreenRegistry.picposRetired]** — 2026-09-20، المرحلة ٨. قرارُ المالك:
+/// «تُفعَّل وتعيش داخل المشتريات الخارجيّة وحدَها، لا مدخلَ جانبيَّ لها».
+/// فهذه الحالةُ الوحيدةُ التي **يُفترَق فيها الموضعان عمداً**: القائمةُ
+/// تُخفيها، والنطاقُ يُبلغها — وشاشةُ الاستيراد وحدَها هي التي تُبلغها.
+/// وحذفُها من هنا يُعيد المدخلَ الجانبيَّ الذي أسقطه المالك.
 const kPicPosRetiredNavIndexes = <int>{
   38, // طلبات الصرف
-  41, // التكاليف المحملة
+  41, // التكاليف المحملة — مخفيّةٌ من القائمة، **مبلوغةٌ** من شاشة الاستيراد
   42, // الجرد الدوري (‏= `fieldAudit`، اسمان لفهرسٍ واحد)
 };
 
@@ -1056,6 +1066,8 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.receiptVoucher: 'treasury_view',
   ScreenId.paymentVoucher: 'treasury_view',
   ScreenId.chequeBooks: 'treasury_view',
+  // المشتريات الخارجيّة — عينُ صلاحيّةِ «فواتير المشتريات».
+  ScreenId.importPurchases: 'purchases_create',
 };
 
 final userAllowedScreensProvider = FutureProvider<List<int>>((ref) async {

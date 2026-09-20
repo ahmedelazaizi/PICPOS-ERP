@@ -94,6 +94,11 @@ class DeltaPullService {
     // ── Tier 4: transactional items ──
     'sales_invoice_items',     // → sales_invoices, products
     'purchase_invoice_items',  // → purchase_invoices, products
+    // v174 / المرحلة ٨ — وسمُ الاستيراد. **موضعُه بعد `purchase_invoices`
+    // إلزاميٌّ**: `purchase_invoice_id` مفتاحٌ خارجيٌّ و`_upsertRow`
+    // **يبتلع** خطأَه بـ`debugPrint` ويمضي — فوسمٌ يسبق فاتورتَه
+    // يُسقَط صامتاً، فتُقرأ الفاتورةُ محلّيّةً إلى الأبد.
+    'import_purchase_details', // → purchase_invoices, parties
     'held_order_items',        // → held_orders, products
     'sales_order_items',       // → sales_orders, products
     'purchase_order_items',    // → purchase_orders, products
@@ -223,6 +228,11 @@ class DeltaPullService {
     'purchase_orders', 'quotations', 'payments', 'journal_entries',
     'safe_transactions', 'commercial_papers', 'stock_movements', 'shifts',
     'sales_invoice_items', 'purchase_invoice_items',
+    // v174 / المرحلة ٨ — **بياناتُ عملٍ لا مرجعيّة**: البيانُ
+    // الجمركيُّ وبوليصةُ الشحن والاعتمادُ المستنديُّ أوراقُ صفقةٍ
+    // لا تُسلَّم لمستدعٍ بلا هويّةٍ متحقَّقة — وهي فرعٌ من فاتورةٍ
+    // محميّةٍ أصلاً فالتركُ خارجاً يُسرّب ما تحميه أمُّه.
+    'import_purchase_details',
     'held_order_items', 'sales_order_items', 'purchase_order_items',
     'quotation_items', 'payment_allocations',
     // v166 / المرحلة ٢ — مستنداتُ الأثر المحاسبيّ. بياناتُ عملٍ لا
@@ -382,6 +392,11 @@ class DeltaPullService {
     // فبذرُ علامتِه يعني جهازاً ثانياً لا يرى طلباً حُرِّر قبل إقلاعه — وهو
     // مستندٌ يُراجَع ويُعتمَد من جهازٍ غيرِ الذي حرّره.
     'asset_disposals',
+
+    // v174 / المرحلة ٨ — وسمُ الاستيراد. بلا استراتيجيّةٍ في `fullSync`،
+    // فبذرُ علامتِه يعني جهازاً ثانياً يرى فاتورةَ الاستيراد **بلا وسمها**:
+    // تُعرَض محلّيّةً وتغيب عن شاشتها، ولا شيءَ يقول إنّ الوسمَ لم يصل.
+    'import_purchase_details',
 
     // v175 / المرحلة ٦ — دفترُ الشيكات. بلا استراتيجيّةٍ في `fullSync`،
     // فبذرُ علامتِه يعني جهازاً ثانياً **لا يرى دفتراً فُتح قبل إقلاعه** —

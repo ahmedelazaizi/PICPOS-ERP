@@ -23,6 +23,7 @@ import '../../domain/models/journal_balance.dart';
 import '../../domain/models/purchase_line_discount.dart';
 import '../../domain/models/cheque_book_plan.dart';
 import '../../domain/models/asset_disposal_plan.dart';
+import '../../domain/models/import_purchase_plan.dart';
 import '../../services/security_service.dart';
 import '../../domain/models/quick_sale_policy.dart'
     show kQuickSaleReceiptTemplateKey, quickSaleReceiptTemplateFile;
@@ -128,6 +129,7 @@ part 'daos/accounting_audit_dao.dart';
 part 'daos/commercial_papers_dao.dart';
 part 'daos/cheque_books_dao.dart';
 part 'daos/asset_disposals_dao.dart';
+part 'daos/import_purchases_dao.dart';
 part 'daos/multi_currency_pricelist_dao.dart';
 part 'daos/manufacturing_dao.dart';
 part 'daos/fixed_assets_dao_ext.dart';
@@ -582,6 +584,22 @@ const String kBankStatementMatchDedupIndexName =
 const String kCreateBankStatementMatchDedupIndexSql =
     'CREATE UNIQUE INDEX IF NOT EXISTS $kBankStatementMatchDedupIndexName '
     'ON bank_statement_lines(matched_journal_line_id)';
+
+/// تفرّدُ وسمِ الاستيراد — صفٌّ واحدٌ لكلّ فاتورة (v174، المرحلة ٨).
+///
+/// `ImportPurchaseDetails` ١:١ مع `PurchaseInvoices` بالتعريف، ولا `UNIQUE`
+/// في تعريف الجدول. وصفّان لفاتورةٍ واحدةٍ يُظهرانها مرّتَين في شاشة
+/// المشتريات الخارجيّة ويجعلان قراءةَ بيانِها الجمركيِّ اختياراً عشوائيّاً
+/// بين ورقتَين.
+///
+/// ✅ **وبلا تسويةٍ تسبقه**: الجدولُ شُحن في v174 بلا كاتبٍ واحد، فهو فارغٌ
+///    في كلّ تنصيبةٍ قائمة — والفهرسُ يُركَّب من أوّل مرّة.
+const String kImportPurchaseDetailsUniqueIndexName =
+    'idx_import_purchase_details_invoice';
+const String kCreateImportPurchaseDetailsUniqueIndexSql =
+    'CREATE UNIQUE INDEX IF NOT EXISTS '
+    '$kImportPurchaseDetailsUniqueIndexName '
+    'ON import_purchase_details(purchase_invoice_id)';
 
 /// تسويةُ المزدوج **قبل** تركيب [kCreateAccountMappingsPurposeCcIndexSql].
 ///
@@ -1405,6 +1423,8 @@ class AppDatabase extends _$AppDatabase {
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
     // v175 / المرحلة ٧ — طلبُ استبعاد أصل.
     'asset_disposals',
+    // v174 / المرحلة ٨ — وسمُ الاستيراد.
+    'import_purchase_details',
     // §٦‑٢ (v172)
     'purchase_returns',
     // v167 / المرحلة ٣ — الفئةُ التشغيليّة (كانت غائبةً هنا).

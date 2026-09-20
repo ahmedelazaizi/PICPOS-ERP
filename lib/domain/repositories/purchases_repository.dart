@@ -1,4 +1,5 @@
 import '../entities/invoice_entity.dart';
+import '../models/import_purchase_plan.dart';
 import '../../data/database/database.dart' show PurchaseInvoiceItemWithProduct, PurchaseInvoiceData;
 /// Purchases repository interface
 ///
@@ -103,6 +104,19 @@ class CreatePurchaseInvoiceParams {
   /// تدخل بضاعتُه مرّتَين ويُقيَّد على المورّد مرّتَين.
   final int? sourceOrderId;
 
+  /// عملةُ الفاتورة ولقطةُ سعرِها — المشتريات الخارجيّة (المرحلة ٨).
+  ///
+  /// 🔴 **و[items] محوَّلةٌ سلفاً إلى المحلّيّة.** التحويلُ يقع في النموذج
+  /// مرّةً واحدة، لأنّ للشراء مسارَين (محلّيّاً، وحمولةَ JSON إلى الخادم)
+  /// فتحويلٌ أعمقَ يُفرِّق رقمَ الذمّة بين الجهازَين. فهاتان لقطةٌ للسجلّ
+  /// لا مُعامِلٌ يُعاد تطبيقُه.
+  final int? currencyId;
+  final double? exchangeRate;
+
+  /// وسمُ الاستيراد — وجودُه هو الفارقُ بين فاتورةٍ خارجيّةٍ ومحلّيّة،
+  /// ويُكتَب في معاملةِ الفاتورة نفسِها.
+  final ImportDocumentFields? importDetails;
+
   const CreatePurchaseInvoiceParams({
     required this.supplierId,
     required this.warehouseId,
@@ -118,6 +132,9 @@ class CreatePurchaseInvoiceParams {
     this.createdByUsername,
     this.discount = 0,
     this.sourceOrderId,
+    this.currencyId,
+    this.exchangeRate,
+    this.importDetails,
   });
 }
 
