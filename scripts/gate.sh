@@ -451,20 +451,29 @@ run_suite() {
   fi
 }
 
-step "flutter analyze lib test   (خط الأساس: 6 info)"
-# ⚠️ `flutter analyze` بيخرج بكود ≠ 0 لو فيه **أي** ملاحظة، حتى `info`. وخط
-#    الأساس هنا ٦ info، فربط البوابة بكود الخروج كان بيخلّيها حمرا دايماً
-#    ويخبّي الفشل الحقيقي. البوابة بتفشل على `error`/`warning` بس، وبتطبع
-#    عدد الـinfo عشان أي انحراف عن الـ٦ يبان.
+step "flutter analyze lib test   (خط الأساس: 0 info)"
+# ⚠️ `flutter analyze` بيخرج بكود ≠ 0 لو فيه **أي** ملاحظة، حتى `info`. فربط
+#    البوابة بكود الخروج كان بيخلّيها حمرا دايماً ويخبّي الفشل الحقيقي.
+#    البوابة بتفشل على `error`/`warning` بس، وبتطبع عدد الـinfo عشان أي
+#    انحراف عن خط الأساس يبان.
+#
+# 🔴 **وخطُّ الأساس نزل من ٦ إلى ٠ (2026-09-21) — والشرطُ مساواةٌ تامّة.**
+#    الستُّ أُصلحت تباعاً ولم يتبعها العدّاد، فبقيت البوابةُ **حمراءَ لأنّ
+#    الشيفرةَ صارت أنظفَ ممّا تتوقّع** — وهي حمرةٌ لا تدلّ على شيءٍ ويتعوّد
+#    القارئُ على تجاهلها، فتُخفي حمرةً حقيقيّةً بجوارها (وقد أخفت فعلاً:
+#    `installer_version_matches_pubspec` كان أحمرَ في نفس التشغيلة).
+#
+# ⚠️ **ولا يُرفَع السقفُ عند أوّل ملاحظةٍ جديدة**: صفرٌ يعني أنّ أيَّ ملاحظةٍ
+#    تُسقط البناءَ فوراً — وهذا هو المقصود. مَن يرفعه يُعيد بناءَ نفس المصيدة.
 ANALYZE_OUT="$(flutter analyze lib test 2>&1)"
 printf '%s\n' "$ANALYZE_OUT" | grep -E ' (error|warning|info) - ' || true
 INFO_COUNT="$(printf '%s\n' "$ANALYZE_OUT" | grep -cE ' info - ' || true)"
 if printf '%s\n' "$ANALYZE_OUT" | grep -qE ' (error|warning) - '; then
   fail "analyze — فيه error/warning"
-elif [[ "$INFO_COUNT" -ne 6 ]]; then
-  fail "analyze — عدد الـinfo $INFO_COUNT مش ٦ (انحراف عن خط الأساس)"
+elif [[ "$INFO_COUNT" -ne 0 ]]; then
+  fail "analyze — عدد الـinfo $INFO_COUNT مش ٠ (انحراف عن خط الأساس)"
 else
-  ok "analyze — ٦ info بالظبط"
+  ok "analyze — نظيف بلا ملاحظات"
 fi
 
 # الحدود مقيسةٌ 2026-08-11 بعد إعادة §٣-ب (حسابٌ فرعيٌّ لكلّ خزنة تحت 111)
