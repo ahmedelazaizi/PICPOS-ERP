@@ -27,9 +27,12 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/data/providers/auth_providers.dart';
+import '../helpers/attachments_test_overrides.dart';
+
+import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/data/providers/document_record_providers.dart';
 import 'package:ural_erp/domain/models/document_record.dart';
+import 'package:ural_erp/presentation/picpos_shell/picpos_attachments_panel.dart';
 import 'package:ural_erp/presentation/treasury_picpos/screens/voucher_records_picpos_screen.dart';
 
 VoucherRecord _rec({
@@ -86,6 +89,10 @@ Future<void> _pump(
           seen?.filter = key.$2;
           return Stream.value(rows);
         }),
+        // ⚠️ **إلزاميّ**: حوارُ المستند يحمل `PicPosAttachmentsPanel`،
+        //    واللوحُ يصل `databaseProvider` فتُفتَح قاعدةٌ حقيقيّةٌ ولا
+        //    يستقرّ `pumpAndSettle`. راجع رأسَ `attachments_test_overrides`.
+        attachmentsRepositoryProvider.overrideWithValue(fakeAttachmentsRepo()),
         currentUserPermissionsProvider
             .overrideWith((ref) async => const ['treasury_view']),
       ],
@@ -217,6 +224,22 @@ void main() {
     expect(find.byKey(const Key('voucher_document_view')), findsOneWidget,
         reason: 'فتحُ صفٍّ لا يعرض شيئاً — وهو نصفُ خ‑٩');
     expect(find.text('خزنة رئيسية'), findsWidgets);
+
+    // 🔴 **ولوحُ المرفقات فيه** (خ‑١٠): كان سندا القبض والصرف موسومَين
+    //    «ينتظران شاشةَ عرض» — وهذه هي. وإرفاقٌ بلا مستندٍ محفوظٍ لا
+    //    معنى له، فهنا موضعُه لا في الاستمارة.
+    expect(find.byKey(const Key('attachments_panel')), findsOneWidget,
+        reason: '🔴 المستندُ يُعرَض بلا مرفقاته — والوسمُ الذي كان يعِد '
+            'بها حُذف');
+
+    // 🔴 **والمرساةُ صفُّ السند نفسُه، ونوعُه يتبع الاتّجاه.** الصفّان
+    //    يعيشان في `safe_transactions`، فنوعٌ واحدٌ يجعل إيصالَ قبضٍ
+    //    يُقرأ على سند صرف.
+    final panel = tester.widget<PicPosAttachmentsPanel>(
+        find.byType(PicPosAttachmentsPanel));
+    expect(panel.entityId, 1);
+    expect(panel.entityType, 'receipt_voucher',
+        reason: '🔴 نوعُ المرفق لا يتبع اتّجاهَ السند');
   });
 
   testWidgets('وسجلٌّ فارغٌ يقول ذلك ولا يبدو معطوباً', (tester) async {

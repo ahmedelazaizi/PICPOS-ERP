@@ -27,7 +27,11 @@ String _code(String raw) => [
         if (!line.trimLeft().startsWith('//')) line,
     ].join('\n');
 
-/// الستُّ التي تُركَّب فيها فعلاً: المِلفُّ ونوعُ المستند.
+/// التي تُركَّب فيها فعلاً: المِلفُّ ونوعُ المستند.
+///
+/// ⚠️ **ونمَت بخ‑٩ (2026-09-21)**: شاشاتُ السجلّ صارت تعرض المستندَ
+///    المحفوظَ في حوارٍ، فزال سببُ الوسم في ثلاثةٍ من الأربعة. والوسمُ
+///    لا يُحذَف بلا تركيبٍ — راجع الفحصَ أدناه.
 const _mounted = <String, String>{
   'lib/presentation/purchases_picpos/screens/purchases_picpos_details.dart':
       'purchase_invoice',
@@ -41,24 +45,40 @@ const _mounted = <String, String>{
       'fixed_asset',
   'lib/presentation/fixed_assets_picpos/screens/asset_disposal_request_picpos.dart':
       'asset_disposal',
+  // خ‑٩ — سجلُّ المردودات: الحوارُ يعرض المردودَ المحفوظ.
+  'lib/presentation/purchase_returns_picpos/screens/purchase_return_records_picpos_screen.dart':
+      'purchase_return',
 };
 
-/// والأربعُ الموسومةُ بسببها.
+/// ⚠️ **وسجلُّ السندات ملفٌّ واحدٌ بنوعَين** — لا يقبله [_mounted] بمفتاحٍ
+///    واحد. و`entityType` يتبع **الاتّجاهَ** لا الجدول: الصفّان يعيشان في
+///    `safe_transactions`، فنوعٌ واحدٌ يخلط إيصالَ قبضٍ بإيصالِ صرف.
+const _mountedBoth = <String, List<String>>{
+  'lib/presentation/treasury_picpos/screens/voucher_records_picpos_screen.dart':
+      ['receipt_voucher', 'payment_voucher'],
+};
+
+/// والباقيتان الموسومتان بسببهما بعد خ‑٩.
+///
+/// و«سندُ القيد» موسومٌ بسببٍ **مختلف**: لا شاشةَ عرضٍ له **بقرارِ مالكٍ**
+/// (2026-09-20) لا بتأجيل — المستندُ هو القيد، وشاشةُ «قيود اليومية»
+/// سجلُّه فعلاً وفيها لوحُه. وسجلٌّ ثانٍ كان يعني مصدرَي حقيقةٍ لمستندٍ
+/// واحد.
 const _marked = <String, String>{
-  'lib/presentation/treasury_picpos/screens/voucher_form_picpos.dart':
-      'سندا القبض والصرف',
   'lib/presentation/accounting_picpos/journal_voucher_picpos_screen.dart':
       'سند القيد',
-  'lib/presentation/purchase_returns_picpos/screens/purchase_returns_picpos_screen.dart':
-      'مردود المشتريات',
   'lib/presentation/accounting_picpos/chart_of_accounts_detail_panel.dart':
       'دليل الحسابات (خارجَ التسعة)',
 };
 
 void main() {
   group('حراسةُ الحارس', () {
-    test('الملفّاتُ العشرةُ موجودةٌ وغيرُ فارغة', () {
-      for (final p in [..._mounted.keys, ..._marked.keys]) {
+    test('الملفّاتُ كلُّها موجودةٌ وغيرُ فارغة', () {
+      for (final p in [
+        ..._mounted.keys,
+        ..._mountedBoth.keys,
+        ..._marked.keys,
+      ]) {
         final f = File(p);
         expect(f.existsSync(), isTrue, reason: 'الملفُّ «$p» غيرُ موجود');
         expect(f.readAsStringSync().length, greaterThan(500));
@@ -82,7 +102,7 @@ void main() {
     });
   });
 
-  test('🔴 الستُّ مُركَّبةٌ فعلاً — بالنوع الصحيح', () {
+  test('🔴 المُركَّبةُ مُركَّبةٌ فعلاً — بالنوع الصحيح', () {
     final missing = <String>[];
     _mounted.forEach((path, type) {
       final code = _code(_read(path));
@@ -92,12 +112,24 @@ void main() {
         missing.add('$path — اللوحُ هناك بنوعٍ غير «$type»');
       }
     });
+    _mountedBoth.forEach((path, types) {
+      final code = _code(_read(path));
+      if (!code.contains('PicPosAttachmentsPanel(')) {
+        missing.add('$path — لا لوحَ أصلاً');
+        return;
+      }
+      for (final t in types) {
+        if (!code.contains("'$t'")) {
+          missing.add('$path — بلا النوع «$t» ⇒ اتّجاهٌ يقرأ مرفقاتِ الآخر');
+        }
+      }
+    });
     expect(missing, isEmpty,
         reason: 'شاشةٌ تعرض مستنداً محفوظاً بلا لوحِ مرفقاتٍ:\n'
             '  ${missing.join('\n  ')}');
   });
 
-  test('🔴 والأربعُ موسومةٌ بسببها — لا صمت', () {
+  test('🔴 والباقيتان موسومتان بسببهما — لا صمت', () {
     final silent = <String>[];
     _marked.forEach((path, label) {
       final raw = _read(path);

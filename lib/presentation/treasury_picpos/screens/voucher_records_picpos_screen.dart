@@ -29,6 +29,8 @@ import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/document_record_providers.dart';
 import '../../../domain/models/document_record.dart';
+import '../../../data/providers/providers.dart';
+import '../../picpos_shell/picpos_attachments_panel.dart';
 import '../../picpos_shell/picpos_data_table.dart';
 import '../../picpos_shell/picpos_dialog.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
@@ -285,6 +287,21 @@ class _VoucherRecordsPicPosScreenState
                   r.isCheque ? 'شيك — مستندٌ بلا حركةِ نقد' : 'نقديّ'),
               if ((r.description ?? '').isNotEmpty)
                 _field('البيان', r.description!),
+              const SizedBox(height: 12),
+              // §٨ (v176) — **المرفقاتُ هنا لا في الاستمارة**: اللوحُ يشترط
+              // رقمَ المستند وهُويّتَه، وهو أوّلُ موضعٍ في هذا المسار يعرض
+              // سنداً **محفوظاً**. وقبلَه كان الوسمُ في
+              // `voucher_form_picpos.dart` يقول «ينتظر شاشةَ عرض» — وهذه هي.
+              //
+              // ⚠️ و`entityType` يتبع الاتّجاهَ لا الجدول: الصفّان يعيشان في
+              //    `safe_transactions`، فنوعٌ واحدٌ كان يخلط إيصالَ قبضٍ
+              //    بإيصالِ صرف.
+              PicPosAttachmentsPanel(
+                entityType:
+                    _isReceipt ? 'receipt_voucher' : 'payment_voucher',
+                entityId: r.id,
+                attachedByUserId: ref.read(authProvider).user?.id,
+              ),
             ],
           ),
         ],
