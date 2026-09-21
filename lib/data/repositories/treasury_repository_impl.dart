@@ -1,4 +1,5 @@
 import '../../core/errors/app_exceptions.dart';
+import '../../domain/models/document_record.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'base_repository.dart';
@@ -32,6 +33,22 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
         .watchSafesForBranches(branchIds)
         .map((list) => list.map(_safeRowToData).toList());
   }
+
+  @override
+  Stream<List<VoucherRecord>> watchVoucherRecords({
+    required VoucherDirection direction,
+    DateTime? from,
+    DateTime? to,
+    Set<int>? branchIds,
+    String? search,
+  }) =>
+      db.watchVoucherRecords(
+        direction: direction,
+        from: from,
+        to: to,
+        branchIds: branchIds,
+        search: search,
+      );
 
   SafeData _safeRowToData(Safe s) => SafeData(
         id: s.id,

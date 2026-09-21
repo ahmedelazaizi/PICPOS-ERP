@@ -1,6 +1,7 @@
 import '../../services/generators/base_generator.dart' show InvoiceItem;
 import '../../data/database/database.dart';
 import '../../domain/entities/product_entity.dart';
+import '../models/document_record.dart';
 
 /// Data structure for return receipt printing
 class ReturnPrintData {
@@ -121,6 +122,19 @@ abstract class IReturnsRepository {
   /// [allowedBranchIds] — authoritative branch-scope cap (Spec 151 Track-3):
   /// null = full access, {} = fail-closed (no rows), {ids} = those branches
   /// OR NULL-branch (shared/head-office) rows.
+  /// سجلُّ مردودات المشتريات — **من `purchase_returns` بتاريخ المردود**.
+  ///
+  /// ⚠️ **ولا تُستبدَل بها [getPurchaseReturnHistory] أدناه بلا قياس**:
+  /// تلك تقرأ **فواتيرَ** لها مردودات (وتُستعمل في تقرير المردودات
+  /// وحوارِ السجلّ القديم)، وهذه تقرأ **المردوداتِ** أنفسَها. المخرَجان
+  /// مختلفان لا نسختان.
+  Stream<List<PurchaseReturnRecord>> watchPurchaseReturnRecords({
+    DateTime? from,
+    DateTime? to,
+    Set<int>? branchIds,
+    String? search,
+  });
+
   Future<List<PurchaseInvoiceData>> getPurchaseReturnHistory({
     required DateTime fromDate,
     required DateTime toDate,

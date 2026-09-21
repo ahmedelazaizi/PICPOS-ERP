@@ -1,3 +1,5 @@
+import '../models/document_record.dart';
+
 /// Treasury repository interface
 ///
 /// Defines contract for treasury/safe operations. Implementations in data layer.
@@ -46,6 +48,22 @@ abstract class ITreasuryRepository {
   /// Returns active safes belonging to one of [branchIds] (or NULL branch_id).
   /// Pass `null` for unrestricted access (admin / financial manager).
   Stream<List<SafeData>> watchSafesForBranches(Set<int>? branchIds);
+
+  /// سجلُّ السندات لاتّجاهٍ واحد — ما تعرضه شاشةُ السجلّ (خ‑٩).
+  ///
+  /// ⚠️ **يعيد [VoucherRecord] لا صفَّ drift**: هذه الواجهةُ في `domain`
+  /// فلا تعرف أنواعَ المحرّك — وهو عينُ ما يقوله [getVoucherNumberById]
+  /// أعلاه. وشاشاتُ السجلّ جديدةٌ فلا يجوز لها استيرادُ `data/database`
+  /// أصلاً (`presentation_db_import_guard`).
+  ///
+  /// و`branchIds` مجموعةُ `branchScopeProvider`: `null` = وصولٌ كامل.
+  Stream<List<VoucherRecord>> watchVoucherRecords({
+    required VoucherDirection direction,
+    DateTime? from,
+    DateTime? to,
+    Set<int>? branchIds,
+    String? search,
+  });
 
   /// Get safe by ID
   Future<SafeData?> getSafeById(int id);

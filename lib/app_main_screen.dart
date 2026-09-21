@@ -97,8 +97,8 @@ import 'presentation/settings_picpos/screens/cheques_picpos_screen.dart';
 import 'presentation/screens/fixed_assets_screen.dart';
 import 'presentation/fixed_assets_picpos/screens/fixed_assets_picpos_screen.dart';
 import 'presentation/accounting_picpos/journal_voucher_picpos_screen.dart';
-import 'presentation/treasury_picpos/screens/receipt_voucher_picpos_screen.dart';
-import 'presentation/treasury_picpos/screens/payment_voucher_picpos_screen.dart';
+import 'presentation/treasury_picpos/screens/voucher_records_picpos_screen.dart';
+import 'domain/models/document_record.dart';
 import 'presentation/treasury_picpos/screens/cheque_books_picpos_screen.dart';
 import 'presentation/fixed_assets_picpos/screens/asset_categories_picpos_screen.dart';
 import 'presentation/fixed_assets_picpos/screens/asset_locations_picpos_screen.dart';
@@ -1146,17 +1146,22 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         label: 'سند قيد',
         icon: PhosphorIconsBold.notePencil,
       ),
-      // سندا القبض والصرف — PicPos وحدَها: صفحتان تحلّان محلَّ حوارَي
-      // الخزينة، والحواران باقيان فيها حتى يصل دفترُ الشيكات.
+      // سندا القبض والصرف — PicPos وحدَها. والمدخلُ يفتح **السجلَّ** لا
+      // الاستمارةَ (خ‑٩): كان يفتحها مباشرةً، فلا سبيلَ لمطالعة سندٍ
+      // محفوظٍ ولا مرساةً لمرفقاته. و«جديد» يدفع الاستمارةَ كما هي.
       ScreenConfig(
         appScreen: AppScreen.receiptVoucher,
-        builder: (_) => const ReceiptVoucherPicposScreen(),
+        builder: (_) => const VoucherRecordsPicPosScreen(
+          direction: VoucherDirection.receipt,
+        ),
         label: 'سند قبض',
         icon: PhosphorIconsBold.arrowCircleDown,
       ),
       ScreenConfig(
         appScreen: AppScreen.paymentVoucher,
-        builder: (_) => const PaymentVoucherPicposScreen(),
+        builder: (_) => const VoucherRecordsPicPosScreen(
+          direction: VoucherDirection.payment,
+        ),
         label: 'سند صرف',
         icon: PhosphorIconsBold.arrowCircleUp,
       ),

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../database/database.dart';
 import '../../core/constants/app_constants.dart';
 import '../../domain/models/return_refund_calculator.dart';
+import '../../domain/models/document_record.dart';
 import '../../core/errors/app_exceptions.dart';
 import '../../domain/repositories/returns_repository.dart';
 import '../../services/accounting_service.dart';
@@ -742,6 +743,20 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
   @override
   Future<List<PurchaseInvoiceItem>> getPurchaseInvoiceItems(int invoiceId) =>
       _db.getPurchaseInvoiceItems(invoiceId);
+
+  @override
+  Stream<List<PurchaseReturnRecord>> watchPurchaseReturnRecords({
+    DateTime? from,
+    DateTime? to,
+    Set<int>? branchIds,
+    String? search,
+  }) =>
+      _db.watchPurchaseReturnRecords(
+        from: from,
+        to: to,
+        branchIds: branchIds,
+        search: search,
+      );
 
   @override
   Future<List<PurchaseInvoiceData>> getPurchaseReturnHistory({
