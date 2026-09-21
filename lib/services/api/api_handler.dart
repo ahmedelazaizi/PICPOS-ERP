@@ -2704,6 +2704,10 @@ class ApiHandler {
     // [DeltaPullService.pullTables]؛ بدونه لا يسلّم الخادمُ صفوفَه فيفتح
     // الجهازُ الثاني دفتراً بنفس المدى.
     'cheque_books',
+    // v176 / 2026-09-21 — الإضافاتُ والخيارات. يقابل الإدراجَ نفسَه في
+    // [DeltaPullService.pullTables]؛ بدونه لا يسلّم الخادمُ صفوفَها
+    // فيبقى منتقي الكاشير فارغاً مهما عرّف المديرُ.
+    'modifier_groups', 'modifier_items', 'product_modifier_groups',
     // Tier 2
     'parties', 'products', 'price_list_items', 'product_barcodes',
     'product_units',

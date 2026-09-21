@@ -55,6 +55,39 @@ const _syncColumns = <String>[
 const _columnExceptions = <String, Set<String>>{
 };
 
+/// جداولُ **SQL خامٍّ** — تعريفُها DDL لا صنفُ drift، ودليلُها اختبارٌ على
+/// قاعدةٍ حيّة.
+///
+/// ═══ لماذا استثناءٌ أصلاً ═══
+///
+/// غرضُ هذا الحارس: **أثبِت أنّ الأعمدةَ موجودةٌ في التعريف**، لأنّ عموداً
+/// مفقوداً يُبتلَع في `catch` فيبدو السحبُ عاملاً ولا يصل صفّ. ودليلُه في
+/// الحالة العامّة **جسمُ صنف drift**.
+///
+/// وجداولُ الإضافات والخيارات (‏أُنشئت بـSQL خامٍّ في هجرة v70) لا صنفَ لها،
+/// فلا يجد المسحُ لها جسماً ويقول «لا صنفَ يقابله» — وهو صحيحٌ حرفيّاً
+/// ومضلِّلٌ معنًى: الأعمدةُ موجودةٌ فعلاً، يضعها
+/// `AppDatabase._ensureModifierSyncColumns`.
+///
+/// ⚠️ **والدليلُ هنا أقوى من مطابقة النصّ**: الملفُّ المذكورُ يفتح قاعدةً
+///    حقيقيّةً ويقرأ الأعمدةَ بعد `ensureModifierTables()`. فمطابقةُ نصٍّ
+///    على DDL تُثبت أنّ السطرَ مكتوب؛ وهذا يُثبت أنّ العمودَ **وُجد**.
+///
+/// ⚠️ **وليست قائمةَ إسكات**: الحارسُ أدناه يشترط وجودَ ملفِّ الدليل وأن
+///    يذكر الجدولَ باسمه. فحذفُ الاختبار يُسقط البناءَ بدل أن يُسكته.
+///
+/// 🟡 **وهذا توسيعٌ لعقد الحارس** (2026-09-21): كان يقبل أصنافَ drift
+///    وحدَها. والبديلُ تحويلُ الثلاثة إلى أصنافٍ — عقدٌ كاملٌ لكنّه يحتاج
+///    `build_runner` و**يُعيد تعريفاً ثانياً** بجوار `ensureModifierTables`،
+///    وهو عينُ ما عطّل الميزةَ بالكامل على PostgreSQL مرّةً (‏٦‑٢، مكتوبٌ
+///    في `database.dart`). فإن رُئي التحويلُ أولى، يُحذَف هذا السطرُ ويُعاد
+///    البناءُ — والحارسُ يُعيد البلاغَ من نفسه.
+const _rawSqlProvenAtRuntime = <String, String>{
+  'modifier_groups': 'test/unit/modifiers_sync_contract_test.dart',
+  'modifier_items': 'test/unit/modifiers_sync_contract_test.dart',
+  'product_modifier_groups': 'test/unit/modifiers_sync_contract_test.dart',
+};
+
 /// جداولُ ليست في `pullTables` وتُرقَّم مع ذلك — الطرفُ الآخرُ من العقد.
 ///
 /// وثيقةُ [IdNamespaceService.namespacedTables] تذكر «حفنةً من جداولَ
@@ -175,11 +208,31 @@ void main() {
     });
   });
 
+  test('🔴 واستثناءُ SQL الخامّ يحمل دليلَه — لا إسكاتَ صامت', () {
+    // الاستثناءُ أعلاه يُسقط الجدولَ من الفحص، فلا بدّ أن يبقى دليلُه
+    // قائماً ويذكر الجدولَ باسمه. وإلّا صار سطراً يُخرس الحارسَ إلى الأبد.
+    expect(_rawSqlProvenAtRuntime, isNotEmpty,
+        reason: 'لا استثناءَ ⇒ الفحصُ تحته لا يقيس شيئاً');
+    _rawSqlProvenAtRuntime.forEach((table, path) {
+      final f = File(path);
+      expect(f.existsSync(), isTrue,
+          reason: '🔴 دليلُ `$table` غائب: $path — استثناءٌ بلا دليلٍ '
+              'إسكاتٌ صامت');
+      expect(f.readAsStringSync(), contains(table),
+          reason: '🔴 ملفُّ الدليل لا يذكر `$table` — الدليلُ لا يخصّه');
+      // ويجب أن يكون مُدرَجاً في السحب فعلاً، وإلّا فهو سطرٌ بائت.
+      expect(DeltaPullService.pullTables, contains(table),
+          reason: 'استثناءٌ لجدولٍ لا يُسحَب — اسمٌ بائتٌ يوهم بعقدٍ قائم');
+    });
+  });
+
   test('🔴 كلُّ جدولٍ يُسحَب يحمل أعمدةَ المزامنة في تعريفه', () {
     final gaps = <String>[];
     for (final table in DeltaPullService.pullTables) {
       final entry = bodies[table];
       if (entry == null) {
+        final proof = _rawSqlProvenAtRuntime[table];
+        if (proof != null) continue; // دليلُه اختبارٌ حيٌّ — راجع الوثيقةَ أعلاه
         gaps.add('$table — لا صنفَ يقابله');
         continue;
       }
