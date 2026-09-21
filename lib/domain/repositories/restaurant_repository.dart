@@ -10,6 +10,12 @@ abstract class IRestaurantRepository {
   Future<void> deleteSection(int id);
 
   Stream<List<RestaurantTable>> watchTablesInSection(int sectionId);
+
+  /// كلُّ الطاولات **بثّاً**.
+  ///
+  /// 🔴 مصمّمُ القاعة كان يقرؤها لقطةً (`getAllTables`)، فطاولةٌ تُنشأ
+  /// والمصمّمُ مفتوحٌ لا تصله أبداً — راجع `watchAllSections` أعلاه.
+  Stream<List<RestaurantTable>> watchAllTables();
   Future<List<RestaurantTable>> getAllTables();
   Future<int> createTable({
     required String name,
