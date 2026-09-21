@@ -48,6 +48,9 @@ class IdNamespaceService {
   static const List<String> namespacedTables = [
     'fiscal_years', 'cost_centers', 'accounts', 'roles', 'currencies',
     'categories', 'units', 'regions', 'party_groups', 'safes', 'printers',
+    // v176 — الإضافاتُ والخيارات: بياناتٌ رئيسةٌ يتبنّى العميلُ معرّفَ
+    // الخادمِ فيها كالأصناف.
+    'modifier_groups', 'modifier_items', 'product_modifier_groups',
     'accounting_periods', 'branches', 'warehouses', 'price_lists', 'users',
     'shifts', 'parties', 'products', 'price_list_items', 'product_barcodes',
     'product_units',

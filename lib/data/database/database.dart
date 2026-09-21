@@ -1468,6 +1468,10 @@ class AppDatabase extends _$AppDatabase {
     'currencies', 'price_lists', 'price_list_items',
     'regions', 'branches', 'warehouses', 'stock_movements',
     'units', 'categories', 'products', 'product_barcodes', 'product_units',
+    // v176 — الإضافاتُ والخيارات. وبلا هذا يُولَد صفُّها على PostgreSQL
+    // بختمٍ فارغٍ (‏`fn_bump_row_version` هو الوحيدُ الذي يختم عند
+    // الإدراج) فلا يصل عميلاً بعد أوّل سحب.
+    'modifier_groups', 'modifier_items', 'product_modifier_groups',
     'quotations', 'quotation_items',
     'safes', 'safe_transactions', 'printers',
     'shifts',
@@ -1544,6 +1548,52 @@ class AppDatabase extends _$AppDatabase {
   ///      back to v10).
   Future<void> _ensurePostgresSyncInfrastructure() async {
     if (!_isPostgres) return;
+
+    // ── Step 0.5: Modifier tables. Migration v70 creates these via raw
+    //    SQLite DDL (AUTOINCREMENT, INTEGER booleans), and Drift's
+    //    onUpgrade is skipped on PG, so a Postgres server installed
+    //    before v70 — or any PG server, since these tables have no
+    //    Drift Table class — never gets the schema. The DAO query
+    //      SELECT mg.* FROM modifier_groups ...
+    //    then fails with "relation modifier_groups does not exist"
+    //    every time a cashier opens the modifier panel for a product.
+    //    Idempotent CREATE IF NOT EXISTS keeps this safe across restarts.
+    //
+    // 🔴 ٦‑٢: هذه الكتلةُ كانت تحمل **نسخةً ثانيةً** من تعريف
+    //    `modifier_groups` تخالف ما يكتبه [ensureModifierTables]:
+    //      هنا:      (id, name, min_selection, max_selection, is_active)
+    //      الصحيح:   (id, name, type, min_select, max_select, is_required,
+    //                 is_active, sort_order)
+    //    و`CREATE TABLE IF NOT EXISTS` تجعل الأسبقَ يفوز، والأسبقُ على PG هو
+    //    الإقلاعُ لا الشاشة — فـ`ensureTables()` التي تناديها شاشةُ الإعدادات
+    //    تصير بلا أثر، و`createModifierGroup` (تكتب الخمسةَ الناقصة) تنهار على
+    //    **كلِّ** قاعدةِ PostgreSQL. أي الميزةُ معطَّلةٌ بالكامل لا «تقرأ خطأً».
+    //
+    //    فالتعريفُ صار مصدراً واحداً: تُستدعى [ensureModifierTables] نفسُها،
+    //    وهي تُفرّع على الخلفيّة داخليّاً وتحمل شفاءَ الأعمدة الناقصة لخادمٍ
+    //    نُصِّب على الشكل القديم. والفهرسان يبقيان هنا لأنّها لا تُنشئهما.
+    try {
+      await ensureModifierTables();
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_modifier_items_group ON modifier_items(group_id)',
+      );
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_product_modifier_groups_product ON product_modifier_groups(product_id)',
+      );
+    } catch (e) {
+      debugPrint('[PG-SYNC] modifier tables ensure failed: $e');
+    }
+
+    // ⚠️ **ونُقلت من الخطوة ٤٫٥ إلى ما قبلَ الخطوة ١ (2026-09-21).**
+    //    صارت جداولُ المعدِّلات في `_syncHardenedTables`، والخطوتان ١
+    //    (‏أعمدةُ المزامنة) و٤ (‏المُشغِّلات) تمرّان على تلك القائمة —
+    //    فكانتا تسبقان إنشاءَ الجداول على قاعدةٍ جديدة، **ويُبتلَع
+    //    إخفاقُهما في `catch` يطبع سطراً ويمضي**.
+    //
+    // 🔴 والأثرُ: صفٌّ يُنشأ على الخادم بختمٍ فارغٍ فلا يصل عميلاً بعد أوّل
+    //    سحب — وكلُّ شيءٍ يبدو موصولاً. أمسكته المرساةُ السالبةُ في
+    //    `pg_phase4_sync_columns_pg_test` بعدِّ المُشغِّلات، وهو حرفيّاً ما
+    //    يحذّر منه نصُّها: «جدولٌ في القائمة فشل تركيبُه وابتُلع في catch».
 
     // ── Step 1: backfill sync columns (Postgres 9.6+ supports IF NOT EXISTS).
     for (final t in _syncHardenedTables) {
@@ -1743,41 +1793,6 @@ class AppDatabase extends _$AppDatabase {
           debugPrint('[PG-SYNC] trigger $t: $e');
         }
       }
-    }
-
-    // ── Step 4.5: Modifier tables. Migration v70 creates these via raw
-    //    SQLite DDL (AUTOINCREMENT, INTEGER booleans), and Drift's
-    //    onUpgrade is skipped on PG, so a Postgres server installed
-    //    before v70 — or any PG server, since these tables have no
-    //    Drift Table class — never gets the schema. The DAO query
-    //      SELECT mg.* FROM modifier_groups ...
-    //    then fails with "relation modifier_groups does not exist"
-    //    every time a cashier opens the modifier panel for a product.
-    //    Idempotent CREATE IF NOT EXISTS keeps this safe across restarts.
-    //
-    // 🔴 ٦‑٢: هذه الكتلةُ كانت تحمل **نسخةً ثانيةً** من تعريف
-    //    `modifier_groups` تخالف ما يكتبه [ensureModifierTables]:
-    //      هنا:      (id, name, min_selection, max_selection, is_active)
-    //      الصحيح:   (id, name, type, min_select, max_select, is_required,
-    //                 is_active, sort_order)
-    //    و`CREATE TABLE IF NOT EXISTS` تجعل الأسبقَ يفوز، والأسبقُ على PG هو
-    //    الإقلاعُ لا الشاشة — فـ`ensureTables()` التي تناديها شاشةُ الإعدادات
-    //    تصير بلا أثر، و`createModifierGroup` (تكتب الخمسةَ الناقصة) تنهار على
-    //    **كلِّ** قاعدةِ PostgreSQL. أي الميزةُ معطَّلةٌ بالكامل لا «تقرأ خطأً».
-    //
-    //    فالتعريفُ صار مصدراً واحداً: تُستدعى [ensureModifierTables] نفسُها،
-    //    وهي تُفرّع على الخلفيّة داخليّاً وتحمل شفاءَ الأعمدة الناقصة لخادمٍ
-    //    نُصِّب على الشكل القديم. والفهرسان يبقيان هنا لأنّها لا تُنشئهما.
-    try {
-      await ensureModifierTables();
-      await customStatement(
-        'CREATE INDEX IF NOT EXISTS idx_modifier_items_group ON modifier_items(group_id)',
-      );
-      await customStatement(
-        'CREATE INDEX IF NOT EXISTS idx_product_modifier_groups_product ON product_modifier_groups(product_id)',
-      );
-    } catch (e) {
-      debugPrint('[PG-SYNC] modifier tables ensure failed: $e');
     }
 
     // ── Step 5: activity_logs sync columns. activity_logs is NOT in
@@ -2851,6 +2866,56 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(stmt);
         } catch (_) {/* already exists */}
       }
+    }
+
+    await _ensureModifierSyncColumns();
+  }
+
+  /// أعمدةُ المزامنة الخمسةُ على جداول المعدِّلات — 2026-09-21.
+  ///
+  /// ═══ 🔴 لماذا ═══
+  ///
+  /// الإضافاتُ والخيارات ميزةٌ مشحونةٌ يستعملها ثمانيةُ ملفّاتٍ في نقطة البيع،
+  /// وجداولُها الثلاثةُ كانت **خارجَ قوائم المزامنة الثماني كلِّها**. فمجموعةُ
+  /// إضافاتٍ يعرّفها المديرُ لا تصل جهازَ الكاشير أبداً، وسعرُ الخيار — وهو
+  /// **يزيد قيمةَ الصنف في الفاتورة** — يختلف من جهازٍ لآخرَ في فاتورتَين.
+  ///
+  /// وقرارُ المالك 2026-09-21: **بياناتٌ رئيسةٌ عامّةٌ** كالأصناف والفئات —
+  /// تعريفٌ واحدٌ يصل كلَّ الأجهزة في كلّ الفروع.
+  ///
+  /// ⚠️ **ولا `build_runner` في هذا**: الجداولُ الثلاثةُ **SQL خامٌّ** بلا
+  ///    صنفِ drift (‏أُنشئت في هجرة v70)، و`_upsertRow` في مسار السحب
+  ///    **اسميٌّ وعامّ** — يبني قائمةَ الأعمدة من الصفّ ولا يحتاج بياناتِ
+  ///    المحرّك. فالأعمدةُ تُضاف بنفس نمط الـDDL القائم.
+  ///
+  /// ⚠️ **و`ADD COLUMN IF NOT EXISTS` لا تعرفها SQLite** — ولهذا الكتلةُ
+  ///    أعلاه محصورةٌ بـPG. فهنا يُفرَّع: الشرطُ على PG، ومحاولةٌ مبتلَعةُ
+  ///    الفشلِ على SQLite (تُخفق حين يوجد العمودُ وهو المطلوب).
+  Future<void> _ensureModifierSyncColumns() async {
+    const tables = ['modifier_groups', 'modifier_items',
+        'product_modifier_groups'];
+    final stampType = _isPostgres ? 'BIGINT' : 'INTEGER';
+    for (final t in tables) {
+      for (final col in [
+        'global_id TEXT',
+        'last_modified_at $stampType',
+        'deleted_at $stampType',
+        'origin_client_id TEXT',
+        'row_version INTEGER NOT NULL DEFAULT 0',
+      ]) {
+        final ine = _isPostgres ? 'IF NOT EXISTS ' : '';
+        try {
+          await customStatement('ALTER TABLE $t ADD COLUMN $ine$col');
+        } catch (_) {/* العمودُ موجودٌ — وهو الحالُ الغالب */}
+      }
+      // ⚠️ **فريدٌ لا عاديّ**: `_upsertRow` يحلّ الصفَّ بالمعرّف العالميّ،
+      //    وتكرارُه يعني صفَّين لمجموعةٍ واحدةٍ بعد أوّل سحب.
+      try {
+        await customStatement(
+          'CREATE UNIQUE INDEX IF NOT EXISTS idx_${t}_global_id '
+          'ON $t(global_id)',
+        );
+      } catch (_) {/* موجودٌ */}
     }
   }
 

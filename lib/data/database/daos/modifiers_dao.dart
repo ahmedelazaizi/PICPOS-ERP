@@ -6,6 +6,27 @@ part of '../database.dart';
 //
 // Raw SQL DAO for the modifier_groups, modifier_items, and
 // product_modifier_groups tables (created in v70 migration).
+//
+// ═══ 🔴 عقدُ المزامنة — 2026-09-21 ═══
+//
+// الجداولُ الثلاثةُ **بياناتٌ رئيسةٌ عامّةٌ** كالأصناف والفئات (قرارُ مالك):
+// تعريفٌ واحدٌ يصل كلَّ الأجهزة في كلّ الفروع. وكانت خارجَ قوائم المزامنة
+// الثماني كلِّها — فمجموعةٌ يعرّفها المديرُ لا تصل الكاشيرَ أبداً، وسعرُ
+// الخيار (‏`extra_price`، وهو **يزيد قيمةَ الصنف في الفاتورة**) يختلف من
+// جهازٍ لآخرَ في فاتورتَين.
+//
+// ولذلك في هذا الملفّ ثلاثةُ التزامات:
+//
+//   ‏١) **كلُّ إدراجٍ يمنح `global_id` ويختم `last_modified_at`** — صفٌّ بلا
+//      معرّفٍ لا يحلّه `_upsertRow` فيُدرَج ثانيةً بمعرّفٍ محلّيٍّ مختلف،
+//      وصفٌّ بلا ختمٍ لا يلتقطه السحبُ التفاضليُّ أبداً.
+//
+//   ‏٢) 🔴 **والحذفُ ناعمٌ لا قاطع** — حذفٌ قاطعٌ محلّيّاً يترك الصفَّ على
+//      الخادم فيعود بأوّل سحب: يحذف المستخدمُ الخيارَ فيعود بعد دقائقَ
+//      بلا سبب.
+//
+//   ‏٣) **وكلُّ قراءةٍ ترشّح `deleted_at IS NULL`** — وإلّا بقي المحذوفُ
+//      معروضاً ومُسعَّراً، و«حذفٌ» لا يحذف.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Data class for a modifier group
@@ -91,10 +112,15 @@ extension ModifiersDao on AppDatabase {
   // MODIFIER GROUPS CRUD
   // ═══════════════════════════════════════════════════════════════════════
 
+  /// ختمُ المزامنة — ثوانٍ منذ الحقبة، صيغةُ `last_modified_at` نفسُها في
+  /// باقي الجداول (‏`deleted_at` كذلك).
+  int _syncStamp() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
   /// Get all modifier groups
   Future<List<ModifierGroupData>> getAllModifierGroups() async {
     final rows = await customSelect(
-      'SELECT * FROM modifier_groups ORDER BY sort_order, name',
+      'SELECT * FROM modifier_groups WHERE deleted_at IS NULL '
+      'ORDER BY sort_order, name',
     ).get();
     return rows.map((r) => ModifierGroupData.fromRow(r.data)).toList();
   }
@@ -103,7 +129,8 @@ extension ModifiersDao on AppDatabase {
   Future<List<ModifierGroupData>> getActiveModifierGroups() async {
     final boolTrue = sqlBool(true);
     final rows = await customSelect(
-      'SELECT * FROM modifier_groups WHERE is_active = $boolTrue ORDER BY sort_order, name',
+      'SELECT * FROM modifier_groups WHERE is_active = $boolTrue '
+      'AND deleted_at IS NULL ORDER BY sort_order, name',
     ).get();
     return rows.map((r) => ModifierGroupData.fromRow(r.data)).toList();
   }
@@ -117,18 +144,20 @@ extension ModifiersDao on AppDatabase {
     bool isRequired = false,
     int sortOrder = 0,
   }) async {
+    final gid = UuidV7.generate();
+    final now = _syncStamp();
     if (isPostgres) {
       final result = await customSelect(
-        'INSERT INTO modifier_groups (name, type, min_select, max_select, is_required, sort_order) '
-        'VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
-        variables: [Variable(name), Variable(type), Variable(minSelect), Variable(maxSelect), Variable(isRequired), Variable(sortOrder)],
+        'INSERT INTO modifier_groups (name, type, min_select, max_select, is_required, sort_order, global_id, last_modified_at) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id',
+        variables: [Variable(name), Variable(type), Variable(minSelect), Variable(maxSelect), Variable(isRequired), Variable(sortOrder), Variable(gid), Variable(now)],
       ).getSingle();
       return result.data['id'] as int;
     } else {
       await customStatement(
-        'INSERT INTO modifier_groups (name, type, min_select, max_select, is_required, sort_order) '
-        'VALUES (?, ?, ?, ?, ?, ?)',
-        [name, type, minSelect, maxSelect, isRequired ? 1 : 0, sortOrder],
+        'INSERT INTO modifier_groups (name, type, min_select, max_select, is_required, sort_order, global_id, last_modified_at) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [name, type, minSelect, maxSelect, isRequired ? 1 : 0, sortOrder, gid, now],
       );
       final result = await customSelect('SELECT last_insert_rowid() as id').getSingle();
       return result.data['id'] as int;
@@ -149,21 +178,40 @@ extension ModifiersDao on AppDatabase {
     if (isPostgres) {
       await customStatement(
         'UPDATE modifier_groups SET name = ?, type = ?, min_select = ?, max_select = ?, '
-        'is_required = ?, is_active = ?, sort_order = ? WHERE id = ?',
-        [name, type, minSelect, maxSelect, isRequired, isActive, sortOrder, id],
+        'is_required = ?, is_active = ?, sort_order = ?, last_modified_at = ? WHERE id = ?',
+        [name, type, minSelect, maxSelect, isRequired, isActive, sortOrder, _syncStamp(), id],
       );
     } else {
       await customStatement(
         'UPDATE modifier_groups SET name = ?, type = ?, min_select = ?, max_select = ?, '
-        'is_required = ?, is_active = ?, sort_order = ? WHERE id = ?',
-        [name, type, minSelect, maxSelect, isRequired ? 1 : 0, isActive ? 1 : 0, sortOrder, id],
+        'is_required = ?, is_active = ?, sort_order = ?, last_modified_at = ? WHERE id = ?',
+        [name, type, minSelect, maxSelect, isRequired ? 1 : 0, isActive ? 1 : 0, sortOrder, _syncStamp(), id],
       );
     }
   }
 
-  /// Delete a modifier group (cascade deletes items and product links)
+  /// حذفٌ **ناعم** — راجع عقدَ المزامنة في رأس الملفّ.
+  ///
+  /// ⚠️ **وعناصرُها تُوسَم معها**: الحذفُ القاطعُ كان يعتمد على
+  ///    `ON DELETE CASCADE`، والناعمُ لا يُشغّله — فعناصرُ مجموعةٍ محذوفةٍ
+  ///    كانت ستبقى قائمةً وتظهر لو رُبط معرّفُها ثانيةً.
   Future<void> deleteModifierGroup(int id) async {
-    await customStatement('DELETE FROM modifier_groups WHERE id = ?', [id]);
+    final now = _syncStamp();
+    await customStatement(
+      'UPDATE modifier_groups SET deleted_at = ?, last_modified_at = ? '
+      'WHERE id = ?',
+      [now, now, id],
+    );
+    await customStatement(
+      'UPDATE modifier_items SET deleted_at = ?, last_modified_at = ? '
+      'WHERE group_id = ? AND deleted_at IS NULL',
+      [now, now, id],
+    );
+    await customStatement(
+      'UPDATE product_modifier_groups SET deleted_at = ?, '
+      'last_modified_at = ? WHERE modifier_group_id = ? AND deleted_at IS NULL',
+      [now, now, id],
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -173,7 +221,8 @@ extension ModifiersDao on AppDatabase {
   /// Get items for a modifier group
   Future<List<ModifierItemData>> getModifierItems(int groupId) async {
     final rows = await customSelect(
-      'SELECT * FROM modifier_items WHERE group_id = ? ORDER BY sort_order, name',
+      'SELECT * FROM modifier_items WHERE group_id = ? AND deleted_at IS NULL '
+      'ORDER BY sort_order, name',
       variables: [Variable.withInt(groupId)],
     ).get();
     return rows.map((r) => ModifierItemData.fromRow(r.data)).toList();
@@ -187,18 +236,20 @@ extension ModifiersDao on AppDatabase {
     bool isDefault = false,
     int sortOrder = 0,
   }) async {
+    final gid = UuidV7.generate();
+    final now = _syncStamp();
     if (isPostgres) {
       final result = await customSelect(
-        'INSERT INTO modifier_items (group_id, name, extra_price, is_default, sort_order) '
-        'VALUES (?, ?, ?, ?, ?) RETURNING id',
-        variables: [Variable(groupId), Variable(name), Variable(extraPrice), Variable(isDefault), Variable(sortOrder)],
+        'INSERT INTO modifier_items (group_id, name, extra_price, is_default, sort_order, global_id, last_modified_at) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id',
+        variables: [Variable(groupId), Variable(name), Variable(extraPrice), Variable(isDefault), Variable(sortOrder), Variable(gid), Variable(now)],
       ).getSingle();
       return result.data['id'] as int;
     } else {
       await customStatement(
-        'INSERT INTO modifier_items (group_id, name, extra_price, is_default, sort_order) '
-        'VALUES (?, ?, ?, ?, ?)',
-        [groupId, name, extraPrice, isDefault ? 1 : 0, sortOrder],
+        'INSERT INTO modifier_items (group_id, name, extra_price, is_default, sort_order, global_id, last_modified_at) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [groupId, name, extraPrice, isDefault ? 1 : 0, sortOrder, gid, now],
       );
       final result = await customSelect('SELECT last_insert_rowid() as id').getSingle();
       return result.data['id'] as int;
@@ -216,20 +267,25 @@ extension ModifiersDao on AppDatabase {
   }) async {
     if (isPostgres) {
       await customStatement(
-        'UPDATE modifier_items SET name = ?, extra_price = ?, is_default = ?, is_active = ?, sort_order = ? WHERE id = ?',
-        [name, extraPrice, isDefault, isActive, sortOrder, id],
+        'UPDATE modifier_items SET name = ?, extra_price = ?, is_default = ?, is_active = ?, sort_order = ?, last_modified_at = ? WHERE id = ?',
+        [name, extraPrice, isDefault, isActive, sortOrder, _syncStamp(), id],
       );
     } else {
       await customStatement(
-        'UPDATE modifier_items SET name = ?, extra_price = ?, is_default = ?, is_active = ?, sort_order = ? WHERE id = ?',
-        [name, extraPrice, isDefault ? 1 : 0, isActive ? 1 : 0, sortOrder, id],
+        'UPDATE modifier_items SET name = ?, extra_price = ?, is_default = ?, is_active = ?, sort_order = ?, last_modified_at = ? WHERE id = ?',
+        [name, extraPrice, isDefault ? 1 : 0, isActive ? 1 : 0, sortOrder, _syncStamp(), id],
       );
     }
   }
 
   /// Delete a modifier item
   Future<void> deleteModifierItem(int id) async {
-    await customStatement('DELETE FROM modifier_items WHERE id = ?', [id]);
+    final now = _syncStamp();
+    await customStatement(
+      'UPDATE modifier_items SET deleted_at = ?, last_modified_at = ? '
+      'WHERE id = ?',
+      [now, now, id],
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -243,6 +299,7 @@ extension ModifiersDao on AppDatabase {
       'SELECT mg.* FROM modifier_groups mg '
       'JOIN product_modifier_groups pmg ON mg.id = pmg.modifier_group_id '
       'WHERE pmg.product_id = ? AND mg.is_active = $boolTrue '
+      'AND pmg.deleted_at IS NULL AND mg.deleted_at IS NULL '
       'ORDER BY pmg.sort_order, mg.name',
       variables: [Variable.withInt(productId)],
     ).get();
@@ -260,7 +317,8 @@ extension ModifiersDao on AppDatabase {
   /// Get modifier group IDs linked to a product
   Future<List<int>> getProductModifierGroupIds(int productId) async {
     final rows = await customSelect(
-      'SELECT modifier_group_id FROM product_modifier_groups WHERE product_id = ? ORDER BY sort_order',
+      'SELECT modifier_group_id FROM product_modifier_groups '
+      'WHERE product_id = ? AND deleted_at IS NULL ORDER BY sort_order',
       variables: [Variable.withInt(productId)],
     ).get();
     return rows.map((r) => r.data['modifier_group_id'] as int).toList();
@@ -272,17 +330,28 @@ extension ModifiersDao on AppDatabase {
     required int modifierGroupId,
     int sortOrder = 0,
   }) async {
+    final now = _syncStamp();
+    // 🔴 **يُحيي قبل أن يُدرج.** الحذفُ صار ناعماً، والصفُّ الموسومُ ما زال
+    //    يشغل قيدَ `UNIQUE(product_id, modifier_group_id)` — فإدراجٌ بـ
+    //    `ON CONFLICT DO NOTHING` يُهمَل بصمتٍ ويبقى الربطُ محذوفاً. أي
+    //    إعادةُ ربطِ إضافةٍ بصنفٍ **لا تعمل أبداً** بعد فكٍّ واحد.
+    await customStatement(
+      'UPDATE product_modifier_groups SET deleted_at = NULL, sort_order = ?, '
+      'last_modified_at = ? WHERE product_id = ? AND modifier_group_id = ?',
+      [sortOrder, now, productId, modifierGroupId],
+    );
+    final gid = UuidV7.generate();
     if (isPostgres) {
       await customStatement(
-        'INSERT INTO product_modifier_groups (product_id, modifier_group_id, sort_order) '
-        'VALUES (?, ?, ?) ON CONFLICT DO NOTHING',
-        [productId, modifierGroupId, sortOrder],
+        'INSERT INTO product_modifier_groups (product_id, modifier_group_id, sort_order, global_id, last_modified_at) '
+        'VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING',
+        [productId, modifierGroupId, sortOrder, gid, now],
       );
     } else {
       await customStatement(
-        'INSERT OR IGNORE INTO product_modifier_groups (product_id, modifier_group_id, sort_order) '
-        'VALUES (?, ?, ?)',
-        [productId, modifierGroupId, sortOrder],
+        'INSERT OR IGNORE INTO product_modifier_groups (product_id, modifier_group_id, sort_order, global_id, last_modified_at) '
+        'VALUES (?, ?, ?, ?, ?)',
+        [productId, modifierGroupId, sortOrder, gid, now],
       );
     }
   }
@@ -292,17 +361,21 @@ extension ModifiersDao on AppDatabase {
     required int productId,
     required int modifierGroupId,
   }) async {
+    final now = _syncStamp();
     await customStatement(
-      'DELETE FROM product_modifier_groups WHERE product_id = ? AND modifier_group_id = ?',
-      [productId, modifierGroupId],
+      'UPDATE product_modifier_groups SET deleted_at = ?, last_modified_at = ? '
+      'WHERE product_id = ? AND modifier_group_id = ?',
+      [now, now, productId, modifierGroupId],
     );
   }
 
   /// Set all modifier groups for a product (replaces existing links)
   Future<void> setProductModifierGroups(int productId, List<int> groupIds) async {
+    final now = _syncStamp();
     await customStatement(
-      'DELETE FROM product_modifier_groups WHERE product_id = ?',
-      [productId],
+      'UPDATE product_modifier_groups SET deleted_at = ?, last_modified_at = ? '
+      'WHERE product_id = ? AND deleted_at IS NULL',
+      [now, now, productId],
     );
     for (int i = 0; i < groupIds.length; i++) {
       await linkModifierToProduct(

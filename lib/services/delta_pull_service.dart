@@ -75,6 +75,9 @@ class DeltaPullService {
     // ── Tier 2: depend on Tier 1 ──
     'parties',              // → accounts, party_groups
     'products',             // → categories, units
+    'modifier_groups',      // v176 — بياناتٌ رئيسةٌ عامّة
+    'modifier_items',       // → modifier_groups
+    'product_modifier_groups', // → products, modifier_groups
     'price_list_items',     // → price_lists, products
     'product_barcodes',     // → products
     'product_units',        // → products, units
@@ -349,6 +352,12 @@ class DeltaPullService {
   /// الاستراتيجيّات — وذاك شبكةُ أمانٍ للجداول **غيرِ** المصلَّبة، كما يقول
   /// تعليقُ المؤقّت الدوريّ في `main_desktop.dart`.
   static const Set<String> deltaOnlyTables = {
+    // v176 / 2026-09-21 — الإضافاتُ والخيارات. لا استراتيجيّةَ لها في
+    // `fullSync`، فبذرُ علامتها يعني أنّ السحبَ التالي يطلب ما بعدَ لحظةِ
+    // البذر — وكلُّ مجموعةٍ عُرِّفت قبلها **لا تصل الجهازَ أبداً** بلا خطأٍ
+    // ولا سجلّ. أمسكه `delta_only_watermark_guard` عند التوصيل.
+    'modifier_groups', 'modifier_items', 'product_modifier_groups',
+
     'asset_categories', 'op_expense_categories', 'bill_of_materials',
     'fixed_assets', 'manufacturing_orders', 'bom_components',
     'op_expenses', 'asset_depreciations', 'mfg_order_costs',

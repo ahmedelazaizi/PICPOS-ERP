@@ -216,6 +216,22 @@ const _unsyncedBaseline = <String>{
   // `ProcessedMessages` بالضبط.
   'SyncOutbox',
 
+  // ═══ ⚪ أطلالُ هجراتٍ بـSQL خامّ — **صفرُ مواضعِ نداء** ═══
+  //
+  // كشفها فتحُ عين الحارس على `CREATE TABLE` الخامّ (2026-09-21). وحكمُها
+  // مقيسٌ من قبل ومكتوبٌ في `database.dart` عند الخطوة ٢ب حرفيّاً:
+  // «‏sync_logs, warehouse_transfers/_items, pricing_rules — have zero call
+  // sites and are dead/id-only stubs, so they are intentionally NOT
+  // provisioned». واثنان منها في `epoch_2` بعمودِ `id` وحدَه.
+  //
+  // و`period_account_summaries` كذلك: كاتبُها الوحيدُ كان بلا مُنادٍ (تعليقُ
+  // `accounting_dao_writes` يسجّله).
+  //
+  // ⚠️ **ولا تُزامَن أطلالٌ**: مزامنةُ جدولٍ ميّتٍ تُضيف حمولةً وسطحَ خطأٍ
+  //    بلا قارئ. وحذفُها عملٌ مستقلٌّ (هجرةُ إسقاطٍ) لا يُقحَم هنا.
+  'sync_logs', 'warehouse_transfers', 'warehouse_transfer_items',
+  'pricing_rules', 'period_account_summaries',
+
   // (‏`WarehousePrices` — كشفها نزعُ التعليقات 2026-08-27 وسُدَّت في
   //  المرحلة ٤ / v173 مع الفئة التشغيليّة أعلاه.)
 };
@@ -264,7 +280,41 @@ List<String> _allTables() {
       out.add(m.group(1)!);
     }
   }
+  out.addAll(_rawSqlOnlyTables(out.toSet()));
   return out..sort();
+}
+
+/// 🔴 **جداولُ SQL الخامّ — كانت خارجَ عدّ الحارس كلِّه.**
+///
+/// الكشفُ أعلاه يمسح `class X extends Table`. وجدولٌ يُنشأ بـ`CREATE TABLE`
+/// خامٍّ في هجرةٍ أو في شفاءٍ ذاتيٍّ **لا صنفَ له**، فلا يراه الحارسُ ولا
+/// يُعَدُّ في «غيرِ المغطّى» — هو خارجُ القياس لا داخلَه.
+///
+/// وكشفه بلاغٌ ميدانيٌّ 2026-09-21: **الإضافاتُ والخيارات**
+/// (`modifier_groups` · `modifier_items` · `product_modifier_groups`) ميزةٌ
+/// مشحونةٌ يستعملها ثمانيةُ ملفّاتٍ في نقطة البيع، و**صفرٌ** من قوائم
+/// المزامنة الثماني يذكرها — فمجموعةُ إضافاتٍ يعرّفها المديرُ لا تصل جهازَ
+/// الكاشير أبداً، وسعرُ الخيار يختلف من جهازٍ لآخر في فاتورتَين.
+///
+/// ⚠️ **والاسمُ يُقاس خامّاً**: `isCovered` يطابق صيغةَ الصنف أو `snake_case`،
+///    وهذه لا صنفَ لها — فاسمُ الجدول نفسُه هو المقياس.
+Set<String> _rawSqlOnlyTables(Set<String> driftClasses) {
+  final driftSnake = {for (final c in driftClasses) _snake(c)};
+  final found = <String>{};
+  // ⚠️ ثلاثةُ أحرفٍ فأكثرُ وبدايةٌ بحرف — وإلّا التُقطت كلماتُ SQL المجاورةُ
+  //    (`IF` · `ONLY` · `WITH`) جداولَ وهميّة.
+  final re = RegExp(
+    r'''CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?['"]?([a-z][a-z0-9_]{2,})''',
+    caseSensitive: false,
+  );
+  for (final f in Directory('lib/data/database').listSync(recursive: true)) {
+    if (f is! File || !f.path.endsWith('.dart')) continue;
+    for (final m in re.allMatches(_stripComments(f.readAsStringSync()))) {
+      final t = m.group(1)!.toLowerCase();
+      if (!driftSnake.contains(t)) found.add(t);
+    }
+  }
+  return found;
 }
 
 /// ينزع التعليقاتِ قبلَ قياس التغطية.
