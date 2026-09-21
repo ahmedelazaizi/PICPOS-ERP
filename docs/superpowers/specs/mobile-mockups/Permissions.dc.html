@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&amp;display=swap">
+  <style>
+    body { margin: 0; font-family: 'Cairo', 'Segoe UI', sans-serif; }
+    a { color: #0250D3; } a:hover { color: #012258; }
+    .row { display: flex; align-items: center; gap: 11px; padding: 12px 14px; border-bottom: 1px solid #DCE3EE; }
+    .row:last-child { border-bottom: none; }
+    .nm { font-size: 14px; font-weight: 600; flex-grow: 1; }
+    .off .nm { color: #9AA6B8; font-weight: 400; }
+  </style>
+</helmet>
+<div dir="rtl" style="width: 880px; height: 844px; background: #F2F5FA; padding: 24px 30px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; color: #000000;">
+
+  <div style="display: flex; flex-direction: column; gap: 6px;">
+    <div style="font-size: 24px; font-weight: 700; letter-spacing: -0.3px;">نفسُ التطبيق — مستخدمان مختلفان</div>
+    <div style="font-size: 13px; color: #6B7280; line-height: 1.6;">القائمةُ تُبنى من صلاحيّات المستخدم لحظةَ دخوله. الرماديُّ هنا <b>للتوضيح فقط</b> — على جهازه لا يظهر أصلاً.</div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; flex-grow: 1;">
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 11px; background: #ffffff; border: 1px solid #DCE3EE; border-radius: 14px; padding: 13px 15px;">
+        <div style="width: 38px; height: 38px; border-radius: 999px; background: linear-gradient(135deg, #0250D3, #012258); display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 13px; font-weight: 700;">أ.ي</div>
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px;">
+          <span style="font-size: 15px; font-weight: 700;">أحمد يوسف</span>
+          <span style="font-size: 12px; color: #6B7280;">مدير عام · كلُّ الفروع</span>
+        </div>
+        <span style="font-size: 11px; font-weight: 700; color: #ffffff; background: #0250D3; border-radius: 999px; padding: 5px 11px;">٩ شاشات</span>
+      </div>
+
+      <div style="background: #ffffff; border: 1px solid #DCE3EE; border-radius: 14px; overflow: hidden;">
+        <div class="row"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0250D3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg><span class="nm">الرئيسيّة</span></div>
+        <div class="row"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0250D3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m7 15 4-4 3 3 5-6"></path></svg><span class="nm">المبيعات</span></div>
+        <div class="row"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0250D3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"></rect><path d="M17 12h.01"></path></svg><span class="nm">الخزائن</span></div>
+        <div class="row"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0250D3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg><span class="nm">الورديّات</span></div>
+        <div class="row"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0250D3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5v8l9 5 9-5z"></path><path d="m3 8 9 5 9-5"></path></svg><span class="nm">المخزون</span></div>
+        <div class="row"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0250D3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg><span class="nm">القوائمُ الماليّة</span></div>
+        <div class="row"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0250D3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M3 20a6 6 0 0 1 12 0"></path><path d="M17 11h4"></path><path d="M19 9v4"></path></svg><span class="nm">العملاءُ والموردون</span></div>
+        <div class="row"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0250D3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><path d="M3 6h18"></path></svg><span class="nm">المشتريات</span></div>
+        <div class="row"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0250D3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg><span class="nm">المستخدمون</span></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 11px; background: #ffffff; border: 1px solid #DCE3EE; border-radius: 14px; padding: 13px 15px;">
+        <div style="width: 38px; height: 38px; border-radius: 999px; background: #F4F7FC; border: 1.5px solid #DCE3EE; display: flex; align-items: center; justify-content: center; color: #0250D3; font-size: 13px; font-weight: 700;">ع.ح</div>
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px;">
+          <span style="font-size: 15px; font-weight: 700;">عمرو حسن</span>
+          <span style="font-size: 12px; color: #6B7280;">أمينُ مخزن · الفرعُ الرئيسيّ</span>
+        </div>
+        <span style="font-size: 11px; font-weight: 700; color: #374151; background: #F4F7FC; border: 1px solid #DCE3EE; border-radius: 999px; padding: 5px 11px;">٣ شاشات</span>
+      </div>
+
+      <div style="background: #ffffff; border: 1px solid #DCE3EE; border-radius: 14px; overflow: hidden;">
+        <div class="row"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0250D3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg><span class="nm">الرئيسيّة</span></div>
+        <div class="row off"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#C7D2E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m7 15 4-4 3 3 5-6"></path></svg><span class="nm">المبيعات</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C7D2E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+        <div class="row off"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#C7D2E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"></rect><path d="M17 12h.01"></path></svg><span class="nm">الخزائن</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C7D2E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+        <div class="row off"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#C7D2E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg><span class="nm">الورديّات</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C7D2E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+        <div class="row"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0250D3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5v8l9 5 9-5z"></path><path d="m3 8 9 5 9-5"></path></svg><span class="nm">المخزون</span></div>
+        <div class="row off"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#C7D2E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg><span class="nm">القوائمُ الماليّة</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C7D2E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+        <div class="row off"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#C7D2E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M3 20a6 6 0 0 1 12 0"></path></svg><span class="nm">العملاءُ والموردون</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C7D2E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+        <div class="row"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0250D3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><path d="M3 6h18"></path></svg><span class="nm">المشتريات</span></div>
+        <div class="row off"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#C7D2E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg><span class="nm">المستخدمون</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C7D2E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="background: #ffffff; border: 1px solid #DCE3EE; border-right: 4px solid #0250D3; border-radius: 14px; padding: 15px 17px; display: flex; align-items: center; gap: 13px;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0250D3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 2 4 6v6c0 5 3.4 8.9 8 10 4.6-1.1 8-5 8-10V6z"></path><path d="m9 12 2 2 4-4"></path></svg>
+    <div style="font-size: 13px; line-height: 1.7;">الإخفاءُ ترتيبٌ للواجهة لا حماية. <b>الحمايةُ في النظام نفسِه</b> — لو حاول أحدٌ الوصولَ لشاشةٍ ليست له، النظامُ يرفض الطلبَ قبل أن يخرج منه رقمٌ واحد.</div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
