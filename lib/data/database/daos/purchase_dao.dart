@@ -336,6 +336,98 @@ extension PurchaseDao on AppDatabase {
     )..where((tbl) => tbl.invoiceId.equals(invoiceId))).get();
   }
 
+  /// سجلُّ مردودات المشتريات — **من `purchase_returns` بتاريخ المردود**.
+  ///
+  /// ═══ 🔴 لماذا قراءةٌ جديدةٌ ولم تكفِ القائمة ═══
+  ///
+  /// [IReturnsRepository.getPurchaseReturnHistory] — القراءةُ الوحيدةُ
+  /// القائمةُ اليوم — **لا تلمس `purchase_returns` إطلاقاً**: تقرأ
+  /// `purchase_invoices` في مدىً زمنيٍّ ثمّ ترشّح على `status`. وأثرُ ذلك
+  /// ثلاثةُ أعطابٍ في قراءةٍ واحدة:
+  ///
+  ///   • المدى على **تاريخ الفاتورة** لا تاريخ المردود — فمردودُ اليوم على
+  ///     فاتورةٍ عمرُها سنتان لا يظهر أبداً. (وتعليقُ المنادي يعترف:
+  ///     «History queries by invoice_date, not return_date — wide range
+  ///     prevents misses» — ورقعةٌ بمدىً واسعٍ ليست علاجاً.)
+  ///   • الصفُّ فاتورةٌ لا مردود — فثلاثةُ مردوداتٍ على فاتورةٍ واحدةٍ تظهر
+  ///     صفّاً واحداً بمجموعها، ولا سبيلَ لفتح واحدٍ منها بعينه؛
+  ///   • ولا `id` مردودٍ يُفتَح، فمرفقاتُ §٨ بلا مرساة.
+  ///
+  /// و`branchIds` هي مجموعةُ `branchScopeProvider` (‏Spec 151 Track-3):
+  /// `null` = وصولٌ كامل، ومردودٌ بلا فرعٍ يبقى ظاهراً كصفوف ما قبلَه.
+  Stream<List<PurchaseReturnRecord>> watchPurchaseReturnRecords({
+    DateTime? from,
+    DateTime? to,
+    Set<int>? branchIds,
+    String? search,
+    int limit = 500,
+  }) {
+    final supplier = alias(parties, 'sup');
+    final query = select(purchaseReturns).join([
+      leftOuterJoin(purchaseInvoices,
+          purchaseInvoices.id.equalsExp(purchaseReturns.originalInvoiceId)),
+      leftOuterJoin(supplier, supplier.id.equalsExp(purchaseReturns.supplierId)),
+    ]);
+
+    var where = purchaseReturns.isDeleted.equals(false) &
+        purchaseReturns.deletedAt.isNull();
+
+    if (from != null && to != null) {
+      where = where & purchaseReturns.returnDate.isBetweenValues(from, to);
+    } else if (from != null) {
+      where = where & purchaseReturns.returnDate.isBiggerOrEqualValue(from);
+    } else if (to != null) {
+      where = where & purchaseReturns.returnDate.isSmallerOrEqualValue(to);
+    }
+
+    if (branchIds != null) {
+      where = where &
+          (purchaseReturns.branchId.isIn(branchIds) |
+              purchaseReturns.branchId.isNull());
+    }
+
+    final needle = search?.trim() ?? '';
+    if (needle.isNotEmpty) {
+      final like = '%$needle%';
+      where = where &
+          (purchaseInvoices.invoiceNumber.like(like) |
+              supplier.name.like(like) |
+              purchaseReturns.reason.like(like));
+    }
+
+    query
+      ..where(where)
+      // ⚠️ و`id` فاصلٌ حاسمٌ بعد التاريخ: `return_date` يومٌ بلا ساعةٍ في
+      //    أغلب الكتابات، فثلاثةُ مردوداتٍ في يومٍ واحدٍ تتقافز بلا هذا.
+      ..orderBy([
+        OrderingTerm.desc(purchaseReturns.returnDate),
+        OrderingTerm.desc(purchaseReturns.id),
+      ])
+      ..limit(limit);
+
+    return query.watch().map((rows) => [
+          for (final row in rows)
+            () {
+              final r = row.readTable(purchaseReturns);
+              return PurchaseReturnRecord(
+                id: r.id,
+                originalInvoiceId: r.originalInvoiceId,
+                returnDate: r.returnDate,
+                subtotal: r.subtotal,
+                tax: r.tax,
+                total: r.total,
+                refundMethod: r.refundMethod,
+                isFullReturn: r.isFullReturn,
+                originalInvoiceNumber:
+                    row.readTableOrNull(purchaseInvoices)?.invoiceNumber,
+                supplierId: r.supplierId,
+                supplierName: row.readTableOrNull(supplier)?.name,
+                reason: r.reason,
+              );
+            }(),
+        ]);
+  }
+
   /// Total monetary value of all purchase returns recorded against [invoiceId].
   ///
   /// Spec 002 Round 7: the returns-history dialog used to display

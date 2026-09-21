@@ -20,6 +20,7 @@ import '../../domain/models/invoice_due_date.dart';
 import '../../domain/models/account_facts.dart';
 import '../../domain/models/asset_movement_types.dart';
 import '../../domain/models/journal_balance.dart';
+import '../../domain/models/document_record.dart';
 import '../../domain/models/purchase_line_discount.dart';
 import '../../domain/models/cheque_book_plan.dart';
 import '../../domain/models/asset_disposal_plan.dart';

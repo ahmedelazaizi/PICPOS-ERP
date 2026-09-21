@@ -1862,6 +1862,101 @@ extension TreasuryDao on AppDatabase {
         .watch();
   }
 
+  /// سجلُّ السندات لاتّجاهٍ واحد — ما تعرضه شاشةُ السجلّ (خ‑٩).
+  ///
+  /// ═══ 🔴 سندُ الشيك ليس نوعَه، فلا يكفي `transaction_type` ═══
+  ///
+  /// السندُ النقديُّ يكتب `'receipt'`/`'payment'`. أمّا سندُ الشيك فيكتب
+  /// [kChequeVoucherTxnType] لأنّ `treasury_repository_impl` يمرّر
+  /// `skipSafeTransaction: true` للشيك — فالصفُّ الوحيدُ الخارجُ هو صفُّ
+  /// المستند. وترشيحٌ بالنوع وحدَه **يُخفي كلَّ سندات الشيكات** من سجلّها.
+  ///
+  /// والفاصلُ بين اتّجاهَي سند الشيك **بادئةُ رقمه** (`RV`/`PV`): يكتبها
+  /// [_writeChequeVoucherRow] بيده، بخلاف `category` الذي يمرّره كلُّ منادٍ
+  /// كما يشاء.
+  ///
+  /// ⚠️ **ولا تُبنى على [watchTransactions]**: تلك لا ترشّح `deleted_at`
+  ///    إطلاقاً (بخلاف [watchRecentTransactions] بجوارها) ولا تعرف الفروع،
+  ///    فسجلٌّ عليها يعرض سنداً محذوفاً وسنداتِ فروعٍ أخرى.
+  ///
+  /// و`branchIds` هي مجموعةُ `branchScopeProvider`: `null` = وصولٌ كامل.
+  /// وخزنةٌ بلا فرعٍ تبقى ظاهرةً — نفسُ عقد
+  /// [watchRecentTransactionsForBranches]: صفوفُ ما قبل ١٣٣ بلا فرع.
+  Stream<List<VoucherRecord>> watchVoucherRecords({
+    required VoucherDirection direction,
+    DateTime? from,
+    DateTime? to,
+    Set<int>? branchIds,
+    String? search,
+    int limit = 500,
+  }) {
+    final party = alias(parties, 'p');
+    final query = select(safeTransactions).join([
+      innerJoin(safes, safes.id.equalsExp(safeTransactions.safeId)),
+      leftOuterJoin(party, party.id.equalsExp(safeTransactions.partyId)),
+    ]);
+
+    // 🔴 النقديُّ بنوعه، وسندُ الشيك بنوعه الثالث **وبادئةِ رقمه**.
+    final isCash = safeTransactions.transactionType.equals(direction.txnType);
+    final isCheque =
+        safeTransactions.transactionType.equals(kChequeVoucherTxnType) &
+            safeTransactions.voucherNumber.like('${direction.chequePrefix}%');
+    var where = safeTransactions.deletedAt.isNull() & (isCash | isCheque);
+
+    if (from != null && to != null) {
+      where = where &
+          safeTransactions.createdAt.isBetweenValues(from, to);
+    } else if (from != null) {
+      where = where & safeTransactions.createdAt.isBiggerOrEqualValue(from);
+    } else if (to != null) {
+      where = where & safeTransactions.createdAt.isSmallerOrEqualValue(to);
+    }
+
+    if (branchIds != null) {
+      where = where & (safes.branchId.isIn(branchIds) | safes.branchId.isNull());
+    }
+
+    final needle = search?.trim() ?? '';
+    if (needle.isNotEmpty) {
+      final like = '%$needle%';
+      where = where &
+          (safeTransactions.voucherNumber.like(like) |
+              safeTransactions.description.like(like) |
+              party.name.like(like));
+    }
+
+    query
+      ..where(where)
+      // ⚠️ و`id` فاصلٌ حاسمٌ بعد اللحظة: ساعةُ ويندوز ~١٥ms، فصفّان في
+      //    نفس الثانية يتقافزان بين إعادتَي بناءٍ بلا هذا.
+      ..orderBy([
+        OrderingTerm.desc(safeTransactions.createdAt),
+        OrderingTerm.desc(safeTransactions.id),
+      ])
+      ..limit(limit);
+
+    return query.watch().map((rows) => [
+          for (final row in rows)
+            () {
+              final t = row.readTable(safeTransactions);
+              return VoucherRecord(
+                id: t.id,
+                voucherNumber: t.voucherNumber,
+                date: t.createdAt,
+                amount: t.amount,
+                discount: t.discount,
+                category: t.category,
+                isCheque: t.transactionType == kChequeVoucherTxnType,
+                safeId: t.safeId,
+                safeName: row.readTableOrNull(safes)?.name,
+                partyId: t.partyId,
+                partyName: row.readTableOrNull(party)?.name,
+                description: t.description,
+              );
+            }(),
+        ]);
+  }
+
   /// Watch recent transactions (limited to 50)
   Stream<List<SafeTransactionData>> watchRecentTransactions() {
     return (select(safeTransactions)
