@@ -54,6 +54,10 @@ class _PaymentVoucherPicposScreenState
   bool _busy = false;
   int? _partyId;
 
+  /// عدّادُ تجديد الاستمارة — تبديلُه يُعيد بناءَ `PicPosVoucherForm` بحالةٍ
+  /// نظيفة. راجع `finishVoucherSave` في `voucher_form_picpos.dart`.
+  int _formEpoch = 0;
+
   /// الأرقامُ التي سُحبت فعلاً في هذه المحاولة — تُقال في رسالة الفشل.
   List<int> _drawn = const [];
 
@@ -77,6 +81,7 @@ class _PaymentVoucherPicposScreenState
       //    ممنوحٍ لأيّ دور، فربطُ الشاشة به يسحبها من الجميع.
       permission: PermissionCodes.treasuryView,
       child: PicPosVoucherForm(
+        key: ValueKey(_formEpoch),
         kind: PicPosVoucherKind.payment,
         parties: [
           for (final p in parties)
@@ -98,7 +103,7 @@ class _PaymentVoucherPicposScreenState
         chequeBooks: _bookOptions(),
         busy: _busy,
         onPartyPicked: (id) => setState(() => _partyId = id),
-        onCancel: () => Navigator.of(context).maybePop(),
+        onCancel: _finish,
         onSubmit: _save,
       ),
     );
@@ -209,7 +214,7 @@ class _PaymentVoucherPicposScreenState
 
       if (!mounted) return;
       _toast('تم حفظ سند الصرف', ToastType.success);
-      Navigator.of(context).maybePop();
+      _finish();
     } catch (e) {
       // 🔴 **وما سُحب من الدفتر يُقال.** الفشلُ بعد السحب يترك أرقاماً
       //    مُستهلَكةً في الدفتر بلا شيكٍ يقابلها — ورقةٌ نُزعت وأُتلفت.
@@ -339,6 +344,12 @@ class _PaymentVoucherPicposScreenState
               ),
           ],
         );
+  }
+
+  /// يُغلق الاستمارةَ إن كانت مدفوعةً، وإلّا يُجدّدُها نظيفةً.
+  void _finish() {
+    if (!mounted) return;
+    if (finishVoucherSave(context)) setState(() => _formEpoch++);
   }
 
   void _toast(String message, ToastType type) {

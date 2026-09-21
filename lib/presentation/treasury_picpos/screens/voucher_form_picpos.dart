@@ -175,6 +175,32 @@ typedef VoucherSubmission = ({
   int? chequeBookId,
 });
 
+/// يُنهي سنداً **حُفظ بنجاح**: يُغلق الاستمارةَ إن كانت مدفوعةً، وإلّا
+/// يطلب من المضيف تجديدَها. يُرجع `true` حين وجب التجديد.
+///
+/// ═══ 🔴 ولماذا لا يكفي `Navigator.maybePop` وحدَها ═══
+///
+/// سندا القبض والصرف يُبلَغان من الشريط الجانبيّ، فجسمُهما هو **المسارُ
+/// الأوّل** في ملّاح القشرة المتداخل (`appShellNestedNavigatorKey`).
+/// و`maybePop` على المسار الأوّل تُرجع `false` ولا تفعل شيئاً — فكان السندُ
+/// يُكتَب، وتخرج رسالةُ النجاح، **وتبقى الاستمارةُ ممتلئةً كما هي**:
+/// ضغطةٌ ثانيةٌ على «مراجعة واعتماد» تكتب سنداً ثانياً مطابقاً، ولا شيءَ في
+/// المحرّك يردّه فهو سندٌ مشروعٌ تماماً من وجهة نظره.
+///
+/// وهو عينُ ما تقوله `_resetForm` في `journal_voucher_picpos_screen.dart`
+/// حرفيّاً: «نموذجٌ نظيفٌ بعد الحفظ — وإلّا رُحِّل القيدُ نفسُه مرّتين».
+///
+/// ⚠️ **ودالّةٌ واحدةٌ لا نسختان في الشاشتَين**: `voucherOpenInvoicesProvider`
+///    في هذا المسار نفسِه يحمل شرحاً لنسختَين افترقتا عند أوّل تعديل.
+bool finishVoucherSave(BuildContext context) {
+  final nav = Navigator.of(context);
+  if (nav.canPop()) {
+    nav.pop();
+    return false;
+  }
+  return true;
+}
+
 class PicPosVoucherForm extends StatefulWidget {
   const PicPosVoucherForm({
     super.key,

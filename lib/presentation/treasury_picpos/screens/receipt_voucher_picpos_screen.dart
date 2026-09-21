@@ -85,6 +85,10 @@ class _ReceiptVoucherPicposScreenState
   bool _busy = false;
   int? _partyId;
 
+  /// عدّادُ تجديد الاستمارة — تبديلُه يُعيد بناءَ `PicPosVoucherForm` بحالةٍ
+  /// نظيفة. راجع `finishVoucherSave` في `voucher_form_picpos.dart`.
+  int _formEpoch = 0;
+
   @override
   Widget build(BuildContext context) {
     final parties = ref.watch(allPartiesProvider).value ?? const <Party>[];
@@ -108,6 +112,7 @@ class _ReceiptVoucherPicposScreenState
       //    وحدَه، فالتوصيلُ يُبقي **مَن يُنشئ سنداً** كما هو.
       permission: PermissionCodes.treasuryView,
       child: PicPosVoucherForm(
+        key: ValueKey(_formEpoch),
         kind: PicPosVoucherKind.receipt,
         parties: [
           for (final p in parties)
@@ -129,7 +134,7 @@ class _ReceiptVoucherPicposScreenState
         openInvoices: invoices,
         busy: _busy,
         onPartyPicked: (id) => setState(() => _partyId = id),
-        onCancel: () => Navigator.of(context).maybePop(),
+        onCancel: _finish,
         onSubmit: _save,
       ),
     );
@@ -234,7 +239,7 @@ class _ReceiptVoucherPicposScreenState
 
       if (!mounted) return;
       _toast('تم حفظ سند القبض', ToastType.success);
-      Navigator.of(context).maybePop();
+      _finish();
     } catch (e) {
       _toast('خطأ في الحفظ: $e', ToastType.error);
     } finally {
@@ -358,6 +363,12 @@ class _ReceiptVoucherPicposScreenState
               ),
           ],
         );
+  }
+
+  /// يُغلق الاستمارةَ إن كانت مدفوعةً، وإلّا يُجدّدُها نظيفةً.
+  void _finish() {
+    if (!mounted) return;
+    if (finishVoucherSave(context)) setState(() => _formEpoch++);
   }
 
   void _toast(String message, ToastType type) {
