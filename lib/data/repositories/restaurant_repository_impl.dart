@@ -35,6 +35,9 @@ class RestaurantRepositoryImpl implements IRestaurantRepository {
       _db.watchTablesBySection(sectionId);
 
   @override
+  Stream<List<RestaurantTable>> watchAllTables() => _db.watchAllTables();
+
+  @override
   Future<List<RestaurantTable>> getAllTables() =>
       (_db.select(_db.restaurantTables)
             ..orderBy([(t) => OrderingTerm.asc(t.name)]))

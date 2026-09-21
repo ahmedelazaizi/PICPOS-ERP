@@ -49,21 +49,42 @@ const Map<String, ({double width, double height})> kFloorPlanKindSize = {
   'text': (width: 120, height: 32),
 };
 
-/// أقسامُ الطاولات — لقطةٌ لا بثّ.
+/// أقسامُ الطاولات — **بثٌّ لا لقطة**.
+///
+/// ═══ 🔴 بلاغٌ ميدانيٌّ 2026-09-21 ═══
+///
+/// كانت لقطةً (`getAllSections` في `FutureProvider`)، فقسمٌ يُنشأ في شاشة
+/// «الطاولات» **لا يصل المصمّمَ أبداً**: يقول «لا أقسامَ بعد» وقد أُنشئ
+/// القسمُ فعلاً وظهر في الشاشة المجاورة.
+///
+/// ⚠️ **و`autoDispose` لا ينقذ**: الشاشتان تابان في `IndexedStack`، و«كلُّ
+///    تابٍ مفتوحٍ شجرةٌ حيّةٌ بمؤقّتاتها ومراقباتها» (راجع
+///    `_openScreensStack`). فالمراقبُ قائمٌ والمزوّدُ لا يتخلّص ولا يُعيد
+///    القراءة — ولا مخرجَ للمستخدم إلّا إغلاقُ التاب أو البرنامج.
+///
+/// وشاشةُ الطاولات كانت تقرأ `watchAllSections` والشرطُ في الـDAO **مطابقٌ
+/// حرفاً** (`is_active = 1`) — فالفرقُ كان في شكل القراءة وحدَه.
 final floorPlanSectionsProvider =
-    FutureProvider.autoDispose<List<TableSection>>((ref) async {
-  return ref.watch(restaurantRepositoryProvider).getAllSections();
+    StreamProvider.autoDispose<List<TableSection>>((ref) {
+  return ref.watch(restaurantRepositoryProvider).watchAllSections();
 });
 
-/// كلُّ الطاولات — منها تُقرأ الأسماءُ والسعاتُ والحالات.
+/// كلُّ الطاولات — منها تُقرأ الأسماءُ والسعاتُ والحالات. **بثٌّ** كذلك:
+/// طاولةٌ تُنشأ والمصمّمُ مفتوحٌ كانت تغيب عنه لنفس السبب، فيرى المستخدمُ
+/// صالةً فارغةً وطاولتُه في الشاشة المجاورة.
 final floorPlanTablesProvider =
-    FutureProvider.autoDispose<List<RestaurantTable>>((ref) async {
-  return ref.watch(restaurantRepositoryProvider).getAllTables();
+    StreamProvider.autoDispose<List<RestaurantTable>>((ref) {
+  return ref.watch(restaurantRepositoryProvider).watchAllTables();
 });
 
 /// صناديقُ الأقسام على أرضيّة المحلّ — لنظرةِ المحلّ كلِّه.
+///
+/// ⚠️ **وتتبع الأقسامَ**: الصناديقُ مشتقّةٌ منها، فقسمٌ جديدٌ يعني صندوقاً
+///    جديداً. وبلا هذا التعلُّق تبقى نظرةُ المحلّ لقطةً قديمةً بينما
+///    محرّرُ القسم تحدَّث — وهو نصفُ العطب لا كلُّه.
 final floorPlanShopBoxesProvider =
     FutureProvider.autoDispose<List<FloorPlanSectionBox>>((ref) async {
+  await ref.watch(floorPlanSectionsProvider.future);
   return ref.watch(restaurantRepositoryProvider).getFloorPlanSectionBoxes();
 });
 
@@ -122,6 +143,36 @@ class _FloorPlanDesignerPicposScreenState
   // ───────────────────────────────────────────────────────────────────────
   // تحميل
   // ───────────────────────────────────────────────────────────────────────
+
+  /// 🔴 **طاولةٌ تُنشأ والمصمّمُ مفتوحٌ تصله** — بلاغٌ ميدانيٌّ 2026-09-21.
+  ///
+  /// اللوحةُ ترسم [_draft] (هندسةَ المخطَّط المحفوظ) و[floorPlanTablesProvider]
+  /// يعطي الأسماءَ والسعاتِ وحدَها. فطاولةٌ جديدةٌ ليست في المسوّدة، ولا
+  /// تظهر حتى يُعاد تحميلُ القسم — والمستخدمُ يرى صالةً فارغةً وطاولتُه في
+  /// الشاشة المجاورة.
+  ///
+  /// ⚠️ **ولا يُعاد التحميلُ على مسوّدةٍ متّسخة**: إعادةُ التحميل تبني
+  ///    `FloorPlanUndoStack` جديدةً، فكلُّ سحبةٍ لم تُحفَظ تضيع — وضياعُ
+  ///    عملِ المستخدم أسوأُ من طاولةٍ تتأخّر حتى الحفظ. فالمتّسخةُ تُترَك،
+  ///    والعنوانُ يقول «تغييراتٌ لم تُحفَظ» فالحالُ مرئيّةٌ لا صامتة.
+  void _watchForNewTables() {
+    ref.listen<AsyncValue<List<RestaurantTable>>>(floorPlanTablesProvider,
+        (prev, next) {
+      final sid = _sectionId;
+      final before = prev?.asData?.value;
+      final after = next.asData?.value;
+      if (sid == null || before == null || after == null) return;
+
+      Set<int> idsIn(List<RestaurantTable> list) =>
+          {for (final t in list) if (t.sectionId == sid) t.id};
+
+      final was = idsIn(before);
+      final now = idsIn(after);
+      if (was.length == now.length && was.containsAll(now)) return;
+      if (_dirty) return;
+      _loadSection(sid);
+    });
+  }
 
   Future<void> _loadSection(int sectionId) async {
     setState(() => _busy = true);
@@ -476,6 +527,8 @@ class _FloorPlanDesignerPicposScreenState
 
   @override
   Widget build(BuildContext context) {
+    _watchForNewTables();
+
     final sections =
         ref.watch(floorPlanSectionsProvider).asData?.value ??
             const <TableSection>[];

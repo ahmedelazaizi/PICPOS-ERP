@@ -7,6 +7,8 @@
 // drift لا يحرّكها أحدٌ فيها. فالمحقونُ هنا مستودعٌ وهميّ، والحسابُ الحقيقيُّ
 // مقيسٌ في `floor_plan_dao_test` على قاعدةٍ حقيقيّةٍ خارجَ المنطقة الوهميّة.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -76,14 +78,58 @@ class _FakeRestaurantRepo implements IRestaurantRepository {
   final saved = <FloorPlanSectionLayout>[];
   Object? throwOnSave;
 
+  // ── بثٌّ حيٌّ — لمحاكاة إنشاءِ قسمٍ أو طاولةٍ **والمصمّمُ مفتوحٌ** ──
+  //
+  // 🔴 وهي الحالُ الواقعيّةُ لا فرضٌ نظريّ: الشاشتان تابان في
+  //    `IndexedStack`، و«كلُّ تابٍ مفتوحٍ شجرةٌ حيّةٌ بمؤقّتاتها
+  //    ومراقباتها» (تعليقُ `_openScreensStack`). فالمستخدمُ ينشئ القسمَ
+  //    في «الطاولات» والمصمّمُ حيٌّ في تابه.
+  final _sectionsCtl =
+      StreamController<List<TableSection>>.broadcast();
+  final _tablesCtl = StreamController<List<RestaurantTable>>.broadcast();
+
+  @override
+  Stream<List<TableSection>> watchAllSections() async* {
+    yield List.of(_sections);
+    yield* _sectionsCtl.stream;
+  }
+
+  @override
+  Stream<List<RestaurantTable>> watchAllTables() async* {
+    yield List.of(_tables);
+    yield* _tablesCtl.stream;
+  }
+
+  /// يُنشئ قسماً كما تفعل شاشةُ الطاولات.
+  void addSection(TableSection s) {
+    _sections.add(s);
+    _sectionsCtl.add(List.of(_sections));
+  }
+
+  /// ويُنشئ طاولةً كذلك.
+  void addTable(RestaurantTable t) {
+    _tables.add(t);
+    _tablesCtl.add(List.of(_tables));
+  }
+
+  void disposeControllers() {
+    _sectionsCtl.close();
+    _tablesCtl.close();
+  }
+
   @override
   Future<List<TableSection>> getAllSections() async => _sections;
 
   @override
   Future<List<RestaurantTable>> getAllTables() async => _tables;
 
+  /// كم مرّةً طُلب مخطَّطُ قسمٍ — به يُقاس «هل أُعيد التحميل؟»، وهو
+  /// المرصدُ الوحيدُ لذلك: إعادةُ تحميلٍ لنفس البيانات ترسم نفسَ الشاشة.
+  final layoutReads = <int>[];
+
   @override
   Future<FloorPlanSectionLayout?> getFloorPlanLayout(int sectionId) async {
+    layoutReads.add(sectionId);
     if (!_sections.any((s) => s.id == sectionId)) return null;
     return _layouts[sectionId] ??
         (
@@ -574,6 +620,133 @@ void main() {
       expect(btn.onPressed, isNull);
 
       await _teardownTree(tester);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════
+  group('🔴 القسمُ المُنشأُ يصل المصمّمَ — بلاغٌ ميدانيّ 2026-09-21', () {
+    // ═══ ما بُلِّغ ═══
+    //
+    // أُنشئ قسمٌ («التراس») وطاولةٌ في «إدارة الطاولات» وظهرا فيها،
+    // و«مصمم القاعة» يقول «لا أقسامَ بعد».
+    //
+    // ═══ والسببُ المقيس ═══
+    //
+    // الشاشتان تقرآن **نفسَ** الجدول بنفس الشرط (`is_active = 1`) —
+    // `tables_dao.getAllSections` و`watchAllSections` متطابقتان حرفاً.
+    // الفرقُ أنّ شاشةَ الطاولات تقرأ **بثّاً** والمصمّمَ يقرأ **لقطةً**:
+    //
+    //     /// أقسامُ الطاولات — لقطةٌ لا بثّ.
+    //     final floorPlanSectionsProvider = FutureProvider.autoDispose…
+    //
+    // و`autoDispose` لا ينقذ: الشاشتان تابان في `IndexedStack` و«كلُّ
+    // تابٍ مفتوحٍ شجرةٌ حيّةٌ بمؤقّتاتها ومراقباتها» — فالمراقبُ قائمٌ
+    // والمزوّدُ لا يتخلّص ولا يُعيد القراءةَ أبداً.
+    //
+    // ⇒ فالمقيسُ هنا **التتبُّعُ** لا القراءةُ الأولى: يُفتَح المصمّمُ
+    //   فارغاً ثمّ يُنشأ القسمُ، ويجب أن يصل.
+
+    testWidgets('مرساةٌ — المصمّمُ يقول «لا أقسام» حين لا أقسامَ فعلاً',
+        (tester) async {
+      final repo = _FakeRestaurantRepo(sections: [], tables: []);
+      addTearDown(repo.disposeControllers);
+      await _pump(tester, repo: repo);
+      expect(find.byKey(const Key('floor_plan_no_sections')), findsOneWidget,
+          reason: 'بلا هذه لا يعني اختفاءُ الرسالة تحتَها شيئاً');
+    });
+
+    testWidgets('🔴 وقسمٌ يُنشأ والمصمّمُ مفتوحٌ يظهر فيه', (tester) async {
+      final repo = _FakeRestaurantRepo(sections: [], tables: []);
+      addTearDown(repo.disposeControllers);
+      await _pump(tester, repo: repo);
+      expect(find.byKey(const Key('floor_plan_no_sections')), findsOneWidget);
+
+      // ← وهذا ما فعله المالكُ في «إدارة الطاولات».
+      repo.addSection(_section(7, 'التراس'));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byKey(const Key('floor_plan_no_sections')), findsNothing,
+          reason: '🔴 القسمُ أُنشئ والمصمّمُ ما زال يقول «لا أقسامَ بعد» — '
+              'فالمستخدمُ لا يملك سبيلاً لرسم صالته إلّا بإغلاق البرنامج');
+    });
+
+    testWidgets('🔴 وطاولةُ قسمٍ آخرَ لا تُعيد تحميلَ هذا القسم',
+        (tester) async {
+      // 🔴 نجت طفرةٌ تُسقط شرطَ القسم (‏F4): كلُّ طاولةٍ في المطعم كانت
+      //    تُعيد تحميلَ المخطَّط المفتوح. والأثرُ ليس أداءً وحدَه — إعادةُ
+      //    التحميل تبني `FloorPlanUndoStack` جديدةً فيضيع تاريخُ التراجع.
+      final repo = _FakeRestaurantRepo(
+        sections: [_section(7, 'التراس'), _section(8, 'الصالة')],
+        tables: [],
+      );
+      addTearDown(repo.disposeControllers);
+      await _pump(tester, repo: repo);
+      final before = repo.layoutReads.length;
+      expect(before, greaterThan(0), reason: 'لم يُحمَّل قسمٌ أصلاً');
+
+      // طاولةٌ في القسم **الآخر**.
+      repo.addTable(_table(21, sectionId: 8, name: 'ص-1'));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+
+      expect(repo.layoutReads.length, before,
+          reason: '🔴 أُعيد تحميلُ القسم المفتوح لطاولةٍ ليست فيه');
+    });
+
+    testWidgets('🔴 ومسوّدةٌ لم تُحفَظ لا تُسقَط بطاولةٍ جديدة',
+        (tester) async {
+      // 🔴 نجت طفرةٌ تحذف شرطَ `_dirty` (‏F5): إعادةُ التحميل تبني مكدّسَ
+      //    تراجعٍ جديداً، فكلُّ سحبةٍ ورسمةٍ لم تُحفَظ تضيع **بلا سؤال**
+      //    لأنّ زميلاً أضاف طاولةً في شاشةٍ أخرى. وضياعُ عملِ المستخدم
+      //    أسوأُ من طاولةٍ تتأخّر حتى الحفظ.
+      final repo = _FakeRestaurantRepo(
+        sections: [_section(7, 'التراس')],
+        tables: [],
+      );
+      addTearDown(repo.disposeControllers);
+      await _pump(tester, repo: repo);
+
+      // تعديلٌ لم يُحفَظ — جدارٌ يُضاف.
+      await tester.tap(find.byKey(const Key('floor_plan_add_wall')));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('تغييراتٌ لم تُحفَظ'), findsOneWidget,
+          reason: 'لم تتّسخ المسوّدةُ ⇒ الفحصُ تحتَها لا يقيس شيئاً');
+
+      final before = repo.layoutReads.length;
+      repo.addTable(_table(31, sectionId: 7, name: 'ت-9'));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+
+      expect(repo.layoutReads.length, before,
+          reason: '🔴 أُعيد التحميلُ فوق مسوّدةٍ متّسخة — وضاع عملُ '
+              'المستخدم بلا سؤال');
+      expect(find.text('تغييراتٌ لم تُحفَظ'), findsOneWidget,
+          reason: '🔴 التعديلُ غير المحفوظ اختفى');
+    });
+
+    testWidgets('🔴 وطاولةٌ تُنشأ تصل المصمّمَ كذلك', (tester) async {
+      // الطاولاتُ تُقرأ بنفس الشكل (`getAllTables` لقطةً)، والمالكُ أنشأ
+      // طاولةً مع القسم. فلو أُصلح القسمُ وحدَه لَرأى صالةً فارغةً.
+      final repo = _FakeRestaurantRepo(
+        sections: [_section(7, 'التراس')],
+        tables: [],
+      );
+      addTearDown(repo.disposeControllers);
+      await _pump(tester, repo: repo);
+
+      repo.addTable(_table(11, sectionId: 7, name: 'ت-1'));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('ت-1'), findsWidgets,
+          reason: '🔴 الطاولةُ أُنشئت ولم تصل المصمّمَ — فيرى المستخدمُ '
+              'صالةً فارغةً وطاولتُه في الشاشة المجاورة');
     });
   });
 }
