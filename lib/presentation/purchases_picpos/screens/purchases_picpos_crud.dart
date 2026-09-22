@@ -149,6 +149,15 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
       // قبل أن يكتمل مستقبَلُه — وهو عينُ التعلّق الموصوف أعلاه. وإبقاؤه
       // يُبقي الخامَ تبعاً لأنّه يراقبه.
       ref.listenManual(posDefaultTaxPercentProvider, (_, _) {}),
+      // 🔴 **وأسماءُ الفروع** — بلاغٌ ميدانيٌّ 2026-09-22. أُضيفت قراءتُها
+      // بعد بناء هذه القائمة ولم تُضَف إليها، فخرجت النافذةُ بـ«Bad state:
+      // The provider StreamProvider<List<Branche>> was disposed during
+      // loading state» ولم تُفتَح فاتورةُ مشترياتٍ إطلاقاً.
+      //
+      // ⚠️ والمصيدةُ بنيويّةٌ لا سهو: القراءةُ والإبقاءُ موضعان منفصلان،
+      //    وقراءةٌ بلا نظيرها تعمل في التطوير (شيءٌ آخرُ يراقب صدفةً)
+      //    وتسقط عند المستخدم. يقرنهما `future_reads_are_kept_alive_test`.
+      ref.listenManual(allBranchesProvider, (_, _) {}),
     ];
     try {
       final controller = ref.read(purchaseInvoicesControllerProvider.notifier);
