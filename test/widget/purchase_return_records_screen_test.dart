@@ -222,6 +222,38 @@ void main() {
           reason: 'زرُّ «جديد» لا يفتح شاشةَ الإنشاء القائمة');
     });
 
+    test('🔴 والاستمارةُ المدفوعةُ لا تنتحل هويّةَ السجلّ', () {
+      // 🔴 بلاغٌ ميدانيٌّ 2026-09-22: «زرُّ جديد بيفتح شاشة مرتجع
+      //    المشتريات السابقة». وهو صحيحٌ في الإحساس: الشاشةُ المدفوعةُ
+      //    كانت تحمل **نفسَ العنوان** («مرتجع المشتريات») وسطراً يقول
+      //    «تسجيل ومتابعة» وزرّاً اسمُه «سجل المرتجعات» — ثلاثُ إشاراتٍ
+      //    تقول «سجلٌّ ثانٍ» بينما هي استمارةُ الإنشاء.
+      //
+      // ⚠️ **ويُقاس بنيويّاً**: الاستمارةُ تفتح قاعدةً حقيقيّةً عند
+      //    `initState` (‏`loadInvoices`) فلا تُركَّب في اختبار ودجت.
+      final form = File(
+              'lib/presentation/purchase_returns_picpos/screens/purchase_returns_picpos_screen.dart')
+          .readAsStringSync();
+      final code = [
+        for (final line in form.split('\n'))
+          if (!line.trimLeft().startsWith('//')) line,
+      ].join('\n');
+
+      expect(code, isNot(contains("title: 'مرتجع المشتريات'")),
+          reason: '🔴 الاستمارةُ تحمل عنوانَ السجلّ نفسَه — فيظنُّ '
+              'المستخدمُ أنّ «جديد» أعاده إلى حيث كان');
+      expect(code, contains('جديد'),
+          reason: 'عنوانُ الاستمارة لا يقول إنّها إنشاء');
+      expect(code, isNot(contains("Text('سجل المرتجعات')")),
+          reason: '🔴 زرٌّ اسمُه «سجل المرتجعات» داخلَ الاستمارة يُنتج '
+              'سجلَّين ظاهرَين لمستندٍ واحد');
+
+      // ⚠️ **ولا يُسحَب الزرُّ**: حوارُه البابُ الوحيدُ لثلاثة مساراتٍ حيّة.
+      expect(code, contains('showReturnsHistoryDialog'),
+          reason: '🔴 سُحب الزرُّ ⇒ سقطت إعادةُ الطباعة وعرضُ الأصناف '
+              'و**تعديلُ مرتجعٍ مُرحَّل** (ميزة ٠١٥) بلا بابٍ بديل');
+    });
+
     test('ذراعُ PicPos تبني السجلَّ', () {
       final src = File('lib/app_main_screen.dart').readAsStringSync();
       final at = src.indexOf('appScreen: AppScreen.purchaseReturns,');

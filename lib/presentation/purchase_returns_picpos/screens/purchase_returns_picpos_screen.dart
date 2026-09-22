@@ -119,15 +119,29 @@ class _PurchaseReturnsPicposScreenState
     final state = ref.watch(purchaseReturnProvider);
     final notifier = ref.read(purchaseReturnProvider.notifier);
 
+    // ═══ 🔴 بلاغٌ ميدانيٌّ 2026-09-22 ═══
+    //
+    // «زرُّ جديد… بيفتح شاشة مرتجع المشتريات السابقة». وهو صحيح: بعد خ‑٩
+    // صار المدخلُ الجانبيُّ **سجلَّ** المردودات، وهذه الشاشةُ تُدفَع منه
+    // بزرّ «جديد» — فكانت تحمل **نفسَ العنوان** وسطراً يقول «تسجيل
+    // ومتابعة» وزرّاً اسمُه «سجل المرتجعات». ثلاثُ إشاراتٍ تقول «هذا سجلٌّ
+    // ثانٍ» بينما هي استمارةُ الإنشاء.
+    //
+    // ⚠️ **والعلاجُ تسميةٌ لا حذف** (خ‑٩٫٧: لا يُمَسُّ منطقُ استمارةٍ قائمة).
+    //    وزرُّ السجلّ **لا يُسحَب**: حوارُه يحمل ثلاثةَ مساراتٍ حيّةٍ لا
+    //    يوجد لها بابٌ آخر — إعادةُ الطباعة (`purchases_return_print`) وعرضُ
+    //    الأصناف المرتجعة و**تعديلُ مرتجعٍ مُرحَّل** (ميزة ٠١٥،
+    //    `purchases_return_edit`). فسحبُه يُسقطها، وإبقاؤه باسمه القديم
+    //    يُبقي الالتباس. فسُمّي بما يفعله.
     return PicPosScreenScaffold(
-      title: 'مرتجع المشتريات',
-      subtitle: 'تسجيل ومتابعة مرتجعات الشراء',
+      title: 'مرتجع مشتريات جديد',
+      subtitle: 'اختر فاتورةَ الشراء ثمّ حدّد ما يُردُّ منها',
       icon: PhosphorIconsBold.arrowUUpLeft,
       headerActions: [
         OutlinedButton.icon(
           onPressed: showReturnsHistoryDialog,
-          icon: const Icon(PhosphorIconsBold.clockCounterClockwise, size: 16),
-          label: const Text('سجل المرتجعات'),
+          icon: const Icon(PhosphorIconsBold.printer, size: 16),
+          label: const Text('طباعة أو تعديل مرتجعٍ سابق'),
         ),
       ],
       body: _buildBody(state, notifier),
