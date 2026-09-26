@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-ink:#0250D3; --brand-light:#4A80E8;
+    --wash:rgba(2,80,211,.08); --side:#0F172A; --side-line:#243247;
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280; --track:#E6ECF6;
+    --desk:#E4E9F2; --ink:#0B1220; --rule:#0B1220; --hair:#C9D2E0;
+  }
+  [data-theme="dark"]{
+    --canvas:#0A1220; --card:#121C2E; --hairline:#243247; --field:#18243A;
+    --brand-ink:#7DA6F5; --wash:rgba(74,128,232,.14); --side:#08101E; --side-line:#1D2A3E;
+    --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8; --track:#1E2B42; --desk:#060D18;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#0A1220;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#94A3B855;border-radius:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" dir="rtl" style="width:1920px;height:1080px;display:flex;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;">
+
+  <div style="width:84px;flex:none;background:var(--side);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:14px;">
+    <div style="width:44px;height:44px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <img src="assets/picpos-logo.png" alt="PicPos" style="width:38px;height:38px;object-fit:contain;" />
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:7px;">
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="10">
+        <div title="{{ r.label }}" style="position:relative;width:52px;height:46px;border-radius:13px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+          <i class="ph-bold {{ r.icon }}" style="font-size:21px;color:{{ r.fg }};"></i>
+          <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;inset-inline-end:-14px;top:11px;width:3.5px;height:24px;border-radius:3px;background:var(--brand-light);"></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="width:40px;height:40px;flex:none;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;">م.س</div>
+  </div>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <div style="height:76px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:14px;padding:0 26px;">
+      <div style="width:46px;height:46px;flex:none;border-radius:14px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold ph-printer" style="font-size:23px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-size:19px;font-weight:800;line-height:1.3;color:var(--txt);">نماذج الطباعة</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;">مبنية على بنية محرر الفواتير — كل حقل بمفتاح <span style="font-family:'JetBrains Mono',monospace;">content</span> الذي يطابقه المحرر</div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="display:flex;align-items:center;gap:7px;border:1.5px solid var(--hairline);border-radius:12px;padding:4px;">
+        <sc-for list="{{ zooms }}" as="z" hint-placeholder-count="3">
+          <div onClick="{{ z.pick }}" style="height:34px;border-radius:9px;background:{{ z.bg }};display:flex;align-items:center;padding:0 13px;cursor:pointer;">
+            <span style="font-size:12px;font-weight:800;color:{{ z.fg }};white-space:nowrap;">{{ z.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div onClick="{{ toggleGuides }}" style="height:44px;flex:none;border-radius:12px;border:1.5px solid {{ guides.bd }};background:{{ guides.bg }};display:flex;align-items:center;gap:8px;padding:0 15px;cursor:pointer;color:{{ guides.fg }};font-size:12.5px;font-weight:700;white-space:nowrap;">
+        <i class="ph-bold ph-crosshair" style="font-size:16px;"></i>{{ guides.label }}
+      </div>
+      <div onClick="{{ toggleTheme }}" style="width:44px;height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+        <i class="ph-bold {{ themeIcon }}" style="font-size:18px;"></i>
+      </div>
+      <div style="height:44px;flex:none;border-radius:12px;background:var(--brand);display:flex;align-items:center;gap:8px;padding:0 20px;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        <i class="ph-bold ph-file-arrow-down" style="font-size:17px;"></i>{{ doc.file }}
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;display:flex;">
+
+      <!-- ═══════════ template rail ═══════════ -->
+      <div style="width:320px;flex:none;background:var(--card);border-inline-end:1px solid var(--hairline);display:flex;flex-direction:column;overflow-y:auto;">
+        <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+          <div style="flex:none;">
+            <div style="padding:13px 16px 9px;display:flex;align-items:center;gap:8px;position:sticky;top:0;background:var(--card);z-index:2;">
+              <i class="ph-bold {{ g.icon }}" style="font-size:14px;color:{{ g.tint }};"></i>
+              <span style="flex:1;font-size:12px;font-weight:800;color:{{ g.tint }};">{{ g.label }}</span>
+              <span style="font-size:10px;font-weight:800;color:{{ g.tint }};background:{{ g.bg }};border-radius:999px;padding:2px 8px;">{{ g.count }}</span>
+            </div>
+            <sc-for list="{{ g.items }}" as="t" hint-placeholder-count="5">
+              <div onClick="{{ t.pick }}" style="padding:11px 16px;border-bottom:1px solid var(--hairline);background:{{ t.bg }};border-inline-start:3px solid {{ t.mark }};cursor:pointer;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:32px;height:32px;flex:none;border-radius:9px;background:{{ t.iconBg }};display:flex;align-items:center;justify-content:center;">
+                    <i class="ph-bold {{ t.icon }}" style="font-size:15px;color:{{ t.tint }};"></i>
+                  </div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-size:12.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.name }}</div>
+                    <div style="font-size:10px;font-weight:600;color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.meta }}</div>
+                  </div>
+                  <span style="font-size:10px;font-weight:800;color:var(--muted);flex:none;">{{ t.paperLabel }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- ═══════════ paper ═══════════ -->
+      <div style="flex:1;min-width:0;background:var(--desk);overflow:auto;padding:30px;display:flex;justify-content:center;align-items:flex-start;">
+        <div style="width:{{ paper.w }};flex:none;transform:scale({{ paper.scale }});transform-origin:top center;">
+          <div style="width:100%;min-height:{{ paper.minH }};background:#FFFFFF;color:#0B1220;box-shadow:0 10px 34px rgba(11,18,32,.20);padding:{{ paper.pad }};font-family:'Noto Naskh Arabic','Cairo',serif;display:flex;flex-direction:column;gap:{{ paper.gap }};position:relative;">
+
+            <sc-if value="{{ showGuides }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;inset:{{ paper.pad }};border:1px dashed rgba(2,80,211,.34);pointer-events:none;"></div>
+            </sc-if>
+
+            <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="8">
+              <div style="width:100%;">
+
+                <sc-if value="{{ b.isHead }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:flex-start;gap:14px;">
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-size:{{ b.h1 }};font-weight:700;line-height:1.25;letter-spacing:-.2px;">شركة بيك بوس للتجارة</div>
+                      <div style="font-size:{{ b.small }};color:#3F4A5A;margin-top:3px;line-height:1.5;">المعادي — شارع ٩، القاهرة · Maadi, Cairo</div>
+                      <div style="display:flex;gap:16px;margin-top:4px;font-size:{{ b.small }};color:#3F4A5A;">
+                        <span>هاتف · Tel ٠٢٢٥٢٨٨٤٤٠</span>
+                        <span style="font-family:'JetBrains Mono',monospace;">س.ت · Tax Reg. 344-228-891</span>
+                      </div>
+                    </div>
+                    <sc-if value="{{ b.showLogo }}" hint-placeholder-val="{{ true }}">
+                      <div style="width:{{ b.logoW }};height:{{ b.logoW }};flex:none;border:1px solid #C9D2E0;display:flex;align-items:center;justify-content:center;">
+                        <span style="font-size:9px;font-weight:700;color:#8B95A5;font-family:'Cairo',sans-serif;">LOGO</span>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ b.isRule }}" hint-placeholder-val="{{ false }}">
+                  <div style="height:{{ b.h }};background:{{ b.color }};width:100%;"></div>
+                </sc-if>
+
+                <sc-if value="{{ b.isTitle }}" hint-placeholder-val="{{ false }}">
+                  <div style="text-align:center;padding:{{ b.pad }} 0;">
+                    <div style="font-size:{{ b.size }};font-weight:700;color:{{ b.tone }};letter-spacing:.3px;">{{ b.ar }}</div>
+                    <div style="font-size:{{ b.small }};font-weight:600;color:#6B7280;font-family:'Cairo',sans-serif;letter-spacing:1.6px;margin-top:2px;">{{ b.en }}</div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ b.isPairs }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:grid;grid-template-columns:{{ b.cols }};gap:{{ b.gap }} 22px;">
+                    <sc-for list="{{ b.rows }}" as="p" hint-placeholder-count="4">
+                      <div style="display:flex;align-items:baseline;gap:7px;min-width:0;justify-content:{{ p.justify }};">
+                        <span style="font-size:{{ b.small }};color:#6B7280;white-space:nowrap;">{{ p.label }}</span>
+                        <span style="flex:1;min-width:0;border-bottom:1px dotted #D6DDE8;height:1px;"></span>
+                        <span style="font-size:{{ b.size }};font-weight:{{ p.fw }};color:{{ p.tone }};white-space:nowrap;font-family:{{ p.fam }};">{{ p.value }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ b.isTable }}" hint-placeholder-val="{{ false }}">
+                  <div style="width:100%;">
+                    <div style="display:grid;grid-template-columns:{{ b.grid }};border-top:1.4px solid #0B1220;border-bottom:1px solid #0B1220;padding:{{ b.hpad }} 0;">
+                      <sc-for list="{{ b.head }}" as="h" hint-placeholder-count="6">
+                        <div style="min-width:0;text-align:{{ h.align }};padding:0 5px;">
+                          <div style="font-size:{{ b.size }};font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ h.ar }}</div>
+                          <sc-if value="{{ b.bilingual }}" hint-placeholder-val="{{ true }}">
+                            <div style="font-size:{{ b.tiny }};font-weight:600;color:#8B95A5;font-family:'Cairo',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ h.en }}</div>
+                          </sc-if>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <sc-for list="{{ b.rows }}" as="r" hint-placeholder-count="5">
+                      <div style="display:grid;grid-template-columns:{{ b.grid }};border-bottom:1px solid #E8EDF4;padding:{{ b.rpad }} 0;background:{{ r.bg }};">
+                        <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="6">
+                          <div style="min-width:0;text-align:{{ c.align }};padding:0 5px;font-size:{{ b.size }};font-weight:{{ c.fw }};color:{{ c.tone }};font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:{{ c.fam }};">{{ c.v }}</div>
+                        </sc-for>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ b.isTotals }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;justify-content:{{ b.side }};">
+                    <div style="width:{{ b.width }};">
+                      <sc-for list="{{ b.rows }}" as="t" hint-placeholder-count="5">
+                        <div style="display:flex;align-items:baseline;gap:10px;padding:{{ t.pad }} 0;border-top:{{ t.line }};">
+                          <span style="font-size:{{ t.labelSize }};color:{{ t.labelTone }};font-weight:{{ t.fw }};white-space:nowrap;">{{ t.ar }}</span>
+                          <span style="font-size:{{ b.tiny }};color:#9AA4B2;font-family:'Cairo',sans-serif;white-space:nowrap;">{{ t.en }}</span>
+                          <span style="flex:1;"></span>
+                          <span style="font-size:{{ t.size }};font-weight:{{ t.fw }};color:{{ t.tone }};font-variant-numeric:tabular-nums;white-space:nowrap;">{{ t.value }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ b.isNote }}" hint-placeholder-val="{{ false }}">
+                  <div style="border-inline-start:2px solid #0B1220;padding-inline-start:9px;">
+                    <div style="font-size:{{ b.tiny }};color:#6B7280;font-family:'Cairo',sans-serif;">{{ b.label }}</div>
+                    <div style="font-size:{{ b.size }};color:#0B1220;margin-top:2px;line-height:1.5;">{{ b.value }}</div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ b.isStamp }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:flex-start;gap:14px;justify-content:{{ b.justify }};">
+                    <div style="width:{{ b.qr }};height:{{ b.qr }};flex:none;border:1px solid #0B1220;display:flex;align-items:center;justify-content:center;">
+                      <span style="font-size:9px;font-weight:800;color:#0B1220;font-family:'Cairo',sans-serif;letter-spacing:1px;">QR</span>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-size:{{ b.tiny }};color:#6B7280;font-family:'Cairo',sans-serif;">{{ b.uuidLabel }}</div>
+                      <div style="font-size:{{ b.tiny }};color:#0B1220;font-family:'JetBrains Mono',monospace;word-break:break-all;line-height:1.6;">{{ b.uuid }}</div>
+                      <div style="font-size:{{ b.tiny }};color:#6B7280;font-family:'Cairo',sans-serif;margin-top:3px;">{{ b.taxLine }}</div>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ b.isSign }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:grid;grid-template-columns:{{ b.cols }};gap:26px;padding-top:{{ b.pad }};">
+                    <sc-for list="{{ b.items }}" as="s" hint-placeholder-count="2">
+                      <div>
+                        <div style="border-top:1px solid #0B1220;padding-top:5px;font-size:{{ b.tiny }};color:#3F4A5A;text-align:center;">{{ s.ar }}</div>
+                        <div style="font-size:{{ b.tiny }};color:#9AA4B2;text-align:center;font-family:'Cairo',sans-serif;">{{ s.en }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ b.isThanks }}" hint-placeholder-val="{{ false }}">
+                  <div style="text-align:center;font-size:{{ b.size }};color:#3F4A5A;padding-top:4px;">{{ b.text }}</div>
+                </sc-if>
+
+              </div>
+            </sc-for>
+          </div>
+          <div style="text-align:center;margin-top:11px;font-size:11px;font-weight:700;color:var(--muted);font-family:'Cairo',sans-serif;">{{ paper.caption }}</div>
+        </div>
+      </div>
+
+      <!-- ═══════════ inspector ═══════════ -->
+      <div style="width:410px;flex:none;background:var(--card);border-inline-start:1px solid var(--hairline);display:flex;flex-direction:column;overflow-y:auto;">
+
+        <div style="flex:none;padding:15px 18px 13px;border-bottom:1px solid var(--hairline);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:38px;height:38px;flex:none;border-radius:11px;background:{{ doc.iconBg }};display:flex;align-items:center;justify-content:center;">
+              <i class="ph-bold {{ doc.icon }}" style="font-size:18px;color:{{ doc.tint }};"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ doc.name }}</div>
+              <div style="font-size:11px;font-weight:600;color:var(--muted);">{{ doc.paperNote }}</div>
+            </div>
+          </div>
+          <div style="margin-top:11px;padding:10px 12px;border-radius:11px;background:{{ doc.statusBg }};border:1.5px solid {{ doc.statusBd }};">
+            <div style="display:flex;align-items:center;gap:7px;">
+              <i class="ph-bold {{ doc.statusIcon }}" style="font-size:14px;color:{{ doc.statusFg }};"></i>
+              <span style="font-size:12px;font-weight:800;color:{{ doc.statusFg }};">{{ doc.statusLabel }}</span>
+            </div>
+            <div style="font-size:11px;font-weight:600;color:var(--txt2);margin-top:5px;line-height:1.6;">{{ doc.statusNote }}</div>
+          </div>
+        </div>
+
+        <div style="flex:none;padding:14px 18px;border-bottom:1px solid var(--hairline);">
+          <div style="font-size:12.5px;font-weight:800;color:var(--txt);margin-bottom:10px;">تعريف القالب</div>
+          <sc-for list="{{ doc.spec }}" as="s" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--hairline);">
+              <span style="font-size:11px;font-weight:700;color:var(--muted);min-width:96px;flex:none;">{{ s.k }}</span>
+              <span style="flex:1;min-width:0;font-size:11.5px;font-weight:700;color:var(--txt2);font-family:'JetBrains Mono',monospace;word-break:break-all;">{{ s.v }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="flex:1;min-height:0;padding:14px 18px;">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">
+            <i class="ph-bold ph-list-checks" style="font-size:15px;color:var(--brand-ink);"></i>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12.5px;font-weight:800;color:var(--txt);">{{ doc.fieldsTitle }}</div>
+              <div style="font-size:10.5px;font-weight:600;color:var(--muted);">{{ doc.fieldsNote }}</div>
+            </div>
+          </div>
+          <sc-for list="{{ doc.fields }}" as="f" hint-placeholder-count="10">
+            <div style="display:flex;align-items:center;gap:9px;padding:6px 0;border-top:1px solid var(--hairline);">
+              <span style="font-size:9.5px;font-weight:800;color:{{ f.secFg }};background:{{ f.secBg }};border-radius:6px;padding:2px 7px;flex:none;min-width:44px;text-align:center;">{{ f.section }}</span>
+              <span style="flex:1;min-width:0;font-size:11px;font-weight:700;color:var(--txt2);font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.key }}</span>
+              <span style="font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap;">{{ f.label }}</span>
+              <i class="ph-bold {{ f.icon }}" style="font-size:13px;color:{{ f.iconFg }};flex:none;"></i>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;,&quot;section&quot;:&quot;العرض&quot;}}">
+const RAIL = [
+  {icon:'ph-squares-four', label:'الرئيسية'},
+  {icon:'ph-receipt', label:'الفواتير'},
+  {icon:'ph-printer', label:'نماذج الطباعة', active:true},
+  {icon:'ph-broadcast', label:'الفوترة الإلكترونية'},
+  {icon:'ph-users-three', label:'العملاء'},
+  {icon:'ph-currency-circle-dollar', label:'الخزينة'},
+  {icon:'ph-chart-line-up', label:'التحليلات'},
+  {icon:'ph-file-text', label:'التقارير'},
+  {icon:'ph-buildings', label:'الفروع'},
+  {icon:'ph-gear', label:'الإعدادات'},
+];
+
+// mm → px at 96dpi, the ratio the paper previews are drawn at
+const MM = 3.7795;
+
+// ── sample data, one set reused by every document so figures agree ──
+const ITEMS = [
+  ['١', 'SKU-1042', 'سكر معبأ ١ كجم', 'كرتونة', '٤٠', '22.00', '5.00', '123.20', '1,003.20'],
+  ['٢', 'SKU-1108', 'زيت عافية ١ لتر', 'كرتونة', '٢٤', '68.00', '0.00', '228.48', '1,860.48'],
+  ['٣', 'SKU-1190', 'أرز مصري ٥ كجم', 'كيس',    '١٢', '145.00', '30.00', '235.20', '1,915.20'],
+  ['٤', 'SKU-1274', 'شاي العروسة ٢٥٠ج', 'كرتونة', '١٨', '58.00', '0.00', '146.16', '1,190.16'],
+  ['٥', 'SKU-1318', 'لبن جهينة ١ لتر', 'كرتونة', '٣٠', '34.00', '20.00', '140.00', '1,140.00'],
+];
+const RET_ITEMS = [
+  ['١', 'SKU-1318', 'لبن جهينة ١ لتر', 'كرتونة', '٦', '34.00', '0.00', '28.56', '232.56'],
+  ['٢', 'SKU-1274', 'شاي العروسة ٢٥٠ج', 'كرتونة', '٢', '58.00', '0.00', '16.24', '132.24'],
+];
+const THERMAL_ITEMS = [
+  ['خبز بلدي', '٥', '3.50', '17.50'],
+  ['لبن جهينة ١ل', '٢', '42.00', '84.00'],
+  ['شاي العروسة', '١', '74.00', '74.00'],
+  ['سكر ١ كجم', '٣', '27.00', '81.00'],
+];
+
+const STATEMENT_ROWS = [
+  ['٢٠٢٦-٠٦-٠١', '—', 'رصيد مُدوَّر', '28,400.00', '—', '28,400.00'],
+  ['٢٠٢٦-٠٦-٠٨', 'INV-0842', 'فاتورة بيع آجل', '34,180.00', '—', '62,580.00'],
+  ['٢٠٢٦-٠٦-٢٢', 'RCP-0410', 'تحصيل نقدي', '—', '34,180.00', '28,400.00'],
+  ['٢٠٢٦-٠٧-٠٤', 'INV-0961', 'فاتورة بيع آجل', '42,600.00', '—', '71,000.00'],
+  ['٢٠٢٦-٠٧-١١', 'RET-0122', 'مرتجع مبيعات', '—', '4,820.00', '66,180.00'],
+  ['٢٠٢٦-٠٧-٢٨', 'RCP-0498', 'تحصيل بنكي', '—', '30,000.00', '36,180.00'],
+  ['٢٠٢٦-٠٨-٠٣', 'INV-1035', 'فاتورة بيع آجل', '9,140.00', '—', '45,320.00'],
+  ['٢٠٢٦-٠٨-٢٤', 'DN-0044', 'إشعار مدين — فرق نقل', '1,480.00', '—', '46,800.00'],
+  ['٢٠٢٦-٠٨-٢٦', 'RCP-0552', 'دفعة تحت الحساب', '—', '2,600.00', '44,200.00'],
+];
+const SUP_ROWS = [
+  ['٢٠٢٦-٠٦-٠١', '—', 'رصيد مُدوَّر', '—', '62,400.00', '62,400.00'],
+  ['٢٠٢٦-٠٦-١٢', 'PUR-0388', 'فاتورة شراء آجل', '—', '86,400.00', '148,800.00'],
+  ['٢٠٢٦-٠٦-١٨', 'PRT-0074', 'مرتجع مشتريات', '6,840.00', '—', '141,960.00'],
+  ['٢٠٢٦-٠٧-٠٢', 'PAY-0281', 'سداد بتحويل بنكي', '79,560.00', '—', '62,400.00'],
+  ['٢٠٢٦-٠٧-١٤', 'PUR-0402', 'فاتورة شراء آجل', '—', '62,000.00', '124,400.00'],
+  ['٢٠٢٦-٠٧-٢٢', 'CN-0031', 'إشعار دائن — خصم كمية', '3,720.00', '—', '120,680.00'],
+  ['٢٠٢٦-٠٨-٠٤', 'PAY-0318', 'سداد نقدي', '40,400.00', '—', '80,280.00'],
+  ['٢٠٢٦-٠٨-١٢', 'PUR-0411', 'فاتورة شراء آجل', '—', '62,000.00', '142,280.00'],
+  ['٢٠٢٦-٠٨-٢٦', 'PAY-0344', 'سداد بتحويل بنكي', '43,680.00', '—', '98,600.00'],
+];
+const REPORT_ROWS = [
+  ['فرع المعادي',      'CC-01', '١,٢٤٨', '1,486,200.00', '412,340.00', '٢٧.٧٪'],
+  ['فرع مدينة نصر',    'CC-02', '٦٨٤',   '642,800.00',   '174,560.00', '٢٧.٢٪'],
+  ['فرع أكتوبر',       'CC-03', '٣١٢',   '284,600.00',   '76,842.00',  '٢٧.٠٪'],
+  ['مبيعات التوزيع',   'CC-05', '١٤٨',   '72,800.00',    '18,928.00',  '٢٦.٠٪'],
+];
+
+// ── block constructors ───────────────────────────────────────────────────
+const head = (o = {}) => Object.assign({k:'head', showLogo:true}, o);
+const rule = (heavy) => ({k:'rule', heavy: !!heavy});
+const title = (ar, en, tone) => ({k:'title', ar, en, tone: tone || '#0B1220'});
+const pairs = (rows, cols) => ({k:'pairs', rows, cols: cols || '1fr 1fr'});
+const table = (head2, rows, grid, o = {}) => Object.assign({k:'table', head: head2, rows, grid}, o);
+const totals = (rows, o = {}) => Object.assign({k:'totals', rows}, o);
+const note = (label, value) => ({k:'note', label, value});
+const stamp = (o = {}) => Object.assign({k:'stamp', uuid:'2026082610422900000000000091AD4C7F8E1B', taxLine:'الرقم الضريبي · Tax Registration 344-228-891'}, o);
+const sign = (items) => ({k:'sign', items});
+const thanks = (text) => ({k:'thanks', text});
+
+const P = (label, value, o = {}) => Object.assign({label, value}, o);
+
+const A4_GRID  = '.5fr 1fr 2.6fr .8fr .7fr 1fr .8fr 1fr 1.2fr';
+const A4_HEAD  = [
+  {ar:'م', en:'#', align:'center'}, {ar:'الكود', en:'Code', align:'right'},
+  {ar:'الصنف', en:'Description', align:'right'}, {ar:'الوحدة', en:'Unit', align:'center'},
+  {ar:'الكمية', en:'Qty', align:'center'}, {ar:'السعر', en:'Price', align:'end'},
+  {ar:'الخصم', en:'Disc.', align:'end'}, {ar:'الضريبة', en:'VAT', align:'end'},
+  {ar:'الإجمالي', en:'Amount', align:'end'},
+];
+const A4_ALIGN = ['center','right','right','center','center','end','end','end','end'];
+
+const cells = (row, aligns, bolds) => row.map((v, i) => ({
+  v, align: aligns[i],
+  fw: (bolds && bolds[i]) ? '700' : '400',
+  tone: i === 2 ? '#0B1220' : '#243247',
+  fam: /^[\d.,٠-٩]+$/.test(String(v).replace(/[\s,]/g,'')) || aligns[i] === 'end'
+    ? "'Noto Naskh Arabic',serif" : "'Noto Naskh Arabic',serif",
+}));
+
+const tRow = (ar, en, value, o = {}) => Object.assign({ar, en, value}, o);
+
+// ── documents ────────────────────────────────────────────────────────────
+const DOCS = [
+  {
+    id:'sales_a4', name:'فاتورة مبيعات ضريبية', file:'a4_sales_tax_invoice.json',
+    icon:'ph-receipt', tint:'#0250D3', ready:true,
+    paper:{w:210, h:297, label:'A4'}, type:'a4', category:'invoice',
+    blocks:[
+      head({}), rule(true),
+      title('فاتورة ضريبية', 'TAX INVOICE'),
+      rule(),
+      pairs([
+        P('رقم الفاتورة · Invoice No.', 'INV-2026-1040', {fw:'700'}),
+        P('التاريخ · Date', '٢٠٢٦-٠٨-٢٥'),
+        P('الفرع · Branch', 'المعادي'),
+        P('المخزن · Warehouse', 'الرئيسي'),
+      ]),
+      rule(),
+      pairs([
+        P('العميل · Customer', 'سوبر ماركت النور', {fw:'700'}),
+        P('الهاتف · Phone', '٠١٠٠٢٢٤٤٨٨٠'),
+        P('العنوان · Address', 'المعادي — شارع ٩'),
+        P('الرقم الضريبي · Tax Reg.', '٢٠٤-٤١٨-٧٧٢'),
+        P('طريقة الدفع · Payment', 'آجل ٣٠ يوماً'),
+        P('المستخدم · Issued by', 'سارة منير'),
+      ]),
+      table(A4_HEAD, ITEMS, A4_GRID),
+      totals([
+        tRow('الإجمالي الفرعي', 'Subtotal', '7,842.11'),
+        tRow('الخصم', 'Discount', '55.00'),
+        tRow('ضريبة القيمة المضافة ١٤٪', 'VAT 14%', '1,097.89'),
+        tRow('الإجمالي المستحق', 'Total Due', '8,940.00', {big:true}),
+        tRow('المدفوع', 'Paid', '0.00', {line:true}),
+        tRow('المتبقي', 'Balance', '8,940.00', {tone:'#B42318', fw:'700'}),
+      ]),
+      note('ملاحظات · Notes', 'التسليم بمخزن العميل. البضاعة المباعة لا تُرد إلا خلال ٧ أيام وبفاتورتها.'),
+      rule(),
+      stamp({uuidLabel:'معرّف المستند لدى المنظومة · Document UUID'}),
+      thanks('شكراً لتعاملكم معنا  ·  Thank you for your business'),
+    ],
+    fields:[
+      ['header','company_name','اسم الشركة'], ['header','logo','الشعار'],
+      ['header','company_address','العنوان'], ['header','company_phone','الهاتف'],
+      ['header','company_tax_number','الرقم الضريبي'], ['header','branch_name','الفرع'],
+      ['body','invoice_number','رقم الفاتورة'], ['body','date','التاريخ'],
+      ['body','warehouse_name','المخزن'], ['body','customer_name','العميل'],
+      ['body','customer_phone','الهاتف'], ['body','customer_address','العنوان'],
+      ['body','payment_method','طريقة الدفع'], ['body','cashier_name','المستخدم'],
+      ['details','items_table','جدول الأصناف'],
+      ['footer','subtotal','الفرعي'], ['footer','discount','الخصم'],
+      ['footer','tax_amount','الضريبة'], ['footer','total_amount','الإجمالي'],
+      ['footer','paid','المدفوع'], ['footer','remaining','المتبقي'],
+      ['footer','qr_code','كود QR'], ['footer','tax_registration','الرقم الضريبي'],
+      ['footer','notes','ملاحظات'],
+    ],
+  },
+
+  {
+    id:'sales_a5', name:'فاتورة مبيعات ضريبية', file:'a5_sales_tax_invoice.json',
+    icon:'ph-receipt', tint:'#0250D3', ready:true,
+    paper:{w:148, h:210, label:'A5'}, type:'a4', category:'invoice',
+    blocks:[
+      head({compact:true}), rule(true),
+      title('فاتورة ضريبية', 'TAX INVOICE'),
+      rule(),
+      pairs([
+        P('رقم الفاتورة · Invoice No.', 'INV-2026-1040', {fw:'700'}),
+        P('التاريخ · Date', '٢٠٢٦-٠٨-٢٥'),
+        P('العميل · Customer', 'سوبر ماركت النور', {fw:'700'}),
+        P('الهاتف · Phone', '٠١٠٠٢٢٤٤٨٨٠'),
+        P('طريقة الدفع · Payment', 'آجل ٣٠ يوماً'),
+        P('المستخدم · Issued by', 'سارة منير'),
+      ]),
+      table(
+        [{ar:'م',en:'#',align:'center'},{ar:'الصنف',en:'Description',align:'right'},
+         {ar:'الكمية',en:'Qty',align:'center'},{ar:'السعر',en:'Price',align:'end'},
+         {ar:'الإجمالي',en:'Amount',align:'end'}],
+        ITEMS.map(r => [r[0], r[2], r[4], r[5], r[8]]),
+        '.5fr 2.6fr .8fr 1fr 1.2fr'
+      ),
+      totals([
+        tRow('الإجمالي الفرعي', 'Subtotal', '7,842.11'),
+        tRow('ضريبة القيمة المضافة ١٤٪', 'VAT 14%', '1,097.89'),
+        tRow('الإجمالي المستحق', 'Total Due', '8,940.00', {big:true}),
+        tRow('المتبقي', 'Balance', '8,940.00', {tone:'#B42318', fw:'700', line:true}),
+      ]),
+      rule(),
+      stamp({uuidLabel:'معرّف المستند · UUID'}),
+      thanks('شكراً لتعاملكم معنا  ·  Thank you'),
+    ],
+    fields:[
+      ['header','company_name','اسم الشركة'], ['header','logo','الشعار'],
+      ['header','company_address','العنوان'], ['header','company_tax_number','الرقم الضريبي'],
+      ['body','invoice_number','رقم الفاتورة'], ['body','date','التاريخ'],
+      ['body','customer_name','العميل'], ['body','customer_phone','الهاتف'],
+      ['body','payment_method','طريقة الدفع'],
+      ['details','items_table','جدول الأصناف'],
+      ['footer','subtotal','الفرعي'], ['footer','tax_amount','الضريبة'],
+      ['footer','total_amount','الإجمالي'], ['footer','remaining','المتبقي'],
+      ['footer','qr_code','كود QR'], ['footer','tax_registration','الرقم الضريبي'],
+    ],
+  },
+
+  {
+    id:'purchase_a4', name:'فاتورة مشتريات', file:'a4_purchase_invoice.json',
+    icon:'ph-truck', tint:'#8B5CF6', ready:true,
+    paper:{w:210, h:297, label:'A4'}, type:'a4', category:'purchase',
+    blocks:[
+      head({}), rule(true),
+      title('فاتورة مشتريات', 'PURCHASE INVOICE'),
+      rule(),
+      pairs([
+        P('رقم الفاتورة · Invoice No.', 'PUR-2026-0418', {fw:'700'}),
+        P('التاريخ · Date', '٢٠٢٦-٠٨-٢٤'),
+        P('المخزن المستلِم · Warehouse', 'الرئيسي'),
+        P('أمين المخزن · Received by', 'منى رشاد'),
+      ]),
+      rule(),
+      pairs([
+        P('المورد · Supplier', 'الأناضول للأغذية', {fw:'700'}),
+        P('الهاتف · Phone', '٠١٢٢٤٤٨٨٦٦٠'),
+        P('العنوان · Address', 'ميناء الإسكندرية'),
+        P('طريقة السداد · Terms', 'آجل ٣٠ يوماً'),
+      ]),
+      table(A4_HEAD, ITEMS, A4_GRID),
+      totals([
+        tRow('الإجمالي الفرعي', 'Subtotal', '61,982.46'),
+        tRow('الخصم', 'Discount', '55.00'),
+        tRow('ضريبة القيمة المضافة ١٤٪', 'VAT 14%', '8,677.54'),
+        tRow('الإجمالي المستحق', 'Total Due', '70,660.00', {big:true}),
+        tRow('المدفوع', 'Paid', '0.00', {line:true}),
+        tRow('المتبقي', 'Balance', '70,660.00', {tone:'#B42318', fw:'700'}),
+      ]),
+      note('ملاحظات · Notes', 'تُحمَّل تكاليف الشحن والجمارك على هذه الفاتورة بورقة تحميل LC-2026-0042.'),
+      rule(),
+      sign([{ar:'توقيع المستلِم', en:'Receiver Signature'}, {ar:'توقيع المورد', en:'Supplier Signature'}]),
+    ],
+    fields:[
+      ['header','company_name','اسم الشركة'], ['header','logo','الشعار'],
+      ['header','company_address','العنوان'], ['header','company_tax_number','الرقم الضريبي'],
+      ['body','invoice_number','رقم الفاتورة'], ['body','date','التاريخ'],
+      ['body','warehouse_name','المخزن'], ['body','cashier_name','أمين المخزن'],
+      ['body','supplier_name','المورد'], ['body','customer_phone','الهاتف'],
+      ['body','customer_address','العنوان'], ['body','payment_method','طريقة السداد'],
+      ['details','items_table','جدول الأصناف'],
+      ['footer','subtotal','الفرعي'], ['footer','discount','الخصم'],
+      ['footer','tax_amount','الضريبة'], ['footer','total_amount','الإجمالي'],
+      ['footer','paid','المدفوع'], ['footer','remaining','المتبقي'],
+      ['footer','notes','ملاحظات'],
+    ],
+  },
+
+  {
+    id:'thermal80', name:'بيع سريع حراري', file:'thermal80_quick_sale.json',
+    icon:'ph-receipt', tint:'#22C55E', ready:true,
+    paper:{w:80, h:0, label:'80mm'}, type:'thermal', category:'receipt',
+    blocks:[
+      head({center:true, showLogo:false}),
+      rule(),
+      title('فاتورة ضريبية مبسطة', 'SIMPLIFIED TAX INVOICE'),
+      rule(),
+      pairs([
+        P('فاتورة · Inv', 'INV-1040', {fw:'700'}),
+        P('التاريخ', '٢٠٢٦-٠٨-٢٥'),
+        P('الوقت · Time', '١٤:٢٦'),
+        P('كاشير · By', 'سارة'),
+        P('العميل', 'نقدي'),
+        P('الدفع', 'كاش'),
+      ], '1fr'),
+      table(
+        [{ar:'الصنف',en:'Item',align:'right'},{ar:'كمية',en:'Qty',align:'center'},
+         {ar:'السعر',en:'Price',align:'end'},{ar:'إجمالي',en:'Total',align:'end'}],
+        THERMAL_ITEMS, '2.4fr .6fr .9fr 1fr'
+      ),
+      totals([
+        tRow('الفرعي', 'Subtotal', '224.12'),
+        tRow('ض.ق.م ١٤٪', 'VAT 14%', '32.38'),
+        tRow('الإجمالي', 'TOTAL', '256.50', {big:true}),
+        tRow('مدفوع', 'Paid', '300.00', {line:true}),
+        tRow('باقي', 'Change', '43.50', {fw:'700'}),
+      ], {side:'stretch'}),
+      rule(),
+      stamp({justify:'center', uuidLabel:'معرّف المستند'}),
+      thanks('شكراً لزيارتكم  ·  Thank you'),
+    ],
+    fields:[
+      ['header','company_name','اسم الشركة'], ['header','company_address','العنوان'],
+      ['header','company_phone','الهاتف'], ['header','company_tax_number','الرقم الضريبي'],
+      ['body','invoice_number','رقم الفاتورة'], ['body','date','التاريخ'],
+      ['body','time','الوقت'], ['body','cashier_name','الكاشير'],
+      ['body','customer_name','العميل'], ['body','payment_method','طريقة الدفع'],
+      ['details','items_table','جدول الأصناف'],
+      ['footer','subtotal','الفرعي'], ['footer','discount','الخصم'],
+      ['footer','tax_amount','الضريبة'], ['footer','total_amount','الإجمالي'],
+      ['footer','paid','المدفوع'], ['footer','remaining','الباقي'],
+      ['footer','qr_code','كود QR'], ['footer','tax_registration','الرقم الضريبي'],
+    ],
+  },
+
+  {
+    id:'thermal58', name:'بيع سريع حراري', file:'thermal58_quick_sale.json',
+    icon:'ph-receipt', tint:'#22C55E', ready:true,
+    paper:{w:58, h:0, label:'58mm'}, type:'thermal', category:'receipt',
+    blocks:[
+      head({center:true, showLogo:false, minimal:true}),
+      rule(),
+      pairs([
+        P('فاتورة', 'INV-1040', {fw:'700'}),
+        P('التاريخ', '٢٠٢٦-٠٨-٢٥'),
+        P('كاشير', 'سارة'),
+      ], '1fr'),
+      table(
+        [{ar:'الصنف',en:'Item',align:'right'},{ar:'ك',en:'Q',align:'center'},
+         {ar:'إجمالي',en:'Total',align:'end'}],
+        THERMAL_ITEMS.map(r => [r[0], r[1], r[3]]), '2.4fr .5fr 1fr'
+      ),
+      totals([
+        tRow('الإجمالي', 'TOTAL', '256.50', {big:true}),
+        tRow('مدفوع', 'Paid', '300.00', {line:true}),
+        tRow('باقي', 'Change', '43.50'),
+      ], {side:'stretch'}),
+      rule(),
+      stamp({justify:'center', uuidLabel:'معرّف المستند', short:true}),
+      thanks('شكراً لزيارتكم'),
+    ],
+    fields:[
+      ['header','company_name','اسم الشركة'], ['header','company_phone','الهاتف'],
+      ['header','company_tax_number','الرقم الضريبي'],
+      ['body','invoice_number','رقم الفاتورة'], ['body','date','التاريخ'],
+      ['body','cashier_name','الكاشير'],
+      ['details','items_table','جدول الأصناف'],
+      ['footer','total_amount','الإجمالي'], ['footer','paid','المدفوع'],
+      ['footer','remaining','الباقي'], ['footer','qr_code','كود QR'],
+    ],
+  },
+
+  {
+    id:'sales_return_a4', name:'مرتجع مبيعات — إشعار دائن', file:'a4_sales_return.json',
+    icon:'ph-arrow-u-up-left', tint:'#B42318', ready:true,
+    paper:{w:210, h:297, label:'A4'}, type:'a4', category:'invoice',
+    blocks:[
+      head({}), rule(true),
+      title('إشعار دائن — مرتجع مبيعات', 'CREDIT NOTE — SALES RETURN', '#B42318'),
+      rule(),
+      pairs([
+        P('رقم المرتجع · Return No.', 'RET-2026-0139', {fw:'700'}),
+        P('التاريخ · Date', '٢٠٢٦-٠٨-٢٥'),
+        P('ضد الفاتورة · Against Invoice', 'INV-2026-1032'),
+        P('مخزن الاستلام · Warehouse', 'الرئيسي'),
+      ]),
+      rule(),
+      pairs([
+        P('العميل · Customer', 'بقالة الأمانة', {fw:'700'}),
+        P('الهاتف · Phone', '٠١٢٢٧٧٣٣٩٩١'),
+        P('المستخدم · Processed by', 'سارة منير'),
+        P('حالة البضاعة · Condition', 'سليمة — تعاد للمخزون'),
+      ]),
+      table(A4_HEAD, RET_ITEMS, A4_GRID),
+      totals([
+        tRow('الإجمالي الفرعي', 'Subtotal', '319.44'),
+        tRow('ضريبة القيمة المضافة ١٤٪', 'VAT 14%', '44.80'),
+        tRow('قيمة المرتجع', 'Total Refund', '364.80', {big:true, tone:'#B42318'}),
+        tRow('مُسترَد نقداً', 'Refunded Cash', '200.00', {line:true}),
+        tRow('مُسترَد بنكياً', 'Refunded Bank', '164.80'),
+      ]),
+      note('سبب المرتجع · Reason for Return', 'قرب انتهاء الصلاحية — استُلمت البضاعة سليمة وأعيدت للمخزون بالمخزن الرئيسي.'),
+      rule(),
+      stamp({uuidLabel:'معرّف الإشعار لدى المنظومة · Document UUID',
+             uuid:'2026082514080100000000000072BC91E4D3A7'}),
+      sign([{ar:'توقيع العميل', en:'Customer Signature'}, {ar:'توقيع المستلِم', en:'Received by'}]),
+    ],
+    fields:[
+      ['header','company_name','اسم الشركة'], ['header','logo','الشعار'],
+      ['header','company_tax_number','الرقم الضريبي'],
+      ['body','invoice_number','رقم المرتجع'], ['body','date','التاريخ'],
+      ['body','order_number','ضد الفاتورة'], ['body','warehouse_name','المخزن'],
+      ['body','customer_name','العميل'], ['body','customer_phone','الهاتف'],
+      ['body','cashier_name','المستخدم'],
+      ['details','items_table','جدول الأصناف'],
+      ['footer','subtotal','الفرعي'], ['footer','tax_amount','الضريبة'],
+      ['footer','total_amount','قيمة المرتجع'],
+      ['footer','cash_amount','مُسترَد نقداً'], ['footer','bank_amount','مُسترَد بنكياً'],
+      ['footer','notes','سبب المرتجع'], ['footer','qr_code','كود QR'],
+      ['footer','tax_registration','الرقم الضريبي'],
+    ],
+  },
+
+  {
+    id:'sales_return_t80', name:'مرتجع مبيعات حراري', file:'thermal80_sales_return.json',
+    icon:'ph-arrow-u-up-left', tint:'#B42318', ready:true,
+    paper:{w:80, h:0, label:'80mm'}, type:'thermal', category:'receipt',
+    blocks:[
+      head({center:true, showLogo:false, minimal:true}),
+      rule(),
+      title('إشعار دائن — مرتجع', 'CREDIT NOTE', '#B42318'),
+      rule(),
+      pairs([
+        P('مرتجع', 'RET-0139', {fw:'700'}),
+        P('التاريخ', '٢٠٢٦-٠٨-٢٥'),
+        P('ضد الفاتورة', 'INV-1032'),
+        P('العميل', 'بقالة الأمانة'),
+      ], '1fr'),
+      table(
+        [{ar:'الصنف',en:'Item',align:'right'},{ar:'كمية',en:'Qty',align:'center'},
+         {ar:'السعر',en:'Price',align:'end'},{ar:'إجمالي',en:'Total',align:'end'}],
+        RET_ITEMS.map(r => [r[2], r[4], r[5], r[8]]), '2.4fr .6fr .9fr 1fr'
+      ),
+      totals([
+        tRow('قيمة المرتجع', 'REFUND', '364.80', {big:true, tone:'#B42318'}),
+        tRow('نقداً', 'Cash', '200.00', {line:true}),
+        tRow('بنكياً', 'Bank', '164.80'),
+      ], {side:'stretch'}),
+      rule(),
+      note('السبب', 'قرب انتهاء الصلاحية'),
+      stamp({justify:'center', uuidLabel:'معرّف الإشعار', short:true}),
+      thanks('يُعتمد بتوقيع العميل'),
+    ],
+    fields:[
+      ['header','company_name','اسم الشركة'], ['header','company_tax_number','الرقم الضريبي'],
+      ['body','invoice_number','رقم المرتجع'], ['body','date','التاريخ'],
+      ['body','order_number','ضد الفاتورة'], ['body','customer_name','العميل'],
+      ['details','items_table','جدول الأصناف'],
+      ['footer','total_amount','قيمة المرتجع'], ['footer','cash_amount','نقداً'],
+      ['footer','bank_amount','بنكياً'], ['footer','notes','السبب'],
+      ['footer','qr_code','كود QR'],
+    ],
+  },
+
+  {
+    id:'purchase_return_a4', name:'مرتجع مشتريات — إشعار مدين', file:'a4_purchase_return.json',
+    icon:'ph-arrow-u-up-right', tint:'#F59E0B', ready:true,
+    paper:{w:210, h:297, label:'A4'}, type:'a4', category:'purchase',
+    blocks:[
+      head({}), rule(true),
+      title('إشعار مدين — مرتجع مشتريات', 'DEBIT NOTE — PURCHASE RETURN', '#B42318'),
+      rule(),
+      pairs([
+        P('رقم المرتجع · Return No.', 'PRT-2026-0091', {fw:'700'}),
+        P('التاريخ · Date', '٢٠٢٦-٠٨-٢٤'),
+        P('ضد الفاتورة · Against Invoice', 'PUR-2026-0411'),
+        P('المخزن المُخرِج · Warehouse', 'الرئيسي'),
+      ]),
+      rule(),
+      pairs([
+        P('المورد · Supplier', 'جهينة للأغذية', {fw:'700'}),
+        P('الهاتف · Phone', '٠١٢٢٤٤٨٨٦٦٠'),
+        P('المستخدم · Processed by', 'منى رشاد'),
+        P('أساس المطالبة · Claim Basis', 'فرق وزن بإذن GRN-0412'),
+      ]),
+      table(A4_HEAD, RET_ITEMS, A4_GRID),
+      totals([
+        tRow('الإجمالي الفرعي', 'Subtotal', '4,105.26'),
+        tRow('ضريبة القيمة المضافة ١٤٪', 'VAT 14%', '574.74'),
+        tRow('قيمة المرتجع', 'Total Claim', '4,680.00', {big:true, tone:'#B42318'}),
+        tRow('يُخصم من رصيد المورد', 'Off Supplier Balance', '4,680.00', {line:true, fw:'700'}),
+      ]),
+      note('سبب المرتجع · Reason for Return', 'نقص ٤٢ كجم في شحنة الألبان مقارنةً بإذن الاستلام — مطالبة بإشعار دائن من المورد.'),
+      rule(),
+      sign([{ar:'توقيع المورد', en:'Supplier Signature'}, {ar:'توقيع أمين المخزن', en:'Storekeeper'}]),
+    ],
+    fields:[
+      ['header','company_name','اسم الشركة'], ['header','logo','الشعار'],
+      ['header','company_tax_number','الرقم الضريبي'],
+      ['body','invoice_number','رقم المرتجع'], ['body','date','التاريخ'],
+      ['body','order_number','ضد الفاتورة'], ['body','warehouse_name','المخزن'],
+      ['body','supplier_name','المورد'], ['body','customer_phone','الهاتف'],
+      ['body','cashier_name','المستخدم'],
+      ['details','items_table','جدول الأصناف'],
+      ['footer','subtotal','الفرعي'], ['footer','tax_amount','الضريبة'],
+      ['footer','total_amount','قيمة المرتجع'],
+      ['footer','cash_amount','مُسترَد نقداً'], ['footer','bank_amount','مُسترَد بنكياً'],
+      ['footer','notes','سبب المرتجع'],
+    ],
+  },
+
+  // ── need the editor extension ──
+  {
+    id:'stmt_customer', name:'كشف حساب عميل', file:'a4_customer_statement.json',
+    icon:'ph-user-list', tint:'#0250D3', ready:false,
+    paper:{w:210, h:297, label:'A4'}, type:'statement', category:'party_statement',
+    blocks:[
+      head({}), rule(true),
+      title('كشف حساب عميل', 'CUSTOMER STATEMENT OF ACCOUNT'),
+      rule(),
+      pairs([
+        P('العميل · Customer', 'سوبر ماركت النور', {fw:'700'}),
+        P('كود العميل · Code', 'CUS-0142'),
+        P('من تاريخ · From', '٢٠٢٦-٠٦-٠١'),
+        P('إلى تاريخ · To', '٢٠٢٦-٠٨-٢٦'),
+        P('الرقم الضريبي · Tax Reg.', '٢٠٤-٤١٨-٧٧٢'),
+        P('حد الائتمان · Credit Limit', '50,000.00'),
+      ]),
+      table(
+        [{ar:'التاريخ',en:'Date',align:'right'},{ar:'المستند',en:'Document',align:'right'},
+         {ar:'البيان',en:'Description',align:'right'},{ar:'مدين',en:'Debit',align:'end'},
+         {ar:'دائن',en:'Credit',align:'end'},{ar:'الرصيد',en:'Balance',align:'end'}],
+        STATEMENT_ROWS, '1.1fr 1.1fr 2.4fr 1.1fr 1.1fr 1.2fr'
+      ),
+      totals([
+        tRow('رصيد أول الفترة', 'Opening Balance', '28,400.00'),
+        tRow('إجمالي المدين', 'Total Debit', '124,740.00'),
+        tRow('إجمالي الدائن', 'Total Credit', '80,540.00'),
+        tRow('الرصيد الختامي', 'Closing Balance', '44,200.00', {big:true}),
+        tRow('المتأخر عن مدة السماح', 'Overdue', '12,600.00', {tone:'#B42318', fw:'700', line:true}),
+      ]),
+      note('أعمار الدين · Ageing', 'لم يحن ١٩,٥٦٠  ·  ١—٣٠ يوماً ١٢,٠٤٠  ·  ٣١—٦٠ يوماً ٩,١٤٠  ·  فوق ٦٠ يوماً ٣,٤٦٠'),
+      rule(),
+      sign([{ar:'المحاسب', en:'Accountant'}, {ar:'إقرار العميل بالرصيد', en:'Customer Acknowledgement'}]),
+    ],
+    fields:[
+      ['header','company_name','اسم الشركة'], ['header','logo','الشعار'],
+      ['header','company_tax_number','الرقم الضريبي'],
+      ['body','party_name','اسم الطرف'], ['body','party_code','كود الطرف'],
+      ['body','party_tax_number','الرقم الضريبي للطرف'],
+      ['body','period_from','من تاريخ'], ['body','period_to','إلى تاريخ'],
+      ['body','credit_limit','حد الائتمان'],
+      ['details','ledger_table','جدول الحركة'],
+      ['footer','opening_balance','رصيد أول الفترة'], ['footer','total_debit','إجمالي المدين'],
+      ['footer','total_credit','إجمالي الدائن'], ['footer','closing_balance','الرصيد الختامي'],
+      ['footer','overdue_amount','المتأخر'], ['footer','ageing_buckets','أعمار الدين'],
+    ],
+  },
+
+  {
+    id:'stmt_supplier', name:'كشف حساب مورد', file:'a4_supplier_statement.json',
+    icon:'ph-truck', tint:'#8B5CF6', ready:false,
+    paper:{w:210, h:297, label:'A4'}, type:'statement', category:'party_statement',
+    blocks:[
+      head({}), rule(true),
+      title('كشف حساب مورد', 'SUPPLIER STATEMENT OF ACCOUNT'),
+      rule(),
+      pairs([
+        P('المورد · Supplier', 'جهينة للأغذية', {fw:'700'}),
+        P('كود المورد · Code', 'SUP-0018'),
+        P('من تاريخ · From', '٢٠٢٦-٠٦-٠١'),
+        P('إلى تاريخ · To', '٢٠٢٦-٠٨-٢٦'),
+        P('الرقم الضريبي · Tax Reg.', '٢٠٠-٤٤٨-٧٧٢'),
+        P('حد التوريد الآجل · Credit Limit', '150,000.00'),
+      ]),
+      table(
+        [{ar:'التاريخ',en:'Date',align:'right'},{ar:'المستند',en:'Document',align:'right'},
+         {ar:'البيان',en:'Description',align:'right'},{ar:'مدين',en:'Debit',align:'end'},
+         {ar:'دائن',en:'Credit',align:'end'},{ar:'الرصيد',en:'Balance',align:'end'}],
+        SUP_ROWS, '1.1fr 1.1fr 2.4fr 1.1fr 1.1fr 1.2fr'
+      ),
+      totals([
+        tRow('رصيد أول الفترة', 'Opening Balance', '62,400.00'),
+        tRow('إجمالي المدين', 'Total Debit', '174,200.00'),
+        tRow('إجمالي الدائن', 'Total Credit', '272,800.00'),
+        tRow('الرصيد الختامي', 'Closing Balance', '98,600.00', {big:true}),
+        tRow('شيكات صادرة قائمة', 'Outstanding Cheques', '110,600.00', {tone:'#B42318', fw:'700', line:true}),
+      ]),
+      note('تنبيه · Note', 'الرصيد الختامي لا يشمل الشيكات الصادرة القائمة — الالتزام الفعلي على السيولة 209,200.00 ج.م.'),
+      rule(),
+      sign([{ar:'المحاسب', en:'Accountant'}, {ar:'إقرار المورد بالرصيد', en:'Supplier Acknowledgement'}]),
+    ],
+    fields:[
+      ['header','company_name','اسم الشركة'], ['header','logo','الشعار'],
+      ['body','party_name','اسم الطرف'], ['body','party_code','كود الطرف'],
+      ['body','party_tax_number','الرقم الضريبي للطرف'],
+      ['body','period_from','من تاريخ'], ['body','period_to','إلى تاريخ'],
+      ['body','credit_limit','حد التوريد'],
+      ['details','ledger_table','جدول الحركة'],
+      ['footer','opening_balance','رصيد أول الفترة'], ['footer','total_debit','إجمالي المدين'],
+      ['footer','total_credit','إجمالي الدائن'], ['footer','closing_balance','الرصيد الختامي'],
+      ['footer','outstanding_papers','أوراق قائمة'],
+    ],
+  },
+
+  {
+    id:'report_a4', name:'نموذج تقرير عام', file:'a4_report_generic.json',
+    icon:'ph-file-text', tint:'#F59E0B', ready:false,
+    paper:{w:210, h:297, label:'A4'}, type:'report', category:'report',
+    blocks:[
+      head({}), rule(true),
+      title('تقرير المبيعات حسب الفرع', 'SALES BY BRANCH REPORT'),
+      rule(),
+      pairs([
+        P('الفترة · Period', 'من ٢٠٢٦-٠٨-٠١ إلى ٢٠٢٦-٠٨-٢٦'),
+        P('تاريخ الإصدار · Generated', '٢٠٢٦-٠٨-٢٦ ١٥:٠٢'),
+        P('المُصدِر · Generated by', 'محمود سعيد'),
+        P('التصفية · Filters', 'كل الفروع · مبيعات مُرحَّلة'),
+      ]),
+      table(
+        [{ar:'الفرع',en:'Branch',align:'right'},{ar:'مركز التكلفة',en:'Cost Centre',align:'right'},
+         {ar:'الفواتير',en:'Invoices',align:'center'},{ar:'صافي المبيعات',en:'Net Sales',align:'end'},
+         {ar:'الربح',en:'Profit',align:'end'},{ar:'الهامش',en:'Margin',align:'end'}],
+        REPORT_ROWS, '1.8fr 1.2fr 1fr 1.5fr 1.4fr 1fr'
+      ),
+      totals([
+        tRow('عدد الفواتير', 'Invoice Count', '٢,٣٩٢'),
+        tRow('صافي المبيعات', 'Net Sales', '2,486,400.00'),
+        tRow('إجمالي الربح', 'Gross Profit', '682,670.00'),
+        tRow('متوسط الهامش', 'Average Margin', '٢٧.٥٪', {big:true}),
+      ]),
+      note('حدود التقرير · Scope', 'يشمل الفواتير المُرحَّلة فقط ويستبعد المسوّدات والملغاة. المرتجعات مخصومة من صافي المبيعات.'),
+      rule(),
+      thanks('صفحة ١ من ١  ·  Page 1 of 1'),
+    ],
+    fields:[
+      ['header','company_name','اسم الشركة'], ['header','logo','الشعار'],
+      ['header','branch_name','الفرع'],
+      ['body','report_title','عنوان التقرير'], ['body','period_from','من تاريخ'],
+      ['body','period_to','إلى تاريخ'], ['body','generated_at','تاريخ الإصدار'],
+      ['body','generated_by','المُصدِر'], ['body','filter_summary','ملخص التصفية'],
+      ['details','report_table','جدول التقرير'],
+      ['footer','report_totals','مجاميع التقرير'], ['footer','row_count','عدد السطور'],
+      ['footer','page_number','رقم الصفحة'], ['footer','scope_note','حدود التقرير'],
+    ],
+  },
+];
+
+const SEC = {
+  header:  {label:'رأس',   fg:'#0250D3', bg:'rgba(2,80,211,.12)'},
+  body:    {label:'متن',   fg:'#8B5CF6', bg:'rgba(139,92,246,.12)'},
+  details: {label:'جدول',  fg:'#F59E0B', bg:'rgba(245,158,11,.14)'},
+  footer:  {label:'تذييل', fg:'#22C55E', bg:'rgba(34,197,94,.12)'},
+};
+
+// keys the section editor already knows — anything else needs the extension
+const KNOWN = new Set(['logo','company_name','company_address','company_phone','company_tax_number',
+  'branch_name','invoice_number','order_number','date','time','cashier_name','warehouse_name',
+  'payment_method','sale_type','invoice_type_label','customer_name','supplier_name','customer_phone',
+  'customer_address','adhoc_customer_name','adhoc_customer_phone','table_number','waiter_name',
+  'delivery_type','delivery_address','delivery_fee','courier_name','items_table','subtotal','discount',
+  'tax_amount','total_amount','paid','remaining','cash_amount','bank_amount','click_amount','notes',
+  'kitchen_notes','footer_text','qr_code','tax_registration']);
+
+class Component extends DCLogic {
+  state = {theme:null, sel:'sales_a4', zoom:null, guides:false};
+
+  get doc(){ return DOCS.find(d => d.id === this.state.sel) || DOCS[0]; }
+
+  renderVals(){
+    const dark = (this.state.theme || this.props.theme || 'light') === 'dark';
+    const d = this.doc;
+    const thermal = d.type === 'thermal';
+    const zoom = this.state.zoom || (thermal ? 2 : d.paper.w <= 148 ? 1.1 : 0.82);
+
+    // paper metrics scale with the sheet: an 80mm receipt cannot wear A4 type sizes
+    const w = d.paper.w;
+    const sc = thermal ? {size:7.6, small:6.4, tiny:5.8, h1:11, gap:'5px', pad:'7mm 4mm'}
+      : w <= 148     ? {size:8.4, small:7.2, tiny:6.4, h1:13, gap:'7px', pad:'11mm 10mm'}
+                     : {size:9.6, small:8.2, tiny:7.2, h1:17, gap:'9px', pad:'15mm 14mm'};
+
+    const blocks = d.blocks.map(b => {
+      const base = {isHead:false, isRule:false, isTitle:false, isPairs:false, isTable:false,
+        isTotals:false, isNote:false, isStamp:false, isSign:false, isThanks:false,
+        size: sc.size + 'px', small: sc.small + 'px', tiny: sc.tiny + 'px'};
+
+      if (b.k === 'head') return Object.assign(base, {isHead:true,
+        h1: (b.minimal ? sc.h1 - 1 : sc.h1) + 'px', showLogo: b.showLogo !== false,
+        logoW: (w <= 148 ? 42 : 58) + 'px'});
+
+      if (b.k === 'rule') return Object.assign(base, {isRule:true,
+        h: b.heavy ? '1.6px' : '1px', color: b.heavy ? '#0B1220' : '#C9D2E0'});
+
+      if (b.k === 'title') return Object.assign(base, {isTitle:true, ar:b.ar, en:b.en,
+        tone:b.tone, size: (thermal ? sc.size + 2 : sc.h1 - 2) + 'px',
+        pad: (thermal ? 2 : 5) + 'px'});
+
+      if (b.k === 'pairs') return Object.assign(base, {isPairs:true, cols:b.cols,
+        gap: (thermal ? 2 : 5) + 'px',
+        rows: b.rows.map(p => ({label:p.label, value:p.value,
+          fw: p.fw || '600', tone: p.tone || '#0B1220',
+          justify:'flex-start', fam:"'Noto Naskh Arabic',serif"}))});
+
+      if (b.k === 'table') {
+        const aligns = b.head.map(h => h.align);
+        return Object.assign(base, {isTable:true, grid:b.grid, head:b.head,
+          bilingual: !thermal,
+          hpad: (thermal ? 3 : 5) + 'px', rpad: (thermal ? 2.5 : 4.5) + 'px',
+          rows: b.rows.map((r, i) => ({
+            bg: (!thermal && i % 2 === 1) ? '#FAFBFD' : 'transparent',
+            cells: cells(r, aligns, aligns.map((a, ci) => ci === b.head.length - 1)),
+          }))});
+      }
+
+      if (b.k === 'totals') return Object.assign(base, {isTotals:true,
+        side: b.side === 'stretch' ? 'stretch' : 'flex-start',
+        width: b.side === 'stretch' ? '100%' : (w <= 148 ? '58%' : '46%'),
+        rows: b.rows.map(t => ({ar:t.ar, en: thermal ? '' : t.en, value:t.value,
+          fw: t.big || t.fw ? '700' : '400',
+          size: (t.big ? sc.size + 2.4 : sc.size) + 'px',
+          labelSize: (t.big ? sc.size + 0.6 : sc.small) + 'px',
+          labelTone: t.big ? '#0B1220' : '#6B7280',
+          tone: t.tone || '#0B1220',
+          pad: (thermal ? 1.5 : 3) + 'px',
+          line: t.line || t.big ? '1px solid #0B1220' : '1px solid transparent'}))});
+
+      if (b.k === 'note') return Object.assign(base, {isNote:true, label:b.label, value:b.value});
+
+      if (b.k === 'stamp') return Object.assign(base, {isStamp:true,
+        justify: b.justify === 'center' ? 'center' : 'flex-start',
+        qr: (thermal ? 40 : 58) + 'px',
+        uuidLabel:b.uuidLabel, taxLine: b.short ? '' : b.taxLine,
+        uuid: b.short ? b.uuid.slice(0, 24) + '…' : b.uuid});
+
+      if (b.k === 'sign') return Object.assign(base, {isSign:true,
+        cols: b.items.map(() => '1fr').join(' '), pad: (w <= 148 ? 14 : 26) + 'px',
+        items:b.items});
+
+      if (b.k === 'thanks') return Object.assign(base, {isThanks:true, text:b.text});
+      return base;
+    });
+
+    const readyCount = DOCS.filter(x => x.ready).length;
+    const mkItem = t => ({
+      name:t.name, icon:t.icon, tint:t.tint, iconBg: t.tint + '1f',
+      meta:t.file, paperLabel:t.paper.label,
+      bg: t.id === d.id ? 'var(--wash)' : 'transparent',
+      mark: t.id === d.id ? 'var(--brand)' : 'transparent',
+      pick: () => this.setState({sel: t.id, zoom: null}),
+    });
+
+    return {
+      theme: dark ? 'dark' : 'light',
+      themeIcon: dark ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.setState({theme: dark ? 'light' : 'dark'}),
+      rail: RAIL.map(r => ({...r, bg: r.active ? 'rgba(74,128,232,.18)' : 'transparent', fg: r.active ? '#7DA6F5' : '#64748B'})),
+
+      zooms: [{v:0.6, l:'٦٠٪'}, {v:0.82, l:'٨٢٪'}, {v:1, l:'١٠٠٪'}, {v:2, l:'٢٠٠٪'}].map(z => {
+        const on = Math.abs(z.v - zoom) < 0.001;
+        return {label:z.l, bg: on ? 'var(--brand)' : 'transparent', fg: on ? '#fff' : 'var(--muted)',
+          pick: () => this.setState({zoom: z.v})};
+      }),
+
+      guides: {
+        label: this.state.guides ? 'حدود الطباعة ظاهرة' : 'إظهار حدود الطباعة',
+        bd: this.state.guides ? 'var(--brand)' : 'var(--hairline)',
+        bg: this.state.guides ? 'var(--wash)' : 'transparent',
+        fg: this.state.guides ? 'var(--brand-ink)' : 'var(--txt2)',
+      },
+      showGuides: this.state.guides,
+      toggleGuides: () => this.setState({guides: !this.state.guides}),
+
+      groups: [
+        {label:'جاهزة للاستيراد في المحرر', icon:'ph-check-circle', tint:'#22C55E',
+         bg:'rgba(34,197,94,.12)', count: readyCount,
+         items: DOCS.filter(x => x.ready).map(mkItem)},
+        {label:'تحتاج امتداد المحرر', icon:'ph-warning', tint:'#F59E0B',
+         bg:'rgba(245,158,11,.14)', count: DOCS.length - readyCount,
+         items: DOCS.filter(x => !x.ready).map(mkItem)},
+      ],
+
+      paper: {
+        w: (w * MM).toFixed(0) + 'px',
+        minH: d.paper.h ? (d.paper.h * MM).toFixed(0) + 'px' : 'auto',
+        pad: sc.pad, gap: sc.gap, scale: zoom,
+        caption: d.paper.label + ' · ' + w + 'mm' + (d.paper.h ? ' × ' + d.paper.h + 'mm' : ' × ارتفاع تلقائي')
+          + ' · معاينة ' + Math.round(zoom * 100) + '٪',
+      },
+
+      blocks,
+
+      doc: {
+        name: d.name, file: d.file, icon: d.icon, tint: d.tint, iconBg: d.tint + '1f',
+        paperNote: d.paper.label + ' · ' + w + 'mm · ' + d.fields.length + ' حقلاً',
+        statusLabel: d.ready ? 'جاهز — يُستورد ويُعدَّل فوراً' : 'يحتاج امتداد المحرر',
+        statusIcon: d.ready ? 'ph-check-circle' : 'ph-warning',
+        statusFg: d.ready ? '#22C55E' : '#F59E0B',
+        statusBg: d.ready ? 'rgba(34,197,94,.08)' : 'rgba(245,158,11,.09)',
+        statusBd: d.ready ? 'rgba(34,197,94,.35)' : 'rgba(245,158,11,.4)',
+        statusNote: d.ready
+          ? 'كل حقل يحمل مفتاح content الذي يطابقه محرر الأقسام، فيظهر مرئياً وقابلاً للسحب وتغيير الحجم والمحاذاة بلا أي تعديل في الكود.'
+          : 'المولِّد الحالي في report_pdf_generator.dart لا يقرأ القوالب. الملف مكتوب بنفس بنية الاستيراد وسيعمل فور إضافة النوع والمتغيرات الموصوفة أدناه — على نمط shift_closing.',
+        spec: [
+          {k:'name', v:d.name}, {k:'type', v:d.type},
+          {k:'templateCategory', v:d.category},
+          {k:'paperSize', v:d.paper.label},
+          {k:'paperWidth', v:String(w)},
+          {k:'elements', v:String(d.fields.length)},
+        ],
+        fieldsTitle: 'خريطة الحقول',
+        fieldsNote: d.ready ? 'كلها مفاتيح يعرفها المحرر' : 'الملوّن بالبرتقالي مفاتيح جديدة يضيفها الامتداد',
+        fields: d.fields.map(f => {
+          const s = SEC[f[0]] || SEC.body;
+          const known = KNOWN.has(f[1]);
+          return {section:s.label, secFg:s.fg, secBg:s.bg, key:f[1], label:f[2],
+            icon: known ? 'ph-check' : 'ph-plus-circle',
+            iconFg: known ? '#22C55E' : '#F59E0B'};
+        }),
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

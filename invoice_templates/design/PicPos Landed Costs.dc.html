@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-ink:#0250D3; --brand-dark:#012258; --brand-light:#4A80E8;
+    --wash:rgba(2,80,211,.08); --side:#0F172A; --side-line:#243247;
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280;
+    --track:#E6ECF6; --paper:#FBFCFE;
+  }
+  [data-theme="dark"]{
+    --canvas:#0A1220; --card:#121C2E; --hairline:#243247; --field:#18243A;
+    --brand-ink:#7DA6F5; --wash:rgba(74,128,232,.14); --side:#08101E; --side-line:#1D2A3E;
+    --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8;
+    --track:#1E2B42; --paper:#0F1929;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#0A1220;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#94A3B855;border-radius:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" dir="rtl" style="width:1920px;height:1080px;display:flex;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;">
+
+  <sc-if value="{{ overlay.open }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:60;background:rgba(1,34,88,.5);display:flex;align-items:center;justify-content:center;">
+      <div style="width:{{ overlay.width }};max-height:820px;background:var(--card);border-radius:20px;box-shadow:0 30px 80px rgba(1,34,88,.4);display:flex;flex-direction:column;overflow:hidden;">
+        <div style="flex:none;padding:18px 22px 15px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:13px;">
+          <div style="width:46px;height:46px;flex:none;border-radius:13px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+            <i class="ph-bold {{ overlay.icon }}" style="font-size:22px;color:var(--brand-ink);"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:17px;font-weight:800;color:var(--txt);">{{ overlay.title }}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:2px;">{{ overlay.sub }}</div>
+          </div>
+          <div onClick="{{ overlay.close }}" style="width:36px;height:36px;flex:none;border-radius:10px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+            <i class="ph-bold ph-x" style="font-size:16px;"></i>
+          </div>
+        </div>
+
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:16px 22px;display:flex;flex-direction:column;gap:14px;">
+
+          <sc-if value="{{ overlay.hasTypes }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="font-size:11.5px;font-weight:800;color:var(--muted);margin-bottom:9px;">نوع التكلفة</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <sc-for list="{{ overlay.types }}" as="t" hint-placeholder-count="6">
+                  <div onClick="{{ t.pick }}" style="height:38px;border-radius:11px;border:1.5px solid {{ t.bd }};background:{{ t.bg }};display:flex;align-items:center;gap:7px;padding:0 14px;cursor:pointer;">
+                    <i class="ph-bold {{ t.icon }}" style="font-size:15px;color:{{ t.fg }};"></i>
+                    <span style="font-size:12.5px;font-weight:800;color:{{ t.fg }};">{{ t.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ overlay.hasRows }}" hint-placeholder-val="{{ true }}">
+            <div style="border:1px solid var(--hairline);border-radius:14px;overflow:hidden;">
+              <sc-for list="{{ overlay.rows }}" as="r" hint-placeholder-count="3">
+                <div onClick="{{ r.pick }}" style="padding:13px 16px;border-bottom:1px solid var(--hairline);background:{{ r.bg }};border-inline-start:3px solid {{ r.mark }};cursor:pointer;display:flex;align-items:center;gap:14px;">
+                  <div style="min-width:0;flex:1;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span style="font-size:14px;font-weight:800;color:var(--txt);">{{ r.number }}</span>
+                      <span style="font-size:10.5px;font-weight:800;color:{{ r.statusFg }};background:{{ r.statusBg }};border-radius:999px;padding:2px 9px;">{{ r.statusLabel }}</span>
+                    </div>
+                    <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:3px;">{{ r.invoice }} · {{ r.supplier }} · {{ r.date }}</div>
+                  </div>
+                  <div style="text-align:center;flex:none;min-width:96px;">
+                    <div style="font-size:10.5px;font-weight:700;color:var(--muted);">الطريقة</div>
+                    <div style="font-size:12px;font-weight:800;color:var(--txt2);margin-top:2px;">{{ r.method }}</div>
+                  </div>
+                  <div style="text-align:center;flex:none;min-width:78px;">
+                    <div style="font-size:10.5px;font-weight:700;color:var(--muted);">بنود / أصناف</div>
+                    <div style="font-size:12px;font-weight:800;color:var(--txt2);margin-top:2px;">{{ r.items }} / {{ r.lines }}</div>
+                  </div>
+                  <div style="text-align:end;flex:none;min-width:96px;">
+                    <div style="font-size:15px;font-weight:800;color:var(--brand-ink);font-variant-numeric:tabular-nums;">{{ r.total }}</div>
+                    <div style="font-size:10.5px;font-weight:700;color:#F59E0B;">{{ r.pct }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ overlay.hasFields }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <sc-for list="{{ overlay.fields }}" as="f" hint-placeholder-count="4">
+                <div>
+                  <div style="font-size:11.5px;font-weight:800;color:var(--muted);margin-bottom:6px;">{{ f.label }}</div>
+                  <div style="height:42px;border-radius:11px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:9px;padding:0 13px;">
+                    <i class="ph-bold {{ f.icon }}" style="font-size:15px;color:var(--brand-ink);flex:none;"></i>
+                    <span style="font-size:13px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.value }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+        </div>
+
+        <div style="flex:none;padding:14px 22px;border-top:1px solid var(--hairline);background:var(--field);display:flex;align-items:center;gap:10px;">
+          <div style="flex:1;"></div>
+          <div onClick="{{ overlay.close }}" style="height:42px;border-radius:11px;border:1.5px solid var(--hairline);display:flex;align-items:center;padding:0 20px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;">إلغاء</div>
+          <div onClick="{{ overlay.confirm }}" style="height:42px;border-radius:11px;background:var(--brand);display:flex;align-items:center;gap:8px;padding:0 22px;cursor:pointer;color:#fff;font-size:13.5px;font-weight:700;white-space:nowrap;">
+            <i class="ph-bold {{ overlay.primaryIcon }}" style="font-size:16px;"></i>{{ overlay.primary }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="width:84px;flex:none;background:var(--side);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:14px;">
+    <div style="width:44px;height:44px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <img src="assets/picpos-logo.png" alt="PicPos" style="width:38px;height:38px;object-fit:contain;" />
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:7px;">
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="10">
+        <div title="{{ r.label }}" style="position:relative;width:52px;height:46px;border-radius:13px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+          <i class="ph-bold {{ r.icon }}" style="font-size:21px;color:{{ r.fg }};"></i>
+          <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;inset-inline-end:-14px;top:11px;width:3.5px;height:24px;border-radius:3px;background:var(--brand-light);"></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="width:40px;height:40px;flex:none;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;">م.س</div>
+  </div>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <div style="height:76px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:14px;padding:0 26px;">
+      <div style="width:46px;height:46px;flex:none;border-radius:14px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold ph-stack-plus" style="font-size:23px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-size:19px;font-weight:800;line-height:1.3;color:var(--txt);">التكاليف المحملة</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;">ورقة تحميل تكاليف على فاتورة شراء — تُوزَّع على الأصناف فتغيّر تكلفة الوحدة</div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="height:44px;border-radius:12px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:9px;padding:0 14px;">
+        <i class="ph-bold ph-magnifying-glass" style="font-size:16px;color:var(--muted);"></i>
+        <span style="font-size:13px;color:var(--muted);font-weight:600;">ابحث برقم الورقة أو فاتورة الشراء...</span>
+      </div>
+      <div onClick="{{ toggleTheme }}" style="width:44px;height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+        <i class="ph-bold {{ themeIcon }}" style="font-size:18px;"></i>
+      </div>
+      <div onClick="{{ openList }}" style="height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 16px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;white-space:nowrap;">
+        <i class="ph-bold ph-files" style="font-size:17px;"></i>كل الأوراق
+      </div>
+      <div onClick="{{ openNew }}" style="height:44px;flex:none;border-radius:12px;background:var(--brand);display:flex;align-items:center;gap:8px;padding:0 20px;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        <i class="ph-bold ph-plus" style="font-size:17px;"></i>ورقة تحميل جديدة
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:18px 26px 26px;display:flex;flex-direction:column;gap:14px;">
+
+      <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;padding:16px 18px;display:flex;align-items:center;gap:18px;">
+        <div style="width:52px;height:52px;flex:none;border-radius:14px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+          <i class="ph-bold ph-receipt" style="font-size:25px;color:var(--brand-ink);"></i>
+        </div>
+        <div style="min-width:0;">
+          <div style="display:flex;align-items:center;gap:9px;">
+            <span style="font-size:18px;font-weight:800;color:var(--txt);">{{ sheet.number }}</span>
+            <span style="font-size:11px;font-weight:800;color:{{ sheet.statusFg }};background:{{ sheet.statusBg }};border-radius:999px;padding:3px 10px;">{{ sheet.statusLabel }}</span>
+          </div>
+          <div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:3px;">فاتورة الشراء {{ sheet.invoice }} · {{ sheet.supplier }} · {{ sheet.date }}</div>
+        </div>
+        <div style="width:1px;height:44px;background:var(--hairline);flex:none;"></div>
+        <sc-for list="{{ sheet.stats }}" as="s" hint-placeholder-count="4">
+          <div style="min-width:132px;">
+            <div style="font-size:11px;font-weight:700;color:var(--muted);">{{ s.label }}</div>
+            <div style="font-size:19px;font-weight:800;color:{{ s.fg }};line-height:1.2;margin-top:3px;font-variant-numeric:tabular-nums;">{{ s.value }}</div>
+          </div>
+        </sc-for>
+        <div style="flex:1;"></div>
+        <div onClick="{{ apply }}" style="height:42px;flex:none;border-radius:12px;background:{{ applyBg }};display:flex;align-items:center;gap:8px;padding:0 18px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+          <i class="ph-bold {{ applyIcon }}" style="font-size:16px;"></i>{{ applyLabel }}
+        </div>
+      </div>
+
+      <div style="flex:none;display:grid;grid-template-columns:410px 1fr;gap:14px;">
+
+        <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;display:flex;flex-direction:column;overflow:hidden;">
+          <div style="padding:14px 16px 11px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:9px;">
+            <i class="ph-bold ph-list-plus" style="font-size:17px;color:var(--brand-ink);"></i>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:800;color:var(--txt);">بنود التكلفة</div>
+              <div style="font-size:11px;color:var(--muted);font-weight:600;">كل بند بنوعه وطرفه — المجموع هو ما يُوزَّع</div>
+            </div>
+            <div onClick="{{ openItem }}" style="width:30px;height:30px;border-radius:9px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+              <i class="ph-bold ph-plus" style="font-size:14px;"></i>
+            </div>
+          </div>
+          <div style="flex:1;min-height:0;display:flex;flex-direction:column;">
+            <sc-for list="{{ items }}" as="c" hint-placeholder-count="6">
+              <div style="padding:11px 16px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--hairline);">
+                <div style="width:34px;height:34px;flex:none;border-radius:10px;background:{{ c.bg }};display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold {{ c.icon }}" style="font-size:16px;color:{{ c.tint }};"></i>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:13px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.desc }}</div>
+                  <div style="font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.typeLabel }} · {{ c.party }}</div>
+                </div>
+                <div style="text-align:end;flex:none;">
+                  <div style="font-size:13.5px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ c.amount }}</div>
+                  <div style="font-size:10px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;">{{ c.share }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="padding:13px 16px;background:var(--field);border-top:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
+            <i class="ph-bold ph-equals" style="font-size:15px;color:var(--brand-ink);"></i>
+            <span style="flex:1;font-size:12.5px;font-weight:800;color:var(--txt2);">إجمالي التكلفة الإضافية</span>
+            <span style="font-size:19px;font-weight:800;color:var(--brand-ink);font-variant-numeric:tabular-nums;">{{ totals.cost }}</span>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;padding:15px 17px;">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;">
+              <i class="ph-bold ph-arrows-split" style="font-size:17px;color:var(--brand-ink);"></i>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14px;font-weight:800;color:var(--txt);">طريقة التوزيع</div>
+                <div style="font-size:11px;color:var(--muted);font-weight:600;">تغيير الطريقة يعيد حساب تكلفة كل وحدة فوراً</div>
+              </div>
+              <span style="font-size:11px;font-weight:700;color:var(--muted);">{{ totals.cost }} ج.م على {{ totals.lineCount }} صنفاً</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;">
+              <sc-for list="{{ methods }}" as="m" hint-placeholder-count="4">
+                <div onClick="{{ m.pick }}" style="border:1.5px solid {{ m.bd }};background:{{ m.bg }};border-radius:13px;padding:12px 13px;cursor:{{ m.cursor }};position:relative;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <i class="ph-bold {{ m.icon }}" style="font-size:17px;color:{{ m.fg }};"></i>
+                    <span style="font-size:13px;font-weight:800;color:{{ m.fg }};">{{ m.label }}</span>
+                  </div>
+                  <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-top:6px;line-height:1.45;">{{ m.sub }}</div>
+                  <div style="font-size:10.5px;font-weight:800;color:{{ m.fg }};margin-top:7px;font-family:ui-monospace,monospace;">{{ m.formula }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;padding:15px 17px;display:flex;align-items:center;gap:14px;">
+            <div style="width:40px;height:40px;flex:none;border-radius:11px;background:rgba(239,68,68,.1);display:flex;align-items:center;justify-content:center;">
+              <i class="ph-bold ph-scales" style="font-size:19px;color:#EF4444;"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:800;color:var(--txt);">أثر الطريقة المختارة على تكلفة الوحدة</div>
+              <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px;">{{ verdict }}</div>
+            </div>
+            <sc-for list="{{ spread }}" as="s" hint-placeholder-count="3">
+              <div style="text-align:center;min-width:108px;padding:8px 10px;border-radius:11px;background:var(--field);">
+                <div style="font-size:10.5px;font-weight:700;color:var(--muted);">{{ s.label }}</div>
+                <div style="font-size:16px;font-weight:800;color:{{ s.fg }};margin-top:3px;font-variant-numeric:tabular-nums;">{{ s.value }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+        <div style="padding:14px 18px 12px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
+          <i class="ph-bold ph-table" style="font-size:17px;color:var(--brand-ink);"></i>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:800;color:var(--txt);">جدول التوزيع على الأصناف</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:600;">التكلفة الأصلية زائد المحمَّل يساوي التكلفة الجديدة — وهي ما يُقيَّد في المخزون</div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:var(--muted);">فرق التقريب يُحمَّل على أكبر بند</span>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1.2fr 1.3fr 1.5fr 1.3fr 1.3fr;padding:9px 18px;background:var(--field);border-bottom:1px solid var(--hairline);">
+          <sc-for list="{{ cols }}" as="h" hint-placeholder-count="7">
+            <span style="font-size:11px;font-weight:800;color:var(--muted);text-align:{{ h.align }};">{{ h.label }}</span>
+          </sc-for>
+        </div>
+        <sc-for list="{{ lines }}" as="l" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:2fr 1fr 1.2fr 1.3fr 1.5fr 1.3fr 1.3fr;padding:11px 18px;border-bottom:1px solid var(--hairline);align-items:center;">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+              <div style="width:32px;height:32px;flex:none;border-radius:9px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+                <i class="ph-bold {{ l.icon }}" style="font-size:15px;color:var(--brand-ink);"></i>
+              </div>
+              <div style="min-width:0;">
+                <div style="font-size:13px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ l.name }}</div>
+                <div style="font-size:10.5px;font-weight:600;color:var(--muted);">{{ l.sku }}</div>
+              </div>
+            </div>
+            <span style="font-size:13px;font-weight:700;color:var(--txt2);text-align:end;font-variant-numeric:tabular-nums;">{{ l.qty }}</span>
+            <span style="font-size:13px;font-weight:700;color:var(--txt2);text-align:end;font-variant-numeric:tabular-nums;">{{ l.unitCost }}</span>
+            <span style="font-size:13px;font-weight:700;color:var(--txt2);text-align:end;font-variant-numeric:tabular-nums;">{{ l.origTotal }}</span>
+            <div style="padding-inline:12px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <span style="font-size:13px;font-weight:800;color:#F59E0B;font-variant-numeric:tabular-nums;">{{ l.alloc }}</span>
+                <span style="font-size:10.5px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;">{{ l.pct }}</span>
+              </div>
+              <div style="height:5px;border-radius:3px;background:var(--track);margin-top:5px;overflow:hidden;">
+                <div style="height:100%;width:{{ l.bar }};background:#F59E0B;border-radius:3px;"></div>
+              </div>
+            </div>
+            <span style="font-size:14px;font-weight:800;color:var(--brand-ink);text-align:end;font-variant-numeric:tabular-nums;">{{ l.newUnit }}</span>
+            <div style="text-align:end;">
+              <div style="font-size:13px;font-weight:800;color:#EF4444;font-variant-numeric:tabular-nums;">{{ l.delta }}</div>
+              <div style="font-size:10px;font-weight:600;color:var(--muted);">{{ l.deltaNote }}</div>
+            </div>
+          </div>
+        </sc-for>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1.2fr 1.3fr 1.5fr 1.3fr 1.3fr;padding:12px 18px;background:var(--field);align-items:center;">
+          <span style="font-size:12.5px;font-weight:800;color:var(--txt);">{{ totals.lineCount }} صنفاً</span>
+          <span style="font-size:12.5px;font-weight:800;color:var(--txt);text-align:end;font-variant-numeric:tabular-nums;">{{ totals.qty }}</span>
+          <span style="font-size:12.5px;font-weight:800;color:var(--muted);text-align:end;">—</span>
+          <span style="font-size:12.5px;font-weight:800;color:var(--txt);text-align:end;font-variant-numeric:tabular-nums;">{{ totals.orig }}</span>
+          <span style="font-size:12.5px;font-weight:800;color:#F59E0B;text-align:center;font-variant-numeric:tabular-nums;">{{ totals.alloc }}</span>
+          <span style="font-size:12.5px;font-weight:800;color:var(--brand-ink);text-align:end;font-variant-numeric:tabular-nums;">{{ totals.newValue }}</span>
+          <span style="font-size:12.5px;font-weight:800;color:#EF4444;text-align:end;font-variant-numeric:tabular-nums;">{{ totals.deltaPct }}</span>
+        </div>
+      </div>
+
+      <div style="flex:none;display:grid;grid-template-columns:1.35fr 1fr;gap:14px;">
+        <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;padding:15px 17px;">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;">
+            <i class="ph-bold ph-scales" style="font-size:17px;color:var(--brand-ink);"></i>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:800;color:var(--txt);">القيد الذي يُنشأ عند التطبيق</div>
+              <div style="font-size:11px;color:var(--muted);font-weight:600;">التطبيق يرفع قيمة المخزون ويُقيَّد في مواجهة أطراف التكلفة</div>
+            </div>
+          </div>
+          <sc-for list="{{ journal }}" as="j" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-top:1px solid var(--hairline);">
+              <div style="width:30px;height:30px;flex:none;border-radius:9px;background:{{ j.bg }};display:flex;align-items:center;justify-content:center;">
+                <i class="ph-bold {{ j.icon }}" style="font-size:14px;color:{{ j.tint }};"></i>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12.5px;font-weight:700;color:var(--txt);">{{ j.account }}</div>
+                <div style="font-size:10.5px;font-weight:600;color:var(--muted);">{{ j.note }}</div>
+              </div>
+              <span style="font-size:11px;font-weight:800;color:{{ j.tint }};background:{{ j.bg }};border-radius:999px;padding:2px 9px;">{{ j.side }}</span>
+              <span style="font-size:14px;font-weight:800;color:var(--txt);min-width:90px;text-align:end;font-variant-numeric:tabular-nums;">{{ j.amount }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;padding:15px 17px;display:flex;flex-direction:column;gap:11px;">
+          <div style="display:flex;align-items:center;gap:9px;">
+            <i class="ph-bold ph-flow-arrow" style="font-size:17px;color:var(--brand-ink);"></i>
+            <div style="font-size:14px;font-weight:800;color:var(--txt);">حالة الورقة</div>
+          </div>
+          <sc-for list="{{ flow }}" as="f" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:12px;background:{{ f.bg }};border:1.5px solid {{ f.bd }};">
+              <i class="ph-bold {{ f.icon }}" style="font-size:16px;color:{{ f.tint }};"></i>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12.5px;font-weight:800;color:{{ f.fg }};">{{ f.label }}</div>
+                <div style="font-size:10.5px;font-weight:600;color:var(--muted);line-height:1.4;">{{ f.sub }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;allocationMethod&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;by_value&quot;,&quot;by_quantity&quot;,&quot;equal&quot;],&quot;default&quot;:&quot;by_value&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;التوزيع&quot;}}">
+const RAIL = [
+  {icon:'ph-squares-four', label:'الرئيسية'},
+  {icon:'ph-receipt', label:'الفواتير'},
+  {icon:'ph-package', label:'المخزون'},
+  {icon:'ph-stack-plus', label:'التكاليف المحملة', active:true},
+  {icon:'ph-truck', label:'الموردون'},
+  {icon:'ph-currency-circle-dollar', label:'الخزينة'},
+  {icon:'ph-chart-line', label:'التحليلات'},
+  {icon:'ph-file-text', label:'التقارير'},
+  {icon:'ph-buildings', label:'الفروع'},
+  {icon:'ph-gear', label:'الإعدادات'},
+];
+
+const SHEET = {
+  number:'LC-2026-0042',
+  invoice:'PUR-2026-0418',
+  supplier:'شركة الأناضول للأغذية — تركيا',
+  date:'٢٠٢٦-٠٨-٢٤',
+};
+
+const TYPES = {
+  shipping:  {label:'شحن',   icon:'ph-boat',              tint:'#0250D3'},
+  customs:   {label:'جمارك', icon:'ph-stamp',             tint:'#EF4444'},
+  insurance: {label:'تأمين', icon:'ph-shield-check',      tint:'#8B5CF6'},
+  freight:   {label:'نقل',   icon:'ph-truck',             tint:'#F59E0B'},
+  handling:  {label:'مناولة', icon:'ph-hand-grabbing',    tint:'#22C55E'},
+  other:     {label:'أخرى',  icon:'ph-dots-three-circle', tint:'#6B7280'},
+};
+
+const ITEMS = [
+  {type:'shipping',  desc:'شحن بحري — حاوية ٤٠ قدم', party:'خطوط النقل الدولية', amount:12400},
+  {type:'customs',   desc:'رسوم جمركية وضريبة إفراج', party:'مصلحة الجمارك',      amount:8600},
+  {type:'freight',   desc:'نقل داخلي من ميناء الإسكندرية', party:'نقل الدلتا',    amount:3200},
+  {type:'handling',  desc:'مناولة وتستيف بالمخزن', party:'شركة المناولة',         amount:1480},
+  {type:'insurance', desc:'تأمين بحري على الشحنة', party:'مصر للتأمين',           amount:1240},
+  {type:'other',     desc:'رسوم فحص وتحاليل معملية', party:'هيئة سلامة الغذاء',   amount:680},
+];
+
+const LINES = [
+  {name:'سكر معبأ 1ك',      sku:'SKU-1042 · كرتونة ١٠',  icon:'ph-cube',    qty:400, unitCost:22.00},
+  {name:'زيت عافية 1ل',      sku:'SKU-1108 · كرتونة ١٢',  icon:'ph-drop',    qty:240, unitCost:68.00},
+  {name:'أرز مصري 5ك',       sku:'SKU-1190 · كيس',        icon:'ph-grains',  qty:120, unitCost:145.00},
+  {name:'مكرونة 400ج',       sku:'SKU-1226 · كرتونة ٢٠',  icon:'ph-cube',    qty:600, unitCost:12.50},
+  {name:'شاي العروسة 250ج',  sku:'SKU-1274 · كرتونة ٢٤',  icon:'ph-coffee',  qty:180, unitCost:58.00},
+  {name:'لبن جهينة 1ل',      sku:'SKU-1318 · كرتونة ١٢',  icon:'ph-drop',    qty:300, unitCost:34.00},
+];
+
+const METHODS = [
+  {id:'by_value',    label:'بالقيمة',  icon:'ph-currency-circle-dollar', sub:'الصنف الأغلى يحمل أكثر — الافتراضي ويناسب الشحن والتأمين', formula:'التكلفة × (قيمة البند ÷ إجمالي القيمة)'},
+  {id:'by_quantity', label:'بالكمية',  icon:'ph-stack',                  sub:'كل وحدة تحمل بالتساوي — يناسب المناولة والنقل',            formula:'التكلفة × (كمية البند ÷ إجمالي الكمية)'},
+  {id:'equal',       label:'بالتساوي', icon:'ph-equals',                 sub:'كل بند يحمل نفس المبلغ — يناسب رسوم الفحص لكل صنف',        formula:'التكلفة ÷ عدد البنود'},
+  {id:'by_weight',   label:'بالوزن',   icon:'ph-scales',                 sub:'غير متاح — يحتاج وزناً مسجَّلاً لكل منتج',                  formula:'مؤجَّل في هذا الإصدار', locked:true},
+];
+
+const STATUSES = {
+  draft:     {label:'مسوّدة',  fg:'#F59E0B', bg:'rgba(245,158,11,.12)'},
+  applied:   {label:'مُطبَّقة', fg:'#22C55E', bg:'rgba(34,197,94,.12)'},
+  cancelled: {label:'ملغاة',   fg:'#6B7280', bg:'rgba(107,114,128,.14)'},
+  voided:    {label:'مُبطَلة',  fg:'#EF4444', bg:'rgba(239,68,68,.12)'},
+};
+
+// Every sheet carries its own cost items and the purchase lines it allocates over.
+const SHEETS = [
+  {number:'LC-2026-0042', invoice:'PUR-2026-0418', supplier:'شركة الأناضول للأغذية — تركيا',
+   date:'٢٠٢٦-٠٨-٢٤', status:'draft', method:'by_value', items:ITEMS, lines:LINES},
+
+  {number:'LC-2026-0038', invoice:'PUR-2026-0374', supplier:'عافية مصر', date:'٢٠٢٦-٠٦-٠٢',
+   status:'applied', method:'by_quantity',
+   items:[
+     {type:'freight',  desc:'نقل من مصنع العاشر للمخزن', party:'نقل الدلتا',    amount:1240},
+     {type:'handling', desc:'تحميل وتنزيل', party:'عمالة يومية',                amount:600},
+   ],
+   lines:[
+     {name:'زيت عافية 1ل',  sku:'SKU-1108 · كرتونة ١٢', icon:'ph-drop',   qty:480, unitCost:66.00},
+     {name:'زيت عافية 2.25ل', sku:'SKU-1112 · كرتونة ٦', icon:'ph-drop',   qty:180, unitCost:148.00},
+   ]},
+
+  {number:'LC-2026-0031', invoice:'PUR-2026-0360', supplier:'التحرير للسكر', date:'٢٠٢٦-٠٥-١٨',
+   status:'voided', method:'equal',
+   items:[
+     {type:'customs', desc:'رسوم إفراج جمركي', party:'مصلحة الجمارك', amount:4200},
+     {type:'other',   desc:'رسوم تحاليل', party:'هيئة سلامة الغذاء',   amount:480},
+   ],
+   lines:[
+     {name:'سكر معبأ 1ك', sku:'SKU-1042 · كرتونة ١٠', icon:'ph-cube', qty:1200, unitCost:21.00},
+     {name:'سكر سائب',    sku:'SKU-1044 · شيكارة ٥٠ك', icon:'ph-cube', qty:60,   unitCost:980.00},
+   ]},
+];
+
+// Purchase invoices with no landed-cost sheet yet — the pool a new sheet draws from.
+const PURCHASES = [
+  {number:'PUR-2026-0424', supplier:'شركة الأناضول للأغذية — تركيا', date:'٢٠٢٦-٠٨-٢٦', total:94200, lines:8, note:'شحنة مستوردة — لها شحن وجمارك'},
+  {number:'PUR-2026-0411', supplier:'جهينة للأغذية', date:'٢٠٢٦-٠٨-١٢', total:62000, lines:28, note:'توريد محلي — نقل فقط'},
+  {number:'PUR-2026-0419', supplier:'موزّع المنظفات', date:'٢٠٢٦-٠٨-٢٥', total:34200, lines:14, note:'توريد محلي'},
+  {number:'PUR-2026-0402', supplier:'جهينة للأغذية', date:'٢٠٢٦-٠٧-١٤', total:62000, lines:28, note:'مسدَّدة جزئياً'},
+];
+
+const money = n => n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+const money0 = n => n.toLocaleString('en-US', {maximumFractionDigits:0});
+const pct = n => n.toFixed(1) + '٪';
+const AR = n => String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
+
+class Component extends DCLogic {
+  state = {theme:null, method:null, status:'draft'};
+
+  get theme(){ return this.state.theme || this.props.theme || 'light'; }
+  get method(){
+    const sh = this.sheet;
+    return (this.state.methodById || {})[sh.number] || this.props.allocationMethod || sh.method;
+  }
+
+  get sheet(){ return SHEETS.find(s => s.number === (this.state.sheetId || SHEETS[0].number)) || SHEETS[0]; }
+  get status(){ const s = this.sheet; return (this.state.statusById || {})[s.number] || s.status; }
+
+  compute(){
+    const sh = this.sheet;
+    const method = this.method;
+    const totalCost = sh.items.reduce((s, i) => s + i.amount, 0);
+    const lines = sh.lines.map(l => Object.assign({}, l, {origTotal: l.qty * l.unitCost}));
+    const basisOf = l => method === 'by_quantity' ? l.qty : method === 'equal' ? 1 : l.origTotal;
+    const sumBasis = lines.reduce((s, l) => s + basisOf(l), 0);
+
+    lines.forEach(l => { l.alloc = totalCost * basisOf(l) / sumBasis; });
+
+    // rounding residual lands on the largest line so the sheet balances exactly
+    const rounded = lines.map(l => Math.round(l.alloc * 100) / 100);
+    const drift = Math.round((totalCost - rounded.reduce((s, v) => s + v, 0)) * 100) / 100;
+    let big = 0;
+    rounded.forEach((v, i) => { if (v > rounded[big]) big = i; });
+    rounded[big] = Math.round((rounded[big] + drift) * 100) / 100;
+
+    lines.forEach((l, i) => {
+      l.alloc = rounded[i];
+      l.newUnit = (l.origTotal + l.alloc) / l.qty;
+      l.deltaPct = l.alloc / l.origTotal * 100;
+    });
+
+    const maxAlloc = Math.max.apply(null, lines.map(l => l.alloc));
+    const origSum = lines.reduce((s, l) => s + l.origTotal, 0);
+    const deltas = lines.map(l => l.deltaPct);
+
+    return {method, totalCost, lines, maxAlloc, origSum, drift,
+      qtySum: lines.reduce((s, l) => s + l.qty, 0),
+      minDelta: Math.min.apply(null, deltas), maxDelta: Math.max.apply(null, deltas)};
+  }
+
+  overlayVals(sh, c){
+    const kind = this.state.ov;
+    const close = () => this.setState({ov:null});
+    const wrap = o => Object.assign({hasRows: o.rows.length > 0, hasFields: o.fields.length > 0, hasTypes: o.types.length > 0}, o);
+    this._wrap = wrap;
+    if (!kind) return wrap({open:false, kind:'', width:'0', icon:'ph-dot', title:'', sub:'', primary:'', primaryIcon:'ph-dot', rows:[], fields:[], types:[], close, confirm: close});
+
+    if (kind === 'list'){
+      return wrap({open:true, kind:'list', width:'860px', icon:'ph-files',
+        title:'أوراق التحميل', sub:'كل ورقة مرتبطة بفاتورة شراء واحدة — اختر ورقة لعرضها',
+        primary:'ورقة جديدة', primaryIcon:'ph-plus', close,
+        confirm: () => this.setState({ov:'new'}),
+        rows: SHEETS.map(s => {
+          const total = s.items.reduce((x, i) => x + i.amount, 0);
+          const orig = s.lines.reduce((x, l) => x + l.qty * l.unitCost, 0);
+          const stt = STATUSES[(this.state.statusById || {})[s.number] || s.status];
+          const mm = METHODS.find(m => m.id === ((this.state.methodById || {})[s.number] || s.method));
+          const on = s.number === sh.number;
+          return {
+            number:s.number, invoice:s.invoice, supplier:s.supplier, date:s.date,
+            statusLabel:stt.label, statusFg:stt.fg, statusBg:stt.bg,
+            method: mm ? mm.label : '—',
+            total: money0(total), pct: pct(total / orig * 100),
+            items: AR(s.items.length), lines: AR(s.lines.length),
+            bg: on ? 'var(--wash)' : 'transparent',
+            mark: on ? 'var(--brand)' : 'transparent',
+            pick: () => this.setState({sheetId: s.number, ov:null}),
+          };
+        }),
+        fields:[], types:[]});
+    }
+
+    if (kind === 'new'){
+      const pi = this.state.pi || PURCHASES[0].number;
+      const sel = PURCHASES.find(p => p.number === pi) || PURCHASES[0];
+      return wrap({open:true, kind:'new', width:'820px', icon:'ph-file-plus',
+        title:'ورقة تحميل جديدة', sub:'اختر فاتورة الشراء التي ستُحمَّل عليها التكاليف',
+        primary:'إنشاء الورقة', primaryIcon:'ph-check', close,
+        confirm: close,
+        rows: PURCHASES.map(p => {
+          const on = p.number === pi;
+          return {
+            number:p.number, invoice:p.note, supplier:p.supplier, date:p.date,
+            statusLabel: AR(p.lines) + ' بند', statusFg:'var(--brand-ink)', statusBg:'var(--wash)',
+            method:'بلا ورقة تحميل', total: money0(p.total), pct:'—',
+            items:'٠', lines: AR(p.lines),
+            bg: on ? 'var(--wash)' : 'transparent',
+            mark: on ? 'var(--brand)' : 'transparent',
+            pick: () => this.setState({pi: p.number}),
+          };
+        }),
+        fields:[
+          {label:'رقم الورقة', icon:'ph-hash', value:'LC-2026-0043'},
+          {label:'فاتورة الشراء', icon:'ph-receipt', value: sel.number},
+          {label:'المورد', icon:'ph-truck', value: sel.supplier},
+          {label:'طريقة التوزيع الابتدائية', icon:'ph-arrows-split', value:'بالقيمة — يمكن تغييرها لاحقاً'},
+        ],
+        types:[]});
+    }
+
+    // kind === 'item'
+    const t = this.state.itype || 'shipping';
+    return wrap({open:true, kind:'item', width:'760px', icon:'ph-list-plus',
+      title:'بند تكلفة جديد', sub:'يُضاف لمجموع الورقة ويُعاد توزيعه على الأصناف فوراً',
+      primary:'إضافة البند', primaryIcon:'ph-check', close,
+      confirm: close,
+      rows:[],
+      types: Object.keys(TYPES).map(k => {
+        const on = k === t;
+        return {label: TYPES[k].label, icon: TYPES[k].icon,
+          bd: on ? TYPES[k].tint : 'var(--hairline)',
+          bg: on ? TYPES[k].tint + '14' : 'transparent',
+          fg: on ? TYPES[k].tint : 'var(--muted)',
+          pick: () => this.setState({itype: k})};
+      }),
+      fields:[
+        {label:'الوصف', icon:'ph-text-aa', value:'رسوم أرضيات بالميناء'},
+        {label:'المبلغ', icon:'ph-money', value:'2,400 ج.م'},
+        {label:'الطرف', icon:'ph-user', value:'هيئة ميناء الإسكندرية'},
+        {label:'المجموع بعد الإضافة', icon:'ph-equals', value: money0(c.totalCost + 2400) + ' ج.م'},
+      ]});
+  }
+
+  renderVals(){
+    const dark = this.theme === 'dark';
+    const sh = this.sheet;
+    const c = this.compute();
+    const status = this.status;
+    const st = STATUSES[status] || STATUSES.draft;
+    const applied = status === 'applied';
+    const setStatus = v => this.setState({statusById: Object.assign({}, this.state.statusById, {[sh.number]: v})});
+
+    const verdicts = {
+      by_value: 'التوزيع بالقيمة يرفع كل صنف بنفس النسبة تماماً — لأن نصيبه من التكلفة يتناسب مع قيمته. لذلك تتساوى أدنى وأعلى نسبة تحميل، وهو ما يحفظ الهامش النسبي لكل صنف كما هو.',
+      by_quantity: 'التوزيع بالكمية يظلم الأصناف الرخيصة كثيرة العدد: المكرونة تحمل نسبة تفوق قيمتها بكثير، والأرز يحمل أقل من نصيبه — فتتباعد نسب التحميل بشدة.',
+      equal: 'التوزيع بالتساوي يحمّل كل صنف نفس المبلغ بغض النظر عن قيمته أو كميته — أعلى نسبة تحميل تصل أضعاف أدناها، ويشوّه تكلفة الأصناف الصغيرة.',
+    };
+
+    return {
+      theme: this.theme,
+      themeIcon: dark ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.setState({theme: dark ? 'light' : 'dark'}),
+      rail: RAIL.map(r => ({...r, bg: r.active ? 'rgba(74,128,232,.18)' : 'transparent', fg: r.active ? '#7DA6F5' : '#64748B'})),
+
+      sheet: {
+        number: sh.number, invoice: sh.invoice, supplier: sh.supplier, date: sh.date,
+        statusLabel: st.label, statusFg: st.fg, statusBg: st.bg,
+        stats: [
+          {label:'قيمة الفاتورة الأصلية', value: money0(c.origSum), fg:'var(--txt)'},
+          {label:'التكلفة الإضافية', value: money0(c.totalCost), fg:'#F59E0B'},
+          {label:'قيمة المخزون الجديدة', value: money0(c.origSum + c.totalCost), fg:'var(--brand-ink)'},
+          {label:'نسبة التحميل', value: pct(c.totalCost / c.origSum * 100), fg:'#EF4444'},
+        ],
+      },
+
+      applyLabel: applied ? 'إلغاء التطبيق' : 'تطبيق الورقة',
+      applyIcon: applied ? 'ph-arrow-counter-clockwise' : 'ph-check-circle',
+      applyBg: applied ? '#EF4444' : '#22C55E',
+      apply: () => setStatus(applied ? 'draft' : 'applied'),
+
+      items: sh.items.map(i => {
+        const t = TYPES[i.type];
+        return {desc:i.desc, party:i.party, typeLabel:t.label, icon:t.icon, tint:t.tint,
+          bg: t.tint + '1f', amount: money0(i.amount), share: pct(i.amount / c.totalCost * 100)};
+      }),
+
+      overlay: this.overlayVals(sh, c),
+      openList: () => this.setState({ov:'list'}),
+      openNew: () => this.setState({ov:'new'}),
+      openItem: () => this.setState({ov:'item'}),
+
+      methods: METHODS.map(m => {
+        const on = m.id === c.method;
+        return {label:m.label, icon:m.icon, sub:m.sub, formula:m.formula,
+          bd: m.locked ? 'var(--hairline)' : on ? 'var(--brand)' : 'var(--hairline)',
+          bg: m.locked ? 'var(--field)' : on ? 'var(--wash)' : 'transparent',
+          fg: m.locked ? 'var(--muted)' : on ? 'var(--brand-ink)' : 'var(--txt2)',
+          cursor: m.locked ? 'not-allowed' : 'pointer',
+          pick: m.locked ? (() => {}) : (() => this.setState({methodById: Object.assign({}, this.state.methodById, {[sh.number]: m.id})}))};
+      }),
+
+      verdict: verdicts[c.method],
+      spread: [
+        {label:'أدنى نسبة تحميل', value: pct(c.minDelta), fg:'#22C55E'},
+        {label:'أعلى نسبة تحميل', value: pct(c.maxDelta), fg: c.maxDelta - c.minDelta < 0.05 ? '#22C55E' : '#EF4444'},
+        {label:'تباعد النسب', value: c.maxDelta - c.minDelta < 0.05 ? 'متساوية' : pct(c.maxDelta - c.minDelta), fg: c.maxDelta - c.minDelta < 0.05 ? '#22C55E' : '#F59E0B'},
+        {label:'فرق التقريب', value: money(Math.abs(c.drift)), fg:'var(--muted)'},
+      ],
+
+      cols: [
+        {label:'الصنف', align:'start'}, {label:'الكمية', align:'end'},
+        {label:'التكلفة الأصلية', align:'end'}, {label:'قيمة البند', align:'end'},
+        {label:'المحمَّل', align:'start'}, {label:'التكلفة الجديدة', align:'end'},
+        {label:'الزيادة', align:'end'},
+      ],
+
+      lines: c.lines.map(l => ({
+        name:l.name, sku:l.sku, icon:l.icon,
+        qty: money0(l.qty), unitCost: money(l.unitCost), origTotal: money0(l.origTotal),
+        alloc: money(l.alloc), pct: pct(l.alloc / c.totalCost * 100),
+        bar: (l.alloc / c.maxAlloc * 100).toFixed(1) + '%',
+        newUnit: money(l.newUnit), delta: '+' + pct(l.deltaPct),
+        deltaNote: 'على تكلفة الوحدة',
+      })),
+
+      totals: {
+        cost: money0(c.totalCost), lineCount: c.lines.length,
+        qty: money0(c.qtySum), orig: money0(c.origSum),
+        alloc: money0(c.totalCost), newValue: money0(c.origSum + c.totalCost),
+        deltaPct: '+' + pct(c.totalCost / c.origSum * 100),
+      },
+
+      journal: [
+        {account:'1301 · المخزون', note:'يرتفع بقيمة التكلفة المحمَّلة كاملة', side:'مدين', icon:'ph-package', tint:'#22C55E', bg:'rgba(34,197,94,.12)', amount: money0(c.totalCost)},
+        {account:'2101 · موردو خدمات', note:'٦ أطراف — شحن وجمارك ونقل ومناولة وتأمين وفحص', side:'دائن', icon:'ph-users-three', tint:'#EF4444', bg:'rgba(239,68,68,.12)', amount: money0(c.totalCost)},
+        {account:'متوسط التكلفة المرجَّح', note:'يُعاد حسابه لكل صنف من الأصناف الستة', side:'تحديث', icon:'ph-arrows-clockwise', tint:'#0250D3', bg:'rgba(2,80,211,.12)', amount: c.lines.length + ' صنفاً'},
+        {account:'أثر على هامش الربح', note:'أسعار البيع الحالية تعطي هامشاً أقل بعد التحميل', side:'تنبيه', icon:'ph-warning', tint:'#F59E0B', bg:'rgba(245,158,11,.12)', amount: '-' + pct(c.totalCost / c.origSum * 100)},
+      ],
+
+      flow: [
+        {label:'مسوّدة', sub:'الورقة قابلة للتعديل ولا قيد لها ولا أثر على تكلفة المخزون', icon:'ph-file-dashed',
+          tint: status === 'draft' ? '#F59E0B' : 'var(--muted)',
+          fg: status === 'draft' ? 'var(--txt)' : 'var(--muted)',
+          bg: status === 'draft' ? 'rgba(245,158,11,.1)' : 'transparent',
+          bd: status === 'draft' ? 'rgba(245,158,11,.35)' : 'var(--hairline)'},
+        {label:'مُطبَّقة', sub:'القيد يُنشأ وتكلفة الوحدة تتغيّر — لا تعديل بعدها إلا بالإلغاء', icon:'ph-check-circle',
+          tint: applied ? '#22C55E' : 'var(--muted)',
+          fg: applied ? 'var(--txt)' : 'var(--muted)',
+          bg: applied ? 'rgba(34,197,94,.1)' : 'transparent',
+          bd: applied ? 'rgba(34,197,94,.35)' : 'var(--hairline)'},
+        {label:'ملغاة', sub:'إلغاء يدوي قبل التطبيق — الورقة تبقى للسجل بلا أثر', icon:'ph-x-circle',
+          tint:'var(--muted)', fg:'var(--muted)', bg:'transparent', bd:'var(--hairline)'},
+        {label:'مُبطَلة', sub:'تُبطَل تلقائياً لو أُبطلت فاتورة الشراء الأصلية — وقيدها يُعكَس', icon:'ph-prohibit',
+          tint:'#EF4444', fg:'var(--txt2)', bg:'rgba(239,68,68,.07)', bd:'rgba(239,68,68,.28)'},
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

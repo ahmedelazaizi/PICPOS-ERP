@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-ink:#0250D3; --brand-light:#4A80E8;
+    --wash:rgba(2,80,211,.08); --side:#0F172A; --side-line:#243247;
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280; --track:#E6ECF6;
+    --code-bg:#0F172A; --code-fg:#A5C4F7;
+  }
+  [data-theme="dark"]{
+    --canvas:#0A1220; --card:#121C2E; --hairline:#243247; --field:#18243A;
+    --brand-ink:#7DA6F5; --wash:rgba(74,128,232,.14); --side:#08101E; --side-line:#1D2A3E;
+    --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8; --track:#1E2B42;
+    --code-bg:#060D18; --code-fg:#8FB5F0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#0A1220;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#94A3B855;border-radius:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" dir="rtl" style="width:1920px;height:1080px;display:flex;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;">
+
+  <div style="width:84px;flex:none;background:var(--side);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:14px;">
+    <div style="width:44px;height:44px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <img src="assets/picpos-logo.png" alt="PicPos" style="width:38px;height:38px;object-fit:contain;" />
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:7px;">
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="10">
+        <div title="{{ r.label }}" style="position:relative;width:52px;height:46px;border-radius:13px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+          <i class="ph-bold {{ r.icon }}" style="font-size:21px;color:{{ r.fg }};"></i>
+          <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;inset-inline-end:-14px;top:11px;width:3.5px;height:24px;border-radius:3px;background:var(--brand-light);"></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="width:40px;height:40px;flex:none;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;">م.س</div>
+  </div>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <div style="height:76px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:14px;padding:0 26px;">
+      <div style="width:46px;height:46px;flex:none;border-radius:14px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold ph-broadcast" style="font-size:23px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-size:19px;font-weight:800;line-height:1.3;color:var(--txt);">الفوترة الإلكترونية</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;">إرسال الفواتير لمنظومة الضرائب ومتابعة حالتها — كل تغيير حالة يُسجَّل ولا يُحذف</div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="height:44px;border-radius:12px;background:{{ conn.bg }};border:1.5px solid {{ conn.bd }};display:flex;align-items:center;gap:9px;padding:0 15px;">
+        <span style="width:9px;height:9px;border-radius:50%;background:{{ conn.dot }};flex:none;"></span>
+        <div>
+          <div style="font-size:12px;font-weight:800;color:{{ conn.fg }};line-height:1.2;">{{ conn.label }}</div>
+          <div style="font-size:10px;font-weight:600;color:var(--muted);">{{ conn.sub }}</div>
+        </div>
+      </div>
+      <div onClick="{{ toggleTheme }}" style="width:44px;height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+        <i class="ph-bold {{ themeIcon }}" style="font-size:18px;"></i>
+      </div>
+      <div style="height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 16px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;white-space:nowrap;">
+        <i class="ph-bold ph-arrows-clockwise" style="font-size:17px;"></i>تحديث الحالات
+      </div>
+      <div style="height:44px;flex:none;border-radius:12px;background:var(--brand);display:flex;align-items:center;gap:8px;padding:0 20px;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        <i class="ph-bold ph-paper-plane-tilt" style="font-size:17px;"></i>إرسال المعلَّقة ({{ pipeline.pendingCount }})
+      </div>
+    </div>
+
+    <div style="flex:none;background:var(--card);border-bottom:1px solid var(--hairline);padding:13px 26px;display:flex;align-items:center;gap:10px;">
+      <sc-for list="{{ platforms }}" as="p" hint-placeholder-count="2">
+        <div onClick="{{ p.pick }}" style="flex:none;width:428px;border:1.5px solid {{ p.bd }};background:{{ p.bg }};border-radius:14px;padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;">
+          <div style="width:38px;height:38px;flex:none;border-radius:11px;background:{{ p.iconBg }};display:flex;align-items:center;justify-content:center;">
+            <i class="ph-bold {{ p.icon }}" style="font-size:18px;color:{{ p.tint }};"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:7px;">
+              <span style="font-size:13.5px;font-weight:800;color:{{ p.fg }};">{{ p.name }}</span>
+              <span style="font-size:9.5px;font-weight:800;color:{{ p.envFg }};background:{{ p.envBg }};border-radius:999px;padding:2px 7px;">{{ p.env }}</span>
+              <span style="font-size:9.5px;font-weight:800;color:{{ p.onFg }};background:{{ p.onBg }};border-radius:999px;padding:2px 7px;">{{ p.onLabel }}</span>
+            </div>
+            <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace;">{{ p.meta }}</div>
+          </div>
+          <div style="text-align:end;flex:none;">
+            <div style="font-size:16px;font-weight:800;color:{{ p.tint }};font-variant-numeric:tabular-nums;">{{ p.sent }}</div>
+            <div style="font-size:9.5px;font-weight:700;color:var(--muted);">مُرسَلة اليوم</div>
+          </div>
+        </div>
+      </sc-for>
+      <div style="width:1px;height:52px;background:var(--hairline);flex:none;"></div>
+      <div style="flex:1;min-width:0;display:flex;align-items:center;gap:7px;">
+        <sc-for list="{{ pipeline.stages }}" as="s" hint-placeholder-count="6">
+          <div onClick="{{ s.pick }}" style="flex:1;min-width:0;border:1.5px solid {{ s.bd }};background:{{ s.bg }};border-radius:12px;padding:9px 10px;cursor:pointer;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <i class="ph-bold {{ s.icon }}" style="font-size:14px;color:{{ s.tint }};"></i>
+              <span style="font-size:11px;font-weight:800;color:{{ s.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.label }}</span>
+            </div>
+            <div style="font-size:19px;font-weight:800;color:{{ s.tint }};line-height:1.1;margin-top:5px;font-variant-numeric:tabular-nums;">{{ s.count }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;display:flex;">
+
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;border-inline-end:1px solid var(--hairline);">
+        <div style="flex:none;padding:11px 22px;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
+          <i class="ph-bold ph-queue" style="font-size:16px;color:var(--brand-ink);"></i>
+          <span style="font-size:13.5px;font-weight:800;color:var(--txt);">طابور الإرسال</span>
+          <span style="font-size:11px;font-weight:700;color:var(--muted);">{{ queueNote }}</span>
+          <div style="flex:1;"></div>
+          <sc-for list="{{ docTypes }}" as="d" hint-placeholder-count="5">
+            <div style="height:28px;border-radius:8px;border:1.5px solid {{ d.bd }};background:{{ d.bg }};display:flex;align-items:center;gap:5px;padding:0 9px;cursor:pointer;">
+              <i class="ph-bold {{ d.icon }}" style="font-size:12px;color:{{ d.fg }};"></i>
+              <span style="font-size:10.5px;font-weight:800;color:{{ d.fg }};white-space:nowrap;">{{ d.label }}</span>
+              <span style="font-size:9.5px;font-weight:800;color:{{ d.fg }};opacity:.65;">{{ d.count }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex:none;display:grid;grid-template-columns:1.5fr 1.4fr 1.2fr 1.9fr 1.1fr 1.3fr 1.2fr;padding:9px 22px;background:var(--field);border-bottom:1px solid var(--hairline);">
+          <span style="font-size:11px;font-weight:800;color:var(--muted);">المرجع الداخلي</span>
+          <span style="font-size:11px;font-weight:800;color:var(--muted);">الفاتورة</span>
+          <span style="font-size:11px;font-weight:800;color:var(--muted);">النوع</span>
+          <span style="font-size:11px;font-weight:800;color:var(--muted);">معرّف المستند</span>
+          <span style="font-size:11px;font-weight:800;color:var(--muted);text-align:end;">القيمة</span>
+          <span style="font-size:11px;font-weight:800;color:var(--muted);">الحالة</span>
+          <span style="font-size:11px;font-weight:800;color:var(--muted);">آخر فحص</span>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;">
+          <sc-for list="{{ queue }}" as="q" hint-placeholder-count="10">
+            <div onClick="{{ q.pick }}" style="display:grid;grid-template-columns:1.5fr 1.4fr 1.2fr 1.9fr 1.1fr 1.3fr 1.2fr;padding:11px 22px;border-bottom:1px solid var(--hairline);align-items:center;background:{{ q.bg }};border-inline-start:3px solid {{ q.mark }};cursor:pointer;">
+              <div style="display:flex;align-items:center;gap:9px;min-width:0;">
+                <div style="width:30px;height:30px;flex:none;border-radius:9px;background:{{ q.iconBg }};display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold {{ q.icon }}" style="font-size:14px;color:{{ q.tint }};"></i>
+                </div>
+                <div style="min-width:0;">
+                  <div style="font-size:12.5px;font-weight:800;color:var(--txt);font-family:'JetBrains Mono',monospace;">{{ q.internalId }}</div>
+                  <div style="font-size:10px;font-weight:600;color:var(--muted);">{{ q.platform }}</div>
+                </div>
+              </div>
+              <div style="min-width:0;">
+                <div style="font-size:12.5px;font-weight:700;color:var(--txt);">{{ q.invoice }}</div>
+                <div style="font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ q.customer }}</div>
+              </div>
+              <span style="font-size:10.5px;font-weight:800;color:{{ q.typeFg }};background:{{ q.typeBg }};border-radius:999px;padding:3px 9px;justify-self:start;">{{ q.typeLabel }}</span>
+              <div style="min-width:0;">
+                <div style="font-size:11px;font-weight:600;color:var(--txt2);font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ q.uuid }}</div>
+                <div style="font-size:9.5px;font-weight:600;color:var(--muted);font-family:'JetBrains Mono',monospace;">{{ q.hash }}</div>
+              </div>
+              <span style="font-size:12.5px;font-weight:800;color:var(--txt);text-align:end;font-variant-numeric:tabular-nums;">{{ q.amount }}</span>
+              <div>
+                <span style="font-size:10.5px;font-weight:800;color:{{ q.tint }};background:{{ q.iconBg }};border-radius:999px;padding:3px 9px;">{{ q.statusLabel }}</span>
+                <sc-if value="{{ q.hasRetry }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:9.5px;font-weight:700;color:#EF4444;margin-top:4px;">أُعيدت {{ q.retry }} مرات</div>
+                </sc-if>
+              </div>
+              <div>
+                <div style="font-size:11.5px;font-weight:700;color:var(--txt2);">{{ q.checked }}</div>
+                <div style="font-size:9.5px;font-weight:600;color:var(--muted);">{{ q.submitted }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="width:600px;flex:none;background:var(--card);display:flex;flex-direction:column;overflow-y:auto;">
+        <div style="flex:none;padding:15px 20px 13px;border-bottom:1px solid var(--hairline);">
+          <div style="display:flex;align-items:center;gap:11px;">
+            <div style="width:42px;height:42px;flex:none;border-radius:12px;background:{{ det.iconBg }};display:flex;align-items:center;justify-content:center;">
+              <i class="ph-bold {{ det.icon }}" style="font-size:20px;color:{{ det.tint }};"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:15px;font-weight:800;color:var(--txt);font-family:'JetBrains Mono',monospace;">{{ det.internalId }}</span>
+                <span style="font-size:10.5px;font-weight:800;color:{{ det.tint }};background:{{ det.iconBg }};border-radius:999px;padding:2px 9px;">{{ det.statusLabel }}</span>
+              </div>
+              <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px;">{{ det.invoice }} · {{ det.customer }} · {{ det.amount }} ج.م</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px;">
+            <sc-for list="{{ det.actions }}" as="a" hint-placeholder-count="3">
+              <div style="flex:1;height:36px;border-radius:10px;border:1.5px solid {{ a.bd }};background:{{ a.bg }};display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;">
+                <i class="ph-bold {{ a.icon }}" style="font-size:14px;color:{{ a.fg }};"></i>
+                <span style="font-size:12px;font-weight:800;color:{{ a.fg }};white-space:nowrap;">{{ a.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="flex:none;padding:14px 20px;border-bottom:1px solid var(--hairline);">
+          <div style="font-size:12.5px;font-weight:800;color:var(--txt);margin-bottom:10px;">معرّفات المستند</div>
+          <sc-for list="{{ det.ids }}" as="d" hint-placeholder-count="5">
+            <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--hairline);">
+              <span style="font-size:11px;font-weight:700;color:var(--muted);min-width:104px;flex:none;">{{ d.label }}</span>
+              <span style="flex:1;min-width:0;font-size:11px;font-weight:600;color:var(--txt2);font-family:'JetBrains Mono',monospace;word-break:break-all;">{{ d.value }}</span>
+              <i class="ph-bold ph-copy" style="font-size:14px;color:var(--muted);cursor:pointer;flex:none;"></i>
+            </div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ det.hasError }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;margin:14px 20px;border:1.5px solid rgba(239,68,68,.35);background:rgba(239,68,68,.07);border-radius:13px;padding:13px 15px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <i class="ph-bold ph-warning-octagon" style="font-size:16px;color:#EF4444;"></i>
+              <span style="font-size:12.5px;font-weight:800;color:#EF4444;">{{ det.errorCode }}</span>
+            </div>
+            <div style="font-size:11.5px;font-weight:600;color:var(--txt2);margin-top:7px;line-height:1.6;">{{ det.errorMessage }}</div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:8px;">{{ det.errorHint }}</div>
+          </div>
+        </sc-if>
+
+        <div style="flex:none;padding:14px 20px;border-top:1px solid var(--hairline);">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">
+            <div style="font-size:12.5px;font-weight:800;color:var(--txt);flex:1;">الحِمل المُرسَل والرد</div>
+            <sc-for list="{{ rawTabs }}" as="t" hint-placeholder-count="2">
+              <div onClick="{{ t.pick }}" style="height:26px;border-radius:8px;border:1.5px solid {{ t.bd }};background:{{ t.bg }};display:flex;align-items:center;padding:0 10px;cursor:pointer;">
+                <span style="font-size:10.5px;font-weight:800;color:{{ t.fg }};">{{ t.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:var(--code-bg);border-radius:12px;padding:13px 15px;max-height:196px;overflow:auto;">
+            <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.75;color:var(--code-fg);white-space:pre;direction:ltr;text-align:left;">{{ det.raw }}</pre>
+          </div>
+        </div>
+
+        <div style="flex:none;padding:14px 20px;border-top:1px solid var(--hairline);">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+            <i class="ph-bold ph-lock-simple" style="font-size:15px;color:var(--brand-ink);"></i>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12.5px;font-weight:800;color:var(--txt);">سجل الحالات</div>
+              <div style="font-size:10.5px;font-weight:600;color:var(--muted);">سجل إضافة فقط — لا تعديل ولا حذف لأي سطر</div>
+            </div>
+          </div>
+          <sc-for list="{{ det.log }}" as="l" hint-placeholder-count="4">
+            <div style="display:flex;gap:11px;padding-bottom:12px;">
+              <div style="width:26px;flex:none;display:flex;flex-direction:column;align-items:center;">
+                <div style="width:26px;height:26px;border-radius:8px;background:{{ l.bg }};display:flex;align-items:center;justify-content:center;flex:none;">
+                  <i class="ph-bold {{ l.icon }}" style="font-size:12px;color:{{ l.tint }};"></i>
+                </div>
+                <div style="flex:1;width:1.5px;background:var(--hairline);margin-top:4px;min-height:10px;"></div>
+              </div>
+              <div style="flex:1;min-width:0;padding-top:2px;">
+                <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+                  <span style="font-size:11px;font-weight:800;color:var(--muted);">{{ l.from }}</span>
+                  <i class="ph-bold ph-arrow-left" style="font-size:11px;color:var(--muted);"></i>
+                  <span style="font-size:11.5px;font-weight:800;color:{{ l.tint }};">{{ l.to }}</span>
+                </div>
+                <div style="font-size:11px;font-weight:600;color:var(--txt2);margin-top:3px;line-height:1.5;">{{ l.note }}</div>
+                <div style="font-size:10px;font-weight:600;color:var(--muted);margin-top:3px;">{{ l.who }} · {{ l.at }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="flex:none;padding:14px 20px;border-top:1px solid var(--hairline);">
+          <div style="font-size:12.5px;font-weight:800;color:var(--txt);margin-bottom:10px;">الضرائب المطبَّقة على المستند</div>
+          <sc-for list="{{ det.taxes }}" as="t" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--hairline);">
+              <span style="font-size:10.5px;font-weight:800;color:var(--brand-ink);background:var(--wash);border-radius:7px;padding:3px 8px;font-family:'JetBrains Mono',monospace;flex:none;">{{ t.code }}</span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;font-weight:700;color:var(--txt);">{{ t.nameAr }}</div>
+                <div style="font-size:10px;font-weight:600;color:var(--muted);">{{ t.nameEn }} · {{ t.kind }}</div>
+              </div>
+              <span style="font-size:12px;font-weight:800;color:var(--txt2);font-variant-numeric:tabular-nums;">{{ t.rate }}</span>
+              <span style="font-size:12.5px;font-weight:800;color:var(--txt);min-width:74px;text-align:end;font-variant-numeric:tabular-nums;">{{ t.amount }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;,&quot;section&quot;:&quot;العرض&quot;}}">
+const RAIL = [
+  {icon:'ph-squares-four', label:'الرئيسية'},
+  {icon:'ph-receipt', label:'الفواتير'},
+  {icon:'ph-broadcast', label:'الفوترة الإلكترونية', active:true},
+  {icon:'ph-package', label:'المخزون'},
+  {icon:'ph-users-three', label:'العملاء'},
+  {icon:'ph-currency-circle-dollar', label:'الخزينة'},
+  {icon:'ph-chart-line', label:'التحليلات'},
+  {icon:'ph-file-text', label:'التقارير'},
+  {icon:'ph-buildings', label:'الفروع'},
+  {icon:'ph-gear', label:'الإعدادات'},
+];
+
+const PLATFORMS = [
+  {id:'eta', name:'منظومة الضرائب المصرية — ETA', icon:'ph-shield-check', tint:'#0250D3',
+   reg:'٣٤٤-٢٢٨-٨٩١', activity:'4711', branch:'0', version:'1.0', coding:'EGS',
+   production:true, enabled:true, sent:'١٤٢'},
+  {id:'jofotara', name:'JOFOTARA — الأردن', icon:'ph-globe-hemisphere-east', tint:'#8B5CF6',
+   reg:'١٠٠٢٢٤٤٨٨', activity:'—', branch:'—', version:'0.9', coding:'GS1',
+   production:false, enabled:false, sent:'٠'},
+];
+
+const STATUSES = {
+  pending:   {label:'معلَّقة',  icon:'ph-clock',            tint:'#F59E0B'},
+  submitted: {label:'مُرسَلة',  icon:'ph-paper-plane-tilt', tint:'#4A80E8'},
+  valid:     {label:'مقبولة',  icon:'ph-seal-check',       tint:'#22C55E'},
+  invalid:   {label:'غير صحيحة', icon:'ph-warning-octagon', tint:'#EF4444'},
+  rejected:  {label:'مرفوضة',  icon:'ph-x-circle',         tint:'#EF4444'},
+  cancelled: {label:'ملغاة',   icon:'ph-prohibit',         tint:'#6B7280'},
+};
+
+const DOCS = {
+  invoice:        {label:'فاتورة',      icon:'ph-receipt',           tint:'#0250D3'},
+  credit_note:    {label:'إشعار دائن',  icon:'ph-arrow-u-up-left',   tint:'#22C55E'},
+  debit_note:     {label:'إشعار مدين',  icon:'ph-arrow-u-up-right',  tint:'#F59E0B'},
+  export_invoice: {label:'فاتورة تصدير', icon:'ph-airplane-tilt',     tint:'#8B5CF6'},
+  receipt:        {label:'إيصال',       icon:'ph-note',              tint:'#6B7280'},
+};
+
+const SUBS = [
+  {internalId:'INV-2026-1040', invoice:'فاتورة بيع 1040', customer:'سوبر ماركت النور', platform:'eta',
+   type:'invoice', status:'valid', amount:8940, uuid:'8f3a9c1e-4d72-4b8a-9e11-2c7f5b0d81a4',
+   longId:'2026082610422900000000000091AD4C7F8E1B', hash:'a91f7c2d4b8e05631f7a', submission:'SUB-9F41C2',
+   submitted:'اليوم 14:26', checked:'اليوم 14:27', retry:0,
+   taxes:[{code:'T1', sub:'V009', nameAr:'ضريبة القيمة المضافة', nameEn:'Value Added Tax', pct:true, rate:14, amount:1097.72},
+          {code:'T4', sub:'Tbl01', nameAr:'ضريبة الجدول — نسبية', nameEn:'Table Tax', pct:true, rate:1.5, amount:117.61}]},
+
+  {internalId:'INV-2026-1041', invoice:'فاتورة بيع 1041', customer:'مطعم البيت الشامي', platform:'eta',
+   type:'invoice', status:'submitted', amount:10620, uuid:'b27d4e88-91af-4c05-8d3e-6a1948fc2b70',
+   longId:'—', hash:'c40e91b8d2f7a5610c93', submission:'SUB-9F41D0',
+   submitted:'اليوم 14:52', checked:'اليوم 14:55', retry:0,
+   taxes:[{code:'T1', sub:'V009', nameAr:'ضريبة القيمة المضافة', nameEn:'Value Added Tax', pct:true, rate:14, amount:1303.86}]},
+
+  {internalId:'RET-2026-0139', invoice:'مرتجع مبيعات 0139', customer:'بقالة الأمانة', platform:'eta',
+   type:'credit_note', status:'valid', amount:1240, uuid:'5c8b0a14-77de-4f92-b6c1-3e05d7419a2f',
+   longId:'2026082514080100000000000072BC91E4D3A7', hash:'7b21ce90a4d86f350be2', submission:'SUB-9F3E88',
+   submitted:'أمس 14:08', checked:'أمس 14:09', retry:0,
+   taxes:[{code:'T1', sub:'V009', nameAr:'ضريبة القيمة المضافة', nameEn:'Value Added Tax', pct:true, rate:14, amount:152.28}]},
+
+  {internalId:'INV-2026-1038', invoice:'فاتورة بيع 1038', customer:'كافيه الركن', platform:'eta',
+   type:'invoice', status:'invalid', amount:3420, uuid:'e91c7f30-2ab5-4d61-95c8-0f7b41e6d829',
+   longId:'—', hash:'f08a3d17c95b2e64071f', submission:'SUB-9F3D12',
+   submitted:'أمس 11:40', checked:'اليوم 09:15', retry:3,
+   errorCode:'EINV-4212 · رقم تسجيل المُشتري غير صالح',
+   errorMessage: 'المنظومة رفضت المستند لأن الرقم الضريبي للعميل «كافيه الركن» مكوَّن من ٨ أرقام بينما التسجيل الضريبي المصري يتطلب ٩. المستند لم يُقيَّد في المنظومة ولا يحمل معرّفاً طويلاً.',
+   errorHint:'صحّح الرقم الضريبي في ملف العميل ثم أعد الإرسال — المستند يحتفظ بمرجعه الداخلي ورقم فاتورته.',
+   taxes:[{code:'T1', sub:'V009', nameAr:'ضريبة القيمة المضافة', nameEn:'Value Added Tax', pct:true, rate:14, amount:420.00}]},
+
+  {internalId:'INV-2026-1036', invoice:'فاتورة بيع 1036', customer:'ماركت الحرية', platform:'eta',
+   type:'invoice', status:'rejected', amount:6280, uuid:'3d5f812c-6e04-4a97-81bb-9c2740fe5a13',
+   longId:'—', hash:'2e97b41c8द05f7a3'.replace(/[^0-9a-f]/g,''), submission:'SUB-9F3C04',
+   submitted:'٢٠٢٦-٠٨-٢٤ 16:22', checked:'٢٠٢٦-٠٨-٢٥ 08:30', retry:1,
+   errorCode:'EINV-3108 · رفض من المنظومة بعد القبول المبدئي',
+   errorMessage: 'قُبل المستند مبدئياً ثم رُفض في مرحلة التحقق الثانية: مجموع بنود الفاتورة لا يساوي الإجمالي المُصرَّح بفارق 0.04 ج.م ناتج عن تقريب ضريبة الجدول.',
+   errorHint:'الرفض بعد القبول يتطلب إصدار مستند جديد — لا يُعاد إرسال نفس المرجع الداخلي.',
+   taxes:[{code:'T1', sub:'V009', nameAr:'ضريبة القيمة المضافة', nameEn:'Value Added Tax', pct:true, rate:14, amount:771.31},
+          {code:'T4', sub:'Tbl01', nameAr:'ضريبة الجدول — نسبية', nameEn:'Table Tax', pct:true, rate:1.5, amount:82.64}]},
+
+  {internalId:'INV-2026-1042', invoice:'فاتورة بيع 1042', customer:'مخبز السلام', platform:'eta',
+   type:'invoice', status:'pending', amount:2180, uuid:'—',
+   longId:'—', hash:'—', submission:'—',
+   submitted:'لم تُرسَل', checked:'—', retry:0,
+   taxes:[{code:'T1', sub:'V009', nameAr:'ضريبة القيمة المضافة', nameEn:'Value Added Tax', pct:true, rate:14, amount:267.72}]},
+
+  {internalId:'INV-2026-1043', invoice:'فاتورة بيع 1043', customer:'بقالة النصر', platform:'eta',
+   type:'invoice', status:'pending', amount:940, uuid:'—',
+   longId:'—', hash:'—', submission:'—',
+   submitted:'لم تُرسَل', checked:'—', retry:0,
+   taxes:[{code:'T1', sub:'V009', nameAr:'ضريبة القيمة المضافة', nameEn:'Value Added Tax', pct:true, rate:14, amount:115.44}]},
+
+  {internalId:'EXP-2026-0018', invoice:'فاتورة تصدير 0018', customer:'Gulf Foods — الرياض', platform:'eta',
+   type:'export_invoice', status:'valid', amount:186400, uuid:'a04e2b76-8f1d-4390-b7c2-51d908ae4c6b',
+   longId:'2026082209150400000000000188EF20C914B6', hash:'91d0f47ba2c8e5360a71', submission:'SUB-9F2A61',
+   submitted:'٢٠٢٦-٠٨-٢٢ 09:15', checked:'٢٠٢٦-٠٨-٢٢ 09:16', retry:0,
+   taxes:[{code:'T2', sub:'V002', nameAr:'ضريبة معفاة — تصدير', nameEn:'Exempt — Export', pct:true, rate:0, amount:0}]},
+
+  {internalId:'DN-2026-0044', invoice:'إشعار مدين 0044', customer:'سوبر ماركت النور', platform:'eta',
+   type:'debit_note', status:'valid', amount:1480, uuid:'c71a3e05-4b98-42d7-a0f6-8e2b17d94053',
+   longId:'2026082411300700000000000144AB78C2E091', hash:'5f83a1c7e04b92d6317a', submission:'SUB-9F3B90',
+   submitted:'٢٠٢٦-٠٨-٢٤ 11:30', checked:'٢٠٢٦-٠٨-٢٤ 11:31', retry:0,
+   taxes:[{code:'T1', sub:'V009', nameAr:'ضريبة القيمة المضافة', nameEn:'Value Added Tax', pct:true, rate:14, amount:181.75}]},
+
+  {internalId:'INV-2026-1029', invoice:'فاتورة بيع 1029', customer:'كافيه الركن', platform:'eta',
+   type:'invoice', status:'cancelled', amount:1860, uuid:'0b6d9f24-3c81-4e75-8a29-7f04c1b3e582',
+   longId:'2026082010040200000000000119CD64A8F203', hash:'8c40b7e1f395a2d60c48', submission:'SUB-9F2E17',
+   submitted:'٢٠٢٦-٠٨-٢٠ 10:04', checked:'٢٠٢٦-٠٨-٢١ 12:00', retry:0,
+   taxes:[{code:'T1', sub:'V009', nameAr:'ضريبة القيمة المضافة', nameEn:'Value Added Tax', pct:true, rate:14, amount:228.42}]},
+];
+
+const LOGS = {
+  'INV-2026-1040': [
+    {from:'—', to:'معلَّقة', who:'system', at:'اليوم 14:26', note:'أُنشئ المستند من فاتورة البيع بعد ترحيلها وحُسِب الهاش.'},
+    {from:'معلَّقة', to:'مُرسَلة', who:'system', at:'اليوم 14:26', note:'أُرسل الحِمل للمنظومة وعاد معرّف إرسال SUB-9F41C2.'},
+    {from:'مُرسَلة', to:'مقبولة', who:'system', at:'اليوم 14:27', note:'قبلت المنظومة المستند وأصدرت معرّفاً طويلاً وكود QR.'},
+  ],
+  'INV-2026-1038': [
+    {from:'—', to:'معلَّقة', who:'system', at:'أمس 11:38', note:'أُنشئ المستند وحُسِب الهاش من بنود الفاتورة.'},
+    {from:'معلَّقة', to:'مُرسَلة', who:'سارة منير', at:'أمس 11:40', note:'إرسال يدوي من طابور المعلَّقة.'},
+    {from:'مُرسَلة', to:'غير صحيحة', who:'system', at:'أمس 11:41', note:'رفض تحقُّق: طول الرقم الضريبي للمُشتري غير مطابق.'},
+    {from:'غير صحيحة', to:'مُرسَلة', who:'سارة منير', at:'أمس 15:20', note:'إعادة إرسال ١ بعد محاولة تصحيح — الرقم لم يُحدَّث في ملف العميل.'},
+    {from:'مُرسَلة', to:'غير صحيحة', who:'system', at:'اليوم 09:15', note:'نفس الرفض للمرة الثالثة — أُوقفت إعادة المحاولة التلقائية.'},
+  ],
+  'INV-2026-1036': [
+    {from:'—', to:'معلَّقة', who:'system', at:'٢٠٢٦-٠٨-٢٤ 16:20', note:'أُنشئ المستند من فاتورة البيع.'},
+    {from:'معلَّقة', to:'مُرسَلة', who:'system', at:'٢٠٢٦-٠٨-٢٤ 16:22', note:'قبول مبدئي من المنظومة.'},
+    {from:'مُرسَلة', to:'مرفوضة', who:'system', at:'٢٠٢٦-٠٨-٢٥ 08:30', note:'رفض في التحقق الثاني: فرق تقريب 0.04 بين مجموع البنود والإجمالي.'},
+  ],
+  'INV-2026-1029': [
+    {from:'—', to:'معلَّقة', who:'system', at:'٢٠٢٦-٠٨-٢٠ 10:02', note:'أُنشئ المستند من فاتورة البيع.'},
+    {from:'معلَّقة', to:'مُرسَلة', who:'system', at:'٢٠٢٦-٠٨-٢٠ 10:04', note:'أُرسل للمنظومة.'},
+    {from:'مُرسَلة', to:'مقبولة', who:'system', at:'٢٠٢٦-٠٨-٢٠ 10:05', note:'قُبل وصدر له معرّف طويل.'},
+    {from:'مقبولة', to:'ملغاة', who:'محمود سعيد', at:'٢٠٢٦-٠٨-٢١ 12:00', note:'إلغاء داخل مهلة الـ٢٤ ساعة المسموح بها — العميل ألغى الطلب.'},
+  ],
+};
+
+const money = n => n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+const money0 = n => n.toLocaleString('en-US', {maximumFractionDigits:0});
+const AR = n => String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
+
+class Component extends DCLogic {
+  state = {theme:null, sel:0, stage:null, plat:'eta', raw:'request'};
+
+  renderVals(){
+    const dark = (this.state.theme || this.props.theme || 'light') === 'dark';
+    const stage = this.state.stage;
+    const visible = stage ? SUBS.filter(s => s.status === stage) : SUBS;
+    const cur = visible[this.state.sel] || visible[0] || SUBS[0];
+    const st = STATUSES[cur.status];
+    const doc = DOCS[cur.type];
+
+    const count = k => SUBS.filter(s => s.status === k).length;
+    const stages = ['pending','submitted','valid','invalid','rejected','cancelled'];
+
+    const netTax = cur.taxes.reduce((s, t) => s + t.amount, 0);
+    const request = JSON.stringify({
+      issuer: {type:'B', id:'344228891', name:'PicPos Retail'},
+      receiver: {type:'B', id: cur.status === 'invalid' ? '17204418' : '204418772', name: cur.customer},
+      documentType: cur.type === 'credit_note' ? 'C' : cur.type === 'debit_note' ? 'D' : 'I',
+      documentTypeVersion: '1.0',
+      dateTimeIssued: '2026-08-26T14:26:00Z',
+      taxpayerActivityCode: '4711',
+      internalID: cur.internalId,
+      totalSalesAmount: cur.amount,
+      totalDiscountAmount: 0,
+      netAmount: cur.amount,
+      taxTotals: cur.taxes.map(t => ({taxType: t.code, amount: t.amount})),
+      totalAmount: Math.round((cur.amount + netTax) * 100) / 100,
+      signatures: [{signatureType:'I', value:'MIIE...' + cur.hash.slice(0, 8)}],
+    }, null, 2);
+
+    const response = cur.status === 'valid'
+      ? JSON.stringify({submissionUUID: cur.submission, acceptedDocuments:[{uuid: cur.uuid, longId: cur.longId, internalId: cur.internalId, hashKey: cur.hash}], rejectedDocuments: []}, null, 2)
+      : cur.status === 'pending'
+      ? '// لم يُرسَل بعد — لا يوجد رد من المنظومة'
+      : JSON.stringify({submissionUUID: cur.submission, acceptedDocuments: [], rejectedDocuments:[{internalId: cur.internalId, error:{code: (cur.errorCode || '').split(' · ')[0], message: cur.status === 'invalid' ? 'Invalid receiver registration number length' : 'Document totals mismatch by 0.04', target:'receiver.id'}}]}, null, 2);
+
+    const conn = PLATFORMS[0];
+    return {
+      theme: dark ? 'dark' : 'light',
+      themeIcon: dark ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.setState({theme: dark ? 'light' : 'dark'}),
+      rail: RAIL.map(r => ({...r, bg: r.active ? 'rgba(74,128,232,.18)' : 'transparent', fg: r.active ? '#7DA6F5' : '#64748B'})),
+
+      conn: {label:'متصل بالمنظومة الحقيقية', sub:'ETA · آخر مزامنة قبل ٣ دقائق', dot:'#22C55E',
+        fg:'#22C55E', bg:'rgba(34,197,94,.08)', bd:'rgba(34,197,94,.35)'},
+
+      platforms: PLATFORMS.map(p => {
+        const on = p.id === this.state.plat;
+        return {
+          name:p.name, icon:p.icon, tint:p.tint, iconBg: p.tint + '1f',
+          bd: on ? p.tint : 'var(--hairline)',
+          bg: on ? p.tint + '0f' : 'transparent',
+          fg: on ? 'var(--txt)' : 'var(--txt2)',
+          env: p.production ? 'إنتاج' : 'تجريبي',
+          envFg: p.production ? '#EF4444' : '#F59E0B',
+          envBg: p.production ? 'rgba(239,68,68,.12)' : 'rgba(245,158,11,.12)',
+          onLabel: p.enabled ? 'مُفعَّل' : 'موقوف',
+          onFg: p.enabled ? '#22C55E' : '#6B7280',
+          onBg: p.enabled ? 'rgba(34,197,94,.12)' : 'rgba(107,114,128,.14)',
+          meta: 'تسجيل ' + p.reg + ' · نشاط ' + p.activity + ' · إصدار ' + p.version + ' · ترميز ' + p.coding,
+          sent: p.sent,
+          pick: () => this.setState({plat: p.id}),
+        };
+      }),
+
+      pipeline: {
+        pendingCount: AR(count('pending')),
+        stages: stages.map(k => {
+          const s = STATUSES[k];
+          const on = stage === k;
+          return {label:s.label, icon:s.icon, tint:s.tint, count: AR(count(k)),
+            bd: on ? s.tint : 'var(--hairline)',
+            bg: on ? s.tint + '12' : 'transparent',
+            fg: on ? 'var(--txt)' : 'var(--muted)',
+            pick: () => this.setState({stage: on ? null : k, sel: 0})};
+        }),
+      },
+
+      queueNote: stage ? 'مُصفّى على «' + STATUSES[stage].label + '» — ' + AR(visible.length) + ' مستنداً' : AR(SUBS.length) + ' مستنداً في آخر ٧ أيام',
+
+      docTypes: Object.keys(DOCS).map(k => {
+        const d = DOCS[k];
+        const n = SUBS.filter(s => s.type === k).length;
+        return {label:d.label, icon:d.icon, count: AR(n),
+          bd:'var(--hairline)', bg:'transparent', fg:'var(--muted)'};
+      }),
+
+      queue: visible.map((s, i) => {
+        const ss = STATUSES[s.status];
+        const dd = DOCS[s.type];
+        const on = s.internalId === cur.internalId;
+        return {
+          internalId:s.internalId, invoice:s.invoice, customer:s.customer,
+          platform: s.platform === 'eta' ? 'ETA · مصر' : 'JOFOTARA',
+          icon: ss.icon, tint: ss.tint, iconBg: ss.tint + '1f', statusLabel: ss.label,
+          typeLabel: dd.label, typeFg: dd.tint, typeBg: dd.tint + '1a',
+          uuid: s.uuid === '—' ? 'لم يصدر معرّف بعد' : s.uuid,
+          hash: s.hash === '—' ? '' : 'hash ' + s.hash.slice(0, 12) + '…',
+          amount: money0(s.amount),
+          checked: s.checked, submitted: s.submitted,
+          hasRetry: s.retry > 0, retry: AR(s.retry),
+          bg: on ? 'var(--wash)' : 'var(--card)',
+          mark: on ? 'var(--brand)' : 'transparent',
+          pick: () => this.setState({sel: i}),
+        };
+      }),
+
+      rawTabs: [
+        {id:'request', label:'الحِمل المُرسَل'},
+        {id:'response', label:'رد المنظومة'},
+      ].map(t => {
+        const on = t.id === this.state.raw;
+        return {label:t.label,
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          bg: on ? 'var(--wash)' : 'transparent',
+          fg: on ? 'var(--brand-ink)' : 'var(--muted)',
+          pick: () => this.setState({raw: t.id})};
+      }),
+
+      det: {
+        internalId: cur.internalId, invoice: cur.invoice, customer: cur.customer,
+        amount: money0(cur.amount),
+        icon: st.icon, tint: st.tint, iconBg: st.tint + '1f', statusLabel: st.label,
+        actions: [
+          {label: cur.status === 'pending' ? 'إرسال الآن' : 'إعادة إرسال', icon:'ph-paper-plane-tilt',
+           fg:'#fff', bg:'var(--brand)', bd:'var(--brand)'},
+          {label:'فحص الحالة', icon:'ph-arrows-clockwise', fg:'var(--txt2)', bg:'transparent', bd:'var(--hairline)'},
+          {label: cur.status === 'valid' ? 'إلغاء المستند' : 'عرض الفاتورة', icon: cur.status === 'valid' ? 'ph-prohibit' : 'ph-eye',
+           fg: cur.status === 'valid' ? '#EF4444' : 'var(--txt2)', bg:'transparent',
+           bd: cur.status === 'valid' ? 'rgba(239,68,68,.4)' : 'var(--hairline)'},
+        ],
+        ids: [
+          {label:'معرّف المستند', value: cur.uuid},
+          {label:'المعرّف الطويل', value: cur.longId},
+          {label:'معرّف الإرسال', value: cur.submission},
+          {label:'هاش المستند', value: cur.hash === '—' ? 'يُحسب عند الإرسال' : cur.hash},
+          {label:'كود QR', value: cur.status === 'valid' ? 'مُتاح — يُطبع على الفاتورة من المعرّف الطويل' : 'لا يصدر إلا بعد القبول'},
+        ],
+        hasError: !!cur.errorCode,
+        errorCode: cur.errorCode || '',
+        errorMessage: cur.errorMessage || '',
+        errorHint: cur.errorHint || '',
+        raw: this.state.raw === 'request' ? request : response,
+        log: (LOGS[cur.internalId] || [
+          {from:'—', to: st.label, who:'system', at: cur.submitted, note:'أُنشئ المستند وينتظر الإرسال للمنظومة.'},
+        ]).map(l => {
+          const target = Object.keys(STATUSES).map(k => STATUSES[k]).find(s => s.label === l.to);
+          return {from:l.from, to:l.to, who:l.who === 'system' ? 'النظام' : l.who, at:l.at, note:l.note,
+            icon: target ? target.icon : 'ph-dot', tint: target ? target.tint : 'var(--muted)',
+            bg: (target ? target.tint : '#6B7280') + '1f'};
+        }),
+        taxes: cur.taxes.map(t => ({
+          code: t.code + ' · ' + t.sub, nameAr:t.nameAr, nameEn:t.nameEn,
+          kind: t.pct ? 'نسبية' : 'مبلغ ثابت',
+          rate: t.pct ? t.rate + '٪' : 'ثابت',
+          amount: money(t.amount),
+        })),
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

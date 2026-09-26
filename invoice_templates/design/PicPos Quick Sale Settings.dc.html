@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-dark:#012258; --brand-light:#4A80E8;
+    --wash:rgba(2,80,211,.08); --side:#0F172A; --side-line:#243247; --brand-ink:#0250D3;
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280;
+    --ok:#22C55E; --warn:#F59E0B; --err:#EF4444;
+    --track:#E6ECF6; --shadow:0 18px 50px rgba(1,34,88,.16);
+  }
+  [data-theme="dark"]{
+    --canvas:#0A1220; --card:#121C2E; --hairline:#243247; --field:#18243A;
+    --wash:rgba(74,128,232,.14); --side:#08101E; --side-line:#1D2A3E; --brand-ink:#7DA6F5;
+    --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8;
+    --track:#1E2B42; --shadow:0 18px 60px rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#0A1220;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#94A3B855;border-radius:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" data-screen-label="إعدادات البيع السريع" dir="rtl" style="width:1920px;height:1080px;display:flex;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;">
+
+  <!-- rail -->
+  <div style="width:84px;flex:none;background:var(--side);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:14px;">
+    <div style="width:44px;height:44px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <img src="assets/picpos-logo.png" alt="PicPos" style="width:38px;height:38px;object-fit:contain;" />
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:7px;">
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="9">
+        <div title="{{ r.label }}" style="position:relative;width:52px;height:46px;border-radius:13px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+          <i class="ph-bold {{ r.icon }}" style="font-size:21px;color:{{ r.fg }};"></i>
+          <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;inset-inline-end:-14px;top:11px;width:3.5px;height:24px;border-radius:3px;background:var(--brand-light);"></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="width:40px;height:40px;flex:none;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;">م.س</div>
+  </div>
+
+  <!-- main -->
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <!-- topbar -->
+    <div style="height:76px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:14px;padding:0 26px;">
+      <div style="width:42px;height:42px;flex:none;border-radius:12px;background:var(--wash);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <i class="ph-bold ph-arrow-right" style="font-size:19px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="width:46px;height:46px;flex:none;border-radius:14px;background:rgba(245,158,11,.12);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold ph-lightning" style="font-size:23px;color:#F59E0B;"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <span style="font-size:19px;font-weight:800;line-height:1.3;color:var(--txt);">إعدادات البيع السريع</span>
+          <span style="font-size:10.5px;font-weight:800;color:var(--muted);background:var(--field);border:1px solid var(--hairline);border-radius:7px;padding:3px 8px;">التشغيل · نقطة البيع</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;">مرتَّبة على رحلة البيع — كل إعداد في اللحظة التي يعمل فيها فعلاً</div>
+      </div>
+
+      <div style="flex:1;"></div>
+
+      <div style="height:44px;flex:none;border-radius:12px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:9px;padding:0 14px;cursor:pointer;">
+        <i class="ph-bold ph-buildings" style="font-size:16px;color:var(--muted);"></i>
+        <span style="font-size:13px;font-weight:700;color:var(--txt2);">الفرع الرئيسي</span>
+        <i class="ph-bold ph-caret-down" style="font-size:13px;color:var(--muted);"></i>
+      </div>
+      <div style="height:44px;flex:none;border-radius:12px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:9px;padding:0 14px;cursor:pointer;">
+        <i class="ph-bold ph-cash-register" style="font-size:16px;color:var(--muted);"></i>
+        <span style="font-size:13px;font-weight:700;color:var(--txt2);">كل نقاط البيع (٣)</span>
+        <i class="ph-bold ph-caret-down" style="font-size:13px;color:var(--muted);"></i>
+      </div>
+      <div onClick="{{ toggleTheme }}" style="width:44px;height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+        <i class="ph-bold {{ themeIcon }}" style="font-size:18px;"></i>
+      </div>
+    </div>
+
+    <!-- journey strip -->
+    <div style="flex:none;background:var(--card);border-bottom:1px solid var(--hairline);padding:14px 26px 16px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+          <sc-if value="{{ s.notFirst }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:none;width:26px;display:flex;align-items:center;justify-content:center;">
+              <i class="ph-bold ph-caret-left" style="font-size:15px;color:var(--muted);opacity:.55;"></i>
+            </div>
+          </sc-if>
+          <div onClick="{{ s.go }}" style="flex:1;min-width:0;border:1.5px solid {{ s.bd }};background:{{ s.bg }};border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:{{ s.shadow }};">
+            <div style="width:40px;height:40px;flex:none;border-radius:12px;background:{{ s.iconBg }};display:flex;align-items:center;justify-content:center;position:relative;">
+              <i class="ph-bold {{ s.icon }}" style="font-size:20px;color:{{ s.iconFg }};"></i>
+              <span style="position:absolute;top:-6px;inset-inline-start:-6px;min-width:18px;height:18px;border-radius:999px;background:{{ s.numBg }};color:{{ s.numFg }};font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;">{{ s.num }}</span>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:800;color:{{ s.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.label }}</div>
+              <div style="font-size:11px;font-weight:600;color:{{ s.subFg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.sub }}</div>
+            </div>
+            <div style="flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;">
+              <span style="font-size:12px;font-weight:800;color:{{ s.fg }};">{{ s.count }}</span>
+              <span style="font-size:9.5px;font-weight:700;color:{{ s.subFg }};">إعداد</span>
+            </div>
+            <sc-if value="{{ s.hasDirty }}" hint-placeholder-val="{{ false }}">
+              <span style="width:8px;height:8px;border-radius:50%;background:#F59E0B;flex:none;"></span>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- body -->
+    <div style="flex:1;min-height:0;display:grid;grid-template-columns:{{ bodyCols }};">
+
+      <!-- settings column -->
+      <div style="min-width:0;overflow-y:auto;padding:20px 24px 24px;display:flex;flex-direction:column;gap:16px;">
+
+        <div style="flex:none;display:flex;align-items:center;gap:12px;border-radius:16px;background:{{ lede.bg }};border:1px solid {{ lede.bd }};padding:14px 16px;">
+          <i class="ph-bold {{ lede.icon }}" style="font-size:20px;color:{{ lede.tint }};flex:none;"></i>
+          <div style="flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--txt2);line-height:1.65;text-wrap:pretty;">{{ lede.text }}</div>
+        </div>
+
+        <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+          <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:18px;overflow:hidden;">
+            <div style="padding:15px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;">
+              <span style="width:3.5px;height:16px;border-radius:3px;background:{{ g.tint }};flex:none;"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ g.title }}</div>
+                <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:1px;">{{ g.sub }}</div>
+              </div>
+              <sc-if value="{{ g.badge }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:11px;font-weight:800;color:{{ g.badgeFg }};background:{{ g.badgeBg }};border-radius:999px;padding:5px 11px;flex:none;">{{ g.badge }}</span>
+              </sc-if>
+            </div>
+
+            <!-- checkbox cards -->
+            <sc-if value="{{ g.isPick }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:14px 18px 18px;display:grid;grid-template-columns:{{ g.pickCols }};gap:11px;">
+                <sc-for list="{{ g.items }}" as="m" hint-placeholder-count="5">
+                  <div onClick="{{ m.toggle }}" style="border:1.5px solid {{ m.bd }};background:{{ m.bg }};border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+                    <div style="width:22px;height:22px;flex:none;border-radius:7px;border:2px solid {{ m.boxBd }};background:{{ m.boxBg }};display:flex;align-items:center;justify-content:center;">
+                      <i class="ph-bold ph-check" style="font-size:13px;color:{{ m.checkFg }};"></i>
+                    </div>
+                    <div style="width:38px;height:38px;flex:none;border-radius:11px;background:{{ m.wash }};display:flex;align-items:center;justify-content:center;">
+                      <i class="ph-bold {{ m.icon }}" style="font-size:19px;color:{{ m.tint }};"></i>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="display:flex;align-items:center;gap:7px;">
+                        <span style="font-size:13.5px;font-weight:800;color:{{ m.fg }};">{{ m.label }}</span>
+                        <sc-if value="{{ m.isDefault }}" hint-placeholder-val="{{ false }}">
+                          <span style="font-size:9.5px;font-weight:800;color:#F59E0B;background:rgba(245,158,11,.14);border-radius:6px;padding:2px 6px;">افتراضي</span>
+                        </sc-if>
+                      </div>
+                      <div style="font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ m.sub }}</div>
+                    </div>
+                    <sc-if value="{{ m.drag }}" hint-placeholder-val="{{ false }}">
+                      <i class="ph-bold ph-dots-six-vertical" style="font-size:15px;color:var(--muted);flex:none;"></i>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- rows -->
+            <sc-if value="{{ g.isRows }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:2px 18px 6px;">
+                <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="4">
+                  <div style="padding:{{ r.pad }} 0;border-bottom:1px solid var(--hairline);display:flex;align-items:{{ r.align }};gap:13px;">
+                    <div style="width:36px;height:36px;flex:none;border-radius:11px;background:{{ r.wash }};display:flex;align-items:center;justify-content:center;">
+                      <i class="ph-bold {{ r.icon }}" style="font-size:17px;color:{{ r.tint }};"></i>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:13.5px;font-weight:700;color:var(--txt);">{{ r.title }}</span>
+                        <sc-if value="{{ r.risky }}" hint-placeholder-val="{{ false }}">
+                          <span style="font-size:9.5px;font-weight:800;color:#EF4444;background:rgba(239,68,68,.12);border-radius:6px;padding:2px 7px;">حسّاس</span>
+                        </sc-if>
+                      </div>
+                      <div style="font-size:11.5px;font-weight:500;color:var(--muted);margin-top:2px;line-height:1.6;text-wrap:pretty;">{{ r.sub }}</div>
+
+                      <sc-if value="{{ r.isSeg }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top:11px;display:grid;grid-template-columns:{{ r.segCols }};gap:9px;">
+                          <sc-for list="{{ r.options }}" as="o" hint-placeholder-count="3">
+                            <div onClick="{{ o.pick }}" style="border:1.5px solid {{ o.bd }};background:{{ o.bg }};border-radius:12px;padding:10px 12px;cursor:pointer;">
+                              <div style="display:flex;align-items:center;gap:7px;">
+                                <span style="width:15px;height:15px;flex:none;border-radius:50%;border:2px solid {{ o.dotBd }};background:{{ o.dotBg }};"></span>
+                                <span style="font-size:12.5px;font-weight:800;color:{{ o.fg }};">{{ o.label }}</span>
+                              </div>
+                              <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-top:5px;line-height:1.5;">{{ o.sub }}</div>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </div>
+
+                    <sc-if value="{{ r.isToggle }}" hint-placeholder-val="{{ false }}">
+                      <div onClick="{{ r.toggle }}" style="width:46px;height:26px;border-radius:999px;background:{{ r.knobBg }};position:relative;flex:none;cursor:pointer;">
+                        <div style="position:absolute;top:3px;inset-inline-start:{{ r.knobX }};width:20px;height:20px;border-radius:50%;background:#fff;"></div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ r.isPill }}" hint-placeholder-val="{{ false }}">
+                      <span onClick="{{ r.cycle }}" style="font-size:12.5px;font-weight:800;color:var(--brand-ink);background:var(--wash);border:1px solid var(--hairline);border-radius:10px;padding:7px 14px;flex:none;cursor:pointer;display:flex;align-items:center;gap:7px;white-space:nowrap;">
+                        {{ r.value }}<i class="ph-bold ph-caret-up-down" style="font-size:12px;opacity:.7;"></i>
+                      </span>
+                    </sc-if>
+                    <sc-if value="{{ r.isStep }}" hint-placeholder-val="{{ false }}">
+                      <div style="flex:none;display:flex;align-items:center;gap:2px;border:1px solid var(--hairline);background:var(--field);border-radius:11px;padding:4px;">
+                        <div onClick="{{ r.minus }}" style="width:30px;height:30px;border-radius:8px;background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                          <i class="ph-bold ph-minus" style="font-size:13px;color:var(--txt2);"></i>
+                        </div>
+                        <div style="min-width:66px;text-align:center;font-size:14px;font-weight:800;color:var(--txt);">{{ r.value }}</div>
+                        <div onClick="{{ r.plus }}" style="width:30px;height:30px;border-radius:8px;background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                          <i class="ph-bold ph-plus" style="font-size:13px;color:var(--txt2);"></i>
+                        </div>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ g.note }}" hint-placeholder-val="{{ false }}">
+              <div style="margin:0 18px 18px;border-radius:13px;background:var(--field);border:1px solid var(--hairline);padding:13px 15px;display:flex;gap:10px;">
+                <i class="ph-bold ph-info" style="font-size:16px;color:var(--muted);flex:none;margin-top:2px;"></i>
+                <div style="font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.7;text-wrap:pretty;">{{ g.note }}</div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- preview column -->
+      <sc-if value="{{ withPreview }}" hint-placeholder-val="{{ true }}">
+      <div style="min-width:0;border-inline-start:1px solid var(--hairline);background:var(--card);display:flex;flex-direction:column;">
+        <div style="flex:none;padding:15px 20px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
+          <i class="ph-bold ph-eye" style="font-size:18px;color:var(--brand-ink);"></i>
+          <span style="flex:1;font-size:14px;font-weight:800;color:var(--txt);">ما يراه الكاشير</span>
+          <span style="font-size:11px;font-weight:800;color:{{ pv.tagFg }};background:{{ pv.tagBg }};border-radius:999px;padding:5px 11px;">{{ pv.tag }}</span>
+        </div>
+
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:18px 20px 22px;display:flex;flex-direction:column;gap:14px;">
+
+          <!-- POS main screen -->
+          <sc-if value="{{ pv.isPos }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:none;border-radius:18px;background:#0B1220;padding:16px;color:#fff;">
+              <div style="border-radius:12px;border:2px solid {{ pv.scanBd }};background:#17203300;padding:11px 13px;display:flex;align-items:center;gap:10px;background:#161F33;">
+                <i class="ph-bold ph-barcode" style="font-size:19px;color:{{ pv.scanFg }};"></i>
+                <span style="flex:1;font-size:13px;font-weight:700;color:#94A3B8;">{{ pv.scanHint }}</span>
+                <span style="width:2px;height:18px;background:{{ pv.scanFg }};border-radius:2px;"></span>
+              </div>
+
+              <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                <sc-for list="{{ pv.tiles }}" as="t" hint-placeholder-count="6">
+                  <div style="border-radius:12px;background:#161F33;border:1px solid #243247;padding:11px 9px;display:flex;flex-direction:column;gap:6px;min-height:70px;">
+                    <i class="ph-bold {{ t.icon }}" style="font-size:18px;color:{{ t.tint }};"></i>
+                    <span style="font-size:11.5px;font-weight:800;color:#E2E8F2;line-height:1.3;">{{ t.name }}</span>
+                    <span style="font-size:10.5px;font-weight:700;color:#7C8AA3;">{{ t.price }}</span>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="margin-top:12px;border-radius:14px;border:2px solid {{ pv.cartBd }};background:#161F33;padding:12px;">
+                <div style="display:flex;align-items:center;gap:8px;padding-bottom:9px;border-bottom:1px solid #243247;">
+                  <i class="ph-bold ph-shopping-cart" style="font-size:15px;color:#4A80E8;"></i>
+                  <span style="flex:1;font-size:12px;font-weight:800;color:#E2E8F2;">السلة · ٣ أصناف</span>
+                  <span style="font-size:10.5px;font-weight:700;color:#7C8AA3;">INV-2026-1041</span>
+                </div>
+                <sc-for list="{{ pv.lines }}" as="l" hint-placeholder-count="3">
+                  <div style="padding:8px 0;display:flex;align-items:center;gap:9px;">
+                    <span style="font-size:11.5px;font-weight:800;color:#7C8AA3;min-width:26px;">{{ l.qty }}</span>
+                    <span style="flex:1;font-size:12px;font-weight:700;color:#E2E8F2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ l.name }}</span>
+                    <span style="font-size:12px;font-weight:800;color:#fff;">{{ l.total }}</span>
+                  </div>
+                </sc-for>
+                <div style="margin-top:4px;padding-top:10px;border-top:1px solid #243247;display:flex;flex-direction:column;gap:7px;">
+                  <div style="display:flex;align-items:center;">
+                    <span style="flex:1;font-size:11.5px;font-weight:700;color:#7C8AA3;">الخصم ({{ pv.discPct }})</span>
+                    <span style="font-size:12px;font-weight:800;color:#F59E0B;">{{ pv.discVal }}</span>
+                  </div>
+                  <div style="display:flex;align-items:baseline;">
+                    <span style="flex:1;font-size:12.5px;font-weight:800;color:#E2E8F2;">الإجمالي</span>
+                    <span style="font-size:26px;font-weight:800;color:#fff;line-height:1;">{{ pv.total }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-top:11px;display:flex;gap:8px;">
+                <sc-for list="{{ pv.actions }}" as="a" hint-placeholder-count="4">
+                  <div style="flex:1;height:46px;border-radius:11px;background:{{ a.bg }};border:1px solid {{ a.bd }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
+                    <i class="ph-bold {{ a.icon }}" style="font-size:16px;color:{{ a.fg }};"></i>
+                    <span style="font-size:10px;font-weight:800;color:{{ a.fg }};">{{ a.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- payment dialog -->
+          <sc-if value="{{ pv.isPay }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:none;border-radius:18px;background:#0B1220;padding:20px;color:#fff;">
+              <div style="display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.14);">
+                <i class="ph-bold ph-receipt" style="font-size:18px;color:#4A80E8;"></i>
+                <span style="flex:1;font-size:14px;font-weight:800;">إتمام الدفع</span>
+                <span style="font-size:11.5px;font-weight:700;color:#94A3B8;">INV-2026-1041</span>
+              </div>
+              <div style="padding:16px 0;text-align:center;">
+                <div style="font-size:11.5px;font-weight:700;color:#94A3B8;">المطلوب</div>
+                <div style="font-size:42px;font-weight:800;line-height:1.1;">{{ pv.total }}</div>
+              </div>
+              <sc-if value="{{ pv.fastPath }}" hint-placeholder-val="{{ false }}">
+                <div style="border-radius:14px;background:#22C55E;padding:16px;display:flex;align-items:center;justify-content:center;gap:10px;">
+                  <i class="ph-bold {{ pv.fastIcon }}" style="font-size:22px;color:#fff;"></i>
+                  <span style="font-size:16px;font-weight:800;color:#fff;">{{ pv.fastLabel }}</span>
+                </div>
+                <div style="margin-top:11px;font-size:11.5px;font-weight:600;color:#94A3B8;text-align:center;line-height:1.6;">طريقة واحدة مؤشَّرة — الحوار يُتخطّى ويُحصَّل المبلغ مباشرة</div>
+              </sc-if>
+              <sc-if value="{{ pv.payGrid }}" hint-placeholder-val="{{ true }}">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <sc-for list="{{ pv.payMethods }}" as="m" hint-placeholder-count="4">
+                    <div style="border-radius:13px;background:{{ m.pvBg }};border:1.5px solid {{ m.pvBd }};padding:15px 12px;display:flex;flex-direction:column;align-items:center;gap:7px;">
+                      <i class="ph-bold {{ m.icon }}" style="font-size:23px;color:{{ m.pvFg }};"></i>
+                      <span style="font-size:13px;font-weight:800;color:{{ m.pvFg }};">{{ m.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ pv.quickAmounts }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:11px;display:flex;gap:8px;">
+                  <sc-for list="{{ pv.amounts }}" as="a" hint-placeholder-count="4">
+                    <div style="flex:1;height:42px;border-radius:11px;background:#161F33;border:1px solid #243247;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#E2E8F2;">{{ a.label }}</div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <!-- receipt -->
+          <sc-if value="{{ pv.isPrint }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:none;border-radius:18px;background:var(--field);border:1px solid var(--hairline);padding:18px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+              <div style="width:100%;display:flex;align-items:center;gap:9px;">
+                <i class="ph-bold ph-printer" style="font-size:16px;color:var(--brand-ink);"></i>
+                <span style="flex:1;font-size:12.5px;font-weight:800;color:var(--txt);">{{ pv.printTitle }}</span>
+                <span style="font-size:10.5px;font-weight:800;color:var(--muted);">{{ pv.printMeta }}</span>
+              </div>
+              <div style="width:300px;background:#fff;border-radius:6px;padding:16px 14px;font-family:'Cairo',sans-serif;color:#111;box-shadow:0 10px 30px rgba(1,34,88,.14);">
+                <div style="text-align:center;font-size:14px;font-weight:800;">بيك بوس ماركت</div>
+                <div style="text-align:center;font-size:10px;font-weight:600;color:#555;margin-top:2px;">الفرع الرئيسي · ت 0100 000 0000</div>
+                <div style="margin:10px 0;border-top:1px dashed #bbb;"></div>
+                <div style="display:flex;font-size:9.5px;font-weight:800;color:#333;">
+                  <span style="flex:1;">الصنف</span><span style="width:34px;text-align:center;">كم</span><span style="width:54px;text-align:end;">الإجمالي</span>
+                </div>
+                <div style="margin:6px 0;border-top:1px solid #ddd;"></div>
+                <sc-for list="{{ pv.lines }}" as="l" hint-placeholder-count="3">
+                  <div style="display:flex;font-size:10px;font-weight:600;padding:3px 0;">
+                    <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ l.name }}</span>
+                    <span style="width:34px;text-align:center;">{{ l.qty }}</span>
+                    <span style="width:54px;text-align:end;">{{ l.total }}</span>
+                  </div>
+                </sc-for>
+                <div style="margin:8px 0;border-top:1px dashed #bbb;"></div>
+                <div style="display:flex;font-size:12px;font-weight:800;">
+                  <span style="flex:1;">المطلوب</span><span>{{ pv.total }}</span>
+                </div>
+                <div style="display:flex;font-size:10px;font-weight:600;color:#555;margin-top:3px;">
+                  <span style="flex:1;">{{ pv.payLabel }}</span><span>{{ pv.total }}</span>
+                </div>
+                <div style="margin-top:12px;text-align:center;font-size:9.5px;font-weight:600;color:#555;">شكراً لزيارتكم</div>
+              </div>
+              <div style="width:100%;display:flex;gap:8px;">
+                <sc-for list="{{ pv.printBtns }}" as="b" hint-placeholder-count="3">
+                  <div style="flex:1;height:48px;border-radius:12px;border:1.5px solid {{ b.bd }};background:{{ b.bg }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;">
+                    <i class="ph-bold {{ b.icon }}" style="font-size:16px;color:{{ b.fg }};"></i>
+                    <span style="font-size:10.5px;font-weight:800;color:{{ b.fg }};">{{ b.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- shift close -->
+          <sc-if value="{{ pv.isShift }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:none;border-radius:18px;background:#0B1220;padding:20px;color:#fff;">
+              <div style="display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.14);">
+                <i class="ph-bold ph-clock-countdown" style="font-size:18px;color:#4A80E8;"></i>
+                <span style="flex:1;font-size:14px;font-weight:800;">إغلاق الوردية</span>
+                <span style="font-size:11.5px;font-weight:700;color:#94A3B8;">أحمد فؤاد · ٦س ١٢د</span>
+              </div>
+              <div style="padding:14px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <sc-for list="{{ pv.shiftStats }}" as="s" hint-placeholder-count="4">
+                  <div style="border-radius:12px;background:#161F33;border:1px solid #243247;padding:12px;">
+                    <div style="font-size:10.5px;font-weight:700;color:#7C8AA3;">{{ s.label }}</div>
+                    <div style="font-size:18px;font-weight:800;color:{{ s.fg }};margin-top:3px;">{{ s.value }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex;gap:9px;">
+                <sc-for list="{{ pv.closeBtns }}" as="b" hint-placeholder-count="3">
+                  <div style="flex:1;height:54px;border-radius:12px;border:1.5px solid {{ b.bd }};background:{{ b.bg }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;">
+                    <i class="ph-bold {{ b.icon }}" style="font-size:17px;color:{{ b.fg }};"></i>
+                    <span style="font-size:11px;font-weight:800;color:{{ b.fg }};">{{ b.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="margin-top:12px;font-size:11.5px;font-weight:600;color:#94A3B8;line-height:1.7;text-wrap:pretty;">{{ pv.closeNote }}</div>
+            </div>
+          </sc-if>
+
+          <!-- impact -->
+          <div style="flex:none;border:1px solid var(--hairline);border-radius:16px;background:var(--field);padding:15px 16px;">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+              <i class="ph-bold ph-target" style="font-size:16px;color:var(--brand-ink);"></i>
+              <span style="flex:1;font-size:12.5px;font-weight:800;color:var(--txt);">أثر الإعدادات الحالية</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:9px;">
+              <sc-for list="{{ pv.impact }}" as="i" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span style="width:7px;height:7px;border-radius:50%;background:{{ i.tint }};flex:none;"></span>
+                  <span style="flex:1;font-size:11.5px;font-weight:600;color:var(--txt2);line-height:1.6;text-wrap:pretty;">{{ i.text }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+    <!-- footer -->
+    <div style="height:68px;flex:none;background:var(--card);border-top:1px solid var(--hairline);display:flex;align-items:center;gap:14px;padding:0 26px;">
+      <div style="width:36px;height:36px;flex:none;border-radius:11px;background:{{ foot.dotBg }};display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold {{ foot.icon }}" style="font-size:18px;color:{{ foot.iconFg }};"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-size:13.5px;font-weight:800;color:{{ foot.fg }};">{{ foot.title }}</div>
+        <div style="font-size:11.5px;font-weight:600;color:var(--muted);">{{ foot.sub }}</div>
+      </div>
+      <div style="flex:1;"></div>
+      <div onClick="{{ reset }}" style="height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 18px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;">
+        <i class="ph-bold ph-arrow-counter-clockwise" style="font-size:16px;"></i>استعادة الافتراضي
+      </div>
+      <div style="height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 18px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;">
+        <i class="ph-bold ph-copy" style="font-size:16px;"></i>نسخ إلى فرع آخر
+      </div>
+      <div onClick="{{ save }}" style="height:44px;flex:none;border-radius:12px;background:{{ foot.saveBg }};display:flex;align-items:center;gap:9px;padding:0 24px;color:#fff;font-size:13.5px;font-weight:800;cursor:pointer;">
+        <i class="ph-bold {{ foot.saveIcon }}" style="font-size:17px;"></i>{{ foot.saveLabel }}
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;},&quot;showPreview&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;التخطيط&quot;},&quot;compact&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;التخطيط&quot;}}">
+const RAIL = [
+  {icon:'ph-squares-four', label:'الرئيسية'},
+  {icon:'ph-storefront', label:'نقطة البيع'},
+  {icon:'ph-receipt', label:'الفواتير'},
+  {icon:'ph-package', label:'المخزون'},
+  {icon:'ph-users', label:'العملاء'},
+  {icon:'ph-vault', label:'الخزينة'},
+  {icon:'ph-chart-line', label:'التقارير'},
+  {icon:'ph-buildings', label:'الفروع'},
+  {icon:'ph-gear', label:'الإعدادات', active:true},
+];
+
+const METHODS = [
+  {k:'cash', icon:'ph-money', label:'نقدي', sub:'الخزينة الرئيسية · بلا مصادقة', on:true, tint:'#22C55E'},
+  {k:'card', icon:'ph-credit-card', label:'بطاقة', sub:'شبكة المدفوعات · حساب بنك', on:true, tint:'#0250D3'},
+  {k:'click', icon:'ph-device-mobile', label:'محفظة / كليك', sub:'المحافظ الإلكترونية', on:true, tint:'#8B5CF6'},
+  {k:'credit', icon:'ph-hourglass', label:'آجل', sub:'يتطلب عميلاً وحد ائتمان', on:true, tint:'#F59E0B'},
+  {k:'split', icon:'ph-squares-four', label:'دفع متعدّد', sub:'تقسيم المبلغ على أكثر من طريقة', on:false, tint:'#6B7280'},
+];
+
+const AUTH = [
+  {k:'card', icon:'ph-identification-badge', label:'بطاقة مشرف', sub:'مسح بطاقة على القارئ', on:true, tint:'#0250D3'},
+  {k:'pass', icon:'ph-lock-key', label:'كلمة مرور', sub:'حساب مشرف أو مدير', on:true, tint:'#4A80E8'},
+  {k:'pin', icon:'ph-keyboard', label:'PIN رقمي', sub:'٤ أرقام على لوحة الأرقام', on:false, tint:'#8B5CF6'},
+];
+
+const STEPS = [
+  {k:'scan', icon:'ph-barcode', label:'مسح الصنف', sub:'الباركود والكمية',
+   lede:{icon:'ph-barcode', tint:'#0250D3', text:'هذه اللحظة تحدد سرعة الكاشير أكثر من أي شيء آخر — كل نقرة إضافية بين مسحتين تتضاعف بعدد أصناف اليوم.'},
+   groups:[
+    {kind:'rows', tint:'#0250D3', title:'المسح والإدخال', sub:'سلوك حقل الباركود ولوحة الأرقام', rows:[
+      {k:'focus', icon:'ph-cursor-text', tint:'#0250D3', title:'التركيز الدائم على حقل الباركود', sub:'يرجع المؤشر لحقل المسح بعد كل إضافة أو إغلاق نافذة', kind:'toggle', on:true},
+      {k:'askqty', icon:'ph-keyboard', tint:'#4A80E8', title:'سؤال عن الكمية قبل الإضافة', sub:'يفتح لوحة أرقام — أطفئه إذا كانت أغلب المبيعات وحدة واحدة', kind:'toggle', on:false},
+      {k:'scale', icon:'ph-scales', tint:'#22C55E', title:'قراءة باركود الميزان', sub:'يفصل رمز الصنف والوزن من الباركود المركّب تلقائياً', kind:'toggle', on:true},
+      {k:'unknown', icon:'ph-question', tint:'#F59E0B', title:'عند باركود غير معروف', sub:'ما يحدث حين لا يطابق الباركود أي صنف', kind:'seg', v:0, cols:'repeat(3,1fr)', options:[
+        {label:'صنف سريع', sub:'يفتح نافذة إضافة باسم وسعر فقط'},
+        {label:'بحث بالاسم', sub:'يتحول الحقل لبحث نصي'},
+        {label:'تحذير ورفض', sub:'صوت تنبيه ولا شيء يُضاف'},
+      ]},
+    ]},
+    {kind:'rows', tint:'#22C55E', title:'الأصناف والمخزون', sub:'ما يُسمح به عند نقص الرصيد', note:'حالة «السماح» تُنشئ رصيداً سالباً يظهر في تقرير الفروقات ويحتاج تسوية جرد لاحقاً.', rows:[
+      {k:'negstock', icon:'ph-warning-octagon', tint:'#F59E0B', title:'البيع بأقل من الرصيد', sub:'عند بيع صنف رصيده صفر أو أقل من الكمية المطلوبة', kind:'seg', v:1, cols:'repeat(3,1fr)', options:[
+        {label:'منع', sub:'لا يمكن إضافة الصنف'},
+        {label:'تحذير', sub:'تنبيه مع السماح بالمتابعة'},
+        {label:'السماح', sub:'يمرّ بلا أي تنبيه'},
+      ]},
+      {k:'merge', icon:'ph-stack', tint:'#0250D3', title:'تجميع الصنف المتكرر في سطر واحد', sub:'المسح الثاني يزيد الكمية بدلاً من إضافة سطر — أصناف الميزان تبقى منفصلة', kind:'toggle', on:true},
+      {k:'maxqty', icon:'ph-number-square-nine', tint:'#6B7280', title:'أقصى كمية في السطر الواحد', sub:'حاجز أمان ضد الأخطاء المطبعية في لوحة الأرقام', kind:'pill', v:1, options:['٩٩','٩٩٩','٩,٩٩٩','بلا حد']},
+    ]},
+   ]},
+
+  {k:'cart', icon:'ph-shopping-cart', label:'السلة', sub:'الخصم والتعليق',
+   lede:{icon:'ph-percent', tint:'#F59E0B', text:'كل ما يُفتح للكاشير هنا يجب أن يُقابله سقف رقمي — الصلاحية بلا حد تفتح باباً لا يُراجَع إلا في نهاية الشهر.'},
+   groups:[
+    {kind:'rows', tint:'#F59E0B', title:'الخصم والتسعير', sub:'حدود التصرف في السعر داخل السلة', rows:[
+      {k:'disccap', icon:'ph-percent', tint:'#F59E0B', title:'الحد الأقصى للخصم اليدوي', sub:'يسري على الفاتورة والسطر معاً', kind:'step', v:15, min:0, max:50, unit:'٪'},
+      {k:'discappr', icon:'ph-shield-check', tint:'#22C55E', title:'يتطلب موافقة مدير فوق الحد', sub:'بدون الموافقة يُرفض الخصم بدلاً من تسجيله', kind:'toggle', on:true},
+      {k:'priceedit', icon:'ph-tag', tint:'#0250D3', title:'تعديل سعر البيع في السلة', sub:'تغيير سعر السطر أثناء العملية', kind:'seg', v:1, cols:'repeat(3,1fr)', options:[
+        {label:'ممنوع', sub:'السعر من كارت الصنف فقط'},
+        {label:'بموافقة', sub:'يتطلب مصادقة مشرف'},
+        {label:'مسموح', sub:'حر بلا مصادقة'},
+      ]},
+    ]},
+    {kind:'rows', tint:'#0250D3', title:'إجراءات السلة', sub:'الأزرار المتاحة للكاشير أثناء العملية', rows:[
+      {k:'hold', icon:'ph-pause-circle', tint:'#0250D3', title:'تعليق الفاتورة (Hold)', sub:'يحفظ السلة ويفتح فاتورة جديدة — للطوابير المزدوجة', kind:'toggle', on:true},
+      {k:'holdmax', icon:'ph-list-numbers', tint:'#4A80E8', title:'أقصى عدد فواتير معلّقة', sub:'الوصول للحد يمنع تعليق فاتورة جديدة', kind:'pill', v:1, options:['٥','١٠','٢٠','بلا حد']},
+      {k:'delauth', icon:'ph-trash', tint:'#EF4444', title:'حذف سطر يتطلب مصادقة', sub:'يُسجَّل كل حذف في سجل الوردية باسم من صادق عليه', kind:'toggle', on:false, risky:true},
+      {k:'reqcust', icon:'ph-user-circle', tint:'#8B5CF6', title:'إلزام اختيار عميل قبل الدفع', sub:'الآجل يطلب عميلاً دائماً بغضّ النظر عن هذا الإعداد', kind:'toggle', on:false},
+    ]},
+   ]},
+
+  {k:'pay', icon:'ph-money', label:'الدفع', sub:'الطرق والحوار',
+   lede:{icon:'ph-lightning', tint:'#22C55E', text:'الطرق المؤشَّرة هي وحدها ما يظهر للكاشير مهما كانت صلاحيته — وطريقة واحدة مؤشَّرة تُلغي حوار الدفع من أساسه.'},
+   groups:[
+    {kind:'pick', tint:'#22C55E', title:'الطرق المؤشَّرة', sub:'اسحب للترتيب — الترتيب هو ترتيب الأزرار على الشاشة', pickCols:'1fr 1fr', items:'methods'},
+    {kind:'rows', tint:'#0250D3', title:'سلوك حوار الدفع', sub:'ما يحدث بين آخر صنف وإتمام الفاتورة', rows:[
+      {k:'skipdlg', icon:'ph-lightning', tint:'#F59E0B', title:'تخطّي الحوار عند طريقة واحدة', sub:'يُحصَّل المبلغ مباشرة بلا نافذة — أسرع مسار ممكن', kind:'toggle', on:true},
+      {k:'defmethod', icon:'ph-star', tint:'#0250D3', title:'الطريقة الافتراضية', sub:'المحدّدة مسبقاً عند فتح الحوار', kind:'pill', v:0, options:['نقدي','بطاقة','محفظة / كليك','آجل']},
+      {k:'round', icon:'ph-coins', tint:'#22C55E', title:'تقريب الإجمالي', sub:'لأقرب وحدة عملة متاحة فعلاً في الدرج', kind:'pill', v:1, options:['بلا تقريب','لأقرب ٥ قروش','لأقرب ٢٥ قرش','لأقرب جنيه']},
+      {k:'mgrlimit', icon:'ph-shield-warning', tint:'#F59E0B', title:'تأكيد مدير للمبالغ فوق', sub:'حاجز أمان على الفواتير الكبيرة', kind:'pill', v:2, options:['١,٠٠٠ ج.م','٢,٥٠٠ ج.م','٥,٠٠٠ ج.م','بلا حد']},
+      {k:'quickamt', icon:'ph-grid-four', tint:'#4A80E8', title:'لوحة مبالغ سريعة', sub:'أزرار ٥٠ / ١٠٠ / ٢٠٠ / ٥٠٠ لحساب الباقي بنقرة', kind:'toggle', on:true},
+    ]},
+   ]},
+
+  {k:'print', icon:'ph-printer', label:'الطباعة', sub:'الإيصال والدرج',
+   lede:{icon:'ph-printer', tint:'#0250D3', text:'الطباعة التلقائية توفّر نقرة في كل فاتورة، لكنها تستهلك ورقاً في المبيعات التي لا يطلب فيها العميل إيصالاً.'},
+   groups:[
+    {kind:'rows', tint:'#0250D3', title:'الإيصال', sub:'ما يُطبع تلقائياً وبكم نسخة', rows:[
+      {k:'autoprint', icon:'ph-printer', tint:'#0250D3', title:'طباعة تلقائية عند الإتمام', sub:'بلا نافذة تأكيد — الإيصال يخرج مع إغلاق الفاتورة', kind:'toggle', on:true},
+      {k:'copies', icon:'ph-copy', tint:'#4A80E8', title:'عدد النسخ', sub:'النسخة الثانية للأرشيف أو لتوقيع العميل', kind:'pill', v:0, options:['نسخة واحدة','نسختان','٣ نسخ']},
+      {k:'tpl', icon:'ph-cards', tint:'#8B5CF6', title:'القالب المستخدم', sub:'يُحلّ حسب الفرع والطابعة واللغة', kind:'pill', v:0, options:['thermal80_quick_sale','thermal58_quick_sale','a4_sales_tax_invoice']},
+      {k:'drawer', icon:'ph-cash-register', tint:'#22C55E', title:'فتح درج النقدية مع الطباعة', sub:'يفتح في الدفع النقدي فقط', kind:'toggle', on:true},
+    ]},
+    {kind:'rows', tint:'#8B5CF6', title:'بعد الإتمام', sub:'إلى أين تذهب الشاشة، وما يُعرض للعميل', rows:[
+      {k:'after', icon:'ph-arrow-u-up-left', tint:'#8B5CF6', title:'بعد الطباعة', sub:'وجهة الشاشة مباشرة بعد إغلاق الفاتورة', kind:'seg', v:0, cols:'repeat(3,1fr)', options:[
+        {label:'فاتورة جديدة', sub:'سلة فارغة والمؤشر على المسح'},
+        {label:'البقاء عليها', sub:'للمراجعة أو إعادة الطباعة'},
+        {label:'شاشة الانتظار', sub:'تتطلب دخول كاشير من جديد'},
+      ]},
+      {k:'digital', icon:'ph-paper-plane-tilt', tint:'#22C55E', title:'إرسال الإيصال رقمياً', sub:'زر واتساب / بريد بجانب الطباعة', kind:'toggle', on:false},
+    ]},
+   ]},
+
+  {k:'shift', icon:'ph-clock-countdown', label:'الوردية', sub:'الإغلاق والمصادقة',
+   lede:{icon:'ph-lock-key-open', tint:'#EF4444', text:'الإغلاق السريع أخطر إعداد في هذه الشاشة — يجعل الفرق صفراً بلا مصادقة، فيضيع الدليل على أي نقص في الدرج.'},
+   groups:[
+    {kind:'rows', tint:'#EF4444', title:'الإغلاق', sub:'كيف تُقفل الوردية ومن يصادق عليها', rows:[
+      {k:'quickclose', icon:'ph-lock-key-open', tint:'#EF4444', title:'إظهار «إغلاق سريع»', sub:'إغلاق بلا مصادقة يُسجّل الفرق صفراً — أطفئه ليمرّ كل إغلاق بمصادقة', kind:'toggle', on:true, risky:true},
+      {k:'blind', icon:'ph-eye-slash', tint:'#0250D3', title:'إغلاق أعمى', sub:'لا يعرض المتوقع للكاشير قبل إدخال العدّة الفعلية', kind:'toggle', on:true},
+      {k:'diffmax', icon:'ph-scales', tint:'#F59E0B', title:'أقصى فرق مسموح بلا سبب', sub:'فوقه يُطلب سبب مكتوب يُرفق بمحضر الوردية', kind:'pill', v:1, options:['٥ ج.م','٢٠ ج.م','٥٠ ج.م','بلا حد']},
+      {k:'xrep', icon:'ph-receipt-x', tint:'#22C55E', title:'طباعة تقرير X عند الإغلاق', sub:'ملخّص الوردية على الطابعة الحرارية مباشرة', kind:'toggle', on:true},
+    ]},
+    {kind:'pick', tint:'#0250D3', title:'طرق المصادقة على الإغلاق', sub:'الطريقة الواحدة تكفي — التعدد يعطي بديلاً وقت الأعطال', pickCols:'repeat(3,1fr)', items:'auth',
+     note:'إطفاء كل الطرق مع إخفاء الإغلاق السريع يمنع إغلاق الوردية تماماً — النظام يُبقي «كلمة المرور» مفعّلة قسراً في هذه الحالة.'},
+   ]},
+];
+
+const LINES = [
+  {name:'أرز مصري ٥ كجم', qty:'٢', total:'٣١٥.٠٠'},
+  {name:'زيت عافية ١.٨ل', qty:'١', total:'١٨٩.٥٠'},
+  {name:'جبنة رومي — وزن', qty:'٠.٤٦', total:'١٠٤.١٠'},
+];
+
+const TILES = [
+  {icon:'ph-bread', name:'مخبوزات', price:'٤٢ صنف', tint:'#F59E0B'},
+  {icon:'ph-drop', name:'زيوت وسمن', price:'٣١ صنف', tint:'#22C55E'},
+  {icon:'ph-coffee', name:'مشروبات', price:'٦٧ صنف', tint:'#8B5CF6'},
+  {icon:'ph-cheese', name:'أجبان', price:'٢٤ صنف', tint:'#0250D3'},
+  {icon:'ph-carrot', name:'خضار وفاكهة', price:'٥٨ صنف', tint:'#22C55E'},
+  {icon:'ph-spray-bottle', name:'منظفات', price:'٣٩ صنف', tint:'#4A80E8'},
+];
+
+const ar = n => String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
+
+class Component extends DCLogic {
+  state = {theme:null, step:2, on:{}, val:{}};
+
+  get t(){ return this.state.theme || this.props.theme || 'light'; }
+
+  flat(){
+    const rows = [];
+    STEPS.forEach((s, si) => s.groups.forEach(g => {
+      if (g.kind === 'rows') g.rows.forEach(r => rows.push({...r, si}));
+    }));
+    return rows;
+  }
+
+  isOn(k, def){ return this.state.on[k] === undefined ? def : this.state.on[k]; }
+  valOf(k, def){ return this.state.val[k] === undefined ? def : this.state.val[k]; }
+  setOn(k, v){ this.setState(s => ({on:{...s.on, [k]:v}})); }
+  setVal(k, v){ this.setState(s => ({val:{...s.val, [k]:v}})); }
+
+  dirtyKeys(){
+    const d = new Set();
+    const rows = this.flat();
+    rows.forEach(r => {
+      if (r.kind === 'toggle' && this.state.on[r.k] !== undefined && this.state.on[r.k] !== r.on) d.add(r.si);
+      if (r.kind !== 'toggle' && this.state.val[r.k] !== undefined && this.state.val[r.k] !== r.v) d.add(r.si);
+    });
+    METHODS.forEach(m => { if (this.state.on['m:' + m.k] !== undefined && this.state.on['m:' + m.k] !== m.on) d.add(2); });
+    AUTH.forEach(a => { if (this.state.on['a:' + a.k] !== undefined && this.state.on['a:' + a.k] !== a.on) d.add(4); });
+    return d;
+  }
+
+  knob(on){
+    return {knobBg: on ? 'var(--brand)' : 'var(--track)', knobX: on ? '23px' : '3px'};
+  }
+
+  pickItems(which){
+    const src = which === 'auth' ? AUTH : METHODS;
+    const pre = which === 'auth' ? 'a:' : 'm:';
+    const def = this.valOf('defmethod', 0);
+    return src.map((m, i) => {
+      const on = this.isOn(pre + m.k, m.on);
+      return {...m,
+        bd: on ? m.tint + '66' : 'var(--hairline)',
+        bg: on ? m.tint + '12' : 'var(--field)',
+        boxBd: on ? m.tint : 'var(--muted)',
+        boxBg: on ? m.tint : 'transparent',
+        checkFg: on ? '#fff' : 'transparent',
+        wash: on ? m.tint + '1F' : 'var(--card)',
+        tint: on ? m.tint : 'var(--muted)',
+        fg: on ? 'var(--txt)' : 'var(--muted)',
+        drag: which !== 'auth',
+        isDefault: which !== 'auth' && on && i === def,
+        toggle: () => this.setOn(pre + m.k, !on)};
+    });
+  }
+
+  buildPreview(stepKey){
+    const methods = this.pickItems('methods').filter(m => this.isOn('m:' + m.k, METHODS.find(x => x.k === m.k).on));
+    const skip = this.isOn('skipdlg', true);
+    const fast = skip && methods.length === 1;
+    const defIdx = this.valOf('defmethod', 0);
+    const defLabel = ['نقدي','بطاقة','محفظة / كليك','آجل'][defIdx];
+    const discPct = ar(this.valOf('disccap', 15));
+    const askQty = this.isOn('askqty', false);
+    const quickClose = this.isOn('quickclose', true);
+    const blind = this.isOn('blind', true);
+    const autoPrint = this.isOn('autoprint', true);
+    const copies = ['نسخة واحدة','نسختان','٣ نسخ'][this.valOf('copies', 0)];
+    const tpl = ['thermal80_quick_sale','thermal58_quick_sale','a4_sales_tax_invoice'][this.valOf('tpl', 0)];
+    const digital = this.isOn('digital', false);
+    const drawer = this.isOn('drawer', true);
+    const hold = this.isOn('hold', true);
+    const authOn = AUTH.filter(a => this.isOn('a:' + a.k, a.on));
+
+    const base = {
+      lines: LINES, tiles: TILES, total: '١,٤١٣.٦٠',
+      discPct: discPct + '٪', discVal: '−١٩٥.٠٠',
+      isPos:false, isPay:false, isPrint:false, isShift:false,
+      payGrid:false, fastPath:false, quickAmounts:false,
+    };
+
+    const impactBy = {
+      scan: [
+        {tint:'#22C55E', text: askQty ? 'كل مسحة تفتح لوحة أرقام — أبطأ، لكن أدق في أصناف الكمية.' : 'المسح يضيف وحدة واحدة فوراً — أقصر مسار للطابور.'},
+        {tint:'#0250D3', text: this.isOn('scale', true) ? 'باركود الميزان يُفكّ تلقائياً — لا إدخال وزن يدوي.' : 'وزن الميزان يُدخَل يدوياً، وهو أكثر مصادر الخطأ في الجرد.'},
+        {tint:'#F59E0B', text: ['الباركود غير المعروف يفتح صنفاً سريعاً — راجع «الأصناف المؤقتة» أسبوعياً.','الباركود غير المعروف يتحول لبحث بالاسم.','الباركود غير المعروف يُرفض — لا تسريب أصناف بلا كارت.'][this.valOf('unknown', 0)]},
+      ],
+      cart: [
+        {tint:'#F59E0B', text: 'الكاشير يخصم حتى ' + discPct + '٪ ' + (this.isOn('discappr', true) ? 'وما فوقه يحتاج موافقة مدير.' : 'وما فوقه يُرفض بلا مسار موافقة.')},
+        {tint: hold ? '#22C55E' : '#6B7280', text: hold ? 'التعليق مفعّل — الكاشير يخدم عميلاً ثانياً بلا فقد السلة.' : 'التعليق مطفأ — أي انقطاع يعني إعادة إدخال السلة كاملة.'},
+        {tint: this.isOn('delauth', false) ? '#22C55E' : '#EF4444', text: this.isOn('delauth', false) ? 'كل حذف سطر يُصادق عليه ويُسجَّل باسم المصادق.' : 'حذف السطر حر — لا أثر يربط الحذف بشخص.'},
+      ],
+      pay: [
+        {tint: fast ? '#22C55E' : '#0250D3', text: fast ? 'مسار سريع: طريقة واحدة مؤشَّرة والحوار مُتخطّى تماماً.' : ar(methods.length) + ' طرق مؤشَّرة — الكاشير يختار من حوار الدفع.'},
+        {tint:'#F59E0B', text: 'التقريب: ' + ['بلا تقريب','لأقرب ٥ قروش','لأقرب ٢٥ قرش','لأقرب جنيه'][this.valOf('round', 1)] + ' · الافتراضي: ' + defLabel + '.'},
+        {tint:'#8B5CF6', text: 'ما فوق ' + ['١,٠٠٠ ج.م','٢,٥٠٠ ج.م','٥,٠٠٠ ج.م','بلا حد'][this.valOf('mgrlimit', 2)] + ' يحتاج تأكيد مدير.'},
+      ],
+      print: [
+        {tint: autoPrint ? '#22C55E' : '#6B7280', text: autoPrint ? copies + ' تُطبع تلقائياً على قالب ' + tpl + '.' : 'لا طباعة تلقائية — الكاشير يطبع بنقرة عند الطلب فقط.'},
+        {tint:'#0250D3', text: drawer ? 'الدرج يُفتح مع الطباعة في الدفع النقدي فقط.' : 'الدرج لا يُفتح آلياً — فتحه اليدوي يُسجَّل في الوردية.'},
+        {tint: digital ? '#22C55E' : '#6B7280', text: digital ? 'زر الإرسال الرقمي ظاهر بجانب الطباعة.' : 'لا إرسال رقمي — الإيصال ورقي فقط.'},
+      ],
+      shift: [
+        {tint: quickClose ? '#EF4444' : '#22C55E', text: quickClose ? 'الإغلاق السريع ظاهر — أي كاشير يقفل بلا مصادقة والفرق يُسجَّل صفراً.' : 'كل إغلاق يمرّ بمصادقة، والفرق يُسجَّل كما هو.'},
+        {tint:'#0250D3', text: blind ? 'إغلاق أعمى — الكاشير لا يرى المتوقع قبل العدّ.' : 'المتوقع معروض قبل العدّ، وهو ما يجعل الفرق دائماً صفراً على الورق.'},
+        {tint: authOn.length ? '#22C55E' : '#EF4444', text: authOn.length ? 'طرق المصادقة المتاحة: ' + authOn.map(a => a.label).join(' · ') + '.' : 'لا طريقة مصادقة مفعّلة — النظام سيُبقي كلمة المرور قسراً.'},
+      ],
+    };
+
+    let pv;
+    if (stepKey === 'scan' || stepKey === 'cart') {
+      const onScan = stepKey === 'scan';
+      pv = {...base, isPos:true,
+        tag: onScan ? 'شاشة المسح' : 'السلة والخصم',
+        scanBd: onScan ? '#4A80E8' : '#243247',
+        scanFg: onScan ? '#4A80E8' : '#7C8AA3',
+        scanHint: askQty ? 'امسح الباركود ثم أدخل الكمية…' : 'امسح الباركود أو ابحث بالاسم…',
+        cartBd: onScan ? '#243247' : '#F59E0B',
+        actions: [
+          {icon:'ph-percent', label:'خصم ' + discPct + '٪', tint:'#F59E0B'},
+          {icon:'ph-pause-circle', label: hold ? 'تعليق' : 'تعليق (مطفأ)', tint: hold ? '#4A80E8' : '#3A465C'},
+          {icon:'ph-user-circle', label:'عميل', tint:'#8B5CF6'},
+          {icon:'ph-money', label:'دفع', tint:'#22C55E'},
+        ].map(a => ({...a, bg: a.tint === '#3A465C' ? '#111A2B' : a.tint + '1F', bd: a.tint === '#3A465C' ? '#1C2740' : a.tint + '55', fg: a.tint === '#3A465C' ? '#4C596F' : a.tint})),
+      };
+    } else if (stepKey === 'pay') {
+      pv = {...base, isPay:true,
+        tag: fast ? 'مسار سريع بلا حوار' : 'حوار الدفع',
+        fastPath: fast, payGrid: !fast,
+        quickAmounts: !fast && this.isOn('quickamt', true),
+        fastIcon: methods[0] ? methods[0].icon : 'ph-money',
+        fastLabel: 'تحصيل ' + (methods[0] ? methods[0].label : 'نقدي') + ' · إتمام فوري',
+        payMethods: methods.map((m, i) => ({...m,
+          pvBg: i === defIdx ? m.tint : '#161F33',
+          pvBd: i === defIdx ? m.tint : '#243247',
+          pvFg: i === defIdx ? '#fff' : '#E2E8F2'})),
+        amounts: [{label:'٥٠'},{label:'١٠٠'},{label:'٢٠٠'},{label:'٥٠٠'}],
+      };
+    } else if (stepKey === 'print') {
+      pv = {...base, isPrint:true,
+        tag: autoPrint ? 'طباعة تلقائية' : 'طباعة بالطلب',
+        printTitle: autoPrint ? copies + ' · تلقائي' : 'بانتظار نقرة الكاشير',
+        printMeta: tpl,
+        payLabel: 'المدفوع (' + defLabel + ')',
+        printBtns: [
+          {icon:'ph-printer', label:'إعادة طباعة', on:true},
+          {icon:'ph-cash-register', label: drawer ? 'فتح الدرج' : 'الدرج مقفول', on:drawer},
+          {icon:'ph-paper-plane-tilt', label: digital ? 'إرسال' : 'الإرسال مخفي', on:digital},
+        ].map(b => ({...b,
+          bd: b.on ? 'var(--brand)' : 'var(--hairline)',
+          bg: b.on ? 'var(--wash)' : 'transparent',
+          fg: b.on ? 'var(--brand-ink)' : 'var(--muted)'})),
+      };
+    } else {
+      pv = {...base, isShift:true,
+        tag: quickClose ? 'إغلاق سريع متاح' : 'إغلاق بمصادقة',
+        shiftStats: [
+          {label:'مبيعات الوردية', value:'٤٢,٩١٠', fg:'#fff'},
+          {label:'عدد الفواتير', value:'١٣٧', fg:'#fff'},
+          {label:'المتوقع في الدرج', value: blind ? 'مخفي' : '١٨,٤٠٥', fg: blind ? '#7C8AA3' : '#fff'},
+          {label:'الفرق', value: quickClose ? '٠.٠٠' : 'يُحسب بعد العدّ', fg: quickClose ? '#EF4444' : '#F59E0B'},
+        ],
+        closeBtns: [
+          {icon:'ph-lightning', label:'إغلاق سريع', on:quickClose, danger:true},
+          ...AUTH.map(a => ({icon:a.icon, label:a.label, on:this.isOn('a:' + a.k, a.on)})),
+        ].map(b => ({...b,
+          bd: b.on ? (b.danger ? '#EF4444' : '#4A80E8') : '#243247',
+          bg: b.on ? (b.danger ? 'rgba(239,68,68,.18)' : 'rgba(74,128,232,.16)') : '#111A2B',
+          fg: b.on ? (b.danger ? '#F98080' : '#9CC0FF') : '#4C596F'})),
+        closeNote: quickClose
+          ? 'الإغلاق السريع ظاهر — أي كاشير يقدر يقفل الوردية بلا مصادقة ويُسجَّل الفرق صفراً.'
+          : 'الإغلاق السريع مخفي — كل إغلاق يمرّ بمصادقة، والفرق يُسجَّل كما هو ويظهر في تقرير الفروقات.',
+      };
+    }
+
+    pv.impact = impactBy[stepKey];
+    pv.tagFg = pv.isShift && quickClose ? '#EF4444' : (pv.fastPath ? '#22C55E' : 'var(--brand-ink)');
+    pv.tagBg = pv.isShift && quickClose ? 'rgba(239,68,68,.12)' : (pv.fastPath ? 'rgba(34,197,94,.12)' : 'var(--wash)');
+    return pv;
+  }
+
+  renderVals(){
+    const dark = this.t === 'dark';
+    const si = this.state.step;
+    const step = STEPS[si];
+    const dirty = this.dirtyKeys();
+    const compact = this.props.compact ?? false;
+    const withPreview = this.props.showPreview ?? true;
+
+    const groups = step.groups.map(g => {
+      if (g.kind === 'pick') {
+        const items = this.pickItems(g.items);
+        const onCount = items.filter(i => i.checkFg === '#fff').length;
+        return {...g, isPick:true, isRows:false, items,
+          badge: ar(onCount) + ' من ' + ar(items.length),
+          badgeFg:'var(--brand-ink)', badgeBg:'var(--wash)'};
+      }
+      return {...g, isPick:false, isRows:true,
+        badge: ar(g.rows.length) + ' إعداد', badgeFg:'var(--muted)', badgeBg:'var(--field)',
+        rows: g.rows.map(r => {
+          const isToggle = r.kind === 'toggle', isPill = r.kind === 'pill',
+                isSeg = r.kind === 'seg', isStep = r.kind === 'step';
+          const on = isToggle ? this.isOn(r.k, r.on) : false;
+          const vi = this.valOf(r.k, r.v);
+          const out = {...r, isToggle, isPill, isSeg, isStep,
+            wash: r.tint + '1A',
+            pad: compact ? '11px' : '14px',
+            align: isSeg ? 'flex-start' : 'center',
+            ...this.knob(on)};
+          if (isToggle) out.toggle = () => this.setOn(r.k, !on);
+          if (isPill) { out.value = r.options[vi]; out.cycle = () => this.setVal(r.k, (vi + 1) % r.options.length); }
+          if (isStep) {
+            out.value = ar(vi) + (r.unit || '');
+            out.minus = () => this.setVal(r.k, Math.max(r.min, vi - 1));
+            out.plus = () => this.setVal(r.k, Math.min(r.max, vi + 1));
+          }
+          if (isSeg) {
+            out.segCols = r.cols;
+            out.options = r.options.map((o, oi) => ({...o,
+              bd: oi === vi ? r.tint : 'var(--hairline)',
+              bg: oi === vi ? r.tint + '12' : 'var(--field)',
+              fg: oi === vi ? 'var(--txt)' : 'var(--txt2)',
+              dotBd: oi === vi ? r.tint : 'var(--muted)',
+              dotBg: oi === vi ? r.tint : 'transparent',
+              pick: () => this.setVal(r.k, oi)}));
+          }
+          return out;
+        })};
+    });
+
+    const count = step.groups.reduce((n, g) => n + (g.kind === 'pick' ? (g.items === 'auth' ? AUTH.length : METHODS.length) : g.rows.length), 0);
+    const dn = dirty.size;
+
+    return {
+      theme: this.t,
+      themeIcon: dark ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.setState({theme: dark ? 'light' : 'dark'}),
+      withPreview,
+      bodyCols: withPreview ? '1fr 560px' : '1fr',
+      rail: RAIL.map(r => ({...r,
+        bg: r.active ? 'rgba(74,128,232,.16)' : 'transparent',
+        fg: r.active ? '#7DA6F5' : '#64748B'})),
+      steps: STEPS.map((s, i) => {
+        const active = i === si;
+        const gc = s.groups.reduce((n, g) => n + (g.kind === 'pick' ? (g.items === 'auth' ? AUTH.length : METHODS.length) : g.rows.length), 0);
+        return {icon:s.icon, label:s.label, sub:s.sub, num: ['١','٢','٣','٤','٥'][i],
+          count: ar(gc),
+          notFirst: i > 0, hasDirty: dirty.has(i),
+          bd: active ? 'var(--brand)' : 'var(--hairline)',
+          bg: active ? 'var(--brand)' : 'var(--field)',
+          shadow: active ? '0 10px 26px rgba(2,80,211,.28)' : 'none',
+          iconBg: active ? 'rgba(255,255,255,.18)' : 'var(--card)',
+          iconFg: active ? '#fff' : 'var(--muted)',
+          numBg: active ? '#fff' : 'var(--hairline)',
+          numFg: active ? 'var(--brand)' : 'var(--muted)',
+          fg: active ? '#fff' : 'var(--txt)',
+          subFg: active ? 'rgba(255,255,255,.72)' : 'var(--muted)',
+          go: () => this.setState({step:i})};
+      }),
+      lede: {...step.lede,
+        bg: step.lede.tint + '0F',
+        bd: step.lede.tint + '33'},
+      groups,
+      pv: this.buildPreview(step.k),
+      foot: {
+        icon: dn ? 'ph-pencil-simple' : 'ph-check-circle',
+        iconFg: dn ? '#F59E0B' : '#22C55E',
+        dotBg: dn ? 'rgba(245,158,11,.14)' : 'rgba(34,197,94,.14)',
+        fg: dn ? '#B45309' : 'var(--txt)',
+        title: dn ? 'تعديلات غير محفوظة في ' + ar(dn) + ' مرحلة' : 'كل الإعدادات محفوظة',
+        sub: dn ? 'يسري على ٣ نقاط بيع عند العملية التالية — الورديات المفتوحة تُطبّق فوراً' : ar(count) + ' إعداد في هذه المرحلة · آخر حفظ ١٠:٤٢ ص بواسطة م. سامي',
+        saveBg: dn ? 'var(--brand)' : 'var(--muted)',
+        saveIcon: dn ? 'ph-floppy-disk' : 'ph-check',
+        saveLabel: dn ? 'حفظ الإعدادات' : 'محفوظ',
+      },
+      save: () => this.setState({on:{}, val:{}}),
+      reset: () => this.setState({on:{}, val:{}}),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+1: A=دليل الحسابات - شركة صناعية وتجارية
+2: A=Chart of Accounts - Industrial & Trading Company
+3: A=كود الحساب | B=اسم الحساب (عربي) | C=Account Name (English) | D=نوع الحساب | E=طبيعة الحساب | F=المستوى | G=الحساب الأب | H=ملاحظات
+4: A=1 | B=الأصول | C=Assets | D=رئيسي | E=مدين | F=1
+5: A=11 | B=    الأصول المتداولة | C=Current Assets | D=رئيسي | E=مدين | F=2 | G=1
+6: A=111 | B=        النقدية وما في حكمها | C=Cash & Cash Equivalents | D=رئيسي | E=مدين | F=3 | G=11
+7: A=1111 | B=            الصندوق الرئيسي | C=Main Cash | D=تفصيلي | E=مدين | F=4 | G=111 | H=النقدية بالعملة المحلية
+8: A=1112 | B=            صندوق العهد والمصروفات | C=Petty Cash | D=تفصيلي | E=مدين | F=4 | G=111
+9: A=1113 | B=            البنك الأهلي - حساب جاري | C=National Bank - Current Acct | D=تفصيلي | E=مدين | F=4 | G=111
+10: A=1114 | B=            بنك القاهرة - حساب جاري | C=Cairo Bank - Current Acct | D=تفصيلي | E=مدين | F=4 | G=111
+11: A=1115 | B=            البنك التجاري - ودائع | C=Commercial Bank - Deposits | D=تفصيلي | E=مدين | F=4 | G=111 | H=ودائع لأجل
+12: A=112 | B=        الذمم المدينة - العملاء | C=Accounts Receivable - Customers | D=رئيسي | E=مدين | F=3 | G=11
+13: A=1121 | B=            ذمم عملاء محليون | C=Local Customers Receivable | D=تفصيلي | E=مدين | F=4 | G=112
+14: A=1122 | B=            ذمم عملاء خارجيون | C=Foreign Customers Receivable | D=تفصيلي | E=مدين | F=4 | G=112
+15: A=1123 | B=            أوراق القبض | C=Notes Receivable | D=تفصيلي | E=مدين | F=4 | G=112 | H=شيكات وكمبيالات
+16: A=1124 | B=            مخصص ديون مشكوك فيها | C=Allowance for Doubtful Debts | D=تفصيلي | E=دائن | F=4 | G=112 | H=حساب مقابل
+17: A=113 | B=        المخزون | C=Inventory | D=رئيسي | E=مدين | F=3 | G=11
+18: A=1131 | B=            مخزون المواد الخام | C=Raw Materials Inventory | D=تفصيلي | E=مدين | F=4 | G=113
+19: A=1132 | B=            مخزون مواد التغليف | C=Packaging Materials Inventory | D=تفصيلي | E=مدين | F=4 | G=113
+20: A=1133 | B=            مخزون تحت التشغيل | C=Work-in-Progress Inventory | D=تفصيلي | E=مدين | F=4 | G=113
+21: A=1134 | B=            مخزون البضاعة التامة الصنع | C=Finished Goods Inventory | D=تفصيلي | E=مدين | F=4 | G=113
+22: A=1135 | B=            مخزون قطع الغيار | C=Spare Parts Inventory | D=تفصيلي | E=مدين | F=4 | G=113
+23: A=1136 | B=            مخزون البضاعة للبيع | C=Trading Goods Inventory | D=تفصيلي | E=مدين | F=4 | G=113
+24: A=1137 | B=            مخصص هبوط أسعار المخزون | C=Inventory Obsolescence Allowance | D=تفصيلي | E=دائن | F=4 | G=113 | H=حساب مقابل
+25: A=114 | B=        الذمم المدينة الأخرى | C=Other Receivables | D=رئيسي | E=مدين | F=3 | G=11
+26: A=1141 | B=            ضريبة القيمة المضافة - مدفوعة | C=VAT Paid (Input Tax) | D=تفصيلي | E=مدين | F=4 | G=114
+27: A=1142 | B=            ضريبة المبيعات المدفوعة مقدماً | C=Prepaid Sales Tax | D=تفصيلي | E=مدين | F=4 | G=114
+28: A=1143 | B=            المصروفات المدفوعة مقدماً | C=Prepaid Expenses | D=تفصيلي | E=مدين | F=4 | G=114
+29: A=1144 | B=            الإيرادات المستحقة | C=Accrued Income | D=تفصيلي | E=مدين | F=4 | G=114
+30: A=1145 | B=            دائنو السلف والعهد | C=Advances to Suppliers | D=تفصيلي | E=مدين | F=4 | G=114 | H=دفعات مقدمة للموردين
+31: A=1146 | B=            سلف الموظفين | C=Employee Advances | D=تفصيلي | E=مدين | F=4 | G=114
+32: A=1147 | B=            حسابات جارية - مدينة | C=Current Accounts - Debit | D=تفصيلي | E=مدين | F=4 | G=114
+33: A=12 | B=    الأصول غير المتداولة | C=Non-Current Assets | D=رئيسي | E=مدين | F=2 | G=1
+34: A=121 | B=        الأصول الثابتة الملموسة | C=Property, Plant & Equipment | D=رئيسي | E=مدين | F=3 | G=12
+35: A=1211 | B=            الأراضي | C=Land | D=تفصيلي | E=مدين | F=4 | G=121 | H=لا يُهلك
+36: A=1212 | B=            المباني والإنشاءات | C=Buildings & Constructions | D=تفصيلي | E=مدين | F=4 | G=121
+37: A=1212.1 | B=                م. مراكمة - مباني | C=Accum. Depr. - Buildings | D=تفصيلي | E=دائن | F=5 | G=1212 | H=حساب مجمع الإهلاك
+38: A=1213 | B=            الآلات والمعدات الصناعية | C=Industrial Machinery & Equipment | D=تفصيلي | E=مدين | F=4 | G=121
+39: A=1213.1 | B=                م. مراكمة - آلات | C=Accum. Depr. - Machinery | D=تفصيلي | E=دائن | F=5 | G=1213
+40: A=1214 | B=            السيارات والمركبات | C=Vehicles & Transportation | D=تفصيلي | E=مدين | F=4 | G=121
+41: A=1214.1 | B=                م. مراكمة - مركبات | C=Accum. Depr. - Vehicles | D=تفصيلي | E=دائن | F=5 | G=1214
+42: A=1215 | B=            الأثاث والتجهيزات | C=Furniture & Fixtures | D=تفصيلي | E=مدين | F=4 | G=121
+43: A=1215.1 | B=                م. مراكمة - أثاث | C=Accum. Depr. - Furniture | D=تفصيلي | E=دائن | F=5 | G=1215
+44: A=1216 | B=            أجهزة الحاسب والبرمجيات | C=IT Equipment & Software | D=تفصيلي | E=مدين | F=4 | G=121
+45: A=1216.1 | B=                م. مراكمة - حاسب | C=Accum. Depr. - IT | D=تفصيلي | E=دائن | F=5 | G=1216
+46: A=1217 | B=            معدات وأدوات المصنع | C=Factory Tools & Equipment | D=تفصيلي | E=مدين | F=4 | G=121
+47: A=122 | B=        الأصول غير الملموسة | C=Intangible Assets | D=رئيسي | E=مدين | F=3 | G=12
+48: A=1221 | B=            الشهرة | C=Goodwill | D=تفصيلي | E=مدين | F=4 | G=122
+49: A=1222 | B=            براءات الاختراع والعلامات التجارية | C=Patents & Trademarks | D=تفصيلي | E=مدين | F=4 | G=122
+50: A=1223 | B=            حقوق الامتياز | C=Franchise Rights | D=تفصيلي | E=مدين | F=4 | G=122
+51: A=123 | B=        الاستثمارات طويلة الأجل | C=Long-term Investments | D=رئيسي | E=مدين | F=3 | G=12
+52: A=1231 | B=            استثمارات في شركات شقيقة | C=Investments in Associates | D=تفصيلي | E=مدين | F=4 | G=123
+53: A=1232 | B=            استثمارات في أوراق مالية | C=Investment Securities | D=تفصيلي | E=مدين | F=4 | G=123
+54: A=2 | B=الالتزامات | C=Liabilities | D=رئيسي | E=دائن | F=1
+55: A=21 | B=    الالتزامات المتداولة | C=Current Liabilities | D=رئيسي | E=دائن | F=2 | G=2
+56: A=211 | B=        الذمم الدائنة - الموردون | C=Accounts Payable - Suppliers | D=رئيسي | E=دائن | F=3 | G=21
+57: A=2111 | B=            ذمم موردون محليون | C=Local Suppliers Payable | D=تفصيلي | E=دائن | F=4 | G=211
+58: A=2112 | B=            ذمم موردون خارجيون | C=Foreign Suppliers Payable | D=تفصيلي | E=دائن | F=4 | G=211
+59: A=2113 | B=            أوراق الدفع | C=Notes Payable | D=تفصيلي | E=دائن | F=4 | G=211 | H=كمبيالات وشيكات مؤجلة
+60: A=212 | B=        الالتزامات الضريبية | C=Tax Liabilities | D=رئيسي | E=دائن | F=3 | G=21
+61: A=2121 | B=            ضريبة القيمة المضافة - محصلة | C=VAT Collected (Output Tax) | D=تفصيلي | E=دائن | F=4 | G=212
+62: A=2122 | B=            ضريبة الدخل المستحقة | C=Income Tax Payable | D=تفصيلي | E=دائن | F=4 | G=212
+63: A=2123 | B=            ضريبة الرواتب المستحقة | C=Payroll Tax Payable | D=تفصيلي | E=دائن | F=4 | G=212
+64: A=2124 | B=            ضريبة الجمارك المستحقة | C=Customs Duty Payable | D=تفصيلي | E=دائن | F=4 | G=212
+65: A=213 | B=        المستحقات والالتزامات الأخرى | C=Accrued Liabilities & Others | D=رئيسي | E=دائن | F=3 | G=21
+66: A=2131 | B=            رواتب ومزايا مستحقة | C=Accrued Salaries & Benefits | D=تفصيلي | E=دائن | F=4 | G=213
+67: A=2132 | B=            مصروفات مستحقة الدفع | C=Accrued Expenses | D=تفصيلي | E=دائن | F=4 | G=213
+68: A=2133 | B=            إيرادات مقدمة | C=Deferred Revenue | D=تفصيلي | E=دائن | F=4 | G=213
+69: A=2134 | B=            عملاء - دفعات مقدمة | C=Customer Advances | D=تفصيلي | E=دائن | F=4 | G=213
+70: A=2135 | B=            حسابات جارية - دائنة | C=Current Accounts - Credit | D=تفصيلي | E=دائن | F=4 | G=213
+71: A=214 | B=        القروض قصيرة الأجل | C=Short-term Loans | D=رئيسي | E=دائن | F=3 | G=21
+72: A=2141 | B=            قروض بنكية قصيرة الأجل | C=Short-term Bank Loans | D=تفصيلي | E=دائن | F=4 | G=214
+73: A=2142 | B=            تسهيلات ائتمانية - بنكية | C=Bank Credit Facilities | D=تفصيلي | E=دائن | F=4 | G=214
+74: A=2143 | B=            الجزء الجاري من قروض طويلة الأجل | C=Current Portion of LT Loans | D=تفصيلي | E=دائن | F=4 | G=214
+75: A=22 | B=    الالتزامات غير المتداولة | C=Non-Current Liabilities | D=رئيسي | E=دائن | F=2 | G=2
+76: A=221 | B=        القروض طويلة الأجل | C=Long-term Loans | D=رئيسي | E=دائن | F=3 | G=22
+77: A=2211 | B=            قروض بنكية طويلة الأجل | C=Long-term Bank Loans | D=تفصيلي | E=دائن | F=4 | G=221
+78: A=2212 | B=            سندات وصكوك | C=Bonds & Sukuk | D=تفصيلي | E=دائن | F=4 | G=221
+79: A=222 | B=        الالتزامات الأخرى طويلة الأجل | C=Other Long-term Liabilities | D=رئيسي | E=دائن | F=3 | G=22
+80: A=2221 | B=            مخصص مكافأة نهاية الخدمة | C=End-of-Service Benefits Provision | D=تفصيلي | E=دائن | F=4 | G=222
+81: A=2222 | B=            ضمانات العملاء | C=Customer Guarantees | D=تفصيلي | E=دائن | F=4 | G=222
+82: A=3 | B=حقوق الملكية | C=Equity | D=رئيسي | E=دائن | F=1
+83: A=31 | B=    رأس المال | C=Capital | D=رئيسي | E=دائن | F=2 | G=3
+84: A=311 | B=        رأس المال المدفوع | C=Paid-up Capital | D=تفصيلي | E=دائن | F=3 | G=31
+85: A=312 | B=    الاحتياطيات | C=Reserves | D=رئيسي | E=دائن | F=2 | G=3
+86: A=3121 | B=            الاحتياطي القانوني | C=Legal Reserve | D=تفصيلي | E=دائن | F=4 | G=312
+87: A=3122 | B=            الاحتياطي العام | C=General Reserve | D=تفصيلي | E=دائن | F=4 | G=312
+88: A=3123 | B=            احتياطي إعادة تقييم الأصول | C=Asset Revaluation Reserve | D=تفصيلي | E=دائن | F=4 | G=312
+89: A=313 | B=        الأرباح المبقاة | C=Retained Earnings | D=تفصيلي | E=دائن | F=3 | G=31
+90: A=314 | B=        الأرباح والخسائر السنة الحالية | C=Current Year P&L | D=تفصيلي | E=دائن | F=3 | G=31 | H=يُغلق في نهاية السنة
+91: A=4 | B=الإيرادات | C=Revenue | D=رئيسي | E=دائن | F=1
+92: A=41 | B=    إيرادات المبيعات | C=Sales Revenue | D=رئيسي | E=دائن | F=2 | G=4
+93: A=411 | B=        مبيعات المنتجات الصناعية | C=Industrial Products Sales | D=رئيسي | E=دائن | F=3 | G=41
+94: A=4111 | B=            مبيعات المنتج الأول | C=Product Line 1 Sales | D=تفصيلي | E=دائن | F=4 | G=411
+95: A=4112 | B=            مبيعات المنتج الثاني | C=Product Line 2 Sales | D=تفصيلي | E=دائن | F=4 | G=411
+96: A=4113 | B=            مبيعات المنتج الثالث | C=Product Line 3 Sales | D=تفصيلي | E=دائن | F=4 | G=411
+97: A=412 | B=        مبيعات البضاعة التجارية | C=Trading Goods Sales | D=رئيسي | E=دائن | F=3 | G=41
+98: A=4121 | B=            مبيعات محلية - تجاري | C=Local Trading Sales | D=تفصيلي | E=دائن | F=4 | G=412
+99: A=4122 | B=            مبيعات تصدير - تجاري | C=Export Trading Sales | D=تفصيلي | E=دائن | F=4 | G=412
+100: A=413 | B=        إيرادات الخدمات | C=Service Revenue | D=رئيسي | E=دائن | F=3 | G=41
+101: A=4131 | B=            خدمات ما بعد البيع | C=After-sales Services | D=تفصيلي | E=دائن | F=4 | G=413
+102: A=4132 | B=            خدمات الصيانة والإصلاح | C=Maintenance & Repair Services | D=تفصيلي | E=دائن | F=4 | G=413
+103: A=42 | B=    مردودات ومسموحات المبيعات | C=Sales Returns & Allowances | D=رئيسي | E=مدين | F=2 | G=4 | H=حساب مقابل
+104: A=4211 | B=        مردودات المبيعات | C=Sales Returns | D=تفصيلي | E=مدين | F=3 | G=42
+105: A=4212 | B=        خصم المبيعات | C=Sales Discounts | D=تفصيلي | E=مدين | F=3 | G=42
+106: A=43 | B=    الإيرادات الأخرى | C=Other Income | D=رئيسي | E=دائن | F=2 | G=4
+107: A=4311 | B=        إيرادات أرباح الاستثمارات | C=Investment Income | D=تفصيلي | E=دائن | F=3 | G=43
+108: A=4312 | B=        إيرادات فوائد | C=Interest Income | D=تفصيلي | E=دائن | F=3 | G=43
+109: A=4313 | B=        إيرادات إيجارات | C=Rental Income | D=تفصيلي | E=دائن | F=3 | G=43
+110: A=4314 | B=        أرباح بيع أصول ثابتة | C=Gain on Asset Disposal | D=تفصيلي | E=دائن | F=3 | G=43
+111: A=4315 | B=        إيرادات متنوعة أخرى | C=Miscellaneous Income | D=تفصيلي | E=دائن | F=3 | G=43
+112: A=5 | B=تكلفة البضاعة المباعة | C=Cost of Goods Sold | D=رئيسي | E=مدين | F=1
+113: A=51 | B=    تكاليف الإنتاج الصناعي | C=Manufacturing Costs | D=رئيسي | E=مدين | F=2 | G=5
+114: A=511 | B=        المواد الخام المباشرة | C=Direct Raw Materials | D=رئيسي | E=مدين | F=3 | G=51
+115: A=5111 | B=            استهلاك المواد الخام | C=Raw Materials Consumed | D=تفصيلي | E=مدين | F=4 | G=511
+116: A=5112 | B=            استهلاك مواد التغليف | C=Packaging Materials Consumed | D=تفصيلي | E=مدين | F=4 | G=511
+117: A=512 | B=        العمالة المباشرة | C=Direct Labor | D=رئيسي | E=مدين | F=3 | G=51
+118: A=5121 | B=            رواتب عمال الإنتاج | C=Production Workers Salaries | D=تفصيلي | E=مدين | F=4 | G=512
+119: A=5122 | B=            أجور إضافية - إنتاج | C=Production Overtime Wages | D=تفصيلي | E=مدين | F=4 | G=512
+120: A=5123 | B=            مكافآت وحوافز إنتاجية | C=Production Bonuses & Incentives | D=تفصيلي | E=مدين | F=4 | G=512
+121: A=513 | B=        التكاليف الصناعية غير المباشرة | C=Manufacturing Overhead | D=رئيسي | E=مدين | F=3 | G=51
+122: A=5131 | B=            إهلاك الآلات والمعدات | C=Depreciation - Machinery | D=تفصيلي | E=مدين | F=4 | G=513
+123: A=5132 | B=            إهلاك المباني الصناعية | C=Depreciation - Factory Buildings | D=تفصيلي | E=مدين | F=4 | G=513
+124: A=5133 | B=            صيانة وإصلاح الآلات | C=Machinery Maintenance & Repair | D=تفصيلي | E=مدين | F=4 | G=513
+125: A=5134 | B=            مصروف الكهرباء والطاقة - مصنع | C=Factory Electricity & Energy | D=تفصيلي | E=مدين | F=4 | G=513
+126: A=5135 | B=            مصروف المياه - مصنع | C=Factory Water | D=تفصيلي | E=مدين | F=4 | G=513
+127: A=5136 | B=            مصروف الوقود - الإنتاج | C=Production Fuel | D=تفصيلي | E=مدين | F=4 | G=513
+128: A=5137 | B=            مستلزمات الإنتاج الأخرى | C=Other Production Supplies | D=تفصيلي | E=مدين | F=4 | G=513
+129: A=52 | B=    تكلفة البضاعة التجارية المباعة | C=Cost of Trading Goods Sold | D=رئيسي | E=مدين | F=2 | G=5
+130: A=5211 | B=        تكلفة بضاعة تجارية محلية | C=Local Trading Goods Cost | D=تفصيلي | E=مدين | F=3 | G=52
+131: A=5212 | B=        تكلفة بضاعة تجارية مستوردة | C=Imported Trading Goods Cost | D=تفصيلي | E=مدين | F=3 | G=52
+132: A=5213 | B=        تكاليف الاستيراد والجمارك | C=Import & Customs Costs | D=تفصيلي | E=مدين | F=3 | G=52
+133: A=6 | B=مصروفات التشغيل | C=Operating Expenses | D=رئيسي | E=مدين | F=1
+134: A=61 | B=    مصروفات المبيعات والتوزيع | C=Selling & Distribution Expenses | D=رئيسي | E=مدين | F=2 | G=6
+135: A=611 | B=        رواتب وأجور - مبيعات | C=Salaries - Sales Dept | D=تفصيلي | E=مدين | F=3 | G=61
+136: A=612 | B=        عمولات المبيعات | C=Sales Commissions | D=تفصيلي | E=مدين | F=3 | G=61
+137: A=613 | B=        مصروف إعلان وتسويق | C=Advertising & Marketing | D=تفصيلي | E=مدين | F=3 | G=61
+138: A=614 | B=        مصروف نقل وتوزيع | C=Freight & Distribution | D=تفصيلي | E=مدين | F=3 | G=61
+139: A=615 | B=        مصروف تغليف وتعبئة | C=Packaging & Packing Expenses | D=تفصيلي | E=مدين | F=3 | G=61
+140: A=616 | B=        مصروف ضمانات وخدمة عملاء | C=Warranty & Customer Service | D=تفصيلي | E=مدين | F=3 | G=61
+141: A=617 | B=        سفر وانتقالات - مبيعات | C=Travel & Transport - Sales | D=تفصيلي | E=مدين | F=3 | G=61
+142: A=618 | B=        مصروف المعارض والبازارات | C=Exhibitions & Trade Shows | D=تفصيلي | E=مدين | F=3 | G=61
+143: A=62 | B=    المصروفات الإدارية والعمومية | C=General & Administrative Expenses | D=رئيسي | E=مدين | F=2 | G=6
+144: A=621 | B=        رواتب وأجور - إدارة | C=Salaries - Admin Dept | D=تفصيلي | E=مدين | F=3 | G=62
+145: A=622 | B=        مكافآت نهاية الخدمة | C=End-of-Service Benefits | D=تفصيلي | E=مدين | F=3 | G=62
+146: A=623 | B=        مصروف الإيجارات | C=Rent Expense | D=تفصيلي | E=مدين | F=3 | G=62 | H=مكاتب وإداري
+147: A=624 | B=        مصروف الكهرباء والمياه - إدارة | C=Electricity & Water - Admin | D=تفصيلي | E=مدين | F=3 | G=62
+148: A=625 | B=        مصروف الهاتف والإنترنت | C=Telephone & Internet | D=تفصيلي | E=مدين | F=3 | G=62
+149: A=626 | B=        مصروف القرطاسية والمطبوعات | C=Stationery & Printing | D=تفصيلي | E=مدين | F=3 | G=62
+150: A=627 | B=        مصروف الصيانة - إدارة | C=Maintenance - Admin | D=تفصيلي | E=مدين | F=3 | G=62
+151: A=628 | B=        مصروف التأمين | C=Insurance Expense | D=تفصيلي | E=مدين | F=3 | G=62
+152: A=629 | B=        مصروف الاستشارات والمحاسبة | C=Consulting & Accounting Fees | D=تفصيلي | E=مدين | F=3 | G=62
+153: A=630 | B=        مصروف الترخيص والرسوم الحكومية | C=Licenses & Government Fees | D=تفصيلي | E=مدين | F=3 | G=62
+154: A=631 | B=        مصروف النظافة والأمن | C=Cleaning & Security | D=تفصيلي | E=مدين | F=3 | G=62
+155: A=632 | B=        مصروف سفر وانتقالات - إدارة | C=Travel & Transport - Admin | D=تفصيلي | E=مدين | F=3 | G=62
+156: A=633 | B=        مصروفات الإهلاك - إداري | C=Depreciation - Admin Assets | D=تفصيلي | E=مدين | F=3 | G=62
+157: A=634 | B=        مصروفات متنوعة - إدارة | C=Miscellaneous Admin Expenses | D=تفصيلي | E=مدين | F=3 | G=62
+158: A=63 | B=    مصروفات التمويل | C=Finance Costs | D=رئيسي | E=مدين | F=2 | G=6
+159: A=631 | B=        فوائد قروض بنكية | C=Bank Loan Interest | D=تفصيلي | E=مدين | F=3 | G=63
+160: A=632 | B=        عمولات بنكية | C=Bank Commissions & Charges | D=تفصيلي | E=مدين | F=3 | G=63
+161: A=633 | B=        خسائر فروق العملة | C=Foreign Exchange Losses | D=تفصيلي | E=مدين | F=3 | G=63
+162: A=64 | B=    المصروفات الأخرى | C=Other Expenses | D=رئيسي | E=مدين | F=2 | G=6
+163: A=641 | B=        ديون معدومة وهالكة | C=Bad Debts Written Off | D=تفصيلي | E=مدين | F=3 | G=64
+164: A=642 | B=        خسائر بيع أصول ثابتة | C=Loss on Asset Disposal | D=تفصيلي | E=مدين | F=3 | G=64
+165: A=643 | B=        مصروف هبوط أسعار المخزون | C=Inventory Write-down Expense | D=تفصيلي | E=مدين | F=3 | G=64
+166: A=644 | B=        مصروفات استثنائية | C=Extraordinary Expenses | D=تفصيلي | E=مدين | F=3 | G=64
+167: A=7 | B=حسابات ختامية ومقاصة | C=Closing & Clearing Accounts | D=رئيسي | E=مدين | F=1
+168: A=71 | B=    حساب المتاجرة | C=Trading Account | D=تفصيلي | E=مدين | F=2 | G=7
+169: A=72 | B=    حساب الأرباح والخسائر | C=Profit & Loss Account | D=تفصيلي | E=مدين | F=2 | G=7
+170: A=73 | B=    ضريبة الدخل | C=Income Tax | D=تفصيلي | E=مدين | F=2 | G=7
+171: A=74 | B=    حساب التوزيعات / الأرباح الموزعة | C=Dividends Distribution | D=تفصيلي | E=مدين | F=2 | G=7
+172: A=75 | B=    حساب المقاصة الداخلية | C=Internal Clearing Account | D=تفصيلي | E=مدين | F=2 | G=7 | H=للتحويلات الداخلية

@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-ink:#0250D3; --brand-light:#4A80E8;
+    --wash:rgba(2,80,211,.08); --side:#0F172A; --side-line:#243247;
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280; --track:#E6ECF6; --desk:#DFE5EF;
+  }
+  [data-theme="dark"]{
+    --canvas:#0A1220; --card:#121C2E; --hairline:#243247; --field:#18243A;
+    --brand-ink:#7DA6F5; --wash:rgba(74,128,232,.14); --side:#08101E; --side-line:#1D2A3E;
+    --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8; --track:#1E2B42; --desk:#050B15;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#0A1220;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#94A3B855;border-radius:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" dir="rtl" onMouseMove="{{ onMove }}" onMouseUp="{{ onUp }}" style="width:1920px;height:1080px;display:flex;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;user-select:none;">
+
+  <div style="width:84px;flex:none;background:var(--side);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:14px;">
+    <div style="width:44px;height:44px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <img src="assets/picpos-logo.png" alt="PicPos" style="width:38px;height:38px;object-fit:contain;" />
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:7px;">
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="9">
+        <div title="{{ r.label }}" style="position:relative;width:52px;height:46px;border-radius:13px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+          <i class="ph-bold {{ r.icon }}" style="font-size:21px;color:{{ r.fg }};"></i>
+          <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;inset-inline-end:-14px;top:11px;width:3.5px;height:24px;border-radius:3px;background:var(--brand-light);"></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="width:40px;height:40px;flex:none;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;">م.س</div>
+  </div>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <!-- ═══════════ toolbar ═══════════ -->
+    <div style="height:70px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:12px;padding:0 22px;">
+      <div style="width:42px;height:42px;flex:none;border-radius:12px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold ph-layout" style="font-size:21px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <a href="PicPos Template Library.dc.html" title="فتح مكتبة النماذج" style="font-size:16px;font-weight:800;color:var(--txt);cursor:pointer;border-bottom:1.5px dotted var(--muted);text-decoration:none;">{{ tpl.name }}</a>
+          <a href="PicPos Template Library.dc.html" title="فتح مكتبة النماذج" style="display:flex;align-items:center;color:var(--muted);text-decoration:none;"><i class="ph-bold ph-caret-down" style="font-size:13px;"></i></a>
+          <sc-if value="{{ tpl.isDefault }}" hint-placeholder-val="{{ true }}">
+            <span style="font-size:10px;font-weight:800;color:#22C55E;background:rgba(34,197,94,.12);border-radius:999px;padding:2px 9px;">افتراضي</span>
+          </sc-if>
+          <sc-if value="{{ dirty }}" hint-placeholder-val="{{ false }}">
+            <span style="font-size:10px;font-weight:800;color:#F59E0B;background:rgba(245,158,11,.14);border-radius:999px;padding:2px 9px;">تعديلات غير محفوظة</span>
+          </sc-if>
+        </div>
+        <div style="font-size:11px;color:var(--muted);font-weight:600;">{{ tpl.meta }}</div>
+      </div>
+      <div style="flex:1;"></div>
+
+      <div style="display:flex;align-items:center;gap:6px;border:1.5px solid var(--hairline);border-radius:11px;padding:3px;">
+        <sc-for list="{{ papers }}" as="p" hint-placeholder-count="4">
+          <div onClick="{{ p.pick }}" style="height:30px;border-radius:8px;background:{{ p.bg }};display:flex;align-items:center;padding:0 11px;cursor:pointer;">
+            <span style="font-size:11.5px;font-weight:800;color:{{ p.fg }};white-space:nowrap;">{{ p.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:6px;border:1.5px solid var(--hairline);border-radius:11px;padding:3px;">
+        <div onClick="{{ zoomOut }}" style="width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+          <i class="ph-bold ph-minus" style="font-size:13px;"></i>
+        </div>
+        <span style="font-size:11.5px;font-weight:800;color:var(--txt2);min-width:38px;text-align:center;">{{ zoomLabel }}</span>
+        <div onClick="{{ zoomIn }}" style="width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+          <i class="ph-bold ph-plus" style="font-size:13px;"></i>
+        </div>
+      </div>
+
+      <div onClick="{{ toggleSnap }}" title="محاذاة للشبكة" style="width:40px;height:40px;flex:none;border-radius:11px;border:1.5px solid {{ snap.bd }};background:{{ snap.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;color:{{ snap.fg }};">
+        <i class="ph-bold ph-grid-nine" style="font-size:17px;"></i>
+      </div>
+
+      <div style="flex:1;"></div>
+
+      <div onClick="{{ toggleTheme }}" style="width:40px;height:40px;flex:none;border-radius:11px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+        <i class="ph-bold {{ themeIcon }}" style="font-size:17px;"></i>
+      </div>
+      <a href="PicPos Template Library.dc.html" style="height:40px;flex:none;border-radius:11px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:7px;padding:0 14px;cursor:pointer;color:var(--txt2);font-size:12.5px;font-weight:700;white-space:nowrap;text-decoration:none;">
+        <i class="ph-bold ph-books" style="font-size:16px;"></i>مكتبة النماذج
+      </a>
+      <div onClick="{{ togglePreview }}" style="height:40px;flex:none;border-radius:11px;border:1.5px solid {{ preview.bd }};background:{{ preview.bg }};display:flex;align-items:center;gap:7px;padding:0 14px;cursor:pointer;color:{{ preview.fg }};font-size:12.5px;font-weight:700;white-space:nowrap;">
+        <i class="ph-bold {{ preview.icon }}" style="font-size:16px;"></i>{{ preview.label }}
+      </div>
+      <div onClick="{{ saveOnly }}" title="حفظ بلا تغيير الرابطات" style="height:40px;flex:none;border-radius:11px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;width:44px;cursor:pointer;color:var(--txt2);">
+        <i class="ph-bold ph-floppy-disk" style="font-size:16px;"></i>
+      </div>
+      <div onClick="{{ save }}" style="height:40px;flex:none;border-radius:11px;background:var(--brand);display:flex;align-items:center;gap:7px;padding:0 18px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        <i class="ph-bold ph-check-circle" style="font-size:16px;"></i>حفظ وتفعيل كافتراضي
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;display:flex;">
+
+      <!-- ═══════════ left: outline + library ═══════════ -->
+      <div style="width:300px;flex:none;background:var(--card);border-inline-end:1px solid var(--hairline);display:flex;flex-direction:column;">
+        <div style="flex:none;display:flex;border-bottom:1px solid var(--hairline);">
+          <sc-for list="{{ leftTabs }}" as="t" hint-placeholder-count="2">
+            <div onClick="{{ t.pick }}" style="flex:1;height:42px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;border-bottom:2px solid {{ t.mark }};background:{{ t.bg }};">
+              <i class="ph-bold {{ t.icon }}" style="font-size:14px;color:{{ t.fg }};"></i>
+              <span style="font-size:12px;font-weight:800;color:{{ t.fg }};">{{ t.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- outline -->
+        <sc-if value="{{ showOutline }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1;min-height:0;overflow-y:auto;">
+            <sc-for list="{{ outline }}" as="b" hint-placeholder-count="5">
+              <div style="border-bottom:1px solid var(--hairline);">
+                <div onClick="{{ b.pick }}" style="padding:9px 14px;display:flex;align-items:center;gap:8px;background:{{ b.headBg }};cursor:pointer;">
+                  <i class="ph-bold {{ b.icon }}" style="font-size:13px;color:{{ b.tint }};"></i>
+                  <span style="flex:1;font-size:12px;font-weight:800;color:{{ b.tint }};">{{ b.label }}</span>
+                  <span style="font-size:9.5px;font-weight:700;color:var(--muted);">{{ b.hmm }}</span>
+                  <sc-if value="{{ b.grows }}" hint-placeholder-val="{{ false }}">
+                    <i class="ph-bold ph-arrows-out-line-vertical" title="يتمدّد بالبيانات" style="font-size:12px;color:#F59E0B;"></i>
+                  </sc-if>
+                </div>
+                <sc-for list="{{ b.items }}" as="e" hint-placeholder-count="4">
+                  <div onClick="{{ e.pick }}" style="padding:7px 14px 7px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;background:{{ e.bg }};border-inline-start:3px solid {{ e.mark }};">
+                    <i onClick="{{ e.toggle }}" class="ph-bold {{ e.visIcon }}" style="font-size:13px;color:{{ e.visFg }};flex:none;"></i>
+                    <span style="flex:1;min-width:0;font-size:11.5px;font-weight:700;color:{{ e.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ e.label }}</span>
+                    <sc-if value="{{ e.hasCond }}" hint-placeholder-val="{{ false }}">
+                      <i class="ph-bold ph-funnel" title="{{ e.cond }}" style="font-size:11px;color:#8B5CF6;flex:none;"></i>
+                    </sc-if>
+                    <span style="font-size:9px;font-weight:700;color:var(--muted);font-family:'JetBrains Mono',monospace;flex:none;">{{ e.key }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- library -->
+        <sc-if value="{{ showLibrary }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-height:0;overflow-y:auto;padding:12px 14px;">
+            <sc-for list="{{ library }}" as="g" hint-placeholder-count="4">
+              <div style="margin-bottom:14px;">
+                <div style="font-size:11px;font-weight:800;color:{{ g.tint }};margin-bottom:7px;">{{ g.label }}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                  <sc-for list="{{ g.items }}" as="f" hint-placeholder-count="6">
+                    <div onClick="{{ f.add }}" title="{{ f.key }}" style="height:28px;border-radius:8px;border:1.5px solid {{ f.bd }};background:{{ f.bg }};display:flex;align-items:center;gap:5px;padding:0 9px;cursor:{{ f.cursor }};">
+                      <i class="ph-bold {{ f.icon }}" style="font-size:11px;color:{{ f.fg }};"></i>
+                      <span style="font-size:11px;font-weight:700;color:{{ f.fg }};white-space:nowrap;">{{ f.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- ═══════════ centre: paper ═══════════ -->
+      <div style="flex:1;min-width:0;background:var(--desk);overflow:auto;padding:26px;display:flex;justify-content:center;align-items:flex-start;">
+        <div style="flex:none;transform:scale({{ zoom }});transform-origin:top center;">
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+
+            <!-- band gutter -->
+            <div style="width:26px;flex:none;display:flex;flex-direction:column;gap:0;padding-top:0;">
+              <sc-for list="{{ bands }}" as="b" hint-placeholder-count="5">
+                <div onClick="{{ b.pick }}" style="height:{{ b.h }};display:flex;align-items:center;justify-content:center;background:{{ b.gutBg }};border-inline-end:2.5px solid {{ b.tint }};cursor:pointer;position:relative;">
+                  <span style="font-size:9px;font-weight:800;color:{{ b.tint }};writing-mode:vertical-rl;white-space:nowrap;letter-spacing:.5px;">{{ b.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="width:{{ paper.w }};background:#FFFFFF;box-shadow:0 12px 38px rgba(11,18,32,.24);position:relative;font-family:'Noto Naskh Arabic','Cairo',serif;color:#0B1220;">
+              <sc-for list="{{ bands }}" as="b" hint-placeholder-count="5">
+                <div onClick="{{ b.pick }}" style="height:{{ b.h }};position:relative;border-bottom:1px dashed {{ b.edge }};background:{{ b.bg }};opacity:{{ b.bandOpacity }};">
+                  <sc-if value="{{ showSnap }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute;inset:0;background-image:radial-gradient(circle, #C9D2E0 1px, transparent 1px);background-size:{{ grid }} {{ grid }};opacity:.55;pointer-events:none;"></div>
+                  </sc-if>
+
+                  <sc-for list="{{ b.els }}" as="e" hint-placeholder-count="4">
+                    <div onMouseDown="{{ e.down }}" onClick="{{ e.click }}" style="position:absolute;inset-inline-start:{{ e.x }};top:{{ e.y }};width:{{ e.w }};height:{{ e.h }};display:flex;align-items:center;justify-content:{{ e.justify }};padding:0 2px;cursor:move;outline:{{ e.outline }};outline-offset:1px;background:{{ e.selBg }};opacity:{{ e.opacity }};">
+                      <span style="font-size:{{ e.fs }};font-weight:{{ e.fw }};color:{{ e.color }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ e.text }}</span>
+                      <sc-if value="{{ e.selected }}" hint-placeholder-val="{{ false }}">
+                        <span style="position:absolute;inset-inline-start:-4px;top:-4px;width:7px;height:7px;background:var(--brand);border:1.5px solid #fff;"></span>
+                        <span style="position:absolute;inset-inline-end:-4px;top:-4px;width:7px;height:7px;background:var(--brand);border:1.5px solid #fff;"></span>
+                        <span style="position:absolute;inset-inline-start:-4px;bottom:-4px;width:7px;height:7px;background:var(--brand);border:1.5px solid #fff;"></span>
+                        <span onMouseDown="{{ e.resize }}" style="position:absolute;inset-inline-end:-4px;bottom:-4px;width:7px;height:7px;background:var(--brand);border:1.5px solid #fff;cursor:nwse-resize;"></span>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+
+                  <sc-if value="{{ b.isTable }}" hint-placeholder-val="{{ false }}">
+                    <div onMouseDown="{{ b.tableDown }}" onClick="{{ b.tableClick }}" style="position:absolute;inset-inline-start:{{ b.tx }};top:{{ b.ty }};width:{{ b.tw }};cursor:move;outline:{{ b.tOutline }};outline-offset:2px;">
+                      <div style="display:grid;grid-template-columns:{{ b.tgrid }};border-top:1.4px solid #0B1220;border-bottom:1px solid #0B1220;padding:3px 0;">
+                        <sc-for list="{{ b.cols }}" as="c" hint-placeholder-count="6">
+                          <div style="min-width:0;text-align:{{ c.align }};padding:0 3px;">
+                            <div style="font-size:{{ b.hfs }};font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.ar }}</div>
+                            <sc-if value="{{ b.bilingual }}" hint-placeholder-val="{{ true }}">
+                              <div style="font-size:{{ b.tinyfs }};font-weight:600;color:#8B95A5;font-family:'Cairo',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.en }}</div>
+                            </sc-if>
+                          </div>
+                        </sc-for>
+                      </div>
+                      <sc-for list="{{ b.rows }}" as="r" hint-placeholder-count="4">
+                        <div style="display:grid;grid-template-columns:{{ b.tgrid }};border-bottom:1px solid #E8EDF4;padding:2.5px 0;background:{{ r.bg }};">
+                          <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="6">
+                            <div style="min-width:0;text-align:{{ c.align }};padding:0 3px;font-size:{{ c.fs }};color:#243247;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.v }}</div>
+                          </sc-for>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:10px;font-size:11px;font-weight:700;color:var(--muted);font-family:'Cairo',sans-serif;">{{ paper.caption }}</div>
+        </div>
+      </div>
+
+      <!-- ═══════════ right: properties ═══════════ -->
+      <div style="width:376px;flex:none;background:var(--card);border-inline-start:1px solid var(--hairline);display:flex;flex-direction:column;overflow-y:auto;">
+
+        <!-- element properties -->
+        <sc-if value="{{ hasEl }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:none;">
+            <div style="padding:14px 18px 12px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
+              <div style="width:34px;height:34px;flex:none;border-radius:10px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+                <i class="ph-bold {{ el.icon }}" style="font-size:16px;color:var(--brand-ink);"></i>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:800;color:var(--txt);">{{ el.title }}</div>
+                <div style="font-size:10.5px;font-weight:600;color:var(--muted);font-family:'JetBrains Mono',monospace;">{{ el.key }} · {{ el.bandLabel }}</div>
+              </div>
+              <i onClick="{{ el.remove }}" class="ph-bold ph-trash" style="font-size:15px;color:#EF4444;cursor:pointer;"></i>
+            </div>
+
+            <div style="padding:13px 18px;border-bottom:1px solid var(--hairline);">
+              <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:9px;">التسمية المطبوعة</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div>
+                  <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:4px;">عربي</div>
+                  <input value="{{ el.labelAr }}" onChange="{{ el.setAr }}" placeholder="بلا تسمية" style="width:100%;height:34px;border-radius:9px;border:1.5px solid var(--hairline);background:var(--field);padding:0 10px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;color:var(--txt);outline:none;" />
+                </div>
+                <div>
+                  <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:4px;">English</div>
+                  <input dir="ltr" value="{{ el.labelEn }}" onChange="{{ el.setEn }}" placeholder="none" style="width:100%;height:34px;border-radius:9px;border:1.5px solid var(--hairline);background:var(--field);padding:0 10px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;color:var(--txt);outline:none;" />
+                </div>
+              </div>
+            </div>
+
+            <div style="padding:13px 18px;border-bottom:1px solid var(--hairline);">
+              <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:9px;">الموضع والحجم — بالمليمتر داخل النطاق</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <sc-for list="{{ el.geo }}" as="g" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:10.5px;font-weight:700;color:var(--muted);min-width:38px;">{{ g.label }}</span>
+                    <div onClick="{{ g.dec }}" style="width:26px;height:30px;border-radius:8px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+                      <i class="ph-bold ph-minus" style="font-size:11px;"></i>
+                    </div>
+                    <span style="flex:1;text-align:center;font-size:12.5px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ g.value }}</span>
+                    <div onClick="{{ g.inc }}" style="width:26px;height:30px;border-radius:8px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+                      <i class="ph-bold ph-plus" style="font-size:11px;"></i>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="padding:13px 18px;border-bottom:1px solid var(--hairline);">
+              <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:9px;">المظهر</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;">
+                <span style="font-size:10.5px;font-weight:700;color:var(--muted);min-width:52px;">حجم الخط</span>
+                <div onClick="{{ el.fsDec }}" style="width:28px;height:30px;border-radius:8px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+                  <i class="ph-bold ph-minus" style="font-size:11px;"></i>
+                </div>
+                <span style="min-width:34px;text-align:center;font-size:12.5px;font-weight:800;color:var(--txt);">{{ el.fontSize }}</span>
+                <div onClick="{{ el.fsInc }}" style="width:28px;height:30px;border-radius:8px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+                  <i class="ph-bold ph-plus" style="font-size:11px;"></i>
+                </div>
+                <div onClick="{{ el.toggleBold }}" style="flex:1;height:30px;border-radius:8px;border:1.5px solid {{ el.boldBd }};background:{{ el.boldBg }};display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;">
+                  <i class="ph-bold ph-text-b" style="font-size:13px;color:{{ el.boldFg }};"></i>
+                  <span style="font-size:11px;font-weight:800;color:{{ el.boldFg }};">عريض</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:10.5px;font-weight:700;color:var(--muted);min-width:52px;">المحاذاة</span>
+                <sc-for list="{{ el.aligns }}" as="a" hint-placeholder-count="3">
+                  <div onClick="{{ a.pick }}" style="flex:1;height:30px;border-radius:8px;border:1.5px solid {{ a.bd }};background:{{ a.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                    <i class="ph-bold {{ a.icon }}" style="font-size:13px;color:{{ a.fg }};"></i>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="padding:13px 18px;border-bottom:1px solid var(--hairline);">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;">
+                <i class="ph-bold ph-funnel" style="font-size:13px;color:#8B5CF6;"></i>
+                <span style="flex:1;font-size:11px;font-weight:800;color:var(--muted);">شرط الإظهار</span>
+                <span style="font-size:10px;font-weight:700;color:var(--muted);">اتركه فارغاً ليظهر دائماً</span>
+              </div>
+              <div style="height:34px;border-radius:9px;border:1.5px solid {{ el.condBd }};background:{{ el.condBg }};display:flex;align-items:center;padding:0 10px;gap:7px;">
+                <span style="flex:1;min-width:0;font-size:11.5px;font-weight:700;color:{{ el.condFg }};font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ el.cond }}</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">
+                <sc-for list="{{ el.condPresets }}" as="c" hint-placeholder-count="4">
+                  <div onClick="{{ c.pick }}" style="height:24px;border-radius:7px;border:1px solid var(--hairline);background:var(--field);display:flex;align-items:center;padding:0 8px;cursor:pointer;">
+                    <span style="font-size:10px;font-weight:700;color:var(--txt2);font-family:'JetBrains Mono',monospace;white-space:nowrap;">{{ c.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- table / column editor -->
+        <sc-if value="{{ hasTable }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;">
+            <div style="padding:14px 18px 12px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
+              <div style="width:34px;height:34px;flex:none;border-radius:10px;background:rgba(245,158,11,.14);display:flex;align-items:center;justify-content:center;">
+                <i class="ph-bold ph-table" style="font-size:16px;color:#F59E0B;"></i>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:800;color:var(--txt);">جدول الأصناف</div>
+                <div style="font-size:10.5px;font-weight:600;color:var(--muted);">{{ tbl.onCount }} من {{ tbl.total }} عمود مُفعَّل · اسحب لإعادة الترتيب</div>
+              </div>
+            </div>
+
+            <div style="padding:11px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:8px;">
+              <span style="font-size:10.5px;font-weight:700;color:var(--muted);">خط البدن</span>
+              <i onClick="{{ tbl.fsDec }}" class="ph-bold ph-minus" style="font-size:10px;color:var(--txt2);cursor:pointer;"></i>
+              <span style="font-size:12px;font-weight:800;color:var(--txt);min-width:26px;text-align:center;">{{ tbl.fontSize }}</span>
+              <i onClick="{{ tbl.fsInc }}" class="ph-bold ph-plus" style="font-size:10px;color:var(--txt2);cursor:pointer;"></i>
+              <span style="width:1px;height:18px;background:var(--hairline);"></span>
+              <span style="font-size:10.5px;font-weight:700;color:var(--muted);">العناوين</span>
+              <i onClick="{{ tbl.hfsDec }}" class="ph-bold ph-minus" style="font-size:10px;color:var(--txt2);cursor:pointer;"></i>
+              <span style="font-size:12px;font-weight:800;color:var(--txt);min-width:26px;text-align:center;">{{ tbl.headerFontSize }}</span>
+              <i onClick="{{ tbl.hfsInc }}" class="ph-bold ph-plus" style="font-size:10px;color:var(--txt2);cursor:pointer;"></i>
+              <span style="width:1px;height:18px;background:var(--hairline);"></span>
+              <div onClick="{{ tbl.toggleBilingual }}" style="flex:1;height:28px;border-radius:8px;border:1.5px solid {{ tbl.biBd }};background:{{ tbl.biBg }};display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;">
+                <i class="ph-bold ph-translate" style="font-size:12px;color:{{ tbl.biFg }};"></i>
+                <span style="font-size:10.5px;font-weight:800;color:{{ tbl.biFg }};">عناوين ثنائية</span>
+              </div>
+            </div>
+
+            <sc-for list="{{ tbl.cols }}" as="c" hint-placeholder-count="8">
+              <div style="padding:10px 14px;border-bottom:1px solid var(--hairline);background:{{ c.rowBg }};">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="display:flex;flex-direction:column;gap:1px;flex:none;">
+                    <i onClick="{{ c.up }}" class="ph-bold ph-caret-up" style="font-size:10px;color:{{ c.upFg }};cursor:pointer;"></i>
+                    <i onClick="{{ c.down }}" class="ph-bold ph-caret-down" style="font-size:10px;color:{{ c.downFg }};cursor:pointer;"></i>
+                  </div>
+                  <i onClick="{{ c.toggle }}" class="ph-bold {{ c.onIcon }}" style="font-size:16px;color:{{ c.onFg }};cursor:pointer;flex:none;"></i>
+                  <div style="flex:1;min-width:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                    <input value="{{ c.ar }}" onChange="{{ c.setAr }}" style="width:100%;height:28px;border-radius:7px;border:1.5px solid var(--hairline);background:var(--field);padding:0 8px;font-family:'Cairo',sans-serif;font-size:11.5px;font-weight:700;color:{{ c.fg }};outline:none;" />
+                    <input dir="ltr" value="{{ c.en }}" onChange="{{ c.setEn }}" style="width:100%;height:28px;border-radius:7px;border:1.5px solid var(--hairline);background:var(--field);padding:0 8px;font-family:'Cairo',sans-serif;font-size:11.5px;font-weight:700;color:{{ c.fg }};outline:none;" />
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:7px;padding-inline-start:32px;">
+                  <span style="font-size:10px;font-weight:700;color:var(--muted);">عرض</span>
+                  <i onClick="{{ c.wDec }}" class="ph-bold ph-minus" style="font-size:10px;color:var(--txt2);cursor:pointer;"></i>
+                  <div style="flex:1;height:5px;border-radius:3px;background:var(--track);overflow:hidden;">
+                    <div style="height:100%;width:{{ c.wPct }};background:{{ c.barFg }};border-radius:3px;"></div>
+                  </div>
+                  <i onClick="{{ c.wInc }}" class="ph-bold ph-plus" style="font-size:10px;color:var(--txt2);cursor:pointer;"></i>
+                  <span style="font-size:10.5px;font-weight:800;color:var(--txt2);min-width:22px;text-align:center;font-variant-numeric:tabular-nums;">{{ c.flex }}</span>
+                  <span style="width:1px;height:14px;background:var(--hairline);"></span>
+                  <span style="font-size:10px;font-weight:700;color:var(--muted);">خانات</span>
+                  <i onClick="{{ c.decDec }}" class="ph-bold ph-minus" style="font-size:10px;color:var(--txt2);cursor:pointer;"></i>
+                  <span style="font-size:10.5px;font-weight:800;color:var(--txt2);min-width:10px;text-align:center;">{{ c.dec }}</span>
+                  <i onClick="{{ c.decInc }}" class="ph-bold ph-plus" style="font-size:10px;color:var(--txt2);cursor:pointer;"></i>
+                  <sc-if value="{{ c.hasFormula }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size:9.5px;font-weight:800;color:#8B5CF6;background:rgba(139,92,246,.12);border-radius:6px;padding:2px 7px;font-family:'JetBrains Mono',monospace;">{{ c.formula }}</span>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+
+            <div onClick="{{ tbl.addComputed }}" style="margin:12px 18px;height:36px;border-radius:10px;border:1.5px dashed var(--brand);display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;">
+              <i class="ph-bold ph-function" style="font-size:14px;color:var(--brand-ink);"></i>
+              <span style="font-size:12px;font-weight:800;color:var(--brand-ink);">عمود محسوب بمعادلة</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- band properties -->
+        <sc-if value="{{ hasBand }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;padding:14px 18px;border-bottom:1px solid var(--hairline);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+              <div style="width:34px;height:34px;flex:none;border-radius:10px;background:{{ band.bg }};display:flex;align-items:center;justify-content:center;">
+                <i class="ph-bold {{ band.icon }}" style="font-size:16px;color:{{ band.tint }};"></i>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:800;color:var(--txt);">نطاق {{ band.label }}</div>
+                <div style="font-size:10.5px;font-weight:600;color:var(--muted);">{{ band.note }}</div>
+              </div>
+            </div>
+            <sc-for list="{{ band.opts }}" as="o" hint-placeholder-count="3">
+              <div onClick="{{ o.toggle }}" style="display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--hairline);cursor:pointer;">
+                <i class="ph-bold {{ o.icon }}" style="font-size:14px;color:{{ o.tint }};"></i>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12px;font-weight:700;color:var(--txt);">{{ o.title }}</div>
+                  <div style="font-size:10px;font-weight:600;color:var(--muted);line-height:1.4;">{{ o.sub }}</div>
+                </div>
+                <i class="ph-bold {{ o.stateIcon }}" style="font-size:17px;color:{{ o.stateFg }};flex:none;"></i>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="flex:none;margin:14px 18px 20px;padding:11px 13px;border-radius:11px;background:var(--field);border:1px solid var(--hairline);">
+          <div style="display:flex;align-items:center;gap:7px;">
+            <i class="ph-bold ph-info" style="font-size:13px;color:var(--brand-ink);"></i>
+            <span style="font-size:11.5px;font-weight:800;color:var(--txt);">{{ hint.title }}</span>
+          </div>
+          <div style="font-size:11px;font-weight:600;color:var(--txt2);margin-top:5px;line-height:1.65;">{{ hint.body }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;bottom:22px;inset-inline-start:120px;width:430px;background:var(--card);border:1.5px solid rgba(34,197,94,.45);border-radius:15px;box-shadow:0 16px 44px rgba(6,12,22,.3);padding:14px 16px;z-index:50;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <i class="ph-bold ph-check-circle" style="font-size:17px;color:#22C55E;"></i>
+        <span style="flex:1;font-size:13px;font-weight:800;color:var(--txt);">{{ toast.title }}</span>
+        <i onClick="{{ closeToast }}" class="ph-bold ph-x" style="font-size:14px;color:var(--muted);cursor:pointer;"></i>
+      </div>
+      <sc-for list="{{ toast.lines }}" as="l" hint-placeholder-count="4">
+        <div style="display:flex;align-items:flex-start;gap:7px;margin-top:7px;">
+          <i class="ph-bold ph-arrow-left" style="font-size:11px;color:var(--muted);margin-top:3px;flex:none;"></i>
+          <span style="font-size:11.5px;font-weight:600;color:var(--txt2);line-height:1.55;">{{ l }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;snapToGrid&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;المحرر&quot;}}">
+const RAIL = [
+  {icon:'ph-squares-four', label:'الرئيسية'},
+  {icon:'ph-receipt', label:'الفواتير'},
+  {icon:'ph-layout', label:'محرر النماذج', active:true},
+  {icon:'ph-printer', label:'الطابعات'},
+  {icon:'ph-broadcast', label:'الفوترة الإلكترونية'},
+  {icon:'ph-users-three', label:'العملاء'},
+  {icon:'ph-chart-line-up', label:'التحليلات'},
+  {icon:'ph-file-text', label:'التقارير'},
+  {icon:'ph-gear', label:'الإعدادات'},
+];
+
+const PAPERS = {
+  A4:      {label:'A4',   w:210, h:297},
+  A5:      {label:'A5',   w:148, h:210},
+  '80mm':  {label:'80mm', w:80,  h:0},
+  '58mm':  {label:'58mm', w:58,  h:0},
+};
+
+// Bands flow top to bottom; elements sit at absolute mm INSIDE their band.
+// The detail band is the only one that grows with the data.
+const BANDS = [
+  {id:'header',  label:'الرأس',     icon:'ph-arrow-line-up',   tint:'#0250D3', h:34, note:'يتكرر على كل صفحة',
+   opts:[['ph-repeat','تكرار على كل صفحة','يُعاد رسمه أعلى كل ورقة عند انقسام الجدول',true],
+         ['ph-eye','ظاهر','إخفاء النطاق يخفي كل عناصره',true]]},
+  {id:'info',    label:'البيانات',  icon:'ph-info',            tint:'#8B5CF6', h:24, note:'بيانات المستند',
+   opts:[['ph-eye','ظاهر','إخفاء النطاق يخفي كل عناصره',true],
+         ['ph-arrows-in-line-vertical','ارتفاع تلقائي','يتقلّص لأصغر ارتفاع يسع عناصره',false]]},
+  {id:'party',   label:'الطرف',     icon:'ph-user',            tint:'#4A80E8', h:26, note:'العميل أو المورد',
+   opts:[['ph-eye','ظاهر','إخفاء النطاق يخفي كل عناصره',true],
+         ['ph-arrows-in-line-vertical','ارتفاع تلقائي','يتقلّص لأصغر ارتفاع يسع عناصره',false]]},
+  {id:'details', label:'التفاصيل',  icon:'ph-table',           tint:'#F59E0B', h:96, grows:true, note:'يتمدّد بعدد الأصناف ويدفع ما بعده',
+   opts:[['ph-arrows-out-line-vertical','يتمدّد بالبيانات','لا يمكن إيقافه — هو ما يمنع الجدول من دهس المجاميع',true],
+         ['ph-repeat','تكرار رأس الجدول','رؤوس الأعمدة تُعاد على كل صفحة',true],
+         ['ph-scissors','منع قطع الصف','الصف لا ينقسم بين صفحتين',true]]},
+  {id:'totals',  label:'المجاميع',  icon:'ph-equals',          tint:'#22C55E', h:42, note:'يلتصق أسفل الجدول',
+   opts:[['ph-eye','ظاهر','إخفاء النطاق يخفي كل عناصره',true],
+         ['ph-arrow-line-down','تثبيت أسفل الصفحة الأخيرة','بدل أن يتبع الجدول مباشرة',false]]},
+  {id:'footer',  label:'التذييل',   icon:'ph-arrow-line-down', tint:'#6B7280', h:36, note:'يتكرر على كل صفحة',
+   opts:[['ph-repeat','تكرار على كل صفحة','يُعاد رسمه أسفل كل ورقة',true],
+         ['ph-eye','ظاهر','إخفاء النطاق يخفي كل عناصره',true]]},
+];
+
+// x/y/w/h in mm, measured from the band's start edge (right, in RTL)
+const ELEMENTS = [
+  {id:'e1',  band:'header', key:'company_name',      ar:'اسم الشركة',   en:'Company', x:6,   y:5,  w:96, h:8, fs:15, bold:true,  align:'right', sample:'شركة بيك بوس للتجارة'},
+  {id:'e2',  band:'header', key:'company_address',   ar:'',             en:'',        x:6,   y:14, w:96, h:5, fs:7.5, bold:false, align:'right', sample:'المعادي — شارع ٩، القاهرة'},
+  {id:'e3',  band:'header', key:'company_phone',     ar:'هاتف',         en:'Tel',     x:6,   y:20, w:60, h:5, fs:7.5, bold:false, align:'right', sample:'٠٢٢٥٢٨٨٤٤٠'},
+  {id:'e4',  band:'header', key:'company_tax_number',ar:'س.ت',          en:'Tax Reg.',x:6,   y:26, w:60, h:5, fs:7.5, bold:false, align:'right', sample:'344-228-891'},
+  {id:'e5',  band:'header', key:'logo',              ar:'',             en:'',        x:172, y:5,  w:22, h:22, fs:8, bold:false, align:'center', sample:'LOGO', isLogo:true},
+  {id:'e6',  band:'header', key:'doc_title',         ar:'',             en:'',        x:66,  y:12, w:78, h:11, fs:14, bold:true,  align:'center', sample:'فاتورة ضريبية · TAX INVOICE', isText:true},
+
+  {id:'e7',  band:'info',   key:'invoice_number',    ar:'رقم الفاتورة', en:'Invoice No.', x:6,   y:5,  w:82, h:6, fs:9, bold:true,  align:'right', sample:'INV-2026-1040'},
+  {id:'e8',  band:'info',   key:'date',              ar:'التاريخ',      en:'Date',        x:112, y:5,  w:82, h:6, fs:9, bold:false, align:'left',  sample:'٢٠٢٦-٠٨-٢٥'},
+  {id:'e9',  band:'info',   key:'branch_name',       ar:'الفرع',        en:'Branch',      x:6,   y:13, w:82, h:6, fs:8, bold:false, align:'right', sample:'المعادي'},
+  {id:'e10', band:'info',   key:'warehouse_name',    ar:'المخزن',       en:'Warehouse',   x:112, y:13, w:82, h:6, fs:8, bold:false, align:'left',  sample:'الرئيسي'},
+
+  {id:'e11', band:'party',  key:'customer_name',     ar:'العميل',       en:'Customer', x:6,   y:4,  w:96, h:7, fs:9.5, bold:true,  align:'right', sample:'سوبر ماركت النور'},
+  {id:'e12', band:'party',  key:'customer_phone',    ar:'الهاتف',       en:'Phone',    x:112, y:4,  w:82, h:7, fs:9,   bold:false, align:'left',  sample:'٠١٠٠٢٢٤٤٨٨٠'},
+  {id:'e13', band:'party',  key:'customer_address',  ar:'العنوان',      en:'Address',  x:6,   y:12, w:118, h:6, fs:8,  bold:false, align:'right', sample:'المعادي — شارع ٩'},
+  {id:'e14', band:'party',  key:'payment_method',    ar:'طريقة الدفع',  en:'Payment',  x:130, y:12, w:64, h:6, fs:8,   bold:false, align:'left',  sample:'آجل ٣٠ يوماً'},
+
+  {id:'e15', band:'totals', key:'subtotal',      ar:'الإجمالي الفرعي',        en:'Subtotal',  x:112, y:3,  w:82, h:6, fs:9,  bold:false, align:'right', sample:'7,842.11'},
+  {id:'e16', band:'totals', key:'discount',      ar:'الخصم',                  en:'Discount',  x:112, y:10, w:82, h:6, fs:9,  bold:false, align:'right', sample:'55.00', cond:'discount > 0'},
+  {id:'e17', band:'totals', key:'tax_amount',    ar:'ضريبة القيمة المضافة',   en:'VAT 14%',   x:112, y:17, w:82, h:6, fs:9,  bold:false, align:'right', sample:'1,097.89'},
+  {id:'e18', band:'totals', key:'total_amount',  ar:'الإجمالي المستحق',       en:'Total Due', x:112, y:25, w:82, h:8, fs:12, bold:true,  align:'right', sample:'8,940.00'},
+  {id:'e19', band:'totals', key:'remaining',     ar:'المتبقي',                en:'Balance',   x:6,   y:25, w:82, h:8, fs:10, bold:true,  align:'right', sample:'8,940.00', cond:'remaining > 0', color:'#B42318'},
+
+  {id:'e20', band:'footer', key:'qr_code',         ar:'',            en:'',                 x:6,   y:4,  w:18, h:18, fs:7, bold:false, align:'center', sample:'QR', isLogo:true},
+  {id:'e21', band:'footer', key:'tax_registration',ar:'الرقم الضريبي', en:'Tax Registration', x:28,  y:5,  w:96, h:6, fs:7.5, bold:false, align:'right', sample:'344-228-891'},
+  {id:'e22', band:'footer', key:'notes',           ar:'ملاحظات',      en:'Notes',            x:28,  y:12, w:120, h:6, fs:7.5, bold:false, align:'right', sample:'التسليم بمخزن العميل', cond:'notes != ""'},
+  {id:'e23', band:'footer', key:'footer_text',     ar:'',            en:'',                 x:6,   y:26, w:188, h:7, fs:8, bold:false, align:'center', sample:'شكراً لتعاملكم معنا · Thank you', isText:true},
+];
+
+const COLUMNS = [
+  {key:'index',    ar:'م',        en:'#',           on:true,  flex:0.8, dec:0, align:'center'},
+  {key:'code',     ar:'الكود',    en:'Code',        on:true,  flex:1.5, dec:0, align:'right'},
+  {key:'product',  ar:'الصنف',    en:'Description', on:true,  flex:3.0, dec:0, align:'right'},
+  {key:'unit',     ar:'الوحدة',   en:'Unit',        on:true,  flex:1.0, dec:0, align:'center'},
+  {key:'quantity', ar:'الكمية',   en:'Qty',         on:true,  flex:1.0, dec:2, align:'center'},
+  {key:'price',    ar:'السعر',    en:'Price',       on:true,  flex:1.2, dec:2, align:'end'},
+  {key:'discount', ar:'الخصم',    en:'Disc.',       on:true,  flex:1.0, dec:2, align:'end'},
+  {key:'tax',      ar:'الضريبة',  en:'VAT',         on:true,  flex:1.0, dec:2, align:'end'},
+  {key:'net',      ar:'الصافي',   en:'Net',         on:false, flex:1.2, dec:2, align:'end', formula:'[total] - [discount]'},
+  {key:'total',    ar:'الإجمالي', en:'Amount',      on:true,  flex:1.5, dec:2, align:'end'},
+  {key:'barcode',  ar:'الباركود', en:'Barcode',     on:false, flex:1.6, dec:0, align:'center'},
+  {key:'note',     ar:'ملاحظة',   en:'Note',        on:false, flex:2.0, dec:0, align:'right'},
+];
+
+const SAMPLE = {
+  index:['١','٢','٣','٤'], code:['SKU-1042','SKU-1108','SKU-1190','SKU-1274'],
+  product:['سكر معبأ ١ كجم','زيت عافية ١ لتر','أرز مصري ٥ كجم','شاي العروسة ٢٥٠ج'],
+  unit:['كرتونة','كرتونة','كيس','كرتونة'], quantity:['40.00','24.00','12.00','18.00'],
+  price:['22.00','68.00','145.00','58.00'], discount:['5.00','0.00','30.00','0.00'],
+  tax:['123.20','228.48','235.20','146.16'], net:['998.20','1,860.48','1,885.20','1,190.16'],
+  total:['1,003.20','1,860.48','1,915.20','1,190.16'],
+  barcode:['6221031','6221049','6221055','6221062'], note:['—','—','عرض','—'],
+};
+
+const LIBRARY = [
+  {label:'الشركة', tint:'#0250D3', keys:[
+    ['company_name','اسم الشركة','ph-buildings'], ['company_address','العنوان','ph-map-pin'],
+    ['company_phone','الهاتف','ph-phone'], ['company_tax_number','الرقم الضريبي','ph-identification-badge'],
+    ['branch_name','الفرع','ph-storefront'], ['logo','الشعار','ph-image'],
+  ]},
+  {label:'المستند', tint:'#8B5CF6', keys:[
+    ['invoice_number','رقم الفاتورة','ph-hash'], ['order_number','رقم الطلب','ph-list-numbers'],
+    ['date','التاريخ','ph-calendar'], ['time','الوقت','ph-clock'],
+    ['cashier_name','الكاشير','ph-user'], ['warehouse_name','المخزن','ph-warehouse'],
+    ['payment_method','طريقة الدفع','ph-credit-card'], ['sale_type','نوع البيع','ph-shopping-cart'],
+  ]},
+  {label:'الطرف', tint:'#4A80E8', keys:[
+    ['customer_name','العميل','ph-user'], ['supplier_name','المورد','ph-truck'],
+    ['customer_phone','الهاتف','ph-phone'], ['customer_address','العنوان','ph-map-pin'],
+    ['table_number','رقم الطاولة','ph-table'], ['waiter_name','الويتر','ph-user-circle'],
+  ]},
+  {label:'المجاميع', tint:'#22C55E', keys:[
+    ['subtotal','الفرعي','ph-currency-circle-dollar'], ['discount','الخصم','ph-tag'],
+    ['tax_amount','الضريبة','ph-percent'], ['total_amount','الإجمالي','ph-coins'],
+    ['paid','المدفوع','ph-money'], ['remaining','المتبقي','ph-arrows-left-right'],
+    ['cash_amount','نقداً','ph-money'], ['bank_amount','بنكياً','ph-bank'],
+  ]},
+  {label:'عناصر حرة', tint:'#F59E0B', keys:[
+    ['text','نص ثابت','ph-text-t'], ['line','خط فاصل','ph-minus'],
+    ['qr_code','كود QR','ph-qr-code'], ['barcode','باركود','ph-barcode'],
+    ['notes','ملاحظات','ph-notepad'], ['page_number','رقم الصفحة','ph-file'],
+  ]},
+];
+
+const CONDS = ['discount > 0', 'remaining > 0', 'tax > 0', 'notes != ""', 'paid < total'];
+const ALIGNS = [['right','ph-text-align-right'], ['center','ph-text-align-center'], ['left','ph-text-align-left']];
+
+class Component extends DCLogic {
+  state = {
+    theme:null, paper:'A4', zoom:1.5, snap:true, leftTab:'outline',
+    sel:{kind:'el', id:'e18'}, dirty:false,
+    els:null, cols:null, bilingual:true, drag:null,
+    preview:false, toast:null, bandOpts:{}, tblFs:9, tblHfs:9.5,
+  };
+
+  // Persisted band flags live in one map keyed "<bandId>:<optIndex>" so a toggle
+  // never has to mutate the BANDS constant.
+  bandOpt(bandId, i, fallback){
+    const k = bandId + ':' + i;
+    return this.state.bandOpts[k] === undefined ? fallback : this.state.bandOpts[k];
+  }
+  setBandOpt(bandId, i, v){
+    this.setState({bandOpts: Object.assign({}, this.state.bandOpts, {[bandId + ':' + i]: v}), dirty: true});
+  }
+
+  setCol(i, changes){
+    this.setState({cols: this.cols.map((c, j) => j === i ? Object.assign({}, c, changes) : c), dirty: true});
+  }
+
+  flash(title, lines){
+    this.setState({toast:{title, lines}});
+    if (this._t) clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({toast: null}), 5200);
+  }
+
+  componentWillUnmount(){ if (this._t) clearTimeout(this._t); }
+
+  // Mirrors §7 of EDITOR-ARCHITECTURE.md — one transaction, then cache invalidation.
+  doSave(activate){
+    const els = this.els;
+    const onCols = this.cols.filter(c => c.on);
+    this.setState({dirty:false});
+    this.flash(activate ? 'حُفظ القالب وفُعِّل كافتراضي' : 'حُفظ القالب', [
+      'كُتب ' + els.length + ' عنصراً بترتيبها الجديد داخل ' + BANDS.length + ' نطاقات',
+      'حُفظت ' + onCols.length + ' أعمدة بعناوينها وعروضها ومنازلها العشرية',
+      activate ? 'أُنشئت رابطة: فاتورة مبيعات · كل الفروع · عربي' : 'لم تُغيَّر الرابطات',
+      'أُبطلت ذاكرة الحسم المؤقتة — الطباعة التالية تقرأ هذه النسخة',
+    ]);
+  }
+
+  get els(){ return this.state.els || ELEMENTS; }
+  get cols(){ return this.state.cols || COLUMNS; }
+  get pw(){ return PAPERS[this.state.paper].w; }
+  // mm → px on screen; the paper is drawn at true proportion and scaled by zoom
+  get k(){ return 2.6; }
+
+  setEls(next){ this.setState({els: next, dirty: true}); }
+
+  patch(id, changes){
+    this.setEls(this.els.map(e => e.id === id ? Object.assign({}, e, changes) : e));
+  }
+
+  // ── pointer drag: move the element inside its band, optionally snapped ──
+  onMove = (ev) => {
+    const d = this.state.drag;
+    if (!d) return;
+    const dxmm = (ev.clientX - d.sx) / (this.k * this.state.zoom);
+    const dymm = (ev.clientY - d.sy) / (this.k * this.state.zoom);
+    // RTL: dragging left on screen increases the start-edge offset
+    const snapTo = v => this.state.snap ? Math.round(v / 2) * 2 : Math.round(v * 10) / 10;
+    if (d.mode === 'move') {
+      this.patch(d.id, {
+        x: Math.max(0, snapTo(d.ox - dxmm)),
+        y: Math.max(0, snapTo(d.oy + dymm)),
+      });
+    } else {
+      this.patch(d.id, {
+        w: Math.max(8, snapTo(d.ow - dxmm)),
+        h: Math.max(4, snapTo(d.oh + dymm)),
+      });
+    }
+  };
+
+  onUp = () => { if (this.state.drag) this.setState({drag: null}); };
+
+  startDrag(e, ev, mode){
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.setState({
+      sel:{kind:'el', id:e.id},
+      drag:{id:e.id, mode, sx:ev.clientX, sy:ev.clientY, ox:e.x, oy:e.y, ow:e.w, oh:e.h},
+    });
+  }
+
+  renderVals(){
+    const dark = (this.state.theme || this.props.theme || 'light') === 'dark';
+    const k = this.k;
+    const pw = this.pw;
+    const sel = this.state.sel;
+    const els = this.els;
+    const cols = this.cols;
+    const onCols = cols.filter(c => c.on);
+    const thermal = pw <= 80;
+
+    const pv = this.state.preview;
+    const selEl = (sel.kind === 'el' && !pv) ? els.find(e => e.id === sel.id) : null;
+    const selBand = (sel.kind === 'band' && !pv) ? BANDS.find(b => b.id === sel.id) : null;
+
+    const bandEls = id => els.filter(e => e.band === id);
+
+    return {
+      theme: dark ? 'dark' : 'light',
+      themeIcon: dark ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.setState({theme: dark ? 'light' : 'dark'}),
+      rail: RAIL.map(r => ({...r, bg: r.active ? 'rgba(74,128,232,.18)' : 'transparent', fg: r.active ? '#7DA6F5' : '#64748B'})),
+
+      onMove: this.onMove,
+      onUp: this.onUp,
+
+      tpl: {
+        name:'فاتورة مبيعات ضريبية — A4',
+        isDefault: true,
+        meta: 'invoice · ' + PAPERS[this.state.paper].label + ' · ' + els.length + ' عنصراً · ' + onCols.length + ' عمود',
+      },
+      dirty: this.state.dirty,
+      save: () => this.doSave(true),
+      saveOnly: () => this.doSave(false),
+
+      preview: {
+        on: this.state.preview,
+        label: this.state.preview ? 'عودة للتحرير' : 'معاينة بالبيانات',
+        icon: this.state.preview ? 'ph-pencil-simple' : 'ph-eye',
+        bd: this.state.preview ? 'var(--brand)' : 'var(--hairline)',
+        bg: this.state.preview ? 'var(--wash)' : 'transparent',
+        fg: this.state.preview ? 'var(--brand-ink)' : 'var(--txt2)',
+      },
+      togglePreview: () => this.setState({preview: !this.state.preview, sel: this.state.preview ? this.state.sel : {kind:'none'}}),
+
+      toast: this.state.toast || {title:'', lines:[]},
+      hasToast: !!this.state.toast,
+      closeToast: () => this.setState({toast: null}),
+
+      papers: Object.keys(PAPERS).map(p => {
+        const on = p === this.state.paper;
+        return {label: PAPERS[p].label, bg: on ? 'var(--brand)' : 'transparent',
+          fg: on ? '#fff' : 'var(--muted)', pick: () => this.setState({paper: p})};
+      }),
+
+      zoom: this.state.zoom,
+      zoomLabel: Math.round(this.state.zoom * 100) + '٪',
+      zoomIn:  () => this.setState({zoom: Math.min(3, Math.round((this.state.zoom + 0.25) * 100) / 100)}),
+      zoomOut: () => this.setState({zoom: Math.max(0.5, Math.round((this.state.zoom - 0.25) * 100) / 100)}),
+
+      snap: {
+        bd: this.state.snap ? 'var(--brand)' : 'var(--hairline)',
+        bg: this.state.snap ? 'var(--wash)' : 'transparent',
+        fg: this.state.snap ? 'var(--brand-ink)' : 'var(--txt2)',
+      },
+      showSnap: this.state.snap && !this.state.preview,
+      grid: (2 * k).toFixed(1) + 'px',
+      toggleSnap: () => this.setState({snap: !this.state.snap}),
+
+      leftTabs: [
+        {id:'outline', label:'بنية المستند', icon:'ph-tree-structure'},
+        {id:'library', label:'مكتبة الحقول', icon:'ph-squares-four'},
+      ].map(t => {
+        const on = t.id === this.state.leftTab;
+        return {label:t.label, icon:t.icon,
+          mark: on ? 'var(--brand)' : 'transparent',
+          bg: on ? 'var(--wash)' : 'transparent',
+          fg: on ? 'var(--brand-ink)' : 'var(--muted)',
+          pick: () => this.setState({leftTab: t.id})};
+      }),
+      showOutline: this.state.leftTab === 'outline',
+      showLibrary: this.state.leftTab === 'library',
+
+      outline: BANDS.map(b => ({
+        label:b.label, icon:b.icon, tint:b.tint, grows: !!b.grows,
+        hmm: b.h + 'مم',
+        headBg: (sel.kind === 'band' && sel.id === b.id) ? b.tint + '1a' : 'var(--field)',
+        pick: () => this.setState({sel:{kind:'band', id:b.id}}),
+        items: (b.id === 'details' ? [] : bandEls(b.id)).map(e => {
+          const on = sel.kind === 'el' && sel.id === e.id;
+          const vis = e.hidden !== true;
+          return {
+            label: e.ar || e.sample, key: e.key,
+            fg: vis ? 'var(--txt2)' : 'var(--muted)',
+            bg: on ? 'var(--wash)' : 'transparent',
+            mark: on ? 'var(--brand)' : 'transparent',
+            visIcon: vis ? 'ph-eye' : 'ph-eye-slash',
+            visFg: vis ? '#22C55E' : 'var(--muted)',
+            hasCond: !!e.cond, cond: e.cond || '',
+            pick: () => this.setState({sel:{kind:'el', id:e.id}}),
+            toggle: () => this.patch(e.id, {hidden: vis}),
+          };
+        }).concat(b.id === 'details' ? [{
+          label:'جدول الأصناف', key:'items_table',
+          fg:'var(--txt2)',
+          bg: sel.kind === 'table' ? 'var(--wash)' : 'transparent',
+          mark: sel.kind === 'table' ? 'var(--brand)' : 'transparent',
+          visIcon:'ph-eye', visFg:'#22C55E', hasCond:false, cond:'',
+          pick: () => this.setState({sel:{kind:'table'}}),
+          toggle: () => {},
+        }] : []),
+      })),
+
+      library: LIBRARY.map(g => ({
+        label:g.label, tint:g.tint,
+        items: g.keys.map(kk => {
+          const used = els.some(e => e.key === kk[0]);
+          return {label:kk[1], key:kk[0], icon:kk[2],
+            bd: used ? 'var(--hairline)' : g.tint + '55',
+            bg: used ? 'var(--field)' : 'transparent',
+            fg: used ? 'var(--muted)' : g.tint,
+            cursor: used ? 'not-allowed' : 'pointer',
+            add: used ? (() => {}) : (() => {
+              const id = 'n' + Date.now();
+              this.setEls(els.concat([{id, band: selBand ? selBand.id : 'info', key:kk[0],
+                ar:kk[1], en:'', x:6, y:4, w:70, h:6, fs:9, bold:false, align:'right', sample:kk[1]}]));
+              this.setState({sel:{kind:'el', id}});
+            })};
+        }),
+      })),
+
+      paper: {
+        w: (pw * k).toFixed(0) + 'px',
+        caption: PAPERS[this.state.paper].label + ' · ' + pw + 'مم'
+          + (PAPERS[this.state.paper].h ? ' × ' + PAPERS[this.state.paper].h + 'مم' : ' × ارتفاع متدفّق')
+          + ' · النطاقات تتراصّ رأسياً والتفاصيل تتمدّد بالبيانات',
+      },
+
+      bands: BANDS.map(b => {
+        const isTable = b.id === 'details';
+        const bandSel = sel.kind === 'band' && sel.id === b.id && !pv;
+        const bandVisible = b.id === 'details' ? true : this.bandOpt(b.id, b.opts.length - 1, true);
+        return {
+          label:b.label, tint: pv ? 'transparent' : b.tint, h: (b.h * k).toFixed(0) + 'px',
+          grows: !!b.grows,
+          gutBg: pv ? 'transparent' : bandSel ? b.tint + '26' : b.tint + '0f',
+          bg: bandSel ? b.tint + '09' : 'transparent',
+          edge: pv ? 'transparent' : b.tint + '66',
+          bandOpacity: bandVisible ? '1' : '.25',
+          pick: () => this.setState({sel:{kind:'band', id:b.id}}),
+          isTable,
+          tx: (6 * k).toFixed(0) + 'px', ty: (4 * k).toFixed(0) + 'px',
+          tw: ((pw - 12) * k).toFixed(0) + 'px',
+          tOutline: pv ? '1px solid transparent' : sel.kind === 'table' ? '2px solid #0250D3' : '1px dashed #F59E0B99',
+          tableDown: (ev) => { ev.stopPropagation(); this.setState({sel:{kind:'table'}}); },
+          // the click that follows mousedown must not reach the band, or the band's
+          // own onClick reselects itself and the element selection never sticks
+          tableClick: (ev) => { ev.stopPropagation(); },
+          tgrid: onCols.map(c => c.flex + 'fr').join(' '),
+          bilingual: this.state.bilingual && !thermal,
+          hfs: (thermal ? 6 : 7.5) + 'px',
+          tinyfs: (thermal ? 5 : 6) + 'px',
+          cols: onCols.map(c => ({ar:c.ar, en:c.en, align: c.align === 'end' ? 'end' : c.align})),
+          rows: [0,1,2,3].map(i => ({
+            bg: i % 2 === 1 ? '#FAFBFD' : 'transparent',
+            cells: onCols.map(c => ({
+              v: (SAMPLE[c.key] || [])[i] || '—',
+              align: c.align === 'end' ? 'end' : c.align,
+              fs: (thermal ? 6 : 7.5) + 'px',
+            })),
+          })),
+          els: bandEls(b.id).map(e => {
+            const on = sel.kind === 'el' && sel.id === e.id;
+            const vis = e.hidden !== true;
+            const label = e.ar ? e.ar + ': ' + e.sample : e.sample;
+            return {
+              x: (e.x * k).toFixed(1) + 'px', y: (e.y * k).toFixed(1) + 'px',
+              w: (e.w * k).toFixed(1) + 'px', h: (e.h * k).toFixed(1) + 'px',
+              fs: (e.fs * 0.9).toFixed(1) + 'px',
+              fw: e.bold ? '700' : '400',
+              color: e.color || '#0B1220',
+              text: e.isLogo ? e.sample : label,
+              justify: e.align === 'center' ? 'center' : e.align === 'left' ? 'flex-end' : 'flex-start',
+              outline: (on && !pv) ? '2px solid #0250D3' : (e.isLogo ? '1px solid #C9D2E0' : '1px solid transparent'),
+              selBg: (on && !pv) ? 'rgba(2,80,211,.07)' : 'transparent',
+              opacity: vis ? '1' : (pv ? '0' : '.32'),
+              selected: on && !pv,
+              down: (ev) => this.startDrag(e, ev, 'move'),
+              click: (ev) => { ev.stopPropagation(); this.setState({sel:{kind:'el', id:e.id}}); },
+              resize: (ev) => this.startDrag(e, ev, 'resize'),
+            };
+          }),
+        };
+      }),
+
+      // ── right panel ──
+      hasEl: !!selEl,
+      hasTable: sel.kind === 'table',
+      hasBand: !!selBand,
+
+      el: selEl ? {
+        title: selEl.ar || selEl.sample, key: selEl.key,
+        icon: selEl.isLogo ? 'ph-image' : selEl.isText ? 'ph-text-t' : 'ph-textbox',
+        bandLabel: (BANDS.find(b => b.id === selEl.band) || {}).label,
+        labelAr: selEl.ar || '',
+        labelEn: selEl.en || '',
+        setAr: (ev) => this.patch(selEl.id, {ar: ev.target.value}),
+        setEn: (ev) => this.patch(selEl.id, {en: ev.target.value}),
+        remove: () => { this.setEls(els.filter(x => x.id !== selEl.id)); this.setState({sel:{kind:'band', id:selEl.band}}); },
+        geo: [
+          {label:'من اليمين', value: selEl.x.toFixed(1),
+           dec: () => this.patch(selEl.id, {x: Math.max(0, selEl.x - 1)}),
+           inc: () => this.patch(selEl.id, {x: selEl.x + 1})},
+          {label:'من أعلى', value: selEl.y.toFixed(1),
+           dec: () => this.patch(selEl.id, {y: Math.max(0, selEl.y - 1)}),
+           inc: () => this.patch(selEl.id, {y: selEl.y + 1})},
+          {label:'العرض', value: selEl.w.toFixed(1),
+           dec: () => this.patch(selEl.id, {w: Math.max(8, selEl.w - 2)}),
+           inc: () => this.patch(selEl.id, {w: selEl.w + 2})},
+          {label:'الارتفاع', value: selEl.h.toFixed(1),
+           dec: () => this.patch(selEl.id, {h: Math.max(4, selEl.h - 1)}),
+           inc: () => this.patch(selEl.id, {h: selEl.h + 1})},
+        ],
+        fontSize: selEl.fs.toFixed(1),
+        fsDec: () => this.patch(selEl.id, {fs: Math.max(4, Math.round((selEl.fs - 0.5) * 10) / 10)}),
+        fsInc: () => this.patch(selEl.id, {fs: Math.min(48, Math.round((selEl.fs + 0.5) * 10) / 10)}),
+        toggleBold: () => this.patch(selEl.id, {bold: !selEl.bold}),
+        boldBd: selEl.bold ? 'var(--brand)' : 'var(--hairline)',
+        boldBg: selEl.bold ? 'var(--wash)' : 'transparent',
+        boldFg: selEl.bold ? 'var(--brand-ink)' : 'var(--txt2)',
+        aligns: ALIGNS.map(a => {
+          const on = a[0] === selEl.align;
+          return {icon:a[1],
+            bd: on ? 'var(--brand)' : 'var(--hairline)',
+            bg: on ? 'var(--wash)' : 'transparent',
+            fg: on ? 'var(--brand-ink)' : 'var(--txt2)',
+            pick: () => this.patch(selEl.id, {align: a[0]})};
+        }),
+        cond: selEl.cond || 'يظهر دائماً',
+        condBd: selEl.cond ? 'rgba(139,92,246,.45)' : 'var(--hairline)',
+        condBg: selEl.cond ? 'rgba(139,92,246,.07)' : 'var(--field)',
+        condFg: selEl.cond ? '#8B5CF6' : 'var(--muted)',
+        condPresets: CONDS.concat(['بلا شرط']).map(c => ({label:c,
+          pick: () => this.patch(selEl.id, {cond: c === 'بلا شرط' ? null : c})})),
+      } : {geo:[], aligns:[], condPresets:[]},
+
+      tbl: {
+        onCount: onCols.length, total: cols.length,
+        fontSize: this.state.tblFs.toFixed(1),
+        headerFontSize: this.state.tblHfs.toFixed(1),
+        fsDec: () => this.setState({tblFs: Math.max(4, Math.round((this.state.tblFs - 0.5) * 10) / 10), dirty:true}),
+        fsInc: () => this.setState({tblFs: Math.min(20, Math.round((this.state.tblFs + 0.5) * 10) / 10), dirty:true}),
+        hfsDec: () => this.setState({tblHfs: Math.max(4, Math.round((this.state.tblHfs - 0.5) * 10) / 10), dirty:true}),
+        hfsInc: () => this.setState({tblHfs: Math.min(20, Math.round((this.state.tblHfs + 0.5) * 10) / 10), dirty:true}),
+        biBd: this.state.bilingual ? 'var(--brand)' : 'var(--hairline)',
+        biBg: this.state.bilingual ? 'var(--wash)' : 'transparent',
+        biFg: this.state.bilingual ? 'var(--brand-ink)' : 'var(--txt2)',
+        toggleBilingual: () => this.setState({bilingual: !this.state.bilingual, dirty: true}),
+        addComputed: () => {
+          const n = cols.concat([{key:'computed' + cols.length, ar:'عمود محسوب', en:'Computed',
+            on:true, flex:1.2, dec:2, align:'end', formula:'[price] * [quantity]'}]);
+          this.setState({cols:n, dirty:true});
+          this.flash('أُضيف عمود محسوب', ['المعادلة الافتراضية [price] * [quantity] — عدّلها من حقل المعادلة',
+            'العمود يُحسب وقت الطباعة ولا يُخزَّن في بنود الفاتورة']);
+        },
+        cols: cols.map((c, i) => ({
+          ar:c.ar, en:c.en,
+          setAr: (ev) => this.setCol(i, {ar: ev.target.value}),
+          setEn: (ev) => this.setCol(i, {en: ev.target.value}),
+          wDec: () => this.setCol(i, {flex: Math.max(0.4, Math.round((c.flex - 0.2) * 10) / 10)}),
+          wInc: () => this.setCol(i, {flex: Math.min(6, Math.round((c.flex + 0.2) * 10) / 10)}),
+          decDec: () => this.setCol(i, {dec: Math.max(0, c.dec - 1)}),
+          decInc: () => this.setCol(i, {dec: Math.min(4, c.dec + 1)}),
+          fg: c.on ? 'var(--txt)' : 'var(--muted)',
+          rowBg: c.on ? 'transparent' : 'var(--field)',
+          onIcon: c.on ? 'ph-check-circle' : 'ph-circle',
+          onFg: c.on ? '#22C55E' : 'var(--muted)',
+          toggle: () => this.setState({cols: cols.map((x, j) => j === i ? Object.assign({}, x, {on: !x.on}) : x), dirty: true}),
+          upFg: i === 0 ? 'var(--hairline)' : 'var(--txt2)',
+          downFg: i === cols.length - 1 ? 'var(--hairline)' : 'var(--txt2)',
+          up: () => { if (i === 0) return; const n = cols.slice(); const t = n[i-1]; n[i-1] = n[i]; n[i] = t; this.setState({cols:n, dirty:true}); },
+          down: () => { if (i === cols.length - 1) return; const n = cols.slice(); const t = n[i+1]; n[i+1] = n[i]; n[i] = t; this.setState({cols:n, dirty:true}); },
+          flex: c.flex.toFixed(1),
+          wPct: (c.flex / 3.0 * 100).toFixed(0) + '%',
+          barFg: c.on ? 'var(--brand)' : 'var(--muted)',
+          dec: String(c.dec),
+          hasFormula: !!c.formula, formula: c.formula || '',
+        })),
+      },
+
+      band: selBand ? {
+        label: selBand.label, icon: selBand.icon, tint: selBand.tint, bg: selBand.tint + '1f',
+        note: selBand.note,
+        opts: selBand.opts.map((o, i) => {
+          const on = this.bandOpt(selBand.id, i, o[3]);
+          const locked = selBand.id === 'details' && i === 0; // التمدّد لا يُوقَف
+          return {
+            icon:o[0], title:o[1], sub: locked ? o[2] + ' — لا يمكن إيقافه' : o[2],
+            tint: selBand.tint,
+            stateIcon: on ? 'ph-toggle-right' : 'ph-toggle-left',
+            stateFg: locked ? 'var(--muted)' : on ? '#22C55E' : 'var(--muted)',
+            toggle: locked ? (() => this.flash('لا يمكن إيقاف التمدّد',
+              ['نطاق التفاصيل هو ما يمنع الجدول من دهس المجاميع — إيقافه يكسر كل قالب فيه جدول']))
+              : (() => this.setBandOpt(selBand.id, i, !on)),
+          };
+        }),
+      } : {opts:[]},
+
+      hint: sel.kind === 'table'
+        ? {title:'الأعمدة تُطبع بالترتيب المعروض',
+           body:'العرض رقم نسبي لا مليمترات — العمود بعرض ٣ يأخذ ضعف ما يأخذه عمود بعرض ١.٥ من المساحة المتاحة، فيبقى الجدول سليماً على A4 و A5 والحراري معاً.'}
+        : selBand
+        ? {title:'لماذا نطاقات لا ورقة واحدة',
+           body:'العناصر داخل النطاق تُوضع بالإحداثيات بحرية كاملة، والنطاقات نفسها تتراصّ رأسياً. فحين يكبر جدول الأصناف يدفع المجاميع والتذييل أمامه بدل أن يدهسها — وهذا ما يجعل «ما تراه هو ما يُطبع» صادقاً مع أي عدد أصناف.'}
+        : {title:'السحب يحرّك داخل النطاق فقط',
+           body:'العنصر لا يغادر نطاقه بالسحب — لنقله لنطاق آخر استعمل بنية المستند على اليمين. الإحداثيات بالمليمتر من حافة النطاق، والمحاذاة للشبكة تقرّبها لأقرب ٢ مم.'},
+    };
+  }
+}
+</script>
+</body>
+</html>

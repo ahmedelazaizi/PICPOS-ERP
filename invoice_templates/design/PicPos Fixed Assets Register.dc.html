@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-ink:#0250D3; --brand-dark:#012258; --brand-light:#4A80E8;
+    --wash:rgba(2,80,211,.08); --side:#0F172A; --side-line:#243247;
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280; --track:#E6ECF6;
+  }
+  [data-theme="dark"]{
+    --canvas:#0A1220; --card:#121C2E; --hairline:#243247; --field:#18243A;
+    --brand-ink:#7DA6F5; --wash:rgba(74,128,232,.14); --side:#08101E; --side-line:#1D2A3E;
+    --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8; --track:#1E2B42;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#0A1220;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#94A3B855;border-radius:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" dir="rtl" style="width:1920px;height:1080px;display:flex;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;">
+
+  <sc-if value="{{ overlay.open }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:60;background:rgba(1,34,88,.5);display:flex;align-items:center;justify-content:center;">
+      <div style="width:{{ overlay.width }};max-height:860px;background:var(--card);border-radius:20px;box-shadow:0 30px 80px rgba(1,34,88,.4);display:flex;flex-direction:column;overflow:hidden;">
+        <div style="flex:none;padding:18px 22px 15px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:13px;">
+          <div style="width:46px;height:46px;flex:none;border-radius:13px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+            <i class="ph-bold {{ overlay.icon }}" style="font-size:22px;color:var(--brand-ink);"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:17px;font-weight:800;color:var(--txt);">{{ overlay.title }}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:2px;">{{ overlay.sub }}</div>
+          </div>
+          <div onClick="{{ overlay.close }}" style="width:36px;height:36px;flex:none;border-radius:10px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+            <i class="ph-bold ph-x" style="font-size:16px;"></i>
+          </div>
+        </div>
+
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:16px 22px;display:flex;flex-direction:column;gap:15px;">
+
+          <sc-if value="{{ overlay.hasChips }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:9px;">
+              <sc-for list="{{ overlay.chips }}" as="c" hint-placeholder-count="2">
+                <div onClick="{{ c.pick }}" style="flex:1;height:44px;border-radius:12px;border:1.5px solid {{ c.bd }};background:{{ c.bg }};display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">
+                  <i class="ph-bold {{ c.icon }}" style="font-size:16px;color:{{ c.fg }};"></i>
+                  <span style="font-size:13px;font-weight:800;color:{{ c.fg }};">{{ c.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ overlay.hasFields }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <sc-for list="{{ overlay.fields }}" as="f" hint-placeholder-count="6">
+                <div>
+                  <div style="font-size:11.5px;font-weight:800;color:var(--muted);margin-bottom:6px;">{{ f.label }}</div>
+                  <div style="height:42px;border-radius:11px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:9px;padding:0 13px;">
+                    <i class="ph-bold {{ f.icon }}" style="font-size:15px;color:var(--brand-ink);flex:none;"></i>
+                    <span style="font-size:13px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.value }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ overlay.hasRows }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1px solid var(--hairline);border-radius:14px;overflow:hidden;">
+              <sc-for list="{{ overlay.rows }}" as="r" hint-placeholder-count="3">
+                <div style="padding:12px 15px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:12px;">
+                  <div style="width:34px;height:34px;flex:none;border-radius:10px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;">
+                    <i class="ph-bold {{ r.icon }}" style="font-size:15px;color:{{ r.tint }};"></i>
+                  </div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-size:13px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.title }}</div>
+                    <div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:2px;">{{ r.sub }}</div>
+                  </div>
+                  <span style="font-size:10.5px;font-weight:800;color:{{ r.tint }};background:{{ r.bg }};border-radius:999px;padding:3px 9px;flex:none;">{{ r.meta }}</span>
+                  <span style="font-size:14px;font-weight:800;color:var(--txt);min-width:92px;text-align:end;flex:none;font-variant-numeric:tabular-nums;">{{ r.value }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ overlay.hasNote }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1.5px solid rgba(245,158,11,.35);background:rgba(245,158,11,.07);border-radius:13px;padding:13px 15px;display:flex;gap:11px;">
+              <i class="ph-bold ph-info" style="font-size:17px;color:#F59E0B;flex:none;"></i>
+              <div style="font-size:12px;font-weight:600;color:var(--txt2);line-height:1.65;">{{ overlay.note }}</div>
+            </div>
+          </sc-if>
+
+        </div>
+
+        <div style="flex:none;padding:14px 22px;border-top:1px solid var(--hairline);background:var(--field);display:flex;align-items:center;gap:10px;">
+          <div style="flex:1;"></div>
+          <div onClick="{{ overlay.close }}" style="height:42px;border-radius:11px;border:1.5px solid var(--hairline);display:flex;align-items:center;padding:0 20px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;">إلغاء</div>
+          <div onClick="{{ overlay.confirm }}" style="height:42px;border-radius:11px;background:var(--brand);display:flex;align-items:center;gap:8px;padding:0 22px;cursor:pointer;color:#fff;font-size:13.5px;font-weight:700;white-space:nowrap;">
+            <i class="ph-bold {{ overlay.primaryIcon }}" style="font-size:16px;"></i>{{ overlay.primary }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="width:84px;flex:none;background:var(--side);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:14px;">
+    <div style="width:44px;height:44px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <img src="assets/picpos-logo.png" alt="PicPos" style="width:38px;height:38px;object-fit:contain;" />
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:7px;">
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="10">
+        <div title="{{ r.label }}" style="position:relative;width:52px;height:46px;border-radius:13px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+          <i class="ph-bold {{ r.icon }}" style="font-size:21px;color:{{ r.fg }};"></i>
+          <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;inset-inline-end:-14px;top:11px;width:3.5px;height:24px;border-radius:3px;background:var(--brand-light);"></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="width:40px;height:40px;flex:none;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;">م.س</div>
+  </div>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <div style="height:76px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:14px;padding:0 26px;">
+      <div style="width:46px;height:46px;flex:none;border-radius:14px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold ph-buildings" style="font-size:23px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-size:19px;font-weight:800;line-height:1.3;color:var(--txt);">الأصول الثابتة</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;">سجل بطاقات الأصول — كل أصل بجدول إهلاكه المحتسب من تكلفته وعمره وطريقته</div>
+      </div>
+      <div style="flex:1;"></div>
+      <sc-for list="{{ topStats }}" as="s" hint-placeholder-count="3">
+        <div style="text-align:end;min-width:118px;">
+          <div style="font-size:10.5px;font-weight:700;color:var(--muted);">{{ s.label }}</div>
+          <div style="font-size:17px;font-weight:800;color:{{ s.fg }};line-height:1.2;font-variant-numeric:tabular-nums;">{{ s.value }}</div>
+        </div>
+      </sc-for>
+      <div style="width:1px;height:44px;background:var(--hairline);flex:none;"></div>
+      <div onClick="{{ toggleTheme }}" style="width:44px;height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+        <i class="ph-bold {{ themeIcon }}" style="font-size:18px;"></i>
+      </div>
+      <div onClick="{{ openPost }}" style="height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 16px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;white-space:nowrap;">
+        <i class="ph-bold ph-arrow-down-right" style="font-size:17px;"></i>ترحيل إهلاك الشهر
+      </div>
+      <div onClick="{{ openNew }}" style="height:44px;flex:none;border-radius:12px;background:var(--brand);display:flex;align-items:center;gap:8px;padding:0 20px;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        <i class="ph-bold ph-plus" style="font-size:17px;"></i>أصل جديد
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;display:flex;">
+
+      <div style="width:420px;flex:none;background:var(--card);border-inline-end:1px solid var(--hairline);display:flex;flex-direction:column;">
+        <div style="padding:14px 18px 12px;border-bottom:1px solid var(--hairline);">
+          <div style="height:40px;border-radius:11px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:9px;padding:0 13px;">
+            <i class="ph-bold ph-magnifying-glass" style="font-size:15px;color:var(--muted);"></i>
+            <span style="font-size:12.5px;color:var(--muted);font-weight:600;">ابحث بكود الأصل أو اسمه...</span>
+          </div>
+          <div style="display:flex;gap:7px;margin-top:11px;">
+            <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+              <div onClick="{{ f.pick }}" style="flex:1;height:31px;border-radius:9px;border:1.5px solid {{ f.bd }};background:{{ f.bg }};display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;">
+                <span style="font-size:11.5px;font-weight:800;color:{{ f.fg }};white-space:nowrap;">{{ f.label }}</span>
+                <span style="font-size:10px;font-weight:800;color:{{ f.fg }};opacity:.7;">{{ f.count }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;">
+          <sc-for list="{{ register }}" as="a" hint-placeholder-count="7">
+            <div onClick="{{ a.pick }}" style="padding:13px 18px;border-bottom:1px solid var(--hairline);background:{{ a.bg }};border-inline-start:3px solid {{ a.mark }};cursor:pointer;">
+              <div style="display:flex;align-items:center;gap:11px;">
+                <div style="width:36px;height:36px;flex:none;border-radius:10px;background:{{ a.iconBg }};display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold {{ a.icon }}" style="font-size:17px;color:{{ a.tint }};"></i>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:13.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ a.name }}</div>
+                  <div style="font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ a.code }} · {{ a.category }} · {{ a.location }}</div>
+                </div>
+                <span style="font-size:10px;font-weight:800;color:{{ a.tint }};background:{{ a.iconBg }};border-radius:999px;padding:2px 8px;flex:none;">{{ a.statusLabel }}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:9px;margin-top:9px;">
+                <div style="flex:1;height:6px;border-radius:3px;background:var(--track);overflow:hidden;position:relative;">
+                  <div style="height:100%;width:{{ a.deprBar }};background:{{ a.tint }};border-radius:3px;"></div>
+                </div>
+                <span style="font-size:10.5px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;flex:none;">{{ a.deprPct }} مُستهلك</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px;">
+                <span style="font-size:10.5px;font-weight:600;color:var(--muted);">دفترية {{ a.book }}</span>
+                <span style="font-size:10.5px;font-weight:600;color:var(--muted);">قسط {{ a.monthly }} / شهر</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:0;overflow-y:auto;padding:18px 22px 26px;display:flex;flex-direction:column;gap:14px;">
+
+        <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;padding:17px 19px;">
+          <div style="display:flex;align-items:center;gap:15px;">
+            <div style="width:56px;height:56px;flex:none;border-radius:15px;background:{{ sel.iconBg }};display:flex;align-items:center;justify-content:center;">
+              <i class="ph-bold {{ sel.icon }}" style="font-size:27px;color:{{ sel.tint }};"></i>
+            </div>
+            <div style="min-width:0;">
+              <div style="display:flex;align-items:center;gap:9px;">
+                <span style="font-size:20px;font-weight:800;color:var(--txt);">{{ sel.name }}</span>
+                <span style="font-size:11px;font-weight:800;color:{{ sel.tint }};background:{{ sel.iconBg }};border-radius:999px;padding:3px 10px;">{{ sel.statusLabel }}</span>
+              </div>
+              <div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:3px;">{{ sel.code }} · {{ sel.category }} · {{ sel.location }} · {{ sel.costCenter }}</div>
+            </div>
+            <div style="flex:1;"></div>
+            <div style="display:flex;gap:9px;">
+              <div onClick="{{ openEdit }}" style="height:38px;border-radius:11px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:7px;padding:0 14px;cursor:pointer;color:var(--txt2);font-size:12.5px;font-weight:700;white-space:nowrap;">
+                <i class="ph-bold ph-pencil-simple" style="font-size:15px;"></i>تعديل البطاقة
+              </div>
+              <div onClick="{{ openDispose }}" style="height:38px;border-radius:11px;border:1.5px solid {{ disposeBtn.bd }};display:flex;align-items:center;gap:7px;padding:0 14px;cursor:pointer;color:{{ disposeBtn.fg }};font-size:12.5px;font-weight:700;white-space:nowrap;">
+                <i class="ph-bold {{ disposeBtn.icon }}" style="font-size:15px;"></i>{{ disposeBtn.label }}
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:11px;margin-top:15px;">
+            <sc-for list="{{ sel.tiles }}" as="t" hint-placeholder-count="6">
+              <div style="border:1px solid var(--hairline);border-radius:13px;padding:11px 13px;background:{{ t.bg }};">
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <i class="ph-bold {{ t.icon }}" style="font-size:14px;color:{{ t.fg }};"></i>
+                  <span style="font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.label }}</span>
+                </div>
+                <div style="font-size:19px;font-weight:800;color:{{ t.fg }};line-height:1.15;margin-top:7px;font-variant-numeric:tabular-nums;">{{ t.value }}</div>
+                <div style="font-size:10px;font-weight:600;color:var(--muted);margin-top:3px;">{{ t.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;padding:15px 18px;display:flex;align-items:center;gap:16px;">
+          <div style="display:flex;gap:10px;">
+            <sc-for list="{{ deprMethods }}" as="m" hint-placeholder-count="2">
+              <div onClick="{{ m.pick }}" style="border:1.5px solid {{ m.bd }};background:{{ m.bg }};border-radius:12px;padding:10px 14px;cursor:pointer;min-width:196px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <i class="ph-bold {{ m.icon }}" style="font-size:16px;color:{{ m.fg }};"></i>
+                  <span style="font-size:13px;font-weight:800;color:{{ m.fg }};">{{ m.label }}</span>
+                </div>
+                <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-top:5px;font-family:ui-monospace,monospace;">{{ m.formula }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="width:1px;height:48px;background:var(--hairline);flex:none;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12.5px;font-weight:800;color:var(--txt);">{{ methodNote.title }}</div>
+            <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:3px;line-height:1.5;">{{ methodNote.body }}</div>
+          </div>
+          <div style="text-align:center;flex:none;padding:9px 14px;border-radius:12px;background:var(--field);">
+            <div style="font-size:10.5px;font-weight:700;color:var(--muted);">القسط الشهري الحالي</div>
+            <div style="font-size:21px;font-weight:800;color:#F59E0B;margin-top:2px;font-variant-numeric:tabular-nums;">{{ sel.monthlyFull }}</div>
+          </div>
+        </div>
+
+        <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+          <div style="padding:14px 18px 12px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
+            <i class="ph-bold ph-table" style="font-size:17px;color:var(--brand-ink);"></i>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:800;color:var(--txt);">جدول الإهلاك حتى نهاية العمر</div>
+              <div style="font-size:11px;color:var(--muted);font-weight:600;">سطر لكل سنة — القسط والمتراكم والقيمة الدفترية، والإهلاك يتوقف عند القيمة التخريدية</div>
+            </div>
+            <span style="font-size:11px;font-weight:800;color:#22C55E;background:rgba(34,197,94,.12);border-radius:999px;padding:3px 10px;">مُرحَّل {{ sel.postedCount }}</span>
+            <span style="font-size:11px;font-weight:800;color:var(--muted);background:var(--field);border-radius:999px;padding:3px 10px;">متوقَّع {{ sel.futureCount }}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1.1fr 1.3fr 1.3fr 2.4fr 1.3fr 1.4fr;padding:9px 18px;background:var(--field);border-bottom:1px solid var(--hairline);">
+            <span style="font-size:11px;font-weight:800;color:var(--muted);">الفترة</span>
+            <span style="font-size:11px;font-weight:800;color:var(--muted);text-align:end;">قسط السنة</span>
+            <span style="font-size:11px;font-weight:800;color:var(--muted);text-align:end;">المتراكم</span>
+            <span style="font-size:11px;font-weight:800;color:var(--muted);text-align:center;">القيمة الدفترية</span>
+            <span style="font-size:11px;font-weight:800;color:var(--muted);text-align:end;">الدفترية</span>
+            <span style="font-size:11px;font-weight:800;color:var(--muted);">القيد</span>
+          </div>
+          <sc-for list="{{ schedule }}" as="s" hint-placeholder-count="7">
+            <div style="display:grid;grid-template-columns:1.1fr 1.3fr 1.3fr 2.4fr 1.3fr 1.4fr;padding:10px 18px;border-bottom:1px solid var(--hairline);align-items:center;background:{{ s.rowBg }};">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <i class="ph-bold {{ s.icon }}" style="font-size:14px;color:{{ s.tint }};"></i>
+                <span style="font-size:12.5px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ s.period }}</span>
+              </div>
+              <span style="font-size:12.5px;font-weight:700;color:#F59E0B;text-align:end;font-variant-numeric:tabular-nums;">{{ s.amount }}</span>
+              <span style="font-size:12.5px;font-weight:700;color:var(--txt2);text-align:end;font-variant-numeric:tabular-nums;">{{ s.accum }}</span>
+              <div style="padding-inline:14px;">
+                <div style="height:7px;border-radius:4px;background:var(--track);overflow:hidden;">
+                  <div style="height:100%;width:{{ s.bar }};background:{{ s.barFg }};border-radius:4px;"></div>
+                </div>
+              </div>
+              <span style="font-size:13px;font-weight:800;color:{{ s.bookFg }};text-align:end;font-variant-numeric:tabular-nums;">{{ s.book }}</span>
+              <span style="font-size:11.5px;font-weight:700;color:{{ s.jeFg }};">{{ s.je }}</span>
+            </div>
+          </sc-for>
+          <div style="display:grid;grid-template-columns:1.1fr 1.3fr 1.3fr 2.4fr 1.3fr 1.4fr;padding:12px 18px;background:var(--field);align-items:center;">
+            <span style="font-size:12.5px;font-weight:800;color:var(--txt);">{{ sel.lifeLabel }}</span>
+            <span style="font-size:12.5px;font-weight:800;color:#F59E0B;text-align:end;font-variant-numeric:tabular-nums;">{{ sel.depreciable }}</span>
+            <span style="font-size:12.5px;font-weight:800;color:var(--txt);text-align:end;font-variant-numeric:tabular-nums;">{{ sel.depreciable }}</span>
+            <span style="font-size:11px;font-weight:700;color:var(--muted);text-align:center;">يتوقف عند القيمة التخريدية {{ sel.salvage }}</span>
+            <span style="font-size:12.5px;font-weight:800;color:#22C55E;text-align:end;font-variant-numeric:tabular-nums;">{{ sel.salvage }}</span>
+            <span style="font-size:11px;font-weight:700;color:var(--muted);">{{ sel.postedCount }}</span>
+          </div>
+        </div>
+
+        <div style="flex:none;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;padding:15px 17px;">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+              <i class="ph-bold ph-bank" style="font-size:17px;color:var(--brand-ink);"></i>
+              <div style="font-size:14px;font-weight:800;color:var(--txt);">الربط المحاسبي</div>
+            </div>
+            <sc-for list="{{ sel.accounts }}" as="a" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-top:1px solid var(--hairline);">
+                <i class="ph-bold {{ a.icon }}" style="font-size:15px;color:{{ a.tint }};width:18px;"></i>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12.5px;font-weight:700;color:var(--txt);">{{ a.label }}</div>
+                  <div style="font-size:10.5px;font-weight:600;color:var(--muted);">{{ a.note }}</div>
+                </div>
+                <span style="font-size:12px;font-weight:800;color:{{ a.tint }};font-variant-numeric:tabular-nums;">{{ a.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;padding:15px 17px;">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+              <i class="ph-bold ph-clock-counter-clockwise" style="font-size:17px;color:var(--brand-ink);"></i>
+              <div style="font-size:14px;font-weight:800;color:var(--txt);">دورة حياة الأصل</div>
+            </div>
+            <sc-for list="{{ sel.timeline }}" as="t" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-top:1px solid var(--hairline);">
+                <div style="width:28px;height:28px;flex:none;border-radius:8px;background:{{ t.bg }};display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold {{ t.icon }}" style="font-size:13px;color:{{ t.tint }};"></i>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12.5px;font-weight:700;color:var(--txt);">{{ t.label }}</div>
+                  <div style="font-size:10.5px;font-weight:600;color:var(--muted);">{{ t.note }}</div>
+                </div>
+                <span style="font-size:11.5px;font-weight:800;color:{{ t.tint }};">{{ t.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;,&quot;section&quot;:&quot;العرض&quot;}}">
+const RAIL = [
+  {icon:'ph-squares-four', label:'الرئيسية'},
+  {icon:'ph-receipt', label:'الفواتير'},
+  {icon:'ph-package', label:'المخزون'},
+  {icon:'ph-stack-plus', label:'التكاليف المحملة'},
+  {icon:'ph-buildings', label:'الأصول الثابتة', active:true},
+  {icon:'ph-currency-circle-dollar', label:'الخزينة'},
+  {icon:'ph-chart-line', label:'التحليلات'},
+  {icon:'ph-file-text', label:'التقارير'},
+  {icon:'ph-users-three', label:'الموظفون'},
+  {icon:'ph-gear', label:'الإعدادات'},
+];
+
+const CATS = {
+  cooling: {name:'أجهزة تبريد',    life:7,  acc:'1211 · أجهزة',      dep:'1311 · مجمع إهلاك أجهزة',  exp:'5301 · إهلاك أجهزة'},
+  computer:{name:'أجهزة حاسب',     life:5,  acc:'1211 · أجهزة',      dep:'1311 · مجمع إهلاك أجهزة',  exp:'5301 · إهلاك أجهزة'},
+  vehicle: {name:'وسائل نقل',      life:10, acc:'1212 · وسائل نقل',  dep:'1312 · مجمع إهلاك نقل',    exp:'5302 · إهلاك نقل'},
+  fixture: {name:'أثاث وتجهيزات',  life:12, acc:'1213 · أثاث',       dep:'1313 · مجمع إهلاك أثاث',   exp:'5303 · إهلاك أثاث'},
+  machine: {name:'آلات ومعدات',    life:8,  acc:'1214 · آلات',       dep:'1314 · مجمع إهلاك آلات',   exp:'5304 · إهلاك آلات'},
+};
+
+const ASSETS = [
+  {code:'AST-001', name:'ثلاجة عرض 4 متر', cat:'cooling', icon:'ph-wind', location:'فرع المعادي', cc:'CC-01 · تشغيل المعادي',
+   price:86000, salvage:6000, life:7, method:'straight_line', bought:'٢٠٢٢-١٢-٠١', boughtYear:2022, boughtMonth:12, status:'active',
+   linked:'AST-001-SUB', po:'PUR-2022-0188', elapsed:3.7},
+  {code:'AST-002', name:'ماكينة كاشير POS', cat:'computer', icon:'ph-desktop-tower', location:'فرع المعادي', cc:'CC-01 · تشغيل المعادي',
+   price:42000, salvage:2000, life:5, method:'declining_balance', bought:'٢٠٢٣-٠٣-١٥', boughtYear:2023, boughtMonth:3, status:'active',
+   linked:'AST-002-SUB', po:'PUR-2023-0042', elapsed:3.4},
+  {code:'AST-003', name:'سيارة توصيل نصف نقل', cat:'vehicle', icon:'ph-truck', location:'فرع المعادي', cc:'CC-05 · التوزيع',
+   price:186000, salvage:26000, life:10, method:'straight_line', bought:'٢٠٢٢-٠٦-١٠', boughtYear:2022, boughtMonth:6, status:'active',
+   linked:'AST-003-SUB', po:'PUR-2022-0091', elapsed:4.2},
+  {code:'AST-004', name:'تكييف 5 حصان', cat:'cooling', icon:'ph-thermometer-cold', location:'فرع مدينة نصر', cc:'CC-02 · تشغيل نصر',
+   price:34000, salvage:3000, life:7, method:'straight_line', bought:'٢٠٢٠-٠٢-٢٠', boughtYear:2020, boughtMonth:2, status:'active',
+   linked:'AST-004-SUB', po:'PUR-2020-0033', elapsed:6.5},
+  {code:'AST-005', name:'أرفف معدنية — مخزن', cat:'fixture', icon:'ph-archive', location:'المخزن الرئيسي', cc:'CC-04 · المخازن',
+   price:62000, salvage:4000, life:12, method:'straight_line', bought:'٢٠٢٤-٠٩-٠١', boughtYear:2024, boughtMonth:9, status:'active',
+   linked:'AST-005-SUB', po:'PUR-2024-0210', elapsed:1.9},
+  {code:'AST-006', name:'ميزان إلكتروني', cat:'machine', icon:'ph-scales', location:'فرع المعادي', cc:'CC-01 · تشغيل المعادي',
+   price:18000, salvage:1200, life:5, method:'straight_line', bought:'٢٠٢١-١١-٠٥', boughtYear:2021, boughtMonth:11, status:'active',
+   linked:'AST-006-SUB', po:'PUR-2021-0155', elapsed:4.8},
+  {code:'AST-007', name:'ماكينة قطع لحوم', cat:'machine', icon:'ph-knife', location:'فرع المعادي', cc:'CC-01 · تشغيل المعادي',
+   price:58200, salvage:4200, life:8, method:'straight_line', bought:'٢٠١٨-٠٤-١٢', boughtYear:2018, boughtMonth:4, status:'sold',
+   linked:'AST-007-SUB', po:'PUR-2018-0077', elapsed:8, disposalDate:'٢٠٢٦-٠٦-١٥', disposalValue:12400},
+  {code:'AST-012', name:'طابعة حرارية 80مم', cat:'computer', icon:'ph-printer', location:'فرع أكتوبر', cc:'CC-03 · تشغيل أكتوبر',
+   price:4800, salvage:0, life:5, method:'straight_line', bought:'٢٠٢١-٠١-١٠', boughtYear:2021, boughtMonth:1, status:'disposed',
+   linked:'AST-012-SUB', po:'PUR-2021-0012', elapsed:5, disposalDate:'٢٠٢٦-٠٣-٢٢', disposalValue:0},
+];
+
+const STATUS = {
+  active:   {label:'نشط',    tint:'#22C55E'},
+  sold:     {label:'مُباع',   tint:'#8B5CF6'},
+  disposed: {label:'مُستبعَد', tint:'#6B7280'},
+};
+
+const money = n => n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+const money0 = n => n.toLocaleString('en-US', {maximumFractionDigits:0});
+const AR = n => String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
+// Arabic counts 3–10 take the plural form
+const years = n => AR(n) + ' ' + (n >= 3 && n <= 10 ? 'سنوات' : 'سنة');
+const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+// One clock for the whole card: how many monthly instalments have actually been
+// posted. Everything else — accumulated depreciation, book value, which schedule
+// rows are settled, the lifecycle row — is derived from this single number so the
+// panels can never disagree with each other.
+function posted(asset, sc){
+  const totalMonths = sc.rows.length * 12;
+  const months = Math.min(Math.round(asset.elapsed * 12), totalMonths);
+  let left = months, accum = 0;
+  const perRow = sc.rows.map(r => {
+    const m = Math.max(0, Math.min(12, left));
+    left -= m;
+    accum += r.amount / 12 * m;
+    return m;
+  });
+  const yearIdx = Math.min(Math.floor(months / 12), sc.rows.length - 1);
+  // depreciation starts the month AFTER purchase, so the nth instalment lands here
+  const abs = asset.boughtMonth + months;
+  return {
+    months, perRow, accum,
+    book: asset.price - accum,
+    monthly: sc.rows[yearIdx].amount / 12,
+    lastLabel: months > 0
+      ? MONTHS_AR[(abs - 1) % 12] + ' ' + AR(asset.boughtYear + Math.floor((abs - 1) / 12))
+      : 'لم يبدأ الإهلاك',
+  };
+}
+
+// Builds the year-by-year schedule. Straight line spreads the depreciable base
+// evenly; declining balance applies 2/life to the opening book value. Both floor
+// at salvage value — an asset never depreciates below what it can be scrapped for.
+function schedule(a){
+  const rows = [];
+  let accum = 0;
+  let book = a.price;
+  const depreciable = a.price - a.salvage;
+  const straight = depreciable / a.life;
+  const rate = 2 / a.life;
+
+  for (let y = 0; y < a.life; y++){
+    let amount;
+    if (a.method === 'declining_balance'){
+      // a pure declining rate never amortises to salvage, so switch to straight-line
+      // over the remaining years once that charge is the larger of the two
+      const remainingYears = a.life - y;
+      amount = Math.max(book * rate, (book - a.salvage) / remainingYears);
+    } else {
+      amount = straight;
+    }
+    if (book - amount < a.salvage) amount = book - a.salvage;
+    if (amount < 0) amount = 0;
+    accum += amount;
+    book -= amount;
+    rows.push({year: a.boughtYear + y, amount, accum, book});
+  }
+  return {rows, depreciable, straight};
+}
+
+class Component extends DCLogic {
+  state = {theme:null, sel:0, method:null, filter:'active'};
+
+  // Single source of truth for an asset's depreciation method: the per-asset override
+  // if the user picked one, otherwise what the card stores. Every panel resolves
+  // through here so the detail, the register row and the header can't diverge.
+  methodOf(a){ return (this.state.methodById || {})[a.code] || a.method; }
+  liveOf(a){ return Object.assign({}, a, {method: this.methodOf(a)}); }
+  bookOf(a){ return posted(a, schedule(this.liveOf(a))); }
+
+  overlayVals(asset, sc, ctx){
+    const kind = this.state.ov;
+    const close = () => this.setState({ov:null});
+    const wrap = o => Object.assign({hasRows: o.rows.length > 0, hasFields: o.fields.length > 0, hasChips: o.chips.length > 0}, o);
+    if (!kind) return wrap({open:false, width:'0', icon:'ph-dot', title:'', sub:'', note:'', hasNote:false,
+      primary:'', primaryIcon:'ph-dot', rows:[], fields:[], chips:[], close, confirm: close});
+
+    // a new asset defaults to its own category, not the one selected in the register
+    const cat = kind === 'new' ? CATS.cooling : CATS[asset.cat];
+
+    if (kind === 'post'){
+      // one journal entry per category, pending categories only
+      const pend = Object.keys(CATS).map(k => {
+        const cats = ASSETS.filter(a => a.cat === k && a.status === 'active');
+        const monthly = cats.reduce((s, a) => s + this.bookOf(a).monthly, 0);
+        return {key:k, name: CATS[k].name, count: cats.length, monthly, exp: CATS[k].exp, dep: CATS[k].dep};
+      }).filter(p => p.count > 0);
+      const total = pend.reduce((s, p) => s + p.monthly, 0);
+
+      return wrap({open:true, width:'880px', icon:'ph-arrow-down-right',
+        title:'ترحيل إهلاك الشهر', sub:'قيد واحد لكل فئة — يخصم المصروف ويزيد مجمع الإهلاك',
+        primary:'ترحيل ' + AR(pend.length) + ' قيود', primaryIcon:'ph-check', close, confirm: close,
+        note:'الأصول المستبعدة والمباعة لا تُهلك، والأصل الذي بلغ قيمته التخريدية يتوقف قسطه تلقائياً — لذلك قد يقل إجمالي القسط من شهر لآخر بلا تغيير في عدد الأصول.',
+        hasNote:true,
+        fields:[
+          {label:'الشهر', icon:'ph-calendar-blank', value:'أغسطس ٢٠٢٦'},
+          {label:'تاريخ القيد', icon:'ph-calendar-check', value:'٢٠٢٦-٠٨-٣١'},
+          {label:'إجمالي القسط', icon:'ph-money', value: money(total) + ' ج.م'},
+          {label:'عدد الأصول النشطة', icon:'ph-package', value: AR(ASSETS.filter(a => a.status === 'active').length)},
+        ],
+        rows: pend.map(p => ({
+          title: p.name, sub: p.exp + ' مدين · ' + p.dep + ' دائن',
+          meta: AR(p.count) + ' أصل', value: money(p.monthly),
+          icon:'ph-arrow-down-right', tint:'#F59E0B', bg:'rgba(245,158,11,.12)',
+          pick: () => {},
+        })),
+        chips:[]});
+    }
+
+    if (kind === 'dispose' && asset.status !== 'active'){
+      // already off the books — show what was recorded, never propose a new sale
+      const proceeds = asset.disposalValue || 0;
+      const realised = proceeds - ctx.bookToDate;
+      const sold = asset.status === 'sold';
+      return wrap({open:true, width:'820px', icon:'ph-receipt',
+        title:'تفاصيل الاستبعاد', sub:'هذا الأصل خرج من الدفاتر بالفعل — السجل للعرض فقط',
+        primary:'إغلاق', primaryIcon:'ph-check', close, confirm: close,
+        note: sold
+          ? 'تم البيع بـ ' + money0(proceeds) + ' ج.م مقابل قيمة دفترية ' + money0(ctx.bookToDate) + ' ج.م، فتحقق ' + (realised >= 0 ? 'ربح' : 'خسارة') + ' ' + money0(Math.abs(realised)) + ' ج.م قُيِّد إيراداً غير تشغيلي. تكلفة الأصل ومجمع إهلاكه خرجا من الميزانية معاً، ولذلك لا يظهر ضمن إجماليات أعلى الشاشة.'
+          : 'أُعدم الأصل بلا ثمن بعد استنفاد عمره بالكامل، فكانت قيمته الدفترية ' + money0(ctx.bookToDate) + ' ج.م هي الخسارة المُقيَّدة. تكلفته ومجمع إهلاكه خرجا من الميزانية.',
+        hasNote:true, chips:[], rows:[],
+        fields:[
+          {label:'الأصل', icon:'ph-package', value: asset.code + ' · ' + asset.name},
+          {label:'نوع الاستبعاد', icon: sold ? 'ph-handshake' : 'ph-trash', value: sold ? 'بيع' : 'إعدام'},
+          {label:'تاريخ الاستبعاد', icon:'ph-calendar-blank', value: asset.disposalDate},
+          {label:'ثمن البيع المُحصَّل', icon:'ph-money', value: sold ? money0(proceeds) + ' ج.م' : 'بلا ثمن'},
+          {label:'القيمة الدفترية عند الاستبعاد', icon:'ph-scales', value: money(ctx.bookToDate) + ' ج.م'},
+          {label: realised >= 0 ? 'الربح المُحقَّق' : 'الخسارة المُحقَّقة', icon: realised >= 0 ? 'ph-trend-up' : 'ph-trend-down', value: money(Math.abs(realised)) + ' ج.م'},
+          {label:'الأقساط المُرحَّلة', icon:'ph-arrow-down-right', value: AR(ctx.postedYears) + ' من ' + AR(sc.rows.length * 12) + ' قسطاً'},
+          {label:'الحالة', icon:'ph-seal-check', value: sold ? 'مُباع — لا إهلاك بعده' : 'مُستبعَد — لا إهلاك بعده'},
+        ]});
+    }
+
+    if (kind === 'dispose'){
+      const mode = this.state.dmode || 'sell';
+      // a plausible offer sits just above book value; scrapping realises nothing
+      const price = mode === 'sell' ? Math.round(ctx.bookToDate * 1.06 / 100) * 100 : 0;
+      const gain = price - ctx.bookToDate;
+      return wrap({open:true, width:'820px', icon:'ph-trash',
+        title:'استبعاد أو بيع أصل', sub:'الربح أو الخسارة = ثمن البيع ناقص القيمة الدفترية',
+        primary:'تأكيد الاستبعاد', primaryIcon:'ph-check', close, confirm: close,
+        note: gain >= 0
+          ? 'ثمن البيع ' + money0(price) + ' أعلى من القيمة الدفترية ' + money0(ctx.bookToDate) + ' — الفرق ' + money0(Math.abs(gain)) + ' ج.م يُقيَّد إيراداً غير تشغيلي لا إيراد مبيعات.'
+          : 'ثمن البيع ' + money0(price) + ' أقل من القيمة الدفترية ' + money0(ctx.bookToDate) + ' — الفرق ' + money0(Math.abs(gain)) + ' ج.م خسارة استبعاد تُحمَّل على نتيجة الفترة.',
+        hasNote:true,
+        chips:[
+          {label:'بيع', icon:'ph-handshake', id:'sell'},
+          {label:'إعدام', icon:'ph-trash', id:'scrap'},
+        ].map(c => {
+          const on = c.id === mode;
+          return {label:c.label, icon:c.icon,
+            bd: on ? 'var(--brand)' : 'var(--hairline)',
+            bg: on ? 'var(--wash)' : 'transparent',
+            fg: on ? 'var(--brand-ink)' : 'var(--muted)',
+            pick: () => this.setState({dmode: c.id})};
+        }),
+        fields:[
+          {label:'الأصل', icon:'ph-package', value: asset.code + ' · ' + asset.name},
+          {label:'القيمة الدفترية', icon:'ph-scales', value: money(ctx.bookToDate) + ' ج.م'},
+          {label: mode === 'sell' ? 'ثمن البيع' : 'ثمن البيع', icon:'ph-money', value: mode === 'sell' ? money0(price) + ' ج.م' : 'بلا ثمن'},
+          {label:'تاريخ الاستبعاد', icon:'ph-calendar-blank', value:'اليوم'},
+          {label: gain >= 0 ? 'ربح الاستبعاد' : 'خسارة الاستبعاد', icon: gain >= 0 ? 'ph-trend-up' : 'ph-trend-down', value: money(Math.abs(gain)) + ' ج.م'},
+          {label:'القسط الذي يتوقف', icon:'ph-stop-circle', value: money(ctx.monthly) + ' / شهر'},
+        ],
+        rows:[]});
+    }
+
+    // new / edit share the same card shape
+    const isNew = kind === 'new';
+    const method = this.state.nmethod || (isNew ? 'straight_line' : asset.method);
+    const price = isNew ? 64000 : asset.price;
+    const salvage = isNew ? 4000 : asset.salvage;
+    const life = isNew ? 7 : asset.life;
+    const straight = (price - salvage) / life / 12;
+    const declining = price * (2 / life) / 12;
+    const monthly = method === 'declining_balance' ? declining : straight;
+
+    return wrap({open:true, width:'880px', icon: isNew ? 'ph-plus-circle' : 'ph-pencil-simple',
+      title: isNew ? 'أصل ثابت جديد' : 'تعديل بطاقة الأصل',
+      sub:'الفئة تُملي العمر والطريقة والحسابات — ويمكن تجاوزها لهذا الأصل',
+      primary: isNew ? 'إنشاء الأصل' : 'حفظ التعديل', primaryIcon:'ph-check', close, confirm: close,
+      note: isNew
+        ? 'القسط الشهري الجديد ' + money(monthly) + ' ج.م يُضاف لمصروف إهلاك الشهر القادم. الإهلاك يبدأ من الشهر التالي للشراء — الشهر الجزئي لا يُهلك.'
+        : 'تغيير العمر أو الطريقة يسري على الأقساط القادمة فقط. الأقساط المُرحَّلة (' + AR(ctx.postedYears) + ' قسطاً) تبقى كما هي لأن شهورها مُقفلة محاسبياً.',
+      hasNote:true,
+      chips:[
+        {label:'القسط الثابت', icon:'ph-equals', id:'straight_line'},
+        {label:'القسط المتناقص', icon:'ph-trend-down', id:'declining_balance'},
+      ].map(c => {
+        const on = c.id === method;
+        return {label:c.label, icon:c.icon,
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          bg: on ? 'var(--wash)' : 'transparent',
+          fg: on ? 'var(--brand-ink)' : 'var(--muted)',
+          pick: () => this.setState({nmethod: c.id})};
+      }),
+      fields:[
+        {label:'كود الأصل', icon:'ph-hash', value: isNew ? 'AST-019' : asset.code},
+        {label:'اسم الأصل', icon:'ph-tag', value: isNew ? 'ثلاجة عرض 3 متر' : asset.name},
+        {label:'الفئة', icon:'ph-folders', value: isNew ? 'أجهزة تبريد' : cat.name},
+        {label:'الموقع', icon:'ph-map-pin', value: isNew ? 'فرع أكتوبر' : asset.location},
+        {label:'مركز التكلفة', icon:'ph-target', value: isNew ? 'CC-03 · تشغيل أكتوبر' : asset.cc},
+        {label:'تاريخ الشراء', icon:'ph-calendar-blank', value: isNew ? '٢٠٢٦-٠٨-٢٦' : asset.bought},
+        {label:'ثمن الشراء', icon:'ph-money', value: money0(price) + ' ج.م'},
+        {label:'العمر الإنتاجي', icon:'ph-hourglass', value: AR(life) + ' سنوات'},
+        {label:'القيمة التخريدية', icon:'ph-recycle', value: money0(salvage) + ' ج.م'},
+        {label:'القسط الشهري المحتسب', icon:'ph-arrow-down-right', value: money(monthly) + ' ج.م'},
+      ],
+      rows:[
+        {title: cat.acc, sub:'حساب الأصل — يُقيَّد فيه ثمن الشراء', meta:'مدين', value: money0(price), icon:'ph-bank', tint:'#0250D3', bg:'rgba(2,80,211,.12)', pick: () => {}},
+        {title: cat.dep, sub:'مجمع الإهلاك — يزيد بكل قسط', meta:'دائن', value: money0(isNew ? 0 : ctx.accumToDate), icon:'ph-bank', tint:'#F59E0B', bg:'rgba(245,158,11,.12)', pick: () => {}},
+        {title: cat.exp, sub:'مصروف الإهلاك على مركز التكلفة', meta:'شهري', value: money(monthly), icon:'ph-bank', tint:'#EF4444', bg:'rgba(239,68,68,.12)', pick: () => {}},
+      ]});
+  }
+
+  renderVals(){
+    const dark = (this.state.theme || this.props.theme || 'light') === 'dark';
+    const filter = this.state.filter;
+    const visible = ASSETS.filter(a => filter === 'all' ? true : a.status === filter);
+    const asset = visible[this.state.sel] || visible[0] || ASSETS[0];
+    const method = this.methodOf(asset);
+    const live = this.liveOf(asset);
+    const sc = schedule(live);
+    const cat = CATS[asset.cat];
+    const st = STATUS[asset.status];
+
+    const pd = posted(asset, sc);
+    const postedYears = pd.months;
+    const accumToDate = pd.accum;
+    const bookToDate = pd.book;
+    const monthly = pd.monthly;
+    const maxBook = asset.price;
+
+    const counts = {
+      active: ASSETS.filter(a => a.status === 'active').length,
+      sold: ASSETS.filter(a => a.status === 'sold').length,
+      disposed: ASSETS.filter(a => a.status === 'disposed').length,
+      all: ASSETS.length,
+    };
+
+    // A sold or scrapped asset takes its cost and accumulated depreciation off the
+    // books at disposal, so the headline covers active assets only — matching the register.
+    const onBooks = ASSETS.filter(a => a.status === 'active');
+    const totalCost = onBooks.reduce((s, a) => s + a.price, 0);
+    const totalAccum = onBooks.reduce((s, a) => s + this.bookOf(a).accum, 0);
+
+    const methodNotes = {
+      straight_line: {title:'القسط الثابت — قسط متساوٍ كل سنة',
+        body:'يوزّع (التكلفة ناقص القيمة التخريدية) على سنوات العمر بالتساوي. أبسط في المراجعة ويناسب الأصول التي تُستهلك بانتظام كالأثاث والمباني.'},
+      declining_balance: {title:'القسط المتناقص — أعلى في السنوات الأولى',
+        body:'يُطبَّق معدل ٢ ÷ العمر على الرصيد الدفتري كل سنة، فيتحمّل القسط الأكبر مبكراً. يناسب الأجهزة التي تفقد قيمتها سريعاً كالحاسبات وماكينات الكاشير.'},
+    };
+
+    return {
+      theme: dark ? 'dark' : 'light',
+      themeIcon: dark ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.setState({theme: dark ? 'light' : 'dark'}),
+      rail: RAIL.map(r => ({...r, bg: r.active ? 'rgba(74,128,232,.18)' : 'transparent', fg: r.active ? '#7DA6F5' : '#64748B'})),
+
+      overlay: this.overlayVals(asset, sc, {bookToDate, accumToDate, monthly, postedYears}),
+      openNew: () => this.setState({ov:'new', nmethod:null}),
+      openPost: () => this.setState({ov:'post'}),
+      openEdit: () => this.setState({ov:'edit', nmethod:null}),
+      openDispose: () => this.setState({ov:'dispose', dmode:'sell'}),
+      disposeBtn: asset.status === 'active'
+        ? {label:'استبعاد', icon:'ph-trash', fg:'#EF4444', bd:'rgba(239,68,68,.4)'}
+        : {label:'تفاصيل الاستبعاد', icon:'ph-receipt', fg:'var(--txt2)', bd:'var(--hairline)'},
+
+      topStats: [
+        {label:'التكلفة التاريخية', value: money0(totalCost), fg:'var(--txt)'},
+        {label:'مجمع الإهلاك', value: money0(totalAccum), fg:'#F59E0B'},
+        {label:'القيمة الدفترية', value: money0(totalCost - totalAccum), fg:'#22C55E'},
+      ],
+
+      filters: [
+        {id:'active', label:'نشط', count: AR(counts.active)},
+        {id:'sold', label:'مُباع', count: AR(counts.sold)},
+        {id:'disposed', label:'مُستبعَد', count: AR(counts.disposed)},
+        {id:'all', label:'الكل', count: AR(counts.all)},
+      ].map(f => {
+        const on = f.id === filter;
+        return {label:f.label, count:f.count,
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          bg: on ? 'var(--wash)' : 'transparent',
+          fg: on ? 'var(--brand-ink)' : 'var(--muted)',
+          pick: () => this.setState({filter: f.id, sel: 0})};
+      }),
+
+      register: visible.map((a, i) => {
+        const p2 = this.bookOf(a);
+        const ac = p2.accum;
+        const stt = STATUS[a.status];
+        const on = a.code === asset.code;
+        return {
+          name:a.name, code:a.code, category: CATS[a.cat].name, location:a.location,
+          icon:a.icon, tint: stt.tint, iconBg: stt.tint + '1f', statusLabel: stt.label,
+          bg: on ? 'var(--wash)' : 'transparent',
+          mark: on ? 'var(--brand)' : 'transparent',
+          deprBar: (ac / a.price * 100).toFixed(1) + '%',
+          deprPct: (ac / a.price * 100).toFixed(0) + '٪',
+          book: money0(a.price - ac),
+          monthly: money0(p2.monthly),
+          pick: () => this.setState({sel: i}),
+        };
+      }),
+
+      sel: {
+        name: asset.name, code: asset.code, category: cat.name, location: asset.location,
+        costCenter: asset.cc, icon: asset.icon, tint: st.tint, iconBg: st.tint + '1f',
+        statusLabel: st.label,
+        monthlyFull: money(monthly),
+        lifeLabel: years(asset.life),
+        depreciable: money0(sc.depreciable),
+        salvage: money0(asset.salvage),
+        postedCount: AR(pd.months) + ' قسطاً',
+        futureCount: AR(sc.rows.length * 12 - pd.months) + ' قسطاً',
+        tiles: [
+          {label:'ثمن الشراء', value: money0(asset.price), note: asset.bought, icon:'ph-money', fg:'var(--txt)', bg:'transparent'},
+          {label:'القيمة التخريدية', value: money0(asset.salvage), note:'حد الإهلاك الأدنى', icon:'ph-recycle', fg:'var(--txt2)', bg:'transparent'},
+          {label:'مجمع الإهلاك', value: money0(accumToDate), note: AR(pd.months) + ' قسطاً مُرحَّلاً', icon:'ph-arrow-down-right', fg:'#F59E0B', bg:'rgba(245,158,11,.07)'},
+          {label:'القيمة الدفترية', value: money0(bookToDate), note:'التكلفة ناقص المتراكم', icon:'ph-scales', fg:'#22C55E', bg:'rgba(34,197,94,.07)'},
+          {label:'العمر الإنتاجي', value: years(asset.life), note:'مضى ' + AR(asset.elapsed.toFixed(1)), icon:'ph-hourglass', fg:'var(--txt)', bg:'transparent'},
+          {label:'نسبة الاستهلاك', value: (accumToDate / asset.price * 100).toFixed(0) + '٪', note:'من التكلفة', icon:'ph-percent', fg:'#EF4444', bg:'rgba(239,68,68,.07)'},
+        ],
+        accounts: [
+          {label: cat.acc, note:'حساب الأصل — يُقيَّد فيه ثمن الشراء', value: money0(asset.price), icon:'ph-bank', tint:'#0250D3'},
+          {label: cat.dep, note:'مجمع الإهلاك — يزيد بكل قسط مُرحَّل', value: money0(accumToDate), icon:'ph-bank', tint:'#F59E0B'},
+          {label: cat.exp, note:'مصروف الإهلاك — يُحمَّل على مركز التكلفة', value: money0(monthly) + ' / شهر', icon:'ph-bank', tint:'#EF4444'},
+          {label:'حساب فرعي ' + asset.linked, note:'أُنشئ ذرياً مع الأصل — لكن القيود تبقى على حساب الفئة', value:'مرتبط', icon:'ph-link', tint:'#8B5CF6'},
+        ],
+        timeline: [
+          {label:'الشراء والإضافة للسجل', note: asset.bought + ' · ' + asset.po, value: money0(asset.price), icon:'ph-plus-circle', tint:'#22C55E', bg:'rgba(34,197,94,.12)'},
+          {label:'بدء الإهلاك', note:'من الشهر التالي للشراء — الشهر الجزئي لا يُهلك', value:'شهرياً', icon:'ph-play-circle', tint:'#0250D3', bg:'rgba(2,80,211,.12)'},
+          {label:'آخر قسط مُرحَّل', note: pd.lastLabel + ' · القسط رقم ' + AR(pd.months) + ' من ' + AR(sc.rows.length * 12), value: money0(monthly), icon:'ph-arrow-down-right', tint:'#F59E0B', bg:'rgba(245,158,11,.12)'},
+          asset.disposalDate
+            ? {label: asset.status === 'sold' ? 'البيع والاستبعاد' : 'الإعدام والاستبعاد',
+               note: asset.disposalDate + ' · دفترية ' + money0(bookToDate),
+               value: asset.disposalValue ? money0(asset.disposalValue) : 'بلا ثمن',
+               icon:'ph-trash', tint:'#EF4444', bg:'rgba(239,68,68,.12)'}
+            : {label:'نهاية العمر الافتراضي', note:'يصل القيمة التخريدية ' + money0(asset.salvage) + ' ثم يتوقف القسط',
+               value: AR(asset.boughtYear + asset.life), icon:'ph-flag-checkered', tint:'#6B7280', bg:'rgba(107,114,128,.14)'},
+        ],
+      },
+
+      deprMethods: [
+        {id:'straight_line', label:'القسط الثابت', icon:'ph-equals', formula:'(التكلفة − التخريدية) ÷ العمر'},
+        {id:'declining_balance', label:'القسط المتناقص', icon:'ph-trend-down', formula:'الرصيد الدفتري × (٢ ÷ العمر)'},
+      ].map(m => {
+        const on = m.id === method;
+        return {label:m.label, icon:m.icon, formula:m.formula,
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          bg: on ? 'var(--wash)' : 'transparent',
+          fg: on ? 'var(--brand-ink)' : 'var(--txt2)',
+          pick: () => this.setState({methodById: Object.assign({}, this.state.methodById, {[asset.code]: m.id})})};
+      }),
+
+      methodNote: methodNotes[method],
+
+      schedule: sc.rows.map((r, i) => {
+        const m = pd.perRow[i];
+        const full = m === 12, part = m > 0 && m < 12;
+        const atSalvage = r.book <= asset.salvage + 0.5;
+        return {
+          // a life-year runs from the purchase month, so label it as a straddling pair
+          period: AR(r.year) + '/' + AR(String(r.year + 1).slice(2)),
+          amount: money(r.amount),
+          accum: money0(r.accum),
+          book: money0(r.book),
+          bar: (r.book / maxBook * 100).toFixed(1) + '%',
+          barFg: full ? '#0250D3' : part ? '#4A80E8' : 'var(--muted)',
+          bookFg: atSalvage ? '#22C55E' : 'var(--txt)',
+          icon: full ? 'ph-check-circle' : part ? 'ph-hourglass-medium' : 'ph-clock',
+          tint: full ? '#22C55E' : part ? '#F59E0B' : 'var(--muted)',
+          rowBg: full ? 'transparent' : part ? 'rgba(245,158,11,.06)' : 'var(--field)',
+          je: full ? 'JV-' + AR(r.year + 1) + '-' + AR(600 + i * 7)
+            : part ? AR(m) + ' من ١٢ قسطاً' : 'لم يُرحَّل',
+          jeFg: full ? 'var(--brand-ink)' : part ? '#F59E0B' : 'var(--muted)',
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

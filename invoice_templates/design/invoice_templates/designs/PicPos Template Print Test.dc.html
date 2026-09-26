@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-ink:#0250D3; --brand-light:#4A80E8;
+    --wash:rgba(2,80,211,.08); --side:#0F172A; --side-line:#243247;
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280; --track:#E6ECF6; --desk:#DFE5EF;
+  }
+  [data-theme="dark"]{
+    --canvas:#0A1220; --card:#121C2E; --hairline:#243247; --field:#18243A;
+    --brand-ink:#7DA6F5; --wash:rgba(74,128,232,.14); --side:#08101E; --side-line:#1D2A3E;
+    --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8; --track:#1E2B42; --desk:#050B15;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#0A1220;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#94A3B855;border-radius:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" dir="rtl" style="width:1920px;height:1080px;display:flex;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;">
+
+  <div style="width:84px;flex:none;background:var(--side);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:14px;">
+    <div style="width:44px;height:44px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <img src="assets/picpos-logo.png" alt="PicPos" style="width:38px;height:38px;object-fit:contain;" />
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:7px;">
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="9">
+        <div title="{{ r.label }}" style="position:relative;width:52px;height:46px;border-radius:13px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+          <i class="ph-bold {{ r.icon }}" style="font-size:21px;color:{{ r.fg }};"></i>
+          <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;inset-inline-end:-14px;top:11px;width:3.5px;height:24px;border-radius:3px;background:var(--brand-light);"></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="width:40px;height:40px;flex:none;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;">م.س</div>
+  </div>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <div style="height:76px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:14px;padding:0 26px;">
+      <div style="width:46px;height:46px;flex:none;border-radius:14px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold ph-test-tube" style="font-size:23px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-size:19px;font-weight:800;line-height:1.3;color:var(--txt);">معاينة وطباعة تجريبية</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;">نفس الراسم الذي يطبع — لا معاينة موازية · اختبر الحالات الحدّية قبل التفعيل</div>
+      </div>
+      <div style="flex:1;"></div>
+      <div onClick="{{ toggleTheme }}" style="width:44px;height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+        <i class="ph-bold {{ themeIcon }}" style="font-size:18px;"></i>
+      </div>
+      <div onClick="{{ doPdf }}" style="height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 16px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;white-space:nowrap;">
+        <i class="ph-bold ph-file-pdf" style="font-size:17px;"></i>حفظ PDF
+      </div>
+      <div onClick="{{ doPrint }}" style="height:44px;flex:none;border-radius:12px;background:var(--brand);display:flex;align-items:center;gap:8px;padding:0 20px;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        <i class="ph-bold ph-printer" style="font-size:17px;"></i>طباعة على {{ target.short }}
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;display:flex;">
+
+      <!-- ═══════════ scenarios ═══════════ -->
+      <div style="width:340px;flex:none;background:var(--card);border-inline-end:1px solid var(--hairline);display:flex;flex-direction:column;overflow-y:auto;">
+        <div style="flex:none;padding:14px 18px 11px;">
+          <div style="font-size:13px;font-weight:800;color:var(--txt);">حالات الاختبار</div>
+          <div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:2px;">كل حالة تكسر افتراضاً مختلفاً في القالب</div>
+        </div>
+        <sc-for list="{{ scenarios }}" as="s" hint-placeholder-count="6">
+          <div onClick="{{ s.pick }}" style="padding:11px 18px;border-bottom:1px solid var(--hairline);background:{{ s.bg }};border-inline-start:3px solid {{ s.mark }};cursor:pointer;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:32px;height:32px;flex:none;border-radius:9px;background:{{ s.iconBg }};display:flex;align-items:center;justify-content:center;">
+                <i class="ph-bold {{ s.icon }}" style="font-size:15px;color:{{ s.tint }};"></i>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.name }}</div>
+                <div style="font-size:10.5px;font-weight:600;color:var(--muted);line-height:1.45;">{{ s.probe }}</div>
+              </div>
+              <sc-if value="{{ s.risky }}" hint-placeholder-val="{{ false }}">
+                <i class="ph-bold ph-warning" style="font-size:13px;color:#F59E0B;flex:none;"></i>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+
+        <div style="flex:none;padding:14px 18px;border-top:1px solid var(--hairline);margin-top:6px;">
+          <div style="font-size:12.5px;font-weight:800;color:var(--txt);margin-bottom:10px;">وجهة الطباعة</div>
+          <sc-for list="{{ targets }}" as="t" hint-placeholder-count="3">
+            <div onClick="{{ t.pick }}" style="display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:11px;border:1.5px solid {{ t.bd }};background:{{ t.bg }};margin-bottom:7px;cursor:pointer;">
+              <i class="ph-bold {{ t.icon }}" style="font-size:15px;color:{{ t.fg }};"></i>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;font-weight:800;color:{{ t.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.name }}</div>
+                <div style="font-size:10px;font-weight:600;color:var(--muted);">{{ t.meta }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ═══════════ rendered sheets ═══════════ -->
+      <div style="flex:1;min-width:0;background:var(--desk);overflow:auto;padding:24px;">
+        <div style="display:flex;gap:20px;align-items:flex-start;justify-content:center;">
+          <sc-for list="{{ pages }}" as="p" hint-placeholder-count="2">
+            <div style="flex:none;">
+              <div style="width:{{ p.w }};min-height:{{ p.h }};background:#FFFFFF;color:#0B1220;box-shadow:0 10px 32px rgba(11,18,32,.22);padding:{{ p.pad }};font-family:'Noto Naskh Arabic','Cairo',serif;display:flex;flex-direction:column;gap:{{ p.gap }};position:relative;">
+
+                <sc-if value="{{ p.showHead }}" hint-placeholder-val="{{ true }}">
+                  <div>
+                    <div style="display:flex;align-items:flex-start;gap:12px;">
+                      <div style="flex:1;min-width:0;">
+                        <div style="font-size:{{ p.h1 }};font-weight:700;line-height:1.25;">شركة بيك بوس للتجارة</div>
+                        <div style="font-size:{{ p.tiny }};color:#3F4A5A;margin-top:2px;">المعادي — شارع ٩، القاهرة</div>
+                        <div style="font-size:{{ p.tiny }};color:#3F4A5A;font-family:'JetBrains Mono',monospace;">س.ت 344-228-891</div>
+                      </div>
+                      <sc-if value="{{ p.showLogo }}" hint-placeholder-val="{{ true }}">
+                        <div style="width:{{ p.logo }};height:{{ p.logo }};flex:none;border:1px solid #C9D2E0;display:flex;align-items:center;justify-content:center;">
+                          <span style="font-size:8px;font-weight:700;color:#8B95A5;font-family:'Cairo',sans-serif;">LOGO</span>
+                        </div>
+                      </sc-if>
+                    </div>
+                    <div style="height:1.5px;background:#0B1220;margin-top:6px;"></div>
+                    <div style="text-align:center;padding:5px 0;">
+                      <div style="font-size:{{ p.title }};font-weight:700;">{{ p.docTitle }}</div>
+                      <div style="font-size:{{ p.tiny }};font-weight:600;color:#6B7280;font-family:'Cairo',sans-serif;letter-spacing:1.4px;">{{ p.docTitleEn }}</div>
+                    </div>
+                    <div style="height:1px;background:#C9D2E0;"></div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ p.showMeta }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:grid;grid-template-columns:{{ p.metaCols }};gap:4px 20px;">
+                    <sc-for list="{{ p.meta }}" as="m" hint-placeholder-count="4">
+                      <div style="display:flex;align-items:baseline;gap:6px;min-width:0;">
+                        <span style="font-size:{{ p.tiny }};color:#6B7280;white-space:nowrap;">{{ m.k }}</span>
+                        <span style="flex:1;border-bottom:1px dotted #D6DDE8;height:1px;"></span>
+                        <span style="font-size:{{ p.body }};font-weight:{{ m.fw }};color:{{ m.tone }};white-space:nowrap;">{{ m.v }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ p.showTable }}" hint-placeholder-val="{{ true }}">
+                  <div>
+                    <div style="display:grid;grid-template-columns:{{ p.grid }};border-top:1.4px solid #0B1220;border-bottom:1px solid #0B1220;padding:3px 0;">
+                      <sc-for list="{{ p.cols }}" as="c" hint-placeholder-count="5">
+                        <div style="min-width:0;text-align:{{ c.align }};padding:0 4px;">
+                          <div style="font-size:{{ p.body }};font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.ar }}</div>
+                          <sc-if value="{{ p.bilingual }}" hint-placeholder-val="{{ true }}">
+                            <div style="font-size:{{ p.micro }};font-weight:600;color:#8B95A5;font-family:'Cairo',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.en }}</div>
+                          </sc-if>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <sc-for list="{{ p.rows }}" as="r" hint-placeholder-count="6">
+                      <div style="display:grid;grid-template-columns:{{ p.grid }};border-bottom:1px solid #E8EDF4;padding:{{ p.rpad }} 0;background:{{ r.bg }};">
+                        <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="5">
+                          <div style="min-width:0;text-align:{{ c.align }};padding:0 4px;font-size:{{ p.body }};color:#243247;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:{{ c.wrap }};">{{ c.v }}</div>
+                        </sc-for>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ p.continued }}" hint-placeholder-val="{{ false }}">
+                      <div style="text-align:center;font-size:{{ p.tiny }};color:#8B95A5;padding-top:5px;font-family:'Cairo',sans-serif;">يتبع في الصفحة التالية ↓</div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ p.showTotals }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;justify-content:{{ p.totalsSide }};">
+                    <div style="width:{{ p.totalsW }};">
+                      <sc-for list="{{ p.totals }}" as="t" hint-placeholder-count="4">
+                        <div style="display:flex;align-items:baseline;gap:9px;padding:{{ t.pad }} 0;border-top:{{ t.line }};">
+                          <span style="font-size:{{ t.labelSize }};color:{{ t.labelTone }};font-weight:{{ t.fw }};white-space:nowrap;">{{ t.k }}</span>
+                          <span style="flex:1;"></span>
+                          <span style="font-size:{{ t.size }};font-weight:{{ t.fw }};color:{{ t.tone }};font-variant-numeric:tabular-nums;">{{ t.v }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ p.showFoot }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top:auto;">
+                    <div style="height:1px;background:#C9D2E0;margin-bottom:6px;"></div>
+                    <div style="display:flex;align-items:flex-start;gap:11px;">
+                      <div style="width:{{ p.qr }};height:{{ p.qr }};flex:none;border:1px solid #0B1220;display:flex;align-items:center;justify-content:center;">
+                        <span style="font-size:8px;font-weight:800;font-family:'Cairo',sans-serif;">QR</span>
+                      </div>
+                      <div style="flex:1;min-width:0;">
+                        <div style="font-size:{{ p.micro }};color:#0B1220;font-family:'JetBrains Mono',monospace;word-break:break-all;line-height:1.55;">{{ p.uuid }}</div>
+                        <div style="font-size:{{ p.micro }};color:#6B7280;font-family:'Cairo',sans-serif;margin-top:2px;">الرقم الضريبي 344-228-891</div>
+                      </div>
+                      <span style="font-size:{{ p.micro }};color:#6B7280;font-family:'Cairo',sans-serif;flex:none;">{{ p.pageLabel }}</span>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+              <div style="text-align:center;margin-top:9px;font-size:11px;font-weight:700;color:var(--muted);font-family:'Cairo',sans-serif;">{{ p.caption }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ═══════════ findings ═══════════ -->
+      <div style="width:400px;flex:none;background:var(--card);border-inline-start:1px solid var(--hairline);display:flex;flex-direction:column;overflow-y:auto;">
+
+        <div style="flex:none;padding:15px 18px 13px;border-bottom:1px solid var(--hairline);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:38px;height:38px;flex:none;border-radius:11px;background:{{ sc.iconBg }};display:flex;align-items:center;justify-content:center;">
+              <i class="ph-bold {{ sc.icon }}" style="font-size:18px;color:{{ sc.tint }};"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ sc.name }}</div>
+              <div style="font-size:11px;font-weight:600;color:var(--muted);">{{ sc.probe }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:none;padding:14px 18px;border-bottom:1px solid var(--hairline);">
+          <div style="font-size:12.5px;font-weight:800;color:var(--txt);margin-bottom:10px;">قياسات الإخراج</div>
+          <sc-for list="{{ sc.metrics }}" as="m" hint-placeholder-count="5">
+            <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--hairline);">
+              <i class="ph-bold {{ m.icon }}" style="font-size:14px;color:{{ m.tint }};width:18px;flex:none;"></i>
+              <span style="flex:1;min-width:0;font-size:11.5px;font-weight:700;color:var(--txt2);">{{ m.label }}</span>
+              <span style="font-size:12.5px;font-weight:800;color:{{ m.tint }};font-variant-numeric:tabular-nums;white-space:nowrap;">{{ m.value }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="flex:1;min-height:0;padding:14px 18px;">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+            <i class="ph-bold ph-list-checks" style="font-size:15px;color:var(--brand-ink);"></i>
+            <span style="flex:1;font-size:12.5px;font-weight:800;color:var(--txt);">فحوص المطبوع</span>
+            <span style="font-size:10.5px;font-weight:800;color:{{ sc.passFg }};background:{{ sc.passBg }};border-radius:999px;padding:2px 9px;">{{ sc.passLabel }}</span>
+          </div>
+          <sc-for list="{{ sc.checks }}" as="c" hint-placeholder-count="6">
+            <div style="display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--hairline);">
+              <i class="ph-bold {{ c.icon }}" style="font-size:15px;color:{{ c.tint }};flex:none;margin-top:1px;"></i>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;font-weight:700;color:var(--txt);">{{ c.title }}</div>
+                <div style="font-size:10.5px;font-weight:600;color:var(--muted);line-height:1.6;margin-top:2px;">{{ c.note }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;bottom:22px;inset-inline-start:120px;width:440px;background:var(--card);border:1.5px solid {{ toast.bd }};border-radius:15px;box-shadow:0 16px 44px rgba(6,12,22,.3);padding:14px 16px;z-index:50;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <i class="ph-bold {{ toast.icon }}" style="font-size:17px;color:{{ toast.fg }};"></i>
+        <span style="flex:1;font-size:13px;font-weight:800;color:var(--txt);">{{ toast.title }}</span>
+        <i onClick="{{ closeToast }}" class="ph-bold ph-x" style="font-size:14px;color:var(--muted);cursor:pointer;"></i>
+      </div>
+      <sc-for list="{{ toast.lines }}" as="l" hint-placeholder-count="3">
+        <div style="display:flex;align-items:flex-start;gap:7px;margin-top:7px;">
+          <i class="ph-bold ph-arrow-left" style="font-size:11px;color:var(--muted);margin-top:3px;flex:none;"></i>
+          <span style="font-size:11.5px;font-weight:600;color:var(--txt2);line-height:1.55;">{{ l }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;,&quot;section&quot;:&quot;العرض&quot;}}">
+const RAIL = [
+  {icon:'ph-squares-four', label:'الرئيسية'},
+  {icon:'ph-receipt', label:'الفواتير'},
+  {icon:'ph-layout', label:'محرر النماذج'},
+  {icon:'ph-git-fork', label:'حسم القوالب'},
+  {icon:'ph-test-tube', label:'معاينة تجريبية', active:true},
+  {icon:'ph-printer', label:'الطابعات'},
+  {icon:'ph-users-three', label:'العملاء'},
+  {icon:'ph-file-text', label:'التقارير'},
+  {icon:'ph-gear', label:'الإعدادات'},
+];
+
+const MM = 2.5;
+
+const ITEM = (n, name, qty, price, total, unit) => ({name, qty, price, total, unit: unit || 'كرتونة', n});
+const BASE_ITEMS = [
+  ITEM('١','سكر معبأ ١ كجم','40.00','22.00','1,003.20'),
+  ITEM('٢','زيت عافية ١ لتر','24.00','68.00','1,860.48'),
+  ITEM('٣','أرز مصري ٥ كجم','12.00','145.00','1,915.20','كيس'),
+  ITEM('٤','شاي العروسة ٢٥٠ج','18.00','58.00','1,190.16'),
+  ITEM('٥','لبن جهينة ١ لتر','30.00','34.00','1,140.00'),
+];
+
+const LONG_NAME = 'مجموعة توابل وأعشاب مشكّلة معبأة في عبوات زجاجية محكمة الغلق — تشكيلة رمضان الكبرى ٢٤ صنفاً';
+
+const SCENARIOS = [
+  {id:'normal', name:'فاتورة عادية', icon:'ph-check-circle', tint:'#22C55E',
+   probe:'٥ أصناف · صفحة واحدة · كل الحقول ممتلئة',
+   items: BASE_ITEMS, pages:1, paper:'A4'},
+
+  {id:'overflow', name:'جدول يتجاوز الصفحة', icon:'ph-arrows-out-line-vertical', tint:'#F59E0B', risky:true,
+   probe:'٤٢ صنفاً — يختبر أن النطاقات تدفع ولا تدهس',
+   items: BASE_ITEMS, pages:2, paper:'A4', overflow:true},
+
+  {id:'longtext', name:'اسم صنف طويل جداً', icon:'ph-text-aa', tint:'#F59E0B', risky:true,
+   probe:'٩٦ حرفاً في خلية — يختبر الالتفاف والقصّ',
+   items: [Object.assign({}, BASE_ITEMS[0], {name: LONG_NAME}), BASE_ITEMS[1], BASE_ITEMS[2]],
+   pages:1, paper:'A4', longText:true},
+
+  {id:'empty', name:'حقول فارغة', icon:'ph-tray', tint:'#8B5CF6', risky:true,
+   probe:'بلا عميل ولا ملاحظات ولا خصم — يختبر ألا تُطبع تسمية معلَّقة',
+   items: BASE_ITEMS.slice(0, 3), pages:1, paper:'A4', empty:true},
+
+  {id:'thermal', name:'إيصال حراري 80mm', icon:'ph-receipt', tint:'#0250D3',
+   probe:'عرض ٧٢مم فعلي — يختبر أن الأعمدة لا تتزاحم',
+   items: BASE_ITEMS.slice(0, 4), pages:1, paper:'80mm'},
+
+  {id:'thermal58', name:'إيصال حراري 58mm', icon:'ph-receipt', tint:'#EF4444', risky:true,
+   probe:'أضيق ورق — يختبر أقل عدد أعمدة محتمل',
+   items: BASE_ITEMS.slice(0, 3), pages:1, paper:'58mm'},
+
+  {id:'zero', name:'إجمالي صفر ومرتجع كامل', icon:'ph-arrow-u-up-left', tint:'#B42318', risky:true,
+   probe:'قيم سالبة وصفرية — يختبر تنسيق الأرقام والألوان',
+   items: [Object.assign({}, BASE_ITEMS[0], {qty:'-6.00', total:'-232.56'})],
+   pages:1, paper:'A4', negative:true},
+];
+
+const TARGETS = [
+  {id:'laser', name:'HP LaserJet — مكتب', meta:'A4 · USB001 · افتراضية', icon:'ph-printer'},
+  {id:'thermal', name:'XPrinter XP-80C', meta:'80mm · COM3 · كاشير', icon:'ph-receipt'},
+  {id:'pdf', name:'حفظ كملف PDF', meta:'بلا طابعة — للمراجعة', icon:'ph-file-pdf'},
+];
+
+const PAPERS = {A4:{w:210,h:297}, '80mm':{w:80,h:0}, '58mm':{w:58,h:0}};
+
+class Component extends DCLogic {
+  state = {theme:null, sel:'overflow', target:'laser', toast:null};
+
+  flash(title, lines, tone){
+    this.setState({toast:{title, lines, tone: tone || 'ok'}});
+    if (this._t) clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({toast:null}), 5200);
+  }
+  componentWillUnmount(){ if (this._t) clearTimeout(this._t); }
+
+  renderVals(){
+    const dark = (this.state.theme || this.props.theme || 'light') === 'dark';
+    const s = SCENARIOS.find(x => x.id === this.state.sel) || SCENARIOS[0];
+    const target = TARGETS.find(t => t.id === this.state.target) || TARGETS[0];
+    const P = PAPERS[s.paper];
+    const thermal = P.w <= 80;
+    const narrow = P.w <= 58;
+
+    const sc = thermal
+      ? {body:'7px', tiny:'6px', micro:'5.5px', h1:'10px', title:'9px', gap:'5px',
+         pad: narrow ? '6mm 3mm' : '7mm 4mm', logo:'26px', qr:'30px', rpad:'2px'}
+      : {body:'8.5px', tiny:'7px', micro:'6.2px', h1:'14px', title:'12px', gap:'7px',
+         pad:'12mm 11mm', logo:'42px', qr:'40px', rpad:'3.5px'};
+
+    // column set shrinks with the paper — this is the whole point of the test
+    const cols = narrow
+      ? [{k:'name', ar:'الصنف', en:'Item', align:'right', flex:2.4},
+         {k:'qty', ar:'ك', en:'Q', align:'center', flex:0.6},
+         {k:'total', ar:'إجمالي', en:'Total', align:'end', flex:1.1}]
+      : thermal
+      ? [{k:'name', ar:'الصنف', en:'Item', align:'right', flex:2.4},
+         {k:'qty', ar:'كمية', en:'Qty', align:'center', flex:0.7},
+         {k:'price', ar:'السعر', en:'Price', align:'end', flex:0.9},
+         {k:'total', ar:'إجمالي', en:'Total', align:'end', flex:1.1}]
+      : [{k:'n', ar:'م', en:'#', align:'center', flex:0.5},
+         {k:'name', ar:'الصنف', en:'Description', align:'right', flex:3.0},
+         {k:'unit', ar:'الوحدة', en:'Unit', align:'center', flex:0.9},
+         {k:'qty', ar:'الكمية', en:'Qty', align:'center', flex:0.9},
+         {k:'price', ar:'السعر', en:'Price', align:'end', flex:1.1},
+         {k:'total', ar:'الإجمالي', en:'Amount', align:'end', flex:1.4}];
+
+    const grid = cols.map(c => c.flex + 'fr').join(' ');
+
+    const mkRows = (items, wrap) => items.map((it, i) => ({
+      bg: (!thermal && i % 2 === 1) ? '#FAFBFD' : 'transparent',
+      cells: cols.map(c => ({
+        v: it[c.k] || '—',
+        align: c.align,
+        wrap: (c.k === 'name' && wrap) ? 'normal' : 'nowrap',
+      })),
+    }));
+
+    const meta = s.empty
+      ? [{k:'رقم الفاتورة', v:'INV-2026-1044', fw:'700', tone:'#0B1220'},
+         {k:'التاريخ', v:'٢٠٢٦-٠٨-٢٦', fw:'600', tone:'#0B1220'}]
+      : [{k:'رقم الفاتورة', v:'INV-2026-1040', fw:'700', tone:'#0B1220'},
+         {k:'التاريخ', v:'٢٠٢٦-٠٨-٢٥', fw:'600', tone:'#0B1220'},
+         {k:'العميل', v:'سوبر ماركت النور', fw:'700', tone:'#0B1220'},
+         {k:'الدفع', v:'آجل ٣٠ يوماً', fw:'600', tone:'#0B1220'}];
+
+    const totals = s.negative
+      ? [{k:'الفرعي', v:'-204.00', pad:'2px', line:'1px solid transparent', size: sc.body, labelSize: sc.tiny, labelTone:'#6B7280', fw:'400', tone:'#0B1220'},
+         {k:'الضريبة', v:'-28.56', pad:'2px', line:'1px solid transparent', size: sc.body, labelSize: sc.tiny, labelTone:'#6B7280', fw:'400', tone:'#0B1220'},
+         {k:'قيمة المرتجع', v:'-232.56', pad:'3px', line:'1px solid #0B1220', size:'12px', labelSize:'9px', labelTone:'#0B1220', fw:'700', tone:'#B42318'}]
+      : s.empty
+      ? [{k:'الإجمالي الفرعي', v:'4,778.88', pad:'2px', line:'1px solid transparent', size: sc.body, labelSize: sc.tiny, labelTone:'#6B7280', fw:'400', tone:'#0B1220'},
+         {k:'ضريبة القيمة المضافة', v:'669.04', pad:'2px', line:'1px solid transparent', size: sc.body, labelSize: sc.tiny, labelTone:'#6B7280', fw:'400', tone:'#0B1220'},
+         {k:'الإجمالي المستحق', v:'5,447.92', pad:'3px', line:'1px solid #0B1220', size:'12px', labelSize:'9px', labelTone:'#0B1220', fw:'700', tone:'#0B1220'}]
+      : [{k:'الإجمالي الفرعي', v:'7,842.11', pad:'2px', line:'1px solid transparent', size: sc.body, labelSize: sc.tiny, labelTone:'#6B7280', fw:'400', tone:'#0B1220'},
+         {k:'الخصم', v:'55.00', pad:'2px', line:'1px solid transparent', size: sc.body, labelSize: sc.tiny, labelTone:'#6B7280', fw:'400', tone:'#0B1220'},
+         {k:'ضريبة القيمة المضافة', v:'1,097.89', pad:'2px', line:'1px solid transparent', size: sc.body, labelSize: sc.tiny, labelTone:'#6B7280', fw:'400', tone:'#0B1220'},
+         {k:'الإجمالي المستحق', v:'8,940.00', pad:'3px', line:'1px solid #0B1220', size: thermal ? '11px' : '13px', labelSize: thermal ? '8px' : '9.5px', labelTone:'#0B1220', fw:'700', tone:'#0B1220'}];
+
+    const basePage = {
+      w: (P.w * MM).toFixed(0) + 'px',
+      h: P.h ? (P.h * MM).toFixed(0) + 'px' : 'auto',
+      pad: sc.pad, gap: sc.gap, h1: sc.h1, title: sc.title,
+      body: sc.body, tiny: sc.tiny, micro: sc.micro, rpad: sc.rpad,
+      logo: sc.logo, qr: sc.qr,
+      showLogo: !thermal,
+      bilingual: !thermal,
+      grid, cols,
+      metaCols: thermal ? '1fr' : '1fr 1fr',
+      totalsSide: thermal ? 'stretch' : 'flex-start',
+      totalsW: thermal ? '100%' : '48%',
+      docTitle: s.negative ? 'إشعار دائن — مرتجع' : 'فاتورة ضريبية',
+      docTitleEn: s.negative ? 'CREDIT NOTE' : 'TAX INVOICE',
+      uuid: '2026082610422900000000000091AD4C7F8E1B',
+    };
+
+    const pages = s.overflow
+      ? [
+          Object.assign({}, basePage, {
+            showHead:true, showMeta:true, showTable:true, showTotals:false, showFoot:true,
+            meta, totals:[],
+            rows: mkRows(BASE_ITEMS.concat(BASE_ITEMS).concat(BASE_ITEMS.slice(0,2)), false),
+            continued:true, pageLabel:'صفحة ١ من ٢',
+            caption:'الصفحة ١ · الرأس والتذييل مكرران · رؤوس الأعمدة معادة',
+          }),
+          Object.assign({}, basePage, {
+            showHead:true, showMeta:false, showTable:true, showTotals:true, showFoot:true,
+            meta:[], totals,
+            rows: mkRows(BASE_ITEMS.slice(0,3), false),
+            continued:false, pageLabel:'صفحة ٢ من ٢',
+            caption:'الصفحة ٢ · المجاميع لحقت الجدول ولم تُدهَس',
+          }),
+        ]
+      : [Object.assign({}, basePage, {
+          showHead:true, showMeta:true, showTable:true, showTotals:true, showFoot:true,
+          meta, totals,
+          rows: mkRows(s.items, !!s.longText),
+          continued:false, pageLabel:'صفحة ١ من ١',
+          caption: s.paper + ' · ' + P.w + 'مم · صفحة واحدة',
+        })];
+
+    const CHECKS = {
+      normal: [
+        ['ok','كل الحقول ممتلئة','لا تسمية بلا قيمة ولا قيمة بلا تسمية'],
+        ['ok','الأعمدة الستة تسع العرض','أضيق عمود ٩مم — فوق حد القراءة'],
+        ['ok','المجاميع تلي الجدول','النطاق التالي بدأ بعد آخر صف بـ٤مم'],
+        ['ok','دقّة موحّدة','خانتان في الجدول والمجاميع معاً'],
+      ],
+      overflow: [
+        ['ok','النطاقات دفعت ولم تدهس','٤٢ صنفاً انقسمت على صفحتين والمجاميع سليمة'],
+        ['ok','رؤوس الأعمدة معادة','الصفحة ٢ تحمل نفس الرؤوس — repeat: true'],
+        ['ok','الرأس والتذييل مكرران','ترقيم الصفحات صحيح ١ من ٢ · ٢ من ٢'],
+        ['warn','المجاميع في الصفحة الأخيرة فقط','مقصود — لكن راجعه لو المحاسب يريد مجموعاً مرحّلاً لكل صفحة'],
+      ],
+      longtext: [
+        ['warn','الاسم الطويل التفّ على سطرين','ارتفاع الصف تمدّد — تأكد أن «منع قطع الصف» مُفعَّل'],
+        ['ok','باقي الأعمدة لم تنزح','العرض النسبي حافظ على مواضعها'],
+        ['err','القصّ في الحراري','نفس الاسم على 58mm يُقصّ — فعّل الالتفاف لعمود الصنف أو اختصر الاسم'],
+      ],
+      empty: [
+        ['ok','لا تسمية معلَّقة','العميل والملاحظات والخصم اختفت بالكامل لا بتسمية فارغة'],
+        ['ok','الشرط عمل','الخصم مربوط بـ discount > 0 فلم يُطبع'],
+        ['warn','فراغ في نطاق الطرف','النطاق ثابت الارتفاع — فعّل «ارتفاع تلقائي» ليتقلّص'],
+      ],
+      thermal: [
+        ['ok','أربعة أعمدة تسع ٧٢مم','عمود الصنف ٣٤مم — كافٍ لسطر واحد'],
+        ['ok','بلا عناوين إنجليزية','مقصود على الحراري — توفير ارتفاع'],
+        ['ok','العناوين حبر أسود','لا تعتمد على تعبئة خلفية تُسقطها الطابعة'],
+      ],
+      thermal58: [
+        ['warn','ثلاثة أعمدة فقط','السعر أُسقط — الإجمالي وحده يكفي القارئ'],
+        ['err','اسم الصنف ٢٠مم','أي اسم فوق ١٤ حرفاً يُقصّ — فعّل الالتفاف أو استعمل اسماً مختصراً للطباعة'],
+        ['ok','الإجمالي واضح','١١px عريض — أكبر عنصر على الورقة'],
+      ],
+      zero: [
+        ['ok','السالب بلون مميز','قيمة المرتجع بالأحمر ومسبوقة بالإشارة'],
+        ['ok','الصفر لم يُخفَ خطأً','الخصم صفر فاختفى بالشرط، والإجمالي صفر لو حدث يبقى ظاهراً'],
+        ['warn','عنوان المستند تغيّر','«إشعار دائن» بدل «فاتورة ضريبية» — تأكد أن القالب المحسوم هو قالب المرتجع لا الفاتورة'],
+      ],
+    };
+
+    const checks = (CHECKS[s.id] || CHECKS.normal).map(c => ({
+      title:c[1], note:c[2],
+      icon: c[0] === 'ok' ? 'ph-check-circle' : c[0] === 'warn' ? 'ph-warning' : 'ph-x-circle',
+      tint: c[0] === 'ok' ? '#22C55E' : c[0] === 'warn' ? '#F59E0B' : '#EF4444',
+    }));
+    const fails = checks.filter(c => c.tint === '#EF4444').length;
+    const warns = checks.filter(c => c.tint === '#F59E0B').length;
+
+    return {
+      theme: dark ? 'dark' : 'light',
+      themeIcon: dark ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.setState({theme: dark ? 'light' : 'dark'}),
+      rail: RAIL.map(r => ({...r, bg: r.active ? 'rgba(74,128,232,.18)' : 'transparent', fg: r.active ? '#7DA6F5' : '#64748B'})),
+
+      target: {short: target.name.split(' —')[0]},
+
+      doPrint: () => {
+        if (fails) {
+          this.flash('الطباعة موقوفة', [
+            'هذه الحالة فيها ' + fails + ' فحص فاشل — الطباعة عليها تُنتج ورقاً معطوباً',
+            'عالج الفحوص الحمراء في المحرر ثم أعد الاختبار'], 'err');
+          return;
+        }
+        this.flash('أُرسلت للطباعة', [
+          pages.length + ' صفحة إلى ' + target.name,
+          'المستند موسوم «تجريبي» ولا يُسجَّل في سجل المستندات ولا يُرسَل للمنظومة الضريبية',
+          warns ? warns + ' تنبيه — راجعها على الورق المطبوع' : 'كل الفحوص سليمة'],
+          warns ? 'warn' : 'ok');
+      },
+      doPdf: () => this.flash('حُفظ PDF', [
+        s.name + ' — ' + pages.length + ' صفحة بمقاس ' + P.w + 'مم',
+        'نفس الراسم الذي يطبع، فالملف مطابق للورق حرفياً']),
+
+      hasToast: !!this.state.toast,
+      toast: this.state.toast
+        ? Object.assign({}, this.state.toast, {
+            icon: this.state.toast.tone === 'err' ? 'ph-warning-octagon'
+                : this.state.toast.tone === 'warn' ? 'ph-warning' : 'ph-check-circle',
+            fg: this.state.toast.tone === 'err' ? '#EF4444'
+              : this.state.toast.tone === 'warn' ? '#F59E0B' : '#22C55E',
+            bd: this.state.toast.tone === 'err' ? 'rgba(239,68,68,.45)'
+              : this.state.toast.tone === 'warn' ? 'rgba(245,158,11,.45)' : 'rgba(34,197,94,.45)',
+          })
+        : {title:'', lines:[], icon:'ph-check-circle', fg:'#22C55E', bd:'transparent'},
+      closeToast: () => this.setState({toast: null}),
+
+      scenarios: SCENARIOS.map(x => ({
+        name:x.name, probe:x.probe, icon:x.icon, tint:x.tint, iconBg: x.tint + '1f',
+        risky: !!x.risky,
+        bg: x.id === s.id ? 'var(--wash)' : 'transparent',
+        mark: x.id === s.id ? 'var(--brand)' : 'transparent',
+        pick: () => this.setState({sel: x.id}),
+      })),
+
+      targets: TARGETS.map(t => {
+        const on = t.id === target.id;
+        return {name:t.name, meta:t.meta, icon:t.icon,
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          bg: on ? 'var(--wash)' : 'transparent',
+          fg: on ? 'var(--brand-ink)' : 'var(--txt2)',
+          pick: () => this.setState({target: t.id})};
+      }),
+
+      pages,
+
+      sc: {
+        name:s.name, probe:s.probe, icon:s.icon, tint:s.tint, iconBg: s.tint + '1f',
+        metrics: [
+          {icon:'ph-file', label:'عدد الصفحات', value: String(pages.length), tint:'#0250D3'},
+          {icon:'ph-ruler', label:'عرض الورق', value: P.w + 'مم', tint:'#0250D3'},
+          {icon:'ph-columns', label:'الأعمدة المُفعَّلة', value: String(cols.length), tint:'#8B5CF6'},
+          {icon:'ph-rows', label:'صفوف الجدول', value: String(pages.reduce((a, p) => a + p.rows.length, 0)), tint:'#8B5CF6'},
+          {icon:'ph-text-aa', label:'أضيق عمود', value: narrow ? '١٢مم' : thermal ? '١٣مم' : '٩مم', tint: narrow ? '#EF4444' : '#22C55E'},
+        ],
+        checks,
+        passLabel: fails ? fails + ' فشل' : warns ? warns + ' تنبيه' : 'كل الفحوص سليمة',
+        passFg: fails ? '#EF4444' : warns ? '#F59E0B' : '#22C55E',
+        passBg: fails ? 'rgba(239,68,68,.12)' : warns ? 'rgba(245,158,11,.14)' : 'rgba(34,197,94,.12)',
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

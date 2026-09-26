@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-ink:#0250D3; --brand-light:#4A80E8;
+    --wash:rgba(2,80,211,.08); --side:#0F172A; --side-line:#243247;
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280; --track:#E6ECF6;
+    --code-bg:#0F172A; --code-fg:#A5C4F7;
+  }
+  [data-theme="dark"]{
+    --canvas:#0A1220; --card:#121C2E; --hairline:#243247; --field:#18243A;
+    --brand-ink:#7DA6F5; --wash:rgba(74,128,232,.14); --side:#08101E; --side-line:#1D2A3E;
+    --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8; --track:#1E2B42;
+    --code-bg:#060D18; --code-fg:#8FB5F0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#0A1220;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#94A3B855;border-radius:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" dir="rtl" style="width:1920px;height:1080px;display:flex;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;">
+
+  <div style="width:84px;flex:none;background:var(--side);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:14px;">
+    <div style="width:44px;height:44px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <img src="assets/picpos-logo.png" alt="PicPos" style="width:38px;height:38px;object-fit:contain;" />
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:7px;">
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="10">
+        <div title="{{ r.label }}" style="position:relative;width:52px;height:46px;border-radius:13px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+          <i class="ph-bold {{ r.icon }}" style="font-size:21px;color:{{ r.fg }};"></i>
+          <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;inset-inline-end:-14px;top:11px;width:3.5px;height:24px;border-radius:3px;background:var(--brand-light);"></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="width:40px;height:40px;flex:none;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;">م.س</div>
+  </div>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <div style="height:76px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:14px;padding:0 26px;">
+      <div style="width:46px;height:46px;flex:none;border-radius:14px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold ph-sliders-horizontal" style="font-size:23px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-size:19px;font-weight:800;line-height:1.3;color:var(--txt);">تقارير مخصصة</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;">اختر جهة البيانات والأعمدة والشروط والتجميع — المعاينة تعمل على البيانات الحقيقية</div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="height:44px;border-radius:12px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:9px;padding:0 14px;">
+        <i class="ph-bold ph-text-aa" style="font-size:15px;color:var(--muted);"></i>
+        <span style="font-size:13px;color:var(--txt);font-weight:700;">{{ report.name }}</span>
+        <i class="ph-bold ph-pencil-simple" style="font-size:13px;color:var(--muted);"></i>
+      </div>
+      <div onClick="{{ toggleShared }}" style="height:44px;flex:none;border-radius:12px;border:1.5px solid {{ shared.bd }};background:{{ shared.bg }};display:flex;align-items:center;gap:8px;padding:0 15px;cursor:pointer;color:{{ shared.fg }};font-size:12.5px;font-weight:700;white-space:nowrap;">
+        <i class="ph-bold {{ shared.icon }}" style="font-size:16px;"></i>{{ shared.label }}
+      </div>
+      <div onClick="{{ toggleTheme }}" style="width:44px;height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+        <i class="ph-bold {{ themeIcon }}" style="font-size:18px;"></i>
+      </div>
+      <div style="height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 16px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;white-space:nowrap;">
+        <i class="ph-bold ph-floppy-disk" style="font-size:17px;"></i>حفظ التعريف
+      </div>
+      <div onClick="{{ run }}" style="height:44px;flex:none;border-radius:12px;background:var(--brand);display:flex;align-items:center;gap:8px;padding:0 20px;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        <i class="ph-bold ph-play" style="font-size:17px;"></i>تشغيل التقرير
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;display:flex;">
+
+      <div style="width:296px;flex:none;background:var(--card);border-inline-end:1px solid var(--hairline);display:flex;flex-direction:column;">
+        <div style="padding:13px 16px 11px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:9px;">
+          <i class="ph-bold ph-bookmarks" style="font-size:16px;color:var(--brand-ink);"></i>
+          <span style="flex:1;font-size:13.5px;font-weight:800;color:var(--txt);">التعريفات المحفوظة</span>
+          <span style="font-size:10.5px;font-weight:800;color:var(--muted);background:var(--field);border-radius:999px;padding:2px 8px;">{{ savedCount }}</span>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;">
+          <sc-for list="{{ saved }}" as="s" hint-placeholder-count="6">
+            <div onClick="{{ s.pick }}" style="padding:12px 16px;border-bottom:1px solid var(--hairline);background:{{ s.bg }};border-inline-start:3px solid {{ s.mark }};cursor:pointer;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <i class="ph-bold {{ s.icon }}" style="font-size:14px;color:{{ s.tint }};flex:none;"></i>
+                <span style="flex:1;min-width:0;font-size:12.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.name }}</span>
+                <sc-if value="{{ s.isShared }}" hint-placeholder-val="{{ false }}">
+                  <i class="ph-bold ph-users-three" style="font-size:12px;color:#22C55E;flex:none;"></i>
+                </sc-if>
+              </div>
+              <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-top:4px;line-height:1.45;">{{ s.desc }}</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:7px;">
+                <span style="font-size:9.5px;font-weight:700;color:var(--muted);font-family:'JetBrains Mono',monospace;">{{ s.entity }}</span>
+                <div style="flex:1;"></div>
+                <span style="font-size:9.5px;font-weight:700;color:var(--muted);">{{ s.rows }} سطر</span>
+                <span style="font-size:9.5px;font-weight:700;color:{{ s.msFg }};">{{ s.ms }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex:none;padding:12px 16px;border-top:1px solid var(--hairline);background:var(--field);">
+          <div style="font-size:11px;font-weight:800;color:var(--txt2);margin-bottom:8px;">آخر تشغيلات هذا التقرير</div>
+          <sc-for list="{{ runs }}" as="r" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
+              <i class="ph-bold ph-clock-counter-clockwise" style="font-size:12px;color:var(--muted);flex:none;"></i>
+              <span style="flex:1;min-width:0;font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap;">{{ r.at }}</span>
+              <span style="font-size:10.5px;font-weight:700;color:var(--txt2);font-variant-numeric:tabular-nums;">{{ r.rows }}</span>
+              <span style="font-size:10.5px;font-weight:700;color:{{ r.msFg }};font-variant-numeric:tabular-nums;min-width:44px;text-align:end;">{{ r.ms }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto;padding:16px 20px 22px;gap:13px;">
+
+        <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:16px;padding:14px 16px;">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+            <i class="ph-bold ph-database" style="font-size:16px;color:var(--brand-ink);"></i>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13.5px;font-weight:800;color:var(--txt);">جهة البيانات</div>
+              <div style="font-size:11px;font-weight:600;color:var(--muted);">تغييرها يبدّل الأعمدة المتاحة ويصفّر الشروط</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:9px;">
+            <sc-for list="{{ entities }}" as="e" hint-placeholder-count="7">
+              <div onClick="{{ e.pick }}" style="border:1.5px solid {{ e.bd }};background:{{ e.bg }};border-radius:12px;padding:10px 11px;cursor:pointer;">
+                <i class="ph-bold {{ e.icon }}" style="font-size:17px;color:{{ e.fg }};"></i>
+                <div style="font-size:12px;font-weight:800;color:{{ e.fg }};margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ e.label }}</div>
+                <div style="font-size:9.5px;font-weight:700;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ e.table }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="flex:none;display:grid;grid-template-columns:1.15fr 1.35fr 1fr;gap:13px;">
+
+          <div style="background:var(--card);border:1px solid var(--hairline);border-radius:16px;padding:14px 16px;">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+              <i class="ph-bold ph-columns" style="font-size:16px;color:var(--brand-ink);"></i>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:800;color:var(--txt);">الأعمدة</div>
+                <div style="font-size:11px;font-weight:600;color:var(--muted);">{{ colsNote }}</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:7px;">
+              <sc-for list="{{ fields }}" as="f" hint-placeholder-count="9">
+                <div onClick="{{ f.toggle }}" style="height:30px;border-radius:9px;border:1.5px solid {{ f.bd }};background:{{ f.bg }};display:flex;align-items:center;gap:6px;padding:0 10px;cursor:pointer;">
+                  <i class="ph-bold {{ f.icon }}" style="font-size:12px;color:{{ f.fg }};"></i>
+                  <span style="font-size:11.5px;font-weight:700;color:{{ f.fg }};white-space:nowrap;">{{ f.label }}</span>
+                  <span style="font-size:9px;font-weight:700;color:{{ f.fg }};opacity:.6;font-family:'JetBrains Mono',monospace;">{{ f.type }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:var(--card);border:1px solid var(--hairline);border-radius:16px;padding:14px 16px;">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+              <i class="ph-bold ph-funnel" style="font-size:16px;color:var(--brand-ink);"></i>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:800;color:var(--txt);">الشروط</div>
+                <div style="font-size:11px;font-weight:600;color:var(--muted);">تُدمج بـ AND — الشرط الواحد حقل ومُعامل وقيمة</div>
+              </div>
+              <div style="width:28px;height:28px;border-radius:8px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+                <i class="ph-bold ph-plus" style="font-size:13px;"></i>
+              </div>
+            </div>
+            <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
+              <div style="display:grid;grid-template-columns:1.3fr .9fr 1.2fr 26px;gap:7px;align-items:center;margin-bottom:8px;">
+                <div style="height:34px;border-radius:9px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:6px;padding:0 9px;">
+                  <i class="ph-bold {{ f.icon }}" style="font-size:12px;color:var(--brand-ink);flex:none;"></i>
+                  <span style="font-size:11.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.field }}</span>
+                </div>
+                <div style="height:34px;border-radius:9px;background:var(--wash);border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;">
+                  <span style="font-size:12px;font-weight:800;color:var(--brand-ink);font-family:'JetBrains Mono',monospace;">{{ f.op }}</span>
+                </div>
+                <div style="height:34px;border-radius:9px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;padding:0 9px;">
+                  <span style="font-size:11.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.value }}</span>
+                </div>
+                <div style="width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#EF4444;">
+                  <i class="ph-bold ph-x" style="font-size:12px;"></i>
+                </div>
+              </div>
+            </sc-for>
+            <div style="display:flex;align-items:center;gap:7px;margin-top:10px;padding-top:10px;border-top:1px solid var(--hairline);">
+              <span style="font-size:10.5px;font-weight:700;color:var(--muted);">المُعاملات المتاحة</span>
+              <sc-for list="{{ ops }}" as="o" hint-placeholder-count="8">
+                <span style="font-size:10px;font-weight:800;color:var(--muted);background:var(--field);border-radius:6px;padding:2px 6px;font-family:'JetBrains Mono',monospace;">{{ o }}</span>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:var(--card);border:1px solid var(--hairline);border-radius:16px;padding:14px 16px;">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+              <i class="ph-bold ph-function" style="font-size:16px;color:var(--brand-ink);"></i>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:800;color:var(--txt);">التجميع والدوال والترتيب</div>
+                <div style="font-size:11px;font-weight:600;color:var(--muted);">{{ groupNote }}</div>
+              </div>
+            </div>
+            <div style="font-size:10.5px;font-weight:800;color:var(--muted);margin-bottom:7px;">تجميع حسب</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+              <sc-for list="{{ groupOpts }}" as="g" hint-placeholder-count="4">
+                <div onClick="{{ g.toggle }}" style="height:28px;border-radius:8px;border:1.5px solid {{ g.bd }};background:{{ g.bg }};display:flex;align-items:center;gap:5px;padding:0 9px;cursor:pointer;">
+                  <i class="ph-bold {{ g.icon }}" style="font-size:11px;color:{{ g.fg }};"></i>
+                  <span style="font-size:11px;font-weight:700;color:{{ g.fg }};white-space:nowrap;">{{ g.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="font-size:10.5px;font-weight:800;color:var(--muted);margin-bottom:7px;">الدوال التجميعية</div>
+            <sc-for list="{{ aggs }}" as="a" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
+                <span style="flex:1;min-width:0;font-size:11.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ a.field }}</span>
+                <div style="display:flex;gap:4px;">
+                  <sc-for list="{{ a.fns }}" as="fn" hint-placeholder-count="3">
+                    <div onClick="{{ fn.pick }}" style="height:26px;min-width:38px;border-radius:7px;border:1.5px solid {{ fn.bd }};background:{{ fn.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                      <span style="font-size:9.5px;font-weight:800;color:{{ fn.fg }};font-family:'JetBrains Mono',monospace;">{{ fn.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+            <div style="font-size:10.5px;font-weight:800;color:var(--muted);margin:12px 0 7px;">الترتيب</div>
+            <div style="display:flex;align-items:center;gap:7px;">
+              <div style="flex:1;height:32px;border-radius:9px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:6px;padding:0 9px;">
+                <i class="ph-bold ph-sort-ascending" style="font-size:12px;color:var(--brand-ink);"></i>
+                <span style="font-size:11.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ sort.field }}</span>
+              </div>
+              <div onClick="{{ sort.flip }}" style="height:32px;border-radius:9px;border:1.5px solid var(--brand);background:var(--wash);display:flex;align-items:center;gap:5px;padding:0 11px;cursor:pointer;">
+                <i class="ph-bold {{ sort.icon }}" style="font-size:12px;color:var(--brand-ink);"></i>
+                <span style="font-size:11px;font-weight:800;color:var(--brand-ink);">{{ sort.dirLabel }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:16px;overflow:hidden;">
+          <div style="padding:13px 17px 11px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
+            <i class="ph-bold ph-eye" style="font-size:16px;color:var(--brand-ink);"></i>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13.5px;font-weight:800;color:var(--txt);">المعاينة</div>
+              <div style="font-size:11px;font-weight:600;color:var(--muted);">{{ preview.note }}</div>
+            </div>
+            <span style="font-size:11px;font-weight:800;color:var(--brand-ink);background:var(--wash);border-radius:999px;padding:3px 10px;">{{ preview.rowCount }} سطر</span>
+            <span style="font-size:11px;font-weight:800;color:{{ preview.msFg }};background:var(--field);border-radius:999px;padding:3px 10px;">{{ preview.ms }}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:{{ preview.grid }};padding:9px 17px;background:var(--field);border-bottom:1px solid var(--hairline);">
+            <sc-for list="{{ preview.head }}" as="h" hint-placeholder-count="5">
+              <div style="min-width:0;text-align:{{ h.align }};">
+                <div style="font-size:11px;font-weight:800;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ h.label }}</div>
+                <div style="font-size:9px;font-weight:700;color:var(--muted);opacity:.7;font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ h.key }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-for list="{{ preview.rows }}" as="r" hint-placeholder-count="7">
+            <div style="display:grid;grid-template-columns:{{ preview.grid }};padding:10px 17px;border-bottom:1px solid var(--hairline);align-items:center;">
+              <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="5">
+                <span style="min-width:0;font-size:12.5px;font-weight:{{ c.fw }};color:{{ c.fg }};text-align:{{ c.align }};font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.value }}</span>
+              </sc-for>
+            </div>
+          </sc-for>
+          <sc-if value="{{ preview.hasFooter }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:{{ preview.grid }};padding:11px 17px;background:var(--field);align-items:center;">
+              <sc-for list="{{ preview.footer }}" as="c" hint-placeholder-count="5">
+                <span style="min-width:0;font-size:12.5px;font-weight:800;color:{{ c.fg }};text-align:{{ c.align }};font-variant-numeric:tabular-nums;white-space:nowrap;">{{ c.value }}</span>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:16px;padding:14px 16px;">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">
+            <i class="ph-bold ph-code" style="font-size:16px;color:var(--brand-ink);"></i>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13.5px;font-weight:800;color:var(--txt);">تعريف التقرير المحفوظ</div>
+              <div style="font-size:11px;font-weight:600;color:var(--muted);">هذا ما يُخزَّن فعلياً — أعمدة وشروط وتجميع ودوال وترتيب</div>
+            </div>
+            <div style="height:30px;border-radius:9px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:6px;padding:0 11px;cursor:pointer;color:var(--txt2);">
+              <i class="ph-bold ph-copy" style="font-size:13px;"></i>
+              <span style="font-size:11.5px;font-weight:700;">نسخ</span>
+            </div>
+          </div>
+          <div style="background:var(--code-bg);border-radius:12px;padding:13px 15px;max-height:150px;overflow:auto;">
+            <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.7;color:var(--code-fg);white-space:pre;direction:ltr;text-align:left;">{{ spec }}</pre>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;,&quot;section&quot;:&quot;العرض&quot;}}">
+const RAIL = [
+  {icon:'ph-squares-four', label:'الرئيسية'},
+  {icon:'ph-receipt', label:'الفواتير'},
+  {icon:'ph-package', label:'المخزون'},
+  {icon:'ph-users-three', label:'العملاء'},
+  {icon:'ph-currency-circle-dollar', label:'الخزينة'},
+  {icon:'ph-chart-line-up', label:'التحليلات'},
+  {icon:'ph-sliders-horizontal', label:'تقارير مخصصة', active:true},
+  {icon:'ph-file-text', label:'التقارير الجاهزة'},
+  {icon:'ph-buildings', label:'الفروع'},
+  {icon:'ph-gear', label:'الإعدادات'},
+];
+
+const N = 'num', T = 'txt', D = 'date';
+
+// One definition per source entity the report builder can read from.
+const ENTITIES = {
+  products: {label:'الأصناف', table:'products', icon:'ph-package',
+    fields:[
+      {key:'name', label:'اسم الصنف', type:T, icon:'ph-text-aa'},
+      {key:'sku', label:'الكود', type:T, icon:'ph-barcode'},
+      {key:'category_id', label:'الفئة', type:T, icon:'ph-folders'},
+      {key:'cost', label:'التكلفة', type:N, icon:'ph-money'},
+      {key:'price', label:'سعر البيع', type:N, icon:'ph-tag'},
+      {key:'margin', label:'الهامش', type:N, icon:'ph-percent'},
+      {key:'qty_on_hand', label:'الرصيد', type:N, icon:'ph-stack'},
+      {key:'reorder_level', label:'حد الطلب', type:N, icon:'ph-bell'},
+      {key:'is_active', label:'نشط', type:T, icon:'ph-toggle-right'},
+    ],
+    rows:[
+      {name:'زيت عافية 1ل', sku:'SKU-1108', category_id:'زيوت وسمن', cost:68.00, price:86.00, margin:26.5, qty_on_hand:284, reorder_level:120, is_active:'نعم'},
+      {name:'أرز مصري 5ك', sku:'SKU-1190', category_id:'بقالة جافة', cost:145.00, price:182.00, margin:25.5, qty_on_hand:96, reorder_level:80, is_active:'نعم'},
+      {name:'شاي العروسة 250ج', sku:'SKU-1274', category_id:'مشروبات', cost:58.00, price:74.00, margin:27.6, qty_on_hand:412, reorder_level:150, is_active:'نعم'},
+      {name:'سكر معبأ 1ك', sku:'SKU-1042', category_id:'بقالة جافة', cost:22.00, price:27.00, margin:22.7, qty_on_hand:1840, reorder_level:600, is_active:'نعم'},
+      {name:'لبن جهينة 1ل', sku:'SKU-1318', category_id:'ألبان', cost:34.00, price:42.00, margin:23.5, qty_on_hand:64, reorder_level:200, is_active:'نعم'},
+      {name:'مكرونة 400ج', sku:'SKU-1226', category_id:'بقالة جافة', cost:12.50, price:16.00, margin:28.0, qty_on_hand:2160, reorder_level:800, is_active:'نعم'},
+      {name:'جبنة بيضاء 500ج', sku:'SKU-1352', category_id:'ألبان', cost:26.00, price:34.00, margin:30.8, qty_on_hand:38, reorder_level:100, is_active:'نعم'},
+    ]},
+
+  sales_invoices: {label:'فواتير البيع', table:'sales_invoices', icon:'ph-receipt',
+    fields:[
+      {key:'number', label:'رقم الفاتورة', type:T, icon:'ph-hash'},
+      {key:'date', label:'التاريخ', type:D, icon:'ph-calendar-blank'},
+      {key:'customer', label:'العميل', type:T, icon:'ph-user'},
+      {key:'branch', label:'الفرع', type:T, icon:'ph-storefront'},
+      {key:'payment', label:'طريقة الدفع', type:T, icon:'ph-wallet'},
+      {key:'subtotal', label:'قبل الضريبة', type:N, icon:'ph-money'},
+      {key:'tax', label:'الضريبة', type:N, icon:'ph-percent'},
+      {key:'total', label:'الإجمالي', type:N, icon:'ph-currency-circle-dollar'},
+      {key:'profit', label:'الربح', type:N, icon:'ph-trend-up'},
+    ],
+    rows:[
+      {number:'INV-2026-1040', date:'٢٠٢٦-٠٨-٢٥', customer:'سوبر ماركت النور', branch:'المعادي', payment:'آجل', subtotal:7842.11, tax:1097.89, total:8940.00, profit:2384.20},
+      {number:'INV-2026-1041', date:'٢٠٢٦-٠٨-٢٦', customer:'مطعم البيت الشامي', branch:'المعادي', payment:'آجل', subtotal:9315.79, tax:1304.21, total:10620.00, profit:2921.40},
+      {number:'INV-2026-1038', date:'٢٠٢٦-٠٨-٢٤', customer:'كافيه الركن', branch:'مدينة نصر', payment:'نقدي', subtotal:3000.00, tax:420.00, total:3420.00, profit:864.00},
+      {number:'INV-2026-1036', date:'٢٠٢٦-٠٨-٢٤', customer:'ماركت الحرية', branch:'أكتوبر', payment:'نقدي', subtotal:5508.77, tax:771.23, total:6280.00, profit:1602.80},
+      {number:'INV-2026-1035', date:'٢٠٢٦-٠٨-٠٣', customer:'سوبر ماركت النور', branch:'المعادي', payment:'آجل', subtotal:8017.54, tax:1122.46, total:9140.00, profit:2376.40},
+      {number:'INV-2026-1032', date:'٢٠٢٦-٠٨-٢٢', customer:'بقالة الأمانة', branch:'المعادي', payment:'نقدي', subtotal:2789.47, tax:390.53, total:3180.00, profit:795.00},
+      {number:'INV-2026-1029', date:'٢٠٢٦-٠٨-٢٠', customer:'كافيه الركن', branch:'مدينة نصر', payment:'نقدي', subtotal:1631.58, tax:228.42, total:1860.00, profit:446.40},
+    ]},
+
+  purchase_invoices: {label:'فواتير الشراء', table:'purchase_invoices', icon:'ph-truck',
+    fields:[
+      {key:'number', label:'رقم الفاتورة', type:T, icon:'ph-hash'},
+      {key:'date', label:'التاريخ', type:D, icon:'ph-calendar-blank'},
+      {key:'supplier', label:'المورد', type:T, icon:'ph-truck'},
+      {key:'due', label:'الاستحقاق', type:D, icon:'ph-calendar-check'},
+      {key:'total', label:'الإجمالي', type:N, icon:'ph-currency-circle-dollar'},
+      {key:'paid', label:'المسدَّد', type:N, icon:'ph-hand-coins'},
+      {key:'balance', label:'المتبقي', type:N, icon:'ph-scales'},
+      {key:'landed', label:'تكاليف محمَّلة', type:N, icon:'ph-stack-plus'},
+    ],
+    rows:[
+      {number:'PUR-2026-0418', date:'٢٠٢٦-٠٨-٢٤', supplier:'الأناضول للأغذية', due:'٢٠٢٦-٠٩-٢٣', total:70660.00, paid:0.00, balance:70660.00, landed:27600.00},
+      {number:'PUR-2026-0411', date:'٢٠٢٦-٠٨-١٢', supplier:'جهينة للأغذية', due:'٢٠٢٦-٠٩-١١', total:62000.00, paid:0.00, balance:62000.00, landed:0.00},
+      {number:'PUR-2026-0402', date:'٢٠٢٦-٠٧-١٤', supplier:'جهينة للأغذية', due:'٢٠٢٦-٠٨-١٣', total:62000.00, paid:40400.00, balance:21600.00, landed:0.00},
+      {number:'PUR-2026-0388', date:'٢٠٢٦-٠٦-١٢', supplier:'جهينة للأغذية', due:'٢٠٢٦-٠٧-١٢', total:86400.00, paid:86400.00, balance:0.00, landed:0.00},
+      {number:'PUR-2026-0374', date:'٢٠٢٦-٠٦-٠٢', supplier:'عافية مصر', due:'٢٠٢٦-٠٧-٠٢', total:48200.00, paid:48200.00, balance:0.00, landed:1840.00},
+      {number:'PUR-2026-0360', date:'٢٠٢٦-٠٥-١٨', supplier:'التحرير للسكر', due:'٢٠٢٦-٠٦-١٧', total:34600.00, paid:34600.00, balance:0.00, landed:0.00},
+    ]},
+
+  parties: {label:'العملاء والموردون', table:'parties', icon:'ph-users-three',
+    fields:[
+      {key:'name', label:'الاسم', type:T, icon:'ph-user'},
+      {key:'code', label:'الكود', type:T, icon:'ph-hash'},
+      {key:'kind', label:'النوع', type:T, icon:'ph-tag'},
+      {key:'phone', label:'الهاتف', type:T, icon:'ph-phone'},
+      {key:'balance', label:'الرصيد', type:N, icon:'ph-scales'},
+      {key:'credit_limit', label:'حد الائتمان', type:N, icon:'ph-credit-card'},
+      {key:'overdue', label:'المتأخر', type:N, icon:'ph-warning'},
+      {key:'last_deal', label:'آخر تعامل', type:D, icon:'ph-clock'},
+    ],
+    rows:[
+      {name:'سوبر ماركت النور', code:'CUS-0142', kind:'عميل', phone:'٠١٠٠٢٢٤٤٨٨٠', balance:44200.00, credit_limit:50000.00, overdue:12600.00, last_deal:'٢٠٢٦-٠٨-٢٦'},
+      {name:'مطعم البيت الشامي', code:'CUS-0158', kind:'عميل', phone:'٠١٠١٤٤٦٦٨٨٢', balance:29800.00, credit_limit:40000.00, overdue:0.00, last_deal:'٢٠٢٦-٠٨-٢٦'},
+      {name:'بقالة الأمانة', code:'CUS-0166', kind:'عميل', phone:'٠١٢٢٧٧٣٣٩٩١', balance:18400.00, credit_limit:25000.00, overdue:2200.00, last_deal:'٢٠٢٦-٠٨-٢٢'},
+      {name:'كافيه الركن', code:'CUS-0174', kind:'عميل', phone:'٠١٥٥٨٨٢٢٤٤٦', balance:16400.00, credit_limit:15000.00, overdue:8400.00, last_deal:'٢٠٢٦-٠٨-٢٤'},
+      {name:'جهينة للأغذية', code:'SUP-0018', kind:'مورد', phone:'٠١٢٢٤٤٨٨٦٦٠', balance:98600.00, credit_limit:150000.00, overdue:0.00, last_deal:'٢٠٢٦-٠٨-٢٦'},
+      {name:'عافية مصر', code:'SUP-0024', kind:'مورد', phone:'٠١٠٦٦٩٩٣٣٢٢', balance:62000.00, credit_limit:100000.00, overdue:0.00, last_deal:'٢٠٢٦-٠٨-٢٠'},
+    ]},
+
+  inventory_balances: {label:'أرصدة المخازن', table:'inventory_balances', icon:'ph-warehouse',
+    fields:[
+      {key:'product', label:'الصنف', type:T, icon:'ph-package'},
+      {key:'warehouse', label:'المخزن', type:T, icon:'ph-warehouse'},
+      {key:'qty', label:'الكمية', type:N, icon:'ph-stack'},
+      {key:'avg_cost', label:'متوسط التكلفة', type:N, icon:'ph-money'},
+      {key:'value', label:'قيمة الرصيد', type:N, icon:'ph-currency-circle-dollar'},
+      {key:'last_move', label:'آخر حركة', type:D, icon:'ph-clock'},
+      {key:'expiry', label:'أقرب انتهاء', type:D, icon:'ph-calendar-x'},
+    ],
+    rows:[
+      {product:'سكر معبأ 1ك', warehouse:'الرئيسي', qty:1840, avg_cost:30.59, value:56285.60, last_move:'٢٠٢٦-٠٨-٢٥', expiry:'٢٠٢٧-٠٦-٣٠'},
+      {product:'مكرونة 400ج', warehouse:'الرئيسي', qty:2160, avg_cost:17.38, value:37540.80, last_move:'٢٠٢٦-٠٨-٢٤', expiry:'٢٠٢٧-٠٣-١٥'},
+      {product:'شاي العروسة 250ج', warehouse:'الرئيسي', qty:412, avg_cost:80.66, value:33231.92, last_move:'٢٠٢٦-٠٨-٢٦', expiry:'٢٠٢٨-٠١-٢٠'},
+      {product:'زيت عافية 1ل', warehouse:'فرع المعادي', qty:284, avg_cost:94.56, value:26855.04, last_move:'٢٠٢٦-٠٨-٢٦', expiry:'٢٠٢٧-٠٩-١٠'},
+      {product:'أرز مصري 5ك', warehouse:'الرئيسي', qty:96, avg_cost:201.64, value:19357.44, last_move:'٢٠٢٦-٠٨-٢٣', expiry:'٢٠٢٧-١١-٠١'},
+      {product:'لبن جهينة 1ل', warehouse:'فرع المعادي', qty:64, avg_cost:47.28, value:3025.92, last_move:'٢٠٢٦-٠٨-٢٦', expiry:'٢٠٢٦-٠٩-٠٤'},
+      {product:'جبنة بيضاء 500ج', warehouse:'فرع مدينة نصر', qty:38, avg_cost:13.99, value:531.62, last_move:'٢٠٢٦-٠٨-٢٥', expiry:'٢٠٢٦-٠٩-١٨'},
+    ]},
+
+  journal_entries: {label:'القيود المحاسبية', table:'journal_entries', icon:'ph-book-open',
+    fields:[
+      {key:'number', label:'رقم القيد', type:T, icon:'ph-hash'},
+      {key:'date', label:'التاريخ', type:D, icon:'ph-calendar-blank'},
+      {key:'account', label:'الحساب', type:T, icon:'ph-bank'},
+      {key:'description', label:'البيان', type:T, icon:'ph-text-aa'},
+      {key:'debit', label:'مدين', type:N, icon:'ph-arrow-down-left'},
+      {key:'credit', label:'دائن', type:N, icon:'ph-arrow-up-right'},
+      {key:'source', label:'المصدر', type:T, icon:'ph-link'},
+    ],
+    rows:[
+      {number:'JV-2026-0641', date:'٢٠٢٦-٠٨-٣١', account:'5301 إهلاك أجهزة', description:'قسط إهلاك أغسطس — أجهزة تبريد', debit:1428.57, credit:0.00, source:'إهلاك دوري'},
+      {number:'JV-2026-0642', date:'٢٠٢٦-٠٨-٣١', account:'1311 مجمع إهلاك', description:'مقابل قسط إهلاك أغسطس', debit:0.00, credit:1428.57, source:'إهلاك دوري'},
+      {number:'JV-2026-0638', date:'٢٠٢٦-٠٨-٢٦', account:'1101 الخزينة', description:'تحصيل من سوبر ماركت النور', debit:11540.00, credit:0.00, source:'سند قبض'},
+      {number:'JV-2026-0637', date:'٢٠٢٦-٠٨-٢٦', account:'1201 عملاء آجل', description:'مقابل تحصيل النور', debit:0.00, credit:11540.00, source:'سند قبض'},
+      {number:'JV-2026-0630', date:'٢٠٢٦-٠٨-٢٤', account:'1301 المخزون', description:'تحميل تكاليف LC-2026-0042', debit:27600.00, credit:0.00, source:'تكاليف محمَّلة'},
+      {number:'JV-2026-0629', date:'٢٠٢٦-٠٨-٢٤', account:'2101 موردو خدمات', description:'مقابل تحميل التكاليف', debit:0.00, credit:27600.00, source:'تكاليف محمَّلة'},
+    ]},
+
+  employees: {label:'الموظفون', table:'employees', icon:'ph-identification-badge',
+    fields:[
+      {key:'name', label:'الاسم', type:T, icon:'ph-user'},
+      {key:'code', label:'الكود', type:T, icon:'ph-hash'},
+      {key:'role', label:'الوظيفة', type:T, icon:'ph-briefcase'},
+      {key:'branch', label:'الفرع', type:T, icon:'ph-storefront'},
+      {key:'salary', label:'الراتب', type:N, icon:'ph-money'},
+      {key:'advances', label:'السلف', type:N, icon:'ph-hand-coins'},
+      {key:'attendance', label:'نسبة الحضور', type:N, icon:'ph-calendar-check'},
+      {key:'hired', label:'تاريخ التعيين', type:D, icon:'ph-calendar-plus'},
+    ],
+    rows:[
+      {name:'محمود سعيد', code:'EMP-0004', role:'مدير فرع', branch:'المعادي', salary:14000.00, advances:0.00, attendance:98.2, hired:'٢٠٢١-٠٣-٠١'},
+      {name:'سارة منير', code:'EMP-0011', role:'محاسب', branch:'المعادي', salary:11500.00, advances:2000.00, attendance:96.4, hired:'٢٠٢٢-٠٧-١٥'},
+      {name:'خالد عبد الله', code:'EMP-0018', role:'مندوب توزيع', branch:'المعادي', salary:8200.00, advances:1500.00, attendance:91.8, hired:'٢٠٢٣-٠١-١٠'},
+      {name:'أحمد فتحي', code:'EMP-0026', role:'كاشير', branch:'مدينة نصر', salary:6800.00, advances:0.00, attendance:94.6, hired:'٢٠٢٤-٠٥-٢٠'},
+      {name:'منى رشاد', code:'EMP-0031', role:'أمين مخزن', branch:'الرئيسي', salary:7400.00, advances:800.00, attendance:97.1, hired:'٢٠٢٣-٠٩-٠٥'},
+    ]},
+};
+
+// Saved report definitions — each is a real spec over one source entity.
+const SAVED = [
+  {id:'r1', name:'أصناف تحت حد الطلب', desc:'أصناف رصيدها أقل من حد الطلب مرتبة بالأقل رصيداً',
+   entity:'products', icon:'ph-package', tint:'#F59E0B', shared:true, rows:3, ms:42,
+   cols:['name','sku','qty_on_hand','reorder_level','cost'],
+   filters:[{field:'qty_on_hand', op:'<', value:'حد الطلب'}, {field:'is_active', op:'=', value:'نعم'}],
+   group:[], aggs:{qty_on_hand:'SUM'}, sort:{field:'qty_on_hand', dir:'asc'}},
+
+  {id:'r2', name:'ربحية الفواتير بالفرع', desc:'إجمالي وربح الفواتير مجمَّعة على الفرع',
+   entity:'sales_invoices', icon:'ph-receipt', tint:'#22C55E', shared:true, rows:3, ms:118,
+   cols:['branch','number','total','profit'],
+   filters:[{field:'date', op:'≥', value:'٢٠٢٦-٠٨-٠١'}],
+   group:['branch'], aggs:{total:'SUM', profit:'SUM'}, sort:{field:'profit', dir:'desc'}},
+
+  {id:'r3', name:'عملاء تجاوزوا حد الائتمان', desc:'رصيد العميل أكبر من حد ائتمانه',
+   entity:'parties', icon:'ph-warning-octagon', tint:'#EF4444', shared:false, rows:1, ms:28,
+   cols:['name','code','balance','credit_limit','overdue'],
+   filters:[{field:'kind', op:'=', value:'عميل'}, {field:'balance', op:'>', value:'حد الائتمان'}],
+   group:[], aggs:{overdue:'SUM'}, sort:{field:'overdue', dir:'desc'}},
+
+  {id:'r4', name:'قيمة المخزون بالمخزن', desc:'قيمة الأرصدة مجمَّعة على المخزن',
+   entity:'inventory_balances', icon:'ph-warehouse', tint:'#0250D3', shared:true, rows:3, ms:186,
+   cols:['warehouse','product','qty','value'],
+   filters:[{field:'qty', op:'>', value:'0'}],
+   group:['warehouse'], aggs:{value:'SUM', qty:'SUM'}, sort:{field:'value', dir:'desc'}},
+
+  {id:'r5', name:'مديونيات الموردين المستحقة', desc:'فواتير شراء لها رصيد متبقٍ',
+   entity:'purchase_invoices', icon:'ph-truck', tint:'#8B5CF6', shared:false, rows:3, ms:64,
+   cols:['number','supplier','due','total','balance'],
+   filters:[{field:'balance', op:'>', value:'0'}],
+   group:[], aggs:{balance:'SUM'}, sort:{field:'due', dir:'asc'}},
+
+  {id:'r6', name:'ميزان القيود بالحساب', desc:'مدين ودائن كل حساب لمراجعة التوازن',
+   entity:'journal_entries', icon:'ph-book-open', tint:'#6B7280', shared:true, rows:6, ms:242,
+   cols:['account','number','debit','credit'],
+   filters:[],
+   group:['account'], aggs:{debit:'SUM', credit:'SUM'}, sort:{field:'debit', dir:'desc'}},
+];
+
+const OPS = ['=','≠','>','<','≥','≤','يحتوي','بين'];
+const FNS = ['SUM','AVG','COUNT','MIN','MAX'];
+
+const nf2 = n => n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+const nf0 = n => n.toLocaleString('en-US', {maximumFractionDigits:0});
+const AR = n => String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
+
+class Component extends DCLogic {
+  state = {theme:null, sel:'r1', entity:null, cols:null, group:null, aggs:null, sort:null, shared:null, runNo:0};
+
+  get def(){ return SAVED.find(s => s.id === this.state.sel) || SAVED[0]; }
+  get entityId(){ return this.state.entity || this.def.entity; }
+  get cols(){ return this.state.cols || this.def.cols; }
+  get group(){ return this.state.group || this.def.group; }
+  get aggs(){ return this.state.aggs || this.def.aggs; }
+  get sort(){ return this.state.sort || this.def.sort; }
+
+  load(id){
+    const d = SAVED.find(s => s.id === id);
+    this.setState({sel:id, entity:d.entity, cols:d.cols, group:d.group, aggs:d.aggs, sort:d.sort, shared:d.shared});
+  }
+
+  // Runs the saved spec against the entity rows: group → aggregate → sort.
+  execute(){
+    const ent = ENTITIES[this.entityId];
+    const cols = this.cols.filter(c => ent.fields.some(f => f.key === c));
+    const group = this.group.filter(g => cols.indexOf(g) >= 0);
+    const aggs = this.aggs;
+    const sort = this.sort;
+    let rows;
+
+    if (group.length){
+      const buckets = {};
+      ent.rows.forEach(r => {
+        const k = group.map(g => r[g]).join(' · ');
+        if (!buckets[k]) buckets[k] = {key:k, items:[]};
+        buckets[k].items.push(r);
+      });
+      rows = Object.keys(buckets).map(k => {
+        const b = buckets[k];
+        const out = {};
+        group.forEach((g, i) => { out[g] = b.items[0][g]; });
+        cols.forEach(c => {
+          if (group.indexOf(c) >= 0) return;
+          const fld = ent.fields.find(f => f.key === c);
+          const fn = aggs[c];
+          if (fld.type === N && fn){
+            const vals = b.items.map(x => x[c]);
+            out[c] = fn === 'SUM' ? vals.reduce((s, v) => s + v, 0)
+                   : fn === 'AVG' ? vals.reduce((s, v) => s + v, 0) / vals.length
+                   : fn === 'COUNT' ? vals.length
+                   : fn === 'MIN' ? Math.min.apply(null, vals)
+                   : Math.max.apply(null, vals);
+          } else {
+            out[c] = b.items.length > 1 ? AR(b.items.length) + ' سطر' : b.items[0][c];
+          }
+        });
+        return out;
+      });
+    } else {
+      rows = ent.rows.map(r => {
+        const out = {};
+        cols.forEach(c => { out[c] = r[c]; });
+        return out;
+      });
+    }
+
+    if (sort && cols.indexOf(sort.field) >= 0){
+      const dir = sort.dir === 'asc' ? 1 : -1;
+      rows = rows.slice().sort((a, b) => {
+        const x = a[sort.field], y = b[sort.field];
+        if (typeof x === 'number' && typeof y === 'number') return (x - y) * dir;
+        return String(x).localeCompare(String(y), 'ar') * dir;
+      });
+    }
+
+    return {ent, cols, group, rows};
+  }
+
+  renderVals(){
+    const dark = (this.state.theme || this.props.theme || 'light') === 'dark';
+    const def = this.def;
+    const shared = this.state.shared === null ? def.shared : this.state.shared;
+    const ex = this.execute();
+    const ent = ex.ent;
+    const aggs = this.aggs;
+    const sort = this.sort;
+
+    // execution cost scales with column and row work — same shape the runs log stores
+    const ms = 18 + ex.cols.length * 7 + ex.rows.length * 4 + ex.group.length * 22 + this.state.runNo * 3;
+
+    const spec = JSON.stringify({
+      name: def.name,
+      sourceEntity: this.entityId,
+      columns: ex.cols,
+      filters: def.filters.map(f => ({field:f.field, op:f.op, value:f.value})),
+      groupBy: ex.group,
+      aggregates: aggs,
+      sortBy: [{field:sort.field, dir:sort.dir}],
+      isShared: shared,
+    }, null, 2);
+
+    const numericCols = ex.cols.filter(c => (ent.fields.find(f => f.key === c) || {}).type === N);
+    const hasFooter = ex.cols.length > 1;
+
+    const footer = ex.cols.map((c, i) => {
+      const fld = ent.fields.find(f => f.key === c);
+      if (i === 0) return {value: AR(ex.rows.length) + (ex.group.length ? ' مجموعة' : ' سطر'), fg:'var(--txt)', align:'start'};
+      if (fld && fld.type === N){
+        const sum = ex.rows.reduce((s, r) => s + (typeof r[c] === 'number' ? r[c] : 0), 0);
+        const fn = aggs[c] || 'SUM';
+        const val = fn === 'AVG' ? sum / (ex.rows.length || 1) : sum;
+        return {value: nf2(val), fg: 'var(--brand-ink)', align:'end'};
+      }
+      return {value:'—', fg:'var(--muted)', align:'end'};
+    });
+
+    return {
+      theme: dark ? 'dark' : 'light',
+      themeIcon: dark ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.setState({theme: dark ? 'light' : 'dark'}),
+      rail: RAIL.map(r => ({...r, bg: r.active ? 'rgba(74,128,232,.18)' : 'transparent', fg: r.active ? '#7DA6F5' : '#64748B'})),
+
+      report: {name: def.name},
+      savedCount: AR(SAVED.length),
+      run: () => this.setState({runNo: this.state.runNo + 1}),
+
+      shared: {
+        label: shared ? 'مشترك مع الفريق' : 'خاص بي',
+        icon: shared ? 'ph-users-three' : 'ph-lock-simple',
+        bd: shared ? 'rgba(34,197,94,.45)' : 'var(--hairline)',
+        bg: shared ? 'rgba(34,197,94,.08)' : 'transparent',
+        fg: shared ? '#22C55E' : 'var(--txt2)',
+      },
+      toggleShared: () => this.setState({shared: !shared}),
+
+      saved: SAVED.map(s => {
+        const on = s.id === def.id;
+        return {
+          name:s.name, desc:s.desc, icon:s.icon, tint:s.tint, isShared:s.shared,
+          entity: ENTITIES[s.entity].table,
+          rows: AR(s.rows), ms: AR(s.ms) + ' مث',
+          msFg: s.ms > 150 ? '#EF4444' : s.ms > 80 ? '#F59E0B' : '#22C55E',
+          bg: on ? 'var(--wash)' : 'transparent',
+          mark: on ? 'var(--brand)' : 'transparent',
+          pick: () => this.load(s.id),
+        };
+      }),
+
+      runs: [
+        {at:'اليوم 15:02', rows: AR(ex.rows.length), ms: AR(ms) + ' مث'},
+        {at:'اليوم 09:41', rows: AR(def.rows), ms: AR(def.ms) + ' مث'},
+        {at:'أمس 17:20', rows: AR(def.rows), ms: AR(def.ms + 12) + ' مث'},
+        {at:'٢٠٢٦-٠٨-٢٤', rows: AR(def.rows), ms: AR(def.ms + 34) + ' مث'},
+      ].map(r => ({...r, msFg: parseInt(String(r.ms).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)), 10) > 150 ? '#EF4444' : 'var(--txt2)'})),
+
+      entities: Object.keys(ENTITIES).map(k => {
+        const e = ENTITIES[k];
+        const on = k === this.entityId;
+        return {label:e.label, table:e.table, icon:e.icon,
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          bg: on ? 'var(--wash)' : 'transparent',
+          fg: on ? 'var(--brand-ink)' : 'var(--txt2)',
+          pick: () => this.setState({entity:k, cols: e.fields.slice(0, 5).map(f => f.key), group:[], aggs:{}, sort:{field:e.fields[0].key, dir:'asc'}})};
+      }),
+
+      colsNote: AR(this.cols.length) + ' من ' + AR(ent.fields.length) + ' حقل مُختار',
+      fields: ent.fields.map(f => {
+        const on = this.cols.indexOf(f.key) >= 0;
+        return {label:f.label, icon:f.icon, type:f.type,
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          bg: on ? 'var(--wash)' : 'transparent',
+          fg: on ? 'var(--brand-ink)' : 'var(--muted)',
+          toggle: () => {
+            const next = on ? this.cols.filter(c => c !== f.key) : this.cols.concat([f.key]);
+            this.setState({cols: next.length ? next : [f.key]});
+          }};
+      }),
+
+      filters: def.filters.length ? def.filters.map(f => {
+        const fld = ent.fields.find(x => x.key === f.field) || {label:f.field, icon:'ph-dot'};
+        return {field: fld.label, icon: fld.icon, op: f.op, value: f.value};
+      }) : [{field:'بلا شروط', icon:'ph-funnel-simple', op:'—', value:'كل السطور'}],
+
+      ops: OPS,
+
+      groupNote: ex.group.length ? 'مجمَّع على ' + AR(ex.group.length) + ' حقل' : 'بلا تجميع — سطر لكل سجل',
+      groupOpts: ent.fields.filter(f => f.type !== N).slice(0, 5).map(f => {
+        const on = this.group.indexOf(f.key) >= 0;
+        return {label:f.label, icon:f.icon,
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          bg: on ? 'var(--wash)' : 'transparent',
+          fg: on ? 'var(--brand-ink)' : 'var(--muted)',
+          toggle: () => {
+            const next = on ? this.group.filter(g => g !== f.key) : this.group.concat([f.key]);
+            const cols = this.cols.indexOf(f.key) >= 0 ? this.cols : [f.key].concat(this.cols);
+            this.setState({group: next, cols});
+          }};
+      }),
+
+      aggs: ent.fields.filter(f => f.type === N && this.cols.indexOf(f.key) >= 0).map(f => ({
+        field: f.label,
+        fns: ['SUM','AVG','COUNT'].map(fn => {
+          const on = aggs[f.key] === fn;
+          return {label:fn,
+            bd: on ? 'var(--brand)' : 'var(--hairline)',
+            bg: on ? 'var(--wash)' : 'transparent',
+            fg: on ? 'var(--brand-ink)' : 'var(--muted)',
+            pick: () => {
+              const next = Object.assign({}, aggs);
+              if (on) delete next[f.key]; else next[f.key] = fn;
+              this.setState({aggs: next});
+            }};
+        }),
+      })),
+
+      sort: {
+        field: (ent.fields.find(f => f.key === sort.field) || {label: sort.field}).label,
+        dirLabel: sort.dir === 'asc' ? 'تصاعدي' : 'تنازلي',
+        icon: sort.dir === 'asc' ? 'ph-sort-ascending' : 'ph-sort-descending',
+        flip: () => this.setState({sort: {field: sort.field, dir: sort.dir === 'asc' ? 'desc' : 'asc'}}),
+      },
+
+      preview: {
+        note: ent.label + ' · ' + (ex.group.length ? 'مجمَّع على ' + ex.group.map(g => (ent.fields.find(f => f.key === g) || {}).label).join(' و ') : 'بلا تجميع')
+          + ' · مرتَّب بـ ' + (ent.fields.find(f => f.key === sort.field) || {label:'—'}).label,
+        rowCount: AR(ex.rows.length),
+        ms: AR(ms) + ' مث',
+        msFg: ms > 150 ? '#EF4444' : ms > 80 ? '#F59E0B' : '#22C55E',
+        grid: ex.cols.map((c, i) => {
+          const fld = ent.fields.find(f => f.key === c);
+          return i === 0 ? '1.7fr' : fld && fld.type === N ? '1fr' : '1.2fr';
+        }).join(' '),
+        head: ex.cols.map((c, i) => {
+          const fld = ent.fields.find(f => f.key === c) || {label:c};
+          const fn = aggs[c];
+          return {label: fn ? fld.label + ' · ' + fn : fld.label, key: c,
+            align: i === 0 ? 'start' : fld.type === N ? 'end' : 'start'};
+        }),
+        rows: ex.rows.map(r => ({
+          cells: ex.cols.map((c, i) => {
+            const fld = ent.fields.find(f => f.key === c) || {};
+            const v = r[c];
+            return {
+              value: typeof v === 'number' ? (Number.isInteger(v) && fld.key !== 'value' ? nf0(v) : nf2(v)) : v,
+              fg: i === 0 ? 'var(--txt)' : fld.type === N ? 'var(--txt2)' : 'var(--muted)',
+              fw: i === 0 ? '800' : '700',
+              align: i === 0 ? 'start' : fld.type === N ? 'end' : 'start',
+            };
+          }),
+        })),
+        hasFooter,
+        footer,
+      },
+
+      spec,
+    };
+  }
+}
+</script>
+</body>
+</html>

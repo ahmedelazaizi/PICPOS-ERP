@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<script src="picpos-booking-data.js"></script>
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-dark:#012258; --brand-light:#4A80E8;
+    --hero:#012258; --bar:#0B2E6F;
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280;
+    --ok:#22C55E; --warn:#F59E0B; --err:#EF4444; --info:#4A80E8;
+    --track:#E6ECF6; --rowhover:#F7F9FD;
+  }
+  [data-theme="dark"]{
+    --canvas:#0A1220; --card:#121C2E; --hairline:#243247; --field:#18243A;
+    --hero:#0B1D3C; --bar:#0B1D3C;
+    --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8;
+    --track:#1E2B42; --rowhover:#18243A;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#0A1220;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  input{font-family:'Cairo',sans-serif;}
+  @keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" dir="rtl" style="width:1920px;height:1080px;display:flex;flex-direction:column;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;">
+
+  <!-- ═══ شريط نقطة البيع ═══ -->
+  <div style="height:62px;flex:none;background:var(--bar);display:flex;align-items:center;gap:9px;padding:0 14px;">
+    <div style="height:40px;border-radius:11px;background:#EF4444;display:flex;align-items:center;gap:8px;padding:0 15px;cursor:pointer;color:#fff;font-size:13px;font-weight:800;">
+      <i class="ph-bold ph-sign-out" style="font-size:16px;"></i>إغلاق الوردية
+    </div>
+    <sc-for list="{{ posTabs }}" as="p" hint-placeholder-count="4">
+      <div onClick="{{ p.go }}" style="height:40px;border-radius:11px;background:{{ p.bg }};border:{{ p.bd }};display:flex;align-items:center;gap:8px;padding:0 15px;cursor:pointer;color:{{ p.fg }};font-size:13px;font-weight:{{ p.fw }};white-space:nowrap;">
+        <i class="ph-bold {{ p.icon }}" style="font-size:16px;"></i>{{ p.label }}
+        <sc-if value="{{ p.badge }}" hint-placeholder-val="{{ false }}">
+          <span style="min-width:20px;height:20px;border-radius:999px;background:#EF4444;display:flex;align-items:center;justify-content:center;padding:0 6px;font-size:11px;font-weight:800;color:#fff;">{{ p.badge }}</span>
+        </sc-if>
+      </div>
+    </sc-for>
+    <div style="flex:1;"></div>
+    <div style="text-align:end;">
+      <div style="font-size:17px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:.5px;">{{ clock }}</div>
+      <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.62);font-variant-numeric:tabular-nums;">2026/08/01</div>
+    </div>
+    <div onClick="{{ toggleTheme }}" style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.10);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;">
+      <i class="ph-bold {{ themeIcon }}" style="font-size:19px;"></i>
+    </div>
+    <div style="width:44px;height:44px;border-radius:12px;background:#0F1B33;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;">
+      <i class="ph-bold ph-list" style="font-size:20px;"></i>
+    </div>
+  </div>
+
+  <div style="flex:1;min-height:0;display:flex;">
+
+    <!-- ═══ منطقة الحجوزات ═══ -->
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;padding:12px 14px 12px 12px;">
+
+      <div style="flex:none;display:flex;align-items:center;gap:11px;">
+        <div style="width:38px;height:38px;flex:none;border-radius:11px;background:rgba(2,80,211,.10);display:flex;align-items:center;justify-content:center;">
+          <i class="ph-bold {{ head.icon }}" style="font-size:20px;color:var(--brand);"></i>
+        </div>
+        <div>
+          <div style="font-size:18px;font-weight:800;line-height:1.2;color:var(--txt);">{{ head.title }}</div>
+          <div style="font-size:11.5px;font-weight:600;color:var(--muted);">{{ head.sub }}</div>
+        </div>
+        <div style="flex:1;"></div>
+        <sc-if value="{{ notBoard }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ goBoard }}" style="height:40px;border-radius:11px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:7px;padding:0 15px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;">
+            <i class="ph-bold ph-arrow-right" style="font-size:15px;"></i>لوحة الحجوزات
+          </div>
+        </sc-if>
+        <div onClick="{{ openNew }}" style="height:40px;border-radius:11px;background:var(--brand);display:flex;align-items:center;gap:8px;padding:0 20px;cursor:pointer;color:#fff;font-size:13.5px;font-weight:800;">
+          <i class="ph-bold ph-calendar-plus" style="font-size:17px;"></i>حجز جديد
+        </div>
+      </div>
+
+      <!-- بطاقات المؤشرات -->
+      <sc-if value="{{ isCards }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:none;display:grid;grid-template-columns:repeat(6,1fr);gap:10px;">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="6">
+          <div style="background:var(--card);border:1px solid var(--hairline);border-radius:13px;padding:10px 12px;display:flex;align-items:center;gap:10px;">
+            <div style="width:34px;height:34px;flex:none;border-radius:10px;background:{{ k.tint }};display:flex;align-items:center;justify-content:center;">
+              <i class="ph-bold {{ k.icon }}" style="font-size:17px;color:{{ k.color }};"></i>
+            </div>
+            <div style="min-width:0;">
+              <div style="font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ k.label }}</div>
+              <div style="font-size:19px;font-weight:800;line-height:1.2;color:{{ k.color }};font-variant-numeric:tabular-nums;">{{ k.value }}<span style="font-size:10.5px;font-weight:700;color:var(--muted);margin-inline-start:4px;">{{ k.unit }}</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isStrip }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:13px;padding:11px 14px;display:flex;align-items:stretch;">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="6">
+          <div style="flex:1;min-width:0;display:flex;align-items:center;gap:9px;padding:0 13px;border-inline-end:1px solid var(--hairline);">
+            <div style="width:4px;height:34px;flex:none;border-radius:99px;background:{{ k.color }};"></div>
+            <div style="min-width:0;">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ k.label }}</div>
+              <div style="font-size:18px;font-weight:800;line-height:1.2;color:var(--txt);font-variant-numeric:tabular-nums;">{{ k.value }}<span style="font-size:10px;font-weight:600;color:var(--muted);margin-inline-start:4px;">{{ k.unit }}</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <div style="flex:1;min-height:0;display:flex;gap:10px;">
+
+        <!-- العمود الأيمن: تقويم + القادمة -->
+        <div style="width:296px;flex:none;display:flex;flex-direction:column;gap:10px;">
+          <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:13px;padding:12px;">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;">
+              <i class="ph-bold ph-calendar-dots" style="font-size:16px;color:var(--brand);"></i>
+              <span style="font-size:13px;font-weight:800;color:var(--txt);">تقويم الحجوزات</span>
+              <div style="flex:1;"></div>
+              <div style="width:24px;height:24px;border-radius:7px;background:var(--field);display:flex;align-items:center;justify-content:center;color:var(--muted);"><i class="ph-bold ph-caret-right" style="font-size:12px;"></i></div>
+              <span style="font-size:12px;font-weight:800;color:var(--txt);">أغسطس 2026</span>
+              <div style="width:24px;height:24px;border-radius:7px;background:var(--field);display:flex;align-items:center;justify-content:center;color:var(--muted);"><i class="ph-bold ph-caret-left" style="font-size:12px;"></i></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:5px;">
+              <sc-for list="{{ dayNames }}" as="d" hint-placeholder-count="7">
+                <div style="height:20px;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:var(--muted);">{{ d.label }}</div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;">
+              <sc-for list="{{ calDays }}" as="c" hint-placeholder-count="35">
+                <div onClick="{{ c.go }}" style="height:29px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ c.bg }};color:{{ c.fg }};font-size:12px;font-weight:{{ c.fw }};position:relative;">
+                  {{ c.label }}
+                  <sc-if value="{{ c.dot }}" hint-placeholder-val="{{ false }}">
+                    <span style="position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:{{ c.dotBg }};"></span>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="flex:1;min-height:0;background:var(--card);border:1px solid var(--hairline);border-radius:13px;display:flex;flex-direction:column;overflow:hidden;">
+            <div style="flex:none;height:42px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:7px;padding:0 12px;">
+              <i class="ph-bold ph-calendar-heart" style="font-size:15px;color:var(--brand);"></i>
+              <span style="font-size:12.5px;font-weight:800;color:var(--txt);">الحجوزات القادمة</span>
+              <span style="margin-inline-start:auto;font-size:10.5px;font-weight:700;color:var(--muted);">{{ upcomingCount }}</span>
+            </div>
+            <div style="flex:1;min-height:0;overflow:auto;padding:9px;display:flex;flex-direction:column;gap:6px;">
+              <sc-for list="{{ upcoming }}" as="u" hint-placeholder-count="3">
+                <div style="flex:none;border:1px solid var(--hairline);border-inline-start:3px solid {{ u.color }};border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;">
+                  <div style="min-width:0;flex:1;">
+                    <div style="font-size:12px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ u.cust }}</div>
+                    <div style="font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ u.service }} · {{ u.res }}</div>
+                  </div>
+                  <div style="flex:none;font-size:12px;font-weight:800;color:{{ u.color }};font-variant-numeric:tabular-nums;">{{ u.time }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div onClick="{{ goBoard }}" style="flex:none;margin:9px;height:38px;border-radius:10px;background:var(--brand);display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;color:#fff;font-size:12.5px;font-weight:800;">
+              <i class="ph-bold ph-list-checks" style="font-size:15px;"></i>عرض كل الحجوزات
+            </div>
+          </div>
+        </div>
+
+        <!-- المحتوى -->
+        <div style="flex:1;min-width:0;background:var(--card);border:1px solid var(--hairline);border-radius:13px;display:flex;flex-direction:column;overflow:hidden;">
+
+          <div style="flex:none;height:52px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 12px;">
+            <sc-for list="{{ views }}" as="v" hint-placeholder-count="3">
+              <div onClick="{{ v.go }}" style="height:32px;border-radius:9px;display:flex;align-items:center;gap:6px;padding:0 13px;cursor:pointer;background:{{ v.bg }};border:1px solid {{ v.bd }};color:{{ v.fg }};font-size:12.5px;font-weight:{{ v.fw }};">
+                <i class="ph-bold {{ v.icon }}" style="font-size:14px;"></i>{{ v.label }}
+              </div>
+            </sc-for>
+            <div style="flex:1;min-width:0;max-width:420px;height:36px;border-radius:10px;background:var(--field);display:flex;align-items:center;gap:8px;padding:0 12px;margin-inline-start:6px;">
+              <i class="ph-bold ph-magnifying-glass" style="flex:none;font-size:15px;color:var(--muted);"></i>
+              <input value="{{ q }}" onChange="{{ setQ }}" placeholder="بحث سريع (اسم، هاتف، خدمة...)" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:12.5px;font-weight:600;color:var(--txt);" />
+            </div>
+            <div style="flex:1;"></div>
+            <div style="height:36px;border-radius:10px;border:1px solid var(--hairline);display:flex;align-items:center;gap:7px;padding:0 13px;cursor:pointer;color:var(--txt2);font-size:12.5px;font-weight:600;">
+              <i class="ph-bold ph-funnel" style="font-size:14px;"></i>المزيد من الفلاتر
+            </div>
+          </div>
+
+          <!-- ▸ لوحة اليوم -->
+          <sc-if value="{{ isBoard }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1;min-height:0;display:flex;flex-direction:column;">
+            <div style="flex:none;height:46px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;gap:12px;">
+              <div onClick="{{ nextDay }}" style="width:30px;height:30px;border-radius:9px;border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);"><i class="ph-bold ph-caret-right" style="font-size:13px;"></i></div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <i class="ph-bold ph-calendar-blank" style="font-size:15px;color:var(--brand);"></i>
+                <span style="font-size:13.5px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ dayLabel }}</span>
+              </div>
+              <div onClick="{{ prevDay }}" style="width:30px;height:30px;border-radius:9px;border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);"><i class="ph-bold ph-caret-left" style="font-size:13px;"></i></div>
+            </div>
+
+            <div style="flex:none;height:36px;background:var(--hero);display:flex;align-items:center;padding:0 14px;font-size:11px;font-weight:800;color:rgba(255,255,255,.85);">
+              <div style="width:112px;flex:none;">الوقت</div>
+              <div style="flex:1;min-width:0;">العميل</div>
+              <div style="width:170px;flex:none;">الخدمة</div>
+              <div style="width:190px;flex:none;">الموظف / المورد</div>
+              <div style="width:170px;flex:none;">الحالة</div>
+              <div style="width:130px;flex:none;text-align:end;">العربون</div>
+              <div style="width:186px;flex:none;text-align:center;">الإجراءات</div>
+            </div>
+
+            <div style="flex:1;min-height:0;overflow:auto;">
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+                <div style="height:{{ rowH }}px;display:flex;align-items:center;padding:0 14px;border-bottom:1px solid var(--hairline);background:{{ r.bg }};">
+                  <div style="width:112px;flex:none;display:flex;align-items:center;gap:6px;">
+                    <i class="ph-bold ph-clock" style="font-size:14px;color:var(--muted);"></i>
+                    <span style="font-size:12.5px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ r.time }}</span>
+                  </div>
+                  <div style="flex:1;min-width:0;padding-inline-end:10px;">
+                    <div style="font-size:13px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.cust }}</div>
+                    <div style="font-size:11px;font-weight:600;color:var(--muted);direction:ltr;text-align:start;font-variant-numeric:tabular-nums;">{{ r.phone }}</div>
+                  </div>
+                  <div style="width:170px;flex:none;display:flex;align-items:center;gap:7px;">
+                    <i class="ph-bold {{ r.svcIcon }}" style="font-size:15px;color:{{ r.svcColor }};"></i>
+                    <div style="min-width:0;">
+                      <div style="font-size:12.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.service }}</div>
+                      <div style="font-size:10px;font-weight:600;color:var(--muted);">{{ r.dur }}</div>
+                    </div>
+                  </div>
+                  <div style="width:190px;flex:none;display:flex;align-items:center;gap:8px;">
+                    <div style="width:30px;height:30px;flex:none;border-radius:50%;background:{{ r.resTint }};border:1.5px solid {{ r.resColor }};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:{{ r.resColor }};">{{ r.resInit }}</div>
+                    <div style="min-width:0;">
+                      <div style="font-size:12.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.res }}</div>
+                      <div style="font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.resRole }}</div>
+                    </div>
+                  </div>
+                  <div style="width:170px;flex:none;">
+                    <sc-if value="{{ isPills }}" hint-placeholder-val="{{ true }}">
+                      <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;color:{{ r.stFg }};background:{{ r.stBg }};border:1px solid {{ r.stBd }};border-radius:999px;padding:4px 10px;white-space:nowrap;">
+                        <i class="ph-bold {{ r.stIcon }}" style="font-size:12px;"></i>{{ r.stLabel }}
+                      </span>
+                    </sc-if>
+                    <sc-if value="{{ isDots }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--txt);">
+                        <span style="width:9px;height:9px;border-radius:50%;background:{{ r.stFg }};box-shadow:0 0 0 3px {{ r.stBg }};"></span>{{ r.stLabel }}
+                      </span>
+                    </sc-if>
+                    <sc-if value="{{ isBars }}" hint-placeholder-val="{{ false }}">
+                      <div>
+                        <div style="font-size:11px;font-weight:800;color:{{ r.stFg }};margin-bottom:4px;">{{ r.stLabel }}</div>
+                        <div style="height:5px;width:104px;border-radius:99px;background:var(--track);overflow:hidden;">
+                          <div style="height:100%;width:{{ r.stPct }}%;border-radius:99px;background:{{ r.stFg }};"></div>
+                        </div>
+                      </div>
+                    </sc-if>
+                  </div>
+                  <div style="width:130px;flex:none;text-align:end;">
+                    <div style="font-size:13px;font-weight:800;color:{{ r.depFg }};font-variant-numeric:tabular-nums;">{{ r.dep }}</div>
+                    <div style="font-size:10px;font-weight:700;color:var(--muted);">{{ r.depLabel }}</div>
+                  </div>
+                  <div style="width:186px;flex:none;display:flex;align-items:center;justify-content:center;gap:6px;">
+                    <sc-if value="{{ r.showAction }}" hint-placeholder-val="{{ true }}">
+                      <div onClick="{{ r.action }}" style="height:30px;border-radius:8px;background:{{ r.actBg }};display:flex;align-items:center;gap:6px;padding:0 11px;cursor:pointer;color:#fff;font-size:11.5px;font-weight:800;white-space:nowrap;">
+                        <i class="ph-bold {{ r.actIcon }}" style="font-size:13px;"></i>{{ r.actLabel }}
+                      </div>
+                    </sc-if>
+                    <div onClick="{{ r.edit }}" style="width:29px;height:29px;flex:none;border-radius:8px;border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--brand);"><i class="ph-bold ph-pencil-simple" style="font-size:13px;"></i></div>
+                    <div onClick="{{ r.cancel }}" style="width:29px;height:29px;flex:none;border-radius:8px;border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#EF4444;"><i class="ph-bold ph-trash" style="font-size:13px;"></i></div>
+                    <div style="width:29px;height:29px;flex:none;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);"><i class="ph-bold ph-dots-three-vertical" style="font-size:14px;"></i></div>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}">
+                <div style="height:100%;min-height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;">
+                  <i class="ph-bold ph-calendar-x" style="font-size:44px;color:var(--muted);opacity:.5;"></i>
+                  <div style="font-size:14px;font-weight:800;color:var(--txt2);">لا حجوزات في {{ dayLabel }}</div>
+                  <div onClick="{{ openNew }}" style="height:36px;border-radius:10px;background:var(--brand);display:flex;align-items:center;gap:7px;padding:0 16px;cursor:pointer;color:#fff;font-size:12.5px;font-weight:800;">
+                    <i class="ph-bold ph-calendar-plus" style="font-size:15px;"></i>احجز في هذا اليوم
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+
+            <div style="flex:none;height:48px;border-top:1px solid var(--hairline);display:flex;align-items:center;padding:0 14px;">
+              <span style="font-size:11.5px;font-weight:700;color:var(--muted);">{{ pageInfo }}</span>
+              <div style="flex:1;"></div>
+              <div style="display:flex;align-items:center;gap:5px;">
+                <sc-for list="{{ pages }}" as="p" hint-placeholder-count="3">
+                  <div onClick="{{ p.go }}" style="min-width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 8px;cursor:pointer;background:{{ p.bg }};border:1px solid {{ p.bd }};color:{{ p.fg }};font-size:12px;font-weight:800;">{{ p.label }}</div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- ▸ قائمة الانتظار -->
+          <sc-if value="{{ isWait }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-height:0;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;">
+            <div style="flex:none;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.30);border-radius:11px;padding:10px 13px;display:flex;align-items:center;gap:9px;">
+              <i class="ph-bold ph-info" style="font-size:16px;color:#F59E0B;"></i>
+              <span style="font-size:12px;font-weight:700;color:var(--txt2);">حجز بلا مورد مُسند = قائمة انتظار — لا يشارك في فحص التعارض حتى يُسنَد لموظف.</span>
+            </div>
+            <sc-for list="{{ waitRows }}" as="w" hint-placeholder-count="4">
+              <div style="flex:none;border:1px solid var(--hairline);border-radius:12px;padding:12px;display:flex;align-items:center;gap:12px;">
+                <div style="width:38px;height:38px;flex:none;border-radius:11px;background:{{ w.tint }};display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold {{ w.icon }}" style="font-size:18px;color:{{ w.color }};"></i>
+                </div>
+                <div style="min-width:0;width:250px;flex:none;">
+                  <div style="font-size:13.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ w.cust }}</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--muted);direction:ltr;text-align:start;">{{ w.phone }}</div>
+                </div>
+                <div style="width:190px;flex:none;">
+                  <div style="font-size:10px;font-weight:700;color:var(--muted);">الخدمة المطلوبة</div>
+                  <div style="font-size:12.5px;font-weight:700;color:var(--txt);">{{ w.service }}</div>
+                </div>
+                <div style="width:200px;flex:none;">
+                  <div style="font-size:10px;font-weight:700;color:var(--muted);">الوقت المرغوب</div>
+                  <div style="font-size:12.5px;font-weight:700;color:var(--txt);">{{ w.want }}</div>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:10px;font-weight:700;color:var(--muted);">ملاحظات · {{ w.since }}</div>
+                  <div style="font-size:12px;font-weight:600;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ w.note }}</div>
+                </div>
+                <div onClick="{{ w.assign }}" style="flex:none;height:36px;border-radius:10px;background:var(--brand);display:flex;align-items:center;gap:7px;padding:0 15px;cursor:pointer;color:#fff;font-size:12.5px;font-weight:800;white-space:nowrap;">
+                  <i class="ph-bold ph-user-switch" style="font-size:15px;"></i>إسناد لموظف
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+
+          <!-- ▸ الموظفون / الموارد -->
+          <sc-if value="{{ isRes }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-height:0;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:9px;">
+            <sc-for list="{{ resRows }}" as="r" hint-placeholder-count="5">
+              <div style="flex:none;border:1px solid var(--hairline);border-radius:12px;padding:12px;display:flex;align-items:center;gap:12px;">
+                <div style="width:44px;height:44px;flex:none;border-radius:50%;background:{{ r.tint }};border:2px solid {{ r.color }};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:{{ r.color }};">{{ r.initials }}</div>
+                <div style="width:230px;flex:none;min-width:0;">
+                  <div style="font-size:14px;font-weight:800;color:var(--txt);">{{ r.name }}</div>
+                  <div style="font-size:11.5px;font-weight:600;color:var(--muted);">{{ r.role }} · {{ r.shift }}</div>
+                </div>
+                <div style="width:120px;flex:none;">
+                  <div style="font-size:10px;font-weight:700;color:var(--muted);">حجوزات اليوم</div>
+                  <div style="font-size:16px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ r.count }}</div>
+                </div>
+                <div style="width:130px;flex:none;">
+                  <div style="font-size:10px;font-weight:700;color:var(--muted);">إيراد متوقع</div>
+                  <div style="font-size:16px;font-weight:800;color:{{ r.color }};font-variant-numeric:tabular-nums;">{{ r.revenue }}</div>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">
+                    <span>نسبة إشغال الوردية</span><span style="color:{{ r.color }};font-weight:800;">{{ r.load }}%</span>
+                  </div>
+                  <div style="height:8px;border-radius:99px;background:var(--track);overflow:hidden;">
+                    <div style="height:100%;width:{{ r.load }}%;border-radius:99px;background:{{ r.color }};"></div>
+                  </div>
+                </div>
+                <div onClick="{{ r.openNew }}" style="flex:none;height:36px;border-radius:10px;border:1.5px solid {{ r.color }};display:flex;align-items:center;gap:7px;padding:0 14px;cursor:pointer;color:{{ r.color }};font-size:12.5px;font-weight:800;white-space:nowrap;">
+                  <i class="ph-bold ph-calendar-plus" style="font-size:15px;"></i>حجز على {{ r.first }}
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+
+          <!-- ▸ الخدمات -->
+          <sc-if value="{{ isSvc }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-height:0;overflow:auto;padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-content:start;">
+            <sc-for list="{{ svcCards }}" as="s" hint-placeholder-count="8">
+              <div style="border:1px solid var(--hairline);border-top:3px solid {{ s.color }};border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:9px;">
+                <div style="display:flex;align-items:center;gap:9px;">
+                  <div style="width:34px;height:34px;flex:none;border-radius:10px;background:{{ s.tint }};display:flex;align-items:center;justify-content:center;">
+                    <i class="ph-bold {{ s.icon }}" style="font-size:17px;color:{{ s.color }};"></i>
+                  </div>
+                  <div style="min-width:0;flex:1;">
+                    <div style="font-size:13.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.name }}</div>
+                    <div style="font-size:10.5px;font-weight:700;color:var(--muted);">صنف خدمي · قابل للفاتورة</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:7px;">
+                  <div style="flex:1;background:var(--field);border-radius:9px;padding:7px 9px;">
+                    <div style="font-size:9.5px;font-weight:700;color:var(--muted);">المدة</div>
+                    <div style="font-size:13px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ s.dur }}</div>
+                  </div>
+                  <div style="flex:1;background:var(--field);border-radius:9px;padding:7px 9px;">
+                    <div style="font-size:9.5px;font-weight:700;color:var(--muted);">فاصل</div>
+                    <div style="font-size:13px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ s.buf }}</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:flex-end;justify-content:space-between;">
+                  <div>
+                    <div style="font-size:9.5px;font-weight:700;color:var(--muted);">السعر</div>
+                    <div style="font-size:18px;font-weight:800;color:{{ s.color }};font-variant-numeric:tabular-nums;">{{ s.price }}<span style="font-size:10px;font-weight:700;color:var(--muted);margin-inline-start:4px;">EGP</span></div>
+                  </div>
+                  <div style="text-align:end;">
+                    <div style="font-size:9.5px;font-weight:700;color:var(--muted);">حجوزات اليوم</div>
+                    <div style="font-size:15px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ s.count }}</div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+
+          <!-- ▸ العملاء -->
+          <sc-if value="{{ isCust }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-height:0;display:flex;flex-direction:column;">
+            <div style="flex:none;height:34px;background:var(--field);border-bottom:1px solid var(--hairline);display:flex;align-items:center;padding:0 14px;font-size:10.5px;font-weight:800;color:var(--muted);">
+              <div style="flex:1;min-width:0;">العميل</div>
+              <div style="width:150px;flex:none;">الهاتف</div>
+              <div style="width:120px;flex:none;text-align:center;">عدد الزيارات</div>
+              <div style="width:160px;flex:none;text-align:end;">إجمالي الإنفاق</div>
+              <div style="width:170px;flex:none;">الخدمة المفضلة</div>
+              <div style="width:130px;flex:none;">آخر زيارة</div>
+              <div style="width:120px;flex:none;text-align:center;">الفئة</div>
+            </div>
+            <div style="flex:1;min-height:0;overflow:auto;">
+              <sc-for list="{{ custRows }}" as="c" hint-placeholder-count="8">
+                <div style="height:52px;display:flex;align-items:center;padding:0 14px;border-bottom:1px solid var(--hairline);">
+                  <div style="flex:1;min-width:0;display:flex;align-items:center;gap:9px;">
+                    <div style="width:30px;height:30px;flex:none;border-radius:50%;background:{{ c.tint }};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:{{ c.color }};">{{ c.initials }}</div>
+                    <span style="font-size:13px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.name }}</span>
+                  </div>
+                  <div style="width:150px;flex:none;font-size:12px;font-weight:600;color:var(--txt2);direction:ltr;text-align:start;">{{ c.phone }}</div>
+                  <div style="width:120px;flex:none;text-align:center;font-size:13px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ c.visits }}</div>
+                  <div style="width:160px;flex:none;text-align:end;font-size:13px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ c.spend }}</div>
+                  <div style="width:170px;flex:none;font-size:12px;font-weight:700;color:var(--txt2);">{{ c.fav }}</div>
+                  <div style="width:130px;flex:none;font-size:12px;font-weight:600;color:var(--muted);">{{ c.last }}</div>
+                  <div style="width:120px;flex:none;display:flex;justify-content:center;">
+                    <span style="font-size:10.5px;font-weight:800;color:{{ c.color }};background:{{ c.tint }};border-radius:999px;padding:3px 10px;">{{ c.tier }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- ▸ التذكيرات -->
+          <sc-if value="{{ isRem }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-height:0;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;">
+            <sc-for list="{{ remRows }}" as="r" hint-placeholder-count="5">
+              <div style="flex:none;border:1px solid {{ r.bd }};border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:12px;background:{{ r.bg }};">
+                <div style="width:36px;height:36px;flex:none;border-radius:10px;background:{{ r.tint }};display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold {{ r.icon }}" style="font-size:17px;color:{{ r.color }};"></i>
+                </div>
+                <div style="width:240px;flex:none;min-width:0;">
+                  <div style="font-size:13px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.cust }}</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--muted);direction:ltr;text-align:start;">{{ r.phone }}</div>
+                </div>
+                <div style="width:170px;flex:none;">
+                  <div style="font-size:10px;font-weight:700;color:var(--muted);">موعد الحجز</div>
+                  <div style="font-size:12.5px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ r.at }}</div>
+                </div>
+                <div style="width:190px;flex:none;">
+                  <div style="font-size:10px;font-weight:700;color:var(--muted);">القناة والتوقيت</div>
+                  <div style="font-size:12.5px;font-weight:700;color:var(--txt);">{{ r.channel }} · {{ r.when }}</div>
+                </div>
+                <div style="flex:1;"></div>
+                <span style="flex:none;font-size:11px;font-weight:800;color:{{ r.color }};background:{{ r.tint }};border-radius:999px;padding:4px 11px;">{{ r.stLabel }}</span>
+                <div onClick="{{ r.send }}" style="flex:none;height:34px;border-radius:9px;background:{{ r.btnBg }};display:flex;align-items:center;gap:7px;padding:0 14px;cursor:pointer;color:#fff;font-size:12px;font-weight:800;white-space:nowrap;">
+                  <i class="ph-bold ph-paper-plane-tilt" style="font-size:14px;"></i>{{ r.btnLabel }}
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+
+          <!-- ▸ التقارير -->
+          <sc-if value="{{ isRep }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-height:0;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px;">
+            <div style="flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+              <sc-for list="{{ repCards }}" as="r" hint-placeholder-count="4">
+                <div style="background:var(--field);border-radius:12px;padding:12px;">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
+                    <i class="ph-bold {{ r.icon }}" style="font-size:15px;color:{{ r.color }};"></i>
+                    <span style="font-size:11.5px;font-weight:700;color:var(--muted);">{{ r.label }}</span>
+                  </div>
+                  <div style="font-size:21px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ r.value }}</div>
+                  <div style="font-size:10.5px;font-weight:600;color:var(--muted);">{{ r.sub }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex:none;background:var(--field);border-radius:12px;padding:14px;">
+              <div style="font-size:13px;font-weight:800;color:var(--txt);margin-bottom:12px;">توزيع حجوزات اليوم على الخدمات</div>
+              <div style="display:flex;flex-direction:column;gap:9px;">
+                <sc-for list="{{ repBars }}" as="b" hint-placeholder-count="6">
+                  <div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                      <span style="width:9px;height:9px;flex:none;border-radius:3px;background:{{ b.color }};"></span>
+                      <span style="font-size:12px;font-weight:700;color:var(--txt);">{{ b.name }}</span>
+                      <span style="margin-inline-start:auto;font-size:12px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ b.count }} حجز · {{ b.revenue }}</span>
+                    </div>
+                    <div style="height:7px;border-radius:99px;background:var(--track);overflow:hidden;">
+                      <div style="height:100%;width:{{ b.pct }}%;border-radius:99px;background:{{ b.color }};"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:none;display:flex;align-items:center;gap:9px;">
+              <div style="height:38px;border-radius:10px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:7px;padding:0 15px;cursor:pointer;color:var(--txt2);font-size:12.5px;font-weight:700;"><i class="ph-bold ph-file-pdf" style="font-size:15px;"></i>تصدير PDF</div>
+              <div style="height:38px;border-radius:10px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:7px;padding:0 15px;cursor:pointer;color:var(--txt2);font-size:12.5px;font-weight:700;"><i class="ph-bold ph-file-xls" style="font-size:15px;"></i>تصدير Excel</div>
+              <span style="font-size:11.5px;font-weight:600;color:var(--muted);">الفلاتر المشتركة (المدى · الفرع · المستودع) تُحقن في الاستعلام لا في العرض.</span>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- ▸ إعدادات الحجوزات -->
+          <sc-if value="{{ isSet }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-height:0;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;">
+            <sc-for list="{{ setRows }}" as="s" hint-placeholder-count="7">
+              <div style="flex:none;border:1px solid var(--hairline);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;">
+                <div style="width:34px;height:34px;flex:none;border-radius:10px;background:rgba(2,80,211,.10);display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold {{ s.icon }}" style="font-size:16px;color:var(--brand);"></i>
+                </div>
+                <div style="min-width:0;flex:1;">
+                  <div style="font-size:13px;font-weight:800;color:var(--txt);">{{ s.title }}</div>
+                  <div style="font-size:11.5px;font-weight:600;color:var(--muted);text-wrap:pretty;">{{ s.sub }}</div>
+                </div>
+                <sc-if value="{{ s.isToggle }}" hint-placeholder-val="{{ true }}">
+                  <div onClick="{{ s.go }}" style="width:46px;height:26px;flex:none;border-radius:99px;background:{{ s.knobBg }};position:relative;cursor:pointer;">
+                    <div style="position:absolute;top:3px;inset-inline-start:{{ s.knobX }}px;width:20px;height:20px;border-radius:50%;background:#fff;"></div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ s.isValue }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex:none;height:34px;border-radius:9px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:7px;padding:0 12px;font-size:12.5px;font-weight:800;color:var(--txt);">
+                    {{ s.value }}<i class="ph-bold ph-caret-down" style="font-size:12px;color:var(--muted);"></i>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+
+        </div>
+      </div>
+
+      <!-- الشريط السفلي: الوجهات السبع -->
+      <div style="flex:none;display:grid;grid-template-columns:repeat(7,1fr);gap:9px;">
+        <sc-for list="{{ dests }}" as="d" hint-placeholder-count="7">
+          <div onClick="{{ d.go }}" style="height:70px;border-radius:13px;background:{{ d.bg }};border:1.5px solid {{ d.bd }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;position:relative;">
+            <i class="ph-bold {{ d.icon }}" style="font-size:22px;color:{{ d.fg }};"></i>
+            <span style="font-size:12px;font-weight:800;color:{{ d.fg }};white-space:nowrap;">{{ d.label }}</span>
+            <sc-if value="{{ d.badge }}" hint-placeholder-val="{{ false }}">
+              <span style="position:absolute;top:9px;inset-inline-end:11px;min-width:20px;height:20px;border-radius:999px;background:#EF4444;display:flex;align-items:center;justify-content:center;padding:0 6px;font-size:11px;font-weight:800;color:#fff;">{{ d.badge }}</span>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+    </div>
+
+    <!-- ═══ سلة نقطة البيع ═══ -->
+    <div style="width:562px;flex:none;background:var(--card);border-inline-start:1px solid var(--hairline);display:flex;flex-direction:column;">
+
+      <div style="flex:none;height:60px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;">
+        <sc-for list="{{ cartHead }}" as="c" hint-placeholder-count="5">
+          <div style="flex:1;min-width:0;padding:0 11px;border-inline-end:1px solid var(--hairline);">
+            <div style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--muted);">
+              <i class="ph-bold {{ c.icon }}" style="font-size:12px;"></i>{{ c.label }}
+            </div>
+            <div style="font-size:12.5px;font-weight:800;color:{{ c.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="flex:none;height:56px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--hairline);">
+        <div style="flex:1;min-width:0;height:38px;border-radius:10px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 11px;">
+          <i class="ph-bold ph-magnifying-glass" style="flex:none;font-size:15px;color:var(--muted);"></i>
+          <span style="font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">امسح الباركود أو اكتب اسم الصنف للبحث</span>
+        </div>
+        <div style="flex:none;height:38px;border-radius:10px;border:1px solid var(--hairline);display:flex;align-items:center;gap:6px;padding:0 12px;cursor:pointer;color:var(--brand);font-size:12px;font-weight:800;">
+          <i class="ph-bold ph-sliders-horizontal" style="font-size:14px;"></i>عرض
+        </div>
+        <div onClick="{{ clearCart }}" style="flex:none;height:38px;border-radius:10px;border:1px solid rgba(239,68,68,.35);display:flex;align-items:center;gap:6px;padding:0 12px;cursor:pointer;color:#EF4444;font-size:12px;font-weight:800;">
+          <i class="ph-bold ph-trash" style="font-size:14px;"></i>مسح الكل
+        </div>
+      </div>
+
+      <div style="flex:none;height:38px;background:var(--hero);display:flex;align-items:center;padding:0 12px;font-size:11px;font-weight:800;color:rgba(255,255,255,.85);">
+        <div style="width:30px;flex:none;">م</div>
+        <div style="flex:1;min-width:0;">الصنف</div>
+        <div style="width:74px;flex:none;text-align:center;">الكمية</div>
+        <div style="width:92px;flex:none;text-align:end;">السعر</div>
+        <div style="width:74px;flex:none;text-align:center;">الخصم %</div>
+        <div style="width:104px;flex:none;text-align:end;">الإجمالي</div>
+      </div>
+
+      <div style="flex:1;min-height:0;overflow:auto;">
+        <sc-if value="{{ cartEmpty }}" hint-placeholder-val="{{ true }}">
+        <div style="height:100%;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;">
+          <i class="ph-bold ph-barcode" style="font-size:56px;color:var(--muted);opacity:.45;"></i>
+          <div style="font-size:13.5px;font-weight:700;color:var(--muted);">امسح باركود أو اكتب كود الصنف للبدء</div>
+          <div style="font-size:11.5px;font-weight:600;color:var(--muted);opacity:.8;">أو ابدأ الخدمة من جدول الحجوزات لتدخل الفاتورة تلقائيًا</div>
+        </div>
+        </sc-if>
+        <sc-for list="{{ cartLines }}" as="l" hint-placeholder-count="0">
+          <div style="height:52px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid var(--hairline);">
+            <div style="width:30px;flex:none;font-size:11.5px;font-weight:800;color:var(--muted);">{{ l.n }}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ l.name }}</div>
+              <div style="font-size:10px;font-weight:700;color:{{ l.metaFg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ l.meta }}</div>
+            </div>
+            <div style="width:74px;flex:none;text-align:center;font-size:12.5px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ l.qty }}</div>
+            <div style="width:92px;flex:none;text-align:end;font-size:12.5px;font-weight:700;color:var(--txt2);font-variant-numeric:tabular-nums;">{{ l.price }}</div>
+            <div style="width:74px;flex:none;text-align:center;font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;">{{ l.disc }}</div>
+            <div style="width:104px;flex:none;text-align:end;font-size:13px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ l.total }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="flex:none;border-top:1px solid var(--hairline);padding:12px;display:flex;flex-direction:column;gap:10px;">
+        <sc-if value="{{ hasDeposit }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:9px;background:rgba(139,92,246,.10);border:1px solid rgba(139,92,246,.28);border-radius:11px;padding:9px 12px;">
+          <i class="ph-bold ph-wallet" style="font-size:16px;color:#8B5CF6;"></i>
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:11.5px;font-weight:800;color:#8B5CF6;">عربون محصَّل مقدمًا — يُخصم من المستحق</div>
+            <div style="font-size:10.5px;font-weight:600;color:var(--muted);">الأثر المحاسبي: 2134 عملاء — دفعات مقدمة (التزام) ← إيراد عند الخدمة</div>
+          </div>
+          <div style="flex:none;font-size:14px;font-weight:800;color:#8B5CF6;font-variant-numeric:tabular-nums;">− {{ depositTotal }}</div>
+        </div>
+        </sc-if>
+
+        <div style="background:var(--field);border-radius:12px;padding:12px 14px;display:flex;align-items:center;">
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:12px;font-weight:700;color:var(--muted);">الإجمالي النهائي</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+              <i class="ph-bold ph-vault" style="font-size:13px;color:#22C55E;"></i>
+              <span style="font-size:11px;font-weight:800;color:#22C55E;">الصندوق: صندوق الكاشير</span>
+            </div>
+          </div>
+          <div style="flex:none;text-align:end;">
+            <div style="font-size:30px;font-weight:800;line-height:1;color:var(--txt);font-variant-numeric:tabular-nums;letter-spacing:-.6px;">{{ cartTotal }}</div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);">EGP · {{ cartCount }}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;">
+          <div style="flex:none;height:46px;border-radius:11px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:7px;padding:0 14px;cursor:pointer;color:var(--txt2);font-size:12.5px;font-weight:700;">
+            <i class="ph-bold ph-clock-counter-clockwise" style="font-size:15px;"></i>الفاتورة السابقة
+          </div>
+          <div style="flex:none;height:46px;border-radius:11px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:7px;padding:0 14px;cursor:pointer;color:var(--txt2);font-size:12.5px;font-weight:700;">
+            <i class="ph-bold ph-floppy-disk" style="font-size:15px;"></i>F2 حفظ
+          </div>
+          <div style="flex:1;min-width:0;height:46px;border-radius:11px;background:{{ payBg }};display:flex;align-items:center;justify-content:center;gap:8px;cursor:{{ payCursor }};color:#fff;font-size:14.5px;font-weight:800;opacity:{{ payOpacity }};">
+            <i class="ph-bold ph-credit-card" style="font-size:17px;"></i>F4 دفع
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+          <sc-for list="{{ cartActions }}" as="a" hint-placeholder-count="4">
+            <div style="height:56px;border-radius:11px;background:var(--field);border:1px solid var(--hairline);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;color:var(--txt2);">
+              <i class="ph-bold {{ a.icon }}" style="font-size:18px;"></i>
+              <span style="font-size:11.5px;font-weight:800;">{{ a.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ لوحة حجز جديد ═══ -->
+  <sc-if value="{{ panelNew }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;background:rgba(3,10,24,.5);display:flex;animation:fadeIn .15s ease;">
+    <div style="width:760px;flex:none;height:100%;background:var(--card);border-inline-end:1px solid var(--hairline);box-shadow:24px 0 60px rgba(2,12,32,.28);display:flex;flex-direction:column;animation:slideIn .22s ease;">
+
+      <div style="height:64px;flex:none;background:var(--hero);display:flex;align-items:center;gap:11px;padding:0 18px;">
+        <div style="width:36px;height:36px;flex:none;border-radius:10px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;">
+          <i class="ph-bold ph-calendar-plus" style="font-size:18px;color:#fff;"></i>
+        </div>
+        <div>
+          <div style="font-size:16px;font-weight:800;color:#fff;">حجز جديد</div>
+          <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.7);">موعد خدمة — يحجز وقت مورد، لا طاولة</div>
+        </div>
+        <div style="flex:1;"></div>
+        <div onClick="{{ closePanel }}" style="width:36px;height:36px;border-radius:9px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;">
+          <i class="ph-bold ph-x" style="font-size:16px;"></i>
+        </div>
+      </div>
+
+      <div style="flex:1;min-height:0;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:14px;">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">اسم العميل</div>
+            <input value="{{ nb.cust }}" onChange="{{ nb.setCust }}" placeholder="اسم العميل" style="width:100%;height:42px;border-radius:11px;background:var(--field);border:1px solid {{ nb.custBd }};outline:none;padding:0 12px;font-size:13px;font-weight:700;color:var(--txt);" />
+          </div>
+          <div>
+            <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">رقم الهاتف</div>
+            <input value="{{ nb.phone }}" onChange="{{ nb.setPhone }}" placeholder="07xxxxxxxx" style="width:100%;height:42px;border-radius:11px;background:var(--field);border:1px solid var(--hairline);outline:none;padding:0 12px;font-size:13px;font-weight:700;color:var(--txt);direction:ltr;text-align:start;" />
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:6px;">الخدمة</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;">
+            <sc-for list="{{ nb.services }}" as="s" hint-placeholder-count="8">
+              <div onClick="{{ s.go }}" style="height:56px;border-radius:11px;background:{{ s.bg }};border:1.5px solid {{ s.bd }};display:flex;align-items:center;gap:8px;padding:0 10px;cursor:pointer;">
+                <i class="ph-bold {{ s.icon }}" style="flex:none;font-size:16px;color:{{ s.fg }};"></i>
+                <div style="min-width:0;">
+                  <div style="font-size:11.5px;font-weight:800;color:{{ s.nameFg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.name }}</div>
+                  <div style="font-size:9.5px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;">{{ s.meta }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:6px;">الموظف / المورد</div>
+          <div style="display:flex;flex-wrap:wrap;gap:7px;">
+            <sc-for list="{{ nb.resources }}" as="r" hint-placeholder-count="6">
+              <div onClick="{{ r.go }}" style="height:48px;border-radius:11px;background:{{ r.bg }};border:1.5px solid {{ r.bd }};display:flex;align-items:center;gap:8px;padding:0 12px;cursor:pointer;">
+                <div style="width:30px;height:30px;flex:none;border-radius:50%;background:{{ r.tint }};border:1.5px solid {{ r.color }};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:{{ r.color }};">{{ r.initials }}</div>
+                <div style="min-width:0;">
+                  <div style="font-size:12px;font-weight:800;color:{{ r.nameFg }};white-space:nowrap;">{{ r.name }}</div>
+                  <div style="font-size:9.5px;font-weight:700;color:var(--muted);white-space:nowrap;">{{ r.role }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div>
+            <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">التاريخ</div>
+            <div style="height:42px;border-radius:11px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 12px;">
+              <i class="ph-bold ph-calendar-blank" style="flex:none;font-size:14px;color:var(--muted);"></i>
+              <span style="font-size:12.5px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ nb.date }}</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">المدة (دقيقة)</div>
+            <div style="height:42px;border-radius:11px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 12px;">
+              <i class="ph-bold ph-timer" style="flex:none;font-size:14px;color:var(--muted);"></i>
+              <span style="font-size:12.5px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ nb.dur }}</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">العربون (EGP)</div>
+            <input value="{{ nb.dep }}" onChange="{{ nb.setDep }}" style="width:100%;height:42px;border-radius:11px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.32);outline:none;padding:0 12px;font-size:13px;font-weight:800;color:#8B5CF6;font-variant-numeric:tabular-nums;" />
+          </div>
+        </div>
+
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:10.5px;font-weight:700;color:var(--muted);">وقت البداية</span>
+            <span style="font-size:10px;font-weight:700;color:var(--muted);">— المشغول والماضي معطَّلان</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;">
+            <sc-for list="{{ nb.slots }}" as="t" hint-placeholder-count="24">
+              <div onClick="{{ t.go }}" style="height:38px;border-radius:9px;background:{{ t.bg }};border:1.5px solid {{ t.bd }};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:{{ t.cursor }};opacity:{{ t.op }};">
+                <span style="font-size:11.5px;font-weight:800;color:{{ t.fg }};font-variant-numeric:tabular-nums;">{{ t.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:none;border-top:1px solid var(--hairline);padding:13px 18px;background:var(--field);">
+        <div style="display:flex;align-items:center;gap:11px;background:{{ nb.stBg }};border:1px solid {{ nb.stBd }};border-radius:12px;padding:11px 13px;margin-bottom:11px;">
+          <i class="ph-bold {{ nb.stIcon }}" style="font-size:20px;color:{{ nb.stFg }};"></i>
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:13px;font-weight:800;color:{{ nb.stFg }};">{{ nb.stLabel }}</div>
+            <div style="font-size:11px;font-weight:600;color:var(--muted);">{{ nb.stSub }}</div>
+          </div>
+          <div style="flex:none;text-align:end;">
+            <div style="font-size:10px;font-weight:700;color:var(--muted);">إجمالي الخدمة</div>
+            <div style="font-size:15px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;">{{ nb.price }}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;">
+          <div onClick="{{ closePanel }}" style="height:44px;border-radius:11px;border:1.5px solid var(--hairline);display:flex;align-items:center;padding:0 18px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;">إلغاء</div>
+          <div style="flex:1;"></div>
+          <div onClick="{{ nb.saveWait }}" style="height:44px;border-radius:11px;border:1.5px solid #F59E0B;display:flex;align-items:center;gap:7px;padding:0 18px;cursor:pointer;color:#F59E0B;font-size:13px;font-weight:800;">
+            <i class="ph-bold ph-clock-countdown" style="font-size:16px;"></i>إضافة لقائمة الانتظار
+          </div>
+          <div onClick="{{ nb.save }}" style="height:44px;border-radius:11px;background:{{ nb.okBg }};display:flex;align-items:center;gap:7px;padding:0 22px;cursor:{{ nb.okCursor }};color:#fff;font-size:13.5px;font-weight:800;opacity:{{ nb.okOpacity }};">
+            <i class="ph-bold ph-check-circle" style="font-size:17px;"></i>حفظ وتأكيد الحجز
+          </div>
+        </div>
+      </div>
+    </div>
+    <div onClick="{{ closePanel }}" style="flex:1;"></div>
+  </div>
+  </sc-if>
+
+  <!-- ═══ حوار ═══ -->
+  <sc-if value="{{ dialogOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;background:rgba(3,10,24,.55);display:flex;align-items:center;justify-content:center;animation:fadeIn .15s ease;">
+    <div onClick="{{ closeDialog }}" style="position:absolute;inset:0;"></div>
+    <div style="position:relative;width:540px;background:var(--card);border-radius:16px;box-shadow:0 30px 70px rgba(2,12,32,.4);overflow:hidden;">
+      <div style="padding:18px 20px;display:flex;align-items:flex-start;gap:12px;border-bottom:1px solid var(--hairline);">
+        <div style="width:44px;height:44px;flex:none;border-radius:12px;background:{{ dlg.tint }};display:flex;align-items:center;justify-content:center;">
+          <i class="ph-bold {{ dlg.icon }}" style="font-size:22px;color:{{ dlg.color }};"></i>
+        </div>
+        <div style="min-width:0;flex:1;">
+          <div style="font-size:16px;font-weight:800;color:var(--txt);">{{ dlg.title }}</div>
+          <div style="font-size:12px;font-weight:600;color:var(--muted);line-height:1.6;text-wrap:pretty;">{{ dlg.body }}</div>
+        </div>
+      </div>
+      <div style="padding:14px 20px;display:flex;flex-direction:column;gap:7px;">
+        <sc-for list="{{ dlg.rows }}" as="r" hint-placeholder-count="3">
+          <div style="display:flex;align-items:center;gap:10px;background:var(--field);border-radius:10px;padding:9px 12px;">
+            <span style="flex:none;font-size:11px;font-weight:700;color:var(--muted);width:110px;">{{ r.label }}</span>
+            <span style="font-size:12.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.value }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="padding:14px 20px 18px;display:flex;align-items:center;gap:9px;">
+        <div style="flex:1;"></div>
+        <div onClick="{{ closeDialog }}" style="height:42px;border-radius:11px;border:1.5px solid var(--hairline);display:flex;align-items:center;padding:0 20px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;">إلغاء</div>
+        <div onClick="{{ dlg.confirm }}" style="height:42px;border-radius:11px;background:{{ dlg.color }};display:flex;align-items:center;gap:7px;padding:0 22px;cursor:pointer;color:#fff;font-size:13.5px;font-weight:800;">
+          <i class="ph-bold {{ dlg.okIcon }}" style="font-size:16px;"></i>{{ dlg.ok }}
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;board&quot;,&quot;wait&quot;,&quot;cust&quot;,&quot;res&quot;,&quot;svc&quot;,&quot;rep&quot;,&quot;rem&quot;,&quot;set&quot;],&quot;default&quot;:&quot;board&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;statusStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;pills&quot;,&quot;dots&quot;,&quot;bars&quot;],&quot;default&quot;:&quot;pills&quot;,&quot;section&quot;:&quot;اختلافات التصميم&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;kpiStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;cards&quot;,&quot;strip&quot;],&quot;default&quot;:&quot;cards&quot;,&quot;section&quot;:&quot;اختلافات التصميم&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;comfy&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;comfy&quot;,&quot;section&quot;:&quot;اختلافات التصميم&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const NOW = 1013; // 16:53
+const fmt = (n) => (Math.round((n || 0) * 100) / 100).toLocaleString('en-US', {minimumFractionDigits:3, maximumFractionDigits:3});
+const fmt0 = (n) => Math.round(n || 0).toLocaleString('en-US');
+const alpha = (hex, a) => { const h = hex.replace('#',''); return 'rgba(' + parseInt(h.slice(0,2),16) + ',' + parseInt(h.slice(2,4),16) + ',' + parseInt(h.slice(4,6),16) + ',' + a + ')'; };
+const t12 = (min) => { const h = Math.floor(min / 60), m = min % 60; const ap = h >= 12 ? 'م' : 'ص'; const hh = h % 12 === 0 ? 12 : h % 12; return String(hh).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ' ' + ap; };
+const initialsOf = (name) => name.split(' ').slice(0, 2).map(w => w[0]).join('.');
+
+const ST = {
+  confirmed:{label:'مؤكد', icon:'ph-check-circle', fg:'#22C55E', pct:40},
+  pending:{label:'بانتظار التأكيد', icon:'ph-clock', fg:'#F59E0B', pct:20},
+  in_service:{label:'قيد الخدمة', icon:'ph-hourglass-high', fg:'#8B5CF6', pct:75},
+  seated:{label:'تم الحضور', icon:'ph-user-check', fg:'#0250D3', pct:100},
+  cancelled:{label:'ملغي', icon:'ph-x-circle', fg:'#EF4444', pct:0},
+  no_show:{label:'لم يحضر', icon:'ph-prohibit', fg:'#94A3B8', pct:0},
+};
+
+const DESTS = [
+  {k:'wait', label:'قائمة الانتظار', icon:'ph-clock-countdown'},
+  {k:'cust', label:'العملاء', icon:'ph-users'},
+  {k:'res', label:'الموظفون / الموارد', icon:'ph-users-three'},
+  {k:'svc', label:'الخدمات', icon:'ph-scissors'},
+  {k:'rep', label:'التقارير', icon:'ph-chart-bar'},
+  {k:'rem', label:'التذكيرات', icon:'ph-bell'},
+  {k:'set', label:'إعدادات الحجوزات', icon:'ph-gear'},
+];
+
+const HEADS = {
+  board:{icon:'ph-calendar-dots', title:'نظام الحجوزات', sub:'مواعيد الخدمة — الوردية مفتوحة · صندوق الكاشير'},
+  wait:{icon:'ph-clock-countdown', title:'قائمة الانتظار', sub:'حجوزات بلا مورد مُسند — تنتظر أول وقت متاح'},
+  cust:{icon:'ph-users', title:'عملاء الحجوزات', sub:'سجل الزيارات والإنفاق والخدمة المفضلة'},
+  res:{icon:'ph-users-three', title:'الموظفون / الموارد', sub:'من يُحجَز وقتُه — موظف أو جهاز'},
+  svc:{icon:'ph-scissors', title:'الخدمات', sub:'أصناف خدمية (productType=service) — قابلة للفاتورة'},
+  rep:{icon:'ph-chart-bar', title:'تقارير الحجوزات', sub:'الفلاتر المشتركة · المدى والفرع يُحقنان في الاستعلام'},
+  rem:{icon:'ph-bell', title:'التذكيرات', sub:'تنبيه العميل قبل الموعد — واتساب أو SMS'},
+  set:{icon:'ph-gear', title:'إعدادات الحجوزات', sub:'قواعد التعارض والعربون والتذكيرات'},
+};
+
+class Component extends DCLogic {
+  state = {theme:null, screen:null, page:0, day:1, view:'day', q:'', panel:null, dialog:null, dlgIdx:null,
+    over:{}, cart:[], nb:null};
+
+  componentDidMount() {
+    if (!window.PICPOS_BK) {
+      this._h = () => this.forceUpdate();
+      window.addEventListener('picpos-bk-ready', this._h);
+      this._t = setInterval(() => { if (window.PICPOS_BK) { clearInterval(this._t); this._t = null; this.forceUpdate(); } }, 100);
+    }
+  }
+  componentWillUnmount() { if (this._t) clearInterval(this._t); if (this._h) window.removeEventListener('picpos-bk-ready', this._h); }
+
+  get D() { return window.PICPOS_BK || {services:[], resources:[], today:[], upcoming:[], waitlist:[], reminders:[], customers:[]}; }
+  get theme() { return this.state.theme ?? this.props.theme ?? 'light'; }
+  get dark() { return this.theme === 'dark'; }
+  get screen() { return this.state.screen ?? this.props.screen ?? 'board'; }
+  get statusStyle() { return this.props.statusStyle ?? 'pills'; }
+  get kpiStyle() { return this.props.kpiStyle ?? 'cards'; }
+  get density() { return this.props.density ?? 'comfy'; }
+  set(p) { this.setState(p); }
+
+  svc(id) { return this.D.services.find(s => s.id === id) || {name:'—', dur:0, buf:0, price:0, color:'#64748B', icon:'ph-dot'}; }
+  res(id) { return this.D.resources.find(r => r.id === id) || {name:'قائمة الانتظار', role:'بدون مورد', initials:'ق.إ', color:'#F59E0B'}; }
+
+  get bookings() {
+    const over = this.state.over;
+    return this.D.today.map((b, i) => ({...b, i, status: over[i] || b.status}));
+  }
+
+  get nb() {
+    return this.state.nb || {cust:'', phone:'', sid:1, rid:1, min:1080, dep:0};
+  }
+  setNb(p) { this.set({nb: {...this.nb, ...p}}); }
+
+  renderVals() {
+    return {...this.base(), ...this.kpiVals(), ...this.boardVals(), ...this.subVals(), ...this.cartVals(), ...this.panelVals(), ...this.dialogVals()};
+  }
+
+  base() {
+    const s = this.screen, dark = this.dark;
+    const draft = this.bookings.filter(b => b.status === 'pending').length;
+    const posTabs = [
+      {k:'held', label:'فواتير معلقة (0)', icon:'ph-clock-afternoon', on:false},
+      {k:'pos', label:'نقطة البيع', icon:'ph-cash-register', on:false},
+      {k:'bk', label:'الحجوزات', icon:'ph-calendar-dots', on:true, badge: String(draft)},
+      {k:'sys', label:'مدير النظام', icon:'ph-user-gear', on:false},
+    ].map(p => ({...p, go: () => {},
+      bg: p.on ? 'rgba(74,128,232,.22)' : 'rgba(255,255,255,.08)',
+      bd: p.on ? '2px solid #4A80E8' : '1px solid rgba(255,255,255,.10)',
+      fg: '#fff', fw: p.on ? 800 : 600}));
+    const dests = DESTS.map(d => { const on = d.k === s;
+      return {...d, go: () => this.set({screen: on ? 'board' : d.k, q:''}),
+        bg: on ? 'var(--brand)' : 'var(--card)', bd: on ? 'var(--brand)' : 'var(--hairline)',
+        fg: on ? '#fff' : 'var(--txt2)',
+        badge: d.k === 'rem' ? String(this.D.reminders.filter(r => r.state === 'due').length) : null}; });
+    const views = [
+      {k:'day', label:'اليوم', icon:'ph-calendar-blank'},
+      {k:'month', label:'الشهر', icon:'ph-calendar'},
+      {k:'cal', label:'تقويم', icon:'ph-calendar-dots'},
+    ].map(v => { const on = this.state.view === v.k; return {...v, go: () => this.set({view:v.k}),
+      bg: on ? 'var(--brand)' : 'transparent', bd: on ? 'var(--brand)' : 'var(--hairline)',
+      fg: on ? '#fff' : 'var(--txt2)', fw: on ? 800 : 600}; });
+    return {theme:this.theme, themeIcon: dark ? 'ph-sun' : 'ph-moon', clock:'16:53:43',
+      toggleTheme: () => this.set({theme: dark ? 'light' : 'dark'}),
+      posTabs, dests, views, head: HEADS[s] || HEADS.board,
+      notBoard: s !== 'board', goBoard: () => this.set({screen:'board'}),
+      q: this.state.q, setQ: (e) => this.set({q:e.target.value, page:0}),
+      openNew: () => this.set({panel:'new'}),
+      isBoard: s === 'board', isWait: s === 'wait', isCust: s === 'cust', isRes: s === 'res',
+      isSvc: s === 'svc', isRep: s === 'rep', isRem: s === 'rem', isSet: s === 'set',
+      isCards: this.kpiStyle === 'cards', isStrip: this.kpiStyle === 'strip',
+      isPills: this.statusStyle === 'pills', isDots: this.statusStyle === 'dots', isBars: this.statusStyle === 'bars',
+      rowH: this.density === 'compact' ? 50 : 60};
+  }
+
+  kpiVals() {
+    const dark = this.dark, bs = this.bookings;
+    const live = bs.filter(b => b.status !== 'cancelled');
+    const dep = bs.filter(b => b.depPaid).reduce((a, b) => a + b.dep, 0);
+    const expected = live.filter(b => b.status !== 'no_show').reduce((a, b) => a + this.svc(b.service).price - (b.depPaid ? b.dep : 0), 0);
+    const mk = (label, icon, color, value, unit) => ({label, icon, color, value, unit, tint: alpha(color, dark ? .18 : .10)});
+    return {kpis: [
+      mk('حجوزات اليوم', 'ph-calendar-check', '#22C55E', fmt0(bs.length), 'حجز'),
+      mk('قيد الانتظار', 'ph-hourglass', '#F59E0B', fmt0(bs.filter(b => b.status === 'pending').length + this.D.waitlist.length), 'طلب'),
+      mk('تم الحضور', 'ph-user-check', '#0250D3', fmt0(bs.filter(b => b.status === 'seated' || b.status === 'in_service').length), 'عميل'),
+      mk('لم يحضر', 'ph-prohibit', '#EF4444', fmt0(bs.filter(b => b.status === 'no_show').length), 'حجز'),
+      mk('إجمالي العربون', 'ph-wallet', '#8B5CF6', fmt0(dep), 'EGP'),
+      mk('المتوقع تحصيله', 'ph-money', '#14B8A6', fmt0(expected), 'EGP'),
+    ]};
+  }
+
+  boardVals() {
+    const dark = this.dark, q = this.state.q.trim();
+    const isToday = this.state.day === 1;
+    const all = isToday ? this.bookings : [];
+    const list = all.filter(b => !q || b.cust.includes(q) || b.phone.includes(q) || this.svc(b.service).name.includes(q) || this.res(b.res).name.includes(q));
+    const per = 6, page = Math.min(this.state.page, Math.max(Math.ceil(list.length / per) - 1, 0));
+    const slice = list.slice(page * per, page * per + per);
+
+    const rows = slice.map((b, idx) => {
+      const s = this.svc(b.service), r = this.res(b.res), st = ST[b.status];
+      const canStart = b.status === 'confirmed' || b.status === 'pending';
+      const canFinish = b.status === 'in_service';
+      return {
+        time: b.time, cust: b.cust, phone: b.phone,
+        service: s.name, svcIcon: s.icon, svcColor: s.color, dur: s.dur + ' د · فاصل ' + s.buf + ' د',
+        res: r.name, resRole: r.role, resInit: r.initials, resColor: r.color, resTint: alpha(r.color, dark ? .2 : .12),
+        stLabel: st.label, stIcon: st.icon, stFg: st.fg, stBg: alpha(st.fg, dark ? .18 : .10), stBd: alpha(st.fg, .3), stPct: st.pct,
+        dep: b.dep ? fmt(b.dep) : '0.000', depFg: b.dep ? '#8B5CF6' : 'var(--muted)',
+        depLabel: b.dep ? (b.depPaid ? 'محصَّل' : 'غير محصَّل') : 'بلا عربون',
+        bg: (page * per + idx) % 2 ? (dark ? 'rgba(255,255,255,.02)' : '#FBFCFF') : 'transparent',
+        showAction: canStart || canFinish,
+        actLabel: canFinish ? 'إنهاء وفاتورة' : 'بدء الخدمة',
+        actIcon: canFinish ? 'ph-receipt' : 'ph-play',
+        actBg: canFinish ? '#22C55E' : 'var(--brand)',
+        action: canFinish ? () => this.finish(b) : () => this.set({over: {...this.state.over, [b.i]:'in_service'}}),
+        edit: () => this.set({panel:'new', nb:{cust:b.cust, phone:b.phone, sid:b.service, rid:b.res, min:b.min, dep:b.dep}}),
+        cancel: () => this.set({dialog:'cancel', dlgIdx:b.i}),
+      };
+    });
+
+    const pageCount = Math.max(Math.ceil(list.length / per), 1);
+    const pages = [];
+    pages.push({label:'»', go: () => this.set({page:0})});
+    for (let i = 0; i < pageCount; i++) pages.push({label: String(i + 1), i, go: () => this.set({page:i})});
+    pages.push({label:'«', go: () => this.set({page: pageCount - 1})});
+    const pageBtns = pages.map(p => ({...p,
+      bg: p.i === page ? 'var(--brand)' : 'transparent', bd: p.i === page ? 'var(--brand)' : 'var(--hairline)',
+      fg: p.i === page ? '#fff' : 'var(--txt2)'}));
+
+    const DAYN = ['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'];
+    const calDays = [];
+    for (let d = 1; d <= 31; d++) {
+      const on = d === this.state.day;
+      calDays.push({label: String(d), go: () => this.set({day:d, page:0}),
+        bg: on ? 'var(--brand)' : 'transparent', fg: on ? '#fff' : 'var(--txt2)', fw: on ? 800 : 600,
+        dot: d === 1 || d === 3 || d === 7 || d === 12 || d === 18,
+        dotBg: on ? '#fff' : '#4A80E8'});
+    }
+    const upcoming = this.D.upcoming.map(u => { const s = this.svc(u.service);
+      return {cust:u.cust, time:u.time, service:s.name, res:this.res(u.res).name, color:s.color}; });
+
+    return {rows, noRows: rows.length === 0, pages: pageBtns,
+      pageInfo: list.length ? ('عرض ' + (page * per + 1) + ' - ' + Math.min((page + 1) * per, list.length) + ' من ' + list.length + ' حجز') : 'لا نتائج',
+      dayLabel: (isToday ? 'اليوم · ' : '') + DAYN[(this.state.day - 1) % 7] + ' ' + String(this.state.day).padStart(2,'0') + '/08/2026',
+      prevDay: () => this.set({day: Math.max(this.state.day - 1, 1), page:0}),
+      nextDay: () => this.set({day: Math.min(this.state.day + 1, 31), page:0}),
+      dayNames: ['سبت','أحد','اثنين','ثلاثاء','أربعاء','خميس','جمعة'].map(d => ({label:d})),
+      calDays, upcoming, upcomingCount: upcoming.length + ' حجز'};
+  }
+
+  finish(b) {
+    const s = this.svc(b.service);
+    const line = {name: s.name + ' — ' + b.cust, qty:1, price:s.price, disc:0, dep: b.depPaid ? b.dep : 0, res: this.res(b.res).name};
+    this.setState(st => ({cart: [...st.cart, line], over: {...st.over, [b.i]:'seated'}}));
+  }
+
+  subVals() {
+    const dark = this.dark, bs = this.bookings;
+    const waitRows = this.D.waitlist.map(w => { const s = this.svc(w.service);
+      return {cust:w.cust, phone:w.phone, service:s.name, want:w.want, since:w.since, note:w.note,
+        icon:s.icon, color:s.color, tint: alpha(s.color, dark ? .18 : .10),
+        assign: () => this.set({panel:'new', nb:{cust:w.cust, phone:w.phone, sid:w.service, rid:1, min:1080, dep:0}})}; });
+
+    const resRows = this.D.resources.map(r => {
+      const mine = bs.filter(b => b.res === r.id && b.status !== 'cancelled');
+      const revenue = mine.reduce((a, b) => a + this.svc(b.service).price, 0);
+      const minutes = mine.reduce((a, b) => a + this.svc(b.service).dur + this.svc(b.service).buf, 0);
+      return {name:r.name, role:r.role, shift:r.shift, initials:r.initials, color:r.color, tint: alpha(r.color, dark ? .2 : .12),
+        count: fmt0(mine.length), revenue: fmt0(revenue), load: Math.min(Math.round(minutes / 480 * 100), 100),
+        first: r.name.split(' ')[0],
+        openNew: () => this.set({panel:'new', nb:{...this.nb, rid:r.id}})};
+    });
+
+    const svcCards = this.D.services.map(s => ({name:s.name, icon:s.icon, color:s.color, tint: alpha(s.color, dark ? .18 : .10),
+      dur: s.dur + ' د', buf: s.buf + ' د', price: fmt0(s.price),
+      count: fmt0(bs.filter(b => b.service === s.id && b.status !== 'cancelled').length)}));
+
+    const PAL = {'بلاتيني':'#8B5CF6','ذهبي':'#F59E0B','فضي':'#64748B','برونزي':'#14B8A6'};
+    const custRows = this.D.customers.map(c => ({name:c.name, phone:c.phone, visits:c.visits, spend: fmt0(c.spend),
+      fav:c.fav, last:c.last, tier:c.tier, initials: initialsOf(c.name),
+      color: PAL[c.tier] || '#0250D3', tint: alpha(PAL[c.tier] || '#0250D3', dark ? .2 : .12)}));
+
+    const remRows = this.D.reminders.map(r => { const due = r.state === 'due';
+      const color = due ? '#F59E0B' : '#22C55E';
+      return {cust:r.cust, phone:r.phone, at:r.at, channel:r.channel, when:r.when,
+        icon: r.channel === 'SMS' ? 'ph-chat-text' : 'ph-whatsapp-logo',
+        color, tint: alpha(color, dark ? .18 : .10),
+        bg: due ? alpha('#F59E0B', dark ? .07 : .04) : 'var(--card)',
+        bd: due ? alpha('#F59E0B', .3) : 'var(--hairline)',
+        stLabel: due ? 'مستحق الإرسال' : 'تم الإرسال',
+        btnLabel: due ? 'إرسال الآن' : 'إعادة الإرسال',
+        btnBg: due ? '#22C55E' : 'var(--muted)',
+        send: () => {}}; });
+
+    const live = bs.filter(b => b.status !== 'cancelled');
+    const dep = bs.filter(b => b.depPaid).reduce((a, b) => a + b.dep, 0);
+    const revenue = live.filter(b => b.status !== 'no_show').reduce((a, b) => a + this.svc(b.service).price, 0);
+    const noShowRate = Math.round(bs.filter(b => b.status === 'no_show').length / Math.max(bs.length, 1) * 100);
+    const repCards = [
+      {label:'إيراد الخدمات المتوقع', icon:'ph-money', color:'#22C55E', value: fmt0(revenue), sub:'قبل الضريبة · حجوزات غير ملغاة'},
+      {label:'عربون محصَّل', icon:'ph-wallet', color:'#8B5CF6', value: fmt0(dep), sub:'التزام حتى تقديم الخدمة'},
+      {label:'نسبة عدم الحضور', icon:'ph-prohibit', color:'#EF4444', value: noShowRate + '%', sub: bs.filter(b => b.status === 'no_show').length + ' من ' + bs.length + ' حجز'},
+      {label:'متوسط قيمة الحجز', icon:'ph-chart-line-up', color:'#0250D3', value: fmt0(revenue / Math.max(live.length, 1)), sub:'إجمالي الإيراد ÷ الحجوزات'},
+    ];
+    const maxC = Math.max(...this.D.services.map(s => bs.filter(b => b.service === s.id).length), 1);
+    const repBars = this.D.services.map(s => { const c = bs.filter(b => b.service === s.id && b.status !== 'cancelled');
+      return {name:s.name, color:s.color, count: c.length, revenue: fmt0(c.length * s.price),
+        pct: Math.round(c.length / maxC * 100)}; }).filter(b => b.count > 0);
+
+    const T = (title, sub, on) => ({title, sub, isToggle:true, isValue:false, on,
+      knobBg: on ? '#0250D3' : (dark ? '#2A3B55' : '#C7D2E1'), knobX: on ? 23 : 3, go: () => {}});
+    const V = (title, sub, value) => ({title, sub, isToggle:false, isValue:true, value});
+    const setRows = [
+      {...T('منع التعارض على المورد', 'يرفض أي حجز يتداخل مع حجز قائم لنفس الموظف — القرار في الـDAO لا في الشاشة', true), icon:'ph-shield-check'},
+      {...T('منع الحجز في الماضي', 'الحجز حاضر أو مستقبل — يُقاس على وقت مُمرَّر صراحة', true), icon:'ph-clock-clockwise'},
+      {...V('الفاصل الافتراضي بين الحجوزات', 'يُضاف بعد مدة الخدمة قبل حساب التداخل', '10 دقائق'), icon:'ph-timer'},
+      {...V('نسبة العربون المقترحة', 'تُحسب من سعر الخدمة عند فتح لوحة الحجز', '25% من السعر'), icon:'ph-wallet'},
+      {...T('العربون التزام لا إيراد', 'يُرحَّل إلى 2134 عملاء — دفعات مقدمة، ويُعترف بالإيراد عند تقديم الخدمة', true), icon:'ph-scales'},
+      {...T('تذكير تلقائي قبل الموعد', 'واتساب أو SMS حسب إعداد القناة لكل عميل', true), icon:'ph-bell-ringing'},
+      {...V('مهلة إلغاء بلا رسوم', 'بعدها يُحتسب العربون كرسوم إلغاء', 'قبل 4 ساعات'), icon:'ph-hand-palm'},
+      {...T('السماح بقائمة انتظار بلا مورد', 'حجز بلا موظف مُسند لا يشارك في فحص التعارض', true), icon:'ph-clock-countdown'},
+    ];
+
+    return {waitRows, resRows, svcCards, custRows, remRows, repCards, repBars, setRows};
+  }
+
+  cartVals() {
+    const lines = this.state.cart;
+    const sub = lines.reduce((a, l) => a + l.qty * l.price * (1 - l.disc / 100), 0);
+    const dep = lines.reduce((a, l) => a + (l.dep || 0), 0);
+    const net = Math.max(sub - dep, 0);
+    return {
+      cartHead: [
+        {label:'التاريخ', icon:'ph-calendar-blank', value:'2026/08/01', fg:'var(--txt)'},
+        {label:'أمر فاتورة #', icon:'ph-hash', value:'SINV-22', fg:'var(--brand)'},
+        {label:'عميل', icon:'ph-user', value: lines.length ? lines[lines.length - 1].name.split('—')[1] || 'عميل نقدي' : 'عميل نقدي', fg:'var(--txt)'},
+        {label:'رصيد العميل', icon:'ph-wallet', value:'0.000', fg:'#22C55E'},
+        {label:'المستودع', icon:'ph-warehouse', value:'المخزن الرئيسي', fg:'var(--txt)'},
+      ],
+      cartLines: lines.map((l, i) => ({n: i + 1, name: l.name, meta: 'خدمة · ' + l.res + (l.dep ? ' · عربون ' + fmt0(l.dep) : ''),
+        metaFg: l.dep ? '#8B5CF6' : 'var(--muted)',
+        qty: String(l.qty), price: fmt(l.price), disc: l.disc ? l.disc + '%' : '—', total: fmt(l.qty * l.price)})),
+      cartEmpty: lines.length === 0,
+      cartTotal: fmt(net), cartCount: lines.length ? lines.length + ' صنف' : 'لا أصناف',
+      hasDeposit: dep > 0, depositTotal: fmt(dep),
+      payBg: lines.length ? '#22C55E' : 'var(--muted)', payOpacity: lines.length ? 1 : .5,
+      payCursor: lines.length ? 'pointer' : 'not-allowed',
+      clearCart: () => this.set({cart:[]}),
+      cartActions: [
+        {label:'فواتير', icon:'ph-files'},
+        {label:'تعليق', icon:'ph-pause-circle'},
+        {label:'معلقة', icon:'ph-stack'},
+        {label:'رجوع', icon:'ph-arrow-u-up-left'},
+      ]};
+  }
+
+  panelVals() {
+    const dark = this.dark, nb = this.nb;
+    const s = this.svc(nb.sid), r = nb.rid ? this.res(nb.rid) : null;
+    const end = nb.min + s.dur + s.buf;
+    const clash = this.bookings.filter(b => b.res === nb.rid && b.status !== 'cancelled' && b.status !== 'no_show' && (() => {
+      const bs2 = this.svc(b.service); const bEnd = b.min + bs2.dur + bs2.buf;
+      return nb.min < bEnd && b.min < end;
+    })());
+    const past = nb.min <= NOW;
+    const noRes = !nb.rid;
+    const ok = !past && (noRes || clash.length === 0) && !!nb.cust.trim();
+
+    const slots = [];
+    for (let m = 600; m <= 1290; m += 30) {
+      const busy = this.bookings.some(b => b.res === nb.rid && b.status !== 'cancelled' && b.status !== 'no_show' && (() => {
+        const bs2 = this.svc(b.service); return m < b.min + bs2.dur + bs2.buf && b.min < m + s.dur + s.buf; })());
+      const isPast = m <= NOW, on = m === nb.min, off = busy || isPast;
+      slots.push({label: t12(m), go: off ? () => {} : () => this.setNb({min:m}),
+        bg: on ? 'var(--brand)' : off ? (dark ? '#1A2537' : '#EEF2F8') : 'var(--field)',
+        bd: on ? 'var(--brand)' : off ? 'transparent' : 'var(--hairline)',
+        fg: on ? '#fff' : off ? 'var(--muted)' : 'var(--txt)',
+        op: off ? .45 : 1, cursor: off ? 'not-allowed' : 'pointer'});
+    }
+
+    const st = past ? {label:'وقت ماضٍ — لا حجز في الماضي', sub:'اختر وقتًا لاحقًا للساعة ' + t12(NOW), fg:'#EF4444', icon:'ph-clock-counter-clockwise'}
+      : noRes ? {label:'قائمة انتظار — بلا مورد مُسند', sub:'لا يشارك في فحص التعارض حتى يُسنَد لموظف', fg:'#F59E0B', icon:'ph-clock-countdown'}
+      : clash.length ? {label:'تعارض مع ' + clash.length + ' حجز على ' + r.name, sub: clash.map(c => c.time + ' ' + this.svc(c.service).name).join(' · '), fg:'#EF4444', icon:'ph-warning-circle'}
+      : !nb.cust.trim() ? {label:'اكتب اسم العميل لإتمام الحجز', sub: r.name + ' متاح ' + t12(nb.min) + ' — ' + t12(end - s.buf), fg:'#F59E0B', icon:'ph-user-focus'}
+      : {label:'الوقت متاح', sub: r.name + ' · ' + t12(nb.min) + ' — ' + t12(end - s.buf) + ' (فاصل ' + s.buf + ' د)', fg:'#22C55E', icon:'ph-check-circle'};
+
+    return {
+      panelNew: this.state.panel === 'new',
+      closePanel: () => this.set({panel:null}),
+      nb: {
+        cust: nb.cust, phone: nb.phone, date:'السبت 01/08/2026', dur: String(s.dur) + ' + فاصل ' + s.buf,
+        dep: String(nb.dep || 0), price: fmt0(s.price) + ' EGP',
+        setCust: (e) => this.setNb({cust: e.target.value}),
+        setPhone: (e) => this.setNb({phone: e.target.value}),
+        setDep: (e) => this.setNb({dep: parseFloat(String(e.target.value).replace(/[^\d.]/g,'')) || 0}),
+        custBd: nb.cust.trim() ? 'var(--hairline)' : 'rgba(245,158,11,.5)',
+        services: this.D.services.map(x => { const on = x.id === nb.sid;
+          return {name:x.name, icon:x.icon, meta: x.dur + ' د · ' + fmt0(x.price), go: () => this.setNb({sid:x.id}),
+            bg: on ? alpha(x.color, dark ? .2 : .10) : 'var(--field)', bd: on ? x.color : 'var(--hairline)',
+            fg: x.color, nameFg: on ? x.color : 'var(--txt)'}; }),
+        resources: [...this.D.resources.map(x => { const on = x.id === nb.rid;
+          return {name:x.name, role:x.role, initials:x.initials, color:x.color, tint: alpha(x.color, dark ? .2 : .12),
+            go: () => this.setNb({rid:x.id}),
+            bg: on ? alpha(x.color, dark ? .18 : .09) : 'var(--field)', bd: on ? x.color : 'var(--hairline)',
+            nameFg: on ? x.color : 'var(--txt)'}; }),
+          (() => { const on = !nb.rid; return {name:'قائمة الانتظار', role:'بدون مورد', initials:'ق.إ', color:'#F59E0B',
+            tint: alpha('#F59E0B', dark ? .2 : .12), go: () => this.setNb({rid:0}),
+            bg: on ? alpha('#F59E0B', dark ? .18 : .09) : 'var(--field)', bd: on ? '#F59E0B' : 'var(--hairline)',
+            nameFg: on ? '#F59E0B' : 'var(--txt)'}; })()],
+        slots,
+        stLabel: st.label, stSub: st.sub, stFg: st.fg, stIcon: st.icon,
+        stBg: alpha(st.fg, dark ? .14 : .08), stBd: alpha(st.fg, .3),
+        okBg: ok ? '#22C55E' : 'var(--muted)', okOpacity: ok ? 1 : .55, okCursor: ok ? 'pointer' : 'not-allowed',
+        save: () => { if (ok) this.set({dialog:'save'}); },
+        saveWait: () => this.set({dialog:'wait'}),
+      }};
+  }
+
+  dialogVals() {
+    const dark = this.dark, d = this.state.dialog, nb = this.nb;
+    const b = this.state.dlgIdx !== null ? this.bookings[this.state.dlgIdx] : null;
+    const CFG = {
+      cancel: {title:'إلغاء الحجز', color:'#EF4444', icon:'ph-x-circle', ok:'تأكيد الإلغاء', okIcon:'ph-check',
+        body:'الإلغاء قبل المهلة المحددة بلا رسوم؛ بعدها يُحتسب العربون رسوم إلغاء ويُعترف به إيرادًا.',
+        rows: b ? [{label:'العميل', value:b.cust}, {label:'الموعد', value:b.time + ' · ' + this.svc(b.service).name}, {label:'العربون', value: fmt(b.dep) + ' EGP'}] : [],
+        confirm: () => this.set({over: {...this.state.over, [this.state.dlgIdx]:'cancelled'}, dialog:null})},
+      save: {title:'تأكيد الحجز', color:'#22C55E', icon:'ph-check-circle', ok:'حفظ وتأكيد', okIcon:'ph-check',
+        body:'سيُسجَّل الحجز في سجل العمليات باسم المستخدم، ويُحجز وقت المورد فورًا.',
+        rows: [{label:'العميل', value: nb.cust || '—'}, {label:'الخدمة', value: this.svc(nb.sid).name},
+          {label:'المورد والوقت', value: (nb.rid ? this.res(nb.rid).name : 'قائمة الانتظار') + ' · ' + t12(nb.min)},
+          {label:'العربون', value: fmt(nb.dep || 0) + ' EGP'}],
+        confirm: () => this.set({dialog:null, panel:null})},
+      wait: {title:'إضافة لقائمة الانتظار', color:'#F59E0B', icon:'ph-clock-countdown', ok:'إضافة للانتظار', okIcon:'ph-plus',
+        body:'الحجز يُحفظ بلا مورد مُسند، فلا يشارك في فحص التعارض، ويظهر في قائمة الانتظار حتى يُسنَد.',
+        rows: [{label:'العميل', value: nb.cust || '—'}, {label:'الخدمة', value: this.svc(nb.sid).name}, {label:'الوقت المرغوب', value: t12(nb.min)}],
+        confirm: () => this.set({dialog:null, panel:null})},
+    };
+    const cfg = CFG[d] || CFG.save;
+    return {dialogOpen: !!d, closeDialog: () => this.set({dialog:null}),
+      dlg: {...cfg, tint: alpha(cfg.color, dark ? .18 : .10)}};
+  }
+}
+
+</script>
+</body>
+</html>

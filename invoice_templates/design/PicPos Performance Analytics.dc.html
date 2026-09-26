@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-ink:#0250D3; --brand-light:#4A80E8;
+    --wash:rgba(2,80,211,.08); --side:#0F172A; --side-line:#243247;
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280; --track:#E6ECF6;
+    --grid:#E9EEF7;
+  }
+  [data-theme="dark"]{
+    --canvas:#0A1220; --card:#121C2E; --hairline:#243247; --field:#18243A;
+    --brand-ink:#7DA6F5; --wash:rgba(74,128,232,.14); --side:#08101E; --side-line:#1D2A3E;
+    --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8; --track:#1E2B42;
+    --grid:#1C2739;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#0A1220;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#94A3B855;border-radius:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" dir="rtl" style="width:1920px;height:1080px;display:flex;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;">
+
+  <div style="width:84px;flex:none;background:var(--side);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:14px;">
+    <div style="width:44px;height:44px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <img src="assets/picpos-logo.png" alt="PicPos" style="width:38px;height:38px;object-fit:contain;" />
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:7px;">
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="10">
+        <div title="{{ r.label }}" style="position:relative;width:52px;height:46px;border-radius:13px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+          <i class="ph-bold {{ r.icon }}" style="font-size:21px;color:{{ r.fg }};"></i>
+          <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;inset-inline-end:-14px;top:11px;width:3.5px;height:24px;border-radius:3px;background:var(--brand-light);"></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="width:40px;height:40px;flex:none;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;">م.س</div>
+  </div>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <div style="height:76px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:14px;padding:0 26px;">
+      <div style="width:46px;height:46px;flex:none;border-radius:14px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold ph-chart-line-up" style="font-size:23px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-size:19px;font-weight:800;line-height:1.3;color:var(--txt);">التحليلات</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;">اتجاه ومقارنة فترات وتنبؤ بالانحدار الخطي — كل رقم محتسب من السلسلة الزمنية لا مُدخَل</div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <sc-for list="{{ scopes }}" as="s" hint-placeholder-count="2">
+          <div onClick="{{ s.toggle }}" style="height:44px;border-radius:12px;border:1.5px solid {{ s.bd }};background:{{ s.bg }};display:flex;align-items:center;gap:9px;padding:0 13px;cursor:pointer;position:relative;">
+            <i class="ph-bold {{ s.icon }}" style="font-size:16px;color:{{ s.tint }};flex:none;"></i>
+            <div style="min-width:0;">
+              <div style="font-size:10px;font-weight:700;color:var(--muted);line-height:1.2;">{{ s.kind }}</div>
+              <div style="font-size:12.5px;font-weight:800;color:{{ s.fg }};line-height:1.3;white-space:nowrap;">{{ s.label }}</div>
+            </div>
+            <i class="ph-bold ph-caret-down" style="font-size:12px;color:var(--muted);flex:none;"></i>
+            <sc-if value="{{ s.open }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:50px;inset-inline-end:0;z-index:40;width:262px;background:var(--card);border:1px solid var(--hairline);border-radius:14px;box-shadow:0 20px 50px rgba(1,34,88,.22);overflow:hidden;">
+                <sc-for list="{{ s.options }}" as="o" hint-placeholder-count="5">
+                  <div onClick="{{ o.pick }}" style="padding:10px 13px;display:flex;align-items:center;gap:9px;cursor:pointer;background:{{ o.bg }};border-bottom:1px solid var(--hairline);">
+                    <i class="ph-bold {{ o.icon }}" style="font-size:14px;color:{{ o.fg }};flex:none;"></i>
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-size:12.5px;font-weight:800;color:{{ o.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ o.label }}</div>
+                      <div style="font-size:10px;font-weight:600;color:var(--muted);">{{ o.sub }}</div>
+                    </div>
+                    <span style="font-size:11px;font-weight:800;color:{{ o.shareFg }};flex:none;font-variant-numeric:tabular-nums;">{{ o.share }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;border:1.5px solid var(--hairline);border-radius:12px;padding:4px;">
+        <sc-for list="{{ ranges }}" as="r" hint-placeholder-count="3">
+          <div onClick="{{ r.pick }}" style="height:34px;border-radius:9px;background:{{ r.bg }};display:flex;align-items:center;padding:0 13px;cursor:pointer;">
+            <span style="font-size:12px;font-weight:800;color:{{ r.fg }};white-space:nowrap;">{{ r.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div onClick="{{ toggleTheme }}" style="width:44px;height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+        <i class="ph-bold {{ themeIcon }}" style="font-size:18px;"></i>
+      </div>
+      <div onClick="{{ toggleSmooth }}" style="height:44px;flex:none;border-radius:12px;border:1.5px solid {{ smooth.bd }};background:{{ smooth.bg }};display:flex;align-items:center;gap:8px;padding:0 16px;cursor:pointer;color:{{ smooth.fg }};font-size:13px;font-weight:700;white-space:nowrap;">
+        <i class="ph-bold ph-waves" style="font-size:17px;"></i>{{ smooth.label }}
+      </div>
+      <div style="height:44px;flex:none;border-radius:12px;background:var(--brand);display:flex;align-items:center;gap:8px;padding:0 20px;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        <i class="ph-bold ph-file-arrow-down" style="font-size:17px;"></i>تصدير اللقطة
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:18px 26px 26px;display:flex;flex-direction:column;gap:14px;">
+
+      <div style="flex:none;display:grid;grid-template-columns:repeat(5,1fr);gap:13px;">
+        <sc-for list="{{ metrics }}" as="m" hint-placeholder-count="5">
+          <div onClick="{{ m.pick }}" style="background:var(--card);border:1.5px solid {{ m.bd }};border-radius:15px;padding:14px 16px;cursor:pointer;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <i class="ph-bold {{ m.icon }}" style="font-size:15px;color:{{ m.tint }};"></i>
+              <span style="flex:1;font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ m.label }}</span>
+              <sc-if value="{{ m.on }}" hint-placeholder-val="{{ false }}">
+                <i class="ph-bold ph-crosshair-simple" style="font-size:13px;color:var(--brand-ink);"></i>
+              </sc-if>
+            </div>
+            <div style="font-size:24px;font-weight:800;color:var(--txt);line-height:1.1;margin-top:8px;font-variant-numeric:tabular-nums;">{{ m.current }}</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+              <i class="ph-bold {{ m.arrow }}" style="font-size:12px;color:{{ m.deltaFg }};"></i>
+              <span style="font-size:11.5px;font-weight:800;color:{{ m.deltaFg }};font-variant-numeric:tabular-nums;">{{ m.deltaPct }}</span>
+              <span style="font-size:10.5px;font-weight:600;color:var(--muted);">عن {{ m.prev }}</span>
+            </div>
+            <div style="margin-top:10px;height:34px;">
+              <svg viewBox="0 0 120 34" preserveAspectRatio="none" style="width:100%;height:34px;display:block;">
+                <polyline points="{{ m.spark }}" fill="none" stroke="{{ m.tint }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                <polyline points="{{ m.sparkFill }}" fill="{{ m.tint }}" opacity="0.12" stroke="none" />
+              </svg>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;padding:17px 20px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <i class="ph-bold {{ focus.icon }}" style="font-size:19px;color:{{ focus.tint }};"></i>
+          <div style="min-width:0;">
+            <div style="font-size:15.5px;font-weight:800;color:var(--txt);">{{ focus.label }} — الاتجاه والتنبؤ</div>
+            <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px;">{{ focus.note }}</div>
+          </div>
+          <div style="flex:1;"></div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <sc-for list="{{ legend }}" as="l" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="width:14px;height:{{ l.h }};border-radius:2px;background:{{ l.color }};display:inline-block;{{ l.extra }}"></span>
+                <span style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;">{{ l.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="position:relative;height:280px;display:flex;gap:14px;">
+          <div style="width:74px;flex:none;display:flex;flex-direction:column;justify-content:space-between;padding-bottom:26px;">
+            <sc-for list="{{ chart.yAxis }}" as="y" hint-placeholder-count="5">
+              <span style="font-size:10.5px;font-weight:700;color:var(--muted);text-align:end;font-variant-numeric:tabular-nums;">{{ y }}</span>
+            </sc-for>
+          </div>
+          <div style="flex:1;min-width:0;position:relative;">
+            <div style="position:absolute;inset:0 0 26px 0;display:flex;flex-direction:column;justify-content:space-between;">
+              <sc-for list="{{ chart.lines }}" as="g" hint-placeholder-count="5">
+                <div style="height:1px;background:var(--grid);"></div>
+              </sc-for>
+            </div>
+            <svg viewBox="0 0 1000 254" preserveAspectRatio="none" style="position:absolute;inset:0 0 26px 0;width:100%;height:calc(100% - 26px);overflow:visible;">
+              <polyline points="{{ chart.regression }}" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-dasharray="7 5" stroke-linecap="round" />
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:flex-end;gap:8px;">
+              <sc-for list="{{ chart.bars }}" as="b" hint-placeholder-count="15">
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end;">
+                  <span style="font-size:10px;font-weight:800;color:{{ b.labelFg }};font-variant-numeric:tabular-nums;white-space:nowrap;">{{ b.value }}</span>
+                  <div style="width:100%;height:{{ b.h }};background:{{ b.fill }};border:{{ b.border }};border-radius:7px 7px 0 0;min-height:3px;"></div>
+                  <span style="font-size:10.5px;font-weight:700;color:{{ b.monthFg }};height:14px;white-space:nowrap;">{{ b.month }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:none;display:grid;grid-template-columns:1.55fr 1fr;gap:14px;">
+
+        <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+          <div style="padding:14px 18px 12px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
+            <i class="ph-bold ph-trend-up" style="font-size:17px;color:var(--brand-ink);"></i>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:800;color:var(--txt);">تحليل الاتجاه لكل مؤشر</div>
+              <div style="font-size:11px;color:var(--muted);font-weight:600;">الميل من الانحدار الخطي على {{ chart.pointCount }} نقطة — والتنبؤ هو النقطة التالية على الخط</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1.7fr 1.1fr 1.1fr 1.1fr 1.2fr 1.3fr;padding:9px 18px;background:var(--field);border-bottom:1px solid var(--hairline);">
+            <span style="font-size:11px;font-weight:800;color:var(--muted);">المؤشر</span>
+            <span style="font-size:11px;font-weight:800;color:var(--muted);text-align:end;">البداية</span>
+            <span style="font-size:11px;font-weight:800;color:var(--muted);text-align:end;">النهاية</span>
+            <span style="font-size:11px;font-weight:800;color:var(--muted);text-align:end;">الميل / شهر</span>
+            <span style="font-size:11px;font-weight:800;color:var(--muted);text-align:end;">التغير</span>
+            <span style="font-size:11px;font-weight:800;color:var(--muted);text-align:end;">تنبؤ الشهر القادم</span>
+          </div>
+          <sc-for list="{{ trends }}" as="t" hint-placeholder-count="5">
+            <div onClick="{{ t.pick }}" style="display:grid;grid-template-columns:1.7fr 1.1fr 1.1fr 1.1fr 1.2fr 1.3fr;padding:11px 18px;border-bottom:1px solid var(--hairline);align-items:center;background:{{ t.bg }};cursor:pointer;">
+              <div style="display:flex;align-items:center;gap:9px;min-width:0;">
+                <div style="width:30px;height:30px;flex:none;border-radius:9px;background:{{ t.iconBg }};display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold {{ t.icon }}" style="font-size:14px;color:{{ t.tint }};"></i>
+                </div>
+                <div style="min-width:0;">
+                  <div style="font-size:12.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.label }}</div>
+                  <div style="font-size:10px;font-weight:700;color:{{ t.dirFg }};">{{ t.dirLabel }}</div>
+                </div>
+              </div>
+              <span style="font-size:12.5px;font-weight:700;color:var(--txt2);text-align:end;font-variant-numeric:tabular-nums;">{{ t.start }}</span>
+              <span style="font-size:12.5px;font-weight:700;color:var(--txt);text-align:end;font-variant-numeric:tabular-nums;">{{ t.end }}</span>
+              <span style="font-size:12.5px;font-weight:800;color:{{ t.slopeFg }};text-align:end;font-variant-numeric:tabular-nums;">{{ t.slope }}</span>
+              <span style="font-size:12.5px;font-weight:800;color:{{ t.dirFg }};text-align:end;font-variant-numeric:tabular-nums;">{{ t.change }}</span>
+              <span style="font-size:13px;font-weight:800;color:var(--brand-ink);text-align:end;font-variant-numeric:tabular-nums;">{{ t.forecast }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;padding:15px 18px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:13px;">
+            <i class="ph-bold ph-calendar-heart" style="font-size:17px;color:var(--brand-ink);"></i>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:800;color:var(--txt);">مُعامل الموسمية</div>
+              <div style="font-size:11px;color:var(--muted);font-weight:600;">متوسط الشهر ÷ متوسط السلسلة — فوق ١.٠ يعني موسماً مرتفعاً</div>
+            </div>
+          </div>
+          <sc-for list="{{ seasons }}" as="s" hint-placeholder-count="12">
+            <div style="display:flex;align-items:center;gap:10px;padding:5px 0;">
+              <span style="font-size:11.5px;font-weight:700;color:var(--txt2);min-width:44px;flex:none;">{{ s.month }}</span>
+              <div style="flex:1;min-width:0;height:16px;position:relative;background:var(--track);border-radius:4px;overflow:hidden;">
+                <div style="position:absolute;top:0;bottom:0;inset-inline-start:50%;width:1.5px;background:var(--muted);opacity:.5;"></div>
+                <div style="position:absolute;top:0;bottom:0;inset-inline-start:{{ s.from }};width:{{ s.w }};background:{{ s.fill }};border-radius:3px;"></div>
+              </div>
+              <span style="font-size:11.5px;font-weight:800;color:{{ s.fill }};min-width:42px;text-align:end;flex:none;font-variant-numeric:tabular-nums;">{{ s.index }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;padding:16px 19px;display:flex;align-items:center;gap:18px;">
+        <div style="width:46px;height:46px;flex:none;border-radius:13px;background:{{ read.bg }};display:flex;align-items:center;justify-content:center;">
+          <i class="ph-bold {{ read.icon }}" style="font-size:22px;color:{{ read.tint }};"></i>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ read.title }}</div>
+          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:3px;line-height:1.6;">{{ read.body }}</div>
+        </div>
+        <sc-for list="{{ read.stats }}" as="s" hint-placeholder-count="4">
+          <div style="text-align:center;min-width:124px;padding:9px 12px;border-radius:12px;background:var(--field);flex:none;">
+            <div style="font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap;">{{ s.label }}</div>
+            <div style="font-size:17px;font-weight:800;color:{{ s.fg }};margin-top:3px;font-variant-numeric:tabular-nums;">{{ s.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;,&quot;section&quot;:&quot;العرض&quot;}}">
+const RAIL = [
+  {icon:'ph-squares-four', label:'الرئيسية'},
+  {icon:'ph-receipt', label:'الفواتير'},
+  {icon:'ph-package', label:'المخزون'},
+  {icon:'ph-users-three', label:'العملاء'},
+  {icon:'ph-currency-circle-dollar', label:'الخزينة'},
+  {icon:'ph-chart-line-up', label:'التحليلات', active:true},
+  {icon:'ph-file-text', label:'التقارير'},
+  {icon:'ph-buildings', label:'الفروع'},
+  {icon:'ph-broadcast', label:'الفوترة الإلكترونية'},
+  {icon:'ph-gear', label:'الإعدادات'},
+];
+
+const MONTHS = ['سبت','أكت','نوف','ديس','ينا','فبر','مار','أبر','ماي','يون','يول','أغس'];
+const FULL = ['سبتمبر','أكتوبر','نوفمبر','ديسمبر','يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس'];
+
+// 12 monthly observations per metric, oldest first (Sep 2025 → Aug 2026)
+const METRICS = [
+  {id:'sales', label:'صافي المبيعات', icon:'ph-currency-circle-dollar', tint:'#0250D3', unit:'ج.م', kind:'money',
+   series:[1842000,1918000,2104000,2286000,1964000,2042000,2168000,2244000,2312000,2398000,2441000,2486400]},
+  {id:'margin', label:'هامش الربح الإجمالي', icon:'ph-percent', tint:'#22C55E', unit:'٪', kind:'pct',
+   series:[26.4,26.8,27.1,27.9,26.2,26.6,27.0,27.2,27.4,27.6,27.9,28.2]},
+  {id:'basket', label:'متوسط قيمة الفاتورة', icon:'ph-shopping-cart', tint:'#8B5CF6', unit:'ج.م', kind:'money',
+   series:[268,272,281,296,274,279,284,288,291,296,301,308]},
+  {id:'invoices', label:'عدد الفواتير', icon:'ph-receipt', tint:'#F59E0B', unit:'فاتورة', kind:'count',
+   series:[6873,7051,7488,7723,7168,7319,7634,7792,7945,8102,8110,8072]},
+  {id:'expenses', label:'المصروفات التشغيلية', icon:'ph-receipt-x', tint:'#EF4444', unit:'ج.م', kind:'money',
+   series:[186400,188200,192600,201400,194800,197200,203600,206400,209800,213200,216400,218880]},
+];
+
+// ── Analytics engine: linear regression, moving average, seasonality, forecast ──
+function regress(data){
+  const n = data.length;
+  if (n < 2) return {slope:0, intercept: n ? data[0] : 0};
+  let sx = 0, sy = 0, sxy = 0, sxx = 0;
+  for (let i = 0; i < n; i++){ sx += i; sy += data[i]; sxy += i * data[i]; sxx += i * i; }
+  const slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
+  return {slope, intercept: (sy - slope * sx) / n};
+}
+
+function analyze(data){
+  const {slope, intercept} = regress(data);
+  const start = data[0], end = data[data.length - 1];
+  const changePercent = start !== 0 ? (end - start) / start * 100 : 0;
+  return {slope, intercept, start, end, changePercent,
+    direction: slope > 0.01 ? 'up' : slope < -0.01 ? 'down' : 'flat',
+    forecastNext: Math.max(0, end + slope)};
+}
+
+function movingAverage(data, w){
+  if (data.length < w) return data.slice();
+  const out = [];
+  for (let i = w - 1; i < data.length; i++){
+    let s = 0;
+    for (let j = i - w + 1; j <= i; j++) s += data[j];
+    out.push(s / w);
+  }
+  // pad the head so the series keeps its length and stays aligned to months
+  const pad = [];
+  for (let i = 0; i < w - 1; i++) pad.push(out[0]);
+  return pad.concat(out);
+}
+
+function forecast(data, periods){
+  const t = analyze(data);
+  const out = [];
+  for (let i = 1; i <= periods; i++) out.push(Math.max(0, t.end + t.slope * i));
+  return out;
+}
+
+// Scope filters. Share is the slice of company volume; marginDelta is how far that
+// slice's gross margin sits from the company average (margins don't scale, they shift).
+const REGIONS = [
+  {id:'all',   label:'كل المناطق', sub:'٤ فروع · ٣ مناطق', share:1,    marginDelta:0,    basket:1},
+  {id:'south', label:'القاهرة الجنوبية', sub:'المعادي وحلوان', share:0.46, marginDelta:0.4,  basket:1.06},
+  {id:'east',  label:'القاهرة الشرقية', sub:'مدينة نصر', share:0.34, marginDelta:-0.6, basket:0.92},
+  {id:'west',  label:'الجيزة وأكتوبر', sub:'أكتوبر', share:0.20, marginDelta:1.1,  basket:1.14},
+];
+
+const BRANCHES = [
+  {id:'all',      label:'كل الفروع', sub:'المنشأة كاملة', share:1,    marginDelta:0,    basket:1,    region:'all'},
+  {id:'maadi',    label:'فرع المعادي', sub:'الفرع الرئيسي · ٢ نقطة بيع', share:0.32, marginDelta:0.9,  basket:1.12, region:'south'},
+  {id:'helwan',   label:'فرع حلوان', sub:'نقطة بيع واحدة', share:0.14, marginDelta:-0.7, basket:0.88, region:'south'},
+  {id:'nasr',     label:'فرع مدينة نصر', sub:'٢ نقطة بيع', share:0.34, marginDelta:-0.6, basket:0.92, region:'east'},
+  {id:'october',  label:'فرع أكتوبر', sub:'نقطة بيع واحدة', share:0.20, marginDelta:1.1,  basket:1.14, region:'west'},
+];
+
+const nf0 = n => n.toLocaleString('en-US', {maximumFractionDigits:0});
+const nf1 = n => n.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1});
+const AR = n => String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
+
+function fmt(v, kind){
+  if (kind === 'pct') return nf1(v) + '٪';
+  if (kind === 'count') return nf0(v);
+  return v >= 100000 ? nf0(v / 1000) + 'ك' : nf0(v);
+}
+
+class Component extends DCLogic {
+  state = {theme:null, focus:'sales', smooth:false, range:12};
+
+  renderVals(){
+    const dark = (this.state.theme || this.props.theme || 'light') === 'dark';
+    const window = this.state.range;
+    const smooth = this.state.smooth;
+    const focusId = this.state.focus;
+
+    const regionId = this.state.region || 'all';
+    const branchId = this.state.branch || 'all';
+    const region = REGIONS.find(r => r.id === regionId) || REGIONS[0];
+    const branch = BRANCHES.find(b => b.id === branchId) || BRANCHES[0];
+    // the narrower selection wins: a chosen branch overrides its region
+    const scope = branchId !== 'all' ? branch : region;
+    const scopeLabel = branchId !== 'all' ? branch.label : region.label;
+
+    // Scoping has to stay internally consistent: sales and expenses take the volume
+    // share, basket value is a ratio that shifts on its own, and invoice count is
+    // whatever reconciles the two (sales ÷ basket).
+    const factorFor = id =>
+      id === 'basket' ? scope.basket :
+      id === 'invoices' ? scope.share / scope.basket :
+      scope.share;
+
+    const prep = m => {
+      const raw = m.series.slice(-window).map(v => {
+        if (m.kind === 'pct') return v + scope.marginDelta;
+        const scaled = v * factorFor(m.id);
+        return m.kind === 'count' ? Math.round(scaled) : scaled;
+      });
+      return smooth ? movingAverage(raw, 3) : raw;
+    };
+
+    const focus = METRICS.find(m => m.id === focusId) || METRICS[0];
+    const fSeries = prep(focus);
+    const fTrend = analyze(fSeries);
+    const fFore = forecast(fSeries, 3);
+    const monthsWin = MONTHS.slice(-window);
+    const fullWin = FULL.slice(-window);
+
+    // chart geometry: 12 actual + 3 forecast columns share one value scale
+    const all = fSeries.concat(fFore);
+    const top = Math.max.apply(null, all) * 1.12;
+    const bars = fSeries.map((v, i) => ({v, i, kind:'actual', month: monthsWin[i]}))
+      .concat(fFore.map((v, i) => ({v, i: fSeries.length + i, kind:'forecast', month:'+' + AR(i + 1)})));
+
+    const yTicks = [];
+    for (let i = 4; i >= 0; i--) yTicks.push(fmt(top * i / 4, focus.kind));
+
+    // RTL: time flows right-to-left, so mirror the SVG x-axis to sit under the bars
+    const cols = bars.length;
+    const regPts = bars.map((b, i) => {
+      const y = 254 - (fTrend.intercept + fTrend.slope * i) / top * 254;
+      const x = (cols - 1 - i + 0.5) / cols * 1000;
+      return x.toFixed(1) + ',' + Math.max(0, Math.min(254, y)).toFixed(1);
+    }).join(' ');
+
+    // seasonality index per month across the full 12-point series
+    const seriesAll = focus.series;
+    const avgAll = seriesAll.reduce((s, v) => s + v, 0) / seriesAll.length;
+    const seasons = seriesAll.map((v, i) => {
+      const idx = v / avgAll;
+      const dev = (idx - 1) * 100;                 // percent away from the mean
+      const w = Math.min(Math.abs(dev) * 2.6, 49); // half-width bar around centre
+      return {
+        month: FULL[i].slice(0, 4),
+        index: nf1(idx * 100 / 100) === '1.0' ? '١.٠٠' : idx.toFixed(2).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]),
+        from: (dev >= 0 ? 50 : 50 - w).toFixed(1) + '%',
+        w: Math.max(w, 1.2).toFixed(1) + '%',
+        fill: dev >= 1 ? '#22C55E' : dev <= -1 ? '#EF4444' : 'var(--muted)',
+      };
+    });
+
+    const dirMeta = {
+      up: {label:'صاعد', fg:'#22C55E', arrow:'ph-trend-up'},
+      down: {label:'هابط', fg:'#EF4444', arrow:'ph-trend-down'},
+      flat: {label:'مستقر', fg:'var(--muted)', arrow:'ph-minus'},
+    };
+
+    const focusDir = dirMeta[fTrend.direction];
+    const expenses = METRICS.find(m => m.id === 'expenses');
+    const salesT = analyze(prep(METRICS[0]));
+    const expT = analyze(prep(expenses));
+    const salesGrowth = salesT.slope / salesT.start * 100;
+    const expGrowth = expT.slope / expT.start * 100;
+
+    return {
+      theme: dark ? 'dark' : 'light',
+      themeIcon: dark ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.setState({theme: dark ? 'light' : 'dark'}),
+      rail: RAIL.map(r => ({...r, bg: r.active ? 'rgba(74,128,232,.18)' : 'transparent', fg: r.active ? '#7DA6F5' : '#64748B'})),
+
+      scopes: [
+        {kind:'المنطقة', icon:'ph-map-trifold', key:'region', cur: region, list: REGIONS},
+        {kind:'الفرع', icon:'ph-storefront', key:'branch', cur: branch,
+         list: BRANCHES.filter(b => regionId === 'all' || b.region === 'all' || b.region === regionId)},
+      ].map(s => {
+        const active = s.cur.id !== 'all';
+        const open = this.state.menu === s.key;
+        return {
+          kind: s.kind, icon: s.icon, label: s.cur.label, open,
+          tint: active ? 'var(--brand-ink)' : 'var(--muted)',
+          fg: active ? 'var(--brand-ink)' : 'var(--txt2)',
+          bd: active ? 'var(--brand)' : 'var(--hairline)',
+          bg: active ? 'var(--wash)' : 'transparent',
+          toggle: () => this.setState({menu: open ? null : s.key}),
+          options: s.list.map(o => {
+            const on = o.id === s.cur.id;
+            return {
+              label: o.label, sub: o.sub, icon: on ? 'ph-check-circle' : s.icon,
+              fg: on ? 'var(--brand-ink)' : 'var(--txt)',
+              bg: on ? 'var(--wash)' : 'transparent',
+              share: o.id === 'all' ? '١٠٠٪' : nf1(o.share * 100) + '٪',
+              shareFg: o.id === 'all' ? 'var(--muted)' : 'var(--txt2)',
+              pick: () => this.setState(s.key === 'region'
+                ? {region: o.id, branch: 'all', menu: null}
+                : {branch: o.id, menu: null}),
+            };
+          }),
+        };
+      }),
+
+      ranges: [{n:6, label:'٦ أشهر'}, {n:9, label:'٩ أشهر'}, {n:12, label:'١٢ شهراً'}].map(r => {
+        const on = r.n === window;
+        return {label:r.label, bg: on ? 'var(--brand)' : 'transparent', fg: on ? '#fff' : 'var(--muted)',
+          pick: () => this.setState({range: r.n})};
+      }),
+
+      smooth: {
+        label: smooth ? 'تنعيم بمتوسط ٣ أشهر' : 'القيم الخام',
+        bd: smooth ? 'var(--brand)' : 'var(--hairline)',
+        bg: smooth ? 'var(--wash)' : 'transparent',
+        fg: smooth ? 'var(--brand-ink)' : 'var(--txt2)',
+      },
+      toggleSmooth: () => this.setState({smooth: !smooth}),
+
+      metrics: METRICS.map(m => {
+        const s = prep(m);
+        const t = analyze(s);
+        const d = dirMeta[t.direction];
+        const lo = Math.min.apply(null, s), hi = Math.max.apply(null, s);
+        const range = hi - lo || 1;
+        const pts = s.map((v, i) => ((s.length - 1 - i) / (s.length - 1) * 120).toFixed(1) + ',' + (32 - (v - lo) / range * 30).toFixed(1));
+        const good = m.id === 'expenses' ? t.changePercent < 0 : t.changePercent > 0;
+        return {
+          label:m.label, icon:m.icon, tint:m.tint, on: m.id === focusId,
+          bd: m.id === focusId ? 'var(--brand)' : 'var(--hairline)',
+          current: fmt(t.end, m.kind),
+          prev: fmt(s[s.length - 2], m.kind),
+          deltaPct: (t.end >= s[s.length - 2] ? '+' : '') + nf1((t.end - s[s.length - 2]) / s[s.length - 2] * 100) + '٪',
+          arrow: t.end >= s[s.length - 2] ? 'ph-trend-up' : 'ph-trend-down',
+          deltaFg: good ? '#22C55E' : '#EF4444',
+          spark: pts.join(' '),
+          sparkFill: ('120,34 ' + pts.join(' ') + ' 0,34'),
+          pick: () => this.setState({focus: m.id}),
+        };
+      }),
+
+      focus: {
+        label: focus.label, icon: focus.icon, tint: focus.tint,
+        note: scopeLabel + ' · من ' + fullWin[0] + ' إلى ' + fullWin[fullWin.length - 1] + ' · ' + AR(window) + ' نقطة'
+          + (smooth ? ' · مُنعَّمة بمتوسط متحرك ٣ أشهر' : ' · قيم خام') + ' · تنبؤ ٣ أشهر قادمة',
+      },
+
+      legend: [
+        {label:'القيمة الفعلية', color: focus.tint, h:'14px', extra:''},
+        {label:'خط الانحدار', color:'#EF4444', h:'2.5px', extra:''},
+        {label:'التنبؤ', color:'transparent', h:'14px', extra:'border:1.5px dashed ' + focus.tint + ';'},
+      ],
+
+      chart: {
+        yAxis: yTicks,
+        lines: [1,2,3,4,5],
+        pointCount: AR(window),
+        regression: regPts,
+        bars: bars.map(b => ({
+          h: (b.v / top * 100).toFixed(1) + '%',
+          value: fmt(b.v, focus.kind),
+          month: b.month,
+          fill: b.kind === 'actual' ? focus.tint : 'transparent',
+          border: b.kind === 'actual' ? 'none' : '1.5px dashed ' + focus.tint,
+          labelFg: b.kind === 'actual' ? 'var(--txt2)' : focus.tint,
+          monthFg: b.kind === 'actual' ? 'var(--muted)' : focus.tint,
+        })),
+      },
+
+      trends: METRICS.map(m => {
+        const s = prep(m);
+        const t = analyze(s);
+        const d = dirMeta[t.direction];
+        const good = m.id === 'expenses' ? t.changePercent < 0 : t.changePercent > 0;
+        return {
+          label:m.label, icon:m.icon, tint:m.tint, iconBg: m.tint + '1f',
+          dirLabel: d.label, dirFg: good ? '#22C55E' : '#EF4444',
+          start: fmt(t.start, m.kind), end: fmt(t.end, m.kind),
+          slope: (t.slope >= 0 ? '+' : '') + fmt(Math.abs(t.slope), m.kind === 'count' ? 'count' : m.kind),
+          slopeFg: t.slope >= 0 ? (m.id === 'expenses' ? '#EF4444' : '#22C55E') : (m.id === 'expenses' ? '#22C55E' : '#EF4444'),
+          change: (t.changePercent >= 0 ? '+' : '') + nf1(t.changePercent) + '٪',
+          forecast: fmt(t.forecastNext, m.kind),
+          bg: m.id === focusId ? 'var(--wash)' : 'transparent',
+          pick: () => this.setState({focus: m.id}),
+        };
+      }),
+
+      seasons,
+
+      read: {
+        icon: salesGrowth > expGrowth ? 'ph-check-circle' : 'ph-warning',
+        tint: salesGrowth > expGrowth ? '#22C55E' : '#EF4444',
+        bg: salesGrowth > expGrowth ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)',
+        title: (salesGrowth > expGrowth ? 'النمو يسبق المصروف — الاتجاه سليم' : 'المصروف ينمو أسرع من المبيعات') + ' · ' + scopeLabel,
+        body: 'ميل المبيعات ' + nf1(salesGrowth) + '٪ شهرياً مقابل ' + nf1(expGrowth) + '٪ للمصروفات التشغيلية. '
+          + 'نقطة الضعف أن عدد الفواتير بلغ ذروته في يوليو ثم تراجع، فالنمو الأخير مصدره متوسط الفاتورة لا اتساع القاعدة — '
+          + 'وهو نمو أهش لأنه يعتمد على السعر لا على عملاء جدد.',
+        stats: [
+          {label:'ميل المبيعات', value: nf1(salesGrowth) + '٪', fg:'#22C55E'},
+          {label:'ميل المصروف', value: nf1(expGrowth) + '٪', fg:'#EF4444'},
+          {label:'تنبؤ مبيعات سبتمبر', value: fmt(salesT.forecastNext, 'money'), fg:'var(--brand-ink)'},
+          {label:'أعلى موسم', value:'ديسمبر', fg:'#F59E0B'},
+        ],
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

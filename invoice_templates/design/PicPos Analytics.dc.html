@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-ink:#0250D3; --brand-dark:#012258; --brand-light:#4A80E8;
+    --wash:rgba(2,80,211,.08); --side:#0F172A; --side-line:#243247;
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280;
+    --ok:#22C55E; --warn:#F59E0B; --err:#EF4444;
+    --track:#E6ECF6; --shadow:0 18px 50px rgba(1,34,88,.16);
+  }
+  [data-theme="dark"]{
+    --canvas:#0A1220; --card:#121C2E; --hairline:#243247; --field:#18243A;
+    --brand-ink:#7DA6F5; --wash:rgba(74,128,232,.14); --side:#08101E; --side-line:#1D2A3E;
+    --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8;
+    --track:#1E2B42; --shadow:0 18px 60px rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#0A1220;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#94A3B855;border-radius:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" dir="rtl" style="width:1920px;height:1080px;display:flex;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;">
+
+  <div style="width:84px;flex:none;background:var(--side);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:14px;">
+    <div style="width:44px;height:44px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <img src="assets/picpos-logo.png" alt="PicPos" style="width:38px;height:38px;object-fit:contain;" />
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:7px;">
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="10">
+        <div title="{{ r.label }}" style="position:relative;width:52px;height:46px;border-radius:13px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+          <i class="ph-bold {{ r.icon }}" style="font-size:21px;color:{{ r.fg }};"></i>
+          <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;inset-inline-end:-14px;top:11px;width:3.5px;height:24px;border-radius:3px;background:var(--brand-light);"></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="width:40px;height:40px;flex:none;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;">م.س</div>
+  </div>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <div style="height:76px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:14px;padding:0 26px;">
+      <div style="width:46px;height:46px;flex:none;border-radius:14px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold {{ head.icon }}" style="font-size:23px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-size:19px;font-weight:800;line-height:1.3;color:var(--txt);">{{ head.title }}</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;">{{ head.sub }}</div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="width:280px;height:44px;border-radius:12px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:9px;padding:0 14px;">
+        <i class="ph-bold ph-magnifying-glass" style="font-size:16px;color:var(--muted);"></i>
+        <span style="font-size:13px;color:var(--muted);font-weight:600;">{{ head.hint }}</span>
+      </div>
+      <div onClick="{{ toggleTheme }}" style="width:44px;height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+        <i class="ph-bold {{ themeIcon }}" style="font-size:18px;"></i>
+      </div>
+      <div onClick="{{ head.altGo }}" style="height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 16px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;white-space:nowrap;">
+        <i class="ph-bold {{ head.altIcon }}" style="font-size:17px;"></i>{{ head.alt }}
+      </div>
+      <div onClick="{{ head.go }}" style="height:44px;flex:none;border-radius:12px;background:var(--brand);display:flex;align-items:center;gap:8px;padding:0 20px;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        <i class="ph-bold ph-plus" style="font-size:17px;"></i>{{ head.action }}
+      </div>
+    </div>
+
+    <div style="height:50px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:2px;padding:0 26px;">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+        <div onClick="{{ t.pick }}" style="height:50px;display:flex;align-items:center;gap:8px;padding:0 15px;cursor:pointer;border-bottom:2.5px solid {{ t.line }};">
+          <i class="ph-bold {{ t.icon }}" style="font-size:16px;color:{{ t.fg }};"></i>
+          <span style="font-size:13px;font-weight:{{ t.fw }};color:{{ t.fg }};white-space:nowrap;">{{ t.label }}</span>
+          <sc-if value="{{ t.badge }}" hint-placeholder-val="{{ false }}">
+            <span style="font-size:10.5px;font-weight:800;color:{{ t.badgeFg }};background:{{ t.badgeBg }};border-radius:999px;padding:2px 7px;">{{ t.badge }}</span>
+          </sc-if>
+        </div>
+      </sc-for>
+      <div style="flex:1;"></div>
+      <span style="font-size:11.5px;font-weight:600;color:var(--muted);white-space:nowrap;">{{ tabNote }}</span>
+    </div>
+
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:20px 26px 26px;display:flex;flex-direction:column;gap:16px;">
+      <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="2">
+
+        <sc-if value="{{ b.isKpis }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;display:grid;grid-template-columns:{{ b.cols }};gap:13px;">
+            <sc-for list="{{ b.items }}" as="k" hint-placeholder-count="4">
+              <div style="background:var(--card);border:1px solid var(--hairline);border-inline-start:3px solid {{ k.tint }};border-radius:14px;padding:14px 16px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <i class="ph-bold {{ k.icon }}" style="font-size:15px;color:{{ k.tint }};"></i>
+                  <span style="flex:1;font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ k.label }}</span>
+                </div>
+                <div style="font-size:25px;font-weight:800;color:var(--txt);line-height:1.1;margin-top:8px;font-variant-numeric:tabular-nums;">{{ k.value }}</div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+                  <sc-if value="{{ k.hasDelta }}" hint-placeholder-val="{{ false }}">
+                    <i class="ph-bold {{ k.arrow }}" style="font-size:12px;color:{{ k.deltaFg }};"></i>
+                    <span style="font-size:11.5px;font-weight:800;color:{{ k.deltaFg }};">{{ k.delta }}</span>
+                  </sc-if>
+                  <span style="font-size:10.5px;font-weight:600;color:var(--muted);">{{ k.vs }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isCards }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;">
+            <sc-if value="{{ b.title }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+                <span style="flex:1;font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</span>
+                <span style="font-size:11.5px;font-weight:600;color:var(--muted);">{{ b.sub }}</span>
+              </div>
+            </sc-if>
+            <div style="display:grid;grid-template-columns:{{ b.cols }};gap:13px;align-items:start;">
+              <sc-for list="{{ b.items }}" as="c" hint-placeholder-count="3">
+                <div onClick="{{ c.go }}" style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;cursor:{{ c.cursor }};">
+                  <div style="padding:16px;display:flex;align-items:flex-start;gap:12px;">
+                    <div style="width:46px;height:46px;flex:none;border-radius:14px;background:{{ c.wash }};display:flex;align-items:center;justify-content:center;">
+                      <sc-if value="{{ c.initials }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:15px;font-weight:800;color:{{ c.tint }};">{{ c.initials }}</span>
+                      </sc-if>
+                      <sc-if value="{{ c.icon }}" hint-placeholder-val="{{ false }}">
+                        <i class="ph-bold {{ c.icon }}" style="font-size:23px;color:{{ c.tint }};"></i>
+                      </sc-if>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-size:15px;font-weight:800;color:var(--txt);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.title }}</div>
+                      <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.sub }}</div>
+                    </div>
+                    <span style="font-size:11px;font-weight:800;color:{{ c.pillFg }};background:{{ c.pillBg }};border-radius:8px;padding:5px 10px;flex:none;white-space:nowrap;">{{ c.status }}</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:{{ c.statCols }};border-top:1px solid var(--hairline);">
+                    <sc-for list="{{ c.stats }}" as="s" hint-placeholder-count="3">
+                      <div style="padding:11px 14px;border-inline-start:1px solid var(--hairline);">
+                        <div style="font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.label }}</div>
+                        <div style="font-size:15px;font-weight:800;color:{{ s.fg }};margin-top:3px;font-variant-numeric:tabular-nums;white-space:nowrap;">{{ s.value }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="padding:11px 14px;border-top:1px solid var(--hairline);background:var(--field);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <sc-for list="{{ c.chips }}" as="ch" hint-placeholder-count="2">
+                      <div style="display:flex;align-items:center;gap:5px;">
+                        <i class="ph-bold {{ ch.icon }}" style="font-size:12.5px;color:{{ ch.fg }};"></i>
+                        <span style="font-size:11px;font-weight:700;color:{{ ch.fg }};white-space:nowrap;">{{ ch.label }}</span>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ c.hasDrawer }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-inline-start:auto;display:flex;align-items:center;gap:5px;">
+                        <span style="font-size:10.5px;font-weight:800;color:var(--brand-ink);white-space:nowrap;">الملف الكامل</span>
+                        <i class="ph-bold ph-arrow-left" style="font-size:13px;color:var(--brand-ink);"></i>
+                      </div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isBars }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
+              <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <span style="flex:1;font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</span>
+              <span style="font-size:11.5px;font-weight:600;color:var(--muted);">{{ b.sub }}</span>
+            </div>
+            <div style="padding:14px 18px 16px;display:flex;flex-direction:column;gap:11px;">
+              <sc-for list="{{ b.items }}" as="r" hint-placeholder-count="4">
+                <div style="display:grid;grid-template-columns:170px 1fr 110px;gap:14px;align-items:center;">
+                  <div style="display:flex;align-items:center;gap:9px;min-width:0;">
+                    <i class="ph-bold {{ r.icon }}" style="font-size:15px;color:{{ r.tint }};flex:none;"></i>
+                    <div style="min-width:0;">
+                      <div style="font-size:13px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.label }}</div>
+                      <div style="font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap;">{{ r.sub }}</div>
+                    </div>
+                  </div>
+                  <div style="height:24px;border-radius:8px;background:var(--track);overflow:hidden;display:flex;">
+                    <div style="width:{{ r.pct }};height:100%;border-radius:8px;background:{{ r.tint }};display:flex;align-items:center;justify-content:flex-start;padding:0 9px;">
+                      <span style="font-size:11px;font-weight:800;color:#fff;white-space:nowrap;">{{ r.inner }}</span>
+                    </div>
+                    <sc-if value="{{ r.pct2 }}" hint-placeholder-val="{{ false }}">
+                      <div style="width:{{ r.pct2 }};height:100%;background:{{ r.tint2 }};"></div>
+                    </sc-if>
+                  </div>
+                  <span style="font-size:14px;font-weight:800;color:{{ r.valFg }};text-align:end;font-variant-numeric:tabular-nums;">{{ r.value }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isGauge }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+              <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <span style="flex:1;font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</span>
+              <span style="font-size:11.5px;font-weight:600;color:var(--muted);">{{ b.sub }}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:{{ b.cols }};gap:13px;">
+              <sc-for list="{{ b.items }}" as="g" hint-placeholder-count="4">
+                <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;padding:16px;display:flex;align-items:center;gap:14px;">
+                  <div style="width:78px;height:78px;flex:none;border-radius:50%;background:{{ g.ring }};display:flex;align-items:center;justify-content:center;">
+                    <div style="width:58px;height:58px;border-radius:50%;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                      <span style="font-size:16px;font-weight:800;color:{{ g.tint }};line-height:1;font-variant-numeric:tabular-nums;">{{ g.pctLabel }}</span>
+                      <span style="font-size:9px;font-weight:700;color:var(--muted);margin-top:2px;">من الهدف</span>
+                    </div>
+                  </div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-size:14px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ g.title }}</div>
+                    <div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ g.sub }}</div>
+                    <div style="display:flex;align-items:center;gap:12px;margin-top:9px;">
+                      <sc-for list="{{ g.stats }}" as="s" hint-placeholder-count="2">
+                        <div style="min-width:0;">
+                          <div style="font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap;">{{ s.label }}</div>
+                          <div style="font-size:13px;font-weight:800;color:{{ s.fg }};font-variant-numeric:tabular-nums;white-space:nowrap;">{{ s.value }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isBoard }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+              <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <span style="flex:1;font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</span>
+              <span style="font-size:11.5px;font-weight:600;color:var(--muted);">{{ b.sub }}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:{{ b.cols }};gap:13px;align-items:start;">
+              <sc-for list="{{ b.items }}" as="col" hint-placeholder-count="4">
+                <div style="background:var(--card);border:1px solid var(--hairline);border-radius:16px;overflow:hidden;">
+                  <div style="padding:12px 14px;border-bottom:1px solid var(--hairline);border-top:3px solid {{ col.tint }};display:flex;align-items:center;gap:9px;">
+                    <i class="ph-bold {{ col.icon }}" style="font-size:16px;color:{{ col.tint }};"></i>
+                    <span style="flex:1;font-size:13px;font-weight:800;color:var(--txt);white-space:nowrap;">{{ col.label }}</span>
+                    <span style="font-size:12px;font-weight:800;color:{{ col.tint }};font-variant-numeric:tabular-nums;">{{ col.count }}</span>
+                  </div>
+                  <div style="padding:11px;display:flex;flex-direction:column;gap:9px;">
+                    <sc-for list="{{ col.cards }}" as="c" hint-placeholder-count="3">
+                      <div onClick="{{ c.go }}" style="border:1px solid var(--hairline);background:var(--field);border-radius:12px;padding:11px 12px;cursor:pointer;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                          <span style="font-size:12.5px;font-weight:800;color:var(--txt);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.title }}</span>
+                          <span style="font-size:11.5px;font-weight:800;color:{{ c.valFg }};flex:none;font-variant-numeric:tabular-nums;">{{ c.value }}</span>
+                        </div>
+                        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.sub }}</div>
+                        <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+                          <i class="ph-bold {{ c.icon }}" style="font-size:12px;color:{{ c.tint }};"></i>
+                          <span style="font-size:10.5px;font-weight:700;color:{{ c.tint }};white-space:nowrap;">{{ c.meta }}</span>
+                        </div>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ col.more }}" hint-placeholder-val="{{ false }}">
+                      <div style="text-align:center;padding:5px;font-size:11.5px;font-weight:700;color:var(--brand-ink);cursor:pointer;">{{ col.more }}</div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isCal }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;">
+              <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</div>
+                <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:1px;">{{ b.sub }}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex:none;">
+                <sc-for list="{{ b.legend }}" as="l" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="width:10px;height:10px;border-radius:3px;background:{{ l.c }};"></span>
+                    <span style="font-size:11.5px;font-weight:700;color:var(--txt2);white-space:nowrap;">{{ l.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--field);border-bottom:1px solid var(--hairline);">
+              <sc-for list="{{ b.dow }}" as="d" hint-placeholder-count="7">
+                <div style="padding:9px;text-align:center;font-size:11.5px;font-weight:800;color:var(--muted);border-inline-start:1px solid var(--hairline);">{{ d }}</div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);">
+              <sc-for list="{{ b.days }}" as="d" hint-placeholder-count="35">
+                <div style="min-height:82px;padding:8px 9px;border-inline-start:1px solid var(--hairline);border-bottom:1px solid var(--hairline);background:{{ d.bg }};display:flex;flex-direction:column;gap:5px;">
+                  <span style="font-size:13px;font-weight:{{ d.fw }};color:{{ d.fg }};font-variant-numeric:tabular-nums;">{{ d.day }}</span>
+                  <sc-for list="{{ d.marks }}" as="m" hint-placeholder-count="1">
+                    <div style="border-radius:7px;background:{{ m.bg }};padding:4px 7px;">
+                      <span style="font-size:10.5px;font-weight:800;color:{{ m.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">{{ m.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isRoster }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;">
+              <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</div>
+                <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:1px;">{{ b.sub }}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex:none;">
+                <sc-for list="{{ b.legend }}" as="l" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="width:10px;height:10px;border-radius:3px;background:{{ l.c }};"></span>
+                    <span style="font-size:11.5px;font-weight:700;color:var(--txt2);white-space:nowrap;">{{ l.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:210px 1fr 130px;gap:0;background:var(--field);border-bottom:1px solid var(--hairline);">
+              <div style="padding:9px 18px;font-size:11.5px;font-weight:800;color:var(--muted);">الموظف</div>
+              <div style="padding:9px 0;display:grid;grid-template-columns:repeat({{ b.hourCount }},1fr);">
+                <sc-for list="{{ b.hours }}" as="h" hint-placeholder-count="8">
+                  <span style="font-size:10.5px;font-weight:700;color:var(--muted);text-align:center;">{{ h }}</span>
+                </sc-for>
+              </div>
+              <div style="padding:9px 18px;font-size:11.5px;font-weight:800;color:var(--muted);text-align:end;">إجمالي الساعات</div>
+            </div>
+            <sc-for list="{{ b.items }}" as="r" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:210px 1fr 130px;gap:0;border-bottom:1px solid var(--hairline);align-items:center;">
+                <div style="padding:11px 18px;display:flex;align-items:center;gap:10px;min-width:0;">
+                  <div style="width:32px;height:32px;flex:none;border-radius:10px;background:{{ r.wash }};display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:{{ r.tint }};">{{ r.initials }}</div>
+                  <div style="min-width:0;">
+                    <div style="font-size:12.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.name }}</div>
+                    <div style="font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap;">{{ r.role }}</div>
+                  </div>
+                </div>
+                <div style="padding:11px 0;position:relative;height:44px;">
+                  <div style="position:absolute;top:19px;inset-inline:0;height:6px;border-radius:4px;background:var(--track);"></div>
+                  <sc-for list="{{ r.segs }}" as="s" hint-placeholder-count="1">
+                    <div title="{{ s.tip }}" style="position:absolute;top:13px;inset-inline-start:{{ s.x }};width:{{ s.w }};height:18px;border-radius:6px;background:{{ s.c }};display:flex;align-items:center;justify-content:center;">
+                      <span style="font-size:10px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;">{{ s.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="padding:11px 18px;text-align:end;">
+                  <div style="font-size:14px;font-weight:800;color:{{ r.hoursFg }};font-variant-numeric:tabular-nums;">{{ r.hours }}</div>
+                  <div style="font-size:10.5px;font-weight:700;color:{{ r.noteFg }};white-space:nowrap;">{{ r.note }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isMatrix }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;">
+              <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</div>
+                <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:1px;">{{ b.sub }}</div>
+              </div>
+              <div onClick="{{ b.go }}" style="height:34px;border-radius:10px;border:1.5px solid var(--brand);display:flex;align-items:center;gap:7px;padding:0 13px;cursor:pointer;flex:none;">
+                <i class="ph-bold ph-pencil-simple" style="font-size:14px;color:var(--brand-ink);"></i>
+                <span style="font-size:12px;font-weight:800;color:var(--brand-ink);">تعديل الصلاحيات</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:{{ b.grid }};background:var(--field);border-bottom:1px solid var(--hairline);">
+              <sc-for list="{{ b.cols }}" as="c" hint-placeholder-count="5">
+                <div style="padding:11px 14px;border-inline-start:1px solid var(--hairline);">
+                  <div style="font-size:11.5px;font-weight:800;color:var(--muted);text-align:{{ c.align }};white-space:nowrap;">{{ c.label }}</div>
+                  <sc-if value="{{ c.sub }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:10px;font-weight:600;color:var(--muted);text-align:{{ c.align }};margin-top:2px;white-space:nowrap;">{{ c.sub }}</div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <sc-for list="{{ b.rows }}" as="r" hint-placeholder-count="7">
+              <div style="display:grid;grid-template-columns:{{ b.grid }};border-bottom:1px solid var(--hairline);align-items:center;">
+                <div style="padding:11px 14px;display:flex;align-items:center;gap:10px;min-width:0;">
+                  <div style="width:32px;height:32px;flex:none;border-radius:10px;background:{{ r.wash }};display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:{{ r.tint }};">{{ r.initials }}</div>
+                  <div style="min-width:0;">
+                    <div style="font-size:12.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.name }}</div>
+                    <div style="font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap;">{{ r.role }}</div>
+                  </div>
+                </div>
+                <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="4">
+                  <div onClick="{{ c.toggle }}" style="padding:11px 14px;display:flex;align-items:center;justify-content:center;cursor:{{ c.cursor }};border-inline-start:1px solid var(--hairline);">
+                    <div style="width:30px;height:30px;border-radius:9px;background:{{ c.bg }};display:flex;align-items:center;justify-content:center;">
+                      <i class="ph-bold {{ c.icon }}" style="font-size:16px;color:{{ c.fg }};"></i>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isPayroll }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;display:grid;grid-template-columns:1fr 380px;gap:13px;align-items:start;">
+            <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;">
+                <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</div>
+                  <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:1px;">{{ b.sub }}</div>
+                </div>
+                <span style="font-size:11px;font-weight:800;color:var(--brand-ink);background:var(--wash);border-radius:8px;padding:5px 10px;flex:none;">{{ b.formula }}</span>
+              </div>
+              <sc-for list="{{ b.lines }}" as="l" hint-placeholder-count="8">
+                <div style="padding:12px 18px;border-bottom:1px solid var(--hairline);display:grid;grid-template-columns:34px 1fr 140px 130px;gap:12px;align-items:center;background:{{ l.bg }};">
+                  <div style="width:26px;height:26px;border-radius:8px;background:{{ l.signBg }};display:flex;align-items:center;justify-content:center;">
+                    <i class="ph-bold {{ l.signIcon }}" style="font-size:14px;color:{{ l.signFg }};"></i>
+                  </div>
+                  <div style="min-width:0;">
+                    <div style="font-size:13px;font-weight:{{ l.fw }};color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ l.label }}</div>
+                    <sc-if value="{{ l.note }}" hint-placeholder-val="{{ false }}">
+                      <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ l.note }}</div>
+                    </sc-if>
+                  </div>
+                  <span style="font-size:11.5px;font-weight:700;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap;">{{ l.basis }}</span>
+                  <span style="font-size:14.5px;font-weight:800;color:{{ l.fg }};text-align:end;font-variant-numeric:tabular-nums;">{{ l.amount }}</span>
+                </div>
+              </sc-for>
+              <div style="padding:16px 18px;background:var(--field);display:grid;grid-template-columns:34px 1fr 140px 130px;gap:12px;align-items:center;">
+                <div style="width:26px;height:26px;border-radius:8px;background:var(--brand);display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold ph-equals" style="font-size:14px;color:#fff;"></i>
+                </div>
+                <span style="font-size:15px;font-weight:800;color:var(--txt);">{{ b.netLabel }}</span>
+                <span style="font-size:11.5px;font-weight:700;color:var(--muted);text-align:center;">{{ b.netBasis }}</span>
+                <span style="font-size:21px;font-weight:800;color:var(--ok);text-align:end;font-variant-numeric:tabular-nums;">{{ b.net }}</span>
+              </div>
+            </div>
+            <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+              <div style="padding:16px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:12px;">
+                <div style="width:46px;height:46px;flex:none;border-radius:14px;background:{{ b.who.wash }};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:{{ b.who.tint }};">{{ b.who.initials }}</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:15px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ b.who.name }}</div>
+                  <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px;">{{ b.who.sub }}</div>
+                </div>
+              </div>
+              <sc-for list="{{ b.facts }}" as="f" hint-placeholder-count="6">
+                <div style="padding:12px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;">
+                  <i class="ph-bold {{ f.icon }}" style="font-size:16px;color:{{ f.tint }};flex:none;"></i>
+                  <span style="flex:1;font-size:12.5px;font-weight:700;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.label }}</span>
+                  <span style="font-size:13.5px;font-weight:800;color:{{ f.fg }};flex:none;font-variant-numeric:tabular-nums;">{{ f.value }}</span>
+                </div>
+              </sc-for>
+              <div style="padding:14px 18px;display:flex;flex-direction:column;gap:10px;">
+                <div onClick="{{ b.payGo }}" style="height:46px;border-radius:12px;background:var(--brand);display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;">
+                  <i class="ph-bold ph-hand-coins" style="font-size:17px;color:#fff;"></i>
+                  <span style="font-size:13.5px;font-weight:800;color:#fff;">صرف الراتب من الخزينة</span>
+                </div>
+                <div style="border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.08);border-radius:12px;padding:12px;display:flex;gap:10px;">
+                  <i class="ph-bold ph-info" style="font-size:17px;color:var(--warn);flex:none;"></i>
+                  <span style="font-size:11.5px;font-weight:600;color:var(--txt2);line-height:1.7;text-wrap:pretty;">{{ b.warn }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isTable }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;">
+              <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</div>
+                <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:1px;">{{ b.sub }}</div>
+              </div>
+              <sc-for list="{{ b.chips }}" as="c" hint-placeholder-count="2">
+                <div onClick="{{ c.pick }}" style="height:32px;border-radius:9px;border:1px solid {{ c.bd }};background:{{ c.bg }};display:flex;align-items:center;gap:6px;padding:0 12px;cursor:pointer;flex:none;">
+                  <span style="font-size:11.5px;font-weight:700;color:{{ c.fg }};white-space:nowrap;">{{ c.label }}</span>
+                  <span style="font-size:10.5px;font-weight:800;color:{{ c.fg }};opacity:.75;">{{ c.count }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:{{ b.grid }};gap:12px;padding:11px 18px;background:var(--field);border-bottom:1px solid var(--hairline);">
+              <sc-for list="{{ b.cols }}" as="c" hint-placeholder-count="6">
+                <span style="font-size:11.5px;font-weight:800;color:var(--muted);text-align:{{ c.align }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.label }}</span>
+              </sc-for>
+            </div>
+            <sc-if value="{{ b.filtered }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:8px 18px;background:var(--wash);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:7px;">
+                <i class="ph-bold ph-funnel" style="font-size:13px;color:var(--brand-ink);"></i>
+                <span style="font-size:11.5px;font-weight:700;color:var(--brand-ink);">{{ b.filterNote }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ b.isEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:34px 18px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+                <i class="ph-bold ph-tray" style="font-size:26px;color:var(--muted);"></i>
+                <span style="font-size:12.5px;font-weight:700;color:var(--muted);">{{ b.emptyNote }}</span>
+              </div>
+            </sc-if>
+            <sc-for list="{{ b.rows }}" as="r" hint-placeholder-count="6">
+              <div onClick="{{ r.go }}" style="display:grid;grid-template-columns:{{ b.grid }};gap:12px;padding:11px 18px;border-bottom:1px solid var(--hairline);align-items:center;cursor:{{ r.cursor }};">
+                <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="6">
+                  <div style="min-width:0;display:flex;align-items:center;gap:9px;justify-content:{{ c.justify }};">
+                    <sc-if value="{{ c.icon }}" hint-placeholder-val="{{ false }}">
+                      <div style="width:30px;height:30px;flex:none;border-radius:9px;background:{{ c.iconBg }};display:flex;align-items:center;justify-content:center;">
+                        <i class="ph-bold {{ c.icon }}" style="font-size:15px;color:{{ c.iconFg }};"></i>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ c.isPill }}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size:11.5px;font-weight:800;color:{{ c.fg }};background:{{ c.pillBg }};border-radius:8px;padding:5px 10px;white-space:nowrap;">{{ c.text }}</span>
+                    </sc-if>
+                    <sc-if value="{{ c.isBar }}" hint-placeholder-val="{{ false }}">
+                      <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;">
+                        <div style="flex:1;height:7px;border-radius:4px;background:var(--track);overflow:hidden;">
+                          <div style="width:{{ c.pct }};height:100%;border-radius:4px;background:{{ c.barFg }};"></div>
+                        </div>
+                        <span style="font-size:12px;font-weight:800;color:{{ c.fg }};min-width:44px;text-align:end;font-variant-numeric:tabular-nums;">{{ c.text }}</span>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ c.isText }}" hint-placeholder-val="{{ false }}">
+                      <div style="min-width:0;flex:1;text-align:{{ c.align }};">
+                        <div style="font-size:13px;font-weight:{{ c.fw }};color:{{ c.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;">{{ c.text }}</div>
+                        <sc-if value="{{ c.sub }}" hint-placeholder-val="{{ false }}">
+                          <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.sub }}</div>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ c.isTrend }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;align-items:center;gap:5px;">
+                        <i class="ph-bold {{ c.arrow }}" style="font-size:13px;color:{{ c.fg }};"></i>
+                        <span style="font-size:12.5px;font-weight:800;color:{{ c.fg }};font-variant-numeric:tabular-nums;">{{ c.text }}</span>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ c.isBtn }}" hint-placeholder-val="{{ false }}">
+                      <div onClick="{{ c.act }}" style="height:30px;border-radius:9px;border:1.5px solid {{ c.fg }};display:flex;align-items:center;gap:6px;padding:0 11px;cursor:pointer;">
+                        <i class="ph-bold {{ c.btnIcon }}" style="font-size:13px;color:{{ c.fg }};"></i>
+                        <span style="font-size:11.5px;font-weight:800;color:{{ c.fg }};white-space:nowrap;">{{ c.text }}</span>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+            <sc-if value="{{ b.hasTotals }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:{{ b.grid }};gap:12px;padding:14px 18px;background:var(--field);">
+                <sc-for list="{{ b.totals }}" as="t" hint-placeholder-count="6">
+                  <span style="font-size:13.5px;font-weight:800;color:{{ t.fg }};text-align:{{ t.align }};font-variant-numeric:tabular-nums;white-space:nowrap;">{{ t.text }}</span>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ═══════════ entity detail drawer ═══════════ -->
+  <sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeDrawer }}" style="position:absolute;inset:0;background:rgba(1,34,88,.42);z-index:60;"></div>
+  <div style="position:absolute;top:0;bottom:0;left:0;width:620px;background:var(--card);border-inline-start:1px solid var(--hairline);box-shadow:var(--shadow);z-index:61;display:flex;flex-direction:column;">
+    <div style="flex:none;padding:20px 24px;border-bottom:1px solid var(--hairline);display:flex;align-items:flex-start;gap:13px;">
+      <div style="width:52px;height:52px;flex:none;border-radius:15px;background:{{ drawer.wash }};display:flex;align-items:center;justify-content:center;">
+        <sc-if value="{{ drawer.initials }}" hint-placeholder-val="{{ false }}">
+          <span style="font-size:17px;font-weight:800;color:{{ drawer.tint }};">{{ drawer.initials }}</span>
+        </sc-if>
+        <sc-if value="{{ drawer.icon }}" hint-placeholder-val="{{ false }}">
+          <i class="ph-bold {{ drawer.icon }}" style="font-size:25px;color:{{ drawer.tint }};"></i>
+        </sc-if>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <span style="font-size:10px;font-weight:700;color:var(--muted);background:var(--field);border:1px solid var(--hairline);border-radius:6px;padding:2px 7px;">{{ drawer.crumb }}</span>
+        <div style="font-size:19px;font-weight:800;color:var(--txt);margin-top:6px;line-height:1.3;">{{ drawer.title }}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:2px;">{{ drawer.sub }}</div>
+      </div>
+      <div onClick="{{ closeDrawer }}" style="width:38px;height:38px;flex:none;border-radius:11px;border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <i class="ph-bold ph-x" style="font-size:17px;color:var(--txt2);"></i>
+      </div>
+    </div>
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:18px 24px 24px;display:flex;flex-direction:column;gap:16px;">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;">
+        <sc-for list="{{ drawer.kpis }}" as="k" hint-placeholder-count="4">
+          <div style="border:1px solid var(--hairline);background:var(--field);border-radius:13px;padding:12px;">
+            <div style="font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ k.label }}</div>
+            <div style="font-size:18px;font-weight:800;color:{{ k.fg }};margin-top:4px;font-variant-numeric:tabular-nums;">{{ k.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <sc-for list="{{ drawer.groups }}" as="g" hint-placeholder-count="3">
+        <div>
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">
+            <i class="ph-bold {{ g.icon }}" style="font-size:16px;color:var(--brand-ink);"></i>
+            <span style="flex:1;font-size:13px;font-weight:800;color:var(--txt);">{{ g.label }}</span>
+            <span style="font-size:11px;font-weight:700;color:var(--muted);">{{ g.meta }}</span>
+          </div>
+          <div style="border:1px solid var(--hairline);border-radius:14px;overflow:hidden;">
+            <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
+              <div style="padding:11px 14px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;background:{{ r.bg }};">
+                <div style="width:32px;height:32px;flex:none;border-radius:10px;background:{{ r.wash }};display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold {{ r.icon }}" style="font-size:15px;color:{{ r.tint }};"></i>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.title }}</div>
+                  <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.sub }}</div>
+                </div>
+                <span style="font-size:12.5px;font-weight:800;color:{{ r.valFg }};flex:none;font-variant-numeric:tabular-nums;">{{ r.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="flex:none;padding:15px 24px;border-top:1px solid var(--hairline);background:var(--field);display:flex;align-items:center;gap:10px;">
+      <div onClick="{{ closeDrawer }}" style="height:46px;border-radius:12px;border:1.5px solid var(--hairline);background:var(--card);display:flex;align-items:center;padding:0 20px;font-size:13px;font-weight:700;color:var(--txt2);cursor:pointer;">إغلاق</div>
+      <div style="flex:1;"></div>
+      <sc-for list="{{ drawer.actions }}" as="a" hint-placeholder-count="2">
+        <div onClick="{{ a.go }}" style="height:46px;border-radius:12px;border:1.5px solid {{ a.bd }};background:{{ a.bg }};display:flex;align-items:center;gap:8px;padding:0 18px;cursor:pointer;">
+          <i class="ph-bold {{ a.icon }}" style="font-size:16px;color:{{ a.fg }};"></i>
+          <span style="font-size:13px;font-weight:800;color:{{ a.fg }};white-space:nowrap;">{{ a.label }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ═══════════ dialog ═══════════ -->
+  <sc-if value="{{ dlgOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeDlg }}" style="position:absolute;inset:0;background:rgba(1,34,88,.45);backdrop-filter:blur(3px);z-index:80;"></div>
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:{{ dlg.width }};max-height:88%;background:var(--card);border:1px solid var(--hairline);border-radius:22px;box-shadow:0 26px 70px rgba(1,34,88,.42);z-index:81;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="flex:none;padding:20px 24px;border-bottom:1px solid var(--hairline);display:flex;align-items:flex-start;gap:13px;">
+      <div style="width:48px;height:48px;flex:none;border-radius:14px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold {{ dlg.icon }}" style="font-size:24px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:18px;font-weight:800;color:var(--txt);line-height:1.3;">{{ dlg.title }}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:3px;text-wrap:pretty;">{{ dlg.sub }}</div>
+      </div>
+      <div onClick="{{ closeDlg }}" style="width:38px;height:38px;flex:none;border-radius:11px;border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <i class="ph-bold ph-x" style="font-size:17px;color:var(--txt2);"></i>
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;display:grid;grid-template-columns:{{ dlg.bodyCols }};">
+      <div style="min-width:0;overflow-y:auto;padding:20px 24px 24px;display:flex;flex-direction:column;gap:19px;">
+        <sc-for list="{{ dlg.groups }}" as="g" hint-placeholder-count="3">
+          <div>
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+              <span style="width:3.5px;height:14px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <span style="flex:1;font-size:12.5px;font-weight:800;color:var(--txt);">{{ g.label }}</span>
+              <span style="font-size:11px;font-weight:700;color:var(--muted);">{{ g.hint }}</span>
+            </div>
+
+            <sc-if value="{{ g.isFields }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:{{ g.cols }};gap:12px;">
+                <sc-for list="{{ g.items }}" as="f" hint-placeholder-count="4">
+                  <div>
+                    <div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:6px;">{{ f.label }}</div>
+                    <div style="height:46px;border-radius:12px;border:1.5px solid {{ f.bd }};background:var(--field);display:flex;align-items:center;gap:9px;padding:0 13px;cursor:pointer;">
+                      <i class="ph-bold {{ f.icon }}" style="font-size:16px;color:{{ f.iconFg }};flex:none;"></i>
+                      <span style="flex:1;font-size:13.5px;font-weight:700;color:{{ f.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.value }}</span>
+                      <sc-if value="{{ f.tail }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:11px;font-weight:700;color:var(--muted);flex:none;">{{ f.tail }}</span>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ g.isChips }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-wrap:wrap;gap:9px;">
+                <sc-for list="{{ g.items }}" as="c" hint-placeholder-count="4">
+                  <div onClick="{{ c.toggle }}" style="height:40px;border-radius:11px;border:1.5px solid {{ c.bd }};background:{{ c.bg }};display:flex;align-items:center;gap:8px;padding:0 14px;cursor:pointer;">
+                    <i class="ph-bold {{ c.mark }}" style="font-size:16px;color:{{ c.fg }};"></i>
+                    <span style="font-size:13px;font-weight:700;color:{{ c.fg }};white-space:nowrap;">{{ c.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ g.isCards }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:{{ g.cols }};gap:11px;">
+                <sc-for list="{{ g.items }}" as="o" hint-placeholder-count="3">
+                  <div onClick="{{ o.pick }}" style="border:1.5px solid {{ o.bd }};background:{{ o.bg }};border-radius:14px;padding:13px;cursor:pointer;">
+                    <div style="display:flex;align-items:center;gap:9px;">
+                      <i class="ph-bold {{ o.icon }}" style="font-size:19px;color:{{ o.fg }};"></i>
+                      <span style="flex:1;font-size:13px;font-weight:800;color:{{ o.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ o.label }}</span>
+                      <sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}">
+                        <i class="ph-bold ph-check-circle" style="font-size:16px;color:{{ o.fg }};"></i>
+                      </sc-if>
+                    </div>
+                    <div style="font-size:11px;font-weight:600;color:var(--muted);line-height:1.6;margin-top:7px;text-wrap:pretty;">{{ o.sub }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ g.isToggles }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid var(--hairline);border-radius:14px;background:var(--field);padding:2px 15px;">
+                <sc-for list="{{ g.items }}" as="t" hint-placeholder-count="3">
+                  <div style="padding:12px 0;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:12px;">
+                    <i class="ph-bold {{ t.icon }}" style="font-size:17px;color:var(--muted);flex:none;"></i>
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-size:12.5px;font-weight:700;color:var(--txt);">{{ t.title }}</div>
+                      <div style="font-size:10.5px;font-weight:500;color:var(--muted);margin-top:2px;">{{ t.sub }}</div>
+                    </div>
+                    <div onClick="{{ t.toggle }}" style="width:44px;height:25px;border-radius:999px;background:{{ t.knobBg }};position:relative;flex:none;cursor:pointer;">
+                      <div style="position:absolute;top:3px;inset-inline-start:{{ t.knobX }};width:19px;height:19px;border-radius:50%;background:#fff;"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ g.isScores }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <sc-for list="{{ g.items }}" as="s" hint-placeholder-count="4">
+                  <div>
+                    <div style="display:flex;align-items:center;gap:9px;margin-bottom:7px;">
+                      <i class="ph-bold {{ s.icon }}" style="font-size:15px;color:{{ s.tint }};"></i>
+                      <span style="flex:1;font-size:12.5px;font-weight:700;color:var(--txt);">{{ s.label }}</span>
+                      <span style="font-size:14px;font-weight:800;color:{{ s.tint }};font-variant-numeric:tabular-nums;">{{ s.value }}</span>
+                    </div>
+                    <div style="height:9px;border-radius:5px;background:var(--track);overflow:hidden;">
+                      <div style="width:{{ s.pct }};height:100%;border-radius:5px;background:{{ s.tint }};"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ g.isChain }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid var(--hairline);border-radius:14px;overflow:hidden;">
+                <sc-for list="{{ g.items }}" as="s" hint-placeholder-count="3">
+                  <div style="padding:13px 15px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:12px;background:{{ s.bg }};">
+                    <div style="width:32px;height:32px;flex:none;border-radius:50%;background:{{ s.dotBg }};display:flex;align-items:center;justify-content:center;">
+                      <i class="ph-bold {{ s.icon }}" style="font-size:15px;color:{{ s.dotFg }};"></i>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-size:12.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.title }}</div>
+                      <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.sub }}</div>
+                    </div>
+                    <span style="font-size:11px;font-weight:800;color:{{ s.pillFg }};background:{{ s.pillBg }};border-radius:8px;padding:4px 9px;flex:none;white-space:nowrap;">{{ s.status }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ g.isNote }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid {{ g.noteBd }};background:{{ g.noteBg }};border-radius:14px;padding:13px;display:flex;gap:11px;">
+                <i class="ph-bold {{ g.noteIcon }}" style="font-size:18px;color:{{ g.noteFg }};flex:none;"></i>
+                <div style="font-size:12px;font-weight:600;color:var(--txt2);line-height:1.75;text-wrap:pretty;">{{ g.note }}</div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ dlg.hasAside }}" hint-placeholder-val="{{ false }}">
+        <div style="border-inline-start:1px solid var(--hairline);background:var(--field);min-width:0;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;align-items:center;gap:9px;">
+            <i class="ph-bold {{ dlg.aside.icon }}" style="font-size:17px;color:var(--brand-ink);"></i>
+            <span style="font-size:13px;font-weight:800;color:var(--txt);">{{ dlg.aside.title }}</span>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--hairline);border-radius:14px;overflow:hidden;">
+            <sc-for list="{{ dlg.aside.rows }}" as="r" hint-placeholder-count="5">
+              <div style="padding:11px 14px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
+                <span style="flex:1;font-size:11.5px;font-weight:{{ r.fw }};color:{{ r.labelFg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.label }}</span>
+                <span style="font-size:13px;font-weight:800;color:{{ r.fg }};flex:none;font-variant-numeric:tabular-nums;">{{ r.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ dlg.aside.verdict }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1.5px solid {{ dlg.aside.vBd }};background:{{ dlg.aside.vBg }};border-radius:14px;padding:14px;display:flex;gap:11px;">
+              <i class="ph-bold {{ dlg.aside.vIcon }}" style="font-size:19px;color:{{ dlg.aside.vFg }};flex:none;"></i>
+              <div style="min-width:0;">
+                <div style="font-size:12.5px;font-weight:800;color:{{ dlg.aside.vFg }};">{{ dlg.aside.verdict }}</div>
+                <div style="font-size:11px;font-weight:600;color:var(--txt2);line-height:1.7;margin-top:4px;text-wrap:pretty;">{{ dlg.aside.vSub }}</div>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ dlg.aside.hasBig }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--card);border:1px solid var(--hairline);border-radius:14px;padding:16px;text-align:center;">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);">{{ dlg.aside.bigLabel }}</div>
+              <div style="font-size:28px;font-weight:800;color:{{ dlg.aside.bigFg }};margin-top:6px;line-height:1.1;font-variant-numeric:tabular-nums;">{{ dlg.aside.big }}</div>
+              <div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:4px;">{{ dlg.aside.bigSub }}</div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="flex:none;padding:16px 24px;border-top:1px solid var(--hairline);background:var(--field);display:flex;align-items:center;gap:11px;">
+      <div onClick="{{ closeDlg }}" style="height:48px;border-radius:13px;border:1.5px solid var(--hairline);background:var(--card);display:flex;align-items:center;padding:0 22px;font-size:13.5px;font-weight:700;color:var(--txt2);cursor:pointer;">{{ dlg.cancel }}</div>
+      <div style="flex:1;"></div>
+      <sc-if value="{{ dlg.alt }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeDlg }}" style="height:48px;border-radius:13px;border:1.5px solid var(--hairline);background:var(--card);display:flex;align-items:center;gap:8px;padding:0 18px;cursor:pointer;">
+          <i class="ph-bold {{ dlg.altIcon }}" style="font-size:17px;color:var(--txt2);"></i>
+          <span style="font-size:13.5px;font-weight:700;color:var(--txt2);white-space:nowrap;">{{ dlg.alt }}</span>
+        </div>
+      </sc-if>
+      <div onClick="{{ closeDlg }}" style="height:48px;border-radius:13px;background:{{ dlg.saveBg }};display:flex;align-items:center;gap:9px;padding:0 26px;cursor:pointer;">
+        <i class="ph-bold {{ dlg.saveIcon }}" style="font-size:18px;color:#fff;"></i>
+        <span style="font-size:14px;font-weight:800;color:#fff;white-space:nowrap;">{{ dlg.save }}</span>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;module&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;branches&quot;,&quot;regions&quot;,&quot;analytics&quot;,&quot;staff&quot;],&quot;default&quot;:&quot;branches&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;العرض&quot;}}">
+const RAIL = [
+  {icon:'ph-squares-four', label:'لوحة التحكم'},
+  {icon:'ph-receipt', label:'فواتير المبيعات'},
+  {icon:'ph-package', label:'المخزون'},
+  {icon:'ph-users-three', label:'العملاء والموردين'},
+  {icon:'ph-vault', label:'الخزينة'},
+  {icon:'ph-chart-bar', label:'التقارير'},
+  {icon:'ph-chart-donut', label:'التحليلات', active:true},
+  {icon:'ph-scales', label:'ميزان PLU'},
+  {icon:'ph-clipboard-text', label:'سجل العمليات'},
+  {icon:'ph-gear', label:'الإعدادات'},
+];
+
+const KPI = (icon, label, value, delta, up, tint, vs) => ({icon, label, value, delta, up, tint, vs: vs || ''});
+const T = (text, opt) => Object.assign({kind:'text', text}, opt || {});
+const N = (text, opt) => Object.assign({kind:'text', text, align:'end', fw:800}, opt || {});
+const P = (text, tint) => ({kind:'pill', text, tint});
+const B = (text, pct, tint) => ({kind:'bar', text, pct, tint});
+const TR = (text, up) => ({kind:'trend', text, up});
+const BTN = (text, icon, tint, dlg) => ({kind:'btn', text, btnIcon:icon, tint, dlg});
+const ARD = n => String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
+
+const LATIN = s => String(s).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+const numOf = txt => {
+  const t = LATIN(txt == null ? '' : txt).replace(/,/g, '').trim();
+  if (!/^\(?-?\d+(\.\d+)?\)?$/.test(t)) return null;
+  const neg = t.charAt(0) === '(';
+  return (neg ? -1 : 1) * parseFloat(t.replace(/[()]/g, ''));
+};
+const fmtSum = n => n.toLocaleString('en-US', {maximumFractionDigits: 2});
+// Rebuilds a totals row from the rows on screen: the first cell keeps its authored
+// unit word but takes the live count, numeric columns are summed, and anything that
+// isn't a plain number (a percentage, a dash) is left exactly as authored.
+// Arabic counted nouns take the plural form for 3–10 and the singular either side of
+// that, so the unit word has to follow the live count rather than the authored one.
+const UNITS = [['أصل','أصول'],['ورقة','أوراق'],['فئة','فئات'],['موقع','مواقع'],['حركة','حركات'],
+  ['بند','بنود'],['أمر','أوامر'],['عميل','عملاء'],['شريحة','شرائح'],['فاتورة','فواتير'],
+  ['شيك','شيكات'],['صنف','أصناف'],['مورد','موردون'],['موظف','موظفون'],['مندوب','مندوبون'],
+  ['قسط','أقساط'],['سطر','سطور'],['مصروف','مصروفات'],['برنامج','برامج'],['حساب','حسابات'],
+  ['قيد','قيود'],['زيارة','زيارات'],['مسار','مسارات'],['فرع','فروع'],['منطقة','مناطق'],
+  ['مخزن','مخازن'],['نقطة','نقاط'],['تقرير','تقارير'],['دفعة','دفعات'],['بطاقة','بطاقات'],
+  ['يوم','أيام'],['شهر','أشهر'],['طرف','أطراف'],['أصل ثابت','أصول ثابتة']];
+const countedNoun = (word, n) => {
+  const w = String(word || '').replace(/ً/g, '').trim();
+  if (!w) return '';
+  const pair = UNITS.find(u => u[0] === w || u[1] === w);
+  if (!pair) return w;
+  return (n >= 3 && n <= 10) ? pair[1] : pair[0];
+};
+const hasArabicDigits = s => /[٠-٩]/.test(String(s == null ? '' : s));
+const derivedTotals = (b, shown) => (b.totals || []).map((t, ci) => {
+  if (ci === 0) {
+    const unit = countedNoun(String(t || '').replace(/[0-9٠-٩,.]+/g, ' ').trim(), shown.length);
+    return ARD(shown.length) + (unit ? ' ' + unit : '');
+  }
+  const authored = numOf(t);
+  if (authored === null) {
+    // A percentage total summarises two other columns. Echoing the authored string
+    // would go stale the moment a filter changes the row set, so find the column pair
+    // whose ratio reproduces it on the full set, then recompute that ratio on `shown`.
+    const raw = LATIN(t == null ? '' : t).replace(/[٪%\s,]/g, '');
+    if (!/^-?\d+(\.\d+)?$/.test(raw)) return t;
+    const target = parseFloat(raw);
+    const ratio = (rows, num, den) => {
+      let a = 0, c = 0, okA = false, okC = false;
+      rows.forEach(r => {
+        const x = numOf((r[num] || {}).text), y = numOf((r[den] || {}).text);
+        if (x !== null) { a += x; okA = true; }
+        if (y !== null) { c += y; okC = true; }
+      });
+      return (okA && okC && c) ? a / c * 100 : null;
+    };
+    const width = (b.cols || []).length;
+    const sym = /%/.test(String(t)) ? '%' : '٪';
+    for (let den = 0; den < width; den++) {
+      for (let num = 0; num < width; num++) {
+        if (num === den) continue;
+        const base = ratio(b.rows, num, den);
+        if (base === null || Math.abs(base - target) > 1) continue;
+        const live = ratio(shown, num, den);
+        if (live === null) return t;
+        const out2 = Math.round(live) + sym;
+        return hasArabicDigits(t) ? ARD(out2) : out2;
+      }
+    }
+    return t;
+  }
+  // the footer must speak the same numeral system as the column it is summing
+  const arabicCol = hasArabicDigits(t) || shown.some(r => hasArabicDigits((r[ci] || {}).text));
+  const out = v => arabicCol ? ARD(fmtSum(v)) : fmtSum(v);
+  // A running-balance column is not additive: if the authored footer matches the last
+  // row's value, it is a closing figure, so carry that value instead of summing.
+  const lastVal = shown.length ? numOf((shown[shown.length - 1][ci] || {}).text) : null;
+  if (lastVal !== null && Math.abs(authored - lastVal) < 0.5) return out(lastVal);
+  let sum = 0, any = false;
+  shown.forEach(r => {
+    const v = numOf((r[ci] || {}).text);
+    if (v !== null) { sum += v; any = true; }
+  });
+  return any ? out(sum) : t;
+});
+
+const MODULES = [
+  {id:'branches', icon:'ph-buildings', label:'الفروع', meta:'٣ فروع · ٤ نقاط بيع', count:'٣'},
+  {id:'regions', icon:'ph-map-trifold', label:'المناطق والمسارات', meta:'٤ مسارات · ٦ مناديب', count:'٤'},
+  {id:'analytics', icon:'ph-chart-donut', label:'التحليلات', meta:'موازنات واعتمادات', count:'٧'},
+  {id:'staff', icon:'ph-identification-badge', label:'الموظفون', meta:'١٤ موظفاً · ٢ بصمة', count:'١٤'},
+];
+
+const HEADS = {
+  branches: {icon:'ph-buildings', title:'الفروع والمنشآت', sub:'الفروع ونقاط البيع والمخازن وتقويم العطلات وصلاحيات الوصول', hint:'ابحث عن فرع أو نقطة بيع...', action:'فرع جديد', dlg:'branch', alt:'صلاحيات الوصول', altIcon:'ph-lock-key', altDlg:'access'},
+  regions: {icon:'ph-map-trifold', title:'المناطق ومسارات التوزيع', sub:'المسارات الجغرافية وزيارات المندوبين والأهداف والتحصيل', hint:'ابحث عن مسار أو مندوب...', action:'مسار جديد', dlg:'route', alt:'تخطيط زيارات', altIcon:'ph-calendar-plus', altDlg:'visit'},
+  analytics: {icon:'ph-chart-donut', title:'التحليلات المؤسسية', sub:'مقارنة الفروع والموازنات وسير الاعتمادات', hint:'ابحث في المؤشرات...', action:'موازنة جديدة', dlg:'budget', alt:'طلبات الاعتماد', altIcon:'ph-seal-check', altDlg:'approve'},
+  staff: {icon:'ph-identification-badge', title:'الموظفون والرواتب', sub:'الحضور والرواتب والسلف والإجازات والأداء والعقود', hint:'ابحث عن موظف...', action:'موظف جديد', dlg:'employee', alt:'صرف رواتب الشهر', altIcon:'ph-hand-coins', altDlg:'payslip'}};
+
+const TABS = {
+  branches: [
+    {id:'list', label:'الفروع', icon:'ph-buildings', badge:'٣', note:'الفرع يملك نقاط بيع ومخازن وتقويم عطلات مستقلاً'},
+    {id:'pos', label:'نقاط البيع', icon:'ph-desktop-tower', badge:'٤', note:'كل نقطة بيع مرتبطة بفرع وطابعة وخزينة'},
+    {id:'warehouses', label:'المخازن', icon:'ph-warehouse', badge:'٤', note:'مخزن التالف لا يُباع منه'},
+    {id:'holidays', label:'تقويم العطلات', icon:'ph-calendar-x', note:'عطلات الفرع = صفوفه + الصفوف العامة (دمج تراكمي)'},
+    {id:'access', label:'صلاحيات الوصول', icon:'ph-lock-key', note:'بلا صفوف = وصول لكل الفروع (توافق خلفي)'},
+  ],
+  regions: [
+    {id:'routes', label:'المسارات', icon:'ph-path', badge:'٤', note:'كل مسار له مندوب مسؤول ومنطقة جغرافية'},
+    {id:'visits', label:'الزيارات', icon:'ph-map-pin-line', badge:'٤٨', note:'الزيارة قد تنتج فاتورة بيع أو تُتخطّى بسبب'},
+    {id:'targets', label:'الأهداف والتحصيل', icon:'ph-target', note:'الهدف شهري بالقيمة وبعدد الزيارات معاً'},
+    {id:'delivery', label:'شركات التوصيل', icon:'ph-moped', badge:'٣', note:'المندوب يتبع شركة أو يكون داخلياً'},
+  ],
+  analytics: [
+    {id:'overview', label:'نظرة عامة', icon:'ph-gauge', note:'مؤشرات مجمّعة على مستوى المنشأة'},
+    {id:'budget', label:'الموازنات', icon:'ph-chart-line', badge:'٣', note:'التوزيع الشهري: متساوٍ أو يدوي أو موسمي'},
+    {id:'approvals', label:'الاعتمادات', icon:'ph-seal-check', badge:'٧', note:'مستويان = صانع/مراجع · ثلاثة = + معتمد'},
+    {id:'compare', label:'مقارنة الفروع', icon:'ph-git-diff', note:'نفس الفترة لكل الفروع'},
+  ],
+  staff: [
+    {id:'people', label:'الموظفون', icon:'ph-users', badge:'١٤', note:'الموظف مرتبط بفرع وله نوع راتب ومعرّف بصمة'},
+    {id:'attendance', label:'الحضور', icon:'ph-fingerprint', badge:'اليوم', note:'الحضور المتوقع 09:00 والانصراف 17:00'},
+    {id:'payroll', label:'الرواتب', icon:'ph-money', note:'المقام أيام الشهر الفعلية لا ٣٠ ثابتة'},
+    {id:'advances', label:'السلف والخصومات', icon:'ph-hand-coins', badge:'٦', note:'السلفة لا تتجاوز ٥٠٪ من الراتب'},
+    {id:'leaves', label:'الإجازات', icon:'ph-airplane-takeoff', badge:'٤', note:'الرصيد سنوي لكل نوع إجازة'},
+    {id:'perf', label:'الأداء', icon:'ph-medal', note:'٤ محاور بوزن متساوٍ تُنتج التقييم العام'},
+    {id:'contracts', label:'العقود', icon:'ph-file-text', badge:'٢', note:'العقد الدائم بلا تاريخ نهاية'},
+  ]};
+
+// ══════════════════ BRANCHES ══════════════════
+const BLOCKS = {};
+
+BLOCKS['branches:list'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-buildings','الفروع النشطة','٣','—',true,'#0250D3','من ٣ مسجلة'),
+    KPI('ph-currency-circle-dollar','مبيعات اليوم','184,320','١٢٪',true,'#22C55E'),
+    KPI('ph-package','قيمة المخزون','1,842,600','٤٪',true,'#F59E0B','بالتكلفة'),
+    KPI('ph-users','الموظفون الموزّعون','١٤','١',true,'#8B5CF6','على ٣ فروع'),
+  ]},
+  {kind:'cards', cols:'repeat(3,1fr)', title:'الفروع', sub:'البطاقات المعلَّمة بـ «الملف الكامل» تفتح نقاط البيع والمخازن والموظفين', items:[
+    {id:'b1', icon:'ph-storefront', tint:'#22C55E', title:'فرع المعادي', sub:'٩ شارع ٧٧ المتفرع · الفرع الرئيسي', status:'رئيسي', pill:'#22C55E',
+      stats:[['مبيعات اليوم','103,240','#22C55E'],['نقاط البيع','٢',''],['الموظفون','٧','']],
+      chips:[['ph-warehouse','مخزنان','#6B7280'],['ph-clock','٠٨:٠٠ — ٢٣:٠٠','#6B7280'],['ph-broadcast','وردية مفتوحة','#22C55E']]},
+    {id:'b2', icon:'ph-storefront', tint:'#F59E0B', title:'فرع مدينة نصر', sub:'١٤ شارع مصطفى النحاس', status:'تحت المستهدف', pill:'#F59E0B',
+      stats:[['مبيعات اليوم','48,420','#F59E0B'],['نقاط البيع','١',''],['الموظفون','٤','']],
+      chips:[['ph-warehouse','مخزن واحد','#6B7280'],['ph-clock','١٠:٠٠ — ٢٣:٠٠','#6B7280'],['ph-warning','٨٢٪ من المستهدف','#F59E0B']]},
+    {id:'b3', icon:'ph-storefront', tint:'#0250D3', title:'فرع أكتوبر', sub:'الحصري · المحور المركزي', status:'نشط', pill:'#0250D3',
+      stats:[['مبيعات اليوم','32,660','#0250D3'],['نقاط البيع','١',''],['الموظفون','٣','']],
+      chips:[['ph-warehouse','مخزن واحد','#6B7280'],['ph-clock','١٠:٠٠ — ٢٢:٠٠','#6B7280'],['ph-trend-up','أعلى هامش ٢٤٪','#22C55E']]},
+  ]},
+  {kind:'bars', title:'حصة كل فرع من المبيعات والربح', sub:'الفترة: هذا الشهر · ج.م', items:[
+    {icon:'ph-storefront', tint:'#22C55E', label:'فرع المعادي', sub:'٢ نقطة بيع · ٧ موظفين', pct:'100%', inner:'٥٦٪ من المبيعات', value:'103,240'},
+    {icon:'ph-storefront', tint:'#F59E0B', label:'فرع مدينة نصر', sub:'نقطة بيع · ٤ موظفين', pct:'47%', inner:'٢٦٪', value:'48,420'},
+    {icon:'ph-storefront', tint:'#0250D3', label:'فرع أكتوبر', sub:'نقطة بيع · ٣ موظفين', pct:'32%', inner:'١٨٪', value:'32,660'},
+  ]},
+];
+
+BLOCKS['branches:pos'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-desktop-tower','نقاط البيع','٤','—',true,'#0250D3','٤ نشطة'),
+    KPI('ph-broadcast','ورديات مفتوحة الآن','٢','—',true,'#22C55E'),
+    KPI('ph-printer','طابعات متصلة','٥','١',false,'#F59E0B','من ٦'),
+    KPI('ph-wifi-slash','آخر انقطاع مزامنة','٠٤:١٢','—',true,'#6B7280','استُعيد تلقائياً'),
+  ]},
+  {kind:'table', title:'نقاط البيع', sub:'كل نقطة مرتبطة بفرع وخزينة وطابعة إيصالات', chips:[['الكل','٤',1],['متصلة','٣',0],['بها تنبيه','١',0]],
+    grid:'1.7fr 1.3fr 1.3fr 1.5fr 1.4fr 1.2fr 1fr',
+    cols:[['نقطة البيع'],['الفرع'],['الخزينة'],['الطابعة'],['الوردية الحالية'],['آخر مزامنة'],['الحالة']],
+    rows:[
+      [T('CASHIER-01',{icon:'ph-desktop-tower', tint:'#22C55E', sub:'كاشير ١ · الرئيسي'}), T('المعادي'), T('كاشير ١'), T('حرارية 80mm',{sub:'USB · متصلة'}), T('محمود سعيد',{sub:'٧٤ فاتورة'}), T('الآن'), P('متصلة','#22C55E')],
+      [T('CASHIER-02',{icon:'ph-desktop-tower', tint:'#22C55E', sub:'كاشير ٢'}), T('المعادي'), T('كاشير ٢'), T('حرارية 80mm',{sub:'شبكة · متصلة'}), T('أحمد فؤاد',{sub:'٣١ فاتورة'}), T('الآن'), P('متصلة','#22C55E')],
+      [T('NASR-01',{icon:'ph-desktop-tower', tint:'#F59E0B', sub:'كاشير نصر'}), T('مدينة نصر'), T('نصر الرئيسية'), T('حرارية 58mm',{sub:'طابعة غير مستجيبة'}), T('—',{sub:'مغلقة 23:12'}), T('قبل ٤ دقائق'), P('تنبيه طابعة','#F59E0B')],
+      [T('OCT-01',{icon:'ph-desktop-tower', tint:'#0250D3', sub:'كاشير أكتوبر'}), T('أكتوبر'), T('أكتوبر الرئيسية'), T('حرارية 80mm',{sub:'USB · متصلة'}), T('—',{sub:'مغلقة 22:04'}), T('الآن'), P('متصلة','#22C55E')],
+    ]},
+];
+
+BLOCKS['branches:warehouses'] = [
+  {kind:'table', title:'المخازن', sub:'كل مخزن يتبع فرعاً واحداً · مخزن التالف لا يُباع منه', chips:[['كل المخازن','٤',1],['بها نقص','٣',0]],
+    grid:'1.8fr 1.4fr 1fr 1.4fr 1.6fr 1.1fr 1.2fr',
+    cols:[['المخزن'],['الفرع'],['الأصناف','end'],['قيمة التكلفة','end'],['حصة من المخزون'],['تحت الحد','end'],['الحالة']],
+    rows:[
+      [T('المخزن الرئيسي',{icon:'ph-warehouse', tint:'#0250D3', sub:'يُباع منه'}), T('المعادي'), N('٣٨٤٠'), N('1,180,400'), B('٦٤.٠٪','100%','#F59E0B'), N('٦'), P('نشط','#22C55E')],
+      [T('مخزن نصر',{icon:'ph-warehouse', tint:'#0250D3', sub:'يُباع منه'}), T('مدينة نصر'), N('٨٤٠'), N('348,200'), B('١٨.٩٪','30%','#F59E0B'), N('٤'), P('نشط','#22C55E')],
+      [T('مخزن أكتوبر',{icon:'ph-warehouse', tint:'#0250D3', sub:'يُباع منه'}), T('أكتوبر'), N('٤٦٠'), N('272,000'), B('١٤.٨٪','23%','#F59E0B'), N('٣'), P('نشط','#22C55E')],
+      [T('مخزن التالف',{icon:'ph-warehouse', tint:'#EF4444', sub:'لا يُباع منه'}), T('المعادي'), N('٦٠'), N('42,000'), B('٢.٣٪','4%','#EF4444'), N('١'), P('محجوز','#EF4444')],
+    ],
+    totals:['٤ مخازن','','٥٢٠٠','1,842,600','١٠٠٪','١٤','']},
+  {kind:'bars', title:'التحويلات بين الفروع', sub:'آخر ٣٠ يوماً · قيمة المنقول', items:[
+    {icon:'ph-arrows-left-right', tint:'#0250D3', label:'الرئيسي ← نصر', sub:'١٤ تحويلاً', pct:'100%', inner:'٤٨٢ صنفاً', value:'86,400'},
+    {icon:'ph-arrows-left-right', tint:'#4A80E8', label:'الرئيسي ← أكتوبر', sub:'٩ تحويلات', pct:'62%', inner:'٣١٠ أصناف', value:'53,200'},
+    {icon:'ph-arrows-left-right', tint:'#F59E0B', label:'نصر ← الرئيسي', sub:'٣ تحويلات (مرتجع)', pct:'18%', inner:'٦٤ صنفاً', value:'15,800'},
+    {icon:'ph-trash', tint:'#EF4444', label:'الرئيسي ← التالف', sub:'٦ إعدامات', pct:'9%', inner:'٤٢ صنفاً', value:'7,640'},
+  ]},
+];
+
+BLOCKS['branches:holidays'] = [
+  {kind:'cal', title:'سبتمبر ٢٠٢٦ — تقويم العطلات', sub:'الجمعة عطلة أسبوعية عامة · العطلات الخاصة لكل فرع تُضاف فوقها',
+    legend:[['عطلة أسبوعية','#6B7280'],['عطلة عامة','#EF4444'],['عطلة فرع','#F59E0B']],
+    dow:['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'],
+    marks:{4:['جمعة','w'], 11:['جمعة','w'], 18:['جمعة','w'], 25:['جمعة','w'],
+      6:['المولد النبوي','g'], 20:['جرد نصف سنوي — المعادي','b'], 23:['صيانة — أكتوبر','b']},
+    firstDow:2, days:30},
+  {kind:'table', title:'قواعد العطلات', sub:'الصف يحمل يوماً أسبوعياً أو تاريخاً بعينه — لا الاثنين معاً', chips:[['الكل','٧',1],['أسبوعية','١',0],['بتاريخ','٦',0]],
+    grid:'1.9fr 1.3fr 1.5fr 1.5fr 1.3fr 1.2fr',
+    cols:[['اسم العطلة'],['النوع'],['اليوم / التاريخ'],['النطاق'],['أثر على الرواتب'],['إجراء']],
+    rows:[
+      [T('الجمعة',{icon:'ph-calendar-dot', tint:'#6B7280', sub:'متكررة أسبوعياً'}), P('يوم أسبوعي','#6B7280'), T('الجمعة'), T('كل الفروع',{sub:'branchId معدوم'}), T('تُستثنى من أيام العمل'), BTN('تعديل','ph-pencil-simple','#0250D3','holidayEdit')],
+      [T('المولد النبوي الشريف',{icon:'ph-calendar-x', tint:'#EF4444'}), P('تاريخ','#EF4444'), T('٢٠٢٦-٠٩-٠٦'), T('كل الفروع'), T('مدفوعة'), BTN('تعديل','ph-pencil-simple','#0250D3','holidayEdit')],
+      [T('جرد نصف سنوي',{icon:'ph-clipboard-text', tint:'#F59E0B', sub:'الفرع مغلق للبيع'}), P('تاريخ','#F59E0B'), T('٢٠٢٦-٠٩-٢٠'), T('فرع المعادي فقط'), T('مدفوعة'), BTN('تعديل','ph-pencil-simple','#0250D3','holidayEdit')],
+      [T('صيانة تكييف',{icon:'ph-wrench', tint:'#F59E0B'}), P('تاريخ','#F59E0B'), T('٢٠٢٦-٠٩-٢٣'), T('فرع أكتوبر فقط'), T('مدفوعة'), BTN('تعديل','ph-pencil-simple','#0250D3','holidayEdit')],
+      [T('ثورة ٢٣ يوليو',{icon:'ph-calendar-x', tint:'#EF4444'}), P('تاريخ','#EF4444'), T('٢٠٢٦-٠٧-٢٣'), T('كل الفروع',{sub:'مضت'}), T('مدفوعة'), BTN('تعديل','ph-pencil-simple','#0250D3','holidayEdit')],
+    ]},
+];
+
+BLOCKS['branches:access'] = [
+  {kind:'kpis', cols:'repeat(3,1fr)', items:[
+    KPI('ph-users','مستخدمون لهم وصول مقيّد','٥','—',true,'#0250D3','من ٩'),
+    KPI('ph-globe','وصول لكل الفروع','٤','—',true,'#22C55E','بلا صفوف = الكل'),
+    KPI('ph-shield-warning','محاولات وصول مرفوضة','١٤','٤',false,'#EF4444','هذا الشهر'),
+  ]},
+  {kind:'matrix', title:'صلاحية الوصول للفروع', sub:'اضغط أي خلية لمنح أو منع الوصول · مدير النظام له كل الفروع دائماً',
+    grid:'1.9fr 1fr 1fr 1fr 1.2fr',
+    cols:[['المستخدم'],['المعادي','center'],['مدينة نصر','center'],['أكتوبر','center'],['المخازن','center','مخزن مسموح']],
+    rows:[
+      {name:'محمود سعيد', role:'مدير النظام', initials:'م.س', tint:'#0250D3', cells:[2,2,2,'٤']},
+      {name:'أحمد فؤاد', role:'كاشير', initials:'أ.ف', tint:'#22C55E', cells:[1,0,0,'١']},
+      {name:'منة الله حسن', role:'كاشير', initials:'م.ح', tint:'#22C55E', cells:[1,0,0,'١']},
+      {name:'يوسف طارق', role:'مشرف مبيعات', initials:'ي.ط', tint:'#4A80E8', cells:[1,1,0,'٢']},
+      {name:'خالد عبد الله', role:'أمين مخزن', initials:'خ.ع', tint:'#F59E0B', cells:[1,1,1,'٤']},
+      {name:'سارة منير', role:'محاسب', initials:'س.م', tint:'#8B5CF6', cells:[1,1,1,'٠']},
+      {name:'هدى إبراهيم', role:'كاشير · موقوف', initials:'ه.إ', tint:'#6B7280', cells:[0,1,0,'٠']},
+    ]},
+];
+
+// ══════════════════ REGIONS ══════════════════
+BLOCKS['regions:routes'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-path','المسارات النشطة','٤','—',true,'#0250D3','من ٥'),
+    KPI('ph-map-pin-line','زيارات هذا الشهر','٤٨','١٢٪',true,'#22C55E'),
+    KPI('ph-currency-circle-dollar','مبيعات المسارات','96,400','٩٪',true,'#22C55E'),
+    KPI('ph-hand-coins','تحصيلات المناديب','62,180','١٤٪',true,'#F59E0B'),
+  ]},
+  {kind:'cards', cols:'repeat(2,1fr)', title:'مسارات التوزيع', sub:'البطاقات المعلَّمة بـ «الملف الكامل» تفتح العملاء والزيارات والتحصيل', items:[
+    {id:'r1', icon:'ph-path', tint:'#22C55E', title:'مسار شرق القاهرة', sub:'المعادي · المقطم · دار السلام', status:'متقدم على الهدف', pill:'#22C55E',
+      stats:[['العملاء','٢٤',''],['زيارات الشهر','١٨','#22C55E'],['المبيعات','42,600','#22C55E']],
+      chips:[['ph-user','يوسف طارق','#0250D3'],['ph-target','١١٢٪ من الهدف','#22C55E'],['ph-calendar','٣ أيام/أسبوع','#6B7280']]},
+    {id:'r2', icon:'ph-path', tint:'#F59E0B', title:'مسار مدينة نصر', sub:'مصطفى النحاس · عباس العقاد · الحي العاشر', status:'متأخر', pill:'#F59E0B',
+      stats:[['العملاء','١٨',''],['زيارات الشهر','١٢','#F59E0B'],['المبيعات','28,400','#F59E0B']],
+      chips:[['ph-user','خالد عبد الله','#0250D3'],['ph-target','٨٢٪ من الهدف','#F59E0B'],['ph-calendar','يومان/أسبوع','#6B7280']]},
+    {id:'r3', icon:'ph-path', tint:'#0250D3', title:'مسار أكتوبر والشيخ زايد', sub:'الحصري · الشيخ زايد · حدائق أكتوبر', status:'نشط', pill:'#0250D3',
+      stats:[['العملاء','١٤',''],['زيارات الشهر','١١',''],['المبيعات','19,200','']],
+      chips:[['ph-user','عمر صلاح','#0250D3'],['ph-target','٩٦٪ من الهدف','#22C55E'],['ph-calendar','يومان/أسبوع','#6B7280']]},
+    {id:'r4', icon:'ph-path', tint:'#8B5CF6', title:'مسار وسط البلد', sub:'العتبة · باب اللوق · التوفيقية', status:'قيد التجربة', pill:'#8B5CF6',
+      stats:[['العملاء','٩',''],['زيارات الشهر','٧',''],['المبيعات','6,200','']],
+      chips:[['ph-user','بلا مندوب ثابت','#F59E0B'],['ph-target','٦٤٪ من الهدف','#EF4444'],['ph-calendar','يوم/أسبوع','#6B7280']]},
+  ]},
+];
+
+BLOCKS['regions:visits'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-map-pin-line','زيارات مخططة','٤٨','—',true,'#0250D3','هذا الأسبوع'),
+    KPI('ph-check-circle','منفَّذة','٣١','٨٪',true,'#22C55E','٦٥٪ إتمام'),
+    KPI('ph-skip-forward','متخطّاة','١٠','٣',false,'#F59E0B','بسبب مسجّل'),
+    KPI('ph-currency-circle-dollar','قيمة الطلبات','38,420','١١٪',true,'#22C55E','من الزيارات المنفَّذة'),
+  ]},
+  {kind:'board', cols:'repeat(4,1fr)', title:'لوحة زيارات هذا الأسبوع', sub:'اضغط أي زيارة لعرض تفصيلها والفاتورة الناتجة',
+    items:[
+      {label:'مخططة', icon:'ph-calendar-blank', tint:'#0250D3', count:'٧', more:'+٤ زيارات',
+        cards:[
+          {title:'سوبر ماركت النور', sub:'مسار شرق القاهرة · غداً 10:00', value:'—', meta:'يوسف طارق', icon:'ph-user', tint:'#0250D3'},
+          {title:'بقالة الأمانة', sub:'مسار شرق القاهرة · غداً 11:30', value:'—', meta:'يوسف طارق', icon:'ph-user', tint:'#0250D3'},
+          {title:'ماركت الحرية', sub:'مسار مدينة نصر · الأحد 09:00', value:'—', meta:'خالد عبد الله', icon:'ph-user', tint:'#0250D3'},
+        ]},
+      {label:'منفَّذة', icon:'ph-check-circle', tint:'#22C55E', count:'٣١', more:'+٢٨ زيارة',
+        cards:[
+          {title:'مطعم البيت الشامي', sub:'اليوم 13:44 · INV-2026-1037', value:'6,420', meta:'أنتجت فاتورة', icon:'ph-receipt', tint:'#22C55E'},
+          {title:'سوبر ماركت النور', sub:'اليوم 14:26 · INV-2026-1040', value:'8,940', meta:'أنتجت فاتورة', icon:'ph-receipt', tint:'#22C55E'},
+          {title:'كافيه الركن', sub:'أمس 16:10 · بلا طلب', value:'0', meta:'زيارة متابعة', icon:'ph-chat-circle', tint:'#6B7280'},
+        ]},
+      {label:'متخطّاة', icon:'ph-skip-forward', tint:'#F59E0B', count:'١٠', more:'+٧ زيارات',
+        cards:[
+          {title:'مخبز السلام', sub:'أمس 11:00 · مغلق', value:'—', meta:'المحل مغلق', icon:'ph-lock-simple', tint:'#F59E0B'},
+          {title:'بقالة النصر', sub:'أمس 12:30 · العميل غير موجود', value:'—', meta:'يُعاد الأسبوع القادم', icon:'ph-arrow-clockwise', tint:'#F59E0B'},
+          {title:'ماركت الشمس', sub:'٢٠٢٦-٠٨-٢٣ · تجاوز حد الائتمان', value:'—', meta:'يحتاج تحصيلاً أولاً', icon:'ph-warning', tint:'#EF4444'},
+        ]},
+      {label:'ملغاة', icon:'ph-x-circle', tint:'#EF4444', count:'٤',
+        cards:[
+          {title:'كافيه الركن', sub:'٢٠٢٦-٠٨-٢٢ · طلب العميل', value:'—', meta:'ألغاها يوسف طارق', icon:'ph-user-minus', tint:'#EF4444'},
+          {title:'مسار وسط البلد', sub:'٢٠٢٦-٠٨-٢١ · بلا مندوب', value:'—', meta:'٣ زيارات ملغاة', icon:'ph-user-minus', tint:'#EF4444'},
+        ]},
+    ]},
+];
+
+BLOCKS['regions:targets'] = [
+  {kind:'gauge', cols:'repeat(2,1fr)', title:'أهداف المناديب — أغسطس ٢٠٢٦', sub:'الهدف بالقيمة وبعدد الزيارات معاً', items:[
+    {title:'يوسف طارق', sub:'مسار شرق القاهرة · مشرف مبيعات', pct:112, tint:'#22C55E',
+      stats:[['الهدف','38,000'],['المحقق','42,600','#22C55E'],['الزيارات','١٨ / ١٦','#22C55E']]},
+    {title:'خالد عبد الله', sub:'مسار مدينة نصر · أمين مخزن ومندوب', pct:82, tint:'#F59E0B',
+      stats:[['الهدف','34,600'],['المحقق','28,400','#F59E0B'],['الزيارات','١٢ / ١٤','#F59E0B']]},
+    {title:'عمر صلاح', sub:'مسار أكتوبر والشيخ زايد · مندوب', pct:96, tint:'#22C55E',
+      stats:[['الهدف','20,000'],['المحقق','19,200','#22C55E'],['الزيارات','١١ / ١٢','#F59E0B']]},
+    {title:'مسار وسط البلد', sub:'بلا مندوب ثابت — يُوزّع بالتناوب', pct:64, tint:'#EF4444',
+      stats:[['الهدف','9,700'],['المحقق','6,200','#EF4444'],['الزيارات','٧ / ١٢','#EF4444']]},
+  ]},
+  {kind:'table', title:'تحصيلات المناديب', sub:'نقدي وشيكات وتحويلات من العملاء على المسار', chips:[['الكل','٢٢',1],['نقدي','١٤',0],['شيكات','٦',0]],
+    grid:'1.7fr 1.9fr 1.3fr 1.4fr 1.2fr 1.4fr',
+    cols:[['المندوب'],['العميل'],['الطريقة'],['المرجع'],['المبلغ','end'],['التاريخ']],
+    rows:[
+      [T('يوسف طارق',{icon:'ph-user', tint:'#0250D3', sub:'شرق القاهرة'}), T('سوبر ماركت النور'), P('شيك','#F59E0B'), T('8842 · بنك مصر'), N('18,000'), T('اليوم 12:04')],
+      [T('يوسف طارق',{icon:'ph-user', tint:'#0250D3'}), T('بقالة الأمانة'), P('نقدي','#22C55E'), T('RCV-2026-0228'), N('9,400'), T('اليوم 10:22')],
+      [T('خالد عبد الله',{icon:'ph-user', tint:'#0250D3', sub:'مدينة نصر'}), T('ماركت الحرية'), P('نقدي','#22C55E'), T('RCV-2026-0224'), N('6,200'), T('أمس 15:40')],
+      [T('عمر صلاح',{icon:'ph-user', tint:'#0250D3', sub:'أكتوبر'}), T('كافيه الركن'), P('تحويل','#0250D3'), T('TRX-77120'), N('12,400'), T('أمس 11:08')],
+      [T('خالد عبد الله',{icon:'ph-user', tint:'#0250D3'}), T('مخبز السلام'), P('نقدي','#22C55E'), T('RCV-2026-0219'), N('4,180'), T('٢٠٢٦-٠٨-٢٣')],
+      [T('يوسف طارق',{icon:'ph-user', tint:'#0250D3'}), T('مطعم البيت الشامي'), P('شيك','#F59E0B'), T('9014 · CIB'), N('12,000'), T('٢٠٢٦-٠٨-٢٢')],
+    ],
+    totals:['٦ تحصيلات','','','','62,180','']},
+];
+
+BLOCKS['regions:delivery'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-moped','شركات التوصيل','٣','—',true,'#0250D3','٢ نشطة'),
+    KPI('ph-user','المناديب','٦','١',true,'#22C55E','٤ داخليون'),
+    KPI('ph-package','طلبات التوصيل','١٤٢','١٨٪',true,'#22C55E','هذا الشهر'),
+    KPI('ph-receipt-x','رسوم التوصيل','4,260','٩٪',false,'#F59E0B','عمولة الشركات'),
+  ]},
+  {kind:'table', title:'شركات التوصيل والمناديب', sub:'المندوب يتبع شركة أو يكون داخلياً على كفالة الفرع', chips:[['الكل','٦',1],['داخلي','٤',0],['شركة','٢',0]],
+    grid:'1.7fr 1.7fr 1.4fr 1.1fr 1.3fr 1.2fr 1.2fr',
+    cols:[['المندوب'],['الشركة'],['الهاتف'],['الطلبات','end'],['قيمة الطلبات','end'],['العمولة','end'],['الحالة']],
+    rows:[
+      [T('سيد كمال',{icon:'ph-moped', tint:'#22C55E', sub:'داخلي · المعادي'}), T('توصيل داخلي',{sub:'بلا عمولة'}), T('0100 442 8871'), N('٤٨'), N('34,200'), N('0'), P('نشط','#22C55E')],
+      [T('محمد عادل',{icon:'ph-moped', tint:'#22C55E', sub:'داخلي · المعادي'}), T('توصيل داخلي'), T('0111 220 9042'), N('٣١'), N('21,400'), N('0'), P('نشط','#22C55E')],
+      [T('أحمد رجب',{icon:'ph-moped', tint:'#0250D3', sub:'شركة'}), T('سريع للتوصيل',{sub:'عمولة ٨٪'}), T('0122 771 4408'), N('٢٦'), N('18,600'), N('1,488'), P('نشط','#22C55E')],
+      [T('كريم فوزي',{icon:'ph-moped', tint:'#0250D3', sub:'شركة'}), T('سريع للتوصيل'), T('0128 004 1120'), N('١٩'), N('13,200'), N('1,056'), P('نشط','#22C55E')],
+      [T('طارق منصور',{icon:'ph-moped', tint:'#F59E0B', sub:'شركة'}), T('الوصول السريع',{sub:'عمولة ١٠٪'}), T('0155 882 3310'), N('١٤'), N('9,800'), N('980'), P('تحت المراجعة','#F59E0B')],
+      [T('هاني صابر',{icon:'ph-moped', tint:'#6B7280', sub:'داخلي · نصر'}), T('توصيل داخلي'), T('0106 118 7745'), N('٤'), N('2,800'), N('0'), P('موقوف','#6B7280')],
+    ],
+    totals:['٦ مناديب','','','١٤٢','100,000','3,524','']},
+];
+
+// ══════════════════ ANALYTICS ══════════════════
+BLOCKS['analytics:overview'] = [
+  {kind:'kpis', cols:'repeat(5,1fr)', items:[
+    KPI('ph-currency-circle-dollar','مبيعات الشهر','2,486,400','٩٪',true,'#22C55E'),
+    KPI('ph-trend-up','صافي الربح','412,100','٧٪',true,'#0250D3','هامش ١٦.٦٪'),
+    KPI('ph-package','دوران المخزون','٦.١×','٠.٤',true,'#F59E0B','٦٠ يوم تغطية'),
+    KPI('ph-users-three','ذمم العملاء','412,600','٧٪',false,'#EF4444','٤٢ ألف فوق ٩٠ يوم'),
+    KPI('ph-seal-check','اعتمادات معلّقة','٧','٣',false,'#8B5CF6','٢ تجاوزت المهلة'),
+  ]},
+  {kind:'bars', title:'مؤشرات المنشأة مقابل المستهدف', sub:'أغسطس ٢٠٢٦ · نسبة الإنجاز', items:[
+    {icon:'ph-currency-circle-dollar', tint:'#22C55E', label:'المبيعات', sub:'المستهدف 2,400,000', pct:'100%', inner:'١٠٤٪ من المستهدف', value:'2,486,400'},
+    {icon:'ph-trend-up', tint:'#0250D3', label:'صافي الربح', sub:'المستهدف 448,000', pct:'92%', inner:'٩٢٪', value:'412,100'},
+    {icon:'ph-hand-coins', tint:'#F59E0B', label:'المصروفات التشغيلية', sub:'الميزانية 240,000', pct:'91%', inner:'٩١٪ من الميزانية', value:'218,880'},
+    {icon:'ph-receipt', tint:'#4A80E8', label:'عدد الفواتير', sub:'المستهدف ٦٢٠٠', pct:'96%', inner:'٩٦٪', value:'٥٩٥٠'},
+    {icon:'ph-arrow-u-up-left', tint:'#EF4444', label:'نسبة المرتجعات', sub:'الحد المقبول ٢.٥٪', pct:'100%', inner:'٣.٤٪ — تجاوز الحد', value:'٣.٤٪'},
+  ]},
+  {kind:'table', title:'أكبر التحركات هذا الشهر', sub:'ما تغيّر بأكبر قدر مقارنة بالشهر السابق', chips:[['الكل','٨',1],['إيجابي','٥',0],['سلبي','٣',0]],
+    grid:'2fr 1.4fr 1.3fr 1.3fr 1.1fr 1.8fr',
+    cols:[['المؤشر'],['الفرع / النطاق'],['الشهر الحالي','end'],['الشهر السابق','end'],['التغير','end'],['التفسير']],
+    rows:[
+      [T('مبيعات فرع أكتوبر',{icon:'ph-trend-up', tint:'#22C55E'}), T('أكتوبر'), N('32,660'), N('24,180'), TR('٣٥٪',true), T('افتتاح مسار الشيخ زايد')],
+      [T('تحصيلات المناديب',{icon:'ph-trend-up', tint:'#22C55E'}), T('كل المسارات'), N('62,180'), N('48,400'), TR('٢٨٪',true), T('حملة تحصيل الذمم المتأخرة')],
+      [T('نسبة المرتجعات',{icon:'ph-trend-down', tint:'#EF4444'}), T('المعادي'), N('٣.٤٪'), N('٢.٨٪'), TR('٠.٦ نقطة',false), T('لبن جهينة — قارب انتهاء الصلاحية')],
+      [T('العجز في الورديات',{icon:'ph-trend-down', tint:'#EF4444'}), T('مدينة نصر'), N('-٢٠٥'), N('-٦٢'), TR('٢٣١٪',false), T('٣ ورديات بإغلاق سريع بلا مصادقة')],
+      [T('هامش الربح',{icon:'ph-trend-down', tint:'#F59E0B'}), T('كل الفروع'), N('١٦.٦٪'), N('١٧.٨٪'), TR('١.٢ نقطة',false), T('ارتفاع تكلفة الزيوت والسكر')],
+      [T('دوران المخزون',{icon:'ph-trend-up', tint:'#22C55E'}), T('الرئيسي'), N('٦.٨×'), N('٦.١×'), TR('١١٪',true), T('تصريف الأصناف الراكدة')],
+    ]},
+];
+
+BLOCKS['analytics:budget'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-chart-line','موازنات معتمدة','٣','١',true,'#0250D3','من ٤ مسوَّدة'),
+    KPI('ph-hand-coins','المخطط للشهر','240,000','—',true,'#4A80E8'),
+    KPI('ph-receipt-x','المنفَّذ فعلياً','218,880','٩٪',true,'#F59E0B','٩١٪ من المخطط'),
+    KPI('ph-warning','بنود تجاوزت الموازنة','٢','١',false,'#EF4444'),
+  ]},
+  {kind:'table', title:'موازنة المصروفات — السنة المالية ٢٠٢٦', sub:'التوزيع الشهري متساوٍ إلا ما وُزّع يدوياً أو موسمياً', chips:[['كل البنود','٦',1],['تجاوز','٢',0],['موسمي','١',0]],
+    grid:'1.9fr 1.1fr 1.2fr 1.3fr 1.3fr 1.2fr 1.7fr',
+    cols:[['البند'],['الحساب'],['التوزيع'],['المخطط شهرياً','end'],['المنفَّذ','end'],['الفرق','end'],['الاستهلاك']],
+    rows:[
+      [T('رواتب وأجور',{icon:'ph-users', tint:'#0250D3'}), T('5201'), P('متساوٍ','#6B7280'), N('112,000'), N('108,400'), N('3,600'), B('٩٧٪','97%','#F59E0B')],
+      [T('إيجارات',{icon:'ph-buildings', tint:'#0250D3'}), T('5202'), P('متساوٍ','#6B7280'), N('48,000'), N('48,000'), N('0'), B('١٠٠٪','100%','#F59E0B')],
+      [T('كهرباء ومياه',{icon:'ph-lightning', tint:'#EF4444', sub:'تجاوز'}), T('5203'), P('موسمي','#F59E0B'), N('24,000'), N('28,800'), N('(4,800)'), B('١٢٠٪','100%','#EF4444')],
+      [T('صيانة وإصلاحات',{icon:'ph-wrench', tint:'#22C55E'}), T('5204'), P('يدوي','#0250D3'), N('30,000'), N('21,600'), N('8,400'), B('٧٢٪','72%','#22C55E')],
+      [T('نقل ومواصلات',{icon:'ph-moped', tint:'#22C55E'}), T('5205'), P('متساوٍ','#6B7280'), N('15,000'), N('10,400'), N('4,600'), B('٦٩٪','69%','#22C55E')],
+      [T('تسويق ودعاية',{icon:'ph-megaphone', tint:'#EF4444', sub:'تجاوز'}), T('5206'), P('يدوي','#0250D3'), N('11,000'), N('1,680'), N('9,320'), B('١٥٪','15%','#22C55E')],
+    ],
+    totals:['٦ بنود','','','240,000','218,880','21,120','٩١٪']},
+  {kind:'bars', title:'الفرق الشهري التراكمي', sub:'المخطط ناقص المنفَّذ · ألف ج.م', items:[
+    {icon:'ph-check-circle', tint:'#22C55E', label:'يناير — مارس', sub:'٣ أشهر · تحت الموازنة', pct:'54%', inner:'وفر 42 ألف', value:'+42,100'},
+    {icon:'ph-check-circle', tint:'#22C55E', label:'أبريل — يونيو', sub:'٣ أشهر · تحت الموازنة', pct:'38%', inner:'وفر 29 ألف', value:'+29,400'},
+    {icon:'ph-warning', tint:'#F59E0B', label:'يوليو', sub:'شهر واحد · قارب الحد', pct:'12%', inner:'وفر 9 آلاف', value:'+9,200'},
+    {icon:'ph-check-circle', tint:'#22C55E', label:'أغسطس', sub:'الشهر الحالي', pct:'27%', inner:'وفر 21 ألف', value:'+21,120'},
+  ]},
+];
+
+BLOCKS['analytics:approvals'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-seal-check','طلبات معلّقة','٧','٣',false,'#8B5CF6'),
+    KPI('ph-timer','تجاوزت مهلة التصعيد','٢','١',false,'#EF4444','٢٤ ساعة'),
+    KPI('ph-check-circle','معتمدة هذا الشهر','٤٢','١٢٪',true,'#22C55E'),
+    KPI('ph-lightning','اعتماد تلقائي','١٨','٤',true,'#0250D3','تحت 5,000'),
+  ]},
+  {kind:'board', cols:'repeat(4,1fr)', title:'طابور الاعتمادات', sub:'مستويان = صانع/مراجع · ثلاثة مستويات = + معتمد نهائي',
+    items:[
+      {label:'منتظر المراجعة', icon:'ph-eye', tint:'#F59E0B', count:'٤', more:'+١ طلب',
+        cards:[
+          {title:'قيد يومية JV-2026-0644', sub:'سارة منير · مستوى ١ من ٢', value:'18,400', meta:'منتظر ٤ ساعات', icon:'ph-clock', tint:'#F59E0B'},
+          {title:'فاتورة شراء PUR-0412', sub:'خالد عبد الله · مستوى ١ من ٢', value:'48,600', meta:'منتظر ساعتين', icon:'ph-clock', tint:'#F59E0B'},
+          {title:'تحويل خزينة TRF-0046', sub:'محمود سعيد · مستوى ١ من ٣', value:'62,000', meta:'منتظر ٢٦ ساعة — تصعيد', icon:'ph-warning', tint:'#EF4444'},
+        ]},
+      {label:'منتظر الاعتماد', icon:'ph-stamp', tint:'#0250D3', count:'٣',
+        cards:[
+          {title:'موازنة تسويق ٢٠٢٦', sub:'سارة منير · مستوى ٢ من ٣', value:'132,000', meta:'راجعها يوسف طارق', icon:'ph-check', tint:'#0250D3'},
+          {title:'خصم استثنائي ٢٠٪', sub:'يوسف طارق · مستوى ٢ من ٢', value:'1,240', meta:'منتظر ٣١ ساعة — تصعيد', icon:'ph-warning', tint:'#EF4444'},
+          {title:'إعدام تالف DMG-0016', sub:'خالد عبد الله · مستوى ٢ من ٢', value:'7,640', meta:'راجعها محمود سعيد', icon:'ph-check', tint:'#0250D3'},
+        ]},
+      {label:'معتمدة', icon:'ph-check-circle', tint:'#22C55E', count:'٤٢', more:'+٣٩ طلباً',
+        cards:[
+          {title:'سلفة أحمد فؤاد', sub:'اليوم 10:40 · مستوى ٢ من ٢', value:'2,000', meta:'اعتمدها محمود سعيد', icon:'ph-seal-check', tint:'#22C55E'},
+          {title:'إلغاء INV-2026-1038', sub:'اليوم 13:58 · مستوى ٢ من ٢', value:'412', meta:'اعتمدها محمود سعيد', icon:'ph-seal-check', tint:'#22C55E'},
+          {title:'أمر شراء PO-0088', sub:'أمس · اعتماد تلقائي', value:'4,200', meta:'تحت حد 5,000', icon:'ph-lightning', tint:'#0250D3'},
+        ]},
+      {label:'مرفوضة', icon:'ph-x-circle', tint:'#EF4444', count:'٥',
+        cards:[
+          {title:'خصم يدوي ٣٥٪', sub:'٢٠٢٦-٠٨-٢٢ · مستوى ١', value:'3,400', meta:'رفضه محمود سعيد', icon:'ph-prohibit', tint:'#EF4444'},
+          {title:'إغلاق سريع SHF-0308', sub:'٢٠٢٦-٠٨-٢٢ · بلا مصادقة', value:'-120', meta:'رفضه يوسف طارق', icon:'ph-prohibit', tint:'#EF4444'},
+        ]},
+    ]},
+];
+
+BLOCKS['analytics:compare'] = [
+  {kind:'bars', title:'مقارنة الفروع — أغسطس ٢٠٢٦', sub:'المبيعات مقابل صافي الربح · ج.م', items:[
+    {icon:'ph-storefront', tint:'#0250D3', tint2:'#22C55E', label:'فرع المعادي', sub:'ربح 26,420', pct:'74%', pct2:'26%', inner:'مبيعات 103,240', value:'٥٦٪'},
+    {icon:'ph-storefront', tint:'#0250D3', tint2:'#22C55E', label:'فرع مدينة نصر', sub:'ربح 10,880', pct:'36%', pct2:'11%', inner:'مبيعات 48,420', value:'٢٦٪'},
+    {icon:'ph-storefront', tint:'#0250D3', tint2:'#22C55E', label:'فرع أكتوبر', sub:'ربح 7,870', pct:'23%', pct2:'9%', inner:'مبيعات 32,660', value:'١٨٪'},
+  ]},
+  {kind:'table', title:'الكفاءة التشغيلية لكل فرع', sub:'الأرقام التي تفرّق بين فرع مربح وفرع مشغول', chips:[['كل الفروع','٣',1]],
+    grid:'1.6fr 1.2fr 1.2fr 1.3fr 1.5fr 1.2fr 1.2fr',
+    cols:[['الفرع'],['مبيعات/موظف','end'],['مبيعات/نقطة','end'],['المصروف/الإيراد'],['دوران المخزون'],['متوسط الفاتورة','end'],['من المستهدف','end']],
+    rows:[
+      [T('فرع المعادي',{icon:'ph-storefront', tint:'#22C55E', sub:'٧ موظفين · ٢ نقطة'}), N('14,749'), N('51,620'), B('٩.٥٪','60%','#22C55E'), B('٦.٨×','100%','#22C55E'), N('376.8'), N('١١٢٪')],
+      [T('فرع مدينة نصر',{icon:'ph-storefront', tint:'#F59E0B', sub:'٤ موظفين · نقطة'}), N('12,105'), N('48,420'), B('١٠.٧٪','68%','#F59E0B'), B('٤.٢×','62%','#F59E0B'), N('361.3'), N('٨٢٪')],
+      [T('فرع أكتوبر',{icon:'ph-storefront', tint:'#0250D3', sub:'٣ موظفين · نقطة'}), N('10,887'), N('32,660'), B('٩.٨٪','62%','#22C55E'), B('٥.١×','75%','#22C55E'), N('413.4'), N('٩٦٪')],
+    ],
+    totals:['٣ فروع','13,166','46,080','٩.٩٪','٦.١×','378.5','١٠٠٪']},
+  {kind:'table', title:'ما يميّز كل فرع', sub:'أعلى صنف وأعلى كاشير وأكبر مشكلة في كل فرع', chips:[['كل الفروع','٣',1]],
+    grid:'1.5fr 1.9fr 1.7fr 1.6fr 2fr',
+    cols:[['الفرع'],['الصنف الأعلى'],['الكاشير الأعلى'],['أعلى ساعة'],['أكبر مشكلة']],
+    rows:[
+      [T('المعادي',{icon:'ph-storefront', tint:'#22C55E'}), T('زيت عافية 1.8ل',{sub:'57,776 ج.م'}), T('محمود سعيد',{sub:'62,668 ج.م'}), T('١٩:٠٠'), T('مرتجعات ٣.٤٪',{sub:'أعلى من الحد المقبول'})],
+      [T('مدينة نصر',{icon:'ph-storefront', tint:'#F59E0B'}), T('لبن جهينة 1ل',{sub:'18,400 ج.م'}), T('يوسف طارق',{sub:'21,600 ج.م'}), T('١٨:٠٠'), T('عجز نقدية ٢٠٥ ج.م',{sub:'٣ إغلاقات سريعة'})],
+      [T('أكتوبر',{icon:'ph-storefront', tint:'#0250D3'}), T('أرز أبو كاس 1ك',{sub:'12,600 ج.م'}), T('خالد عبد الله',{sub:'14,200 ج.م'}), T('١٧:٠٠'), T('طابعة 58mm فقط',{sub:'الإيصال يخرج ناقصاً'})],
+    ]},
+];
+
+// ══════════════════ STAFF ══════════════════
+BLOCKS['staff:people'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-users','الموظفون النشطون','١٤','١',true,'#0250D3','من ١٦ مسجلاً'),
+    KPI('ph-money','إجمالي الرواتب الشهرية','108,400','٣٪',true,'#22C55E','قبل الخصومات'),
+    KPI('ph-hand-coins','سلف غير مسددة','12,400','٦',false,'#F59E0B','٦ موظفين'),
+    KPI('ph-fingerprint','مرتبطون ببصمة','١١','٢',true,'#8B5CF6','من ١٤'),
+  ]},
+  {kind:'cards', cols:'repeat(3,1fr)', title:'الموظفون', sub:'البطاقات المعلَّمة بـ «الملف الكامل» تفتح الحضور والراتب والسلف والإجازات', items:[
+    {id:'e1', initials:'م.س', tint:'#0250D3', title:'محمود سعيد', sub:'مدير النظام · فرع المعادي', status:'شهري', pill:'#0250D3',
+      stats:[['الراتب','14,000',''],['الحضور','٢٢ / ٢٣','#22C55E'],['سلف','0','#22C55E']],
+      chips:[['ph-fingerprint','بصمة #1042','#22C55E'],['ph-calendar-check','تعيين 2023-02-14','#6B7280'],['ph-file-text','عقد دائم','#22C55E']]},
+    {id:'e2', initials:'أ.ف', tint:'#22C55E', title:'أحمد فؤاد', sub:'كاشير · فرع المعادي', status:'شهري', pill:'#0250D3',
+      stats:[['الراتب','6,800',''],['الحضور','٢١ / ٢٣','#F59E0B'],['سلف','2,000','#F59E0B']],
+      chips:[['ph-fingerprint','بصمة #1043','#22C55E'],['ph-calendar-check','تعيين 2024-06-01','#6B7280'],['ph-file-text','عقد دائم','#22C55E']]},
+    {id:'e3', initials:'م.ح', tint:'#22C55E', title:'منة الله حسن', sub:'كاشير · فرع المعادي', status:'شهري', pill:'#0250D3',
+      stats:[['الراتب','6,800',''],['الحضور','٢٣ / ٢٣','#22C55E'],['سلف','0','#22C55E']],
+      chips:[['ph-fingerprint','بصمة #1044','#22C55E'],['ph-calendar-check','تعيين 2025-01-12','#6B7280'],['ph-medal','أعلى التزام ٩٤٪','#22C55E']]},
+    {id:'e4', initials:'ي.ط', tint:'#4A80E8', title:'يوسف طارق', sub:'مشرف مبيعات · نصر + المعادي', status:'شهري + عمولة', pill:'#8B5CF6',
+      stats:[['الراتب','9,200',''],['الحضور','٢٠ / ٢٣','#F59E0B'],['سلف','4,000','#EF4444']],
+      chips:[['ph-fingerprint','بصمة #1045','#22C55E'],['ph-target','١١٢٪ من الهدف','#22C55E'],['ph-warning','٢ إغلاق سريع','#EF4444']]},
+    {id:'e5', initials:'خ.ع', tint:'#F59E0B', title:'خالد عبد الله', sub:'أمين مخزن ومندوب · نصر', status:'شهري', pill:'#0250D3',
+      stats:[['الراتب','7,400',''],['الحضور','٢٢ / ٢٣','#22C55E'],['سلف','3,000','#F59E0B']],
+      chips:[['ph-fingerprint','بصمة #1046','#22C55E'],['ph-path','مسار مدينة نصر','#0250D3'],['ph-file-text','عقد دائم','#22C55E']]},
+    {id:'e6', initials:'س.م', tint:'#8B5CF6', title:'سارة منير', sub:'محاسب · المكتب الرئيسي', status:'شهري', pill:'#0250D3',
+      stats:[['الراتب','11,000',''],['الحضور','٢٣ / ٢٣','#22C55E'],['سلف','0','#22C55E']],
+      chips:[['ph-fingerprint','بلا بصمة','#F59E0B'],['ph-calendar-check','تعيين 2024-09-01','#6B7280'],['ph-file-text','عقد دائم','#22C55E']]},
+    {id:'e7', initials:'ع.ص', tint:'#0EA5E9', title:'عمر صلاح', sub:'مندوب توزيع · أكتوبر', status:'شهري + عمولة', pill:'#8B5CF6',
+      stats:[['الراتب','5,600',''],['الحضور','١٩ / ٢٣','#EF4444'],['سلف','2,400','#F59E0B']],
+      chips:[['ph-fingerprint','بلا بصمة','#F59E0B'],['ph-path','مسار أكتوبر','#0250D3'],['ph-file-text','عقد مؤقت — ينتهي 2026-12-31','#F59E0B']]},
+    {id:'e8', initials:'س.ك', tint:'#22C55E', title:'سيد كمال', sub:'مندوب توصيل · المعادي', status:'يومي', pill:'#F59E0B',
+      stats:[['اليومية','280',''],['أيام العمل','٢٢','#22C55E'],['سلف','0','#22C55E']],
+      chips:[['ph-fingerprint','بصمة #1048','#22C55E'],['ph-moped','٤٨ طلب توصيل','#22C55E'],['ph-file-text','عقد جزئي','#F59E0B']]},
+    {id:'e9', initials:'ه.إ', tint:'#6B7280', title:'هدى إبراهيم', sub:'كاشير · فرع مدينة نصر', status:'موقوف', pill:'#6B7280',
+      stats:[['الراتب','6,400',''],['الحضور','٤ / ٢٣','#EF4444'],['سلف','1,000','#F59E0B']],
+      chips:[['ph-lock-simple','الحساب مقفول','#EF4444'],['ph-warning','٥ محاولات دخول فاشلة','#EF4444'],['ph-file-text','عقد دائم','#22C55E']]},
+  ]},
+];
+
+BLOCKS['staff:attendance'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-user-check','حضور اليوم','١١','—',true,'#22C55E','من ١٤'),
+    KPI('ph-clock','متأخرون','٣','١',false,'#F59E0B','بعد ٠٩:٠٠'),
+    KPI('ph-hourglass','ساعات إضافية اليوم','٦.٤','١.٢',true,'#0250D3','ساعة · ١.٥×'),
+    KPI('ph-user-minus','غياب بلا إجازة','٢','—',false,'#EF4444'),
+  ]},
+  {kind:'roster', title:'سجل حضور اليوم — ٢٠٢٦-٠٨-٢٥', sub:'الحضور المتوقع ٠٩:٠٠ والانصراف ١٧:٠٠ · ما بعد ٨ ساعات إضافي',
+    legend:[['في الوقت','#22C55E'],['متأخر','#F59E0B'],['إضافي','#0250D3']],
+    hours:['٨','١٠','١٢','١٤','١٦','١٨','٢٠','٢٢'], h0:8, h1:24,
+    items:[
+      {name:'محمود سعيد', role:'مدير النظام', initials:'م.س', tint:'#0250D3', in:8.0, out:19.5, late:false, hours:'١١.٥', note:'إضافي ٣.٥ س', noteFg:'#0250D3'},
+      {name:'أحمد فؤاد', role:'كاشير', initials:'أ.ف', tint:'#22C55E', in:9.4, out:17.2, late:true, hours:'٧.٨', note:'متأخر ٢٤ د', noteFg:'#F59E0B'},
+      {name:'منة الله حسن', role:'كاشير', initials:'م.ح', tint:'#22C55E', in:8.9, out:17.1, late:false, hours:'٨.٢', note:'في الوقت', noteFg:'#22C55E'},
+      {name:'يوسف طارق', role:'مشرف مبيعات', initials:'ي.ط', tint:'#4A80E8', in:10.2, out:20.0, late:true, hours:'٩.٨', note:'متأخر ١.٢ س', noteFg:'#F59E0B'},
+      {name:'خالد عبد الله', role:'أمين مخزن', initials:'خ.ع', tint:'#F59E0B', in:8.2, out:16.0, late:false, hours:'٧.٨', note:'انصراف مبكر', noteFg:'#F59E0B'},
+      {name:'سارة منير', role:'محاسب', initials:'س.م', tint:'#8B5CF6', in:9.0, out:17.0, late:false, hours:'٨.٠', note:'في الوقت', noteFg:'#22C55E'},
+      {name:'سيد كمال', role:'مندوب توصيل', initials:'س.ك', tint:'#22C55E', in:11.0, out:22.5, late:false, hours:'١١.٥', note:'إضافي ٣.٥ س', noteFg:'#0250D3'},
+    ]},
+  {kind:'table', title:'أجهزة البصمة', sub:'ZKTeco · المنفذ الافتراضي 4370 · المزامنة تسحب سجلات الحضور', chips:[['الكل','٢',1],['متصل','١',0]],
+    grid:'1.9fr 1.4fr 1.2fr 1.5fr 1.3fr 1.4fr 1.2fr',
+    cols:[['الجهاز'],['عنوان IP'],['المنفذ','end'],['الطراز'],['الموظفون','end'],['آخر مزامنة'],['الحالة']],
+    rows:[
+      [T('جهاز بصمة الاستقبال',{icon:'ph-fingerprint', tint:'#22C55E', sub:'فرع المعادي'}), T('192.168.1.201'), N('4370'), T('ZKTeco K40',{sub:'S/N 8842119'}), N('٨'), T('اليوم 14:30'), P('متصل','#22C55E')],
+      [T('جهاز بصمة نصر',{icon:'ph-fingerprint', tint:'#EF4444', sub:'فرع مدينة نصر'}), T('192.168.2.201'), N('4370'), T('ZKTeco F18',{sub:'S/N 7710442'}), N('٣'), T('أمس 23:12'), P('غير متصل','#EF4444')],
+    ]},
+];
+
+BLOCKS['staff:payroll'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-money','إجمالي المستحق','96,842','٢٪',true,'#22C55E','أغسطس ٢٠٢٦'),
+    KPI('ph-calendar-check','أيام العمل الفعلية','٢٦','—',true,'#0250D3','بعد استثناء الجمعة'),
+    KPI('ph-hand-coins','سلف تُخصم','12,400','٦',false,'#F59E0B'),
+    KPI('ph-hourglass','بدل ساعات إضافية','6,184','١٨٪',true,'#0250D3','١.٥× أجر الساعة'),
+  ]},
+  {kind:'payroll', title:'احتساب راتب أغسطس ٢٠٢٦', sub:'كل بند مشتق من الحضور والحركات — لا رقم يدوي',
+    formula:'الأساسي ÷ أيام الشهر الفعلية × أيام الحضور',
+    who:{name:'أحمد فؤاد', sub:'كاشير · فرع المعادي · راتب شهري', initials:'أ.ف', tint:'#22C55E'},
+    lines:[
+      {label:'الراتب الأساسي', note:'شهري ثابت من ملف الموظف', basis:'6,800 ÷ ٢٦ يوم', amount:'6,800.00', sign:1, bold:true},
+      {label:'خصم الغياب', note:'يومان بلا إجازة × 261.54 ج.م/يوم', basis:'٢ يوم', amount:'523.08', sign:-1},
+      {label:'بدل ساعات إضافية', note:'٩.٢ ساعة × 32.69 ج.م × ١.٥', basis:'٩.٢ ساعة', amount:'451.11', sign:1},
+      {label:'حافز التزام', note:'اعتمده يوسف طارق · مستوى ٢ من ٢', basis:'مكافأة', amount:'400.00', sign:1},
+      {label:'سلفة أغسطس', note:'صُرفت 10:40 · غير مسددة', basis:'سلفة', amount:'2,000.00', sign:-1},
+      {label:'خصم تأخير', note:'٤ أيام تأخير مجمّع ١.٦ ساعة', basis:'جزاء', amount:'52.31', sign:-1},
+    ],
+    netLabel:'صافي المستحق', netBasis:'يُصرف من الخزينة الرئيسية', net:'5,075.72',
+    facts:[
+      ['ph-calendar-check','أيام الشهر الفعلية','٢٦','#0250D3'],
+      ['ph-user-check','أيام الحضور','٢١',''],
+      ['ph-user-minus','أيام الغياب','٢','#EF4444'],
+      ['ph-airplane-takeoff','أيام إجازة معتمدة','٣','#22C55E'],
+      ['ph-hourglass','ساعات إضافية','٩.٢','#0250D3'],
+      ['ph-divide','أجر اليوم','261.54',''],
+      ['ph-clock','أجر الساعة','32.69',''],
+    ],
+    warn:'أيام الشهر الفعلية هي المقام لا ٣٠ ثابتة — تغييرها يعيد حساب كل بند مشتق. السلف غير المسددة تُخصم بالكامل من راتب الشهر إلا لو جُزّئت يدوياً.'},
+  {kind:'table', title:'مسيّر رواتب أغسطس', sub:'اضغط أي موظف لعرض احتسابه التفصيلي', chips:[['الكل','١٤',1],['بها سلف','٦',0],['غياب','٤',0]],
+    grid:'1.8fr 1.2fr 1.1fr 1.1fr 1.2fr 1.2fr 1.3fr 1.1fr',
+    cols:[['الموظف'],['الأساسي','end'],['الحضور','end'],['الإضافي','end'],['السلف','end'],['الخصومات','end'],['الصافي','end'],['الحالة']],
+    rows:[
+      [T('محمود سعيد',{icon:'ph-user', tint:'#0250D3', sub:'مدير النظام'}), N('14,000'), N('٢٢/٢٦'), N('1,716'), N('0'), N('2,154'), N('13,562'), P('جاهز','#22C55E')],
+      [T('أحمد فؤاد',{icon:'ph-user', tint:'#22C55E', sub:'كاشير'}), N('6,800'), N('٢١/٢٦'), N('451'), N('2,000'), N('575'), N('5,076'), P('جاهز','#22C55E')],
+      [T('منة الله حسن',{icon:'ph-user', tint:'#22C55E', sub:'كاشير'}), N('6,800'), N('٢٦/٢٦'), N('261'), N('0'), N('0'), N('7,061'), P('جاهز','#22C55E')],
+      [T('يوسف طارق',{icon:'ph-user', tint:'#4A80E8', sub:'مشرف مبيعات'}), N('9,200'), N('٢٠/٢٦'), N('796'), N('4,000'), N('2,123'), N('3,873'), P('يحتاج مراجعة','#F59E0B')],
+      [T('خالد عبد الله',{icon:'ph-user', tint:'#F59E0B', sub:'أمين مخزن'}), N('7,400'), N('٢٢/٢٦'), N('427'), N('3,000'), N('1,138'), N('3,689'), P('جاهز','#22C55E')],
+      [T('سارة منير',{icon:'ph-user', tint:'#8B5CF6', sub:'محاسب'}), N('11,000'), N('٢٦/٢٦'), N('0'), N('0'), N('0'), N('11,000'), P('جاهز','#22C55E')],
+      [T('عمر صلاح',{icon:'ph-user', tint:'#0EA5E9', sub:'مندوب'}), N('5,600'), N('١٩/٢٦'), N('323'), N('2,400'), N('1,508'), N('2,015'), P('يحتاج مراجعة','#F59E0B')],
+      [T('هدى إبراهيم',{icon:'ph-user', tint:'#6B7280', sub:'موقوف'}), N('6,400'), N('٤/٢٦'), N('0'), N('1,000'), N('5,415'), N('(15)'), P('موقوف الصرف','#EF4444')],
+    ],
+    totals:['١٤ موظفاً','108,400','','6,184','12,400','19,342','96,842','']},
+];
+
+BLOCKS['staff:advances'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-hand-coins','سلف غير مسددة','12,400','٦',false,'#F59E0B','٦ موظفين'),
+    KPI('ph-receipt-x','خصومات وجزاءات','2,840','٣',false,'#EF4444','هذا الشهر'),
+    KPI('ph-gift','مكافآت وحوافز','4,200','٢',true,'#22C55E'),
+    KPI('ph-shield-check','رفض تلقائي للحد','٢','١',false,'#8B5CF6','تجاوز ٥٠٪ من الراتب'),
+  ]},
+  {kind:'table', title:'حركات الموظفين', sub:'السلفة تُصرف من الخزينة وتُخصم من الراتب · لا تتجاوز ٥٠٪ من الأساسي', chips:[['الكل','٢٤',1],['سلف','٦',0],['خصومات','٣',0],['مكافآت','٢',0]],
+    grid:'1.6fr 1.1fr 1.1fr 1.8fr 1.2fr 1.3fr 1.2fr 1.3fr',
+    cols:[['الموظف'],['النوع'],['المبلغ','end'],['البيان'],['التاريخ'],['أثر الخزينة'],['الحالة'],['إجراء']],
+    rows:[
+      [T('يوسف طارق',{icon:'ph-user', tint:'#4A80E8', sub:'الأساسي 9,200'}), P('سلفة','#F59E0B'), N('4,000'), T('سلفة أغسطس',{sub:'٤٣٪ من الأساسي'}), T('٢٠٢٦-٠٨-٠٤'), T('صُرفت نقداً',{sub:'PAY-2026-0072'}), P('غير مسددة','#F59E0B'), BTN('سلفة أخرى','ph-hand-coins','#EF4444','advance')],
+      [T('خالد عبد الله',{icon:'ph-user', tint:'#F59E0B', sub:'الأساسي 7,400'}), P('سلفة','#F59E0B'), N('3,000'), T('سلفة أغسطس',{sub:'٤١٪ من الأساسي'}), T('٢٠٢٦-٠٨-٠٦'), T('صُرفت نقداً',{sub:'PAY-2026-0074'}), P('غير مسددة','#F59E0B'), BTN('سلفة أخرى','ph-hand-coins','#F59E0B','advance')],
+      [T('عمر صلاح',{icon:'ph-user', tint:'#0EA5E9', sub:'الأساسي 5,600'}), P('سلفة','#F59E0B'), N('2,400'), T('سلفة أغسطس',{sub:'٤٣٪ من الأساسي'}), T('٢٠٢٦-٠٨-١١'), T('صُرفت نقداً'), P('غير مسددة','#F59E0B'), BTN('سلفة أخرى','ph-hand-coins','#F59E0B','advance')],
+      [T('أحمد فؤاد',{icon:'ph-user', tint:'#22C55E', sub:'الأساسي 6,800'}), P('سلفة','#F59E0B'), N('2,000'), T('سلفة أغسطس',{sub:'٢٩٪ من الأساسي'}), T('اليوم 10:40'), T('صُرفت نقداً',{sub:'اعتمدها محمود سعيد'}), P('غير مسددة','#F59E0B'), BTN('سلفة أخرى','ph-hand-coins','#0250D3','advance')],
+      [T('يوسف طارق',{icon:'ph-user', tint:'#4A80E8'}), P('جزاء','#EF4444'), N('1,240'), T('خصم يدوي ٢٠٪ بلا موافقة',{sub:'INV-2026-1030'}), T('اليوم 12:10'), T('لا يمسّ الخزينة'), P('مُطبَّق','#EF4444'), BTN('عرض','ph-eye','#6B7280','advance')],
+      [T('عمر صلاح',{icon:'ph-user', tint:'#0EA5E9'}), P('جزاء','#EF4444'), N('1,048'), T('غياب ٤ أيام بلا إجازة'), T('٢٠٢٦-٠٨-١٨'), T('لا يمسّ الخزينة'), P('مُطبَّق','#EF4444'), BTN('عرض','ph-eye','#6B7280','advance')],
+      [T('منة الله حسن',{icon:'ph-user', tint:'#22C55E'}), P('مكافأة','#22C55E'), N('400'), T('حافز التزام ٩٤٪',{sub:'اعتمدها يوسف طارق'}), T('٢٠٢٦-٠٨-٢٠'), T('تُضاف للراتب'), P('معتمدة','#22C55E'), BTN('عرض','ph-eye','#6B7280','advance')],
+      [T('محمود سعيد',{icon:'ph-user', tint:'#0250D3'}), P('مكافأة','#22C55E'), N('3,800'), T('حافز ربع سنوي'), T('٢٠٢٦-٠٨-٠١'), T('تُضاف للراتب'), P('معتمدة','#22C55E'), BTN('عرض','ph-eye','#6B7280','advance')],
+    ],
+    totals:['٨ حركات','','17,888','','','','','']},
+];
+
+BLOCKS['staff:leaves'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-airplane-takeoff','طلبات معلّقة','٤','٢',false,'#F59E0B'),
+    KPI('ph-check-circle','معتمدة هذا الشهر','٩','٣',true,'#22C55E','٢١ يوماً'),
+    KPI('ph-first-aid','إجازات مرضية','٤','١',false,'#EF4444','٦ أيام'),
+    KPI('ph-calendar-x','بلا رصيد','٢','—',false,'#8B5CF6','تُخصم كغياب'),
+  ]},
+  {kind:'table', title:'طلبات الإجازات', sub:'الاعتماد يخصم من رصيد النوع نفسه · بلا رصيد = خصم من الراتب', chips:[['الكل','١٧',1],['معلّقة','٤',0],['معتمدة','٩',0],['مرفوضة','٢',0]],
+    grid:'1.7fr 1.2fr 1.3fr 1.3fr .9fr 1.3fr 1.2fr 1.3fr',
+    cols:[['الموظف'],['النوع'],['من'],['إلى'],['الأيام','end'],['من أذن'],['الحالة'],['إجراء']],
+    rows:[
+      [T('أحمد فؤاد',{icon:'ph-user', tint:'#22C55E', sub:'رصيد سنوي ٩ أيام'}), P('سنوية','#0250D3'), T('٢٠٢٦-٠٩-٠١'), T('٢٠٢٦-٠٩-٠٣'), N('٣'), T('—'), P('معلّقة','#F59E0B'), BTN('بتّ الطلب','ph-gavel','#0250D3','leave')],
+      [T('منة الله حسن',{icon:'ph-user', tint:'#22C55E', sub:'رصيد سنوي ١٤ يوماً'}), P('سنوية','#0250D3'), T('٢٠٢٦-٠٩-١٠'), T('٢٠٢٦-٠٩-١٤'), N('٥'), T('—'), P('معلّقة','#F59E0B'), BTN('بتّ الطلب','ph-gavel','#0250D3','leave')],
+      [T('عمر صلاح',{icon:'ph-user', tint:'#0EA5E9', sub:'الرصيد صفر'}), P('بلا أجر','#6B7280'), T('٢٠٢٦-٠٩-٠٧'), T('٢٠٢٦-٠٩-٠٨'), N('٢'), T('—'), P('معلّقة','#F59E0B'), BTN('بتّ الطلب','ph-gavel','#EF4444','leave')],
+      [T('خالد عبد الله',{icon:'ph-user', tint:'#F59E0B'}), P('طارئة','#F59E0B'), T('اليوم'), T('اليوم'), N('١'), T('—'), P('معلّقة','#F59E0B'), BTN('بتّ الطلب','ph-gavel','#0250D3','leave')],
+      [T('أحمد فؤاد',{icon:'ph-user', tint:'#22C55E'}), P('مرضية','#EF4444'), T('٢٠٢٦-٠٨-١٢'), T('٢٠٢٦-٠٨-١٤'), N('٣'), T('محمود سعيد'), P('معتمدة','#22C55E'), BTN('عرض','ph-eye','#6B7280','leave')],
+      [T('سارة منير',{icon:'ph-user', tint:'#8B5CF6'}), P('سنوية','#0250D3'), T('٢٠٢٦-٠٨-٠٣'), T('٢٠٢٦-٠٨-٠٧'), N('٥'), T('محمود سعيد'), P('معتمدة','#22C55E'), BTN('عرض','ph-eye','#6B7280','leave')],
+      [T('عمر صلاح',{icon:'ph-user', tint:'#0EA5E9', sub:'تجاوز الرصيد'}), P('سنوية','#0250D3'), T('٢٠٢٦-٠٨-١٨'), T('٢٠٢٦-٠٨-٢١'), N('٤'), T('يوسف طارق'), P('مرفوضة','#EF4444'), BTN('عرض','ph-eye','#6B7280','leave')],
+    ]},
+  {kind:'bars', title:'أرصدة الإجازات ٢٠٢٦', sub:'المستهلك من الرصيد السنوي لكل نوع', items:[
+    {icon:'ph-airplane-takeoff', tint:'#0250D3', label:'سنوية', sub:'٢١ يوماً لكل موظف', pct:'62%', inner:'مستهلك ١٨٢ يوماً', value:'١٨٢ / ٢٩٤'},
+    {icon:'ph-first-aid', tint:'#EF4444', label:'مرضية', sub:'٦ أيام لكل موظف', pct:'38%', inner:'مستهلك ٣٢ يوماً', value:'٣٢ / ٨٤'},
+    {icon:'ph-warning-circle', tint:'#F59E0B', label:'طارئة', sub:'٣ أيام لكل موظف', pct:'26%', inner:'مستهلك ١١ يوماً', value:'١١ / ٤٢'},
+    {icon:'ph-calendar-x', tint:'#6B7280', label:'بلا أجر', sub:'بلا رصيد — تُخصم', pct:'12%', inner:'٨ أيام مخصومة', value:'٨ أيام'},
+  ]},
+];
+
+BLOCKS['staff:perf'] = [
+  {kind:'gauge', cols:'repeat(3,1fr)', title:'أعلى تقييم — الربع الثالث ٢٠٢٦', sub:'٤ محاور بوزن متساوٍ: الالتزام والإنتاجية والجودة والعمل الجماعي', items:[
+    {title:'منة الله حسن', sub:'كاشير · لا غياب ولا إلغاءات', pct:94, tint:'#22C55E',
+      stats:[['الالتزام','٩٨','#22C55E'],['الإنتاجية','٩٢',''],['الجودة','٩٤','']]},
+    {title:'محمود سعيد', sub:'مدير النظام · أعلى إيراد', pct:88, tint:'#22C55E',
+      stats:[['الالتزام','٩٠','#22C55E'],['الإنتاجية','٩٦','#22C55E'],['الجودة','٨٤','']]},
+    {title:'سارة منير', sub:'محاسب · إغلاق شهري بلا فروق', pct:86, tint:'#0250D3',
+      stats:[['الالتزام','١٠٠','#22C55E'],['الإنتاجية','٧٨',''],['الجودة','٩٢','']]},
+  ]},
+  {kind:'table', title:'تقييمات الأداء', sub:'التقييم العام = متوسط المحاور الأربعة', chips:[['الربع الثالث','١٤',1],['يحتاج تحسين','٣',0]],
+    grid:'1.8fr 1.1fr 1fr 1fr 1fr 1fr 1.4fr 1.3fr',
+    cols:[['الموظف'],['الفترة'],['الالتزام','end'],['الإنتاجية','end'],['الجودة','end'],['الجماعي','end'],['التقييم العام'],['التوصية']],
+    rows:[
+      [T('منة الله حسن',{icon:'ph-user', tint:'#22C55E'}), T('ربع ٣'), N('٩٨'), N('٩٢'), N('٩٤'), N('٩٢'), B('٩٤','94%','#22C55E'), P('علاوة استثنائية','#22C55E')],
+      [T('محمود سعيد',{icon:'ph-user', tint:'#0250D3'}), T('ربع ٣'), N('٩٠'), N('٩٦'), N('٨٤'), N('٨٢'), B('٨٨','88%','#22C55E'), P('علاوة','#22C55E')],
+      [T('سارة منير',{icon:'ph-user', tint:'#8B5CF6'}), T('ربع ٣'), N('١٠٠'), N('٧٨'), N('٩٢'), N('٧٤'), B('٨٦','86%','#22C55E'), P('علاوة','#22C55E')],
+      [T('خالد عبد الله',{icon:'ph-user', tint:'#F59E0B'}), T('ربع ٣'), N('٨٦'), N('٧٤'), N('٨٠'), N('٨٤'), B('٨١','81%','#0250D3'), P('استمرار','#0250D3')],
+      [T('أحمد فؤاد',{icon:'ph-user', tint:'#22C55E'}), T('ربع ٣'), N('٧٢'), N('٨٠'), N('٧٦'), N('٧٨'), B('٧٧','77%','#0250D3'), P('استمرار','#0250D3')],
+      [T('يوسف طارق',{icon:'ph-user', tint:'#4A80E8', sub:'٢ إغلاق سريع'}), T('ربع ٣'), N('٥٨'), N('٩٤'), N('٦٢'), N('٦٨'), B('٧١','71%','#F59E0B'), P('خطة تحسين','#F59E0B')],
+      [T('عمر صلاح',{icon:'ph-user', tint:'#0EA5E9', sub:'٤ أيام غياب'}), T('ربع ٣'), N('٥٢'), N('٧٠'), N('٦٦'), N('٧٢'), B('٦٥','65%','#F59E0B'), P('خطة تحسين','#F59E0B')],
+      [T('هدى إبراهيم',{icon:'ph-user', tint:'#6B7280', sub:'موقوف'}), T('ربع ٣'), N('٢٤'), N('٣٠'), N('٤٤'), N('٣٨'), B('٣٤','34%','#EF4444'), P('إنهاء تعاقد','#EF4444')],
+    ]},
+  {kind:'table', title:'الأهداف الجارية', sub:'الهدف له وزن ونسبة إنجاز — يدخل في تقييم الفترة', chips:[['الكل','٦',1],['متأخر','٢',0]],
+    grid:'1.6fr 2.2fr 1.2fr .9fr 1.4fr 1.1fr 1.3fr',
+    cols:[['الموظف'],['الهدف'],['تاريخ الاستحقاق'],['الوزن','end'],['الإنجاز'],['الحالة'],['إجراء']],
+    rows:[
+      [T('يوسف طارق',{icon:'ph-user', tint:'#4A80E8'}), T('رفع تحصيل مسار شرق القاهرة إلى ٩٠٪'), T('٢٠٢٦-٠٩-٣٠'), N('٣'), B('٧٤٪','74%','#22C55E'), P('جارٍ','#0250D3'), BTN('تقييم','ph-medal','#0250D3','perf')],
+      [T('خالد عبد الله',{icon:'ph-user', tint:'#F59E0B'}), T('تصفير الأصناف الراكدة في مخزن نصر'), T('٢٠٢٦-٠٩-١٥'), N('٢'), B('٤٢٪','42%','#F59E0B'), P('متأخر','#F59E0B'), BTN('تقييم','ph-medal','#0250D3','perf')],
+      [T('أحمد فؤاد',{icon:'ph-user', tint:'#22C55E'}), T('صفر إلغاءات بلا موافقة لمدة شهر'), T('٢٠٢٦-٠٩-٢٥'), N('٢'), B('٨٨٪','88%','#22C55E'), P('جارٍ','#0250D3'), BTN('تقييم','ph-medal','#0250D3','perf')],
+      [T('عمر صلاح',{icon:'ph-user', tint:'#0EA5E9'}), T('١٢ زيارة أسبوعياً على مسار أكتوبر'), T('٢٠٢٦-٠٩-٣٠'), N('٣'), B('٥٨٪','58%','#F59E0B'), P('متأخر','#F59E0B'), BTN('تقييم','ph-medal','#0250D3','perf')],
+      [T('سارة منير',{icon:'ph-user', tint:'#8B5CF6'}), T('إغلاق شهري خلال ٣ أيام عمل'), T('٢٠٢٦-٠٩-٠٥'), N('٢'), B('١٠٠٪','100%','#22C55E'), P('مكتمل','#22C55E'), BTN('تقييم','ph-medal','#0250D3','perf')],
+    ]},
+];
+
+BLOCKS['staff:contracts'] = [
+  {kind:'kpis', cols:'repeat(3,1fr)', items:[
+    KPI('ph-file-text','عقود سارية','١٤','—',true,'#0250D3','٩ دائمة'),
+    KPI('ph-hourglass','تنتهي خلال ٩٠ يوماً','٢','١',false,'#F59E0B'),
+    KPI('ph-file-x','منتهية بلا تجديد','١','—',false,'#EF4444','تحتاج قراراً'),
+  ]},
+  {kind:'table', title:'عقود العمل', sub:'العقد الدائم بلا تاريخ نهاية · المؤقت والجزئي يحتاجان تجديداً', chips:[['الكل','١٥',1],['دائم','٩',0],['مؤقت','٤',0],['جزئي','٢',0]],
+    grid:'1.8fr 1.3fr 1.3fr 1.4fr 1.2fr 1.9fr 1.3fr',
+    cols:[['الموظف'],['نوع العقد'],['البداية'],['النهاية'],['الراتب','end'],['المزايا'],['الحالة']],
+    rows:[
+      [T('محمود سعيد',{icon:'ph-file-text', tint:'#22C55E', sub:'مدير النظام'}), P('دائم','#22C55E'), T('٢٠٢٣-٠٢-١٤'), T('—',{sub:'بلا نهاية'}), N('14,000'), T('تأمين اجتماعي · بدل انتقال'), P('ساري','#22C55E')],
+      [T('أحمد فؤاد',{icon:'ph-file-text', tint:'#22C55E'}), P('دائم','#22C55E'), T('٢٠٢٤-٠٦-٠١'), T('—'), N('6,800'), T('تأمين اجتماعي'), P('ساري','#22C55E')],
+      [T('منة الله حسن',{icon:'ph-file-text', tint:'#22C55E'}), P('دائم','#22C55E'), T('٢٠٢٥-٠١-١٢'), T('—'), N('6,800'), T('تأمين اجتماعي'), P('ساري','#22C55E')],
+      [T('عمر صلاح',{icon:'ph-file-text', tint:'#F59E0B', sub:'ينتهي قريباً'}), P('مؤقت','#F59E0B'), T('٢٠٢٦-٠١-٠١'), T('٢٠٢٦-١٢-٣١',{sub:'باقي ١٢٨ يوماً'}), N('5,600'), T('عمولة ٢٪ على المسار'), P('ساري','#22C55E')],
+      [T('سيد كمال',{icon:'ph-file-text', tint:'#F59E0B'}), P('جزئي','#F59E0B'), T('٢٠٢٦-٠٣-٠١'), T('٢٠٢٦-١١-٣٠',{sub:'باقي ٩٧ يوماً'}), N('280 / يوم'), T('بدل وقود'), P('ساري','#22C55E')],
+      [T('طارق منصور',{icon:'ph-file-text', tint:'#F59E0B'}), P('حر','#8B5CF6'), T('٢٠٢٦-٠٥-٠١'), T('٢٠٢٦-١٠-٣١',{sub:'باقي ٦٧ يوماً'}), N('بالعمولة'), T('عمولة ١٠٪ توصيل'), P('تحت المراجعة','#F59E0B')],
+      [T('هدى إبراهيم',{icon:'ph-file-x', tint:'#EF4444', sub:'موقوف'}), P('دائم','#22C55E'), T('٢٠٢٤-١١-٠١'), T('—'), N('6,400'), T('تأمين اجتماعي'), P('موقوف','#EF4444')],
+    ]},
+];
+
+// ══════════════════ DIALOGS ══════════════════
+const DLGS = {
+  branch: {icon:'ph-buildings', width:'880px', title:'فرع جديد', sub:'الفرع يملك نقاط بيعه ومخازنه وتقويم عطلاته وخزينته مستقلاً', save:'إنشاء الفرع', saveIcon:'ph-check', cancel:'إلغاء', alt:'حفظ كمسوّدة', altIcon:'ph-floppy-disk',
+    groups:[
+      {label:'بيانات الفرع', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'اسم الفرع', icon:'ph-storefront', value:'فرع الشيخ زايد'},
+        {label:'كود الفرع', icon:'ph-hash', value:'BR-004'},
+        {label:'العنوان', icon:'ph-map-pin', value:'الحي الأول · الشيخ زايد'},
+        {label:'الهاتف', icon:'ph-phone', value:'02 3850 4412'},
+      ]},
+      {label:'ساعات العمل', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'الافتتاح', icon:'ph-clock', value:'١٠:٠٠'},
+        {label:'الإغلاق', icon:'ph-clock', value:'٢٣:٠٠'},
+      ]},
+      {label:'ما يُنشأ تلقائياً مع الفرع', kind:'toggles', items:[
+        {icon:'ph-vault', title:'خزينة رئيسية للفرع', sub:'يُربط بها كل نقاط البيع', on:true},
+        {icon:'ph-warehouse', title:'مخزن افتراضي', sub:'يُباع منه ويستقبل التحويلات', on:true},
+        {icon:'ph-desktop-tower', title:'نقطة بيع واحدة', sub:'تُضبط طابعتها لاحقاً', on:true},
+        {icon:'ph-calendar-x', title:'نسخ تقويم العطلات من فرع قائم', sub:'العطلات العامة تسري تلقائياً على أي حال', on:false},
+      ]},
+      {label:'تنبيه', kind:'note', tone:'warn', note:'الفرع الجديد لا يظهر لأي مستخدم إلا بعد منحه صلاحية الوصول — عدا المستخدمين بلا صفوف وصول، فهم يرون كل الفروع تلقائياً.'},
+    ],
+    aside:{icon:'ph-list-checks', title:'ما سيُنشأ', rows:[
+      ['فرع','BR-004'],['خزينة','١',''],['مخزن','١',''],['نقطة بيع','١',''],['موظفون','٠','#6B7280'],
+      ['العطلات السارية','٥ عامة','#0250D3'],
+    ], verdict:'جاهز للإنشاء', vSub:'٤ سجلات مرتبطة ستُنشأ في عملية واحدة قابلة للتراجع.', vTone:'ok'}},
+
+  employee: {icon:'ph-user-plus', width:'880px', title:'موظف جديد', sub:'الموظف مرتبط بفرع وله نوع راتب ومعرّف بصمة اختياري', save:'إضافة الموظف', saveIcon:'ph-check', cancel:'إلغاء',
+    groups:[
+      {label:'البيانات الأساسية', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'الاسم', icon:'ph-user', value:'ياسر عبد الحميد'},
+        {label:'الهاتف', icon:'ph-phone', value:'0100 992 4471'},
+        {label:'الوظيفة', icon:'ph-briefcase', value:'كاشير'},
+        {label:'الفرع', icon:'ph-storefront', value:'فرع أكتوبر'},
+        {label:'تاريخ التعيين', icon:'ph-calendar-blank', value:'٢٠٢٦-٠٩-٠١'},
+        {label:'معرّف جهاز البصمة', icon:'ph-fingerprint', value:'1049', tail:'ZKTeco'},
+      ]},
+      {label:'الراتب', kind:'cards', cols:'1fr 1fr 1fr', items:[
+        {icon:'ph-calendar', label:'شهري', sub:'مبلغ ثابت يُقسم على أيام الشهر الفعلية', on:true},
+        {icon:'ph-sun', label:'يومي', sub:'أجر اليوم × أيام الحضور'},
+        {icon:'ph-clock', label:'بالساعة', sub:'يستلزم تحديد ساعات العمل اليومية'},
+      ]},
+      {label:'القيمة وساعات العمل', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'الراتب الأساسي', icon:'ph-money', value:'6,400', tail:'ج.م / شهر'},
+        {label:'ساعات العمل اليومية', icon:'ph-hourglass', value:'٨', tail:'اختياري للشهري'},
+      ]},
+      {label:'تنبيه', kind:'note', tone:'warn', note:'ساعات العمل اليومية هي مقام أجر الساعة — بدونها لا يُشتقّ بدل الإضافي ويبقى يدوياً. ولا تُخمَّن قيمة افتراضية: تخمين المقام يعطي رقماً يبدو صحيحاً وليس كذلك.'},
+    ],
+    aside:{icon:'ph-calculator', title:'المشتقات', rows:[
+      ['أيام الشهر الفعلية','٢٦'],['أجر اليوم','246.15','#0250D3'],['أجر الساعة','30.77','#0250D3'],
+      ['أجر الساعة الإضافية','46.15','#22C55E'],['حد السلفة الأقصى','3,200','#F59E0B'],
+    ], big:'6,400', bigLabel:'الراتب الأساسي', bigSub:'شهري · فرع أكتوبر'}},
+
+  advance: {icon:'ph-hand-coins', width:'880px', title:'صرف سلفة', sub:'تُصرف من الخزينة وتُخصم بالكامل من راتب الشهر', save:'صرف السلفة', saveIcon:'ph-check', cancel:'إلغاء', alt:'تجزئة على ٣ أشهر', altIcon:'ph-git-branch',
+    groups:[
+      {label:'الموظف والمبلغ', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'الموظف', icon:'ph-user', value:'يوسف طارق'},
+        {label:'الراتب الأساسي', icon:'ph-money', value:'9,200', tail:'ج.م'},
+        {label:'مبلغ السلفة', icon:'ph-hand-coins', value:'6,000', tail:'ج.م', bad:true},
+        {label:'تاريخ الصرف', icon:'ph-calendar-blank', value:'اليوم'},
+      ]},
+      {label:'الخزينة', kind:'cards', cols:'1fr 1fr', items:[
+        {icon:'ph-vault', label:'الخزينة الرئيسية', sub:'الرصيد الحالي 42,610 ج.م', on:true},
+        {icon:'ph-bank', label:'تحويل بنكي', sub:'يُسجّل بلا أثر على الخزينة النقدية'},
+      ]},
+      {label:'البيان', kind:'fields', cols:'1fr', items:[
+        {label:'وصف السلفة', icon:'ph-text-align-right', value:'سلفة سبتمبر — مصاريف مدرسة'},
+      ]},
+      {label:'الحد المسموح', kind:'note', tone:'err', note:'السلفة لا يمكن أن تتجاوز ٥٠٪ من الراتب الأساسي (4,600 ج.م). ولدى الموظف سلفة سابقة غير مسددة بـ 4,000 ج.م — إجمالي السلف بعد هذه العملية 10,000 ج.م وهو أكبر من الراتب الأساسي.'},
+    ],
+    aside:{icon:'ph-shield-warning', title:'فحص الحد', rows:[
+      ['الراتب الأساسي','9,200'],['الحد الأقصى (٥٠٪)','4,600','#0250D3'],
+      ['سلف سابقة غير مسددة','4,000','#F59E0B'],['المتاح فعلياً','600','#EF4444'],
+      ['المطلوب','6,000','#EF4444'],
+    ], verdict:'مرفوض — تجاوز الحد', vSub:'المبلغ أكبر من ٥٠٪ من الأساسي، وإجمالي السلف يتجاوز الراتب. اخفض المبلغ إلى 600 ج.م أو سدّد السلفة السابقة أولاً.', vTone:'err',
+      big:'600', bigLabel:'أقصى مبلغ مسموح الآن', bigSub:'بعد خصم السلف غير المسددة'},
+    saveTone:'err'},
+
+  payslip: {icon:'ph-money', width:'880px', title:'احتساب وصرف راتب', sub:'كل بند مشتق من الحضور والحركات — راجع قبل الصرف', save:'صرف من الخزينة', saveIcon:'ph-hand-coins', cancel:'إلغاء', alt:'طباعة قسيمة', altIcon:'ph-printer',
+    groups:[
+      {label:'الفترة والموظف', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'الموظف', icon:'ph-user', value:'أحمد فؤاد'},
+        {label:'الشهر', icon:'ph-calendar-blank', value:'أغسطس ٢٠٢٦'},
+        {label:'الخزينة', icon:'ph-vault', value:'الخزينة الرئيسية'},
+        {label:'طريقة الصرف', icon:'ph-money', value:'نقدي'},
+      ]},
+      {label:'ما يُحسب تلقائياً', kind:'toggles', items:[
+        {icon:'ph-user-minus', title:'خصم أيام الغياب', sub:'يومان × 261.54 = 523.08 ج.م', on:true},
+        {icon:'ph-hourglass', title:'بدل الساعات الإضافية', sub:'٩.٢ ساعة × ١.٥× = 451.11 ج.م', on:true},
+        {icon:'ph-hand-coins', title:'خصم السلف غير المسددة', sub:'سلفة أغسطس 2,000 ج.م', on:true},
+        {icon:'ph-clock', title:'خصم التأخير المجمّع', sub:'١.٦ ساعة = 52.31 ج.م', on:true},
+        {icon:'ph-gift', title:'إضافة المكافآت المعتمدة', sub:'حافز التزام 400 ج.م', on:true},
+      ]},
+      {label:'تنبيه', kind:'note', tone:'warn', note:'الصرف يُنشئ حركة خزينة وقيداً محاسبياً معاً — ولا يُتراجع عنه إلا بقيد عكسي. تأكد أن الشهر مغلق حضورياً قبل الصرف.'},
+    ],
+    aside:{icon:'ph-receipt', title:'قسيمة الراتب', rows:[
+      ['الأساسي','6,800'],['− خصم الغياب','523.08','#EF4444'],['+ بدل إضافي','451.11','#22C55E'],
+      ['+ حافز التزام','400.00','#22C55E'],['− سلفة أغسطس','2,000.00','#EF4444'],['− خصم تأخير','52.31','#EF4444'],
+    ], big:'5,075.72', bigLabel:'صافي المستحق', bigSub:'أغسطس ٢٠٢٦ · نقدي',
+      verdict:'جاهز للصرف', vSub:'الشهر مغلق حضورياً · الرصيد النقدي 42,610 ج.م يكفي.', vTone:'ok'}},
+
+  leave: {icon:'ph-airplane-takeoff', width:'860px', title:'طلب إجازة', sub:'الاعتماد يخصم من رصيد النوع نفسه', save:'اعتماد الطلب', saveIcon:'ph-check', cancel:'رفض', alt:'إحالة لمشرف', altIcon:'ph-user-switch',
+    groups:[
+      {label:'الطلب', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'الموظف', icon:'ph-user', value:'عمر صلاح'},
+        {label:'الفرع', icon:'ph-storefront', value:'فرع أكتوبر'},
+        {label:'من تاريخ', icon:'ph-calendar-blank', value:'٢٠٢٦-٠٩-٠٧'},
+        {label:'إلى تاريخ', icon:'ph-calendar-blank', value:'٢٠٢٦-٠٩-٠٨'},
+      ]},
+      {label:'نوع الإجازة', kind:'cards', cols:'1fr 1fr', items:[
+        {icon:'ph-airplane-takeoff', label:'سنوية', sub:'الرصيد المتبقي: ٠ يوم من ٢١'},
+        {icon:'ph-first-aid', label:'مرضية', sub:'الرصيد المتبقي: ٢ يوم من ٦'},
+        {icon:'ph-warning-circle', label:'طارئة', sub:'الرصيد المتبقي: ١ يوم من ٣'},
+        {icon:'ph-calendar-x', label:'بلا أجر', sub:'بلا رصيد — تُخصم من الراتب', on:true},
+      ]},
+      {label:'ملاحظات', kind:'fields', cols:'1fr', items:[
+        {label:'سبب الإجازة', icon:'ph-text-align-right', value:'سفر عائلي — مسجّل مسبقاً'},
+      ]},
+      {label:'تنبيه', kind:'note', tone:'warn', note:'رصيد الإجازة السنوية للموظف صفر. اعتماد الطلب كإجازة بلا أجر يخصم يومين من راتب سبتمبر (492.30 ج.م) ولا يُنقص أي رصيد.'},
+    ],
+    aside:{icon:'ph-scales', title:'أثر الاعتماد', rows:[
+      ['أيام الإجازة','٢'],['نوعها','بلا أجر','#6B7280'],['خصم من الراتب','492.30','#EF4444'],
+      ['الرصيد السنوي بعدها','٠ / ٢١','#EF4444'],['أيام الحضور المتوقعة','١٩ / ٢٦','#F59E0B'],
+    ], verdict:'يمكن الاعتماد بتحفّظ', vSub:'الموظف تجاوز رصيده السنوي وله ٤ أيام غياب هذا الشهر — يستحق مراجعة التزام.', vTone:'warn'}},
+
+  holiday: {icon:'ph-calendar-x', width:'820px', title:'عطلة جديدة', sub:'الصف يحمل يوماً أسبوعياً أو تاريخاً بعينه — لا الاثنين معاً', save:'إضافة العطلة', saveIcon:'ph-check', cancel:'إلغاء',
+    groups:[
+      {label:'شكل العطلة', kind:'cards', cols:'1fr 1fr', items:[
+        {icon:'ph-repeat', label:'يوم أسبوعي متكرر', sub:'مثل الجمعة — يسري كل أسبوع بلا نهاية'},
+        {icon:'ph-calendar-blank', label:'تاريخ بعينه', sub:'مثل المولد النبوي — يوم واحد', on:true},
+      ]},
+      {label:'التفاصيل', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'اسم العطلة', icon:'ph-tag', value:'جرد نصف سنوي'},
+        {label:'التاريخ', icon:'ph-calendar-blank', value:'٢٠٢٦-٠٩-٢٠'},
+      ]},
+      {label:'النطاق', kind:'chips', hint:'فارغ = كل الفروع', items:[
+        {label:'فرع المعادي', on:true},{label:'فرع مدينة نصر'},{label:'فرع أكتوبر'},
+      ]},
+      {label:'أثر على الرواتب', kind:'toggles', items:[
+        {icon:'ph-money', title:'عطلة مدفوعة', sub:'تُستثنى من أيام العمل ولا تُخصم', on:true},
+        {icon:'ph-storefront', title:'إغلاق البيع في الفرع', sub:'نقاط البيع تُمنع من إصدار فواتير', on:true},
+      ]},
+      {label:'كيف تُدمج', kind:'note', tone:'info', note:'الدمج تراكمي: عطلات الفرع هي صفوفه مضافةً إلى الصفوف العامة، لا بديلةً عنها. فرع المعادي سيكون له ٦ عطلات في سبتمبر: ٤ جمعات + المولد النبوي + الجرد.'},
+    ],
+    aside:{icon:'ph-calendar-check', title:'سبتمبر بعد الإضافة', rows:[
+      ['أيام الشهر','٣٠'],['جمعات','٤','#6B7280'],['عطلات عامة','١','#EF4444'],
+      ['عطلات الفرع','١','#F59E0B'],['أيام عمل فعلية','٢٤','#0250D3'],
+    ], verdict:'المقام سيتغيّر', vSub:'أيام العمل الفعلية لفرع المعادي في سبتمبر تنزل من ٢٥ إلى ٢٤ — وهي مقام أجر اليوم.', vTone:'warn'}},
+
+  access: {icon:'ph-lock-key', width:'860px', title:'صلاحية الوصول للفروع', sub:'اختر الفروع والمخازن التي يراها المستخدم', save:'حفظ الصلاحيات', saveIcon:'ph-check', cancel:'إلغاء',
+    groups:[
+      {label:'المستخدم', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'المستخدم', icon:'ph-user', value:'يوسف طارق'},
+        {label:'الدور', icon:'ph-shield-check', value:'مشرف مبيعات'},
+      ]},
+      {label:'الفروع', kind:'chips', hint:'بلا اختيار = كل الفروع', items:[
+        {label:'فرع المعادي', on:true},{label:'فرع مدينة نصر', on:true},{label:'فرع أكتوبر'},
+      ]},
+      {label:'المخازن', kind:'chips', hint:'يُقيَّد داخل الفروع المسموحة', items:[
+        {label:'المخزن الرئيسي', on:true},{label:'مخزن نصر', on:true},{label:'مخزن أكتوبر'},{label:'مخزن التالف'},
+      ]},
+      {label:'قيود إضافية', kind:'toggles', items:[
+        {icon:'ph-percent', title:'حد الخصم الأقصى', sub:'١٥٪ — أي خصم أعلى يحتاج موافقة', on:true},
+        {icon:'ph-lightning', title:'السماح بالإغلاق السريع للوردية', sub:'بلا مصادقة مشرف — غير محبَّب', on:false},
+        {icon:'ph-arrows-left-right', title:'التحويل بين الفروع المسموحة', sub:'بلا الحاجة لموافقة إضافية', on:true},
+      ]},
+      {label:'تنبيه', kind:'note', tone:'info', note:'مستخدم بلا أي صف وصول يرى كل الفروع (توافق خلفي). لتقييده فعلياً يجب اختيار فرع واحد على الأقل. ومدير النظام الجذري لا يُقيَّد بأي حال.'},
+    ],
+    aside:{icon:'ph-eye', title:'ما سيراه', rows:[
+      ['الفروع','٢ من ٣','#0250D3'],['المخازن','٢ من ٤','#0250D3'],['نقاط البيع','٣ من ٤',''],
+      ['الموظفون','١١ من ١٤',''],['حد الخصم','١٥٪','#F59E0B'],
+    ], verdict:'تقييد فعّال', vSub:'المستخدم لن يرى فرع أكتوبر ولا مخزن التالف ولا حركاتهما في أي تقرير.', vTone:'ok'}},
+
+  route: {icon:'ph-path', width:'860px', title:'مسار توزيع جديد', sub:'المسار مجموعة عملاء بمنطقة جغرافية ومندوب مسؤول', save:'إنشاء المسار', saveIcon:'ph-check', cancel:'إلغاء',
+    groups:[
+      {label:'بيانات المسار', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'اسم المسار', icon:'ph-path', value:'مسار حلوان والمعصرة'},
+        {label:'المنطقة الجغرافية', icon:'ph-map-pin', value:'حلوان · المعصرة · طرة'},
+        {label:'المندوب المسؤول', icon:'ph-user', value:'عمر صلاح'},
+        {label:'الفرع التابع', icon:'ph-storefront', value:'فرع المعادي'},
+      ]},
+      {label:'أيام الزيارة', kind:'chips', hint:'الزيارات تُخطَّط تلقائياً على هذه الأيام', items:[
+        {label:'السبت', on:true},{label:'الأحد'},{label:'الاثنين', on:true},{label:'الثلاثاء'},{label:'الأربعاء', on:true},{label:'الخميس'},
+      ]},
+      {label:'الهدف الشهري', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'هدف القيمة', icon:'ph-target', value:'24,000', tail:'ج.م / شهر'},
+        {label:'هدف الزيارات', icon:'ph-map-pin-line', value:'١٢', tail:'زيارة / شهر'},
+      ]},
+      {label:'صلاحيات المندوب', kind:'toggles', items:[
+        {icon:'ph-receipt', title:'إصدار فواتير من المسار', sub:'فاتورة بيع مرتبطة بالزيارة', on:true},
+        {icon:'ph-money', title:'التحصيل النقدي من العملاء', sub:'يُورَّد لخزينة الفرع في نهاية اليوم', on:true},
+        {icon:'ph-percent', title:'منح خصم حتى ٥٪', sub:'أي خصم أعلى يحتاج موافقة مشرف', on:true},
+      ]},
+    ],
+    aside:{icon:'ph-list-checks', title:'ملخص المسار', rows:[
+      ['أيام الزيارة','٣ / أسبوع'],['زيارات متوقعة','١٢ / شهر','#0250D3'],
+      ['هدف القيمة','24,000','#0250D3'],['متوسط الزيارة','2,000',''],
+      ['العملاء المرشحون','١١','#22C55E'],
+    ], verdict:'١١ عميلاً في النطاق', vSub:'عملاء مسجّلون بعناوين داخل حلوان والمعصرة وطرة وغير مرتبطين بمسار آخر.', vTone:'ok'}},
+
+  visit: {icon:'ph-calendar-plus', width:'820px', title:'تخطيط زيارات الأسبوع', sub:'تُنشأ الزيارات تلقائياً على أيام كل مسار', save:'إنشاء ٤٨ زيارة', saveIcon:'ph-check', cancel:'إلغاء',
+    groups:[
+      {label:'الفترة', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'من', icon:'ph-calendar-blank', value:'٢٠٢٦-٠٨-٢٩'},
+        {label:'إلى', icon:'ph-calendar-blank', value:'٢٠٢٦-٠٩-٠٤'},
+      ]},
+      {label:'المسارات المشمولة', kind:'chips', items:[
+        {label:'شرق القاهرة', on:true},{label:'مدينة نصر', on:true},{label:'أكتوبر والشيخ زايد', on:true},{label:'وسط البلد'},
+      ]},
+      {label:'قواعد التخطيط', kind:'toggles', items:[
+        {icon:'ph-arrow-clockwise', title:'إعادة الزيارات المتخطّاة', sub:'١٠ زيارات متخطّاة تُضاف لأول يوم متاح', on:true},
+        {icon:'ph-warning', title:'تخطّي العملاء المتجاوزين حد الائتمان', sub:'٣ عملاء — يحتاجون تحصيلاً أولاً', on:true},
+        {icon:'ph-user-minus', title:'تخطّي المسارات بلا مندوب', sub:'مسار وسط البلد', on:true},
+        {icon:'ph-bell', title:'تنبيه المندوب على الموبايل', sub:'إشعار بجدول يومه صباحاً', on:true},
+      ]},
+      {label:'تنبيه', kind:'note', tone:'info', note:'الزيارة المخططة لا تلزم المندوب بفاتورة — قد تُنفَّذ كزيارة متابعة بلا طلب، أو تُتخطّى بسبب مسجّل. السبب إلزامي في حالة التخطّي.'},
+    ],
+    aside:{icon:'ph-calendar-check', title:'ما سيُنشأ', rows:[
+      ['المسارات','٣ من ٤'],['أيام الزيارة','٧'],['زيارات جديدة','٣٨','#0250D3'],
+      ['زيارات معادة','١٠','#F59E0B'],['عملاء مستثنون','٣','#EF4444'],
+    ], big:'٤٨', bigLabel:'إجمالي زيارات الأسبوع', bigSub:'٣٨ جديدة + ١٠ معادة'}},
+
+  budget: {icon:'ph-chart-line', width:'860px', title:'موازنة جديدة', sub:'موازنة سنوية لحساب واحد تُوزّع على أشهر السنة المالية', save:'إنشاء الموازنة', saveIcon:'ph-check', cancel:'إلغاء', alt:'حفظ كمسوّدة', altIcon:'ph-floppy-disk',
+    groups:[
+      {label:'الأساس', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'السنة المالية', icon:'ph-calendar-blank', value:'٢٠٢٦'},
+        {label:'الحساب', icon:'ph-bank', value:'5206 · تسويق ودعاية'},
+        {label:'مركز التكلفة', icon:'ph-target', value:'كل الفروع'},
+        {label:'المبلغ السنوي', icon:'ph-money', value:'132,000', tail:'ج.م'},
+      ]},
+      {label:'طريقة التوزيع', kind:'cards', cols:'1fr 1fr 1fr', items:[
+        {icon:'ph-equals', label:'متساوٍ', sub:'11,000 ج.م لكل شهر'},
+        {icon:'ph-sliders-horizontal', label:'يدوي', sub:'تحدّد كل شهر بنفسك', on:true},
+        {icon:'ph-waves', label:'موسمي', sub:'يتبع نمط مبيعات العام السابق'},
+      ]},
+      {label:'الاعتماد', kind:'toggles', items:[
+        {icon:'ph-seal-check', title:'إرسال للاعتماد فوراً', sub:'٣ مستويات — الحساب فوق حد 100,000', on:true},
+        {icon:'ph-bell', title:'تنبيه عند تجاوز ٩٠٪ من الموازنة الشهرية', sub:'يُرسل للمحاسب ومدير النظام', on:true},
+        {icon:'ph-prohibit', title:'منع الصرف فوق الموازنة', sub:'رفض القيد بدلاً من التنبيه', on:false},
+      ]},
+      {label:'تنبيه', kind:'note', tone:'warn', note:'بند التسويق استهلك 1,680 ج.م فقط من 11,000 المخططة هذا الشهر (١٥٪). التوزيع اليدوي يسمح بتحميل الربع الأخير بحملات الموسم بدلاً من التساوي العقيم.'},
+    ],
+    aside:{icon:'ph-chart-bar', title:'التوزيع اليدوي', rows:[
+      ['يناير — مارس','18,000'],['أبريل — يونيو','24,000'],['يوليو — سبتمبر','30,000','#0250D3'],
+      ['أكتوبر — ديسمبر','60,000','#22C55E'],['الإجمالي','132,000','#0250D3'],
+    ], verdict:'يحتاج اعتماداً ثلاثي المستويات', vSub:'المبلغ فوق حد 100,000 ج.م: صانع ← مراجع ← معتمد نهائي. مهلة التصعيد ٢٤ ساعة لكل مستوى.', vTone:'warn'}},
+
+  approve: {icon:'ph-seal-check', width:'820px', title:'طلب اعتماد', sub:'تحويل خزينة بمبلغ فوق الحد — يحتاج ثلاثة مستويات', save:'اعتماد', saveIcon:'ph-check', cancel:'رفض', alt:'إحالة للمستوى الأعلى', altIcon:'ph-arrow-up',
+    groups:[
+      {label:'الطلب', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'نوع المستند', icon:'ph-arrows-left-right', value:'تحويل خزينة'},
+        {label:'المستند', icon:'ph-hash', value:'TRF-2026-0046'},
+        {label:'المبلغ', icon:'ph-money', value:'62,000', tail:'ج.م'},
+        {label:'مقدّم الطلب', icon:'ph-user', value:'محمود سعيد'},
+      ]},
+      {label:'سلسلة الاعتماد', kind:'chain', items:[
+        {icon:'ph-check', title:'المستوى ١ — الصانع', sub:'محمود سعيد · اليوم 09:12', status:'مكتمل', tone:'ok'},
+        {icon:'ph-eye', title:'المستوى ٢ — المراجع', sub:'سارة منير · منتظر ٢٦ ساعة — تجاوز مهلة التصعيد', status:'منتظر', tone:'err'},
+        {icon:'ph-stamp', title:'المستوى ٣ — المعتمد النهائي', sub:'المالك · لم يبدأ', status:'لاحقاً', tone:'idle'},
+      ]},
+      {label:'ملاحظات الاعتماد', kind:'fields', cols:'1fr', items:[
+        {label:'ملاحظة تُسجَّل في السجل', icon:'ph-text-align-right', value:'راجعت الرصيد والمستند — سليم'},
+      ]},
+      {label:'تنبيه', kind:'note', tone:'err', note:'الطلب تجاوز مهلة التصعيد (٢٤ ساعة). التصعيد التلقائي معطّل لهذا النوع، فالطلب سيبقى معلّقاً حتى تدخّل يدوي.'},
+    ],
+    aside:{icon:'ph-info', title:'سياق القرار', rows:[
+      ['حد تفعيل الاعتماد','25,000'],['المبلغ','62,000','#EF4444'],
+      ['المستويات المطلوبة','٣','#0250D3'],['مهلة التصعيد','٢٤ ساعة','#F59E0B'],
+      ['منتظر منذ','٢٦ ساعة','#EF4444'],
+    ], verdict:'تجاوز المهلة', vSub:'اعتمادك ينقل الطلب للمستوى ٣ ويسجّل قرارك باسمك في سجل القرارات — لا يُحذف.', vTone:'err'}},
+
+  perf: {icon:'ph-medal', width:'860px', title:'تقييم أداء', sub:'٤ محاور بوزن متساوٍ تُنتج التقييم العام', save:'حفظ التقييم', saveIcon:'ph-check', cancel:'إلغاء',
+    groups:[
+      {label:'الموظف والفترة', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'الموظف', icon:'ph-user', value:'يوسف طارق'},
+        {label:'الفترة', icon:'ph-calendar-blank', value:'الربع الثالث ٢٠٢٦'},
+      ]},
+      {label:'المحاور', kind:'scores', items:[
+        {icon:'ph-clock', label:'الالتزام', value:58, tint:'#EF4444'},
+        {icon:'ph-lightning', label:'الإنتاجية', value:94, tint:'#22C55E'},
+        {icon:'ph-seal-check', label:'الجودة', value:62, tint:'#F59E0B'},
+        {icon:'ph-users-three', label:'العمل الجماعي', value:68, tint:'#F59E0B'},
+      ]},
+      {label:'ملاحظات المُقيِّم', kind:'fields', cols:'1fr', items:[
+        {label:'الملاحظات', icon:'ph-text-align-right', value:'إنتاجية عالية جداً على المسار، لكن ٢ إغلاق سريع بلا مصادقة وخصم يدوي ٢٠٪ بلا موافقة'},
+      ]},
+      {label:'التوصية', kind:'cards', cols:'1fr 1fr', items:[
+        {icon:'ph-trend-up', label:'علاوة', sub:'التقييم ٨٥ أو أعلى'},
+        {icon:'ph-wrench', label:'خطة تحسين', sub:'٦٠ — ٨٤ · متابعة شهرية', on:true},
+      ]},
+    ],
+    aside:{icon:'ph-calculator', title:'التقييم العام', rows:[
+      ['الالتزام','٥٨','#EF4444'],['الإنتاجية','٩٤','#22C55E'],['الجودة','٦٢','#F59E0B'],['العمل الجماعي','٦٨','#F59E0B'],
+      ['المتوسط','٧١','#F59E0B'],
+    ], big:'٧١', bigLabel:'التقييم العام', bigSub:'خطة تحسين · متابعة شهرية',
+      verdict:'الالتزام يسحب التقييم', vSub:'محور الالتزام (٥٨) أقل من الحد المقبول ٧٠ — يستوجب خطة تحسين لا علاوة، مهما بلغت الإنتاجية.', vTone:'warn'}}};
+
+// ══════════════════ DRAWERS ══════════════════
+const DRAWERS = {
+  b1: {icon:'ph-storefront', tint:'#22C55E', crumb:'الفروع ← فرع', title:'فرع المعادي', sub:'٩ شارع ٧٧ المتفرع · الفرع الرئيسي · ٠٨:٠٠ — ٢٣:٠٠',
+    kpis:[['مبيعات اليوم','103,240','#22C55E'],['نقاط البيع','٢',''],['الموظفون','٧',''],['المخازن','٢','']],
+    groups:[
+      {label:'نقاط البيع', icon:'ph-desktop-tower', meta:'٢ متصلة', rows:[
+        ['ph-desktop-tower','CASHIER-01','كاشير ١ · حرارية 80mm · وردية مفتوحة','متصلة','#22C55E'],
+        ['ph-desktop-tower','CASHIER-02','كاشير ٢ · حرارية 80mm · وردية مفتوحة','متصلة','#22C55E'],
+      ]},
+      {label:'المخازن', icon:'ph-warehouse', meta:'قيمة 1,222,400', rows:[
+        ['ph-warehouse','المخزن الرئيسي','٣٨٤٠ صنفاً · ٦ تحت الحد','1,180,400','#0250D3'],
+        ['ph-warehouse','مخزن التالف','٦٠ صنفاً · لا يُباع منه','42,000','#EF4444'],
+      ]},
+      {label:'الموظفون', icon:'ph-users', meta:'٧ موظفين', rows:[
+        ['ph-user','محمود سعيد','مدير النظام · حاضر منذ 08:00','14,000','#0250D3'],
+        ['ph-user','أحمد فؤاد','كاشير · متأخر ٢٤ د','6,800','#F59E0B'],
+        ['ph-user','منة الله حسن','كاشير · في الوقت','6,800','#22C55E'],
+        ['ph-user','سيد كمال','مندوب توصيل · ٤٨ طلباً','280 / يوم','#22C55E'],
+      ]},
+      {label:'عطلات سبتمبر', icon:'ph-calendar-x', meta:'٦ أيام', rows:[
+        ['ph-calendar-dot','٤ جمعات','عطلة أسبوعية عامة','مدفوعة','#6B7280'],
+        ['ph-calendar-x','المولد النبوي','٢٠٢٦-٠٩-٠٦ · عطلة عامة','مدفوعة','#EF4444'],
+        ['ph-clipboard-text','جرد نصف سنوي','٢٠٢٦-٠٩-٢٠ · خاص بالفرع','مدفوعة','#F59E0B'],
+      ]},
+    ],
+    actions:[['ph-pencil-simple','تعديل الفرع','out'],['ph-calendar-plus','إضافة عطلة','in','holiday']]},
+
+  e2: {initials:'أ.ف', tint:'#22C55E', crumb:'الموظفون ← موظف', title:'أحمد فؤاد', sub:'كاشير · فرع المعادي · راتب شهري 6,800 · بصمة #1043',
+    kpis:[['الحضور','٢١/٢٦','#F59E0B'],['صافي أغسطس','5,076','#22C55E'],['سلف','2,000','#F59E0B'],['التقييم','٧٧','#0250D3']],
+    groups:[
+      {label:'حضور آخر ٥ أيام', icon:'ph-fingerprint', meta:'المتوقع ٠٩:٠٠ — ١٧:٠٠', rows:[
+        ['ph-clock','اليوم','09:24 — 17:12 · متأخر ٢٤ د','٧.٨ س','#F59E0B'],
+        ['ph-check-circle','أمس','08:58 — 18:40 · إضافي ١.٧ س','٩.٧ س','#0250D3'],
+        ['ph-check-circle','٢٠٢٦-٠٨-٢٣','09:02 — 17:05','٨.١ س','#22C55E'],
+        ['ph-x-circle','٢٠٢٦-٠٨-٢٢','غياب بلا إجازة','—','#EF4444'],
+        ['ph-first-aid','٢٠٢٦-٠٨-١٤','إجازة مرضية معتمدة','—','#22C55E'],
+      ]},
+      {label:'الحركات المالية', icon:'ph-hand-coins', meta:'أغسطس ٢٠٢٦', rows:[
+        ['ph-hand-coins','سلفة أغسطس','صُرفت اليوم 10:40 · ٢٩٪ من الأساسي','2,000','#F59E0B'],
+        ['ph-clock','خصم تأخير','٤ أيام · ١.٦ ساعة مجمّعة','52.31','#EF4444'],
+        ['ph-user-minus','خصم غياب','يومان × 261.54','523.08','#EF4444'],
+        ['ph-hourglass','بدل إضافي','٩.٢ ساعة × ١.٥×','451.11','#22C55E'],
+      ]},
+      {label:'الإجازات', icon:'ph-airplane-takeoff', meta:'الرصيد ٩ / ٢١', rows:[
+        ['ph-first-aid','مرضية','٢٠٢٦-٠٨-١٢ إلى ١٤ · معتمدة','٣ أيام','#22C55E'],
+        ['ph-airplane-takeoff','سنوية','٢٠٢٦-٠٩-٠١ إلى ٠٣ · معلّقة','٣ أيام','#F59E0B'],
+      ]},
+      {label:'العقد والأداء', icon:'ph-file-text', meta:'عقد دائم', rows:[
+        ['ph-file-text','عقد دائم','من ٢٠٢٤-٠٦-٠١ · بلا نهاية','6,800','#22C55E'],
+        ['ph-medal','تقييم الربع الثالث','التزام ٧٢ · إنتاجية ٨٠ · جودة ٧٦','٧٧','#0250D3'],
+        ['ph-target','هدف جارٍ','صفر إلغاءات بلا موافقة لمدة شهر','٨٨٪','#22C55E'],
+      ]},
+    ],
+    actions:[['ph-hand-coins','صرف سلفة','in','advance'],['ph-money','احتساب الراتب','in','payslip']]},
+
+  r1: {icon:'ph-path', tint:'#22C55E', crumb:'المناطق ← مسار', title:'مسار شرق القاهرة', sub:'المعادي · المقطم · دار السلام · يوسف طارق · ٣ أيام/أسبوع',
+    kpis:[['العملاء','٢٤',''],['زيارات الشهر','١٨','#22C55E'],['المبيعات','42,600','#22C55E'],['من الهدف','١١٢٪','#22C55E']],
+    groups:[
+      {label:'أعلى عملاء المسار', icon:'ph-users-three', meta:'٢٤ عميلاً', rows:[
+        ['ph-storefront','سوبر ماركت النور','٦ زيارات · آجل حد 50,000','18,400','#22C55E'],
+        ['ph-storefront','مطعم البيت الشامي','٤ زيارات · آجل','12,200','#22C55E'],
+        ['ph-storefront','بقالة الأمانة','٥ زيارات · نقدي','8,600','#22C55E'],
+        ['ph-storefront','كافيه الركن','٣ زيارات · تجاوز الحد','3,400','#EF4444'],
+      ]},
+      {label:'زيارات هذا الأسبوع', icon:'ph-map-pin-line', meta:'٧ زيارات', rows:[
+        ['ph-check-circle','مطعم البيت الشامي','اليوم 13:44 · INV-2026-1037','6,420','#22C55E'],
+        ['ph-check-circle','سوبر ماركت النور','اليوم 14:26 · INV-2026-1040','8,940','#22C55E'],
+        ['ph-calendar-blank','بقالة الأمانة','غداً 11:30 · مخططة','—','#0250D3'],
+        ['ph-skip-forward','مخبز السلام','أمس 11:00 · المحل مغلق','—','#F59E0B'],
+      ]},
+      {label:'التحصيل', icon:'ph-money', meta:'٣ تحصيلات', rows:[
+        ['ph-note','شيك 8842','سوبر ماركت النور · بنك مصر','18,000','#F59E0B'],
+        ['ph-money','نقدي','بقالة الأمانة · RCV-2026-0228','9,400','#22C55E'],
+        ['ph-note','شيك 9014','مطعم البيت الشامي · CIB','12,000','#F59E0B'],
+      ]},
+    ],
+    actions:[['ph-target','تعديل الهدف','out'],['ph-calendar-plus','تخطيط زيارات','in','visit']]}};
+
+DLGS.holidayEdit = Object.assign({}, DLGS.holiday, {
+  title:'تعديل عطلة', sub:'تغيير النطاق أو التاريخ يعيد حساب أيام العمل — ومقام أجر اليوم معها',
+  save:'حفظ التعديل', saveIcon:'ph-floppy-disk', alt:'حذف العطلة', altIcon:'ph-trash'});
+
+const TONE = {ok:'#22C55E', warn:'#F59E0B', err:'#EF4444', info:'#0250D3', idle:'#6B7280'};
+
+class Component extends DCLogic {
+  state = {theme:null, mod:null, tab:0, dlg:null, drawer:null, choice:{}, chip:{}};
+
+  get theme(){ return this.state.theme || this.props.theme || 'light'; }
+  get mod(){ return 'analytics'; }
+
+  openDlg(k){ return () => this.setState({dlg:k}); }
+
+  cell(c){
+    const tint = c.tint || '';
+    const align = c.align || 'start';
+    const out = {isText:false, isPill:false, isBar:false, isTrend:false, isBtn:false,
+      justify: align === 'end' ? 'flex-end' : 'flex-start', align,
+      text:c.text, sub:c.sub || '', icon:c.icon || '', fw:c.fw || 700,
+      fg:'var(--txt)', iconBg:'var(--field)', iconFg:'var(--muted)', pillBg:'',
+      pct:c.pct || '0%', barFg:'', arrow:'', btnIcon:c.btnIcon || '', act:() => {}};
+    if (c.icon) { out.iconBg = tint ? tint + '18' : 'var(--field)'; out.iconFg = tint || 'var(--muted)'; }
+    if (c.kind === 'pill') { out.isPill = true; out.fg = tint; out.pillBg = tint + '16'; }
+    else if (c.kind === 'bar') { out.isBar = true; out.fg = tint; out.barFg = tint; }
+    else if (c.kind === 'trend') { out.isTrend = true; out.fg = c.up ? '#22C55E' : '#EF4444'; out.arrow = c.up ? 'ph-trend-up' : 'ph-trend-down'; }
+    else if (c.kind === 'btn') { out.isBtn = true; out.fg = tint; out.act = this.openDlg(c.dlg || 'holiday'); }
+    else { out.isText = true; out.fw = c.fw || (align === 'end' ? 800 : 700); }
+    return out;
+  }
+
+  // Shared numeric plumbing: every count or sum shown for a table is read back out
+  // of that table's own rows, never authored twice.
+  rowCountOf(mod, tabId){
+    const blk = (BLOCKS[mod + ':' + tabId] || []).find(x => x.kind === 'table');
+    return blk ? blk.rows.length : null;
+  }
+
+  buildTable(b, key){
+    const pickKey = key + ':chip';
+    const pick = this.state.chip[pickKey];
+    // One predicate drives both the badge counts and the actual filtering, so a chip
+    // can never advertise a number different from the rows it produces.
+    const rowText = r => r.map(c => (c.text || '') + ' ' + (c.sub || '')).join(' ');
+    const matches = t => b.rows.filter(r => rowText(r).indexOf(t) >= 0).length;
+    const chips = (b.chips || []).map((c, i) => {
+      const on = pick === undefined ? !!c[2] : i === pick;
+      const n = i === 0 ? b.rows.length : matches(c[0]);
+      return {label:c[0], count: ARD(n),
+        fg: n === 0 ? 'var(--muted)' : on ? 'var(--brand-ink)' : 'var(--txt2)',
+        bg: on ? 'var(--wash)' : 'var(--field)',
+        bd: on ? 'var(--brand)' : 'var(--hairline)',
+        pick: () => this.setState({chip: Object.assign({}, this.state.chip, {[pickKey]: i})})};
+    });
+    // The selected chip actually filters the rows — chip 0 is the "show all" reset.
+    // Totals are hidden while filtered so the footer never contradicts what is visible.
+    const actIdx = pick === undefined ? (b.chips || []).findIndex(c => c[2]) : pick;
+    const term = actIdx > 0 ? ((b.chips || [])[actIdx] || [])[0] : null;
+    const shown = term ? b.rows.filter(r => rowText(r).indexOf(term) >= 0) : b.rows;
+    return {isTable:true, title:b.title, sub:b.sub, chips, grid:b.grid,
+      cols: b.cols.map(c => ({label:c[0], align:c[1] || 'start'})),
+      rows: shown.map(r => ({cursor: b.clickable ? 'pointer' : 'default',
+        go: b.clickable ? this.openDlg(b.clickable) : (() => {}),
+        cells: r.map((c, ci) => this.cell(Object.assign({}, c, {align: c.align || (b.cols[ci] || [])[1] || 'start'})))})),
+      isEmpty: shown.length === 0,
+      emptyNote: 'لا سطور مطابقة لـ «' + (term || '') + '»',
+      filtered: !!term,
+      filterNote: term ? 'مُصفّى على «' + term + '» · ' + ARD(shown.length) + ' من ' + ARD(b.rows.length) : '',
+      hasTotals: !!b.totals,
+      // The footer is summed from the rows on screen, so it tracks the active filter
+      // instead of restating an authored figure that may describe a different set.
+      totals: derivedTotals(b, shown).map((t, i) => ({text:t, align: (b.cols[i] || [])[1] || 'start',
+        fg: t ? 'var(--txt)' : 'var(--muted)'}))};
+  }
+
+  buildBlock(b, i, tabId){
+    // key must be scoped to the tab: this.mod is constant, so without tabId every
+    // tab's block of the same index would share one slot of per-block state
+    const key = this.mod + ':' + (tabId || '') + ':' + i;
+    if (b.kind === 'kpis') return {isKpis:true, cols:b.cols,
+      items: b.items.map(k => ({icon:k.icon, label:k.label, value:k.value, delta:k.delta, vs:k.vs, tint:k.tint,
+        hasDelta: k.delta && k.delta !== '—',
+        arrow: k.up ? 'ph-trend-up' : 'ph-trend-down',
+        deltaFg: k.up ? '#22C55E' : '#EF4444'}))};
+
+    if (b.kind === 'cards') return {isCards:true, cols:b.cols, title:b.title, sub:b.sub,
+      items: b.items.map(c => {
+        const has = !!DRAWERS[c.id];
+        return {icon:c.icon || '', initials:c.initials || '', tint:c.tint, wash:c.tint + '18',
+          title:c.title, sub:c.sub, status:c.status, pillFg:c.pill, pillBg:c.pill + '16',
+          hasDrawer: has, cursor: has ? 'pointer' : 'default',
+          statCols: 'repeat(' + c.stats.length + ',1fr)',
+          stats: c.stats.map(s => ({label:s[0], value:s[1], fg: s[2] || 'var(--txt)'})),
+          chips: c.chips.map(ch => ({icon:ch[0], label:ch[1], fg: ch[2] === '#6B7280' ? 'var(--muted)' : ch[2]})),
+          go: has ? (() => this.setState({drawer:c.id})) : (() => {})};
+      })};
+
+    if (b.kind === 'bars') return {isBars:true, title:b.title, sub:b.sub,
+      items: b.items.map(r => ({icon:r.icon, tint:r.tint, tint2:r.tint2 || '', label:r.label, sub:r.sub,
+        pct:r.pct, pct2:r.pct2 || '', inner:r.inner, value:r.value, valFg:'var(--txt)'}))};
+
+    if (b.kind === 'gauge') return {isGauge:true, cols:b.cols, title:b.title, sub:b.sub,
+      items: b.items.map(g => {
+        const deg = Math.min(g.pct, 100) * 3.6;
+        return {title:g.title, sub:g.sub, tint:g.tint, pctLabel: g.pct + '٪',
+          ring: 'conic-gradient(' + g.tint + ' 0deg ' + deg + 'deg, var(--track) ' + deg + 'deg 360deg)',
+          stats: g.stats.map(s => ({label:s[0], value:s[1], fg: s[2] || 'var(--txt)'}))};
+      })};
+
+    if (b.kind === 'board') return {isBoard:true, cols:b.cols, title:b.title, sub:b.sub,
+      items: b.items.map(col => ({label:col.label, icon:col.icon, tint:col.tint, count:col.count, more:col.more || '',
+        cards: col.cards.map(c => ({title:c.title, sub:c.sub, value:c.value, meta:c.meta, icon:c.icon, tint:c.tint,
+          valFg: c.value === '—' ? 'var(--muted)' : 'var(--txt)',
+          go: this.openDlg(this.mod === 'analytics' ? 'approve' : 'visit')}))}))};
+
+    if (b.kind === 'cal') {
+      const cells = [];
+      for (let i = 0; i < b.firstDow; i++) cells.push({day:'', muted:true});
+      for (let d = 1; d <= b.days; d++) cells.push({day:String(d), muted:false});
+      while (cells.length % 7) cells.push({day:'', muted:true});
+      const AR = '٠١٢٣٤٥٦٧٨٩';
+      const arNum = (n) => String(n).replace(/[0-9]/g, x => AR[+x]);
+      const MK = {w:{bg:'rgba(107,114,128,.14)', fg:'#6B7280'}, g:{bg:'rgba(239,68,68,.14)', fg:'#EF4444'}, b:{bg:'rgba(245,158,11,.16)', fg:'#F59E0B'}};
+      return {isCal:true, title:b.title, sub:b.sub, dow:b.dow,
+        legend: b.legend.map(l => ({label:l[0], c:l[1]})),
+        days: cells.map(c => {
+          const m = c.day ? b.marks[+c.day] : null;
+          const mk = m ? MK[m[1]] : null;
+          return {day: c.day ? arNum(c.day) : '',
+            bg: c.muted ? 'var(--field)' : (mk ? mk.bg.replace(/,\.\d+\)/, ',.05)') : 'transparent'),
+            fw: mk ? 800 : 600,
+            fg: c.muted ? 'var(--muted)' : (mk ? mk.fg : 'var(--txt)'),
+            marks: m ? [{label:m[0], bg:mk.bg, fg:mk.fg}] : []};
+        })};
+    }
+
+    if (b.kind === 'roster') {
+      const span = b.h1 - b.h0;
+      return {isRoster:true, title:b.title, sub:b.sub, hours:b.hours, hourCount:b.hours.length,
+        legend: b.legend.map(l => ({label:l[0], c:l[1]})),
+        items: b.items.map(r => {
+          const segs = [];
+          const push = (from, to, c, label) => {
+            if (to <= from) return;
+            segs.push({x: ((from - b.h0) / span * 100) + '%', w: ((to - from) / span * 100) + '%',
+              c, label, tip: label});
+          };
+          const otStart = Math.min(r.in + 8, r.out);
+          push(r.in, otStart, r.late ? '#F59E0B' : '#22C55E', r.late ? 'متأخر' : 'دوام');
+          push(otStart, r.out, '#0250D3', 'إضافي');
+          return {name:r.name, role:r.role, initials:r.initials, tint:r.tint, wash:r.tint + '18',
+            segs, hours:r.hours, note:r.note, noteFg:r.noteFg,
+            hoursFg: r.noteFg === '#EF4444' ? '#EF4444' : 'var(--txt)'};
+        })};
+    }
+
+    if (b.kind === 'matrix') {
+      const MC = {
+        0:{bg:'var(--field)', fg:'var(--muted)', icon:'ph-minus', cursor:'pointer'},
+        1:{bg:'rgba(34,197,94,.14)', fg:'#22C55E', icon:'ph-check', cursor:'pointer'},
+        2:{bg:'rgba(2,80,211,.14)', fg:'#0250D3', icon:'ph-crown', cursor:'not-allowed'}};
+      return {isMatrix:true, title:b.title, sub:b.sub, grid:b.grid, go: this.openDlg('access'),
+        cols: b.cols.map(c => ({label:c[0], align:c[1] || 'start', sub:c[2] || ''})),
+        rows: b.rows.map((r, ri) => ({name:r.name, role:r.role, initials:r.initials, tint:r.tint, wash:r.tint + '18',
+          cells: r.cells.map((v, ci) => {
+            if (typeof v === 'string') return {bg:'var(--field)', fg:'var(--txt2)', icon:'ph-warehouse', cursor:'default', toggle: () => {}};
+            const k = ri + ':' + ci;
+            const ov = this.state.choice['mx:' + k];
+            const val = ov === undefined ? v : ov;
+            const m = MC[val] || MC[0];
+            return Object.assign({}, m, {toggle: val === 2 ? (() => {})
+              : (() => this.setState({choice: Object.assign({}, this.state.choice, {['mx:' + k]: val === 1 ? 0 : 1})}))});
+          })}))};
+    }
+
+    if (b.kind === 'payroll') return {isPayroll:true, title:b.title, sub:b.sub, formula:b.formula,
+      netLabel:b.netLabel, netBasis:b.netBasis, net:b.net, warn:b.warn,
+      who:{name:b.who.name, sub:b.who.sub, initials:b.who.initials, tint:b.who.tint, wash:b.who.tint + '18'},
+      lines: b.lines.map(l => ({label:l.label, note:l.note || '', basis:l.basis,
+        amount:l.amount, fw: l.bold ? 800 : 700,
+        bg: l.bold ? 'var(--field)' : 'transparent',
+        fg: l.sign > 0 ? 'var(--txt)' : '#EF4444',
+        signIcon: l.sign > 0 ? 'ph-plus' : 'ph-minus',
+        signBg: l.sign > 0 ? 'rgba(34,197,94,.14)' : 'rgba(239,68,68,.14)',
+        signFg: l.sign > 0 ? '#22C55E' : '#EF4444'})),
+      facts: b.facts.map(f => ({icon:f[0], label:f[1], value:f[2], tint: f[3] || 'var(--muted)', fg: f[3] || 'var(--txt)'})),
+      payGo: this.openDlg('payslip')};
+
+    if (b.kind === 'table') return this.buildTable(b, key);
+    return {};
+  }
+
+  renderVals(){
+    const dark = this.theme === 'dark';
+    const mod = this.mod;
+    const tabs = TABS[mod];
+    const tabIdx = Math.min(this.state.tab || 0, tabs.length - 1);
+    const tab = tabs[tabIdx];
+    const h = HEADS[mod];
+    const chosen = this.state.choice || {};
+    const blocks = BLOCKS[mod + ':' + tab.id] || [];
+
+    const base = {
+      theme: this.theme,
+      themeIcon: dark ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.setState({theme: dark ? 'light' : 'dark'}),
+      rail: RAIL.map(r => ({...r, bg: r.active ? 'rgba(74,128,232,.20)' : 'transparent', fg: r.active ? '#FFFFFF' : '#94A3B8'})),
+      head: {icon:h.icon, title:h.title, sub:h.sub, hint:h.hint, action:h.action,
+        alt:h.alt, altIcon:h.altIcon,
+        go: this.openDlg(h.dlg), altGo: this.openDlg(h.altDlg)},
+      modules: MODULES.map(m => {
+        const on = m.id === mod;
+        return {label:m.label, meta:m.meta, icon:m.icon, count:m.count,
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          bg: on ? 'var(--wash)' : 'transparent',
+          iconBg: on ? 'var(--brand)' : 'var(--field)',
+          iconFg: on ? '#FFFFFF' : 'var(--muted)',
+          fg: on ? 'var(--brand-ink)' : 'var(--txt)', fw: on ? 800 : 700,
+          countFg: on ? 'var(--brand-ink)' : 'var(--muted)',
+          pick: () => this.setState({mod:m.id, tab:0, dlg:null, drawer:null})};
+      }),
+      tabs: tabs.map((t, i) => {
+        const on = i === tabIdx;
+        // a tab that owns a table shows that table's real row count, not an authored one
+        const rc = this.rowCountOf(mod, t.id);
+        return {label:t.label, icon:t.icon, badge: rc === null ? (t.badge || '') : ARD(rc),
+          fg: on ? 'var(--brand-ink)' : 'var(--muted)', fw: on ? 800 : 700,
+          line: on ? 'var(--brand)' : 'transparent',
+          badgeFg: on ? 'var(--brand-ink)' : 'var(--muted)',
+          badgeBg: on ? 'var(--wash)' : 'var(--field)',
+          pick: () => this.setState({tab:i})};
+      }),
+      tabNote: tab.note || '',
+      blocks: blocks.map((b, i) => this.buildBlock(b, i, tab.id))};
+
+    // ── dialog ──
+    const dk = this.state.dlg;
+    const d = DLGS[dk];
+    base.dlgOpen = !!d;
+    base.closeDlg = () => this.setState({dlg:null});
+    if (d) {
+      const a = d.aside;
+      base.dlg = {width:d.width, icon:d.icon, title:d.title, sub:d.sub,
+        save:d.save, saveIcon:d.saveIcon, cancel:d.cancel, alt:d.alt || '', altIcon:d.altIcon || '',
+        saveBg: d.saveTone === 'err' ? '#EF4444' : 'var(--brand)',
+        bodyCols: a ? '1fr 320px' : '1fr', hasAside: !!a,
+        groups: d.groups.map((g, gi) => {
+          const tone = TONE[g.tone || 'info'];
+          return {label:g.label, hint:g.hint || '', cols:g.cols || '1fr', note:g.note || '',
+            isFields: g.kind === 'fields', isChips: g.kind === 'chips', isCards: g.kind === 'cards',
+            isToggles: g.kind === 'toggles', isScores: g.kind === 'scores', isChain: g.kind === 'chain',
+            isNote: g.kind === 'note',
+            noteFg: tone, noteBd: tone + '55', noteBg: tone + '14',
+            noteIcon: g.tone === 'err' ? 'ph-warning-octagon' : (g.tone === 'warn' ? 'ph-warning' : 'ph-info'),
+            items: (g.items || []).map((it, ii) => {
+              const key = dk + ':' + gi + ':' + ii;
+              const on = chosen[key] === undefined ? !!it.on : chosen[key];
+              const flip = () => this.setState({choice: Object.assign({}, chosen, {[key]: !on})});
+              if (g.kind === 'chips') return {label:it.label, mark: on ? 'ph-check-circle' : 'ph-circle',
+                bd: on ? 'var(--brand)' : 'var(--hairline)', bg: on ? 'var(--wash)' : 'var(--field)',
+                fg: on ? 'var(--brand-ink)' : 'var(--txt2)', toggle: flip};
+              if (g.kind === 'cards') return {icon:it.icon, label:it.label, sub:it.sub, on,
+                bd: on ? 'var(--brand)' : 'var(--hairline)', bg: on ? 'var(--wash)' : 'var(--field)',
+                fg: on ? 'var(--brand-ink)' : 'var(--txt)', pick: flip};
+              if (g.kind === 'toggles') return {icon:it.icon, title:it.title, sub:it.sub, toggle: flip,
+                knobBg: on ? '#22C55E' : 'var(--track)', knobX: on ? '22px' : '3px'};
+              if (g.kind === 'scores') return {icon:it.icon, label:it.label, tint:it.tint,
+                value:String(it.value), pct: it.value + '%'};
+              if (g.kind === 'chain') {
+                const t = TONE[it.tone];
+                return {icon:it.icon, title:it.title, sub:it.sub, status:it.status,
+                  bg: it.tone === 'idle' ? 'var(--field)' : 'transparent',
+                  dotBg: t + '18', dotFg: t, pillFg: t, pillBg: t + '16'};
+              }
+              return {label:it.label, icon:it.icon, value:it.value, tail:it.tail || '',
+                bd: it.bad ? '#EF4444' : 'var(--hairline)',
+                iconFg: it.bad ? '#EF4444' : 'var(--muted)',
+                fg: it.bad ? '#EF4444' : 'var(--txt)'};
+            })};
+        }),
+        aside: a ? {icon:a.icon, title:a.title,
+          rows: a.rows.map((r, i) => ({label:r[0], value:r[1],
+            fg: r[2] || 'var(--txt)', labelFg: i === a.rows.length - 1 ? 'var(--txt)' : 'var(--txt2)',
+            fw: i === a.rows.length - 1 ? 800 : 700})),
+          verdict: a.verdict || '', vSub: a.vSub || '',
+          vFg: TONE[a.vTone || 'info'], vBd: TONE[a.vTone || 'info'] + '66', vBg: TONE[a.vTone || 'info'] + '12',
+          vIcon: a.vTone === 'err' ? 'ph-warning-octagon' : (a.vTone === 'warn' ? 'ph-warning' : 'ph-check-circle'),
+          hasBig: !!a.big, big: a.big || '', bigLabel: a.bigLabel || '', bigSub: a.bigSub || '',
+          bigFg: a.vTone === 'err' ? '#EF4444' : 'var(--txt)'} : null};
+    } else {
+      base.dlg = {width:'860px', icon:'ph-gear', title:'', sub:'', groups:[], bodyCols:'1fr', hasAside:false,
+        aside:null, save:'', saveIcon:'ph-check', cancel:'إلغاء', alt:'', altIcon:'', saveBg:'var(--brand)'};
+    }
+
+    // ── drawer ──
+    const wk = this.state.drawer;
+    const w = DRAWERS[wk];
+    base.drawerOpen = !!w;
+    base.closeDrawer = () => this.setState({drawer:null});
+    base.drawer = w ? {icon:w.icon || '', initials:w.initials || '', tint:w.tint, wash:w.tint + '18',
+      crumb:w.crumb, title:w.title, sub:w.sub,
+      kpis: w.kpis.map(k => ({label:k[0], value:k[1], fg: k[2] || 'var(--txt)'})),
+      groups: w.groups.map(g => ({label:g.label, icon:g.icon, meta:g.meta,
+        rows: g.rows.map(r => ({icon:r[0], title:r[1], sub:r[2], value:r[3], tint:r[4],
+          wash: r[4] + '18', bg:'transparent',
+          valFg: r[4] === '#6B7280' ? 'var(--muted)' : r[4]}))})),
+      actions: w.actions.map(a => ({icon:a[0], label:a[1],
+        bd: a[2] === 'in' ? 'var(--brand)' : 'var(--hairline)',
+        bg: a[2] === 'in' ? 'var(--wash)' : 'var(--card)',
+        fg: a[2] === 'in' ? 'var(--brand-ink)' : 'var(--txt2)',
+        go: a[3] ? this.openDlg(a[3]) : (() => this.setState({drawer:null}))}))}
+      : {icon:'ph-storefront', initials:'', tint:'#0250D3', wash:'', crumb:'', title:'', sub:'', kpis:[], groups:[], actions:[]};
+
+    if (dark) {
+      const INK = {'#0250D3':'#7DA6F5','#012258':'#8FB3F2','#4A80E8':'#93B4F5','#8B5CF6':'#A78BFA',
+        '#6B7280':'#94A3B8','#EF4444':'#F87171','#22C55E':'#4ADE80','#F59E0B':'#FBBF24','#0EA5E9':'#7DD3FC'};
+      const walk = (o) => {
+        if (Array.isArray(o)) { o.forEach(walk); return; }
+        if (!o || typeof o !== 'object') return;
+        Object.keys(o).forEach(k => {
+          const v = o[k];
+          if (typeof v === 'string') {
+            if ((/fg$/i.test(k) || k === 'tint' || k === 'tint2' || k === 'c') && INK[v]) o[k] = INK[v];
+          } else if (v && typeof v === 'object') walk(v);
+        });
+      };
+      walk(base);
+    }
+
+    return base;
+  }
+}
+</script>
+</body>
+</html>

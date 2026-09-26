@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-ink:#0250D3; --brand-light:#4A80E8;
+    --wash:rgba(2,80,211,.08); --side:#0F172A; --side-line:#243247;
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280; --track:#E6ECF6;
+  }
+  [data-theme="dark"]{
+    --canvas:#0A1220; --card:#121C2E; --hairline:#243247; --field:#18243A;
+    --brand-ink:#7DA6F5; --wash:rgba(74,128,232,.14); --side:#08101E; --side-line:#1D2A3E;
+    --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8; --track:#1E2B42;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#0A1220;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#94A3B855;border-radius:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" dir="rtl" style="width:1920px;height:1080px;display:flex;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;">
+
+  <div style="width:84px;flex:none;background:var(--side);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:14px;">
+    <div style="width:44px;height:44px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <img src="assets/picpos-logo.png" alt="PicPos" style="width:38px;height:38px;object-fit:contain;" />
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:7px;">
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="9">
+        <div title="{{ r.label }}" style="position:relative;width:52px;height:46px;border-radius:13px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+          <i class="ph-bold {{ r.icon }}" style="font-size:21px;color:{{ r.fg }};"></i>
+          <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;inset-inline-end:-14px;top:11px;width:3.5px;height:24px;border-radius:3px;background:var(--brand-light);"></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="width:40px;height:40px;flex:none;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;">م.س</div>
+  </div>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <div style="height:76px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:14px;padding:0 26px;">
+      <div style="width:46px;height:46px;flex:none;border-radius:14px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold ph-git-fork" style="font-size:23px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-size:19px;font-weight:800;line-height:1.3;color:var(--txt);">حسم القوالب والطابعات</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;">أي مستند ← أي قالب ← أي طابعة · المفتاح: نوع المستند + الفرع + الطابعة + اللغة</div>
+      </div>
+      <div style="flex:1;"></div>
+      <sc-for list="{{ head }}" as="h" hint-placeholder-count="3">
+        <div style="text-align:end;min-width:112px;">
+          <div style="font-size:10.5px;font-weight:700;color:var(--muted);">{{ h.label }}</div>
+          <div style="font-size:17px;font-weight:800;color:{{ h.fg }};line-height:1.2;font-variant-numeric:tabular-nums;">{{ h.value }}</div>
+        </div>
+      </sc-for>
+      <div style="width:1px;height:44px;background:var(--hairline);flex:none;"></div>
+      <div onClick="{{ toggleTheme }}" style="width:44px;height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+        <i class="ph-bold {{ themeIcon }}" style="font-size:18px;"></i>
+      </div>
+      <div style="height:44px;flex:none;border-radius:12px;background:var(--brand);display:flex;align-items:center;gap:8px;padding:0 20px;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        <i class="ph-bold ph-plus" style="font-size:17px;"></i>قاعدة حسم جديدة
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;display:flex;">
+
+      <!-- ═══════════ resolution table ═══════════ -->
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+        <div style="flex:none;padding:13px 24px;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:9px;">
+          <i class="ph-bold ph-funnel" style="font-size:15px;color:var(--brand-ink);"></i>
+          <span style="font-size:12px;font-weight:800;color:var(--txt2);">الفرع</span>
+          <sc-for list="{{ branchChips }}" as="c" hint-placeholder-count="4">
+            <div onClick="{{ c.pick }}" style="height:30px;border-radius:9px;border:1.5px solid {{ c.bd }};background:{{ c.bg }};display:flex;align-items:center;padding:0 12px;cursor:pointer;">
+              <span style="font-size:11.5px;font-weight:800;color:{{ c.fg }};white-space:nowrap;">{{ c.label }}</span>
+            </div>
+          </sc-for>
+          <span style="width:1px;height:20px;background:var(--hairline);"></span>
+          <span style="font-size:12px;font-weight:800;color:var(--txt2);">اللغة</span>
+          <sc-for list="{{ langChips }}" as="c" hint-placeholder-count="2">
+            <div onClick="{{ c.pick }}" style="height:30px;border-radius:9px;border:1.5px solid {{ c.bd }};background:{{ c.bg }};display:flex;align-items:center;padding:0 12px;cursor:pointer;">
+              <span style="font-size:11.5px;font-weight:800;color:{{ c.fg }};white-space:nowrap;">{{ c.label }}</span>
+            </div>
+          </sc-for>
+          <div style="flex:1;"></div>
+          <span style="font-size:11px;font-weight:700;color:var(--muted);">{{ filterNote }}</span>
+        </div>
+
+        <div style="flex:none;display:grid;grid-template-columns:1.9fr 1.4fr 1.9fr 1.5fr .9fr 1.1fr;padding:9px 24px;background:var(--field);border-bottom:1px solid var(--hairline);">
+          <span style="font-size:11px;font-weight:800;color:var(--muted);">نوع المستند</span>
+          <span style="font-size:11px;font-weight:800;color:var(--muted);">الفئة والورق</span>
+          <span style="font-size:11px;font-weight:800;color:var(--muted);">القالب المحسوم</span>
+          <span style="font-size:11px;font-weight:800;color:var(--muted);">الطابعة</span>
+          <span style="font-size:11px;font-weight:800;color:var(--muted);text-align:center;">النُّسخ</span>
+          <span style="font-size:11px;font-weight:800;color:var(--muted);">الحالة</span>
+        </div>
+
+        <div style="flex:1;min-height:0;overflow-y:auto;">
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="12">
+            <div onClick="{{ r.pick }}" style="display:grid;grid-template-columns:1.9fr 1.4fr 1.9fr 1.5fr .9fr 1.1fr;padding:12px 24px;border-bottom:1px solid var(--hairline);align-items:center;background:{{ r.bg }};border-inline-start:3px solid {{ r.mark }};cursor:pointer;">
+              <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                <div style="width:32px;height:32px;flex:none;border-radius:9px;background:{{ r.iconBg }};display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold {{ r.icon }}" style="font-size:15px;color:{{ r.tint }};"></i>
+                </div>
+                <div style="min-width:0;">
+                  <div style="font-size:12.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.doc }}</div>
+                  <div style="font-size:10px;font-weight:600;color:var(--muted);font-family:'JetBrains Mono',monospace;">{{ r.docKey }}</div>
+                </div>
+              </div>
+              <div style="min-width:0;">
+                <div style="font-size:11.5px;font-weight:700;color:var(--txt2);font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.category }}</div>
+                <div style="font-size:10px;font-weight:600;color:var(--muted);">{{ r.paper }}</div>
+              </div>
+              <div style="min-width:0;display:flex;align-items:center;gap:7px;">
+                <i class="ph-bold {{ r.srcIcon }}" title="{{ r.srcNote }}" style="font-size:13px;color:{{ r.srcFg }};flex:none;"></i>
+                <div style="min-width:0;">
+                  <div style="font-size:12px;font-weight:700;color:{{ r.tplFg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.template }}</div>
+                  <div style="font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.srcNote }}</div>
+                </div>
+              </div>
+              <div style="min-width:0;">
+                <div style="font-size:12px;font-weight:700;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.printer }}</div>
+                <div style="font-size:10px;font-weight:600;color:var(--muted);">{{ r.printerNote }}</div>
+              </div>
+              <span style="font-size:13px;font-weight:800;color:var(--txt2);text-align:center;font-variant-numeric:tabular-nums;">{{ r.copies }}</span>
+              <span style="font-size:10.5px;font-weight:800;color:{{ r.stFg }};background:{{ r.stBg }};border-radius:999px;padding:3px 10px;justify-self:start;white-space:nowrap;">{{ r.status }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ═══════════ fallback chain inspector ═══════════ -->
+      <div style="width:430px;flex:none;background:var(--card);border-inline-start:1px solid var(--hairline);display:flex;flex-direction:column;overflow-y:auto;">
+
+        <div style="flex:none;padding:15px 18px 13px;border-bottom:1px solid var(--hairline);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:38px;height:38px;flex:none;border-radius:11px;background:{{ sel.iconBg }};display:flex;align-items:center;justify-content:center;">
+              <i class="ph-bold {{ sel.icon }}" style="font-size:18px;color:{{ sel.tint }};"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ sel.doc }}</div>
+              <div style="font-size:11px;font-weight:600;color:var(--muted);">{{ sel.context }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:none;padding:14px 18px;border-bottom:1px solid var(--hairline);">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+            <i class="ph-bold ph-stack" style="font-size:15px;color:var(--brand-ink);"></i>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12.5px;font-weight:800;color:var(--txt);">سلسلة السقوط</div>
+              <div style="font-size:10.5px;font-weight:600;color:var(--muted);">تُجرَّب بالترتيب — أول قاعدة تُطابِق تفوز</div>
+            </div>
+          </div>
+          <sc-for list="{{ sel.chain }}" as="c" hint-placeholder-count="5">
+            <div style="display:flex;gap:11px;padding-bottom:11px;">
+              <div style="width:26px;flex:none;display:flex;flex-direction:column;align-items:center;">
+                <div style="width:26px;height:26px;border-radius:8px;background:{{ c.bg }};display:flex;align-items:center;justify-content:center;flex:none;">
+                  <i class="ph-bold {{ c.icon }}" style="font-size:12px;color:{{ c.tint }};"></i>
+                </div>
+                <div style="flex:1;width:1.5px;background:var(--hairline);margin-top:4px;min-height:8px;"></div>
+              </div>
+              <div style="flex:1;min-width:0;padding-top:2px;">
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <span style="font-size:11.5px;font-weight:800;color:{{ c.fg }};">{{ c.level }}</span>
+                  <sc-if value="{{ c.isWinner }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size:9.5px;font-weight:800;color:#22C55E;background:rgba(34,197,94,.12);border-radius:999px;padding:2px 8px;">المُطبَّق</span>
+                  </sc-if>
+                </div>
+                <div style="font-size:10.5px;font-weight:600;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:3px;word-break:break-all;line-height:1.6;">{{ c.key }}</div>
+                <div style="font-size:11px;font-weight:600;color:{{ c.resultFg }};margin-top:3px;">{{ c.result }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="flex:none;padding:14px 18px;border-bottom:1px solid var(--hairline);">
+          <div style="font-size:12.5px;font-weight:800;color:var(--txt);margin-bottom:10px;">سلوك الطباعة</div>
+          <sc-for list="{{ sel.behaviour }}" as="b" hint-placeholder-count="5">
+            <div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid var(--hairline);">
+              <i class="ph-bold {{ b.icon }}" style="font-size:14px;color:{{ b.tint }};width:18px;flex:none;"></i>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;font-weight:700;color:var(--txt);">{{ b.title }}</div>
+                <div style="font-size:10px;font-weight:600;color:var(--muted);line-height:1.45;">{{ b.sub }}</div>
+              </div>
+              <span style="font-size:11.5px;font-weight:800;color:{{ b.tint }};flex:none;">{{ b.value }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="flex:none;padding:14px 18px;">
+          <div style="border:1.5px solid {{ sel.warnBd }};background:{{ sel.warnBg }};border-radius:12px;padding:12px 14px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <i class="ph-bold {{ sel.warnIcon }}" style="font-size:15px;color:{{ sel.warnFg }};"></i>
+              <span style="font-size:12.5px;font-weight:800;color:{{ sel.warnFg }};">{{ sel.warnTitle }}</span>
+            </div>
+            <div style="font-size:11.5px;font-weight:600;color:var(--txt2);margin-top:7px;line-height:1.7;">{{ sel.warnBody }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;,&quot;section&quot;:&quot;العرض&quot;}}">
+const RAIL = [
+  {icon:'ph-squares-four', label:'الرئيسية'},
+  {icon:'ph-receipt', label:'الفواتير'},
+  {icon:'ph-layout', label:'محرر النماذج'},
+  {icon:'ph-git-fork', label:'حسم القوالب', active:true},
+  {icon:'ph-printer', label:'الطابعات'},
+  {icon:'ph-broadcast', label:'الفوترة الإلكترونية'},
+  {icon:'ph-users-three', label:'العملاء'},
+  {icon:'ph-file-text', label:'التقارير'},
+  {icon:'ph-gear', label:'الإعدادات'},
+];
+
+const BRANCHES = [
+  {id:'all',    label:'كل الفروع'},
+  {id:'maadi',  label:'المعادي'},
+  {id:'nasr',   label:'مدينة نصر'},
+  {id:'october',label:'أكتوبر'},
+];
+const LANGS = [{id:'ar', label:'عربي'}, {id:'en', label:'English'}];
+
+// Each document type the app can print, with the template it resolves to today.
+const DOCS = [
+  {key:'sales_invoice',    doc:'فاتورة مبيعات',        icon:'ph-receipt',            tint:'#0250D3',
+   category:'invoice',     paper:'A4 · 210مم',   printer:'HP LaserJet — مكتب',  port:'USB001', copies:2,
+   tpl:'فاتورة مبيعات ضريبية — A4', src:'branch'},
+  {key:'sales_receipt',    doc:'بيع سريع (كاشير)',      icon:'ph-receipt',            tint:'#22C55E',
+   category:'receipt',     paper:'80mm',         printer:'XPrinter XP-80C',      port:'COM3',   copies:1,
+   tpl:'بيع سريع حراري — 80mm', src:'exact'},
+  {key:'sales_return',     doc:'مرتجع مبيعات',          icon:'ph-arrow-u-up-left',    tint:'#B42318',
+   category:'invoice',     paper:'A4 · 210مم',   printer:'HP LaserJet — مكتب',  port:'USB001', copies:2,
+   tpl:'فاتورة مبيعات ضريبية — A4', src:'collision'},
+  {key:'purchase_invoice', doc:'فاتورة مشتريات',        icon:'ph-truck',              tint:'#8B5CF6',
+   category:'purchase',    paper:'A4 · 210مم',   printer:'HP LaserJet — مكتب',  port:'USB001', copies:1,
+   tpl:'فاتورة مشتريات — A4', src:'exact'},
+  {key:'purchase_return',  doc:'مرتجع مشتريات',         icon:'ph-arrow-u-up-right',   tint:'#F59E0B',
+   category:'purchase',    paper:'A4 · 210مم',   printer:'HP LaserJet — مكتب',  port:'USB001', copies:1,
+   tpl:'فاتورة مشتريات — A4', src:'collision'},
+  {key:'kitchen_order',    doc:'طلب مطبخ',              icon:'ph-cooking-pot',        tint:'#EF4444',
+   category:'kitchen',     paper:'80mm',         printer:'Epson TM-T20 — مطبخ', port:'LAN',    copies:1,
+   tpl:'طلب مطبخ احترافي', src:'special'},
+  {key:'quotation',        doc:'عرض سعر',               icon:'ph-file-text',          tint:'#4A80E8',
+   category:'quotation',   paper:'A4 · 210مم',   printer:'HP LaserJet — مكتب',  port:'USB001', copies:1,
+   tpl:'—', src:'missing'},
+  {key:'shift_closing',    doc:'تقرير إغلاق وردية',     icon:'ph-clock-countdown',    tint:'#8B5CF6',
+   category:'shift_closing', paper:'80mm',       printer:'XPrinter XP-80C',      port:'COM3',   copies:1,
+   tpl:'تقرير إغلاق الوردية', src:'exact'},
+  {key:'receipt_voucher',  doc:'سند قبض',               icon:'ph-hand-coins',         tint:'#22C55E',
+   category:'receipt',     paper:'A5 · 148مم',   printer:'HP LaserJet — مكتب',  port:'USB001', copies:2,
+   tpl:'سند قبض A4', src:'paper_mismatch'},
+  {key:'customer_stmt',    doc:'كشف حساب عميل',         icon:'ph-user-list',          tint:'#0250D3',
+   category:'party_statement', paper:'A4 · 210مم', printer:'HP LaserJet — مكتب', port:'USB001', copies:1,
+   tpl:'كشف حساب عميل — A4', src:'pending'},
+  {key:'supplier_stmt',    doc:'كشف حساب مورد',         icon:'ph-truck',              tint:'#8B5CF6',
+   category:'party_statement', paper:'A4 · 210مم', printer:'HP LaserJet — مكتب', port:'USB001', copies:1,
+   tpl:'كشف حساب مورد — A4', src:'pending'},
+  {key:'report_generic',   doc:'تقرير عام',             icon:'ph-chart-bar',          tint:'#F59E0B',
+   category:'report',      paper:'A4 · 210مم',   printer:'HP LaserJet — مكتب',  port:'USB001', copies:1,
+   tpl:'نموذج تقرير عام — A4', src:'pending'},
+];
+
+const SRC = {
+  exact:          {label:'مضبوط',            fg:'#22C55E', bg:'rgba(34,197,94,.12)',   icon:'ph-check-circle',    note:'قاعدة صريحة لهذا المستند'},
+  branch:         {label:'من الفرع',         fg:'#0250D3', bg:'rgba(2,80,211,.12)',    icon:'ph-storefront',      note:'قاعدة على مستوى الفرع'},
+  special:        {label:'حالة خاصة بالكود', fg:'#F59E0B', bg:'rgba(245,158,11,.14)',  icon:'ph-code',            note:'مُستثنى في الكود — يحتاج توحيداً'},
+  collision:      {label:'تصادم فئة',        fg:'#EF4444', bg:'rgba(239,68,68,.12)',   icon:'ph-warning-octagon', note:'يتقاسم فئة الفاتورة — لا قالب خاص'},
+  paper_mismatch: {label:'ورق غير مطابق',    fg:'#EF4444', bg:'rgba(239,68,68,.12)',   icon:'ph-warning',         note:'القالب A4 والطابعة مضبوطة A5'},
+  missing:        {label:'بلا قالب',         fg:'#6B7280', bg:'rgba(107,114,128,.14)', icon:'ph-prohibit',        note:'يسقط على التصميم المدمج'},
+  pending:        {label:'بانتظار الامتداد', fg:'#F59E0B', bg:'rgba(245,158,11,.14)',  icon:'ph-hourglass',       note:'القالب جاهز — المولِّد لا يقرأه بعد'},
+};
+
+class Component extends DCLogic {
+  state = {theme:null, branch:'maadi', lang:'ar', sel:'sales_return'};
+
+  renderVals(){
+    const dark = (this.state.theme || this.props.theme || 'light') === 'dark';
+    const branch = BRANCHES.find(b => b.id === this.state.branch) || BRANCHES[0];
+    const lang = LANGS.find(l => l.id === this.state.lang) || LANGS[0];
+    const cur = DOCS.find(d => d.key === this.state.sel) || DOCS[0];
+    const s = SRC[cur.src];
+
+    const healthy = DOCS.filter(d => d.src === 'exact' || d.src === 'branch').length;
+    const broken = DOCS.filter(d => d.src === 'collision' || d.src === 'paper_mismatch' || d.src === 'missing').length;
+
+    // the four-key chain, most specific first — first match wins
+    const chainFor = d => {
+      const full = `${d.key} · ${branch.id} · ${d.printer.split(' —')[0]} · ${lang.id}`;
+      const noPrinter = `${d.key} · ${branch.id} · * · ${lang.id}`;
+      const noBranch = `${d.key} · * · * · ${lang.id}`;
+      const noLang = `${d.key} · * · * · *`;
+      const cat = `${d.category} · * · * · *`;
+      const winner =
+        d.src === 'exact' ? 1 :
+        d.src === 'branch' ? 2 :
+        d.src === 'special' ? 0 :
+        d.src === 'missing' ? 5 : 4;
+      const steps = [
+        {level:'١ · مستند + فرع + طابعة + لغة', key: full},
+        {level:'٢ · مستند + فرع + لغة',          key: noPrinter},
+        {level:'٣ · مستند + لغة',                key: noBranch},
+        {level:'٤ · مستند',                      key: noLang},
+        {level:'٥ · الفئة (السلوك الحالي)',      key: cat},
+        {level:'٦ · التصميم المدمج في الكود',    key: 'built-in fallback'},
+      ];
+      return steps.map((st, i) => {
+        const isWinner = i === winner;
+        const before = i < winner;
+        return Object.assign({}, st, {
+          isWinner,
+          icon: isWinner ? 'ph-check-circle' : before ? 'ph-x' : 'ph-dot',
+          tint: isWinner ? '#22C55E' : before ? '#EF4444' : 'var(--muted)',
+          bg: isWinner ? 'rgba(34,197,94,.14)' : before ? 'rgba(239,68,68,.10)' : 'var(--field)',
+          fg: isWinner ? 'var(--txt)' : 'var(--muted)',
+          result: isWinner ? '← ' + d.tpl : before ? 'لا قاعدة مطابقة' : 'لم يُجرَّب',
+          resultFg: isWinner ? '#22C55E' : before ? 'var(--muted)' : 'var(--muted)',
+        });
+      });
+    };
+
+    const warnOf = d => {
+      if (d.src === 'collision') return {
+        title:'تصادم فئة — المرتجع يطبع قالب الفاتورة',
+        body:'المرتجع والفاتورة يتقاسمان الفئة نفسها، و getDefaultTemplateByCategory تحسم بـ(النوع + الفئة) فقط، فأول قالب افتراضي يفوز بالاثنين. الحل: إضافة sales_return و purchase_return كفئتين مستقلتين، وتمرير الفئة الصحيحة من شاشة المرتجعات.',
+        fg:'#EF4444', bd:'rgba(239,68,68,.4)', bg:'rgba(239,68,68,.07)', icon:'ph-warning-octagon'};
+      if (d.src === 'paper_mismatch') return {
+        title:'عرض القالب لا يطابق الطابعة',
+        body:'القالب مبني على A4 (210مم) والطابعة المضبوطة لهذا المستند على A5 (148مم). الراسم يقصّ ما يتجاوز عرض الورق بلا رسالة خطأ. القاعدة المقترحة: منع الحفظ حين يختلف عرض القالب عن عرض الطابعة، أو عرض تحذير صريح.',
+        fg:'#EF4444', bd:'rgba(239,68,68,.4)', bg:'rgba(239,68,68,.07)', icon:'ph-warning'};
+      if (d.src === 'missing') return {
+        title:'لا قالب — يسقط على التصميم المدمج',
+        body:'لا يوجد قالب افتراضي لهذا المستند، فتُستدعى الدالّة المدمجة في الكود ولا يملك المستخدم أي تحكم في شكلها. يُنصح ببذر قالب مبدئي لكل نوع مستند وقت التنصيب.',
+        fg:'#6B7280', bd:'var(--hairline)', bg:'var(--field)', icon:'ph-prohibit'};
+      if (d.src === 'special') return {
+        title:'استثناء مكتوب في الكود',
+        body:'المطبخ يُحسم بشرط if خاص (category == kitchen ⇒ type = kitchen) خارج سلسلة الحسم العامة. يعمل، لكنه يعني أن أي قاعدة جديدة لا تسري عليه. يُنصح بضمّه للسلسلة الموحّدة.',
+        fg:'#F59E0B', bd:'rgba(245,158,11,.4)', bg:'rgba(245,158,11,.08)', icon:'ph-code'};
+      if (d.src === 'pending') return {
+        title:'القالب جاهز والمولِّد لا يقرأه',
+        body:'ملف القالب مكتوب ببنية الاستيراد الصحيحة، لكن هذا المستند يُطبع من report_pdf_generator.dart الذي لا يمرّ على منظومة القوالب. يعمل فور تنفيذ الامتداد الموصوف في EXTENSION-SPEC.md.',
+        fg:'#F59E0B', bd:'rgba(245,158,11,.4)', bg:'rgba(245,158,11,.08)', icon:'ph-hourglass'};
+      return {
+        title:'الحسم سليم',
+        body:'قاعدة صريحة تطابق هذا المستند بالمفتاح الكامل، والقالب وعرض الطابعة متوافقان. أي تعديل يُحفظ في المحرر يسري على هذا المسار مباشرةً.',
+        fg:'#22C55E', bd:'rgba(34,197,94,.35)', bg:'rgba(34,197,94,.07)', icon:'ph-check-circle'};
+    };
+
+    const w = warnOf(cur);
+
+    return {
+      theme: dark ? 'dark' : 'light',
+      themeIcon: dark ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.setState({theme: dark ? 'light' : 'dark'}),
+      rail: RAIL.map(r => ({...r, bg: r.active ? 'rgba(74,128,232,.18)' : 'transparent', fg: r.active ? '#7DA6F5' : '#64748B'})),
+
+      head: [
+        {label:'مسارات الطباعة', value: String(DOCS.length), fg:'var(--txt)'},
+        {label:'حسم سليم', value: String(healthy), fg:'#22C55E'},
+        {label:'يحتاج معالجة', value: String(broken), fg:'#EF4444'},
+      ],
+
+      branchChips: BRANCHES.map(b => {
+        const on = b.id === this.state.branch;
+        return {label:b.label,
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          bg: on ? 'var(--wash)' : 'transparent',
+          fg: on ? 'var(--brand-ink)' : 'var(--muted)',
+          pick: () => this.setState({branch: b.id})};
+      }),
+      langChips: LANGS.map(l => {
+        const on = l.id === this.state.lang;
+        return {label:l.label,
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          bg: on ? 'var(--wash)' : 'transparent',
+          fg: on ? 'var(--brand-ink)' : 'var(--muted)',
+          pick: () => this.setState({lang: l.id})};
+      }),
+      filterNote: 'المفتاح المعروض: ' + branch.label + ' · ' + lang.label,
+
+      rows: DOCS.map(d => {
+        const ss = SRC[d.src];
+        const on = d.key === cur.key;
+        return {
+          doc:d.doc, docKey:d.key, icon:d.icon, tint:d.tint, iconBg: d.tint + '1f',
+          category:d.category, paper:d.paper,
+          template: d.tpl,
+          tplFg: d.src === 'missing' ? 'var(--muted)' : 'var(--txt)',
+          srcIcon: ss.icon, srcFg: ss.fg, srcNote: ss.note,
+          printer:d.printer, printerNote: d.port + ' · ' + branch.label,
+          copies: String(d.copies),
+          status: ss.label, stFg: ss.fg, stBg: ss.bg,
+          bg: on ? 'var(--wash)' : 'var(--card)',
+          mark: on ? 'var(--brand)' : 'transparent',
+          pick: () => this.setState({sel: d.key}),
+        };
+      }),
+
+      sel: {
+        doc: cur.doc, icon: cur.icon, tint: cur.tint, iconBg: cur.tint + '1f',
+        context: branch.label + ' · ' + lang.label + ' · ' + cur.printer,
+        chain: chainFor(cur),
+        behaviour: [
+          {icon:'ph-copy', title:'عدد النُّسخ', sub:'تُطبع تلقائياً عند التأكيد', value: String(cur.copies), tint:'#0250D3'},
+          {icon:'ph-lightning', title:'طباعة مباشرة', sub:'بلا نافذة اختيار طابعة', value: cur.paper.indexOf('mm') > 0 ? 'مُفعَّلة' : 'معطَّلة', tint: cur.paper.indexOf('mm') > 0 ? '#22C55E' : 'var(--muted)'},
+          {icon:'ph-ruler', title:'عرض القالب', sub:'يجب أن يطابق عرض الطابعة', value: cur.paper, tint: cur.src === 'paper_mismatch' ? '#EF4444' : '#22C55E'},
+          {icon:'ph-translate', title:'اتجاه المستند', sub: lang.id === 'ar' ? 'من اليمين لليسار' : 'من اليسار لليمين', value: lang.label, tint:'#8B5CF6'},
+          {icon:'ph-file-pdf', title:'حفظ نسخة PDF', sub:'تُرفق بسجل المستند', value:'مُفعَّل', tint:'#22C55E'},
+        ],
+        warnTitle: w.title, warnBody: w.body,
+        warnFg: w.fg, warnBd: w.bd, warnBg: w.bg, warnIcon: w.icon,
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-ink:#0250D3; --brand-light:#4A80E8;
+    --wash:rgba(2,80,211,.08); --side:#0F172A; --side-line:#243247;
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280; --track:#E6ECF6; --desk:#E7ECF4;
+  }
+  [data-theme="dark"]{
+    --canvas:#0A1220; --card:#121C2E; --hairline:#243247; --field:#18243A;
+    --brand-ink:#7DA6F5; --wash:rgba(74,128,232,.14); --side:#08101E; --side-line:#1D2A3E;
+    --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8; --track:#1E2B42; --desk:#0B1524;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#0A1220;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#94A3B855;border-radius:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" dir="rtl" style="width:1920px;height:1080px;display:flex;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;">
+
+  <div style="width:84px;flex:none;background:var(--side);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:14px;">
+    <div style="width:44px;height:44px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <img src="assets/picpos-logo.png" alt="PicPos" style="width:38px;height:38px;object-fit:contain;" />
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:7px;">
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="9">
+        <div title="{{ r.label }}" style="position:relative;width:52px;height:46px;border-radius:13px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+          <i class="ph-bold {{ r.icon }}" style="font-size:21px;color:{{ r.fg }};"></i>
+          <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;inset-inline-end:-14px;top:11px;width:3.5px;height:24px;border-radius:3px;background:var(--brand-light);"></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="width:40px;height:40px;flex:none;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;">م.س</div>
+  </div>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <div style="height:76px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:14px;padding:0 26px;">
+      <div style="width:46px;height:46px;flex:none;border-radius:14px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold ph-books" style="font-size:23px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-size:19px;font-weight:800;line-height:1.3;color:var(--txt);">مكتبة النماذج</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;">{{ head.sub }}</div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="height:44px;border-radius:12px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:9px;padding:0 14px;min-width:230px;">
+        <i class="ph-bold ph-magnifying-glass" style="font-size:16px;color:var(--muted);"></i>
+        <span style="font-size:13px;color:var(--muted);font-weight:600;">ابحث باسم القالب...</span>
+      </div>
+      <div onClick="{{ toggleTheme }}" style="width:44px;height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+        <i class="ph-bold {{ themeIcon }}" style="font-size:18px;"></i>
+      </div>
+      <div onClick="{{ importJson }}" style="height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 16px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;white-space:nowrap;">
+        <i class="ph-bold ph-upload-simple" style="font-size:17px;"></i>استيراد JSON
+      </div>
+      <div onClick="{{ openNew }}" style="height:44px;flex:none;border-radius:12px;background:var(--brand);display:flex;align-items:center;gap:8px;padding:0 20px;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        <i class="ph-bold ph-plus" style="font-size:17px;"></i>قالب جديد
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;display:flex;">
+
+      <!-- ═══════════ filters ═══════════ -->
+      <div style="width:250px;flex:none;background:var(--card);border-inline-end:1px solid var(--hairline);overflow-y:auto;padding:16px 14px;">
+        <sc-for list="{{ facets }}" as="f" hint-placeholder-count="3">
+          <div style="margin-bottom:18px;">
+            <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:8px;padding-inline-start:4px;">{{ f.label }}</div>
+            <sc-for list="{{ f.items }}" as="o" hint-placeholder-count="5">
+              <div onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;background:{{ o.bg }};cursor:pointer;margin-bottom:3px;">
+                <i class="ph-bold {{ o.icon }}" style="font-size:14px;color:{{ o.fg }};flex:none;"></i>
+                <span style="flex:1;min-width:0;font-size:12px;font-weight:{{ o.fw }};color:{{ o.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ o.label }}</span>
+                <span style="font-size:10.5px;font-weight:800;color:{{ o.countFg }};">{{ o.count }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- ═══════════ gallery ═══════════ -->
+      <div style="flex:1;min-width:0;background:var(--desk);overflow-y:auto;padding:20px 22px 28px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="font-size:12.5px;font-weight:800;color:var(--txt2);">{{ gallery.note }}</span>
+          <div style="flex:1;"></div>
+          <sc-for list="{{ sorts }}" as="s" hint-placeholder-count="3">
+            <div onClick="{{ s.pick }}" style="height:30px;border-radius:9px;border:1.5px solid {{ s.bd }};background:{{ s.bg }};display:flex;align-items:center;gap:5px;padding:0 11px;cursor:pointer;">
+              <i class="ph-bold {{ s.icon }}" style="font-size:12px;color:{{ s.fg }};"></i>
+              <span style="font-size:11.5px;font-weight:800;color:{{ s.fg }};white-space:nowrap;">{{ s.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+          <sc-for list="{{ cards }}" as="c" hint-placeholder-count="8">
+            <div onClick="{{ c.pick }}" style="background:var(--card);border:1.5px solid {{ c.bd }};border-radius:15px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;">
+
+              <!-- thumbnail -->
+              <div style="height:186px;flex:none;background:{{ c.deskBg }};display:flex;align-items:center;justify-content:center;padding:14px;position:relative;">
+                <div style="width:{{ c.thumbW }};height:{{ c.thumbH }};background:#FFFFFF;box-shadow:0 4px 14px rgba(11,18,32,.18);position:relative;overflow:hidden;">
+                  <sc-for list="{{ c.sketch }}" as="s" hint-placeholder-count="8">
+                    <div style="position:absolute;inset-inline-start:{{ s.x }};top:{{ s.y }};width:{{ s.w }};height:{{ s.h }};background:{{ s.bg }};border-radius:{{ s.r }};"></div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ c.isDefault }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;top:10px;inset-inline-start:10px;height:22px;border-radius:999px;background:#22C55E;display:flex;align-items:center;gap:4px;padding:0 9px;">
+                    <i class="ph-bold ph-check-circle" style="font-size:11px;color:#fff;"></i>
+                    <span style="font-size:10px;font-weight:800;color:#fff;">افتراضي</span>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ c.pending }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;top:10px;inset-inline-start:10px;height:22px;border-radius:999px;background:#F59E0B;display:flex;align-items:center;gap:4px;padding:0 9px;">
+                    <i class="ph-bold ph-hourglass" style="font-size:11px;color:#fff;"></i>
+                    <span style="font-size:10px;font-weight:800;color:#fff;">ينتظر الامتداد</span>
+                  </div>
+                </sc-if>
+                <div style="position:absolute;top:10px;inset-inline-end:10px;height:22px;border-radius:999px;background:rgba(11,18,32,.72);display:flex;align-items:center;padding:0 9px;">
+                  <span style="font-size:10px;font-weight:800;color:#fff;font-family:'JetBrains Mono',monospace;">{{ c.paper }}</span>
+                </div>
+              </div>
+
+              <div style="flex:1;min-width:0;padding:12px 14px 13px;border-top:1px solid var(--hairline);">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <i class="ph-bold {{ c.icon }}" style="font-size:15px;color:{{ c.tint }};flex:none;"></i>
+                  <span style="flex:1;min-width:0;font-size:13px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.name }}</span>
+                </div>
+                <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-top:4px;font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.meta }}</div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:9px;">
+                  <span style="font-size:10px;font-weight:800;color:{{ c.ownFg }};background:{{ c.ownBg }};border-radius:6px;padding:2px 7px;">{{ c.owner }}</span>
+                  <div style="flex:1;"></div>
+                  <span style="font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap;">{{ c.used }}</span>
+                </div>
+                <div style="display:flex;gap:6px;margin-top:11px;">
+                  <div onClick="{{ c.edit }}" style="flex:1;height:31px;border-radius:9px;background:var(--brand);display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;">
+                    <i class="ph-bold ph-pencil-simple" style="font-size:12px;color:#fff;"></i>
+                    <span style="font-size:11.5px;font-weight:800;color:#fff;">تحرير</span>
+                  </div>
+                  <div onClick="{{ c.dup }}" title="نسخة" style="width:31px;height:31px;border-radius:9px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+                    <i class="ph-bold ph-copy" style="font-size:13px;"></i>
+                  </div>
+                  <div onClick="{{ c.more }}" title="المزيد" style="width:31px;height:31px;border-radius:9px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+                    <i class="ph-bold ph-dots-three" style="font-size:13px;"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ═══════════ detail ═══════════ -->
+      <div style="width:376px;flex:none;background:var(--card);border-inline-start:1px solid var(--hairline);display:flex;flex-direction:column;overflow-y:auto;">
+        <div style="flex:none;padding:15px 18px 13px;border-bottom:1px solid var(--hairline);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:38px;height:38px;flex:none;border-radius:11px;background:{{ sel.iconBg }};display:flex;align-items:center;justify-content:center;">
+              <i class="ph-bold {{ sel.icon }}" style="font-size:18px;color:{{ sel.tint }};"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ sel.name }}</div>
+              <div style="font-size:11px;font-weight:600;color:var(--muted);">{{ sel.meta }}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:7px;margin-top:12px;">
+            <div onClick="{{ sel.edit }}" style="flex:1;height:36px;border-radius:10px;background:var(--brand);display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;">
+              <i class="ph-bold ph-pencil-simple" style="font-size:14px;color:#fff;"></i>
+              <span style="font-size:12.5px;font-weight:800;color:#fff;">فتح في المحرر</span>
+            </div>
+            <div onClick="{{ sel.preview }}" style="height:36px;border-radius:10px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;gap:6px;padding:0 12px;cursor:pointer;color:var(--txt2);">
+              <i class="ph-bold ph-eye" style="font-size:14px;"></i>
+              <span style="font-size:12px;font-weight:700;">معاينة</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:none;padding:14px 18px;border-bottom:1px solid var(--hairline);">
+          <div style="font-size:12.5px;font-weight:800;color:var(--txt);margin-bottom:10px;">التعريف</div>
+          <sc-for list="{{ sel.spec }}" as="s" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--hairline);">
+              <span style="font-size:11px;font-weight:700;color:var(--muted);min-width:92px;flex:none;">{{ s.k }}</span>
+              <span style="flex:1;min-width:0;font-size:11.5px;font-weight:700;color:var(--txt2);font-family:'JetBrains Mono',monospace;word-break:break-all;">{{ s.v }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="flex:none;padding:14px 18px;border-bottom:1px solid var(--hairline);">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">
+            <i class="ph-bold ph-git-fork" style="font-size:14px;color:var(--brand-ink);"></i>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12.5px;font-weight:800;color:var(--txt);">المستندات المربوطة</div>
+              <div style="font-size:10.5px;font-weight:600;color:var(--muted);">{{ sel.bindNote }}</div>
+            </div>
+          </div>
+          <sc-for list="{{ sel.bindings }}" as="b" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid var(--hairline);">
+              <i class="ph-bold {{ b.icon }}" style="font-size:13px;color:{{ b.tint }};width:16px;flex:none;"></i>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:11.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ b.doc }}</div>
+                <div style="font-size:10px;font-weight:600;color:var(--muted);">{{ b.scope }}</div>
+              </div>
+              <span style="font-size:10px;font-weight:800;color:{{ b.stFg }};background:{{ b.stBg }};border-radius:999px;padding:2px 8px;flex:none;white-space:nowrap;">{{ b.status }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="flex:none;padding:14px 18px;border-bottom:1px solid var(--hairline);">
+          <div style="font-size:12.5px;font-weight:800;color:var(--txt);margin-bottom:10px;">إجراءات</div>
+          <sc-for list="{{ sel.actions }}" as="a" hint-placeholder-count="5">
+            <div onClick="{{ a.go }}" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--hairline);cursor:pointer;">
+              <i class="ph-bold {{ a.icon }}" style="font-size:15px;color:{{ a.tint }};width:18px;flex:none;"></i>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;font-weight:700;color:{{ a.tint }};">{{ a.title }}</div>
+                <div style="font-size:10px;font-weight:600;color:var(--muted);line-height:1.45;">{{ a.sub }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="flex:none;padding:14px 18px;">
+          <div style="font-size:12.5px;font-weight:800;color:var(--txt);margin-bottom:10px;">آخر التعديلات</div>
+          <sc-for list="{{ sel.history }}" as="h" hint-placeholder-count="3">
+            <div style="display:flex;gap:10px;padding-bottom:11px;">
+              <div style="width:22px;flex:none;display:flex;flex-direction:column;align-items:center;">
+                <div style="width:22px;height:22px;border-radius:7px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold {{ h.icon }}" style="font-size:11px;color:var(--brand-ink);"></i>
+                </div>
+                <div style="flex:1;width:1.5px;background:var(--hairline);margin-top:3px;min-height:8px;"></div>
+              </div>
+              <div style="flex:1;min-width:0;padding-top:1px;">
+                <div style="font-size:11.5px;font-weight:700;color:var(--txt);">{{ h.what }}</div>
+                <div style="font-size:10px;font-weight:600;color:var(--muted);margin-top:2px;">{{ h.who }} · {{ h.when }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;bottom:22px;inset-inline-start:120px;width:440px;background:var(--card);border:1.5px solid {{ toast.bd }};border-radius:15px;box-shadow:0 16px 44px rgba(6,12,22,.3);padding:14px 16px;z-index:50;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <i class="ph-bold {{ toast.icon }}" style="font-size:17px;color:{{ toast.fg }};"></i>
+        <span style="flex:1;font-size:13px;font-weight:800;color:var(--txt);">{{ toast.title }}</span>
+        <i onClick="{{ closeToast }}" class="ph-bold ph-x" style="font-size:14px;color:var(--muted);cursor:pointer;"></i>
+      </div>
+      <sc-for list="{{ toast.lines }}" as="l" hint-placeholder-count="3">
+        <div style="display:flex;align-items:flex-start;gap:7px;margin-top:7px;">
+          <i class="ph-bold ph-arrow-left" style="font-size:11px;color:var(--muted);margin-top:3px;flex:none;"></i>
+          <span style="font-size:11.5px;font-weight:600;color:var(--txt2);line-height:1.55;">{{ l }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- ═══════════ new template dialog ═══════════ -->
+  <sc-if value="{{ dlgOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeNew }}" style="position:absolute;inset:0;background:rgba(6,12,22,.55);display:flex;align-items:center;justify-content:center;z-index:40;">
+      <div style="width:980px;max-height:820px;background:var(--card);border-radius:19px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 26px 70px rgba(6,12,22,.42);">
+        <div style="flex:none;padding:17px 22px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;flex:none;border-radius:12px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+            <i class="ph-bold ph-sparkle" style="font-size:19px;color:var(--brand-ink);"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:16px;font-weight:800;color:var(--txt);">قالب جديد</div>
+            <div style="font-size:11.5px;font-weight:600;color:var(--muted);">ابدأ من نموذج جاهز — كلها قابلة للتعديل بالكامل بعد الإنشاء</div>
+          </div>
+          <i onClick="{{ closeNew }}" class="ph-bold ph-x" style="font-size:18px;color:var(--muted);cursor:pointer;"></i>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:18px 22px;">
+          <sc-for list="{{ starters }}" as="g" hint-placeholder-count="2">
+            <div style="margin-bottom:18px;">
+              <div style="font-size:12px;font-weight:800;color:{{ g.tint }};margin-bottom:10px;">{{ g.label }}</div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+                <sc-for list="{{ g.items }}" as="s" hint-placeholder-count="4">
+                  <div style="border:1.5px solid var(--hairline);border-radius:13px;overflow:hidden;cursor:pointer;">
+                    <div style="height:118px;background:var(--desk);display:flex;align-items:center;justify-content:center;padding:11px;">
+                      <div style="width:{{ s.thumbW }};height:{{ s.thumbH }};background:#fff;box-shadow:0 3px 10px rgba(11,18,32,.16);position:relative;overflow:hidden;">
+                        <sc-for list="{{ s.sketch }}" as="k" hint-placeholder-count="6">
+                          <div style="position:absolute;inset-inline-start:{{ k.x }};top:{{ k.y }};width:{{ k.w }};height:{{ k.h }};background:{{ k.bg }};border-radius:{{ k.r }};"></div>
+                        </sc-for>
+                      </div>
+                    </div>
+                    <div style="padding:10px 12px;border-top:1px solid var(--hairline);">
+                      <div style="font-size:12px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.name }}</div>
+                      <div style="font-size:10px;font-weight:600;color:var(--muted);margin-top:3px;line-height:1.45;">{{ s.sub }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex:none;padding:14px 22px;border-top:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
+          <span style="flex:1;font-size:11.5px;font-weight:600;color:var(--muted);">القالب الجديد يُنشأ كمسوّدة — لا يُطبع شيء حتى تربطه بمستند في شاشة حسم القوالب.</span>
+          <div onClick="{{ closeNew }}" style="height:38px;border-radius:11px;border:1.5px solid var(--hairline);display:flex;align-items:center;padding:0 18px;cursor:pointer;color:var(--txt2);font-size:12.5px;font-weight:700;">إلغاء</div>
+          <div onClick="{{ closeNew }}" style="height:38px;border-radius:11px;background:var(--brand);display:flex;align-items:center;gap:7px;padding:0 20px;cursor:pointer;color:#fff;font-size:12.5px;font-weight:700;">
+            <i class="ph-bold ph-arrow-left" style="font-size:15px;"></i>إنشاء وفتح المحرر
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;,&quot;section&quot;:&quot;العرض&quot;}}">
+const RAIL = [
+  {icon:'ph-squares-four', label:'الرئيسية'},
+  {icon:'ph-receipt', label:'الفواتير'},
+  {icon:'ph-books', label:'مكتبة النماذج', active:true},
+  {icon:'ph-layout', label:'محرر النماذج'},
+  {icon:'ph-git-fork', label:'حسم القوالب'},
+  {icon:'ph-test-tube', label:'معاينة تجريبية'},
+  {icon:'ph-printer', label:'الطابعات'},
+  {icon:'ph-file-text', label:'التقارير'},
+  {icon:'ph-gear', label:'الإعدادات'},
+];
+
+// Sketch primitives — a thumbnail is a handful of grey bars at true relative
+// positions, so the card reads as this template's layout and not a generic icon.
+const BAR = (x, y, w, h, tone, r) => ({x, y, w, h, tone: tone || 'mid', r: r || 0});
+const TONE = {
+  strong:'#0B1220', mid:'#94A3B8', soft:'#CBD5E1', faint:'#E8EDF4',
+  rule:'#0B1220', accent:'#0250D3', warn:'#B42318',
+};
+
+// A4-ish sketch: letterhead, title rule, meta pairs, table, totals, footer
+const A4_SKETCH = (o = {}) => [
+  BAR(6, 5, 44, 5, 'strong'), BAR(76, 5, 18, 18, 'faint', '1px'),
+  BAR(6, 12, 34, 2.5, 'soft'), BAR(6, 16, 26, 2.5, 'soft'),
+  BAR(6, 24, 88, 1, 'rule'),
+  BAR(30, 28, 40, 5, o.titleTone || 'strong'),
+  BAR(6, 36, 88, .8, 'soft'),
+  BAR(6, 41, 40, 2.5, 'mid'), BAR(56, 41, 38, 2.5, 'mid'),
+  BAR(6, 46, 40, 2.5, 'soft'), BAR(56, 46, 38, 2.5, 'soft'),
+  BAR(6, 54, 88, 1.2, 'rule'),
+  BAR(6, 58, 88, 2.2, 'mid'), BAR(6, 62, 88, 2.2, 'faint'),
+  BAR(6, 66, 88, 2.2, 'mid'), BAR(6, 70, 88, 2.2, 'faint'),
+  BAR(6, 74, 88, 2.2, 'mid'), BAR(6, 78, 88, 1, 'rule'),
+  BAR(56, 83, 38, 2.5, 'soft'), BAR(56, 88, 38, 4, o.totalTone || 'strong'),
+  BAR(6, 100, 12, 12, 'faint', '1px'), BAR(22, 102, 50, 2.2, 'soft'),
+  BAR(22, 107, 40, 2, 'soft'),
+  BAR(6, 118, 88, 2.5, 'soft'),
+];
+
+const THERMAL_SKETCH = (o = {}) => [
+  BAR(12, 5, 56, 4, 'strong'), BAR(20, 11, 40, 2, 'soft'),
+  BAR(24, 15, 32, 2, 'soft'),
+  BAR(6, 21, 68, .9, 'rule'),
+  BAR(18, 25, 44, 3.5, o.titleTone || 'strong'),
+  BAR(6, 32, 68, .9, 'rule'),
+  BAR(6, 36, 30, 2.2, 'mid'), BAR(44, 36, 30, 2.2, 'soft'),
+  BAR(6, 41, 30, 2.2, 'mid'), BAR(44, 41, 30, 2.2, 'soft'),
+  BAR(6, 48, 68, 1, 'rule'),
+  BAR(6, 52, 68, 2, 'mid'), BAR(6, 56, 68, 2, 'mid'),
+  BAR(6, 60, 68, 2, 'mid'), BAR(6, 64, 68, 1, 'rule'),
+  BAR(6, 68, 68, 4, o.totalTone || 'strong'),
+  BAR(28, 78, 24, 24, 'faint', '1px'),
+  BAR(14, 106, 52, 2.2, 'soft'),
+];
+
+const STMT_SKETCH = () => [
+  BAR(6, 5, 44, 5, 'strong'), BAR(76, 5, 18, 18, 'faint', '1px'),
+  BAR(6, 12, 34, 2.5, 'soft'),
+  BAR(6, 24, 88, 1, 'rule'),
+  BAR(24, 28, 52, 5, 'strong'),
+  BAR(6, 36, 88, .8, 'soft'),
+  BAR(6, 41, 40, 2.5, 'mid'), BAR(56, 41, 38, 2.5, 'mid'),
+  BAR(6, 46, 40, 2.5, 'soft'), BAR(56, 46, 38, 2.5, 'soft'),
+  BAR(6, 54, 88, 1.2, 'rule'),
+  BAR(6, 58, 88, 2, 'mid'), BAR(6, 61.5, 88, 2, 'faint'),
+  BAR(6, 65, 88, 2, 'mid'), BAR(6, 68.5, 88, 2, 'faint'),
+  BAR(6, 72, 88, 2, 'mid'), BAR(6, 75.5, 88, 2, 'faint'),
+  BAR(6, 79, 88, 2, 'mid'), BAR(6, 82.5, 88, 1, 'rule'),
+  BAR(56, 87, 38, 2.5, 'soft'), BAR(56, 92, 38, 4, 'strong'),
+  BAR(6, 104, 36, 2.2, 'soft'), BAR(56, 104, 38, 2.2, 'soft'),
+  BAR(6, 112, 36, .8, 'rule'), BAR(56, 112, 38, .8, 'rule'),
+];
+
+const TEMPLATES = [
+  {id:'t1', name:'فاتورة مبيعات ضريبية — A4', file:'a4_sales_tax_invoice.json',
+   icon:'ph-receipt', tint:'#0250D3', type:'a4', category:'invoice', paper:'A4', pw:210,
+   owner:'مبذور', els:30, cols:9, isDefault:true, sketch:A4_SKETCH(),
+   bindings:[['فاتورة مبيعات','كل الفروع · عربي','مفعّل','#22C55E'],
+             ['مرتجع مبيعات','كل الفروع · عربي','تصادم فئة','#EF4444']],
+   history:[['أُنشئ من ملف مستورد','النظام','٢٠٢٦-٠٨-٢٦'],
+            ['رُبط بفاتورة المبيعات','محمود سعيد','٢٠٢٦-٠٨-٢٦']]},
+
+  {id:'t2', name:'فاتورة مبيعات ضريبية — A5', file:'a5_sales_tax_invoice.json',
+   icon:'ph-receipt', tint:'#0250D3', type:'a4', category:'invoice', paper:'A5', pw:148,
+   owner:'مبذور', els:25, cols:5, sketch:A4_SKETCH(),
+   bindings:[], history:[['أُنشئ من ملف مستورد','النظام','٢٠٢٦-٠٨-٢٦']]},
+
+  {id:'t3', name:'فاتورة مشتريات — A4', file:'a4_purchase_invoice.json',
+   icon:'ph-truck', tint:'#8B5CF6', type:'a4', category:'purchase', paper:'A4', pw:210,
+   owner:'مبذور', els:27, cols:9, isDefault:true, sketch:A4_SKETCH(),
+   bindings:[['فاتورة مشتريات','كل الفروع · عربي','مفعّل','#22C55E'],
+             ['مرتجع مشتريات','كل الفروع · عربي','تصادم فئة','#EF4444']],
+   history:[['أُنشئ من ملف مستورد','النظام','٢٠٢٦-٠٨-٢٦']]},
+
+  {id:'t4', name:'بيع سريع حراري — 80mm', file:'thermal80_quick_sale.json',
+   icon:'ph-receipt', tint:'#22C55E', type:'thermal', category:'receipt', paper:'80mm', pw:80,
+   owner:'مبذور', els:24, cols:4, isDefault:true, sketch:THERMAL_SKETCH(),
+   bindings:[['بيع سريع (كاشير)','المعادي · XPrinter XP-80C','مفعّل','#22C55E']],
+   history:[['أُنشئ من ملف مستورد','النظام','٢٠٢٦-٠٨-٢٦'],
+            ['عُدِّل حجم خط الإجمالي','سارة منير','اليوم 11:20']]},
+
+  {id:'t5', name:'بيع سريع حراري — 58mm', file:'thermal58_quick_sale.json',
+   icon:'ph-receipt', tint:'#22C55E', type:'thermal', category:'receipt', paper:'58mm', pw:58,
+   owner:'مبذور', els:14, cols:3, sketch:THERMAL_SKETCH(),
+   bindings:[], history:[['أُنشئ من ملف مستورد','النظام','٢٠٢٦-٠٨-٢٦']]},
+
+  {id:'t6', name:'مرتجع مبيعات — A4', file:'a4_sales_return.json',
+   icon:'ph-arrow-u-up-left', tint:'#B42318', type:'a4', category:'invoice', paper:'A4', pw:210,
+   owner:'مبذور', els:28, cols:9, sketch:A4_SKETCH({titleTone:'warn', totalTone:'warn'}),
+   bindings:[['مرتجع مبيعات','—','بلا رابطة','#6B7280']],
+   history:[['أُنشئ من ملف مستورد','النظام','٢٠٢٦-٠٨-٢٦']]},
+
+  {id:'t7', name:'مرتجع مبيعات حراري — 80mm', file:'thermal80_sales_return.json',
+   icon:'ph-arrow-u-up-left', tint:'#B42318', type:'thermal', category:'receipt', paper:'80mm', pw:80,
+   owner:'مبذور', els:17, cols:4, sketch:THERMAL_SKETCH({titleTone:'warn', totalTone:'warn'}),
+   bindings:[], history:[['أُنشئ من ملف مستورد','النظام','٢٠٢٦-٠٨-٢٦']]},
+
+  {id:'t8', name:'مرتجع مشتريات — A4', file:'a4_purchase_return.json',
+   icon:'ph-arrow-u-up-right', tint:'#F59E0B', type:'a4', category:'purchase', paper:'A4', pw:210,
+   owner:'مبذور', els:26, cols:9, sketch:A4_SKETCH({titleTone:'warn'}),
+   bindings:[['مرتجع مشتريات','—','بلا رابطة','#6B7280']],
+   history:[['أُنشئ من ملف مستورد','النظام','٢٠٢٦-٠٨-٢٦']]},
+
+  {id:'t9', name:'كشف حساب عميل — A4', file:'a4_customer_statement.json',
+   icon:'ph-user-list', tint:'#0250D3', type:'statement', category:'party_statement', paper:'A4', pw:210,
+   owner:'مبذور', els:23, cols:6, pending:true, sketch:STMT_SKETCH(),
+   bindings:[['كشف حساب عميل','—','ينتظر الامتداد','#F59E0B']],
+   history:[['أُنشئ من ملف مستورد','النظام','٢٠٢٦-٠٨-٢٦']]},
+
+  {id:'t10', name:'كشف حساب مورد — A4', file:'a4_supplier_statement.json',
+   icon:'ph-truck', tint:'#8B5CF6', type:'statement', category:'party_statement', paper:'A4', pw:210,
+   owner:'مبذور', els:23, cols:6, pending:true, sketch:STMT_SKETCH(),
+   bindings:[['كشف حساب مورد','—','ينتظر الامتداد','#F59E0B']],
+   history:[['أُنشئ من ملف مستورد','النظام','٢٠٢٦-٠٨-٢٦']]},
+
+  {id:'t11', name:'نموذج تقرير عام — A4', file:'a4_report_generic.json',
+   icon:'ph-chart-bar', tint:'#F59E0B', type:'report', category:'report', paper:'A4', pw:210,
+   owner:'مبذور', els:19, cols:6, pending:true, sketch:STMT_SKETCH(),
+   bindings:[['تقرير عام','—','ينتظر الامتداد','#F59E0B']],
+   history:[['أُنشئ من ملف مستورد','النظام','٢٠٢٦-٠٨-٢٦']]},
+
+  {id:'t12', name:'طلب مطبخ احترافي', file:'kitchen_professional.json',
+   icon:'ph-cooking-pot', tint:'#EF4444', type:'kitchen', category:'kitchen', paper:'80mm', pw:80,
+   owner:'مبذور', els:12, cols:2, isDefault:true, sketch:THERMAL_SKETCH({titleTone:'warn'}),
+   bindings:[['طلب مطبخ','المعادي · Epson TM-T20','مفعّل — حالة خاصة','#F59E0B']],
+   history:[['أُنشئ عند التنصيب','النظام','٢٠٢٦-٠١-١٤']]},
+
+  {id:'t13', name:'تقرير إغلاق الوردية', file:'shift_closing.json',
+   icon:'ph-clock-countdown', tint:'#8B5CF6', type:'shift_closing', category:'shift_closing', paper:'80mm', pw:80,
+   owner:'مبذور', els:22, cols:0, isDefault:true, sketch:THERMAL_SKETCH(),
+   bindings:[['تقرير إغلاق وردية','كل الفروع','مفعّل','#22C55E']],
+   history:[['أُنشئ عند التنصيب','النظام','٢٠٢٦-٠١-١٤'],
+            ['أُضيفت قناة كليك','محمود سعيد','٢٠٢٦-٠٨-١١']]},
+
+  {id:'t14', name:'فاتورة المعادي — نسخة الفرع', file:'—',
+   icon:'ph-receipt', tint:'#0250D3', type:'a4', category:'invoice', paper:'A4', pw:210,
+   owner:'المستخدم', els:31, cols:8, sketch:A4_SKETCH(),
+   bindings:[['فاتورة مبيعات','المعادي · عربي','مفعّل','#22C55E']],
+   history:[['نُسخ من «فاتورة مبيعات ضريبية»','محمود سعيد','٢٠٢٦-٠٨-١٨'],
+            ['أُضيف شعار الفرع','محمود سعيد','٢٠٢٦-٠٨-١٨'],
+            ['رُبط بفرع المعادي','محمود سعيد','٢٠٢٦-٠٨-١٩']]},
+
+  {id:'t15', name:'Sales Invoice — English', file:'—',
+   icon:'ph-receipt', tint:'#4A80E8', type:'a4', category:'invoice', paper:'A4', pw:210,
+   owner:'المستخدم', els:29, cols:9, sketch:A4_SKETCH(),
+   bindings:[['فاتورة مبيعات','كل الفروع · English','مفعّل','#22C55E']],
+   history:[['نُسخ من «فاتورة مبيعات ضريبية»','سارة منير','٢٠٢٦-٠٨-٢٠'],
+            ['تُرجمت كل التسميات','سارة منير','٢٠٢٦-٠٨-٢٠']]},
+
+  {id:'t16', name:'عرض سعر — مسوّدة', file:'—',
+   icon:'ph-file-text', tint:'#6B7280', type:'a4', category:'quotation', paper:'A4', pw:210,
+   owner:'المستخدم', els:11, cols:5, draft:true, sketch:A4_SKETCH(),
+   bindings:[], history:[['أُنشئ فارغاً','سارة منير','٢٠٢٦-٠٨-٢٤']]},
+];
+
+const STARTERS = [
+  {group:'فواتير', tint:'#0250D3', items:[
+    {name:'فاتورة ضريبية A4', sub:'ترويسة · جدول ٩ أعمدة · QR ومعرّف', paper:'A4', sketch:A4_SKETCH()},
+    {name:'فاتورة مبسطة A5', sub:'نصف الورقة · ٥ أعمدة', paper:'A5', sketch:A4_SKETCH()},
+    {name:'إيصال حراري 80mm', sub:'٤ أعمدة · بلا عناوين إنجليزية', paper:'80mm', sketch:THERMAL_SKETCH()},
+    {name:'إيصال ضيق 58mm', sub:'٣ أعمدة · الحد الأدنى', paper:'58mm', sketch:THERMAL_SKETCH()},
+  ]},
+  {group:'مستندات أخرى', tint:'#8B5CF6', items:[
+    {name:'إشعار دائن / مرتجع', sub:'حقول الاسترداد نقداً وبنكياً', paper:'A4', sketch:A4_SKETCH({titleTone:'warn', totalTone:'warn'})},
+    {name:'كشف حساب طرف', sub:'مدين ودائن ورصيد جارٍ', paper:'A4', sketch:STMT_SKETCH()},
+    {name:'تقرير بجدول ديناميكي', sub:'أعمدة تُحدَّد وقت التشغيل', paper:'A4', sketch:STMT_SKETCH()},
+    {name:'ورقة فارغة', sub:'نطاقات بلا عناصر — ابنِ من الصفر', paper:'A4', sketch:[
+      BAR(6, 5, 88, .8, 'faint'), BAR(6, 30, 88, .8, 'faint'),
+      BAR(6, 55, 88, .8, 'faint'), BAR(6, 90, 88, .8, 'faint'),
+      BAR(6, 112, 88, .8, 'faint')]},
+  ]},
+];
+
+const TYPES = [
+  {id:'all',      label:'كل الأنواع',      icon:'ph-stack'},
+  {id:'a4',       label:'A4 و A5',         icon:'ph-file'},
+  {id:'thermal',  label:'حراري',           icon:'ph-receipt'},
+  {id:'kitchen',  label:'مطبخ',            icon:'ph-cooking-pot'},
+  {id:'statement',label:'كشوف حساب',       icon:'ph-user-list'},
+  {id:'report',   label:'تقارير',          icon:'ph-chart-bar'},
+  {id:'shift_closing', label:'إغلاق وردية', icon:'ph-clock-countdown'},
+];
+const OWNERS = [
+  {id:'all',      label:'الكل',            icon:'ph-users-three'},
+  {id:'مبذور',    label:'مبذورة مع النظام', icon:'ph-package'},
+  {id:'المستخدم', label:'من إنشائي',        icon:'ph-user'},
+];
+const STATES = [
+  {id:'all',      label:'الكل',            icon:'ph-list'},
+  {id:'default',  label:'مفعّلة كافتراضي',  icon:'ph-check-circle'},
+  {id:'unbound',  label:'بلا رابطة',       icon:'ph-link-break'},
+  {id:'pending',  label:'تنتظر الامتداد',  icon:'ph-hourglass'},
+];
+
+class Component extends DCLogic {
+  state = {theme:null, type:'all', owner:'all', state:'all', sort:'name', sel:'t1', dlg:false,
+    over:{}, toast:null, extra:[]};
+
+  // Per-template overrides so default/duplicate/delete are real, not decorative.
+  ov(id){ return this.state.over[id] || {}; }
+  setOv(id, changes){
+    this.setState({over: Object.assign({}, this.state.over, {[id]: Object.assign({}, this.ov(id), changes)})});
+  }
+  all(){ return TEMPLATES.concat(this.state.extra).filter(t => !this.ov(t.id).deleted); }
+
+  flash(title, lines, tone){
+    this.setState({toast:{title, lines, tone: tone || 'ok'}});
+    if (this._t) clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({toast:null}), 5200);
+  }
+  componentWillUnmount(){ if (this._t) clearTimeout(this._t); }
+
+  isDefault(t){ const o = this.ov(t.id); return o.isDefault === undefined ? !!t.isDefault : o.isDefault; }
+
+  toggleDefault(t){
+    const now = this.isDefault(t);
+    if (now) {
+      this.setOv(t.id, {isDefault:false});
+      this.flash('أُلغي التفعيل', ['حُذفت رابطة «' + t.name + '»',
+        'المستندات المرتبطة ستسقط للمستوى التالي في سلسلة الحسم'], 'warn');
+      return;
+    }
+    // one default per (documentType + branch + locale) — the rest are demoted
+    const clash = this.all().find(x => x.id !== t.id && x.category === t.category && this.isDefault(x));
+    const over = Object.assign({}, this.state.over);
+    over[t.id] = Object.assign({}, this.ov(t.id), {isDefault:true});
+    if (clash) over[clash.id] = Object.assign({}, this.ov(clash.id), {isDefault:false});
+    this.setState({over});
+    this.flash('فُعِّل كافتراضي', [
+      'أُنشئت رابطة: ' + t.category + ' · كل الفروع · عربي',
+      clash ? 'أُلغي تفعيل «' + clash.name + '» — رابطة واحدة لكل مفتاح' : 'لا تعارض مع رابطة قائمة',
+      'أُبطلت ذاكرة الحسم — الطباعة التالية تستعمل هذا القالب',
+    ]);
+  }
+
+  duplicate(t){
+    const id = 'c' + Date.now();
+    const copy = Object.assign({}, t, {id, name: t.name + ' — نسخة', file:'—',
+      owner:'المستخدم', isDefault:false, bindings:[],
+      history:[['نُسخ من «' + t.name + '»','محمود سعيد','الآن']]});
+    this.setState({extra: this.state.extra.concat([copy]), sel:id});
+    this.flash('أُنشئت نسخة', ['«' + copy.name + '» — مسوّدة بلا رابطة',
+      'عدّلها بحرية: الأصل لم يُمسّ ولا مستند مرتبط بها بعد']);
+  }
+
+  remove(t){
+    if ((t.bindings || []).length && !this.ov(t.id).unbound) {
+      this.flash('الحذف مرفوض', ['«' + t.name + '» مربوط بـ' + t.bindings.length + ' مستند',
+        'فكّ الرابطة من شاشة حسم القوالب أولاً — وإلا طُبعت تلك المستندات بلا قالب'], 'err');
+      return;
+    }
+    this.setOv(t.id, {deleted:true});
+    this.setState({sel: (this.all().find(x => x.id !== t.id) || {id:'t1'}).id});
+    this.flash('حُذف القالب', ['«' + t.name + '» أُزيل من المكتبة',
+      'ملفات JSON المصدَّرة منه تبقى صالحة للاستيراد']);
+  }
+
+  filtered(){
+    return this.all().filter(t => {
+      if (this.state.type !== 'all' && t.type !== this.state.type) return false;
+      if (this.state.owner !== 'all' && t.owner !== this.state.owner) return false;
+      const st = this.state.state;
+      if (st === 'default' && !this.isDefault(t)) return false;
+      if (st === 'unbound' && (t.bindings || []).length) return false;
+      if (st === 'pending' && !t.pending) return false;
+      return true;
+    });
+  }
+
+  renderVals(){
+    const dark = (this.state.theme || this.props.theme || 'light') === 'dark';
+    let list = this.filtered();
+    if (this.state.sort === 'name') list = list.slice().sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+    if (this.state.sort === 'paper') list = list.slice().sort((a, b) => b.pw - a.pw);
+    if (this.state.sort === 'used') list = list.slice().sort((a, b) => (b.bindings || []).length - (a.bindings || []).length);
+
+    const ALL = this.all();
+    const cur = ALL.find(t => t.id === this.state.sel) || ALL[0];
+
+    const countBy = (arr, fn) => arr.filter(fn).length;
+    const mkFacet = (label, opts, key) => ({
+      label,
+      items: opts.map(o => {
+        const on = this.state[key] === o.id;
+        const n = o.id === 'all' ? ALL.length
+          : key === 'state'
+            ? countBy(ALL, t => o.id === 'default' ? this.isDefault(t)
+                : o.id === 'unbound' ? !(t.bindings || []).length : !!t.pending)
+            : countBy(ALL, t => t[key] === o.id);
+        return {label:o.label, icon:o.icon, count: String(n),
+          bg: on ? 'var(--wash)' : 'transparent',
+          fg: on ? 'var(--brand-ink)' : 'var(--txt2)',
+          fw: on ? '800' : '600',
+          countFg: on ? 'var(--brand-ink)' : 'var(--muted)',
+          pick: () => this.setState({[key]: o.id})};
+      }),
+    });
+
+    // thumbnails keep true paper proportion, capped to the card box
+    const thumbOf = t => {
+      const ratio = t.pw <= 80 ? (t.pw / 130) : (t.pw / 297);
+      const h = 152;
+      const w = t.pw <= 80 ? Math.round(h * (t.pw / 160)) : Math.round(h * (t.pw / 297));
+      return {w: w + 'px', h: h + 'px'};
+    };
+    const sketchOf = t => t.sketch.map(s => ({
+      x: s.x + '%', y: s.y + '%', w: s.w + '%', h: (s.h < 1.2 ? s.h + 'px' : s.h + '%'),
+      bg: TONE[s.tone] || TONE.mid, r: s.r || '0',
+    }));
+
+    const OWN = {'مبذور':{fg:'#0250D3', bg:'rgba(2,80,211,.12)'}, 'المستخدم':{fg:'#8B5CF6', bg:'rgba(139,92,246,.12)'}};
+
+    return {
+      theme: dark ? 'dark' : 'light',
+      themeIcon: dark ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.setState({theme: dark ? 'light' : 'dark'}),
+      rail: RAIL.map(r => ({...r, bg: r.active ? 'rgba(74,128,232,.18)' : 'transparent', fg: r.active ? '#7DA6F5' : '#64748B'})),
+
+      head: {sub: ALL.length + ' قالباً · ' + countBy(ALL, t => this.isDefault(t))
+        + ' مفعّل كافتراضي · ' + countBy(ALL, t => !(t.bindings || []).length) + ' بلا رابطة'},
+
+      dlgOpen: this.state.dlg,
+      openNew: () => this.setState({dlg: true}),
+      closeNew: () => this.setState({dlg: false}),
+      importJson: () => this.flash('استيراد JSON', [
+        'يُفتح منتقي الملفات — الملف يجب أن يحوي مفتاح elements',
+        'يُستورد كمسوّدة بلا رابطة، فلا يمسّ أي مستند حتى تفعّله']),
+
+      hasToast: !!this.state.toast,
+      toast: this.state.toast
+        ? Object.assign({}, this.state.toast, {
+            icon: this.state.toast.tone === 'err' ? 'ph-warning-octagon'
+                : this.state.toast.tone === 'warn' ? 'ph-warning' : 'ph-check-circle',
+            fg: this.state.toast.tone === 'err' ? '#EF4444'
+              : this.state.toast.tone === 'warn' ? '#F59E0B' : '#22C55E',
+            bd: this.state.toast.tone === 'err' ? 'rgba(239,68,68,.45)'
+              : this.state.toast.tone === 'warn' ? 'rgba(245,158,11,.45)' : 'rgba(34,197,94,.45)',
+          })
+        : {title:'', lines:[], icon:'ph-check-circle', fg:'#22C55E', bd:'transparent'},
+      closeToast: () => this.setState({toast: null}),
+
+      facets: [
+        mkFacet('النوع والورق', TYPES, 'type'),
+        mkFacet('المصدر', OWNERS, 'owner'),
+        mkFacet('الحالة', STATES, 'state'),
+      ],
+
+      sorts: [
+        {id:'name', label:'بالاسم', icon:'ph-sort-ascending'},
+        {id:'paper', label:'بالمقاس', icon:'ph-ruler'},
+        {id:'used', label:'بالاستخدام', icon:'ph-git-fork'},
+      ].map(s => {
+        const on = s.id === this.state.sort;
+        return {label:s.label, icon:s.icon,
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          bg: on ? 'var(--wash)' : 'var(--card)',
+          fg: on ? 'var(--brand-ink)' : 'var(--muted)',
+          pick: () => this.setState({sort: s.id})};
+      }),
+
+      gallery: {note: list.length === TEMPLATES.length
+        ? 'كل القوالب — ' + list.length
+        : 'مُصفّى — ' + list.length + ' من ' + TEMPLATES.length},
+
+      cards: list.map(t => {
+        const th = thumbOf(t);
+        const own = OWN[t.owner] || OWN['مبذور'];
+        const binds = (t.bindings || []).length;
+        return {
+          name:t.name, icon:t.icon, tint:t.tint, paper:t.paper,
+          meta: t.file === '—' ? 'أُنشئ داخل التطبيق' : t.file,
+          isDefault: this.isDefault(t), pending: !!t.pending,
+          owner: t.owner, ownFg: own.fg, ownBg: own.bg,
+          used: binds ? binds + ' مستند مربوط' : 'بلا رابطة',
+          thumbW: th.w, thumbH: th.h,
+          deskBg: t.id === cur.id ? 'var(--wash)' : 'var(--desk)',
+          bd: t.id === cur.id ? 'var(--brand)' : 'var(--hairline)',
+          sketch: sketchOf(t),
+          pick: () => this.setState({sel: t.id}),
+          edit: (ev) => { ev.stopPropagation(); this.setState({sel: t.id});
+            this.flash('فتح المحرر', ['«' + t.name + '» — التعديلات لا تُحفظ حتى تضغط حفظ']); },
+          dup: (ev) => { ev.stopPropagation(); this.duplicate(t); },
+          more: (ev) => { ev.stopPropagation(); this.setState({sel: t.id});
+            this.flash('إجراءات القالب', ['كل الإجراءات معروضة في اللوحة الجانبية على اليسار']); },
+        };
+      }),
+
+      sel: {
+        name: cur.name, icon: cur.icon, tint: cur.tint, iconBg: cur.tint + '1f',
+        meta: cur.paper + ' · ' + cur.els + ' عنصراً · ' + (cur.cols ? cur.cols + ' عمود' : 'بلا جدول'),
+        edit: () => this.flash('فتح المحرر', ['«' + cur.name + '» — التعديلات لا تُحفظ حتى تضغط حفظ']),
+        preview: () => this.flash('معاينة', ['يُرسم القالب ببيانات وهمية بنفس راسم الطباعة',
+          'لا طابعة تُستدعى — للمراجعة البصرية فقط']),
+        spec: [
+          {k:'الملف', v: cur.file},
+          {k:'type', v: cur.type},
+          {k:'templateCategory', v: cur.category},
+          {k:'paperSize', v: cur.paper},
+          {k:'paperWidth', v: String(cur.pw)},
+          {k:'العناصر', v: String(cur.els)},
+          {k:'أعمدة الجدول', v: String(cur.cols)},
+        ],
+        bindNote: (cur.bindings || []).length
+          ? 'أي تعديل يسري على هذه المستندات فوراً'
+          : 'القالب لا يُطبع حتى تربطه بمستند',
+        bindings: ((cur.bindings || []).length ? cur.bindings : [['— بلا رابطة —','لن يُستعمل في الطباعة','غير مربوط','#6B7280']])
+          .map(b => ({
+            doc:b[0], scope:b[1], status:b[2],
+            icon: b[3] === '#22C55E' ? 'ph-check-circle' : b[3] === '#EF4444' ? 'ph-warning-octagon' : b[3] === '#F59E0B' ? 'ph-hourglass' : 'ph-link-break',
+            tint:b[3], stFg:b[3], stBg: b[3] + '1f',
+          })),
+        actions: [
+          {icon:'ph-copy', title:'إنشاء نسخة', sub:'للتعديل بلا مساس بالأصل — الطريقة الآمنة لتجربة شكل جديد',
+           tint:'var(--txt2)', go: () => this.duplicate(cur)},
+          {icon:'ph-check-circle', title: this.isDefault(cur) ? 'إلغاء التفعيل كافتراضي' : 'تفعيل كافتراضي',
+           sub:'يُنشئ رابطة بنوع المستند والفرع واللغة',
+           tint: this.isDefault(cur) ? '#F59E0B' : '#22C55E', go: () => this.toggleDefault(cur)},
+          {icon:'ph-download-simple', title:'تصدير JSON', sub:'ملف قابل للاستيراد في أي قاعدة أخرى',
+           tint:'var(--txt2)', go: () => this.flash('صُدِّر الملف', [
+             (cur.file === '—' ? cur.name.replace(/\s+/g,'_') + '.json' : cur.file) + ' — ' + cur.els + ' عنصراً و' + cur.cols + ' عمود',
+             'الملف يحمل العناصر والأعمدة والرابطات لا تُصدَّر معه'])},
+          {icon:'ph-printer', title:'طباعة تجريبية', sub:'ببيانات وهمية على الطابعة المربوطة',
+           tint:'var(--txt2)', go: () => this.flash('أُرسلت طباعة تجريبية', [
+             'ببيانات وهمية على ' + ((cur.bindings || [])[0] ? cur.bindings[0][1] : 'الطابعة الافتراضية'),
+             'المستند موسوم «تجريبي» ولا يُسجَّل في سجل المستندات'])},
+          {icon:'ph-trash', title:'حذف القالب',
+           sub: (cur.bindings || []).length ? 'مربوط بمستند — يجب فكّ الرابطة أولاً' : 'بلا رابطة — الحذف آمن',
+           tint:'#EF4444', go: () => this.remove(cur)},
+        ],
+        history: (cur.history || []).map(h => ({
+          what:h[0], who:h[1], when:h[2],
+          icon: h[0].indexOf('أُنشئ') === 0 ? 'ph-plus-circle' : h[0].indexOf('نُسخ') === 0 ? 'ph-copy' : h[0].indexOf('رُبط') === 0 ? 'ph-link' : 'ph-pencil-simple',
+        })),
+      },
+
+      starters: STARTERS.map(g => ({
+        label:g.group, tint:g.tint,
+        items: g.items.map(s => {
+          const pwv = s.paper === 'A4' ? 210 : s.paper === 'A5' ? 148 : s.paper === '80mm' ? 80 : 58;
+          const h = 96;
+          const w = pwv <= 80 ? Math.round(h * (pwv / 160)) : Math.round(h * (pwv / 297));
+          return {name:s.name, sub:s.sub, thumbW: w + 'px', thumbH: h + 'px',
+            sketch: s.sketch.map(k => ({
+              x: k.x + '%', y: k.y + '%', w: k.w + '%', h: (k.h < 1.2 ? k.h + 'px' : k.h + '%'),
+              bg: TONE[k.tone] || TONE.mid, r: k.r || '0'}))};
+        }),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

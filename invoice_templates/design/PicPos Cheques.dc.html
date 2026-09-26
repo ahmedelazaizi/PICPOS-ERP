@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-ink:#0250D3; --brand-dark:#012258; --brand-light:#4A80E8;
+    --wash:rgba(2,80,211,.08); --side:#0F172A; --side-line:#243247;
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280;
+    --ok:#22C55E; --warn:#F59E0B; --err:#EF4444;
+    --track:#E6ECF6; --shadow:0 18px 50px rgba(1,34,88,.16);
+  }
+  [data-theme="dark"]{
+    --canvas:#0A1220; --card:#121C2E; --hairline:#243247; --field:#18243A;
+    --brand-ink:#7DA6F5; --wash:rgba(74,128,232,.14); --side:#08101E; --side-line:#1D2A3E;
+    --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8;
+    --track:#1E2B42; --shadow:0 18px 60px rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#0A1220;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#94A3B855;border-radius:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" dir="rtl" style="width:1920px;height:1080px;display:flex;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;">
+
+  <div style="width:84px;flex:none;background:var(--side);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:14px;">
+    <div style="width:44px;height:44px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <img src="assets/picpos-logo.png" alt="PicPos" style="width:38px;height:38px;object-fit:contain;" />
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:7px;">
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="10">
+        <div title="{{ r.label }}" style="position:relative;width:52px;height:46px;border-radius:13px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+          <i class="ph-bold {{ r.icon }}" style="font-size:21px;color:{{ r.fg }};"></i>
+          <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;inset-inline-end:-14px;top:11px;width:3.5px;height:24px;border-radius:3px;background:var(--brand-light);"></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="width:36px;height:1px;background:var(--side-line);flex:none;"></div>
+    <div style="width:40px;height:40px;flex:none;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;">م.س</div>
+  </div>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <div style="height:76px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:14px;padding:0 26px;">
+      <div style="width:46px;height:46px;flex:none;border-radius:14px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold {{ head.icon }}" style="font-size:23px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-size:19px;font-weight:800;line-height:1.3;color:var(--txt);">{{ head.title }}</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;">{{ head.sub }}</div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="width:280px;height:44px;border-radius:12px;background:var(--field);border:1px solid var(--hairline);display:flex;align-items:center;gap:9px;padding:0 14px;">
+        <i class="ph-bold ph-magnifying-glass" style="font-size:16px;color:var(--muted);"></i>
+        <span style="font-size:13px;color:var(--muted);font-weight:600;">{{ head.hint }}</span>
+      </div>
+      <div onClick="{{ toggleTheme }}" style="width:44px;height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);">
+        <i class="ph-bold {{ themeIcon }}" style="font-size:18px;"></i>
+      </div>
+      <div onClick="{{ head.altGo }}" style="height:44px;flex:none;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 16px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;white-space:nowrap;">
+        <i class="ph-bold {{ head.altIcon }}" style="font-size:17px;"></i>{{ head.alt }}
+      </div>
+      <div onClick="{{ head.go }}" style="height:44px;flex:none;border-radius:12px;background:var(--brand);display:flex;align-items:center;gap:8px;padding:0 20px;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        <i class="ph-bold ph-plus" style="font-size:17px;"></i>{{ head.action }}
+      </div>
+    </div>
+
+    <div style="height:50px;flex:none;background:var(--card);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:2px;padding:0 26px;">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+        <div onClick="{{ t.pick }}" style="height:50px;display:flex;align-items:center;gap:8px;padding:0 15px;cursor:pointer;border-bottom:2.5px solid {{ t.line }};">
+          <i class="ph-bold {{ t.icon }}" style="font-size:16px;color:{{ t.fg }};"></i>
+          <span style="font-size:13px;font-weight:{{ t.fw }};color:{{ t.fg }};white-space:nowrap;">{{ t.label }}</span>
+          <sc-if value="{{ t.badge }}" hint-placeholder-val="{{ false }}">
+            <span style="font-size:10.5px;font-weight:800;color:{{ t.badgeFg }};background:{{ t.badgeBg }};border-radius:999px;padding:2px 7px;">{{ t.badge }}</span>
+          </sc-if>
+        </div>
+      </sc-for>
+      <div style="flex:1;"></div>
+      <span style="font-size:11.5px;font-weight:600;color:var(--muted);white-space:nowrap;">{{ tabNote }}</span>
+    </div>
+
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:20px 26px 26px;display:flex;flex-direction:column;gap:16px;">
+      <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="2">
+
+        <sc-if value="{{ b.isKpis }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;display:grid;grid-template-columns:{{ b.cols }};gap:13px;">
+            <sc-for list="{{ b.items }}" as="k" hint-placeholder-count="4">
+              <div style="background:var(--card);border:1px solid var(--hairline);border-inline-start:3px solid {{ k.tint }};border-radius:14px;padding:14px 16px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <i class="ph-bold {{ k.icon }}" style="font-size:15px;color:{{ k.tint }};"></i>
+                  <span style="flex:1;font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ k.label }}</span>
+                </div>
+                <div style="font-size:25px;font-weight:800;color:var(--txt);line-height:1.1;margin-top:8px;font-variant-numeric:tabular-nums;">{{ k.value }}</div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+                  <sc-if value="{{ k.hasDelta }}" hint-placeholder-val="{{ false }}">
+                    <i class="ph-bold {{ k.arrow }}" style="font-size:12px;color:{{ k.deltaFg }};"></i>
+                    <span style="font-size:11.5px;font-weight:800;color:{{ k.deltaFg }};">{{ k.delta }}</span>
+                  </sc-if>
+                  <span style="font-size:10.5px;font-weight:600;color:var(--muted);">{{ k.vs }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isCards }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;">
+            <sc-if value="{{ b.title }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+                <span style="flex:1;font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</span>
+                <span style="font-size:11.5px;font-weight:600;color:var(--muted);">{{ b.sub }}</span>
+              </div>
+            </sc-if>
+            <div style="display:grid;grid-template-columns:{{ b.cols }};gap:13px;align-items:start;">
+              <sc-for list="{{ b.items }}" as="c" hint-placeholder-count="3">
+                <div onClick="{{ c.go }}" style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;cursor:{{ c.cursor }};">
+                  <div style="padding:16px;display:flex;align-items:flex-start;gap:12px;">
+                    <div style="width:46px;height:46px;flex:none;border-radius:14px;background:{{ c.wash }};display:flex;align-items:center;justify-content:center;">
+                      <sc-if value="{{ c.initials }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:15px;font-weight:800;color:{{ c.tint }};">{{ c.initials }}</span>
+                      </sc-if>
+                      <sc-if value="{{ c.icon }}" hint-placeholder-val="{{ false }}">
+                        <i class="ph-bold {{ c.icon }}" style="font-size:23px;color:{{ c.tint }};"></i>
+                      </sc-if>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-size:15px;font-weight:800;color:var(--txt);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.title }}</div>
+                      <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.sub }}</div>
+                    </div>
+                    <span style="font-size:11px;font-weight:800;color:{{ c.pillFg }};background:{{ c.pillBg }};border-radius:8px;padding:5px 10px;flex:none;white-space:nowrap;">{{ c.status }}</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:{{ c.statCols }};border-top:1px solid var(--hairline);">
+                    <sc-for list="{{ c.stats }}" as="s" hint-placeholder-count="3">
+                      <div style="padding:11px 14px;border-inline-start:1px solid var(--hairline);">
+                        <div style="font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.label }}</div>
+                        <div style="font-size:15px;font-weight:800;color:{{ s.fg }};margin-top:3px;font-variant-numeric:tabular-nums;white-space:nowrap;">{{ s.value }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="padding:11px 14px;border-top:1px solid var(--hairline);background:var(--field);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <sc-for list="{{ c.chips }}" as="ch" hint-placeholder-count="2">
+                      <div style="display:flex;align-items:center;gap:5px;">
+                        <i class="ph-bold {{ ch.icon }}" style="font-size:12.5px;color:{{ ch.fg }};"></i>
+                        <span style="font-size:11px;font-weight:700;color:{{ ch.fg }};white-space:nowrap;">{{ ch.label }}</span>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ c.hasDrawer }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-inline-start:auto;display:flex;align-items:center;gap:5px;">
+                        <span style="font-size:10.5px;font-weight:800;color:var(--brand-ink);white-space:nowrap;">الملف الكامل</span>
+                        <i class="ph-bold ph-arrow-left" style="font-size:13px;color:var(--brand-ink);"></i>
+                      </div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isBars }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
+              <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <span style="flex:1;font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</span>
+              <span style="font-size:11.5px;font-weight:600;color:var(--muted);">{{ b.sub }}</span>
+            </div>
+            <div style="padding:14px 18px 16px;display:flex;flex-direction:column;gap:11px;">
+              <sc-for list="{{ b.items }}" as="r" hint-placeholder-count="4">
+                <div style="display:grid;grid-template-columns:170px 1fr 110px;gap:14px;align-items:center;">
+                  <div style="display:flex;align-items:center;gap:9px;min-width:0;">
+                    <i class="ph-bold {{ r.icon }}" style="font-size:15px;color:{{ r.tint }};flex:none;"></i>
+                    <div style="min-width:0;">
+                      <div style="font-size:13px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.label }}</div>
+                      <div style="font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap;">{{ r.sub }}</div>
+                    </div>
+                  </div>
+                  <div style="height:24px;border-radius:8px;background:var(--track);overflow:hidden;display:flex;">
+                    <div style="width:{{ r.pct }};height:100%;border-radius:8px;background:{{ r.tint }};display:flex;align-items:center;justify-content:flex-start;padding:0 9px;">
+                      <span style="font-size:11px;font-weight:800;color:#fff;white-space:nowrap;">{{ r.inner }}</span>
+                    </div>
+                    <sc-if value="{{ r.pct2 }}" hint-placeholder-val="{{ false }}">
+                      <div style="width:{{ r.pct2 }};height:100%;background:{{ r.tint2 }};"></div>
+                    </sc-if>
+                  </div>
+                  <span style="font-size:14px;font-weight:800;color:{{ r.valFg }};text-align:end;font-variant-numeric:tabular-nums;">{{ r.value }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isGauge }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+              <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <span style="flex:1;font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</span>
+              <span style="font-size:11.5px;font-weight:600;color:var(--muted);">{{ b.sub }}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:{{ b.cols }};gap:13px;">
+              <sc-for list="{{ b.items }}" as="g" hint-placeholder-count="4">
+                <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;padding:16px;display:flex;align-items:center;gap:14px;">
+                  <div style="width:78px;height:78px;flex:none;border-radius:50%;background:{{ g.ring }};display:flex;align-items:center;justify-content:center;">
+                    <div style="width:58px;height:58px;border-radius:50%;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                      <span style="font-size:16px;font-weight:800;color:{{ g.tint }};line-height:1;font-variant-numeric:tabular-nums;">{{ g.pctLabel }}</span>
+                      <span style="font-size:9px;font-weight:700;color:var(--muted);margin-top:2px;">من الهدف</span>
+                    </div>
+                  </div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-size:14px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ g.title }}</div>
+                    <div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ g.sub }}</div>
+                    <div style="display:flex;align-items:center;gap:12px;margin-top:9px;">
+                      <sc-for list="{{ g.stats }}" as="s" hint-placeholder-count="2">
+                        <div style="min-width:0;">
+                          <div style="font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap;">{{ s.label }}</div>
+                          <div style="font-size:13px;font-weight:800;color:{{ s.fg }};font-variant-numeric:tabular-nums;white-space:nowrap;">{{ s.value }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isBoard }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+              <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <span style="flex:1;font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</span>
+              <span style="font-size:11.5px;font-weight:600;color:var(--muted);">{{ b.sub }}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:{{ b.cols }};gap:13px;align-items:start;">
+              <sc-for list="{{ b.items }}" as="col" hint-placeholder-count="4">
+                <div style="background:var(--card);border:1px solid var(--hairline);border-radius:16px;overflow:hidden;">
+                  <div style="padding:12px 14px;border-bottom:1px solid var(--hairline);border-top:3px solid {{ col.tint }};display:flex;align-items:center;gap:9px;">
+                    <i class="ph-bold {{ col.icon }}" style="font-size:16px;color:{{ col.tint }};"></i>
+                    <span style="flex:1;font-size:13px;font-weight:800;color:var(--txt);white-space:nowrap;">{{ col.label }}</span>
+                    <span style="font-size:12px;font-weight:800;color:{{ col.tint }};font-variant-numeric:tabular-nums;">{{ col.count }}</span>
+                  </div>
+                  <div style="padding:11px;display:flex;flex-direction:column;gap:9px;">
+                    <sc-for list="{{ col.cards }}" as="c" hint-placeholder-count="3">
+                      <div onClick="{{ c.go }}" style="border:1px solid var(--hairline);background:var(--field);border-radius:12px;padding:11px 12px;cursor:pointer;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                          <span style="font-size:12.5px;font-weight:800;color:var(--txt);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.title }}</span>
+                          <span style="font-size:11.5px;font-weight:800;color:{{ c.valFg }};flex:none;font-variant-numeric:tabular-nums;">{{ c.value }}</span>
+                        </div>
+                        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.sub }}</div>
+                        <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+                          <i class="ph-bold {{ c.icon }}" style="font-size:12px;color:{{ c.tint }};"></i>
+                          <span style="font-size:10.5px;font-weight:700;color:{{ c.tint }};white-space:nowrap;">{{ c.meta }}</span>
+                        </div>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ col.more }}" hint-placeholder-val="{{ false }}">
+                      <div style="text-align:center;padding:5px;font-size:11.5px;font-weight:700;color:var(--brand-ink);cursor:pointer;">{{ col.more }}</div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isCal }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;">
+              <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</div>
+                <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:1px;">{{ b.sub }}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex:none;">
+                <sc-for list="{{ b.legend }}" as="l" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="width:10px;height:10px;border-radius:3px;background:{{ l.c }};"></span>
+                    <span style="font-size:11.5px;font-weight:700;color:var(--txt2);white-space:nowrap;">{{ l.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--field);border-bottom:1px solid var(--hairline);">
+              <sc-for list="{{ b.dow }}" as="d" hint-placeholder-count="7">
+                <div style="padding:9px;text-align:center;font-size:11.5px;font-weight:800;color:var(--muted);border-inline-start:1px solid var(--hairline);">{{ d }}</div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);">
+              <sc-for list="{{ b.days }}" as="d" hint-placeholder-count="35">
+                <div style="min-height:82px;padding:8px 9px;border-inline-start:1px solid var(--hairline);border-bottom:1px solid var(--hairline);background:{{ d.bg }};display:flex;flex-direction:column;gap:5px;">
+                  <span style="font-size:13px;font-weight:{{ d.fw }};color:{{ d.fg }};font-variant-numeric:tabular-nums;">{{ d.day }}</span>
+                  <sc-for list="{{ d.marks }}" as="m" hint-placeholder-count="1">
+                    <div style="border-radius:7px;background:{{ m.bg }};padding:4px 7px;">
+                      <span style="font-size:10.5px;font-weight:800;color:{{ m.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">{{ m.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isRoster }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;">
+              <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</div>
+                <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:1px;">{{ b.sub }}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex:none;">
+                <sc-for list="{{ b.legend }}" as="l" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="width:10px;height:10px;border-radius:3px;background:{{ l.c }};"></span>
+                    <span style="font-size:11.5px;font-weight:700;color:var(--txt2);white-space:nowrap;">{{ l.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:210px 1fr 130px;gap:0;background:var(--field);border-bottom:1px solid var(--hairline);">
+              <div style="padding:9px 18px;font-size:11.5px;font-weight:800;color:var(--muted);">الموظف</div>
+              <div style="padding:9px 0;display:grid;grid-template-columns:repeat({{ b.hourCount }},1fr);">
+                <sc-for list="{{ b.hours }}" as="h" hint-placeholder-count="8">
+                  <span style="font-size:10.5px;font-weight:700;color:var(--muted);text-align:center;">{{ h }}</span>
+                </sc-for>
+              </div>
+              <div style="padding:9px 18px;font-size:11.5px;font-weight:800;color:var(--muted);text-align:end;">إجمالي الساعات</div>
+            </div>
+            <sc-for list="{{ b.items }}" as="r" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:210px 1fr 130px;gap:0;border-bottom:1px solid var(--hairline);align-items:center;">
+                <div style="padding:11px 18px;display:flex;align-items:center;gap:10px;min-width:0;">
+                  <div style="width:32px;height:32px;flex:none;border-radius:10px;background:{{ r.wash }};display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:{{ r.tint }};">{{ r.initials }}</div>
+                  <div style="min-width:0;">
+                    <div style="font-size:12.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.name }}</div>
+                    <div style="font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap;">{{ r.role }}</div>
+                  </div>
+                </div>
+                <div style="padding:11px 0;position:relative;height:44px;">
+                  <div style="position:absolute;top:19px;inset-inline:0;height:6px;border-radius:4px;background:var(--track);"></div>
+                  <sc-for list="{{ r.segs }}" as="s" hint-placeholder-count="1">
+                    <div title="{{ s.tip }}" style="position:absolute;top:13px;inset-inline-start:{{ s.x }};width:{{ s.w }};height:18px;border-radius:6px;background:{{ s.c }};display:flex;align-items:center;justify-content:center;">
+                      <span style="font-size:10px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;">{{ s.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="padding:11px 18px;text-align:end;">
+                  <div style="font-size:14px;font-weight:800;color:{{ r.hoursFg }};font-variant-numeric:tabular-nums;">{{ r.hours }}</div>
+                  <div style="font-size:10.5px;font-weight:700;color:{{ r.noteFg }};white-space:nowrap;">{{ r.note }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isMatrix }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;">
+              <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</div>
+                <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:1px;">{{ b.sub }}</div>
+              </div>
+              <div onClick="{{ b.go }}" style="height:34px;border-radius:10px;border:1.5px solid var(--brand);display:flex;align-items:center;gap:7px;padding:0 13px;cursor:pointer;flex:none;">
+                <i class="ph-bold ph-pencil-simple" style="font-size:14px;color:var(--brand-ink);"></i>
+                <span style="font-size:12px;font-weight:800;color:var(--brand-ink);">تعديل الصلاحيات</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:{{ b.grid }};background:var(--field);border-bottom:1px solid var(--hairline);">
+              <sc-for list="{{ b.cols }}" as="c" hint-placeholder-count="5">
+                <div style="padding:11px 14px;border-inline-start:1px solid var(--hairline);">
+                  <div style="font-size:11.5px;font-weight:800;color:var(--muted);text-align:{{ c.align }};white-space:nowrap;">{{ c.label }}</div>
+                  <sc-if value="{{ c.sub }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:10px;font-weight:600;color:var(--muted);text-align:{{ c.align }};margin-top:2px;white-space:nowrap;">{{ c.sub }}</div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <sc-for list="{{ b.rows }}" as="r" hint-placeholder-count="7">
+              <div style="display:grid;grid-template-columns:{{ b.grid }};border-bottom:1px solid var(--hairline);align-items:center;">
+                <div style="padding:11px 14px;display:flex;align-items:center;gap:10px;min-width:0;">
+                  <div style="width:32px;height:32px;flex:none;border-radius:10px;background:{{ r.wash }};display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:{{ r.tint }};">{{ r.initials }}</div>
+                  <div style="min-width:0;">
+                    <div style="font-size:12.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.name }}</div>
+                    <div style="font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap;">{{ r.role }}</div>
+                  </div>
+                </div>
+                <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="4">
+                  <div onClick="{{ c.toggle }}" style="padding:11px 14px;display:flex;align-items:center;justify-content:center;cursor:{{ c.cursor }};border-inline-start:1px solid var(--hairline);">
+                    <div style="width:30px;height:30px;border-radius:9px;background:{{ c.bg }};display:flex;align-items:center;justify-content:center;">
+                      <i class="ph-bold {{ c.icon }}" style="font-size:16px;color:{{ c.fg }};"></i>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isPayroll }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;display:grid;grid-template-columns:1fr 380px;gap:13px;align-items:start;">
+            <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;">
+                <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</div>
+                  <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:1px;">{{ b.sub }}</div>
+                </div>
+                <span style="font-size:11px;font-weight:800;color:var(--brand-ink);background:var(--wash);border-radius:8px;padding:5px 10px;flex:none;">{{ b.formula }}</span>
+              </div>
+              <sc-for list="{{ b.lines }}" as="l" hint-placeholder-count="8">
+                <div style="padding:12px 18px;border-bottom:1px solid var(--hairline);display:grid;grid-template-columns:34px 1fr 140px 130px;gap:12px;align-items:center;background:{{ l.bg }};">
+                  <div style="width:26px;height:26px;border-radius:8px;background:{{ l.signBg }};display:flex;align-items:center;justify-content:center;">
+                    <i class="ph-bold {{ l.signIcon }}" style="font-size:14px;color:{{ l.signFg }};"></i>
+                  </div>
+                  <div style="min-width:0;">
+                    <div style="font-size:13px;font-weight:{{ l.fw }};color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ l.label }}</div>
+                    <sc-if value="{{ l.note }}" hint-placeholder-val="{{ false }}">
+                      <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ l.note }}</div>
+                    </sc-if>
+                  </div>
+                  <span style="font-size:11.5px;font-weight:700;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap;">{{ l.basis }}</span>
+                  <span style="font-size:14.5px;font-weight:800;color:{{ l.fg }};text-align:end;font-variant-numeric:tabular-nums;">{{ l.amount }}</span>
+                </div>
+              </sc-for>
+              <div style="padding:16px 18px;background:var(--field);display:grid;grid-template-columns:34px 1fr 140px 130px;gap:12px;align-items:center;">
+                <div style="width:26px;height:26px;border-radius:8px;background:var(--brand);display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold ph-equals" style="font-size:14px;color:#fff;"></i>
+                </div>
+                <span style="font-size:15px;font-weight:800;color:var(--txt);">{{ b.netLabel }}</span>
+                <span style="font-size:11.5px;font-weight:700;color:var(--muted);text-align:center;">{{ b.netBasis }}</span>
+                <span style="font-size:21px;font-weight:800;color:var(--ok);text-align:end;font-variant-numeric:tabular-nums;">{{ b.net }}</span>
+              </div>
+            </div>
+            <div style="background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+              <div style="padding:16px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:12px;">
+                <div style="width:46px;height:46px;flex:none;border-radius:14px;background:{{ b.who.wash }};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:{{ b.who.tint }};">{{ b.who.initials }}</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:15px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ b.who.name }}</div>
+                  <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px;">{{ b.who.sub }}</div>
+                </div>
+              </div>
+              <sc-for list="{{ b.facts }}" as="f" hint-placeholder-count="6">
+                <div style="padding:12px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;">
+                  <i class="ph-bold {{ f.icon }}" style="font-size:16px;color:{{ f.tint }};flex:none;"></i>
+                  <span style="flex:1;font-size:12.5px;font-weight:700;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.label }}</span>
+                  <span style="font-size:13.5px;font-weight:800;color:{{ f.fg }};flex:none;font-variant-numeric:tabular-nums;">{{ f.value }}</span>
+                </div>
+              </sc-for>
+              <div style="padding:14px 18px;display:flex;flex-direction:column;gap:10px;">
+                <div onClick="{{ b.payGo }}" style="height:46px;border-radius:12px;background:var(--brand);display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;">
+                  <i class="ph-bold ph-hand-coins" style="font-size:17px;color:#fff;"></i>
+                  <span style="font-size:13.5px;font-weight:800;color:#fff;">صرف الراتب من الخزينة</span>
+                </div>
+                <div style="border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.08);border-radius:12px;padding:12px;display:flex;gap:10px;">
+                  <i class="ph-bold ph-info" style="font-size:17px;color:var(--warn);flex:none;"></i>
+                  <span style="font-size:11.5px;font-weight:600;color:var(--txt2);line-height:1.7;text-wrap:pretty;">{{ b.warn }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ b.isTable }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;background:var(--card);border:1px solid var(--hairline);border-radius:17px;overflow:hidden;">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;">
+              <span style="width:3.5px;height:15px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14.5px;font-weight:800;color:var(--txt);">{{ b.title }}</div>
+                <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:1px;">{{ b.sub }}</div>
+              </div>
+              <sc-for list="{{ b.chips }}" as="c" hint-placeholder-count="2">
+                <div onClick="{{ c.pick }}" style="height:32px;border-radius:9px;border:1px solid {{ c.bd }};background:{{ c.bg }};display:flex;align-items:center;gap:6px;padding:0 12px;cursor:pointer;flex:none;">
+                  <span style="font-size:11.5px;font-weight:700;color:{{ c.fg }};white-space:nowrap;">{{ c.label }}</span>
+                  <span style="font-size:10.5px;font-weight:800;color:{{ c.fg }};opacity:.75;">{{ c.count }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:{{ b.grid }};gap:12px;padding:11px 18px;background:var(--field);border-bottom:1px solid var(--hairline);">
+              <sc-for list="{{ b.cols }}" as="c" hint-placeholder-count="6">
+                <span style="font-size:11.5px;font-weight:800;color:var(--muted);text-align:{{ c.align }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.label }}</span>
+              </sc-for>
+            </div>
+            <sc-if value="{{ b.filtered }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:8px 18px;background:var(--wash);border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:7px;">
+                <i class="ph-bold ph-funnel" style="font-size:13px;color:var(--brand-ink);"></i>
+                <span style="font-size:11.5px;font-weight:700;color:var(--brand-ink);">{{ b.filterNote }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ b.isEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:34px 18px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+                <i class="ph-bold ph-tray" style="font-size:26px;color:var(--muted);"></i>
+                <span style="font-size:12.5px;font-weight:700;color:var(--muted);">{{ b.emptyNote }}</span>
+              </div>
+            </sc-if>
+            <sc-for list="{{ b.rows }}" as="r" hint-placeholder-count="6">
+              <div onClick="{{ r.go }}" style="display:grid;grid-template-columns:{{ b.grid }};gap:12px;padding:11px 18px;border-bottom:1px solid var(--hairline);align-items:center;cursor:{{ r.cursor }};">
+                <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="6">
+                  <div style="min-width:0;display:flex;align-items:center;gap:9px;justify-content:{{ c.justify }};">
+                    <sc-if value="{{ c.icon }}" hint-placeholder-val="{{ false }}">
+                      <div style="width:30px;height:30px;flex:none;border-radius:9px;background:{{ c.iconBg }};display:flex;align-items:center;justify-content:center;">
+                        <i class="ph-bold {{ c.icon }}" style="font-size:15px;color:{{ c.iconFg }};"></i>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ c.isPill }}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size:11.5px;font-weight:800;color:{{ c.fg }};background:{{ c.pillBg }};border-radius:8px;padding:5px 10px;white-space:nowrap;">{{ c.text }}</span>
+                    </sc-if>
+                    <sc-if value="{{ c.isBar }}" hint-placeholder-val="{{ false }}">
+                      <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;">
+                        <div style="flex:1;height:7px;border-radius:4px;background:var(--track);overflow:hidden;">
+                          <div style="width:{{ c.pct }};height:100%;border-radius:4px;background:{{ c.barFg }};"></div>
+                        </div>
+                        <span style="font-size:12px;font-weight:800;color:{{ c.fg }};min-width:44px;text-align:end;font-variant-numeric:tabular-nums;">{{ c.text }}</span>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ c.isText }}" hint-placeholder-val="{{ false }}">
+                      <div style="min-width:0;flex:1;text-align:{{ c.align }};">
+                        <div style="font-size:13px;font-weight:{{ c.fw }};color:{{ c.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;">{{ c.text }}</div>
+                        <sc-if value="{{ c.sub }}" hint-placeholder-val="{{ false }}">
+                          <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.sub }}</div>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ c.isTrend }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;align-items:center;gap:5px;">
+                        <i class="ph-bold {{ c.arrow }}" style="font-size:13px;color:{{ c.fg }};"></i>
+                        <span style="font-size:12.5px;font-weight:800;color:{{ c.fg }};font-variant-numeric:tabular-nums;">{{ c.text }}</span>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ c.isBtn }}" hint-placeholder-val="{{ false }}">
+                      <div onClick="{{ c.act }}" style="height:30px;border-radius:9px;border:1.5px solid {{ c.fg }};display:flex;align-items:center;gap:6px;padding:0 11px;cursor:pointer;">
+                        <i class="ph-bold {{ c.btnIcon }}" style="font-size:13px;color:{{ c.fg }};"></i>
+                        <span style="font-size:11.5px;font-weight:800;color:{{ c.fg }};white-space:nowrap;">{{ c.text }}</span>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+            <sc-if value="{{ b.hasTotals }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:{{ b.grid }};gap:12px;padding:14px 18px;background:var(--field);">
+                <sc-for list="{{ b.totals }}" as="t" hint-placeholder-count="6">
+                  <span style="font-size:13.5px;font-weight:800;color:{{ t.fg }};text-align:{{ t.align }};font-variant-numeric:tabular-nums;white-space:nowrap;">{{ t.text }}</span>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ═══════════ entity detail drawer ═══════════ -->
+  <sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeDrawer }}" style="position:absolute;inset:0;background:rgba(1,34,88,.42);z-index:60;"></div>
+  <div style="position:absolute;top:0;bottom:0;left:0;width:620px;background:var(--card);border-inline-start:1px solid var(--hairline);box-shadow:var(--shadow);z-index:61;display:flex;flex-direction:column;">
+    <div style="flex:none;padding:20px 24px;border-bottom:1px solid var(--hairline);display:flex;align-items:flex-start;gap:13px;">
+      <div style="width:52px;height:52px;flex:none;border-radius:15px;background:{{ drawer.wash }};display:flex;align-items:center;justify-content:center;">
+        <sc-if value="{{ drawer.initials }}" hint-placeholder-val="{{ false }}">
+          <span style="font-size:17px;font-weight:800;color:{{ drawer.tint }};">{{ drawer.initials }}</span>
+        </sc-if>
+        <sc-if value="{{ drawer.icon }}" hint-placeholder-val="{{ false }}">
+          <i class="ph-bold {{ drawer.icon }}" style="font-size:25px;color:{{ drawer.tint }};"></i>
+        </sc-if>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <span style="font-size:10px;font-weight:700;color:var(--muted);background:var(--field);border:1px solid var(--hairline);border-radius:6px;padding:2px 7px;">{{ drawer.crumb }}</span>
+        <div style="font-size:19px;font-weight:800;color:var(--txt);margin-top:6px;line-height:1.3;">{{ drawer.title }}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:2px;">{{ drawer.sub }}</div>
+      </div>
+      <div onClick="{{ closeDrawer }}" style="width:38px;height:38px;flex:none;border-radius:11px;border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <i class="ph-bold ph-x" style="font-size:17px;color:var(--txt2);"></i>
+      </div>
+    </div>
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:18px 24px 24px;display:flex;flex-direction:column;gap:16px;">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;">
+        <sc-for list="{{ drawer.kpis }}" as="k" hint-placeholder-count="4">
+          <div style="border:1px solid var(--hairline);background:var(--field);border-radius:13px;padding:12px;">
+            <div style="font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ k.label }}</div>
+            <div style="font-size:18px;font-weight:800;color:{{ k.fg }};margin-top:4px;font-variant-numeric:tabular-nums;">{{ k.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <sc-for list="{{ drawer.groups }}" as="g" hint-placeholder-count="3">
+        <div>
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">
+            <i class="ph-bold {{ g.icon }}" style="font-size:16px;color:var(--brand-ink);"></i>
+            <span style="flex:1;font-size:13px;font-weight:800;color:var(--txt);">{{ g.label }}</span>
+            <span style="font-size:11px;font-weight:700;color:var(--muted);">{{ g.meta }}</span>
+          </div>
+          <div style="border:1px solid var(--hairline);border-radius:14px;overflow:hidden;">
+            <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
+              <div style="padding:11px 14px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:11px;background:{{ r.bg }};">
+                <div style="width:32px;height:32px;flex:none;border-radius:10px;background:{{ r.wash }};display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold {{ r.icon }}" style="font-size:15px;color:{{ r.tint }};"></i>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.title }}</div>
+                  <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.sub }}</div>
+                </div>
+                <span style="font-size:12.5px;font-weight:800;color:{{ r.valFg }};flex:none;font-variant-numeric:tabular-nums;">{{ r.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="flex:none;padding:15px 24px;border-top:1px solid var(--hairline);background:var(--field);display:flex;align-items:center;gap:10px;">
+      <div onClick="{{ closeDrawer }}" style="height:46px;border-radius:12px;border:1.5px solid var(--hairline);background:var(--card);display:flex;align-items:center;padding:0 20px;font-size:13px;font-weight:700;color:var(--txt2);cursor:pointer;">إغلاق</div>
+      <div style="flex:1;"></div>
+      <sc-for list="{{ drawer.actions }}" as="a" hint-placeholder-count="2">
+        <div onClick="{{ a.go }}" style="height:46px;border-radius:12px;border:1.5px solid {{ a.bd }};background:{{ a.bg }};display:flex;align-items:center;gap:8px;padding:0 18px;cursor:pointer;">
+          <i class="ph-bold {{ a.icon }}" style="font-size:16px;color:{{ a.fg }};"></i>
+          <span style="font-size:13px;font-weight:800;color:{{ a.fg }};white-space:nowrap;">{{ a.label }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ═══════════ dialog ═══════════ -->
+  <sc-if value="{{ dlgOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeDlg }}" style="position:absolute;inset:0;background:rgba(1,34,88,.45);backdrop-filter:blur(3px);z-index:80;"></div>
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:{{ dlg.width }};max-height:88%;background:var(--card);border:1px solid var(--hairline);border-radius:22px;box-shadow:0 26px 70px rgba(1,34,88,.42);z-index:81;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="flex:none;padding:20px 24px;border-bottom:1px solid var(--hairline);display:flex;align-items:flex-start;gap:13px;">
+      <div style="width:48px;height:48px;flex:none;border-radius:14px;background:var(--wash);display:flex;align-items:center;justify-content:center;">
+        <i class="ph-bold {{ dlg.icon }}" style="font-size:24px;color:var(--brand-ink);"></i>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:18px;font-weight:800;color:var(--txt);line-height:1.3;">{{ dlg.title }}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:3px;text-wrap:pretty;">{{ dlg.sub }}</div>
+      </div>
+      <div onClick="{{ closeDlg }}" style="width:38px;height:38px;flex:none;border-radius:11px;border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <i class="ph-bold ph-x" style="font-size:17px;color:var(--txt2);"></i>
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;display:grid;grid-template-columns:{{ dlg.bodyCols }};">
+      <div style="min-width:0;overflow-y:auto;padding:20px 24px 24px;display:flex;flex-direction:column;gap:19px;">
+        <sc-for list="{{ dlg.groups }}" as="g" hint-placeholder-count="3">
+          <div>
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+              <span style="width:3.5px;height:14px;border-radius:3px;background:var(--brand);flex:none;"></span>
+              <span style="flex:1;font-size:12.5px;font-weight:800;color:var(--txt);">{{ g.label }}</span>
+              <span style="font-size:11px;font-weight:700;color:var(--muted);">{{ g.hint }}</span>
+            </div>
+
+            <sc-if value="{{ g.isFields }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:{{ g.cols }};gap:12px;">
+                <sc-for list="{{ g.items }}" as="f" hint-placeholder-count="4">
+                  <div>
+                    <div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:6px;">{{ f.label }}</div>
+                    <div style="height:46px;border-radius:12px;border:1.5px solid {{ f.bd }};background:var(--field);display:flex;align-items:center;gap:9px;padding:0 13px;cursor:pointer;">
+                      <i class="ph-bold {{ f.icon }}" style="font-size:16px;color:{{ f.iconFg }};flex:none;"></i>
+                      <span style="flex:1;font-size:13.5px;font-weight:700;color:{{ f.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.value }}</span>
+                      <sc-if value="{{ f.tail }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:11px;font-weight:700;color:var(--muted);flex:none;">{{ f.tail }}</span>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ g.isChips }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-wrap:wrap;gap:9px;">
+                <sc-for list="{{ g.items }}" as="c" hint-placeholder-count="4">
+                  <div onClick="{{ c.toggle }}" style="height:40px;border-radius:11px;border:1.5px solid {{ c.bd }};background:{{ c.bg }};display:flex;align-items:center;gap:8px;padding:0 14px;cursor:pointer;">
+                    <i class="ph-bold {{ c.mark }}" style="font-size:16px;color:{{ c.fg }};"></i>
+                    <span style="font-size:13px;font-weight:700;color:{{ c.fg }};white-space:nowrap;">{{ c.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ g.isCards }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:{{ g.cols }};gap:11px;">
+                <sc-for list="{{ g.items }}" as="o" hint-placeholder-count="3">
+                  <div onClick="{{ o.pick }}" style="border:1.5px solid {{ o.bd }};background:{{ o.bg }};border-radius:14px;padding:13px;cursor:pointer;">
+                    <div style="display:flex;align-items:center;gap:9px;">
+                      <i class="ph-bold {{ o.icon }}" style="font-size:19px;color:{{ o.fg }};"></i>
+                      <span style="flex:1;font-size:13px;font-weight:800;color:{{ o.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ o.label }}</span>
+                      <sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}">
+                        <i class="ph-bold ph-check-circle" style="font-size:16px;color:{{ o.fg }};"></i>
+                      </sc-if>
+                    </div>
+                    <div style="font-size:11px;font-weight:600;color:var(--muted);line-height:1.6;margin-top:7px;text-wrap:pretty;">{{ o.sub }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ g.isToggles }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid var(--hairline);border-radius:14px;background:var(--field);padding:2px 15px;">
+                <sc-for list="{{ g.items }}" as="t" hint-placeholder-count="3">
+                  <div style="padding:12px 0;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:12px;">
+                    <i class="ph-bold {{ t.icon }}" style="font-size:17px;color:var(--muted);flex:none;"></i>
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-size:12.5px;font-weight:700;color:var(--txt);">{{ t.title }}</div>
+                      <div style="font-size:10.5px;font-weight:500;color:var(--muted);margin-top:2px;">{{ t.sub }}</div>
+                    </div>
+                    <div onClick="{{ t.toggle }}" style="width:44px;height:25px;border-radius:999px;background:{{ t.knobBg }};position:relative;flex:none;cursor:pointer;">
+                      <div style="position:absolute;top:3px;inset-inline-start:{{ t.knobX }};width:19px;height:19px;border-radius:50%;background:#fff;"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ g.isScores }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <sc-for list="{{ g.items }}" as="s" hint-placeholder-count="4">
+                  <div>
+                    <div style="display:flex;align-items:center;gap:9px;margin-bottom:7px;">
+                      <i class="ph-bold {{ s.icon }}" style="font-size:15px;color:{{ s.tint }};"></i>
+                      <span style="flex:1;font-size:12.5px;font-weight:700;color:var(--txt);">{{ s.label }}</span>
+                      <span style="font-size:14px;font-weight:800;color:{{ s.tint }};font-variant-numeric:tabular-nums;">{{ s.value }}</span>
+                    </div>
+                    <div style="height:9px;border-radius:5px;background:var(--track);overflow:hidden;">
+                      <div style="width:{{ s.pct }};height:100%;border-radius:5px;background:{{ s.tint }};"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ g.isChain }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid var(--hairline);border-radius:14px;overflow:hidden;">
+                <sc-for list="{{ g.items }}" as="s" hint-placeholder-count="3">
+                  <div style="padding:13px 15px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:12px;background:{{ s.bg }};">
+                    <div style="width:32px;height:32px;flex:none;border-radius:50%;background:{{ s.dotBg }};display:flex;align-items:center;justify-content:center;">
+                      <i class="ph-bold {{ s.icon }}" style="font-size:15px;color:{{ s.dotFg }};"></i>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-size:12.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.title }}</div>
+                      <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.sub }}</div>
+                    </div>
+                    <span style="font-size:11px;font-weight:800;color:{{ s.pillFg }};background:{{ s.pillBg }};border-radius:8px;padding:4px 9px;flex:none;white-space:nowrap;">{{ s.status }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ g.isNote }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid {{ g.noteBd }};background:{{ g.noteBg }};border-radius:14px;padding:13px;display:flex;gap:11px;">
+                <i class="ph-bold {{ g.noteIcon }}" style="font-size:18px;color:{{ g.noteFg }};flex:none;"></i>
+                <div style="font-size:12px;font-weight:600;color:var(--txt2);line-height:1.75;text-wrap:pretty;">{{ g.note }}</div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ dlg.hasAside }}" hint-placeholder-val="{{ false }}">
+        <div style="border-inline-start:1px solid var(--hairline);background:var(--field);min-width:0;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;align-items:center;gap:9px;">
+            <i class="ph-bold {{ dlg.aside.icon }}" style="font-size:17px;color:var(--brand-ink);"></i>
+            <span style="font-size:13px;font-weight:800;color:var(--txt);">{{ dlg.aside.title }}</span>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--hairline);border-radius:14px;overflow:hidden;">
+            <sc-for list="{{ dlg.aside.rows }}" as="r" hint-placeholder-count="5">
+              <div style="padding:11px 14px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
+                <span style="flex:1;font-size:11.5px;font-weight:{{ r.fw }};color:{{ r.labelFg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.label }}</span>
+                <span style="font-size:13px;font-weight:800;color:{{ r.fg }};flex:none;font-variant-numeric:tabular-nums;">{{ r.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ dlg.aside.verdict }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1.5px solid {{ dlg.aside.vBd }};background:{{ dlg.aside.vBg }};border-radius:14px;padding:14px;display:flex;gap:11px;">
+              <i class="ph-bold {{ dlg.aside.vIcon }}" style="font-size:19px;color:{{ dlg.aside.vFg }};flex:none;"></i>
+              <div style="min-width:0;">
+                <div style="font-size:12.5px;font-weight:800;color:{{ dlg.aside.vFg }};">{{ dlg.aside.verdict }}</div>
+                <div style="font-size:11px;font-weight:600;color:var(--txt2);line-height:1.7;margin-top:4px;text-wrap:pretty;">{{ dlg.aside.vSub }}</div>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ dlg.aside.hasBig }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--card);border:1px solid var(--hairline);border-radius:14px;padding:16px;text-align:center;">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);">{{ dlg.aside.bigLabel }}</div>
+              <div style="font-size:28px;font-weight:800;color:{{ dlg.aside.bigFg }};margin-top:6px;line-height:1.1;font-variant-numeric:tabular-nums;">{{ dlg.aside.big }}</div>
+              <div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:4px;">{{ dlg.aside.bigSub }}</div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="flex:none;padding:16px 24px;border-top:1px solid var(--hairline);background:var(--field);display:flex;align-items:center;gap:11px;">
+      <div onClick="{{ closeDlg }}" style="height:48px;border-radius:13px;border:1.5px solid var(--hairline);background:var(--card);display:flex;align-items:center;padding:0 22px;font-size:13.5px;font-weight:700;color:var(--txt2);cursor:pointer;">{{ dlg.cancel }}</div>
+      <div style="flex:1;"></div>
+      <sc-if value="{{ dlg.alt }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeDlg }}" style="height:48px;border-radius:13px;border:1.5px solid var(--hairline);background:var(--card);display:flex;align-items:center;gap:8px;padding:0 18px;cursor:pointer;">
+          <i class="ph-bold {{ dlg.altIcon }}" style="font-size:17px;color:var(--txt2);"></i>
+          <span style="font-size:13.5px;font-weight:700;color:var(--txt2);white-space:nowrap;">{{ dlg.alt }}</span>
+        </div>
+      </sc-if>
+      <div onClick="{{ closeDlg }}" style="height:48px;border-radius:13px;background:{{ dlg.saveBg }};display:flex;align-items:center;gap:9px;padding:0 26px;cursor:pointer;">
+        <i class="ph-bold {{ dlg.saveIcon }}" style="font-size:18px;color:#fff;"></i>
+        <span style="font-size:14px;font-weight:800;color:#fff;white-space:nowrap;">{{ dlg.save }}</span>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;module&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;branches&quot;,&quot;regions&quot;,&quot;analytics&quot;,&quot;staff&quot;],&quot;default&quot;:&quot;branches&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;العرض&quot;}}">
+const RAIL = [
+  {icon:'ph-squares-four', label:'لوحة التحكم'},
+  {icon:'ph-receipt', label:'فواتير المبيعات'},
+  {icon:'ph-package', label:'المخزون'},
+  {icon:'ph-users-three', label:'العملاء والموردين'},
+  {icon:'ph-vault', label:'الخزينة'},
+  {icon:'ph-chart-bar', label:'التقارير'},
+  {icon:'ph-note', label:'الشيكات', active:true},
+  {icon:'ph-scales', label:'ميزان PLU'},
+  {icon:'ph-clipboard-text', label:'سجل العمليات'},
+  {icon:'ph-gear', label:'الإعدادات'},
+];
+
+const KPI = (icon, label, value, delta, up, tint, vs) => ({icon, label, value, delta, up, tint, vs: vs || ''});
+const T = (text, opt) => Object.assign({kind:'text', text}, opt || {});
+const N = (text, opt) => Object.assign({kind:'text', text, align:'end', fw:800}, opt || {});
+const P = (text, tint) => ({kind:'pill', text, tint});
+const B = (text, pct, tint) => ({kind:'bar', text, pct, tint});
+const TR = (text, up) => ({kind:'trend', text, up});
+const BTN = (text, icon, tint, dlg) => ({kind:'btn', text, btnIcon:icon, tint, dlg});
+const ARD = n => String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
+
+const LATIN = s => String(s).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+const numOf = txt => {
+  const t = LATIN(txt == null ? '' : txt).replace(/,/g, '').trim();
+  if (!/^\(?-?\d+(\.\d+)?\)?$/.test(t)) return null;
+  const neg = t.charAt(0) === '(';
+  return (neg ? -1 : 1) * parseFloat(t.replace(/[()]/g, ''));
+};
+const fmtSum = n => n.toLocaleString('en-US', {maximumFractionDigits: 2});
+// Rebuilds a totals row from the rows on screen: the first cell keeps its authored
+// unit word but takes the live count, numeric columns are summed, and anything that
+// isn't a plain number (a percentage, a dash) is left exactly as authored.
+// Arabic counted nouns take the plural form for 3–10 and the singular either side of
+// that, so the unit word has to follow the live count rather than the authored one.
+const UNITS = [['أصل','أصول'],['ورقة','أوراق'],['فئة','فئات'],['موقع','مواقع'],['حركة','حركات'],
+  ['بند','بنود'],['أمر','أوامر'],['عميل','عملاء'],['شريحة','شرائح'],['فاتورة','فواتير'],
+  ['شيك','شيكات'],['صنف','أصناف'],['مورد','موردون'],['موظف','موظفون'],['مندوب','مندوبون'],
+  ['قسط','أقساط'],['سطر','سطور'],['مصروف','مصروفات'],['برنامج','برامج'],['حساب','حسابات'],
+  ['قيد','قيود'],['زيارة','زيارات'],['مسار','مسارات'],['فرع','فروع'],['منطقة','مناطق'],
+  ['مخزن','مخازن'],['نقطة','نقاط'],['تقرير','تقارير'],['دفعة','دفعات'],['بطاقة','بطاقات'],
+  ['يوم','أيام'],['شهر','أشهر'],['طرف','أطراف'],['أصل ثابت','أصول ثابتة']];
+const countedNoun = (word, n) => {
+  const w = String(word || '').replace(/ً/g, '').trim();
+  if (!w) return '';
+  const pair = UNITS.find(u => u[0] === w || u[1] === w);
+  if (!pair) return w;
+  return (n >= 3 && n <= 10) ? pair[1] : pair[0];
+};
+const hasArabicDigits = s => /[٠-٩]/.test(String(s == null ? '' : s));
+const derivedTotals = (b, shown) => (b.totals || []).map((t, ci) => {
+  if (ci === 0) {
+    const unit = countedNoun(String(t || '').replace(/[0-9٠-٩,.]+/g, ' ').trim(), shown.length);
+    return ARD(shown.length) + (unit ? ' ' + unit : '');
+  }
+  const authored = numOf(t);
+  if (authored === null) {
+    // A percentage total summarises two other columns. Echoing the authored string
+    // would go stale the moment a filter changes the row set, so find the column pair
+    // whose ratio reproduces it on the full set, then recompute that ratio on `shown`.
+    const raw = LATIN(t == null ? '' : t).replace(/[٪%\s,]/g, '');
+    if (!/^-?\d+(\.\d+)?$/.test(raw)) return t;
+    const target = parseFloat(raw);
+    const ratio = (rows, num, den) => {
+      let a = 0, c = 0, okA = false, okC = false;
+      rows.forEach(r => {
+        const x = numOf((r[num] || {}).text), y = numOf((r[den] || {}).text);
+        if (x !== null) { a += x; okA = true; }
+        if (y !== null) { c += y; okC = true; }
+      });
+      return (okA && okC && c) ? a / c * 100 : null;
+    };
+    const width = (b.cols || []).length;
+    const sym = /%/.test(String(t)) ? '%' : '٪';
+    for (let den = 0; den < width; den++) {
+      for (let num = 0; num < width; num++) {
+        if (num === den) continue;
+        const base = ratio(b.rows, num, den);
+        if (base === null || Math.abs(base - target) > 1) continue;
+        const live = ratio(shown, num, den);
+        if (live === null) return t;
+        const out2 = Math.round(live) + sym;
+        return hasArabicDigits(t) ? ARD(out2) : out2;
+      }
+    }
+    return t;
+  }
+  // the footer must speak the same numeral system as the column it is summing
+  const arabicCol = hasArabicDigits(t) || shown.some(r => hasArabicDigits((r[ci] || {}).text));
+  const out = v => arabicCol ? ARD(fmtSum(v)) : fmtSum(v);
+  // A running-balance column is not additive: if the authored footer matches the last
+  // row's value, it is a closing figure, so carry that value instead of summing.
+  const lastVal = shown.length ? numOf((shown[shown.length - 1][ci] || {}).text) : null;
+  if (lastVal !== null && Math.abs(authored - lastVal) < 0.5) return out(lastVal);
+  let sum = 0, any = false;
+  shown.forEach(r => {
+    const v = numOf((r[ci] || {}).text);
+    if (v !== null) { sum += v; any = true; }
+  });
+  return any ? out(sum) : t;
+});
+
+const MODULES = [];
+
+const HEADS = {
+  main: {icon:'ph-note', title:'الشيكات والأوراق التجارية', sub:'الوارد والصادر والاستحقاق والتجيير والارتجاع', hint:'ابحث برقم الشيك أو الطرف...', action:'ورقة جديدة', dlg:'paper', alt:'إيداع دفعة شيكات', altIcon:'ph-vault', altDlg:'deposit'},
+};
+
+const TABS = {
+  main: [
+    {id:'in', label:'الواردة', icon:'ph-arrow-circle-down', badge:'١٨', note:'الشيك الوارد لا يقلّل ذمة العميل إلا عند التحصيل'},
+    {id:'out', label:'الصادرة', icon:'ph-arrow-circle-up', badge:'٩', note:'الشيك الصادر يُقيَّد كالتزام حتى يُخصم من البنك'},
+    {id:'due', label:'جدول الاستحقاق', icon:'ph-calendar-check', note:'الاستحقاق يُحسب من dueDate لا من تاريخ الإصدار'},
+    {id:'bounced', label:'المرتجعة', icon:'ph-warning-octagon', badge:'٣', note:'الارتجاع يعيد الذمة ويسجّل مصروف عمولة'},
+    {id:'history', label:'سجل الحالات', icon:'ph-clock-counter-clockwise', note:'كل انتقال حالة يُسجَّل بمن نفّذه — لا يُحذف'},
+  ],
+};
+
+const BLOCKS = {};
+
+BLOCKS['main:in'] = [
+  {kind:'kpis', cols:'repeat(5,1fr)', items:[
+    KPI('ph-note','شيكات واردة','٦','٢',true,'#0250D3','قيد التحصيل'),
+    KPI('ph-currency-circle-dollar','قيمتها','78,000','١٢٪',true,'#22C55E'),
+    KPI('ph-vault','مودعة بالبنك','٢','١',true,'#4A80E8','21,400 ج.م'),
+    KPI('ph-hourglass','تستحق هذا الأسبوع','١','—',false,'#F59E0B','9,400 ج.م'),
+    KPI('ph-warning-octagon','مرتجعة','١','١',false,'#EF4444','8,400 ج.م'),
+  ]},
+  {kind:'table', title:'الشيكات الواردة', sub:'من العملاء — تُودع بالبنك ثم تُحصَّل', chips:[['الكل','٦',1],['بالخزنة','٢',0],['مودع','٢',0],['محصَّل','١',0]],
+    grid:'1.4fr 1.7fr 1.5fr 1.2fr 1.2fr 1.2fr 1.3fr 1.2fr',
+    cols:[['رقم الشيك'],['الطرف'],['البنك'],['الإصدار'],['الاستحقاق'],['المبلغ','end'],['الحالة'],['إجراء']],
+    rows:[
+      [T('8842',{icon:'ph-note', tint:'#0250D3', sub:'شيك'}), T('سوبر ماركت النور',{sub:'عميل آجل'}), T('بنك مصر',{sub:'فرع المعادي'}), T('٢٠٢٦-٠٨-٢٠'), T('٢٠٢٦-٠٩-٢٠'), N('18,000'), P('بالخزنة','#F59E0B'), BTN('إيداع','ph-vault','#0250D3','deposit')],
+      [T('9014',{icon:'ph-note', tint:'#0250D3', sub:'شيك'}), T('مطعم البيت الشامي'), T('CIB',{sub:'مصر الجديدة'}), T('٢٠٢٦-٠٨-٢٢'), T('٢٠٢٦-٠٩-٠٥'), N('12,000'), P('مودع','#4A80E8'), BTN('تحصيل','ph-check-circle','#22C55E','cash')],
+      [T('7710',{icon:'ph-note', tint:'#0250D3', sub:'شيك'}), T('بقالة الأمانة'), T('الأهلي',{sub:'حلوان'}), T('٢٠٢٦-٠٨-١٤'), T('٢٠٢٦-٠٨-٢٨'), N('9,400'), P('مودع','#4A80E8'), BTN('تحصيل','ph-check-circle','#22C55E','cash')],
+      [T('6621',{icon:'ph-scroll', tint:'#8B5CF6', sub:'كمبيالة'}), T('ماركت الحرية'), T('—',{sub:'بلا بنك'}), T('٢٠٢٦-٠٧-٣٠'), T('٢٠٢٦-١٠-٣٠'), N('24,000'), P('بالخزنة','#F59E0B'), BTN('تجيير','ph-arrow-bend-up-left','#8B5CF6','endorse')],
+      [T('5540',{icon:'ph-note', tint:'#EF4444', sub:'شيك'}), T('كافيه الركن',{sub:'متعثر'}), T('QNB',{sub:'المعادي'}), T('٢٠٢٦-٠٧-١٨'), T('٢٠٢٦-٠٨-١٨'), N('8,400'), P('مرتجع','#EF4444'), BTN('إعادة إيداع','ph-arrow-clockwise','#F59E0B','deposit')],
+      [T('4418',{icon:'ph-note', tint:'#22C55E', sub:'شيك'}), T('مخبز السلام'), T('بنك مصر',{sub:'المعصرة'}), T('٢٠٢٦-٠٧-١٠'), T('٢٠٢٦-٠٨-١٠'), N('6,200'), P('محصَّل','#22C55E'), BTN('عرض','ph-eye','#6B7280','paper')],
+    ],
+    totals:['١٨ ورقة','','','','','186,400','','']},
+];
+
+BLOCKS['main:out'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-note','شيكات صادرة','٥','٢',true,'#0250D3','للموردين'),
+    KPI('ph-currency-circle-dollar','قيمتها','197,400','٨٪',true,'#F59E0B','التزام قائم'),
+    KPI('ph-hourglass','تستحق خلال ٧ أيام','١','—',false,'#EF4444','48,600 ج.م'),
+    KPI('ph-bank','رصيد البنك المتاح','186,400','١٢٪',true,'#22C55E','يكفي المستحق'),
+  ]},
+  {kind:'table', title:'الشيكات الصادرة', sub:'للموردين — التزام حتى يُخصم من البنك', chips:[['الكل','٥',1],['قائم','٣',0],['مخصوم','١',0]],
+    grid:'1.4fr 1.7fr 1.5fr 1.2fr 1.2fr 1.2fr 1.3fr 1.2fr',
+    cols:[['رقم الشيك'],['المورد'],['البنك المسحوب عليه'],['الإصدار'],['الاستحقاق'],['المبلغ','end'],['الحالة'],['إجراء']],
+    rows:[
+      [T('OUT-1180',{icon:'ph-note', tint:'#EF4444', sub:'شيك'}), T('جهينة للأغذية'), T('الأهلي',{sub:'حساب 4471'}), T('٢٠٢٦-٠٨-٢٥'), T('٢٠٢٦-٠٨-٢٨',{sub:'باقي ٣ أيام'}), N('48,600'), P('قائم','#F59E0B'), BTN('تسجيل خصم','ph-bank','#0250D3','cash')],
+      [T('OUT-1179',{icon:'ph-note', tint:'#F59E0B', sub:'شيك'}), T('عافية مصر'), T('الأهلي',{sub:'حساب 4471'}), T('٢٠٢٦-٠٨-٢٠'), T('٢٠٢٦-٠٩-٠٥'), N('62,000'), P('قائم','#F59E0B'), BTN('تسجيل خصم','ph-bank','#0250D3','cash')],
+      [T('OUT-1178',{icon:'ph-note', tint:'#F59E0B', sub:'شيك'}), T('موزّع المنظفات'), T('CIB',{sub:'حساب 8820'}), T('٢٠٢٦-٠٨-١٢'), T('٢٠٢٦-٠٩-١٢'), N('34,200'), P('قائم','#F59E0B'), BTN('تسجيل خصم','ph-bank','#0250D3','cash')],
+      [T('OUT-1176',{icon:'ph-note', tint:'#22C55E', sub:'شيك'}), T('التحرير للسكر'), T('الأهلي',{sub:'حساب 4471'}), T('٢٠٢٦-٠٧-٢٢'), T('٢٠٢٦-٠٨-٢٢'), N('31,000'), P('مخصوم','#22C55E'), BTN('عرض','ph-eye','#6B7280','paper')],
+      [T('OUT-1174',{icon:'ph-scroll', tint:'#8B5CF6', sub:'كمبيالة'}), T('شركة العروسة'), T('—'), T('٢٠٢٦-٠٦-٣٠'), T('٢٠٢٦-١٢-٣٠'), N('21,600'), P('قائم','#F59E0B'), BTN('عرض','ph-eye','#6B7280','paper')],
+    ],
+    totals:['٩ أوراق','','','','','197,400','','']},
+];
+
+BLOCKS['main:due'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-arrow-circle-down','وارد يستحق','42,600','٤',true,'#22C55E','٤ شيكات'),
+    KPI('ph-arrow-circle-up','صادر يستحق','62,000','٣',false,'#EF4444','٣ شيكات'),
+    KPI('ph-scales','الصافي','-19,400','—',false,'#EF4444','عجز متوقع'),
+    KPI('ph-bank','الرصيد البنكي','186,400','١٢٪',true,'#22C55E','يغطي العجز'),
+  ]},
+  {kind:'cal', title:'سبتمبر ٢٠٢٦ — استحقاقات الأوراق', sub:'الوارد أخضر والصادر أحمر · الاستحقاق من dueDate',
+    legend:[['وارد يستحق','#22C55E'],['صادر يستحق','#EF4444'],['كلاهما','#F59E0B']],
+    dow:['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'],
+    marks:{5:['وارد 12,000','w'], 12:['صادر 34,200','g'], 20:['وارد 18,000','w'], 28:['صادر 48,600','g'], 30:['وارد + صادر','b']},
+    firstDow:3, days:30},
+  {kind:'bars', title:'التدفق النقدي المتوقع من الأوراق', sub:'صافي الوارد ناقص الصادر لكل أسبوع · ج.م', items:[
+    {icon:'ph-arrow-down', tint:'#EF4444', label:'الأسبوع ١', sub:'وارد 0 · صادر 48,600', pct:'78%', inner:'عجز', value:'-48,600'},
+    {icon:'ph-arrow-up', tint:'#22C55E', label:'الأسبوع ٢', sub:'وارد 12,000 · صادر 0', pct:'19%', inner:'فائض', value:'+12,000'},
+    {icon:'ph-arrow-down', tint:'#EF4444', label:'الأسبوع ٣', sub:'وارد 0 · صادر 34,200', pct:'55%', inner:'عجز', value:'-34,200'},
+    {icon:'ph-arrow-up', tint:'#22C55E', label:'الأسبوع ٤', sub:'وارد 18,000 · صادر 0', pct:'29%', inner:'فائض', value:'+18,000'},
+  ]},
+];
+
+BLOCKS['main:bounced'] = [
+  {kind:'kpis', cols:'repeat(4,1fr)', items:[
+    KPI('ph-warning-octagon','شيكات مرتجعة','٣','١',false,'#EF4444','هذا الشهر'),
+    KPI('ph-currency-circle-dollar','قيمتها','18,400','٩٪',false,'#EF4444','عادت للذمة'),
+    KPI('ph-receipt-x','عمولات ارتجاع','٣٦٠','١٢٠',false,'#F59E0B','مصروف بنكي'),
+    KPI('ph-percent','نسبة الارتجاع','١.٦٪','٠.٤ نقطة',false,'#F59E0B','من الواردة'),
+  ]},
+  {kind:'table', title:'الشيكات المرتجعة', sub:'الارتجاع يعيد الذمة للعميل ويسجّل عمولة كمصروف بنكي', chips:[['الكل','٣',1],['متابعة قانونية','١',0]],
+    grid:'1.3fr 1.7fr 1.2fr 1.3fr 1.1fr 1.8fr 1.4fr',
+    cols:[['رقم الشيك'],['الطرف'],['المبلغ','end'],['تاريخ الارتجاع'],['العمولة','end'],['السبب'],['الإجراء المتخذ']],
+    rows:[
+      [T('5540',{icon:'ph-warning-octagon', tint:'#EF4444'}), T('كافيه الركن',{sub:'الذمة عادت 8,400'}), N('8,400'), T('٢٠٢٦-٠٨-٢٠'), N('120'), T('رصيد غير كافٍ'), P('إعادة إيداع','#F59E0B')],
+      [T('5218',{icon:'ph-warning-octagon', tint:'#EF4444'}), T('ماركت الشمس',{sub:'تجاوز حد الائتمان'}), N('6,200'), T('٢٠٢٦-٠٨-١٢'), N('120'), T('توقيع غير مطابق'), P('متابعة قانونية','#EF4444')],
+      [T('4980',{icon:'ph-warning-octagon', tint:'#EF4444'}), T('بقالة النصر'), N('3,800'), T('٢٠٢٦-٠٨-٠٤'), N('120'), T('حساب مغلق'), P('سُدّد نقداً','#22C55E')],
+    ],
+    totals:['٣ شيكات','','18,400','','360','','']},
+];
+
+BLOCKS['main:history'] = [
+  {kind:'table', title:'سجل انتقال الحالات', sub:'كل تغيير حالة بمن نفّذه ووقته — السجل لا يُحذف', chips:[['الكل','٦٢',1],['إيداع','١٨',0],['تحصيل','١٤',0],['ارتجاع','٣',0],['تجيير','٢',0]],
+    grid:'1.3fr 1.5fr 1.5fr 1.2fr 1.5fr 1.9fr',
+    cols:[['الورقة'],['من حالة'],['إلى حالة'],['المبلغ','end'],['من نفّذ'],['الوقت والملاحظة']],
+    rows:[
+      [T('8842',{icon:'ph-note', tint:'#0250D3'}), P('بالخزنة','#F59E0B'), P('مودع','#4A80E8'), N('18,000'), T('سارة منير'), T('اليوم 12:10',{sub:'أُودع ببنك مصر — فرع المعادي'})],
+      [T('9014',{icon:'ph-note', tint:'#0250D3'}), P('مودع','#4A80E8'), P('محصَّل','#22C55E'), N('12,000'), T('سارة منير'), T('أمس 15:40',{sub:'حُصّل بالكامل'})],
+      [T('5540',{icon:'ph-warning-octagon', tint:'#EF4444'}), P('مودع','#4A80E8'), P('مرتجع','#EF4444'), N('8,400'), T('سارة منير'), T('٢٠٢٦-٠٨-٢٠',{sub:'رصيد غير كافٍ · عمولة 120'})],
+      [T('6621',{icon:'ph-scroll', tint:'#8B5CF6'}), P('بالخزنة','#F59E0B'), P('مُجيَّر','#8B5CF6'), N('24,000'), T('محمود سعيد'), T('٢٠٢٦-٠٨-١٨',{sub:'جُيّر لعافية مصر'})],
+      [T('OUT-1176',{icon:'ph-note', tint:'#22C55E'}), P('قائم','#F59E0B'), P('مخصوم','#22C55E'), N('31,000'), T('سارة منير'), T('٢٠٢٦-٠٨-٢٢',{sub:'خُصم من حساب 4471'})],
+      [T('4418',{icon:'ph-note', tint:'#22C55E'}), P('مودع','#4A80E8'), P('محصَّل','#22C55E'), N('6,200'), T('سارة منير'), T('٢٠٢٦-٠٨-١٠',{sub:'حُصّل بالكامل'})],
+    ]},
+];
+
+const DLGS = {
+  paper: {icon:'ph-note', width:'880px', title:'ورقة تجارية جديدة', sub:'شيك أو كمبيالة — وارد من عميل أو صادر لمورد', save:'حفظ الورقة', saveIcon:'ph-check', cancel:'إلغاء',
+    groups:[
+      {label:'النوع والاتجاه', kind:'cards', cols:'1fr 1fr', items:[
+        {icon:'ph-arrow-circle-down', label:'وارد من عميل', sub:'يُخصم من ذمة العميل عند التحصيل لا عند الاستلام', on:true},
+        {icon:'ph-arrow-circle-up', label:'صادر لمورد', sub:'التزام قائم حتى يُخصم من البنك'},
+        {icon:'ph-note', label:'شيك', sub:'له بنك وحساب وتاريخ استحقاق', on:true},
+        {icon:'ph-scroll', label:'كمبيالة', sub:'بلا بنك — التزام موثّق'},
+      ]},
+      {label:'بيانات الورقة', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'رقم الشيك', icon:'ph-hash', value:'8843'},
+        {label:'الطرف', icon:'ph-user', value:'سوبر ماركت النور'},
+        {label:'المبلغ', icon:'ph-money', value:'18,000', tail:'ج.م'},
+        {label:'تاريخ الإصدار', icon:'ph-calendar-blank', value:'٢٠٢٦-٠٨-٢٥'},
+        {label:'تاريخ الاستحقاق', icon:'ph-calendar-check', value:'٢٠٢٦-٠٩-٢٥'},
+        {label:'الخزنة المستلمة', icon:'ph-vault', value:'الخزينة الرئيسية'},
+      ]},
+      {label:'بيانات البنك', kind:'fields', cols:'1fr 1fr 1fr', items:[
+        {label:'البنك', icon:'ph-bank', value:'بنك مصر'},
+        {label:'الفرع', icon:'ph-map-pin', value:'المعادي'},
+        {label:'رقم الحساب', icon:'ph-hash', value:'4471-882-1'},
+      ]},
+      {label:'تنبيه', kind:'note', tone:'warn', note:'استلام الشيك لا يُنقص ذمة العميل — الذمة تُنقص عند التحصيل الفعلي. حتى ذلك الحين تظهر الورقة في «شيكات تحت التحصيل» بحساب 1104.'},
+    ],
+    aside:{icon:'ph-scales', title:'الأثر المحاسبي', rows:[
+      ['1104 شيكات تحت التحصيل','+18,000','#22C55E'],
+      ['1201 عملاء آجل','لا يتغيّر','#6B7280'],
+      ['الذمة الحالية للعميل','44,200',''],
+      ['بعد التحصيل','26,200','#0250D3'],
+      ['أيام حتى الاستحقاق','٣١','#F59E0B'],
+    ], verdict:'ورقة واردة سليمة', vSub:'الطرف له ذمة 44,200 ج.م تغطي قيمة الشيك — لا تجاوز في حد الائتمان.', vTone:'ok'}},
+
+  deposit: {icon:'ph-vault', width:'880px', title:'إيداع شيكات بالبنك', sub:'الإيداع ينقل الورقة من الخزنة إلى «تحت التحصيل» بالبنك', save:'إيداع ٣ شيكات', saveIcon:'ph-check', cancel:'إلغاء',
+    groups:[
+      {label:'البنك والحساب', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'البنك', icon:'ph-bank', value:'بنك مصر — المعادي'},
+        {label:'الحساب', icon:'ph-hash', value:'4471-882-1'},
+        {label:'تاريخ الإيداع', icon:'ph-calendar-blank', value:'اليوم'},
+        {label:'رقم قسيمة الإيداع', icon:'ph-receipt', value:'DEP-2026-0142'},
+      ]},
+      {label:'الشيكات المختارة', kind:'chips', hint:'من الخزنة الرئيسية', items:[
+        {label:'8842 — 18,000', on:true},{label:'5540 — 8,400', on:true},{label:'6621 — 24,000'},{label:'4980 — 3,800', on:true},
+      ]},
+      {label:'خيارات', kind:'toggles', items:[
+        {icon:'ph-printer', title:'طباعة قسيمة الإيداع', sub:'نسخة للبنك ونسخة للملف', on:true},
+        {icon:'ph-bell', title:'تنبيه عند الاستحقاق', sub:'قبل ٣ أيام من تاريخ كل شيك', on:true},
+        {icon:'ph-arrow-clockwise', title:'شيك 5540 إعادة إيداع', sub:'ارتجع سابقاً برصيد غير كافٍ', on:true},
+      ]},
+      {label:'تنبيه', kind:'note', tone:'warn', note:'شيك 5540 ارتجع مرة واحدة برصيد غير كافٍ. إعادة إيداعه قبل تأكيد رصيد العميل قد تُنتج عمولة ارتجاع ثانية (120 ج.م) تُحمَّل على المصروفات البنكية.'},
+    ],
+    aside:{icon:'ph-list-checks', title:'ملخص الإيداع', rows:[
+      ['عدد الشيكات','٣'],['إجمالي القيمة','30,200','#22C55E'],
+      ['من الخزنة','1104 → بنك','#0250D3'],['أقرب استحقاق','٢٠٢٦-٠٩-٢٠','#F59E0B'],
+      ['إعادة إيداع','١','#EF4444'],
+    ], big:'30,200', bigLabel:'إجمالي الإيداع', bigSub:'٣ شيكات · بنك مصر'}},
+
+  cash: {icon:'ph-check-circle', width:'860px', title:'تحصيل ورقة', sub:'التحصيل يُنقص ذمة العميل ويُدخل المبلغ للبنك', save:'تأكيد التحصيل', saveIcon:'ph-check', cancel:'إلغاء', alt:'تحصيل جزئي', altIcon:'ph-git-branch',
+    groups:[
+      {label:'الورقة', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'رقم الشيك', icon:'ph-hash', value:'9014'},
+        {label:'الطرف', icon:'ph-user', value:'مطعم البيت الشامي'},
+        {label:'المبلغ', icon:'ph-money', value:'12,000', tail:'ج.م'},
+        {label:'تاريخ التحصيل', icon:'ph-calendar-blank', value:'اليوم'},
+      ]},
+      {label:'المبلغ المحصَّل', kind:'cards', cols:'1fr 1fr', items:[
+        {icon:'ph-check-circle', label:'تحصيل كامل', sub:'12,000 ج.م — الورقة تُقفل', on:true},
+        {icon:'ph-git-branch', label:'تحصيل جزئي', sub:'الباقي يظل تحت التحصيل'},
+      ]},
+      {label:'الحساب المستلم', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'الحساب البنكي', icon:'ph-bank', value:'1102 · بنك — CIB'},
+        {label:'عمولة التحصيل', icon:'ph-receipt-x', value:'0', tail:'ج.م'},
+      ]},
+      {label:'تنبيه', kind:'note', tone:'info', note:'التحصيل الآن هو ما يُنقص ذمة العميل فعلياً: يُقفل 1104 «شيكات تحت التحصيل» ويُخصم من 1201 «عملاء آجل» بنفس القيمة.'},
+    ],
+    aside:{icon:'ph-scales', title:'الأثر المحاسبي', rows:[
+      ['1102 بنك — CIB','+12,000','#22C55E'],
+      ['1104 تحت التحصيل','-12,000','#EF4444'],
+      ['1201 عملاء آجل','-12,000','#22C55E'],
+      ['ذمة العميل بعدها','29,800','#0250D3'],
+      ['عمولة','0',''],
+    ], verdict:'جاهز للتحصيل', vSub:'الورقة مودعة ووصلت تاريخ الاستحقاق — التحصيل يُقيَّد فوراً.', vTone:'ok'}},
+
+  endorse: {icon:'ph-arrow-bend-up-left', width:'860px', title:'تجيير ورقة', sub:'نقل الورقة لطرف ثالث سداداً لمديونية', save:'تأكيد التجيير', saveIcon:'ph-check', cancel:'إلغاء',
+    groups:[
+      {label:'الورقة والطرف', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'الورقة', icon:'ph-scroll', value:'كمبيالة 6621'},
+        {label:'الطرف الأصلي', icon:'ph-user', value:'ماركت الحرية'},
+        {label:'المبلغ', icon:'ph-money', value:'24,000', tail:'ج.م'},
+        {label:'المُجيَّر إليه', icon:'ph-user-switch', value:'عافية مصر'},
+      ]},
+      {label:'ما يُسدَّد بها', kind:'chips', hint:'مديونيات المورد المختار', items:[
+        {label:'PUR-2026-0411 — 62,000', on:true},{label:'PUR-2026-0402 — 21,600'},{label:'رصيد مفتوح'},
+      ]},
+      {label:'خيارات', kind:'toggles', items:[
+        {icon:'ph-file-text', title:'طباعة محضر تجيير', sub:'يُوقَّع من الطرفين ويُحفظ بالملف', on:true},
+        {icon:'ph-shield-warning', title:'إبقاء مسؤولية الضمان', sub:'لو ارتجعت تعود على منشأتنا', on:true},
+      ]},
+      {label:'تنبيه', kind:'note', tone:'err', note:'التجيير مع إبقاء الضمان يعني أن ارتجاع الورقة يعيد الالتزام على منشأتنا لا على الطرف الأصلي. الكمبيالة تستحق ٢٠٢٦-١٠-٣٠ — بعد استحقاق فاتورة المورد بشهر.'},
+    ],
+    aside:{icon:'ph-git-diff', title:'الأثر', rows:[
+      ['1104 تحت التحصيل','-24,000','#EF4444'],
+      ['2101 موردون','-24,000','#22C55E'],
+      ['مديونية عافية مصر','62,000 → 38,000','#0250D3'],
+      ['ذمة ماركت الحرية','لا تتغيّر','#6B7280'],
+      ['استحقاق الورقة','٢٠٢٦-١٠-٣٠','#F59E0B'],
+    ], verdict:'فرق توقيت ٣١ يوماً', vSub:'فاتورة المورد تستحق ٢٠٢٦-٠٩-٢٩ والكمبيالة ٢٠٢٦-١٠-٣٠ — قد يرفض المورد التجيير أو يطلب فارق فائدة.', vTone:'warn'},
+    saveTone:'err'},
+
+  bounce: {icon:'ph-warning-octagon', width:'860px', title:'تسجيل ارتجاع', sub:'الارتجاع يعيد الذمة ويسجّل عمولة بنكية كمصروف', save:'تسجيل الارتجاع', saveIcon:'ph-check', cancel:'إلغاء',
+    groups:[
+      {label:'الورقة', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'رقم الشيك', icon:'ph-hash', value:'5540'},
+        {label:'الطرف', icon:'ph-user', value:'كافيه الركن'},
+        {label:'المبلغ', icon:'ph-money', value:'8,400', tail:'ج.م'},
+        {label:'تاريخ الارتجاع', icon:'ph-calendar-blank', value:'اليوم'},
+      ]},
+      {label:'سبب الارتجاع', kind:'cards', cols:'1fr 1fr', items:[
+        {icon:'ph-coins', label:'رصيد غير كافٍ', sub:'الأكثر شيوعاً — يُعاد الإيداع عادةً', on:true},
+        {icon:'ph-signature', label:'توقيع غير مطابق', sub:'يحتاج شيكاً بديلاً'},
+        {icon:'ph-prohibit', label:'حساب مغلق', sub:'متابعة قانونية مباشرة'},
+        {icon:'ph-calendar-x', label:'تاريخ غير صحيح', sub:'يُصحَّح ويُعاد'},
+      ]},
+      {label:'العمولة والإجراء', kind:'fields', cols:'1fr 1fr', items:[
+        {label:'عمولة الارتجاع', icon:'ph-receipt-x', value:'120', tail:'ج.م'},
+        {label:'تُحمَّل على', icon:'ph-user', value:'مصروفات بنكية'},
+      ]},
+      {label:'تنبيه', kind:'note', tone:'err', note:'هذا الارتجاع الثاني لكافيه الركن هذا الربع. رصيد العميل الحالي 16,400 ج.م وحد ائتمانه 15,000 — يُنصح بتعليق البيع الآجل له حتى السداد النقدي.'},
+    ],
+    aside:{icon:'ph-shield-warning', title:'الأثر وسجل الطرف', rows:[
+      ['1104 تحت التحصيل','-8,400','#EF4444'],
+      ['1201 عملاء آجل','+8,400','#EF4444'],
+      ['5299 مصروفات بنكية','+120','#EF4444'],
+      ['ارتجاعات الطرف','٢ هذا الربع','#EF4444'],
+      ['الرصيد بعدها','16,400 / 15,000','#EF4444'],
+    ], verdict:'تجاوز حد الائتمان', vSub:'الذمة بعد الارتجاع 16,400 ج.م فوق الحد 15,000 — البيع الآجل سيُرفض تلقائياً للعميل.', vTone:'err'},
+    saveTone:'err'},
+};
+
+const DRAWERS = {
+  p8842: {icon:'ph-note', tint:'#0250D3', crumb:'الأوراق ← شيك وارد', title:'شيك 8842 · 18,000 ج.م',
+    kpis:[['الحالة','مودع','#4A80E8'],['الاستحقاق','٢٠٢٦-٠٩-٢٠',''],['باقي','٣١ يوم','#F59E0B'],['الطرف','النور','']],
+    groups:[
+      {label:'بيانات الورقة', icon:'ph-note', meta:'شيك وارد', rows:[
+        ['ph-user','سوبر ماركت النور','عميل آجل · حد 50,000','44,200','#F59E0B'],
+        ['ph-bank','بنك مصر — المعادي','حساب 4471-882-1','—','#6B7280'],
+        ['ph-vault','بنك مصر (تحت التحصيل)','أُودع اليوم 12:10','18,000','#4A80E8'],
+      ]},
+      {label:'سجل الحالات', icon:'ph-clock-counter-clockwise', meta:'٢ انتقال', rows:[
+        ['ph-plus-circle','استُلم بالخزنة','٢٠٢٦-٠٨-٢٠ · محمود سعيد','بالخزنة','#F59E0B'],
+        ['ph-vault','أُودع بالبنك','اليوم 12:10 · سارة منير','مودع','#4A80E8'],
+      ]},
+      {label:'الفواتير المسدَّدة به', icon:'ph-receipt', meta:'٢ فاتورة', rows:[
+        ['ph-receipt','INV-2026-1035','٢٠٢٦-٠٨-٢٣ · آجل','9,140','#0250D3'],
+        ['ph-receipt','INV-2026-1040','٢٠٢٦-٠٨-٢٥ · آجل','8,860','#0250D3'],
+      ]},
+    ],
+    actions:[['ph-check-circle','تحصيل','in','cash'],['ph-warning-octagon','تسجيل ارتجاع','out','bounce']]},
+};
+
+const TONE = {ok:'#22C55E', warn:'#F59E0B', err:'#EF4444', info:'#0250D3', idle:'#6B7280'};
+
+class Component extends DCLogic {
+  state = {theme:null, mod:null, tab:0, dlg:null, drawer:null, choice:{}, chip:{}};
+
+  get theme(){ return this.state.theme || this.props.theme || 'light'; }
+  get mod(){ return 'main'; }
+
+  openDlg(k){ return () => this.setState({dlg:k}); }
+
+  cell(c){
+    const tint = c.tint || '';
+    const align = c.align || 'start';
+    const out = {isText:false, isPill:false, isBar:false, isTrend:false, isBtn:false,
+      justify: align === 'end' ? 'flex-end' : 'flex-start', align,
+      text:c.text, sub:c.sub || '', icon:c.icon || '', fw:c.fw || 700,
+      fg:'var(--txt)', iconBg:'var(--field)', iconFg:'var(--muted)', pillBg:'',
+      pct:c.pct || '0%', barFg:'', arrow:'', btnIcon:c.btnIcon || '', act:() => {}};
+    if (c.icon) { out.iconBg = tint ? tint + '18' : 'var(--field)'; out.iconFg = tint || 'var(--muted)'; }
+    if (c.kind === 'pill') { out.isPill = true; out.fg = tint; out.pillBg = tint + '16'; }
+    else if (c.kind === 'bar') { out.isBar = true; out.fg = tint; out.barFg = tint; }
+    else if (c.kind === 'trend') { out.isTrend = true; out.fg = c.up ? '#22C55E' : '#EF4444'; out.arrow = c.up ? 'ph-trend-up' : 'ph-trend-down'; }
+    else if (c.kind === 'btn') { out.isBtn = true; out.fg = tint; out.act = this.openDlg(c.dlg || 'holiday'); }
+    else { out.isText = true; out.fw = c.fw || (align === 'end' ? 800 : 700); }
+    return out;
+  }
+
+  // Shared numeric plumbing: every count or sum shown for a table is read back out
+  // of that table's own rows, never authored twice.
+  rowCountOf(mod, tabId){
+    const blk = (BLOCKS[mod + ':' + tabId] || []).find(x => x.kind === 'table');
+    return blk ? blk.rows.length : null;
+  }
+
+  buildTable(b, key){
+    const pickKey = key + ':chip';
+    const pick = this.state.chip[pickKey];
+    // One predicate drives both the badge counts and the actual filtering, so a chip
+    // can never advertise a number different from the rows it produces.
+    const rowText = r => r.map(c => (c.text || '') + ' ' + (c.sub || '')).join(' ');
+    const matches = t => b.rows.filter(r => rowText(r).indexOf(t) >= 0).length;
+    const chips = (b.chips || []).map((c, i) => {
+      const on = pick === undefined ? !!c[2] : i === pick;
+      const n = i === 0 ? b.rows.length : matches(c[0]);
+      return {label:c[0], count: ARD(n),
+        fg: n === 0 ? 'var(--muted)' : on ? 'var(--brand-ink)' : 'var(--txt2)',
+        bg: on ? 'var(--wash)' : 'var(--field)',
+        bd: on ? 'var(--brand)' : 'var(--hairline)',
+        pick: () => this.setState({chip: Object.assign({}, this.state.chip, {[pickKey]: i})})};
+    });
+    // The selected chip actually filters the rows — chip 0 is the "show all" reset.
+    // Totals are hidden while filtered so the footer never contradicts what is visible.
+    const actIdx = pick === undefined ? (b.chips || []).findIndex(c => c[2]) : pick;
+    const term = actIdx > 0 ? ((b.chips || [])[actIdx] || [])[0] : null;
+    const shown = term ? b.rows.filter(r => rowText(r).indexOf(term) >= 0) : b.rows;
+    return {isTable:true, title:b.title, sub:b.sub, chips, grid:b.grid,
+      cols: b.cols.map(c => ({label:c[0], align:c[1] || 'start'})),
+      rows: shown.map(r => ({cursor: b.clickable ? 'pointer' : 'default',
+        go: b.clickable ? this.openDlg(b.clickable) : (() => {}),
+        cells: r.map((c, ci) => this.cell(Object.assign({}, c, {align: c.align || (b.cols[ci] || [])[1] || 'start'})))})),
+      isEmpty: shown.length === 0,
+      emptyNote: 'لا سطور مطابقة لـ «' + (term || '') + '»',
+      filtered: !!term,
+      filterNote: term ? 'مُصفّى على «' + term + '» · ' + ARD(shown.length) + ' من ' + ARD(b.rows.length) : '',
+      hasTotals: !!b.totals,
+      // The footer is summed from the rows on screen, so it tracks the active filter
+      // instead of restating an authored figure that may describe a different set.
+      totals: derivedTotals(b, shown).map((t, i) => ({text:t, align: (b.cols[i] || [])[1] || 'start',
+        fg: t ? 'var(--txt)' : 'var(--muted)'}))};
+  }
+
+  buildBlock(b, i, tabId){
+    // key must be scoped to the tab: this.mod is constant, so without tabId every
+    // tab's block of the same index would share one slot of per-block state
+    const key = this.mod + ':' + (tabId || '') + ':' + i;
+    if (b.kind === 'kpis') return {isKpis:true, cols:b.cols,
+      items: b.items.map(k => ({icon:k.icon, label:k.label, value:k.value, delta:k.delta, vs:k.vs, tint:k.tint,
+        hasDelta: k.delta && k.delta !== '—',
+        arrow: k.up ? 'ph-trend-up' : 'ph-trend-down',
+        deltaFg: k.up ? '#22C55E' : '#EF4444'}))};
+
+    if (b.kind === 'cards') return {isCards:true, cols:b.cols, title:b.title, sub:b.sub,
+      items: b.items.map(c => {
+        const has = !!DRAWERS[c.id];
+        return {icon:c.icon || '', initials:c.initials || '', tint:c.tint, wash:c.tint + '18',
+          title:c.title, sub:c.sub, status:c.status, pillFg:c.pill, pillBg:c.pill + '16',
+          hasDrawer: has, cursor: has ? 'pointer' : 'default',
+          statCols: 'repeat(' + c.stats.length + ',1fr)',
+          stats: c.stats.map(s => ({label:s[0], value:s[1], fg: s[2] || 'var(--txt)'})),
+          chips: c.chips.map(ch => ({icon:ch[0], label:ch[1], fg: ch[2] === '#6B7280' ? 'var(--muted)' : ch[2]})),
+          go: has ? (() => this.setState({drawer:c.id})) : (() => {})};
+      })};
+
+    if (b.kind === 'bars') return {isBars:true, title:b.title, sub:b.sub,
+      items: b.items.map(r => ({icon:r.icon, tint:r.tint, tint2:r.tint2 || '', label:r.label, sub:r.sub,
+        pct:r.pct, pct2:r.pct2 || '', inner:r.inner, value:r.value, valFg:'var(--txt)'}))};
+
+    if (b.kind === 'gauge') return {isGauge:true, cols:b.cols, title:b.title, sub:b.sub,
+      items: b.items.map(g => {
+        const deg = Math.min(g.pct, 100) * 3.6;
+        return {title:g.title, sub:g.sub, tint:g.tint, pctLabel: g.pct + '٪',
+          ring: 'conic-gradient(' + g.tint + ' 0deg ' + deg + 'deg, var(--track) ' + deg + 'deg 360deg)',
+          stats: g.stats.map(s => ({label:s[0], value:s[1], fg: s[2] || 'var(--txt)'}))};
+      })};
+
+    if (b.kind === 'board') return {isBoard:true, cols:b.cols, title:b.title, sub:b.sub,
+      items: b.items.map(col => ({label:col.label, icon:col.icon, tint:col.tint, count:col.count, more:col.more || '',
+        cards: col.cards.map(c => ({title:c.title, sub:c.sub, value:c.value, meta:c.meta, icon:c.icon, tint:c.tint,
+          valFg: c.value === '—' ? 'var(--muted)' : 'var(--txt)',
+          go: this.openDlg(this.mod === 'analytics' ? 'approve' : 'visit')}))}))};
+
+    if (b.kind === 'cal') {
+      const cells = [];
+      for (let i = 0; i < b.firstDow; i++) cells.push({day:'', muted:true});
+      for (let d = 1; d <= b.days; d++) cells.push({day:String(d), muted:false});
+      while (cells.length % 7) cells.push({day:'', muted:true});
+      const AR = '٠١٢٣٤٥٦٧٨٩';
+      const arNum = (n) => String(n).replace(/[0-9]/g, x => AR[+x]);
+      const MK = {w:{bg:'rgba(107,114,128,.14)', fg:'#6B7280'}, g:{bg:'rgba(239,68,68,.14)', fg:'#EF4444'}, b:{bg:'rgba(245,158,11,.16)', fg:'#F59E0B'}};
+      return {isCal:true, title:b.title, sub:b.sub, dow:b.dow,
+        legend: b.legend.map(l => ({label:l[0], c:l[1]})),
+        days: cells.map(c => {
+          const m = c.day ? b.marks[+c.day] : null;
+          const mk = m ? MK[m[1]] : null;
+          return {day: c.day ? arNum(c.day) : '',
+            bg: c.muted ? 'var(--field)' : (mk ? mk.bg.replace(/,\.\d+\)/, ',.05)') : 'transparent'),
+            fw: mk ? 800 : 600,
+            fg: c.muted ? 'var(--muted)' : (mk ? mk.fg : 'var(--txt)'),
+            marks: m ? [{label:m[0], bg:mk.bg, fg:mk.fg}] : []};
+        })};
+    }
+
+    if (b.kind === 'roster') {
+      const span = b.h1 - b.h0;
+      return {isRoster:true, title:b.title, sub:b.sub, hours:b.hours, hourCount:b.hours.length,
+        legend: b.legend.map(l => ({label:l[0], c:l[1]})),
+        items: b.items.map(r => {
+          const segs = [];
+          const push = (from, to, c, label) => {
+            if (to <= from) return;
+            segs.push({x: ((from - b.h0) / span * 100) + '%', w: ((to - from) / span * 100) + '%',
+              c, label, tip: label});
+          };
+          const otStart = Math.min(r.in + 8, r.out);
+          push(r.in, otStart, r.late ? '#F59E0B' : '#22C55E', r.late ? 'متأخر' : 'دوام');
+          push(otStart, r.out, '#0250D3', 'إضافي');
+          return {name:r.name, role:r.role, initials:r.initials, tint:r.tint, wash:r.tint + '18',
+            segs, hours:r.hours, note:r.note, noteFg:r.noteFg,
+            hoursFg: r.noteFg === '#EF4444' ? '#EF4444' : 'var(--txt)'};
+        })};
+    }
+
+    if (b.kind === 'matrix') {
+      const MC = {
+        0:{bg:'var(--field)', fg:'var(--muted)', icon:'ph-minus', cursor:'pointer'},
+        1:{bg:'rgba(34,197,94,.14)', fg:'#22C55E', icon:'ph-check', cursor:'pointer'},
+        2:{bg:'rgba(2,80,211,.14)', fg:'#0250D3', icon:'ph-crown', cursor:'not-allowed'}};
+      return {isMatrix:true, title:b.title, sub:b.sub, grid:b.grid, go: this.openDlg('access'),
+        cols: b.cols.map(c => ({label:c[0], align:c[1] || 'start', sub:c[2] || ''})),
+        rows: b.rows.map((r, ri) => ({name:r.name, role:r.role, initials:r.initials, tint:r.tint, wash:r.tint + '18',
+          cells: r.cells.map((v, ci) => {
+            if (typeof v === 'string') return {bg:'var(--field)', fg:'var(--txt2)', icon:'ph-warehouse', cursor:'default', toggle: () => {}};
+            const k = ri + ':' + ci;
+            const ov = this.state.choice['mx:' + k];
+            const val = ov === undefined ? v : ov;
+            const m = MC[val] || MC[0];
+            return Object.assign({}, m, {toggle: val === 2 ? (() => {})
+              : (() => this.setState({choice: Object.assign({}, this.state.choice, {['mx:' + k]: val === 1 ? 0 : 1})}))});
+          })}))};
+    }
+
+    if (b.kind === 'payroll') return {isPayroll:true, title:b.title, sub:b.sub, formula:b.formula,
+      netLabel:b.netLabel, netBasis:b.netBasis, net:b.net, warn:b.warn,
+      who:{name:b.who.name, sub:b.who.sub, initials:b.who.initials, tint:b.who.tint, wash:b.who.tint + '18'},
+      lines: b.lines.map(l => ({label:l.label, note:l.note || '', basis:l.basis,
+        amount:l.amount, fw: l.bold ? 800 : 700,
+        bg: l.bold ? 'var(--field)' : 'transparent',
+        fg: l.sign > 0 ? 'var(--txt)' : '#EF4444',
+        signIcon: l.sign > 0 ? 'ph-plus' : 'ph-minus',
+        signBg: l.sign > 0 ? 'rgba(34,197,94,.14)' : 'rgba(239,68,68,.14)',
+        signFg: l.sign > 0 ? '#22C55E' : '#EF4444'})),
+      facts: b.facts.map(f => ({icon:f[0], label:f[1], value:f[2], tint: f[3] || 'var(--muted)', fg: f[3] || 'var(--txt)'})),
+      payGo: this.openDlg('payslip')};
+
+    if (b.kind === 'table') return this.buildTable(b, key);
+    return {};
+  }
+
+  renderVals(){
+    const dark = this.theme === 'dark';
+    const mod = this.mod;
+    const tabs = TABS[mod];
+    const tabIdx = Math.min(this.state.tab || 0, tabs.length - 1);
+    const tab = tabs[tabIdx];
+    const h = HEADS[mod];
+    const chosen = this.state.choice || {};
+    const blocks = BLOCKS[mod + ':' + tab.id] || [];
+
+    const base = {
+      theme: this.theme,
+      themeIcon: dark ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.setState({theme: dark ? 'light' : 'dark'}),
+      rail: RAIL.map(r => ({...r, bg: r.active ? 'rgba(74,128,232,.20)' : 'transparent', fg: r.active ? '#FFFFFF' : '#94A3B8'})),
+      head: {icon:h.icon, title:h.title, sub:h.sub, hint:h.hint, action:h.action,
+        alt:h.alt, altIcon:h.altIcon,
+        go: this.openDlg(h.dlg), altGo: this.openDlg(h.altDlg)},
+      modules: MODULES.map(m => {
+        const on = m.id === mod;
+        return {label:m.label, meta:m.meta, icon:m.icon, count:m.count,
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          bg: on ? 'var(--wash)' : 'transparent',
+          iconBg: on ? 'var(--brand)' : 'var(--field)',
+          iconFg: on ? '#FFFFFF' : 'var(--muted)',
+          fg: on ? 'var(--brand-ink)' : 'var(--txt)', fw: on ? 800 : 700,
+          countFg: on ? 'var(--brand-ink)' : 'var(--muted)',
+          pick: () => this.setState({mod:m.id, tab:0, dlg:null, drawer:null})};
+      }),
+      tabs: tabs.map((t, i) => {
+        const on = i === tabIdx;
+        // a tab that owns a table shows that table's real row count, not an authored one
+        const rc = this.rowCountOf(mod, t.id);
+        return {label:t.label, icon:t.icon, badge: rc === null ? (t.badge || '') : ARD(rc),
+          fg: on ? 'var(--brand-ink)' : 'var(--muted)', fw: on ? 800 : 700,
+          line: on ? 'var(--brand)' : 'transparent',
+          badgeFg: on ? 'var(--brand-ink)' : 'var(--muted)',
+          badgeBg: on ? 'var(--wash)' : 'var(--field)',
+          pick: () => this.setState({tab:i})};
+      }),
+      tabNote: tab.note || '',
+      blocks: blocks.map((b, i) => this.buildBlock(b, i, tab.id))};
+
+    // ── dialog ──
+    const dk = this.state.dlg;
+    const d = DLGS[dk];
+    base.dlgOpen = !!d;
+    base.closeDlg = () => this.setState({dlg:null});
+    if (d) {
+      const a = d.aside;
+      base.dlg = {width:d.width, icon:d.icon, title:d.title, sub:d.sub,
+        save:d.save, saveIcon:d.saveIcon, cancel:d.cancel, alt:d.alt || '', altIcon:d.altIcon || '',
+        saveBg: d.saveTone === 'err' ? '#EF4444' : 'var(--brand)',
+        bodyCols: a ? '1fr 320px' : '1fr', hasAside: !!a,
+        groups: d.groups.map((g, gi) => {
+          const tone = TONE[g.tone || 'info'];
+          return {label:g.label, hint:g.hint || '', cols:g.cols || '1fr', note:g.note || '',
+            isFields: g.kind === 'fields', isChips: g.kind === 'chips', isCards: g.kind === 'cards',
+            isToggles: g.kind === 'toggles', isScores: g.kind === 'scores', isChain: g.kind === 'chain',
+            isNote: g.kind === 'note',
+            noteFg: tone, noteBd: tone + '55', noteBg: tone + '14',
+            noteIcon: g.tone === 'err' ? 'ph-warning-octagon' : (g.tone === 'warn' ? 'ph-warning' : 'ph-info'),
+            items: (g.items || []).map((it, ii) => {
+              const key = dk + ':' + gi + ':' + ii;
+              const on = chosen[key] === undefined ? !!it.on : chosen[key];
+              const flip = () => this.setState({choice: Object.assign({}, chosen, {[key]: !on})});
+              if (g.kind === 'chips') return {label:it.label, mark: on ? 'ph-check-circle' : 'ph-circle',
+                bd: on ? 'var(--brand)' : 'var(--hairline)', bg: on ? 'var(--wash)' : 'var(--field)',
+                fg: on ? 'var(--brand-ink)' : 'var(--txt2)', toggle: flip};
+              if (g.kind === 'cards') return {icon:it.icon, label:it.label, sub:it.sub, on,
+                bd: on ? 'var(--brand)' : 'var(--hairline)', bg: on ? 'var(--wash)' : 'var(--field)',
+                fg: on ? 'var(--brand-ink)' : 'var(--txt)', pick: flip};
+              if (g.kind === 'toggles') return {icon:it.icon, title:it.title, sub:it.sub, toggle: flip,
+                knobBg: on ? '#22C55E' : 'var(--track)', knobX: on ? '22px' : '3px'};
+              if (g.kind === 'scores') return {icon:it.icon, label:it.label, tint:it.tint,
+                value:String(it.value), pct: it.value + '%'};
+              if (g.kind === 'chain') {
+                const t = TONE[it.tone];
+                return {icon:it.icon, title:it.title, sub:it.sub, status:it.status,
+                  bg: it.tone === 'idle' ? 'var(--field)' : 'transparent',
+                  dotBg: t + '18', dotFg: t, pillFg: t, pillBg: t + '16'};
+              }
+              return {label:it.label, icon:it.icon, value:it.value, tail:it.tail || '',
+                bd: it.bad ? '#EF4444' : 'var(--hairline)',
+                iconFg: it.bad ? '#EF4444' : 'var(--muted)',
+                fg: it.bad ? '#EF4444' : 'var(--txt)'};
+            })};
+        }),
+        aside: a ? {icon:a.icon, title:a.title,
+          rows: a.rows.map((r, i) => ({label:r[0], value:r[1],
+            fg: r[2] || 'var(--txt)', labelFg: i === a.rows.length - 1 ? 'var(--txt)' : 'var(--txt2)',
+            fw: i === a.rows.length - 1 ? 800 : 700})),
+          verdict: a.verdict || '', vSub: a.vSub || '',
+          vFg: TONE[a.vTone || 'info'], vBd: TONE[a.vTone || 'info'] + '66', vBg: TONE[a.vTone || 'info'] + '12',
+          vIcon: a.vTone === 'err' ? 'ph-warning-octagon' : (a.vTone === 'warn' ? 'ph-warning' : 'ph-check-circle'),
+          hasBig: !!a.big, big: a.big || '', bigLabel: a.bigLabel || '', bigSub: a.bigSub || '',
+          bigFg: a.vTone === 'err' ? '#EF4444' : 'var(--txt)'} : null};
+    } else {
+      base.dlg = {width:'860px', icon:'ph-gear', title:'', sub:'', groups:[], bodyCols:'1fr', hasAside:false,
+        aside:null, save:'', saveIcon:'ph-check', cancel:'إلغاء', alt:'', altIcon:'', saveBg:'var(--brand)'};
+    }
+
+    // ── drawer ──
+    const wk = this.state.drawer;
+    const w = DRAWERS[wk];
+    base.drawerOpen = !!w;
+    base.closeDrawer = () => this.setState({drawer:null});
+    base.drawer = w ? {icon:w.icon || '', initials:w.initials || '', tint:w.tint, wash:w.tint + '18',
+      crumb:w.crumb, title:w.title, sub:w.sub,
+      kpis: w.kpis.map(k => ({label:k[0], value:k[1], fg: k[2] || 'var(--txt)'})),
+      groups: w.groups.map(g => ({label:g.label, icon:g.icon, meta:g.meta,
+        rows: g.rows.map(r => ({icon:r[0], title:r[1], sub:r[2], value:r[3], tint:r[4],
+          wash: r[4] + '18', bg:'transparent',
+          valFg: r[4] === '#6B7280' ? 'var(--muted)' : r[4]}))})),
+      actions: w.actions.map(a => ({icon:a[0], label:a[1],
+        bd: a[2] === 'in' ? 'var(--brand)' : 'var(--hairline)',
+        bg: a[2] === 'in' ? 'var(--wash)' : 'var(--card)',
+        fg: a[2] === 'in' ? 'var(--brand-ink)' : 'var(--txt2)',
+        go: a[3] ? this.openDlg(a[3]) : (() => this.setState({drawer:null}))}))}
+      : {icon:'ph-storefront', initials:'', tint:'#0250D3', wash:'', crumb:'', title:'', sub:'', kpis:[], groups:[], actions:[]};
+
+    if (dark) {
+      const INK = {'#0250D3':'#7DA6F5','#012258':'#8FB3F2','#4A80E8':'#93B4F5','#8B5CF6':'#A78BFA',
+        '#6B7280':'#94A3B8','#EF4444':'#F87171','#22C55E':'#4ADE80','#F59E0B':'#FBBF24','#0EA5E9':'#7DD3FC'};
+      const walk = (o) => {
+        if (Array.isArray(o)) { o.forEach(walk); return; }
+        if (!o || typeof o !== 'object') return;
+        Object.keys(o).forEach(k => {
+          const v = o[k];
+          if (typeof v === 'string') {
+            if ((/fg$/i.test(k) || k === 'tint' || k === 'tint2' || k === 'c') && INK[v]) o[k] = INK[v];
+          } else if (v && typeof v === 'object') walk(v);
+        });
+      };
+      walk(base);
+    }
+
+    return base;
+  }
+}
+</script>
+</body>
+</html>

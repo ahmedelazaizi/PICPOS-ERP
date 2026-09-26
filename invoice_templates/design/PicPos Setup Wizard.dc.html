@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<style>
+  :root{
+    --canvas:#F2F5FA; --card:#FFFFFF; --hairline:#DCE3EE; --field:#F4F7FC;
+    --brand:#0250D3; --brand-dark:#012258; --brand-light:#4A80E8;
+    --rail:#04122E; --rail-line:rgba(255,255,255,.10);
+    --txt:#0B1220; --txt2:#374151; --muted:#6B7280;
+    --ok:#22C55E; --warn:#F59E0B; --err:#EF4444;
+    --track:#E6ECF6;
+  }
+  [data-theme="dark"]{
+    --canvas:#070E1B; --card:#111B2C; --hairline:#233045; --field:#17233A;
+    --rail:#050D1D; --txt:#FFFFFF; --txt2:#CBD5E1; --muted:#94A3B8;
+    --track:#1E2B42;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Cairo',sans-serif;background:#04122E;}
+  a{color:#0250D3;text-decoration:none;}
+  a:hover{color:#012258;}
+  i[class^="ph-"]{line-height:1;}
+  input{font-family:'Cairo',sans-serif;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" dir="rtl" style="width:1920px;height:1080px;display:flex;position:relative;background:var(--canvas);font-family:'Cairo',sans-serif;color:var(--txt);overflow:hidden;">
+
+  <!-- ═══ الشريط الجانبي ═══ -->
+  <sc-if value="{{ isRail }}" hint-placeholder-val="{{ true }}">
+  <div style="width:430px;flex:none;background:var(--rail);position:relative;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="position:absolute;inset-inline-start:-120px;top:-140px;width:460px;height:460px;border-radius:50%;background:radial-gradient(circle at center, rgba(2,80,211,.55), rgba(2,80,211,0) 70%);"></div>
+    <div style="position:absolute;inset-inline-end:-90px;bottom:-120px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle at center, rgba(74,128,232,.30), rgba(74,128,232,0) 70%);"></div>
+
+    <div style="position:relative;padding:30px 32px 22px;display:flex;align-items:center;gap:13px;">
+      <div style="width:54px;height:54px;flex:none;border-radius:15px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        <img src="assets/picpos-logo.png" alt="PicPos" style="width:46px;height:46px;object-fit:contain;" />
+      </div>
+      <div>
+        <div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:.3px;line-height:1.2;">PicPos ERP</div>
+        <div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.55);">إصدار 1.5.1 · إعداد البدء</div>
+      </div>
+    </div>
+
+    <div style="position:relative;padding:0 32px 20px;">
+      <div style="font-size:26px;font-weight:800;color:#fff;line-height:1.35;text-wrap:pretty;">لنجهّز نظامك<br />في {{ totalSteps }} خطوات</div>
+      <div style="margin-top:9px;font-size:12.5px;font-weight:600;color:rgba(255,255,255,.6);line-height:1.7;text-wrap:pretty;">كل ما تدخله هنا يُحفظ في قاعدة البيانات ويظهر في الفواتير والتقارير — ويمكن تعديله لاحقًا من الإعدادات.</div>
+      <div style="margin-top:18px;display:flex;align-items:center;gap:11px;">
+        <div style="flex:1;height:7px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;">
+          <div style="height:100%;width:{{ progress }}%;border-radius:99px;background:linear-gradient(90deg,#4A80E8,#22C55E);"></div>
+        </div>
+        <span style="flex:none;font-size:12px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;">{{ progress }}%</span>
+      </div>
+      <div style="margin-top:7px;font-size:11.5px;font-weight:700;color:rgba(255,255,255,.55);">الخطوة {{ stepNo }} من {{ totalSteps }}</div>
+    </div>
+
+    <div style="position:relative;flex:1;min-height:0;overflow:auto;padding:6px 20px 10px;display:flex;flex-direction:column;gap:4px;">
+      <sc-for list="{{ steps }}" as="s" hint-placeholder-count="7">
+        <div onClick="{{ s.go }}" style="padding:11px 12px;border-radius:13px;display:flex;align-items:center;gap:12px;cursor:pointer;background:{{ s.bg }};border:1px solid {{ s.bd }};">
+          <div style="width:32px;height:32px;flex:none;border-radius:10px;background:{{ s.numBg }};border:1.5px solid {{ s.numBd }};display:flex;align-items:center;justify-content:center;">
+            <sc-if value="{{ s.done }}" hint-placeholder-val="{{ false }}">
+              <i class="ph-bold ph-check" style="font-size:15px;color:#fff;"></i>
+            </sc-if>
+            <sc-if value="{{ s.notDone }}" hint-placeholder-val="{{ true }}">
+              <span style="font-size:12.5px;font-weight:800;color:{{ s.numFg }};font-variant-numeric:tabular-nums;">{{ s.n }}</span>
+            </sc-if>
+          </div>
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:13.5px;font-weight:{{ s.fw }};color:{{ s.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.label }}</div>
+            <div style="font-size:10.5px;font-weight:600;color:rgba(255,255,255,.42);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.hint }}</div>
+          </div>
+          <i class="ph-bold {{ s.icon }}" style="flex:none;font-size:17px;color:{{ s.iconFg }};"></i>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="position:relative;padding:14px 24px 20px;border-top:1px solid var(--rail-line);display:flex;align-items:center;gap:9px;">
+      <div style="height:36px;border-radius:10px;background:rgba(255,255,255,.08);display:flex;align-items:center;gap:7px;padding:0 13px;cursor:pointer;color:rgba(255,255,255,.8);font-size:12px;font-weight:700;">
+        <i class="ph-bold ph-lifebuoy" style="font-size:15px;"></i>مساعدة
+      </div>
+      <div style="height:36px;border-radius:10px;background:rgba(255,255,255,.08);display:flex;align-items:center;gap:7px;padding:0 13px;cursor:pointer;color:rgba(255,255,255,.8);font-size:12px;font-weight:700;">
+        <i class="ph-bold ph-database" style="font-size:15px;"></i>استعادة نسخة
+      </div>
+      <div style="flex:1;"></div>
+      <div onClick="{{ toggleTheme }}" style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;">
+        <i class="ph-bold {{ themeIcon }}" style="font-size:16px;"></i>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ═══ المحتوى ═══ -->
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <sc-if value="{{ isTop }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;background:var(--rail);padding:16px 30px 0;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="width:40px;height:40px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+          <img src="assets/picpos-logo.png" alt="PicPos" style="width:34px;height:34px;object-fit:contain;" />
+        </div>
+        <div>
+          <div style="font-size:16px;font-weight:800;color:#fff;">PicPos ERP — إعداد البدء</div>
+          <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.55);">الخطوة {{ stepNo }} من {{ totalSteps }} · {{ progress }}% مكتمل</div>
+        </div>
+        <div style="flex:1;"></div>
+        <div onClick="{{ toggleTheme }}" style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.10);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;">
+          <i class="ph-bold {{ themeIcon }}" style="font-size:16px;"></i>
+        </div>
+      </div>
+      <div style="display:flex;align-items:stretch;gap:6px;padding-bottom:14px;">
+        <sc-for list="{{ steps }}" as="s" hint-placeholder-count="7">
+          <div onClick="{{ s.go }}" style="flex:1;min-width:0;padding:9px 11px;border-radius:11px;cursor:pointer;background:{{ s.bg }};border:1px solid {{ s.bd }};display:flex;align-items:center;gap:8px;">
+            <div style="width:26px;height:26px;flex:none;border-radius:8px;background:{{ s.numBg }};border:1.5px solid {{ s.numBd }};display:flex;align-items:center;justify-content:center;">
+              <sc-if value="{{ s.done }}" hint-placeholder-val="{{ false }}">
+                <i class="ph-bold ph-check" style="font-size:13px;color:#fff;"></i>
+              </sc-if>
+              <sc-if value="{{ s.notDone }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:11px;font-weight:800;color:{{ s.numFg }};">{{ s.n }}</span>
+              </sc-if>
+            </div>
+            <span style="font-size:11.5px;font-weight:{{ s.fw }};color:{{ s.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <div style="flex:1;min-height:0;display:flex;gap:18px;padding:26px 30px 0;">
+
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+        <div style="flex:none;display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;">
+          <div style="width:48px;height:48px;flex:none;border-radius:14px;background:rgba(2,80,211,.10);display:flex;align-items:center;justify-content:center;">
+            <i class="ph-bold {{ cur.icon }}" style="font-size:24px;color:var(--brand);"></i>
+          </div>
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:26px;font-weight:800;line-height:1.25;color:var(--txt);">{{ cur.title }}</div>
+            <div style="font-size:13.5px;font-weight:600;color:var(--muted);line-height:1.6;text-wrap:pretty;">{{ cur.sub }}</div>
+          </div>
+          <div style="flex:none;display:flex;align-items:center;gap:7px;background:{{ cur.badgeBg }};border:1px solid {{ cur.badgeBd }};border-radius:999px;padding:6px 13px;">
+            <i class="ph-bold {{ cur.badgeIcon }}" style="font-size:14px;color:{{ cur.badgeFg }};"></i>
+            <span style="font-size:11.5px;font-weight:800;color:{{ cur.badgeFg }};">{{ cur.badge }}</span>
+          </div>
+        </div>
+
+        <div style="flex:1;min-height:0;overflow:auto;padding-bottom:6px;">
+
+          <!-- ▸ معلومات الشركة -->
+          <sc-if value="{{ isCompany }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:16px;animation:fadeUp .22s ease;">
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;">
+              <div>
+                <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:6px;">اسم الشركة / المحل <span style="color:#EF4444;">*</span></div>
+                <div style="height:52px;border-radius:13px;background:var(--field);border:1.5px solid {{ f.nameBd }};display:flex;align-items:center;gap:10px;padding:0 14px;">
+                  <i class="ph-bold ph-storefront" style="flex:none;font-size:18px;color:var(--muted);"></i>
+                  <input value="{{ f.name }}" onChange="{{ f.setName }}" placeholder="مثال: سوبر ماركت النيل" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:14px;font-weight:700;color:var(--txt);" />
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:6px;">رقم الهاتف</div>
+                <div style="height:52px;border-radius:13px;background:var(--field);border:1.5px solid var(--hairline);display:flex;align-items:center;gap:10px;padding:0 14px;">
+                  <i class="ph-bold ph-phone" style="flex:none;font-size:18px;color:var(--muted);"></i>
+                  <input value="{{ f.phone }}" onChange="{{ f.setPhone }}" placeholder="01xxxxxxxxx" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:14px;font-weight:700;color:var(--txt);direction:ltr;text-align:start;" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:6px;">العنوان — يظهر في ترويسة الفاتورة</div>
+              <div style="height:52px;border-radius:13px;background:var(--field);border:1.5px solid var(--hairline);display:flex;align-items:center;gap:10px;padding:0 14px;">
+                <i class="ph-bold ph-map-pin" style="flex:none;font-size:18px;color:var(--muted);"></i>
+                <input value="{{ f.address }}" onChange="{{ f.setAddress }}" placeholder="القاهرة، مصر" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:14px;font-weight:700;color:var(--txt);" />
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:8px;">نوع النشاط — يحدد الشاشات والقوالب التي تُفعَّل</div>
+              <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:9px;">
+                <sc-for list="{{ bizTypes }}" as="b" hint-placeholder-count="6">
+                  <div onClick="{{ b.go }}" style="height:88px;border-radius:14px;background:{{ b.bg }};border:1.5px solid {{ b.bd }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;">
+                    <i class="ph-bold {{ b.icon }}" style="font-size:24px;color:{{ b.fg }};"></i>
+                    <span style="font-size:11.5px;font-weight:800;color:{{ b.labelFg }};text-align:center;padding:0 6px;line-height:1.3;">{{ b.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:8px;">العملة الأساسية — لا يمكن تغييرها بعد أول فاتورة</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <sc-for list="{{ currencies }}" as="c" hint-placeholder-count="6">
+                  <div onClick="{{ c.go }}" style="height:46px;border-radius:12px;background:{{ c.bg }};border:1.5px solid {{ c.bd }};display:flex;align-items:center;gap:9px;padding:0 15px;cursor:pointer;">
+                    <span style="font-size:13px;font-weight:800;color:{{ c.fg }};font-variant-numeric:tabular-nums;">{{ c.code }}</span>
+                    <span style="font-size:12px;font-weight:600;color:{{ c.labelFg }};">{{ c.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- ▸ وضع التشغيل والفرع -->
+          <sc-if value="{{ isMode }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:16px;animation:fadeUp .22s ease;">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;">
+              <sc-for list="{{ modes }}" as="m" hint-placeholder-count="4">
+                <div onClick="{{ m.go }}" style="border-radius:15px;background:{{ m.bg }};border:2px solid {{ m.bd }};padding:15px;display:flex;flex-direction:column;gap:9px;cursor:pointer;position:relative;">
+                  <sc-if value="{{ m.on }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute;top:12px;inset-inline-end:12px;width:22px;height:22px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;">
+                      <i class="ph-bold ph-check" style="font-size:12px;color:#fff;"></i>
+                    </div>
+                  </sc-if>
+                  <div style="width:42px;height:42px;border-radius:12px;background:{{ m.tint }};display:flex;align-items:center;justify-content:center;">
+                    <i class="ph-bold {{ m.icon }}" style="font-size:21px;color:{{ m.fg }};"></i>
+                  </div>
+                  <div style="font-size:15px;font-weight:800;color:{{ m.titleFg }};">{{ m.label }}</div>
+                  <div style="font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.55;text-wrap:pretty;">{{ m.desc }}</div>
+                  <div style="margin-top:2px;font-size:10.5px;font-weight:800;color:{{ m.fg }};background:{{ m.tint }};border-radius:7px;padding:4px 8px;align-self:flex-start;">{{ m.tag }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ isLocalMode }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div>
+                <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:6px;">اسم الفرع <span style="color:#EF4444;">*</span></div>
+                <div style="height:52px;border-radius:13px;background:var(--field);border:1.5px solid {{ f.branchBd }};display:flex;align-items:center;gap:10px;padding:0 14px;">
+                  <i class="ph-bold ph-buildings" style="flex:none;font-size:18px;color:var(--muted);"></i>
+                  <input value="{{ f.branch }}" onChange="{{ f.setBranch }}" placeholder="الفرع الرئيسي" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:14px;font-weight:700;color:var(--txt);" />
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:6px;">اسم المخزن <span style="color:#EF4444;">*</span></div>
+                <div style="height:52px;border-radius:13px;background:var(--field);border:1.5px solid {{ f.whBd }};display:flex;align-items:center;gap:10px;padding:0 14px;">
+                  <i class="ph-bold ph-warehouse" style="flex:none;font-size:18px;color:var(--muted);"></i>
+                  <input value="{{ f.wh }}" onChange="{{ f.setWh }}" placeholder="المخزن الرئيسي" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:14px;font-weight:700;color:var(--txt);" />
+                </div>
+              </div>
+            </div>
+            </sc-if>
+
+            <sc-if value="{{ isNetMode }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:grid;grid-template-columns:2.2fr .7fr 1fr;gap:12px;">
+                <div>
+                  <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:6px;">{{ netLabel }} <span style="color:#EF4444;">*</span></div>
+                  <div style="height:52px;border-radius:13px;background:var(--field);border:1.5px solid {{ f.hostBd }};display:flex;align-items:center;gap:10px;padding:0 14px;">
+                    <i class="ph-bold ph-globe-simple" style="flex:none;font-size:18px;color:var(--muted);"></i>
+                    <input value="{{ f.host }}" onChange="{{ f.setHost }}" placeholder="192.168.1.100 أو hq.example.com" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:14px;font-weight:700;color:var(--txt);direction:ltr;text-align:start;" />
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:6px;">المنفذ</div>
+                  <div style="height:52px;border-radius:13px;background:var(--field);border:1.5px solid var(--hairline);display:flex;align-items:center;gap:10px;padding:0 14px;">
+                    <i class="ph-bold ph-hash" style="flex:none;font-size:18px;color:var(--muted);"></i>
+                    <input value="{{ f.port }}" onChange="{{ f.setPort }}" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:14px;font-weight:800;color:var(--txt);direction:ltr;text-align:start;font-variant-numeric:tabular-nums;" />
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:6px;">رمز الـAPI</div>
+                  <div style="height:52px;border-radius:13px;background:var(--field);border:1.5px solid var(--hairline);display:flex;align-items:center;gap:10px;padding:0 14px;">
+                    <i class="ph-bold ph-key" style="flex:none;font-size:18px;color:var(--muted);"></i>
+                    <input value="{{ f.token }}" onChange="{{ f.setToken }}" placeholder="••••••••••" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:14px;font-weight:700;color:var(--txt);direction:ltr;text-align:start;" />
+                  </div>
+                </div>
+              </div>
+              <div style="background:{{ noteBg }};border:1px solid {{ noteBd }};border-radius:13px;padding:14px;display:flex;gap:11px;">
+                <i class="ph-bold {{ noteIcon }}" style="flex:none;font-size:19px;color:{{ noteFg }};"></i>
+                <div style="min-width:0;">
+                  <div style="font-size:12.5px;font-weight:800;color:{{ noteFg }};margin-bottom:5px;">{{ noteTitle }}</div>
+                  <sc-for list="{{ noteBullets }}" as="b" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:3px;">
+                      <span style="width:5px;height:5px;flex:none;margin-top:7px;border-radius:50%;background:{{ noteFg }};"></span>
+                      <span style="font-size:12px;font-weight:600;color:var(--txt2);line-height:1.6;">{{ b.text }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+            </sc-if>
+          </div>
+          </sc-if>
+
+          <!-- ▸ نمط الإدخال -->
+          <sc-if value="{{ isInput }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:13px;animation:fadeUp .22s ease;">
+            <sc-for list="{{ inputModes }}" as="t" hint-placeholder-count="3">
+              <div onClick="{{ t.go }}" style="border-radius:16px;background:{{ t.bg }};border:2px solid {{ t.bd }};padding:20px;display:flex;flex-direction:column;gap:12px;cursor:pointer;">
+                <div style="width:52px;height:52px;border-radius:15px;background:{{ t.tint }};display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold {{ t.icon }}" style="font-size:26px;color:{{ t.fg }};"></i>
+                </div>
+                <div style="font-size:16px;font-weight:800;color:{{ t.titleFg }};">{{ t.label }}</div>
+                <div style="font-size:12.5px;font-weight:600;color:var(--muted);line-height:1.65;text-wrap:pretty;">{{ t.desc }}</div>
+                <div style="margin-top:auto;display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:{{ t.fg }};">
+                  <i class="ph-bold ph-device-mobile" style="font-size:13px;"></i>{{ t.tag }}
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+
+          <!-- ▸ إعدادات PostgreSQL -->
+          <sc-if value="{{ isPg }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px;animation:fadeUp .22s ease;">
+            <div style="display:grid;grid-template-columns:2fr .8fr;gap:12px;">
+              <div>
+                <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:6px;">مضيف قاعدة البيانات <span style="color:#EF4444;">*</span></div>
+                <div style="height:52px;border-radius:13px;background:var(--field);border:1.5px solid var(--hairline);display:flex;align-items:center;gap:10px;padding:0 14px;">
+                  <i class="ph-bold ph-database" style="flex:none;font-size:18px;color:var(--muted);"></i>
+                  <input value="{{ f.pgHost }}" onChange="{{ f.setPgHost }}" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:14px;font-weight:700;color:var(--txt);direction:ltr;text-align:start;" />
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:6px;">المنفذ</div>
+                <div style="height:52px;border-radius:13px;background:var(--field);border:1.5px solid var(--hairline);display:flex;align-items:center;gap:10px;padding:0 14px;">
+                  <i class="ph-bold ph-hash" style="flex:none;font-size:18px;color:var(--muted);"></i>
+                  <input value="{{ f.pgPort }}" onChange="{{ f.setPgPort }}" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:14px;font-weight:800;color:var(--txt);direction:ltr;text-align:start;font-variant-numeric:tabular-nums;" />
+                </div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+              <div>
+                <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:6px;">اسم قاعدة البيانات</div>
+                <div style="height:52px;border-radius:13px;background:var(--field);border:1.5px solid var(--hairline);display:flex;align-items:center;gap:10px;padding:0 14px;">
+                  <i class="ph-bold ph-hard-drives" style="flex:none;font-size:18px;color:var(--muted);"></i>
+                  <input value="{{ f.pgDb }}" onChange="{{ f.setPgDb }}" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:14px;font-weight:700;color:var(--txt);direction:ltr;text-align:start;" />
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:6px;">المستخدم</div>
+                <div style="height:52px;border-radius:13px;background:var(--field);border:1.5px solid var(--hairline);display:flex;align-items:center;gap:10px;padding:0 14px;">
+                  <i class="ph-bold ph-user" style="flex:none;font-size:18px;color:var(--muted);"></i>
+                  <input value="{{ f.pgUser }}" onChange="{{ f.setPgUser }}" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:14px;font-weight:700;color:var(--txt);direction:ltr;text-align:start;" />
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11.5px;font-weight:700;color:var(--txt2);margin-bottom:6px;">كلمة المرور</div>
+                <div style="height:52px;border-radius:13px;background:var(--field);border:1.5px solid var(--hairline);display:flex;align-items:center;gap:10px;padding:0 14px;">
+                  <i class="ph-bold ph-lock-key" style="flex:none;font-size:18px;color:var(--muted);"></i>
+                  <input value="{{ f.pgPass }}" onChange="{{ f.setPgPass }}" placeholder="••••••••" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:14px;font-weight:700;color:var(--txt);direction:ltr;text-align:start;" />
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:11px;">
+              <div onClick="{{ testConn }}" style="height:46px;border-radius:12px;border:1.5px solid var(--brand);display:flex;align-items:center;gap:8px;padding:0 18px;cursor:pointer;color:var(--brand);font-size:13px;font-weight:800;">
+                <i class="ph-bold ph-plugs-connected" style="font-size:17px;"></i>اختبار الاتصال
+              </div>
+              <div style="flex:1;min-width:0;height:46px;border-radius:12px;background:{{ connBg }};border:1px solid {{ connBd }};display:flex;align-items:center;gap:9px;padding:0 14px;">
+                <i class="ph-bold {{ connIcon }}" style="flex:none;font-size:17px;color:{{ connFg }};"></i>
+                <span style="font-size:12.5px;font-weight:700;color:{{ connFg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ connMsg }}</span>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- ▸ تهيئة القاعدة / المزامنة -->
+          <sc-if value="{{ isProv }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:13px;animation:fadeUp .22s ease;">
+            <div style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--hairline);border-radius:14px;padding:14px 16px;">
+              <div style="width:44px;height:44px;flex:none;border-radius:13px;background:{{ prov.tint }};display:flex;align-items:center;justify-content:center;">
+                <i class="ph-bold {{ prov.icon }}" style="font-size:22px;color:{{ prov.color }};{{ prov.spin }}"></i>
+              </div>
+              <div style="min-width:0;flex:1;">
+                <div style="font-size:15px;font-weight:800;color:var(--txt);">{{ prov.title }}</div>
+                <div style="font-size:12px;font-weight:600;color:var(--muted);">{{ prov.sub }}</div>
+              </div>
+              <div style="width:230px;flex:none;">
+                <div style="height:9px;border-radius:99px;background:var(--track);overflow:hidden;">
+                  <div style="height:100%;width:{{ prov.pct }}%;border-radius:99px;background:{{ prov.color }};"></div>
+                </div>
+                <div style="margin-top:5px;font-size:11px;font-weight:800;color:var(--muted);text-align:end;font-variant-numeric:tabular-nums;">{{ prov.pct }}%</div>
+              </div>
+              <div onClick="{{ prov.start }}" style="flex:none;height:44px;border-radius:12px;background:{{ prov.btnBg }};display:flex;align-items:center;gap:8px;padding:0 18px;cursor:pointer;color:#fff;font-size:13px;font-weight:800;">
+                <i class="ph-bold {{ prov.btnIcon }}" style="font-size:16px;"></i>{{ prov.btnLabel }}
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1.15fr .85fr;gap:13px;">
+              <div style="display:flex;flex-direction:column;gap:7px;">
+                <sc-for list="{{ prov.stages }}" as="s" hint-placeholder-count="6">
+                  <div style="border:1px solid {{ s.bd }};border-radius:12px;background:{{ s.bg }};padding:11px 13px;display:flex;align-items:center;gap:11px;">
+                    <div style="width:28px;height:28px;flex:none;border-radius:9px;background:{{ s.tint }};display:flex;align-items:center;justify-content:center;">
+                      <i class="ph-bold {{ s.icon }}" style="font-size:14px;color:{{ s.color }};{{ s.spin }}"></i>
+                    </div>
+                    <span style="flex:1;min-width:0;font-size:12.5px;font-weight:{{ s.fw }};color:{{ s.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.label }}</span>
+                    <span style="flex:none;font-size:10.5px;font-weight:800;color:{{ s.color }};">{{ s.state }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="background:#0A1526;border:1px solid #1B2A44;border-radius:13px;padding:13px;display:flex;flex-direction:column;overflow:hidden;">
+                <div style="flex:none;display:flex;align-items:center;gap:7px;margin-bottom:9px;">
+                  <i class="ph-bold ph-terminal-window" style="font-size:15px;color:#4A80E8;"></i>
+                  <span style="font-size:12px;font-weight:800;color:#CBD5E1;">سجل التهيئة</span>
+                  <span style="margin-inline-start:auto;font-size:10px;font-weight:700;color:#64748B;">{{ prov.logCount }}</span>
+                </div>
+                <div style="flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:4px;direction:ltr;">
+                  <sc-for list="{{ prov.logs }}" as="l" hint-placeholder-count="3">
+                    <div style="font-size:11px;font-weight:600;color:{{ l.fg }};font-family:ui-monospace,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ l.text }}</div>
+                  </sc-for>
+                  <sc-if value="{{ prov.noLogs }}" hint-placeholder-val="{{ true }}">
+                    <div style="font-size:11px;font-weight:600;color:#475569;font-family:ui-monospace,Menlo,monospace;">$ waiting for provisioning to start…</div>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- ▸ المنتجات الأولى -->
+          <sc-if value="{{ isProducts }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:13px;animation:fadeUp .22s ease;">
+            <div style="background:var(--card);border:1px solid var(--hairline);border-radius:14px;padding:13px;display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr .9fr auto;gap:10px;align-items:end;">
+              <div>
+                <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">اسم الصنف</div>
+                <input value="{{ np.name }}" onChange="{{ np.setName }}" placeholder="مثال: أرز مصري 1كجم" style="width:100%;height:44px;border-radius:11px;background:var(--field);border:1.5px solid {{ np.nameBd }};outline:none;padding:0 12px;font-size:13px;font-weight:700;color:var(--txt);" />
+              </div>
+              <div>
+                <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">الباركود</div>
+                <input value="{{ np.barcode }}" onChange="{{ np.setBarcode }}" placeholder="6221000..." style="width:100%;height:44px;border-radius:11px;background:var(--field);border:1.5px solid var(--hairline);outline:none;padding:0 12px;font-size:13px;font-weight:700;color:var(--txt);direction:ltr;text-align:start;" />
+              </div>
+              <div>
+                <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">سعر الشراء</div>
+                <input value="{{ np.cost }}" onChange="{{ np.setCost }}" style="width:100%;height:44px;border-radius:11px;background:var(--field);border:1.5px solid var(--hairline);outline:none;padding:0 12px;font-size:13px;font-weight:800;color:var(--txt);text-align:end;font-variant-numeric:tabular-nums;" />
+              </div>
+              <div>
+                <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">سعر البيع</div>
+                <input value="{{ np.price }}" onChange="{{ np.setPrice }}" style="width:100%;height:44px;border-radius:11px;background:rgba(34,197,94,.08);border:1.5px solid rgba(34,197,94,.32);outline:none;padding:0 12px;font-size:13px;font-weight:800;color:#16A34A;text-align:end;font-variant-numeric:tabular-nums;" />
+              </div>
+              <div>
+                <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">الكمية</div>
+                <input value="{{ np.qty }}" onChange="{{ np.setQty }}" style="width:100%;height:44px;border-radius:11px;background:var(--field);border:1.5px solid var(--hairline);outline:none;padding:0 12px;font-size:13px;font-weight:800;color:var(--txt);text-align:end;font-variant-numeric:tabular-nums;" />
+              </div>
+              <div onClick="{{ np.add }}" style="height:44px;border-radius:11px;background:{{ np.addBg }};display:flex;align-items:center;gap:7px;padding:0 18px;cursor:{{ np.addCursor }};color:#fff;font-size:13px;font-weight:800;opacity:{{ np.addOpacity }};white-space:nowrap;">
+                <i class="ph-bold ph-plus-circle" style="font-size:16px;"></i>إضافة
+              </div>
+            </div>
+
+            <div style="background:var(--card);border:1px solid var(--hairline);border-radius:14px;overflow:hidden;">
+              <div style="height:38px;background:var(--field);border-bottom:1px solid var(--hairline);display:flex;align-items:center;padding:0 14px;font-size:10.5px;font-weight:800;color:var(--muted);">
+                <div style="width:34px;flex:none;">م</div>
+                <div style="flex:1;min-width:0;">الصنف</div>
+                <div style="width:150px;flex:none;">الباركود</div>
+                <div style="width:120px;flex:none;text-align:end;">الشراء</div>
+                <div style="width:120px;flex:none;text-align:end;">البيع</div>
+                <div style="width:110px;flex:none;text-align:end;">هامش الربح</div>
+                <div style="width:100px;flex:none;text-align:end;">الكمية</div>
+                <div style="width:50px;flex:none;"></div>
+              </div>
+              <sc-for list="{{ products }}" as="p" hint-placeholder-count="3">
+                <div style="height:48px;display:flex;align-items:center;padding:0 14px;border-bottom:1px solid var(--hairline);">
+                  <div style="width:34px;flex:none;font-size:11.5px;font-weight:800;color:var(--muted);">{{ p.n }}</div>
+                  <div style="flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.name }}</div>
+                  <div style="width:150px;flex:none;font-size:11.5px;font-weight:600;color:var(--muted);direction:ltr;text-align:start;">{{ p.barcode }}</div>
+                  <div style="width:120px;flex:none;text-align:end;font-size:12.5px;font-weight:700;color:var(--txt2);font-variant-numeric:tabular-nums;">{{ p.cost }}</div>
+                  <div style="width:120px;flex:none;text-align:end;font-size:12.5px;font-weight:800;color:#16A34A;font-variant-numeric:tabular-nums;">{{ p.price }}</div>
+                  <div style="width:110px;flex:none;text-align:end;font-size:12px;font-weight:800;color:{{ p.marginFg }};font-variant-numeric:tabular-nums;">{{ p.margin }}</div>
+                  <div style="width:100px;flex:none;text-align:end;font-size:12.5px;font-weight:700;color:var(--txt2);font-variant-numeric:tabular-nums;">{{ p.qty }}</div>
+                  <div onClick="{{ p.del }}" style="width:50px;flex:none;display:flex;justify-content:flex-end;">
+                    <div style="width:28px;height:28px;border-radius:8px;background:rgba(239,68,68,.10);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#EF4444;">
+                      <i class="ph-bold ph-trash" style="font-size:13px;"></i>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+              <div style="height:46px;display:flex;align-items:center;padding:0 14px;background:var(--field);">
+                <span style="font-size:12px;font-weight:800;color:var(--txt);">{{ productsSummary }}</span>
+                <div style="flex:1;"></div>
+                <span style="font-size:11.5px;font-weight:700;color:var(--muted);">يمكنك استيراد ملف Excel لاحقًا من «الأصناف»</span>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- ▸ المستخدمون -->
+          <sc-if value="{{ isUsers }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:13px;animation:fadeUp .22s ease;">
+            <div style="background:var(--card);border:1px solid var(--hairline);border-radius:14px;padding:13px;display:grid;grid-template-columns:1.4fr 1.2fr 1fr auto;gap:10px;align-items:end;">
+              <div>
+                <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">اسم المستخدم</div>
+                <input value="{{ nu.name }}" onChange="{{ nu.setName }}" placeholder="مثال: كاشير 1" style="width:100%;height:44px;border-radius:11px;background:var(--field);border:1.5px solid {{ nu.nameBd }};outline:none;padding:0 12px;font-size:13px;font-weight:700;color:var(--txt);" />
+              </div>
+              <div>
+                <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">كلمة المرور</div>
+                <input value="{{ nu.pass }}" onChange="{{ nu.setPass }}" placeholder="••••••" style="width:100%;height:44px;border-radius:11px;background:var(--field);border:1.5px solid var(--hairline);outline:none;padding:0 12px;font-size:13px;font-weight:700;color:var(--txt);direction:ltr;text-align:start;" />
+              </div>
+              <div>
+                <div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">الدور</div>
+                <div onClick="{{ nu.cycleRole }}" style="height:44px;border-radius:11px;background:var(--field);border:1.5px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 12px;cursor:pointer;">
+                  <i class="ph-bold {{ nu.roleIcon }}" style="flex:none;font-size:15px;color:{{ nu.roleFg }};"></i>
+                  <span style="font-size:13px;font-weight:800;color:{{ nu.roleFg }};">{{ nu.role }}</span>
+                  <i class="ph-bold ph-caret-down" style="margin-inline-start:auto;flex:none;font-size:12px;color:var(--muted);"></i>
+                </div>
+              </div>
+              <div onClick="{{ nu.add }}" style="height:44px;border-radius:11px;background:{{ nu.addBg }};display:flex;align-items:center;gap:7px;padding:0 18px;cursor:{{ nu.addCursor }};color:#fff;font-size:13px;font-weight:800;opacity:{{ nu.addOpacity }};white-space:nowrap;">
+                <i class="ph-bold ph-user-plus" style="font-size:16px;"></i>إضافة مستخدم
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;">
+              <sc-for list="{{ users }}" as="u" hint-placeholder-count="2">
+                <div style="background:var(--card);border:1px solid var(--hairline);border-radius:14px;padding:13px;display:flex;align-items:center;gap:12px;">
+                  <div style="width:44px;height:44px;flex:none;border-radius:13px;background:{{ u.tint }};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:{{ u.color }};">{{ u.initials }}</div>
+                  <div style="min-width:0;flex:1;">
+                    <div style="font-size:14px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ u.name }}</div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+                      <span style="font-size:10.5px;font-weight:800;color:{{ u.color }};background:{{ u.tint }};border-radius:6px;padding:2px 8px;">{{ u.role }}</span>
+                      <span style="font-size:10.5px;font-weight:600;color:var(--muted);">{{ u.perms }}</span>
+                    </div>
+                  </div>
+                  <sc-if value="{{ u.locked }}" hint-placeholder-val="{{ true }}">
+                    <div style="width:30px;height:30px;flex:none;border-radius:9px;background:var(--field);display:flex;align-items:center;justify-content:center;color:var(--muted);"><i class="ph-bold ph-lock-key" style="font-size:14px;"></i></div>
+                  </sc-if>
+                  <sc-if value="{{ u.removable }}" hint-placeholder-val="{{ false }}">
+                    <div onClick="{{ u.del }}" style="width:30px;height:30px;flex:none;border-radius:9px;background:rgba(239,68,68,.10);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#EF4444;"><i class="ph-bold ph-trash" style="font-size:14px;"></i></div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="background:rgba(2,80,211,.05);border:1px solid rgba(2,80,211,.20);border-radius:13px;padding:13px 15px;display:flex;gap:11px;">
+              <i class="ph-bold ph-shield-check" style="flex:none;font-size:19px;color:var(--brand);"></i>
+              <span style="font-size:12.5px;font-weight:600;color:var(--txt2);line-height:1.65;text-wrap:pretty;">كل زر في النظام محروس بصلاحية. الأدوار المنشأة الآن تأخذ الصلاحيات الافتراضية، وتُعدَّل بالتفصيل من شاشة «الأدوار والصلاحيات» — بما فيها صلاحيات الحجوزات والخزينة والحسابات.</span>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- ▸ الضرائب والإعدادات -->
+          <sc-if value="{{ isTax }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:13px;animation:fadeUp .22s ease;">
+            <sc-for list="{{ toggles }}" as="t" hint-placeholder-count="5">
+              <div style="background:var(--card);border:1px solid var(--hairline);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:13px;">
+                <div style="width:40px;height:40px;flex:none;border-radius:12px;background:{{ t.tint }};display:flex;align-items:center;justify-content:center;">
+                  <i class="ph-bold {{ t.icon }}" style="font-size:19px;color:{{ t.color }};"></i>
+                </div>
+                <div style="min-width:0;flex:1;">
+                  <div style="font-size:14px;font-weight:800;color:var(--txt);">{{ t.title }}</div>
+                  <div style="font-size:12px;font-weight:600;color:var(--muted);line-height:1.55;text-wrap:pretty;">{{ t.sub }}</div>
+                </div>
+                <sc-if value="{{ t.hasRate }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex:none;display:flex;align-items:center;gap:7px;">
+                    <sc-for list="{{ taxRates }}" as="r" hint-placeholder-count="4">
+                      <div onClick="{{ r.go }}" style="height:38px;min-width:56px;border-radius:10px;background:{{ r.bg }};border:1.5px solid {{ r.bd }};display:flex;align-items:center;justify-content:center;cursor:pointer;color:{{ r.fg }};font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;">{{ r.label }}</div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <div onClick="{{ t.go }}" style="width:52px;height:29px;flex:none;border-radius:99px;background:{{ t.knobBg }};position:relative;cursor:pointer;">
+                  <div style="position:absolute;top:3px;inset-inline-start:{{ t.knobX }}px;width:23px;height:23px;border-radius:50%;background:#fff;"></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+
+          <!-- ▸ المراجعة -->
+          <sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:13px;animation:fadeUp .22s ease;">
+            <div style="background:linear-gradient(120deg,#012258,#0250D3);border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden;">
+              <div style="position:absolute;inset-inline-start:-50px;top:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.10);"></div>
+              <div style="position:relative;width:56px;height:56px;flex:none;border-radius:17px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;">
+                <i class="ph-bold ph-check-fat" style="font-size:28px;color:#fff;"></i>
+              </div>
+              <div style="position:relative;min-width:0;flex:1;">
+                <div style="font-size:21px;font-weight:800;color:#fff;">أنت جاهز للبدء</div>
+                <div style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,.72);line-height:1.6;">راجع الملخص ثم اضغط «إنهاء الإعداد والبدء» — سيُحفظ كل شيء وتُفتح الشاشة الرئيسية على وردية جديدة.</div>
+              </div>
+              <div style="position:relative;flex:none;text-align:center;">
+                <div style="font-size:32px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;line-height:1;">{{ readyPct }}%</div>
+                <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7);margin-top:4px;">جاهزية الإعداد</div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;">
+              <sc-for list="{{ summary }}" as="s" hint-placeholder-count="6">
+                <div style="background:var(--card);border:1px solid var(--hairline);border-radius:14px;padding:13px 15px;">
+                  <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px;">
+                    <i class="ph-bold {{ s.icon }}" style="font-size:16px;color:var(--brand);"></i>
+                    <span style="font-size:13px;font-weight:800;color:var(--txt);">{{ s.title }}</span>
+                    <div onClick="{{ s.go }}" style="margin-inline-start:auto;font-size:11px;font-weight:800;color:var(--brand);cursor:pointer;">تعديل</div>
+                  </div>
+                  <sc-for list="{{ s.rows }}" as="r" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:center;gap:9px;padding:5px 0;">
+                      <span style="width:120px;flex:none;font-size:11px;font-weight:700;color:var(--muted);">{{ r.label }}</span>
+                      <span style="font-size:12.5px;font-weight:800;color:{{ r.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.value }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="background:var(--card);border:1px solid var(--hairline);border-radius:14px;padding:14px 16px;">
+              <div style="font-size:13px;font-weight:800;color:var(--txt);margin-bottom:11px;">ما سيحدث عند الإنهاء</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <sc-for list="{{ finalChecks }}" as="c" hint-placeholder-count="6">
+                  <div style="display:flex;align-items:center;gap:9px;">
+                    <div style="width:22px;height:22px;flex:none;border-radius:50%;background:rgba(34,197,94,.14);display:flex;align-items:center;justify-content:center;">
+                      <i class="ph-bold ph-check" style="font-size:12px;color:#22C55E;"></i>
+                    </div>
+                    <span style="font-size:12.5px;font-weight:600;color:var(--txt2);">{{ c.text }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+        </div>
+      </div>
+
+      <!-- عمود التلميحات -->
+      <sc-if value="{{ showTips }}" hint-placeholder-val="{{ true }}">
+      <div style="width:330px;flex:none;display:flex;flex-direction:column;gap:12px;padding-top:2px;">
+        <div style="background:var(--card);border:1px solid var(--hairline);border-radius:15px;padding:15px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px;">
+            <i class="ph-bold ph-lightbulb-filament" style="font-size:17px;color:#F59E0B;"></i>
+            <span style="font-size:13px;font-weight:800;color:var(--txt);">لماذا هذه الخطوة؟</span>
+          </div>
+          <div style="font-size:12.5px;font-weight:600;color:var(--txt2);line-height:1.75;text-wrap:pretty;">{{ cur.why }}</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--hairline);border-radius:15px;padding:15px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px;">
+            <i class="ph-bold ph-list-checks" style="font-size:17px;color:var(--brand);"></i>
+            <span style="font-size:13px;font-weight:800;color:var(--txt);">قائمة تحقق</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px;">
+            <sc-for list="{{ cur.checks }}" as="c" hint-placeholder-count="3">
+              <div style="display:flex;align-items:flex-start;gap:9px;">
+                <div style="width:20px;height:20px;flex:none;border-radius:6px;background:{{ c.tint }};display:flex;align-items:center;justify-content:center;margin-top:1px;">
+                  <i class="ph-bold {{ c.icon }}" style="font-size:11px;color:{{ c.color }};"></i>
+                </div>
+                <span style="font-size:12px;font-weight:600;color:{{ c.fg }};line-height:1.6;">{{ c.text }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="flex:1;"></div>
+        <div style="background:{{ cur.noteBg }};border:1px solid {{ cur.noteBd }};border-radius:15px;padding:14px 15px;display:flex;gap:10px;">
+          <i class="ph-bold {{ cur.noteIcon }}" style="flex:none;font-size:18px;color:{{ cur.noteFg }};"></i>
+          <div style="min-width:0;">
+            <div style="font-size:12px;font-weight:800;color:{{ cur.noteFg }};margin-bottom:4px;">{{ cur.noteTitle }}</div>
+            <div style="font-size:11.5px;font-weight:600;color:var(--txt2);line-height:1.65;text-wrap:pretty;">{{ cur.noteBody }}</div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+    <!-- شريط التنقل -->
+    <div style="flex:none;height:88px;border-top:1px solid var(--hairline);background:var(--card);display:flex;align-items:center;gap:12px;padding:0 30px;">
+      <div onClick="{{ back }}" style="height:50px;border-radius:13px;border:1.5px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 20px;cursor:{{ backCursor }};color:var(--txt2);font-size:13.5px;font-weight:700;opacity:{{ backOpacity }};">
+        <i class="ph-bold ph-arrow-right" style="font-size:16px;"></i>السابق
+      </div>
+      <div style="height:50px;display:flex;align-items:center;gap:9px;padding:0 4px;">
+        <sc-for list="{{ dots }}" as="d" hint-placeholder-count="7">
+          <span style="width:{{ d.w }}px;height:8px;border-radius:99px;background:{{ d.bg }};"></span>
+        </sc-for>
+      </div>
+      <div style="flex:1;min-width:0;display:flex;align-items:center;gap:9px;">
+        <sc-if value="{{ blocked }}" hint-placeholder-val="{{ false }}">
+          <i class="ph-bold ph-warning-circle" style="flex:none;font-size:17px;color:#F59E0B;"></i>
+          <span style="font-size:12.5px;font-weight:700;color:#F59E0B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ blockMsg }}</span>
+        </sc-if>
+      </div>
+      <div onClick="{{ skip }}" style="height:50px;display:flex;align-items:center;padding:0 14px;cursor:pointer;color:var(--muted);font-size:12.5px;font-weight:700;">{{ skipLabel }}</div>
+      <sc-if value="{{ notLast }}" hint-placeholder-val="{{ true }}">
+        <div onClick="{{ next }}" style="height:50px;border-radius:13px;background:{{ nextBg }};display:flex;align-items:center;gap:9px;padding:0 28px;cursor:{{ nextCursor }};color:#fff;font-size:14.5px;font-weight:800;opacity:{{ nextOpacity }};">
+          التالي<i class="ph-bold ph-arrow-left" style="font-size:17px;"></i>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isLast }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ finish }}" style="height:50px;border-radius:13px;background:#22C55E;display:flex;align-items:center;gap:9px;padding:0 28px;cursor:pointer;color:#fff;font-size:14.5px;font-weight:800;">
+          <i class="ph-bold ph-rocket-launch" style="font-size:18px;"></i>إنهاء الإعداد والبدء
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <!-- حوار الإنهاء -->
+  <sc-if value="{{ dialogOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;background:rgba(3,10,24,.6);display:flex;align-items:center;justify-content:center;">
+    <div onClick="{{ closeDialog }}" style="position:absolute;inset:0;"></div>
+    <div style="position:relative;width:560px;background:var(--card);border-radius:18px;box-shadow:0 30px 80px rgba(2,12,32,.45);overflow:hidden;animation:fadeUp .2s ease;">
+      <div style="padding:22px 24px;display:flex;align-items:flex-start;gap:13px;border-bottom:1px solid var(--hairline);">
+        <div style="width:48px;height:48px;flex:none;border-radius:14px;background:rgba(34,197,94,.12);display:flex;align-items:center;justify-content:center;">
+          <i class="ph-bold ph-rocket-launch" style="font-size:24px;color:#22C55E;"></i>
+        </div>
+        <div style="min-width:0;flex:1;">
+          <div style="font-size:18px;font-weight:800;color:var(--txt);">إنهاء الإعداد والبدء</div>
+          <div style="font-size:12.5px;font-weight:600;color:var(--muted);line-height:1.65;text-wrap:pretty;">سيُحفظ كل ما أدخلته، وتُزرع البيانات الأساسية والسنة المالية، ثم تُفتح الشاشة الرئيسية على وردية جديدة.</div>
+        </div>
+      </div>
+      <div style="padding:16px 24px;display:flex;flex-direction:column;gap:8px;">
+        <sc-for list="{{ dlgRows }}" as="r" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:11px;background:var(--field);border-radius:11px;padding:10px 13px;">
+            <span style="flex:none;width:130px;font-size:11.5px;font-weight:700;color:var(--muted);">{{ r.label }}</span>
+            <span style="font-size:13px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.value }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="padding:16px 24px 22px;display:flex;align-items:center;gap:10px;">
+        <div style="flex:1;"></div>
+        <div onClick="{{ closeDialog }}" style="height:46px;border-radius:12px;border:1.5px solid var(--hairline);display:flex;align-items:center;padding:0 20px;cursor:pointer;color:var(--txt2);font-size:13.5px;font-weight:700;">رجوع للمراجعة</div>
+        <div onClick="{{ closeDialog }}" style="height:46px;border-radius:12px;background:#22C55E;display:flex;align-items:center;gap:8px;padding:0 24px;cursor:pointer;color:#fff;font-size:14px;font-weight:800;">
+          <i class="ph-bold ph-check" style="font-size:17px;"></i>تأكيد والبدء
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;},&quot;step&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;company&quot;,&quot;mode&quot;,&quot;input&quot;,&quot;pg&quot;,&quot;prov&quot;,&quot;products&quot;,&quot;users&quot;,&quot;tax&quot;,&quot;review&quot;],&quot;default&quot;:&quot;company&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;standalone&quot;,&quot;server&quot;,&quot;client&quot;,&quot;mirror&quot;],&quot;default&quot;:&quot;standalone&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;navStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;rail&quot;,&quot;top&quot;],&quot;default&quot;:&quot;rail&quot;,&quot;section&quot;:&quot;اختلافات التصميم&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;showTips&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;اختلافات التصميم&quot;,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const ALL = {
+  company:{label:'معلومات الشركة', hint:'الاسم · النشاط · العملة', icon:'ph-buildings',
+    title:'معلومات الشركة', sub:'أدخل بيانات شركتك الأساسية — ستظهر في ترويسة الفواتير والتقارير المطبوعة.',
+    why:'اسم الشركة والعنوان يُطبعان على كل فاتورة، ونوع النشاط يحدد أي شاشات تُفعَّل: المطاعم تحصل على الطاولات والحجوزات، والتجزئة على ميزان PLU، والتصنيع على أوامر الإنتاج.',
+    checks:[['اسم الشركة كما تريده على الفاتورة', 1], ['رقم هاتف يظهر للعميل', 0], ['نوع النشاط يطابق عملك', 1], ['العملة صحيحة — لا تتغير بعد أول فاتورة', 1]],
+    note:['العملة قرار نهائي', 'بعد أول فاتورة لا يمكن تغيير العملة الأساسية — تغييرها يتطلب إعادة تهيئة القاعدة.', 'ph-warning', '#F59E0B']},
+  mode:{label:'وضع التشغيل والفرع', hint:'مستقل · سيرفر · عميل · مرآة', icon:'ph-map-pin',
+    title:'وضع التشغيل والفرع', sub:'حدد كيف يعمل هذا الجهاز في الشبكة، ثم سمِّ الفرع والمخزن الأساسي.',
+    why:'وضع التشغيل يحدد باقي خطوات الإعداد: السيرفر يحتاج إعداد PostgreSQL وتهيئة القاعدة، والعميل والمرآة يحتاجان الاتصال بسيرفر قائم والمزامنة منه بدل إنشاء بيانات جديدة.',
+    checks:[['وضع واحد لكل جهاز — لا تخلط', 1], ['اسم الفرع كما سيظهر في التقارير', 1], ['المخزن الأساسي للجرد والتكلفة', 1]],
+    note:['وضع المرآة', 'لاب توب المدير يعمل كأنه HQ-Server: صلاحيات كاملة على كل الفروع، والكتابات تذهب للسيرفر مباشرة، وread-only عند فقد الاتصال.', 'ph-crown', '#8B5CF6']},
+  input:{label:'نمط الإدخال', hint:'لمس أو لوحة مفاتيح', icon:'ph-hand-tap',
+    title:'نمط الإدخال لهذا الجهاز', sub:'إعداد خاص بهذا الجهاز وحده — لا يُزامن مع باقي الأجهزة.',
+    why:'شاشات اللمس تحتاج لوحة مفاتيح على الشاشة وأزرارًا أكبر (44 بكسل على الأقل)، وأجهزة الكاشير بلوحة مفاتيح فعلية تعمل أسرع بالاختصارات F2/F4 بدون لوحة تظهر وتخفي.',
+    checks:[['اختبر الإدخال على الجهاز نفسه', 1], ['يمكن تغييره لاحقًا من الإعدادات', 1]],
+    note:['إعداد لكل جهاز', 'هذا الخيار يُحفظ محليًا على الجهاز ولا يُنقل بالمزامنة — كل كاشير يضبط نمطه.', 'ph-device-mobile', '#0250D3']},
+  pg:{label:'إعدادات PostgreSQL', hint:'المضيف · القاعدة · المستخدم', icon:'ph-database',
+    title:'إعدادات قاعدة بيانات السيرفر', sub:'بيانات الاتصال بـPostgreSQL الذي ستُبنى عليه قاعدة النظام.',
+    why:'في وضع السيرفر تُخزَّن كل البيانات في PostgreSQL بدل SQLite المحلي، فتستطيع باقي الأجهزة القراءة والكتابة على نفس القاعدة لحظيًا.',
+    checks:[['اختبر الاتصال قبل المتابعة', 1], ['المستخدم له صلاحية إنشاء الجداول', 1], ['المنفذ 5432 مفتوح في الجدار الناري', 0]],
+    note:['قبل المتابعة', 'لا تنتقل للخطوة التالية قبل نجاح اختبار الاتصال — التهيئة تفشل بمنتصف الطريق وتترك جداول ناقصة.', 'ph-warning-circle', '#EF4444']},
+  prov:{label:'تهيئة القاعدة', hint:'جداول · بيانات · حسابات', icon:'ph-hard-drives',
+    title:'تهيئة قاعدة البيانات', sub:'إنشاء الجداول وزرع البيانات الأساسية وشجرة الحسابات والسنة المالية.',
+    why:'هذه الخطوة تبني الهيكل الذي يقوم عليه النظام: الأدوار والفرع والمخزن والخزائن، ثم شجرة حسابات كاملة (169 حسابًا) والسنة المالية الحالية — ولا تُعاد مرة أخرى.',
+    checks:[['لا تغلق النافذة أثناء التهيئة', 1], ['كل مرحلة تُسجَّل في سجل العمليات', 1], ['التحقق النهائي يمنع البيانات الناقصة', 1]],
+    note:['العملية غير قابلة للتراجع', 'إن فشلت مرحلة، أعِد التهيئة من البداية بعد إصلاح السبب — لا تتابع على قاعدة ناقصة.', 'ph-warning', '#F59E0B']},
+  products:{label:'المنتجات الأولى', hint:'صنف واحد يكفي للبدء', icon:'ph-package',
+    title:'المنتجات الأولى', sub:'أضف صنفًا أو صنفين لتجربة البيع فورًا — الباقي يُستورد من Excel لاحقًا.',
+    why:'صنف واحد كافٍ لاختبار دورة كاملة: بيع، فاتورة، طباعة، وقيد محاسبي تلقائي. الاستيراد الكامل من Excel أسرع بعد الإعداد من إدخال مئات الأصناف هنا.',
+    checks:[['اسم واضح يظهر على الفاتورة', 1], ['سعر البيع أعلى من سعر الشراء', 1], ['الباركود اختياري — يمكن توليده', 0]],
+    note:['استيراد Excel', 'شاشة «الأصناف» تستورد ملفًا بعشرات الأعمدة مع تحقق قبل الحفظ — استخدمها للكتالوج الكامل.', 'ph-file-xls', '#22C55E']},
+  users:{label:'المستخدمون', hint:'مدير · كاشير · مخزن', icon:'ph-users',
+    title:'المستخدمون والأدوار', sub:'أنشئ حسابات فريقك — كل دور يأخذ صلاحياته الافتراضية.',
+    why:'حساب المدير موجود بالفعل. أضف كاشيرًا واحدًا على الأقل حتى لا يعمل الفريق بحساب المدير — سجل العمليات يحتاج أن يعرف من فعل ماذا.',
+    checks:[['كاشير واحد على الأقل غير المدير', 1], ['كلمة مرور قوية للمدير', 1], ['الصلاحيات التفصيلية بعد الإعداد', 0]],
+    note:['سجل العمليات', 'كل عملية تُسجَّل باسم المستخدم — العمل بحساب واحد للجميع يُفقد التتبع تمامًا.', 'ph-clipboard-text', '#0250D3']},
+  tax:{label:'الضرائب والإعدادات', hint:'ضريبة · فاتورة · وردية', icon:'ph-gear',
+    title:'الضرائب والإعدادات العامة', sub:'قواعد الضريبة والفاتورة والوردية — كلها قابلة للتعديل لاحقًا.',
+    why:'نسبة الضريبة تدخل في حساب كل فاتورة وفي القيد المحاسبي (ضريبة محصلة 2121 ومدفوعة 1141)، فاضبطها الآن حتى لا تُصحَّح فواتير سابقة.',
+    checks:[['نسبة الضريبة مطابقة للقانون', 1], ['إجبار الوردية يمنع البيع بلا كاشير', 1], ['طباعة تلقائية توفر خطوة لكل فاتورة', 0]],
+    note:['الأثر المحاسبي', 'تفعيل الضريبة يربط الفواتير تلقائيًا بحسابي 2121 و1141 من شجرة الحسابات.', 'ph-scales', '#8B5CF6']},
+  review:{label:'المراجعة والبدء', hint:'ملخص كل ما أدخلته', icon:'ph-flag-checkered',
+    title:'مراجعة الإعداد', sub:'تحقق من الملخص، ثم ابدأ العمل على النظام.',
+    why:'المراجعة الأخيرة أرخص من التصحيح بعد أول فاتورة — خصوصًا العملة ونسبة الضريبة واسم الشركة المطبوع.',
+    checks:[['اسم الشركة والعملة صحيحان', 1], ['الفرع والمخزن مسميان', 1], ['مستخدم غير المدير موجود', 1]],
+    note:['بعد البدء', 'يمكن تعديل كل شيء من «الإعدادات» عدا العملة وهيكل القاعدة.', 'ph-info', '#0250D3']},
+};
+
+const ORDER = {
+  standalone:['company','mode','input','products','users','tax','review'],
+  server:['company','mode','input','pg','prov','products','users','tax','review'],
+  client:['company','mode','input','prov','tax','review'],
+  mirror:['company','mode','input','prov','review'],
+};
+
+const PROV_STAGES = {
+  server:['اختبار الاتصال بالسيرفر','إنشاء جداول قاعدة البيانات','زرع البيانات الأساسية (أدوار، فرع، مخزن، خزائن…)','زرع شجرة الحسابات','إنشاء السنة المالية الحالية','التحقق من اكتمال البيانات'],
+  client:['اختبار الاتصال بالسيرفر','التحقق من الرمز وهوية الجهاز','تنزيل البيانات الأساسية','مزامنة الأصناف والأسعار','ربط الجهاز بالفرع المعيَّن','التحقق من اكتمال المزامنة'],
+  mirror:['اختبار الاتصال بـHQ-Server','التحقق من حساب المدير','تنزيل نطاق كل الفروع','تهيئة توجيه الكتابات للسيرفر','ضبط الوضع read-only عند الانقطاع','التحقق من اكتمال الربط'],
+};
+
+const LOGS = ['$ pg_isready -h {host} -p {port} → accepting connections','$ migrate up → schemaVersion 158 · 84 tables created','$ seed core → roles(6) branch(1) warehouse(1) safes(2)','$ seed coa → 169 accounts · trial balance = 0.00','$ fiscal year 2026 → 01/01 — 31/12 · open','$ verify → 12/12 checks passed'];
+
+const alpha = (hex, a) => { const h = hex.replace('#',''); return 'rgba(' + parseInt(h.slice(0,2),16) + ',' + parseInt(h.slice(2,4),16) + ',' + parseInt(h.slice(4,6),16) + ',' + a + ')'; };
+const fmt = (n) => (Math.round((n || 0) * 100) / 100).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+const ROLES = [
+  {label:'كاشير', icon:'ph-cash-register', color:'#0250D3', perms:'بيع · مرتجع بموافقة'},
+  {label:'مدير مخزن', icon:'ph-package', color:'#14B8A6', perms:'جرد · تحويلات · استلام'},
+  {label:'محاسب', icon:'ph-book-open', color:'#8B5CF6', perms:'قيود · تقارير مالية'},
+  {label:'مدير فرع', icon:'ph-crown-simple', color:'#F59E0B', perms:'كل شاشات الفرع'},
+];
+
+class Component extends DCLogic {
+  state = {theme:null, i:null, mode:null, dialog:null, roleIdx:0,
+    f:{name:'سوبر ماركت النيل', phone:'01001234567', address:'المعادي، القاهرة', biz:'retail', cur:'EGP',
+       branch:'الفرع الرئيسي', wh:'المخزن الرئيسي', host:'192.168.1.100', port:'8080', token:'',
+       pgHost:'192.168.1.100', pgPort:'5432', pgDb:'picpos_erp', pgUser:'postgres', pgPass:''},
+    conn:null, input:'auto', tax:{on:true, rate:14}, opts:{shift:true, autoPrint:false, negative:false, roundCash:true},
+    products:[{name:'أرز مصري 1كجم', barcode:'6221031492015', cost:28, price:36, qty:120},
+              {name:'زيت عافية 900مل', barcode:'6221031005017', cost:74, price:92, qty:60}],
+    users:[{name:'محمود سعيد (مدير النظام)', role:'مدير النظام', locked:true, color:'#EF4444', perms:'كل الصلاحيات'}],
+    np:{name:'', barcode:'', cost:'0', price:'0', qty:'0'}, nu:{name:'', pass:''},
+    prov:{i:0, running:false, done:false, logs:[]}};
+
+  componentWillUnmount() { if (this._t) clearInterval(this._t); }
+
+  get theme() { return this.state.theme ?? this.props.theme ?? 'light'; }
+  get dark() { return this.theme === 'dark'; }
+  get mode() { return this.state.mode ?? this.props.mode ?? 'standalone'; }
+  get order() { return ORDER[this.mode]; }
+  get idx() { return Math.min(this.state.i ?? this.stepFromProp, this.order.length - 1); }
+  get stepFromProp() { const k = this.props.step; const j = this.order.indexOf(k); return j < 0 ? 0 : j; }
+  get key() { return this.order[this.idx]; }
+  get showTips() { return this.props.showTips !== false; }
+  set(p) { this.setState(p); }
+  setF(p) { this.setState(s => ({f: {...s.f, ...p}})); }
+
+  goto(i) { this.set({i: Math.max(0, Math.min(i, this.order.length - 1))}); }
+
+  startProv() {
+    if (this._t) return;
+    const stages = PROV_STAGES[this.mode] || PROV_STAGES.server;
+    this.setState({prov:{i:0, running:true, done:false, logs:[]}});
+    this._t = setInterval(() => {
+      this.setState(s => {
+        const n = s.prov.i + 1;
+        const line = (LOGS[s.prov.i] || '$ step ok')
+          .replace('{host}', s.f.pgHost).replace('{port}', s.f.pgPort);
+        const logs = [...s.prov.logs, line];
+        if (n >= stages.length) { clearInterval(this._t); this._t = null; return {prov:{i:n, running:false, done:true, logs}}; }
+        return {prov:{i:n, running:true, done:false, logs}};
+      });
+    }, 850);
+  }
+
+  renderVals() {
+    return {...this.base(), ...this.stepVals(), ...this.companyVals(), ...this.modeVals(), ...this.inputVals(),
+      ...this.pgVals(), ...this.provVals(), ...this.productVals(), ...this.userVals(), ...this.taxVals(), ...this.reviewVals()};
+  }
+
+  base() {
+    const dark = this.dark;
+    const nav = this.props.navStyle ?? 'rail';
+    const done = this.idx;
+    const steps = this.order.map((k, j) => {
+      const m = ALL[k], on = j === this.idx, past = j < this.idx;
+      return {label: m.label, hint: m.hint, icon: m.icon, n: String(j + 1), done: past, notDone: !past,
+        go: () => this.goto(j),
+        bg: on ? 'rgba(74,128,232,.16)' : 'transparent',
+        bd: on ? 'rgba(74,128,232,.34)' : 'transparent',
+        fg: on ? '#FFFFFF' : past ? 'rgba(255,255,255,.72)' : 'rgba(255,255,255,.55)',
+        fw: on ? 800 : 600,
+        numBg: past ? '#22C55E' : on ? 'var(--brand)' : 'rgba(255,255,255,.06)',
+        numBd: past ? '#22C55E' : on ? 'var(--brand)' : 'rgba(255,255,255,.14)',
+        numFg: on ? '#fff' : 'rgba(255,255,255,.6)',
+        iconFg: on ? '#7FA6F2' : 'rgba(255,255,255,.28)'};
+    });
+    const dots = this.order.map((k, j) => ({w: j === this.idx ? 26 : 8,
+      bg: j === this.idx ? 'var(--brand)' : j < this.idx ? '#22C55E' : (dark ? '#233045' : '#DCE3EE')}));
+    return {theme:this.theme, themeIcon: dark ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.set({theme: dark ? 'light' : 'dark'}),
+      isRail: nav === 'rail', isTop: nav === 'top', showTips: this.showTips,
+      steps, dots, stepNo: this.idx + 1, totalSteps: this.order.length,
+      progress: Math.round((this.idx) / (this.order.length - 1) * 100)};
+  }
+
+  get blockedMsg() {
+    const k = this.key, f = this.state.f;
+    if (k === 'company' && !f.name.trim()) return 'اسم الشركة مطلوب — يظهر على كل فاتورة';
+    if (k === 'mode') {
+      if (this.mode === 'client' || this.mode === 'mirror') { if (!f.host.trim()) return 'عنوان السيرفر مطلوب في هذا الوضع'; }
+      else if (!f.branch.trim() || !f.wh.trim()) return 'اسم الفرع واسم المخزن مطلوبان';
+    }
+    if (k === 'pg' && this.state.conn !== 'ok') return 'اختبر الاتصال بقاعدة البيانات قبل المتابعة';
+    if (k === 'prov' && !this.state.prov.done) return 'أكمل التهيئة قبل الانتقال للخطوة التالية';
+    if (k === 'users' && this.state.users.length < 2) return 'أضف مستخدمًا واحدًا على الأقل غير مدير النظام';
+    return null;
+  }
+
+  stepVals() {
+    const dark = this.dark, m = ALL[this.key], blocked = this.blockedMsg;
+    const badge = this.key === 'prov' ? (this.state.prov.done ? {label:'مكتملة', icon:'ph-check-circle', fg:'#22C55E'} : {label:'خطوة حرجة', icon:'ph-warning', fg:'#F59E0B'})
+      : this.key === 'products' || this.key === 'input' ? {label:'اختيارية', icon:'ph-skip-forward', fg:'#0250D3'}
+      : {label:'مطلوبة', icon:'ph-asterisk', fg:'#EF4444'};
+    const checks = m.checks.map(([text, must]) => ({text,
+      icon: must ? 'ph-check' : 'ph-minus',
+      color: must ? '#22C55E' : '#94A3B8',
+      tint: alpha(must ? '#22C55E' : '#94A3B8', dark ? .2 : .12),
+      fg: must ? 'var(--txt2)' : 'var(--muted)'}));
+    return {
+      cur: {...m, checks,
+        badge: badge.label, badgeIcon: badge.icon, badgeFg: badge.fg,
+        badgeBg: alpha(badge.fg, dark ? .16 : .09), badgeBd: alpha(badge.fg, .28),
+        noteTitle: m.note[0], noteBody: m.note[1], noteIcon: m.note[2], noteFg: m.note[3],
+        noteBg: alpha(m.note[3], dark ? .12 : .06), noteBd: alpha(m.note[3], .26)},
+      isCompany: this.key === 'company', isMode: this.key === 'mode', isInput: this.key === 'input',
+      isPg: this.key === 'pg', isProv: this.key === 'prov', isProducts: this.key === 'products',
+      isUsers: this.key === 'users', isTax: this.key === 'tax', isReview: this.key === 'review',
+      blocked: !!blocked, blockMsg: blocked || '',
+      notLast: this.key !== 'review', isLast: this.key === 'review',
+      back: () => this.goto(this.idx - 1),
+      backCursor: this.idx ? 'pointer' : 'not-allowed', backOpacity: this.idx ? 1 : .45,
+      next: () => { if (!blocked) this.goto(this.idx + 1); },
+      nextBg: blocked ? 'var(--muted)' : 'var(--brand)', nextOpacity: blocked ? .55 : 1,
+      nextCursor: blocked ? 'not-allowed' : 'pointer',
+      skip: () => this.goto(this.idx + 1),
+      skipLabel: (this.key === 'products' || this.key === 'input') ? 'تخطي هذه الخطوة' : '',
+      finish: () => this.set({dialog:'finish'}),
+      dialogOpen: !!this.state.dialog, closeDialog: () => this.set({dialog:null}),
+    };
+  }
+
+  companyVals() {
+    const dark = this.dark, f = this.state.f;
+    const BIZ = [['retail','تجزئة','ph-shopping-cart'],['restaurant','مطعم / كافيه','ph-coffee'],['wholesale','جملة وتوزيع','ph-truck'],['manufacturing','تصنيع','ph-factory'],['services','خدمات','ph-scissors'],['other','أخرى','ph-dots-three-circle']];
+    const CUR = [['EGP','جنيه مصري'],['SAR','ريال سعودي'],['AED','درهم إماراتي'],['JOD','دينار أردني'],['KWD','دينار كويتي'],['USD','دولار أمريكي']];
+    return {
+      f: {
+        name:f.name, phone:f.phone, address:f.address, branch:f.branch, wh:f.wh,
+        host:f.host, port:f.port, token:f.token,
+        pgHost:f.pgHost, pgPort:f.pgPort, pgDb:f.pgDb, pgUser:f.pgUser, pgPass:f.pgPass,
+        nameBd: f.name.trim() ? 'var(--hairline)' : 'rgba(245,158,11,.55)',
+        branchBd: f.branch.trim() ? 'var(--hairline)' : 'rgba(245,158,11,.55)',
+        whBd: f.wh.trim() ? 'var(--hairline)' : 'rgba(245,158,11,.55)',
+        hostBd: f.host.trim() ? 'var(--hairline)' : 'rgba(245,158,11,.55)',
+        setName:(e)=>this.setF({name:e.target.value}), setPhone:(e)=>this.setF({phone:e.target.value}),
+        setAddress:(e)=>this.setF({address:e.target.value}), setBranch:(e)=>this.setF({branch:e.target.value}),
+        setWh:(e)=>this.setF({wh:e.target.value}), setHost:(e)=>this.setF({host:e.target.value}),
+        setPort:(e)=>this.setF({port:e.target.value}), setToken:(e)=>this.setF({token:e.target.value}),
+        setPgHost:(e)=>this.setF({pgHost:e.target.value}), setPgPort:(e)=>this.setF({pgPort:e.target.value}),
+        setPgDb:(e)=>this.setF({pgDb:e.target.value}), setPgUser:(e)=>this.setF({pgUser:e.target.value}),
+        setPgPass:(e)=>this.setF({pgPass:e.target.value}),
+      },
+      bizTypes: BIZ.map(([k, label, icon]) => { const on = f.biz === k;
+        return {label, icon, go: () => this.setF({biz:k}),
+          bg: on ? alpha('#0250D3', dark ? .18 : .08) : 'var(--card)',
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          fg: on ? 'var(--brand)' : 'var(--muted)',
+          labelFg: on ? 'var(--brand)' : 'var(--txt2)'}; }),
+      currencies: CUR.map(([code, label]) => { const on = f.cur === code;
+        return {code, label, go: () => this.setF({cur:code}),
+          bg: on ? alpha('#0250D3', dark ? .18 : .08) : 'var(--card)',
+          bd: on ? 'var(--brand)' : 'var(--hairline)',
+          fg: on ? 'var(--brand)' : 'var(--txt)',
+          labelFg: on ? 'var(--brand)' : 'var(--muted)'}; }),
+    };
+  }
+
+  modeVals() {
+    const dark = this.dark, mode = this.mode;
+    const M = [
+      ['standalone','مستقل','ph-desktop','#0250D3','جهاز واحد بقاعدة محلية — الأسرع في البدء وبلا شبكة.','SQLite محلي'],
+      ['server','سيرفر','ph-hard-drives','#22C55E','هذا الجهاز يستضيف القاعدة وتتصل به باقي الأجهزة.','PostgreSQL'],
+      ['client','عميل','ph-monitor','#F59E0B','كاشير يقرأ ويكتب على قاعدة السيرفر ويعمل بفرعه.','يتصل بسيرفر'],
+      ['mirror','مرآة','ph-crown','#8B5CF6','لاب توب المدير — صلاحيات كل الفروع والكتابة للسيرفر.','HQ كامل'],
+    ];
+    const isNet = mode === 'client' || mode === 'mirror';
+    const NOTE = {
+      client: ['في وضع العميل', [{text:'أنشئ الفروع على السيرفر أولًا ثم اتصل وزامن'},{text:'اختر الفرع المعيَّن لهذا الجهاز بعد المزامنة'},{text:'البيع يتوقف إن انقطع السيرفر — لا كتابة محلية'}], 'ph-monitor', '#F59E0B'],
+      mirror: ['في وضع المرآة', [{text:'كل التعديلات تذهب لـHQ-Server مباشرة'},{text:'read-only عند فقد الاتصال'},{text:'يلزم حساب مدير على HQ-Server للتفعيل'}], 'ph-crown', '#8B5CF6'],
+    };
+    const n = NOTE[mode] || NOTE.client;
+    return {
+      modes: M.map(([k, label, icon, color, desc, tag]) => { const on = mode === k;
+        return {label, icon, desc, tag, on, go: () => this.set({mode:k, i:1, conn:null, prov:{i:0, running:false, done:false, logs:[]}}),
+          bg: on ? alpha(color, dark ? .14 : .06) : 'var(--card)',
+          bd: on ? color : 'var(--hairline)', fg: color, tint: alpha(color, dark ? .2 : .11),
+          titleFg: on ? color : 'var(--txt)'}; }),
+      isLocalMode: !isNet, isNetMode: isNet,
+      netLabel: mode === 'mirror' ? 'عنوان HQ-Server' : 'عنوان السيرفر',
+      noteTitle: n[0], noteBullets: n[1], noteIcon: n[2], noteFg: n[3],
+      noteBg: alpha(n[3], dark ? .12 : .05), noteBd: alpha(n[3], .26),
+    };
+  }
+
+  inputVals() {
+    const dark = this.dark, cur = this.state.input;
+    const T = [
+      ['auto','تلقائي (مستحسن)','ph-magic-wand','#0250D3','يكتشف شاشة اللمس ويُظهر لوحة المفاتيح عند الحاجة فقط.','يتكيف مع الجهاز'],
+      ['touch','لمس دائمًا','ph-hand-tap','#22C55E','لوحة مفاتيح على الشاشة وأزرار أكبر — لأجهزة الكاشير اللمسية.','شاشة لمس'],
+      ['keyboard','لوحة مفاتيح فعلية','ph-keyboard','#F59E0B','بلا لوحة على الشاشة — أسرع للاختصارات F2 حفظ و F4 دفع.','كيبورد وماوس'],
+    ];
+    return {inputModes: T.map(([k, label, icon, color, desc, tag]) => { const on = cur === k;
+      return {label, icon, desc, tag, go: () => this.set({input:k}),
+        bg: on ? alpha(color, dark ? .14 : .06) : 'var(--card)',
+        bd: on ? color : 'var(--hairline)', fg: color, tint: alpha(color, dark ? .2 : .11),
+        titleFg: on ? color : 'var(--txt)'}; })};
+  }
+
+  pgVals() {
+    const c = this.state.conn;
+    const S = {
+      null: {msg:'لم يُختبر الاتصال بعد — اضغط «اختبار الاتصال».', icon:'ph-info', fg:'#6B7280', bg:'var(--field)', bd:'var(--hairline)'},
+      ok: {msg:'الاتصال ناجح · PostgreSQL 16.2 · القاعدة موجودة وقابلة للكتابة', icon:'ph-check-circle', fg:'#22C55E', bg:'rgba(34,197,94,.10)', bd:'rgba(34,197,94,.3)'},
+      testing: {msg:'جارٍ الاتصال بالمضيف…', icon:'ph-circle-notch', fg:'#F59E0B', bg:'rgba(245,158,11,.10)', bd:'rgba(245,158,11,.3)'},
+    };
+    const s = S[c === null ? 'null' : c] || S.null;
+    return {connMsg:s.msg, connIcon:s.icon, connFg:s.fg, connBg:s.bg, connBd:s.bd,
+      testConn: () => { this.set({conn:'testing'}); setTimeout(() => this.set({conn:'ok'}), 900); }};
+  }
+
+  provVals() {
+    const dark = this.dark, p = this.state.prov;
+    const stages = PROV_STAGES[this.mode] || PROV_STAGES.server;
+    const pct = Math.round(p.i / stages.length * 100);
+    const rows = stages.map((label, j) => {
+      const done = j < p.i, running = j === p.i && p.running;
+      const color = done ? '#22C55E' : running ? '#F59E0B' : (dark ? '#94A3B8' : '#94A3B8');
+      return {label, color, tint: alpha(color, dark ? .18 : .11),
+        icon: done ? 'ph-check' : running ? 'ph-circle-notch' : 'ph-dot-outline',
+        spin: running ? 'animation:spin 1s linear infinite;' : '',
+        state: done ? 'تم' : running ? 'جارٍ…' : 'في الانتظار',
+        fg: done || running ? 'var(--txt)' : 'var(--muted)', fw: running ? 800 : 600,
+        bg: running ? alpha('#F59E0B', dark ? .08 : .05) : 'var(--card)',
+        bd: running ? 'rgba(245,158,11,.35)' : 'var(--hairline)'};
+    });
+    const color = p.done ? '#22C55E' : p.running ? '#F59E0B' : '#0250D3';
+    return {prov: {
+      title: p.done ? 'التهيئة اكتملت بنجاح' : p.running ? 'جارٍ التهيئة — لا تغلق النافذة' : 'جاهز لبدء التهيئة',
+      sub: p.done ? 'كل المراحل مرّت والتحقق النهائي نجح' : (p.i + ' من ' + stages.length + ' مرحلة · ' + (this.mode === 'server' ? 'PostgreSQL' : 'مزامنة من السيرفر')),
+      icon: p.done ? 'ph-check-circle' : p.running ? 'ph-circle-notch' : 'ph-play-circle',
+      spin: p.running ? 'animation:spin 1s linear infinite;' : '',
+      color, tint: alpha(color, dark ? .18 : .10), pct,
+      btnLabel: p.done ? 'إعادة التهيئة' : p.running ? 'جارٍ التنفيذ…' : 'بدء التهيئة',
+      btnIcon: p.done ? 'ph-arrows-clockwise' : 'ph-play',
+      btnBg: p.running ? 'var(--muted)' : p.done ? '#0250D3' : '#22C55E',
+      start: () => { if (!p.running) { if (this._t) { clearInterval(this._t); this._t = null; } this.startProv(); } },
+      stages: rows,
+      logs: p.logs.map(text => ({text, fg: text.includes('verify') ? '#5EE49A' : '#93C5FD'})),
+      noLogs: p.logs.length === 0, logCount: p.logs.length + ' سطر'}};
+  }
+
+  productVals() {
+    const np = this.state.np, ps = this.state.products;
+    const ok = !!np.name.trim() && (+np.price > 0);
+    const total = ps.reduce((a, p) => a + p.price * p.qty, 0);
+    return {
+      np: {name:np.name, barcode:np.barcode, cost:np.cost, price:np.price, qty:np.qty,
+        nameBd: np.name.trim() ? 'var(--hairline)' : 'rgba(245,158,11,.45)',
+        setName:(e)=>this.setState(s=>({np:{...s.np, name:e.target.value}})),
+        setBarcode:(e)=>this.setState(s=>({np:{...s.np, barcode:e.target.value}})),
+        setCost:(e)=>this.setState(s=>({np:{...s.np, cost:e.target.value}})),
+        setPrice:(e)=>this.setState(s=>({np:{...s.np, price:e.target.value}})),
+        setQty:(e)=>this.setState(s=>({np:{...s.np, qty:e.target.value}})),
+        addBg: ok ? 'var(--brand)' : 'var(--muted)', addOpacity: ok ? 1 : .5,
+        addCursor: ok ? 'pointer' : 'not-allowed',
+        add: () => { if (!ok) return; this.setState(s => ({
+          products: [...s.products, {name:s.np.name.trim(), barcode:s.np.barcode || '—', cost:+s.np.cost || 0, price:+s.np.price || 0, qty:+s.np.qty || 0}],
+          np: {name:'', barcode:'', cost:'0', price:'0', qty:'0'}})); }},
+      products: ps.map((p, j) => { const m = p.cost ? Math.round((p.price - p.cost) / p.cost * 100) : 0;
+        return {n: j + 1, name:p.name, barcode:p.barcode, cost: fmt(p.cost), price: fmt(p.price), qty: String(p.qty),
+          margin: m + '%', marginFg: m >= 20 ? '#22C55E' : m > 0 ? '#F59E0B' : '#EF4444',
+          del: () => this.set({products: ps.filter((x, k) => k !== j)})}; }),
+      productsSummary: ps.length + ' صنف · قيمة المخزون الافتتاحي ' + fmt(total) + ' ' + this.state.f.cur,
+    };
+  }
+
+  userVals() {
+    const dark = this.dark, nu = this.state.nu, us = this.state.users;
+    const role = ROLES[this.state.roleIdx % ROLES.length];
+    const ok = !!nu.name.trim();
+    return {
+      nu: {name:nu.name, pass:nu.pass, role: role.label, roleIcon: role.icon, roleFg: role.color,
+        nameBd: nu.name.trim() ? 'var(--hairline)' : 'rgba(245,158,11,.45)',
+        setName:(e)=>this.setState(s=>({nu:{...s.nu, name:e.target.value}})),
+        setPass:(e)=>this.setState(s=>({nu:{...s.nu, pass:e.target.value}})),
+        cycleRole: () => this.set({roleIdx: (this.state.roleIdx + 1) % ROLES.length}),
+        addBg: ok ? 'var(--brand)' : 'var(--muted)', addOpacity: ok ? 1 : .5, addCursor: ok ? 'pointer' : 'not-allowed',
+        add: () => { if (!ok) return; this.setState(s => { const r = ROLES[s.roleIdx % ROLES.length];
+          return {users: [...s.users, {name:s.nu.name.trim(), role:r.label, color:r.color, perms:r.perms, locked:false}],
+            nu:{name:'', pass:''}}; }); }},
+      users: us.map((u, j) => ({name:u.name, role:u.role, perms:u.perms, color:u.color,
+        tint: alpha(u.color, dark ? .2 : .12),
+        initials: u.name.split(' ').slice(0, 2).map(w => w[0]).join('.'),
+        locked: !!u.locked, removable: !u.locked,
+        del: () => this.set({users: us.filter((x, k) => k !== j)})})),
+    };
+  }
+
+  taxVals() {
+    const dark = this.dark, t = this.state.tax, o = this.state.opts;
+    const mk = (title, sub, icon, color, on, go, hasRate) => ({title, sub, icon, color, hasRate: !!hasRate,
+      tint: alpha(color, dark ? .18 : .10), go,
+      knobBg: on ? color : (dark ? '#2A3B55' : '#C7D2E1'), knobX: on ? 26 : 3});
+    return {
+      toggles: [
+        mk('تفعيل ضريبة القيمة المضافة', 'تُضاف تلقائيًا على الفواتير وتُرحَّل لحساب الضريبة المحصلة 2121', 'ph-percent', '#0250D3', t.on, () => this.setState(s => ({tax:{...s.tax, on:!s.tax.on}})), true),
+        mk('إجبار فتح وردية قبل البيع', 'لا فاتورة بلا وردية مفتوحة — يضمن جرد الخزينة وتتبع الكاشير', 'ph-cash-register', '#22C55E', o.shift, () => this.setState(s => ({opts:{...s.opts, shift:!s.opts.shift}}))),
+        mk('طباعة الفاتورة تلقائيًا', 'إرسال الفاتورة للطابعة فور الدفع بلا خطوة إضافية', 'ph-printer', '#8B5CF6', o.autoPrint, () => this.setState(s => ({opts:{...s.opts, autoPrint:!s.opts.autoPrint}}))),
+        mk('السماح بالبيع برصيد سالب', 'البيع حتى لو الكمية صفر — يُوصى بإطفائه في التجزئة', 'ph-warning-diamond', '#EF4444', o.negative, () => this.setState(s => ({opts:{...s.opts, negative:!s.opts.negative}}))),
+        mk('تقريب النقدية لأقرب 0.25', 'يقرّب المستحق نقدًا فقط ويسجل الفرق في فروق التقريب', 'ph-coins', '#F59E0B', o.roundCash, () => this.setState(s => ({opts:{...s.opts, roundCash:!s.opts.roundCash}}))),
+      ],
+      taxRates: [0, 5, 14, 15, 16].map(r => { const on = t.rate === r;
+        return {label: r + '%', go: () => this.setState(s => ({tax:{...s.tax, rate:r}})),
+          bg: on ? 'var(--brand)' : 'var(--field)', bd: on ? 'var(--brand)' : 'var(--hairline)',
+          fg: on ? '#fff' : 'var(--txt2)'}; }),
+    };
+  }
+
+  reviewVals() {
+    const f = this.state.f, t = this.state.tax, o = this.state.opts;
+    const BIZ = {retail:'تجزئة', restaurant:'مطعم / كافيه', wholesale:'جملة وتوزيع', manufacturing:'تصنيع', services:'خدمات', other:'أخرى'};
+    const MODE = {standalone:'مستقل', server:'سيرفر', client:'عميل', mirror:'مرآة'};
+    const INP = {auto:'تلقائي', touch:'لمس دائمًا', keyboard:'لوحة مفاتيح فعلية'};
+    const jump = (k) => () => { const j = this.order.indexOf(k); if (j >= 0) this.goto(j); };
+    const net = this.mode === 'client' || this.mode === 'mirror';
+    const ready = [!!f.name.trim(), net ? !!f.host.trim() : !!f.branch.trim(), this.state.users.length >= 2,
+      this.state.products.length > 0, this.mode === 'standalone' || this.state.prov.done, true];
+    const summary = [
+      {title:'الشركة', icon:'ph-buildings', go: jump('company'), rows:[
+        {label:'الاسم', value:f.name || '—', fg: f.name ? 'var(--txt)' : '#EF4444'},
+        {label:'النشاط والعملة', value: BIZ[f.biz] + ' · ' + f.cur, fg:'var(--txt)'},
+        {label:'الهاتف والعنوان', value:(f.phone || '—') + ' · ' + (f.address || '—'), fg:'var(--txt)'}]},
+      {title:'وضع التشغيل', icon:'ph-map-pin', go: jump('mode'), rows:[
+        {label:'الوضع', value: MODE[this.mode], fg:'var(--txt)'},
+        {label: net ? 'السيرفر' : 'الفرع', value: net ? (f.host + ':' + f.port) : f.branch, fg:'var(--txt)'},
+        {label: net ? 'الرمز' : 'المخزن', value: net ? (f.token ? '✓ مضبوط' : 'لم يُدخل') : f.wh, fg:'var(--txt)'}]},
+      {title:'قاعدة البيانات', icon:'ph-database', go: jump(this.mode === 'server' ? 'pg' : 'prov'), rows:[
+        {label:'المحرك', value: this.mode === 'standalone' ? 'SQLite محلي' : 'PostgreSQL ' + f.pgHost + ':' + f.pgPort, fg:'var(--txt)'},
+        {label:'التهيئة', value: this.mode === 'standalone' ? 'تُنفَّذ عند الإنهاء' : (this.state.prov.done ? 'مكتملة' : 'لم تُنفَّذ'), fg: this.mode === 'standalone' || this.state.prov.done ? '#22C55E' : '#F59E0B'},
+        {label:'شجرة الحسابات', value:'169 حسابًا · متوازنة', fg:'var(--txt)'}]},
+      {title:'الأصناف والمستخدمون', icon:'ph-users', go: jump('users'), rows:[
+        {label:'الأصناف', value: this.state.products.length + ' صنف', fg:'var(--txt)'},
+        {label:'المستخدمون', value: this.state.users.length + ' مستخدم', fg: this.state.users.length >= 2 ? 'var(--txt)' : '#F59E0B'},
+        {label:'نمط الإدخال', value: INP[this.state.input], fg:'var(--txt)'}]},
+      {title:'الضرائب', icon:'ph-percent', go: jump('tax'), rows:[
+        {label:'ضريبة القيمة المضافة', value: t.on ? ('مفعّلة · ' + t.rate + '%') : 'غير مفعّلة', fg: t.on ? 'var(--txt)' : 'var(--muted)'},
+        {label:'حسابات الضريبة', value:'2121 محصلة · 1141 مدفوعة', fg:'var(--txt)'},
+        {label:'تقريب النقدية', value: o.roundCash ? 'مفعّل — لأقرب 0.25' : 'غير مفعّل', fg:'var(--txt)'}]},
+      {title:'قواعد التشغيل', icon:'ph-gear', go: jump('tax'), rows:[
+        {label:'إجبار الوردية', value: o.shift ? 'مفعّل' : 'غير مفعّل', fg: o.shift ? '#22C55E' : '#F59E0B'},
+        {label:'طباعة تلقائية', value: o.autoPrint ? 'مفعّلة' : 'غير مفعّلة', fg:'var(--txt)'},
+        {label:'بيع برصيد سالب', value: o.negative ? 'مسموح — راجع القرار' : 'ممنوع', fg: o.negative ? '#EF4444' : '#22C55E'}]},
+    ];
+    return {summary, readyPct: Math.round(ready.filter(Boolean).length / ready.length * 100),
+      finalChecks: [
+        {text:'حفظ بيانات الشركة والفرع والمخزن'},
+        {text:'إنشاء الخزائن الافتراضية وربطها بالكاشير'},
+        {text:'زرع شجرة الحسابات والسنة المالية 2026'},
+        {text:'تفعيل الأدوار والصلاحيات الافتراضية'},
+        {text:'ربط العمليات بالحسابات (مبيعات · مشتريات · ضريبة)'},
+        {text:'فتح الشاشة الرئيسية على وردية جديدة'},
+      ],
+      dlgRows: [
+        {label:'الشركة والعملة', value:(f.name || '—') + ' · ' + f.cur},
+        {label:'وضع التشغيل', value: MODE[this.mode] + (net ? ' — ' + f.host : ' — ' + f.branch)},
+        {label:'الضريبة', value: t.on ? t.rate + '%' : 'غير مفعّلة'},
+        {label:'المستخدمون والأصناف', value: this.state.users.length + ' مستخدم · ' + this.state.products.length + ' صنف'},
+      ]};
+  }
+}
+
+</script>
+</body>
+</html>
