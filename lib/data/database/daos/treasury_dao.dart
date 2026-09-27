@@ -2144,6 +2144,13 @@ extension TreasuryDao on AppDatabase {
     // attribution. Mirrors the manual-JE fix in drift_accounting_repository.
     int? operatingBranchId,
   }) async {
+    if (userId != null) {
+      await PermissionEnforcer(userHasPermission).requireCriticalOp(
+        userId: userId,
+        code: PermissionCodes.treasuryReceiptsCreate,
+        arabicReason: 'لا تملك صلاحية إنشاء سند قبض',
+      );
+    }
     return transaction(() async {
       // 0. Soft/Hard Period Closing Gating
       await accountingDao.validateFinancialPeriod(DateTime.now(), operation: 'سند قبض');
@@ -2349,6 +2356,13 @@ extension TreasuryDao on AppDatabase {
     // Prefer it for the JE branch; fall back to targetSafe.branchId.
     int? operatingBranchId,
   }) async {
+    if (userId != null) {
+      await PermissionEnforcer(userHasPermission).requireCriticalOp(
+        userId: userId,
+        code: PermissionCodes.treasuryPaymentsCreate,
+        arabicReason: 'لا تملك صلاحية إنشاء سند صرف',
+      );
+    }
     return transaction(() async {
       // 0. Soft/Hard Period Closing Gating
       await accountingDao.validateFinancialPeriod(DateTime.now(), operation: 'سند صرف');

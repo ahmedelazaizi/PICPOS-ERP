@@ -1,13 +1,75 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
+import 'package:cryptography/cryptography.dart';
 import 'package:device_info_plus/device_info_plus.dart' as di;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/trial/trial_policy.dart';
+import '../core/utils/license_encoding.dart';
 import '../core/trial/trial_state.dart';
 import '../data/providers/providers.dart';
 import 'secure_storage_service.dart';
+
+/// Verifies PP2 licenses without exposing signing capabilities to the app.
+class LicenseVerifier {
+  final String publicKeyB64;
+  final Ed25519 _algorithm;
+
+  LicenseVerifier(this.publicKeyB64, {Ed25519? algorithm})
+      : _algorithm = algorithm ?? Ed25519();
+
+  Future<bool> verify(String encodedKey, String machineId) async {
+    if (publicKeyB64 == 'REPLACE_WITH_ED25519_PUBLIC_KEY') return false;
+    final parts = encodedKey.replaceAll(RegExp(r'\s'), '').split('.');
+    if (parts.length != 2 || !parts[0].startsWith('PP2-')) return false;
+
+    try {
+      final payloadText = parts[0].substring(4);
+      final payloadBytes = _decodeUnpaddedBase64(payloadText);
+      final signatureBytes = _decodeUnpaddedBase64(parts[1]);
+      if (signatureBytes.length != 64) return false;
+      final payload = jsonDecode(utf8.decode(payloadBytes));
+      if (payload is! Map ||
+          payload['v'] != 2 ||
+          payload['machineId'] != machineId ||
+          payload['issuedAt'] is! String ||
+          DateTime.tryParse(payload['issuedAt'] as String) == null) {
+        return false;
+      }
+
+      final publicKeyBytes = _decodePublicKey(publicKeyB64);
+      if (publicKeyBytes.length != 32) return false;
+      final publicKey = SimplePublicKey(
+        publicKeyBytes,
+        type: KeyPairType.ed25519,
+      );
+      return await _algorithm.verify(
+        payloadBytes,
+        signature: Signature(signatureBytes, publicKey: publicKey),
+      );
+    } on FormatException {
+      return false;
+    } on StateError {
+      return false;
+    } on ArgumentError {
+      return false;
+    }
+  }
+
+  List<int> _decodeUnpaddedBase64(String value) {
+    final isBase64Url = RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(value);
+    if (value.isEmpty || value.contains('=') || !isBase64Url) {
+      throw const FormatException('Invalid unpadded base64url');
+    }
+    return base64Url.decode(value.padRight((value.length + 3) ~/ 4 * 4, '='));
+  }
+
+  List<int> _decodePublicKey(String value) {
+    final unpadded = value.replaceAll('=', '');
+    return _decodeUnpaddedBase64(unpadded);
+  }
+}
 
 /// License Service - Handles Machine ID generation, license key verification,
 /// and configurable trial policy management.
@@ -17,8 +79,9 @@ class LicenseService {
   LicenseService(this.ref);
 
   static const String _licenseKeySetting = 'license_key';
-  static const String _secretSalt = 'UralCash_Secure_Salt_2026';
   static const String _installDateKey = 'install_date';
+  static const String _licensePublicKeyB64 =
+      'zNa-GOFZ-av7sGIjeJmc3u60rSWSvST0G8DbNqMer1s';
   static const String _trialPolicyKey = 'trial_policy';
 
   /// Whether the app has been verified as activated (read by DAOs to bypass demo limits)
@@ -67,20 +130,10 @@ class LicenseService {
     return digest.toString().substring(0, 16).toUpperCase();
   }
 
-  /// Generate a valid license key for a given machine ID (Internal use by developer)
-  String generateKey(String machineId) {
-    final bytes = utf8.encode('$machineId$_secretSalt');
-    final digest = sha256.convert(bytes);
-    // Key format: XXXX-XXXX-XXXX-XXXX
-    final fullHash = digest.toString().toUpperCase();
-    return '${fullHash.substring(0, 4)}-${fullHash.substring(4, 8)}-${fullHash.substring(8, 12)}-${fullHash.substring(12, 16)}';
-  }
-
-  /// Verify if a key is valid for this machine
+  /// Verify a signed license key against this installation's machine ID.
   Future<bool> verifyKey(String key) async {
     final machineId = await getMachineId();
-    final expectedKey = generateKey(machineId);
-    return key.trim().toUpperCase() == expectedKey;
+    return LicenseVerifier(_licensePublicKeyB64).verify(key, machineId);
   }
 
   /// Check if the application is currently activated
@@ -104,7 +157,7 @@ class LicenseService {
               // Persist to secure storage for future boots if file removed
               await ref
                   .read(secureStorageServiceProvider)
-                  .write(_licenseKeySetting, key.toUpperCase());
+                  .write(_licenseKeySetting, key.replaceAll(RegExp(r'\s'), ''));
               return true;
             }
           }
@@ -134,7 +187,7 @@ class LicenseService {
     }
 
     debugPrint(
-      '[LICENSE] isActivated() called. storedKey=${storedKey != null ? "${storedKey.substring(0, 4)}..." : "null"}',
+      '[LICENSE] isActivated() called. storedKey=${storedKey != null ? "present" : "null"}',
     );
 
     if (storedKey == null || storedKey.isEmpty) {
@@ -240,21 +293,20 @@ class LicenseService {
 
   /// Activate the application with a key
   Future<bool> activate(String key) async {
-    debugPrint(
-      '[LICENSE] activate() called with key=${key.substring(0, 4)}...',
-    );
-    final isValid = await verifyKey(key);
+    debugPrint('[LICENSE] activate() called');
+    final normalizedKey = key.replaceAll(RegExp(r'\s'), '');
+    final isValid = await verifyKey(normalizedKey);
 
     if (isValid) {
       // Store in Secure Storage
       await ref
           .read(secureStorageServiceProvider)
-          .write(_licenseKeySetting, key.trim().toUpperCase());
+          .write(_licenseKeySetting, normalizedKey);
 
       // Also sync to DB for backward compatibility if needed
       await ref
           .read(databaseProvider)
-          .setSetting(_licenseKeySetting, key.trim().toUpperCase());
+          .setSetting(_licenseKeySetting, normalizedKey);
 
       TrialState.isActivatedCached = true;
       TrialState.activePolicy = TrialPolicy.fullVersion;

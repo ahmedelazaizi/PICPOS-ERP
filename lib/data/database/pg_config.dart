@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/config/brand.dart';
 
 /// Database connection mode
@@ -56,7 +57,6 @@ class PostgresConfig {
         'port': port,
         'database': database,
         'username': username,
-        'password': password,
         'useSsl': useSsl,
       };
 
@@ -129,6 +129,8 @@ class PostgresConfig {
 
   static const _modeKey = 'db_mode';
   static const _configKey = 'pg_config';
+  static const _passwordKey = 'pg_password';
+  static const _secureStorage = FlutterSecureStorage();
 
   /// Save database mode to SharedPreferences
   static Future<void> saveMode(DatabaseMode mode) async {
@@ -147,6 +149,7 @@ class PostgresConfig {
   /// Save PostgreSQL config to SharedPreferences
   Future<void> save() async {
     final prefs = await SharedPreferences.getInstance();
+    await _secureStorage.write(key: _passwordKey, value: password);
     await prefs.setString(_configKey, jsonEncode(toJson()));
   }
 
@@ -156,9 +159,15 @@ class PostgresConfig {
     final raw = prefs.getString(_configKey);
     if (raw == null) return const PostgresConfig();
     try {
-      return PostgresConfig.fromJson(
-        jsonDecode(raw) as Map<String, dynamic>,
-      );
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      final legacyPassword = json.remove('password') as String?;
+      if (legacyPassword != null) {
+        await _secureStorage.write(key: _passwordKey, value: legacyPassword);
+        await prefs.setString(_configKey, jsonEncode(json));
+      }
+      final config = PostgresConfig.fromJson(json);
+      final password = await _secureStorage.read(key: _passwordKey);
+      return config.copyWith(password: password ?? '');
     } catch (_) {
       return const PostgresConfig();
     }

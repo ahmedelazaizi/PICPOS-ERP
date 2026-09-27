@@ -16,6 +16,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/config/app_config.dart';
+import 'core/auth/admin_password_heal.dart';
 import 'core/config/brand.dart';
 import 'core/config/business_profile_provider.dart';
 import 'core/config/feature_key.dart';
@@ -33,6 +34,7 @@ import 'presentation/widgets/connection_health_wrapper.dart';
 import 'presentation/widgets/touch_keyboard/touch_keyboard_controller.dart';
 import 'presentation/widgets/touch_keyboard/touch_keyboard_overlay.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'services/admin_password_service.dart';
 import 'services/audit_log.dart';
 import 'services/developer_auth_service.dart';
@@ -46,6 +48,7 @@ import 'services/sync/sync_worker.dart';
 import 'main_desktop.dart' if (dart.library.html) 'main_web.dart' as platform;
 import 'data/database/pg_config.dart';
 import 'data/database/connection_io.dart' show openPostgresConnection, testPostgresConnection;
+import 'services/invoice_integrity_service.dart';
 import 'data/database/extensions/branch_dedup_extension.dart';
 import 'data/database/extensions/return_memo_dedup_extension.dart';
 import 'data/database/extensions/fiscal_year_dedup_extension.dart';
@@ -255,7 +258,22 @@ void main() async {
     // fresh `AppDatabase()`. We pass this same instance to every
     // downstream component so SQLite never sees parallel handles on the
     // same file from this process.
-    sharedDb = pgDb ?? AppDatabase();
+    try {
+      sharedDb = pgDb ?? AppDatabase();
+      await InvoiceIntegrityService.initialize(
+        storage: const FlutterSecureStorage(),
+      );
+    } on DatabaseKeyUnavailableException catch (error) {
+      runApp(FatalSetupErrorApp(
+        result: ReconcileInconsistent(
+          reasonAr: error.toString(),
+          reasonCode: ReconcileReasonCode.dbReadError,
+          dbMode: NetworkMode.standalone,
+          details: [error.toString()],
+        ),
+      ));
+      return;
+    }
 
     // تسجيلُ طباعة التقارير — يُضبَط مرّةً هنا لأنّ `PdfComputeHelper` في
     // طبقةِ خدماتٍ لا تعرف قاعدةً ولا مستخدماً. والخطّافُ فارغٌ بالبناء،
@@ -480,6 +498,18 @@ void main() async {
       ));
       return; // Stop main() — Fatal app owns the UI now.
     } catch (e) {
+      if (e is DatabaseKeyUnavailableException) {
+        debugPrint('[STARTUP] ❌ database encryption key unavailable: $e');
+        runApp(FatalSetupErrorApp(
+          result: ReconcileInconsistent(
+            reasonAr: e.toString(),
+            reasonCode: ReconcileReasonCode.dbReadError,
+            dbMode: NetworkService.instance.mode,
+            details: [e.toString()],
+          ),
+        ));
+        return;
+      }
       // A PostgreSQL privilege failure must NOT fall through to the
       // continue-anyway branch below.
       //
@@ -1078,8 +1108,14 @@ Future<void> _bootTimeAdminHeal(AppDatabase db) async {
       return;
     }
 
-    // Step 3: broken + no sentinel → heal via raw SQL.
-    lines.add('⚠ admin/admin fails AND no sentinel — resetting…');
+    if (!adminPasswordNeedsHeal(salt: salt, hash: hash)) {
+      lines.add('ℹ valid non-default password preserved');
+      await flush();
+      return;
+    }
+
+    // Step 3: structurally broken + no sentinel → heal via raw SQL.
+    lines.add('⚠ admin password hash is structurally broken — resetting…');
     try {
       await _resetAdminPasswordToDefault(db);
     } catch (e) {

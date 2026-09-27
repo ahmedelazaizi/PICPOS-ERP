@@ -18,18 +18,12 @@
 
 import 'package:shelf/shelf.dart';
 
-import '../../core/auth/bootstrap_admin.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../data/database/database.dart';
 
 /// Shelf request-context keys.
 class ApiUserCtx {
   ApiUserCtx._();
-
-  // Spec 088 USR-1 — emit the bootstrap-admin bypass PERMS-WARN line at
-  // most once per server boot so field operators can grep for it after
-  // rollout without log spam.
-  static bool _bootstrapBypassLogged = false;
 
   /// Stored in `request.context[userIdKey]` after the middleware verifies
   /// the signed `X-Session-Token`. Null when no valid token was presented.
@@ -78,26 +72,8 @@ class ApiUserCtx {
         headers: const {'content-type': 'application/json'},
       );
     }
-    // Spec 088 USR-1 — bootstrap admin (userId=1, by Spec 061 invariant)
-    // ALWAYS short-circuits to allowed. The matrix-fill path from Spec
-    // 084b and the safety net from Spec 086 remain authoritative for
-    // every other user; this bypass is durable so future permission
-    // codes don't have to be added to admin's grants explicitly. See
-    // specs/088-mirror-hotfix-pack/contracts/permission-bypass.md.
-    if (isBootstrapAdmin(userId)) {
-      if (!_bootstrapBypassLogged) {
-        _bootstrapBypassLogged = true;
-        // ignore: discarded_futures — fire-and-forget log; we don't await
-        // here to avoid adding latency to every admin request, and the
-        // logger swallows its own I/O failures.
-        DiagnosticLogger.log(
-          'PERMS-WARN',
-          'bootstrap admin bypass engaged (userId=$userId) — '
-              'request path=${request.url.path} code=$code',
-        );
-      }
-      return null;
-    }
+    // Bootstrap admins use the same permission path as every other user;
+    // critical financial codes remain explicit for segregation of duties.
     final ok = await db.userHasPermission(userId, code);
     if (!ok) {
       return Response(

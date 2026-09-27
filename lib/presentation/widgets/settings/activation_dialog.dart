@@ -92,7 +92,7 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
   ///    يحتاجه النقلُ مفتاحٌ جديدٌ لا فكُّ تفعيل. صيغَ التنبيهُ على الواقع.
   ///
   /// ٣. ومجموعةُ `key` في التصميم أربعةُ صناديقَ من أربع خانات. المدخلُ هنا
-  ///    حقلٌ واحدٌ بنفس القناع `XXXX-XXXX-XXXX-XXXX` وبنفس الخطّ الأحاديّ —
+  ///    حقلٌ واحدٌ واسعٌ يقبل المفتاح الموقّع الطويل —
   ///    وظيفيّاً هو هو، والتقسيمُ إلى أربعةٍ بندٌ مفتوحٌ لا عطب.
   Widget _buildPicposDialog(BuildContext context) {
     final muted = picposDialogMuted(context);
@@ -118,9 +118,11 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
   List<PicPosPanelGroup> _picposGroups(Color muted) => [
         PicPosPanelGroup(
           label: 'مفتاح الترخيص',
-          hint: '١٦ خانة',
+          hint: 'مفتاح موقّع طويل',
           child: TextField(
             controller: _keyController,
+            maxLength: 512,
+            maxLines: 3,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontFamily: 'monospace',
@@ -129,7 +131,7 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
               fontWeight: FontWeight.bold,
             ),
             decoration: InputDecoration(
-              hintText: 'XXXX-XXXX-XXXX-XXXX',
+              hintText: 'PP2-…',
               hintStyle: TextStyle(color: muted, fontSize: 14),
               prefixIcon: const Icon(PhosphorIconsBold.keyhole),
             ),
@@ -290,6 +292,8 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
               const SizedBox(height: 8),
               TextField(
                 controller: _keyController,
+                maxLength: 512,
+                maxLines: 3,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontFamily: 'monospace',
@@ -298,7 +302,7 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
                   fontWeight: FontWeight.bold,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'XXXX-XXXX-XXXX-XXXX',
+                  hintText: 'PP2-…',
                   hintStyle: TextStyle(
                     color: Colors.grey.shade400,
                     fontSize: 14,
@@ -306,9 +310,6 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
                   border: const OutlineInputBorder(),
                   prefixIcon: const Icon(PhosphorIconsBold.keyhole),
                 ),
-                inputFormatters: [
-                  // Format: XXXX-XXXX-XXXX-XXXX
-                ],
               ),
             ],
           ),

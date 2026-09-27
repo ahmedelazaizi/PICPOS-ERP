@@ -1,28 +1,51 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:crypto/crypto.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../core/logging/diagnostic_logger.dart';
+import 'security_service.dart';
 
-/// S02: Invoice Integrity Service — HMAC-SHA256 hash for tamper detection.
-///
-/// Computes a deterministic hash from immutable invoice fields.
-/// This hash is stored alongside the invoice to detect any unauthorized
-/// modifications to the financial data after creation.
+/// Computes invoice integrity signatures with a per-install secret.
 class InvoiceIntegrityService {
-  /// Secret key for HMAC — derived from app identity (not user-changeable)
-  static const _secretKey = 'UralCash-ERP-Integrity-v1';
+  static const _legacySecretKey = 'UralCash-ERP-Integrity-v1';
+  static const _secretSetting = 'invoice_integrity_secret_v2';
+  static String? _installSecret;
 
-  /// Compute integrity hash for a sales invoice.
-  ///
-  /// The hash is computed from:
-  /// - Invoice number
-  /// - Invoice date (ISO string)
-  /// - Total amount
-  /// - Subtotal
-  /// - Discount
-  /// - Tax
-  /// - Paid amount
-  /// - Customer ID (or 0)
-  /// - User ID
-  /// - Payment method
+  static const _secretStorageKey = 'ural_invoice_integrity_secret_v2';
+
+  /// Loads the per-install secret from device-local secure storage.
+  /// The callbacks remain available for unit tests; production never stores
+  /// this secret in the synced settings table.
+  static Future<void> initialize({
+    Future<String?> Function(String key)? readSetting,
+    Future<void> Function(String key, String value)? writeSetting,
+    FlutterSecureStorage? storage,
+  }) async {
+    try {
+      final secureStorage = storage;
+      final stored = secureStorage != null
+          ? await secureStorage.read(key: _secretStorageKey)
+          : await readSetting!(_secretSetting);
+      if (stored != null && stored.isNotEmpty) {
+        _installSecret = stored;
+        return;
+      }
+      final bytes = List<int>.generate(32, (_) => Random.secure().nextInt(256));
+      final generated = base64Url.encode(bytes);
+      if (secureStorage != null) {
+        await secureStorage.write(key: _secretStorageKey, value: generated);
+      } else {
+        await writeSetting!(_secretSetting, generated);
+      }
+      _installSecret = generated;
+    } catch (error, stack) {
+      if (error is DatabaseKeyUnavailableException) rethrow;
+      _installSecret = null;
+      await DiagnosticLogger.logError('INVOICE_INTEGRITY',
+          'secure secret initialization failed', error, stack);
+    }
+  }
+
   static String computeSalesInvoiceHash({
     required String invoiceNumber,
     required DateTime invoiceDate,
@@ -34,25 +57,61 @@ class InvoiceIntegrityService {
     required int? customerId,
     required int userId,
     required String paymentMethod,
-  }) {
-    final payload = [
-      invoiceNumber,
-      invoiceDate.toIso8601String(),
-      total.toStringAsFixed(4),
-      subtotal.toStringAsFixed(4),
-      discount.toStringAsFixed(4),
-      tax.toStringAsFixed(4),
-      paid.toStringAsFixed(4),
-      (customerId ?? 0).toString(),
-      userId.toString(),
-      paymentMethod,
-    ].join('|');
+  }) => _computeHash(_salesPayload(
+        invoiceNumber,
+        invoiceDate,
+        total,
+        subtotal,
+        discount,
+        tax,
+        paid,
+        customerId,
+        userId,
+        paymentMethod,
+      ));
 
-    return _computeHmac(payload);
+  static String computePurchaseInvoiceHash({
+    required String invoiceNumber,
+    required DateTime invoiceDate,
+    required double total,
+    required double subtotal,
+    required double discount,
+    required double tax,
+    required double paid,
+    required int supplierId,
+    required String paymentMethod,
+  }) => _computeHash([
+        invoiceNumber,
+        invoiceDate.toIso8601String(),
+        total.toStringAsFixed(4),
+        subtotal.toStringAsFixed(4),
+        discount.toStringAsFixed(4),
+        tax.toStringAsFixed(4),
+        paid.toStringAsFixed(4),
+        supplierId.toString(),
+        paymentMethod,
+      ].join('|'));
+
+  static bool verifySalesInvoiceHash({
+    required String storedHash,
+    required String invoiceNumber,
+    required DateTime invoiceDate,
+    required double total,
+    required double subtotal,
+    required double discount,
+    required double tax,
+    required double paid,
+    required int? customerId,
+    required int userId,
+    required String paymentMethod,
+  }) {
+    final payload = _salesPayload(invoiceNumber, invoiceDate, total, subtotal,
+        discount, tax, paid, customerId, userId, paymentMethod);
+    return _verify(storedHash, payload);
   }
 
-  /// Compute integrity hash for a purchase invoice.
-  static String computePurchaseInvoiceHash({
+  static bool verifyPurchaseInvoiceHash({
+    required String storedHash,
     required String invoiceNumber,
     required DateTime invoiceDate,
     required double total,
@@ -74,74 +133,37 @@ class InvoiceIntegrityService {
       supplierId.toString(),
       paymentMethod,
     ].join('|');
-
-    return _computeHmac(payload);
+    return _verify(storedHash, payload);
   }
 
-  /// Verify an existing hash against current invoice data.
-  /// Returns true if the data hasn't been tampered with.
-  static bool verifySalesInvoiceHash({
-    required String storedHash,
-    required String invoiceNumber,
-    required DateTime invoiceDate,
-    required double total,
-    required double subtotal,
-    required double discount,
-    required double tax,
-    required double paid,
-    required int? customerId,
-    required int userId,
-    required String paymentMethod,
-  }) {
-    final computed = computeSalesInvoiceHash(
-      invoiceNumber: invoiceNumber,
-      invoiceDate: invoiceDate,
-      total: total,
-      subtotal: subtotal,
-      discount: discount,
-      tax: tax,
-      paid: paid,
-      customerId: customerId,
-      userId: userId,
-      paymentMethod: paymentMethod,
-    );
-    return computed == storedHash;
+  static String _salesPayload(String number, DateTime date, double total,
+      double subtotal, double discount, double tax, double paid, int? party,
+      int user, String payment) => [
+        number,
+        date.toIso8601String(),
+        total.toStringAsFixed(4),
+        subtotal.toStringAsFixed(4),
+        discount.toStringAsFixed(4),
+        tax.toStringAsFixed(4),
+        paid.toStringAsFixed(4),
+        (party ?? 0).toString(),
+        user.toString(),
+        payment,
+      ].join('|');
+
+  static String _computeHash(String payload) {
+    final key = utf8.encode(_installSecret ?? _legacySecretKey);
+    return 'v2:${Hmac(sha256, key).convert(utf8.encode(payload))}';
   }
 
-  /// Verify an existing hash against current purchase invoice data.
-  /// Returns true if the data hasn't been tampered with.
-  static bool verifyPurchaseInvoiceHash({
-    required String storedHash,
-    required String invoiceNumber,
-    required DateTime invoiceDate,
-    required double total,
-    required double subtotal,
-    required double discount,
-    required double tax,
-    required double paid,
-    required int supplierId,
-    required String paymentMethod,
-  }) {
-    final computed = computePurchaseInvoiceHash(
-      invoiceNumber: invoiceNumber,
-      invoiceDate: invoiceDate,
-      total: total,
-      subtotal: subtotal,
-      discount: discount,
-      tax: tax,
-      paid: paid,
-      supplierId: supplierId,
-      paymentMethod: paymentMethod,
-    );
-    return computed == storedHash;
-  }
-
-  /// Internal HMAC-SHA256 computation
-  static String _computeHmac(String payload) {
-    final key = utf8.encode(_secretKey);
-    final bytes = utf8.encode(payload);
-    final hmacSha256 = Hmac(sha256, key);
-    final digest = hmacSha256.convert(bytes);
-    return digest.toString();
+  static bool _verify(String stored, String payload) {
+    if (stored.startsWith('v2:')) {
+      if (_installSecret == null) return false;
+      return stored == _computeHash(payload);
+    }
+    final legacy = Hmac(sha256, utf8.encode(_legacySecretKey))
+        .convert(utf8.encode(payload))
+        .toString();
+    return stored == legacy;
   }
 }

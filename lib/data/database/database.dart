@@ -27,6 +27,7 @@ import '../../domain/models/asset_disposal_plan.dart';
 import '../../domain/models/floor_plan_layout.dart';
 import '../../domain/models/import_purchase_plan.dart';
 import '../../services/security_service.dart';
+import '../../core/auth/admin_password_heal.dart';
 import '../../domain/models/quick_sale_policy.dart'
     show kQuickSaleReceiptTemplateKey, quickSaleReceiptTemplateFile;
 import '../../services/printing/template_resolver.dart';

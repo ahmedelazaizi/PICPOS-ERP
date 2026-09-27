@@ -508,9 +508,7 @@ extension PermissionsDao on AppDatabase {
       for (final p in allPerms) {
         if (existingRolePermIds.contains(p.id)) continue;
         // 062 (D1-004): segregation of duties — admin must not auto-receive
-        // criticalFinancialOps codes. Operator must explicitly assign each.
-        // Existing installs that already granted these are unaffected
-        // (existingRolePermIds skip already-granted rows).
+        // critical financial operation codes. Operators explicitly assign them.
         if (PermissionCodes.criticalFinancialOps.contains(p.code)) {
           continue;
         }

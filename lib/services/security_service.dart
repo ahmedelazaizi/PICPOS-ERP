@@ -46,6 +46,15 @@ class PasswordRule {
 
 /// Secure password hashing service using PBKDF2-like approach
 /// with SHA-256 and multiple iterations for enhanced security.
+class DatabaseKeyUnavailableException implements Exception {
+  const DatabaseKeyUnavailableException();
+
+  @override
+  String toString() =>
+      'تعذّر قراءة مفتاح تشفير قاعدة البيانات من التخزين الآمن؛ '
+      'لن تُفتح القاعدة تجنباً لفقدان البيانات.';
+}
+
 class SecurityService {
   SecurityService._();
 
@@ -419,7 +428,9 @@ class SecurityService {
   ///
   /// Strategy:
   /// 1. Primary: derive key from device hardware ID + pepper.
-  /// 2. Fallback: generate a random key ONCE, persist it in OS secure storage.
+  /// 2. Fallback: use an existing key from OS secure storage.
+  /// The device derivation and pepper are intentionally unchanged because
+  /// existing customer databases depend on this exact SQLCipher key.
   static Future<String> getDatabaseEncryptionKey() async {
     try {
       final deviceInfo = DeviceInfoPlugin();
@@ -482,10 +493,7 @@ class SecurityService {
       await storage.write(key: _fallbackKeyStorageKey, value: newKey);
       return newKey;
     } catch (_) {
-      // Last resort: generate a random key per session (better than hardcoded)
-      final random = Random.secure();
-      final bytes = List<int>.generate(32, (_) => random.nextInt(256));
-      return sha256.convert(bytes).toString();
+      throw const DatabaseKeyUnavailableException();
     }
   }
 }

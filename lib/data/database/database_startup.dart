@@ -812,16 +812,12 @@ extension DatabaseStartup on AppDatabase {
         final defaultVerifies = storedSalt.isNotEmpty &&
             SecurityService.verifyPassword('admin', storedSalt, storedHash);
 
-        final saltBroken = storedSalt.isEmpty;
-        final hashBroken = storedHash.isEmpty;
-        // Heal when either the row is obviously broken (empty salt/hash),
-        // OR 'admin' fails to verify AND the operator has never set a
-        // custom password (sentinel not set). The second branch is what
-        // rescues installs stuck behind a buggy old seeder without
-        // clobbering real customer-chosen passwords.
-        final shouldHeal = saltBroken ||
-            hashBroken ||
-            (!defaultVerifies && !adminPasswordCustomized);
+        // A failed default-password check is not evidence of corruption: it
+        // may be a valid customer-selected password.
+        final shouldHeal = adminPasswordNeedsHeal(
+          salt: storedSalt,
+          hash: storedHash,
+        );
 
         final logLines = <String>[
           '--- Admin Password Integrity Check: ${DateTime.now()} ---',
@@ -830,9 +826,7 @@ extension DatabaseStartup on AppDatabase {
           'salt.isEmpty=${storedSalt.isEmpty}',
           'defaultVerifies(admin/admin)=$defaultVerifies',
           'admin_password_customized=$adminPasswordCustomized',
-          'shouldHeal=$shouldHeal '
-              '(saltBroken=$saltBroken hashBroken=$hashBroken '
-              'defaultFail_and_notCustom=${!defaultVerifies && !adminPasswordCustomized})',
+          'shouldHeal=$shouldHeal (structural check via adminPasswordNeedsHeal)',
         ];
 
         if (shouldHeal) {

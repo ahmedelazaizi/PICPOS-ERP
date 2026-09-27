@@ -1385,7 +1385,15 @@ extension AccountingDaoWritesExt on AppDatabase {
     required int referenceId,
     required String descriptionPrefix,
     required String newReferenceType,
+    int? actingUserId,
   }) async {
+    if (actingUserId != null) {
+      await PermissionEnforcer(userHasPermission).requireCriticalOp(
+        userId: actingUserId,
+        code: PermissionCodes.accountingJournal,
+        arabicReason: 'لا تملك صلاحية عكس القيد',
+      );
+    }
     final entries = await (select(journalEntries)
           ..where((e) =>
               e.referenceType.equals(referenceType) &
@@ -1436,6 +1444,7 @@ extension AccountingDaoWritesExt on AppDatabase {
     required List<JournalLine> lines,
     String? referenceType,
     int? referenceId,
+    int? createdBy,
   }) async {
     final entryId = await createJournalEntry(
       description: description,
@@ -1461,6 +1470,11 @@ extension AccountingDaoWritesExt on AppDatabase {
   /// Approve a draft journal entry (Maker-Checker: approver != creator)
   /// Uses customStatement for migration-added columns (status, approved_by, approved_at)
   Future<void> approveJournalEntry(int entryId, int approverId) async {
+    await PermissionEnforcer(userHasPermission).requireCriticalOp(
+      userId: approverId,
+      code: PermissionCodes.accountingJournal,
+      arabicReason: 'لا تملك صلاحية اعتماد القيد',
+    );
     // ورقةُ الدفع تُجمَع داخلَ المعاملة وتُرسَل بعد إغلاقها — كما في
     // `createJournalEntry` تماماً، كي لا تحبس زمنُ الشبكة قفلَ الكتابة.
     String? pushDesc;

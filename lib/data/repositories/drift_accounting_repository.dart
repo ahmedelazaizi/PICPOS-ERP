@@ -7,6 +7,8 @@ import '../../domain/models/account_facts.dart';
 import '../../domain/repositories/accounting_repository.dart';
 import '../../services/activity_logger.dart';
 import '../../services/client_write_interceptor.dart';
+import '../../services/permission_enforcer.dart';
+import '../../core/permissions/permission_codes.dart';
 import '../database/database.dart';
 import '../database/sync_interceptor.dart';
 
@@ -94,6 +96,13 @@ class DriftAccountingRepository implements IAccountingRepository {
     int? createdBy,
     String? reference,
   }) async {
+    if (createdBy != null && !isAutoPosted) {
+      await PermissionEnforcer(_db.userHasPermission).requireCriticalOp(
+        userId: createdBy,
+        code: PermissionCodes.accountingJournal,
+        arabicReason: 'لا تملك صلاحية إنشاء قيد يومية',
+      );
+    }
     // Feature 010 / Cluster B (Issue 2) — resolve the originating branch
     // when the caller did not supply one. The manual-JE dialog
     // (journal_entry_create_dialog.saveManualEntry) does NOT pass branchId,
