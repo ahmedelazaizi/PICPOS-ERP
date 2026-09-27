@@ -904,6 +904,15 @@ extension OperationalExpensesDao on AppDatabase {
   /// Finds and removes the associated journal entry before deleting the expense record.
   Future<int> deleteExpense(int expenseId) async {
     return transaction(() async {
+      final expense = await (select(opExpenses)
+            ..where((item) => item.id.equals(expenseId)))
+          .getSingleOrNull();
+      if (expense == null) return 0;
+      await accountingDao.validateFinancialPeriod(
+        expense.expenseDate,
+        operation: 'حذف مصروف تشغيلي',
+      );
+
       // Find and delete the associated journal entry (if any)
       final relatedEntry = await (select(journalEntries)
             ..where((e) => e.referenceType.equals('op_expense') & e.referenceId.equals(expenseId)))

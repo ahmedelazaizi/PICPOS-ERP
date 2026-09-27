@@ -1429,6 +1429,7 @@ extension AccountingDaoWritesExt on AppDatabase {
   // ─────────────────────────────────────────────────────────────────────────
 
   /// Create a manual journal entry as draft (requires approval to post)
+  @Deprecated('Use createJournalEntry with draft status; this posts balances before unposting')
   Future<int> createDraftJournalEntry({
     required String description,
     required DateTime date,
@@ -1577,6 +1578,12 @@ extension AccountingDaoWritesExt on AppDatabase {
   /// Reject a draft journal entry
   /// Uses customStatement for migration-added columns (status, approved_by, approved_at)
   Future<void> rejectJournalEntry(int entryId, int rejectorId) async {
+    final entry = await (select(journalEntries)
+          ..where((journalEntry) => journalEntry.id.equals(entryId)))
+        .getSingleOrNull();
+    if (entry == null) throw Exception('القيد غير موجود');
+    if (entry.isPosted) throw Exception('لا يمكن رفض قيد مُرحَّل');
+
     await customStatement(
       "UPDATE journal_entries SET status = 'rejected', approved_by = ?, approved_at = ? WHERE id = ?",
       [rejectorId, DateTime.now().millisecondsSinceEpoch, entryId],

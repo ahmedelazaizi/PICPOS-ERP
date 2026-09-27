@@ -87,7 +87,7 @@ class _SalesBatchActionBarState extends ConsumerState<SalesBatchActionBar> {
                           ),
                           ElevatedButton(
                             onPressed: () => Navigator.pop(ctx, true),
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
                             child: const Text('حذف الجميع'),
                           ),
                         ],
@@ -134,7 +134,7 @@ class _SalesBatchActionBarState extends ConsumerState<SalesBatchActionBar> {
                     : const Icon(PhosphorIconsBold.trash, size: 18),
                 label: const Text('حذف المحددة'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade600,
+                  backgroundColor: AppColors.error,
                   foregroundColor: Colors.white,
                 ),
               ),

@@ -4,6 +4,8 @@
 *.pyc
 *.swp
 *.orig
+*.root-backup
+*.bak
 .DS_Store
 .atom/
 .build/
@@ -186,6 +188,7 @@ tools/UralCash_License_Tool.*
 tools/license.txt
 tools/test_license.dart
 tools/keygen.bat
+tools/picpos-activation/
 
 # Inno Setup compiled output + downloaded prereqs
 installer/output/

@@ -27,7 +27,7 @@ class NotificationBell extends ConsumerWidget {
               barrierLabel: 'Dismiss',
               pageBuilder: (context, animation, secondaryAnimation) {
                 return Align(
-                  alignment: Alignment.centerLeft, // Right side for LTR, Left side for RTL. Adjust based on app direction.
+                  alignment: AlignmentDirectional.centerEnd,
                   child: Material(
                     elevation: 16,
                     color: Colors.transparent,

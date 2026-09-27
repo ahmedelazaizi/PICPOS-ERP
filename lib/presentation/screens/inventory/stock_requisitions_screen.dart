@@ -147,12 +147,11 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
                                           Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              IconButton(
-                                                icon: const Icon(PhosphorIconsBold.eye, size: 18),
+                                              const IconButton(
+                                                icon: Icon(PhosphorIconsBold.eye, size: 18),
                                                 color: AppColors.info,
-                                                onPressed: () {
-                                                  // TODO: View details
-                                                },
+                                                tooltip: 'قريبًا',
+                                                onPressed: null,
                                               ),
                                               if (req.status == RequisitionStatus.pending) ...[
                                                 IconButton(

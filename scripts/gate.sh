@@ -508,7 +508,7 @@ if (( WITH_PG )); then
   #    القاعدة** (‏DSN واحد). فعند التوازي يمسح ملفٌّ سكيما ملفٍّ آخر أثناء
   #    عمله — ويفشل **أحياناً**، وهو أسوأ من الفشل الدائم لأنه يُقرأ تذبذباً.
   #    عزلُها يحتاج قاعدةً لكل عامل، لا رفعَ الرقم.
-  export PG_TEST_DSN="${PG_TEST_DSN:-postgres://postgres:14590@127.0.0.1:5432/picpos}"
+  export PG_TEST_DSN="${PG_TEST_DSN:?PG_TEST_DSN must be set}"
   run_suite "integration_pg — PostgreSQL حيّة" 45 \
     flutter test test/integration_pg/ --tags pg --run-skipped --concurrency=1
 fi

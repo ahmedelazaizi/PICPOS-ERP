@@ -17,7 +17,7 @@ class PosHeaderButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(right: 8),
+      margin: const EdgeInsetsDirectional.only(start: 8),
       child: Material(
         color: Colors.transparent,
         child: InkWell(

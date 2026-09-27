@@ -112,7 +112,12 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
               color: AppColors.warning,
             ),
             const SizedBox(width: 8),
-            Text('تعديل فاتورة #${widget.invoice.invoiceNumber}'),
+            Flexible(
+              child: Text(
+                'تعديل فاتورة #${widget.invoice.invoiceNumber}',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         content: SizedBox(

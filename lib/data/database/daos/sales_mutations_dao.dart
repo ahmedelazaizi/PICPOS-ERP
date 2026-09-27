@@ -1067,6 +1067,9 @@ extension SalesMutationsDao on AppDatabase {
       )..where((i) => i.id.equals(invoiceId))).getSingleOrNull();
       if (invoice == null) return;
 
+      // 0. Soft/Hard Period Closing Gating
+      await accountingDao.validateFinancialPeriod(invoice.invoiceDate, operation: 'تعديل دفعة فاتورة مبيعات');
+
       // ISS-04 REVISED: Allow payment method changes on locked/posted invoices.
       // The existing journal entry is reversed and a new one is created so the
       // GL stays consistent. Editing line items or amounts still requires a return.
@@ -1104,9 +1107,6 @@ extension SalesMutationsDao on AppDatabase {
           debugPrint('[SalesMutations] Reversed journal entry #${oldEntry.id} for payment method change');
         }
       }
-
-      // 0. Soft/Hard Period Closing Gating
-      await accountingDao.validateFinancialPeriod(invoice.invoiceDate, operation: 'تعديل دفعة فاتورة مبيعات');
 
       final oldPaymentMethod = invoice.paymentMethod;
       final paidAmount = invoice.paid;

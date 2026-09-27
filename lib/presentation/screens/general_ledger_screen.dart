@@ -506,7 +506,7 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
                           
                           return ListTile(
                             dense: true,
-                            contentPadding: EdgeInsets.only(right: 16.0 + (level * 12.0), left: 16.0),
+                            contentPadding: EdgeInsetsDirectional.only(start: 16.0 + (level * 12.0), end: 16.0),
                             leading: CircleAvatar(
                               radius: 14,
                               backgroundColor: Colors.blue.shade50,

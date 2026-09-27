@@ -74,6 +74,7 @@ class AppTypography {
     fontWeight: FontWeight.bold,
     color: AppColors.primary,
     fontFamily: 'monospace',
+    fontFamilyFallback: ['Consolas', 'Courier New'],
   );
 
   static const TextStyle priceRegular = TextStyle(
@@ -81,5 +82,6 @@ class AppTypography {
     fontWeight: FontWeight.bold,
     color: AppColors.primary,
     fontFamily: 'monospace',
+    fontFamilyFallback: ['Consolas', 'Courier New'],
   );
 }

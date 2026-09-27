@@ -187,6 +187,7 @@ extension CommercialPapersDao on AppDatabase {
 
       // Prevent redundant status change
       final oldStatus = paper.status;
+      if (oldStatus == newStatus) return;
 
       // Update paper status
       await (update(

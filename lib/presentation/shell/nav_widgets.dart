@@ -355,7 +355,7 @@ class _CollapsibleNavGroupsState extends State<_CollapsibleNavGroups> {
       onTap: () => widget.onItemTap(item),
       child: Container(
         height: 34,
-        margin: const EdgeInsets.only(right: 22, left: 6, top: 1, bottom: 1),
+        margin: const EdgeInsetsDirectional.only(start: 22, end: 6, top: 1, bottom: 1),
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: isSelected

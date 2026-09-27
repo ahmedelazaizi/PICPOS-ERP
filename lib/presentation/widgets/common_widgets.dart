@@ -37,7 +37,7 @@ class ConfirmDialog extends StatelessWidget {
             Icon(icon, color: effectiveColor),
             const SizedBox(width: 8),
           ],
-          Text(title),
+          Flexible(child: Text(title, overflow: TextOverflow.ellipsis)),
         ],
       ),
       content: Text(message),

@@ -358,7 +358,7 @@ class AvatarBadge extends StatelessWidget {
                 )
               : null,
         ),
-        if (badge != null) Positioned(right: 0, bottom: 0, child: badge!),
+        if (badge != null) PositionedDirectional(start: 0, bottom: 0, child: badge!),
       ],
     );
   }

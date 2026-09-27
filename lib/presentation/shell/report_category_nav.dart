@@ -95,7 +95,7 @@ class _ReportCategoryNavState extends ConsumerState<ReportCategoryNav> {
         },
         child: Container(
           height: 32,
-          margin: const EdgeInsets.only(right: 18, left: 6, bottom: 1),
+          margin: const EdgeInsetsDirectional.only(start: 18, end: 6, bottom: 1),
           padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
             color: isOpen
@@ -137,7 +137,7 @@ class _ReportCategoryNavState extends ConsumerState<ReportCategoryNav> {
             onTap: () => widget.onOpen(cat.id, r.id),
             child: Container(
               height: 28,
-              margin: const EdgeInsets.only(right: 30, left: 6, bottom: 1),
+              margin: const EdgeInsetsDirectional.only(start: 30, end: 6, bottom: 1),
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
                 children: [

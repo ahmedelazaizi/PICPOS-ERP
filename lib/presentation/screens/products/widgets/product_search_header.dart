@@ -205,13 +205,15 @@ class ProductSearchHeader extends ConsumerWidget {
             ),
           ),
         ],
-        child: OutlinedButton.icon(
-          onPressed: null,
+        child: IgnorePointer(
+          child: OutlinedButton.icon(
+            onPressed: () {},
           icon: const Icon(PhosphorIconsBold.scales),
           label: const Text('الميزان ▾'),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.warning,
             side: const BorderSide(color: AppColors.warning),
+            ),
           ),
         ),
       ),

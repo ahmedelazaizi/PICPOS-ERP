@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 import '../core/utils/uuid_v7.dart';
+import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart';
 import '../domain/entities/accounting_entities.dart';
 import '../domain/repositories/settings_repository.dart';
@@ -161,8 +164,11 @@ class InventoryService {
             );
           }
         } catch (e) {
-          // ignore: avoid_print
-          print('[FINANCIAL_WARNING] Inventory bond accounting failed: $e');
+          debugPrint('[FINANCIAL_WARNING] Inventory bond accounting failed: $e');
+          unawaited(DiagnosticLogger.log(
+            'FINANCIAL_WARNING',
+            'Inventory bond accounting failed: $e',
+          ));
         }
       }
 

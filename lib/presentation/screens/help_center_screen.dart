@@ -241,7 +241,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 if (isExpanded)
                   Container(
                     width: double.infinity,
-                    margin: const EdgeInsets.fromLTRB(40, 0, 16, 12),
+                    margin: const EdgeInsetsDirectional.fromSTEB(16, 0, 40, 12),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.04),

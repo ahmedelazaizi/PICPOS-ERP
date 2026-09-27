@@ -648,7 +648,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(confirmCtx, true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
               child: const Text(
                 'إلغاء المرتجع',
                 style: TextStyle(color: Colors.white),

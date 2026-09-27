@@ -320,7 +320,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                   : null,
               isDense: true,
               filled: true,
-              fillColor: Colors.white,
+              fillColor: Theme.of(context).colorScheme.surface,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),

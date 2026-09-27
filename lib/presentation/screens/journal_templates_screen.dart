@@ -34,8 +34,6 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
         ),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
         actions: [
           PermissionGuard(
             permission: PermissionCodes.accountingManage,

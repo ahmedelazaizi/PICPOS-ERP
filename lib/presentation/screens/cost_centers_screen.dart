@@ -177,7 +177,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
     return Container(
       margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
       ),
