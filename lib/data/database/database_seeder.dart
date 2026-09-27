@@ -170,6 +170,17 @@ extension DatabaseSeeder on AppDatabase {
         SettingsCompanion.insert(key: 'tax_rate', value: const Value('14')),
       );
     }
+    final existingZeroCostPolicy = await (select(settings)
+          ..where((s) => s.key.equals('zero_cost_policy')))
+        .getSingleOrNull();
+    if (existingZeroCostPolicy == null) {
+      await into(settings).insert(
+        SettingsCompanion.insert(
+          key: 'zero_cost_policy',
+          value: const Value('block'),
+        ),
+      );
+    }
 
     // Note: seedRolesAndPermissions() is called at the top (before user insert)
 

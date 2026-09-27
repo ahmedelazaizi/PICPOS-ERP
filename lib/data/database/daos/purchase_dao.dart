@@ -759,6 +759,8 @@ extension PurchaseDao on AppDatabase {
       // أدناه، لا بضربِ إجماليّها في معاملٍ واحد.
       final rawMaterialLineIndexes = <int>{};
 
+       double negativeStockCostAdjustment = 0.0;
+
       for (var lineAt = 0; lineAt < items.length; lineAt++) {
         final item = items[lineAt];
         final qty = item.quantity.present ? item.quantity.value : 1.0;
@@ -957,6 +959,7 @@ extension PurchaseDao on AppDatabase {
         await _writeImportPurchaseDetails(invoiceId, importDetails);
       }
 
+
       for (var lineAt = 0; lineAt < items.length; lineAt++) {
         final item = items[lineAt];
         final productId = item.productId.present ? item.productId.value : 0;
@@ -1008,6 +1011,8 @@ extension PurchaseDao on AppDatabase {
         // Update product stock and WAC cost (#PIR Phase 0)
         final product = await getProductById(productId);
         if (product != null && product.trackInventory) {
+           final stockBeforeReceipt = product.currentStock;
+           final costBeforeReceipt = product.costPrice;
           // 1. Update WAC Cost BEFORE updating stock quantity if we want standard average logic,
           // or pass "newQuantity" to the helper which handles current balance.
           await updateProductWAC(
@@ -1035,6 +1040,12 @@ extension PurchaseDao on AppDatabase {
             notes: 'مشتريات فاتورة #$invoiceNumber',
             unitCost: unitCost,
           );
+           final negativeCoverage = stockBeforeReceipt < 0
+               ? (stockBeforeReceipt.abs() < quantity ? stockBeforeReceipt.abs() : quantity)
+               : 0.0;
+           negativeStockCostAdjustment += FinancialUtils.round(
+             negativeCoverage * (unitCost - costBeforeReceipt),
+           );
         }
 
         // Create batch if expiry tracking
@@ -1240,7 +1251,41 @@ extension PurchaseDao on AppDatabase {
         costCenterId: ccId,
         branchId: branchId,
       );
-
+       // Correct the cost of units sold while stock was negative.
+       if (negativeStockCostAdjustment != 0) {
+         final cogsCode = await accountingDao.getMappedAccountCode(
+           'cogs', AccountingDao.accountPurposes['cogs']!,
+         );
+         final cogsAccount = await accountingDao.getAccountByCode(cogsCode);
+         if (cogsAccount == null) {
+           throw StateError('حساب تكلفة البضاعة المباعة غير موجود.');
+         }
+         final amount = negativeStockCostAdjustment.abs();
+         final adjustmentLines = negativeStockCostAdjustment > 0
+             ? [
+                 JournalLine(accountId: invAcc.id, debit: amount,
+                     description: 'تسوية تكلفة مخزون سالب #$invoiceNumber'),
+                 JournalLine(accountId: cogsAccount.id, credit: amount,
+                     description: 'تسوية تكلفة مخزون سالب #$invoiceNumber'),
+               ]
+             : [
+                 JournalLine(accountId: cogsAccount.id, debit: amount,
+                     description: 'تسوية تكلفة مخزون سالب #$invoiceNumber'),
+                 JournalLine(accountId: invAcc.id, credit: amount,
+                     description: 'تسوية تكلفة مخزون سالب #$invoiceNumber'),
+               ];
+         await accountingDao.createJournalEntry(
+           description: 'تسوية تكلفة مخزون سالب للفاتورة #$invoiceNumber',
+           date: effectiveInvoiceDate,
+           lines: adjustmentLines,
+           referenceType: 'negative_stock_cost_adjustment',
+           referenceId: invoiceId,
+           isAutoPosted: true,
+           allowRepost: true,
+           costCenterId: ccId,
+           branchId: branchId,
+         );
+       }
       // البند 6 — settlement leg: Dr supplier payable / Cr the PAYING safe's
       // linked account. autoPostPayment already implements exactly this for
       // `category == 'purchase'`, so there is no new posting code: it resolves

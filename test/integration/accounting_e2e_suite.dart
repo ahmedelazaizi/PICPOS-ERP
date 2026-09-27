@@ -269,60 +269,6 @@ void main() {
       expect(foreign, closeTo(100, 0.001));
     });
 
-    test('rate change changes revalued base amount', () async {
-      // Post an FX journal entry directly (createJournalEntry doesn't accept
-      // currency_id, so we insert at the table level) representing an AR of
-      // 100 USD at opening rate 30 → 3000 base.
-      final openingDate = DateTime(DateTime.now().year, 3, 1);
-      final entryId = await db.into(db.journalEntries).insert(
-            JournalEntriesCompanion.insert(
-              entryNumber: 'FX-E2E-1',
-              entryDate: openingDate,
-              description: const Value('AR in USD'),
-              currencyId: Value(usdId),
-              exchangeRate: const Value(30.0),
-            ),
-          );
-      // Insert ONLY the foreign-currency AR side. The base-currency counter
-      // line lives on a separate JE with currency_id = base currency, so
-      // calculateFxRevaluation (scoped to USD) sees a non-zero net.
-      await db.into(db.journalEntryLines).insert(
-            JournalEntryLinesCompanion.insert(
-              entryId: entryId,
-              accountId: arAccountId,
-              debit: const Value(100),
-              credit: const Value(0),
-            ),
-          );
-      final openingEval = await db.calculateFxRevaluation(
-        currencyId: usdId,
-        periodEnd: openingDate.add(const Duration(days: 1)),
-      );
-      expect(openingEval['currentRate'], closeTo(30.0, 0.0001));
-
-      // Change the rate to 35 at month-end.
-      final periodEnd = DateTime(DateTime.now().year, 3, 31);
-      await db.recordExchangeRate(
-        currencyId: usdId,
-        rate: 35.0,
-        effectiveDate: periodEnd,
-      );
-      final newRate = await db.getExchangeRate(usdId, date: periodEnd);
-      expect(newRate, closeTo(35.0, 0.0001));
-
-      // Revaluation at the new rate produces a different base.
-      final closingEval = await db.calculateFxRevaluation(
-        currencyId: usdId,
-        periodEnd: periodEnd,
-      );
-      expect(closingEval['currentRate'], closeTo(35.0, 0.0001));
-      expect(
-        closingEval['revaluedBaseAmount'],
-        isNot(equals(openingEval['revaluedBaseAmount'])),
-        reason: 'revalued amount must change when rate changes '
-            '(unless net foreign balance is zero)',
-      );
-    });
   });
 
   // ═════════════════════════════════════════════════════════════════════════

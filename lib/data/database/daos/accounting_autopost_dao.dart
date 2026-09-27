@@ -563,7 +563,7 @@ extension AccountingAutopostDao on AppDatabase {
     // Reject the invoice if any tracked item has cost_price <= 0 — posting
     // revenue without COGS overstates profit and breaks trial-balance reporting.
     final trackedRows = await customSelect(
-      'SELECT sii.product_id, sii.cost_price, p.track_inventory, p.name '
+      'SELECT sii.product_id, sii.quantity, sii.cost_price, p.track_inventory, p.name '
       'FROM sales_invoice_items sii '
       'JOIN products p ON p.id = sii.product_id '
       'WHERE sii.invoice_id = ?',
@@ -587,8 +587,14 @@ extension AccountingAutopostDao on AppDatabase {
         );
       }
       if (policy == 'warn') {
-        debugPrint('[ZeroCost] فاتورة ${sale.invoiceNumber}: أصناف متعقبة بتكلفة '
-            'صفر — $names. الإيراد يُرحّل بدون COGS لهذه الأصناف.');
+        for (final row in zeroCostTracked) {
+          await DiagnosticLogger.logZeroCostSale(
+            invoiceId: sale.id,
+            invoiceNumber: sale.invoiceNumber,
+            productId: (row.data['product_id'] as num).toInt(),
+            quantity: (row.data['quantity'] as num?)?.toDouble() ?? 0.0,
+          );
+        }
       }
     }
 
@@ -872,7 +878,7 @@ extension AccountingAutopostDao on AppDatabase {
     // COGS Entry (IAS 2.34): Dr 5101 / Cr 1103
     // Same zero-cost safeguard as autoPostCashSale — see that method for rationale.
     final trackedRowsCr = await customSelect(
-      'SELECT sii.product_id, sii.cost_price, p.track_inventory, p.name '
+      'SELECT sii.product_id, sii.quantity, sii.cost_price, p.track_inventory, p.name '
       'FROM sales_invoice_items sii '
       'JOIN products p ON p.id = sii.product_id '
       'WHERE sii.invoice_id = ?',
@@ -896,8 +902,14 @@ extension AccountingAutopostDao on AppDatabase {
         );
       }
       if (policy == 'warn') {
-        debugPrint('[ZeroCost] فاتورة ${sale.invoiceNumber}: أصناف متعقبة بتكلفة '
-            'صفر — $names. الإيراد يُرحّل بدون COGS لهذه الأصناف.');
+        for (final row in zeroCostTrackedCr) {
+          await DiagnosticLogger.logZeroCostSale(
+            invoiceId: sale.id,
+            invoiceNumber: sale.invoiceNumber,
+            productId: (row.data['product_id'] as num).toInt(),
+            quantity: (row.data['quantity'] as num?)?.toDouble() ?? 0.0,
+          );
+        }
       }
     }
 

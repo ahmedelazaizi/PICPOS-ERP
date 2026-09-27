@@ -71,37 +71,6 @@ extension MultiCurrencyDao on AppDatabase {
     return rate > 0 ? amount / rate : amount;
   }
 
-  /// FX Revaluation: calculate unrealized gains/losses at period end
-  /// IAS 21: Monetary items must be retranslated at closing rate
-  Future<Map<String, double>> calculateFxRevaluation({
-    required int currencyId,
-    required DateTime periodEnd,
-  }) async {
-    final currentRate = await getExchangeRate(currencyId, date: periodEnd);
-
-    // Get all journal lines in this currency
-    final result = await customSelect(
-      '''SELECT
-          COALESCE(SUM(CASE WHEN debit > 0 THEN debit ELSE 0 END), 0) as total_debit,
-          COALESCE(SUM(CASE WHEN credit > 0 THEN credit ELSE 0 END), 0) as total_credit
-         FROM journal_entry_lines l
-         JOIN journal_entries e ON l.entry_id = e.id
-         WHERE e.currency_id = ? AND e.entry_date <= ?''',
-      variables: [Variable(currencyId), Variable(periodEnd)],
-    ).getSingle();
-
-    final totalDebit = (result.data['total_debit'] as num?)?.toDouble() ?? 0;
-    final totalCredit = (result.data['total_credit'] as num?)?.toDouble() ?? 0;
-    final netForeign = totalDebit - totalCredit;
-    final revaluedBase = netForeign * currentRate;
-
-    return {
-      'netForeignBalance': netForeign,
-      'currentRate': currentRate,
-      'revaluedBaseAmount': revaluedBase,
-    };
-  }
-
   /// Seed default currencies (called in migration)
   Future<void> seedDefaultCurrencies() async {
     final count =

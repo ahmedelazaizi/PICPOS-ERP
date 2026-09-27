@@ -110,6 +110,20 @@ class DiagnosticLogger {
   /// previous one; the chain never rejects (errors are swallowed inside).
   static Future<void> _writeChain = Future<void>.value();
 
+  /// Records a zero-cost sales line skipped by the warn policy.
+  static Future<void> logZeroCostSale({
+    required int invoiceId,
+    required String invoiceNumber,
+    required int productId,
+    required double quantity,
+  }) {
+    return log(
+      'ZERO-COST',
+      'invoiceId=$invoiceId invoice=$invoiceNumber productId=$productId '
+          'qty=$quantity COGS skipped under warn policy',
+    );
+  }
+
   static Future<void> log(String tag, String message) async {
     final stamp = DateTime.now().toIso8601String();
     final line = '[$stamp] [$tag] $message';

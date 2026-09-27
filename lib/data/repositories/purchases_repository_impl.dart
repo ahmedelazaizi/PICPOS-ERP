@@ -849,6 +849,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           type: 'purchase_return',
           referenceType: 'purchase_return',
           referenceId: invoice.id,
+           unitCost: item.unitCost,
         );
       }
 

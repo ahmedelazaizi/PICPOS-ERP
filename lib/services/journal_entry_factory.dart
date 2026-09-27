@@ -99,9 +99,9 @@ class JournalEntryFactory {
     this._auditRepo,
   );
 
-  /// PIR-014: Current zero-cost policy. Defaults to [ZeroCostPolicy.warn].
-  /// Can be overridden at runtime via [setZeroCostPolicy].
-  ZeroCostPolicy _zeroCostPolicy = ZeroCostPolicy.warn;
+  /// PIR-014: Current zero-cost policy. New factory instances block by default;
+  /// persisted settings still override this for existing installations.
+  ZeroCostPolicy _zeroCostPolicy = ZeroCostPolicy.block;
 
   /// Set the zero-cost policy at runtime (loaded from settings).
   void setZeroCostPolicy(ZeroCostPolicy policy) {
@@ -341,13 +341,16 @@ class JournalEntryFactory {
           case ZeroCostPolicy.block:
             throw ZeroCostException(item.productId, invNumber);
           case ZeroCostPolicy.warn:
-            debugPrint(
-              '[JE-WARNING] صنف ${item.productId} بتكلفة صفر في فاتورة #$invNumber — '
-              'COGS لن يُسجل لهذا الصنف',
+            await DiagnosticLogger.logZeroCostSale(
+              invoiceId: invoiceId,
+              invoiceNumber: invNumber,
+              productId: item.productId,
+              quantity: item.quantity * item.quantityInBase,
             );
             break;
           case ZeroCostPolicy.allow:
-            break; // Silent
+            // Intentional: allow means skip COGS without a diagnostic warning.
+            break;
         }
       }
       // SAL-1: costPrice is per BASE unit (WAC); quantity is in SALE units.

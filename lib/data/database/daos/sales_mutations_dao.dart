@@ -329,8 +329,13 @@ extension SalesMutationsDao on AppDatabase {
             );
           }
           if (policy == 'warn') {
-            debugPrint('[ZeroCost] صنف "${product.name}" بتكلفة صفر فى فاتورة '
-                '$invNumber — سيُرحَّل الإيراد بدون COGS لهذا الصنف');
+            await DiagnosticLogger.logZeroCostSale(
+              invoiceId: invoiceId,
+              invoiceNumber: invNumber,
+              productId: product.id,
+              quantity: (item.quantity.present ? item.quantity.value : 1.0) *
+                  (item.quantityInBase.present ? item.quantityInBase.value : 1.0),
+            );
           }
         }
         final itemWithCost = item.copyWith(

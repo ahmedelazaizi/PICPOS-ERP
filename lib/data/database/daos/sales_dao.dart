@@ -893,6 +893,27 @@ extension SalesDao on AppDatabase {
     )..where((i) => i.invoiceId.equals(invoiceId))).get();
   }
 
+  /// Lists tracked sales lines whose stamped cost is zero in a date range.
+  Future<List<QueryRow>> listZeroCostSalesLines({
+    required DateTime from,
+    required DateTime to,
+  }) {
+    return customSelect(
+      '''SELECT sii.id, sii.invoice_id, sii.product_id, sii.quantity,
+                sii.quantity_in_base, sii.cost_price, si.invoice_number,
+                si.invoice_date
+         FROM sales_invoice_items sii
+         JOIN sales_invoices si ON si.id = sii.invoice_id
+         JOIN products p ON p.id = sii.product_id
+         WHERE p.track_inventory = ${sqlBool(true)}
+           AND sii.cost_price <= 0
+           AND si.invoice_date >= ? AND si.invoice_date <= ?
+         ORDER BY si.invoice_date, sii.id''',
+      variables: [Variable(from), Variable(to)],
+      readsFrom: {salesInvoiceItems, salesInvoices, products},
+    ).get();
+  }
+
   /// Get next daily order number
   /// Order counter resets after daily closing or when reaching the configured limit
   Future<int> getNextDailyOrderNumber() async {
