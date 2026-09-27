@@ -98,6 +98,8 @@ class _CountingTreasuryRepo implements ITreasuryRepository {
     int? linkedAccountId,
     int? operatingBranchId,
     String? globalId,
+    int? userId,
+    bool manualEntry = false,
   }) async {
     receipts.add(amount);
     return receipts.length;
@@ -120,6 +122,7 @@ class _CountingTreasuryRepo implements ITreasuryRepository {
     int? userId,
     int? operatingBranchId,
     String? globalId,
+    bool manualEntry = false,
   }) async {
     payments.add(amount);
     return payments.length;

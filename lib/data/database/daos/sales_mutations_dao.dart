@@ -818,6 +818,42 @@ extension SalesMutationsDao on AppDatabase {
   // SALES REPORTS — See sales_analytics_dao.dart
   // ═══════════════════════════════════════════════════════════════════════
 
+  Future<int> _reverseActiveSaleEntriesForEdit(
+    int invoiceId,
+    String descriptionPrefix,
+  ) async {
+    final entries = await (select(journalEntries)
+          ..where((e) =>
+              (e.referenceType.equals('sales_invoice') |
+                  e.referenceType.equals('sale') |
+                  e.referenceType.equals('cash_sale') |
+                  e.referenceType.equals('credit_sale')) &
+              e.referenceId.equals(invoiceId) &
+              e.isPosted.equals(true) &
+              e.isDeleted.equals(false)))
+        .get();
+    var reversalCount = 0;
+    for (final entry in entries) {
+      final reversal = await (select(journalEntries)
+            ..where((e) => e.referenceType.equals('reversal') &
+                e.referenceId.equals(entry.id) &
+                e.isPosted.equals(true) &
+                e.isDeleted.equals(false))
+            ..limit(1))
+          .getSingleOrNull();
+      if (reversal != null) {
+        reversalCount++;
+        continue;
+      }
+      await reverseJournalEntryById(
+        entryId: entry.id,
+        descriptionPrefix: descriptionPrefix,
+      );
+      reversalCount++;
+    }
+    return reversalCount;
+  }
+
   /// Update an existing sales invoice with new data
   Future<void> updateSalesInvoice({
     required int invoiceId,
@@ -858,6 +894,19 @@ extension SalesMutationsDao on AppDatabase {
       final oldItems = await (select(
         salesInvoiceItems,
       )..where((i) => i.invoiceId.equals(invoiceId))).get();
+      final amountsChanged = oldInvoice.isLocked &&
+          (oldInvoice.subtotal != subtotal ||
+              oldInvoice.discount != discount ||
+              oldInvoice.tax != tax ||
+              oldInvoice.total != total);
+      var repostRevision = 0;
+      if (amountsChanged) {
+        repostRevision = await _reverseActiveSaleEntriesForEdit(
+          invoiceId,
+          'عكس تعديل مبالغ فاتورة مبيعات',
+        );
+      }
+
       final oldPaid = oldInvoice.paid;
 
       // Restore old stock quantities (UOM: apply quantityInBase conversion)
@@ -1046,6 +1095,31 @@ extension SalesMutationsDao on AppDatabase {
         final balanceDiff = newRemaining - oldRemaining;
         if (balanceDiff != 0) {
           await adjustPartyBalance(oldInvoice.customerId!, balanceDiff);
+         }
+       }
+
+       if (amountsChanged) {
+         final updated = await getSalesInvoiceById(invoiceId);
+         if (updated != null) {
+           if (paymentMethod == 'credit') {
+             final posted = await autoPostCreditSale(
+                updated,
+                repostAfterReversal: true,
+                repostRevision: repostRevision,
+              );
+              if (updated.total > 0 && (posted == null || posted == 0)) {
+                throw Exception('تعذّر إعادة ترحيل قيد الفاتورة بعد التعديل');
+              }
+           } else {
+             final posted = await autoPostCashSale(
+                updated,
+                repostAfterReversal: true,
+                repostRevision: repostRevision,
+              );
+              if (updated.total > 0 && (posted == null || posted == 0)) {
+                throw Exception('تعذّر إعادة ترحيل قيد الفاتورة بعد التعديل');
+              }
+           }
         }
       }
     });
@@ -1073,46 +1147,21 @@ extension SalesMutationsDao on AppDatabase {
       // ISS-04 REVISED: Allow payment method changes on locked/posted invoices.
       // The existing journal entry is reversed and a new one is created so the
       // GL stays consistent. Editing line items or amounts still requires a return.
-      final needsJournalReversal = invoice.isLocked && invoice.paymentMethod != newPaymentMethod;
+      final needsJournalReversal =
+          invoice.isLocked && invoice.paymentMethod != newPaymentMethod;
+      var repostRevision = 0;
       if (needsJournalReversal) {
-        final oldEntry = await (select(journalEntries)
-          ..where((e) =>
-            (e.referenceType.equals('sales_invoice') |
-             e.referenceType.equals('sale') |
-             e.referenceType.equals('cash_sale') |
-             e.referenceType.equals('credit_sale')) &
-            e.referenceId.equals(invoiceId))
-        ).getSingleOrNull();
-
-        if (oldEntry != null) {
-          final affectedRows = await customSelect(
-            'SELECT DISTINCT account_id FROM journal_entry_lines WHERE entry_id = ?',
-            variables: [Variable(oldEntry.id)],
-            readsFrom: {journalEntryLines},
-          ).get();
-          final affectedAccIds = affectedRows.map((r) => r.read<int>('account_id')).toList();
-
-          await (delete(journalEntryLines)..where((l) => l.entryId.equals(oldEntry.id))).go();
-          await (delete(journalEntries)..where((e) => e.id.equals(oldEntry.id))).go();
-
-          for (final accId in affectedAccIds) {
-            final bal = await customSelect(
-              'SELECT COALESCE(SUM(debit),0)-COALESCE(SUM(credit),0) as b FROM journal_entry_lines WHERE account_id = ?',
-              variables: [Variable(accId)],
-              readsFrom: {journalEntryLines},
-            ).getSingle();
-            await customStatement('UPDATE accounts SET balance = ? WHERE id = ?',
-                [(bal.data['b'] as num).toDouble(), accId]);
-          }
-          debugPrint('[SalesMutations] Reversed journal entry #${oldEntry.id} for payment method change');
-        }
+        repostRevision = await _reverseActiveSaleEntriesForEdit(
+          invoiceId,
+          'عكس تعديل وسيلة دفع فاتورة مبيعات',
+        );
       }
 
       final oldPaymentMethod = invoice.paymentMethod;
       final paidAmount = invoice.paid;
 
       // Skip if no payment method change or no paid amount
-      if (oldPaymentMethod == newPaymentMethod || paidAmount <= 0) {
+      if (oldPaymentMethod == newPaymentMethod) {
         // Just update the payment method and notes
         await (update(
           salesInvoices,
@@ -1246,9 +1295,23 @@ extension SalesMutationsDao on AppDatabase {
         final updated = await getSalesInvoiceById(invoiceId);
         if (updated != null) {
           if (newPaymentMethod == 'credit') {
-            await autoPostCreditSale(updated);
+            final posted = await autoPostCreditSale(
+                updated,
+                repostAfterReversal: true,
+                repostRevision: repostRevision,
+              );
+              if (updated.total > 0 && (posted == null || posted == 0)) {
+                throw Exception('تعذّر إعادة ترحيل قيد الفاتورة بعد التعديل');
+              }
           } else {
-            await autoPostCashSale(updated);
+            final posted = await autoPostCashSale(
+                updated,
+                repostAfterReversal: true,
+                repostRevision: repostRevision,
+              );
+              if (updated.total > 0 && (posted == null || posted == 0)) {
+                throw Exception('تعذّر إعادة ترحيل قيد الفاتورة بعد التعديل');
+              }
           }
           debugPrint('[SalesMutations] Re-posted journal entry for payment=$newPaymentMethod');
         }

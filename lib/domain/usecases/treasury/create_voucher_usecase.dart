@@ -16,9 +16,12 @@ class CreateVoucherUseCase {
     required int safeId,
     int? partyId,
     String? description,
+    int? userId,
   }) async {
     _validateAmount(amount);
     return _repo.createReceiptVoucher(
+      userId: userId,
+      manualEntry: true,
       amount: amount,
       category: category,
       safeId: safeId,
@@ -34,10 +37,13 @@ class CreateVoucherUseCase {
     required int safeId,
     int? partyId,
     String? description,
+    int? userId,
   }) async {
     _validateAmount(amount);
     // Balance check is done at the repository/DAO level
     return _repo.createPaymentVoucher(
+      userId: userId,
+      manualEntry: true,
       amount: amount,
       category: category,
       safeId: safeId,

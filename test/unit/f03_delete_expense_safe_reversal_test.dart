@@ -46,6 +46,10 @@ void main() {
       expect(defaultSafe, isNotNull,
           reason: 'forTesting() must seed a default cash safe');
       final balanceBefore = defaultSafe!.balance;
+      final accountBalancesBefore = {
+        for (final account in await db.select(db.accounts).get())
+          account.id: account.balance,
+      };
 
       final expenseId = await db.recordAndPostOperationalExpense(
         categoryId: categoryId,
@@ -79,17 +83,28 @@ void main() {
       final rowsDeleted = await OperationalExpensesDao(db).deleteExpense(expenseId);
       expect(rowsDeleted, 1, reason: 'the op_expenses row was deleted');
 
-      // (a) GL reversed — the JE and its lines are gone.
+      // (a) GL reversal is additive: the posted source JE remains auditable
+      // and a distinct reversal JE offsets its lines.
       final jeAfter = await (db.select(db.journalEntries)
             ..where((e) =>
-                e.referenceType.equals('op_expense') &
-                e.referenceId.equals(expenseId)))
+                (e.referenceType.equals('op_expense') &
+                    e.referenceId.equals(expenseId)) |
+                (e.referenceType.equals('reversal') &
+                    e.referenceId.equals(jeId))))
           .get();
-      expect(jeAfter, isEmpty, reason: 'the op_expense JE must be reversed');
+      expect(jeAfter, hasLength(2));
+      expect(jeAfter.any((entry) => entry.id == jeId), isTrue);
+      expect(jeAfter.any((entry) => entry.referenceType == 'reversal'), isTrue);
       final linesAfter = await (db.select(db.journalEntryLines)
             ..where((l) => l.entryId.equals(jeId)))
           .get();
-      expect(linesAfter, isEmpty, reason: 'the JE lines must be reversed too');
+      expect(linesAfter, isNotEmpty, reason: 'the original JE remains posted');
+      final accountBalancesAfter = {
+        for (final account in await db.select(db.accounts).get())
+          account.id: account.balance,
+      };
+      expect(accountBalancesAfter, accountBalancesBefore,
+          reason: 'source plus reversal must net every account to its prior balance');
 
       // (b) the op_expense safe_transaction row is gone (no orphan child).
       final safeTxnsAfter = await (db.select(db.safeTransactions)
@@ -119,6 +134,10 @@ void main() {
       final categoryId = await seedCategory('فئة F-03 (بنكي)');
       final defaultSafe = await db.getDefaultSafeByType('cash');
       final balanceBefore = defaultSafe!.balance;
+      final accountBalancesBefore = {
+        for (final account in await db.select(db.accounts).get())
+          account.id: account.balance,
+      };
 
       final expenseId = await db.recordAndPostOperationalExpense(
         categoryId: categoryId,
@@ -152,13 +171,22 @@ void main() {
       // Act.
       await OperationalExpensesDao(db).deleteExpense(expenseId);
 
-      // GL reversed.
+      // GL reversal retains the source and creates a reversal.
+      final sourceJeId = jeBefore.single.id;
       final jeAfter = await (db.select(db.journalEntries)
             ..where((e) =>
-                e.referenceType.equals('op_expense') &
-                e.referenceId.equals(expenseId)))
+                (e.referenceType.equals('op_expense') &
+                    e.referenceId.equals(expenseId)) |
+                (e.referenceType.equals('reversal') &
+                    e.referenceId.equals(sourceJeId))))
           .get();
-      expect(jeAfter, isEmpty);
+      expect(jeAfter, hasLength(2));
+       final accountBalancesAfter = {
+         for (final account in await db.select(db.accounts).get())
+           account.id: account.balance,
+       };
+       expect(accountBalancesAfter, accountBalancesBefore,
+           reason: 'source plus reversal must net every account to its prior balance');
 
       // The safe balance is UNCHANGED — the fix must not credit a safe that
       // was never debited (would corrupt the drawer in client/bank flows).

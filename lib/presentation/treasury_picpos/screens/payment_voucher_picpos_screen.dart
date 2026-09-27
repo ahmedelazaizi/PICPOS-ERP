@@ -180,6 +180,8 @@ class _PaymentVoucherPicposScreenState
                   discount: v.discount,
                   category: 'supplier_payment',
                   safeId: v.method == 'check' ? null : v.safeId,
+userId: ref.read(authProvider).user?.id,
+                   manualEntry: true,
                   partyId: v.partyId,
                   description: description,
                   costCenterId: v.costCenterId,

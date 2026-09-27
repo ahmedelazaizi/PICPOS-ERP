@@ -130,7 +130,9 @@ void main() {
                 JournalEntriesCompanion.insert(
                   entryNumber: 'JE-$gid',
                   entryDate: DateTime.now(),
-                  referenceType: const Value('sale'),
+                  // `sale` became exempt in v177 (authorized-edit reposts);
+                  // `purchase` stays a NON-exempt single-JE type.
+                  referenceType: const Value('purchase'),
                   referenceId: const Value(987654),
                   isAutoPosted: const Value(true),
                   globalId: Value(gid),

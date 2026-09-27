@@ -3508,5 +3508,19 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v176: جدولا المرفقات');
       });
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // v177 — إعفاءُ إعادةِ ترحيلِ البيع بعد تعديلٍ مُجاز
+    // ═══════════════════════════════════════════════════════════════════
+    // البيعُ قد يحمل قيوداً تلقائيّةً عدّةً عبر عمر الفاتورة: الأصلي ثمّ
+    // إعادةُ الترحيل بعد عكسه. تفرّدُ كلّ حدثٍ محمولٌ على `global_id`.
+    if (from < 177) {
+      await _safeMigrate('v177 sale-repost autopost dedup index', () async {
+        await m.database
+            .customStatement('DROP INDEX IF EXISTS $kJeAutopostDedupIndexName');
+        await m.database.customStatement(kCreateJeAutopostDedupIndexSql);
+        debugPrint('[Migration] v177: sale reposts exempted from dedup index');
+      });
+    }
   }
 }

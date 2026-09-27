@@ -323,11 +323,12 @@ const String kJeAutopostDedupIndexName = 'idx_je_autopost_dedup';
 /// The exemption list MUST stay in lock-step with `createJournalEntry`'s
 /// `multiJeReferenceTypes` guard: EVERY reference type that legitimately posts
 /// more than one auto-posted JE per `referenceId` is exempt. Besides the two
-/// return types that Spec 151 re-keyed, that set already includes
-/// `commercial_paper` (one JE per lifecycle status: deposited → cashed …) and
-/// `partial_collection` (one JE per instalment). Omitting those here would let
-/// the index — once it lives on fresh installs (b) — reject the second
-/// lifecycle/instalment JE that the in-code guard deliberately allows.
+/// return types that Spec 151 re-keyed, that set already includes `sale`
+/// (the original JE plus authorized-edit reposts), `commercial_paper` (one JE
+/// per lifecycle status: deposited → cashed …) and `partial_collection` (one
+/// JE per instalment). Omitting those here would let the index — once it lives
+/// on fresh installs (b) — reject the second lifecycle/repost/instalment JE
+/// that the in-code guard deliberately allows.
 ///
 /// SQLite-only (partial index `WHERE …`). Postgres never carried this index
 /// (the v120 migration was SQLite-only and it is not a Drift schema entity), so
@@ -354,6 +355,10 @@ const Set<String> kMultiJeReferenceTypes = {
   // الحتميِّ لا على `(refType, refId)`.
   'sales_return',
   'purchase_return',
+  // قيدُ البيع قد يتعدّد عبر عمر الفاتورة: الأصلي ثمّ إعادةُ الترحيل بعد
+  // عكسه عند تعديلٍ مُجاز. وتفرّدُ كلّ حدثٍ مضمونٌ بـ`globalId` الحتميِّ،
+  // كما في المردودات، بينما حارسُ `hasAutoPostEntry` يحمي الترحيلَ الأوّل.
+  'sale',
   // قيدٌ لكلِّ انتقالِ حالة: pending → deposited → cashed.
   'commercial_paper',
   // قيدٌ لكلِّ قسطِ تحصيل.
@@ -425,7 +430,7 @@ const String kCreateJeAutopostDedupIndexSql =
     'ON journal_entries(reference_type, reference_id) '
     'WHERE is_auto_posted = 1 '
     "AND reference_type NOT IN "
-    "('sales_return', 'purchase_return', 'commercial_paper', "
+    "('sales_return', 'purchase_return', 'sale', 'commercial_paper', "
     "'partial_collection', 'asset_depreciation', "
     "'asset_transfer', 'asset_revaluation')";
 
@@ -1158,7 +1163,10 @@ class AppDatabase extends _$AppDatabase {
   // كلِّ قاعدةٍ دون ١٧٤ سواءٌ خُتمت بـ١٧٥ أم لا. والخفضُ إلى ١٧٤ كان يُسقط
   // `migration_numbering_test` (يطابق الرقمَ بأكبر كتلةِ هجرة) **ويُبطِل
   // هجرةَ ١٧٥ على كلّ قاعدةٍ مُرقّاةٍ سلفاً**.
-  int get schemaVersion => 176;
+  //
+  // Schema v177: sale reposts after an authorized edit may legitimately
+  // produce multiple auto-posted JEs for one invoice reference.
+  int get schemaVersion => 177;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.

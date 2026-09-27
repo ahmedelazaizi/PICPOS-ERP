@@ -231,7 +231,12 @@ extension AccountingAutopostDao on AppDatabase {
   /// Auto-post a cash sale (مبيعات نقد فوري)
   /// Debit: Cash (total) | Credit: Sales (subtotal-discount) + VAT (tax)
   /// APG-04: IFRS 15.38 — defer revenue for undelivered delivery orders
-  Future<int?> autoPostCashSale(SalesInvoiceData sale, {int? costCenterId}) async {
+  Future<int?> autoPostCashSale(
+    SalesInvoiceData sale, {
+    int? costCenterId,
+    bool repostAfterReversal = false,
+    int repostRevision = 0,
+  }) async {
     // فاتورة مرتجع ماتترحّلش كبيعة — مهما كان اللي نداها.
     //
     // قيد المرتجع بيتخزّن بـ`referenceType = 'sales_return'`، وحارس التكرار
@@ -258,7 +263,12 @@ extension AccountingAutopostDao on AppDatabase {
     // both pass the hasAutoPostEntry guard and both commit a JE.
     return transaction(() async {
     // Duplicate protection (atomic — inside serialised write transaction)
-    if (await hasAutoPostEntry('sale', sale.id)) return null;
+    if (repostAfterReversal) {
+      final activeId = await _activeSaleEntryId(sale.id);
+      if (activeId != null) return activeId;
+    } else if (await hasAutoPostEntry('sale', sale.id)) {
+      return null;
+    }
 
     // Resolve Branch from Warehouse
     final warehouse = await (select(warehouses)..where((w) => w.id.equals(sale.warehouseId))).getSingleOrNull();
@@ -657,9 +667,9 @@ extension AccountingAutopostDao on AppDatabase {
     final saleJeGid = JournalEntryGid.computeAndLog(
       sourceType: JournalEntryGid.sourceSale,
       sourceGid: saleSourceGid,
-      verb: 'post',
+      verb: repostAfterReversal ? 'repost$repostRevision' : 'post',
       invId: sale.id,
-      suffix: ' (cash)',
+      suffix: repostAfterReversal ? ' (cash repost $repostRevision)' : ' (cash)',
     );
     final jeId = await accountingDao.createJournalEntry(
       description: 'قيود مبيعات بيع ${sale.invoiceNumber}',
@@ -671,6 +681,7 @@ extension AccountingAutopostDao on AppDatabase {
       costCenterId: costCenterId,
       branchId: branchId,
       globalId: saleJeGid,
+      allowRepost: repostAfterReversal,
     );
 
     // ISS-004: Lock sales invoice after successful autopost to prevent
@@ -692,7 +703,12 @@ extension AccountingAutopostDao on AppDatabase {
   /// Debit: Receivables | Credit: Sales + VAT + Delivery
   /// Debit: Sales Discount (if applicable)
   /// APG-04: IFRS 15.38 — skip auto-posting for undelivered delivery orders
-  Future<int?> autoPostCreditSale(SalesInvoiceData sale, {int? costCenterId}) async {
+  Future<int?> autoPostCreditSale(
+    SalesInvoiceData sale, {
+    int? costCenterId,
+    bool repostAfterReversal = false,
+    int repostRevision = 0,
+  }) async {
     // نفس حارس `autoPostCashSale` — شوف التعليق هناك.
     if (sale.saleType == 'return') return null;
     if (sale.total <= 0) return null;
@@ -707,7 +723,12 @@ extension AccountingAutopostDao on AppDatabase {
     // TOCTOU FIX: Wrap entire check+insert in a single transaction.
     return transaction(() async {
     // Duplicate protection (atomic — inside serialised write transaction)
-    if (await hasAutoPostEntry('sale', sale.id)) return null;
+    if (repostAfterReversal) {
+      final activeId = await _activeSaleEntryId(sale.id);
+      if (activeId != null) return activeId;
+    } else if (await hasAutoPostEntry('sale', sale.id)) {
+      return null;
+    }
 
     // Resolve Branch from Warehouse
     final warehouse = await (select(warehouses)..where((w) => w.id.equals(sale.warehouseId))).getSingleOrNull();
@@ -917,9 +938,9 @@ extension AccountingAutopostDao on AppDatabase {
     final saleJeGid = JournalEntryGid.computeAndLog(
       sourceType: JournalEntryGid.sourceSale,
       sourceGid: saleSourceGid,
-      verb: 'post',
+      verb: repostAfterReversal ? 'repost$repostRevision' : 'post',
       invId: sale.id,
-      suffix: ' (credit)',
+      suffix: repostAfterReversal ? ' (credit repost $repostRevision)' : ' (credit)',
     );
     final jeId = await accountingDao.createJournalEntry(
       description: 'قيد مبيعات بيع آجل ${sale.invoiceNumber}',
@@ -931,6 +952,7 @@ extension AccountingAutopostDao on AppDatabase {
       costCenterId: costCenterId,
       branchId: branchId,
       globalId: saleJeGid,
+      allowRepost: repostAfterReversal,
     );
 
     // ISS-004: Lock sales invoice after successful autopost.
@@ -1374,6 +1396,26 @@ extension AccountingAutopostDao on AppDatabase {
               ..limit(1))
             .get();
     return existing.isNotEmpty;
+  }
+
+  Future<int?> _activeSaleEntryId(int saleId) async {
+    final entries = await (select(journalEntries)
+          ..where((e) => e.referenceType.equals('sale') &
+              e.referenceId.equals(saleId) &
+              e.isPosted.equals(true) &
+              e.isDeleted.equals(false)))
+        .get();
+    for (final entry in entries) {
+      final reversal = await (select(journalEntries)
+            ..where((e) => e.referenceType.equals('reversal') &
+                e.referenceId.equals(entry.id) &
+                e.isPosted.equals(true) &
+                e.isDeleted.equals(false))
+            ..limit(1))
+          .getSingleOrNull();
+      if (reversal == null) return entry.id;
+    }
+    return null;
   }
 
   /// A-01 / A-02 / F-04 (Spec 151): dedup guard for auto-posted RETURN JEs.

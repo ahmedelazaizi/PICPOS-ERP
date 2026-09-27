@@ -1373,7 +1373,9 @@ extension PartyDao on AppDatabase {
             SELECT COALESCE(SUM(jel.debit), 0) - COALESCE(SUM(jel.credit), 0)
             FROM journal_entry_lines jel
             INNER JOIN journal_entries je ON je.id = jel.entry_id
-            WHERE jel.account_id = accounts.id AND je.is_posted = 1
+            WHERE jel.account_id = accounts.id
+               AND je.is_posted = ${sqlBool(true)}
+               AND je.is_deleted = ${sqlBool(false)}
           )
           WHERE accounts.id IN (
             SELECT DISTINCT account_id FROM journal_entry_lines

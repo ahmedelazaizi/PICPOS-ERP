@@ -169,6 +169,7 @@ abstract class SalesRepository {
   /// Full sales invoice update — reverses old accounting, updates items/totals, re-posts
   Future<void> updateFullSalesInvoice({
     required int invoiceId,
+    required int? userId,
     int? customerId,
     int warehouseId,
     required double paid,

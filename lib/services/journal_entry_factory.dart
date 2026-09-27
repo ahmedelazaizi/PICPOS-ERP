@@ -222,8 +222,11 @@ class JournalEntryFactory {
       }
     } catch (e) {
       if (e is PeriodLockedException) rethrow;
-      // If no fiscal year setup, allow posting (fresh install)
-      debugPrint('[JE-INFO] لا توجد سنة مالية — السماح بالقيد');
+      await DiagnosticLogger.log(
+        'JE-PERIOD-CHECK',
+        'فشل التحقق من الفترة المالية للتاريخ $date: $e',
+      );
+      rethrow;
     }
   }
 

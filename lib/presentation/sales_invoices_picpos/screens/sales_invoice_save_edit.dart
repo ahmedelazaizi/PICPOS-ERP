@@ -853,7 +853,8 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
 
                       await salesRepo.updateFullSalesInvoice(
                         invoiceId: invoice.id!,
-                        customerId: selectedCustomerId,
+                        userId: ProviderScope.containerOf(context, listen: false).read(authProvider).user?.id,
+                         customerId: selectedCustomerId,
                         warehouseId: selectedWarehouseId ?? 1,
                         paid: paid,
                         paymentMethod: paymentMethod,

@@ -106,7 +106,9 @@ abstract class ITreasuryRepository {
     String? description,
     int? partyId,
     int? safeId,
+    int? userId,
     int? costCenterId,
+    bool manualEntry = false,
     int? linkedAccountId, // GAP-03: Custom GL account from COA
     // Check metadata
     String? paperNumber,
@@ -130,6 +132,7 @@ abstract class ITreasuryRepository {
     int? safeId,
     int? userId,
     int? costCenterId,
+    bool manualEntry = false,
     /// UUID-First: callers that also sync this voucher to a remote server
     /// can pass an explicit globalId so the local and server rows share
     /// identity — lets pull-sync dedupe by UUID instead of creating a

@@ -19,6 +19,7 @@ extension AccountingDaoWritesExt on AppDatabase {
     int? costCenterId,
     int? branchId,
     String? globalId,
+    bool allowRepost = false,
 
     /// «حفظ كمسودة» — يُحفَظ غيرَ مرحَّلٍ وبانتظار الاعتماد، ولا يحرّك
     /// رصيداً حتى [approveJournalEntry].
@@ -81,7 +82,7 @@ extension AccountingDaoWritesExt on AppDatabase {
       // القيدُ بـ`UNIQUE constraint failed` في الفهرس، فتوقّف الإهلاكُ
       // بعد شهره الأوّل بدل أن يُرحَّل.
       const multiJeReferenceTypes = kMultiJeReferenceTypes;
-      if (isAutoPosted && referenceType != null && referenceId != null &&
+      if (isAutoPosted && !allowRepost && referenceType != null && referenceId != null &&
           !multiJeReferenceTypes.contains(referenceType)) {
         // Build the full set of reference type aliases to check:
         //   'sale' ↔ 'sales_invoice'  |  'purchase' ↔ 'purchase_invoice'
@@ -385,8 +386,9 @@ extension AccountingDaoWritesExt on AppDatabase {
       // Generate entry number
       final entryNumber = await _generateEntryNumber();
 
-      // Get current fiscal year
-      final currentFY = await getCurrentFiscalYear();
+      // Resolve the fiscal year from the entry date, not from today's year.
+      // Back-dated entries must remain in the fiscal year that contains [date].
+      final fiscalYear = await getFiscalYearByDate(date);
 
       // كلُّ قيدٍ متوازنٍ يُرحَّل فوراً — إلّا ما طُلب حفظُه مسودّةً.
       //
@@ -408,7 +410,7 @@ extension AccountingDaoWritesExt on AppDatabase {
           isPosted: Value(shouldPost),
           isAutoPosted: Value(isAutoPosted),
           needsApproval: Value(shouldNeedApproval),
-          fiscalYearId: Value(currentFY?.id),
+          fiscalYearId: Value(fiscalYear?.id),
           costCenterId: Value(resolvedCostCenterId),
           branchId: Value(finalBranchId),
           reference: Value(reference),
@@ -458,7 +460,7 @@ extension AccountingDaoWritesExt on AppDatabase {
           '  AS computed_balance '
           'FROM journal_entry_lines jel '
           'INNER JOIN journal_entries je ON je.id = jel.entry_id '
-          'WHERE jel.account_id IN ($placeholders) AND je.is_posted = 1 '
+          'WHERE jel.account_id IN ($placeholders) AND je.is_posted = ${sqlBool(true)} AND je.is_deleted = ${sqlBool(false)} '
           'GROUP BY jel.account_id',
           variables: affectedAccountIds.map((id) => Variable.withInt(id)).toList(),
           readsFrom: {journalEntryLines, journalEntries, accounts},
@@ -730,7 +732,7 @@ extension AccountingDaoWritesExt on AppDatabase {
         'COALESCE(SUM(jel.debit), 0.0) - COALESCE(SUM(jel.credit), 0.0) AS computed_balance '
         'FROM journal_entry_lines jel '
         'INNER JOIN journal_entries je ON je.id = jel.entry_id '
-        'WHERE jel.account_id IN ($ph) AND je.is_posted = 1 '
+        'WHERE jel.account_id IN ($ph) AND je.is_posted = ${sqlBool(true)} AND je.is_deleted = ${sqlBool(false)} '
         'GROUP BY jel.account_id',
         variables: affectedAccountIds.map((id) => Variable.withInt(id)).toList(),
         readsFrom: {journalEntryLines, journalEntries, accounts},
@@ -1397,25 +1399,35 @@ extension AccountingDaoWritesExt on AppDatabase {
     final entries = await (select(journalEntries)
           ..where((e) =>
               e.referenceType.equals(referenceType) &
-              e.referenceId.equalsNullable(referenceId)))
+              e.referenceId.equalsNullable(referenceId) &
+              e.isPosted.equals(true) &
+              e.isDeleted.equals(false)))
         .get();
 
     for (final entry in entries) {
+      final sourceGid = entry.globalId;
+      final reversalGid = (sourceGid != null && sourceGid.isNotEmpty)
+          ? '$sourceGid-rev'
+          : 'je-${entry.id}-rev';
+      final existingReversal = await (select(journalEntries)
+            ..where((e) => e.globalId.equals(reversalGid))
+            ..limit(1))
+          .getSingleOrNull();
+      if (existingReversal != null) continue;
+
       final lines = await (select(journalEntryLines)
             ..where((l) => l.entryId.equals(entry.id)))
           .get();
 
-      final List<JournalLine> reverseLines = [];
-      for (final line in lines) {
-        reverseLines.add(
-          JournalLine(
-            accountId: line.accountId,
-            debit: line.credit,
-            credit: line.debit,
-            description: '$descriptionPrefix - ${line.description}',
-          ),
-        );
-      }
+      final reverseLines = lines
+          .map((line) => JournalLine(
+                accountId: line.accountId,
+                debit: line.credit,
+                credit: line.debit,
+                description: '$descriptionPrefix - ${line.description}',
+                costCenterId: line.costCenterId,
+              ))
+          .toList();
 
       if (reverseLines.isNotEmpty) {
         await createJournalEntry(
@@ -1426,6 +1438,8 @@ extension AccountingDaoWritesExt on AppDatabase {
           referenceId: referenceId,
           isAutoPosted: true,
           costCenterId: entry.costCenterId,
+          branchId: entry.branchId,
+          globalId: reversalGid,
         );
       }
     }
@@ -1436,8 +1450,9 @@ extension AccountingDaoWritesExt on AppDatabase {
   // F-15: MAKER-CHECKER — اعتماد القيود اليدوية
   // ─────────────────────────────────────────────────────────────────────────
 
-  /// Create a manual journal entry as draft (requires approval to post)
-  @Deprecated('Use createJournalEntry with draft status; this posts balances before unposting')
+  /// Create a manual journal entry as draft (requires approval to post).
+  /// Drafts are inserted directly as unposted rows, so they do not affect
+  /// balances and are not sent through the journal sync push.
   Future<int> createDraftJournalEntry({
     required String description,
     required DateTime date,
@@ -1453,10 +1468,11 @@ extension AccountingDaoWritesExt on AppDatabase {
       referenceType: referenceType,
       referenceId: referenceId,
       isAutoPosted: false,
+      asDraft: true,
+      createdBy: createdBy,
     );
 
-    // Override status to draft — these columns are migration-added, not in Drift schema
-    // Must use customStatement but with db.sqlBool() for PG compatibility
+    // Keep the migration-added status explicit for legacy databases.
     final boolFalse = sqlBool(false);
     await customStatement(
       "UPDATE journal_entries SET status = 'draft', is_posted = $boolFalse WHERE id = ?",
@@ -1490,6 +1506,7 @@ extension AccountingDaoWritesExt on AppDatabase {
           .getSingleOrNull();
       if (entry == null) throw Exception('القيد غير موجود');
       if (entry.isPosted) throw Exception('القيد مرحّل بالفعل');
+      await validateFinancialPeriod(entry.entryDate, operation: 'اعتماد القيد');
 
       // ⚠️ **لا يعتمد القيدَ منشئُه** — قرارُ مالك 2026-08-27.
       //
@@ -1527,7 +1544,7 @@ extension AccountingDaoWritesExt on AppDatabase {
           'COALESCE(SUM(jel.debit), 0.0) - COALESCE(SUM(jel.credit), 0.0) AS computed_balance '
           'FROM journal_entry_lines jel '
           'INNER JOIN journal_entries je ON je.id = jel.entry_id '
-          'WHERE jel.account_id IN ($ph) AND je.is_posted = 1 '
+          'WHERE jel.account_id IN ($ph) AND je.is_posted = ${sqlBool(true)} AND je.is_deleted = ${sqlBool(false)} '
           'GROUP BY jel.account_id',
           variables: approvalAccountIds.map((id) => Variable.withInt(id)).toList(),
           readsFrom: {journalEntryLines, journalEntries, accounts},

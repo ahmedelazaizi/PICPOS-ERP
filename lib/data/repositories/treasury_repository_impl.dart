@@ -10,6 +10,8 @@ import '../providers/providers.dart';
 import 'package:flutter/foundation.dart';
 import '../../core/utils/uuid_v7.dart';
 import '../../services/cheque_receipt_jes.dart';
+import '../../core/permissions/permission_codes.dart';
+import '../../services/permission_enforcer.dart';
 
 /// Repository for treasury operations
 class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRepository {
@@ -17,6 +19,23 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
   TreasuryRepositoryImpl(super.db, this._ref);
 
   AccountingService get _accountingService => _ref.read(accountingServiceProvider);
+
+  Future<void> _requireManualVoucherPermission({
+    required bool receipt,
+    required bool manualEntry,
+    required int? userId,
+  }) async {
+    if (!manualEntry) return;
+    await PermissionEnforcer(db.userHasPermission).requireCriticalOp(
+      userId: userId,
+      code: receipt
+          ? PermissionCodes.treasuryReceiptsCreate
+          : PermissionCodes.treasuryPaymentsCreate,
+      arabicReason: receipt
+          ? 'لا تملك صلاحية إنشاء سند قبض'
+          : 'لا تملك صلاحية إنشاء سند صرف',
+    );
+  }
 
   @override
   Future<String?> getVoucherNumberById(int id) async =>
@@ -133,6 +152,7 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
     int? safeId,
     int? userId,
     int? costCenterId,
+    bool manualEntry = false,
     int? linkedAccountId, // GAP-03: Custom GL account from COA
     // Check metadata
     String? paperNumber,
@@ -146,10 +166,15 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
     // device after a sync round-trip.
     String? globalId,
     // Spec 135 BUG-C — operator's working branch for JE attribution
-    int? operatingBranchId,
+    int? operatingBranchId, // voucher method
   }) async {
     await _accountingService.ensureOpenFiscalPeriod(DateTime.now());
 
+    await _requireManualVoucherPermission(
+      receipt: true,
+      manualEntry: manualEntry,
+      userId: userId,
+    );
     return db.transaction(() async {
       // Spec 133 — mirror createPaymentVoucher (lines below). For cheque
       // receipts, the commercial-papers autopost owns the customer-credit
@@ -249,6 +274,7 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
     int? safeId,
     int? userId,
     int? costCenterId,
+    bool manualEntry = false,
     String? globalId,
     // Check metadata
     String? paperNumber,
@@ -257,10 +283,15 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
     DateTime? paperDueDate,
     String? paperBankName,
     // Spec 135 BUG-C — operator's working branch for JE attribution
-    int? operatingBranchId,
+    int? operatingBranchId, // voucher method
   }) async {
     await _accountingService.ensureOpenFiscalPeriod(DateTime.now());
 
+    await _requireManualVoucherPermission(
+      receipt: false,
+      manualEntry: manualEntry,
+      userId: userId,
+    );
     return db.transaction(() async {
       final isCheckPayment = paperType == 'cheque' || paperType == 'check';
 

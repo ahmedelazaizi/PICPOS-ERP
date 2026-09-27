@@ -919,23 +919,10 @@ extension OperationalExpensesDao on AppDatabase {
           .getSingleOrNull();
 
       if (relatedEntry != null) {
-        // Query affected account IDs BEFORE deleting lines
-        final affectedLines = await customSelect(
-          'SELECT DISTINCT account_id FROM journal_entry_lines WHERE entry_id = ?',
-          variables: [Variable(relatedEntry.id)],
-          readsFrom: {journalEntryLines},
-        ).get();
-        final affectedAccountIds = affectedLines.map((r) => r.read<int>('account_id')).toList();
-
-        // Delete journal entry lines first (FK constraint)
-        await (delete(journalEntryLines)..where((l) => l.entryId.equals(relatedEntry.id))).go();
-        // Delete the journal entry
-        await (delete(journalEntries)..where((e) => e.id.equals(relatedEntry.id))).go();
-
-        // Recalculate affected account balances (self-healing)
-        for (final accId in affectedAccountIds) {
-          await accountingDao._updateAccountBalance(accId, 0);
-        }
+        await accountingDao.reverseJournalEntryById(
+          entryId: relatedEntry.id,
+          descriptionPrefix: 'عكس حذف مصروف تشغيلي',
+        );
       }
 
       // F-03 (Spec 151): reverse the TREASURY leg too, atomically in this

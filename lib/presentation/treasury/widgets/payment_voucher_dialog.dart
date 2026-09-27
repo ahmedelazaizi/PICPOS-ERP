@@ -879,6 +879,8 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
           discount: double.tryParse(discountController.text) ?? 0,
           category: category,
           safeId: paymentMethod == 'check' ? null : selectedSafe?.id,
+userId: ref.read(authProvider).user?.id,
+           manualEntry: true,
           partyId: selectedParty?.id,
           description: description,
           costCenterId: selectedCostCenterId,

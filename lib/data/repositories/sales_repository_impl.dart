@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/invoice_entity.dart';
 import '../../domain/entities/cart_item_entity.dart';
+import '../../domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 import '../../domain/repositories/sales_repository.dart';
 import '../../services/generators/base_generator.dart' show InvoiceItem;
 import '../../services/accounting_service.dart';
@@ -12,7 +13,10 @@ import '../../services/network_service.dart';
 import '../database/sync_interceptor.dart';
 import '../../services/client_write_interceptor.dart';
 import '../../core/utils/uuid_v7.dart';
+import '../../core/utils/financial_utils.dart';
 import '../../core/utils/journal_entry_gid.dart';
+import '../../core/permissions/permission_codes.dart';
+import '../../services/permission_enforcer.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
@@ -813,6 +817,7 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
   @override
   Future<void> updateFullSalesInvoice({
     required int invoiceId,
+    required int? userId,
     int? customerId,
     int warehouseId = 1,
     required double paid,
@@ -824,69 +829,83 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
     // 0) Get original invoice to check if it's locked
     final oldInvoice = await db.getSalesInvoiceById(invoiceId);
     if (oldInvoice == null) throw Exception('Invoice not found');
-    
-    // ISS-04: Prevent editing locked/posted invoices to maintain immutable accounting
     if (oldInvoice.isLocked) {
-      throw Exception('لا يمكن تعديل فاتورة مبيعات مُرحّلة محاسبيًا. استخدم الإلغاء بدلاً من التعديل لإنشاء قيد عكسي.');
+      await PermissionEnforcer(db.userHasPermission).requireCriticalOp(
+        userId: userId,
+        code: PermissionCodes.modifyLockedInvoice,
+        arabicReason: 'لا يمكن تعديل فاتورة مُرحّلة محاسبيًا دون صلاحية تعديل فاتورة مقفلة.',
+      );
     }
 
     await db.transaction(() async {
       // 0.5) Soft/Hard Period Closing Gating
       await db.validateFinancialPeriod(oldInvoice.invoiceDate, operation: 'تعديل فاتورة مبيعات');
 
-      // 1) Reverse old GL entry (only safe because it is not locked)
-      // NOTE: referenceType may be 'sales_invoice' (new path), 'sale' (autopost DAO path),
-      // or the legacy 'cash_sale'/'credit_sale' — check all variants.
-      final oldEntry = await (db.select(db.journalEntries)
+      // 1) Reverse every active posted sale JE before reposting.
+      final oldEntries = await (db.select(db.journalEntries)
             ..where((e) =>
                 (e.referenceType.equals('sales_invoice') |
                  e.referenceType.equals('sale') |
                  e.referenceType.equals('cash_sale') |
                  e.referenceType.equals('credit_sale')) &
-                e.referenceId.equals(invoiceId)))
-          .getSingleOrNull();
-      if (oldEntry != null) {
-        final affectedAccs = await db.customSelect(
-          'SELECT DISTINCT account_id FROM journal_entry_lines WHERE entry_id = ?',
-          variables: [Variable(oldEntry.id)],
-          readsFrom: {db.journalEntryLines},
-        ).get();
-        final accIds = affectedAccs.map((r) => r.read<int>('account_id')).toList();
-        await (db.delete(db.journalEntryLines)..where((l) => l.entryId.equals(oldEntry.id))).go();
-        await (db.delete(db.journalEntries)..where((e) => e.id.equals(oldEntry.id))).go();
-        // Recalculate affected account balances inline (private method inaccessible)
-        for (final accId in accIds) {
-          final result = await db.customSelect(
-            'SELECT COALESCE(SUM(debit),0) as total_debit, COALESCE(SUM(credit),0) as total_credit '
-            'FROM journal_entry_lines WHERE account_id = ?',
-            variables: [Variable(accId)],
-            readsFrom: {db.journalEntryLines},
-          ).getSingle();
-          final totalDebit = (result.data['total_debit'] as num).toDouble();
-          final totalCredit = (result.data['total_credit'] as num).toDouble();
-          final newBalance = totalDebit - totalCredit;
-          await db.customStatement(
-            'UPDATE accounts SET balance = ? WHERE id = ?',
-            [newBalance, accId],
-          );
-        }
+                e.referenceId.equals(invoiceId) &
+                e.isPosted.equals(true) &
+                e.isDeleted.equals(false))
+            ..orderBy([
+              (e) => OrderingTerm.desc(e.entryDate),
+              (e) => OrderingTerm.desc(e.id),
+            ]))
+          .get();
+      if (oldEntries.isNotEmpty) {
+        // Keep the posted source entry immutable; reverse it before reposting.
+        await db.reverseJournalEntryById(
+          entryId: oldEntries.first.id,
+          descriptionPrefix: 'عكس تعديل فاتورة مبيعات',
+        );
       }
+
+      final repostRevision = oldEntries.isEmpty
+          ? 0
+          : await (db.select(db.journalEntries)
+                ..where((e) => e.referenceType.equals('reversal') &
+                    e.referenceId.isIn(oldEntries.map((entry) => entry.id)) &
+                    e.isPosted.equals(true) &
+                    e.isDeleted.equals(false)))
+              .get()
+              .then((rows) => rows.length);
 
       // 2) Delete old invoice items
       await (db.delete(db.salesInvoiceItems)..where((i) => i.invoiceId.equals(invoiceId))).go();
 
-      // 3) Insert new items and compute totals
-      double subtotal = 0;
-      double totalTax = 0;
+      // 3) Reuse the creation formula: line discounts, invoice discount,
+      // tax on the discounted net, and currency rounding.
+      var lineDiscountTotal = 0.0;
+      for (final item in items) {
+        lineDiscountTotal += item.discountAmount;
+      }
+      final invoiceDiscountAmount = oldInvoice.discount - lineDiscountTotal;
+      final discountBase = items.fold<double>(
+        0,
+        (sum, item) => sum + item.totalBeforeTax,
+      );
+      final invoiceDiscountPercent = discountBase > 0
+          ? (invoiceDiscountAmount < 0 ? 0 : invoiceDiscountAmount) /
+              discountBase * 100
+          : 0.0;
+      final totals = CalculateInvoiceTotalsUseCase().execute(
+        items: items,
+        invoiceDiscountPercent: invoiceDiscountPercent,
+      );
+      final discountRatio = discountBase > 0
+          ? (discountBase - (invoiceDiscountAmount < 0 ? 0 : invoiceDiscountAmount)) /
+              discountBase
+          : 0.0;
 
       for (final item in items) {
-        final lineTotal = item.quantity * item.unitPrice;
-        subtotal += lineTotal;
-        totalTax += item.taxAmount;
-
-        // Build composite note from itemNote + modifiers (same logic as createSalesInvoice)
-        final compositeNote = item.note;
-
+        final lineTax = FinancialUtils.round(
+          item.totalBeforeTax * discountRatio * item.taxRate / 100,
+        );
+        final lineTotal = FinancialUtils.round(item.totalBeforeTax + lineTax);
         await db.into(db.salesInvoiceItems).insert(SalesInvoiceItemsCompanion.insert(
           invoiceId: invoiceId,
           productId: item.productId,
@@ -894,15 +913,21 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
           unitName: Value(item.selectedUnitName),
           quantityInBase: Value(item.quantityInBase),
           unitPrice: item.unitPrice,
-          total: lineTotal + item.taxAmount,
+          discount: Value(item.discountAmount),
+          total: lineTotal,
           taxRate: Value(item.taxRate),
-          taxAmount: Value(item.taxAmount),
-          note: Value(compositeNote),
+          taxAmount: Value(lineTax),
+          note: Value(item.note),
         ));
       }
 
-      final total = subtotal + totalTax;
-      final status = paid >= total ? 'paid' : (paid > 0 ? 'partial' : 'credit');
+      final subtotal = totals.subtotal;
+      final totalTax = totals.taxAmount;
+      final total = totals.total;
+      final status = FinancialUtils.toMinorUnits(paid) >=
+              FinancialUtils.toMinorUnits(total)
+          ? 'paid'
+          : (paid > 0 ? 'partial' : 'credit');
 
       // 4) Update invoice record
       await (db.update(db.salesInvoices)..where((i) => i.id.equals(invoiceId))).write(
@@ -910,6 +935,7 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
           customerId: Value(customerId),
           warehouseId: Value(warehouseId),
           subtotal: Value(subtotal),
+           discount: Value(totals.totalDiscount),
           tax: Value(totalTax),
           total: Value(total),
           paid: Value(paid),
@@ -927,9 +953,25 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
 
       final isCash = paymentMethod == 'cash';
       if (isCash) {
-        await db.autoPostCashSale(updatedInvoice, costCenterId: costCenterId);
+        final posted = await db.autoPostCashSale(
+          updatedInvoice,
+          costCenterId: costCenterId,
+          repostAfterReversal: true,
+          repostRevision: repostRevision,
+        );
+        if (updatedInvoice.total > 0 && (posted == null || posted == 0)) {
+          throw Exception('تعذّر إعادة ترحيل قيد الفاتورة بعد التعديل');
+        }
       } else {
-        await db.autoPostCreditSale(updatedInvoice, costCenterId: costCenterId);
+        final posted = await db.autoPostCreditSale(
+          updatedInvoice,
+          costCenterId: costCenterId,
+          repostAfterReversal: true,
+          repostRevision: repostRevision,
+        );
+        if (updatedInvoice.total > 0 && (posted == null || posted == 0)) {
+          throw Exception('تعذّر إعادة ترحيل قيد الفاتورة بعد التعديل');
+        }
       }
     });
 

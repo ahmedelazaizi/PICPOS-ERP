@@ -101,13 +101,15 @@ void main() {
       );
 
       final json = original.toJson();
+       expect(json, isNot(contains('password')),
+           reason: 'password is persisted in secure storage, not JSON');
       final restored = PostgresConfig.fromJson(json);
 
       expect(restored.host, original.host);
       expect(restored.port, original.port);
       expect(restored.database, original.database);
       expect(restored.username, original.username);
-      expect(restored.password, original.password);
+      expect(restored.password, isEmpty);
       expect(restored.useSsl, original.useSsl);
     });
 

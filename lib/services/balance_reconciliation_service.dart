@@ -87,7 +87,8 @@ class BalanceReconciliationService {
       'FROM journal_entry_lines jl '
       'INNER JOIN journal_entries je ON je.id = jl.entry_id '
       'WHERE jl.account_id IN ($placeholders) '
-      '  AND je.is_posted = 1 '
+      '  AND je.is_posted = ${_db.sqlBool(true)} '
+      '  AND je.is_deleted = ${_db.sqlBool(false)} '
       'GROUP BY jl.account_id',
       variables: accountIds.map((id) => Variable.withInt(id)).toList(),
       readsFrom: {_db.journalEntryLines, _db.journalEntries},

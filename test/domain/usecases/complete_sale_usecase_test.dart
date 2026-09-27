@@ -144,6 +144,7 @@ class MockSalesRepository implements SalesRepository {
     String? notes,
     required List<CartItemEntity> items,
     int? costCenterId,
+    required int? userId,
   }) async {}
 
   @override

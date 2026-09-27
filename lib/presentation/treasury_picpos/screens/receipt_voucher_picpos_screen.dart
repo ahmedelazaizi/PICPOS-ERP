@@ -205,6 +205,8 @@ class _ReceiptVoucherPicposScreenState
           discount: totalDiscount,
           category: 'customer_payment',
           safeId: v.safeId!,
+userId: ref.read(authProvider).user?.id,
+           manualEntry: true,
           partyId: v.partyId,
           description: description,
           costCenterId: v.costCenterId,

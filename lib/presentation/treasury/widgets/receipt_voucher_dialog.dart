@@ -1056,6 +1056,8 @@ class _ReceiptVoucherDialogState extends ConsumerState<ReceiptVoucherDialog> {
           discount: totalDiscount,
           category: category,
           safeId: selectedSafe!.id,
+userId: ref.read(authProvider).user?.id,
+           manualEntry: true,
           partyId: selectedParty?.id,
           description: description,
           costCenterId: selectedCostCenterId,

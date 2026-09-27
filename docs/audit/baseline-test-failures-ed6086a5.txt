@@ -1,0 +1,11 @@
+Baseline @ ed6086a5 (before go/full-remediation), flutter test test/unit test/data test/structural test/services --concurrency=1
+PASS=6622 SKIP=10 FAIL=6
+flutter analyze lib test: No issues found!
+
+Pre-existing failures:
+test/unit/paper_autopost_idempotency_test.dart :: Feature 053 — idempotency guard first post creates one JE carrying the deterministic globalId
+test/unit/paper_autopost_idempotency_test.dart :: Feature 053 — idempotency guard re-posting the same (paper, transition) is suppressed
+test/unit/paper_autopost_idempotency_test.dart :: Feature 053 — idempotency guard different transitions on same paper post separate JEs
+test/unit/paper_autopost_idempotency_test.dart :: Feature 053 — idempotency guard soft-deleted JE does not block re-posting the same transition
+test/unit/picpos_second_door_guards_test.dart :: «جديد» — الزرُّ والاختصارُ يمرّان بنفس الفحص purchases_picpos_crud.dart — الفحصُ قبل فتح الحوار
+test/unit/picpos_second_door_guards_test.dart :: «جديد» — الزرُّ والاختصارُ يمرّان بنفس الفحص وفاتورةُ المشتريات — الصلاحيةُ تتبع الفعلَ لا مدخلَه

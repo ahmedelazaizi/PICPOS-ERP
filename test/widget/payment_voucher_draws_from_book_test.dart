@@ -155,6 +155,7 @@ class _FakeTreasuryRepo implements ITreasuryRepository {
     int? userId,
     int? operatingBranchId,
     String? globalId,
+    bool manualEntry = false,
   }) async {
     vouchers.add({'paperNumber': paperNumber, 'amount': amount});
     return 77;
