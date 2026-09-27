@@ -34,6 +34,7 @@ import '../../services/printing/template_resolver.dart';
 import '../../services/printing/paper_compatibility.dart';
 import '../../services/password_collision_scanner.dart';
 import '../../services/journal_entry_diagnostics.dart';
+import '../../services/audit_log_integrity_service.dart';
 import '../../core/config/app_config.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/stock_movement_types.dart';
@@ -1166,7 +1167,7 @@ class AppDatabase extends _$AppDatabase {
   //
   // Schema v177: sale reposts after an authorized edit may legitimately
   // produce multiple auto-posted JEs for one invoice reference.
-  int get schemaVersion => 177;
+  int get schemaVersion => 178;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.

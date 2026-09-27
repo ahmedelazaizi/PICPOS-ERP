@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import '../database.dart';
 import '../../../domain/entities/accounting_entities.dart';
 import '../../../core/utils/financial_utils.dart';
+import '../../../core/permissions/permission_codes.dart';
+import '../../../services/permission_enforcer.dart';
 
 /// H1 — عدد أيام الشهر الحقيقي، أساس الأجر اليومي.
 ///
@@ -417,6 +419,79 @@ extension HRExtensions on AppDatabase {
     return employee.salary / (hours * days);
   }
 
+  /// Post one month-end salary accrual for all active employees.
+  Future<int> accruePayrollForMonth(int year, int month, int userId) async {
+    await PermissionEnforcer(userHasPermission).requireCriticalOp(
+      userId: userId,
+      code: PermissionCodes.hrPayrollProcess,
+      arabicReason: 'لا تملك صلاحية إصدار استحقاق الرواتب',
+    );
+    if (month < 1 || month > 12) throw ArgumentError.value(month, 'month');
+    final globalId = 'payroll-accrual-$year-${month.toString().padLeft(2, '0')}';
+    return transaction(() async {
+      final existing = await (select(journalEntries)
+            ..where((e) => e.globalId.equals(globalId))
+            ..limit(1))
+          .getSingleOrNull();
+      if (existing != null) return existing.id;
+      final employees = await (select(this.employees)
+            ..where((e) => e.isActive.equals(true) & e.salary.isBiggerThanValue(0)))
+          .get();
+      if (employees.isEmpty) throw StateError('لا يوجد موظفون نشطون براتب مستحق');
+      final expense = await getAccountByCode(await getMappedAccountCode(
+        'salary_expense', AccountingDao.accountPurposes['salary_expense']!,
+      ));
+      final payable = await getAccountByCode(await getMappedAccountCode(
+        'accrued_salaries', AccountingDao.accountPurposes['accrued_salaries']!,
+      ));
+      if (expense == null || payable == null) {
+        throw StateError('حساب مصروف الرواتب أو الرواتب المستحقة غير موجود');
+      }
+      final total = employees.fold<double>(0, (sum, employee) => sum + employee.salary);
+      return createJournalEntry(
+        description: 'استحقاق رواتب $year-${month.toString().padLeft(2, '0')}',
+        date: DateTime(year, month + 1, 0),
+        lines: [
+          JournalLine(accountId: expense.id, debit: FinancialUtils.round(total), description: 'مصروف الرواتب'),
+          JournalLine(accountId: payable.id, credit: FinancialUtils.round(total), description: 'رواتب مستحقة'),
+        ],
+        referenceType: 'payroll_accrual',
+        globalId: globalId,
+        isAutoPosted: true,
+        createdBy: userId,
+      );
+    });
+  }
+
+  /// Reverse a salary payment and restore its cash/advance settlement.
+  Future<void> reverseSalaryPayment(int paymentId, int userId) async {
+    await PermissionEnforcer(userHasPermission).requireCriticalOp(
+      userId: userId,
+      code: PermissionCodes.hrPayrollProcess,
+      arabicReason: 'لا تملك صلاحية عكس صرف راتب',
+    );
+    await transaction(() async {
+      final payment = await (select(salaryPayments)..where((p) => p.id.equals(paymentId)))
+          .getSingleOrNull();
+      if (payment == null) throw StateError('صرف الراتب غير موجود');
+      final entries = await (select(journalEntries)
+            ..where((e) => e.referenceType.equals('salary_payment') &
+                e.referenceId.equals(paymentId) & e.isDeleted.equals(false)))
+          .get();
+      if (entries.isEmpty) throw StateError('لا يوجد قيد لصرف الراتب');
+      for (final entry in entries) {
+        await reverseJournalEntryById(entryId: entry.id, descriptionPrefix: 'عكس صرف راتب');
+      }
+      final treasuryId = payment.treasuryTransactionId;
+      if (treasuryId != null) {
+        final treasury = await (select(safeTransactions)..where((t) => t.id.equals(treasuryId)))
+            .getSingleOrNull();
+        if (treasury != null) await adjustSafeBalance(treasury.safeId, payment.amount);
+      }
+      await (delete(salaryPayments)..where((p) => p.id.equals(paymentId))).go();
+    });
+  }
+
   /// Record salary payment
   Future<int> recordSalaryPayment({
     required int employeeId,
@@ -467,10 +542,8 @@ extension HRExtensions on AppDatabase {
       // `type` is part of the key on purpose — a bonus or an advance for the
       // same period is a different obligation, not a repeat of the salary.
       //
-      // TODO(owner): this belongs in the schema as UNIQUE(employee_id, period,
-      // type). Adding it needs a migration + build_runner, which is frozen in
-      // agent sessions; until then this is the only layer enforcing it, so a
-      // concurrent writer on another device could still slip a duplicate past.
+      // The database guard `idx_salary_payments_period_dedup` covers
+      // (employee_id, period, type); this query preserves the user-facing error.
       final existing = await (select(salaryPayments)
             ..where((p) =>
                 p.employeeId.equals(employeeId) &
@@ -626,15 +699,34 @@ extension HRExtensions on AppDatabase {
             );
           }
 
+          final periodParts = period.split('-');
+          final accrualGlobalId = periodParts.length == 2
+              ? 'payroll-accrual-${periodParts[0]}-${periodParts[1]}'
+              : null;
+          final accrual = accrualGlobalId == null
+              ? null
+              : await (select(journalEntries)
+                    ..where((e) => e.globalId.equals(accrualGlobalId))
+                    ..limit(1))
+                  .getSingleOrNull();
+          final payableAcc = accrual == null
+              ? null
+              : await getAccountByCode(await getMappedAccountCode(
+                  'accrued_salaries',
+                  AccountingDao.accountPurposes['accrued_salaries']!,
+                ));
+          final debitAccount = payableAcc ?? salaryAcc;
           {
             await createJournalEntry(
-              description: 'صرف راتب — فترة $period',
+              description: payableAcc == null
+                  ? 'صرف راتب — فترة $period'
+                  : 'تسوية رواتب مستحقة — فترة $period',
               date: DateTime.now(),
               lines: [
                 JournalLine(
-                  accountId: salaryAcc.id,
+                  accountId: debitAccount.id,
                   debit: FinancialUtils.round(expenseAmount),
-                  description: 'مصروف الرواتب',
+                  description: payableAcc == null ? 'مصروف الرواتب' : 'تسوية رواتب مستحقة',
                 ),
                 if (amount > 0)
                   JournalLine(

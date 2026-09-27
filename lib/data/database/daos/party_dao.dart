@@ -1437,28 +1437,26 @@ extension PartyDao on AppDatabase {
           [amount, partyId],
         );
 
-        // P1-02: Log balance change for AR/AP audit trail.
-        // Skip when changedBy <= 0: server-side paths (client API requests) have no
-        // authenticated user context; inserting changed_by=0 violates the FK to users
-        // and under PostgreSQL poisons the whole transaction (25P02 at COMMIT).
-        if (changedBy > 0) {
-          try {
-            await logFieldChange(
-              entityType: 'party',
-              entityId: partyId,
-              fieldName: 'رصيد الطرف',
-              fieldKey: 'balance',
-              oldValue: oldBalance.toStringAsFixed(4),
-              newValue: newBalance.toStringAsFixed(4),
-              changedBy: changedBy,
-              changedByName: changedByName,
-              changeReason: changeReason,
-              transactionId: 'balance-adj-$partyId-${DateTime.now().millisecondsSinceEpoch}',
-            );
-          } catch (e) {
-            debugPrint('[FieldAudit] Failed to log party balance change: $e');
-          }
-        }
+        final actorId = changedBy > 0
+            ? changedBy
+            : ((await (select(users)
+                          ..where((u) => u.username.equals('admin'))
+                          ..limit(1))
+                      .getSingleOrNull())
+                    ?.id ??
+                1);
+        await logFieldChange(
+          entityType: 'party',
+          entityId: partyId,
+          fieldName: 'رصيد الطرف',
+          fieldKey: 'balance',
+          oldValue: oldBalance.toStringAsFixed(4),
+          newValue: newBalance.toStringAsFixed(4),
+          changedBy: actorId,
+          changedByName: changedBy > 0 ? changedByName : 'SYSTEM',
+          changeReason: changeReason,
+          transactionId: 'balance-adj-$partyId-${DateTime.now().millisecondsSinceEpoch}',
+        );
       }
     });
   }
@@ -2411,6 +2409,40 @@ extension PartyDao on AppDatabase {
         delta:       cardBalance - glBalance,
       );
     }).toList();
+  }
+
+  /// Recompute stored party balances from posted, non-deleted ledger lines.
+  Future<int> recalculatePartyBalancesFromLedger(int userId) async {
+    await PermissionEnforcer(userHasPermission).requireCriticalOp(
+      userId: userId,
+      code: PermissionCodes.accountingJournal,
+      arabicReason: 'لا تملك صلاحية إصلاح أرصدة الأطراف',
+    );
+    return transaction(() async {
+      final rows = await customSelect(
+        '''SELECT p.id, p.balance AS old_balance,
+          COALESCE(SUM(live_jel.debit) - SUM(live_jel.credit), 0.0) AS ledger_balance
+          FROM parties p
+          LEFT JOIN (
+            SELECT jel.account_id, jel.debit, jel.credit
+            FROM journal_entry_lines jel
+            INNER JOIN journal_entries je ON je.id = jel.entry_id
+              AND je.is_posted = ${sqlBool(true)} AND je.is_deleted = ${sqlBool(false)}
+          ) live_jel ON live_jel.account_id = p.account_id
+          WHERE p.account_id IS NOT NULL AND p.deleted_at IS NULL
+          GROUP BY p.id, p.balance''',
+      ).get();
+      var repaired = 0;
+      for (final row in rows) {
+        final oldBalance = (row.data['old_balance'] as num).toDouble();
+        final ledgerBalance = (row.data['ledger_balance'] as num).toDouble();
+        if ((oldBalance - ledgerBalance).abs() <= 0.01) continue;
+        await (update(parties)..where((p) => p.id.equals(row.data['id'] as int)))
+            .write(PartiesCompanion(balance: Value(ledgerBalance)));
+        repaired++;
+      }
+      return repaired;
+    });
   }
 }
 

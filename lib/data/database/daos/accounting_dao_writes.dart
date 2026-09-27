@@ -2,6 +2,40 @@
 part of '../database.dart';
 
 extension AccountingDaoWritesExt on AppDatabase {
+  Future<void> _auditJournalMutation({
+    required String action,
+    required int entryId,
+    required int? userId,
+    required String description,
+  }) async {
+    final previous = await (select(activityLogs)
+          ..orderBy([(l) => OrderingTerm.desc(l.id)])
+          ..limit(1))
+        .getSingleOrNull();
+    final now = DateTime.now();
+    final previousHash = previous?.hash ?? 'GENESIS';
+    final data = '$description|$entryId';
+    final hash = AuditLogIntegrityService.generateHash(
+      previousHash: previousHash,
+      timestamp: now,
+      action: action,
+      data: data,
+      userId: userId ?? 0,
+    );
+    await into(activityLogs).insert(ActivityLogsCompanion.insert(
+      userId: Value(userId),
+      userName: userId == null ? 'SYSTEM' : 'user:$userId',
+      action: action,
+      entityType: 'journal_entry',
+      entityId: Value(entryId),
+      description: description,
+      newValue: Value(data),
+      hash: Value(hash),
+      previousHash: Value(previousHash),
+      createdAt: Value(now),
+    ));
+  }
+
   /// Create a journal entry
   ///
   /// [globalId] lets callers inject a deterministic UUID so client/server
@@ -1529,6 +1563,12 @@ extension AccountingDaoWritesExt on AppDatabase {
       branchId: original.branchId,
       globalId: reversalGid,
     );
+    await _auditJournalMutation(
+      action: 'journal_entry_reversed',
+      entryId: entryId,
+      userId: null,
+      description: 'عكس القيد #$entryId إلى #$newId',
+    );
     debugPrint(
       '[JE-REVERSE-BY-ID] Reversed JE #$entryId → new JE #$newId '
       '(gid=$reversalGid)',
@@ -1590,7 +1630,13 @@ extension AccountingDaoWritesExt on AppDatabase {
           .toList();
 
       if (reverseLines.isNotEmpty) {
-        await createJournalEntry(
+        await _auditJournalMutation(
+          action: 'journal_entry_reversal_requested',
+          entryId: entry.id,
+          userId: actingUserId,
+          description: '$descriptionPrefix للقيد #${entry.id}',
+        );
+        final reversalId = await createJournalEntry(
           description: '$descriptionPrefix - ${entry.description}',
           date: DateTime.now(),
           lines: reverseLines,
@@ -1727,6 +1773,12 @@ extension AccountingDaoWritesExt on AppDatabase {
       }
 
       // ورقةُ الدفع — تُجمَع هنا وتُرسَل بعد إغلاق المعاملة.
+      await _auditJournalMutation(
+        action: 'journal_entry_approved',
+        entryId: entryId,
+        userId: approverId,
+        description: 'اعتماد القيد #$entryId',
+      );
       if (SyncInterceptor.isClientMode) {
         pushDesc = entry.description ?? '';
         pushDate = entry.entryDate;
@@ -1785,10 +1837,18 @@ extension AccountingDaoWritesExt on AppDatabase {
     if (entry == null) throw Exception('القيد غير موجود');
     if (entry.isPosted) throw Exception('لا يمكن رفض قيد مُرحَّل');
 
-    await customStatement(
-      "UPDATE journal_entries SET status = 'rejected', approved_by = ?, approved_at = ? WHERE id = ?",
-      [rejectorId, DateTime.now().millisecondsSinceEpoch, entryId],
-    );
+    await transaction(() async {
+      await customStatement(
+        "UPDATE journal_entries SET status = 'rejected', approved_by = ?, approved_at = ? WHERE id = ?",
+        [rejectorId, DateTime.now().millisecondsSinceEpoch, entryId],
+      );
+      await _auditJournalMutation(
+        action: 'journal_entry_rejected',
+        entryId: entryId,
+        userId: rejectorId,
+        description: 'رفض القيد #$entryId',
+      );
+    });
   }
 
   /// ONE-TIME REMEDIATION: Backfill missing cost center IDs from parent entries to lines.

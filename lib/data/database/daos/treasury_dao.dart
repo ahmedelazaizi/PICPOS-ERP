@@ -599,6 +599,7 @@ extension TreasuryDao on AppDatabase {
     await (update(shifts)..where((s) => s.id.equals(shiftId))).write(
       const ShiftsCompanion(status: Value('closed')),
     );
+    await _runFinancialIntegrityChecks();
    }
    Future<void> _reopenShiftAfterFailedClose(int shiftId) async {
      await (update(shifts)..where((s) => s.id.equals(shiftId))).write(

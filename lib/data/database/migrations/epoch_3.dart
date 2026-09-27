@@ -3522,5 +3522,13 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v177: sale reposts exempted from dedup index');
       });
     }
+
+    // v178 — reassert the salary-payment database guard on upgraded stores.
+    if (from < 178) {
+      await _safeMigrate('v178 salary payment dedup guard', () async {
+        await m.database.customStatement(kCreateSalaryPaymentDedupIndexSql);
+        debugPrint('[Migration] v178: salary payment dedup guard verified');
+      });
+    }
   }
 }

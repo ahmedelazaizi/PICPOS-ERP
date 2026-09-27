@@ -1656,6 +1656,7 @@ extension DatabaseStartup on AppDatabase {
 
   /// Background tasks that don't block the user from logging in.
   Future<void> _scheduleDeferredTasks() async {
+    await _runFinancialIntegrityChecks();
     // Auto-backup on startup — only for SQLite (file-based)
     if (!_isPostgres) {
       try {
@@ -1667,6 +1668,62 @@ extension DatabaseStartup on AppDatabase {
         );
       } catch (e) {
         debugPrint('[Startup] autoBackup: $e');
+      }
+    }
+  }
+
+  Future<void> _runFinancialIntegrityChecks() async {
+    final mismatches = await getPartyBalanceMismatches();
+    if (mismatches.isNotEmpty) {
+      await DiagnosticLogger.log(
+        'PARTY-BALANCE-MISMATCH',
+        '${mismatches.length} stored party balances differ from the ledger',
+      );
+      final admin = await (select(users)
+            ..where((u) => u.username.equals('admin'))
+            ..limit(1))
+          .getSingleOrNull();
+      if (admin != null) {
+        await createNotification(
+          userId: admin.id,
+          title: 'تنبيه أرصدة الأطراف',
+          body: 'يوجد ${mismatches.length} رصيد طرف يحتاج إلى مراجعة',
+          type: 'warning',
+          relatedEntityType: 'party_balance_reconciliation',
+        );
+      }
+    }
+    final auditRows = await (select(activityLogs)
+          ..where((l) => l.hash.isNotNull())
+          ..orderBy([(l) => OrderingTerm.asc(l.id)]))
+        .get();
+    final broken = AuditLogIntegrityService.verifyChain(auditRows
+        .map((row) => AuditEntry(
+              id: row.id,
+              timestamp: row.createdAt,
+              action: row.action,
+              data: row.newValue ?? '',
+              userId: row.userId ?? 0,
+              integrityHash: row.hash!,
+            ))
+        .toList());
+    if (broken >= 0) {
+      await DiagnosticLogger.log(
+        'AUDIT-CHAIN-BROKEN',
+        'audit chain broken at index $broken',
+      );
+      final admin = await (select(users)
+            ..where((u) => u.username.equals('admin'))
+            ..limit(1))
+          .getSingleOrNull();
+      if (admin != null) {
+        await createNotification(
+          userId: admin.id,
+          title: 'تنبيه سلامة سجل التدقيق',
+          body: 'تم اكتشاف تعديل في سلسلة سجل التدقيق',
+          type: 'error',
+          relatedEntityType: 'audit_log_integrity',
+        );
       }
     }
   }
