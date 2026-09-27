@@ -1,6 +1,7 @@
 # تدقيق شامل لمشروع PicPos / UralCash ERP — 2026
 
-- **الفرع:** `review/full-audit-2026` (آخر commit وقت التدقيق: `6104ae1e`)
+- **الفرع:** `review/full-audit-2026` (مبني على `main` عند `8fbef4c7`)
+- **تحديث بعد التدقيق:** أُزيلت أداة `tools/picpos-activation/picpos-key-generator.html` من تاريخ هذا الفرع بالكامل وأُضيف مسارها إلى `.gitignore` (بقيت على القرص فقط). الملح نفسه ما زال مضمّنًا في `lib/services/license_service.dart:20` المُلتزَم في `main`، لذا يبقى TE-01 حرجًا.
 - **النطاق:** `lib/` (1434 ملف Dart)، `test/` (1164 ملف `*_test.dart`)، `supabase/`، `scripts/`، `tools/`، `.github/workflows/ci.yml`، وجذر المستودع.
 - **المنهج:** بحث نصّي واسع (ripgrep/`Select-String`) بأنماط محددة، ثم قراءة الأسطر المُستشهد بها. كل بند أدناه يستشهد بملف وسطر قُرئ فعلًا. لم يُقرأ `lib/data/database/database.g.dart`. لم تُشغَّل مجموعة الاختبارات. نتيجة `flutter analyze lib/` مذكورة في §3.11 (لم يكتمل التشغيل).
 - **مفتاح التصنيف:**
@@ -335,7 +336,7 @@
 1. **`.gitignore`**: أضف سطر `*.root-backup` (يغطي `assets/fonts/NotoNaskhArabic-Regular.ttf.root-backup` دون حذفه). التحقق: `git status --short` لم يعد يُظهره.
 2. **ملفات `.bak`**: `git rm lib/data/database/database.dart.bak lib/presentation/widgets/settings/pos_settings_widget_backup.dart.bak` وأضف `*.bak` إلى `.gitignore`. التحقق: `git ls-files lib | Select-String '\.bak$'` فارغ.
 3. **`scripts/gate.sh:511`**: استبدل القيمة الافتراضية `postgres://postgres:14590@127.0.0.1:5432/picpos` بـ`${PG_TEST_DSN:?PG_TEST_DSN must be set}` (أو قيمة عامة مثل `postgres:postgres`)، ثم غيّر كلمة المرور الفعلية على قاعدة الاختبار. وحدّث المثال في `docs/superpowers/handoff/2026-08-04-road-to-go.md:196`.
-4. **`.gitignore`**: أضف `tools/picpos-activation/` بجانب قسم «license/keygen tooling» (لمنع إعادة الإضافة مستقبلًا). *ملاحظة:* لا يزيل الملف المُلتزم؛ الإزالة والتدوير في §6 (TE-01).
+4. **`.gitignore`**: أضف `tools/picpos-activation/` بجانب قسم «license/keygen tooling» (لمنع إعادة الإضافة مستقبلًا). *ملاحظة:* نُفِّذ، وأُزيلت الأداة من تاريخ هذا الفرع؛ تدوير الملح في §6 (TE-01).
 5. **`.github/workflows/ci.yml`**: أضف إلى `THRESHOLDS` أكبر الملفات بسقف = حجمها الحالي بالبايت (منع النمو فقط)، مثل `lib/services/api/api_data_handler.dart` و`lib/data/database/daos/treasury_dao.dart` و`lib/services/api/api_handler.dart`. (لا تمس حد `client_write_interceptor.dart` — انظر §6.)
 
 **الخطوط**
@@ -436,3 +437,25 @@
 - لم تُقرأ سياسات RLS في `supabase/migrations/0002_rls_policies.sql` بالتفصيل، ولا مجلد `windows/`، ولا `web_app/` سوى ملف إعداد Supabase.
 - لم تُراجَع الأجسام الداخلية لـ`autoPostSalesReturn`/`autoPostPurchaseReturn` و`recalculateProductWAC`.
 - البنود المُعلَّمة «قراءة مساعدة» جُمعت بقارئ آلي قرأ الأسطر المذكورة ولم أُعد التحقق من كل سطر منها بنفسي.
+
+---
+
+## 7. ما نُفِّذ فعليًا في هذا الـ PR
+
+| بند §5 | الحالة |
+|---|---|
+| 1، 2، 3، 4، 5 | تم — `.gitignore` (`*.root-backup`، `*.bak`، `tools/picpos-activation/`)، حذف ملفَي `.bak`، إزالة كلمة مرور DSN من `scripts/gate.sh`، حدود حجم CI لثلاثة ملفات جديدة (بحجمها الحالي بالضبط) |
+| 6، 9 | تم — إعلان عائلة `Cairo` في `pubspec.yaml`، و`fontFamilyFallback` للأسعار |
+| 7 | لم يُنفَّذ عمدًا (البند 6 يغني عنه) |
+| 8 | **مؤجَّل** — تعذّر تنزيل ملفات أوزان Cairo (لا اتصال بالشبكة)؛ لم تُضف ملفات غير صالحة |
+| 10، 11 | تم — زر «عرض» معطَّل مع تلميح «قريبًا»، وزر «الميزان» لم يعد يُرسم معطَّلًا |
+| 12، 13، 14 | تم — الوضع الداكن وفيض العناوين |
+| 15، 16، 17، 18 | تم — منع رفض قيد مرحَّل، فحص الفترة قبل حذف القيد، فحص الفترة عند حذف مصروف، منع تغيير حالة الورقة لنفس الحالة |
+| 19، 20 | تم — تسجيل تشخيصي لفشل قيد سند المخزون، و`@Deprecated` على `createDraftJournalEntry` |
+| 21، 22، 23، 24 | تم — `AppColors.error` وتحويلات RTL الاتجاهية (شكل العرض العربي الحالي كما هو) |
+
+**التحقق المُشغَّل:**
+- `dart analyze` على كل ملفات Dart المعدَّلة (26 ملفًا): `No issues found!`
+- `flutter test test/unit/audit_safe_fixes_test.dart test/unit/commercial_papers_state_machine_test.dart test/integration/pir_fiscal_period_blocking_test.dart`: `All tests passed!` (15 اختبارًا، منها 3 جديدة للبنود 15 و17 و18).
+- لم تُشغَّل المجموعة الكاملة (`flutter test` لكل `test/`) ولا `flutter analyze lib/` كاملًا — يجب تشغيلهما قبل الدمج.
+- بوابة حجم `client_write_interceptor.dart` في CI ما زالت حمراء (TE-20) لأنها خارج نطاق الإصلاح الآمن.
