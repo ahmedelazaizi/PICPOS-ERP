@@ -5,7 +5,6 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:cryptography/cryptography.dart' as argon_lib;
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Password validation result containing validity, errors, and strength score

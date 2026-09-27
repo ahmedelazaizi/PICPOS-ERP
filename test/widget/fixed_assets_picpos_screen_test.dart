@@ -26,6 +26,7 @@ import 'package:ural_erp/presentation/fixed_assets_picpos/screens/fixed_assets_p
 import 'package:ural_erp/data/providers/providers.dart';
 import '../helpers/attachments_test_overrides.dart';
 
+  // ignore: unused_element
 final _now = DateTime(2026, 8, 26);
 
 db.FixedAssetData _asset({

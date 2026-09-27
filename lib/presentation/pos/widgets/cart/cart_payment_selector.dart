@@ -419,6 +419,7 @@ class CartPaymentSelector extends ConsumerWidget {
   }
 
   /// Helper: Build a compact split payment field row
+  // ignore: unused_element
   Widget _buildSplitField({
     required IconData icon,
     required Color iconColor,

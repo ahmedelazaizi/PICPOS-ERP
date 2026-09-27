@@ -19,7 +19,6 @@
 
 import 'dart:typed_data';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/domain/models/attachment_policy.dart';
 import 'package:ural_erp/domain/repositories/attachments_repository.dart';

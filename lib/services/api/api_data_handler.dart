@@ -1,10 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════════════
-// API DATA HANDLER — CRUD for Expenses, Receipts, Shifts, Parties,
-// Products, Purchases, Inventory, Treasury, Settings, Categories,
-// Users, Warehouses, Backup
-// ═══════════════════════════════════════════════════════════════════════════
-//
-// Extracted from ApiHandler for maintainability (PIR C-01).
+// CRUD API endpoints extracted from ApiHandler (PIR C-01).
 
 import 'dart:async';
 import 'dart:convert';
@@ -3121,6 +3115,7 @@ class ApiDataHandler extends ApiHandlerBase {
       final branchId = parseIntNullable(data['branchId'] ?? data['branch_id']);
       final referenceType = (data['referenceType'] ?? data['reference_type']) as String?;
       final referenceId = parseIntNullable(data['referenceId'] ?? data['reference_id']);
+  // ignore: dead_code
       final isAutoPosted = parseBool(data['isAutoPosted'] ?? data['is_auto_posted']) ?? true;
       // Spec 007 / FR-008: honour the client's locally-minted globalId so
       // both sides converge on the same UUID. Without this the server minted
@@ -3318,6 +3313,7 @@ class ApiDataHandler extends ApiHandlerBase {
       // reflects the actual post-state.
       // 066 (D5-001): generateInvoiceNumber moved inside the txn so the
       // RV/PV counter rolls back if the safe-update or insert fails.
+  // ignore: unused_local_variable
       final newBalance = await db.transaction(() async {
         final voucherNumber = await db.generateInvoiceNumber(
           transactionType == 'receipt' ? 'RV' : 'PV',
@@ -3542,6 +3538,7 @@ class ApiDataHandler extends ApiHandlerBase {
         }
       }
 
+  // ignore: unused_local_variable
       final transferBondId = await db.transaction(() async {
         // Record the header and every stock movement atomically.
         final transferBondId = await db.into(db.inventoryBonds).insert(

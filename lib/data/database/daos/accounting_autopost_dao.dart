@@ -1009,6 +1009,7 @@ extension AccountingAutopostDao on AppDatabase {
     final inputVatAccount = await accountingDao.getAccountByCode(
       await accountingDao.getMappedAccountCode('input_vat', AccountingDao.accountPurposes['input_vat']!),
     );
+  // ignore: unused_local_variable
     final cashAccount = await accountingDao.getAccountByCode(
       await accountingDao.getMappedAccountCode('cash', AccountingDao.accountPurposes['cash']!),
     );
@@ -2130,6 +2131,7 @@ extension AccountingAutopostDao on AppDatabase {
 
     return accountingDao.createJournalEntry(
       description: 'إيراد مؤجل — فاتورة #${sale.invoiceNumber} (قبل التسليم)',
+  // ignore: dead_code
       date: sale.invoiceDate ?? DateTime.now(),
       lines: lines,
       referenceType: 'deferred_sale',

@@ -180,6 +180,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
     entry.action();
   }
 
+  // ignore: unused_element
   void _toggleAccordion(PicposReportCategory cat) {
     setState(() {
       _expandedCatId = _expandedCatId == cat.id ? null : cat.id;

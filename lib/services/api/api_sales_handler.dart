@@ -1087,6 +1087,7 @@ class ApiSalesHandler extends ApiHandlerBase {
         holdNumber: data['holdNumber'] as String,
         subtotal: (parseDouble(data['subtotal'])).toDouble(),
         discount: (parseDoubleNullable(data['discount']))?.toDouble() ?? 0,
+  // ignore: dead_code
         discountIsPercent: parseBool(data['discountIsPercent']) ?? true,
         customerId: parseIntNullable(data['customerId']),
         customerName: data['customerName'] as String?,

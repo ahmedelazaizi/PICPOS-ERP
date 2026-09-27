@@ -142,7 +142,7 @@ void main() {
     test(
       'treasury_dao.dart::createReceiptVoucher exposes skipJournalEntry + skipSafeTransaction',
       () {
-        final source = File('lib/data/database/daos/treasury_dao.dart')
+        final source = File('lib/data/database/daos/treasury_voucher_dao.dart')
             .readAsStringSync();
 
         final methodStart =

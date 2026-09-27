@@ -23,7 +23,6 @@
 // وهذا **قائمٌ اليوم** ومستقلٌّ عن أيِّ تغييرٍ في الخزينة: الترحيلُ على
 // الحسابات الفرعيّة مشحونٌ منذ مواصفة ١٣٦.
 
-import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/domain/entities/accounting_entities.dart';

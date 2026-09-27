@@ -1,6 +1,5 @@
 import 'picpos_surface.dart';
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 
 /// كارت محتوى مسطّح بحد شعري وزوايا 14 — بديل الكروت المرفوعة (`elevation:2`)
 /// التي تكتبها الشاشات inline وتتجاوز بها الثيم. بلا ظلال عن قصد.

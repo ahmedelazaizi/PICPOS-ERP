@@ -791,6 +791,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
           invoiceTotal: invoice.total,
           invoicePaid: invoice.paid,
         );
+  // ignore: unused_local_variable
         final oldGrossReturn = oldSettlement.gross;
         final oldBalanceCorrection = oldSettlement.apPortion;
         final oldCashReturn = oldSettlement.cashPortion;

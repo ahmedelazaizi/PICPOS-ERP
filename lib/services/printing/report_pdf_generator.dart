@@ -1,8 +1,6 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart' as printing_pkg;
-import 'package:flutter/foundation.dart';
 import 'printing_models.dart';
 import '../../core/constants/app_constants.dart';
 import 'pdf_compute_helper.dart';

@@ -135,7 +135,7 @@
    نقصاً، السكربت **لا يحذف صفاً واحداً**: يُخرج لك التكرارات المانعة
    ويتخطّى أي جدول فيه تكرار حتى تحسمه أنت. المرحلة 2 معطّلة افتراضياً
    داخل كتلة تراجع. **شغّله والخدمة متوقفة ومعك نسخة احتياطية.**
-2. **تعارض في سكربت `supabase_migration_v118.sql`** لجدول
+2. **تعارض في سكربت `db/legacy_migrations/supabase_migration_v118.sql`** لجدول
    `processed_messages` — **الفروق خمسة لا ثلاثة**: ينقصه `response_payload`،
    و`action_type` معرّف `NOT NULL` بينما الكود يرسله فارغاً، و
    `idempotency_key` نوعه `uuid` بدل `text`، و`created_at` نوعه `timestamptz`

@@ -91,6 +91,7 @@ void main() {
 
   group('Commercial Papers — Auto-Posting Verification', () {
     test('Received paper creation -> pending posts DEBIT Notes Receivable, CREDIT Receivables', () async {
+  // ignore: unused_local_variable
       final paperId = await _createPaper(repo, direction: 'received', status: 'pending');
 
       final entries = await db.select(db.journalEntries).get();
@@ -134,6 +135,7 @@ void main() {
     });
 
     test('Issued paper creation -> pending posts DEBIT Payables, CREDIT Notes Payable', () async {
+  // ignore: unused_local_variable
       final paperId = await _createPaper(repo, direction: 'issued', status: 'pending');
 
       final entries = await db.select(db.journalEntries).get();

@@ -6,7 +6,6 @@ import '../../../core/diagnostics/perf_trace.dart';
 import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../../core/widgets/shimmer_loading.dart';
 // 063 (D1-005): dual-approval gate for stock write-offs.
 import '../../../services/dual_approval_service.dart';
 import '../../../data/providers/providers.dart';
@@ -488,8 +487,10 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
           flex: 3,
           child: productsAsync.when(
             data: (products) {
+  // ignore: unused_local_variable
               final searchText = _movementSearchController.text.toLowerCase();
               // Find selected product name
+  // ignore: unused_local_variable
               final selectedName = selectedProductId != null
                   ? products.where((p) => p.id == selectedProductId).firstOrNull?.name
                   : null;

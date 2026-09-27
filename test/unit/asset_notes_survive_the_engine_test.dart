@@ -30,7 +30,6 @@
 // يُعرَض في تبويبة «الحركات» من البطاقة. وأثرُ المحرّك في حقلِ نصٍّ حرٍّ
 // فتاتُ خبزٍ لا سجلّ — فيُضاف سطراً تحت ما كتبه المستخدم ولا يحلّ محلَّه.
 
-import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 

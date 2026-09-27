@@ -42,15 +42,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/models/asset_disposal_plan.dart';
-import '../../../domain/models/asset_movement_types.dart';
 import '../../../domain/models/depreciation_math.dart';
-import '../../../domain/repositories/accounting_repository.dart';
-import '../../../domain/repositories/fixed_assets_repository.dart';
 import 'asset_card_picpos.dart';
 import 'asset_disposal_request_picpos.dart';
 import 'fixed_assets_picpos_create_dialog.dart';
-import '../../picpos_shell/picpos_bar_list.dart';
-import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_data_table.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_report_tabs.dart';
@@ -66,6 +61,7 @@ final _money0 = NumberFormat('#,##0', 'en');
 const _ok = Color(0xFF22C55E);
 const _warn = Color(0xFFF59E0B);
 const _err = Color(0xFFEF4444);
+  // ignore: unused_element
 const _purple = Color(0xFF8B5CF6);
 const _idle = Color(0xFF6B7280);
 
@@ -172,6 +168,7 @@ double _deprRatio(FixedAssetData a) {
 
 /// السنواتُ الباقية — مشتقّةٌ من نسبة الإهلاك فتتّسق مع الشريط المعروض
 /// بجوارها، بدل أن تُحسَب من التاريخ فتخالفه.
+  // ignore: unused_element
 double _remainingYears(FixedAssetData a) =>
     (a.usefulLifeYears * (1 - _deprRatio(a))).clamp(0.0, a.usefulLifeYears);
 
@@ -286,6 +283,7 @@ class _FixedAssetsPicposScreenState
 
     final onBooks = all.where((a) => _isActive(a)).toList();
     final disposed = all.where((a) => !_isActive(a)).toList();
+  // ignore: unused_local_variable
     final locations = _locationKeys(onBooks);
     final snaps = ref.watch(_asOfSnapshotsProvider(_asOf)).value ??
         const <int, ({double accumulated, double bookValue, double cost})>{};
@@ -552,6 +550,7 @@ class _FixedAssetsPicposScreenState
     List<AssetCategory> cats,
     Map<int, ({double accumulated, double bookValue, double cost})> snaps,
   ) {
+  // ignore: unused_local_variable
     final catName = {for (final c in cats) c.id: c.name};
 
     // 🔴 **اليومُ يُقرأ حيّاً والماضي يُقرأ لقطةً.**

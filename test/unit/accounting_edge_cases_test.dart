@@ -112,6 +112,7 @@ void main() {
       const lineCostCenter = 10;
       const overrideCostCenter = 20;
 
+  // ignore: dead_code
       const effectiveCostCenter = overrideCostCenter ?? lineCostCenter;
       expect(effectiveCostCenter, 20);
     });

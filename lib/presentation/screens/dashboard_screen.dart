@@ -5,7 +5,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../widgets/branch_chip.dart';
-import '../../core/config/app_config.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../../data/providers/providers.dart';

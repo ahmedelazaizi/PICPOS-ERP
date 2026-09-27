@@ -6,10 +6,8 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../app_main_screen.dart' show enforceShiftForUser;
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
-import '../../../domain/entities/user_entity.dart';
 import '../../pos/logic/open_shift_gate.dart';
 import '../../pos/providers/cart_controller.dart';
-import '../../shift_close_picpos/widgets/picpos_cashier_closing_dialog.dart';
 import '../providers/pos_return_mode_provider.dart';
 
 /// Hand the till to another cashier without leaving the application.

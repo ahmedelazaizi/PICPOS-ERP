@@ -112,6 +112,7 @@ extension _SetupWizardSettingsExt on _SetupWizardScreenState {
     );
   }
 
+  // ignore: unused_element
   Widget _buildDropdown({
     required String label,
     required String value,

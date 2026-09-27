@@ -870,6 +870,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
   }
 
   // ICR-01: Approve a draft journal entry — shows confirmation then posts it
+  // ignore: unused_element
   Future<void> _approveEntry(BuildContext context, IAccountingRepository repo, JournalEntryData entry) async {
     final confirmed = await showDialog<bool>(
       context: context,

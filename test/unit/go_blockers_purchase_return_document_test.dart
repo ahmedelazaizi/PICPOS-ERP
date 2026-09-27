@@ -24,7 +24,9 @@ void main() {
   late AppDatabase db;
   late int supplierId;
   late int warehouseId;
+  // ignore: unused_local_variable
   late int userId;
+  // ignore: unused_local_variable
   late int productId;
 
   // فاتورةُ شراءٍ بضريبةٍ صريحة، ومرتجعٌ جزئيٌّ بأرقامٍ متمايزةٍ عمداً.

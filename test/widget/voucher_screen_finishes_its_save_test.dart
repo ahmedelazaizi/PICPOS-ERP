@@ -45,8 +45,6 @@ import 'package:ural_erp/data/providers/repository_providers.dart';
 import 'package:ural_erp/data/providers/treasury_providers.dart';
 import 'package:ural_erp/domain/repositories/accounting_repository.dart';
 import 'package:ural_erp/domain/repositories/activity_log_repository.dart';
-import 'package:ural_erp/domain/repositories/commercial_papers_repository.dart'
-    hide commercialPapersRepositoryProvider;
 import 'package:ural_erp/domain/repositories/treasury_repository.dart';
 import 'package:ural_erp/presentation/treasury_picpos/screens/payment_voucher_picpos_screen.dart';
 import 'package:ural_erp/presentation/treasury_picpos/screens/receipt_voucher_picpos_screen.dart';

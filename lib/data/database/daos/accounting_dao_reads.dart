@@ -696,6 +696,7 @@ extension AccountingDaoReadsExt on AppDatabase {
     final selectedAccount = await (select(
       accounts,
     )..where((a) => a.id.equals(accountId))).getSingleOrNull();
+  // ignore: unused_local_variable
     final accountCode = selectedAccount?.code ?? '';
 
     // Build account filter: include the selected account AND all child accounts.

@@ -6,7 +6,6 @@ import 'package:device_info_plus/device_info_plus.dart' as di;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/trial/trial_policy.dart';
-import '../core/utils/license_encoding.dart';
 import '../core/trial/trial_state.dart';
 import '../data/providers/providers.dart';
 import 'secure_storage_service.dart';

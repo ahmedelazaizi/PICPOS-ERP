@@ -132,6 +132,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
   TabController get tabController;
 
   void handleBranchAction(String action, dynamic branch) async {
+  // ignore: unused_local_variable
     final branchRepo = screenRef.read(branchRepositoryProvider);
 
     switch (action) {

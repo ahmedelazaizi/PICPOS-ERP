@@ -26,7 +26,6 @@ import 'package:ural_erp/data/database/database.dart' as db;
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/domain/repositories/accounting_repository.dart';
 import 'package:ural_erp/domain/repositories/branch_repository.dart';
-import 'package:ural_erp/domain/repositories/auth_repository.dart';
 import 'package:ural_erp/domain/repositories/budget_repository.dart';
 import 'package:ural_erp/domain/repositories/manufacturing_repository.dart';
 import 'package:ural_erp/presentation/opex_picpos/screens/opex_picpos_screen.dart';

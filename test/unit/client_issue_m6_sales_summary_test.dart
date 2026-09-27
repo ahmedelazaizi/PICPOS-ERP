@@ -22,6 +22,7 @@ void main() {
   late int warehouseId;
   late int otherWarehouseId;
   late int userId;
+  // ignore: unused_local_variable
   late int productId;
 
   setUp(() async {

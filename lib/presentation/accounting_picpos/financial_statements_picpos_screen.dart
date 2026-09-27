@@ -23,7 +23,6 @@ import '../../services/network_service.dart';
 // سابقٌ للحارس، والفوركُ ملفٌّ جديدٌ فيسري عليه.
 // و`isClientModeProvider` يكشف نفسَ المعلومة عبر مزوِّدٍ قائمٍ في
 // `inventory_providers.dart` — فالإصلاحُ توصيلٌ لا اختراع.
-import '../../services/offline_sync_worker.dart';
 import '../../services/sync/sync_worker.dart';
 import '../../core/constants/app_constants.dart';
 import '../widgets/report_components.dart' show DateRangeFilter;

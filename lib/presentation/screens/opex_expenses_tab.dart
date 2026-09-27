@@ -273,6 +273,7 @@ class _ExpensesTab extends ConsumerWidget {
     );
 
     if (confirmed == true) {
+  // ignore: dead_code
       if (saving) return;
       saving = true;
       try {

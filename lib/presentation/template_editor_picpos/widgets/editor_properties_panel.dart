@@ -13,7 +13,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/printing/template_document.dart';
-import '../../../domain/printing/template_edits.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_surface.dart';

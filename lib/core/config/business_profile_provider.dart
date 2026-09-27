@@ -198,6 +198,7 @@ final configLockProvider =
 /// cannot accidentally deadlock the system by holding the lock twice.
 Future<T> runWithConfigLock<T>(Ref ref, Future<T> Function() fn) async {
   final notifier = ref.read(configLockProvider.notifier);
+  // ignore: invalid_use_of_visible_for_testing_member
   if (notifier.state) {
     throw StateError(
       'Config lock is already held — nested critical operation?',

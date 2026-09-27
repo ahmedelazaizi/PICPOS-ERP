@@ -382,6 +382,7 @@ class _DeliveryManagementBodyState
   }
 
   // Dialogs
+  // ignore: unused_element
   void _showAddCompanyDialog() {
     final nameController = TextEditingController();
     final phoneController = TextEditingController();
@@ -469,6 +470,7 @@ class _DeliveryManagementBodyState
     );
   }
 
+  // ignore: unused_element
   void _showEditCompanyDialog(DeliveryCompany company) {
     final nameController = TextEditingController(text: company.name);
     final phoneController = TextEditingController(text: company.phone ?? '');
@@ -800,6 +802,7 @@ class _DeliveryManagementBodyState
     );
   }
 
+  // ignore: unused_element
   Future<void> _deleteCompany(int id, String name) async {
     if (_deletingCompany) return;
     setState(() => _deletingCompany = true);

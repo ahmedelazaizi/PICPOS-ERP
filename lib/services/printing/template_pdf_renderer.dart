@@ -5,7 +5,6 @@ import '../generators/base_generator.dart' show BaseGenerator;
 import 'package:printing/printing.dart' as printing_pkg;
 import 'pdf_compute_helper.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart' as intl;
 import '../../data/database/database.dart' hide Printer;
 import '../../domain/repositories/printers_repository.dart';
@@ -584,6 +583,7 @@ class TemplatePdfRenderer {
   }
 
   /// Get column width from either old format (plain number) or new format (map with 'width')
+  // ignore: unused_element
   static double _getColumnWidth(String key, Map<String, dynamic> widths, double defaultWidth) {
     final val = widths[key];
     if (val is num) return val.toDouble();
@@ -642,6 +642,7 @@ class TemplatePdfRenderer {
       }
     } catch (_) {}
 
+  // ignore: unused_element
     String fmt(num val) => val.toStringAsFixed(decimalPlaces);
     /// Format a numeric value using per-column decimal places
     String fmtCol(num val, String colKey) {

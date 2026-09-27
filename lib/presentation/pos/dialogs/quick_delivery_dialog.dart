@@ -135,6 +135,7 @@ class _QuickDeliveryDialogState extends ConsumerState<QuickDeliveryDialog> {
   }
 
   Future<void> _loadData() async {
+  // ignore: unused_local_variable
     final partiesRepo = ref.read(partiesRepositoryProvider);
     final settingsRepo = ref.read(settingsRepositoryProvider);
     final deliveryRepo = ref.read(deliveryRepositoryProvider);

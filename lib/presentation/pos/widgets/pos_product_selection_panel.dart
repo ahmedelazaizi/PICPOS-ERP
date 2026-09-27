@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/pos_layout_policy.dart';
-import '../../../core/theme/app_colors.dart';
 import '../widgets/pos_barcode_input.dart';
 import '../widgets/pos_product_search_field.dart';
 import '../widgets/pos_scale_input.dart';

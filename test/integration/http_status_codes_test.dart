@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:ural_erp/services/server_proxy.dart';
 
 /// Phase 3 — Fix 3.3: HTTP Status Code Acceptance
 ///

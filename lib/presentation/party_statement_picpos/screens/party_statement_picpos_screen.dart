@@ -44,7 +44,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/logging/diagnostic_logger.dart';
-import '../../../core/navigation/screen_id.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/file_utils.dart' show fileUtils;
 import '../../../core/widgets/app_toast.dart';

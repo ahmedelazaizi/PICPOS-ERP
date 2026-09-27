@@ -10,7 +10,6 @@
 // **يُطفأ عمداً** على ٥٨ و٨٠ — لا مكانَ لسطرين في ٥٢مم، والسطرُ الثاني يدهس
 // الصفَّ الأوّل. فتثبيتُ إطفائه هناك جزءٌ من العقد لا نقصٌ فيه.
 
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/domain/printing/template_document.dart';

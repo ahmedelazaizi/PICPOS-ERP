@@ -52,6 +52,7 @@ class ProductSyncStrategy extends SyncStrategy {
         if (serverUpdated != null) {
           // If server data is older than local, skip price fields & log conflict
           // H-6 FIX: Compare against updatedAt (not createdAt) for accurate conflict detection
+  // ignore: dead_code
           final localUpdated = existing.updatedAt ?? existing.createdAt;
           if (serverUpdated.isBefore(localUpdated)) {
             debugPrint('[Sync] ⚠️ Product #$serverId: server data is older than local — skipping price update');

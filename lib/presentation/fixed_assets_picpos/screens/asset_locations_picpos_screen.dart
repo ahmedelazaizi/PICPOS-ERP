@@ -34,7 +34,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/models/asset_location_plan.dart';
-import '../../../domain/repositories/fixed_assets_repository.dart';
 import '../../picpos_shell/picpos_bar_list.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_data_table.dart';

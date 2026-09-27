@@ -80,12 +80,14 @@ class _EInvoiceDashboardScreenState
     }
   }
 
+  // ignore: unused_element
   Future<void> _toggleEtaVisibility(bool value) async {
     setState(() => _showEta = value);
     final settingsRepo = ref.read(settingsRepositoryProvider);
     await settingsRepo.saveSetting('show_eta_einvoice', value.toString());
   }
 
+  // ignore: unused_element
   Future<void> _toggleJofotaraVisibility(bool value) async {
     setState(() => _showJofotara = value);
     final settingsRepo = ref.read(settingsRepositoryProvider);

@@ -42,10 +42,8 @@ import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../data/providers/providers.dart';
 import '../../../domain/models/asset_movement_types.dart';
 import '../../../domain/models/depreciation_math.dart';
-import '../../../domain/repositories/fixed_assets_repository.dart';
 import '../../picpos_shell/picpos_data_table.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_report_tabs.dart';

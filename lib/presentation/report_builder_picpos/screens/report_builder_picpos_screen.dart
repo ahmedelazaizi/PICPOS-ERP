@@ -44,7 +44,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
-import '../../../domain/repositories/reporting_repository.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_data_table.dart';
 import '../../picpos_shell/picpos_empty_state.dart';

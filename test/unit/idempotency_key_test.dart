@@ -50,6 +50,7 @@ void main() {
     });
 
     test('Headers do NOT include idempotency key when null', () {
+  // ignore: unused_local_variable
       String? idempotencyKey;
       final headers = <String, String>{
         'Content-Type': 'application/json',

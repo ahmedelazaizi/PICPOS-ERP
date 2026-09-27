@@ -18,7 +18,6 @@
 // تُحدّث الصفَّ نفسَه. الخصمُ وحدَه تراكميّ — ولذلك هو وحدَه ما يحتاج حارساً.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/database/extensions/hr_extensions.dart';

@@ -486,6 +486,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
     }
   }
 
+  // ignore: unused_element
   Future<void> _closeTable(
     IRestaurantRepository restaurantRepo,
     RestaurantTable table,

@@ -15,7 +15,6 @@ import '../../core/config/business_profile_meta.dart';
 import '../../domain/models/setup_step_order.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/config/feature_key.dart';
-import '../../core/config/feature_policy.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/database/connection_io.dart'
     show openPostgresConnection, testPostgresConnection;
@@ -27,7 +26,6 @@ import '../../services/developer_auth_service.dart';
 import '../../services/network_service.dart';
 import '../../services/mirror_pairing_service.dart';
 import '../../services/mirror_state.dart';
-import '../../services/mirror_heartbeat_service.dart';
 import '../../services/delta_pull_service.dart';
 import '../../services/server_proxy.dart';
 import '../../services/sync_service.dart';

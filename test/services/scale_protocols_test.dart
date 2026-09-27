@@ -25,6 +25,7 @@ void main() {
     barcode: '2100001',
   );
 
+  // ignore: unused_local_variable
   const arabicItem = ScalePLUItem(
     pluNumber: 42,
     name: 'دجاج طازج',

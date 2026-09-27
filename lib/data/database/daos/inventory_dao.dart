@@ -1301,6 +1301,7 @@ extension InventoryDao on AppDatabase {
       double totalItems = 0; // BUG-M05: fractional-safe stock unit total
       int outOfStock = 0;
       int outOfStockTracked = 0;
+  // ignore: unused_local_variable
       int uniqueWithStock = 0;
 
       // Fetch all balances for the selected warehouses in one query, then group in Dart.

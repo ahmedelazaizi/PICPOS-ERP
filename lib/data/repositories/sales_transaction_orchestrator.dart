@@ -1147,6 +1147,7 @@ class SalesTransactionOrchestrator {
             invoiceDate: Value(DateTime.now()),
             deliveryFee: Value(request.deliveryFee),
             costCenterId: Value(request.costCenterId),
+  // ignore: dead_code
             saleType: Value(request.saleType ?? 'default'),
             originClientId: Value(_deviceName()),
           ),

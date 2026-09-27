@@ -8,7 +8,6 @@ import '../../../core/permissions/permission_codes.dart';
 import '../../../core/widgets/app_shortcuts.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
-import '../../../data/services/excel_service.dart';
 import '../../products/providers/products_controller.dart';
 import '../../screens/units_management_screen.dart';
 // جدولُ الأصناف صار فوركاً في PicPos (قرارُ المالك 2026-08-22) — شاشةُ

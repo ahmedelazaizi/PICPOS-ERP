@@ -627,7 +627,8 @@ void main() {
       // operation success. Fix: kick drainOutbox(force: true) in BOTH
       // _tryOrQueue and _tryOrQueueVoid right after the serverCall
       // succeeds.
-      const relPath = 'lib/services/client_write_interceptor.dart';
+      const relPath = 'lib/services/interceptor/cwi_core.dart';
+       final libraryEntry = File('lib/services/client_write_interceptor.dart').readAsStringSync();
       final source = File(relPath).readAsStringSync();
 
       // The drain call must appear in BOTH internal helpers. Use
@@ -648,7 +649,7 @@ void main() {
 
       // The import must be present too.
       expect(
-        source.contains("import 'offline_sync_worker.dart'"),
+        libraryEntry.contains("import 'offline_sync_worker.dart'"),
         isTrue,
         reason:
             '$relPath is missing the offline_sync_worker.dart import — '

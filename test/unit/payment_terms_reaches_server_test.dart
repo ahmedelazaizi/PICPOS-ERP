@@ -32,7 +32,7 @@ int _count(String src, String needle) => src.split(needle).length - 1;
 void main() {
   const dialog =
       'lib/presentation/parties_picpos/dialogs/add_party_dialog_picpos.dart';
-  const interceptor = 'lib/services/client_write_interceptor.dart';
+  const interceptor = 'lib/services/interceptor/cwi_core.dart';
   const commerce = 'lib/services/interceptor/cwi_commerce.dart';
   const partyApi = 'lib/services/api/api_party_handler.dart';
   const apiHandler = 'lib/services/api/api_handler.dart';

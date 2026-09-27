@@ -1,6 +1,5 @@
 // الوجهاتُ الأربعُ الباقية: العملاءُ والتذكيراتُ والتقاريرُ والإعدادات.
 import '../../../data/providers/feature_settings_providers.dart';
-import '../../shared_widgets/whatsapp_send_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';

@@ -969,6 +969,7 @@ extension ManufacturingDao on AppDatabase {
   }
 
   /// Helper: get account by code (manufacturing-scoped)
+  // ignore: unused_element
   Future<Account?> _mfgGetAccountByCode(String code) async {
     return (select(accounts)..where((a) => a.code.equals(code))..limit(1))
         .getSingleOrNull();

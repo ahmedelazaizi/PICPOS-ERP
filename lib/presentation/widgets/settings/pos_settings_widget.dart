@@ -1240,6 +1240,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
                       hint: const Text('استخدم الإعداد العام'),
                       items: [
                         const DropdownMenuItem<int?>(value: null, child: Text('استخدم الإعداد العام')),
+  // ignore: dead_code
                         ...branchWarehouses.map((w) => DropdownMenuItem<int?>(value: w.id, child: Text(w.name ?? ''))),
                       ],
                       onChanged: (v) => setState(() => _perBranchWarehouseId = v),
@@ -1255,6 +1256,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
                     hint: const Text('تلقائي (الافتراضي)'),
                     items: [
                       const DropdownMenuItem<int?>(value: null, child: Text('تلقائي (الافتراضي)')),
+  // ignore: dead_code
                       ...warehouses.map((w) => DropdownMenuItem<int?>(value: w.id, child: Text(w.name ?? ''))),
                     ],
                     onChanged: (v) => setState(() => _posDefaultWarehouseId = v),

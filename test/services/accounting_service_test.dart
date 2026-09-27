@@ -68,6 +68,7 @@ void main() {
     // AccountingService needs AppDatabase, but the method is
     // stateless. We'll test the logic.
 
+  // ignore: unused_local_variable
     late AccountingService svc;
 
     setUp(() {

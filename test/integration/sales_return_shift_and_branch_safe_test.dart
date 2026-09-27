@@ -21,7 +21,6 @@
 // ح‑٣: تعذُّرُ الخزنةِ يرمي ولا يُتخطّى صامتاً.
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/core/errors/app_exceptions.dart';
@@ -33,7 +32,6 @@ import 'package:ural_erp/domain/entities/product_entity.dart';
 import 'package:ural_erp/domain/repositories/kitchen_repository.dart';
 import 'package:ural_erp/domain/repositories/sales_repository.dart';
 import 'package:ural_erp/domain/repositories/printers_repository.dart';
-import 'package:ural_erp/services/kitchen_service.dart';
 import 'package:ural_erp/domain/repositories/audit_repository_interface.dart';
 import 'package:ural_erp/domain/repositories/i_products_repository.dart';
 import 'package:ural_erp/domain/repositories/inventory_repository.dart';
@@ -803,12 +801,14 @@ class _StubAuditRepo implements IAuditRepository {
       throw UnsupportedError('Stub: ${inv.memberName}');
 }
 
+  // ignore: unused_element
 class _StubKitchenRepo implements KitchenRepository {
   @override
   dynamic noSuchMethod(Invocation inv) =>
       throw UnsupportedError('Stub: ${inv.memberName}');
 }
 
+  // ignore: unused_element
 class _StubPrintersRepo implements IPrintersRepository {
   @override
   dynamic noSuchMethod(Invocation inv) =>

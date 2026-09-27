@@ -687,6 +687,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
   }
 
   /// Show options for reserved table (seat guests or cancel)
+  // ignore: unused_element
   void _showReservedTableOptions(
     BuildContext context,
     IRestaurantRepository restaurantRepo,

@@ -11,7 +11,6 @@ import '../database/database.dart';
 import '../../domain/entities/invoice_entity.dart';
 import '../../services/accounting_service.dart';
 import '../../services/client_write_interceptor.dart';
-import '../../services/network_service.dart';
 import '../../core/utils/uuid_v7.dart';
 import '../../core/utils/journal_entry_gid.dart';
 import '../../core/logging/diagnostic_logger.dart';
@@ -655,6 +654,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           await _db.into(_db.stockMovements).insert(
                 StockMovementsCompanion.insert(
                   productId: item.productId,
+  // ignore: dead_code
                   warehouseId: invoice.warehouseId ?? 1,
                   movementType: 'purchase_return',
                   quantity: -item.returnQuantity,
@@ -717,6 +717,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
         invoiceTotal: invoice.total,
         invoicePaid: invoice.paid,
       );
+  // ignore: unused_local_variable
       final grossReturnAmount = settlement.gross;
       final balanceCorrection = settlement.apPortion;
       if (balanceCorrection > 0) {
@@ -865,6 +866,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
         invoiceTotal: invoice.total,
         invoicePaid: invoice.paid,
       );
+  // ignore: unused_local_variable
       final grossReturnAmount = settlement.gross;
       final balanceCorrection = settlement.apPortion;
       if (balanceCorrection > 0) {
@@ -1167,6 +1169,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
       invoiceTotal: invoice.total,
       invoicePaid: invoice.paid,
     );
+  // ignore: unused_local_variable
     final oldGrossReturn = oldSettlement.gross;
     final oldBalanceCorrection = oldSettlement.apPortion;
     final oldCashReturn = oldSettlement.cashPortion;

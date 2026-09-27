@@ -26,7 +26,6 @@ import '../../widgets/permission_guard.dart';
 ///
 /// [icon] و[tooltip] ليهم قيم افتراضية عشان أغلب المواقع متطابقة؛ بيتغيّروا
 /// بس في أزرار «طباعة» اللي بتنادي التصدير نفسه (شوف التوثيق تحت).
-@visibleForTesting
 Widget buildReportExportAction({
   required VoidCallback? onExport,
   IconData icon = PhosphorIconsBold.fileXls,
@@ -54,7 +53,6 @@ Widget buildReportExportAction({
 /// أزرار الطباعة الحقيقية (اللي بتولّد PDF) **ما اتبوّبتش**: مفيش كود
 /// `reports_print` في الكتالوج، واستعارة `reports_export` ليها كانت هتخلّي
 /// المفتاح يقفل حاجة اسمها حاجة تانية (درس هـ).
-@visibleForTesting
 Widget buildReportPrintAsExportAction({required VoidCallback? onExport}) {
   return buildReportExportAction(
     onExport: onExport,

@@ -37,6 +37,7 @@ class VouchersPdfGenerator extends BaseGenerator {
     
     final isReceipt = voucherType == 'receipt';
     final voucherTitle = isReceipt ? 'سند قبض' : 'سند صرف';
+  // ignore: unused_local_variable
     final totalAmount = amount + discount;
 
     pdf.addPage(

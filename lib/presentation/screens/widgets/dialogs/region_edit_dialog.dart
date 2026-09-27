@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../../data/database/sync_interceptor.dart';
 import '../../../widgets/dialogs/app_form_dialog.dart';

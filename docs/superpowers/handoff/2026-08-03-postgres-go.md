@@ -120,7 +120,7 @@ translate insertOrIgnore» — وعامل فحص وجود صريح بدلها.
 **ملاحظة:** لو ٢-٢ اتصلّح (وبقى فيه `UNIQUE` فعلي على PG)، المسار ده بيتحوّل
 من «تكرار صامت» لـ«استثناء صريح» — فالاتنين مترابطين، **رتّبهم مع بعض**.
 
-### ٢-٥. ⚠️ تضارب سكيما في `supabase_migration_v118.sql:36-41`
+### ٢-٥. ⚠️ تضارب سكيما في `db/legacy_migrations/supabase_migration_v118.sql:36-41`
 
 ```sql
 CREATE TABLE IF NOT EXISTS public.processed_messages (

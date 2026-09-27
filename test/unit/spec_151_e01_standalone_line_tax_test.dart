@@ -41,7 +41,6 @@ import 'package:ural_erp/domain/repositories/sales_repository.dart';
 import 'package:ural_erp/domain/repositories/settings_repository.dart';
 import 'package:ural_erp/domain/repositories/treasury_repository.dart';
 import 'package:ural_erp/services/accounting_service.dart';
-import 'package:ural_erp/services/kitchen_service.dart';
 
 void main() {
   // ─────────────────────────────────────────────────────────────────────────
@@ -310,12 +309,14 @@ class _ThrowingAuditRepo implements IAuditRepository {
       throw UnsupportedError('audit repo not used in this test');
 }
 
+  // ignore: unused_element
 class _ThrowingKitchenRepo implements KitchenRepository {
   @override
   dynamic noSuchMethod(Invocation inv) =>
       throw UnsupportedError('kitchen repo not used in this test');
 }
 
+  // ignore: unused_element
 class _ThrowingPrintersRepo implements IPrintersRepository {
   @override
   dynamic noSuchMethod(Invocation inv) =>

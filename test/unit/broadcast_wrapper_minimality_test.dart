@@ -26,7 +26,6 @@
 // per-endpoint integration tests that need full Drift introspection; the
 // minimality contract is independent of that mechanism.
 
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ural_erp/data/database/database.dart';

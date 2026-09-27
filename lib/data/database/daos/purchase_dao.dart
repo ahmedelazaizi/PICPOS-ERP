@@ -765,6 +765,7 @@ extension PurchaseDao on AppDatabase {
         final item = items[lineAt];
         final qty = item.quantity.present ? item.quantity.value : 1.0;
         final cost = item.unitCost.present ? item.unitCost.value : 0.0;
+  // ignore: dead_code
         final rate = item.taxRate.present ? (item.taxRate.value ?? 0.0) : 0.0;
         final subtotal = qty * cost;
         // Per-line tax toggle: one invoice can mix taxable and exempt
@@ -777,6 +778,7 @@ extension PurchaseDao on AppDatabase {
         // SAME expression the per-line INSERT below now uses, so
         // SUM(line.tax) == header.tax exactly (no float-noise drift).
         final tax = FinancialUtils.round(item.taxAmount.present
+  // ignore: dead_code
             ? (item.taxAmount.value ?? 0.0)
             : subtotal * (rate / 100));
 
@@ -977,6 +979,7 @@ extension PurchaseDao on AppDatabase {
         final unitCost = quantity > 0
             ? FinancialUtils.round(lineNets[lineAt] / quantity)
             : 0.0;
+  // ignore: dead_code
         final taxRate = item.taxRate.present ? (item.taxRate.value ?? 0.0) : 0.0;
         // Spec 151 E-03: honour the passed per-line taxAmount (exactly as the
         // header loop above does) instead of always recomputing from the rate.
@@ -988,6 +991,7 @@ extension PurchaseDao on AppDatabase {
         // Round to the financial precision so the stored line reconciles with
         // the header exactly.
         final taxAmount = FinancialUtils.round(item.taxAmount.present
+  // ignore: dead_code
             ? (item.taxAmount.value ?? 0.0)
             : (quantity * unitCost) * (taxRate / 100));
 
@@ -1395,6 +1399,7 @@ extension PurchaseDao on AppDatabase {
     if (badRate != null) throw ArgumentError(badRate);
     // الطولُ يفحصه `_writeImportPurchaseDetails` — راجع `createPurchaseInvoice`.
     return transaction(() async {
+  // ignore: unused_local_variable
       final effectiveInvoiceDate = invoiceDate ?? DateTime.now();
       double taxTotal = 0;
       double total = 0;
@@ -1403,6 +1408,7 @@ extension PurchaseDao on AppDatabase {
       for (final item in items) {
         final qty = item.quantity.present ? item.quantity.value : 1.0;
         final cost = item.unitCost.present ? item.unitCost.value : 0.0;
+  // ignore: dead_code
         final rate = item.taxRate.present ? (item.taxRate.value ?? 0.0) : 0.0;
         final subtotal = qty * cost;
         // Honour the per-line `taxAmount` passed from the form so exempt
@@ -1410,6 +1416,7 @@ extension PurchaseDao on AppDatabase {
         // non-zero default rate. See createPurchaseInvoice for the same
         // fix; this path is used by the client-mode local cache.
         final tax = item.taxAmount.present
+  // ignore: dead_code
             ? (item.taxAmount.value ?? 0.0)
             : subtotal * (rate / 100);
         subtotalSum += subtotal;
@@ -1831,6 +1838,7 @@ extension PurchaseDao on AppDatabase {
       for (final item in items) {
         final qty = item.quantity.present ? item.quantity.value : 1.0;
         final cost = item.unitCost.present ? item.unitCost.value : 0.0;
+  // ignore: dead_code
         final rate = item.taxRate.present ? (item.taxRate.value ?? 0.0) : 0.0;
         final subtotal = qty * cost;
         // Same rationale as createPurchaseInvoice: honour the form's
@@ -1838,6 +1846,7 @@ extension PurchaseDao on AppDatabase {
         // rows at zero tax. Spec 151 E-03: round with the SAME expression as
         // the per-line INSERT below so SUM(line.tax) == header.tax exactly.
         final tax = FinancialUtils.round(item.taxAmount.present
+  // ignore: dead_code
             ? (item.taxAmount.value ?? 0.0)
             : subtotal * (rate / 100));
         newTotal += subtotal + tax;
@@ -1938,6 +1947,7 @@ extension PurchaseDao on AppDatabase {
         final unitCost = quantity > 0
             ? FinancialUtils.round(lineNets[lineAt] / quantity)
             : 0.0;
+  // ignore: dead_code
         final taxRate = item.taxRate.present ? (item.taxRate.value ?? 0.0) : 0.0;
         // Spec 151 E-03: honour the passed per-line taxAmount (matching the
         // header loop above) instead of always recomputing from the rate, so an
@@ -1946,6 +1956,7 @@ extension PurchaseDao on AppDatabase {
         // Fallback-recompute only when no amount was supplied; round to the
         // financial precision.
         final taxAmount = FinancialUtils.round(item.taxAmount.present
+  // ignore: dead_code
             ? (item.taxAmount.value ?? 0.0)
             : (quantity * unitCost) * (taxRate / 100));
 

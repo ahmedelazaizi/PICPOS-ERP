@@ -28,7 +28,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/providers.dart';
-import '../../../domain/repositories/treasury_repository.dart' show SafeData;
 import '../../screens/commercial_papers/create_paper_action.dart';
 import '../../screens/commercial_papers/deposit_papers_action.dart';
 import '../../screens/commercial_papers/paper_status_actions.dart';

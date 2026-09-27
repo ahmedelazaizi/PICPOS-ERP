@@ -110,6 +110,7 @@ class _StockMovementsScreenState
 
   @override
   Widget build(BuildContext context) {
+  // ignore: unused_local_variable
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // يُعاد بناء الـfuture لما المدى الزمني يتغيّر بس — مش مع كل rebuild.

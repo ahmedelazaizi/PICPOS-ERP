@@ -9,7 +9,6 @@ import 'generators/base_generator.dart';
 import 'package:printing/printing.dart';
 import 'printing/pdf_compute_helper.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import '../core/logging/diagnostic_logger.dart';
 import '../core/utils/template_json_flags.dart';
 import '../data/database/database.dart';
@@ -1252,7 +1251,9 @@ class TemplatedInvoiceService {
         final saleTypeLabel = element.labelAr ?? _getLabel(resolvedType);
         return pw.Text(
           saleTypeLabel.isEmpty
+  // ignore: dead_code
               ? (saleLabel ?? '')
+  // ignore: dead_code
               : '$saleTypeLabel: ${saleLabel ?? ''}',
           style: style,
           textAlign: align,

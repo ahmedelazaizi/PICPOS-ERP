@@ -28,6 +28,7 @@ class AppConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+  // ignore: unused_local_variable
     final theme = Theme.of(context);
     final effectiveColor = color ?? (isDangerous ? AppColors.error : AppColors.primary);
     final effectiveIcon = icon ?? (isDangerous ? PhosphorIconsBold.warning : PhosphorIconsBold.question);

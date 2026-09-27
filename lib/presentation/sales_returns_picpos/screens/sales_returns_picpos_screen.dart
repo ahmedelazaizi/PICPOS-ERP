@@ -8,7 +8,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 
 import '../../../data/providers/providers.dart';
-import '../../../services/generators/thermal_receipt_generator.dart';
 import '../../../services/invoice_generator.dart';
 
 import '../../providers/sales_return_provider.dart';
@@ -20,7 +19,6 @@ import '../../widgets/common/common.dart';
 
 import '../../shared_widgets/open_shift_prompt.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
-import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_returns_panel.dart';
 import '../../../domain/models/picpos_return_view.dart';
 

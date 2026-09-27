@@ -568,6 +568,7 @@ void main() {
       final tC = await newTable('ط٤٢');
       final oA = await service.openTable(
           tableId: tA, guestCount: 2, userId: null, userName: 'أحمد');
+  // ignore: unused_local_variable
       final oB = await service.openTable(
           tableId: tB, guestCount: 2, userId: null, userName: 'أحمد');
       final oC = await service.openTable(

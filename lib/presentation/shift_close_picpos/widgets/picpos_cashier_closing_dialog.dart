@@ -292,6 +292,7 @@ class _PicposCashierClosingDialogState
     );
   }
 
+  // ignore: unused_element
   Widget _buildSummaryRow(String label, String value, [Color? color]) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

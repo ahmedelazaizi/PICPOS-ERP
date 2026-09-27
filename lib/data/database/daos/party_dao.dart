@@ -2044,6 +2044,7 @@ extension PartyDao on AppDatabase {
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
       // Customer balance = sales − receipts − cash refunds − balance adjustments from returns
+  // ignore: dead_code
       customerSide = (pastSales.read<double>('amt') ?? 0)
                    - (pastReceipts.read<double>('amt') ?? 0)
                    - (pastPayments.read<double>('amt') ?? 0)
@@ -2065,6 +2066,7 @@ extension PartyDao on AppDatabase {
         //    `if (isCustomer) … else if (isSupplier)` فيقرأ سندَ القبض
         //    والصرف **مرّةً واحدةً** باتّجاه العميل. وجمعُ الشقَّين هنا كان
         //    سيطرح السندَ مرّتين.
+  // ignore: dead_code
         supplierSide = -(pastPurchases.read<double>('amt') ?? 0)
                      + (pastPurchaseReturnMemos.read<double>('amt') ?? 0);
       } else {
@@ -2080,6 +2082,7 @@ extension PartyDao on AppDatabase {
           variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
         ).getSingle();
         // Supplier balance = purchases − payments − cash receipts from supplier − balance adjustments from returns
+  // ignore: dead_code
         supplierSide = (pastPurchases.read<double>('amt') ?? 0)
                      - (pastPayments.read<double>('amt') ?? 0)
                      - (pastReceipts.read<double>('amt') ?? 0)

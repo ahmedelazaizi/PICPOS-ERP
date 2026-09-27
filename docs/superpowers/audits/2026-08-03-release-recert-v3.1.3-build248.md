@@ -190,7 +190,7 @@ zone-scoped وماكانش هيعمل كده. اختيار حماية خط أس�
    `UNIQUE` و`REFERENCES` لسه بتضيع على PG**. بند ٤-٢ في الشهادة السابقة
    **ما اتلمسش**.
 3. 🚩 **تضارب `processed_messages` متأكَّد إنه لسه قايم** —
-   `git log -- supabase_migration_v118.sql` ⇐ الكوميت الأولي بس. والسطور
+   `git log -- db/legacy_migrations/supabase_migration_v118.sql` ⇐ الكوميت الأولي بس. والسطور
    `:36-41` لسه `idempotency_key uuid PRIMARY KEY` بلا `response_payload`
    و`action_type text NOT NULL`، بينما `sync_tables.dart:97-112` بيقول
    `TEXT` · `responsePayload` **NOT NULL موجود** · `actionType` **nullable**.

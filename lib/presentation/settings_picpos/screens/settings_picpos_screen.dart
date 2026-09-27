@@ -119,7 +119,6 @@ import '../../widgets/settings/company_info_widget.dart';
 import '../../users_picpos/screens/users_management_picpos_screen.dart';
 import '../../widgets/settings/hardware_settings_widget.dart';
 import '../../widgets/settings/pos_settings_widget.dart';
-import '../../widgets/settings/user_management_widget.dart';
 import '../widgets/permissions_matrix_picpos.dart';
 import '../../screens/settings/widgets/server_perms_toggle_dialog.dart';
 import '../../accounting_picpos/account_mapping_picpos_screen.dart';
@@ -160,7 +159,6 @@ import '../../widgets/settings/database_settings_widget.dart';
 import '../../touch_keyboard/providers/touch_mode_provider.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
-import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../widgets/settings_blocks.dart';
 import '../widgets/settings_count.dart';
@@ -325,6 +323,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
     }
   }
 
+  // ignore: unused_element
   Future<void> _showSectionPasswordDialog(String key, String title) async {
     final settingsRepo = ref.read(settingsRepositoryProvider);
     final currentPw = await settingsRepo.getSetting(key);
@@ -1281,6 +1280,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
     );
   }
 
+  // ignore: unused_element
   String _getThemeModeLabel(ThemeMode mode) {
     switch (mode) {
       case ThemeMode.system:
@@ -1294,6 +1294,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
 
   /// ⚠️ كان `SimpleDialog` — بلاغُ المالك بالصورة 2026-08-25. والأوصافُ
   /// أدناه من التصميم (‏`SECTIONS.system` → بلوكُ «مظهر البرنامج»).
+  // ignore: unused_element
   Future<void> _showThemeSelector(
     BuildContext context,
     WidgetRef ref,
@@ -1818,6 +1819,7 @@ class _SettingsSection {
 }
 
 /// ترتيبُ مجموعات العمود كما في التصميم.
+  // ignore: unused_element
 const _kSettingsGroupOrder = <String>[
   'التشغيل',
   'الأمان',

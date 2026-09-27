@@ -13,7 +13,6 @@ import '../../../domain/models/branch_assignment_scope.dart';
 import '../../widgets/permission_guard.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_state_view.dart';
-import '../../../core/widgets/shimmer_loading.dart';
 
 import '../../../data/providers/providers.dart';
 import '../../../services/invoice_generator.dart';
@@ -23,7 +22,6 @@ import '../../../domain/repositories/purchases_repository.dart';
 import '../../screens/purchases/purchase_invoices_controller.dart';
 import '../../screens/purchase_orders_screen.dart';
 import '../../../data/services/excel_service.dart';
-import '../../screens/purchase_invoices/widgets/purchase_invoice_form.dart';
 import '../../widgets/common/common.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 // تصميمُ 2026-08-21 — شاشةُ «فاتورة جديدة» المشتركة بين النمطَين.
@@ -31,7 +29,6 @@ import '../../invoice_form_picpos/picpos_invoice_form.dart';
 import '../../../domain/models/picpos_invoice_draft.dart';
 import '../../../domain/models/purchase_doc.dart';
 import '../../../domain/models/purchase_line_discount.dart';
-import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_totals_bar.dart';
 // نمطُ ديالوجات PicPos — الغلافُ وحوارُ التأكيد المشتركان.
 import '../../picpos_shell/picpos_dialog.dart';

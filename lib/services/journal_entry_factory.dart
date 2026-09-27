@@ -22,7 +22,6 @@ import '../domain/repositories/i_products_repository.dart';
 import '../domain/repositories/inventory_repository.dart';
 import '../domain/repositories/treasury_repository.dart';
 import '../domain/repositories/audit_repository_interface.dart';
-import '../data/database/sync_interceptor.dart';
 import '../core/logging/diagnostic_logger.dart';
 // Spec 139 — single balance-tolerance source of truth. `show` avoids importing
 // FinancialUtils' own UnbalancedJournalException (this file declares its own).

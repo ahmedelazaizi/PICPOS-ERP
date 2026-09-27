@@ -30,7 +30,6 @@ import 'package:flutter_test/flutter_test.dart';
 // — importing the part directly does not compile.
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
-import 'package:ural_erp/domain/entities/accounting_entities.dart';
 import 'package:ural_erp/domain/repositories/audit_repository_interface.dart';
 import 'package:ural_erp/domain/repositories/i_products_repository.dart';
 import 'package:ural_erp/domain/repositories/inventory_repository.dart';

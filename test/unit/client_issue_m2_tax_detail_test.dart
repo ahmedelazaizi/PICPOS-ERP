@@ -23,6 +23,7 @@ import 'package:ural_erp/domain/entities/accounting_entities.dart';
 void main() {
   late AppDatabase db;
   late int warehouseId;
+  // ignore: unused_local_variable
   late int otherWarehouseId;
   late int customerId;
   late int productId;

@@ -56,6 +56,7 @@ class DualApprovalService {
         textDirection: TextDirection.rtl,
         child: StatefulBuilder(
           builder: (context, setState) {
+  // ignore: unused_local_variable
             String? error;
             bool isVerifying = false;
 
@@ -127,6 +128,7 @@ class DualApprovalService {
                 ),
                 ElevatedButton.icon(
                   onPressed: isVerifying
+  // ignore: dead_code
                       ? null
                       : () async {
                           setState(() {

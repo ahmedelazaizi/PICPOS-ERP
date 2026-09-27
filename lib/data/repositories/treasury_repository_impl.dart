@@ -581,6 +581,7 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
       partyName: null,
       description: t.description,
       userId: t.userId,
+  // ignore: dead_code
       createdAt: t.createdAt ?? DateTime.now(),
     )).toList();
   }
@@ -606,6 +607,7 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
       partyName: null,
       description: t.description,
       userId: t.userId,
+  // ignore: dead_code
       createdAt: t.createdAt ?? DateTime.now(),
     );
   }
@@ -849,6 +851,7 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
       partyId: t.partyId,
       description: t.description,
       userId: t.userId,
+  // ignore: dead_code
       createdAt: t.createdAt ?? DateTime.now(),
     )).toList();
   }
@@ -873,6 +876,7 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
       partyId: t.partyId,
       description: t.description,
       userId: t.userId,
+  // ignore: dead_code
       createdAt: t.createdAt ?? DateTime.now(),
     )).toList();
   }
@@ -900,6 +904,7 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
       partyId: t.partyId,
       description: t.description,
       userId: t.userId,
+  // ignore: dead_code
       createdAt: t.createdAt ?? DateTime.now(),
     );
   }

@@ -34,7 +34,7 @@ void main() {
     src = {
       for (final p in const [
         'lib/services/interceptor/cwi_sync.dart',
-        'lib/services/client_write_interceptor.dart',
+        'lib/services/interceptor/cwi_core.dart',
         'lib/services/server_proxy.dart',
         'lib/services/offline_sync_worker.dart',
         'lib/services/api/api_handler.dart',
@@ -77,7 +77,7 @@ void main() {
     });
 
     test('٢ — والمُمرِّرُ الساكنُ موجود', () {
-      final s = src['lib/services/client_write_interceptor.dart']!;
+      final s = src['lib/services/interceptor/cwi_core.dart']!;
       expect(s, contains('_CwiSync.submitAttachment(document)'));
       expect(s, contains('_CwiSync.submitAttachmentDelete(document)'));
     });

@@ -106,6 +106,7 @@ part 'daos/sales_analytics_dao.dart';
 part 'daos/purchase_dao.dart';
 part 'daos/purchase_reports_dao.dart';
 part 'daos/treasury_dao.dart';
+part 'daos/treasury_voucher_dao.dart';
 part 'daos/treasury_reports_dao.dart';
 part 'daos/user_dao.dart';
 part 'daos/party_dao.dart';
@@ -1938,6 +1939,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Read PG live FK constraint signatures `(table.column → refTable.refColumn)`.
   /// Used to detect missing FKs in Drift schema.
+  // ignore: unused_element
   Future<Set<String>> _pgFetchForeignKeys() async {
     final rows = await customSelect(
       "SELECT tc.table_name AS src_table, kcu.column_name AS src_col, "

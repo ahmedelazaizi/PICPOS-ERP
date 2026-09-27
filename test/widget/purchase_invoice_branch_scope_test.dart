@@ -89,6 +89,7 @@ Future<void> _captureSave({
 void main() {
   late AppDatabase db;
   late ProviderContainer container;
+  // ignore: unused_local_variable
   late int hqBranchId;
   late int tantaBranchId;
   late int tantaWarehouseId;

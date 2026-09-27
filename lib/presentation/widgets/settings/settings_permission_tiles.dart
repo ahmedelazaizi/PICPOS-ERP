@@ -38,7 +38,6 @@ import '../permission_guard.dart';
 /// من غير `hr_manage` كان يضغط، المدير يكتب كلمة السر، الديالوج يقفل، وما
 /// يحصلش حاجة — نفس الباج الموثَّق في `permission_guard.dart:291`. الحراسة
 /// على `ListTile` مع `onGranted` صريح بتقفل الاتنين.
-@visibleForTesting
 Widget buildWorkHolidaysTileGuarded({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.hrManage,
@@ -62,7 +61,6 @@ Widget buildWorkHolidaysTileGuarded({required VoidCallback onOpen}) {
 /// كان التايل الوحيد المكشوف وسط تايلات مبوّبة (الطابعات/المستخدمين/الأدوار)
 /// في نفس الشاشة. `onGranted` صريح رغم إن الحارس بيعرف يسحب `onTap` من
 /// `ListTile` — التصريح ما بيعتمدش على التخمين (درس f8d3fa9).
-@visibleForTesting
 Widget buildCompanyInfoTileGuarded({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.settingsCompany,
@@ -86,7 +84,6 @@ Widget buildCompanyInfoTileGuarded({required VoidCallback onOpen}) {
 /// (‏م-٢، قرارُ المالك 2026-08-23): دقّتُها العشريّةُ جزءٌ من كلّ مبلغٍ
 /// محفوظٍ وكلّ قيدٍ مرحَّل. والمنعُ يُشرَح هنا، ويُنفَّذ في
 /// `SystemCurrencyNotifier.setCurrency` — الواجهةُ وحدَها تُلتَفّ.
-@visibleForTesting
 Widget buildCurrencyTileGuarded({
   required String subtitle,
   required VoidCallback onOpen,
@@ -133,7 +130,6 @@ Widget buildCurrencyTileGuarded({
 ///
 /// الديالوج بيبدّل محرك قاعدة البيانات وبيحفظ بيانات اتصال PostgreSQL (كلمة
 /// سر بنص صريح). كان مفتوح لأي حد يقدر يفتح الإعدادات.
-@visibleForTesting
 Widget buildDatabaseSettingsTileGuarded({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.systemDatabase,
@@ -157,7 +153,6 @@ Widget buildDatabaseSettingsTileGuarded({required VoidCallback onOpen}) {
 ///
 /// بوابة الدخول للديالوج كله (أزرار/شبكة/سلة/إيصال/تنبيه مخزون/بيع بالسالب/
 /// مخزن افتراضي). تبويب المدخل أبسط وأشمل من تبويب كل مفتاح جوه.
-@visibleForTesting
 Widget buildPosSettingsTileGuarded({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.settingsPosEdit,
@@ -208,7 +203,6 @@ Widget buildQuickSalePolicyTileGuarded({required VoidCallback onOpen}) {
 /// زرار التفعيل التاني في `core/trial/trial_guard.dart` (شاشة انتهاء
 /// التجربة) مقصود إنه يفضل مكشوف: ده المخرج الوحيد لما التجربة تخلص،
 /// وتبويبه ممكن يقفل البرنامج على المستخدم نهائياً.
-@visibleForTesting
 Widget buildLicenseActivateButtonGuarded({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.systemLicense,
@@ -236,7 +230,6 @@ Widget buildLicenseActivateButtonGuarded({required VoidCallback onOpen}) {
 /// الموافقة — الحارس بيفكّ القفل والمدير يكتب النسبة بنفسه (نفس قرار
 /// `pos_note_add` في دفعة ٧). والإخفاء مكانش صح: القيمة بتتحمّل من الإعدادات
 /// وبتترحّل مع الحفظ، فالإخفاء كان هيمنع أي تعديل نهائياً بدل ما يطلب موافقة.
-@visibleForTesting
 Widget buildDefaultTaxRateTileGuarded({required Widget field}) {
   return PermissionGuard(
     permission: PermissionCodes.settingsTax,

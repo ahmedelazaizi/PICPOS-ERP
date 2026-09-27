@@ -21,7 +21,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../picpos_shell/picpos_surface.dart';
 import 'treasury_picpos_tokens.dart';
 
 class TreasurySafeCardPicpos extends StatelessWidget {

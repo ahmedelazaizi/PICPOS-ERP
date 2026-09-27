@@ -609,6 +609,7 @@ extension AccountingDaoWritesExt on AppDatabase {
       final hashStr = digest.toString();
 
       // Append hash to description (non-destructive — preserves original text)
+  // ignore: dead_code
       final updatedDesc = '${description ?? ''} [HASH:$hashStr]';
       await (update(journalEntries)..where((e) => e.id.equals(entryId))).write(
         JournalEntriesCompanion(description: Value(updatedDesc)),
@@ -888,6 +889,7 @@ extension AccountingDaoWritesExt on AppDatabase {
   /// Per IAS 1: balances derive from journal entries, not incremental adds
   /// ICR-01: excludes unposted (draft) entries from balance calculation
   /// PostgreSQL-compatible: uses Drift expression API instead of raw SQL
+  // ignore: unused_element
   Future<void> _updateAccountBalance(int accountId, double _) async {
     final debitCol = journalEntryLines.debit.sum();
     final creditCol = journalEntryLines.credit.sum();
@@ -1636,6 +1638,7 @@ extension AccountingDaoWritesExt on AppDatabase {
           userId: actingUserId,
           description: '$descriptionPrefix للقيد #${entry.id}',
         );
+  // ignore: unused_local_variable
         final reversalId = await createJournalEntry(
           description: '$descriptionPrefix - ${entry.description}',
           date: DateTime.now(),

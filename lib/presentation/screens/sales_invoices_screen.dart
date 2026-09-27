@@ -15,10 +15,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_state_view.dart';
-import '../../core/widgets/shimmer_loading.dart';
 
 import '../../data/providers/providers.dart';
-import '../../domain/models/branch_assignment_scope.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/database/sync_interceptor.dart';
 import '../../services/network_service.dart';
@@ -27,7 +25,6 @@ import 'sales_invoices_controller.dart';
 // دفعة ٩ — حرّاس sales_print و sales_amounts_view في ملفات الـpart تحت.
 import '../widgets/permission_guard.dart';
 import '../../core/permissions/permission_codes.dart';
-import '../widgets/dialogs/add_product_dialog.dart';
 import 'sales_orders_screen.dart';
 
 // Additional imports for sales_invoice_dialogs.part
@@ -37,7 +34,6 @@ import 'quotations/quotations_tab.dart'; // Add quotations tab import
 import 'quotations/quotations_controller.dart';
 import '../../domain/entities/quotation_entity.dart';
 import '../../domain/entities/invoice_entity.dart';
-import '../../core/widgets/unsaved_changes_dialog.dart';
 // Replace quotations_dao import with database
 
 import '../../services/profit_margin_analysis_service.dart';

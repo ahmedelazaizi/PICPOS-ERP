@@ -300,6 +300,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
     _showTableFormDialog(context, restaurantRepo, null, sectionId: sectionId);
   }
 
+  // ignore: unused_element
   void _showEditTableDialog(
     BuildContext context,
     IRestaurantRepository restaurantRepo,
@@ -519,6 +520,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
     );
   }
 
+  // ignore: unused_element
   Future<void> _confirmDeleteTable(
     IRestaurantRepository restaurantRepo,
     RestaurantTable table,

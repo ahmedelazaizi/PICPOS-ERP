@@ -14,7 +14,6 @@ import '../../../data/providers/manufacturing_providers.dart';
 import '../../../services/invoice_generator.dart';
 import '../../../services/network_service.dart';
 import '../../../data/database/sync_interceptor.dart';
-import '../../../services/offline_sync_worker.dart';
 import '../../../services/sync/sync_worker.dart';
 import '../../../../../../core/constants/app_constants.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;

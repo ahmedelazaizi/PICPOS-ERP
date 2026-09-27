@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ural_erp/core/utils/friendly_error.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/repositories/treasury_repository.dart';
-import '../../../data/database/database.dart';
 import 'treasury_safe_card.dart';
 import 'treasury_transactions_list.dart';
 

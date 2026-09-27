@@ -3,7 +3,6 @@ import '../../core/config/brand.dart';
 import '../picpos_shell/picpos_body_handle.dart';
 import '../picpos_shell/picpos_dialog.dart';
 import '../picpos_shell/picpos_panel_groups.dart';
-import '../picpos_shell/picpos_surface.dart';
 import '../settings_picpos/widgets/settings_blocks.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

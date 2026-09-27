@@ -593,7 +593,9 @@ class SyncService {
     _autoSyncTimer = null;
   }
 
-  // TODO(multi-branch): Activate via Timer.periodic when branch sync is enabled
+  // Branch sync is intentionally disabled until the multi-branch protocol is
+  // enabled; retaining this helper keeps the existing diagnostic endpoint
+  // available without scheduling background traffic.
   /// Send heartbeat to server
   // ignore: unused_element
   Future<void> _sendHeartbeat() async {

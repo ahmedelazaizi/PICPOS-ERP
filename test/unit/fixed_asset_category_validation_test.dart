@@ -13,7 +13,6 @@
 // These tests cover Layer 1 only. The UI gate is exercised through
 // manual testing per the spec.
 
-import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 

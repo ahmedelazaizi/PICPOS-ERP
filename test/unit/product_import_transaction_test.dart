@@ -8,7 +8,6 @@
 // inserts in a single transaction makes Drift emit ONCE on commit.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/repositories/drift_product_repository.dart';

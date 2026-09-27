@@ -18,7 +18,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/data/providers/template_editor_providers.dart';
 import 'package:ural_erp/domain/printing/template_document.dart';
 import 'package:ural_erp/domain/printing/template_save_result.dart';
 import 'package:ural_erp/domain/repositories/invoice_templates_repository.dart';

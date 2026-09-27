@@ -78,6 +78,7 @@ void main() {
       // Current: 5 units @ 20. Total Value = 100.
       // Buy 5 units at 30. Value = 150.
       // New WAC = (100 + 150) / 10 = 250 / 10 = 25.0
+  // ignore: unused_local_variable
         final invoiceId = await db.createPurchaseInvoice(
           supplierId: supplierId,
           warehouseId: warehouseId,

@@ -54,13 +54,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/models/depreciation_math.dart';
-import '../../../domain/repositories/accounting_repository.dart';
-import '../../../domain/repositories/fixed_assets_repository.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_data_table.dart';
 import '../../picpos_shell/picpos_kpi_row.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
-import '../../picpos_shell/picpos_surface.dart';
 import '../../widgets/permission_guard.dart';
 
 const _err = Color(0xFFEF4444);

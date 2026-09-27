@@ -6,7 +6,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../domain/repositories/treasury_repository.dart';
 
 import '../screens/treasury_closing_screen.dart';
-import '../../../data/database/database.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 import '../../../../../../core/constants/app_constants.dart';
 

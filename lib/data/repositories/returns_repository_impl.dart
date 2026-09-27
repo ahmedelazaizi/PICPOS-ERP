@@ -1,5 +1,4 @@
 import '../../core/constants/payment_methods.dart';
-import 'dart:async' show unawaited;
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import '../database/database.dart';
@@ -14,7 +13,6 @@ import '../../domain/entities/product_entity.dart';
 import '../../domain/entities/accounting_entities.dart';
 import '../../domain/models/sales_return_refund_split.dart';
 import '../../services/client_write_interceptor.dart';
-import '../../services/network_service.dart';
 import '../../core/utils/uuid_v7.dart';
 import '../database/sync_interceptor.dart';
 

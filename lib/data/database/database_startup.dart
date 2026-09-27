@@ -226,6 +226,7 @@ extension DatabaseStartup on AppDatabase {
     // `CREATE TABLE IF NOT EXISTS` فالتمريرة no-op على قاعدة سليمة ولا
     // بتلمس صف واحد. كل جدول في try لوحده عشان جدول واحد فاشل ما يوقّفش
     // الباقي.
+  // ignore: invalid_use_of_visible_for_testing_member
     final migrator = createMigrator();
     for (final table in allSchemaEntities.whereType<TableInfo>()) {
       try {

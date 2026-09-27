@@ -11,7 +11,6 @@ import '../../data/providers/providers.dart';
 import '../../domain/repositories/accounting_repository.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../core/permissions/permission_codes.dart';
-import '../widgets/fiscal_year_gate_dialog.dart';
 
 /// هل [permissions] تسمح بإعادة فتح فترة محاسبية مقفلة؟
 ///

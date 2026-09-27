@@ -8,8 +8,6 @@ import '../../domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 import '../../domain/repositories/sales_repository.dart';
 import '../../services/generators/base_generator.dart' show InvoiceItem;
 import '../../services/accounting_service.dart';
-import '../../services/kitchen_service.dart';
-import '../../services/network_service.dart';
 import '../database/sync_interceptor.dart';
 import '../../services/client_write_interceptor.dart';
 import '../../core/utils/uuid_v7.dart';
@@ -42,6 +40,7 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
     _orchestrator = SalesTransactionOrchestrator(db, _accountingService);
   }
 
+  // ignore: unused_element
   void _appendDiag(String msg) {
     try {
       final diagFile = File('sync_diagnostic.txt');
@@ -136,15 +135,14 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
   Future<InvoiceEntity?> getInvoiceById(int id) async {
     final data = await db.getSalesInvoiceById(id);
     if (data == null) return null;
-    // Map to domain entity - this logic might be in a separate mapper
-    return null; // TODO: Implement mapping
+    return InvoiceEntity.fromSalesInvoice(data);
   }
 
   @override
   Future<InvoiceEntity?> getInvoiceByNumber(String invoiceNumber) async {
     final data = await (db.select(db.salesInvoices)..where((s) => s.invoiceNumber.equals(invoiceNumber))).getSingleOrNull();
     if (data == null) return null;
-    return null; // TODO: Implement mapping
+    return InvoiceEntity.fromSalesInvoice(data);
   }
 
   @override

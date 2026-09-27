@@ -361,6 +361,7 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
 
 
 
+  // ignore: unused_element
   double _calculateReturnTotal() {
     final state = ref.read(purchaseReturnProvider);
     if (state.invoiceItems.isEmpty) return 0;

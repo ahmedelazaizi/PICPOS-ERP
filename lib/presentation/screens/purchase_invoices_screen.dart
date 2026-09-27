@@ -9,7 +9,6 @@ import '../../core/permissions/permission_codes.dart';
 import '../widgets/permission_guard.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_state_view.dart';
-import '../../core/widgets/shimmer_loading.dart';
 
 import '../../data/providers/providers.dart';
 import '../../services/invoice_generator.dart';

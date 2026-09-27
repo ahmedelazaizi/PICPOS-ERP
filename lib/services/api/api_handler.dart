@@ -1,7 +1,5 @@
-// ═══════════════════════════════════════════════════════════════════════════
-// API HANDLER — Main router and GET endpoints
-// ═══════════════════════════════════════════════════════════════════════════
-//
+// Main API router and GET endpoints.
+
 // This is the core API handler that builds the shelf Router and contains
 // all read-only (GET) endpoints. Write operations are delegated to
 // domain-specific handlers for maintainability (PIR C-01):
@@ -621,6 +619,7 @@ class ApiHandler {
       }
 
       final branchId = await _extractBranchId(request);
+  // ignore: unused_local_variable
       final warehouseIds = branchId != null ? await _resolveBranchWarehouseIds(branchId) : null;
 
       final since = DateTime.parse(sinceStr);

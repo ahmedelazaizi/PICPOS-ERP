@@ -24,6 +24,7 @@ void main() {
   late int productId;
   late int adminCashAccountId;
   late int branchCashAccountId;
+  // ignore: unused_local_variable
   late int defaultUnlinkedSafeId;
   late int actualBranchSafeId;
 

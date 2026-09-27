@@ -80,7 +80,7 @@ abstract class ApiHandlerBase {
   }) async {
     // limit(1): `processed_messages` carries a PK on `idempotency_key` on any
     // schema drift created, but a server provisioned from the manual
-    // `supabase_migration_v118.sql` (or one whose PK was never emitted) allows
+    // `db/legacy_migrations/supabase_migration_v118.sql` (or one whose PK was never emitted) allows
     // duplicate keys. Without the limit this is `list.single` → StateError on
     // EVERY subsequent request bearing that key, which the caller converts to a
     // 500 — so the client's outbox retries forever and each retry is a fresh

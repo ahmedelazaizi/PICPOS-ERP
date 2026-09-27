@@ -1,7 +1,4 @@
-import 'package:drift/drift.dart' hide isNotNull, isNull;
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/presentation/screens/settings/work_holidays_screen.dart';
 
 import '_support/screen_smoke.dart';

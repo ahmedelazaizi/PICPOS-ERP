@@ -558,6 +558,7 @@ extension ProductCrudDao on AppDatabase {
       pricePerUnit: Value(entity.pricePerUnit),
       imageData: Value(entity.imageData),
       warehouseId: Value(entity.warehouseId),
+  // ignore: dead_code
       productType: Value(entity.productType ?? 'general'),
     );
 

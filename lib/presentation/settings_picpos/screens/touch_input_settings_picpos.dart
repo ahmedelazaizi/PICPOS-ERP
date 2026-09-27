@@ -16,6 +16,7 @@ part of 'settings_picpos_screen.dart';
 // no app restart required (FR-020).
 // ═══════════════════════════════════════════════════════════════════════════
 
+  // ignore: unused_element
 class _TouchInputSettings extends ConsumerWidget {
   const _TouchInputSettings();
 

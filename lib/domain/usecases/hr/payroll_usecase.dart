@@ -16,14 +16,7 @@ class PayrollUseCase {
 
   PayrollUseCase(this._hrRepo);
 
-  /// Process salary payment
-  ///
-  /// B3 — [payableAmount] و[advancesSettled] مصدرُهما `calculateNetSalary`،
-  /// وإغفالُهما يُنتج قيداً بالصافي: المصروفُ مُبخَّس و١١٤٦ لا يُسوّى.
-  ///
-  /// ⚠️ هذه الدالةُ غيرُ مستدعاةٍ من `lib/` (المسارُ الإنتاجي هو
-  /// `HRNotifier.paySalary`)، ومُرِّرَت المعاملاتُ فيها عن قصد: تركُها بلا
-  /// تمريرٍ يجعل من يوصلها يوماً يُعيد B3 صامتاً.
+  /// Process salary payment.
   Future<PayrollResult> paySalary({
     required int employeeId,
     required double netSalary,
@@ -32,7 +25,9 @@ class PayrollUseCase {
     double? payableAmount,
     double advancesSettled = 0,
   }) async {
-    if (netSalary <= 0) return PayrollResult.failure('الراتب الصافي يجب أن يكون أكبر من صفر');
+    if (netSalary <= 0) {
+      return PayrollResult.failure('الراتب الصافي يجب أن يكون أكبر من صفر');
+    }
 
     try {
       final period = '$year-${month.toString().padLeft(2, '0')}';

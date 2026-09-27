@@ -33,7 +33,6 @@ import '../../../widgets/permission_guard.dart';
 // «إضافة صنف».
 
 /// قسم «إدارة الصلاحية» (تتبّع الصلاحية + مدة/تنبيه) — `products_expiry`.
-@visibleForTesting
 Widget buildProductExpirySectionGuarded({required Widget child}) {
   return PermissionGuard(
     permission: PermissionCodes.productsExpiry,
@@ -46,7 +45,6 @@ Widget buildProductExpirySectionGuarded({required Widget child}) {
 ///
 /// المعاينة نفسها فاضلة ظاهرة: اسم الكود في الكتالوج «إضافة/تعديل الصورة»
 /// — فعل تعديل، مش عرض.
-@visibleForTesting
 Widget buildProductImageActionsGuarded({required Widget child}) {
   return PermissionGuard(
     permission: PermissionCodes.productsImage,

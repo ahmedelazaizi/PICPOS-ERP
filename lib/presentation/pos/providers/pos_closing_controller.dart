@@ -8,7 +8,6 @@ import '../../../core/config/business_profile_provider.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../../../services/delta_pull_service.dart';
-import '../../../services/network_service.dart';
 import '../../../services/printing/shift_closing_print.dart';
 import '../../../domain/entities/shift_closing_snapshot.dart';
 import '../../shift_close_picpos/widgets/picpos_close_permissions.dart';
@@ -801,6 +800,7 @@ class PosClosingController extends Notifier<PosClosingState> {
     }
   }
 
+  // ignore: unused_element
   Future<void> _recordLegacyClosingTransactions(
     dynamic authState,
     double systemCash,

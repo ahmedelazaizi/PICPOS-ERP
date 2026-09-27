@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart';
 import '../database.dart';
 import '../../../domain/entities/accounting_entities.dart';
 import '../../../core/utils/financial_utils.dart';

@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/config/industry_tables_policy.dart';
 import '../../domain/models/table_order_totals.dart';
-import '../repositories/settings_repository_cached.dart';
 import 'providers.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════

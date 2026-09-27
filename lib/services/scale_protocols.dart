@@ -663,6 +663,7 @@ class ScaleProtocolHandler {
   /// This is the universal approach used by PLU Manager software —
   /// it works with most modern label scales (CAS, TEM, Rongta, DIGI,
   /// Aclas, etc.) that can parse CSV data received on their TCP port.
+  // ignore: unused_element
   Future<PLUUploadResult> _uploadViaCSV(
     List<ScalePLUItem> items,
     String ip,
@@ -1672,6 +1673,7 @@ class ScaleProtocolHandler {
         errors: ['خطأ في الاتصال: $e'],
       );
     } finally {
+  // ignore: dead_code
       try { await socket?.close(); } catch (_) {}
       try { serialPort?.close(); } catch (_) {}
     }
@@ -2301,6 +2303,7 @@ class ScaleProtocolHandler {
   /// Port 4001 echoes sent data (sometimes with 1-byte offset) followed by
   /// zero-padding, then the scale's real response.
   /// Returns the non-echo portion (may be empty if truly just echo).
+  // ignore: unused_element
   List<int> _stripEcho(Uint8List sent, Uint8List received) {
     if (received.isEmpty) return [];
 

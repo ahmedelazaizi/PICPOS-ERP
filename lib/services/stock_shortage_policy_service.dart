@@ -92,6 +92,7 @@ class StockShortagePolicyService {
 
   /// Load all three tiers from settings (with caching). Call once per
   /// orchestrator invocation, not per line.
+  // ignore: unused_element
   static Future<void> _ensureLoaded(ISettingsRepository settings) =>
       _ensureLoadedWith(settings.getSetting);
 
@@ -111,6 +112,7 @@ class StockShortagePolicyService {
     _cachedPerTerminal = await _loadMapWith(get, _perTerminalKey);
   }
 
+  // ignore: unused_element
   static Future<Map<int, StockShortagePolicy>> _loadMap(
     ISettingsRepository settings,
     String key,

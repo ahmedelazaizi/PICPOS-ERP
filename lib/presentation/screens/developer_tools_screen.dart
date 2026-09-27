@@ -38,7 +38,6 @@ import '../../services/admin/data_wipe_service.dart';
 import '../../data/providers/providers.dart';
 import '../../services/deployment/commit_result.dart';
 import '../../services/deployment/deployment_mode_committer.dart';
-import '../../services/deployment/setup_contract.dart';
 import '../../services/mirror_state.dart';
 import '../../services/network_service.dart';
 import '../picpos_shell/picpos_danger_confirm.dart';
@@ -280,8 +279,11 @@ class _DeveloperToolsBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+  // ignore: unused_local_variable
     final snapshot = ref.watch(runtimeConfigSnapshotProvider);
+  // ignore: unused_local_variable
     final hash = ref.watch(runtimeConfigHashProvider);
+  // ignore: unused_local_variable
     final session = ref.watch(developerSessionProvider);
 
     return Scaffold(

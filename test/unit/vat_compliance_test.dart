@@ -49,6 +49,7 @@ void main() {
     test('Zero VAT for tax-exempt items', () {
       const subtotal = 300.0;
       const isTaxExempt = true;
+  // ignore: dead_code
       const vat = isTaxExempt ? 0.0 : subtotal * vatRate;
 
       expect(vat, equals(0.0));

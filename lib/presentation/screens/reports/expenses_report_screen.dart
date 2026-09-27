@@ -195,6 +195,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
     }
   }
 
+  // ignore: unused_element
   Future<void> _pickDateRange() async {
     final picked = await showDateRangePicker(
       context: context,

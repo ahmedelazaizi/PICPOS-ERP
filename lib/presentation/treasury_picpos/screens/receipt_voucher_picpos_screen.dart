@@ -32,7 +32,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/permissions/permission_codes.dart';

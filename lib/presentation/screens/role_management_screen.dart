@@ -423,6 +423,7 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
   }
 
   void _showAddRoleDialog() async {
+  // ignore: unused_local_variable
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => const AddRoleDialog(),

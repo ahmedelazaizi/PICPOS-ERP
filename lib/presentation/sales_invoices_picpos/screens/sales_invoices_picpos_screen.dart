@@ -7,7 +7,6 @@ import '../../../core/permissions/permission_codes.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import '../../../domain/models/branch_assignment_scope.dart';
 
 import '../../../core/widgets/app_shortcuts.dart';
 import '../../../core/utils/app_error_handler.dart';
@@ -26,7 +25,6 @@ import '../../../domain/models/warehouse_branch_scope.dart';
 import '../../../services/network_service.dart';
 import '../../../core/constants/app_constants.dart' hide InvoiceStatus;
 import '../../screens/sales_invoices_controller.dart';
-import '../../widgets/dialogs/add_product_dialog.dart';
 import '../../screens/sales_orders_screen.dart';
 
 // Additional imports for sales_invoice_dialogs.dart / sales_invoice_save_edit.dart

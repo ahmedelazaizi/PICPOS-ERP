@@ -187,6 +187,7 @@ class _SessionTimeoutWrapperState extends ConsumerState<SessionTimeoutWrapper> {
   Widget build(BuildContext context) {
     // Watch settings to react to changes
     final isEnabled = ref.watch(posSessionTimeoutEnabledProvider).value ?? true;
+  // ignore: unused_local_variable
     final timeoutMinutes = ref.watch(posSessionTimeoutMinutesProvider).value ?? 5;
 
     // If disabled, remove lock if active

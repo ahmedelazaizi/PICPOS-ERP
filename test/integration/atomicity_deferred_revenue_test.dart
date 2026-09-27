@@ -108,6 +108,7 @@ void main() {
         normalBalance: const drift.Value('credit'),
       ));
 
+  // ignore: unused_local_variable
       final scheduleId = await db.createDeferredSchedule(
         sourceAccountId: srcId,
         targetAccountId: tgtId,

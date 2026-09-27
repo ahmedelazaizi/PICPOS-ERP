@@ -369,6 +369,7 @@ class _ExportPayrollButton extends ConsumerWidget {
 }
 
 // ── Salary Slip Dialog ───────────────────────────────────────
+  // ignore: unused_element
 void _showSalarySlip(BuildContext context, EmployeeSalaryCalculation calc) {
   showDialog(
     context: context,

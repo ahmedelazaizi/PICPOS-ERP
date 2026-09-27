@@ -15,7 +15,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'package:flutter/foundation.dart';
-import '../core/constants/app_constants.dart';
 import 'package:ftpconnect/ftpconnect.dart';
 import 'package:serial_port_win32/serial_port_win32.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -916,6 +915,7 @@ class LabelScaleService {
   /// Reverse Arabic text for CAS scale visual order.
   ///
   /// Delegates to [ScaleTransport.reverseArabicForScale].
+  // ignore: unused_element
   String _reverseArabicForScale(String input) =>
       ScaleTransport.reverseArabicForScale(input);
 

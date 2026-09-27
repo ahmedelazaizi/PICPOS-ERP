@@ -49,7 +49,7 @@ void main() {
 
     test('ClientWriteInterceptor implements isMirrorModeImpl', () {
       final src =
-          File('lib/services/client_write_interceptor.dart').readAsStringSync();
+          File('lib/services/interceptor/cwi_core.dart').readAsStringSync();
       expect(src,
           contains('bool get isMirrorModeImpl => WriteRouter.isMirrorActive'),
           reason: 'Mirror-only predicate must NOT be the broadened R9 gate '
@@ -61,7 +61,7 @@ void main() {
     test('isMirrorMode is NOT redefined as ServerProxy.isClientMode-style OR',
         () {
       final src =
-          File('lib/services/client_write_interceptor.dart').readAsStringSync();
+          File('lib/services/interceptor/cwi_core.dart').readAsStringSync();
       // Make sure nobody re-broadens isMirrorMode the same way isClientMode
       // is broadened (which would defeat the whole point of USR-2).
       expect(

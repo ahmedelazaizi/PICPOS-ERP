@@ -31,7 +31,6 @@ import '../pos/providers/cfd_controller.dart';
 import '../../domain/models/app_close_cart_gate.dart';
 import '../widgets/dialogs/cart_not_empty_close_dialog.dart';
 import '../pos/logic/open_shift_gate.dart';
-import '../pos/widgets/pos_cashier_closing_dialog.dart';
 import '../widgets/inactivity_detector.dart';
 import '../../main_desktop.dart'
     if (dart.library.html) '../../main_web.dart'
@@ -43,7 +42,6 @@ import '../widgets/sync_status_badge.dart';
 import '../widgets/mirror_badge.dart';
 import '../widgets/mirror_offline_banner.dart';
 import '../../services/mirror_state.dart';
-import '../screens/reports/financial_statements_screen.dart';
 
 part 'nav_widgets.dart';
 

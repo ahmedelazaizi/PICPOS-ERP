@@ -46,8 +46,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
-import '../../../domain/repositories/accounting_repository.dart';
-import '../../../domain/repositories/manufacturing_repository.dart';
 import '../../widgets/permission_guard.dart';
 import 'opex_picpos_allocate_dialog.dart';
 import 'opex_picpos_expense_dialog.dart';

@@ -55,7 +55,6 @@ import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/e_invoicing_providers.dart';
 import '../../../data/providers/providers.dart';
-import '../../../domain/repositories/e_invoice_repository.dart';
 import '../../../services/e_invoicing/e_invoice_service_wrapper.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_empty_state.dart';

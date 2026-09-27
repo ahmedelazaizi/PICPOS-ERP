@@ -65,6 +65,7 @@ class _TablesScreenState extends ConsumerState<TablesScreen>
   Widget build(BuildContext context) {
     final restaurantRepo = ref.watch(restaurantRepositoryProvider);
     final uiState = ref.watch(tablesUIProvider);
+  // ignore: unused_local_variable
     final uiNotifier = ref.read(tablesUIProvider.notifier);
 
     return Directionality(

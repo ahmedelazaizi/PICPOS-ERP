@@ -421,9 +421,11 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                           final q = textValue.text.toLowerCase();
                           return allProducts.where((p) =>
                               p.name.toLowerCase().contains(q) ||
+  // ignore: dead_code
                               (p.code.toLowerCase().contains(q) ?? false) ||
                               (p.barcode?.contains(textValue.text) ?? false));
                         },
+  // ignore: dead_code
                         displayStringForOption: (p) => '${p.name} (${p.code ?? "-"})',
                         fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
                           acCtrl = controller;

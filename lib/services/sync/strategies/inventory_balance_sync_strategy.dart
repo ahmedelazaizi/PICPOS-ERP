@@ -57,6 +57,7 @@ class InventoryBalanceSyncStrategy extends SyncStrategy {
 
   Future<void> _syncSingleBalance(Map<String, dynamic> balanceMap) async {
     try {
+  // ignore: unused_local_variable
       final serverId = parseInt(balanceMap['id']);
       final serverQuantity = parseDouble(balanceMap['quantity']);
 

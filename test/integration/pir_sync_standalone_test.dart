@@ -13,7 +13,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/services/sync/strategies/category_sync_strategy.dart';
-import 'package:ural_erp/services/sync/strategies/product_sync_strategy.dart';
 import 'package:ural_erp/services/sync/strategies/party_sync_strategy.dart';
 
 void main() {

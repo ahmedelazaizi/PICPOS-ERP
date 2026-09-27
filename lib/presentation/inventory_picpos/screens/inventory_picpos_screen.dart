@@ -492,8 +492,10 @@ class _InventoryPicposScreenState extends ConsumerState<InventoryPicposScreen>
           flex: 3,
           child: productsAsync.when(
             data: (products) {
+  // ignore: unused_local_variable
               final searchText = _movementSearchController.text.toLowerCase();
               // Find selected product name
+  // ignore: unused_local_variable
               final selectedName = selectedProductId != null
                   ? products.where((p) => p.id == selectedProductId).firstOrNull?.name
                   : null;

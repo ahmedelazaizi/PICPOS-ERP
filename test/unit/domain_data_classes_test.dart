@@ -9,7 +9,6 @@ import 'package:ural_erp/domain/entities/stock_requisition_item_entity.dart';
 import 'package:ural_erp/domain/entities/party_entity.dart';
 import 'package:ural_erp/domain/repositories/purchases_repository.dart';
 import 'package:ural_erp/domain/repositories/inventory_repository.dart';
-import 'package:ural_erp/domain/repositories/commercial_papers_repository.dart' hide commercialPapersRepositoryProvider;
 import 'package:ural_erp/domain/usecases/fixed_assets/run_depreciation_usecase.dart';
 
 void main() {

@@ -50,7 +50,9 @@ void main() {
   late int revenueAccountId;
   late int expenseAccountId;
   late int bankAccountId;
+  // ignore: unused_local_variable
   late int arAccountId;
+  // ignore: unused_local_variable
   late int fxGainLossAccountId;
 
   setUp(() async {

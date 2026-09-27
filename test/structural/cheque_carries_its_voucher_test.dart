@@ -29,6 +29,7 @@ const _paymentDialog =
     'lib/presentation/treasury_picpos/widgets/payment_voucher_dialog_picpos.dart';
 const _papersDao = 'lib/data/database/daos/commercial_papers_dao.dart';
 const _treasuryDao = 'lib/data/database/daos/treasury_dao.dart';
+const _voucherDao = 'lib/data/database/daos/treasury_voucher_dao.dart';
 const _partyDao = 'lib/data/database/daos/party_dao.dart';
 const _treasuryRepo = 'lib/data/repositories/treasury_repository_impl.dart';
 
@@ -74,9 +75,10 @@ void main() {
   test('والنوعُ ثابتٌ واحدٌ يُقرأ لا يُكتَب سلسلةً', () {
     // كتابةُ `'cheque_voucher'` بيدها في موضعَين تجعل استثناءً يفلت بصمت.
     final treasury = _code(_treasuryDao);
+    final voucher = _code(_voucherDao);
     expect(treasury.contains("const String kChequeVoucherTxnType ="), isTrue,
         reason: 'الثابتُ اختفى');
-    expect(treasury.contains('transactionType: kChequeVoucherTxnType,'), isTrue,
+    expect(voucher.contains('transactionType: kChequeVoucherTxnType,'), isTrue,
         reason: 'الصفُّ يُكتَب بنوعٍ مكتوبٍ بيده');
     expect("'cheque_voucher'".allMatches(_code(_partyDao)).length, 0,
         reason: 'كشفُ الحساب يقارن بسلسلةٍ مكتوبةٍ بيدها لا بالثابت');
@@ -95,7 +97,7 @@ void main() {
 
   test('ومرساةٌ — الرصيدُ لقطةٌ لا وعدٌ', () {
     // `balance + amount` تَعِد برصيدٍ لم يقع، ويقرؤها كشفُ الخزنة سطراً.
-    final code = _code(_treasuryDao);
+    final code = _code(_voucherDao);
     final at = code.indexOf('Future<int> _writeChequeVoucherRow(');
     expect(at, greaterThan(0), reason: 'كاتبُ الصفّ المستنديّ اختفى');
     final body = code.substring(at, code.indexOf('Future<int> createReceiptVoucher(', at));

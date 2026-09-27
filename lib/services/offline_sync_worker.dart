@@ -80,6 +80,7 @@ Map<String, Map<String, int>> _decodeMappingsBackground(String jsonStr) {
 }
 
 /// Top-level function for background JSON encode (Isolates)
+  // ignore: unused_element
 String _encodeMappingsBackground(Map<String, Map<String, int>> mappings) {
   return jsonEncode(mappings);
 }

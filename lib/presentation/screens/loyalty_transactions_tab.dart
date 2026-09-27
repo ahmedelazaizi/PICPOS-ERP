@@ -80,7 +80,9 @@ class _TransactionsTabState extends State<_TransactionsTab> {
                 itemCount: txs.length,
                 itemBuilder: (context, i) {
                   final tx = txs[i];
+  // ignore: unused_local_variable
                   final isEarn = tx.type == 'earn';
+  // ignore: unused_local_variable
                   final isRedeem = tx.type == 'redeem';
                   return Card(
                     margin: const EdgeInsets.only(bottom: 6),

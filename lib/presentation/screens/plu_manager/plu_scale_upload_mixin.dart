@@ -3,12 +3,16 @@ part of '../plu_manager_screen.dart';
 mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
   // Abstract members satisfied by _PluManagerScreenState
   PluManagerController get _controller;
+  // ignore: unused_element
   bool get _isUploading;
   set _isUploading(bool v);
+  // ignore: unused_element
   String get _uploadStatus;
   set _uploadStatus(String v);
+  // ignore: unused_element
   int get _uploadProgress;
   set _uploadProgress(int v);
+  // ignore: unused_element
   int get _uploadTotal;
   set _uploadTotal(int v);
 
@@ -105,6 +109,7 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
         } else if (result.success > 0) {
           AppToast.show(context, '"${selectedScale.name}": ${result.success} نجاح، ${result.failed} فشل', type: ToastType.warning);
         } else {
+  // ignore: dead_code
           _showUploadErrorDialog(result, selectedScale.name ?? 'الميزان');
         }
       }
@@ -176,6 +181,7 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(children: [
+  // ignore: dead_code
                                       Text(scale.name ?? '—', style: const TextStyle(fontWeight: FontWeight.w600)),
                                       const SizedBox(width: 8),
                                       Container(

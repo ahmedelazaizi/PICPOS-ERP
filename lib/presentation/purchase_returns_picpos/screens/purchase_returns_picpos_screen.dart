@@ -18,7 +18,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/app_error_handler.dart';
-import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/permissions/permission_codes.dart';
 
@@ -31,7 +30,6 @@ import '../../widgets/permission_guard.dart'; // B5: Manager approval
 import '../../widgets/common/common.dart';
 
 import '../../picpos_shell/picpos_screen_scaffold.dart';
-import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_document_header.dart';
 import '../../picpos_shell/picpos_form_action_bar.dart';
 import '../../picpos_shell/picpos_totals_bar.dart';
@@ -404,6 +402,7 @@ class _PurchaseReturnsPicposScreenState
     );
   }
 
+  // ignore: unused_element
   double _calculateReturnTotal() {
     final state = ref.read(purchaseReturnProvider);
     if (state.invoiceItems.isEmpty) return 0;

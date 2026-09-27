@@ -759,6 +759,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
   }
 
   /// Get width for a column, supporting both old and new JSON format
+  // ignore: unused_element
   double _getColWidth(String key) {
     final widths = _parseColumnWidths();
     return widths[key] ?? 1.0;

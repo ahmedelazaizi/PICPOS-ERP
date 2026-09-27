@@ -505,6 +505,7 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
         (itemsByCategory[product?.categoryId] ??= []).add(item);
       }
 
+  // ignore: unused_local_variable
       int workOrdersCreated = 0;
       for (final entry in itemsByCategory.entries) {
         final categoryId = entry.key;

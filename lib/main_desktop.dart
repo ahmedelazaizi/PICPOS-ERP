@@ -16,7 +16,6 @@ import 'services/server_proxy.dart';
 import 'services/sync_service.dart';
 import 'services/websocket_sync_client.dart';
 import 'services/offline_sync_worker.dart';
-import 'services/client_write_interceptor.dart';
 import 'services/adaptive_poll_timer.dart';
 import 'services/cheque_receipt_drift_audit_service.dart';
 import 'data/database/database.dart';

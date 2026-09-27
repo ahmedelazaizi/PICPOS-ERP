@@ -305,6 +305,7 @@ mixin _PurchaseReturnsPicposDetailsPanel
   Widget _buildReturnFooter(
 PurchaseReturnState state, PurchaseReturnNotifier notifier) {
     final total = notifier.calculateReturnTotal();
+  // ignore: unused_local_variable
     final screenState = this as _PurchaseReturnsPicposScreenState;
 
     return Container(

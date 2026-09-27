@@ -12,7 +12,6 @@
 // Uses `AppDatabase.forTesting()` WITHOUT wiping, so the full seeded chart of
 // accounts (incl. 4319) is present, mirroring a real install.
 
-import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 

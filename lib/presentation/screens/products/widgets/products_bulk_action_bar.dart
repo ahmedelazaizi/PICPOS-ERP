@@ -74,6 +74,7 @@ class ProductsBulkActionBar extends ConsumerWidget {
   }
 
   Future<void> _handleBulkUpdate(BuildContext context, WidgetRef ref, bool active) async {
+  // ignore: unused_local_variable
     final success = await ref.read(productsControllerProvider.notifier).bulkUpdateStatus(active);
     // Note: status updates are handled by updateProduct in controller which returns Future<bool>
     // but bulkUpdateStatus currently returns void. Let's fix that if needed.

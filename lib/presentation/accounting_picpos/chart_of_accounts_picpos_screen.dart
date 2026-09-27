@@ -6,7 +6,6 @@ import '../../core/theme/app_colors.dart';
 import '../picpos_shell/picpos_screen_scaffold.dart';
 import 'chart_of_accounts_detail_panel.dart';
 import '../../services/network_service.dart';
-import '../../domain/models/account_facts.dart';
 import '../picpos_shell/picpos_kpi_row.dart';
 import '../picpos_shell/picpos_toolbar.dart';
 import '../picpos_shell/picpos_dialog.dart';

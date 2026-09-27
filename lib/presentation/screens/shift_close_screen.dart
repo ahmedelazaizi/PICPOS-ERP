@@ -388,6 +388,7 @@ class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
                 shifts: snapshot.data ?? const [],
                 userNames: {
                   for (final u in users)
+  // ignore: dead_code
                     u.user.id: u.user.displayName ?? u.user.username,
                 },
                 currentUserId: authState.user?.id,

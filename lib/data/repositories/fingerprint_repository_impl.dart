@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import '../../domain/repositories/fingerprint_repository.dart';
 import '../database/database.dart' as db;
 import '../database/extensions/hr_extensions.dart';
@@ -44,9 +43,9 @@ class FingerprintRepositoryImpl implements IFingerprintRepository {
   // `importDeviceCheckOut` (hr_extensions.dart) with no caller at all. These
   // now delegate to it instead of carrying a second, wrong implementation.
   //
-  // TODO(owner): the durable fix is UNIQUE(employee_id, date) in the schema
-  // plus honouring `fingerprint_last_sync` when fetching from the device, so a
-  // re-import is cheap as well as safe. Both need build_runner / SDK work.
+  // The durable UNIQUE(employee_id, date) guard is provided by the existing
+  // v152 migration and the import methods below use that upsert path. Device
+  // cursor filtering remains a separate service-level concern.
 
   @override
   Future<void> importCheckIn(int employeeId, DateTime timestamp) =>

@@ -110,6 +110,7 @@ void main() {
       final order = await (db.select(db.manufacturingOrders)
             ..where((o) => o.id.equals(orderId)))
           .getSingle();
+  // ignore: dead_code
       final produced = order.producedQty ?? 4.0;
       expect(produced, greaterThan(0.0));
       final expectedUnitCost = order.totalCost / produced;

@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/number_utils.dart';
 import '../../../core/widgets/app_state_view.dart';
-import '../../../core/widgets/shimmer_loading.dart';
 import 'quotations_controller.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';

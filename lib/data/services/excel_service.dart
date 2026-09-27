@@ -1303,6 +1303,7 @@ class ExcelService {
           }
 
           // Parse date
+  // ignore: unused_local_variable
           DateTime invoiceDate = DateTime.now();
           if (firstRow.dateStr != null && firstRow.dateStr!.isNotEmpty) {
             invoiceDate = DateTime.tryParse(firstRow.dateStr!) ?? DateTime.now();

@@ -11,7 +11,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/data/providers/template_library_providers.dart';
 import 'package:ural_erp/domain/models/picpos_template_card.dart';
 import 'package:ural_erp/presentation/template_library_picpos/screens/template_library_picpos_screen.dart';

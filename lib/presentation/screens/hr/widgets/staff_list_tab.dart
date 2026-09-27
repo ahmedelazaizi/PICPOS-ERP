@@ -17,6 +17,7 @@ class StaffListTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+  // ignore: unused_local_variable
     final hrRepo = ref.watch(hrRepositoryProvider);
 
     return Column(

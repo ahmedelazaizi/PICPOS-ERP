@@ -46,7 +46,7 @@
 | الهجرات | ✅ | `git log ... -- migrations/ database.dart` ⇐ **فاضي**، `schemaVersion` ثابت ١٥١ | متسق: صفر تغيير سكيما ⇒ صفر هجرة مطلوبة. تصميم `SaleBatchConsumptions` (١٥٢) **لسه في `git stash` وبرّه الإصدار** — وده الصح |
 | أسرار في الدِّيف | ✅ | مسح regex على `git diff base...HEAD` لمفاتيح/توكنات/كلمات سر ⇐ صفر | كمان صفر `TODO/FIXME/HACK` جديدة في `lib/` |
 | **ذرّية الترانزاكشنات (الكاش)** | ❌ **BLOCKER** | تعداد مقاس + قراءة كود مباشرة — §٢ | **٢٣ نقطة قراءة مخزَّنة جوه ترانزاكشن · ٨ منهم بيقروا حالة نص-ترانزاكشن · ٤ عالية** |
-| مسار PostgreSQL / وضع السيرفر | ❌ **UNVERIFIED + عيب مؤكَّد بالكود** | `database.dart:1281-1334` + `supabase_migration_v118.sql:36-41` — §٤ | مولّد الـDDL **عمره ما بيقرا** `$primaryKey` ولا `defaultConstraints`. وفيه تضارب سكيما فعلي في `processed_messages` |
+| مسار PostgreSQL / وضع السيرفر | ❌ **UNVERIFIED + عيب مؤكَّد بالكود** | `database.dart:1281-1334` + `db/legacy_migrations/supabase_migration_v118.sql:36-41` — §٤ | مولّد الـDDL **عمره ما بيقرا** `$primaryKey` ولا `defaultConstraints`. وفيه تضارب سكيما فعلي في `processed_messages` |
 | فقدان كتابات المرآة | ⚠️ مخاطرة مقبولة | `test/structural/mirror_write_dispatch_test.dart` — baseline صريح لـ٦ مسارات | قرار مالك موثَّق. §٥-١ |
 | تتبّع الدفعات (batch) | ⚠️ دَين تقني + فجوة تتبّع | `sales_invoice_items.batchId` — **صفر كتابة** في كل `lib/` (متحقَّق بـgrep) | §٥-٤ — بيبقى مانع **لو** العميل صيدلة/أغذية بالتزام سحب (recall) |
 | تغطية اختبارية | ⚠️ دَين تقني | `test/structural/return_no_auto_deplete_test.dart` بنيوي مش سلوكي | §٥-٥ |
@@ -162,7 +162,7 @@
    عند drift (`database.g.dart` بيستعمله في عشرات الأعمدة، منها `global_id`).
    ⇒ كل قيود التفرّد والمفاتيح الأجنبية بتضيع على PG.
 3. 🚩 **تضارب سكيما مكانش في أي تقرير قبل كده:**
-   `supabase_migration_v118.sql:36-41` بيعرّف:
+   `db/legacy_migrations/supabase_migration_v118.sql:36-41` بيعرّف:
    ```sql
    CREATE TABLE IF NOT EXISTS public.processed_messages (
        idempotency_key uuid PRIMARY KEY,

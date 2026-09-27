@@ -89,7 +89,7 @@ void main() {
 
     test('treasury_dao threads partyId into both submitSafeTransaction calls',
         () {
-      final src = File('lib/data/database/daos/treasury_dao.dart')
+      final src = File('lib/data/database/daos/treasury_voucher_dao.dart')
           .readAsStringSync();
       // Both calls (receipt + payment) should include partyId.
       final pidCount = 'partyId: partyId,'.allMatches(src).length;

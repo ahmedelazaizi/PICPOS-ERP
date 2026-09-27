@@ -400,8 +400,8 @@ extension SalesMutationsDao on AppDatabase {
         await adjustPartyBalance(
             customerId, saleType == 'return' ? -remaining : remaining);
       }
-      // TODO(SR-1 backfill): historical credit-sale returns posted before this
-      // fix left parties.balance too HIGH by ~2x the AR refund (the GL was
+      // Historical credit-sale returns posted before this fix may have left
+      // parties.balance too HIGH by ~2x the AR refund (the GL was
       // already correct — see autoPostSalesReturn). No safe existing utility
       // WRITES a corrected balance; `party_dao.dart`'s getPartyBalanceMismatches()
       // (Day-17 / Spec 133 "audit read-only, repair deferred") only DETECTS the
@@ -1005,8 +1005,11 @@ extension SalesMutationsDao on AppDatabase {
           newTotalPaid: paid,
         );
 
+  // ignore: unused_local_variable
         final newCash = diff.newDistribution.cash;
+  // ignore: unused_local_variable
         final newBank = diff.newDistribution.bank;
+  // ignore: unused_local_variable
         final newClick = diff.newDistribution.click;
 
         // Apply cash safe diff

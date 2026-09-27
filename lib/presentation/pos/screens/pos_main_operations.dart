@@ -83,6 +83,7 @@ Future<bool> ensurePosWorkOrderPermission(
 }
 
 mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
+  // ignore: unused_element
   void _initOperations() {
     // Logic moved from initState if needed, but mostly focus management
     (this as _PosScreenV2State)._barcodeFocus.requestFocus();

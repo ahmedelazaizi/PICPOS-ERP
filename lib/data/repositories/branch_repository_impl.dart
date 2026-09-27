@@ -5,7 +5,6 @@ import '../database/sync_interceptor.dart';
 import '../../domain/models/warehouse_branch_scope.dart';
 import '../../domain/repositories/branch_repository.dart';
 import '../../services/client_write_interceptor.dart';
-import '../../services/network_service.dart';
 
 class BranchRepositoryImpl implements IBranchRepository {
   final AppDatabase _db;

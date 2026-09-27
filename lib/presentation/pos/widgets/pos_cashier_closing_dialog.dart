@@ -217,6 +217,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
     );
   }
 
+  // ignore: unused_element
   Widget _buildSummaryRow(String label, String value, [Color? color]) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

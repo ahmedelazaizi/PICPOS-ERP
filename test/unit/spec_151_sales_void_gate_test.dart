@@ -379,11 +379,11 @@ void main() {
         isTrue,
         reason: 'submitVoidSalesInvoice must call _proxy.submitVoidSale(...).',
       );
-      final pub = read('lib/services/client_write_interceptor.dart');
+      final pub = read('lib/services/interceptor/cwi_core.dart');
       expect(
         pub.contains('submitVoidSalesInvoice'),
         isTrue,
-        reason: 'client_write_interceptor.dart missing the public '
+        reason: 'cwi_core.dart missing the public '
             'submitVoidSalesInvoice stub.',
       );
     });

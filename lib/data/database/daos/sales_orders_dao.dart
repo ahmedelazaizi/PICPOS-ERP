@@ -257,6 +257,7 @@ extension SalesOrdersDao on AppDatabase {
 
       // Resolve branchId from warehouse to maintain branch isolation
       final warehouse = await (select(warehouses)..where((w) => w.id.equals(so.warehouseId))).getSingleOrNull();
+  // ignore: unused_local_variable
       final branchId = warehouse?.branchId;
 
       // Map SO items to Invoice items companions

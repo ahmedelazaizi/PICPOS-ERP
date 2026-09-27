@@ -137,6 +137,7 @@ class _AddRoleDialogState extends AppFormDialogState<bool, AddRoleDialog> {
     // In client mode: push role to server first so it gets a server-authoritative ID.
     // The server then broadcasts the role back via sync, and the local insertRole
     // is still performed to give instant UI feedback.
+  // ignore: unused_local_variable
     int? serverId;
     if (SyncInterceptor.isClientMode) {
       serverId = await SyncInterceptor.instance!.createRole(name: name);

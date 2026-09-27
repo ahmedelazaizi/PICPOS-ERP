@@ -1108,6 +1108,7 @@ class _UsersManagementPicposScreenState
     );
   }
 
+  // ignore: unused_element
   Widget _buildBranchBadge(int userId, Map<int, List<String>> userBranchNames) {
     final branches = userBranchNames[userId];
     if (branches == null) return const SizedBox.shrink();
@@ -1155,6 +1156,7 @@ class _UsersManagementPicposScreenState
     return Colors.grey;
   }
 
+  // ignore: unused_element
   IconData _getRoleIcon(String? roleName) {
     if (roleName == 'مدير النظام') return PhosphorIconsBold.shieldCheck;
     if (roleName == 'مدير') return PhosphorIconsBold.userGear;

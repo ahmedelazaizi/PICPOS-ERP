@@ -15,7 +15,6 @@ import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
 import 'package:ural_erp/data/repositories/purchases_repository_impl.dart';
 import 'package:ural_erp/domain/repositories/audit_repository_interface.dart';
 import 'package:ural_erp/domain/repositories/i_products_repository.dart';
-import 'package:ural_erp/core/errors/app_exceptions.dart';
 import 'package:ural_erp/domain/repositories/inventory_repository.dart';
 import 'package:ural_erp/domain/repositories/parties_repository.dart';
 import 'package:ural_erp/domain/repositories/purchases_repository.dart';
