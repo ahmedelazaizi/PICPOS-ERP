@@ -347,7 +347,7 @@ extension InventoryDao on AppDatabase {
           );
           final invAcc = await accountingDao.getAccountByCode(invCode);
           if (invAcc == null) {
-            debugPrint('[FINANCIAL_WARNING] adjustStock: inventory account not mapped — JE skipped for $movementType');
+            throw StateError('لا يمكن ترحيل حركة المخزون: حساب المخزون غير مربوط.');
           } else {
             final jeLines = <JournalLine>[];
             if (quantity > 0) {
@@ -357,7 +357,10 @@ extension InventoryDao on AppDatabase {
                 'inventory_surplus', AccountingDao.accountPurposes['inventory_surplus']!,
               );
               final surplusAcc = await accountingDao.getAccountByCode(surplusCode);
-              if (surplusAcc != null) {
+              if (surplusAcc == null) {
+                 throw StateError('لا يمكن ترحيل حركة المخزون: حساب فائض المخزون غير مربوط.');
+               }
+               {
                 jeLines.add(JournalLine(accountId: invAcc.id,      debit: adjustmentValue, description: 'زيادة مخزون — $movementType'));
                 jeLines.add(JournalLine(accountId: surplusAcc.id,  credit: adjustmentValue, description: 'فائض مخزون — $movementType'));
               }
@@ -371,7 +374,10 @@ extension InventoryDao on AppDatabase {
                 expensePurpose, AccountingDao.accountPurposes[expensePurpose]!,
               );
               final expenseAcc = await accountingDao.getAccountByCode(expenseCode);
-              if (expenseAcc != null) {
+              if (expenseAcc == null) {
+                 throw StateError('لا يمكن ترحيل حركة المخزون: حساب خسائر المخزون غير مربوط.');
+               }
+               {
                 jeLines.add(JournalLine(accountId: expenseAcc.id, debit: adjustmentValue,  description: 'عجز مخزون — $movementType'));
                 jeLines.add(JournalLine(accountId: invAcc.id,     credit: adjustmentValue, description: 'تخفيض مخزون — $movementType'));
               }
@@ -1177,7 +1183,7 @@ extension InventoryDao on AppDatabase {
         await accountingDao.getMappedAccountCode('inventory', AccountingDao.accountPurposes['inventory']!),
       );
       if (inventoryAccount == null) {
-        debugPrint('[FINANCIAL_WARNING] Audit #$auditId: inventory account not configured — JE skipped.');
+        throw StateError('لا يمكن ترحيل الجرد: حساب المخزون غير مربوط.');
       } else {
         final lines = <JournalLine>[];
 
@@ -1185,7 +1191,10 @@ extension InventoryDao on AppDatabase {
           final shrinkageAccount = await accountingDao.getAccountByCode(
             await accountingDao.getMappedAccountCode('inventory_shrinkage', AccountingDao.accountPurposes['inventory_shrinkage']!),
           );
-          if (shrinkageAccount != null) {
+          if (shrinkageAccount == null) {
+             throw StateError('لا يمكن ترحيل الجرد: حساب عجز المخزون غير مربوط.');
+           }
+           {
             lines.add(JournalLine(
               accountId: shrinkageAccount.id,
               debit: totalShrinkage,
@@ -1203,7 +1212,10 @@ extension InventoryDao on AppDatabase {
           final surplusAccount = await accountingDao.getAccountByCode(
             await accountingDao.getMappedAccountCode('inventory_surplus', AccountingDao.accountPurposes['inventory_surplus']!),
           );
-          if (surplusAccount != null) {
+          if (surplusAccount == null) {
+             throw StateError('لا يمكن ترحيل الجرد: حساب فائض المخزون غير مربوط.');
+           }
+           {
             lines.add(JournalLine(
               accountId: inventoryAccount.id,
               debit: totalSurplus,

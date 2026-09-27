@@ -200,6 +200,7 @@ class _FakeAccounting implements IAccountingRepository {
 
   int completeCalls = 0;
   int? completedReconciliationId;
+  int? completedAdjustmentAccountId;
 
   /// عددُ استدعاءات `getReconciliationReport` — يثبت أنّ `ref.invalidate`
   /// أعاد الاستعلامَ فعلاً بعد مطابقةٍ/نزعٍ/إقفال، لا مجرّد أنّ الشاشةَ لم
@@ -217,6 +218,24 @@ class _FakeAccounting implements IAccountingRepository {
   @override
   Future<List<db.BankReconciliationData>> getReconciliationSessions() async =>
       openSessions;
+
+  @override
+  Future<List<db.Account>> getAllAccounts() async => [
+        const db.Account(
+          id: 9001,
+          code: '9999',
+          name: 'حساب تسوية الاختبار',
+          accountType: 'expense',
+          accountNature: 'debit',
+          normalBalance: 'debit',
+          level: 1,
+          balance: 0,
+          isSystem: false,
+          isActive: true,
+          isHiddenFromEntries: false,
+          rowVersion: 1,
+        ),
+      ];
 
   @override
   Future<int> createReconciliation({
@@ -283,9 +302,13 @@ class _FakeAccounting implements IAccountingRepository {
   }
 
   @override
-  Future<void> completeReconciliation(int reconciliationId) async {
+  Future<void> completeReconciliation(
+    int reconciliationId, {
+    int? adjustmentAccountId,
+  }) async {
     completeCalls++;
     completedReconciliationId = reconciliationId;
+    completedAdjustmentAccountId = adjustmentAccountId;
   }
 
   @override
@@ -1016,9 +1039,16 @@ void main() {
 
     await tester.tap(find.text('إقفال'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('حساب تسوية الاختبار'));
+    // The picker marks the choice on tap and only enables «تطبيق» on the
+    // next frame (picpos_option_picker: "النقرةُ تُعلِّم، والزرُّ يُطبِّق").
+    await tester.pump();
+    await tester.tap(find.text('تطبيق'));
+    await tester.pumpAndSettle();
 
     expect(accounting.completeCalls, 1);
     expect(accounting.completedReconciliationId, accounting.sessionId);
+    expect(accounting.completedAdjustmentAccountId, 9001);
     expect(find.textContaining('أُقفلت'), findsOneWidget,
         reason: 'نجاحُ الإقفال يُقال — لا صمتَ');
 

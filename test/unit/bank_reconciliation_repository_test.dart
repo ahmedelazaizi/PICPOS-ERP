@@ -181,7 +181,7 @@ void main() {
       bankAccountId: bankId,
       periodStart: DateTime(2026, 5, 1),
       periodEnd: DateTime(2026, 5, 31),
-      statementBalance: 700,
+      statementBalance: 0,
     );
 
     // مرساة: وُلدت `0/0` فعلاً — فلو لم تكن كذلك لما قاس الاختبارُ شيئاً.
@@ -244,7 +244,7 @@ void main() {
       bankAccountId: bankId,
       periodStart: DateTime(2026, 5, 1),
       periodEnd: DateTime(2026, 5, 31, 23, 59, 59),
-      statementBalance: 100,
+      statementBalance: 0,
     );
 
     // ⚠️ بالنوع الصريح لا `dynamic`: هذا ملفُّ اختبارٍ يستورد `database.dart`

@@ -30,6 +30,7 @@ import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/financial_utils.dart';
 import '../../core/utils/uuid_v7.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../data/providers/providers.dart'
@@ -1031,21 +1032,50 @@ class _BankReconciliationPicposScreenState
   /// **غيرَ لاغٍ** افتراضُه الرفض — فالإغلاقُ بالمفتاح أو بالنقر خارجَ
   /// الحوار يُقرأ رفضاً كما كان `proceed != true` يقرؤه. ونصُّ الحوار يبقى
   /// حاملاً **الفرقَ صريحاً** (قرارُ مالك): إقفالٌ بلا رقمٍ قرارٌ بالظنّ.
+  Future<int?> _pickAdjustmentAccount() async {
+    final accounts = await ref.read(accountingRepositoryProvider).getAllAccounts();
+    if (!mounted || accounts.isEmpty) return null;
+    return showPicPosOptionPicker<int?>(
+      context: context,
+      title: 'اختيار حساب تسوية الفرق',
+      subtitle: 'سيُرحّل الفرق الظاهر إلى الحساب المختار.',
+      options: [
+        for (final account in accounts)
+          PicPosOption<int?>(
+            value: account.id,
+            label: account.name,
+            sub: account.code,
+          ),
+      ],
+      selected: null,
+      icon: PhosphorIconsBold.scales,
+    );
+  }
+
   Future<void> _confirmComplete(int sessionId, double difference) async {
     final proceed = await showPicPosConfirm(
       context,
       icon: PhosphorIconsBold.lockSimple,
       title: 'إقفال جلسة المطابقة',
       message: 'الفرقُ الحاليّ: ${_money.format(difference)}. إقفالُ الجلسة '
-          'يعمل ولو بقي فرقٌ (شيكاتٌ برسم التحصيل مثلاً) — متابعة؟',
+          'يجب تصفير الفرق أو اختيار حساب تسوية صريح قبل الإقفال.',
       confirmLabel: 'إقفال',
     );
     if (!proceed || !mounted) return;
 
+    int? adjustmentAccountId;
+    if (difference.abs() > FinancialUtils.balanceTolerance) {
+      adjustmentAccountId = await _pickAdjustmentAccount();
+      if (adjustmentAccountId == null || !mounted) return;
+    }
+
     setState(() => _actionBusy = true);
     try {
       final repo = ref.read(accountingRepositoryProvider);
-      await repo.completeReconciliation(sessionId);
+      await repo.completeReconciliation(
+        sessionId,
+        adjustmentAccountId: adjustmentAccountId,
+      );
       if (!mounted) return;
       AppToast.show(context, 'أُقفلت جلسةُ المطابقة', type: ToastType.success);
       ref.invalidate(_reconciliationReportProvider(sessionId));

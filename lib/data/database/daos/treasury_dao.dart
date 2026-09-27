@@ -566,6 +566,8 @@ extension TreasuryDao on AppDatabase {
         } catch (_) {} // logActivity failure must NEVER block shift close
         // GAP-24: Notify UI so it can show a warning dialog
         onVarianceJeFailed?.call(settlementResult.variance);
+        await _reopenShiftAfterFailedClose(shiftId);
+        rethrow;
       }
     }
 
@@ -578,7 +580,9 @@ extension TreasuryDao on AppDatabase {
         endTime: endTime,
       );
     } catch (e) {
-      debugPrint('[ShiftClose] Safe closing failed (non-fatal): $e');
+      debugPrint('[ShiftClose] Safe closing failed: $e');
+      await _reopenShiftAfterFailedClose(shiftId);
+      rethrow;
     }
 
     // Fiscal Lock: Lock all invoices created during this shift
@@ -591,9 +595,18 @@ extension TreasuryDao on AppDatabase {
               ),
         ))
         .write(const SalesInvoicesCompanion(isLocked: Value(true)));
-  }
 
-  /// PIR-06 Step 1: Calculate expected cash and record shift settlement
+    await (update(shifts)..where((s) => s.id.equals(shiftId))).write(
+      const ShiftsCompanion(status: Value('closed')),
+    );
+   }
+   Future<void> _reopenShiftAfterFailedClose(int shiftId) async {
+     await (update(shifts)..where((s) => s.id.equals(shiftId))).write(
+       const ShiftsCompanion(status: Value('open'), endTime: Value(null)),
+     );
+   }
+
+   /// PIR-06 Step 1: Calculate expected cash and record shift settlement
   /// FIX: Own transaction wrapper to keep settlement atomic without nesting.
   Future<_ShiftSettlementResult> _settleShift({
     required Shift shift,
@@ -693,7 +706,7 @@ extension TreasuryDao on AppDatabase {
           expectedCash: Value(expectedCash),
           actualCash: Value(actualCash),
           variance: Value(variance),
-          status: const Value('closed'),
+          status: const Value('closing'),
           notes: Value(notes),
           closingMethod: Value(closingMethod),
           // Absent(), not Value(null): a close path that doesn't supply a
@@ -803,9 +816,7 @@ extension TreasuryDao on AppDatabase {
     final cashAccount = await resolveSafeGlAccount(primarySafe) ??
         await accountingDao.getLeafAccountByPurpose('cash');
     if (cashAccount == null) {
-      // COA not configured — skip JE but log clearly. This is not a DB error.
-      debugPrint('[FINANCIAL_WARNING] Shift #$shiftId: cash account not configured - variance JE skipped.');
-      return;
+      throw StateError('لا يمكن إغلاق الوردية: حساب النقدية غير مربوط.');
     }
 
     // Spec 083 — thread the safe name into JE descriptions so multi-safe
@@ -825,8 +836,7 @@ extension TreasuryDao on AppDatabase {
         await accountingDao.getMappedAccountCode('cash_shortage', AccountingDao.accountPurposes['cash_shortage']!),
       );
       if (shortageAccount == null) {
-        debugPrint('[FINANCIAL_WARNING] Shift #$shiftId: cash_shortage account not configured - shortage JE skipped.');
-        return;
+        throw StateError('لا يمكن إغلاق الوردية: حساب عجز النقدية غير مربوط.');
       }
       lines.add(JournalLine(
         accountId: shortageAccount.id,
@@ -844,8 +854,7 @@ extension TreasuryDao on AppDatabase {
         await accountingDao.getMappedAccountCode('cash_surplus', AccountingDao.accountPurposes['cash_surplus']!),
       );
       if (surplusAccount == null) {
-        debugPrint('[FINANCIAL_WARNING] Shift #$shiftId: cash_surplus account not configured - surplus JE skipped.');
-        return;
+        throw StateError('لا يمكن إغلاق الوردية: حساب فائض النقدية غير مربوط.');
       }
       lines.add(JournalLine(
         accountId: cashAccount.id,

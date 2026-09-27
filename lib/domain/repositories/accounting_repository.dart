@@ -270,7 +270,10 @@ abstract class IAccountingRepository {
   });
 
   /// Complete a reconciliation
-  Future<void> completeReconciliation(int reconciliationId);
+  Future<void> completeReconciliation(
+    int reconciliationId, {
+    int? adjustmentAccountId,
+  });
 
   // ⚠️ السبعُ أدناه كانت **محجوبةً**: المحرّكُ يحملها منذ البداية والمستودعُ
   //    يكشف ثلاثاً، فبقيت المطابقةُ الفعليّةُ غيرَ مبلوغةٍ من أيّ شاشة.

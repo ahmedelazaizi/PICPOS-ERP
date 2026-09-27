@@ -889,8 +889,14 @@ class DriftAccountingRepository implements IAccountingRepository {
       );
 
   @override
-  Future<void> completeReconciliation(int reconciliationId) =>
-      _db.completeReconciliation(reconciliationId);
+  Future<void> completeReconciliation(
+    int reconciliationId, {
+    int? adjustmentAccountId,
+  }) =>
+      _db.completeReconciliation(
+        reconciliationId,
+        adjustmentAccountId: adjustmentAccountId,
+      );
 
   @override
   Future<int> importBankStatementLines({

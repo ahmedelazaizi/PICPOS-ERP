@@ -397,8 +397,7 @@ extension LandedCostDao on AppDatabase {
       if (invAcc == null) {
         // No CoA mapping → skip GL rather than crash (parity with purchases).
         // Cost blend above still stands; sheet is marked applied below.
-        debugPrint(
-            '[FINANCIAL_WARNING] Landed cost ${sheet.sheetNumber}: inventory account not mapped — GL entry skipped.');
+        throw StateError('لا يمكن تطبيق التكاليف المحملة: حساب المخزون غير مربوط.');
       } else {
         // Group credits by resolved account: supplier AP (آجل) if the item has
         // a supplier, else cash. Sum amounts per account.
@@ -474,8 +473,7 @@ extension LandedCostDao on AppDatabase {
             globalId: jeGid,
           );
         } else {
-          debugPrint(
-              '[FINANCIAL_WARNING] Landed cost ${sheet.sheetNumber}: credit account(s) unresolved — GL entry skipped.');
+          throw StateError('لا يمكن تطبيق التكاليف المحملة: حساب الطرف الدائن غير مربوط.');
         }
       }
 

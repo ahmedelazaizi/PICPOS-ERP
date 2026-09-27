@@ -61,8 +61,7 @@ class InventoryService {
       // 1. Create Bond Header
       final bondId = await db.createInventoryBond(
         InventoryBondsCompanion.insert(
-          bondNumber:
-              'BND-${DateTime.now().millisecondsSinceEpoch}', // Temporary logic, can be improved
+          bondNumber: await db.generateInvoiceNumber('BND'),
           type: Value(bondType),
           warehouseId: warehouseId,
           notes: Value(notes),
@@ -127,7 +126,7 @@ class InventoryService {
       }
 
       // 4. GENERATE ACCOUNTING ENTRY (Standardized Hardening)
-      if (totalValue > 0) {
+      if (totalValue != 0) {
         try {
           final bond = await (db.select(db.inventoryBonds)..where((b) => b.id.equals(bondId))).getSingle();
           final String purpose = inventoryBondAccountPurpose(
@@ -138,7 +137,10 @@ class InventoryService {
           final invAccount = await db.getAccountByPurpose('inventory');
           final targetAccount = await db.getAccountByPurpose(purpose);
 
-          if (invAccount != null && targetAccount != null) {
+          if (invAccount == null || targetAccount == null) {
+             throw StateError('لا يمكن حفظ سند المخزون: حساب المخزون أو الحساب المقابل غير مربوط.');
+           }
+           {
             final isAddition = totalValue > 0;
             await db.createJournalEntry(
               description: 'إثبات قيد سند مخزني #$bondId (${bond.notes ?? ''})',
@@ -168,7 +170,8 @@ class InventoryService {
           unawaited(DiagnosticLogger.log(
             'FINANCIAL_WARNING',
             'Inventory bond accounting failed: $e',
-          ));
+           ));
+           rethrow;
         }
       }
 
@@ -189,7 +192,7 @@ class InventoryService {
     // fire-and-forget مع logging. الـ next sync pull سيُعيد تأكيد البيانات.
     try {
       await ClientWriteInterceptor.submitInventoryBond({
-        'type': 'in',
+        'type': bondType == 'opening' || bondType == 'in' ? 'in' : 'out',
         'warehouseId': warehouseId,
         'notes': notes,
         'userId': userId,

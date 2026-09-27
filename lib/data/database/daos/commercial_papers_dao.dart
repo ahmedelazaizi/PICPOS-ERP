@@ -187,7 +187,36 @@ extension CommercialPapersDao on AppDatabase {
 
       // Prevent redundant status change
       final oldStatus = paper.status;
-      if (oldStatus == newStatus) return;
+      final statusChanged = oldStatus != newStatus;
+      if (!statusChanged) {
+        // Same status: no status write and no history row (audit §5 item 18).
+        // The auto-post is still re-applied because it is idempotent on the
+        // deterministic globalId — a no-op when the JE is active, and the
+        // documented clean re-do (FR-503 / Spec 136 B2) when the operator
+        // soft-deleted it.
+        await _autoPostPaperStatusChange(
+          paper,
+          oldStatus,
+          newStatus,
+          costCenterId: costCenterId,
+          counterAccountId: counterAccountId,
+        );
+        return;
+      }
+      const allowedTransitions = <String, Set<String>>{
+         'none': {'pending'},
+          'pending': {'deposited', 'deposited_for_collection', 'cashed', 'collected', 'bounced', 'endorsed', 'in_portfolio', 'cancelled'},
+         'deposited': {'cashed', 'collected', 'bounced', 'cancelled'},
+         'deposited_for_collection': {'cashed', 'collected', 'bounced', 'cancelled'},
+         'bounced': {'deposited', 'deposited_for_collection', 'returned', 'cancelled'} ,
+          'issued': {'cashed', 'collected', 'bounced', 'cancelled'},
+          'endorsed': {'deposited', 'deposited_for_collection', 'cashed', 'collected', 'bounced', 'cancelled'},
+         'in_portfolio': {'deposited', 'deposited_for_collection', 'cashed', 'collected', 'bounced', 'endorsed', 'cancelled'},
+       };
+       if (!(allowedTransitions[oldStatus]?.contains(newStatus) ?? false)) {
+         throw StateError('انتقال ورقة القبض من "$oldStatus" إلى "$newStatus" غير مسموح.');
+       }
+
 
       // Update paper status
       await (update(
@@ -212,9 +241,13 @@ extension CommercialPapersDao on AppDatabase {
         ),
       );
 
-      // Auto-post journal entry for status change
+      // Auto-post journal entry for status change. `paper` was read BEFORE the
+      // update above, so carry the new endorsee into it — otherwise the
+      // endorsement JE would resolve the party from the stale row (FA-34).
       await _autoPostPaperStatusChange(
-        paper,
+        endorsedToPartyId != null
+            ? paper.copyWith(endorsedToPartyId: Value(endorsedToPartyId))
+            : paper,
         oldStatus,
         newStatus,
         costCenterId: costCenterId,
@@ -312,7 +345,9 @@ extension CommercialPapersDao on AppDatabase {
     // Prefer the party's sub-account when the paper is tied to a specific
     // customer/supplier (e.g. `1121-00042`), falling back to the control
     // account if the party has no linked sub-account.
-    final partyRow = await (select(parties)..where((p) => p.id.equals(paper.partyId))..limit(1))
+    final partyRow = await (select(parties)..where((p) => p.id.equals(newStatus == 'endorsed' && paper.endorsedToPartyId != null
+            ? paper.endorsedToPartyId!
+            : paper.partyId))..limit(1))
         .getSingleOrNull();
     Account? partySubAccount;
     if (partyRow?.accountId != null) {
@@ -415,6 +450,7 @@ extension CommercialPapersDao on AppDatabase {
           // إيداع→تحصيل recorded the cheque value TWICE. No JE / no safe move.
           description = 'إيداع شيك رقم ${paper.paperNumber} برسم التحصيل';
           break;
+        case 'collected':
         case 'cashed': // تحصيل الشيك (بالبنك بعد الإيداع، أو نقداً مباشرةً)
           {
             // Spec 136 (field 2026-06-08): a cheque collected AFTER being
@@ -530,6 +566,7 @@ extension CommercialPapersDao on AppDatabase {
             if (payables == null) await warnMissing('payables', 'issued/$newStatus');
           }
           break;
+        case 'collected':
         case 'cashed': // تم صرف الشيك
           if (notesPayable != null && bankAccount != null) {
             description = 'صرف شيك رقم ${paper.paperNumber}';
@@ -614,8 +651,11 @@ extension CommercialPapersDao on AppDatabase {
                 e.referenceId.equals(paper.id) &
                 e.isDeleted.equals(false) &
                 (e.globalId.equals(jeGid) |
-                 e.description.contains(legacyIdemTag) |
-                 e.description.like('$description%')))
+                 // Legacy rows only (FA-35): v119 backfilled RANDOM uuids into
+                 // old JEs, so "legacy" means not the deterministic je-cp- form.
+                 ((e.globalId.isNull() | e.globalId.like('je-cp-%').not()) &
+                  (e.description.contains(legacyIdemTag) |
+                   e.description.like('$description%')))))
             ..limit(1))
           .getSingleOrNull();
       if (existing != null) {
@@ -716,7 +756,7 @@ extension CommercialPapersDao on AppDatabase {
     String oldStatus,
     String newStatus,
   ) async {
-    if (oldStatus == newStatus) return;
+
 
     if (paper.direction == 'received') {
       switch (newStatus) {
@@ -730,6 +770,7 @@ extension CommercialPapersDao on AppDatabase {
           // in the safe yet. The bank safe is credited ONCE at 'cashed'. Pre-fix
           // both deposit and cashed credited the bank safe → double-count.
           break;
+        case 'collected':
         case 'cashed':
           // Match the GL: deposited→collected clears through the BANK; a direct
           // counter collection (pending→cashed) is CASH (Spec 136 — was always
@@ -743,7 +784,7 @@ extension CommercialPapersDao on AppDatabase {
           // COLLECTED (cashed). A deposited-but-not-collected cheque never added
           // money to a safe. Reverse the SAME channel it was credited to: a
           // deposit set paper.safeId (bank); a direct cash collection didn't.
-          if (oldStatus == 'cashed') {
+          if (oldStatus == 'cashed' || oldStatus == 'collected') {
             await _cpDebitSafeForPaper(paper, bank: paper.safeId != null);
           }
           // Reinstate the customer's AR.
@@ -757,12 +798,13 @@ extension CommercialPapersDao on AppDatabase {
           // We issued a cheque to the supplier → reduce what we owe them.
           await accountingDao.adjustPartyBalance(paper.partyId, -paper.amount);
           break;
+        case 'collected':
         case 'cashed':
           // Issued cheques clear through the BANK (our account is debited).
           await _cpDebitSafeForPaper(paper, bank: true);
           break;
         case 'bounced':
-          if (oldStatus == 'cashed') {
+          if (oldStatus == 'cashed' || oldStatus == 'collected') {
             await _cpCreditSafeForPaper(paper, bank: true);
           }
           // Supplier is owed again.
@@ -863,7 +905,8 @@ extension CommercialPapersDao on AppDatabase {
           case 'deposited_for_collection':
             receivedForCollection += p.amount;
             break;
-          case 'cashed':
+          case 'collected':
+        case 'cashed':
             receivedCashed += p.amount;
             break;
           case 'bounced':
@@ -875,7 +918,8 @@ extension CommercialPapersDao on AppDatabase {
           case 'pending':
             issuedPending += p.amount;
             break;
-          case 'cashed':
+          case 'collected':
+        case 'cashed':
             issuedCashed += p.amount;
             break;
           case 'bounced':

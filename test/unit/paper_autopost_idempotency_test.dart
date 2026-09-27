@@ -56,11 +56,10 @@ void main() {
           ),
         );
 
-    // Insert paper directly at status='pending' WITHOUT going through
-    // createCommercialPaper — so no auto-post has fired yet. This lets
-    // the tests trigger the very first post explicitly via
-    // changePaperStatus(id, 'pending') and observe the guard from a
-    // known-clean baseline.
+    // Insert paper directly at the pre-post sentinel status `none` WITHOUT
+    // going through createCommercialPaper — so no auto-post has fired yet.
+    // This lets the tests trigger the very first none→pending post explicitly
+    // via changePaperStatus and observe the guard from a known-clean baseline.
     paperId = await db.into(db.commercialPapers).insert(
           CommercialPapersCompanion.insert(
             paperNumber: 'CHK-053',
@@ -70,7 +69,7 @@ void main() {
             amount: 1000,
             issueDate: DateTime(2026, 5, 13, 10),
             dueDate: DateTime(2026, 6, 13),
-            status: const Value('pending'),
+            status: const Value('none'),
             globalId: const Value('gid-paper-053'),
           ),
         );

@@ -143,12 +143,21 @@ extension BankReconciliationDao on AppDatabase {
              SELECT matched_journal_line_id FROM bank_statement_lines
              WHERE matched_journal_line_id IS NOT NULL
            )
+           ORDER BY
+             CASE WHEN ? IS NOT NULL AND e.description LIKE '%' || ? || '%' THEN 0 ELSE 1 END,
+             ABS(e.entry_date - ?) ASC,
+             ABS(${isDebit ? 'l.credit' : 'l.debit'} - ?) ASC,
+             l.id ASC
            LIMIT 1''',
         variables: [
           ...scope.vars,
           Variable(amount),
           dateVar(stmt.transactionDate),
           const Variable<int>(threeDaysInSeconds),
+           Variable(stmt.reference),
+           Variable(stmt.reference),
+           dateVar(stmt.transactionDate),
+           Variable(amount),
         ],
       ).getSingleOrNull();
 
@@ -210,7 +219,22 @@ extension BankReconciliationDao on AppDatabase {
   }
 
   /// Unmatch a statement line
+  /// A statement line has no reconciliation FK; membership is inferred from
+  /// bank account plus the completed session's date range.
   Future<void> unmatchStatement(int statementLineId) async {
+    final line = await (select(bankStatementLines)
+          ..where((l) => l.id.equals(statementLineId)))
+        .getSingle();
+    final completed = await (select(bankReconciliations)
+          ..where((r) => r.bankAccountId.equals(line.bankAccountId) &
+              r.status.equals('completed') &
+              r.periodStart.isSmallerOrEqualValue(line.transactionDate) &
+              r.periodEnd.isBiggerOrEqualValue(line.transactionDate))
+          ..limit(1))
+        .getSingleOrNull();
+    if (completed != null) {
+      throw StateError('لا يمكن إلغاء مطابقة سطر كشف ضمن تسوية بنكية مكتملة.');
+    }
     await (update(bankStatementLines)
           ..where((l) => l.id.equals(statementLineId)))
         .write(const BankStatementLinesCompanion(
@@ -298,7 +322,7 @@ extension BankReconciliationDao on AppDatabase {
   /// **لقطةٌ** لحظةَ فتح الجلسة مقابلَ رصيد كشفٍ أدخله المحاسبُ لتلك اللحظة،
   /// وإعادةُ حسابهما عند الإقفال تُغيّر الرقمَ الذي رآه وأقرّه في حوار
   /// التأكيد. والمطابقةُ لا تُحرّك رصيدَ الدفتر أصلاً — تربط الأسطرَ فقط.
-  Future<void> completeReconciliation(int reconciliationId) async {
+  Future<void> completeReconciliation(int reconciliationId, {int? adjustmentAccountId}) async {
     final recon = await (select(bankReconciliations)
           ..where((r) => r.id.equals(reconciliationId)))
         .getSingle();
@@ -319,6 +343,25 @@ extension BankReconciliationDao on AppDatabase {
       ],
     ).getSingle();
 
+    await transaction(() async {
+      if (recon.difference.abs() > FinancialUtils.balanceTolerance &&
+        adjustmentAccountId == null) {
+      throw StateError('لا يمكن إكمال التسوية البنكية: يوجد فرق غير مسوّى.');
+    }
+    if (recon.difference.abs() > FinancialUtils.balanceTolerance) {
+      await createJournalEntry(
+        description: 'تسوية فرق بنكي #$reconciliationId',
+        date: DateTime.now(),
+        isAutoPosted: true,
+        referenceType: 'bank_reconciliation',
+        referenceId: reconciliationId,
+        lines: [
+          JournalLine(accountId: recon.bankAccountId, debit: recon.difference > 0 ? recon.difference.abs() : 0, credit: recon.difference < 0 ? recon.difference.abs() : 0, description: 'فرق التسوية البنكية'),
+          JournalLine(accountId: adjustmentAccountId!, debit: recon.difference < 0 ? recon.difference.abs() : 0, credit: recon.difference > 0 ? recon.difference.abs() : 0, description: 'حساب تسوية الفرق'),
+        ],
+      );
+    }
+
     await (update(bankReconciliations)
           ..where((r) => r.id.equals(reconciliationId)))
         .write(BankReconciliationsCompanion(
@@ -327,6 +370,7 @@ extension BankReconciliationDao on AppDatabase {
       totalMatched: Value((matchStats.data['matched'] as int?) ?? 0),
       totalUnmatched: Value((matchStats.data['unmatched'] as int?) ?? 0),
     ));
+    });
   }
 
   /// Watch all reconciliations

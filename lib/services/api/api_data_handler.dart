@@ -3542,23 +3542,23 @@ class ApiDataHandler extends ApiHandlerBase {
         }
       }
 
-      // Record the transfer header row server-side so a globalId dedup target
-      // exists symmetrically with the mirror's local DAO (Spec 129 F4).
-      final transferBondId = await db.into(db.inventoryBonds).insert(
-            InventoryBondsCompanion.insert(
-              bondNumber: 'TRF-${DateTime.now().millisecondsSinceEpoch}',
-              type: const Value('transfer'),
-              warehouseId: fromWarehouseId,
-              toWarehouseId: Value(toWarehouseId),
-              notes: Value(notes),
-              createdBy: Value(userId),
-              bondDate: Value(DateTime.now()),
-              globalId: Value(incomingGlobalId),
-            ),
-          );
+      final transferBondId = await db.transaction(() async {
+        // Record the header and every stock movement atomically.
+        final transferBondId = await db.into(db.inventoryBonds).insert(
+          InventoryBondsCompanion.insert(
+            bondNumber: await db.generateInvoiceNumber('TRF'),
+            type: const Value('transfer'),
+            warehouseId: fromWarehouseId,
+            toWarehouseId: Value(toWarehouseId),
+            notes: Value(notes),
+            createdBy: Value(userId),
+            bondDate: Value(DateTime.now()),
+            globalId: Value(incomingGlobalId),
+          ),
+        );
 
-      final itemsList = (data['items'] as List? ?? []);
-      for (final item in itemsList) {
+        final itemsList = (data['items'] as List? ?? []);
+        for (final item in itemsList) {
         final m = item as Map<String, dynamic>;
         final resolvedPid = await resolveProductId(
           clientProductId: parseIntNullable(m['productId']),
@@ -3593,7 +3593,9 @@ class ApiDataHandler extends ApiHandlerBase {
           referenceId: transferBondId,
           notes: '$notes ← مخزن $fromWarehouseId',
         );
-      }
+        }
+        return transferBondId;
+      });
 
       broadcast('products');
       broadcast('inventory');
