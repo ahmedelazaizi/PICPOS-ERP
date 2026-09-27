@@ -16,6 +16,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../services/dual_approval_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/number_utils.dart';
+import '../../../core/utils/financial_utils.dart';
 import '../../../core/widgets/app_state_view.dart';
 
 import '../../../data/providers/providers.dart';

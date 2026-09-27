@@ -33,6 +33,7 @@
 // عليها هنا.
 
 import 'dart:math' as math;
+import '../../core/utils/financial_utils.dart';
 
 /// قيمُ السطور **بعد** الخصم — بنفس ترتيب [grossPerLine].
 ///
@@ -55,12 +56,41 @@ List<double> resolvePurchaseLineNets({
 
   final residual = math.max(0.0, documentDiscount - explicitSum);
   final base = afterExplicit.fold<double>(0, (a, v) => a + v);
-  if (residual <= 0 || base <= 0) return afterExplicit;
+  if (residual <= 0 || base <= 0) {
+    final rounded = [for (final value in afterExplicit) FinancialUtils.round(value)];
+    final target = FinancialUtils.round(base);
+    final remainder = FinancialUtils.round(
+      target - rounded.fold<double>(0, (sum, value) => sum + value),
+    );
+    if (remainder != 0) {
+      var largestIndex = 0;
+      for (var i = 1; i < rounded.length; i++) {
+        if (afterExplicit[i] > afterExplicit[largestIndex]) largestIndex = i;
+      }
+      rounded[largestIndex] =
+          FinancialUtils.round(rounded[largestIndex] + remainder);
+    }
+    return rounded;
+  }
 
   // المعاملُ لا ينزل تحت الصفر: خصمٌ أكبرُ من الباقي يُصفِّر السطورَ ولا
   // يقلبها سالبةً — والحارسُ على «الخصم > الإجمالي» يقع عند المنادي.
   final factor = math.max(0.0, (base - residual) / base);
-  return [for (final v in afterExplicit) v * factor];
+  final rounded = [
+    for (final v in afterExplicit) FinancialUtils.round(v * factor),
+  ];
+  final target = FinancialUtils.round(base - residual);
+  final remainder = FinancialUtils.round(
+    target - rounded.fold<double>(0, (sum, value) => sum + value),
+  );
+  if (remainder == 0) return rounded;
+  var largestIndex = 0;
+  for (var i = 1; i < rounded.length; i++) {
+    if (afterExplicit[i] > afterExplicit[largestIndex]) largestIndex = i;
+  }
+  rounded[largestIndex] =
+      FinancialUtils.round(rounded[largestIndex] + remainder);
+  return rounded;
 }
 
 /// عكسُ [resolvePurchaseLineNets] — الإجماليُّ من الصافي المخزَّن.
@@ -106,13 +136,43 @@ List<double> resolvePurchaseLineGross({
   if (residual <= 0 || netSum <= 0) {
     return [
       for (var i = 0; i < netPerLine.length; i++)
-        netPerLine[i] + math.max(0.0, explicitDiscountPerLine[i]),
+        FinancialUtils.round(
+          netPerLine[i] + math.max(0.0, explicitDiscountPerLine[i]),
+        ),
     ];
   }
 
   final expand = (netSum + residual) / netSum;
-  return [
+  final gross = [
     for (var i = 0; i < netPerLine.length; i++)
-      netPerLine[i] * expand + math.max(0.0, explicitDiscountPerLine[i]),
+      _roundInverseGross(
+        netPerLine[i] * expand + math.max(0.0, explicitDiscountPerLine[i]),
+      ),
   ];
+
+  // Forward allocation rounds each net independently and assigns its
+  // remainder to the largest line. Correct the inverse by that same rounded
+  // forward result so a save/reload cycle reproduces the stored nets exactly.
+  for (var pass = 0; pass < 2; pass++) {
+    final reproduced = resolvePurchaseLineNets(
+      grossPerLine: gross,
+      explicitDiscountPerLine: explicitDiscountPerLine,
+      documentDiscount: documentDiscount,
+    );
+    var changed = false;
+    for (var i = 0; i < gross.length; i++) {
+      final netDifference = FinancialUtils.round(netPerLine[i] - reproduced[i]);
+      if (netDifference == 0) continue;
+      gross[i] = FinancialUtils.round(gross[i] + netDifference /
+          math.max(0.000001, 1 / expand));
+      changed = true;
+    }
+    if (!changed) break;
+  }
+  return gross;
 }
+
+/// Forward allocation stores nets at currency precision, so inversion can
+/// leave a sub-milliunit tail. Keep the configured currency precision; a
+/// legitimate third decimal must not be snapped away.
+double _roundInverseGross(double value) => FinancialUtils.round(value);

@@ -1,6 +1,6 @@
-import 'dart:math' as math;
 import 'package:intl/intl.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:ural_erp/core/utils/financial_utils.dart';
 
 /// Number utility functions
 class NumberUtils {
@@ -45,14 +45,18 @@ class NumberUtils {
     return '${value.toStringAsFixed(value == value.roundToDouble() ? 0 : 2)}%';
   }
 
-  /// Round to decimal places
+  /// Round to decimal places. Currency precision uses the central financial rule.
   static double round(double value, int decimalPlaces) {
-    final mod = math.pow(10, decimalPlaces);
-    return (value * mod).roundToDouble() / mod;
+    if (decimalPlaces == AppConstants.decimalPlaces) {
+      return FinancialUtils.round(value);
+    }
+    final mod = BigInt.from(10).pow(decimalPlaces).toDouble();
+    final normalized = double.parse(value.toStringAsFixed(10));
+    return (normalized * mod).roundToDouble() / mod;
   }
 
-  /// Round currency (to configured decimal places)
-  static double roundCurrency(double value) => round(value, AppConstants.decimalPlaces);
+  /// Round currency (to configured decimal places).
+  static double roundCurrency(double value) => FinancialUtils.round(value);
 
   /// Parse a number entered in an Arabic locale (BUG-U14/U25).
   /// Accepts Arabic-Indic digits (٠-٩) and a comma (',' / '،') or the Arabic

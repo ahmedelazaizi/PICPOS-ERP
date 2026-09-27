@@ -212,6 +212,9 @@ class CheckoutController extends Notifier<CheckoutState> {
             : adhocNote;
       }
 
+      final pricesIncludeTax =
+          await ref.read(databaseProvider).getSettingValue('prices_include_tax') ==
+              'true';
       final request = SaleRequest(
         items: cartState.items,
         customerId: customerId ?? cartState.selectedCustomerId,
@@ -228,6 +231,7 @@ class CheckoutController extends Notifier<CheckoutState> {
         discountPercent: cartState.discountPercent,
         taxPercent: cartState.taxRate * 100,
         taxEnabled: cartState.taxEnabled,
+        pricesIncludeTax: pricesIncludeTax,
         deliveryFee: cartState.deliveryFee,
         deliveryCompanyId: cartState.deliveryCompanyId,
         courierId: cartState.courierId,

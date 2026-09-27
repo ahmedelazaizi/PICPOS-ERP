@@ -49,10 +49,18 @@ class FinancialUtils {
   /// Inverse of [toMinorUnits]: 12345 → 12.345.
   static double fromMinorUnits(int minor) => minor / _multiplier;
 
-  /// Securely round a double value to financial precision to prevent floating-point drift.
-  /// Uses half-up rounding common in accounting.
+  /// Round using the currency's minor units, half away from zero.
+  ///
+  /// FA-04 decision: money columns remain `RealColumn` for schema compatibility
+  /// with existing SQLite and PostgreSQL databases. Every persistence boundary
+  /// must therefore call this method first; comparisons use [toMinorUnits].
+  /// Normalizing to ten decimal places before scaling removes binary-fraction
+  /// artefacts (for example 2.675 and 1.005) while preserving the configured
+  /// [AppConstants.decimalPlaces].
   static double round(double value) {
-    return (value * _multiplier).roundToDouble() / _multiplier;
+    if (!value.isFinite) return value;
+    final normalized = double.parse(value.toStringAsFixed(10));
+    return (normalized * _multiplier).roundToDouble() / _multiplier;
   }
 
   /// Phase 2: Defensive precision guard for DB-write boundaries.
@@ -67,8 +75,11 @@ class FinancialUtils {
   /// Phase 2: Assert that journal entry debit/credit totals are balanced.
   /// Throws if the absolute difference exceeds [balanceTolerance] (the single
   /// balance-tolerance source of truth — half-penny tolerance).
-  static void assertBalanced(double totalDebit, double totalCredit,
-      {String? context}) {
+  static void assertBalanced(
+    double totalDebit,
+    double totalCredit, {
+    String? context,
+  }) {
     final diff = (round(totalDebit) - round(totalCredit)).abs();
     if (diff > balanceTolerance) {
       throw UnbalancedJournalException(
@@ -115,39 +126,102 @@ class FinancialUtils {
     return round(afterDiscount + tax);
   }
 
-  /// Centralized calculation of invoice totals from raw line items.
-  /// This prevents the UI from doing manual math and accumulating floating-point errors.
-  /// Returns a record: (subtotal, totalTax, grandTotal)
-  static ({double subtotal, double totalTax, double grandTotal})
+  /// Centralized invoice totals engine.
+  ///
+  /// Line bases are rounded individually. The invoice-discount remainder is
+  /// assigned to the largest line, guaranteeing that the sum of persisted line
+  /// nets equals the rounded header net. Tax is then calculated on each rounded
+  /// net. With [pricesIncludeTax], each discounted gross line is split into net
+  /// and tax before the same rounding rule is applied.
+  static ({
+    double subtotal,
+    double totalDiscount,
+    double totalTax,
+    double grandTotal,
+    List<double> lineNets,
+    List<double> lineTaxes,
+  })
   calculateInvoiceTotals({
     required List<({double quantity, double unitPrice, double taxRatePercent})>
     items,
     double globalDiscountAmount = 0.0,
     double deliveryFee = 0.0,
+    bool pricesIncludeTax = false,
+    List<double>? lineDiscountAmounts,
   }) {
-    double subtotal = 0.0;
-    for (final item in items) {
-      subtotal += calculateLineSubtotal(item.quantity, item.unitPrice);
+    final lineGrosses = items
+        .map((item) => calculateLineSubtotal(item.quantity, item.unitPrice))
+        .toList();
+    final subtotal = round(
+      lineGrosses.fold<double>(0, (sum, value) => sum + value),
+    );
+    final lineDiscounts = List<double>.generate(
+      items.length,
+      (i) => round(
+        (lineDiscountAmounts != null && i < lineDiscountAmounts.length)
+            ? lineDiscountAmounts[i].clamp(0, lineGrosses[i]).toDouble()
+            : 0.0,
+      ),
+    );
+    final afterLineDiscount = round(
+      lineGrosses.fold<double>(0, (sum, value) => sum + value) -
+          lineDiscounts.fold<double>(0, (sum, value) => sum + value),
+    );
+    final requestedDiscount = round(
+      globalDiscountAmount.clamp(0, afterLineDiscount).toDouble(),
+    );
+    final headerNet = round(afterLineDiscount - requestedDiscount);
+    final grossBase = lineGrosses.asMap().entries.fold<double>(
+      0,
+      (sum, entry) => sum + entry.value - lineDiscounts[entry.key],
+    );
+    final ratio = grossBase > 0 ? headerNet / grossBase : 0.0;
+    final lineNets = <double>[];
+    for (var i = 0; i < lineGrosses.length; i++) {
+      final discountedGross = round(
+        (lineGrosses[i] - lineDiscounts[i]) * ratio,
+      );
+      lineNets.add(discountedGross);
     }
-    subtotal = round(subtotal);
-
-    // BUG-M07: VAT must be on the NET base after the global (invoice) discount.
-    // Scale each line by the discount ratio so per-line rates are preserved and
-    // exempt (0-rate) lines stay exempt. deliveryFee is never taxed.
-    final netAfterDiscount = round(subtotal - globalDiscountAmount);
-    final discountRatio = subtotal > 0 ? (netAfterDiscount / subtotal) : 0.0;
-
-    double totalTax = 0.0;
-    for (final item in items) {
-      final lineSubtotal = calculateLineSubtotal(item.quantity, item.unitPrice);
-      final lineNet = lineSubtotal * discountRatio;
-      totalTax += calculateTaxAmount(lineNet, item.taxRatePercent);
+    if (lineNets.isNotEmpty) {
+      final largest = lineGrosses.indexOf(lineGrosses.reduce(math.max));
+      final remainder = round(
+        headerNet - lineNets.fold<double>(0, (sum, value) => sum + value),
+      );
+      lineNets[largest] = round(lineNets[largest] + remainder);
     }
-    totalTax = round(totalTax);
 
-    final grandTotal = round(netAfterDiscount + totalTax + deliveryFee);
-
-    return (subtotal: subtotal, totalTax: totalTax, grandTotal: grandTotal);
+    final lineTaxes = <double>[];
+    for (var i = 0; i < items.length; i++) {
+      final rate = items[i].taxRatePercent;
+      if (rate <= 0) {
+        lineTaxes.add(0.0);
+      } else if (pricesIncludeTax) {
+        final net = round(lineNets[i] / (1 + rate / 100));
+        lineTaxes.add(round(lineNets[i] - net));
+        lineNets[i] = net;
+      } else {
+        lineTaxes.add(calculateTaxAmount(lineNets[i], rate));
+      }
+    }
+    final totalTax = round(
+      lineTaxes.fold<double>(0, (sum, value) => sum + value),
+    );
+    final taxableBase = pricesIncludeTax
+        ? lineNets.fold<double>(0, (sum, value) => sum + value) + totalTax
+        : headerNet + totalTax;
+    final grandTotal = round(taxableBase + deliveryFee);
+    return (
+      subtotal: subtotal,
+      totalDiscount: round(
+        requestedDiscount +
+            lineDiscounts.fold<double>(0, (sum, value) => sum + value),
+      ),
+      totalTax: totalTax,
+      grandTotal: grandTotal,
+      lineNets: lineNets,
+      lineTaxes: lineTaxes,
+    );
   }
 }
 
@@ -169,4 +243,3 @@ class UnbalancedJournalException implements Exception {
       'دائن=${credit.toStringAsFixed(AppConstants.decimalPlaces)}, '
       'فرق=${(debit - credit).abs().toStringAsFixed(AppConstants.decimalPlaces)}';
 }
-

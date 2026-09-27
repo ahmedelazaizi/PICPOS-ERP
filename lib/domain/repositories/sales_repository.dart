@@ -311,6 +311,8 @@ class SaleRequest {
   final double discountPercent;
   final double taxPercent;
   final bool taxEnabled;
+  /// Whether entered unit prices are gross prices including VAT.
+  final bool pricesIncludeTax;
   final double deliveryFee;
   final int? deliveryCompanyId;
   final int? courierId;
@@ -343,6 +345,7 @@ class SaleRequest {
     this.discountPercent = 0,
     this.taxPercent = kDefaultTaxPercent, // Spec 151 E-06 — named fallback, not a bare 14
     this.taxEnabled = true,
+    this.pricesIncludeTax = false,
     this.deliveryFee = 0,
     this.deliveryCompanyId,
     this.courierId,

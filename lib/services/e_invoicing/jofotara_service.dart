@@ -270,7 +270,8 @@ class JofotaraService {
       final netAmount = (quantity * unitPrice) - discount;
       final taxRate =
           (item['taxRate'] as num?)?.toDouble() ?? 16; // Jordan default: 16%
-      final taxAmount = netAmount * taxRate / 100;
+      final taxAmount =
+          (item['taxAmount'] as num?)?.toDouble() ?? netAmount * taxRate / 100;
 
       return {
         'description': item['description'] ?? '',

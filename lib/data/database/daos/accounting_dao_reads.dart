@@ -36,6 +36,39 @@ String inventoryAccountPurposeForProduct(String? productType) =>
     productType == 'raw_material' ? 'raw_materials' : 'inventory';
 
 extension AccountingDaoReadsExt on AppDatabase {
+  /// Return journal lines posted to the rounding-difference account in a period.
+  Future<List<JournalEntryLine>> getRoundingDifferenceActivity(
+    DateTime from,
+    DateTime to,
+  ) async {
+    final query =
+        select(journalEntryLines).join([
+            innerJoin(
+              journalEntries,
+              journalEntries.id.equalsExp(journalEntryLines.entryId),
+            ),
+            innerJoin(
+              accounts,
+              accounts.id.equalsExp(journalEntryLines.accountId),
+            ),
+            innerJoin(
+              accountMappings,
+              accountMappings.accountId.equalsExp(accounts.id),
+            ),
+          ])
+          ..where(
+            accountMappings.purpose.equals('rounding_difference') &
+                journalEntries.entryDate.isBiggerOrEqualValue(from) &
+                journalEntries.entryDate.isSmallerOrEqualValue(to),
+          )
+          ..orderBy([
+            OrderingTerm.asc(journalEntries.entryDate),
+            OrderingTerm.asc(journalEntryLines.id),
+          ]);
+    final rows = await query.get();
+    return rows.map((row) => row.readTable(journalEntryLines)).toList();
+  }
+
   /// معرّفات الحساب **وكل أبنائه** بالشجرة (`parent_id`).
   ///
   /// ── ليه مش `code LIKE 'X%'` ────────────────────────────────────────────
@@ -64,7 +97,6 @@ extension AccountingDaoReadsExt on AppDatabase {
     return rows.map((r) => r.data['id'] as int).toList();
   }
 
-
   /// Strips audit-trail hash suffix [HASH:...] from description for clean display.
   /// The hash remains in the DB for integrity verification (ICR-03).
   static String _cleanHashFromDescription(dynamic desc) {
@@ -82,9 +114,12 @@ extension AccountingDaoReadsExt on AppDatabase {
     return value.toString() == '1' || value.toString().toLowerCase() == 'true';
   }
 
-/// Validate that a given date falls within an open fiscal year and an open accounting period.
+  /// Validate that a given date falls within an open fiscal year and an open accounting period.
   /// Throws an [Exception] if no fiscal year exists or the period is closed.
-  Future<void> validateFinancialPeriod(DateTime date, {String operation = 'العملية'}) async {
+  Future<void> validateFinancialPeriod(
+    DateTime date, {
+    String operation = 'العملية',
+  }) async {
     // Check fiscal year existence and closure
     final fy = await getFiscalYearByDate(date);
     if (fy == null) {
@@ -94,7 +129,9 @@ extension AccountingDaoReadsExt on AppDatabase {
       );
     }
     if (fy.isClosed) {
-      throw Exception('لا يمكن تنفيذ $operation في سنة مالية مغلقة (${fy.name})');
+      throw Exception(
+        'لا يمكن تنفيذ $operation في سنة مالية مغلقة (${fy.name})',
+      );
     }
 
     // Check monthly accounting period closure.
@@ -105,18 +142,20 @@ extension AccountingDaoReadsExt on AppDatabase {
     // duplication. Adding `.limit(1)` keeps this check defensive even
     // when the data has drifted: we only need to know *whether* a closed
     // period exists for that month, not enumerate every copy of it.
-    final closedPeriod = await (select(accountingPeriods)
-          ..where((p) => p.month.equals(date.month))
-          ..where((p) => p.year.equals(date.year))
-          ..where((p) => p.isClosed.equals(true))
-          ..limit(1))
-        .getSingleOrNull();
+    final closedPeriod =
+        await (select(accountingPeriods)
+              ..where((p) => p.month.equals(date.month))
+              ..where((p) => p.year.equals(date.year))
+              ..where((p) => p.isClosed.equals(true))
+              ..limit(1))
+            .getSingleOrNull();
 
     if (closedPeriod != null) {
-      throw Exception('لا يمكن تنفيذ $operation في فترة محاسبية مغلقة (${closedPeriod.name})');
+      throw Exception(
+        'لا يمكن تنفيذ $operation في فترة محاسبية مغلقة (${closedPeriod.name})',
+      );
     }
   }
-
 
   /// PIR D-07: Atomic entry number generation using DocumentSequences table.
   ///
@@ -131,21 +170,23 @@ extension AccountingDaoReadsExt on AppDatabase {
     final displayPrefix = '$seqPrefix-';
 
     return transaction(() async {
-      var seq = await (select(documentSequences)
-            ..where((s) => s.prefix.equals(seqPrefix))
-            ..limit(1))
-          .getSingleOrNull();
+      var seq =
+          await (select(documentSequences)
+                ..where((s) => s.prefix.equals(seqPrefix))
+                ..limit(1))
+              .getSingleOrNull();
 
       int nextSeq;
       if (seq == null) {
         // First entry for this year: bootstrap from any existing JE rows so
         // the new counter never re-issues a number already in the DB.
         final maxEntry = journalEntries.entryNumber.max();
-        final existing = await (selectOnly(journalEntries)
-              ..addColumns([maxEntry])
-              ..where(journalEntries.entryNumber.like('$displayPrefix%')))
-            .map((row) => row.read(maxEntry))
-            .getSingle();
+        final existing =
+            await (selectOnly(journalEntries)
+                  ..addColumns([maxEntry])
+                  ..where(journalEntries.entryNumber.like('$displayPrefix%')))
+                .map((row) => row.read(maxEntry))
+                .getSingle();
 
         nextSeq = 1;
         if (existing != null && existing.startsWith(displayPrefix)) {
@@ -170,7 +211,6 @@ extension AccountingDaoReadsExt on AppDatabase {
     });
   }
 
-
   // --- Fiscal Years managed below ---
 
   /// Get all cost centers (Spec 111 — excludes soft-deleted)
@@ -180,7 +220,6 @@ extension AccountingDaoReadsExt on AppDatabase {
           ..orderBy([(t) => OrderingTerm.asc(t.name)]))
         .get();
   }
-
 
   /// مراكزُ التكلفةِ التابعةُ لـ[branchIds] — **اشتقاقاً لا عموداً**.
   ///
@@ -197,21 +236,23 @@ extension AccountingDaoReadsExt on AppDatabase {
 
     final ids = <int>{};
 
-    final branchRows =
-        await (select(branches)..where((b) => b.id.isIn(branchIds))).get();
+    final branchRows = await (select(
+      branches,
+    )..where((b) => b.id.isIn(branchIds))).get();
     for (final branch in branchRows) {
       if (branch.costCenterId != null) ids.add(branch.costCenterId!);
     }
 
-    final warehouseRows = await (select(warehouses)
-          ..where((w) => w.branchId.isIn(branchIds)))
-        .get();
+    final warehouseRows = await (select(
+      warehouses,
+    )..where((w) => w.branchId.isIn(branchIds))).get();
     for (final warehouse in warehouseRows) {
       if (warehouse.costCenterId != null) ids.add(warehouse.costCenterId!);
     }
 
-    final safeRows =
-        await (select(safes)..where((s) => s.branchId.isIn(branchIds))).get();
+    final safeRows = await (select(
+      safes,
+    )..where((s) => s.branchId.isIn(branchIds))).get();
     for (final safe in safeRows) {
       if (safe.costCenterId != null) ids.add(safe.costCenterId!);
     }
@@ -226,7 +267,6 @@ extension AccountingDaoReadsExt on AppDatabase {
           ..orderBy([(t) => OrderingTerm.asc(t.code)]))
         .get();
   }
-
 
   /// مركزُ تكلفةٍ بعينه — بغضِّ النظر عن `isActive`.
   ///
@@ -247,7 +287,6 @@ extension AccountingDaoReadsExt on AppDatabase {
           ..orderBy([(t) => OrderingTerm.asc(t.code)]))
         .watch();
   }
-
 
   /// Spec 150 (b) — surplus "plug" accounts posted by variance/surplus
   /// settlement JEs (cycle count, stock audit, shift-close cash count). Each
@@ -299,12 +338,12 @@ extension AccountingDaoReadsExt on AppDatabase {
     };
   }
 
-
   /// Get all activity profiles
   Future<List<ActivityProfile>> getActivityProfiles() {
-    return (select(activityProfiles)..orderBy([(t) => OrderingTerm.asc(t.name)])).get();
+    return (select(
+      activityProfiles,
+    )..orderBy([(t) => OrderingTerm.asc(t.name)])).get();
   }
-
 
   // --- Accounts managed below ---
 
@@ -318,17 +357,24 @@ extension AccountingDaoReadsExt on AppDatabase {
     int offset = 0,
   }) async {
     final query = select(journalEntries).join([
-      leftOuterJoin(costCenters, costCenters.id.equalsExp(journalEntries.costCenterId))
+      leftOuterJoin(
+        costCenters,
+        costCenters.id.equalsExp(journalEntries.costCenterId),
+      ),
     ]);
 
     Expression<bool> filter = journalEntries.isDeleted.equals(false);
     if (from != null) {
       final startOfDay = DateTime(from.year, from.month, from.day);
-      filter = filter & journalEntries.entryDate.isBiggerOrEqual(Variable(startOfDay));
+      filter =
+          filter &
+          journalEntries.entryDate.isBiggerOrEqual(Variable(startOfDay));
     }
     if (to != null) {
       final endOfDay = DateTime(to.year, to.month, to.day, 23, 59, 59);
-      filter = filter & journalEntries.entryDate.isSmallerOrEqual(Variable(endOfDay));
+      filter =
+          filter &
+          journalEntries.entryDate.isSmallerOrEqual(Variable(endOfDay));
     }
     query.where(filter);
     query.orderBy([OrderingTerm.desc(journalEntries.entryDate)]);
@@ -348,25 +394,31 @@ extension AccountingDaoReadsExt on AppDatabase {
     }).toList();
   }
 
-
   /// Watch journal entries with filtering
   Stream<List<JournalEntryData>> watchJournalEntries({
     DateTime? from,
     DateTime? to,
   }) {
     final query = select(journalEntries).join([
-      leftOuterJoin(costCenters, costCenters.id.equalsExp(journalEntries.costCenterId))
+      leftOuterJoin(
+        costCenters,
+        costCenters.id.equalsExp(journalEntries.costCenterId),
+      ),
     ]);
-    
+
     Expression<bool> filter = journalEntries.isDeleted.equals(false);
     if (from != null) {
       final startOfDay = DateTime(from.year, from.month, from.day);
-      filter = filter & journalEntries.entryDate.isBiggerOrEqual(Variable(startOfDay));
+      filter =
+          filter &
+          journalEntries.entryDate.isBiggerOrEqual(Variable(startOfDay));
     }
     if (to != null) {
       // Extend to end of day to include all entries on the 'to' date
       final endOfDay = DateTime(to.year, to.month, to.day, 23, 59, 59);
-      filter = filter & journalEntries.entryDate.isSmallerOrEqual(Variable(endOfDay));
+      filter =
+          filter &
+          journalEntries.entryDate.isSmallerOrEqual(Variable(endOfDay));
     }
     query.where(filter);
     query.orderBy([OrderingTerm.desc(journalEntries.entryDate)]);
@@ -378,14 +430,15 @@ extension AccountingDaoReadsExt on AppDatabase {
         if (cc != null) {
           final desc = entry.description ?? '';
           if (!desc.contains(cc.name)) {
-            return entry.copyWith(description: Value('$desc [م.ت: ${cc.name}]'));
+            return entry.copyWith(
+              description: Value('$desc [م.ت: ${cc.name}]'),
+            );
           }
         }
         return entry;
       }).toList();
     });
   }
-
 
   /// مجموعا المدين والدائن **لكلّ قيدٍ في المدى** — استعلامٌ واحدٌ مُجمَّع.
   ///
@@ -409,12 +462,15 @@ extension AccountingDaoReadsExt on AppDatabase {
   }) {
     final debitSum = journalEntryLines.debit.sum();
     final creditSum = journalEntryLines.credit.sum();
-    final query = selectOnly(journalEntryLines).join([
-      innerJoin(journalEntries,
-          journalEntries.id.equalsExp(journalEntryLines.entryId)),
-    ])
-      ..addColumns([journalEntryLines.entryId, debitSum, creditSum])
-      ..groupBy([journalEntryLines.entryId]);
+    final query =
+        selectOnly(journalEntryLines).join([
+            innerJoin(
+              journalEntries,
+              journalEntries.id.equalsExp(journalEntryLines.entryId),
+            ),
+          ])
+          ..addColumns([journalEntryLines.entryId, debitSum, creditSum])
+          ..groupBy([journalEntryLines.entryId]);
 
     // نفسُ ترشيحِ [watchJournalEntries] حرفاً — وأيُّ اختلافٍ يعني شريطاً
     // يجمع قيوداً لا تظهر في القائمة تحته.
@@ -422,22 +478,26 @@ extension AccountingDaoReadsExt on AppDatabase {
     if (from != null) {
       final startOfDay = DateTime(from.year, from.month, from.day);
       filter =
-          filter & journalEntries.entryDate.isBiggerOrEqual(Variable(startOfDay));
+          filter &
+          journalEntries.entryDate.isBiggerOrEqual(Variable(startOfDay));
     }
     if (to != null) {
       final endOfDay = DateTime(to.year, to.month, to.day, 23, 59, 59);
       filter =
-          filter & journalEntries.entryDate.isSmallerOrEqual(Variable(endOfDay));
+          filter &
+          journalEntries.entryDate.isSmallerOrEqual(Variable(endOfDay));
     }
     query.where(filter);
 
-    return query.watch().map((rows) => {
-          for (final row in rows)
-            row.read(journalEntryLines.entryId)!: (
-              debit: row.read(debitSum) ?? 0.0,
-              credit: row.read(creditSum) ?? 0.0,
-            ),
-        });
+    return query.watch().map(
+      (rows) => {
+        for (final row in rows)
+          row.read(journalEntryLines.entryId)!: (
+            debit: row.read(debitSum) ?? 0.0,
+            credit: row.read(creditSum) ?? 0.0,
+          ),
+      },
+    );
   }
 
   /// Watch journal entries with pagination and filtering
@@ -448,17 +508,24 @@ extension AccountingDaoReadsExt on AppDatabase {
     DateTime? to,
   }) {
     final query = select(journalEntries).join([
-      leftOuterJoin(costCenters, costCenters.id.equalsExp(journalEntries.costCenterId))
+      leftOuterJoin(
+        costCenters,
+        costCenters.id.equalsExp(journalEntries.costCenterId),
+      ),
     ]);
-    
+
     Expression<bool> filter = journalEntries.isDeleted.equals(false);
     if (from != null) {
       final startOfDay = DateTime(from.year, from.month, from.day);
-      filter = filter & journalEntries.entryDate.isBiggerOrEqual(Variable(startOfDay));
+      filter =
+          filter &
+          journalEntries.entryDate.isBiggerOrEqual(Variable(startOfDay));
     }
     if (to != null) {
       final endOfDay = DateTime(to.year, to.month, to.day, 23, 59, 59);
-      filter = filter & journalEntries.entryDate.isSmallerOrEqual(Variable(endOfDay));
+      filter =
+          filter &
+          journalEntries.entryDate.isSmallerOrEqual(Variable(endOfDay));
     }
     query.where(filter);
     query.orderBy([OrderingTerm.desc(journalEntries.entryDate)]);
@@ -471,7 +538,9 @@ extension AccountingDaoReadsExt on AppDatabase {
         if (cc != null) {
           final desc = entry.description ?? '';
           if (!desc.contains(cc.name)) {
-            return entry.copyWith(description: Value('$desc [م.ت: ${cc.name}]'));
+            return entry.copyWith(
+              description: Value('$desc [م.ت: ${cc.name}]'),
+            );
           }
         }
         return entry;
@@ -479,79 +548,79 @@ extension AccountingDaoReadsExt on AppDatabase {
     });
   }
 
-
   /// Get account by ID
   Future<Account?> getAccountById(int id) {
     return (select(accounts)..where((a) => a.id.equals(id))).getSingleOrNull();
   }
 
-
   /// Centralized purposes for account mapping to avoid hardcoded strings and codes.
   /// Updated v110: Codes match the comprehensive chart of accounts.
   static const Map<String, String> accountPurposes = {
     // Assets
-    'cash': '1111',             // الصندوق الرئيسي
-    'petty_cash': '1112',       // صندوق العهد والمصروفات
-    'bank': '1113',             // البنك الأهلي - حساب جاري
-    'bank2': '1114',            // بنك القاهرة - حساب جاري
-    'click': '1116',            // حساب Click
-    'receivables': '1121',      // ذمم عملاء محليون
+    'cash': '1111', // الصندوق الرئيسي
+    'petty_cash': '1112', // صندوق العهد والمصروفات
+    'bank': '1113', // البنك الأهلي - حساب جاري
+    'bank2': '1114', // بنك القاهرة - حساب جاري
+    'click': '1116', // حساب Click
+    'receivables': '1121', // ذمم عملاء محليون
     'foreign_receivables': '1122', // ذمم عملاء خارجيون
     'notes_receivable': '1123', // أوراق القبض
-    'inventory': '1136',        // مخزون البضاعة للبيع
-    'raw_materials': '1131',    // مخزون المواد الخام
+    'inventory': '1136', // مخزون البضاعة للبيع
+    'raw_materials': '1131', // مخزون المواد الخام
     'goods_in_transit': '1134', // مخزون البضاعة التامة
-    'wip': '1133',              // مخزون تحت التشغيل
-    'input_vat': '1141',        // ض.ق.م مدفوعة
+    'wip': '1133', // مخزون تحت التشغيل
+    'input_vat': '1141', // ض.ق.م مدفوعة
     'prepaid_expenses': '1143', // مصروفات مقدمة
     'employee_advances': '1146', // سلف الموظفين
-    'fixed_assets': '1211',     // الأراضي (أول أصل ثابت)
+    'fixed_assets': '1211', // الأراضي (أول أصل ثابت)
     // Liabilities
-    'payables': '2111',         // ذمم موردون محليون
+    'payables': '2111', // ذمم موردون محليون
     'foreign_payables': '2112', // ذمم موردون خارجيون
-    'notes_payable': '2113',    // أوراق الدفع
-    'output_vat': '2121',       // ض.ق.م محصلة
-    'income_tax': '2122',       // ضريبة الدخل المستحقة
+    'notes_payable': '2113', // أوراق الدفع
+    'output_vat': '2121', // ض.ق.م محصلة
+    'income_tax': '2122', // ضريبة الدخل المستحقة
     'accrued_salaries': '2131', // رواتب مستحقة
     'deferred_revenue': '2133', // إيرادات مقدمة
     // ‏ق-٢ (2026-08-22): مقابلُ العربون المقبوض — **التزامٌ لا إيراد**.
     // الاعترافُ بالإيراد يقع عند التفويتر، وقبضُ العربون ليس بيعاً.
     'customer_advances': '2134', // عملاء - دفعات مقدمة
-    'loans_payable': '2141',    // قروض بنكية قصيرة
+    'loans_payable': '2141', // قروض بنكية قصيرة
     // Equity
-    'capital': '311',           // رأس المال
+    'capital': '311', // رأس المال
     'retained_earnings': '313', // الأرباح المبقاة
-    'opening_equity': '313',    // حساب الأرصدة الافتتاحية (defaults to retained_earnings)
-    'owner_equity': '315',      // حقوق الشريك / المالك
+    'opening_equity':
+        '313', // حساب الأرصدة الافتتاحية (defaults to retained_earnings)
+    'owner_equity': '315', // حقوق الشريك / المالك
     // Revenue
-    'sales': '4121',            // مبيعات محلية - تجاري
-    'export_sales': '4122',     // مبيعات تصدير
-    'delivery_revenue': '414',  // إيرادات التوصيل
-    'service_revenue': '4131',  // خدمات ما بعد البيع
-    'sales_return': '4211',     // مردودات المبيعات
-    'sales_discount': '4212',   // خصم المبيعات
+    'sales': '4121', // مبيعات محلية - تجاري
+    'export_sales': '4122', // مبيعات تصدير
+    'delivery_revenue': '414', // إيرادات التوصيل
+    'service_revenue': '4131', // خدمات ما بعد البيع
+    'sales_return': '4211', // مردودات المبيعات
+    'sales_discount': '4212', // خصم المبيعات
     'purchase_discount': '4316', // خصم المشتريات المكتسب
     'discount_received': '4316', // خصم مكتسب
-    'other_income': '4315',     // إيرادات متنوعة أخرى
+    'other_income': '4315', // إيرادات متنوعة أخرى
     'inventory_surplus': '4317', // فائض مخزون
-    'cash_surplus': '4318',     // فائض نقدي
+    'cash_surplus': '4318', // فائض نقدي
     // COGS
-    'cogs': '5211',             // تكلفة بضاعة تجارية محلية
-    'purchases': '5211',        // مشتريات (= COGS التجاري)
-    'purchase_return': '5214',  // مردودات المشتريات
+    'cogs': '5211', // تكلفة بضاعة تجارية محلية
+    'purchases': '5211', // مشتريات (= COGS التجاري)
+    'purchase_return': '5214', // مردودات المشتريات
     // Spec 146 (S-MFG-GL): credit party for capitalised manufacturing overhead
     // (Dr WIP 1133 / Cr 5138 at order completion). Contra within the 513
     // overhead subtree — credit-normal. Replaces the guide's proposed 2141,
     // which is already loans_payable.
     'applied_overhead': '5138', // تحميل صناعي مطبّق
     // Operating Expenses
-    'salary_expense': '621',    // رواتب - إدارة
-    'rent_expense': '623',      // مصروف إيجار
+    'salary_expense': '621', // رواتب - إدارة
+    'rent_expense': '623', // مصروف إيجار
     'discount_allowed': '6215', // خصم مسموح به
     'inventory_shrinkage': '6216', // عجز مخزون
-    'cash_shortage': '6217',    // عجز نقدي
-    'misc_expense': '6214',     // مصروفات متنوعة
-    'op_expenses': '6214',      // مصروفات تشغيل (alias of misc_expense — used by shift-closing fallback)
+    'cash_shortage': '6217', // عجز نقدي
+    'misc_expense': '6214', // مصروفات متنوعة
+    'op_expenses':
+        '6214', // مصروفات تشغيل (alias of misc_expense — used by shift-closing fallback)
     // Spec 138 cheque-drift repair suspense (Cr side). MUST be a BALANCE-SHEET
     // account so the correction has zero P&L impact (strategy C premise). The
     // seed COA has no dedicated suspense account, so this defaults to the
@@ -565,11 +634,9 @@ extension AccountingDaoReadsExt on AppDatabase {
     'rounding_difference': '4319',
   };
 
-
   // -----------------------------------------------------------------------
   // AUTO-POSTING ENGINE -- See accounting_autopost_dao.dart
   // -----------------------------------------------------------------------
-
 
   // -----------------------------------------------------------------------
   // GENERAL LEDGER (دفتر الأستاذ العام)
@@ -586,6 +653,7 @@ extension AccountingDaoReadsExt on AppDatabase {
     int? branchId,
     int limit = 1000,
     int offset = 0,
+
     /// Phase 5C.5 (Issue 4) — auth-level scope. When non-null, restrict
     /// the result to JEs whose `branch_id` is in this set OR is NULL
     /// (legacy data without a branch link stays visible — matches
@@ -611,10 +679,11 @@ extension AccountingDaoReadsExt on AppDatabase {
     // Phase 5C.5 — auth-scope filter. Empty set is treated like null
     // (no filter) defensively so a misconfigured caller doesn't accidentally
     // hide every row.
-    final scopedActive = allowedBranchIds != null && allowedBranchIds.isNotEmpty;
+    final scopedActive =
+        allowedBranchIds != null && allowedBranchIds.isNotEmpty;
     final scopeFilter = scopedActive
         ? 'AND (e.branch_id IN (${List.filled(allowedBranchIds.length, '?').join(',')}) '
-            'OR e.branch_id IS NULL)'
+              'OR e.branch_id IS NULL)'
         : '';
     final scopeVars = scopedActive
         ? allowedBranchIds.map((i) => Variable<int>(i)).toList()
@@ -622,9 +691,11 @@ extension AccountingDaoReadsExt on AppDatabase {
 
     final boolTrue = sqlBool(true);
     final boolFalse = sqlBool(false);
-    
+
     // Get the selected account's code to find child accounts
-    final selectedAccount = await (select(accounts)..where((a) => a.id.equals(accountId))).getSingleOrNull();
+    final selectedAccount = await (select(
+      accounts,
+    )..where((a) => a.id.equals(accountId))).getSingleOrNull();
     final accountCode = selectedAccount?.code ?? '';
 
     // Build account filter: include the selected account AND all child accounts.
@@ -661,7 +732,16 @@ extension AccountingDaoReadsExt on AppDatabase {
         WHERE $accountFilter AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue AND e.is_deleted = $boolFalse $ccFilter $brFilter $scopeFilter
         ORDER BY e.entry_date, e.id
         LIMIT ? OFFSET ?''',
-      variables: [...acctVars, dateVar(from), dateVar(to), ...ccVars, ...brVars, ...scopeVars, Variable<int>(limit), Variable<int>(offset)],
+      variables: [
+        ...acctVars,
+        dateVar(from),
+        dateVar(to),
+        ...ccVars,
+        ...brVars,
+        ...scopeVars,
+        Variable<int>(limit),
+        Variable<int>(offset),
+      ],
       readsFrom: {journalEntryLines, journalEntries, accounts, costCenters},
     ).get();
 
@@ -669,7 +749,13 @@ extension AccountingDaoReadsExt on AppDatabase {
     // Get opening balance (all entries before 'from' date) for this account + children
     final openingResult = await customSelect(
       'SELECT SUM(debit - credit) as balance FROM journal_entry_lines l JOIN journal_entries e ON l.entry_id = e.id WHERE $accountFilter AND e.entry_date < ? AND e.is_posted = $boolTrue AND e.is_deleted = $boolFalse $ccFilter $brFilter $scopeFilter',
-      variables: [...acctVars, dateVar(from), ...ccVars, ...brVars, ...scopeVars],
+      variables: [
+        ...acctVars,
+        dateVar(from),
+        ...ccVars,
+        ...brVars,
+        ...scopeVars,
+      ],
       readsFrom: {journalEntryLines, journalEntries, accounts},
     ).getSingle();
     runningBalance = openingResult.data['balance'] as double? ?? 0;
@@ -694,14 +780,18 @@ extension AccountingDaoReadsExt on AppDatabase {
 
       final rawLineDesc = _cleanHashFromDescription(row.data['line_desc']);
       final rawHeaderDesc = _cleanHashFromDescription(row.data['entry_desc']);
-      final actualLineDesc = rawLineDesc.isNotEmpty ? rawLineDesc : rawHeaderDesc;
-      
+      final actualLineDesc = rawLineDesc.isNotEmpty
+          ? rawLineDesc
+          : rawHeaderDesc;
+
       final headerCcName = row.data['header_cc_name'] as String?;
       final lineCcName = row.data['line_cc_name'] as String?;
       final actualCcName = lineCcName ?? headerCcName;
 
       String finalDesc = actualLineDesc;
-      if (actualCcName != null && actualCcName.isNotEmpty && !finalDesc.contains(actualCcName)) {
+      if (actualCcName != null &&
+          actualCcName.isNotEmpty &&
+          !finalDesc.contains(actualCcName)) {
         finalDesc = '$finalDesc [م.ت: $actualCcName]';
       }
 
@@ -710,7 +800,9 @@ extension AccountingDaoReadsExt on AppDatabase {
         'entry_number': row.data['entry_number'],
         'entry_date': () {
           final ed = row.data['entry_date'];
-          return ed is DateTime ? ed : DateTime.fromMillisecondsSinceEpoch((ed as int) * 1000);
+          return ed is DateTime
+              ? ed
+              : DateTime.fromMillisecondsSinceEpoch((ed as int) * 1000);
         }(),
         'description': finalDesc,
         'debit': debit,
@@ -726,10 +818,10 @@ extension AccountingDaoReadsExt on AppDatabase {
 
     return ledger;
   }
+
   Future<List<Account>> getAllAccounts() {
     return (select(accounts)..orderBy([(a) => OrderingTerm.asc(a.code)])).get();
   }
-
 
   /// Watch all accounts as a stream
   Stream<List<Account>> watchAllAccounts() {
@@ -737,8 +829,6 @@ extension AccountingDaoReadsExt on AppDatabase {
       accounts,
     )..orderBy([(a) => OrderingTerm.asc(a.code)])).watch();
   }
-
-
 
   // -----------------------------------------------------------------------
   // FISCAL YEAR MANAGEMENT → See accounting_fiscal_dao.dart
@@ -762,7 +852,9 @@ extension AccountingDaoReadsExt on AppDatabase {
   ) async {
     final boolTrue = sqlBool(true);
     final boolFalse = sqlBool(false);
-    final varianceVars = _costCenterVarianceCodes.map((c) => Variable(c)).toList();
+    final varianceVars = _costCenterVarianceCodes
+        .map((c) => Variable(c))
+        .toList();
 
     final openingResult = await customSelect(
       '''SELECT COALESCE(SUM(l.debit - l.credit), 0) as balance
@@ -771,7 +863,12 @@ extension AccountingDaoReadsExt on AppDatabase {
         WHERE (l.cost_center_id = ? OR (l.cost_center_id IS NULL AND e.cost_center_id = ?))
           AND e.entry_date < ? AND e.is_posted = $boolTrue AND e.is_deleted = $boolFalse
           AND $_excludeVarianceEntriesSql''',
-      variables: [Variable(costCenterId), Variable(costCenterId), dateVar(from), ...varianceVars],
+      variables: [
+        Variable(costCenterId),
+        Variable(costCenterId),
+        dateVar(from),
+        ...varianceVars,
+      ],
       readsFrom: {journalEntryLines, journalEntries, accounts},
     ).getSingle();
     // COALESCE(...,0) over zero rows comes back as an int, so read as num.
@@ -792,7 +889,13 @@ extension AccountingDaoReadsExt on AppDatabase {
           AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue AND e.is_deleted = $boolFalse
           AND $_excludeVarianceEntriesSql
         ORDER BY e.entry_date''',
-      variables: [Variable(costCenterId), Variable(costCenterId), dateVar(from), dateVar(to), ...varianceVars],
+      variables: [
+        Variable(costCenterId),
+        Variable(costCenterId),
+        dateVar(from),
+        dateVar(to),
+        ...varianceVars,
+      ],
       readsFrom: {journalEntryLines, journalEntries, accounts, costCenters},
     ).get();
 
@@ -819,12 +922,14 @@ extension AccountingDaoReadsExt on AppDatabase {
       final actualCcName = lineCcName ?? headerCcName;
 
       if (rawHeaderDesc.isNotEmpty) {
-        data['entry_desc'] = actualCcName != null && !rawHeaderDesc.contains(actualCcName)
+        data['entry_desc'] =
+            actualCcName != null && !rawHeaderDesc.contains(actualCcName)
             ? '$rawHeaderDesc [م.ت: $actualCcName]'
             : rawHeaderDesc;
       }
       if (rawLineDesc.isNotEmpty) {
-        data['line_desc'] = actualCcName != null && !rawLineDesc.contains(actualCcName)
+        data['line_desc'] =
+            actualCcName != null && !rawLineDesc.contains(actualCcName)
             ? '$rawLineDesc [م.ت: $actualCcName]'
             : rawLineDesc;
       }
@@ -840,10 +945,10 @@ extension AccountingDaoReadsExt on AppDatabase {
 
     return ledger;
   }
+
   Stream<List<ActivityProfile>> watchActivityProfiles() {
     return select(activityProfiles).watch();
   }
-
 
   /// Get active profile. Defensive `.limit(1)` against mirror duplicates
   /// (Cluster 028 / Bugs 3+4).
@@ -854,36 +959,47 @@ extension AccountingDaoReadsExt on AppDatabase {
         .getSingleOrNull();
   }
 
-
   /// Get mapped account by purpose with hierarchical cost center resolution
   /// Resolution: specific CC → parent CC → global → default code
-  Future<Account?> getAccountByPurpose(String purpose, {int? costCenterId}) async {
+  Future<Account?> getAccountByPurpose(
+    String purpose, {
+    int? costCenterId,
+  }) async {
     if (costCenterId != null) {
       // 1. Try specific cost center mapping. `.limit(1)` is defensive —
       // mirror duplicates of (purpose, costCenterId) crash the
       // commercial-papers + fixed-assets create flows otherwise
       // (Cluster 028 / Bugs 3+4 — "Bad state: too many elements").
-      final specific = await (select(accountMappings)
-        ..where((m) => m.purpose.equals(purpose) & m.costCenterId.equals(costCenterId))
-        ..limit(1))
-        .getSingleOrNull();
+      final specific =
+          await (select(accountMappings)
+                ..where(
+                  (m) =>
+                      m.purpose.equals(purpose) &
+                      m.costCenterId.equals(costCenterId),
+                )
+                ..limit(1))
+              .getSingleOrNull();
       if (specific != null) {
         return getAccountById(specific.accountId);
       }
       // 2. Try parent cost center (hierarchical walk-up)
-      final cc = await (select(costCenters)
-            ..where((c) => c.id.equals(costCenterId))
-            ..limit(1))
-          .getSingleOrNull();
+      final cc =
+          await (select(costCenters)
+                ..where((c) => c.id.equals(costCenterId))
+                ..limit(1))
+              .getSingleOrNull();
       if (cc?.parentId != null) {
         return getAccountByPurpose(purpose, costCenterId: cc!.parentId);
       }
     }
     // 3. Global mapping (costCenterId IS NULL). Same defensive limit.
-    final globalMapping = await (select(accountMappings)
-      ..where((m) => m.purpose.equals(purpose) & m.costCenterId.isNull())
-      ..limit(1))
-      .getSingleOrNull();
+    final globalMapping =
+        await (select(accountMappings)
+              ..where(
+                (m) => m.purpose.equals(purpose) & m.costCenterId.isNull(),
+              )
+              ..limit(1))
+            .getSingleOrNull();
     if (globalMapping != null) {
       return getAccountById(globalMapping.accountId);
     }
@@ -897,7 +1013,6 @@ extension AccountingDaoReadsExt on AppDatabase {
     return null;
   }
 
-
   /// Gets mapped account code with hierarchical cost center resolution
   Future<String> getMappedAccountCode(
     String purpose,
@@ -907,8 +1022,12 @@ extension AccountingDaoReadsExt on AppDatabase {
     final acc = await getAccountByPurpose(purpose, costCenterId: costCenterId);
     return acc?.code ?? defaultCode;
   }
+
   Future<Account?> getAccountByCode(String code) {
-    return (select(accounts)..where((a) => a.code.equals(code))..limit(1)).getSingleOrNull();
+    return (select(accounts)
+          ..where((a) => a.code.equals(code))
+          ..limit(1))
+        .getSingleOrNull();
   }
 
   /// Cluster 023 / Issue 3 — defensive leaf resolution.
@@ -927,13 +1046,17 @@ extension AccountingDaoReadsExt on AppDatabase {
     final stack = <Account>[root];
     while (stack.isNotEmpty) {
       final current = stack.removeLast();
-      final children = await (select(accounts)
-            ..where((a) => a.parentId.equals(current.id) & a.isActive.equals(true))
-            ..orderBy([
-              (a) => OrderingTerm(expression: a.code),
-              (a) => OrderingTerm(expression: a.id),
-            ]))
-          .get();
+      final children =
+          await (select(accounts)
+                ..where(
+                  (a) =>
+                      a.parentId.equals(current.id) & a.isActive.equals(true),
+                )
+                ..orderBy([
+                  (a) => OrderingTerm(expression: a.code),
+                  (a) => OrderingTerm(expression: a.id),
+                ]))
+              .get();
       for (final child in children) {
         if (!visited.add(child.id)) continue;
         if (child.accountNature != 'view') return child;
@@ -965,8 +1088,8 @@ extension AccountingDaoReadsExt on AppDatabase {
       DiagnosticLogger.log(
         'ACCT-WARN',
         'purpose="$purpose" mapped to view account ${acc.code} (${acc.name}) — '
-        'auto-resolved to leaf ${leaf.code} (${leaf.name}). '
-        'Fix the mapping in Settings → Chart of Accounts → Account Mappings.',
+            'auto-resolved to leaf ${leaf.code} (${leaf.name}). '
+            'Fix the mapping in Settings → Chart of Accounts → Account Mappings.',
       );
     }
     return leaf;
@@ -985,23 +1108,21 @@ extension AccountingDaoReadsExt on AppDatabase {
       DiagnosticLogger.log(
         'ACCT-WARN',
         'accountId=$id (${acc.code} - ${acc.name}) is a view account — '
-        'auto-resolved to leaf ${leaf.code} (${leaf.name}).',
+            'auto-resolved to leaf ${leaf.code} (${leaf.name}).',
       );
     }
     return leaf;
   }
 
-
-
-
   /// Get pending draft entries for approval
   Future<List<JournalEntryData>> getPendingApprovalEntries() async {
     return (select(journalEntries)
-          ..where((e) => e.isPosted.equals(false) & e.needsApproval.equals(true))
+          ..where(
+            (e) => e.isPosted.equals(false) & e.needsApproval.equals(true),
+          )
           ..orderBy([(e) => OrderingTerm.desc(e.createdAt)]))
         .get();
   }
-
 
   // ─────────────────────────────────────────────────────────────────────────
   // F-16: PERIOD REOPEN AUDIT — إعادة فتح الفترات المحاسبية
@@ -1033,7 +1154,11 @@ extension AccountingDaoReadsExt on AppDatabase {
         entityId: periodId,
         description: 'سبب إعادة الفتح: $reason',
       );
-    } catch (e) { debugPrint('[ACCOUNTING_WARNING] Activity log for period reopen failed: $e'); }
+    } catch (e) {
+      debugPrint(
+        '[ACCOUNTING_WARNING] Activity log for period reopen failed: $e',
+      );
+    }
   }
 
   // ── Maintenance: Account Balance Integrity Check ─────────────────────────
@@ -1156,8 +1281,10 @@ extension AccountingDaoReadsExt on AppDatabase {
       }
 
       if (out.isNotEmpty) {
-        debugPrint('[ACCOUNTING] findOrphanedJournalEntries: '
-            '${out.length} issues — re-trigger accounts pull and reverify.');
+        debugPrint(
+          '[ACCOUNTING] findOrphanedJournalEntries: '
+          '${out.length} issues — re-trigger accounts pull and reverify.',
+        );
       }
     } catch (e) {
       debugPrint('[ACCOUNTING] findOrphanedJournalEntries error: $e');

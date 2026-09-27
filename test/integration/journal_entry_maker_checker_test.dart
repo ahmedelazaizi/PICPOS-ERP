@@ -10,7 +10,7 @@
 //
 // ⚠️ وبلا `created_by` لا ضابطَ أصلاً: مَن أنشأ يستطيع أن يعتمد، فيصير
 //    الترحيلُ خطوتَين بيدٍ واحدة — وهو تأخيرٌ لا رقابة.
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show InsertMode, Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
@@ -37,18 +37,29 @@ void main() {
   }
 
   Future<int> seedUser(String name) async {
-    final existing = await db.select(db.users).get();
-    if (existing.length > 1) {
-      return existing.firstWhere((u) => u.username != existing.first.username).id;
-    }
-    return db.into(db.users).insert(
+    final accountant = await (db.select(db.roles)
+          ..where((r) => r.name.equals('محاسب')))
+        .getSingle();
+    final approval = await (db.select(db.permissions)
+          ..where((p) => p.code.equals('approve_journal')))
+        .getSingle();
+    final userId = await db.into(db.users).insert(
           UsersCompanion.insert(
             username: name,
             passwordHash: 'x',
             passwordSalt: const Value('y'),
             displayName: name,
+            roleId: Value(accountant.id),
           ),
         );
+    await db.into(db.rolePermissions).insert(
+      RolePermissionsCompanion.insert(
+        roleId: accountant.id,
+        permissionId: approval.id,
+      ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    return userId;
   }
 
   Future<double> balanceOf(int id) async {

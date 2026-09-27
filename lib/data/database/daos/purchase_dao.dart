@@ -996,7 +996,9 @@ extension PurchaseDao on AppDatabase {
             // would disagree with stock/WAC/GL and a later return would
             // refund more than was ever paid.
             unitCost: Value(unitCost),
-            total: Value(quantity * unitCost + taxAmount),
+            // The rounded net is authoritative; the remainder belongs to
+            // the largest line rather than being lost in unit-cost division.
+            total: Value(FinancialUtils.round(lineNets[lineAt] + taxAmount)),
             taxAmount: Value(taxAmount),
             // UUID-First Phase 1 Slice 3: stable per-line identity.
             globalId: hasLineGid ? item.globalId : Value(UuidV7.generate()),
@@ -1892,7 +1894,9 @@ extension PurchaseDao on AppDatabase {
           item.copyWith(
             invoiceId: Value(invoiceId),
             unitCost: Value(unitCost),
-            total: Value(quantity * unitCost + taxAmount),
+            // The rounded net is authoritative; the remainder belongs to
+            // the largest line rather than being lost in unit-cost division.
+            total: Value(FinancialUtils.round(lineNets[lineAt] + taxAmount)),
             taxAmount: Value(taxAmount),
             // UUID-First Phase 1 Slice 3: stable per-line identity.
             globalId: hasLineGid ? item.globalId : Value(UuidV7.generate()),

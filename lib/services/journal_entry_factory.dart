@@ -33,7 +33,8 @@ class MissingAccountException implements Exception {
   final String purpose;
   MissingAccountException(this.purpose);
   @override
-  String toString() => 'MissingAccountException: حساب "$purpose" غير موجود في ربط الحسابات. '
+  String toString() =>
+      'MissingAccountException: حساب "$purpose" غير موجود في ربط الحسابات. '
       'يرجى إعداد ربط الحسابات من الإعدادات > ربط الحسابات.';
 }
 
@@ -44,7 +45,8 @@ class UnbalancedJournalException implements Exception {
   final String context;
   UnbalancedJournalException(this.totalDebit, this.totalCredit, this.context);
   @override
-  String toString() => 'UnbalancedJournalException: القيد غير متوازن '
+  String toString() =>
+      'UnbalancedJournalException: القيد غير متوازن '
       '($context) — مدين: $totalDebit، دائن: $totalCredit '
       '(فرق: ${(totalDebit - totalCredit).abs()})';
 }
@@ -54,7 +56,8 @@ class PeriodLockedException implements Exception {
   final DateTime date;
   PeriodLockedException(this.date);
   @override
-  String toString() => 'PeriodLockedException: الفترة المحاسبية مغلقة للتاريخ $date';
+  String toString() =>
+      'PeriodLockedException: الفترة المحاسبية مغلقة للتاريخ $date';
 }
 
 /// PIR-014: Policy for handling items with zero cost price.
@@ -69,7 +72,8 @@ class ZeroCostException implements Exception {
   final String invoiceNumber;
   ZeroCostException(this.productId, this.invoiceNumber);
   @override
-  String toString() => 'ZeroCostException: صنف $productId بتكلفة صفر في فاتورة #$invoiceNumber — '
+  String toString() =>
+      'ZeroCostException: صنف $productId بتكلفة صفر في فاتورة #$invoiceNumber — '
       'سياسة النظام تمنع إنشاء قيد بتكلفة صفرية. '
       'يرجى تحديث تكلفة الصنف أو تغيير السياسة من الإعدادات.';
 }
@@ -157,7 +161,9 @@ class JournalEntryFactory {
     // Cluster 023 / Issue 3 — leaf-safe lookup also for optional purposes.
     final account = await _accountingRepo.getLeafAccountByPurpose(purpose);
     if (account == null) {
-      debugPrint('[JE-WARNING] حساب اختياري "$purpose" غير مربوط — سيتم تخطي السطر');
+      debugPrint(
+        '[JE-WARNING] حساب اختياري "$purpose" غير مربوط — سيتم تخطي السطر',
+      );
     }
     return account;
   }
@@ -183,15 +189,22 @@ class JournalEntryFactory {
     // boundary (a float `> 0.01` compare rejects `0.01000…` that the integer
     // `<= 10` accepts). This pre-check only rejects real imbalances; the DAO
     // books any legitimate sub-cap residual to the rounding-difference account.
-    final debitMinor =
-        lines.fold<int>(0, (sum, l) => sum + FinancialUtils.toMinorUnits(l.debit));
-    final creditMinor =
-        lines.fold<int>(0, (sum, l) => sum + FinancialUtils.toMinorUnits(l.credit));
+    final debitMinor = lines.fold<int>(
+      0,
+      (sum, l) => sum + FinancialUtils.toMinorUnits(l.debit),
+    );
+    final creditMinor = lines.fold<int>(
+      0,
+      (sum, l) => sum + FinancialUtils.toMinorUnits(l.credit),
+    );
 
     if ((debitMinor - creditMinor).abs() >
         FinancialUtils.balanceToleranceMinorUnits) {
-      throw UnbalancedJournalException(FinancialUtils.fromMinorUnits(debitMinor),
-          FinancialUtils.fromMinorUnits(creditMinor), context);
+      throw UnbalancedJournalException(
+        FinancialUtils.fromMinorUnits(debitMinor),
+        FinancialUtils.fromMinorUnits(creditMinor),
+        context,
+      );
     }
 
     // ISS-10: Period lock check
@@ -241,6 +254,7 @@ class JournalEntryFactory {
     required double tax,
     required double paid,
     required double remaining,
+    double? invoiceTotal,
 
     /// فرقُ تقريب الإجماليّ (`total - roundedTotal`) — صفرٌ بلا تقريب.
     ///
@@ -277,6 +291,41 @@ class JournalEntryFactory {
     // twice (once as the finished good, once as its raw materials).
     Set<int>? autoDepletedItemIds,
   }) async {
+    // Only an explicitly supplied invoice total is authoritative. Legacy
+    // callers pass line totals that may be gross, net, or pre-discount, so
+    // reconstructing a header total from them creates false rejections.
+    final expectedTotal = invoiceTotal;
+    final paidRemaining = FinancialUtils.toMinorUnits(
+      paid + remaining + roundingAdjustment,
+    );
+    final paidAtLeastTotal = expectedTotal != null &&
+        remaining <= 0 &&
+        FinancialUtils.toMinorUnits(paid + roundingAdjustment) >=
+            FinancialUtils.toMinorUnits(expectedTotal);
+    if (expectedTotal != null &&
+        !paidAtLeastTotal &&
+        paidRemaining != FinancialUtils.toMinorUnits(expectedTotal)) {
+      throw Exception(
+        'عدم اتساق فاتورة المبيعات: المدفوع والمتبقي وفرق التقريب لا يساوي إجمالي الفاتورة.',
+      );
+    }
+    double? storedTax;
+    try {
+      storedTax = FinancialUtils.round(
+        items.fold<double>(0, (sum, item) => sum + item.taxAmount),
+      );
+    } on Object {
+      // See the legacy item-total compatibility note above.
+    }
+    if (storedTax != null &&
+        items.isNotEmpty &&
+        FinancialUtils.toMinorUnits(storedTax) !=
+            FinancialUtils.toMinorUnits(tax)) {
+      throw Exception(
+        'عدم اتساق ضريبة فاتورة المبيعات: ضريبة الأسطر لا تساوي ضريبة الفاتورة.',
+      );
+    }
+
     final List<JournalLine> journalLines = [];
     double cogsTotal = 0;
 
@@ -292,8 +341,10 @@ class JournalEntryFactory {
           case ZeroCostPolicy.block:
             throw ZeroCostException(item.productId, invNumber);
           case ZeroCostPolicy.warn:
-            debugPrint('[JE-WARNING] صنف ${item.productId} بتكلفة صفر في فاتورة #$invNumber — '
-                'COGS لن يُسجل لهذا الصنف');
+            debugPrint(
+              '[JE-WARNING] صنف ${item.productId} بتكلفة صفر في فاتورة #$invNumber — '
+              'COGS لن يُسجل لهذا الصنف',
+            );
             break;
           case ZeroCostPolicy.allow:
             break; // Silent
@@ -309,8 +360,7 @@ class JournalEntryFactory {
     // subdivision of them: a finished BOM item normally carries costPrice = 0
     // (no production order ever stamped a WAC on it), so `cogsTotal` alone is
     // blind to it. Both must be recognised.
-    final bool hasBreakdown =
-        cogsBreakdown != null && cogsBreakdown.isNotEmpty;
+    final bool hasBreakdown = cogsBreakdown != null && cogsBreakdown.isNotEmpty;
     final double breakdownTotal = hasBreakdown
         ? cogsBreakdown.fold<double>(0.0, (s, l) => s + l.totalCost)
         : 0.0;
@@ -319,32 +369,39 @@ class JournalEntryFactory {
     // 1. Debit side (Assets/Expenses)
     if (paid > 0) {
       // FIX: Find the exact safe accounts used by the initial safe transactions to debit correct safes!
-      final cashSafeAccs = await _treasuryRepo.getSafeAccountsForReference('sales_invoice', invoiceId);
-      
+      final cashSafeAccs = await _treasuryRepo.getSafeAccountsForReference(
+        'sales_invoice',
+        invoiceId,
+      );
+
       if (cashSafeAccs.isNotEmpty) {
         // Distribute debit across actual safes used
         for (final entry in cashSafeAccs) {
           final accId = entry['accountId'] as int;
           final amount = entry['amount'] as double;
           final name = entry['safeName'] as String;
-          journalLines.add(JournalLine(
-            accountId: accId,
-            debit: amount,
-            description: 'تحصيل نقدية/بنك ($name) لفاتورة مبيعات #$invNumber',
-            costCenterId: costCenterId,
-          ));
+          journalLines.add(
+            JournalLine(
+              accountId: accId,
+              debit: amount,
+              description: 'تحصيل نقدية/بنك ($name) لفاتورة مبيعات #$invNumber',
+              costCenterId: costCenterId,
+            ),
+          );
         }
       } else {
         // Fallback if no safe transaction found
         final cashAcc = await _requireAccount(
           paymentMethod == 'cash' ? 'cash' : 'bank',
         );
-        journalLines.add(JournalLine(
-          accountId: cashAcc.id,
-          debit: paid,
-          description: 'تحصيل فاتورة مبيعات #$invNumber',
-          costCenterId: costCenterId,
-        ));
+        journalLines.add(
+          JournalLine(
+            accountId: cashAcc.id,
+            debit: paid,
+            description: 'تحصيل فاتورة مبيعات #$invNumber',
+            costCenterId: costCenterId,
+          ),
+        );
       }
     }
     if (remaining > 0) {
@@ -352,12 +409,14 @@ class JournalEntryFactory {
         partyId: customerId,
         fallbackPurpose: 'receivables',
       );
-      journalLines.add(JournalLine(
-        accountId: arAcc.id,
-        debit: remaining,
-        description: 'مبيعات آجلة فاتورة #$invNumber',
-        costCenterId: costCenterId,
-      ));
+      journalLines.add(
+        JournalLine(
+          accountId: arAcc.id,
+          debit: remaining,
+          description: 'مبيعات آجلة فاتورة #$invNumber',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     // COGS Debit — gated on the COMBINED cost. Gating on `cogsTotal` alone
@@ -366,12 +425,14 @@ class JournalEntryFactory {
     // validator fires) while the raw materials had really left stock.
     if (totalCogsDebit > 0.001) {
       final cogsAcc = await _requireAccount('cogs');
-      journalLines.add(JournalLine(
-        accountId: cogsAcc.id,
-        debit: totalCogsDebit,
-        description: 'تكلفة بوابة المبيعات فاتورة #$invNumber',
-        costCenterId: costCenterId,
-      ));
+      journalLines.add(
+        JournalLine(
+          accountId: cogsAcc.id,
+          debit: totalCogsDebit,
+          description: 'تكلفة بوابة المبيعات فاتورة #$invNumber',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     // 2. Credit side (Revenue & Liabilities/Assets reduction)
@@ -394,26 +455,29 @@ class JournalEntryFactory {
     // `subtotal` / `discount` parameters were dead and have been removed.
     final salesAcc = await _requireAccount('sales');
     final vatAcc = tax > 0 ? await _optionalAccount('output_vat') : null;
-    final deliveryAcc =
-        deliveryFee > 0 ? await _optionalAccount('delivery_revenue') : null;
+    final deliveryAcc = deliveryFee > 0
+        ? await _optionalAccount('delivery_revenue')
+        : null;
     final vatLeg = (tax > 0 && vatAcc != null) ? tax : 0.0;
-    final deliveryLeg =
-        (deliveryFee > 0 && deliveryAcc != null) ? deliveryFee : 0.0;
+    final deliveryLeg = (deliveryFee > 0 && deliveryAcc != null)
+        ? deliveryFee
+        : 0.0;
     // Spec 136 (review 2026-06-14): when output_vat / delivery_revenue is
     // unmapped on a taxable/delivery invoice the amount folds into Sales to keep
     // the JE balanced — which OVERSTATES revenue. The autopost path already
     // warns; this local builder folded SILENTLY. Surface it so the operator maps
     // the account (does NOT block posting — availability is intentional).
     if (tax > 0 && vatAcc == null) {
-      await DiagnosticLogger.log('AUTOPOST-WARN',
-          'فاتورة #$invNumber: حساب ضريبة المخرجات (output_vat) غير مربوط — '
-          'الضريبة $tax أُدمجت في إيراد المبيعات لإبقاء القيد متوازناً. '
-          'اربط output_vat في الربط المحاسبي حتى تُرحَّل لحسابها وتظهر في الدفتر.');
+      throw Exception(
+        'تعذر ترحيل فاتورة #$invNumber: حساب ضريبة المخرجات (output_vat) غير مربوط.',
+      );
     }
     if (deliveryFee > 0 && deliveryAcc == null) {
-      await DiagnosticLogger.log('AUTOPOST-WARN',
-          'فاتورة #$invNumber: حساب إيراد التوصيل (delivery_revenue) غير مربوط — '
-          'مبلغ التوصيل $deliveryFee أُدمج في إيراد المبيعات. اربطه في الربط المحاسبي.');
+      await DiagnosticLogger.log(
+        'AUTOPOST-WARN',
+        'فاتورة #$invNumber: حساب إيراد التوصيل (delivery_revenue) غير مربوط — '
+            'مبلغ التوصيل $deliveryFee أُدمج في إيراد المبيعات. اربطه في الربط المحاسبي.',
+      );
     }
     // ── سطرُ فرق التقريب — يُضاف قبل احتساب الإيراد ────────────────────────
     //
@@ -422,18 +486,21 @@ class JournalEntryFactory {
     if (roundingAdjustment != 0) {
       final roundingAcc = await _optionalAccount('rounding_difference');
       if (roundingAcc != null) {
-        journalLines.add(JournalLine(
-          accountId: roundingAcc.id,
-          debit: roundingAdjustment > 0 ? roundingAdjustment : 0,
-          credit: roundingAdjustment < 0 ? -roundingAdjustment : 0,
-          description: 'فروق تقريب',
-          costCenterId: costCenterId,
-        ));
+        journalLines.add(
+          JournalLine(
+            accountId: roundingAcc.id,
+            debit: roundingAdjustment > 0 ? roundingAdjustment : 0,
+            credit: roundingAdjustment < 0 ? -roundingAdjustment : 0,
+            description: 'فروق تقريب',
+            costCenterId: costCenterId,
+          ),
+        );
       } else {
         await DiagnosticLogger.log(
-            'AUTOPOST-WARN',
-            'فاتورة #$invNumber: حساب فروق التقريب (rounding_difference) غير '
-            'مربوط — فرقُ $roundingAdjustment بلا سطر. اربطه في الربط المحاسبي.');
+          'AUTOPOST-WARN',
+          'فاتورة #$invNumber: حساب فروق التقريب (rounding_difference) غير '
+              'مربوط — فرقُ $roundingAdjustment بلا سطر. اربطه في الربط المحاسبي.',
+        );
       }
     }
 
@@ -443,20 +510,24 @@ class JournalEntryFactory {
     final netSalesCredit =
         (paid + remaining + roundingAdjustment) - vatLeg - deliveryLeg;
     if (netSalesCredit.abs() > 0.001) {
-      journalLines.add(JournalLine(
-        accountId: salesAcc.id,
-        credit: netSalesCredit,
-        description: 'إيراد مبيعات فاتورة #$invNumber',
-        costCenterId: costCenterId,
-      ));
+      journalLines.add(
+        JournalLine(
+          accountId: salesAcc.id,
+          credit: netSalesCredit,
+          description: 'إيراد مبيعات فاتورة #$invNumber',
+          costCenterId: costCenterId,
+        ),
+      );
     }
     if (vatLeg > 0) {
-      journalLines.add(JournalLine(
-        accountId: vatAcc!.id,
-        credit: vatLeg,
-        description: 'ضريبة مخرجات فاتورة #$invNumber',
-        costCenterId: costCenterId,
-      ));
+      journalLines.add(
+        JournalLine(
+          accountId: vatAcc!.id,
+          credit: vatLeg,
+          description: 'ضريبة مخرجات فاتورة #$invNumber',
+          costCenterId: costCenterId,
+        ),
+      );
     }
     // Inventory Credit (Stock reduction)
     //
@@ -483,12 +554,14 @@ class JournalEntryFactory {
     // Legacy singleton inventory account — the ordinary (non-BOM) lines.
     if (cogsTotal > 0.001) {
       final invAcc = await _requireAccount('inventory');
-      journalLines.add(JournalLine(
-        accountId: invAcc.id,
-        credit: cogsTotal,
-        description: 'خروج مخزون فاتورة #$invNumber',
-        costCenterId: costCenterId,
-      ));
+      journalLines.add(
+        JournalLine(
+          accountId: invAcc.id,
+          credit: cogsTotal,
+          description: 'خروج مخزون فاتورة #$invNumber',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     // Per-account aggregated breakdown (one leg per distinct accountId) —
@@ -504,12 +577,14 @@ class JournalEntryFactory {
         );
       }
       for (final entry in aggregated.entries) {
-        journalLines.add(JournalLine(
-          accountId: entry.key,
-          credit: entry.value,
-          description: 'خروج مخزون فاتورة #$invNumber',
-          costCenterId: costCenterId,
-        ));
+        journalLines.add(
+          JournalLine(
+            accountId: entry.key,
+            credit: entry.value,
+            description: 'خروج مخزون فاتورة #$invNumber',
+            costCenterId: costCenterId,
+          ),
+        );
       }
     }
 
@@ -518,12 +593,14 @@ class JournalEntryFactory {
     // credit above (derived from total), so we must NOT credit it again here —
     // the old fallback-to-sales would double-credit against the derived net.
     if (deliveryLeg > 0) {
-      journalLines.add(JournalLine(
-        accountId: deliveryAcc!.id,
-        credit: deliveryLeg,
-        description: 'إيراد توصيل فاتورة #$invNumber',
-        costCenterId: costCenterId,
-      ));
+      journalLines.add(
+        JournalLine(
+          accountId: deliveryAcc!.id,
+          credit: deliveryLeg,
+          description: 'إيراد توصيل فاتورة #$invNumber',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     // ISS-01: Validate balance and create entry
@@ -537,7 +614,8 @@ class JournalEntryFactory {
         : '';
     await _validateAndCreateEntry(
       lines: journalLines,
-      description: 'قيد مبيعات تلقائي لفاتورة #$invNumber$regionLabel$branchLabel',
+      description:
+          'قيد مبيعات تلقائي لفاتورة #$invNumber$regionLabel$branchLabel',
       date: invoiceDate ?? DateTime.now(),
       referenceType: 'sales_invoice',
       referenceId: invoiceId,
@@ -560,6 +638,7 @@ class JournalEntryFactory {
     required double total,
     required double paid,
     required double remaining,
+    double discount = 0,
     required String? notes,
     String paymentMethod = 'cash', // ISS-04: default cash for backward compat
     int? supplierId, // NEW: route AP line to supplier sub-account
@@ -567,39 +646,64 @@ class JournalEntryFactory {
     int? branchId,
     DateTime? invoiceDate,
   }) async {
+    final expectedTotal = FinancialUtils.round(subtotal - discount + tax);
+    if (FinancialUtils.toMinorUnits(expectedTotal) !=
+        FinancialUtils.toMinorUnits(paid + remaining)) {
+      throw Exception(
+        'عدم اتساق فاتورة المشتريات: الإجمالي بعد الخصم والضريبة لا يساوي المدفوع والمتبقي.',
+      );
+    }
     final List<JournalLine> journalLines = [];
     final desc = notes ?? 'فاتورة مشتريات #$invoiceId';
 
     if (subtotal > 0) {
       final inventoryAcc = await _requireAccount('inventory');
-      journalLines.add(JournalLine(
-        accountId: inventoryAcc.id,
-        debit: subtotal,
-        description: 'مخزون وارد - $desc',
-        costCenterId: costCenterId,
-      ));
+      journalLines.add(
+        JournalLine(
+          accountId: inventoryAcc.id,
+          debit: subtotal,
+          description: 'مخزون وارد - $desc',
+          costCenterId: costCenterId,
+        ),
+      );
+    }
+
+    if (discount > 0) {
+      final discountAcc = await _requireAccount('purchase_discount');
+      journalLines.add(
+        JournalLine(
+          accountId: discountAcc.id,
+          credit: FinancialUtils.round(discount),
+          description: 'خصم مشتريات - $desc',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     if (tax > 0) {
       final inputVatAcc = await _requireAccount('input_vat');
-      journalLines.add(JournalLine(
-        accountId: inputVatAcc.id,
-        debit: tax,
-        description: 'ضريبة مدخلات - $desc',
-        costCenterId: costCenterId,
-      ));
+      journalLines.add(
+        JournalLine(
+          accountId: inputVatAcc.id,
+          debit: tax,
+          description: 'ضريبة مدخلات - $desc',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     // ISS-04: Route payment to correct account based on paymentMethod
     if (paid > 0) {
       final paymentPurpose = paymentMethod == 'bank' ? 'bank' : 'cash';
       final paymentAcc = await _requireAccount(paymentPurpose);
-      journalLines.add(JournalLine(
-        accountId: paymentAcc.id,
-        credit: paid,
-        description: 'سداد ($paymentMethod) - $desc',
-        costCenterId: costCenterId,
-      ));
+      journalLines.add(
+        JournalLine(
+          accountId: paymentAcc.id,
+          credit: paid,
+          description: 'سداد ($paymentMethod) - $desc',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     if (remaining > 0) {
@@ -607,12 +711,14 @@ class JournalEntryFactory {
         partyId: supplierId,
         fallbackPurpose: 'payables',
       );
-      journalLines.add(JournalLine(
-        accountId: payablesAcc.id,
-        credit: remaining,
-        description: 'مشتريات آجلة - $desc',
-        costCenterId: costCenterId,
-      ));
+      journalLines.add(
+        JournalLine(
+          accountId: payablesAcc.id,
+          credit: remaining,
+          description: 'مشتريات آجلة - $desc',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     // ISS-01: Validate balance and create entry
@@ -650,32 +756,38 @@ class JournalEntryFactory {
 
     // 1. Debit side (Reversing Revenue & Tax)
     final salesReturnAcc = await _requireAccount('sales_return');
-    lines.add(JournalLine(
-      accountId: salesReturnAcc.id,
-      debit: totalReturn - totalTaxReturn,
-      description: 'مرتجع مبيعات فاتورة #$invNumber',
-      costCenterId: costCenterId,
-    ));
+    lines.add(
+      JournalLine(
+        accountId: salesReturnAcc.id,
+        debit: totalReturn - totalTaxReturn,
+        description: 'مرتجع مبيعات فاتورة #$invNumber',
+        costCenterId: costCenterId,
+      ),
+    );
 
     if (totalTaxReturn > 0) {
       final taxAcc = await _requireAccount('output_vat');
-      lines.add(JournalLine(
-        accountId: taxAcc.id,
-        debit: totalTaxReturn,
-        description: 'مرتجع ضريبة فاتورة #$invNumber',
-        costCenterId: costCenterId,
-      ));
+      lines.add(
+        JournalLine(
+          accountId: taxAcc.id,
+          debit: totalTaxReturn,
+          description: 'مرتجع ضريبة فاتورة #$invNumber',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     // COGS reversal (Debit Inventory)
     if (totalCogsReturn > 0) {
       final invAcc = await _requireAccount('inventory');
-      lines.add(JournalLine(
-        accountId: invAcc.id,
-        debit: totalCogsReturn,
-        description: 'إعادة للمخزون - مرتجع فاتورة #$invNumber',
-        costCenterId: costCenterId,
-      ));
+      lines.add(
+        JournalLine(
+          accountId: invAcc.id,
+          debit: totalCogsReturn,
+          description: 'إعادة للمخزون - مرتجع فاتورة #$invNumber',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     // 2. Credit side (Reversing Payment & COGS)
@@ -684,41 +796,49 @@ class JournalEntryFactory {
         partyId: customerId,
         fallbackPurpose: 'receivables',
       );
-      lines.add(JournalLine(
-        accountId: arAcc.id,
-        credit: arRefund,
-        description: 'تخفيض حساب عميل - مرتجع فاتورة #$invNumber',
-        costCenterId: costCenterId,
-      ));
+      lines.add(
+        JournalLine(
+          accountId: arAcc.id,
+          credit: arRefund,
+          description: 'تخفيض حساب عميل - مرتجع فاتورة #$invNumber',
+          costCenterId: costCenterId,
+        ),
+      );
     }
     if (cashRefund > 0) {
       final cashAcc = await _requireAccount('cash');
-      lines.add(JournalLine(
-        accountId: cashAcc.id,
-        credit: cashRefund,
-        description: 'صرف نقدي - مرتجع فاتورة #$invNumber',
-        costCenterId: costCenterId,
-      ));
+      lines.add(
+        JournalLine(
+          accountId: cashAcc.id,
+          credit: cashRefund,
+          description: 'صرف نقدي - مرتجع فاتورة #$invNumber',
+          costCenterId: costCenterId,
+        ),
+      );
     }
     if (bankRefund > 0) {
       final bankAcc = await _requireAccount('bank');
-      lines.add(JournalLine(
-        accountId: bankAcc.id,
-        credit: bankRefund,
-        description: 'صرف بنكي - مرتجع فاتورة #$invNumber',
-        costCenterId: costCenterId,
-      ));
+      lines.add(
+        JournalLine(
+          accountId: bankAcc.id,
+          credit: bankRefund,
+          description: 'صرف بنكي - مرتجع فاتورة #$invNumber',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     // COGS reversal (Credit COGS)
     if (totalCogsReturn > 0) {
       final cogsAcc = await _requireAccount('cogs');
-      lines.add(JournalLine(
-        accountId: cogsAcc.id,
-        credit: totalCogsReturn,
-        description: 'تخفيض تكلفة المبيعات - مرتجع فاتورة #$invNumber',
-        costCenterId: costCenterId,
-      ));
+      lines.add(
+        JournalLine(
+          accountId: cogsAcc.id,
+          credit: totalCogsReturn,
+          description: 'تخفيض تكلفة المبيعات - مرتجع فاتورة #$invNumber',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     // ISS-01: Validate balance and create entry
@@ -800,9 +920,13 @@ class JournalEntryFactory {
       // **والبضاعةُ تفضل في المخزون**. مقيس: انحرافُ ٥ وحداتٍ لكلّ إلغاء.
       final returnMovements = <StockMovementData>[
         ...await _inventoryRepo.getStockMovementsByReference(
-            'sales_return', invoice.id),
+          'sales_return',
+          invoice.id,
+        ),
         ...await _inventoryRepo.getStockMovementsByReference(
-            'sales_invoice', invoice.id),
+          'sales_invoice',
+          invoice.id,
+        ),
       ];
 
       for (final movement in returnMovements) {
@@ -825,10 +949,8 @@ class JournalEntryFactory {
       }
 
       // 2. Reverse refund safe transactions
-      final returnSafeTransactions = await _treasuryRepo.getTransactionsByReference(
-        'sales_return',
-        invoice.id,
-      );
+      final returnSafeTransactions = await _treasuryRepo
+          .getTransactionsByReference('sales_return', invoice.id);
 
       for (final origTxn in returnSafeTransactions) {
         if (origTxn.category == 'sales_return') {
@@ -845,7 +967,8 @@ class JournalEntryFactory {
             // و`newBalance` يبقى لقطةً لـ`balanceAfter`.
             final newBalance = safe.balance + origTxn.amount;
             await _treasuryRepo.createSafeTransaction(
-              voucherNumber: 'CAN-RET${DateTime.now().year}${invoice.id.toString().padLeft(6, '0')}',
+              voucherNumber:
+                  'CAN-RET${DateTime.now().year}${invoice.id.toString().padLeft(6, '0')}',
               safeId: safe.id,
               transactionType: 'receipt',
               category: 'return_cancel',
@@ -872,10 +995,14 @@ class JournalEntryFactory {
           );
 
           for (final entry in entries) {
-            final lines = await _accountingRepo.getJournalEntryLinesWithAccounts(entry.id);
+            final lines = await _accountingRepo
+                .getJournalEntryLinesWithAccounts(entry.id);
             for (final line in lines) {
               if (line['account_id'] == arAcc.id && (line['credit'] ?? 0) > 0) {
-                await _partiesRepo.adjustPartyBalance(invoice.customerId!, line['credit']);
+                await _partiesRepo.adjustPartyBalance(
+                  invoice.customerId!,
+                  line['credit'],
+                );
               }
             }
           }
@@ -889,7 +1016,11 @@ class JournalEntryFactory {
       );
 
       // 5. Reset invoice status
-      await _accountingRepo.updateEntityStatus('sales_invoices', invoice.id, 'completed');
+      await _accountingRepo.updateEntityStatus(
+        'sales_invoices',
+        invoice.id,
+        'completed',
+      );
 
       // 6. Log Activity
       await _auditRepo.logActivity(
@@ -915,7 +1046,7 @@ class JournalEntryFactory {
     required double totalExpenses,
     required double totalSales,
     required String employeeName,
-    int? branchId, 
+    int? branchId,
     int? costCenterId,
   }) async {
     final List<JournalLine> lines = [];
@@ -923,53 +1054,64 @@ class JournalEntryFactory {
 
     if (cashAmount > 0) {
       final cashAcc = await _requireAccount('cash');
-      lines.add(JournalLine(
-        accountId: cashAcc.id,
-        debit: cashAmount,
-        description: 'تحصيل نقدي - $desc',
-        costCenterId: costCenterId,
-      ));
+      lines.add(
+        JournalLine(
+          accountId: cashAcc.id,
+          debit: cashAmount,
+          description: 'تحصيل نقدي - $desc',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     final bankTotal = bankAmount + clickAmount;
     if (bankTotal > 0) {
       final bankAcc = await _requireAccount('bank');
-      lines.add(JournalLine(
-        accountId: bankAcc.id,
-        debit: bankTotal,
-        description: 'تحصيل بنك/بطاقة/كليك - $desc',
-        costCenterId: costCenterId,
-      ));
+      lines.add(
+        JournalLine(
+          accountId: bankAcc.id,
+          debit: bankTotal,
+          description: 'تحصيل بنك/بطاقة/كليك - $desc',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     if (totalExpenses > 0) {
       // Prefer the dedicated 'op_expenses' purpose; fall back to the
       // generic 'misc_expense' mapping (default code '6214'). Both
       // resolve through the seeded chart — no raw code lookup.
-      final expenseAcc = await _optionalAccount('op_expenses')
-          ?? await _optionalAccount('misc_expense');
+      final expenseAcc =
+          await _optionalAccount('op_expenses') ??
+          await _optionalAccount('misc_expense');
       final fallback = expenseAcc;
       if (fallback != null) {
-        lines.add(JournalLine(
-          accountId: fallback.id,
-          debit: totalExpenses,
-          description: 'مصروفات الوردية - $desc',
-          costCenterId: costCenterId,
-        ));
+        lines.add(
+          JournalLine(
+            accountId: fallback.id,
+            debit: totalExpenses,
+            description: 'مصروفات الوردية - $desc',
+            costCenterId: costCenterId,
+          ),
+        );
       } else {
-        debugPrint('[JE-WARNING] حساب المصروفات غير موجود — سيتم تخطي سطر المصروفات');
+        debugPrint(
+          '[JE-WARNING] حساب المصروفات غير موجود — سيتم تخطي سطر المصروفات',
+        );
       }
     }
 
     final totalCredit = cashAmount + bankTotal + totalExpenses;
     if (totalCredit > 0) {
       final salesAcc = await _requireAccount('sales');
-      lines.add(JournalLine(
-        accountId: salesAcc.id,
-        credit: totalCredit,
-        description: 'إيرادات المبيعات - $desc',
-        costCenterId: costCenterId,
-      ));
+      lines.add(
+        JournalLine(
+          accountId: salesAcc.id,
+          credit: totalCredit,
+          description: 'إيرادات المبيعات - $desc',
+          costCenterId: costCenterId,
+        ),
+      );
     }
 
     // ISS-01: Validate balance and create entry

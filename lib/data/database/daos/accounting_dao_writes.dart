@@ -2,7 +2,6 @@
 part of '../database.dart';
 
 extension AccountingDaoWritesExt on AppDatabase {
-
   /// Create a journal entry
   ///
   /// [globalId] lets callers inject a deterministic UUID so client/server
@@ -63,6 +62,7 @@ extension AccountingDaoWritesExt on AppDatabase {
     List<Map<String, dynamic>>? syncLines;
     int? syncResolvedCostCenterId;
     int? syncBranchId;
+    double committedRoundingAmount = 0;
 
     final entryId = await transaction(() async {
       // DEDUP-FIX: Prevent duplicate auto-posted JEs for the same reference.
@@ -82,27 +82,37 @@ extension AccountingDaoWritesExt on AppDatabase {
       // القيدُ بـ`UNIQUE constraint failed` في الفهرس، فتوقّف الإهلاكُ
       // بعد شهره الأوّل بدل أن يُرحَّل.
       const multiJeReferenceTypes = kMultiJeReferenceTypes;
-      if (isAutoPosted && !allowRepost && referenceType != null && referenceId != null &&
+      if (isAutoPosted &&
+          !allowRepost &&
+          referenceType != null &&
+          referenceId != null &&
           !multiJeReferenceTypes.contains(referenceType)) {
         // Build the full set of reference type aliases to check:
         //   'sale' ↔ 'sales_invoice'  |  'purchase' ↔ 'purchase_invoice'
         final refTypesToCheck = <String>[referenceType];
         if (referenceType == 'sale') refTypesToCheck.add('sales_invoice');
         if (referenceType == 'sales_invoice') refTypesToCheck.add('sale');
-        if (referenceType == 'purchase') refTypesToCheck.add('purchase_invoice');
-        if (referenceType == 'purchase_invoice') refTypesToCheck.add('purchase');
+        if (referenceType == 'purchase')
+          refTypesToCheck.add('purchase_invoice');
+        if (referenceType == 'purchase_invoice')
+          refTypesToCheck.add('purchase');
 
         for (final rt in refTypesToCheck) {
-          final dup = await (select(journalEntries)
-                ..where((e) =>
-                    e.referenceType.equals(rt) &
-                    e.referenceId.equals(referenceId) &
-                    e.isAutoPosted.equals(true))
-                ..limit(1))
-              .getSingleOrNull();
+          final dup =
+              await (select(journalEntries)
+                    ..where(
+                      (e) =>
+                          e.referenceType.equals(rt) &
+                          e.referenceId.equals(referenceId) &
+                          e.isAutoPosted.equals(true),
+                    )
+                    ..limit(1))
+                  .getSingleOrNull();
           if (dup != null) {
-            debugPrint('[JE-DEDUP] Skipping duplicate autopost: '
-                '$referenceType #$referenceId — already posted as JE #${dup.id} ($rt)');
+            debugPrint(
+              '[JE-DEDUP] Skipping duplicate autopost: '
+              '$referenceType #$referenceId — already posted as JE #${dup.id} ($rt)',
+            );
             return dup.id; // Return existing JE id (idempotent)
           }
         }
@@ -125,13 +135,21 @@ extension AccountingDaoWritesExt on AppDatabase {
       // Standardize decimal rounding (3 digits per AppConstants.decimalPlaces)
       // to prevent floating-point mismatch.
       // Inherit header costCenterId if line does not explicitly specify one.
-      final roundedLines = lines.map((line) => JournalLine(
-        accountId: line.accountId,
-        debit: double.parse(line.debit.toStringAsFixed(AppConstants.decimalPlaces)),
-        credit: double.parse(line.credit.toStringAsFixed(AppConstants.decimalPlaces)),
-        description: line.description,
-        costCenterId: line.costCenterId ?? costCenterId,
-      )).toList();
+      final roundedLines = lines
+          .map(
+            (line) => JournalLine(
+              accountId: line.accountId,
+              debit: double.parse(
+                line.debit.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
+              credit: double.parse(
+                line.credit.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
+              description: line.description,
+              costCenterId: line.costCenterId ?? costCenterId,
+            ),
+          )
+          .toList();
 
       // Spec 139 — deterministic & honest balancing. Compute the debit/credit
       // residual in INTEGER MINOR UNITS (no float drift). A legitimate sub-cap
@@ -141,32 +159,39 @@ extension AccountingDaoWritesExt on AppDatabase {
       // the Arabic substrings below). Replaces the old ×10 absorb-into-largest-leg
       // plug (Cluster 025 / Issue 1) now that Spec 136 fixed the leg-derivation source.
       final debitMinor = roundedLines.fold<int>(
-          0, (sum, line) => sum + FinancialUtils.toMinorUnits(line.debit));
+        0,
+        (sum, line) => sum + FinancialUtils.toMinorUnits(line.debit),
+      );
       final creditMinor = roundedLines.fold<int>(
-          0, (sum, line) => sum + FinancialUtils.toMinorUnits(line.credit));
+        0,
+        (sum, line) => sum + FinancialUtils.toMinorUnits(line.credit),
+      );
       final residualMinor = debitMinor - creditMinor;
       double absorbedRounding = 0;
       if (residualMinor != 0) {
         if (residualMinor.abs() <= FinancialUtils.balanceToleranceMinorUnits) {
           // Legitimate sub-cap rounding remainder.
           final amount = FinancialUtils.fromMinorUnits(residualMinor.abs());
-          final roundingAccount =
-              await getLeafAccountByPurpose('rounding_difference');
+          final roundingAccount = await getLeafAccountByPurpose(
+            'rounding_difference',
+          );
           if (roundingAccount != null) {
             // Honest path — book the remainder to the dedicated account.
-            roundedLines.add(JournalLine(
-              accountId: roundingAccount.id,
-              // credit-short (residual>0) → rounding GAIN (credit);
-              // debit-short  (residual<0) → rounding LOSS (debit).
-              debit: residualMinor < 0 ? amount : 0,
-              credit: residualMinor > 0 ? amount : 0,
-              description: 'فرق تقريب',
-            ));
+            roundedLines.add(
+              JournalLine(
+                accountId: roundingAccount.id,
+                // credit-short (residual>0) → rounding GAIN (credit);
+                // debit-short  (residual<0) → rounding LOSS (debit).
+                debit: residualMinor < 0 ? amount : 0,
+                credit: residualMinor > 0 ? amount : 0,
+                description: 'فرق تقريب',
+              ),
+            );
             DiagnosticLogger.log(
               'SYNC-WARN',
               'JE rounding residual '
-              '${FinancialUtils.fromMinorUnits(residualMinor).toStringAsFixed(4)} '
-              'posted to rounding-difference account ${roundingAccount.code}. Spec 139.',
+                  '${FinancialUtils.fromMinorUnits(residualMinor).toStringAsFixed(4)} '
+                  'posted to rounding-difference account ${roundingAccount.code}. Spec 139.',
             );
           } else if (SyncInterceptor.isClientMode) {
             // Spec 139 H1 — on a client/mirror the rounding account may not have
@@ -181,8 +206,9 @@ extension AccountingDaoWritesExt on AppDatabase {
             int targetIdx = -1;
             double targetMax = -1;
             for (var i = 0; i < roundedLines.length; i++) {
-              final legAmt =
-                  shortIsCredit ? roundedLines[i].credit : roundedLines[i].debit;
+              final legAmt = shortIsCredit
+                  ? roundedLines[i].credit
+                  : roundedLines[i].debit;
               if (legAmt > targetMax) {
                 targetMax = legAmt;
                 targetIdx = i;
@@ -205,9 +231,9 @@ extension AccountingDaoWritesExt on AppDatabase {
             DiagnosticLogger.log(
               'SYNC-WARN',
               'client-mode: rounding account (rounding_difference) unavailable '
-              'locally; absorbed sub-cap residual '
-              '${FinancialUtils.fromMinorUnits(residualMinor).toStringAsFixed(4)} '
-              'into the largest leg — the server re-posts honestly. Spec 139 H1.',
+                  'locally; absorbed sub-cap residual '
+                  '${FinancialUtils.fromMinorUnits(residualMinor).toStringAsFixed(4)} '
+                  'into the largest leg — the server re-posts honestly. Spec 139 H1.',
             );
           } else {
             // Server/standalone: 4319 is guaranteed by the boot self-heal. If it
@@ -221,11 +247,16 @@ extension AccountingDaoWritesExt on AppDatabase {
             );
           }
           absorbedRounding = FinancialUtils.fromMinorUnits(residualMinor);
+          committedRoundingAmount = absorbedRounding;
           // Defensive re-assert: the entry now balances exactly.
           final d2 = roundedLines.fold<int>(
-              0, (sum, line) => sum + FinancialUtils.toMinorUnits(line.debit));
+            0,
+            (sum, line) => sum + FinancialUtils.toMinorUnits(line.debit),
+          );
           final c2 = roundedLines.fold<int>(
-              0, (sum, line) => sum + FinancialUtils.toMinorUnits(line.credit));
+            0,
+            (sum, line) => sum + FinancialUtils.toMinorUnits(line.credit),
+          );
           if (d2 != c2) {
             throw Exception(
               'خطأ في قيد اليومية: تعذّر موازنة القيد بعد ترحيل فرق التقريب — '
@@ -247,12 +278,18 @@ extension AccountingDaoWritesExt on AppDatabase {
       // Spec 139 — final balanced debit total (major units) for the audit-hash
       // payload below. The old method-scoped `totalDebit` was removed with the
       // absorb plug; recompute it from the now-balanced `roundedLines`.
-      final totalDebit = FinancialUtils.fromMinorUnits(roundedLines.fold<int>(
-          0, (sum, line) => sum + FinancialUtils.toMinorUnits(line.debit)));
+      final totalDebit = FinancialUtils.fromMinorUnits(
+        roundedLines.fold<int>(
+          0,
+          (sum, line) => sum + FinancialUtils.toMinorUnits(line.debit),
+        ),
+      );
 
       // Bulk load affected accounts to eliminate N+1 queries
       final accountIds = roundedLines.map((l) => l.accountId).toSet();
-      final affectedAccounts = await (select(accounts)..where((a) => a.id.isIn(accountIds))).get();
+      final affectedAccounts = await (select(
+        accounts,
+      )..where((a) => a.id.isIn(accountIds))).get();
       final accountMap = {for (var a in affectedAccounts) a.id: a};
 
       // v110: Guard — Prevent posting to 'view' accounts (parent-only accounts)
@@ -302,28 +339,33 @@ extension AccountingDaoWritesExt on AppDatabase {
       // no branch (column itself is nullable in the schema).
       int? finalBranchId = branchId;
       if (finalBranchId == null) {
-        final fallbackBranch = await (select(branches)
-              ..where((b) => b.isActive.equals(true))
-              ..orderBy([(b) => OrderingTerm.asc(b.id)])
-              ..limit(1))
-            .getSingleOrNull();
+        final fallbackBranch =
+            await (select(branches)
+                  ..where((b) => b.isActive.equals(true))
+                  ..orderBy([(b) => OrderingTerm.asc(b.id)])
+                  ..limit(1))
+                .getSingleOrNull();
         finalBranchId = fallbackBranch?.id;
       } else {
         // Defensive: caller-supplied id might not exist locally (e.g.
         // stale dropdown selection on a mirror with partial sync). Verify
         // and fall back if missing.
-        final exists = await (select(branches)
-              ..where((b) => b.id.equals(finalBranchId!))
-              ..limit(1))
-            .getSingleOrNull();
+        final exists =
+            await (select(branches)
+                  ..where((b) => b.id.equals(finalBranchId!))
+                  ..limit(1))
+                .getSingleOrNull();
         if (exists == null) {
-          debugPrint('[ACCOUNTING] branchId=$finalBranchId not found locally '
-              '— falling back to lowest active branch (Spec 108 FK guard)');
-          final fallbackBranch = await (select(branches)
-                ..where((b) => b.isActive.equals(true))
-                ..orderBy([(b) => OrderingTerm.asc(b.id)])
-                ..limit(1))
-              .getSingleOrNull();
+          debugPrint(
+            '[ACCOUNTING] branchId=$finalBranchId not found locally '
+            '— falling back to lowest active branch (Spec 108 FK guard)',
+          );
+          final fallbackBranch =
+              await (select(branches)
+                    ..where((b) => b.isActive.equals(true))
+                    ..orderBy([(b) => OrderingTerm.asc(b.id)])
+                    ..limit(1))
+                  .getSingleOrNull();
           finalBranchId = fallbackBranch?.id;
         }
       }
@@ -331,13 +373,16 @@ extension AccountingDaoWritesExt on AppDatabase {
       // Same defensive verification for costCenterId — a stale id from a
       // mirror's dropdown can otherwise blow up the JE insert with FK 787.
       if (resolvedCostCenterId != null) {
-        final ccExists = await (select(costCenters)
-              ..where((c) => c.id.equals(resolvedCostCenterId!))
-              ..limit(1))
-            .getSingleOrNull();
+        final ccExists =
+            await (select(costCenters)
+                  ..where((c) => c.id.equals(resolvedCostCenterId!))
+                  ..limit(1))
+                .getSingleOrNull();
         if (ccExists == null) {
-          debugPrint('[ACCOUNTING] costCenterId=$resolvedCostCenterId not '
-              'found locally — clearing to null (Spec 108 FK guard)');
+          debugPrint(
+            '[ACCOUNTING] costCenterId=$resolvedCostCenterId not '
+            'found locally — clearing to null (Spec 108 FK guard)',
+          );
           resolvedCostCenterId = null;
         }
       }
@@ -346,15 +391,27 @@ extension AccountingDaoWritesExt on AppDatabase {
       // resolve the branch's own cost center — then its region's — BEFORE the
       // global GEN fallback below. Priority: explicit -> branch -> region -> GEN.
       if (resolvedCostCenterId == null && finalBranchId != null) {
-        final branchRow = await (select(branches)..where((b) => b.id.equals(finalBranchId!))..limit(1)).getSingleOrNull();
+        final branchRow =
+            await (select(branches)
+                  ..where((b) => b.id.equals(finalBranchId!))
+                  ..limit(1))
+                .getSingleOrNull();
         if (branchRow?.costCenterId != null) {
           resolvedCostCenterId = branchRow!.costCenterId;
-          debugPrint('[ACCOUNTING] costCenter auto-resolved from branch #$finalBranchId → cc=${branchRow.costCenterId}');
+          debugPrint(
+            '[ACCOUNTING] costCenter auto-resolved from branch #$finalBranchId → cc=${branchRow.costCenterId}',
+          );
         } else if (branchRow?.regionId != null) {
-          final regionRow = await (select(regions)..where((r) => r.id.equals(branchRow!.regionId!))..limit(1)).getSingleOrNull();
+          final regionRow =
+              await (select(regions)
+                    ..where((r) => r.id.equals(branchRow!.regionId!))
+                    ..limit(1))
+                  .getSingleOrNull();
           if (regionRow?.costCenterId != null) {
             resolvedCostCenterId = regionRow!.costCenterId;
-            debugPrint('[ACCOUNTING] costCenter auto-resolved from region #${branchRow!.regionId} → cc=${regionRow.costCenterId}');
+            debugPrint(
+              '[ACCOUNTING] costCenter auto-resolved from region #${branchRow!.regionId} → cc=${regionRow.costCenterId}',
+            );
           }
         }
       }
@@ -364,10 +421,11 @@ extension AccountingDaoWritesExt on AppDatabase {
       // auto-created once so entries are never lost. Reached ONLY after branch +
       // region both came back empty — never ahead of the branch's own centre.
       if (resolvedCostCenterId == null && needsCostCenter) {
-        final defaultCC = await (select(costCenters)
-              ..where((c) => c.code.equals('GEN'))
-              ..limit(1))
-            .getSingleOrNull();
+        final defaultCC =
+            await (select(costCenters)
+                  ..where((c) => c.code.equals('GEN'))
+                  ..limit(1))
+                .getSingleOrNull();
         if (defaultCC != null) {
           resolvedCostCenterId = defaultCC.id;
         } else {
@@ -379,7 +437,9 @@ extension AccountingDaoWritesExt on AppDatabase {
               globalId: Value(UuidV7.generate()),
             ),
           );
-          debugPrint('[ACCOUNTING] Auto-created default cost center GEN (id=$resolvedCostCenterId)');
+          debugPrint(
+            '[ACCOUNTING] Auto-created default cost center GEN (id=$resolvedCostCenterId)',
+          );
         }
       }
 
@@ -462,7 +522,9 @@ extension AccountingDaoWritesExt on AppDatabase {
           'INNER JOIN journal_entries je ON je.id = jel.entry_id '
           'WHERE jel.account_id IN ($placeholders) AND je.is_posted = ${sqlBool(true)} AND je.is_deleted = ${sqlBool(false)} '
           'GROUP BY jel.account_id',
-          variables: affectedAccountIds.map((id) => Variable.withInt(id)).toList(),
+          variables: affectedAccountIds
+              .map((id) => Variable.withInt(id))
+              .toList(),
           readsFrom: {journalEntryLines, journalEntries, accounts},
         ).get();
 
@@ -492,11 +554,12 @@ extension AccountingDaoWritesExt on AppDatabase {
       // fire on an aborted tx and produce the opaque 25P02 on return.
       // Let any such error propagate so the transaction rolls back cleanly
       // and the real cause surfaces at the API boundary.
-      final previousEntry = await (select(journalEntries)
-            ..where((e) => e.id.isSmallerThanValue(entryId))
-            ..orderBy([(e) => OrderingTerm.desc(e.id)])
-            ..limit(1))
-          .getSingleOrNull();
+      final previousEntry =
+          await (select(journalEntries)
+                ..where((e) => e.id.isSmallerThanValue(entryId))
+                ..orderBy([(e) => OrderingTerm.desc(e.id)])
+                ..limit(1))
+              .getSingleOrNull();
 
       String previousHash = '0' * 64; // Genesis hash
       if (previousEntry != null) {
@@ -506,32 +569,46 @@ extension AccountingDaoWritesExt on AppDatabase {
       }
 
       // Build hash payload: prevHash + entryId + date + totalDebit + description
-      final payload = '$previousHash|$entryId|${date.toIso8601String()}|$totalDebit|$description';
+      final payload =
+          '$previousHash|$entryId|${date.toIso8601String()}|$totalDebit|$description';
       final digest = sha256.convert(utf8.encode(payload));
       final hashStr = digest.toString();
 
       // Append hash to description (non-destructive — preserves original text)
       final updatedDesc = '${description ?? ''} [HASH:$hashStr]';
-      await (update(journalEntries)..where((e) => e.id.equals(entryId)))
-          .write(JournalEntriesCompanion(description: Value(updatedDesc)));
+      await (update(journalEntries)..where((e) => e.id.equals(entryId))).write(
+        JournalEntriesCompanion(description: Value(updatedDesc)),
+      );
 
       // Capture sync payload so it can be used after the transaction commits
       // (the HTTP call below must NOT hold the SQLite write-lock — audit fix #2).
       if (SyncInterceptor.isClientMode) {
         syncDesc = updatedDesc;
-        syncLines = roundedLines.map((l) => <String, dynamic>{
-          'accountId': l.accountId,
-          'debit': l.debit,
-          'credit': l.credit,
-          'description': l.description,
-          'costCenterId': l.costCenterId ?? resolvedCostCenterId,
-        }).toList();
+        syncLines = roundedLines
+            .map(
+              (l) => <String, dynamic>{
+                'accountId': l.accountId,
+                'debit': l.debit,
+                'credit': l.credit,
+                'description': l.description,
+                'costCenterId': l.costCenterId ?? resolvedCostCenterId,
+              },
+            )
+            .toList();
         syncResolvedCostCenterId = resolvedCostCenterId;
         syncBranchId = finalBranchId;
       }
 
       return entryId;
     }); // ← transaction commits here; SQLite write-lock released
+
+    if (committedRoundingAmount != 0) {
+      await DiagnosticLogger.log(
+        'ROUNDING-ACTIVITY',
+        'JE #$entryId posted rounding_difference amount '
+            '${committedRoundingAmount.toStringAsFixed(AppConstants.decimalPlaces)}',
+      );
+    }
 
     // Phase 1.5: Sync OUTSIDE transaction — lock already released above.
     // HTTP latency no longer blocks other writers (fixes SqliteException 517
@@ -560,13 +637,14 @@ extension AccountingDaoWritesExt on AppDatabase {
           globalId: mintedGlobalId,
         );
       } catch (e) {
-        debugPrint('[ACCOUNTING_SYNC] Sync trigger failed for JE #$entryId: $e');
+        debugPrint(
+          '[ACCOUNTING_SYNC] Sync trigger failed for JE #$entryId: $e',
+        );
       }
     }
 
     return entryId;
   }
-
 
   /// Cascade-reverse every auto-posted journal entry matching
   /// (referenceType, referenceId). For each match, a NEW journal entry is
@@ -611,21 +689,24 @@ extension AccountingDaoWritesExt on AppDatabase {
     int? branchId,
     bool requireAutoPosted = true,
   }) async {
-    final originals = await (select(journalEntries)
-          ..where((e) {
-            var predicate = e.referenceType.equals(referenceType) &
-                e.referenceId.equalsNullable(referenceId) &
-                e.isDeleted.equals(false);
-            if (requireAutoPosted) {
-              predicate = predicate & e.isAutoPosted.equals(true);
-            }
-            return predicate;
-          }))
-        .get();
+    final originals =
+        await (select(journalEntries)..where((e) {
+              var predicate =
+                  e.referenceType.equals(referenceType) &
+                  e.referenceId.equalsNullable(referenceId) &
+                  e.isDeleted.equals(false);
+              if (requireAutoPosted) {
+                predicate = predicate & e.isAutoPosted.equals(true);
+              }
+              return predicate;
+            }))
+            .get();
 
     if (originals.isEmpty) {
-      debugPrint('[JE-REVERSE] No auto-posted JE to reverse for '
-          '$referenceType #$referenceId');
+      debugPrint(
+        '[JE-REVERSE] No auto-posted JE to reverse for '
+        '$referenceType #$referenceId',
+      );
       return 0;
     }
 
@@ -640,30 +721,35 @@ extension AccountingDaoWritesExt on AppDatabase {
 
       // Idempotency check — if the reversal already exists (e.g. pulled from
       // server after a local reversal, or re-entry after crash) skip.
-      final existing = await (select(journalEntries)
-            ..where((e) => e.globalId.equals(reversalGid))
-            ..limit(1))
-          .getSingleOrNull();
+      final existing =
+          await (select(journalEntries)
+                ..where((e) => e.globalId.equals(reversalGid))
+                ..limit(1))
+              .getSingleOrNull();
       if (existing != null) {
-        debugPrint('[JE-REVERSE] Reversal already exists for '
-            '$referenceType #$referenceId (gid=$reversalGid) — skipping');
+        debugPrint(
+          '[JE-REVERSE] Reversal already exists for '
+          '$referenceType #$referenceId (gid=$reversalGid) — skipping',
+        );
         continue;
       }
 
-      final originalLines = await (select(journalEntryLines)
-            ..where((l) => l.entryId.equals(originalJE.id)))
-          .get();
+      final originalLines = await (select(
+        journalEntryLines,
+      )..where((l) => l.entryId.equals(originalJE.id))).get();
 
       if (originalLines.isEmpty) continue;
 
       final reversalLines = originalLines
-          .map((line) => JournalLine(
-                accountId: line.accountId,
-                debit: line.credit, // swap
-                credit: line.debit,
-                description: 'عكس: ${line.description ?? ""}',
-                costCenterId: line.costCenterId,
-              ))
+          .map(
+            (line) => JournalLine(
+              accountId: line.accountId,
+              debit: line.credit, // swap
+              credit: line.debit,
+              description: 'عكس: ${line.description ?? ""}',
+              costCenterId: line.costCenterId,
+            ),
+          )
           .toList();
 
       await createJournalEntry(
@@ -678,36 +764,41 @@ extension AccountingDaoWritesExt on AppDatabase {
         globalId: reversalGid,
       );
       inserted++;
-      debugPrint('[JE-REVERSE] Reversed JE #${originalJE.id} '
-          '($referenceType #$referenceId) → gid=$reversalGid');
+      debugPrint(
+        '[JE-REVERSE] Reversed JE #${originalJE.id} '
+        '($referenceType #$referenceId) → gid=$reversalGid',
+      );
     }
     return inserted;
   }
-
 
   /// One-time migration: retroactively post unposted sales/return journal entries
   /// that were created before the isAutoPosted fix was applied.
   /// Also recalculates all affected account balances.
   Future<void> fixUnpostedAutoEntries() async {
     // Find all unposted journal entries for sales_invoice and sales_return
-    final unposted = await (select(journalEntries)
-          ..where((e) =>
-              e.isPosted.equals(false) &
-              (e.referenceType.equals('sales_invoice') |
-               e.referenceType.equals('sales_return'))))
-        .get();
+    final unposted =
+        await (select(journalEntries)..where(
+              (e) =>
+                  e.isPosted.equals(false) &
+                  (e.referenceType.equals('sales_invoice') |
+                      e.referenceType.equals('sales_return')),
+            ))
+            .get();
 
     if (unposted.isEmpty) return;
 
-    debugPrint('[ACCOUNTING_FIX] Found ${unposted.length} unposted sales/return entries. Posting now...');
+    debugPrint(
+      '[ACCOUNTING_FIX] Found ${unposted.length} unposted sales/return entries. Posting now...',
+    );
 
     final affectedAccountIds = <int>{};
     final unpostedIds = unposted.map((e) => e.id).toSet();
 
     if (unpostedIds.isNotEmpty) {
-      final lines = await (select(journalEntryLines)
-            ..where((l) => l.entryId.isIn(unpostedIds)))
-          .get();
+      final lines = await (select(
+        journalEntryLines,
+      )..where((l) => l.entryId.isIn(unpostedIds))).get();
       for (final line in lines) {
         affectedAccountIds.add(line.accountId);
       }
@@ -734,24 +825,30 @@ extension AccountingDaoWritesExt on AppDatabase {
         'INNER JOIN journal_entries je ON je.id = jel.entry_id '
         'WHERE jel.account_id IN ($ph) AND je.is_posted = ${sqlBool(true)} AND je.is_deleted = ${sqlBool(false)} '
         'GROUP BY jel.account_id',
-        variables: affectedAccountIds.map((id) => Variable.withInt(id)).toList(),
+        variables: affectedAccountIds
+            .map((id) => Variable.withInt(id))
+            .toList(),
         readsFrom: {journalEntryLines, journalEntries, accounts},
       ).get();
       final bm = <int, double>{
-        for (final r in bRows) r.read<int>('account_id'): r.read<double>('computed_balance'),
+        for (final r in bRows)
+          r.read<int>('account_id'): r.read<double>('computed_balance'),
       };
       await batch((b) {
         for (final accountId in affectedAccountIds) {
-          b.update(accounts, AccountsCompanion(balance: Value(bm[accountId] ?? 0.0)),
-              where: (a) => a.id.equals(accountId));
+          b.update(
+            accounts,
+            AccountsCompanion(balance: Value(bm[accountId] ?? 0.0)),
+            where: (a) => a.id.equals(accountId),
+          );
         }
       });
     }
 
-    debugPrint('[ACCOUNTING_FIX] Posted ${unposted.length} entries, recalculated ${affectedAccountIds.length} account balances.');
+    debugPrint(
+      '[ACCOUNTING_FIX] Posted ${unposted.length} entries, recalculated ${affectedAccountIds.length} account balances.',
+    );
   }
-
-
 
   /// Recalculate account balance from POSTED journal entry lines only (self-healing)
   /// Per IAS 1: balances derive from journal entries, not incremental adds
@@ -761,10 +858,16 @@ extension AccountingDaoWritesExt on AppDatabase {
     final debitCol = journalEntryLines.debit.sum();
     final creditCol = journalEntryLines.credit.sum();
     final query = selectOnly(journalEntryLines).join([
-      innerJoin(journalEntries, journalEntries.id.equalsExp(journalEntryLines.entryId)),
+      innerJoin(
+        journalEntries,
+        journalEntries.id.equalsExp(journalEntryLines.entryId),
+      ),
     ]);
     query.addColumns([debitCol, creditCol]);
-    query.where(journalEntryLines.accountId.equals(accountId) & journalEntries.isPosted.equals(true));
+    query.where(
+      journalEntryLines.accountId.equals(accountId) &
+          journalEntries.isPosted.equals(true),
+    );
     final row = await query.getSingleOrNull();
     final totalDebit = row?.read(debitCol) ?? 0.0;
     final totalCredit = row?.read(creditCol) ?? 0.0;
@@ -773,7 +876,6 @@ extension AccountingDaoWritesExt on AppDatabase {
       AccountsCompanion(balance: Value(computedBalance)),
     );
   }
-
 
   // D-PERF-1: removed the dead `refreshPeriodSummary` method. It was the ONLY
   // writer of `period_account_summaries`, had ZERO callers, and the table has
@@ -801,9 +903,14 @@ extension AccountingDaoWritesExt on AppDatabase {
     );
   }
 
-
   /// Update cost center
-  Future<void> updateCostCenter(int id, {String? code, String? name, int? parentId, bool? isActive}) {
+  Future<void> updateCostCenter(
+    int id, {
+    String? code,
+    String? name,
+    int? parentId,
+    bool? isActive,
+  }) {
     return (update(costCenters)..where((t) => t.id.equals(id))).write(
       CostCentersCompanion(
         code: code != null ? Value(code) : const Value.absent(),
@@ -814,14 +921,12 @@ extension AccountingDaoWritesExt on AppDatabase {
     );
   }
 
-
   /// Soft-delete cost center (mark inactive)
   Future<void> deactivateCostCenter(int id) {
     return (update(costCenters)..where((t) => t.id.equals(id))).write(
       const CostCentersCompanion(isActive: Value(false)),
     );
   }
-
 
   /// Ensure default accounts exist (comprehensive chart of accounts)
   /// v110: Updated to match the new hierarchical code system
@@ -839,7 +944,11 @@ extension AccountingDaoWritesExt on AppDatabase {
       {'code': '1133', 'name': 'مخزون تحت التشغيل', 'type': 'asset'},
       {'code': '1134', 'name': 'مخزون البضاعة التامة الصنع', 'type': 'asset'},
       {'code': '1136', 'name': 'مخزون البضاعة للبيع', 'type': 'asset'},
-      {'code': '1141', 'name': 'ضريبة القيمة المضافة - مدفوعة', 'type': 'asset'},
+      {
+        'code': '1141',
+        'name': 'ضريبة القيمة المضافة - مدفوعة',
+        'type': 'asset',
+      },
       {'code': '1143', 'name': 'المصروفات المدفوعة مقدماً', 'type': 'asset'},
       {'code': '1146', 'name': 'سلف الموظفين', 'type': 'asset'},
       {'code': '1211', 'name': 'الأراضي', 'type': 'asset'},
@@ -854,7 +963,11 @@ extension AccountingDaoWritesExt on AppDatabase {
       // --- الالتزامات ---
       {'code': '2111', 'name': 'ذمم موردون محليون', 'type': 'liability'},
       {'code': '2113', 'name': 'أوراق الدفع', 'type': 'liability'},
-      {'code': '2121', 'name': 'ضريبة القيمة المضافة - محصلة', 'type': 'liability'},
+      {
+        'code': '2121',
+        'name': 'ضريبة القيمة المضافة - محصلة',
+        'type': 'liability',
+      },
       {'code': '2122', 'name': 'ضريبة الدخل المستحقة', 'type': 'liability'},
       {'code': '2131', 'name': 'رواتب ومزايا مستحقة', 'type': 'liability'},
       {'code': '2133', 'name': 'إيرادات مقدمة', 'type': 'liability'},
@@ -862,7 +975,11 @@ extension AccountingDaoWritesExt on AppDatabase {
       // --- حقوق الملكية ---
       {'code': '311', 'name': 'رأس المال', 'type': 'equity'},
       {'code': '313', 'name': 'الأرباح المبقاة', 'type': 'equity'},
-      {'code': '314', 'name': 'الأرباح والخسائر السنة الحالية', 'type': 'equity'},
+      {
+        'code': '314',
+        'name': 'الأرباح والخسائر السنة الحالية',
+        'type': 'equity',
+      },
       {'code': '315', 'name': 'حقوق الشريك / المالك', 'type': 'equity'},
       // --- الإيرادات ---
       {'code': '4121', 'name': 'مبيعات محلية - تجاري', 'type': 'revenue'},
@@ -907,7 +1024,6 @@ extension AccountingDaoWritesExt on AppDatabase {
     await syncAccountMappings();
   }
 
-
   /// Create a new account
   Future<int> createAccount({
     required String code,
@@ -935,9 +1051,9 @@ extension AccountingDaoWritesExt on AppDatabase {
     // نسختان تفترقان بأوّل نوعٍ يُضاف.
     final parentLevel = parentId == null
         ? null
-        : (await (select(accounts)..where((a) => a.id.equals(parentId)))
-                .getSingleOrNull())
-            ?.level;
+        : (await (select(
+            accounts,
+          )..where((a) => a.id.equals(parentId))).getSingleOrNull())?.level;
 
     return into(accounts).insert(
       AccountsCompanion.insert(
@@ -954,22 +1070,30 @@ extension AccountingDaoWritesExt on AppDatabase {
     );
   }
 
-
   /// Update an existing account
-  Future<int> updateAccount(int id, {String? name, String? code, bool? isActive, bool? isHiddenFromEntries, String? accountNature}) async {
+  Future<int> updateAccount(
+    int id, {
+    String? name,
+    String? code,
+    bool? isActive,
+    bool? isHiddenFromEntries,
+    String? accountNature,
+  }) async {
     // 🔴 **وحسابٌ مُرحَّلٌ عليه لا يصير رئيسيّاً**: حارسُ v110 يرفض الترحيلَ
     // على `view`، فتبديلُ الطبيعة بعد الترحيل يترك سطوراً قائمةً على حسابٍ
     // يقول النظامُ إنّه لا يقبلها — لا تُعكَس ولا تُعدَّل، والدفترُ يحمل ما
     // يمنعه. والفحصُ **قبل** الكتابة فلا يترك نصفَ تبديل.
     if (accountNature == kAccountNatureView) {
-      final posted = await (selectOnly(journalEntryLines)
-            ..addColumns([journalEntryLines.id.count()])
-            ..where(journalEntryLines.accountId.equals(id)))
-          .map((r) => r.read(journalEntryLines.id.count()) ?? 0)
-          .getSingle();
+      final posted =
+          await (selectOnly(journalEntryLines)
+                ..addColumns([journalEntryLines.id.count()])
+                ..where(journalEntryLines.accountId.equals(id)))
+              .map((r) => r.read(journalEntryLines.id.count()) ?? 0)
+              .getSingle();
       if (posted > 0) {
         throw Exception(
-            'لا يمكن جعل الحساب رئيسيّاً — عليه $posted سطرَ قيدٍ مُرحَّل');
+          'لا يمكن جعل الحساب رئيسيّاً — عليه $posted سطرَ قيدٍ مُرحَّل',
+        );
       }
     }
 
@@ -978,12 +1102,15 @@ extension AccountingDaoWritesExt on AppDatabase {
         name: name != null ? Value(name) : const Value.absent(),
         code: code != null ? Value(code) : const Value.absent(),
         isActive: isActive != null ? Value(isActive) : const Value.absent(),
-        isHiddenFromEntries: isHiddenFromEntries != null ? Value(isHiddenFromEntries) : const Value.absent(),
-        accountNature: accountNature != null ? Value(accountNature) : const Value.absent(),
+        isHiddenFromEntries: isHiddenFromEntries != null
+            ? Value(isHiddenFromEntries)
+            : const Value.absent(),
+        accountNature: accountNature != null
+            ? Value(accountNature)
+            : const Value.absent(),
       ),
     );
   }
-
 
   /// Delete a non-system account with zero balance.
   ///
@@ -1009,11 +1136,12 @@ extension AccountingDaoWritesExt on AppDatabase {
     await transaction(() async {
       // Pre-flight FK checks — surface Arabic guidance before the DELETE
       // hits SQLite's foreign-key enforcer.
-      final jelCount = await (selectOnly(journalEntryLines)
-            ..addColumns([journalEntryLines.id.count()])
-            ..where(journalEntryLines.accountId.equals(id)))
-          .map((row) => row.read(journalEntryLines.id.count())!)
-          .getSingle();
+      final jelCount =
+          await (selectOnly(journalEntryLines)
+                ..addColumns([journalEntryLines.id.count()])
+                ..where(journalEntryLines.accountId.equals(id)))
+              .map((row) => row.read(journalEntryLines.id.count())!)
+              .getSingle();
       if (jelCount > 0) {
         throw Exception(
           'لا يمكن حذف الحساب — مرتبط بـ $jelCount قيد محاسبي. '
@@ -1021,11 +1149,12 @@ extension AccountingDaoWritesExt on AppDatabase {
         );
       }
 
-      final partyCount = await (selectOnly(parties)
-            ..addColumns([parties.id.count()])
-            ..where(parties.accountId.equals(id)))
-          .map((row) => row.read(parties.id.count())!)
-          .getSingle();
+      final partyCount =
+          await (selectOnly(parties)
+                ..addColumns([parties.id.count()])
+                ..where(parties.accountId.equals(id)))
+              .map((row) => row.read(parties.id.count())!)
+              .getSingle();
       if (partyCount > 0) {
         throw Exception(
           'لا يمكن حذف الحساب — مرتبط بـ $partyCount عميل/مورد. '
@@ -1033,11 +1162,12 @@ extension AccountingDaoWritesExt on AppDatabase {
         );
       }
 
-      final safeCount = await (selectOnly(safes)
-            ..addColumns([safes.id.count()])
-            ..where(safes.linkedAccountId.equals(id)))
-          .map((row) => row.read(safes.id.count())!)
-          .getSingle();
+      final safeCount =
+          await (selectOnly(safes)
+                ..addColumns([safes.id.count()])
+                ..where(safes.linkedAccountId.equals(id)))
+              .map((row) => row.read(safes.id.count())!)
+              .getSingle();
       if (safeCount > 0) {
         throw Exception(
           'لا يمكن حذف الحساب — مرتبط بـ $safeCount خزنة. '
@@ -1051,7 +1181,6 @@ extension AccountingDaoWritesExt on AppDatabase {
     });
   }
 
-
   /// Create activity profile
   Future<int> createActivityProfile({
     required String name,
@@ -1064,7 +1193,6 @@ extension AccountingDaoWritesExt on AppDatabase {
       ),
     );
   }
-
 
   /// Seed default activity profiles
   Future<void> seedDefaultActivityProfiles() async {
@@ -1104,7 +1232,6 @@ extension AccountingDaoWritesExt on AppDatabase {
     }
   }
 
-
   /// Ensure all default account mappings are seeded into the database
   Future<void> syncAccountMappings() async {
     for (var entry in AccountingDaoReadsExt.accountPurposes.entries) {
@@ -1123,10 +1250,11 @@ extension AccountingDaoWritesExt on AppDatabase {
       // dialog whose entry path runs the sync. We only need to know
       // whether at least one mapping exists for this purpose; the
       // duplicates are a separate data-drift concern.
-      final existing = await (select(accountMappings)
-            ..where((m) => m.purpose.equals(purpose))
-            ..limit(1))
-          .getSingleOrNull();
+      final existing =
+          await (select(accountMappings)
+                ..where((m) => m.purpose.equals(purpose))
+                ..limit(1))
+              .getSingleOrNull();
 
       if (existing == null) {
         // Find the account by its default code
@@ -1149,7 +1277,6 @@ extension AccountingDaoWritesExt on AppDatabase {
     }
   }
 
-
   /// Force-reset ALL account mappings to defaults from accountPurposes map.
   /// Deletes existing global mappings for each known purpose then re-inserts
   /// the default account. Cost-center-specific overrides are also cleared.
@@ -1160,11 +1287,15 @@ extension AccountingDaoWritesExt on AppDatabase {
       final code = entry.value;
       final account = await getAccountByCode(code);
       if (account == null) {
-        debugPrint('[MAPPING] resetDefault skip $purpose: account $code not found');
+        debugPrint(
+          '[MAPPING] resetDefault skip $purpose: account $code not found',
+        );
         continue;
       }
       try {
-        await (delete(accountMappings)..where((m) => m.purpose.equals(purpose))).go();
+        await (delete(
+          accountMappings,
+        )..where((m) => m.purpose.equals(purpose))).go();
         await into(accountMappings).insert(
           AccountMappingsCompanion.insert(
             purpose: purpose,
@@ -1180,17 +1311,25 @@ extension AccountingDaoWritesExt on AppDatabase {
 
   /// Set account mapping for a specific purpose, optionally per cost center.
   /// PostgreSQL-compatible: uses Drift delete+insert instead of raw SQL
-  Future<void> setAccountMapping(String purpose, int accountId, {int? costCenterId}) async {
+  Future<void> setAccountMapping(
+    String purpose,
+    int accountId, {
+    int? costCenterId,
+  }) async {
     await transaction(() async {
       // Delete any existing mapping for this purpose+costCenter combo
       if (costCenterId != null) {
-        await (delete(accountMappings)
-          ..where((m) => m.purpose.equals(purpose) & m.costCenterId.equals(costCenterId))
-        ).go();
+        await (delete(accountMappings)..where(
+              (m) =>
+                  m.purpose.equals(purpose) &
+                  m.costCenterId.equals(costCenterId),
+            ))
+            .go();
       } else {
-        await (delete(accountMappings)
-          ..where((m) => m.purpose.equals(purpose) & m.costCenterId.isNull())
-        ).go();
+        await (delete(accountMappings)..where(
+              (m) => m.purpose.equals(purpose) & m.costCenterId.isNull(),
+            ))
+            .go();
       }
       // Insert the new mapping
       await into(accountMappings).insert(
@@ -1203,17 +1342,18 @@ extension AccountingDaoWritesExt on AppDatabase {
     });
   }
 
-
   /// Reverse accounting entries when a return is cancelled
   Future<void> reverseReturnAccountingEntry({
     required int invoiceId,
     required String invNumber,
   }) async {
-    final entries = await (select(journalEntries)
-          ..where((e) =>
-              e.referenceType.equals('sales_return') &
-              e.referenceId.equalsNullable(invoiceId)))
-        .get();
+    final entries =
+        await (select(journalEntries)..where(
+              (e) =>
+                  e.referenceType.equals('sales_return') &
+                  e.referenceId.equalsNullable(invoiceId),
+            ))
+            .get();
 
     for (final entry in entries) {
       // Spec 151 (idempotency): give the cancel/reversal JE a deterministic
@@ -1227,19 +1367,22 @@ extension AccountingDaoWritesExt on AppDatabase {
       final reversalGid = (origGid != null && origGid.isNotEmpty)
           ? '$origGid-rev'
           : 'return-cancel-${entry.id}-rev';
-      final alreadyReversed = await (select(journalEntries)
-            ..where((e) => e.globalId.equals(reversalGid))
-            ..limit(1))
-          .getSingleOrNull();
+      final alreadyReversed =
+          await (select(journalEntries)
+                ..where((e) => e.globalId.equals(reversalGid))
+                ..limit(1))
+              .getSingleOrNull();
       if (alreadyReversed != null) {
-        debugPrint('[RETURN-CANCEL] reversal already exists for return JE '
-            '#${entry.id} (gid=$reversalGid) — skipping (idempotent)');
+        debugPrint(
+          '[RETURN-CANCEL] reversal already exists for return JE '
+          '#${entry.id} (gid=$reversalGid) — skipping (idempotent)',
+        );
         continue;
       }
 
-      final lines = await (select(journalEntryLines)
-            ..where((l) => l.entryId.equals(entry.id)))
-          .get();
+      final lines = await (select(
+        journalEntryLines,
+      )..where((l) => l.entryId.equals(entry.id))).get();
 
       final List<JournalLine> reverseLines = [];
       for (final line in lines) {
@@ -1265,7 +1408,6 @@ extension AccountingDaoWritesExt on AppDatabase {
       }
     }
   }
-
 
   /// F-02 fix (MJE-1 / MJE-2): reverse a single journal entry by its own
   /// primary key instead of by (referenceType, referenceId).
@@ -1293,12 +1435,15 @@ extension AccountingDaoWritesExt on AppDatabase {
     required int entryId,
     String? descriptionPrefix,
   }) async {
-    final original = await (select(journalEntries)
-          ..where((e) => e.id.equals(entryId) & e.isDeleted.equals(false)))
-        .getSingleOrNull();
+    final original =
+        await (select(journalEntries)
+              ..where((e) => e.id.equals(entryId) & e.isDeleted.equals(false)))
+            .getSingleOrNull();
     if (original == null) {
-      debugPrint('[JE-REVERSE-BY-ID] JE #$entryId not found (or soft-deleted) '
-          '— nothing to reverse');
+      debugPrint(
+        '[JE-REVERSE-BY-ID] JE #$entryId not found (or soft-deleted) '
+        '— nothing to reverse',
+      );
       return 0;
     }
 
@@ -1316,8 +1461,10 @@ extension AccountingDaoWritesExt on AppDatabase {
     // ورميٌ لا `return 0`: الصفرُ يعني «معكوسٌ أصلاً» في هذا العقد، فيقرؤه
     // المستدعي رسالةً كاذبة. والمسوّدةُ **تُعتمَد أو تُعدَّل**، لا تُعكَس.
     if (!original.isPosted) {
-      throw Exception('القيد ${original.entryNumber} مسودة لم تُرحَّل — '
-          'لا يُعكَس ما لم يدخل الأستاذ؛ اعتمده أو عدّله');
+      throw Exception(
+        'القيد ${original.entryNumber} مسودة لم تُرحَّل — '
+        'لا يُعكَس ما لم يدخل الأستاذ؛ اعتمده أو عدّله',
+      );
     }
 
     final sourceGid = original.globalId;
@@ -1326,32 +1473,39 @@ extension AccountingDaoWritesExt on AppDatabase {
         : 'je-manual-$entryId-rev';
 
     // Idempotency check — mirrors reverseAutoPostedJournalEntriesFor.
-    final existing = await (select(journalEntries)
-          ..where((e) => e.globalId.equals(reversalGid))
-          ..limit(1))
-        .getSingleOrNull();
+    final existing =
+        await (select(journalEntries)
+              ..where((e) => e.globalId.equals(reversalGid))
+              ..limit(1))
+            .getSingleOrNull();
     if (existing != null) {
-      debugPrint('[JE-REVERSE-BY-ID] Reversal already exists for JE #$entryId '
-          '(gid=$reversalGid) — skipping');
+      debugPrint(
+        '[JE-REVERSE-BY-ID] Reversal already exists for JE #$entryId '
+        '(gid=$reversalGid) — skipping',
+      );
       return 0;
     }
 
-    final originalLines = await (select(journalEntryLines)
-          ..where((l) => l.entryId.equals(original.id)))
-        .get();
+    final originalLines = await (select(
+      journalEntryLines,
+    )..where((l) => l.entryId.equals(original.id))).get();
     if (originalLines.isEmpty) {
-      debugPrint('[JE-REVERSE-BY-ID] JE #$entryId has no lines — nothing to reverse');
+      debugPrint(
+        '[JE-REVERSE-BY-ID] JE #$entryId has no lines — nothing to reverse',
+      );
       return 0;
     }
 
     final reversalLines = originalLines
-        .map((line) => JournalLine(
-              accountId: line.accountId,
-              debit: line.credit, // swap
-              credit: line.debit,
-              description: 'عكس: ${line.description ?? ""}',
-              costCenterId: line.costCenterId,
-            ))
+        .map(
+          (line) => JournalLine(
+            accountId: line.accountId,
+            debit: line.credit, // swap
+            credit: line.debit,
+            description: 'عكس: ${line.description ?? ""}',
+            costCenterId: line.costCenterId,
+          ),
+        )
         .toList();
 
     final prefix = descriptionPrefix ?? 'عكس قيد';
@@ -1375,11 +1529,12 @@ extension AccountingDaoWritesExt on AppDatabase {
       branchId: original.branchId,
       globalId: reversalGid,
     );
-    debugPrint('[JE-REVERSE-BY-ID] Reversed JE #$entryId → new JE #$newId '
-        '(gid=$reversalGid)');
+    debugPrint(
+      '[JE-REVERSE-BY-ID] Reversed JE #$entryId → new JE #$newId '
+      '(gid=$reversalGid)',
+    );
     return newId;
   }
-
 
   /// Generically reverse any accounting transaction
   Future<void> reverseTransaction({
@@ -1396,37 +1551,42 @@ extension AccountingDaoWritesExt on AppDatabase {
         arabicReason: 'لا تملك صلاحية عكس القيد',
       );
     }
-    final entries = await (select(journalEntries)
-          ..where((e) =>
-              e.referenceType.equals(referenceType) &
-              e.referenceId.equalsNullable(referenceId) &
-              e.isPosted.equals(true) &
-              e.isDeleted.equals(false)))
-        .get();
+    final entries =
+        await (select(journalEntries)..where(
+              (e) =>
+                  e.referenceType.equals(referenceType) &
+                  e.referenceId.equalsNullable(referenceId) &
+                  e.isPosted.equals(true) &
+                  e.isDeleted.equals(false),
+            ))
+            .get();
 
     for (final entry in entries) {
       final sourceGid = entry.globalId;
       final reversalGid = (sourceGid != null && sourceGid.isNotEmpty)
           ? '$sourceGid-rev'
           : 'je-${entry.id}-rev';
-      final existingReversal = await (select(journalEntries)
-            ..where((e) => e.globalId.equals(reversalGid))
-            ..limit(1))
-          .getSingleOrNull();
+      final existingReversal =
+          await (select(journalEntries)
+                ..where((e) => e.globalId.equals(reversalGid))
+                ..limit(1))
+              .getSingleOrNull();
       if (existingReversal != null) continue;
 
-      final lines = await (select(journalEntryLines)
-            ..where((l) => l.entryId.equals(entry.id)))
-          .get();
+      final lines = await (select(
+        journalEntryLines,
+      )..where((l) => l.entryId.equals(entry.id))).get();
 
       final reverseLines = lines
-          .map((line) => JournalLine(
-                accountId: line.accountId,
-                debit: line.credit,
-                credit: line.debit,
-                description: '$descriptionPrefix - ${line.description}',
-                costCenterId: line.costCenterId,
-              ))
+          .map(
+            (line) => JournalLine(
+              accountId: line.accountId,
+              debit: line.credit,
+              credit: line.debit,
+              description: '$descriptionPrefix - ${line.description}',
+              costCenterId: line.costCenterId,
+            ),
+          )
           .toList();
 
       if (reverseLines.isNotEmpty) {
@@ -1444,7 +1604,6 @@ extension AccountingDaoWritesExt on AppDatabase {
       }
     }
   }
-
 
   // ─────────────────────────────────────────────────────────────────────────
   // F-15: MAKER-CHECKER — اعتماد القيود اليدوية
@@ -1482,13 +1641,12 @@ extension AccountingDaoWritesExt on AppDatabase {
     return entryId;
   }
 
-
   /// Approve a draft journal entry (Maker-Checker: approver != creator)
   /// Uses customStatement for migration-added columns (status, approved_by, approved_at)
   Future<void> approveJournalEntry(int entryId, int approverId) async {
     await PermissionEnforcer(userHasPermission).requireCriticalOp(
       userId: approverId,
-      code: PermissionCodes.accountingJournal,
+      code: PermissionCodes.accountingJournalApprove,
       arabicReason: 'لا تملك صلاحية اعتماد القيد',
     );
     // ورقةُ الدفع تُجمَع داخلَ المعاملة وتُرسَل بعد إغلاقها — كما في
@@ -1501,9 +1659,9 @@ extension AccountingDaoWritesExt on AppDatabase {
     int? pushBranchId;
 
     await transaction(() async {
-      final entry = await (select(journalEntries)
-            ..where((e) => e.id.equals(entryId)))
-          .getSingleOrNull();
+      final entry = await (select(
+        journalEntries,
+      )..where((e) => e.id.equals(entryId))).getSingleOrNull();
       if (entry == null) throw Exception('القيد غير موجود');
       if (entry.isPosted) throw Exception('القيد مرحّل بالفعل');
       await validateFinancialPeriod(entry.entryDate, operation: 'اعتماد القيد');
@@ -1535,7 +1693,9 @@ extension AccountingDaoWritesExt on AppDatabase {
       );
 
       // ICR-01: Update account balances now that the entry is posted (perf-01 batch)
-      final approvalLines = await (select(journalEntryLines)..where((l) => l.entryId.equals(entryId))).get();
+      final approvalLines = await (select(
+        journalEntryLines,
+      )..where((l) => l.entryId.equals(entryId))).get();
       final approvalAccountIds = approvalLines.map((l) => l.accountId).toSet();
       if (approvalAccountIds.isNotEmpty) {
         final ph = approvalAccountIds.map((_) => '?').join(', ');
@@ -1546,16 +1706,22 @@ extension AccountingDaoWritesExt on AppDatabase {
           'INNER JOIN journal_entries je ON je.id = jel.entry_id '
           'WHERE jel.account_id IN ($ph) AND je.is_posted = ${sqlBool(true)} AND je.is_deleted = ${sqlBool(false)} '
           'GROUP BY jel.account_id',
-          variables: approvalAccountIds.map((id) => Variable.withInt(id)).toList(),
+          variables: approvalAccountIds
+              .map((id) => Variable.withInt(id))
+              .toList(),
           readsFrom: {journalEntryLines, journalEntries, accounts},
         ).get();
         final bm = <int, double>{
-          for (final r in bRows) r.read<int>('account_id'): r.read<double>('computed_balance'),
+          for (final r in bRows)
+            r.read<int>('account_id'): r.read<double>('computed_balance'),
         };
         await batch((b) {
           for (final accountId in approvalAccountIds) {
-            b.update(accounts, AccountsCompanion(balance: Value(bm[accountId] ?? 0.0)),
-                where: (a) => a.id.equals(accountId));
+            b.update(
+              accounts,
+              AccountsCompanion(balance: Value(bm[accountId] ?? 0.0)),
+              where: (a) => a.id.equals(accountId),
+            );
           }
         });
       }
@@ -1568,13 +1734,15 @@ extension AccountingDaoWritesExt on AppDatabase {
         pushCostCenterId = entry.costCenterId;
         pushBranchId = entry.branchId;
         pushLines = approvalLines
-            .map((l) => <String, dynamic>{
-                  'account_id': l.accountId,
-                  'debit': l.debit,
-                  'credit': l.credit,
-                  'description': l.description,
-                  'cost_center_id': l.costCenterId,
-                })
+            .map(
+              (l) => <String, dynamic>{
+                'account_id': l.accountId,
+                'debit': l.debit,
+                'credit': l.credit,
+                'description': l.description,
+                'cost_center_id': l.costCenterId,
+              },
+            )
             .toList();
       }
     });
@@ -1600,18 +1768,20 @@ extension AccountingDaoWritesExt on AppDatabase {
           globalId: pushGlobalId,
         );
       } catch (e) {
-        debugPrint('[ACCOUNTING_SYNC] Approval push failed for JE #$entryId: $e');
+        debugPrint(
+          '[ACCOUNTING_SYNC] Approval push failed for JE #$entryId: $e',
+        );
       }
     }
   }
 
-
   /// Reject a draft journal entry
   /// Uses customStatement for migration-added columns (status, approved_by, approved_at)
   Future<void> rejectJournalEntry(int entryId, int rejectorId) async {
-    final entry = await (select(journalEntries)
-          ..where((journalEntry) => journalEntry.id.equals(entryId)))
-        .getSingleOrNull();
+    final entry =
+        await (select(journalEntries)
+              ..where((journalEntry) => journalEntry.id.equals(entryId)))
+            .getSingleOrNull();
     if (entry == null) throw Exception('القيد غير موجود');
     if (entry.isPosted) throw Exception('لا يمكن رفض قيد مُرحَّل');
 
@@ -1625,11 +1795,11 @@ extension AccountingDaoWritesExt on AppDatabase {
   /// This fixes visibility issues in financial reports for historical transactions.
   Future<int> remediateHistoricalCostCenters() async {
     debugPrint('[ACCOUNTING_REMEDIATION] Starting cost center backfill...');
-    
+
     // SQLite/PostgreSQL-agnostic update using a JOIN/Subquery logic
     // We update journal_entry_lines with the cost_center_id of their parent journal_entry
     // only if the line's cost_center_id is currently NULL.
-    
+
     const sql = '''
       UPDATE journal_entry_lines 
       SET cost_center_id = (
@@ -1643,15 +1813,19 @@ extension AccountingDaoWritesExt on AppDatabase {
         AND journal_entries.cost_center_id IS NOT NULL
       )
     ''';
-    
+
     try {
       await customStatement(sql);
-      
+
       // Count how many lines were fixed (for logging)
-      final countQuery = await customSelect('SELECT COUNT(*) as cnt FROM journal_entry_lines WHERE cost_center_id IS NOT NULL').getSingle();
+      final countQuery = await customSelect(
+        'SELECT COUNT(*) as cnt FROM journal_entry_lines WHERE cost_center_id IS NOT NULL',
+      ).getSingle();
       final totalWithCC = countQuery.read<int>('cnt');
-      
-      debugPrint('[ACCOUNTING_REMEDIATION] Backfill complete. Lines with CC: $totalWithCC');
+
+      debugPrint(
+        '[ACCOUNTING_REMEDIATION] Backfill complete. Lines with CC: $totalWithCC',
+      );
       return totalWithCC;
     } catch (e) {
       debugPrint('[ACCOUNTING_REMEDIATION] Error: $e');
@@ -1680,7 +1854,8 @@ extension AccountingDaoWritesExt on AppDatabase {
 
     // Entries currently on a GEN «عام» centre whose branch (or its region) has
     // its own non-GEN centre — i.e. the ones that should move.
-    final entryCountSql = '''
+    final entryCountSql =
+        '''
       SELECT COUNT(*) AS cnt
       FROM journal_entries je
       JOIN branches b     ON b.id = je.branch_id
@@ -1692,7 +1867,8 @@ extension AccountingDaoWritesExt on AppDatabase {
               NOT IN (SELECT id FROM cost_centers WHERE code = 'GEN')
     ''';
 
-    final lineCountSql = '''
+    final lineCountSql =
+        '''
       SELECT COUNT(*) AS cnt
       FROM journal_entry_lines jel
       WHERE jel.cost_center_id IN (SELECT id FROM cost_centers WHERE code = 'GEN')
@@ -1711,11 +1887,17 @@ extension AccountingDaoWritesExt on AppDatabase {
     ''';
 
     try {
-      final entries = (await customSelect(entryCountSql).getSingle()).read<int>('cnt');
-      final lines = (await customSelect(lineCountSql).getSingle()).read<int>('cnt');
+      final entries = (await customSelect(
+        entryCountSql,
+      ).getSingle()).read<int>('cnt');
+      final lines = (await customSelect(
+        lineCountSql,
+      ).getSingle()).read<int>('cnt');
 
       if (dryRun || entries == 0) {
-        debugPrint('[CC_REPAIR] dryRun=$dryRun preview: entries=$entries lines=$lines');
+        debugPrint(
+          '[CC_REPAIR] dryRun=$dryRun preview: entries=$entries lines=$lines',
+        );
         return BranchCostCenterRepairReport(
           affectedEntries: entries,
           affectedLines: lines,
@@ -1771,7 +1953,9 @@ extension AccountingDaoWritesExt on AppDatabase {
         ''');
       });
 
-      debugPrint('[CC_REPAIR] applied: entries=$entries lines=$lines moved to branch centres');
+      debugPrint(
+        '[CC_REPAIR] applied: entries=$entries lines=$lines moved to branch centres',
+      );
       return BranchCostCenterRepairReport(
         affectedEntries: entries,
         affectedLines: lines,

@@ -1,3 +1,4 @@
+import '../../../core/utils/financial_utils.dart';
 import '../../../core/utils/number_utils.dart';
 import '../../entities/cart_item_entity.dart';
 
@@ -18,41 +19,32 @@ class CalculateInvoiceTotalsUseCase {
       return const InvoiceTotals.empty();
     }
 
-    // Spec 137 (BUG-C02 / BUG-H01): tax is NOT taken from the stored
-    // item.taxAmount / item.calculatedTaxAmount field — that value is gross
-    // and goes stale on quantity merge. It is recomputed below on the NET
-    // base (after BOTH line and invoice discounts) and gated by taxEnabled,
-    // matching the owner-confirmed policy and the sales-invoice path.
-    double subtotal = 0;
-    double itemDiscounts = 0;
-    for (final item in items) {
-      subtotal += item.subtotal;
-      itemDiscounts += item.discountAmount;
-    }
-
-    // Apply invoice-level discount to the post-line-discount base.
-    final afterItemDiscounts = subtotal - itemDiscounts;
-    final invoiceDiscount = NumberUtils.roundCurrency(
-      afterItemDiscounts * (invoiceDiscountPercent / 100),
+    final subtotal = items.fold<double>(0, (sum, item) => sum + item.subtotal);
+    final itemDiscounts = items.fold<double>(
+      0,
+      (sum, item) => sum + item.discountAmount,
     );
-    final afterAllDiscounts = afterItemDiscounts - invoiceDiscount;
-
-    // Ratio that scales each line net down to the invoice-discounted net,
-    // so per-line tax rates are preserved while tax lands on the net base.
-    final discountRatio =
-        afterItemDiscounts > 0 ? (afterAllDiscounts / afterItemDiscounts) : 0.0;
-
-    double taxAmount = 0;
-    if (taxEnabled) {
-      for (final item in items) {
-        final lineNet = item.totalBeforeTax * discountRatio;
-        final lineRate = item.taxRate > 0 ? item.taxRate : taxPercent;
-        taxAmount += NumberUtils.roundCurrency(lineNet * (lineRate / 100));
-      }
-    }
-    taxAmount = NumberUtils.roundCurrency(taxAmount);
-
-    final total = NumberUtils.roundCurrency(afterAllDiscounts + taxAmount);
+    final invoiceDiscountBase = FinancialUtils.round(subtotal - itemDiscounts);
+    final invoiceDiscount = FinancialUtils.round(
+      invoiceDiscountBase * (invoiceDiscountPercent / 100),
+    );
+    final totals = FinancialUtils.calculateInvoiceTotals(
+      items: items
+          .map(
+            (item) => (
+              quantity: item.quantity,
+              unitPrice: item.effectivePrice,
+              taxRatePercent: taxEnabled
+                  ? (item.taxRate > 0 ? item.taxRate : taxPercent)
+                  : 0.0,
+            ),
+          )
+          .toList(),
+      globalDiscountAmount: invoiceDiscount,
+      lineDiscountAmounts: items.map((item) => item.discountAmount).toList(),
+    );
+    final taxAmount = taxEnabled ? totals.totalTax : 0.0;
+    final total = totals.grandTotal;
 
     return InvoiceTotals(
       itemCount: items.length,

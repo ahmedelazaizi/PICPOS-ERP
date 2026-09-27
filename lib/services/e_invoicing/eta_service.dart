@@ -374,7 +374,8 @@ class EtaService {
       final salesTotal = quantity * unitPrice;
       final netTotal = salesTotal - discount;
       final taxRate = (item['taxRate'] as num?)?.toDouble() ?? 0;
-      final taxAmount = netTotal * taxRate / 100;
+      final taxAmount =
+          (item['taxAmount'] as num?)?.toDouble() ?? netTotal * taxRate / 100;
 
       return {
         'description': item['description'] ?? '',

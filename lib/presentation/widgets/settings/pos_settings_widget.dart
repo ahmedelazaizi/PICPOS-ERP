@@ -193,6 +193,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
   bool _showTopBar = true;
   String _posStockAlertMode = 'zero'; // 'zero' or 'min_stock'
   double _posDefaultTaxRate = 0.16;
+  bool _pricesIncludeTax = false;
 
   /// مفتاحُ الـ`Form` حول حقل النسبة — بلا استدعاءِ `validate()` لا يعمل
   /// المُتحقِّق.
@@ -287,6 +288,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
     final showTopBar = await s.getSetting('app_show_top_bar');
     final stockAlertMode = await s.getSetting('pos_stock_alert_mode');
     final taxRate = await s.getSetting('pos_default_tax_rate');
+    final pricesIncludeTax = await s.getSetting('prices_include_tax');
     // Category display
     final catIconSize = await s.getSetting('pos_category_icon_size');
     final catFontSize = await s.getSetting('pos_category_font_size');
@@ -349,6 +351,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         _posCartRatioLocked = cartRatioLocked == 'true';
         _posStockAlertMode = stockAlertMode ?? 'zero';
         _posDefaultTaxRate = double.tryParse(taxRate ?? '0.16') ?? 0.16;
+        _pricesIncludeTax = pricesIncludeTax == 'true';
         if (cartRatioValue != null) {
           final parsed = double.tryParse(cartRatioValue);
           if (parsed != null && parsed >= 0.3 && parsed <= 0.7) _posCartRatioValue = parsed;
@@ -552,6 +555,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
     await s.saveSetting('app_show_top_bar', _showTopBar.toString());
     await s.saveSetting('pos_stock_alert_mode', _posStockAlertMode);
     await s.saveSetting('pos_default_tax_rate', _posDefaultTaxRate.toString());
+    await s.saveSetting('prices_include_tax', _pricesIncludeTax.toString());
     // Category display settings
     await s.saveSetting('pos_category_icon_size', _catIconSize.toString());
     await s.saveSetting('pos_category_font_size', _catFontSize.toString());
@@ -628,6 +632,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
       'app_show_top_bar': _showTopBar.toString(),
       'pos_stock_alert_mode': _posStockAlertMode,
       'pos_default_tax_rate': _posDefaultTaxRate.toString(),
+      'prices_include_tax': _pricesIncludeTax.toString(),
       // Spec 135 NOTE 1 — single canonical key (0 = disabled).
       'session_timeout_minutes':
           (_posSessionTimeoutEnabled ? _posSessionTimeoutMinutes.round() : 0).toString(),
@@ -1195,6 +1200,13 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
               _taxRateTouched = true;
             }),
           ),
+        ),
+        SwitchListTile(
+          title: const Text('أسعار البيع تشمل الضريبة'),
+          subtitle: const Text('يفصل POS السعر الإجمالي إلى صافي وضريبة عند الحساب'),
+          value: _pricesIncludeTax,
+          onChanged: (value) => setState(() => _pricesIncludeTax = value),
+          contentPadding: EdgeInsets.zero,
         ),
         // ─── المخزن الافتراضي للبيع السريع ───
         FutureBuilder(

@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import '../database.dart';
 import '../../../domain/entities/accounting_entities.dart';
+import '../../../core/utils/financial_utils.dart';
 
 /// H1 — عدد أيام الشهر الحقيقي، أساس الأجر اليومي.
 ///
@@ -411,6 +412,8 @@ extension HRExtensions on AppDatabase {
           'لا أيامَ عملٍ في $month/$year لفرع الموظف ${employee.id} — '
           'راجع تقويمَ العطلات');
     }
+    // This is an intermediate rate; rounding here compounds across worked
+    // hours. Round only final payroll amounts.
     return employee.salary / (hours * days);
   }
 
@@ -630,19 +633,19 @@ extension HRExtensions on AppDatabase {
               lines: [
                 JournalLine(
                   accountId: salaryAcc.id,
-                  debit: expenseAmount,
+                  debit: FinancialUtils.round(expenseAmount),
                   description: 'مصروف الرواتب',
                 ),
                 if (amount > 0)
                   JournalLine(
                     accountId: cashAcc.id,
-                    credit: amount,
+                    credit: FinancialUtils.round(amount),
                     description: 'صرف نقدي من الصندوق',
                   ),
                 if (advanceAcc != null)
                   JournalLine(
                     accountId: advanceAcc.id,
-                    credit: advancesSettled,
+                    credit: FinancialUtils.round(advancesSettled),
                     description: 'تسوية سلف الموظف من راتب $period',
                   ),
               ],
@@ -833,12 +836,12 @@ extension HRExtensions on AppDatabase {
           lines: [
             JournalLine(
               accountId: debitAccountId,
-              debit: amount,
+              debit: FinancialUtils.round(amount),
               description: 'سلفة موظف: ${employee.name}',
             ),
             JournalLine(
               accountId: creditAccountId,
-              credit: amount,
+              credit: FinancialUtils.round(amount),
               description: 'صرف سلفة لموظف: ${employee.name}',
             ),
           ],
@@ -1081,7 +1084,7 @@ extension HRExtensions on AppDatabase {
 
     // القصُّ يبقى لحالةٍ واحدة فقط: جزاءاتٌ تتجاوز الإجمالي (‏payable سالب).
     // السلفُ لم تعد تُسلِّب الصافي لأن المسوَّى منها محدودٌ بالمستحقّ.
-    final netSalary = payableAmount - advancesSettled;
+    final netSalary = FinancialUtils.round(payableAmount - advancesSettled);
 
     return EmployeeSalaryCalculation(
       employee: employee,
@@ -1485,10 +1488,11 @@ extension HRExtensions on AppDatabase {
     // فنداءها في المسار اليدويّ يكسر ذلك حتى لو أُهمِلت نتيجته.
     final double amount;
     if (manualAmount != null) {
-      amount = manualAmount;
+      amount = FinancialUtils.round(manualAmount);
     } else {
-      amount =
-          hours * rate * await hourlyRateFor(employee, date.year, date.month);
+      amount = FinancialUtils.round(
+        hours * rate * await hourlyRateFor(employee, date.year, date.month),
+      );
     }
 
     return into(overtimeRecords).insert(

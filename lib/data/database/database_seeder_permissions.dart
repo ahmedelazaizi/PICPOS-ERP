@@ -850,6 +850,9 @@ extension DatabaseSeederPermissions on AppDatabase {
       // بس). محاسب والمدير المالي (اللي بيورّث المنحة دي تحت) كانوا
       // بيشوفوا الرابط فعلاً، فلازم ياخدوا الكود الحقيقي بدل ما يتسحب منهم.
       'analytics_view',
+      // Manual journal makers and checkers use the accounting role by default.
+      'accounting_journal',
+      'approve_journal',
     ];
     for (final code in accountantPermsIndices) {
       if (permMap.containsKey(code)) {

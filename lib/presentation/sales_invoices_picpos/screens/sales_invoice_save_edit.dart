@@ -402,6 +402,8 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
 
     // Read actual invoice data from DB to get correct warehouseId/costCenterId
     final dbInvoice = await database.getSalesInvoiceById(invoice.id!);
+    final pricesIncludeTax =
+        await database.getSettingValue('prices_include_tax') == 'true';
 
     // Pre-populate
     int? selectedCustomerId = invoice.partyId;
@@ -437,16 +439,24 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
     }).toList();
 
     void recalculate(StateSetter setDialogState) {
-      subtotal = 0;
-      tax = 0;
-      for (final item in invoiceItems) {
-        final line = (item['quantity'] as double) * (item['unitPrice'] as double);
-        item['lineTotal'] = line;
-        item['taxAmount'] = line * (item['taxRate'] as double) / 100;
-        subtotal += line;
-        tax += item['taxAmount'] as double;
+      final totals = FinancialUtils.calculateInvoiceTotals(
+        items: invoiceItems.map((item) => (
+          quantity: item['quantity'] as double,
+          unitPrice: item['unitPrice'] as double,
+          taxRatePercent: item['taxRate'] as double,
+        )).toList(),
+        pricesIncludeTax: pricesIncludeTax,
+      );
+      subtotal = totals.subtotal;
+      tax = totals.totalTax;
+      for (var i = 0; i < invoiceItems.length; i++) {
+        final item = invoiceItems[i];
+        item['lineTotal'] = FinancialUtils.round(
+          (item['quantity'] as double) * (item['unitPrice'] as double),
+        );
+        item['taxAmount'] = totals.lineTaxes[i];
       }
-      total = subtotal + tax;
+      total = totals.grandTotal;
       setDialogState(() {});
     }
 

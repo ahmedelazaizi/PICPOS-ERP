@@ -440,6 +440,7 @@ class SalesTransactionOrchestrator {
         await _accountingService.generateSalesAccountingEntry(
           invoiceId: invoiceId,
           invNumber: invoice.invoiceNumber,
+           invoiceTotal: total,
           tax: tax,
           paid: paid,
           // ⚠️ **الفرقُ يُطرَح هنا ويُمرَّر سطراً هناك.** بدون الطرح تُقرأ
@@ -614,60 +615,49 @@ class SalesTransactionOrchestrator {
     // server submit. Without rounding, totals like `2.1033599999999995`
     // appeared in the field log instead of `2.10`, producing piastre-
     // level mismatches across invoices and POS receipts.
-    double subtotal = 0;
-    double totalTax = 0;
-    double totalDiscountValue = 0;
-
+    final lineDiscounts = request.items
+        .map((item) => FinancialUtils.round(
+            (item.customPrice ?? item.unitPrice) * item.quantity *
+                (item.discountPercent / 100)))
+        .toList();
+    final itemDiscountTotal = lineDiscounts.fold<double>(0, (sum, value) => sum + value);
+    final subtotalBeforeDiscount = request.items.fold<double>(
+      0,
+      (sum, item) => sum + (item.customPrice ?? item.unitPrice) * item.quantity,
+    );
+    final totals = FinancialUtils.calculateInvoiceTotals(
+      items: request.items
+          .map((item) => (
+                quantity: item.quantity,
+                unitPrice: item.customPrice ?? item.unitPrice,
+                taxRatePercent: request.taxEnabled
+                    ? (item.taxRate > 0 ? item.taxRate : request.taxPercent)
+                    : 0.0,
+              ))
+          .toList(),
+      globalDiscountAmount: FinancialUtils.round(
+        (subtotalBeforeDiscount - itemDiscountTotal) *
+            (request.discountPercent / 100),
+      ),
+      lineDiscountAmounts: lineDiscounts,
+      deliveryFee: request.deliveryFee,
+      pricesIncludeTax: request.pricesIncludeTax,
+    );
+    final subtotal = totals.subtotal;
+    final totalTax = totals.totalTax;
+    final totalDiscountValue = totals.totalDiscount;
+    final perLineTax = totals.lineTaxes;
+    final perLineBeforeTax = totals.lineNets;
+    final perLineRate = request.items
+        .map((item) => request.taxEnabled
+            ? (item.taxRate > 0 ? item.taxRate : request.taxPercent)
+            : 0.0)
+        .toList();
     final syncItems = <SyncSaleItem>[];
 
-    // Spec 137 (BUG-C02 / BUG-H01): two-pass tax. PASS 1 = line subtotals +
-    // line discounts. Tax is deferred to PASS 2 so it can be computed on the
-    // net AFTER the invoice-level discount (policy) and gated by
-    // request.taxEnabled. item.taxAmount is intentionally NOT a tax source here
-    // — it is a gross, merge-stale UI field.
-    final lineSubtotals = <double>[];
-    final lineDiscounts = <double>[];
-    for (final item in request.items) {
-      final itemSubtotal = FinancialUtils.round(
-          (item.customPrice ?? item.unitPrice) * item.quantity);
-      final itemDiscount = FinancialUtils.round(
-          itemSubtotal * (item.discountPercent / 100));
-      lineSubtotals.add(itemSubtotal);
-      lineDiscounts.add(itemDiscount);
-      subtotal += itemSubtotal;
-      totalDiscountValue += itemDiscount;
-    }
-
-    subtotal = FinancialUtils.round(subtotal);
-    totalDiscountValue = FinancialUtils.round(totalDiscountValue);
-
-    // Invoice-level discount on the post-line-discount base.
-    final afterItemDiscounts = subtotal - totalDiscountValue;
-    final invoiceDiscountAmount = FinancialUtils.round(
-        afterItemDiscounts * (request.discountPercent / 100));
-    final discountRatio = afterItemDiscounts > 0
-        ? ((afterItemDiscounts - invoiceDiscountAmount) / afterItemDiscounts)
-        : 0.0;
-
-    // PASS 2: per-line VAT on net-after-all-discounts, gated by taxEnabled.
-    // The per-line results are retained so the persisted sales_invoice_items
-    // rows use the SAME net-base values as the header and the SyncSaleItem
-    // payload (Spec 137 P2: SUM(line.tax) == header.tax).
-    final perLineTax = <double>[];
-    final perLineBeforeTax = <double>[];
-    final perLineRate = <double>[];
     for (var i = 0; i < request.items.length; i++) {
       final item = request.items[i];
-      final lineBeforeTax = lineSubtotals[i] - lineDiscounts[i];
-      final lineNet = lineBeforeTax * discountRatio;
-      final lineRate = request.taxEnabled
-          ? (item.taxRate > 0 ? item.taxRate : request.taxPercent)
-          : 0.0;
-      final lineTax = FinancialUtils.round(lineNet * (lineRate / 100));
-      totalTax += lineTax;
-      perLineTax.add(lineTax);
-      perLineBeforeTax.add(FinancialUtils.round(lineBeforeTax));
-      perLineRate.add(lineRate);
+      final lineTax = perLineTax[i];
 
       // ALWAYS build sync items in client mode (even if SyncService is null)
       if (isClientMode) {
@@ -678,9 +668,9 @@ class SalesTransactionOrchestrator {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           discount: item.discountPercent,
-          taxRate: lineRate,
+          taxRate: perLineRate[i],
           taxAmount: lineTax,
-          total: FinancialUtils.round(lineBeforeTax + lineTax),
+          total: FinancialUtils.round(perLineBeforeTax[i] + lineTax),
           note: item.note, // POS-6 FIX: Include item notes
           costPrice: product?.costPrice ?? 0, // M-07 FIX: Use actual WAC cost price
           quantityInBase: item.quantityInBase,
@@ -688,10 +678,7 @@ class SalesTransactionOrchestrator {
       }
     }
 
-    totalTax = FinancialUtils.round(totalTax);
-
-    final finalDiscount = FinancialUtils.round(
-        totalDiscountValue + invoiceDiscountAmount);
+    final finalDiscount = totalDiscountValue;
     final finalTotal = FinancialUtils.round(
         subtotal - finalDiscount + totalTax + request.deliveryFee);
 

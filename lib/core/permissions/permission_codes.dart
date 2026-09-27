@@ -756,6 +756,9 @@ class PermissionCodes {
   /// إنشاء قيود يومية
   static const String accountingJournal = 'accounting_journal';
 
+  /// اعتماد القيود المنشأة من مستخدمٍ آخر (Maker-Checker)
+  static const String accountingJournalApprove = 'approve_journal';
+
   // ═══════════════════════════════════════════════════════════════════════════
   // MANUFACTURING PERMISSIONS (التصنيع)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1600,6 +1603,11 @@ class PermissionCodes {
     {
       'code': accountingJournal,
       'name': 'إنشاء قيود يومية',
+      'category': 'accounting',
+    },
+    {
+      'code': accountingJournalApprove,
+      'name': 'اعتماد القيود اليومية',
       'category': 'accounting',
     },
 

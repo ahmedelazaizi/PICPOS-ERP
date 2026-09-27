@@ -57,7 +57,6 @@ class ShiftCloseValidation {
   bool get isCritical => severity == 'CRITICAL';
 }
 
-
 /// Accounting validation and business rules service — **Facade**.
 ///
 /// Delegates to [AccountingValidator] for validation/business rules
@@ -98,7 +97,9 @@ class AccountingService {
 
   /// ISS-003 / F01: Load zero-cost policy from settings.
   /// Call once after construction when settings are available.
-  Future<void> loadZeroCostPolicyFromSettings(ISettingsRepository settingsRepo) async {
+  Future<void> loadZeroCostPolicyFromSettings(
+    ISettingsRepository settingsRepo,
+  ) async {
     try {
       final policyStr = await settingsRepo.getSetting('zero_cost_policy');
       if (policyStr != null) {
@@ -126,27 +127,25 @@ class AccountingService {
     required int customerId,
     required double purchaseAmount,
   }) => validator.validateCreditPurchase(
-        customerId: customerId,
-        purchaseAmount: purchaseAmount,
-      );
+    customerId: customerId,
+    purchaseAmount: purchaseAmount,
+  );
 
   Future<AccountingValidationResult> validateSafeWithdrawal({
     required int safeId,
     required double amount,
     bool allowNegative = false,
   }) => validator.validateSafeWithdrawal(
-        safeId: safeId,
-        amount: amount,
-        allowNegative: allowNegative,
-      );
+    safeId: safeId,
+    amount: amount,
+    allowNegative: allowNegative,
+  );
 
   Future<AccountingValidationResult> validateStockForSale({
     required int productId,
     required double quantity,
-  }) => validator.validateStockForSale(
-        productId: productId,
-        quantity: quantity,
-      );
+  }) =>
+      validator.validateStockForSale(productId: productId, quantity: quantity);
 
   AccountingValidationResult validateInvoiceTotals({
     required double subtotal,
@@ -156,13 +155,13 @@ class AccountingService {
     required double paid,
     bool isReturn = false,
   }) => validator.validateInvoiceTotals(
-        subtotal: subtotal,
-        discount: discount,
-        tax: tax,
-        total: total,
-        paid: paid,
-        isReturn: isReturn,
-      );
+    subtotal: subtotal,
+    discount: discount,
+    tax: tax,
+    total: total,
+    paid: paid,
+    isReturn: isReturn,
+  );
 
   AccountingValidationResult validateSplitPayment({
     required double paid,
@@ -171,12 +170,12 @@ class AccountingService {
     double clickPaid = 0,
     required String paymentMethod,
   }) => validator.validateSplitPayment(
-        paid: paid,
-        cashPaid: cashPaid,
-        bankPaid: bankPaid,
-        clickPaid: clickPaid,
-        paymentMethod: paymentMethod,
-      );
+    paid: paid,
+    cashPaid: cashPaid,
+    bankPaid: bankPaid,
+    clickPaid: clickPaid,
+    paymentMethod: paymentMethod,
+  );
 
   AccountingValidationResult validateCostPrices({
     required List<Map<String, dynamic>> items,
@@ -187,10 +186,10 @@ class AccountingService {
     required double actualCash,
     double tolerance = 1.0,
   }) => validator.validateShiftClose(
-        expectedCash: expectedCash,
-        actualCash: actualCash,
-        tolerance: tolerance,
-      );
+    expectedCash: expectedCash,
+    actualCash: actualCash,
+    tolerance: tolerance,
+  );
 
   static double roundCurrency(double amount) =>
       AccountingValidator.roundCurrency(amount);
@@ -206,19 +205,17 @@ class AccountingService {
     DateTime? fiscalStart,
     DateTime? fiscalEnd,
   }) => validator.isWithinFiscalPeriod(
-        date,
-        fiscalStart: fiscalStart,
-        fiscalEnd: fiscalEnd,
-      );
+    date,
+    fiscalStart: fiscalStart,
+    fiscalEnd: fiscalEnd,
+  );
 
-  Future<bool> isClosedPeriod(DateTime date) =>
-      validator.isClosedPeriod(date);
+  Future<bool> isClosedPeriod(DateTime date) => validator.isClosedPeriod(date);
 
   Future<void> ensureOpenFiscalPeriod(DateTime date) =>
       validator.ensureOpenFiscalPeriod(date);
 
-  Future<void> ensureNoActiveStocktake() =>
-      validator.ensureNoActiveStocktake();
+  Future<void> ensureNoActiveStocktake() => validator.ensureNoActiveStocktake();
 
   // ═══════════════════════════════════════════════════════════════════════
   // JE GENERATION DELEGATES → JournalEntryFactory
@@ -230,6 +227,8 @@ class AccountingService {
     required double tax,
     required double paid,
     required double remaining,
+    double? invoiceTotal,
+
     /// فرقُ تقريب الإجماليّ — يُمرَّر كما هو إلى المصنع.
     double roundingAdjustment = 0,
     required String paymentMethod,
@@ -245,24 +244,25 @@ class AccountingService {
     List<CogsLine>? cogsBreakdown,
     Set<int>? autoDepletedItemIds,
   }) => journalFactory.generateSalesAccountingEntry(
-        invoiceId: invoiceId,
-        invNumber: invNumber,
-        tax: tax,
-        paid: paid,
-        remaining: remaining,
-        roundingAdjustment: roundingAdjustment,
-        paymentMethod: paymentMethod,
-        deliveryFee: deliveryFee,
-        items: items,
-        customerId: customerId,
-        costCenterId: costCenterId,
-        branchId: branchId,
-        branchName: branchName,
-        regionName: regionName,
-        invoiceDate: invoiceDate,
-        cogsBreakdown: cogsBreakdown,
-        autoDepletedItemIds: autoDepletedItemIds,
-      );
+    invoiceId: invoiceId,
+    invNumber: invNumber,
+    tax: tax,
+    paid: paid,
+    remaining: remaining,
+    invoiceTotal: invoiceTotal,
+    roundingAdjustment: roundingAdjustment,
+    paymentMethod: paymentMethod,
+    deliveryFee: deliveryFee,
+    items: items,
+    customerId: customerId,
+    costCenterId: costCenterId,
+    branchId: branchId,
+    branchName: branchName,
+    regionName: regionName,
+    invoiceDate: invoiceDate,
+    cogsBreakdown: cogsBreakdown,
+    autoDepletedItemIds: autoDepletedItemIds,
+  );
 
   Future<void> generatePurchaseAccountingEntry({
     required int invoiceId,
@@ -271,24 +271,26 @@ class AccountingService {
     required double total,
     required double paid,
     required double remaining,
+    double discount = 0,
     required String? notes,
     int? supplierId,
     int? costCenterId,
     int? branchId,
     DateTime? invoiceDate,
   }) => journalFactory.generatePurchaseAccountingEntry(
-        invoiceId: invoiceId,
-        subtotal: subtotal,
-        tax: tax,
-        total: total,
-        paid: paid,
-        remaining: remaining,
-        notes: notes,
-        supplierId: supplierId,
-        costCenterId: costCenterId,
-        branchId: branchId,
-        invoiceDate: invoiceDate,
-      );
+    invoiceId: invoiceId,
+    subtotal: subtotal,
+    tax: tax,
+    total: total,
+    paid: paid,
+    remaining: remaining,
+    discount: discount,
+    notes: notes,
+    supplierId: supplierId,
+    costCenterId: costCenterId,
+    branchId: branchId,
+    invoiceDate: invoiceDate,
+  );
 
   Future<void> generateReturnAccountingEntry({
     required int invoiceId,
@@ -303,26 +305,26 @@ class AccountingService {
     int? costCenterId,
     int? branchId,
   }) => journalFactory.generateReturnAccountingEntry(
-        invoiceId: invoiceId,
-        invNumber: invNumber,
-        totalReturn: totalReturn,
-        totalTaxReturn: totalTaxReturn,
-        totalCogsReturn: totalCogsReturn,
-        cashRefund: cashRefund,
-        bankRefund: bankRefund,
-        arRefund: arRefund,
-        customerId: customerId,
-        costCenterId: costCenterId,
-        branchId: branchId,
-      );
+    invoiceId: invoiceId,
+    invNumber: invNumber,
+    totalReturn: totalReturn,
+    totalTaxReturn: totalTaxReturn,
+    totalCogsReturn: totalCogsReturn,
+    cashRefund: cashRefund,
+    bankRefund: bankRefund,
+    arRefund: arRefund,
+    customerId: customerId,
+    costCenterId: costCenterId,
+    branchId: branchId,
+  );
 
   Future<void> reverseReturnAccountingEntry({
     required int invoiceId,
     required String invNumber,
   }) => journalFactory.reverseReturnAccountingEntry(
-        invoiceId: invoiceId,
-        invNumber: invNumber,
-      );
+    invoiceId: invoiceId,
+    invNumber: invNumber,
+  );
 
   Future<void> reverseTransaction({
     required String referenceType,
@@ -330,11 +332,11 @@ class AccountingService {
     required String descriptionPrefix,
     required String newReferenceType,
   }) => journalFactory.reverseTransaction(
-        referenceType: referenceType,
-        referenceId: referenceId,
-        descriptionPrefix: descriptionPrefix,
-        newReferenceType: newReferenceType,
-      );
+    referenceType: referenceType,
+    referenceId: referenceId,
+    descriptionPrefix: descriptionPrefix,
+    newReferenceType: newReferenceType,
+  );
 
   /// F-02 fix (MJE-1 / MJE-2): reverse a single journal entry by its own
   /// primary key — see [reverseTransaction] above for the bug this avoids.
@@ -344,19 +346,19 @@ class AccountingService {
     required int entryId,
     String? descriptionPrefix,
   }) => journalFactory.reverseJournalEntryById(
-        entryId: entryId,
-        descriptionPrefix: descriptionPrefix,
-      );
+    entryId: entryId,
+    descriptionPrefix: descriptionPrefix,
+  );
 
   Future<void> cancelSalesReturn({
     required SalesInvoiceData invoice,
     required int userId,
     required String userName,
   }) => journalFactory.cancelSalesReturn(
-        invoice: invoice,
-        userId: userId,
-        userName: userName,
-      );
+    invoice: invoice,
+    userId: userId,
+    userName: userName,
+  );
 
   Future<void> generateClosingAccountingEntry({
     required double cashAmount,
@@ -368,15 +370,15 @@ class AccountingService {
     int? branchId,
     int? costCenterId,
   }) => journalFactory.generateClosingAccountingEntry(
-        cashAmount: cashAmount,
-        bankAmount: bankAmount,
-        clickAmount: clickAmount,
-        totalExpenses: totalExpenses,
-        totalSales: totalSales,
-        employeeName: employeeName,
-        branchId: branchId,
-        costCenterId: costCenterId,
-      );
+    cashAmount: cashAmount,
+    bankAmount: bankAmount,
+    clickAmount: clickAmount,
+    totalExpenses: totalExpenses,
+    totalSales: totalSales,
+    employeeName: employeeName,
+    branchId: branchId,
+    costCenterId: costCenterId,
+  );
 
   // Spec 147 (S-COUNT): generateCycleCountEntry delegate removed — the
   // cycle-count settlement JE now posts inside finalizeCycleCountTask (DAO).
@@ -390,7 +392,9 @@ class AccountingService {
   /// ONE-OFF REPAIR: move historical auto-posted entries off the global «عام»
   /// (GEN) centre onto each transaction's branch cost center. Pass
   /// [dryRun] = true to preview counts without writing.
-  Future<BranchCostCenterRepairReport> repairBranchCostCenters({bool dryRun = true}) {
+  Future<BranchCostCenterRepairReport> repairBranchCostCenters({
+    bool dryRun = true,
+  }) {
     return _accountingRepo.repairBranchCostCenterAttribution(dryRun: dryRun);
   }
 }

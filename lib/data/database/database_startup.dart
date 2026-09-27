@@ -1277,6 +1277,36 @@ extension DatabaseStartup on AppDatabase {
   /// Solution: in client mode, the server is the single source of truth.
   /// We rely entirely on `PermissionSyncStrategy.syncFromJson` to populate
   /// the permissions table with the server's authoritative IDs.
+  /// One-time upgrade for maker-checker approval permissions.
+  Future<void> backfillJournalApprovalPermissionOnce() async {
+    const flag = 'approve_journal_backfill_done';
+    if (await getSettingValue(flag) == 'true') return;
+
+    final createPermission = await (select(permissions)
+          ..where((p) => p.code.equals(PermissionCodes.accountingJournal)))
+        .getSingleOrNull();
+    final approvePermission = await (select(permissions)
+          ..where((p) => p.code.equals(PermissionCodes.accountingJournalApprove)))
+        .getSingleOrNull();
+    if (createPermission != null && approvePermission != null) {
+      final existingGrants = await (select(rolePermissions)
+            ..where((rp) => rp.permissionId.equals(createPermission.id)))
+          .get();
+      for (final grant in existingGrants) {
+        await into(rolePermissions).insert(
+          RolePermissionsCompanion.insert(
+            roleId: grant.roleId,
+            permissionId: approvePermission.id,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+      }
+    }
+    await into(settings).insertOnConflictUpdate(
+      SettingsCompanion.insert(key: flag, value: const Value('true')),
+    );
+  }
+
   Future<void> _syncPermissionsAndAccounts() async {
     // Detect client mode without importing NetworkService here (which would
     // create a layering violation: data layer importing services). Instead,
@@ -1292,6 +1322,14 @@ extension DatabaseStartup on AppDatabase {
         await syncAllPermissions();
       } catch (e) {
         debugPrint('[Startup] syncAllPermissions: $e');
+      }
+
+      // Maker-checker migration: preserve approval rights for roles that
+      // already had journal-entry creation rights, exactly once.
+      try {
+        await backfillJournalApprovalPermissionOnce();
+      } catch (e) {
+        debugPrint('[Startup] journal approval backfill failed: $e');
       }
 
       // Spec 084b — self-heal startup grant.
