@@ -1,6 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:drift/drift.dart'
-    show DriftSqlType, TableUpdate, UpdateKind, Variable;
+    show DriftSqlType, TableUpdate, UpdateKind, Value, Variable;
 import 'package:flutter/foundation.dart';
 import '../data/database/database.dart';
 import '../core/logging/diagnostic_logger.dart';
@@ -20,6 +21,18 @@ import 'sync_event_bus.dart';
 ///  - emits [SyncTablePulled] on [SyncEventBus] for UI widgets
 ///  - calls [AppDatabase.notifyUpdates] so Drift watch() queries react
 ///
+/// Financial rows require manual review when a pending local outbox mutation
+/// conflicts with a server change; they must not be silently server-wins.
+const Set<String> kFinancialSyncTables = {
+  'journal_entries',
+  'journal_entry_lines',
+  'sales_invoices',
+  'purchase_invoices',
+  'safe_transactions',
+  'parties',
+  'commercial_papers',
+};
+
 /// Watermarks are stored in the settings table as epoch-second strings under
 /// keys of the form `_watermark__<tableName>`.
 class DeltaPullService {
@@ -708,6 +721,59 @@ class DeltaPullService {
     }
   }
 
+  Future<SyncOutboxItem?> _pendingOutboxForRow(
+    String table,
+    int? localId,
+    String? globalId,
+  ) async {
+    if (_db == null) return null;
+    final candidates = await (_db!.select(_db!.syncOutbox)
+          ..where((item) => item.targetTable.equals(table)))
+        .get();
+    for (final item in candidates) {
+      if (item.status == 'synced') continue;
+      if (localId != null && item.recordId == localId.toString()) return item;
+      if (globalId != null && globalId.isNotEmpty && item.payload.contains(globalId)) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _recordFinancialPendingConflict({
+    required String table,
+    required Map<String, dynamic> serverRow,
+    required SyncOutboxItem pending,
+  }) async {
+    final recordId = serverRow['id']?.toString() ?? pending.recordId;
+    try {
+      await _db!.into(_db!.syncConflictLog).insert(
+        SyncConflictLogCompanion.insert(
+          conflictTable: table,
+          recordId: recordId,
+          resolution: 'pending_review',
+          clientPayload: pending.payload,
+          serverPayload: Value(jsonEncode(serverRow)),
+          reason: const Value(
+            'Financial row has a pending local change; server version withheld for review',
+          ),
+          clientId: const Value(null),
+        ),
+      );
+      await DiagnosticLogger.log(
+        'SYNC-CONFLICT',
+        'financial conflict pending review table=$table record=$recordId',
+      );
+    } catch (error, stack) {
+      await DiagnosticLogger.logError(
+        'SYNC-CONFLICT',
+        'financial conflict record failed for $table/$recordId',
+        error,
+        stack,
+      );
+    }
+  }
+
   Future<void> _upsertRow(String table, Map<String, dynamic> row) async {
     // Feature 006 / MM.E hot-fix: journal_entries arrives with its child
     // lines embedded under `lines`. Pop them out BEFORE the generic
@@ -859,18 +925,22 @@ class DeltaPullService {
       }
     }
 
-    // Soft-delete: server marks rows with deleted_at instead of hard-deleting
-    if (row['deleted_at'] != null) {
-      try {
-        await _db!.customStatement(
-          'UPDATE $table SET deleted_at = ? WHERE id = ?',
-          [row['deleted_at'], localId],
+    // A pending local financial mutation is a reviewable conflict. Keep the
+    // local row intact for every server change, including soft-deletes.
+    if (kFinancialSyncTables.contains(table)) {
+      final pending = await _pendingOutboxForRow(table, localId, globalId);
+      if (pending != null) {
+        await _recordFinancialPendingConflict(
+          table: table,
+          serverRow: row,
+          pending: pending,
         );
-      } catch (_) {}
-      return;
+        return;
+      }
     }
 
-    // Conflict check: skip if the local row is newer than the server row.
+    // Conflict check must precede soft-delete. A local unsynced financial edit
+    // must not be erased merely because the server row carries deleted_at.
     // C-04: resolve the per-table policy instead of the blanket newerWins
     // default — server is SoT on client/mirror (R4), so server-authoritative
     // rows must serverWins-heal past a locally-bumped row_version.
@@ -880,6 +950,24 @@ class DeltaPullService {
       policy: ConflictResolutionService.instance.policyForTable(table),
     );
     if (!apply) return;
+
+    // Soft-delete: server marks rows with deleted_at instead of hard-deleting.
+    if (row['deleted_at'] != null) {
+      try {
+        await _db!.customStatement(
+          'UPDATE $table SET deleted_at = ? WHERE id = ?',
+          [row['deleted_at'], localId],
+        );
+      } catch (error, stack) {
+        await DiagnosticLogger.logError(
+          'SYNC-PULL',
+          'soft-delete apply failed for $table id=$localId',
+          error,
+          stack,
+        );
+      }
+      return;
+    }
 
     // Spec 136 (field 2026-06-14): remap server party FK → LOCAL party id on the
     // mirror's REAL inbound path. The SyncStrategy-layer party remap

@@ -8,7 +8,7 @@ enum LogLevel { debug, info, warning, error }
 
 /// Central logging service for UralCash
 ///
-/// All logging should go through this service - no print() statements allowed.
+/// All logging should go through this service - no developer.log() statements allowed.
 /// Supports correlation IDs for tracing transactions across the system.
 class AppLogger {
   static final AppLogger _instance = AppLogger._internal();
@@ -127,10 +127,10 @@ class AppLogger {
       final timestamp =
           '${entry.timestamp.hour}:${entry.timestamp.minute}:${entry.timestamp.second}';
       // ignore: avoid_print
-      print('[$timestamp]$logMessage');
+      developer.log('[$timestamp]$logMessage');
       if (exception != null) {
         // ignore: avoid_print
-        print('Exception: $exception');
+        developer.log('Exception: $exception');
       }
       return true;
     }());

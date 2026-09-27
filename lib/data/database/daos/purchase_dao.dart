@@ -948,6 +948,8 @@ extension PurchaseDao on AppDatabase {
         ),
       );
 
+      await _refreshPurchaseInvoiceIntegrity(invoiceId);
+
       // ═══ وسمُ الاستيراد — في معاملة الفاتورة لا بعدَها ═══
       //
       // 🔴 صفُّ `ImportPurchaseDetails` هو **الفارقُ الوحيد** بين فاتورةِ
@@ -1393,6 +1395,7 @@ extension PurchaseDao on AppDatabase {
     if (badRate != null) throw ArgumentError(badRate);
     // الطولُ يفحصه `_writeImportPurchaseDetails` — راجع `createPurchaseInvoice`.
     return transaction(() async {
+      final effectiveInvoiceDate = invoiceDate ?? DateTime.now();
       double taxTotal = 0;
       double total = 0;
       double subtotalSum = 0;
@@ -1469,6 +1472,8 @@ extension PurchaseDao on AppDatabase {
           ),
         ),
       );
+
+      await _refreshPurchaseInvoiceIntegrity(invoiceId);
 
       // نفسُ حكمِ مسار الإنشاء: الوسمُ في المعاملة لا بعدَها.
       if (importDetails != null) {
@@ -1897,6 +1902,17 @@ extension PurchaseDao on AppDatabase {
           discount: Value(effectiveDiscount),
           tax: Value(newTaxTotal),
           total: Value(newTotal),
+           integrityHash: Value(InvoiceIntegrityService.computePurchaseInvoiceHash(
+             invoiceNumber: oldInvoice.invoiceNumber,
+             invoiceDate: oldInvoice.invoiceDate,
+             total: newTotal,
+             subtotal: netSubtotal,
+             discount: effectiveDiscount,
+             tax: newTaxTotal,
+             paid: paid,
+             supplierId: supplierId,
+             paymentMethod: paymentMethod,
+           )),
           paid: Value(paid),
           paymentMethod: Value(paymentMethod),
           status: Value(newStatus),
@@ -2237,7 +2253,8 @@ extension PurchaseDao on AppDatabase {
         ),
       );
 
-      final safeTxn = await _recordPurchasePayment(
+      await _refreshPurchaseInvoiceIntegrity(invoiceId);
+       final safeTxn = await _recordPurchasePayment(
         invoiceId, amount, paymentMethod, invoice.costCenterId,
         safeId: safeId,
         supplierId: invoice.supplierId,
@@ -2278,6 +2295,26 @@ extension PurchaseDao on AppDatabase {
     });
   }
 
+  Future<void> _refreshPurchaseInvoiceIntegrity(int invoiceId) async {
+    final invoice = await (select(purchaseInvoices)
+          ..where((row) => row.id.equals(invoiceId)))
+        .getSingleOrNull();
+    if (invoice == null) return;
+    final hash = InvoiceIntegrityService.computePurchaseInvoiceHash(
+      invoiceNumber: invoice.invoiceNumber,
+      invoiceDate: invoice.invoiceDate,
+      total: invoice.total,
+      subtotal: invoice.subtotal,
+      discount: invoice.discount,
+      tax: invoice.tax,
+      paid: invoice.paid,
+      supplierId: invoice.supplierId,
+      paymentMethod: invoice.paymentMethod,
+    );
+    await (update(purchaseInvoices)..where((row) => row.id.equals(invoiceId)))
+        .write(PurchaseInvoicesCompanion(integrityHash: Value(hash)));
+  }
+
   /// Update payment amount for a purchase invoice (simple update)
   Future<void> updatePurchaseInvoicePayment(
     int invoiceId,
@@ -2297,7 +2334,21 @@ extension PurchaseDao on AppDatabase {
     await (update(
       purchaseInvoices,
     )..where((i) => i.id.equals(invoiceId))).write(
-      PurchaseInvoicesCompanion(paid: Value(newPaid), status: Value(newStatus)),
+      PurchaseInvoicesCompanion(
+         paid: Value(newPaid),
+         status: Value(newStatus),
+         integrityHash: Value(InvoiceIntegrityService.computePurchaseInvoiceHash(
+           invoiceNumber: invoice.invoiceNumber,
+           invoiceDate: invoice.invoiceDate,
+           total: invoice.total,
+           subtotal: invoice.subtotal,
+           discount: invoice.discount,
+           tax: invoice.tax,
+           paid: newPaid,
+           supplierId: invoice.supplierId,
+           paymentMethod: invoice.paymentMethod,
+         )),
+       ),
     );
   }
 
@@ -2534,7 +2585,14 @@ extension PurchaseDao on AppDatabase {
               description:
                   '[P1-02] فشل القيد العكسي عند إلغاء فاتورة المشتريات #${invoice.invoiceNumber}: $e',
             );
-          } catch (_) {} // logActivity failure must NEVER mask the original error
+          } catch (error, stack) {
+             await DiagnosticLogger.logError(
+               'PURCHASE-AUDIT',
+               'reversal failure audit log failed',
+               error,
+               stack,
+             );
+           }
           rethrow;
         }
       }
@@ -2615,7 +2673,14 @@ extension PurchaseDao on AppDatabase {
               description:
                   'فشل عكس قيد التكاليف المحمّلة ${sheet.sheetNumber} عند إلغاء الفاتورة #${invoice.invoiceNumber}: $e',
             );
-          } catch (_) {}
+          } catch (error, stack) {
+             await DiagnosticLogger.logError(
+               'PURCHASE-AUDIT',
+               'landed-cost reversal audit log failed',
+               error,
+               stack,
+             );
+           }
           rethrow;
         }
       }

@@ -155,7 +155,7 @@ class ProductsController extends Notifier<ProductsState> {
         hasMore: hasNext,
       );
     } catch (e, stack) {
-      print('[PRODUCTS_CTRL] ❌ loadNextPage FAILED: $e\n$stack');
+      debugPrint('[PRODUCTS_CTRL] ❌ loadNextPage FAILED: $e\n$stack');
       logger.error('Failed to load products', e, stack, 'PRODUCTS');
       // Spec 118 (Bug Y) — لا state access لو الـ provider تُحلَّل أثناء الـ catch
       if (ref.mounted) {

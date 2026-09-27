@@ -112,7 +112,7 @@ class _DatabaseSettingsDialogState
         // are updated together.
         await ns.setMode(NetworkMode.server, db: db);
         await ns.saveSettings();
-        print('[DB Settings] Auto-configured SERVER mode: HTTP API will start on port 8080');
+        debugPrint('[DB Settings] Auto-configured SERVER mode: HTTP API will start on port 8080');
       } else {
         // FIX: Only set address — preserve the server port from Setup Wizard.
         // The user configures the WAN port in the Setup Wizard (e.g. 9090),
@@ -122,7 +122,7 @@ class _DatabaseSettingsDialogState
         ns.setServerAddress(pgHost, port: existingPort != 8080 ? existingPort : null);
         await ns.setMode(NetworkMode.client, db: db);
         await ns.saveSettings();
-        print('[DB Settings] Auto-configured CLIENT mode: HTTP sync to $pgHost:${ns.serverPort}');
+        debugPrint('[DB Settings] Auto-configured CLIENT mode: HTTP sync to $pgHost:${ns.serverPort}');
       }
     }
 

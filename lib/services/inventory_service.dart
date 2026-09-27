@@ -207,7 +207,7 @@ class InventoryService {
     } catch (e) {
       // local data محفوظ، الـ sync سيُعاد لاحقاً
       // ignore: avoid_print
-      print('[INVENTORY-BOND-SYNC] submit failed (local data saved, will retry sync): $e');
+      debugPrint('[INVENTORY-BOND-SYNC] submit failed (local data saved, will retry sync): $e');
     }
 
     return bondId;
@@ -268,7 +268,7 @@ class InventoryService {
       );
     } catch (e) {
       // ignore: avoid_print
-      print('[INVENTORY-SYNC] Stock transfer sync failed: $e');
+      debugPrint('[INVENTORY-SYNC] Stock transfer sync failed: $e');
     }
 
     return bondId;
@@ -365,7 +365,7 @@ class InventoryService {
       );
     } catch (e) {
       // ignore: avoid_print
-      print('[REQUISITION-SYNC] approve transfer submit failed (local saved): $e');
+      debugPrint('[REQUISITION-SYNC] approve transfer submit failed (local saved): $e');
     }
 
     return bondId;

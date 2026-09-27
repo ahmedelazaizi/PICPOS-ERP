@@ -965,6 +965,7 @@ extension SalesMutationsDao on AppDatabase {
       // v175 — `paid` يُكتَب عبر الثابت وحدَه: تحريرُ فاتورةٍ لا يمسّ
       // تخصيصاتِها، فالقاعدةُ تُعاد حسابُها من الفرق.
       await _writeSalesInvoicePaid(invoiceId, paid);
+       await _refreshSalesInvoiceIntegrity(invoiceId);
 
       // Insert new items and update stock
       for (final item in items) {
@@ -1164,6 +1165,7 @@ extension SalesMutationsDao on AppDatabase {
 
       final oldPaymentMethod = invoice.paymentMethod;
       final paidAmount = invoice.paid;
+       await _refreshSalesInvoiceIntegrity(invoiceId);
 
       // Skip if no payment method change or no paid amount
       if (oldPaymentMethod == newPaymentMethod) {
@@ -1291,6 +1293,18 @@ extension SalesMutationsDao on AppDatabase {
           cashPaid: Value(newCash),
           bankPaid: Value(newBank),
           clickPaid: Value(newClick),
+           integrityHash: Value(InvoiceIntegrityService.computeSalesInvoiceHash(
+             invoiceNumber: invoice.invoiceNumber,
+             invoiceDate: invoice.invoiceDate,
+             total: invoice.total,
+             subtotal: invoice.subtotal,
+             discount: invoice.discount,
+             tax: invoice.tax,
+             paid: invoice.paid,
+             customerId: invoice.customerId,
+             userId: invoice.userId,
+             paymentMethod: newPaymentMethod,
+           )),
           notes: Value(notes),
         ),
       );
@@ -1409,6 +1423,7 @@ extension SalesMutationsDao on AppDatabase {
     }
 
     await _writeSalesInvoicePaid(invoiceId, newPaid, status: newStatus);
+    await _refreshSalesInvoiceIntegrity(invoiceId);
   }
 
   /// يكتب `paid` **ويُبقي الثابتَ** — الموضعُ الوحيدُ الذي يكتب العمودَين معاً.
@@ -1432,6 +1447,26 @@ extension SalesMutationsDao on AppDatabase {
   /// إعادةَ الحساب تُرجع `paid` إلى المجموع، أي أنّ **التخصيصاتِ تفوز**.
   /// وهو عينُ ما تفعله الاستراتيجيّةُ اليوم (`serverWins`)، ولا يُفقَد به
   /// شيءٌ لم يكن يُفقَد قبل العمود.
+  Future<void> _refreshSalesInvoiceIntegrity(int invoiceId) async {
+    final invoice = await (select(salesInvoices)
+          ..where((row) => row.id.equals(invoiceId)))
+        .getSingle();
+    final hash = InvoiceIntegrityService.computeSalesInvoiceHash(
+      invoiceNumber: invoice.invoiceNumber,
+      invoiceDate: invoice.invoiceDate,
+      total: invoice.total,
+      subtotal: invoice.subtotal,
+      discount: invoice.discount,
+      tax: invoice.tax,
+      paid: invoice.paid,
+      customerId: invoice.customerId,
+      userId: invoice.userId,
+      paymentMethod: invoice.paymentMethod,
+    );
+    await (update(salesInvoices)..where((row) => row.id.equals(invoiceId)))
+        .write(SalesInvoicesCompanion(integrityHash: Value(hash)));
+  }
+
   Future<void> _writeSalesInvoicePaid(
     int invoiceId,
     double newPaid, {
@@ -1525,6 +1560,7 @@ extension SalesMutationsDao on AppDatabase {
       // v175 — تحصيلٌ **بلا تخصيص**، فالقاعدةُ تزيد بنفس المبلغ:
       // `base' = newPaid − Σ = (paid + amount) − Σ = base + amount`.
       await _writeSalesInvoicePaid(invoiceId, newPaid, status: newStatus);
+    await _refreshSalesInvoiceIntegrity(invoiceId);
 
       // Post the MONEY via the receipt path: Dr Safe / Cr Customer-AR + safe
       // balance + parties.balance + balanced JE. Thread the SAME globalId so the

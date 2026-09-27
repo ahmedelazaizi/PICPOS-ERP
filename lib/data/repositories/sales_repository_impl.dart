@@ -943,6 +943,18 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
           status: Value(status),
           notes: Value(notes),
           costCenterId: Value(costCenterId),
+           integrityHash: Value(InvoiceIntegrityService.computeSalesInvoiceHash(
+             invoiceNumber: oldInvoice.invoiceNumber,
+             invoiceDate: oldInvoice.invoiceDate,
+             total: total,
+             subtotal: subtotal,
+             discount: totals.totalDiscount,
+             tax: totalTax,
+             paid: paid,
+             customerId: customerId,
+             userId: oldInvoice.userId,
+             paymentMethod: paymentMethod,
+           )),
         ),
       );
 

@@ -579,7 +579,15 @@ class _CwiSync {
     T? readV<T>(dynamic v, [T? fallback]) {
       try {
         if (v != null && v.present == true) return v.value as T?;
-      } catch (_) {}
+      } catch (error, stack) {
+        // Dynamic companion access is optional metadata enrichment.
+        unawaited(DiagnosticLogger.logError(
+          'SYNC-INTERCEPTOR',
+          'party-group companion field read failed',
+          error,
+          stack,
+        ));
+      }
       return fallback;
     }
     final gid = readV<String>(companion.globalId) ?? '';

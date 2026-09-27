@@ -89,7 +89,16 @@ class ClientWriteInterceptor implements SyncInterceptor {
             ..limit(1))
           .getSingleOrNull();
       if (user != null) payload['createdByUsername'] = user.username;
-    } catch (_) {}
+    } catch (error, stack) {
+      // Lookup/enrichment failures do not invalidate the original write, but
+      // they can remove the stable identity needed for sync reconciliation.
+      unawaited(DiagnosticLogger.logError(
+        'SYNC-INTERCEPTOR',
+        'non-critical identity enrichment failed',
+        error,
+        stack,
+      ));
+    }
   }
 
   /// True for exceptions that mean "we never got an answer from HQ"
@@ -345,7 +354,16 @@ class ClientWriteInterceptor implements SyncInterceptor {
         try {
           await (_db!.update(_db!.parties)..where((p) => p.id.equals(partyId)))
               .write(PartiesCompanion(globalId: Value(gid)));
-        } catch (_) {}
+        } catch (error, stack) {
+      // Lookup/enrichment failures do not invalidate the original write, but
+      // they can remove the stable identity needed for sync reconciliation.
+      unawaited(DiagnosticLogger.logError(
+        'SYNC-INTERCEPTOR',
+        'non-critical identity enrichment failed',
+        error,
+        stack,
+      ));
+    }
       }
       return gid;
     } catch (e) {
@@ -387,7 +405,16 @@ class ClientWriteInterceptor implements SyncInterceptor {
         try {
           await (_db!.update(_db!.products)..where((p) => p.id.equals(productId)))
               .write(ProductsCompanion(globalId: Value(gid)));
-        } catch (_) {}
+        } catch (error, stack) {
+      // Lookup/enrichment failures do not invalidate the original write, but
+      // they can remove the stable identity needed for sync reconciliation.
+      unawaited(DiagnosticLogger.logError(
+        'SYNC-INTERCEPTOR',
+        'non-critical identity enrichment failed',
+        error,
+        stack,
+      ));
+    }
       }
       return gid;
     } catch (e) {

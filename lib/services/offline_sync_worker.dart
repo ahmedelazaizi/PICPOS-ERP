@@ -32,6 +32,18 @@ const kDuplicateSupplierInvoiceNoCode = 'DUPLICATE_SUPPLIER_INVOICE_NO';
 bool isTerminalBusinessConflict(String error) =>
     error.contains(kDuplicateSupplierInvoiceNoCode);
 
+Map<String, dynamic>? _serverPayloadFromConflict(String error) {
+  final separator = error.indexOf('): ');
+  if (separator < 0) return null;
+  final body = error.substring(separator + 3);
+  try {
+    final decoded = jsonDecode(body);
+    return decoded is Map<String, dynamic> ? decoded : null;
+  } on FormatException {
+    return null;
+  }
+}
+
 /// Event payload emitted by [OfflineSyncWorker.lastDeadLetterEvent] each time
 /// an outbox item is moved to the dead-letter state. The shell listens for
 /// this and surfaces a snackbar so the admin notices immediately rather than
@@ -61,6 +73,8 @@ Map<String, Map<String, int>> _decodeMappingsBackground(String jsonStr) {
     }
     return result;
   } catch (_) {
+    // Corrupt cached id mappings are recoverable; the next successful drain
+    // rebuilds them from server responses.
     return {};
   }
 }
@@ -282,11 +296,11 @@ class OfflineSyncWorker {
     final addr = ns.serverAddress ?? '';
     if (addr.isEmpty) return false;
 
-    print('[OfflineSyncWorker] ${tokenMissing ? "Token missing" : "Token stale"} — re-verifying with server...');
+    debugPrint('[OfflineSyncWorker] ${tokenMissing ? "Token missing" : "Token stale"} — re-verifying with server...');
     final result = await ns.testServerConnection(addr, ns.serverPort);
     if (result['success'] == true) {
       _tokenVerifiedAt = DateTime.now();
-      print('[OfflineSyncWorker] ✅ Token verified');
+      debugPrint('[OfflineSyncWorker] ✅ Token verified');
       // Spec 151 (P1-8) — now that the server is reachable, mint the signed
       // per-user session token for anyone who logged in while offline (or
       // whose token was evicted by a prior 401). No-op when a token is already
@@ -294,7 +308,7 @@ class OfflineSyncWorker {
       await proxy.ensureSession();
       return true;
     }
-    print('[OfflineSyncWorker] ⚠️ Token verification failed: ${result['error']}');
+    debugPrint('[OfflineSyncWorker] ⚠️ Token verification failed: ${result['error']}');
     return false;
   }
 
@@ -316,7 +330,7 @@ class OfflineSyncWorker {
       // Without this, all POST calls will fail with 401 Unauthorized.
       final hasToken = await _ensureApiToken();
       if (!hasToken) {
-        print('[OfflineSyncWorker] ❌ Cannot drain: no API token (server unreachable)');
+        debugPrint('[OfflineSyncWorker] ❌ Cannot drain: no API token (server unreachable)');
         _scheduleRetry();
         return;
       }
@@ -326,17 +340,17 @@ class OfflineSyncWorker {
       // failed items so they get a fresh chance to sync.
       final resetCount = await _db!.resetFailedSyncItems();
       if (resetCount > 0) {
-        print('[OfflineSyncWorker] ♻️ Reset $resetCount permanently failed items back to pending');
+        debugPrint('[OfflineSyncWorker] ♻️ Reset $resetCount permanently failed items back to pending');
       }
 
       // Check if there are pending items
       final pendingCheck = await _db!.getPendingSyncItems(limit: 1);
       if (pendingCheck.isEmpty) {
-        print('[OfflineSyncWorker] ✅ No pending items in outbox');
+        debugPrint('[OfflineSyncWorker] ✅ No pending items in outbox');
         return;
       }
 
-      print('[OfflineSyncWorker] Starting outbox drain...');
+      debugPrint('[OfflineSyncWorker] Starting outbox drain...');
       int synced = 0;
       int failed = 0;
       bool mappingsUpdated = false;
@@ -431,7 +445,7 @@ class OfflineSyncWorker {
                         mappedIds[item.targetTable] ??= {};
                         mappedIds[item.targetTable]![localId.toString()] = serverId;
                         mappingsUpdated = true;
-                        print('[OfflineSyncWorker] 🔗 Mapped ${item.targetTable} Local ID $localId -> Server ID $serverId');
+                        debugPrint('[OfflineSyncWorker] 🔗 Mapped ${item.targetTable} Local ID $localId -> Server ID $serverId');
                         // Persist immediately to the relational FK remap table (P2.2)
                         final gid = originalPayload['globalId'] as String?;
                         unawaited(_db!.storeFkMapping(
@@ -469,7 +483,7 @@ class OfflineSyncWorker {
                 '→ serverId=${serverId ?? '-'}',
               ));
             }
-            print(
+            debugPrint(
               '[OfflineSyncWorker] ✅ Synced ${item.targetTable}/${item.operation} #${item.id}',
             );
           } catch (e) {
@@ -484,7 +498,7 @@ class OfflineSyncWorker {
 
             if (isNetworkError) {
               // Network error — DON'T burn retry attempts, just pause and retry later
-              print('[OfflineSyncWorker] ⚠️ Network error on item #${item.id} — pausing drain');
+              debugPrint('[OfflineSyncWorker] ⚠️ Network error on item #${item.id} — pausing drain');
               _scheduleRetry();
               return;
             }
@@ -500,7 +514,7 @@ class OfflineSyncWorker {
               int waitSecs = 65; // default: slightly more than the 60s window
               final match = RegExp(r'retryAfterSeconds[":]+\s*(\d+)').firstMatch(errorStr);
               if (match != null) waitSecs = (int.tryParse(match.group(1) ?? '') ?? 60) + 5;
-              print('[OfflineSyncWorker] ⏳ Rate limited (429) on item #${item.id} — pausing ${waitSecs}s');
+              debugPrint('[OfflineSyncWorker] ⏳ Rate limited (429) on item #${item.id} — pausing ${waitSecs}s');
               _retryTimer?.cancel();
               _retryTimer = Timer(Duration(seconds: waitSecs), () => drainOutbox(force: true));
               return;
@@ -521,7 +535,7 @@ class OfflineSyncWorker {
               // so the next _ensureApiToken → ensureSession re-mints a fresh
               // one before the retry.
               ServerProxy.instance.invalidateSessionToken();
-              print('[OfflineSyncWorker] 🔑 401 on item #${item.id} — token may be expired, scheduling re-verify');
+              debugPrint('[OfflineSyncWorker] 🔑 401 on item #${item.id} — token may be expired, scheduling re-verify');
               _scheduleRetry();
               return;
             }
@@ -539,7 +553,7 @@ class OfflineSyncWorker {
                 reason: errorStr,
                 timestamp: DateTime.now(),
               );
-              print('[OfflineSyncWorker] ⛔ Business conflict on item #${item.id} '
+              debugPrint('[OfflineSyncWorker] ⛔ Business conflict on item #${item.id} '
                   '— dead-lettered, operator action required: $errorStr');
               unawaited(DiagnosticLogger.log('SYNC-WARN',
                   '⛔ BUSINESS-CONFLICT table=${item.targetTable} '
@@ -557,6 +571,41 @@ class OfflineSyncWorker {
                 errorStr.contains('already exists');
 
             if (isConflict) {
+              final serverPayload = _serverPayloadFromConflict(errorStr);
+              if (kFinancialSyncTables.contains(item.targetTable)) {
+                try {
+                  await _db!.into(_db!.syncConflictLog).insert(
+                    SyncConflictLogCompanion.insert(
+                      conflictTable: item.targetTable,
+                      recordId: item.recordId,
+                      resolution: 'pending_review',
+                      clientPayload: item.payload,
+                      serverPayload: Value(
+                        serverPayload == null ? null : jsonEncode(serverPayload),
+                      ),
+                      reason: Value(
+                        'بيانات مالية متعارضة؛ بقيت العملية معلقة للمراجعة: '
+                        '${errorStr.substring(0, errorStr.length.clamp(0, 200))}',
+                      ),
+                      clientId: const Value(null),
+                    ),
+                  );
+                } catch (error, stack) {
+                  await DiagnosticLogger.logError(
+                    'SYNC-CONFLICT',
+                    'financial outbox conflict log failed for ${item.targetTable}/${item.recordId}',
+                    error,
+                    stack,
+                  );
+                }
+                await DiagnosticLogger.log(
+                  'SYNC-CONFLICT',
+                  'financial outbox conflict pending review table=${item.targetTable} '
+                  'record=${item.recordId}',
+                );
+                continue;
+              }
+
               synced++;
               await _db!.markAsSyncSuccess(item.id);
               // Pull the server's authoritative version so the local row converges
@@ -573,12 +622,22 @@ class OfflineSyncWorker {
                     recordId: item.recordId,
                     resolution: 'server_wins_pull_triggered',
                     clientPayload: item.payload,
+                    serverPayload: Value(
+                      serverPayload == null ? null : jsonEncode(serverPayload),
+                    ),
                     reason: Value('بيانات موجودة بالفعل على السيرفر: ${errorStr.substring(0, errorStr.length.clamp(0, 200))}'),
                     clientId: const Value(null),
                   ),
                 );
-              } catch (_) {}
-              print(
+              } catch (error, stack) {
+                await DiagnosticLogger.logError(
+                  'SYNC-CONFLICT',
+                  'conflict log insert failed for ${item.targetTable}/${item.recordId}',
+                  error,
+                  stack,
+                );
+              }
+              debugPrint(
                 '[OfflineSyncWorker] ⚠️ Conflict on item #${item.id} (${item.targetTable}) — marked as synced, pulling server state',
               );
               continue;
@@ -660,7 +719,7 @@ class OfflineSyncWorker {
                 reason: errorStr,
                 timestamp: DateTime.now(),
               );
-              print(
+              debugPrint(
                 '[OfflineSyncWorker] 🚫 Permanent validation error on item #${item.id} — immediately dead-lettered (manual retry needed): $e',
               );
               // Surface in persistent diagnostic log so the operator can
@@ -673,7 +732,7 @@ class OfflineSyncWorker {
 
             // Server/logic error — increment attempts
             failed++;
-            print(
+            debugPrint(
               '[OfflineSyncWorker] ❌ Server error item #${item.id} (attempt ${item.attempts + 1}): $e',
             );
             if (item.attempts >= _maxSyncAttempts) {
@@ -684,7 +743,7 @@ class OfflineSyncWorker {
                 reason: errorStr,
                 timestamp: DateTime.now(),
               );
-              print('[OfflineSyncWorker] 🚫 Item #${item.id} moved to dead_letter after ${item.attempts + 1} attempts');
+              debugPrint('[OfflineSyncWorker] 🚫 Item #${item.id} moved to dead_letter after ${item.attempts + 1} attempts');
               unawaited(DiagnosticLogger.log('SYNC-WARN',
                   '🚫 DEAD-LETTER table=${item.targetTable} op=${item.operation} '
                   'id=${item.id} attempts=${item.attempts + 1} reason=$errorStr'));
@@ -701,7 +760,7 @@ class OfflineSyncWorker {
       }
 
       if (failed == 0) _retryAttempts = 0;
-      print('[OfflineSyncWorker] Outbox drain complete: $synced synced, $failed failed');
+      debugPrint('[OfflineSyncWorker] Outbox drain complete: $synced synced, $failed failed');
       // Spec 136 — one summary line per productive drain so the operator can
       // see, in the login log, that the offline queue was flushed (and how many
       // remain) instead of inferring it from silence.
@@ -725,7 +784,7 @@ class OfflineSyncWorker {
         unawaited(DeltaPullService.instance.pullAll());
       }
     } catch (e) {
-      print('[OfflineSyncWorker] Drain error: $e');
+      debugPrint('[OfflineSyncWorker] Drain error: $e');
       _scheduleRetry();
     } finally {
       _isDraining = false;
@@ -780,12 +839,12 @@ class OfflineSyncWorker {
         if (localId == null) continue;
         final product = await _db!.getProductById(localId);
         if (product == null) {
-          print('[OfflineSyncWorker] ⚠️ pre-flight: local product $localId missing — sale will '
+          debugPrint('[OfflineSyncWorker] ⚠️ pre-flight: local product $localId missing — sale will '
               'fail server FK check. Skipping product push.');
           continue;
         }
 
-        print('[OfflineSyncWorker] 🔄 pre-flight: product local=$localId '
+        debugPrint('[OfflineSyncWorker] 🔄 pre-flight: product local=$localId '
             '(code=${product.code}) has no server mapping — pushing now to resolve sale $outboxId');
 
         // Ensure the local product has a globalId so the server's UUID-based
@@ -829,7 +888,16 @@ class OfflineSyncWorker {
                   await (_db!.update(_db!.categories)
                         ..where((c) => c.id.equals(product.categoryId!)))
                       .write(CategoriesCompanion(globalId: Value(categoryGlobalId)));
-                } catch (_) {}
+                } catch (error, stack) {
+      // Mapping failures are recoverable, but must remain diagnosable because
+      // stale FK mappings can make a financial replay target the wrong row.
+      unawaited(DiagnosticLogger.logError(
+        'SYNC-MAPPING',
+        'best-effort mapping operation failed',
+        error,
+        stack,
+      ));
+    }
               }
             }
           } catch (e) {
@@ -875,9 +943,9 @@ class OfflineSyncWorker {
         );
         if (serverId != null && serverId != 0) {
           productMap[localIdStr] = serverId;
-          print('[OfflineSyncWorker] ✅ pre-flight: product local=$localId → server=$serverId');
+          debugPrint('[OfflineSyncWorker] ✅ pre-flight: product local=$localId → server=$serverId');
         } else {
-          print('[OfflineSyncWorker] ⚠️ pre-flight: createProduct returned null/0 for '
+          debugPrint('[OfflineSyncWorker] ⚠️ pre-flight: createProduct returned null/0 for '
               'local=$localId — sale $outboxId may still 23503');
         }
       } catch (e) {
@@ -890,11 +958,11 @@ class OfflineSyncWorker {
             err.contains('UNIQUE constraint') ||
             err.contains('already exists') ||
             err.contains('duplicate')) {
-          print('[OfflineSyncWorker] pre-flight: product $localIdStr already on server — '
+          debugPrint('[OfflineSyncWorker] pre-flight: product $localIdStr already on server — '
               'mapping will be resolved server-side on retry');
           continue;
         }
-        print('[OfflineSyncWorker] ⚠️ pre-flight push failed for product $localIdStr: $e');
+        debugPrint('[OfflineSyncWorker] ⚠️ pre-flight push failed for product $localIdStr: $e');
         // Continue — the sale replay will fail its own FK check and move
         // through the normal error handling (attempt counter / retry).
       }
@@ -907,7 +975,16 @@ class OfflineSyncWorker {
     try {
       final dbMappings = await _db!.loadAllFkMappings();
       if (dbMappings.isNotEmpty) return dbMappings;
-    } catch (_) {}
+    } catch (error, stack) {
+      // Mapping failures are recoverable, but must remain diagnosable because
+      // stale FK mappings can make a financial replay target the wrong row.
+      unawaited(DiagnosticLogger.logError(
+        'SYNC-MAPPING',
+        'best-effort mapping operation failed',
+        error,
+        stack,
+      ));
+    }
     // Fallback: migrate one-time from the legacy JSON blob in settings
     try {
       final jsonStr = await _db!.getSettingValue('_sync_id_mappings');
@@ -919,7 +996,16 @@ class OfflineSyncWorker {
         }
         return legacy;
       }
-    } catch (_) {}
+    } catch (error, stack) {
+      // Mapping failures are recoverable, but must remain diagnosable because
+      // stale FK mappings can make a financial replay target the wrong row.
+      unawaited(DiagnosticLogger.logError(
+        'SYNC-MAPPING',
+        'best-effort mapping operation failed',
+        error,
+        stack,
+      ));
+    }
     return {};
   }
 
@@ -927,7 +1013,16 @@ class OfflineSyncWorker {
     if (_db == null || mappings.isEmpty) return;
     try {
       await _db!.bulkStoreFkMappings(mappings);
-    } catch (_) {}
+    } catch (error, stack) {
+      // Mapping failures are recoverable, but must remain diagnosable because
+      // stale FK mappings can make a financial replay target the wrong row.
+      unawaited(DiagnosticLogger.logError(
+        'SYNC-MAPPING',
+        'best-effort mapping operation failed',
+        error,
+        stack,
+      ));
+    }
   }
 
   /// Enrich a payload with `createdByUsername` so the server can resolve user
@@ -946,7 +1041,16 @@ class OfflineSyncWorker {
         enriched['createdByUsername'] = user.user.username;
         return enriched;
       }
-    } catch (_) {}
+    } catch (error, stack) {
+      // Mapping failures are recoverable, but must remain diagnosable because
+      // stale FK mappings can make a financial replay target the wrong row.
+      unawaited(DiagnosticLogger.logError(
+        'SYNC-MAPPING',
+        'best-effort mapping operation failed',
+        error,
+        stack,
+      ));
+    }
     return payload;
   }
 

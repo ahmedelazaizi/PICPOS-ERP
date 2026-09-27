@@ -212,10 +212,6 @@ const _unsyncedBaseline = <String>{
   //    `attachment_blobs_stay_off_the_wire_test.dart`.
   'AttachmentBlobs',
 
-  // `SyncOutbox` طابورُ الدفعِ نفسُه — مزامنتُه تُنتج دوراً كـ
-  // `ProcessedMessages` بالضبط.
-  'SyncOutbox',
-
   // ═══ ⚪ أطلالُ هجراتٍ بـSQL خامّ — **صفرُ مواضعِ نداء** ═══
   //
   // كشفها فتحُ عين الحارس على `CREATE TABLE` الخامّ (2026-09-21). وحكمُها

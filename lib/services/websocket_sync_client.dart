@@ -122,7 +122,9 @@ class WebSocketSyncClient {
         try {
           final prefs = await SharedPreferences.getInstance();
           _clientBranchId = prefs.getInt('client_branch_id');
-        } catch (_) {}
+        } catch (_) {
+          // Missing branch preference degrades to an unscoped client pull.
+        }
       }
 
       final baseUri = Uri.parse(ns.buildWsUrl());
@@ -336,7 +338,13 @@ class WebSocketSyncClient {
         [nowEpochSeconds, localId],
       );
       debugPrint('[WS-Client] Soft-deleted $table#$localId (remote=$remoteId)');
-    } catch (_) {
+    } catch (error, stack) {
+      await DiagnosticLogger.logError(
+        'SYNC-WS',
+        'soft-delete apply failed for $table#$localId',
+        error,
+        stack,
+      );
       // Table has no deleted_at — trigger a pull to get server state
       _triggerSync(table);
       return;
@@ -357,7 +365,10 @@ class WebSocketSyncClient {
     _pingTimer = Timer.periodic(_pingInterval, (_) {
       try {
         _channel?.sink.add(json.encode({'event': 'ping'}));
-      } catch (_) {}
+      } catch (_) {
+        // A closed socket is expected while reconnecting; the reconnect loop
+        // owns recovery and no financial state is changed here.
+      }
     });
   }
 
@@ -372,7 +383,9 @@ class WebSocketSyncClient {
     _pullDebounce.clear();
     try {
       _channel?.sink.close();
-    } catch (_) {}
+    } catch (_) {
+      // Cleanup is idempotent; a channel already closed needs no recovery.
+    }
     _channel = null;
   }
 

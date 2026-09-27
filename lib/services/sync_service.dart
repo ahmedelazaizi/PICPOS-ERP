@@ -672,10 +672,10 @@ class SyncService {
       if (response.statusCode == 200) {
         return json.decode(body) as Map<String, dynamic>;
       }
-      print('[Sync] GET $path → ${response.statusCode}');
+      debugPrint('[Sync] GET $path → ${response.statusCode}');
       return null;
     } catch (e) {
-      print('[Sync] GET $path failed: $e');
+      debugPrint('[Sync] GET $path failed: $e');
       return null;
     }
   }
@@ -704,7 +704,7 @@ class SyncService {
 
     final liveUrl = _currentUrl;
     final fullUrl = '$liveUrl$path';
-    print('[Sync] POST → $fullUrl');
+    debugPrint('[Sync] POST → $fullUrl');
     _diagLog('POST → $fullUrl');
     try {
       final client = TlsTrust.ioClient(
@@ -718,7 +718,7 @@ class SyncService {
       if (token != null) {
         request.headers.set('Authorization', 'Bearer $token');
       } else {
-        print('[Sync] ⚠️ WARNING: No API token! POST will likely fail auth');
+        debugPrint('[Sync] ⚠️ WARNING: No API token! POST will likely fail auth');
       }
       // Skip ngrok interstitial page
       request.headers.set('ngrok-skip-browser-warning', 'true');
@@ -729,16 +729,16 @@ class SyncService {
       final body = await response.transform(utf8.decoder).join();
       client.close();
 
-      print('[Sync] POST $path → status=${response.statusCode}');
+      debugPrint('[Sync] POST $path → status=${response.statusCode}');
       _diagLog('POST $path → status=${response.statusCode}, bodyLen=${body.length}');
       if (response.statusCode == 200) {
         return json.decode(body) as Map<String, dynamic>;
       }
-      print('[Sync] POST $path FAILED: status=${response.statusCode}, body=$body');
+      debugPrint('[Sync] POST $path FAILED: status=${response.statusCode}, body=$body');
       _diagLog('POST FAILED: status=${response.statusCode}, body=$body');
       return null;
     } catch (e) {
-      print('[Sync] POST $fullUrl EXCEPTION: $e');
+      debugPrint('[Sync] POST $fullUrl EXCEPTION: $e');
       _diagLog('POST EXCEPTION: $e');
       return null;
     }
@@ -758,11 +758,11 @@ class SyncService {
     if (result != null && result['success'] == true) {
       final serverId = result['serverId'] as int?;
       final isDuplicate = result['duplicate'] == true;
-      print('[Sync] Sale submitted: serverId=$serverId duplicate=$isDuplicate');
+      debugPrint('[Sync] Sale submitted: serverId=$serverId duplicate=$isDuplicate');
       _diagLog('submitSale SUCCESS: serverId=$serverId');
       return result;
     }
-    print('[Sync] Sale submission failed for ${request.invoiceNumber}, result=$result');
+    debugPrint('[Sync] Sale submission failed for ${request.invoiceNumber}, result=$result');
     _diagLog('submitSale FAILED: result=$result');
     return null;
   }

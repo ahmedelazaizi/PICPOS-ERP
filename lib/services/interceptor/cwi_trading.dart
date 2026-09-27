@@ -303,7 +303,14 @@ class _CwiTrading {
               await (db.update(db.products)
                     ..where((c) => c.id.equals(productId)))
                   .write(ProductsCompanion(globalId: Value(productGlobalId)));
-            } catch (_) {}
+            } catch (error, stack) {
+                unawaited(DiagnosticLogger.logError(
+                  'SYNC-INTERCEPTOR',
+                  'stock adjustment product identity persistence failed',
+                  error,
+                  stack,
+                ));
+              }
           }
         }
       } catch (e) {

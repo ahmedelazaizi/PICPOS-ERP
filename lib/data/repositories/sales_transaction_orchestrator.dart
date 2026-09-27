@@ -506,7 +506,14 @@ class SalesTransactionOrchestrator {
                 .getSingleOrNull();
             createdByUsername = cashier?.username;
             userGlobalId = cashier?.globalId;
-          } catch (_) {}
+          } catch (error, stack) {
+            unawaited(DiagnosticLogger.logError(
+              'SALE-SYNC',
+              'optional sync metadata lookup failed',
+              error,
+              stack,
+            ));
+          }
 
           // Spec 117 (Bug G) — resolve branchId من warehouse للـ syncRequest.
           // قبلاً كان مفقوداً من الـ payload فالـ mirror يرسل branchId=null
@@ -515,7 +522,14 @@ class SalesTransactionOrchestrator {
           try {
             final wh = await _db.getWarehouseById(warehouseId);
             resolvedBranchIdForSync = wh?.branchId;
-          } catch (_) {}
+          } catch (error, stack) {
+            unawaited(DiagnosticLogger.logError(
+              'SALE-SYNC',
+              'optional sync metadata lookup failed',
+              error,
+              stack,
+            ));
+          }
 
           final syncRequest = {
             'globalId': saleGlobalId,
@@ -912,7 +926,14 @@ class SalesTransactionOrchestrator {
             .getSingleOrNull();
         createdByUsername = cashier?.username;
         userGlobalId = cashier?.globalId;
-      } catch (_) {}
+      } catch (error, stack) {
+            unawaited(DiagnosticLogger.logError(
+              'SALE-SYNC',
+              'optional sync metadata lookup failed',
+              error,
+              stack,
+            ));
+          }
 
       final syncRequest = {
         'globalId': saleGlobalId,
@@ -1077,7 +1098,14 @@ class SalesTransactionOrchestrator {
         try {
           final wh = await _db.getWarehouseById(request.warehouseId);
           warehouseBranchId = wh?.branchId;
-        } catch (_) {/* non-fatal */}
+        } catch (error, stack) {
+           unawaited(DiagnosticLogger.logError(
+             'SALE-SYNC',
+             'warehouse branch lookup failed',
+             error,
+             stack,
+           ));
+         }
         if (resolvedBranchId == null) {
           resolvedBranchId = warehouseBranchId;
         } else if (warehouseBranchId != null &&

@@ -107,7 +107,14 @@ class _CwiCatalog {
               await (db.update(db.categories)
                     ..where((c) => c.id.equals(categoryId)))
                   .write(CategoriesCompanion(globalId: Value(categoryGlobalId)));
-            } catch (_) {}
+            } catch (error, stack) {
+              unawaited(DiagnosticLogger.logError(
+                'SYNC-INTERCEPTOR',
+                'close-shift local metadata lookup failed',
+                error,
+                stack,
+              ));
+            }
           }
         }
       } catch (e) {
@@ -428,13 +435,19 @@ class _CwiCatalog {
               await (db.update(db.shifts)..where((s) => s.id.equals(shiftId)))
                   .write(ShiftsCompanion(globalId: Value(shiftGlobalId)));
             } catch (e) {
-              debugPrint('[ClientInterceptor] closeShift: failed to backfill '
-                  'globalId on local shift $shiftId: $e');
+              await DiagnosticLogger.log('SYNC-INTERCEPTOR', 'close-shift globalId persistence failed for $shiftId: $e');
             }
           }
         }
       }
-    } catch (_) {}
+    } catch (error, stack) {
+      unawaited(DiagnosticLogger.logError(
+        'SYNC-INTERCEPTOR',
+        'close-shift local metadata lookup failed',
+        error,
+        stack,
+      ));
+    }
 
     unawaited(DiagnosticLogger.log('SHIFT-MIRROR',
         'closeShift: routing to server '

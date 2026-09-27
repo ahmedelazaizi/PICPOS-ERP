@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // F-03: Recurring Journal Entry Scheduler
 // Auto-posts journal entries from saved templates on a schedule
+import 'package:flutter/foundation.dart' show debugPrint;
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Frequency for recurring entries
@@ -99,7 +100,7 @@ class RecurringEntryService {
       } catch (e) {
         // Log but don't stop processing other entries
         // ignore: avoid_print
-        print('[RecurringEntry] Failed to post definition ${def.id}: $e');
+        debugPrint('[RecurringEntry] Failed to post definition ${def.id}: $e');
       }
     }
 

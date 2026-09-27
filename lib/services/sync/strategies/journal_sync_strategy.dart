@@ -124,12 +124,12 @@ class JournalSyncStrategy extends SyncStrategy {
       if ((totalDebit - totalCredit).abs() > FinancialUtils.balanceTolerance) {
         final diff = (totalDebit - totalCredit).abs();
         // PHASE-8+: Clear alert for review — both console and conflict log
-        print('╔══════════════════════════════════════════════════════════════╗');
-        print('║  ⚠️  تنبيه: قيد محاسبي غير متوازن وارد من السيرفر!            ║');
-        print('║  رقم القيد: $serverId                                        ║');
-        print('║  المدين: $totalDebit | الدائن: $totalCredit | الفرق: $diff    ║');
-        print('║  ← تم رفض القيد وتسجيله — يرجى مراجعته على السيرفر          ║');
-        print('╚══════════════════════════════════════════════════════════════╝');
+        debugPrint('╔══════════════════════════════════════════════════════════════╗');
+        debugPrint('║  ⚠️  تنبيه: قيد محاسبي غير متوازن وارد من السيرفر!            ║');
+        debugPrint('║  رقم القيد: $serverId                                        ║');
+        debugPrint('║  المدين: $totalDebit | الدائن: $totalCredit | الفرق: $diff    ║');
+        debugPrint('║  ← تم رفض القيد وتسجيله — يرجى مراجعته على السيرفر          ║');
+        debugPrint('╚══════════════════════════════════════════════════════════════╝');
         debugPrint('[Sync] ⚠️ REJECTED unbalanced journal #$serverId: debit=$totalDebit, credit=$totalCredit, diff=$diff');
         try {
           await db.into(db.syncConflictLog).insert(
@@ -141,7 +141,14 @@ class JournalSyncStrategy extends SyncStrategy {
               reason: Value('⚠️ قيد غير متوازن يحتاج مراجعة: مدين=$totalDebit, دائن=$totalCredit, الفرق=$diff'),
             ),
           );
-        } catch (_) {}
+        } catch (error, stack) {
+           await DiagnosticLogger.logError(
+             'SYNC-JOURNAL',
+             'unbalanced journal conflict log failed for $serverId',
+             error,
+             stack,
+           );
+         }
         return affectedIds;
       }
 

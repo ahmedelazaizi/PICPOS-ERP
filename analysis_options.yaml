@@ -54,7 +54,7 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    avoid_print: false # Temporarily disabled to reduce analyzer noise
+    avoid_print: true
     avoid_dynamic_calls: true
     prefer_const_constructors: true
     prefer_const_declarations: true

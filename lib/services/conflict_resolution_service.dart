@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:drift/drift.dart';
+import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart';
 import 'sync_event_bus.dart';
 
@@ -50,6 +51,23 @@ class ConflictResolutionService {
   /// existing strategy declarations onto the 3-value service enum.
   static const Set<String> _lastWriteWinsTables = {'parties', 'shifts'};
 
+  /// Numeric ids are shared across these seeded/master-data tables. For every
+  /// other table, an id-only match is unsafe because client/server sequences
+  /// are independent; a missing global_id therefore means a new row.
+  static const Set<String> _sharedIdTables = {
+    'branches',
+    'warehouses',
+    'products',
+    'parties',
+    'categories',
+    'units',
+    'payment_methods',
+  };
+
+  /// Device clocks are not authoritative. When row versions tie and timestamps
+  /// are within this skew window, server wins deterministically.
+  static const int _timestampSkewSeconds = 120;
+
   ConflictPolicy policyForTable(String table) =>
       _lastWriteWinsTables.contains(table)
           ? ConflictPolicy.newerWins
@@ -99,23 +117,44 @@ class ConflictResolutionService {
         try {
           local = await _db!
               .customSelect(
-                'SELECT row_version, last_modified_at, origin_client_id '
+                'SELECT row_version, last_modified_at, origin_client_id, global_id '
                 'FROM $table WHERE global_id = ? LIMIT 1',
                 variables: [Variable.withString(globalId)],
               )
               .getSingleOrNull();
-        } catch (_) {
-          // table may not carry global_id — fall through to id lookup
+        } catch (error, stack) {
+          // Some legacy tables lack global_id; only their documented shared ids
+          // may use the guarded numeric-id fallback below.
+          await DiagnosticLogger.logError(
+            'SYNC-CONFLICT',
+            'global_id lookup failed for $table',
+            error,
+            stack,
+          );
         }
       }
-      if (local == null && id is int) {
-        local = await _db!
-            .customSelect(
-              'SELECT row_version, last_modified_at, origin_client_id '
-              'FROM $table WHERE id = ? LIMIT 1',
-              variables: [Variable.withInt(id)],
-            )
-            .getSingleOrNull();
+      if (local == null && id is int && _sharedIdTables.contains(table)) {
+        try {
+          final candidate = await _db!
+              .customSelect(
+                'SELECT row_version, last_modified_at, origin_client_id, global_id '
+                'FROM $table WHERE id = ? LIMIT 1',
+                variables: [Variable.withInt(id)],
+              )
+              .getSingleOrNull();
+          // Never let a numeric collision bind unrelated records. A fallback
+          // is valid only when the local candidate also has no global_id.
+          if (candidate == null || candidate.data['global_id'] == null) {
+            local = candidate;
+          }
+        } catch (error, stack) {
+          await DiagnosticLogger.logError(
+            'SYNC-CONFLICT',
+            'shared-id lookup failed for $table',
+            error,
+            stack,
+          );
+        }
       }
 
       if (local == null) return true; // no local row → apply server
@@ -142,6 +181,10 @@ class ConflictResolutionService {
       // origin_client_id lexical order for a deterministic winner.
       final localTs = local.data['last_modified_at'] as int? ?? 0;
       final serverTs = serverRow['last_modified_at'] as int? ?? 0;
+      final timestampDelta = (serverTs - localTs).abs();
+      // Within clock skew, timestamps cannot establish causality. Prefer the
+      // server so every client resolves the tie identically.
+      if (timestampDelta < _timestampSkewSeconds) return true;
       if (serverTs > localTs) return true;
       if (serverTs < localTs) {
         await _logConflict(
@@ -149,7 +192,7 @@ class ConflictResolutionService {
           serverRow: serverRow,
           resolution: 'client_wins',
           reason:
-              'tie on row_version=$localVersion; local last_modified_at=$localTs > server=$serverTs',
+              'tie on row_version=$localVersion; local last_modified_at=$localTs > server=$serverTs outside skew window',
         );
         SyncEventBus.instance.emit(
           SyncConflictDetected(table, id, 'client_wins'),
@@ -174,8 +217,16 @@ class ConflictResolutionService {
         SyncConflictDetected(table, id, 'client_wins'),
       );
       return false;
-    } catch (_) {
-      return true; // on error default to server wins to avoid data loss
+    } catch (error, stack) {
+      // Resolver failures must be observable; server-wins remains the safe
+      // availability default, but the diagnostic trail prevents silent drift.
+      await DiagnosticLogger.logError(
+        'SYNC-CONFLICT',
+        'conflict resolution failed for $table',
+        error,
+        stack,
+      );
+      return true;
     }
   }
 
@@ -196,6 +247,13 @@ class ConflictResolutionService {
           reason: Value(reason),
         ),
       );
-    } catch (_) {}
+    } catch (error, stack) {
+      await DiagnosticLogger.logError(
+        'SYNC-CONFLICT',
+        'conflict log insert failed for $table',
+        error,
+        stack,
+      );
+    }
   }
 }

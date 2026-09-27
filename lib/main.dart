@@ -3,7 +3,7 @@ import 'dart:io' show File, FileMode, Platform;
 import 'package:path_provider/path_provider.dart';
 
 import 'dart:ui' show PlatformDispatcher;
-import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb, kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async' show unawaited;
@@ -168,12 +168,12 @@ void main() async {
       if (args.contains('--use-sqlite')) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('pg_provisioned_ok', false);
-        print('[STARTUP] 🔧 --use-sqlite flag observed — next boot uses SQLite');
+        debugPrint('[STARTUP] 🔧 --use-sqlite flag observed — next boot uses SQLite');
       }
       if (args.contains('--use-postgres')) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('pg_provisioned_ok', true);
-        print('[STARTUP] 🔧 --use-postgres flag observed — next boot attempts PG');
+        debugPrint('[STARTUP] 🔧 --use-postgres flag observed — next boot attempts PG');
       }
     } catch (_) {}
 
@@ -225,7 +225,7 @@ void main() async {
         await PostgresConfig.setOfflineFallback(true);
       }
     } else if (dbMode == DatabaseMode.postgres && !pgProvisioned && !isClient) {
-      print('[STARTUP] 📂 PG mode saved but not yet provisioned — using local SQLite. '
+      debugPrint('[STARTUP] 📂 PG mode saved but not yet provisioned — using local SQLite. '
           'Admin can link PG from Settings → Network Mode after login.');
     } else if (isClient) {
       // Client mode doesn't use PostgreSQL — clear any stale offline fallback flag
@@ -569,11 +569,11 @@ void main() async {
     // no business serving.
     final ns = NetworkService.instance;
     if (!ns.isClient && !ns.isMirror) {
-      print('[STARTUP] 🚀 Starting HTTP API server...');
+      debugPrint('[STARTUP] 🚀 Starting HTTP API server...');
       try {
         await platform.autoStartNetworkServer(sharedDb);
       } catch (e) {
-        print('[STARTUP] ❌ HTTP API server failed: $e');
+        debugPrint('[STARTUP] ❌ HTTP API server failed: $e');
       }
     }
 
@@ -585,10 +585,10 @@ void main() async {
     try {
       final fixed = await sharedDb.backfillMissingInventoryBalances();
       if (fixed > 0) {
-        print('[STARTUP] ✅ Backfilled $fixed missing inventory_balances row(s)');
+        debugPrint('[STARTUP] ✅ Backfilled $fixed missing inventory_balances row(s)');
       }
     } catch (e) {
-      print('[STARTUP] ⚠️ backfillMissingInventoryBalances failed: $e');
+      debugPrint('[STARTUP] ⚠️ backfillMissingInventoryBalances failed: $e');
     }
 
     // Feature 012 / Issue M-DUP-BRANCH — one-shot consolidation of
@@ -600,10 +600,10 @@ void main() async {
     try {
       final removed = await sharedDb.mergeDuplicateBranches();
       if (removed > 0) {
-        print('[STARTUP] ✅ Merged $removed duplicate branch row(s)');
+        debugPrint('[STARTUP] ✅ Merged $removed duplicate branch row(s)');
       }
     } catch (e) {
-      print('[STARTUP] ⚠️ mergeDuplicateBranches failed: $e');
+      debugPrint('[STARTUP] ⚠️ mergeDuplicateBranches failed: $e');
     }
 
     // Feature 012 / Issue M-DUP-PRET — collapse duplicate
@@ -613,10 +613,10 @@ void main() async {
     try {
       final removed = await sharedDb.mergeDuplicateReturnMemos();
       if (removed > 0) {
-        print('[STARTUP] ✅ Merged $removed duplicate return-memo row(s)');
+        debugPrint('[STARTUP] ✅ Merged $removed duplicate return-memo row(s)');
       }
     } catch (e) {
-      print('[STARTUP] ⚠️ mergeDuplicateReturnMemos failed: $e');
+      debugPrint('[STARTUP] ⚠️ mergeDuplicateReturnMemos failed: $e');
     }
 
     // Feature 014 / Issue 2 — collapse duplicate fiscal-year rows that
@@ -625,10 +625,10 @@ void main() async {
     try {
       final removed = await sharedDb.mergeDuplicateFiscalYears();
       if (removed > 0) {
-        print('[STARTUP] ✅ Merged $removed duplicate fiscal-year row(s)');
+        debugPrint('[STARTUP] ✅ Merged $removed duplicate fiscal-year row(s)');
       }
     } catch (e) {
-      print('[STARTUP] ⚠️ mergeDuplicateFiscalYears failed: $e');
+      debugPrint('[STARTUP] ⚠️ mergeDuplicateFiscalYears failed: $e');
     }
 
     // Feature 016 — backfill `sales_invoice_items.cost_price` for the
@@ -641,10 +641,10 @@ void main() async {
       // C-PERF-3: one-shot — skips the full JOIN scan once the DB is clean.
       final updated = await sharedDb.backfillSalesItemCostPriceOnce();
       if (updated > 0) {
-        print('[STARTUP] ✅ Backfilled cost_price on $updated sales-item row(s)');
+        debugPrint('[STARTUP] ✅ Backfilled cost_price on $updated sales-item row(s)');
       }
     } catch (e) {
-      print('[STARTUP] ⚠️ backfillSalesItemCostPriceOnce failed: $e');
+      debugPrint('[STARTUP] ⚠️ backfillSalesItemCostPriceOnce failed: $e');
     }
 
     // Feature 018 / Issue 10 — one-shot backfill of `enable_negative_sales`.
@@ -655,10 +655,10 @@ void main() async {
     try {
       final chosen = await sharedDb.ensureNegativeSalesDefault();
       if (chosen != null) {
-        print('[STARTUP] ✅ enable_negative_sales=$chosen (one-shot default)');
+        debugPrint('[STARTUP] ✅ enable_negative_sales=$chosen (one-shot default)');
       }
     } catch (e) {
-      print('[STARTUP] ⚠️ ensureNegativeSalesDefault failed: $e');
+      debugPrint('[STARTUP] ⚠️ ensureNegativeSalesDefault failed: $e');
     }
 
     // 1. CLI / env recovery flag for the developer password.
@@ -717,17 +717,17 @@ void main() async {
       if (purgeUsers) {
         // Use print (stdout) so the message is visible in PowerShell on
         // a release build — debugPrint is a no-op in release mode.
-        print('[STARTUP] 🔑 --purge-users flag observed — deleting ALL user rows');
+        debugPrint('[STARTUP] 🔑 --purge-users flag observed — deleting ALL user rows');
         try {
           await sharedDb.customStatement('DELETE FROM users');
-          print('[STARTUP] ✅ all users deleted — next startup will re-seed admin/admin');
+          debugPrint('[STARTUP] ✅ all users deleted — next startup will re-seed admin/admin');
         } catch (e) {
-          print('[STARTUP] ❌ --purge-users failed: $e');
+          debugPrint('[STARTUP] ❌ --purge-users failed: $e');
         }
       }
 
       if (fromCli || fromEnv) {
-        print('[STARTUP] 🔑 --reset-admin-password flag observed — resetting admin/admin');
+        debugPrint('[STARTUP] 🔑 --reset-admin-password flag observed — resetting admin/admin');
         try {
           await _resetAdminPasswordToDefault(sharedDb);
           // Immediate verification: re-read the row and confirm the hash
@@ -737,13 +737,13 @@ void main() async {
             "SELECT password_hash, password_salt FROM users WHERE username = 'admin' LIMIT 1",
           ).get();
           if (rows.isEmpty) {
-            print('[STARTUP] ⚠️ reset ran but no admin row found afterwards!');
+            debugPrint('[STARTUP] ⚠️ reset ran but no admin row found afterwards!');
           } else {
             final hash = rows.first.data['password_hash']?.toString() ?? '';
             final salt = rows.first.data['password_salt']?.toString() ?? '';
             final ok = salt.isNotEmpty &&
                 SecurityService.verifyPassword('admin', salt, hash);
-            print(ok
+            debugPrint(ok
                 ? '[STARTUP] ✅ admin password reset verified — login with: admin'
                 : '[STARTUP] ❌ admin password reset WRITTEN but verify FAILED '
                     '(salt.len=${salt.length}, hash.len=${hash.length}). '
@@ -753,11 +753,11 @@ void main() async {
                     'Try: .\\${Brand.name}.exe --purge-users  then restart.');
           }
         } catch (e) {
-          print('[STARTUP] ❌ admin-reset SQL failed: $e');
+          debugPrint('[STARTUP] ❌ admin-reset SQL failed: $e');
         }
       }
     } catch (e) {
-      print('[STARTUP] admin-pwd recovery failed: $e');
+      debugPrint('[STARTUP] admin-pwd recovery failed: $e');
     }
 
     // 1b2. Setup-wizard recovery flag.
@@ -790,16 +790,16 @@ void main() async {
       final fromCli = args.contains('--reset-setup-wizard');
       final fromEnv = env['URAL_RESET_SETUP_WIZARD'] == '1';
       if (fromCli || fromEnv) {
-        print('[STARTUP] 🔑 --reset-setup-wizard observed — clearing setup flags + dev password');
+        debugPrint('[STARTUP] 🔑 --reset-setup-wizard observed — clearing setup flags + dev password');
         await sharedDb.customStatement(
           "DELETE FROM settings WHERE \"key\" IN "
           "('setup_completed', 'setup_in_progress', "
           "'developer_password_salt', 'developer_password_hash')",
         );
-        print('[STARTUP] ✅ setup flags cleared — wizard will run on this boot');
+        debugPrint('[STARTUP] ✅ setup flags cleared — wizard will run on this boot');
       }
     } catch (e) {
-      print('[STARTUP] --reset-setup-wizard failed: $e');
+      debugPrint('[STARTUP] --reset-setup-wizard failed: $e');
     }
 
     // 1c. UNCONDITIONAL admin-login self-heal (runs on EVERY boot).
@@ -969,7 +969,7 @@ void main() async {
       unawaited(
         ClientWriteInterceptor.reconcileOpeningStocks().then((pushed) {
           if (pushed > 0) {
-            print('[STARTUP] ✅ Reconciled $pushed inventory balance(s) to server');
+            debugPrint('[STARTUP] ✅ Reconciled $pushed inventory balance(s) to server');
           }
         }).catchError((e) {
           debugPrint('[STARTUP] ⚠️ reconcileOpeningStocks failed: $e');
@@ -1020,7 +1020,7 @@ Future<void> _bootTimeAdminHeal(AppDatabase db) async {
       final f = File('$exeDir${Platform.pathSeparator}${Brand.dbPrefix}_startup_log.txt');
       await f.writeAsString(body, mode: FileMode.append);
     } catch (e) {
-      print('[BootHeal] exe-dir log write failed: $e');
+      debugPrint('[BootHeal] exe-dir log write failed: $e');
     }
     // Location B: Documents folder.
     try {
@@ -1028,7 +1028,7 @@ Future<void> _bootTimeAdminHeal(AppDatabase db) async {
       final f = File('${dir.path}${Platform.pathSeparator}${Brand.dbPrefix}_startup_log.txt');
       await f.writeAsString(body, mode: FileMode.append);
     } catch (e) {
-      print('[BootHeal] Documents log write failed: $e');
+      debugPrint('[BootHeal] Documents log write failed: $e');
     }
     // Location C: TEMP as a final fallback — Windows always allows writes here.
     try {
@@ -1038,7 +1038,7 @@ Future<void> _bootTimeAdminHeal(AppDatabase db) async {
         await f.writeAsString(body, mode: FileMode.append);
       }
     } catch (e) {
-      print('[BootHeal] TEMP log write failed: $e');
+      debugPrint('[BootHeal] TEMP log write failed: $e');
     }
   }
 

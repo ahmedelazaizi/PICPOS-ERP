@@ -328,6 +328,9 @@ class JournalEntryFactory {
 
     final List<JournalLine> journalLines = [];
     double cogsTotal = 0;
+    // A non-empty breakdown is the authoritative cost source for BOM lines.
+    // The item-level cost may intentionally remain zero in that case.
+    final hasBreakdown = cogsBreakdown != null && cogsBreakdown.isNotEmpty;
 
     for (final item in items) {
       // Cost comes from the consumed raw materials, not from this line.
@@ -335,8 +338,9 @@ class JournalEntryFactory {
           autoDepletedItemIds.contains(item.id)) {
         continue;
       }
-      // ISS-05 + PIR-014: Zero cost policy enforcement
-      if (item.costPrice <= 0) {
+      // ISS-05 + PIR-014: Zero cost policy enforcement. A BOM breakdown is
+      // a valid cost source, so its zero-cost finished-item line is exempt.
+      if (item.costPrice <= 0 && !hasBreakdown) {
         switch (_zeroCostPolicy) {
           case ZeroCostPolicy.block:
             throw ZeroCostException(item.productId, invNumber);
@@ -363,7 +367,6 @@ class JournalEntryFactory {
     // subdivision of them: a finished BOM item normally carries costPrice = 0
     // (no production order ever stamped a WAC on it), so `cogsTotal` alone is
     // blind to it. Both must be recognised.
-    final bool hasBreakdown = cogsBreakdown != null && cogsBreakdown.isNotEmpty;
     final double breakdownTotal = hasBreakdown
         ? cogsBreakdown.fold<double>(0.0, (s, l) => s + l.totalCost)
         : 0.0;

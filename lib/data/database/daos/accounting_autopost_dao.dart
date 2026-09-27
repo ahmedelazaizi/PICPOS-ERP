@@ -560,15 +560,17 @@ extension AccountingAutopostDao on AppDatabase {
     if (lines.isEmpty) return null;
 
     // COGS Entry (IAS 2.34): Dr 5101 تكلفة البضاعة المباعة / Cr 1103 المخزون
-    // Reject the invoice if any tracked item has cost_price <= 0 — posting
-    // revenue without COGS overstates profit and breaks trial-balance reporting.
+    // Reject zero-cost tracked lines unless a BOM consumption row supplies
+    // their cost from the raw materials consumed for that line.
     final trackedRows = await customSelect(
       'SELECT sii.product_id, sii.quantity, sii.cost_price, p.track_inventory, p.name '
       'FROM sales_invoice_items sii '
       'JOIN products p ON p.id = sii.product_id '
-      'WHERE sii.invoice_id = ?',
-      variables: [Variable(sale.id)],
-      readsFrom: {salesInvoiceItems, products},
+      'WHERE sii.invoice_id = ? AND sii.id NOT IN ('
+      'SELECT sale_invoice_item_id FROM sale_bom_consumptions '
+      'WHERE sale_invoice_id = ? AND reversed_by_return_id IS NULL)',
+      variables: [Variable(sale.id), Variable(sale.id)],
+      readsFrom: {salesInvoiceItems, products, saleBomConsumptions},
     ).get();
     final zeroCostTracked = trackedRows.where((r) {
       final tv = r.data['track_inventory'];
@@ -881,9 +883,11 @@ extension AccountingAutopostDao on AppDatabase {
       'SELECT sii.product_id, sii.quantity, sii.cost_price, p.track_inventory, p.name '
       'FROM sales_invoice_items sii '
       'JOIN products p ON p.id = sii.product_id '
-      'WHERE sii.invoice_id = ?',
-      variables: [Variable(sale.id)],
-      readsFrom: {salesInvoiceItems, products},
+      'WHERE sii.invoice_id = ? AND sii.id NOT IN ('
+      'SELECT sale_invoice_item_id FROM sale_bom_consumptions '
+      'WHERE sale_invoice_id = ? AND reversed_by_return_id IS NULL)',
+      variables: [Variable(sale.id), Variable(sale.id)],
+      readsFrom: {salesInvoiceItems, products, saleBomConsumptions},
     ).get();
     final zeroCostTrackedCr = trackedRowsCr.where((r) {
       final tv = r.data['track_inventory'];

@@ -184,4 +184,74 @@ void main() {
     final invoice = await db.getSalesInvoiceById(invoiceId);
     await expectLater(db.autoPostCashSale(invoice!), throwsA(isA<Exception>()));
   });
+
+  test('block permits a BOM line when breakdown supplies its cost', () async {
+    await db.setSetting('zero_cost_policy', 'block');
+    final warehouse = (await db.getDefaultWarehouse())!;
+    final userId = await actorId();
+    final finishedProductId = await db.insertProduct(
+      ProductsCompanion.insert(
+        code: 'P5A-BOM-FINISHED-${DateTime.now().microsecondsSinceEpoch}',
+        name: 'Phase 5a BOM finished product',
+        trackInventory: const Value(false),
+      ),
+    );
+    final rawProductId = await trackedProduct(cost: 5);
+    final bomId = await db.into(db.billOfMaterials).insert(
+          BillOfMaterialsCompanion.insert(
+            finishedProductId: finishedProductId,
+            bomCode: 'P5A-BOM-${DateTime.now().microsecondsSinceEpoch}',
+            autoDepleteOnSale: const Value(true),
+          ),
+        );
+    final invoiceId = await db.createSalesInvoice(
+      invoiceNumber: 'P5A-BOM-SALE-${DateTime.now().microsecondsSinceEpoch}',
+      warehouseId: warehouse.id,
+      userId: userId,
+      subtotal: 20,
+      discount: 0,
+      tax: 0,
+      total: 20,
+      paid: 20,
+      paymentMethod: 'cash',
+      deferAutoPost: true,
+      items: [
+        SalesInvoiceItemsCompanion.insert(
+          invoiceId: 0,
+          productId: finishedProductId,
+          quantity: 1,
+          unitPrice: 20,
+          total: 20,
+          costPrice: const Value(0),
+        ),
+      ],
+    );
+    final item = await (db.select(db.salesInvoiceItems)
+          ..where((row) => row.invoiceId.equals(invoiceId)))
+        .getSingle();
+    await db.into(db.saleBomConsumptions).insert(
+          SaleBomConsumptionsCompanion.insert(
+            saleInvoiceId: invoiceId,
+            saleInvoiceItemId: item.id,
+            bomId: bomId,
+            rawMaterialId: rawProductId,
+            consumedQty: 1,
+            unitCostAtSale: 5,
+            warehouseId: warehouse.id,
+            globalId: 'P5A-CONS-${DateTime.now().microsecondsSinceEpoch}',
+          ),
+        );
+
+    final invoice = await db.getSalesInvoiceById(invoiceId);
+    await expectLater(db.autoPostCashSale(invoice!), completes);
+    final cogsAccount = await db.getAccountByPurpose('cogs');
+    final entry = await (db.select(db.journalEntries)
+          ..where((row) => row.referenceId.equals(invoiceId)))
+        .getSingle();
+    final cogsLines = await (db.select(db.journalEntryLines)
+          ..where((row) => row.entryId.equals(entry.id) &
+              row.accountId.equals(cogsAccount!.id)))
+        .get();
+    expect(cogsLines.fold<double>(0, (sum, line) => sum + line.debit), 5);
+  });
 }

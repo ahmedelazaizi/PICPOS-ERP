@@ -95,22 +95,22 @@ Future<void> autoStartNetworkServer(AppDatabase db) async {
         final pgConfig = await PostgresConfig.load();
         final pgHost = pgConfig.host.trim();
         if (pgHost == 'localhost' || pgHost == '127.0.0.1') {
-          print('[NetworkService] ⚙️ PostgreSQL on localhost detected — auto-setting server mode');
+          debugPrint('[NetworkService] ⚙️ PostgreSQL on localhost detected — auto-setting server mode');
           await ns.setMode(NetworkMode.server, db: db);
           await ns.saveSettings();
         }
       }
     } catch (e) {
-      print('[NetworkService] ⚠️ Could not check PostgreSQL config: $e');
+      debugPrint('[NetworkService] ⚠️ Could not check PostgreSQL config: $e');
     }
   }
 
   // Start the HTTP API server for server/client modes
   try {
     final ok = await ns.startServer(db);
-    print('[NetworkService] HTTP API server: ${ok ? "✅ Running on port ${ns.serverPort}" : "❌ Failed to start"}');
+    debugPrint('[NetworkService] HTTP API server: ${ok ? "✅ Running on port ${ns.serverPort}" : "❌ Failed to start"}');
   } catch (e) {
-    print('[NetworkService] ❌ HTTP API server error: $e');
+    debugPrint('[NetworkService] ❌ HTTP API server error: $e');
   }
 
   // Spec 133 FR-011 — emit a one-line diagnostic signal listing
@@ -152,7 +152,7 @@ Future<void> autoSyncIfClient(AppDatabase db) async {
 
   final serverUrl = ns.buildServerUrl();
   final modeLabel = ns.isMirror ? 'Mirror' : 'Client';
-  print('[Sync] $modeLabel mode detected — syncing from $serverUrl');
+  debugPrint('[Sync] $modeLabel mode detected — syncing from $serverUrl');
 
   // Fetch API token from server (critical — without this, all POST/GET requests fail auth)
   // The token is only populated by testServerConnection, which calls /api/health
@@ -160,17 +160,17 @@ Future<void> autoSyncIfClient(AppDatabase db) async {
   final port = ns.serverPort;
   
   if (addr.trim().isEmpty || addr.trim() == 'localhost') {
-    print('[Sync] Skipping API token fetch — no valid server address configured.');
+    debugPrint('[Sync] Skipping API token fetch — no valid server address configured.');
     return;
   }
 
-  print('[Sync] Fetching API token from $addr:$port...');
+  debugPrint('[Sync] Fetching API token from $addr:$port...');
   final healthResult = await ns.testServerConnection(addr, port);
   if (healthResult['success'] == true) {
-    print('[Sync] ✅ API token fetched successfully');
+    debugPrint('[Sync] ✅ API token fetched successfully');
   } else {
-    print('[Sync] ⚠️ Could not fetch API token: ${healthResult['error']}');
-    print('[Sync] Sales sync will NOT work without API token');
+    debugPrint('[Sync] ⚠️ Could not fetch API token: ${healthResult['error']}');
+    debugPrint('[Sync] Sales sync will NOT work without API token');
   }
 
   final syncService = SyncService(serverUrl: serverUrl, localDb: db);
@@ -183,13 +183,13 @@ Future<void> autoSyncIfClient(AppDatabase db) async {
   if (hasWatermark) {
     try {
       await DeltaPullService.instance.pullAll();
-      print('[Sync] Initial delta pull ✅ (watermarks found)');
+      debugPrint('[Sync] Initial delta pull ✅ (watermarks found)');
     } catch (e) {
-      print('[Sync] Initial delta pull failed, will retry periodically: $e');
+      debugPrint('[Sync] Initial delta pull failed, will retry periodically: $e');
     }
   } else {
     final result = await syncService.fullSync();
-    print(
+    debugPrint(
       '[Sync] Initial full bootstrap: ${result.success ? "✅" : "❌"} ${result.message}',
     );
     // Seed watermarks so the next periodic delta pull is truly incremental
@@ -249,15 +249,15 @@ Future<void> autoSyncIfClient(AppDatabase db) async {
       try {
         OfflineSyncWorker.instance.drainOutbox(force: true);
       } catch (e) {
-        print('[Sync] Outbox drain error: $e');
+        debugPrint('[Sync] Outbox drain error: $e');
       }
 
       // Delta pull: 40 hardened tables, in FK-dependency order
       try {
         await DeltaPullService.instance.pullAll();
-        print('[Sync] Delta pull ✅');
+        debugPrint('[Sync] Delta pull ✅');
       } catch (e) {
-        print('[Sync] Delta pull failed: $e');
+        debugPrint('[Sync] Delta pull failed: $e');
       }
 
       // Every 10th tick: safety-net fullSync for non-hardened tables.
@@ -265,14 +265,14 @@ Future<void> autoSyncIfClient(AppDatabase db) async {
       if (periodicTick % 10 == 0) {
         try {
           final r = await syncService.fullSync();
-          print('[Sync] Legacy fullSync ${r.success ? "✅" : "partial: ${r.message}"}');
+          debugPrint('[Sync] Legacy fullSync ${r.success ? "✅" : "partial: ${r.message}"}');
         } catch (e) {
-          print('[Sync] Legacy fullSync failed: $e');
+          debugPrint('[Sync] Legacy fullSync failed: $e');
         }
       }
     },
   );
-  print('[Sync] Adaptive poll started — WS-connected: 300s, WS-disconnected: 30s');
+  debugPrint('[Sync] Adaptive poll started — WS-connected: 300s, WS-disconnected: 30s');
 
   // ─── Mirror-mode heartbeat (MM.B + MM.E hot-fix) ───────────────────────
   // The ticker is now a static service so it can be (re)started both at

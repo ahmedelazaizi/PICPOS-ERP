@@ -670,7 +670,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
       await ClientWriteInterceptor.saveSettings(allSettings);
     } catch (e) {
       // ignore: avoid_print
-      print('[POS-SETTINGS-SYNC] server sync failed (local saved): $e');
+      debugPrint('[POS-SETTINGS-SYNC] server sync failed (local saved): $e');
       if (mounted) {
         final isRateLimit = e.toString().contains('429') ||
             e.toString().contains('Too many requests');

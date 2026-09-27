@@ -165,7 +165,7 @@ void main() {
           const SalesInvoiceItem(
             id: 3, invoiceId: 3, productId: 1,
             quantity: 2, unitPrice: 100, discount: 0, total: 200,
-            costPrice: 0, sortOrder: 0, taxRate: 0, taxAmount: 0, quantityInBase: 2,
+            costPrice: 60, sortOrder: 0, taxRate: 0, taxAmount: 0, quantityInBase: 2,
             rowVersion: 0,
           ),
         ],
@@ -338,7 +338,7 @@ void main() {
           const SalesInvoiceItem(
             id: 201, invoiceId: 201, productId: 1,
             quantity: 1, unitPrice: 100, discount: 0, total: 100,
-            costPrice: 0, sortOrder: 0, taxRate: 0, taxAmount: 0, quantityInBase: 1,
+            costPrice: 60, sortOrder: 0, taxRate: 0, taxAmount: 0, quantityInBase: 1,
             rowVersion: 0,
           ),
         ],

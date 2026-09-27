@@ -1437,14 +1437,21 @@ extension PartyDao on AppDatabase {
           [amount, partyId],
         );
 
-        final actorId = changedBy > 0
-            ? changedBy
-            : ((await (select(users)
-                          ..where((u) => u.username.equals('admin'))
-                          ..limit(1))
-                      .getSingleOrNull())
-                    ?.id ??
-                1);
+        User? actor;
+        if (changedBy > 0) {
+          actor = await (select(users)
+                ..where((u) => u.id.equals(changedBy))
+                ..limit(1))
+              .getSingleOrNull();
+        }
+        actor ??= await (select(users)
+              ..where((u) => u.id.equals(1) | u.username.equals('admin'))
+              ..limit(1))
+            .getSingleOrNull();
+        // field_audit_logs has a required FK. Passing 0 intentionally skips the
+        // audit row when even the bootstrap actor is absent, instead of aborting
+        // the balance adjustment with a foreign-key violation.
+        final actorId = actor?.id ?? 0;
         await logFieldChange(
           entityType: 'party',
           entityId: partyId,
@@ -1453,7 +1460,9 @@ extension PartyDao on AppDatabase {
           oldValue: oldBalance.toStringAsFixed(4),
           newValue: newBalance.toStringAsFixed(4),
           changedBy: actorId,
-          changedByName: changedBy > 0 ? changedByName : 'SYSTEM',
+          changedByName: changedBy > 0 && actor?.id == changedBy
+               ? changedByName
+               : 'SYSTEM',
           changeReason: changeReason,
           transactionId: 'balance-adj-$partyId-${DateTime.now().millisecondsSinceEpoch}',
         );

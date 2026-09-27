@@ -4,7 +4,7 @@
 /// ```dart
 /// final result = await repository.getSomething();
 /// switch (result) {
-///   case Success(:final data): print(data);
+///   case Success(:final data): debugPrint(data);
 ///   case Failure(:final error): showError(error);
 /// }
 /// ```

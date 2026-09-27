@@ -563,7 +563,14 @@ extension TreasuryDao on AppDatabase {
                 '(فرق=${settlementResult.variance.toStringAsFixed(2)}): $e',
             amount: settlementResult.variance.abs(),
           );
-        } catch (_) {} // logActivity failure must NEVER block shift close
+        } catch (error, stack) {
+           await DiagnosticLogger.logError(
+             'SHIFT-VARIANCE-FAIL',
+             'shift-close audit log failed',
+             error,
+             stack,
+           );
+         }
         // GAP-24: Notify UI so it can show a warning dialog
         onVarianceJeFailed?.call(settlementResult.variance);
         await _reopenShiftAfterFailedClose(shiftId);
