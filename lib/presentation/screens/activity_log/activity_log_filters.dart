@@ -246,7 +246,7 @@ mixin _ActivityLogFiltersMixin on ConsumerState<ActivityLogScreen> {
   Widget _buildSubActionChip(String label, String actionKey) {
     final isSelected = selectedSubAction == actionKey;
     return Padding(
-      padding: const EdgeInsets.only(left: 4),
+      padding: const EdgeInsetsDirectional.only(end: 4),
       child: ChoiceChip(
         selected: isSelected,
         label: Text(label, style: const TextStyle(fontSize: 12)),

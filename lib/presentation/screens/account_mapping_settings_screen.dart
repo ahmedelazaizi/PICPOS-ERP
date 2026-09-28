@@ -241,8 +241,8 @@ class _AccountMappingSettingsScreenState
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [AppColors.primaryDark, AppColors.primary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topEnd,
+          end: AlignmentDirectional.bottomStart,
         ),
         boxShadow: [
           BoxShadow(

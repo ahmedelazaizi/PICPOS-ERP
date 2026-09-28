@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../data/database/database.dart'; // Only for FieldAuditLog type
@@ -88,7 +89,7 @@ class _FieldAuditViewerState extends State<FieldAuditViewer> {
       children: [
         // Header with filter
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 8),
           child: Row(
             children: [
               Icon(Icons.history, size: 20, color: theme.colorScheme.primary),
@@ -200,7 +201,7 @@ class _FieldAuditViewerState extends State<FieldAuditViewer> {
     final changeColor = isAddition
         ? Colors.green
         : isDeletion
-            ? Colors.red
+            ? AppColors.error
             : Colors.amber.shade700;
 
     final changeIcon = isAddition
@@ -273,13 +274,13 @@ class _FieldAuditViewerState extends State<FieldAuditViewer> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.08),
+                              color: AppColors.error.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               log.oldValue ?? '—',
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: Colors.red.shade700,
+                                color: AppColors.error,
                                 decoration: TextDecoration.lineThrough,
                               ),
                               maxLines: 2,

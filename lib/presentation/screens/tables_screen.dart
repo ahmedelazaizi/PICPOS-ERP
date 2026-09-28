@@ -91,7 +91,7 @@ class _TablesScreenState extends ConsumerState<TablesScreen>
                   // Right Panel: Order Details
                   Container(
                     width: 380,
-                    margin: const EdgeInsets.only(left: 12, bottom: 12),
+                    margin: const EdgeInsetsDirectional.only(end: 12, bottom: 12),
                     decoration: BoxDecoration(
                       color: const Color(0xFF111827),
                       borderRadius: BorderRadius.circular(20),

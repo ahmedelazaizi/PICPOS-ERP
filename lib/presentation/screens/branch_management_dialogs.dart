@@ -76,9 +76,9 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
             SimpleDialogOption(
               onPressed: () { Navigator.pop(dialogCtx); handleBranchAction('delete', branch); },
               child: const Row(children: [
-                Icon(PhosphorIconsBold.trash, color: Colors.red, size: 20),
+                Icon(PhosphorIconsBold.trash, color: AppColors.error, size: 20),
                 SizedBox(width: 12),
-                Text('حذف', style: TextStyle(color: Colors.red)),
+                Text('حذف', style: TextStyle(color: AppColors.error)),
               ]),
             ),
           ],
@@ -114,9 +114,9 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
             SimpleDialogOption(
               onPressed: () { Navigator.pop(dialogCtx); handleWarehouseAction('delete', warehouse); },
               child: const Row(children: [
-                Icon(PhosphorIconsBold.trash, color: Colors.red, size: 20),
+                Icon(PhosphorIconsBold.trash, color: AppColors.error, size: 20),
                 SizedBox(width: 12),
-                Text('حذف', style: TextStyle(color: Colors.red)),
+                Text('حذف', style: TextStyle(color: AppColors.error)),
               ]),
             ),
           ],

@@ -362,7 +362,7 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
         const SizedBox(height: 4),
         // Hint under the role row
         Padding(
-          padding: const EdgeInsets.only(right: 12),
+          padding: const EdgeInsetsDirectional.only(start: 12),
           child: Text(
             'لإنشاء دور جديد بصلاحيات مخصصة اضغط +',
             style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
@@ -408,7 +408,7 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
                 else selectedBranchIds.remove(branch.id);
               }),
               dense: true,
-              contentPadding: const EdgeInsets.only(right: 32),
+              contentPadding: const EdgeInsetsDirectional.only(start: 32),
             )),
           const SizedBox(height: 12),
         ],
@@ -429,7 +429,7 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
     final result = SecurityService.validatePassword(passwordController.text);
     final strengthLabel = SecurityService.getPasswordStrengthLabel(result.strength);
     final strengthColor = result.strength < 30
-        ? Colors.red
+        ? AppColors.error
         : result.strength < 50
             ? Colors.orange
             : result.strength < 70
@@ -467,10 +467,10 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
                 padding: const EdgeInsets.only(bottom: 2),
                 child: Row(
                   children: [
-                    const Icon(Icons.close, size: 14, color: Colors.red),
+                    const Icon(Icons.close, size: 14, color: AppColors.error),
                     const SizedBox(width: 4),
                     Expanded(
-                      child: Text(e, style: const TextStyle(fontSize: 11, color: Colors.red)),
+                      child: Text(e, style: const TextStyle(fontSize: 11, color: AppColors.error)),
                     ),
                   ],
                 ),

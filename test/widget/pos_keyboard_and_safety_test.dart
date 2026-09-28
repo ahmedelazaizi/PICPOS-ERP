@@ -9,6 +9,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:ural_erp/presentation/pos/widgets/pos_shortcut_bar.dart';
 import 'package:ural_erp/presentation/widgets/invoice_safety_guards.dart';
 import 'package:ural_erp/domain/entities/party_entity.dart';
@@ -107,7 +108,8 @@ void main() {
       );
       final texts = tester.widgetList<Text>(find.text('F5')).toList();
       expect(texts, isNotEmpty);
-      expect(texts.first.style?.color, equals(Colors.red));
+      // Phase 8: danger hues come from the central palette (AppColors.error).
+      expect(texts.first.style?.color, equals(AppColors.error));
     });
 
     testWidgets('normal shortcut (not hot, not return) does not use orange or red',

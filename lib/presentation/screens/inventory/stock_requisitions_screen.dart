@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../data/providers/providers.dart';
+import '../../../../data/providers/repository_providers.dart';
+import '../../../../domain/entities/product_entity.dart';
+import '../../../../domain/entities/stock_requisition_entity.dart';
+import '../../../../domain/entities/stock_requisition_item_entity.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/enums/requisition_status.dart';
@@ -147,11 +152,11 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
                                           Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              const IconButton(
-                                                icon: Icon(PhosphorIconsBold.eye, size: 18),
+                                              IconButton(
+                                                icon: const Icon(PhosphorIconsBold.eye, size: 18),
                                                 color: AppColors.info,
-                                                tooltip: 'قريبًا',
-                                                onPressed: null,
+                                                tooltip: 'عرض التفاصيل',
+                                                onPressed: () => _showRequisitionDetails(req),
                                               ),
                                               if (req.status == RequisitionStatus.pending) ...[
                                                 IconButton(
@@ -198,6 +203,89 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
     );
   }
 
+  Future<_RequisitionDetails> _loadRequisitionDetails(int id) async {
+    final inventory = ref.read(inventoryRepositoryProvider);
+    final products = ref.read(productRepositoryProvider);
+    final requisition = await inventory.getStockRequisitionById(id);
+    if (requisition == null) {
+      throw StateError('لم يعد طلب الصرف موجوداً');
+    }
+    final items = await inventory.getStockRequisitionItems(id);
+    final productRows = await products.getProductsByIds(
+      items.map((item) => item.productId).toSet().toList(),
+    );
+    return _RequisitionDetails(
+      requisition: requisition,
+      items: items,
+      products: {for (final product in productRows) product.id: product},
+    );
+  }
+
+  void _showRequisitionDetails(StockRequisitionEntity request) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('تفاصيل طلب ${request.requisitionNumber}'),
+          content: SizedBox(
+            width: 620,
+            child: FutureBuilder<_RequisitionDetails>(
+              future: _loadRequisitionDetails(request.id),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const SizedBox(
+                    height: 120,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (snapshot.hasError || !snapshot.hasData) {
+                  return Text(snapshot.error?.toString() ?? 'تعذر تحميل التفاصيل');
+                }
+                final details = snapshot.data!;
+                final requisition = details.requisition;
+                return SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text('التاريخ: ${requisition.requisitionDate.toString().substring(0, 10)}'),
+                      Text('الحالة: ${statusToDb(requisition.status)}'),
+                      Text('من فرع: ${requisition.fromBranchName ?? requisition.fromBranchId}'),
+                      Text('إلى فرع: ${requisition.toBranchName ?? requisition.toBranchId}'),
+                      if (requisition.notes?.isNotEmpty == true)
+                        Text('ملاحظات: ${requisition.notes}'),
+                      const Divider(),
+                      if (details.items.isEmpty)
+                        const Text('لا توجد أصناف في هذا الطلب')
+                      else
+                        ...details.items.map((item) {
+                          final product = details.products[item.productId];
+                          return ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(product?.name ?? 'منتج #${item.productId}'),
+                            subtitle: Text(product?.code ?? ''),
+                            trailing: Text(
+                              '${item.quantity} / منفذ ${item.fulfilledQuantity}',
+                            ),
+                          );
+                        }),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('إغلاق'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildStatusBadge(String status) {
     Color color;
     String label;
@@ -235,4 +323,16 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
       ),
     );
   }
+}
+
+class _RequisitionDetails {
+  final StockRequisitionEntity requisition;
+  final List<StockRequisitionItemEntity> items;
+  final Map<int, ProductEntity> products;
+
+  const _RequisitionDetails({
+    required this.requisition,
+    required this.items,
+    required this.products,
+  });
 }

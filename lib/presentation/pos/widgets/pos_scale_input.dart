@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -156,7 +157,7 @@ class _PosScaleInputState extends State<PosScaleInput> {
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: statusColor,
-                      fontFamily: 'monospace',
+                      fontFamily: AppTypography.mono,
                     ),
                     child: Text(_currentWeight.toStringAsFixed(3)),
                   ),

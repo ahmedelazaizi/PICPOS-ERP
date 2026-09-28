@@ -665,7 +665,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             final catCols = _catColumnsFor(c.maxWidth);
             final reportCols = _reportColumnsFor(c.maxWidth);
             return SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+              padding: const EdgeInsetsDirectional.fromSTEB(20, 20, 20, 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -951,7 +951,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       highlighted: isOpen,
       onTap: () => _toggleAccordion(cat),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+        padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 10, 8),
         child: Row(
           children: [
             Container(
@@ -1009,7 +1009,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   Widget _expandedPanel(_ReportCategory cat) {
     return Container(
       margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 16),
       decoration: BoxDecoration(
         color: cat.color.withValues(alpha: 0.04),
         border: Border.all(color: cat.color.withValues(alpha: 0.25)),
@@ -1086,7 +1086,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         r.action();
       },
       child: Container(
-        padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
+        padding: const EdgeInsetsDirectional.fromSTEB(6, 8, 10, 8),
         constraints: const BoxConstraints(minWidth: 220, maxWidth: 320),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
@@ -1251,7 +1251,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return _HoverCard(
       onTap: () => _openFlatItem(item),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
+        padding: const EdgeInsetsDirectional.fromSTEB(6, 8, 10, 8),
         child: Row(
           children: [
             Container(
@@ -1725,7 +1725,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             value.toStringAsFixed(2),
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: highlight ? Colors.red : null,
+              color: highlight ? AppColors.error : null,
             ),
           ),
         ],

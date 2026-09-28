@@ -823,7 +823,7 @@ class _AnalyticsDashboardScreenState
 
                     final colors = [
                       Colors.deepOrange,
-                      Colors.redAccent,
+                      AppColors.error,
                       Colors.amber.shade700,
                       Colors.brown,
                       Colors.indigo,
@@ -1376,7 +1376,7 @@ class _AnalyticsDashboardScreenState
           value:
               '${glNetProfit.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
           trend: profitTrend,
-          color: glNetProfit >= 0 ? Colors.green : Colors.red,
+          color: glNetProfit >= 0 ? Colors.green : AppColors.error,
           subtitle: 'هامش الربح: ${glRevenue > 0 ? ((glNetProfit / glRevenue) * 100).toStringAsFixed(1) : '0.0'}% | مصروفات: ${glExpenses.toStringAsFixed(AppConstants.decimalPlaces)}',
         ),
         KPIData(
@@ -1410,7 +1410,7 @@ class _AnalyticsDashboardScreenState
           value:
               '${purchaseReturns.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
           trend: 0,
-          color: Colors.red.shade400,
+          color: AppColors.error,
           subtitle: 'عدد: ${purchaseReturns.count}',
         ),
       ];
@@ -1475,7 +1475,7 @@ class _AnalyticsDashboardScreenState
       label: 'مرتجع المشتريات',
       value: '0.00 ${AppConstants.currencySymbolEn}',
       trend: 0,
-      color: Colors.red,
+      color: AppColors.error,
     ),
   ];
 }

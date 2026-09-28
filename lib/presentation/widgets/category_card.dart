@@ -75,9 +75,9 @@ class _CategoryCardState extends State<CategoryCard> {
           children: [
             // Lock indicator badge (top-left)
             if (widget.isLocked)
-              Positioned(
+              PositionedDirectional(
                 top: 8,
-                left: 8,
+                end: 8,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -110,9 +110,9 @@ class _CategoryCardState extends State<CategoryCard> {
               ),
             // Excluded indicator badge
             if (widget.isExcluded && !widget.isLocked)
-              Positioned(
+              PositionedDirectional(
                 top: 8,
-                left: 8,
+                end: 8,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -145,9 +145,9 @@ class _CategoryCardState extends State<CategoryCard> {
               ),
             // POS hidden badge
             if (!widget.cat.showInPos && !widget.isLocked && !widget.isExcluded)
-              Positioned(
+              PositionedDirectional(
                 top: 8,
-                left: 8,
+                end: 8,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -180,9 +180,9 @@ class _CategoryCardState extends State<CategoryCard> {
               ),
             // Printer badge (top-right)
             if (widget.cat.printerId != null)
-              Positioned(
+              PositionedDirectional(
                 top: 8,
-                right: 8,
+                start: 8,
                 child: Tooltip(
                   message: 'مرتبط بطابعة',
                   child: Container(
@@ -219,8 +219,8 @@ class _CategoryCardState extends State<CategoryCard> {
                           effectiveColor.withValues(alpha: 0.2),
                           effectiveColor.withValues(alpha: 0.1),
                         ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                        begin: AlignmentDirectional.topEnd,
+                        end: AlignmentDirectional.bottomStart,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: _isHovered

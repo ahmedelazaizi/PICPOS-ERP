@@ -252,8 +252,8 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                                     ),
                                   ),
                                   if (c.balance > 0)
-                                    Positioned(
-                                      right: -4,
+                                    PositionedDirectional(
+                                      start: -4,
                                       top: -4,
                                       child: Container(
                                         width: 14,

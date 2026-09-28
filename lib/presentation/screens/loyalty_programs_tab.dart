@@ -150,9 +150,8 @@ class _ProgramsTab extends StatelessWidget {
                             onGranted: () =>
                                 _confirmDeleteProgram(context, repo, p),
                             child: IconButton(
-                              icon: Icon(
-                                PhosphorIconsBold.trash,
-                                color: Colors.red.shade400,
+                              icon: const Icon(PhosphorIconsBold.trash,
+                                color: AppColors.error,
                               ),
                               tooltip: 'حذف',
                               onPressed: () =>
@@ -207,7 +206,7 @@ class _ProgramsTab extends StatelessWidget {
                         if (ctx.mounted) setDialogState(() => saving = false);
                       }
                     },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
               child: saving
                   ? const SizedBox(
                       width: 16,

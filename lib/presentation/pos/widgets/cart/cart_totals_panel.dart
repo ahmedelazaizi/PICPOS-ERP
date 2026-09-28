@@ -97,15 +97,15 @@ class CartTotalsPanel extends ConsumerWidget {
                   padding: EdgeInsets.all(12 * scaleFactor),
                   margin: EdgeInsets.only(bottom: spacing),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: AppColors.error,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.red.shade200),
+                    border: Border.all(color: AppColors.error),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.error_outline,
-                        color: Colors.red.shade700,
+                        color: AppColors.error,
                         size: 20 * scaleFactor,
                       ),
                       SizedBox(width: spacing),
@@ -113,7 +113,7 @@ class CartTotalsPanel extends ConsumerWidget {
                         child: Text(
                           posState.error!,
                           style: TextStyle(
-                            color: Colors.red.shade700,
+                            color: AppColors.error,
                             fontSize: 13 * scaleFactor,
                             fontWeight: FontWeight.bold,
                           ),

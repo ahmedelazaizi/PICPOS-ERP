@@ -19,7 +19,7 @@ Widget buildSalesReturnDeleteButtonGuarded({
     actionName: 'إلغاء مرتجع مبيعات',
     onGranted: onCancel,
     child: IconButton(
-      icon: const Icon(PhosphorIconsBold.x, color: Colors.red, size: 18),
+      icon: const Icon(PhosphorIconsBold.x, color: AppColors.error, size: 18),
       tooltip: 'إلغاء المرتجع',
       onPressed: onCancel,
     ),
@@ -597,7 +597,7 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
         child: AlertDialog(
           title: const Row(
             children: [
-              Icon(PhosphorIconsBold.warning, color: Colors.red),
+              Icon(PhosphorIconsBold.warning, color: AppColors.error),
               SizedBox(width: 8),
               Text('تأكيد إلغاء المرتجع'),
             ],
@@ -643,7 +643,7 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(confirmCtx, true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
               child: const Text(
                 'إلغاء المرتجع',
                 style: TextStyle(color: Colors.white),

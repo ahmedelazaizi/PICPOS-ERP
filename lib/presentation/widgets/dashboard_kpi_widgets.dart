@@ -250,7 +250,7 @@ class SlowMovingItemsWidget extends StatelessWidget {
                         '${item.daysSinceLastSale}d',
                         style: GoogleFonts.cairo(
                           fontSize: 11,
-                          color: item.daysSinceLastSale > 90 ? Colors.red : Colors.orange,
+                          color: item.daysSinceLastSale > 90 ? AppColors.error : Colors.orange,
                           fontWeight: FontWeight.w600,
                         ),
                         textAlign: TextAlign.center,

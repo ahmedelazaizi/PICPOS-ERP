@@ -42,7 +42,7 @@ class _DeferredScheduleScreenState extends ConsumerState<DeferredScheduleScreen>
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF37474F), Color(0xFF546E7A)],
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topEnd, end: AlignmentDirectional.bottomStart,
         ),
       ),
       child: Row(

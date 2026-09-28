@@ -417,7 +417,7 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
   /// أحدَ التقريرَين مكسوراً — وهذا أسوأُ من القيد نفسِه.
   Widget _caveats() => Container(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+        padding: const EdgeInsetsDirectional.fromSTEB(24, 8, 24, 8),
         color: AppColors.info.withValues(alpha: 0.07),
         child: const Row(
           crossAxisAlignment: CrossAxisAlignment.start,

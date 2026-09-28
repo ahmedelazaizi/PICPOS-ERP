@@ -304,7 +304,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
         builder: (context, c) {
           if (isSearching) {
             return SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(26, 18, 26, 26),
+              padding: const EdgeInsetsDirectional.fromSTEB(26, 18, 26, 26),
               child:
                   _searchResultsSection(results, _reportColumnsFor(c.maxWidth)),
             );
@@ -495,12 +495,12 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
         children: [
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+              padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 12, 16),
               children: [
                 for (final g in _kGroupOrder)
                   if ((byGroup[g] ?? const []).isNotEmpty) ...[
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 12, 8, 6),
+                      padding: const EdgeInsetsDirectional.fromSTEB(8, 12, 8, 6),
                       child: Text(
                         g,
                         style: TextStyle(
@@ -654,7 +654,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
   Widget _detailPane(PicposReportCategory cat, int cols) {
     final pinned = _pinnedItems();
     return ListView(
-      padding: const EdgeInsets.fromLTRB(26, 22, 26, 30),
+      padding: const EdgeInsetsDirectional.fromSTEB(26, 22, 26, 30),
       children: [
         _kpiRow(cols),
         const SizedBox(height: 18),
@@ -775,7 +775,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
     final up = (delta ?? 0) >= 0;
     final good = up == upIsGood;
     return Container(
-      padding: const EdgeInsets.fromLTRB(17, 15, 17, 15),
+      padding: const EdgeInsetsDirectional.fromSTEB(17, 15, 17, 15),
       decoration: BoxDecoration(
         color: context.picposCard,
         borderRadius: BorderRadius.circular(16),
@@ -1185,7 +1185,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+            padding: const EdgeInsetsDirectional.fromSTEB(18, 14, 18, 18),
             child: Wrap(
               spacing: 11,
               runSpacing: 11,
@@ -1364,7 +1364,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
     return _HoverCard(
       onTap: () => _openFlatItem(item),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
+        padding: const EdgeInsetsDirectional.fromSTEB(6, 8, 10, 8),
         child: Row(
           children: [
             Container(
@@ -1839,7 +1839,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             value.toStringAsFixed(2),
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: highlight ? Colors.red : null,
+              color: highlight ? AppColors.error : null,
             ),
           ),
         ],

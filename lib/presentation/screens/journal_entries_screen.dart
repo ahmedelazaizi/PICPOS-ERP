@@ -191,12 +191,12 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
 
   Widget _buildHeader(BuildContext context, IAccountingRepository accountingRepo) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [AppColors.primaryDark, AppColors.primary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topEnd,
+          end: AlignmentDirectional.bottomStart,
         ),
         boxShadow: [
           BoxShadow(
@@ -299,7 +299,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
 
   Widget _buildFilterBar(BuildContext context, IAccountingRepository accountingRepo) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 4),
       child: Column(
         children: [
           TextField(
@@ -410,7 +410,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.border),
       ),
@@ -649,7 +649,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                       ),
                       const SizedBox(height: 8),
                       Align(
-                        alignment: Alignment.centerLeft,
+                        alignment: AlignmentDirectional.centerEnd,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

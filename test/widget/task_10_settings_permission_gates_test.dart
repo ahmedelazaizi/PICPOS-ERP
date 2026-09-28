@@ -162,4 +162,33 @@ void main() {
       expect(find.byType(AbsorbPointer), findsWidgets);
     });
   });
+
+  group('party balance repair — نفس صلاحية DAO', () {
+    testWidgets('يظهر ويحرس إجراء الإصلاح بصلاحية الأستاذ', (tester) async {
+      var opened = 0;
+      await pump(
+        tester,
+        buildPartyBalanceRepairTileGuarded(onOpen: () => opened++),
+        [PermissionCodes.accountingJournal],
+      );
+
+      expect(guardOf(tester).permission, PermissionCodes.accountingJournal);
+      await tester.tap(find.text('تدقيق أرصدة الأطراف'));
+      await tester.pump();
+      expect(opened, 1);
+    });
+
+    testWidgets('بدون صلاحية الأستاذ لا يفتح الإصلاح', (tester) async {
+      var opened = 0;
+      await pump(
+        tester,
+        buildPartyBalanceRepairTileGuarded(onOpen: () => opened++),
+        const [],
+      );
+
+      await tester.tap(find.text('تدقيق أرصدة الأطراف'), warnIfMissed: false);
+      await tester.pump();
+      expect(opened, 0);
+    });
+  });
 }

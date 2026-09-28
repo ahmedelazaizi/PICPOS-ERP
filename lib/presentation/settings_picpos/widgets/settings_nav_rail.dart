@@ -90,16 +90,16 @@ class SettingsNavRail extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 12),
             child: search,
           ),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+              padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 12, 16),
               children: [
                 for (final group in groups) ...[
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 12, 8, 6),
+                    padding: const EdgeInsetsDirectional.fromSTEB(8, 12, 8, 6),
                     child: Text(
                       group,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -237,7 +237,7 @@ class SettingsRailFooter extends ConsumerWidget {
     final activated = ref.watch(activationStatusProvider);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+      padding: const EdgeInsetsDirectional.fromSTEB(18, 14, 18, 14),
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: context.picposHairline)),
       ),

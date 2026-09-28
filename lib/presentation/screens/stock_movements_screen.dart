@@ -191,8 +191,8 @@ class _StockMovementsScreenState
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.primaryDark, AppColors.primary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topEnd,
+          end: AlignmentDirectional.bottomStart,
         ),
       ),
       child: Row(
@@ -278,7 +278,7 @@ class _StockMovementsScreenState
 
   Widget _buildFilters(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 8),
       decoration: BoxDecoration(
         color: context.picposCard,
         border: Border(bottom: BorderSide(color: context.picposHairline)),
@@ -392,7 +392,7 @@ class _StockMovementsScreenState
                 final isSelected = _selectedType == entry.key;
                 final info = entry.value;
                 return Padding(
-                  padding: const EdgeInsets.only(left: 6),
+                  padding: const EdgeInsetsDirectional.only(end: 6),
                   child: FilterChip(
                     selected: isSelected,
                     label: Row(

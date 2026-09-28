@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -125,7 +126,7 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
             maxLines: 3,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: AppTypography.mono,
               fontSize: 18,
               letterSpacing: 2.0,
               fontWeight: FontWeight.bold,
@@ -260,7 +261,7 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
                       child: Text(
                         _machineId ?? 'جاري التحميل...',
                         style: const TextStyle(
-                          fontFamily: 'monospace',
+                          fontFamily: AppTypography.mono,
                           fontSize: 16,
                           letterSpacing: 1.2,
                           fontWeight: FontWeight.bold,
@@ -296,7 +297,7 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
                 maxLines: 3,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontFamily: 'monospace',
+                  fontFamily: AppTypography.mono,
                   fontSize: 18,
                   letterSpacing: 2.0,
                   fontWeight: FontWeight.bold,

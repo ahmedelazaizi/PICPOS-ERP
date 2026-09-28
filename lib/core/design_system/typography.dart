@@ -3,6 +3,9 @@ import '../theme/app_colors.dart';
 
 /// Centralized Typography system for the application
 class AppTypography {
+  /// Stable numeric/text fallback for Windows and offline deployments.
+  static const String mono = 'Cairo';
+  static const List<String> monoFallback = ['Consolas', 'Courier New', 'monospace'];
   // Headings
   static const TextStyle h1 = TextStyle(
     fontSize: 32,
@@ -73,15 +76,15 @@ class AppTypography {
     fontSize: 28,
     fontWeight: FontWeight.bold,
     color: AppColors.primary,
-    fontFamily: 'monospace',
-    fontFamilyFallback: ['Consolas', 'Courier New'],
+    fontFamily: mono,
+    fontFamilyFallback: monoFallback,
   );
 
   static const TextStyle priceRegular = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.bold,
     color: AppColors.primary,
-    fontFamily: 'monospace',
-    fontFamilyFallback: ['Consolas', 'Courier New'],
+    fontFamily: mono,
+    fontFamilyFallback: monoFallback,
   );
 }

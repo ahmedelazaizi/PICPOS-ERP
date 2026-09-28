@@ -105,7 +105,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
   Widget _buildTemplateCard(BuildContext context, IAccountingRepository accountingRepo, JournalEntryTemplateData template) {
     return Card(
       elevation: 0,
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),

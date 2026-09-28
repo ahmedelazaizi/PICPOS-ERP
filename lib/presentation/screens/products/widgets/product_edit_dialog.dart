@@ -1449,8 +1449,8 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                       }
                     });
                   },
-                  child: Icon(PhosphorIconsBold.trash, size: 16,
-                      color: Colors.red.shade400),
+                  child: const Icon(PhosphorIconsBold.trash, size: 16,
+                      color: AppColors.error),
                 ),
               ],
             ),
@@ -1717,7 +1717,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                 }),
                 if (_unitRows.length < 5)
                   Align(
-                    alignment: Alignment.centerRight,
+                    alignment: AlignmentDirectional.centerStart,
                     child: TextButton.icon(
                       onPressed: () => setState(() => _unitRows.add(_EditProductUnitRow())),
                       icon: const Icon(PhosphorIconsBold.plus, size: 14),

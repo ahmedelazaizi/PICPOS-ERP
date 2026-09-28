@@ -6,6 +6,7 @@ import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb, kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:async' show unawaited;
 import 'services/printing/pdf_compute_helper.dart';
 import 'services/app_version_service.dart';
@@ -66,6 +67,8 @@ import 'app_main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // All Cairo weights are bundled; never depend on network access at POS startup.
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   // حارس الهوية — أول حاجة تتنفّذ.
   //

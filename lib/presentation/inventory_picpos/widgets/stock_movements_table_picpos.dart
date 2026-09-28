@@ -300,7 +300,7 @@ class _StockMovementsHeader extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Align(
-          alignment: alignEnd ? Alignment.centerLeft : Alignment.centerRight,
+          alignment: alignEnd ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
           child: Text(text, style: style, overflow: TextOverflow.ellipsis),
         ),
       ),
@@ -375,7 +375,7 @@ class _StockMovementRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Align(
-                alignment: Alignment.centerRight,
+                alignment: AlignmentDirectional.centerStart,
                 child: Tooltip(
                   message: productName,
                   child: Text(
@@ -420,7 +420,7 @@ class _StockMovementRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerEnd,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 4),
@@ -447,7 +447,7 @@ class _StockMovementRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerEnd,
                 child: Text(
                   m.unitCost.toStringAsFixed(AppConstants.decimalPlaces),
                   style: const TextStyle(
@@ -462,7 +462,7 @@ class _StockMovementRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerEnd,
                 child: Text(
                   m.balanceAfter.toStringAsFixed(0),
                   style: const TextStyle(
@@ -477,7 +477,7 @@ class _StockMovementRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Align(
-                alignment: Alignment.centerRight,
+                alignment: AlignmentDirectional.centerStart,
                 child: m.referenceId != null && m.referenceType != null
                     ? InkWell(
                         onTap: () => onNavigateToInvoice(
@@ -520,7 +520,7 @@ class _StockMovementRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Align(
-                alignment: Alignment.centerRight,
+                alignment: AlignmentDirectional.centerStart,
                 child: Tooltip(
                   message: m.notes ?? '',
                   child: Text(

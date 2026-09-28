@@ -46,7 +46,7 @@ class _SettingsSectionPaneState extends State<SettingsSectionPane> {
   Widget build(BuildContext context) {
     return ListView(
       key: PageStorageKey('settings-${widget.sectionId}'),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 24),
       children: [
         for (final child in widget.children)
           PageStorage(bucket: _childStorage, child: child),

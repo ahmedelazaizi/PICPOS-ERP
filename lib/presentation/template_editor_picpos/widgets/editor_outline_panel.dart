@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 // اللوحةُ اليسرى — بنيةُ المستند، ومكتبةُ الحقول.
 //
 // ── بنيةُ المستند ليست قائمةَ زينة ───────────────────────────────────────
@@ -315,7 +316,7 @@ class _Outline extends StatelessWidget {
                       style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
-                          fontFamily: 'monospace',
+                          fontFamily: AppTypography.mono,
                           color: context.picposMuted),
                     ),
                   ],
@@ -336,7 +337,7 @@ class _FieldLibrary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 10),

@@ -141,7 +141,7 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
     final result = SecurityService.validatePassword(passwordController.text);
     final strengthLabel = SecurityService.getPasswordStrengthLabel(result.strength);
     final strengthColor = result.strength < 30
-        ? Colors.red
+        ? AppColors.error
         : result.strength < 50
             ? Colors.orange
             : result.strength < 70
@@ -183,10 +183,10 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
                 padding: const EdgeInsets.only(bottom: 2),
                 child: Row(
                   children: [
-                    const Icon(Icons.close, size: 14, color: Colors.red),
+                    const Icon(Icons.close, size: 14, color: AppColors.error),
                     const SizedBox(width: 4),
                     Expanded(
-                      child: Text(e, style: const TextStyle(fontSize: 11, color: Colors.red)),
+                      child: Text(e, style: const TextStyle(fontSize: 11, color: AppColors.error)),
                     ),
                   ],
                 ),

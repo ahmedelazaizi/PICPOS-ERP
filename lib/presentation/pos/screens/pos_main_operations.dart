@@ -116,10 +116,10 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
               ),
             ],
           ),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.errorDark,
           duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+          margin: const EdgeInsetsDirectional.only(bottom: 80, end: 16, start: 16),
         ),
       );
     }
@@ -194,7 +194,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
           backgroundColor: Colors.orange.shade700,
           duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+          margin: const EdgeInsetsDirectional.only(bottom: 80, end: 16, start: 16),
         ),
       );
     }
@@ -434,7 +434,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('⛔ إضافة الأصناف تتطلب صلاحية المدير'),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.error,
                 duration: Duration(seconds: 3),
               ),
             );
@@ -494,7 +494,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
           textDirection: TextDirection.rtl,
           child: AlertDialog(
             title: const Row(children: [
-              Icon(Icons.lock_clock, color: Colors.red, size: 28),
+              Icon(Icons.lock_clock, color: AppColors.error, size: 28),
               SizedBox(width: 8),
               Text('السنة المالية مغلقة'),
             ]),
@@ -622,19 +622,19 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (zeroPriceItems.isNotEmpty) ...[
-                const Text('⚠️ أصناف بسعر صفر:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                const Text('⚠️ أصناف بسعر صفر:', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error)),
                 const SizedBox(height: 4),
                 ...zeroPriceItems.map((n) => Padding(
-                  padding: const EdgeInsets.only(right: 12, bottom: 2),
+                  padding: const EdgeInsetsDirectional.only(start: 12, bottom: 2),
                   child: Text('• $n', style: const TextStyle(fontSize: 13)),
                 )),
                 const SizedBox(height: 8),
               ],
               if (zeroQtyItems.isNotEmpty) ...[
-                const Text('⚠️ أصناف بكمية صفر:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                const Text('⚠️ أصناف بكمية صفر:', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error)),
                 const SizedBox(height: 4),
                 ...zeroQtyItems.map((n) => Padding(
-                  padding: const EdgeInsets.only(right: 12, bottom: 2),
+                  padding: const EdgeInsetsDirectional.only(start: 12, bottom: 2),
                   child: Text('• $n', style: const TextStyle(fontSize: 13)),
                 )),
                 const SizedBox(height: 8),

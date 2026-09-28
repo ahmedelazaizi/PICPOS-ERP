@@ -350,7 +350,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
             cellStyle: pw.TextStyle(font: font, fontSize: 10),
             headerDecoration:
                 const pw.BoxDecoration(color: PdfColors.grey200),
-            cellAlignment: pw.Alignment.centerRight,
+            cellAlignment: pw.AlignmentDirectional.centerStart,
             headers: ['الفئة', 'الإجمالي', 'العدد'],
             data: _activeSummary
                 .map((r) => [
@@ -373,7 +373,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
             cellStyle: pw.TextStyle(font: font, fontSize: 9),
             headerDecoration:
                 const pw.BoxDecoration(color: PdfColors.grey200),
-            cellAlignment: pw.Alignment.centerRight,
+            cellAlignment: pw.AlignmentDirectional.centerStart,
             headers: [
               'التاريخ',
               'الفئة',
@@ -661,7 +661,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
       ),
     ];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 4),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final w = constraints.maxWidth;
@@ -683,7 +683,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
 
   Widget _buildContent() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 16),
       child: LayoutBuilder(
         builder: (context, constraints) {
           // On narrow screens, stack vertically.
@@ -823,7 +823,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 8),
             child: Row(
               children: [
                 const Icon(PhosphorIconsBold.listDashes,

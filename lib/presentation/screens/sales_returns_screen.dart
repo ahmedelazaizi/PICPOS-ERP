@@ -489,7 +489,7 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
       case 'completed':
         return AppColors.success;
       case 'returned':
-        return Colors.red;
+        return AppColors.error;
       case 'partial_return':
         return Colors.orange;
       case 'voided':

@@ -19,7 +19,7 @@ class PosLowStockIndicator extends ConsumerWidget {
         child: lowStockItems.isEmpty
               ? const SizedBox.shrink()
               : Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsetsDirectional.only(start: 8),
                   child: Container(
                     key: const ValueKey('pos_low_stock_indicator'),
                     decoration: BoxDecoration(
@@ -37,8 +37,8 @@ class PosLowStockIndicator extends ConsumerWidget {
                             color: Colors.orange,
                             size: 18,
                           ),
-                          Positioned(
-                            right: -10,
+                          PositionedDirectional(
+                            start: -10,
                             top: -10,
                             child: Container(
                               padding: const EdgeInsets.all(4),

@@ -1,3 +1,5 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:ural_erp/core/design_system/typography.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // FATAL SETUP ERROR SCREEN — Spec 125 Mirror Foundation (FR-013)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -59,7 +61,7 @@ class FatalSetupErrorApp extends StatelessWidget {
     // for mirror-cache-divergence (matches the default red severity).
     final isPgParity = result.kind == ReconcileFatalKind.pgSchemaParity;
     final seedColor =
-        isPgParity ? Colors.orange.shade700 : Colors.red.shade700;
+        isPgParity ? Colors.orange.shade700 : AppColors.error;
     return MaterialApp(
       title: Brand.name,
       debugShowCheckedModeBanner: false,
@@ -127,7 +129,14 @@ class FatalSetupErrorScreen extends StatelessWidget {
     final isPgParity = result.kind == ReconcileFatalKind.pgSchemaParity;
     final isMirrorDivergence =
         result.kind == ReconcileFatalKind.mirrorCacheDivergence;
-    final accent = isPgParity ? Colors.orange : Colors.red;
+    final accentStrong =
+        isPgParity ? Colors.orange.shade700 : AppColors.errorDark;
+    final accentSurface =
+        isPgParity ? Colors.orange.shade50 : AppColors.error.withValues(alpha: 0.08);
+    final accentBorder =
+        isPgParity ? Colors.orange.shade200 : AppColors.error.withValues(alpha: 0.25);
+    final accentText =
+        isPgParity ? Colors.orange.shade900 : AppColors.errorDark;
     final titleAr = isPgParity
         ? 'فشل التهيئة الذاتية لقاعدة البيانات'
         : isMirrorDivergence
@@ -166,7 +175,7 @@ class FatalSetupErrorScreen extends StatelessWidget {
                               ? PhosphorIconsBold.arrowsCounterClockwise
                               : PhosphorIconsBold.warningCircle,
                       size: 96,
-                      color: accent.shade700,
+                      color: accentStrong,
                     ),
                     const SizedBox(height: 24),
                     Text(
@@ -189,9 +198,9 @@ class FatalSetupErrorScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: accent.shade50,
+                        color: accentSurface,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: accent.shade200),
+                        border: Border.all(color: accentBorder),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,14 +209,14 @@ class FatalSetupErrorScreen extends StatelessWidget {
                             'التفاصيل:',
                             style: theme.textTheme.labelLarge?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: accent.shade900,
+                              color: accentText,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             result.reasonAr,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: accent.shade900,
+                              color: accentText,
                             ),
                           ),
                           if (result.details.isNotEmpty) ...[
@@ -218,7 +227,7 @@ class FatalSetupErrorScreen extends StatelessWidget {
                               title: Text(
                                 'تفاصيل تشخيصية (${result.details.length})',
                                 style: theme.textTheme.labelMedium?.copyWith(
-                                  color: accent.shade900,
+                                  color: accentText,
                                 ),
                               ),
                               children: result.details
@@ -229,8 +238,8 @@ class FatalSetupErrorScreen extends StatelessWidget {
                                           '• $d',
                                           style: theme.textTheme.bodySmall
                                               ?.copyWith(
-                                            color: accent.shade900,
-                                            fontFamily: 'monospace',
+                                            color: accentText,
+                                            fontFamily: AppTypography.mono,
                                           ),
                                           textDirection: TextDirection.ltr,
                                           textAlign: TextAlign.left,

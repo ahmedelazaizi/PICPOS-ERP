@@ -243,7 +243,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                                   ),
                                   if (previouslyReturned > 0)
                                     Container(
-                                      margin: const EdgeInsets.only(right: 8),
+                                      margin: const EdgeInsetsDirectional.only(start: 8),
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 6,
                                         vertical: 2,

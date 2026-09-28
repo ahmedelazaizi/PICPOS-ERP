@@ -362,7 +362,7 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
                 icon: const Icon(PhosphorIconsBold.trash, size: 18),
                 label: const Text('حذف المحددة'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade600,
+                  backgroundColor: AppColors.error,
                   foregroundColor: Colors.white,
                 ),
               ),

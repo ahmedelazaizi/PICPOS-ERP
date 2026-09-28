@@ -283,7 +283,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                       Text(
                         syncRepo.buildServerUrl(),
                         style: const TextStyle(
-                          fontFamily: 'monospace',
+                          fontFamily: AppTypography.mono,
                           fontSize: 12,
                           color: AppColors.primary,
                         ),
@@ -521,7 +521,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                     color: enabled
                         ? AppColors.textMuted
                         : Colors.grey.withValues(alpha: 0.5),
-                    fontFamily: 'monospace',
+                    fontFamily: AppTypography.mono,
                   ),
                 ),
               ],

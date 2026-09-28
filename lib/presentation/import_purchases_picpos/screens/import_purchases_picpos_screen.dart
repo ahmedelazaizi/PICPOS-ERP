@@ -531,7 +531,7 @@ class _ImportPurchasesPicposScreenState
           Material(
             color: Colors.transparent,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 0),
               child: Row(
                 children: [
                   OutlinedButton.icon(
@@ -980,7 +980,7 @@ class _ImportInvoiceDialogState extends State<_ImportInvoiceDialog> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 0),
             child: ImportDocumentPanel(
               currencies: widget.currencies,
               agents: widget.agents,

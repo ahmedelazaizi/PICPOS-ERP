@@ -307,7 +307,7 @@ class _BankReconciliationPicposScreenState
         // وهذا السطرُ يشرح لماذا لا يبدو عدد الخزائن كاملاً.
         if (excluded > 0)
           Padding(
-            padding: const EdgeInsets.fromLTRB(26, 8, 26, 0),
+            padding: const EdgeInsetsDirectional.fromSTEB(26, 8, 26, 0),
             child: Text(
               'خزنةٌ بنكيّةٌ أو أكثرُ بلا حسابٍ مرتبطٍ — لا يمكن مطابقتُها',
               style: TextStyle(fontSize: 12, color: context.picposMuted),
@@ -906,7 +906,7 @@ class _BankReconciliationPicposScreenState
   /// يقيس الأرضيّات، والنصُّ هنا على أرضيّة الشاشة كما هي.
   Widget _lockedNotice() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(26, 12, 26, 0),
+      padding: const EdgeInsetsDirectional.fromSTEB(26, 12, 26, 0),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

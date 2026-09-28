@@ -78,8 +78,8 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.primaryDark, AppColors.primary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topEnd,
+          end: AlignmentDirectional.bottomStart,
         ),
       ),
       child: Row(

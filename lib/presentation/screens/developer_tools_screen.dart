@@ -1351,7 +1351,7 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
                   willRemain: willRemain,
                 ),
         style: OutlinedButton.styleFrom(
-          alignment: Alignment.centerRight,
+          alignment: AlignmentDirectional.centerStart,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           side: BorderSide(
             color: AppColors.error.withValues(alpha: extraDanger ? 0.9 : 0.4),

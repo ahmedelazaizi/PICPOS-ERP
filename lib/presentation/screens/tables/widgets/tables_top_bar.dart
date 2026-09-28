@@ -15,7 +15,7 @@ import '../providers/tables_state_provider.dart';
 Widget _tablesActionButtonChip(IconData icon, String label, VoidCallback onTap,
     {bool highlight = false}) {
   return Padding(
-    padding: const EdgeInsets.only(right: 4),
+    padding: const EdgeInsetsDirectional.only(start: 4),
     child: Material(
       color: Colors.transparent,
       child: InkWell(
@@ -101,8 +101,8 @@ class TablesTopBar extends ConsumerWidget {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0F172A)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+          begin: AlignmentDirectional.centerEnd,
+          end: AlignmentDirectional.centerStart,
         ),
         border: Border(
           bottom: BorderSide(

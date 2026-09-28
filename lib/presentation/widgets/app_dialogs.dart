@@ -1,3 +1,5 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:ural_erp/core/design_system/typography.dart';
 import 'package:flutter/material.dart';
 import '../../core/widgets/app_toast.dart';
 
@@ -138,7 +140,7 @@ class AppDialogs {
                 child: Text(
                   details,
                   style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        fontFamily: 'monospace',
+                        fontFamily: AppTypography.mono,
                       ),
                   textDirection: TextDirection.ltr,
                 ),
@@ -397,15 +399,15 @@ class AppDialogs {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.gavel, color: Colors.red, size: 48),
+        icon: const Icon(Icons.gavel, color: AppColors.error, size: 48),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.warning_amber, color: Colors.red, size: 20),
+            const Icon(Icons.warning_amber, color: AppColors.error, size: 20),
             const SizedBox(width: 8),
-            Text(title, style: const TextStyle(color: Colors.red)),
+            Text(title, style: const TextStyle(color: AppColors.error)),
             const SizedBox(width: 8),
-            const Icon(Icons.warning_amber, color: Colors.red, size: 20),
+            const Icon(Icons.warning_amber, color: AppColors.error, size: 20),
           ],
         ),
         content: Column(
@@ -418,19 +420,19 @@ class AppDialogs {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
+                color: AppColors.error,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.shade200),
+                border: Border.all(color: AppColors.error),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.balance, color: Colors.red.shade700, size: 20),
+                  const Icon(Icons.balance, color: AppColors.error, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       '⚖️ التأثير القانوني: $impact',
-                      style: TextStyle(
-                        color: Colors.red.shade800,
+                      style: const TextStyle(
+                        color: AppColors.error,
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                       ),
@@ -452,7 +454,7 @@ class AppDialogs {
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             child: Text(confirmLabel),
           ),
         ],

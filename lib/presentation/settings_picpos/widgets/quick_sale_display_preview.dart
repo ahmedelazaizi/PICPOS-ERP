@@ -197,14 +197,14 @@ class QuickSaleDisplayPreview extends StatelessWidget {
               ),
             FittedBox(
               fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
+              alignment: AlignmentDirectional.centerStart,
               child: Text('صنف',
                   style: TextStyle(
                       fontSize: nameFontSize / 2, color: _ink)),
             ),
             FittedBox(
               fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
+              alignment: AlignmentDirectional.centerStart,
               child: Text('٣٢.٠٠',
                   style: TextStyle(
                       fontSize: priceFontSize / 2,

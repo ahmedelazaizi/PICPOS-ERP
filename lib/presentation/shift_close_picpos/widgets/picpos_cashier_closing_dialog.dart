@@ -622,7 +622,7 @@ class _PicposCashierClosingDialogState
                 child: ExpansionTile(
                   tilePadding: const EdgeInsets.symmetric(horizontal: 6),
                   childrenPadding:
-                      const EdgeInsets.only(right: 12, bottom: 8),
+                      const EdgeInsetsDirectional.only(start: 12, bottom: 8),
                   title: Text(
                     'تفصيل المصروفات (${a.expensesList.length})',
                     style: const TextStyle(fontSize: 12),
@@ -645,7 +645,7 @@ class _PicposCashierClosingDialogState
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 4, vertical: 1),
-                            margin: const EdgeInsets.only(left: 6),
+                            margin: const EdgeInsetsDirectional.only(end: 6),
                             decoration: BoxDecoration(
                               color: context.picposField,
                               borderRadius: BorderRadius.circular(3),

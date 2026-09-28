@@ -28,7 +28,7 @@ class PicPosPageHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 20, 14),
       decoration: BoxDecoration(
         color: context.picposCard,
         border: const Border(

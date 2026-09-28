@@ -42,12 +42,12 @@ class CreditLimitWarningBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: alreadyExceeded
-            ? Colors.red.shade50
+            ? AppColors.error
             : Colors.orange.shade50,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: alreadyExceeded
-              ? Colors.red.shade200
+              ? AppColors.error
               : Colors.orange.shade200,
         ),
       ),
@@ -57,7 +57,7 @@ class CreditLimitWarningBanner extends StatelessWidget {
             alreadyExceeded
                 ? PhosphorIconsBold.warningCircle
                 : PhosphorIconsBold.warning,
-            color: alreadyExceeded ? Colors.red : Colors.orange,
+            color: alreadyExceeded ? AppColors.error : Colors.orange,
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -72,7 +72,7 @@ class CreditLimitWarningBanner extends StatelessWidget {
                   style: GoogleFonts.cairo(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: alreadyExceeded ? Colors.red.shade700 : Colors.orange.shade800,
+                    color: alreadyExceeded ? AppColors.error : Colors.orange.shade800,
                   ),
                 ),
                 Text(

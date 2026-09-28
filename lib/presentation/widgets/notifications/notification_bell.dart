@@ -61,8 +61,8 @@ class NotificationBell extends ConsumerWidget {
         unreadCountAsync.when(
           data: (count) {
             if (count > 0) {
-              return Positioned(
-                right: 8,
+              return PositionedDirectional(
+                start: 8,
                 top: 8,
                 child: Container(
                   padding: const EdgeInsets.all(4),

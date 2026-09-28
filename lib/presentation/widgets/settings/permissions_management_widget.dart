@@ -966,7 +966,7 @@ class _PermissionsManagementWidgetState
             // يختفي للأبد ويتنسى.
             if (nonTogglablePerms.isNotEmpty) ...[
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
+                padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: nonTogglablePerms

@@ -74,7 +74,7 @@ class _SalesBatchActionBarState extends ConsumerState<SalesBatchActionBar> {
                       child: AlertDialog(
                         title: const Row(
                           children: [
-                            Icon(PhosphorIconsBold.warning, color: Colors.red),
+                            Icon(PhosphorIconsBold.warning, color: AppColors.error),
                             SizedBox(width: 8),
                             Text('تأكيد الحذف المجمع'),
                           ],

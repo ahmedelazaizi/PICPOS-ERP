@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
@@ -51,7 +52,7 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
           children: [
             // ── Header ──
             Container(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+              padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: isDark
@@ -267,7 +268,7 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
           const SizedBox(width: 12),
           _summaryCard('إجمالي المدين', totalDebit, PhosphorIconsBold.arrowUp, Colors.green, isDark),
           const SizedBox(width: 12),
-          _summaryCard('إجمالي الدائن', totalCredit, PhosphorIconsBold.arrowDown, Colors.red, isDark),
+          _summaryCard('إجمالي الدائن', totalCredit, PhosphorIconsBold.arrowDown, AppColors.error, isDark),
           const SizedBox(width: 12),
           _summaryCard('الرصيد الختامي', closingBalance, PhosphorIconsBold.equals, Colors.deepPurple, isDark),
         ],
@@ -378,10 +379,10 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
                   ),
                 ),
                 DataCell(Text(debit > 0 ? _fmt.format(debit) : '', style: TextStyle(fontSize: 12, color: Colors.green.shade700))),
-                DataCell(Text(credit > 0 ? _fmt.format(credit) : '', style: TextStyle(fontSize: 12, color: Colors.red.shade700))),
+                DataCell(Text(credit > 0 ? _fmt.format(credit) : '', style: const TextStyle(fontSize: 12, color: AppColors.error))),
                 DataCell(Text(
                   _fmt.format(balance),
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: balance >= 0 ? Colors.green.shade800 : Colors.red.shade800),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: balance >= 0 ? Colors.green.shade800 : AppColors.error),
                 )),
               ],
             );

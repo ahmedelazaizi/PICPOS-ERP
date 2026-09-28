@@ -12,7 +12,7 @@ class PosNotificationBell extends ConsumerWidget {
     final unreadCount = notifications.where((n) => !n.isRead).length;
 
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsetsDirectional.only(start: 8),
       child: PopupMenuButton<void>(
         offset: const Offset(0, 50),
         onOpened: () {
@@ -126,9 +126,9 @@ class PosNotificationBell extends ConsumerWidget {
               ),
             ),
             if (unreadCount > 0)
-              Positioned(
+              PositionedDirectional(
                 top: -4,
-                right: -4,
+                start: -4,
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: const BoxDecoration(

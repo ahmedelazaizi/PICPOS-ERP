@@ -616,14 +616,14 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
+            padding: EdgeInsetsDirectional.fromSTEB(16, 16, 16, 4),
             child: Text(
               'الإغلاق حسب المستخدم',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 12),
             child: Text(
               'العجز والزيادة منفصلان — الصافي وحده يخفي خطأين يتقاصّان.',
               style: TextStyle(fontSize: 12, color: AppColors.textSecondary),

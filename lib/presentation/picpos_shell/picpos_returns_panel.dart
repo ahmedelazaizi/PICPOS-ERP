@@ -28,7 +28,7 @@ Color picposReturnStatusColor(PicPosReturnStatus s) {
     case PicPosReturnStatus.completed:
       return AppColors.success;
     case PicPosReturnStatus.returned:
-      return Colors.red;
+      return AppColors.error;
     case PicPosReturnStatus.partialReturn:
       return Colors.orange;
     case PicPosReturnStatus.voided:
@@ -80,7 +80,7 @@ class PicPosReturnsSummaryCards extends StatelessWidget {
           label: 'مرتجعة كليّاً',
           value: '${kpis.fullyReturned}',
           icon: PhosphorIconsBold.arrowUUpLeft,
-          tint: Colors.red,
+          tint: AppColors.error,
         ),
         PicPosKpi(
           label: 'مرتجعة جزئيّاً',

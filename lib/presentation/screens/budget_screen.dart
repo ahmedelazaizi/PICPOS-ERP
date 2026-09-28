@@ -65,7 +65,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF4527A0), Color(0xFF7C4DFF)],
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topEnd, end: AlignmentDirectional.bottomStart,
         ),
       ),
       child: Row(

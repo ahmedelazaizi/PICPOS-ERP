@@ -79,7 +79,7 @@ class PayrollTab extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               child: ShimmerLoading.list(itemCount: 6),
             ),
-            error: (e, s) => Center(child: Text('خطأ: $e', style: const TextStyle(color: Colors.red))),
+            error: (e, s) => Center(child: Text('خطأ: $e', style: const TextStyle(color: AppColors.error))),
           ),
         ),
       ],
@@ -136,7 +136,7 @@ class _PayrollCard extends ConsumerWidget {
                     if (calc.unpaidDays > 0)
                       _calcRow('خصم غياب (${calc.unpaidDays} يوم)',
                           -calc.dailyRate * calc.unpaidDays,
-                          color: Colors.red),
+                          color: AppColors.error),
                   ]
                 else if (calc.employee.salaryType == 'hourly')
                   // موظفُ الساعة: الأساسيُّ = ساعاتُ الحضور × أجرُ الساعة، لا
@@ -157,12 +157,12 @@ class _PayrollCard extends ConsumerWidget {
                 // B3 — المسوَّى من هذه القسيمة لا المُصرَف كلَّه. سلفةُ ٥٠٠٠ على
                 // مستحقٍّ ٢٨٠٠ تُسوّي ٢٨٠٠ فقط، وعرضُ ٥٠٠٠ خصماً بجانب صافٍ
                 // بصفرٍ أرقامٌ لا تجتمع: ٢٨٠٠ − ٥٠٠٠ ≠ ٠.
-                _calcRow('السلف المسوّاة', -calc.advancesSettled, color: Colors.red),
+                _calcRow('السلف المسوّاة', -calc.advancesSettled, color: AppColors.error),
                 if (calc.totalAdvances - calc.advancesSettled > 0.01)
                   _calcRow('سلف مؤجّلة للشهر القادم',
                       calc.totalAdvances - calc.advancesSettled,
                       color: Colors.orange),
-                _calcRow('الخصومات', -calc.totalDeductions, color: Colors.red),
+                _calcRow('الخصومات', -calc.totalDeductions, color: AppColors.error),
                 const Divider(),
                 _calcRow('الإجمالي المستحق', calc.grossPay, isBold: true, color: Colors.indigo),
                 _calcRow('الصافي للصرف', calc.netSalary, isBold: true, color: Colors.blue),
@@ -172,7 +172,7 @@ class _PayrollCard extends ConsumerWidget {
         );
       },
       loading: () => const Card(child: ListTile(title: LinearProgressIndicator())),
-      error: (e, s) => Card(child: ListTile(title: Text('خطأ: $e', style: const TextStyle(color: Colors.red)))),
+      error: (e, s) => Card(child: ListTile(title: Text('خطأ: $e', style: const TextStyle(color: AppColors.error)))),
     );
   }
 

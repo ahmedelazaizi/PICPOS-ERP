@@ -17,7 +17,7 @@ class PosStatusIndicators extends ConsumerWidget {
         // Scale connection indicator
         if (showScaleIndicator)
           Padding(
-            padding: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsetsDirectional.only(start: 16),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(

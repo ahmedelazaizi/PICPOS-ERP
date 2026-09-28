@@ -103,7 +103,7 @@ class SalesFilterBar extends ConsumerWidget {
             data: (branches) {
               if (branches.length <= 1) return const SizedBox.shrink();
               return Padding(
-                padding: const EdgeInsets.only(left: 12),
+                padding: const EdgeInsetsDirectional.only(end: 12),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
@@ -188,7 +188,7 @@ class SalesFilterBar extends ConsumerWidget {
             data: (centers) {
               if (centers.isEmpty) return const SizedBox.shrink();
               return Padding(
-                padding: const EdgeInsets.only(left: 12),
+                padding: const EdgeInsetsDirectional.only(end: 12),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(

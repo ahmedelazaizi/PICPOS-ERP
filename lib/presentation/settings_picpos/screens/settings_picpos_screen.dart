@@ -153,6 +153,7 @@ import '../../../services/costing_method_service.dart';
 import '../../../services/session_timeout_service.dart' show sessionTimeoutProvider;
 import '../../../services/stock_shortage_policy_service.dart';
 import '../../widgets/settings/branch_scope_admin_dialog.dart';
+import '../../widgets/settings/party_balance_repair_dialog.dart';
 import '../../widgets/settings/cheque_receipt_drift_admin_dialog.dart';
 import '../../widgets/settings/mirror_parity_audit_dialog.dart';
 import '../../widgets/settings/database_settings_widget.dart';
@@ -1250,7 +1251,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
     }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 24),
       children: [
         Text(
           '${matches.length} قسم مطابق',
@@ -2269,8 +2270,25 @@ class _AdvancedTiles extends ConsumerWidget {
           meta: 'أدوات تشخيصية',
           tint: AppColors.warning,
           onTap: () => showBranchScopeAdminDialog(context),
-        ),
-        // ⚠️ التدقيقان مشروطان بالوضع لا معطَّلَين فيه: تدقيقُ المرآة
+         ),
+         SettingsTile(
+           icon: PhosphorIconsBold.scales,
+           title: 'تدقيق أرصدة الأطراف',
+           sub: 'مقارنة أرصدة العملاء والموردين بالأستاذ',
+           meta: 'إعادة احتساب محمية بالصلاحية',
+           tint: AppColors.warning,
+           permission: PermissionCodes.accountingJournal,
+           onTap: () {
+             final userId = ref.read(authProvider).effectiveUser?.id;
+             if (userId == null) return;
+             showPartyBalanceRepairDialog(
+               context,
+               repository: ref.read(partiesRepositoryProvider),
+               userId: userId,
+             );
+           },
+         ),
+         // ⚠️ التدقيقان مشروطان بالوضع لا معطَّلَين فيه: تدقيقُ المرآة
         //    يقارن بالسيرفر فلا معنى له في وضعٍ مستقلّ، وتدقيقُ الشيكات
         //    يقرأ سجلَّ السيرفر. ومربّعٌ حاضرٌ لا يعمل يُسأل عنه.
         if (mode == NetworkMode.mirror)

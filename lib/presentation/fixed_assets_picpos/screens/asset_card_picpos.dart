@@ -222,7 +222,7 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
   }
 
   Widget _scroll(Widget child) => SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 20),
         child: child,
       );
 
@@ -231,7 +231,7 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
   Widget _header(BuildContext context) {
     final a = widget.asset;
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 20, 14),
       decoration: BoxDecoration(
         color: context.picposCard,
         border: Border(bottom: BorderSide(color: context.picposHairline)),

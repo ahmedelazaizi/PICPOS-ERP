@@ -237,7 +237,7 @@ class _UsersManagementPicposScreenState
     // فمستخدمٌ معطَّلٌ ومقفولٌ يُعرَض «مقفول» لأنه العائقُ الأقربُ للحلّ.
     final (String stLabel, Color stColor) = user.isLocked
         ? ('مقفول', Colors.orange)
-        : (!user.isActive ? ('معطل', Colors.red) : ('نشط', AppColors.success));
+        : (!user.isActive ? ('معطل', AppColors.error) : ('نشط', AppColors.success));
 
     final branches = userBranchNames[user.id] ?? const <String>[];
     final branchLabel = branches.isEmpty ? 'كل الفروع' : branches.join('، ');
@@ -414,7 +414,7 @@ class _UsersManagementPicposScreenState
                     const PopupMenuItem(
                       value: 'delete',
                       child: Text('حذف',
-                          style: TextStyle(fontSize: 12, color: Colors.red)),
+                          style: TextStyle(fontSize: 12, color: AppColors.error)),
                     ),
                   ],
                 ),
@@ -700,7 +700,7 @@ class _UsersManagementPicposScreenState
                           IconButton(
                             icon: const Icon(
                               PhosphorIconsBold.x,
-                              color: Colors.red,
+                              color: AppColors.error,
                               size: 18,
                             ),
                             tooltip: 'إزالة الحد',

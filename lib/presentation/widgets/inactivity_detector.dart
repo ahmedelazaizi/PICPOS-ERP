@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
 import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -222,10 +223,10 @@ class _InactivityDetectorState extends ConsumerState<InactivityDetector> {
       fit: StackFit.expand,
       children: [
         widget.child,
-        Positioned(
+        PositionedDirectional(
           top: 0,
-          left: 0,
-          right: 0,
+          end: 0,
+          start: 0,
           child: ValueListenableBuilder<int?>(
             valueListenable: _countdown,
             builder: (context, remaining, _) {
@@ -263,11 +264,11 @@ class _InactivityWarningBanner extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.orange.shade700, Colors.red.shade600],
+              colors: [Colors.orange.shade700, AppColors.error],
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.red.withValues(alpha: 0.3),
+                color: AppColors.error.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),

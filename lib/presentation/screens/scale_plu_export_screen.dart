@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';

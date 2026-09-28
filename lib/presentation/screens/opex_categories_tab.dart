@@ -132,7 +132,7 @@ class _CategoryCard extends ConsumerWidget {
                         Colors.teal),
                     if (category.isProductionRelated)
                       _chip('إنتاج', Colors.blue),
-                    if (!category.isActive) _chip('معطلة', Colors.red),
+                    if (!category.isActive) _chip('معطلة', AppColors.error),
                   ],
                 ),
               ],

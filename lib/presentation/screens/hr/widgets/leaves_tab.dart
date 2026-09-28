@@ -53,7 +53,7 @@ class LeavesTab extends ConsumerWidget {
                     onChanged: (v) => notifier.selectEmployee(v),
                   ),
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, s) => Text('خطأ: $e', style: const TextStyle(color: Colors.red)),
+                  error: (e, s) => Text('خطأ: $e', style: const TextStyle(color: AppColors.error)),
                 ),
               ),
               const SizedBox(width: 8),
@@ -256,7 +256,7 @@ class _PendingLeavesSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Align(
-            alignment: Alignment.centerRight,
+            alignment: AlignmentDirectional.centerStart,
             child: Text(
               'طلبات معلقة',
               style: TextStyle(
@@ -334,7 +334,7 @@ class _PendingLeaveCard extends ConsumerWidget {
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 loading: () => const Text('جار التحميل...', style: TextStyle(fontWeight: FontWeight.bold)),
-                error: (e, s) => const Text('خطأ', style: TextStyle(color: Colors.red)),
+                error: (e, s) => const Text('خطأ', style: TextStyle(color: AppColors.error)),
               ),
               const SizedBox(height: 4),
               Text(
@@ -371,7 +371,7 @@ class _PendingLeaveCard extends ConsumerWidget {
                       onPressed: () =>
                           notifier.updateLeave(leave.id, 'rejected'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: AppColors.error,
                         padding: const EdgeInsets.symmetric(vertical: 4),
                       ),
                       child: const Text('رفض', style: TextStyle(fontSize: 12)),
@@ -460,7 +460,7 @@ class _EmployeeLeaveDetails extends ConsumerWidget {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Center(child: Text('خطأ: $e', style: const TextStyle(color: Colors.red))),
+              error: (e, s) => Center(child: Text('خطأ: $e', style: const TextStyle(color: AppColors.error))),
             ),
           ),
           const SizedBox(height: 8),
@@ -494,7 +494,7 @@ class _EmployeeLeaveDetails extends ConsumerWidget {
                           color: l.status == 'approved'
                               ? Colors.green
                               : l.status == 'rejected'
-                              ? Colors.red
+                              ? AppColors.error
                               : Colors.orange,
                         ),
                         title: Text(
@@ -530,7 +530,7 @@ class _EmployeeLeaveDetails extends ConsumerWidget {
   Color _statusColor(String status) => status == 'approved'
       ? Colors.green[50]!
       : status == 'rejected'
-      ? Colors.red[50]!
+      ? AppColors.errorLight
       : Colors.orange[50]!;
 }
 
@@ -554,7 +554,7 @@ Color _leaveTypeColor(String type) {
     case 'annual':
       return Colors.blue;
     case 'sick':
-      return Colors.red;
+      return AppColors.error;
     case 'unpaid':
       return Colors.grey;
     case 'emergency':

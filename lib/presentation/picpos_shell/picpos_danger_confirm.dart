@@ -237,7 +237,7 @@ class _ImpactList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 12, 12),
       decoration: BoxDecoration(
         color: tint.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(10),

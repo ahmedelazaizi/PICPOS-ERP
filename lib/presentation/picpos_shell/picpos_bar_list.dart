@@ -109,7 +109,7 @@ class PicPosBarList extends StatelessWidget {
             )
           else
             Padding(
-              padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
+              padding: const EdgeInsetsDirectional.fromSTEB(18, 14, 18, 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,

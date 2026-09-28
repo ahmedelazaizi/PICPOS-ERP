@@ -156,9 +156,9 @@ class _PosToastWidgetState extends State<_PosToastWidget>
       PosNotificationType.info => Icons.info_rounded,
     };
 
-    return Positioned(
+    return PositionedDirectional(
       top: 70,
-      right: 16,
+      start: 16,
       child: SlideTransition(
         position: _slideAnimation,
         child: FadeTransition(

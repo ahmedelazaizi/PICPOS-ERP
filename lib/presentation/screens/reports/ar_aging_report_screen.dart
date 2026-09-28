@@ -108,7 +108,7 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
               padding: const EdgeInsets.all(16),
               child: Text(
                 'خطأ في تحميل بيانات التقادم: $e',
-                style: const TextStyle(color: Colors.red),
+                style: const TextStyle(color: AppColors.error),
               ),
             ),
           ),

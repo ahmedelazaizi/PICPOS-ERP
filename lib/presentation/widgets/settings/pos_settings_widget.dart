@@ -811,7 +811,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                  padding: const EdgeInsetsDirectional.fromSTEB(8, 6, 8, 8),
                   child: Text(
                     'أقسام الحوار',
                     style: TextStyle(
@@ -840,7 +840,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         ),
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),
+            padding: const EdgeInsetsDirectional.fromSTEB(22, 18, 22, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -878,7 +878,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         color: context.picposField,
         border: Border(right: BorderSide(color: context.picposHairline)),
       ),
-      padding: const EdgeInsets.fromLTRB(14, 18, 14, 20),
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 18, 14, 20),
       child: SingleChildScrollView(
         child: QuickSaleDisplayPreview(
           showTopBar: _showTopBar,
@@ -935,7 +935,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
       );
     }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 14, 0, 6),
+      padding: const EdgeInsetsDirectional.fromSTEB(0, 14, 0, 6),
       child: Row(children: [
         Container(
           width: 3.5,
@@ -1814,7 +1814,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         ),
         clipBehavior: Clip.antiAlias,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: children,

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 import 'dart:convert';
 import 'package:drift/drift.dart' show Value, OrderingTerm;
 import 'package:flutter/material.dart';
@@ -230,7 +231,7 @@ class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
                     style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.textMuted,
-                        fontFamily: 'monospace'),
+                        fontFamily: AppTypography.mono),
                   ),
                 ),
                 IconButton(

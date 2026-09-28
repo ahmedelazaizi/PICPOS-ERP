@@ -47,7 +47,7 @@ class _NewTemplateSheetState extends ConsumerState<_NewTemplateSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 6),
               child: Row(
                 children: [
                   Icon(PhosphorIconsBold.filePlus,
@@ -80,7 +80,7 @@ class _NewTemplateSheetState extends ConsumerState<_NewTemplateSheet> {
             ),
             if (_error != null)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
                 child: Text(_error!,
                     style: const TextStyle(
                         fontSize: 12, color: AppColors.error)),

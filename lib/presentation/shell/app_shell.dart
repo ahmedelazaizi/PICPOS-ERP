@@ -626,7 +626,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   /// حقلُ البحث أعلى القائمة.
   Widget _navSearchField() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+      padding: const EdgeInsetsDirectional.fromSTEB(10, 8, 10, 4),
       child: SizedBox(
         height: 34,
         child: TextField(

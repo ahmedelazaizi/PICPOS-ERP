@@ -123,7 +123,7 @@ class _AuditDashboardScreenState
                           icon: PhosphorIconsBold.warning,
                           title: 'تعارضات معلّقة',
                           value: '$_conflictCount',
-                          color: _conflictCount > 0 ? Colors.red : Colors.green,
+                          color: _conflictCount > 0 ? AppColors.error : Colors.green,
                         )),
                       ],
                     ),
@@ -304,12 +304,12 @@ class _AuditDashboardScreenState
       decoration: BoxDecoration(
         color: isValid
             ? Colors.green.withValues(alpha: 0.08)
-            : Colors.red.withValues(alpha: 0.08),
+            : AppColors.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isValid
               ? Colors.green.withValues(alpha: 0.3)
-              : Colors.red.withValues(alpha: 0.3),
+              : AppColors.error.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -321,7 +321,7 @@ class _AuditDashboardScreenState
                 isValid
                     ? PhosphorIconsBold.checkCircle
                     : PhosphorIconsBold.xCircle,
-                color: isValid ? Colors.green : Colors.red,
+                color: isValid ? Colors.green : AppColors.error,
                 size: 28,
               ),
               const SizedBox(width: 8),
@@ -332,7 +332,7 @@ class _AuditDashboardScreenState
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: isValid ? Colors.green[700] : Colors.red[700],
+                  color: isValid ? Colors.green[700] : AppColors.errorDark,
                 ),
               ),
             ],
@@ -347,10 +347,10 @@ class _AuditDashboardScreenState
           if (!isValid && result['brokenAt'] != null)
             Text('الكسر في قيد رقم: ${result['brokenAt']}',
                 style: const TextStyle(
-                    color: Colors.red, fontWeight: FontWeight.bold)),
+                    color: AppColors.error, fontWeight: FontWeight.bold)),
           if (!isValid && result['brokenReason'] != null)
             Text('السبب: ${result['brokenReason']}',
-                style: const TextStyle(color: Colors.red)),
+                style: const TextStyle(color: AppColors.error)),
         ],
       ),
     );
@@ -365,7 +365,7 @@ class _AuditDashboardScreenState
             isActive
                 ? PhosphorIconsBold.checkCircle
                 : PhosphorIconsBold.xCircle,
-            color: isActive ? Colors.green : Colors.red,
+            color: isActive ? Colors.green : AppColors.error,
             size: 20,
           ),
           const SizedBox(width: 12),

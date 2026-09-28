@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
 // منطق منسوخ من inventory_bonds_screen.dart (monolith) — أي إصلاح منطقي
 // يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ §٥.٨).
 //
@@ -400,7 +401,7 @@ class _InventoryBondsPicposScreenState
                                     IconButton(
                                       icon: const Icon(
                                         PhosphorIconsBold.trash,
-                                        color: Colors.red,
+                                        color: AppColors.error,
                                         size: 20,
                                       ),
                                       onPressed: () => _removeItem(index),

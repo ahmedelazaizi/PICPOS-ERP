@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -201,7 +202,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                 fontSize: smallFontSize - 1,
                                 color: AppColors.textMuted,
                                 fontWeight: FontWeight.w600,
-                                fontFamily: 'monospace',
+                                fontFamily: AppTypography.mono,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),

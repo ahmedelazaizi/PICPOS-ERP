@@ -449,7 +449,7 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            textAlign: TextAlign.left,
+            textAlign: TextAlign.end,
           ),
         ],
       ),

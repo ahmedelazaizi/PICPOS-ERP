@@ -723,7 +723,7 @@ class _LineRow extends StatelessWidget {
                   border: Border.all(color: theme.dividerColor),
                   borderRadius: BorderRadius.circular(9),
                 ),
-                alignment: Alignment.centerRight,
+                alignment: AlignmentDirectional.centerStart,
                 child: TextField(
                   key: ValueKey('price_${line.productId}'),
                   controller: TextEditingController(
@@ -732,7 +732,7 @@ class _LineRow extends StatelessWidget {
                   ),
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                   style: const TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
@@ -778,7 +778,7 @@ class _LineRow extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(9),
                   ),
-                  alignment: Alignment.centerRight,
+                  alignment: AlignmentDirectional.centerStart,
                   child: TextField(
                     key: ValueKey('discount_${line.productId}'),
                     controller: TextEditingController(
@@ -787,7 +787,7 @@ class _LineRow extends StatelessWidget {
                     ),
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.start,
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,

@@ -200,7 +200,7 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
                                         const Text('(غير نشط)', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                                       ],
                                     ]),
-                                    Text(conn, style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontFamily: 'monospace')),
+                                    Text(conn, style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontFamily: AppTypography.mono)),
                                   ],
                                 ),
                               ),
@@ -249,7 +249,7 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
                 SizedBox(
                   height: 100,
                   child: SingleChildScrollView(
-                    child: Text(result.errors.take(10).join('\n'), style: const TextStyle(fontSize: 11, fontFamily: 'monospace')),
+                    child: Text(result.errors.take(10).join('\n'), style: const TextStyle(fontSize: 11, fontFamily: AppTypography.mono)),
                   ),
                 ),
               ],

@@ -144,7 +144,7 @@ Widget buildProductAvgCostCell({
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Align(
-          alignment: Alignment.centerLeft,
+          alignment: AlignmentDirectional.centerEnd,
           child: _AvgCostCell(
             loading: loading,
             value: value,
@@ -171,7 +171,7 @@ Widget buildProductStockCell({
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Align(
-          alignment: Alignment.centerLeft,
+          alignment: AlignmentDirectional.centerEnd,
           child: Text(
             currentStock.toStringAsFixed(0),
             style: TextStyle(
@@ -244,7 +244,7 @@ Widget _gridTextCell(
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Align(
-        alignment: alignEnd ? Alignment.centerLeft : Alignment.centerRight,
+        alignment: alignEnd ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
         child: tooltip == null ? child : Tooltip(message: tooltip, child: child),
       ),
     ),
@@ -505,9 +505,9 @@ class _ProductsTableState extends ConsumerState<ProductsTable> {
                 ),
               ),
             if (isLoading)
-              const Positioned(
+              const PositionedDirectional(
                 bottom: 8,
-                right: 8,
+                start: 8,
                 child: SizedBox(
                   width: 24,
                   height: 24,
@@ -581,7 +581,7 @@ class _ProductsTableHeader extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Align(
-          alignment: alignEnd ? Alignment.centerLeft : Alignment.centerRight,
+          alignment: alignEnd ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
           child: Text(text, style: style, overflow: TextOverflow.ellipsis),
         ),
       ),
@@ -710,7 +710,7 @@ class _ProductRow extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Align(
-                    alignment: Alignment.centerRight,
+                    alignment: AlignmentDirectional.centerStart,
                     child: _ProductTypeBadge(type: product.productType),
                   ),
                 ),
@@ -749,7 +749,7 @@ class _ProductRow extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Align(
-                    alignment: Alignment.centerRight,
+                    alignment: AlignmentDirectional.centerStart,
                     child: _StatusBadge(
                       product: product,
                       lockedCategoryIds: lockedCategoryIds,
@@ -832,7 +832,7 @@ class _StatusBadge extends StatelessWidget {
           children: [
             if (isCategoryLocked && !isExplicitlyUnlocked)
               const Padding(
-                padding: EdgeInsets.only(left: 4),
+                padding: EdgeInsetsDirectional.only(end: 4),
                 child: Icon(
                   PhosphorIconsBold.lock,
                   size: 10,

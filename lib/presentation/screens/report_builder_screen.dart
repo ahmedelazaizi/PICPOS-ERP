@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -169,9 +170,9 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
           const PopupMenuItem(
             value: 'delete',
             child: Row(children: [
-              Icon(Icons.delete, size: 18, color: Colors.red),
+              Icon(Icons.delete, size: 18, color: AppColors.error),
               SizedBox(width: 8),
-              Text('حذف', style: TextStyle(color: Colors.red)),
+              Text('حذف', style: TextStyle(color: AppColors.error)),
             ]),
           ),
         ],
@@ -472,7 +473,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
               ),
       ),
       Align(
-        alignment: Alignment.centerRight,
+        alignment: AlignmentDirectional.centerStart,
         child: TextButton.icon(
           icon: const Icon(PhosphorIconsBold.plus, size: 16),
           label: const Text('إضافة شرط'),
@@ -544,7 +545,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
           ),
           IconButton(
             tooltip: 'حذف الشرط',
-            icon: const Icon(PhosphorIconsBold.trash, size: 18, color: Colors.red),
+            icon: const Icon(PhosphorIconsBold.trash, size: 18, color: AppColors.error),
             onPressed: () => setDialogState(() => conditions.removeAt(index)),
           ),
         ]),

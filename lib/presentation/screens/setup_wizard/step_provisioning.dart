@@ -525,7 +525,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(serverCommitResult.reasonAr),
-              backgroundColor: Colors.red.shade700,
+              backgroundColor: AppColors.error,
               duration: const Duration(seconds: 6),
             ),
           );

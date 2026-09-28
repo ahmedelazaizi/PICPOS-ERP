@@ -93,8 +93,8 @@ class FieldAuditHistoryWidget extends ConsumerWidget {
                             child: _ValueBox(
                               label: 'من',
                               value: change.oldValue ?? '(فارغ)',
-                              color: Colors.red.shade50,
-                              textColor: Colors.red.shade700,
+                              color: AppColors.error,
+                              textColor: AppColors.error,
                             ),
                           ),
                           const Padding(

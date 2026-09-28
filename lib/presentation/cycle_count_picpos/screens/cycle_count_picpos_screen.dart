@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
 // شاشة الجرد الميداني بهوية PicPos — semi-modular fork.
 //
 // الأصل: lib/presentation/screens/cycle_count_screen.dart (613 سطر).
@@ -442,7 +443,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
                       '${item.variance! > 0 ? '+' : ''}${item.variance!.toStringAsFixed(2)}',
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: item.variance! > 0 ? Colors.green : Colors.red),
+                          color: item.variance! > 0 ? Colors.green : AppColors.error),
                     ),
                     Text('${item.variancePercent!.toStringAsFixed(1)}%',
                         style: theme.textTheme.bodySmall),
@@ -498,7 +499,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
                       value: accuracy / 100,
                       strokeWidth: 12,
                       backgroundColor: theme.colorScheme.surfaceContainerHigh,
-                      color: accuracy >= 95 ? Colors.green : accuracy >= 80 ? Colors.amber : Colors.red,
+                      color: accuracy >= 95 ? Colors.green : accuracy >= 80 ? Colors.amber : AppColors.error,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -652,7 +653,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
   Icon _taskStatusIcon(String s) => switch (s) {
     'completed' => const Icon(Icons.check_circle, color: Colors.green, size: 20),
     'in_progress' => const Icon(Icons.hourglass_top, color: Colors.blue, size: 20),
-    'cancelled' => const Icon(Icons.cancel, color: Colors.red, size: 20),
+    'cancelled' => const Icon(Icons.cancel, color: AppColors.error, size: 20),
     _ => const Icon(Icons.schedule, color: Colors.amber, size: 20),
   };
 }

@@ -53,7 +53,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       child: Container(
         color: _fHero(context),
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 14),
         child: Stack(
           children: [
             PositionedDirectional(

@@ -19,7 +19,7 @@ class _TouchInputSettings extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isOn = ref.watch(touchModeProvider);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

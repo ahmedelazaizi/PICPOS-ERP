@@ -105,7 +105,7 @@ class _SubmissionTile extends StatelessWidget {
             if (submission.errorMessage != null)
               Text(
                 submission.errorMessage!,
-                style: const TextStyle(color: Colors.red, fontSize: 12),
+                style: const TextStyle(color: AppColors.error, fontSize: 12),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -165,7 +165,7 @@ class _SubmissionTile extends StatelessWidget {
       case 'pending':
         return Colors.orange;
       case 'invalid':
-        return Colors.red;
+        return AppColors.error;
       case 'cancelled':
         return Colors.grey;
       default:

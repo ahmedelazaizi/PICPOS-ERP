@@ -570,7 +570,7 @@ class _SalesByClassificationReportState
           'careem': Colors.green,
           'ashyae': Colors.purple,
           'table': Colors.indigo,
-          'return': Colors.red,
+          'return': AppColors.error,
         };
 
         final Map<String, IconData> typeIcons = {
@@ -890,8 +890,8 @@ class _SalesByClassificationReportState
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topEnd,
+          end: AlignmentDirectional.bottomStart,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [

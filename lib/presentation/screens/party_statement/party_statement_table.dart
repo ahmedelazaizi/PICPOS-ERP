@@ -79,7 +79,7 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [accentColor, accentColor.withValues(alpha: 0.85)],
-          begin: Alignment.centerRight, end: Alignment.centerLeft,
+          begin: AlignmentDirectional.centerStart, end: AlignmentDirectional.centerEnd,
         ),
         borderRadius: BorderRadius.circular(10),
       ),

@@ -247,7 +247,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
               style: const TextStyle(
                 color: Colors.white38,
                 fontSize: 16,
-                fontFamily: 'monospace',
+                fontFamily: AppTypography.mono,
               ),
             ),
           ),
@@ -450,7 +450,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
                         builder: (context, snap) {
                           if (!snap.hasData || snap.data == 0) return const SizedBox.shrink();
                           return Padding(
-                            padding: const EdgeInsets.only(right: 6),
+                            padding: const EdgeInsetsDirectional.only(start: 6),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                               decoration: BoxDecoration(

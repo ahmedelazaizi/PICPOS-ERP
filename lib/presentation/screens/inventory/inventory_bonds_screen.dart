@@ -361,7 +361,7 @@ class _InventoryBondsScreenState extends ConsumerState<InventoryBondsScreen> {
                                           IconButton(
                                             icon: const Icon(
                                               PhosphorIconsBold.trash,
-                                              color: Colors.red,
+                                              color: AppColors.error,
                                               size: 20,
                                             ),
                                             onPressed: () => _removeItem(index),

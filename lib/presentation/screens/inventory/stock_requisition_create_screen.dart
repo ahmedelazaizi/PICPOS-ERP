@@ -272,7 +272,7 @@ class _StockRequisitionCreateScreenState extends ConsumerState<StockRequisitionC
                                       ),
                                       DataCell(
                                         IconButton(
-                                          icon: const Icon(PhosphorIconsBold.trash, color: Colors.red),
+                                          icon: const Icon(PhosphorIconsBold.trash, color: AppColors.error),
                                           onPressed: () => _removeItem(index),
                                         ),
                                       ),

@@ -150,7 +150,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
               child: sections.isEmpty
                   ? const Center(child: Text('لا توجد نتائج'))
                   : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 16),
                       itemCount: sections.length,
                       itemBuilder: (context, sectionIndex) {
                         final section = sections[sectionIndex];

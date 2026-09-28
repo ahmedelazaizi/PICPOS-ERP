@@ -568,7 +568,7 @@ class _OversellBadge extends ConsumerWidget {
     if (!allowed) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.only(left: 5),
+      padding: const EdgeInsetsDirectional.only(end: 5),
       child: Tooltip(
         message: 'مسموح بيع أصناف غير متوفرة في هذه الفاتورة — اضغط للإلغاء',
         child: InkWell(

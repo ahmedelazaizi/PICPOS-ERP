@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import '../database/database.dart';
+import '../../domain/models/party_balance_mismatch.dart' as domain_models;
 import '../../domain/repositories/parties_repository.dart';
 
 /// Data-layer implementation of IPartiesRepository
@@ -154,6 +155,29 @@ class PartiesRepositoryImpl implements IPartiesRepository {
     // Net balance: what the party owes us (positive) or we owe them (negative)
     return (receivable - receipts) - (payable - payments);
   }
+
+  @override
+  Future<List<domain_models.PartyBalanceMismatch>>
+      getPartyBalanceMismatches() async {
+    final mismatches = await _db.getPartyBalanceMismatches();
+    return mismatches
+        .map(
+          (mismatch) => domain_models.PartyBalanceMismatch(
+            partyId: mismatch.partyId,
+            partyName: mismatch.partyName,
+            isCustomer: mismatch.isCustomer,
+            isSupplier: mismatch.isSupplier,
+            cardBalance: mismatch.cardBalance,
+            glBalance: mismatch.glBalance,
+            delta: mismatch.delta,
+          ),
+        )
+        .toList();
+  }
+
+  @override
+  Future<int> recalculatePartyBalancesFromLedger(int userId) =>
+      _db.recalculatePartyBalancesFromLedger(userId);
 
   @override
   Future<void> updatePartyBalance(int partyId, double balance) async {

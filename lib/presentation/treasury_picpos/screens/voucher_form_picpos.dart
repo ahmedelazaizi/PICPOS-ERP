@@ -403,7 +403,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [

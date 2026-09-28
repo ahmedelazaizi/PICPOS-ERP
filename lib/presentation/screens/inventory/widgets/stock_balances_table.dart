@@ -439,7 +439,7 @@ class _StockBalancesHeader extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Align(
-          alignment: alignEnd ? Alignment.centerLeft : Alignment.centerRight,
+          alignment: alignEnd ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
           child: Text(text, style: style, overflow: TextOverflow.ellipsis),
         ),
       ),
@@ -512,7 +512,7 @@ class _StockBalanceRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerEnd,
                 child: Text(
                   stock.toStringAsFixed(1),
                   style: TextStyle(
@@ -528,7 +528,7 @@ class _StockBalanceRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Align(
-                alignment: Alignment.centerRight,
+                alignment: AlignmentDirectional.centerStart,
                 child: _StockStatusBadge(isOut: isOut, isLow: isLow),
               ),
             ),
@@ -538,7 +538,7 @@ class _StockBalanceRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Align(
-                alignment: Alignment.centerRight,
+                alignment: AlignmentDirectional.centerStart,
                 child: _ExpiryBadge(
                   expiryDate: expiryDate,
                   trackExpiry: product.trackExpiry,
@@ -595,7 +595,7 @@ class _StockBalanceRow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Align(
-          alignment: Alignment.centerRight,
+          alignment: AlignmentDirectional.centerStart,
           child: tooltip == null
               ? child
               : Tooltip(message: tooltip, child: child),

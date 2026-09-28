@@ -48,7 +48,7 @@ class InventoryAgingItem {
     if (ageInDays <= 90) return Colors.amber;
     if (ageInDays <= 180) return Colors.orange;
     if (ageInDays <= 365) return Colors.deepOrange;
-    return Colors.red;
+    return AppColors.error;
   }
 }
 

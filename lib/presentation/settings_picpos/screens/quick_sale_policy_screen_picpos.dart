@@ -189,7 +189,7 @@ class _QuickSalePolicyScreenState
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+            padding: const EdgeInsetsDirectional.fromSTEB(8, 6, 8, 8),
             child: Text('خطوات البيع',
                 style: TextStyle(
                   fontSize: 10.5,
@@ -221,7 +221,7 @@ class _QuickSalePolicyScreenState
   // ── لوحةُ الخطوة ────────────────────────────────────────────────────────
   Widget _buildStepPane(QuickSaleStep step, QuickSalePolicyValues values) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),
+      padding: const EdgeInsetsDirectional.fromSTEB(22, 18, 22, 24),
       children: [
         QuickSaleSectionHeader(
           icon: _stepIcon[step.id]!,
@@ -265,7 +265,7 @@ class _QuickSalePolicyScreenState
 
   Widget _buildNote(String note) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+      padding: const EdgeInsetsDirectional.fromSTEB(4, 8, 4, 0),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Icon(PhosphorIconsBold.info, size: 14, color: AppColors.warning),
         const SizedBox(width: 8),
@@ -309,7 +309,7 @@ class _QuickSalePolicyScreenState
   /// يظنّ السلوكَ تغيّر؛ وإخفاءُ الحقيقة عنه أسوأُ من غياب المِزلاج أصلاً.
   Widget _buildNotEnforcedBadge(QuickSaleRow row) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(44, 0, 0, 10),
+      padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 44, 10),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -335,7 +335,7 @@ class _QuickSalePolicyScreenState
 
   Widget _buildCaveat(String caveat) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(44, 0, 0, 10),
+      padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 44, 10),
       child: Text('⚠︎ $caveat',
           style: TextStyle(
               fontSize: 10.5, height: 1.55, color: context.picposMuted)),
@@ -515,7 +515,7 @@ class _QuickSalePolicyScreenState
         border: Border(right: BorderSide(color: context.picposHairline)),
       ),
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 18, 16, 24),
         children: [
           Row(children: [
             const Icon(PhosphorIconsBold.eye, size: 18, color: AppColors.primary),

@@ -174,7 +174,7 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                               border: OutlineInputBorder(),
                               prefixIcon: Icon(
                                 PhosphorIconsBold.arrowUpRight,
-                                color: Colors.red,
+                                color: AppColors.error,
                               ),
                             ),
                             items: list
@@ -325,7 +325,7 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                                           IconButton(
                                             icon: const Icon(
                                               PhosphorIconsBold.trash,
-                                              color: Colors.red,
+                                              color: AppColors.error,
                                             ),
                                             onPressed: () => _removeItem(index),
                                           ),

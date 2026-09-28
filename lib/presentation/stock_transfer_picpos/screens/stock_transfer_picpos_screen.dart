@@ -220,7 +220,7 @@ class _StockTransferPicposScreenState
                               border: OutlineInputBorder(),
                               prefixIcon: Icon(
                                 PhosphorIconsBold.arrowUpRight,
-                                color: Colors.red,
+                                color: AppColors.error,
                               ),
                             ),
                             items: list
@@ -371,7 +371,7 @@ class _StockTransferPicposScreenState
                                     IconButton(
                                       icon: const Icon(
                                         PhosphorIconsBold.trash,
-                                        color: Colors.red,
+                                        color: AppColors.error,
                                       ),
                                       onPressed: () => _removeItem(index),
                                     ),

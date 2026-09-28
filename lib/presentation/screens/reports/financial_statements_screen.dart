@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
@@ -591,7 +592,7 @@ class _FinancialStatementsScreenState
                       final isTotal = row['type'] == 'total';
                       final style = TextStyle(
                         fontWeight: isTotal ? FontWeight.w900 : FontWeight.normal,
-                        fontFamily: 'monospace',
+                        fontFamily: AppTypography.mono,
                         fontSize: isTotal ? 13 : 12,
                       );
                       final nameStyle = TextStyle(
@@ -845,7 +846,7 @@ class _FinancialStatementsScreenState
               const SizedBox(height: 24),
               if (!data['isBalanced'])
                 const Card(
-                  color: Colors.redAccent,
+                  color: AppColors.error,
                   child: Padding(
                     padding: EdgeInsets.all(8.0),
                     child: Text(
@@ -1065,22 +1066,22 @@ class _FinancialStatementsScreenState
                         DataColumn(label: Text('0-30 يوم', style: TextStyle(fontWeight: FontWeight.bold)), numeric: true),
                         DataColumn(label: Text('31-60 يوم', style: TextStyle(fontWeight: FontWeight.bold)), numeric: true),
                         DataColumn(label: Text('61-90 يوم', style: TextStyle(fontWeight: FontWeight.bold)), numeric: true),
-                        DataColumn(label: Text('+90 يوم', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)), numeric: true),
+                        DataColumn(label: Text('+90 يوم', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error)), numeric: true),
                       ],
                       rows: data.map((row) {
                         final over90 = (row['over90'] as num?)?.toDouble() ?? 0;
                         return DataRow(cells: [
                           DataCell(Text(row['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.w500))),
-                          DataCell(Text(currFmt.format(row['totalBalance'] ?? 0), style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold))),
-                          DataCell(Text(currFmt.format(row['current'] ?? 0), style: const TextStyle(fontFamily: 'monospace'))),
-                          DataCell(Text(currFmt.format(row['days31_60'] ?? 0), style: const TextStyle(fontFamily: 'monospace'))),
-                          DataCell(Text(currFmt.format(row['days61_90'] ?? 0), style: const TextStyle(fontFamily: 'monospace'))),
+                          DataCell(Text(currFmt.format(row['totalBalance'] ?? 0), style: const TextStyle(fontFamily: AppTypography.mono, fontWeight: FontWeight.bold))),
+                          DataCell(Text(currFmt.format(row['current'] ?? 0), style: const TextStyle(fontFamily: AppTypography.mono))),
+                          DataCell(Text(currFmt.format(row['days31_60'] ?? 0), style: const TextStyle(fontFamily: AppTypography.mono))),
+                          DataCell(Text(currFmt.format(row['days61_90'] ?? 0), style: const TextStyle(fontFamily: AppTypography.mono))),
                           DataCell(Text(
                             currFmt.format(over90),
                             style: TextStyle(
-                              fontFamily: 'monospace',
+                              fontFamily: AppTypography.mono,
                               fontWeight: over90 > 0 ? FontWeight.bold : FontWeight.normal,
-                              color: over90 > 0 ? Colors.red : null,
+                              color: over90 > 0 ? AppColors.error : null,
                             ),
                           )),
                         ]);
@@ -1147,7 +1148,7 @@ class _FinancialStatementsScreenState
             style: TextStyle(
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
               fontSize: large ? 18 : 14,
-              fontFamily: 'monospace',
+              fontFamily: AppTypography.mono,
             ),
           ),
         ],
@@ -1173,7 +1174,7 @@ class _FinancialStatementsScreenState
                 const SizedBox(height: 12),
                 Text('خطأ في تحميل البيانات', style: TextStyle(color: Colors.grey.shade600)),
                 const SizedBox(height: 8),
-                Text('${snapshot.error}', style: const TextStyle(fontSize: 11, color: Colors.red)),
+                Text('${snapshot.error}', style: const TextStyle(fontSize: 11, color: AppColors.error)),
                 const SizedBox(height: 8),
                 TextButton.icon(
                   icon: const Icon(PhosphorIconsBold.arrowClockwise),
@@ -1215,7 +1216,7 @@ class _FinancialStatementsScreenState
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _reconcileStat('مطابق', matched, Colors.green),
-                  _reconcileStat('غير مرحل', missing, Colors.red),
+                  _reconcileStat('غير مرحل', missing, AppColors.error),
                   _reconcileStat('مسودة', draft, Colors.orange),
                   _reconcileStat('فرق قيمة', mismatch, Colors.purple),
                   _reconcileStat('قيد يتيم', orphan, Colors.blueGrey),
@@ -1245,7 +1246,7 @@ class _FinancialStatementsScreenState
                       final statusCode = row['statusCode'] as String;
                       final statusColor = switch (statusCode) {
                         'matched' => Colors.green,
-                        'missing' => Colors.red,
+                        'missing' => AppColors.error,
                         'draft' => Colors.orange,
                         'mismatch' => Colors.purple,
                         'orphan' => Colors.blueGrey,
@@ -1262,7 +1263,7 @@ class _FinancialStatementsScreenState
                       }
                       return DataRow(
                         color: WidgetStateProperty.resolveWith((states) {
-                          if (statusCode == 'missing') return Colors.red.withValues(alpha: 0.08);
+                          if (statusCode == 'missing') return AppColors.error.withValues(alpha: 0.08);
                           if (statusCode == 'orphan') return Colors.blue.withValues(alpha: 0.08);
                           if (statusCode == 'mismatch') return Colors.purple.withValues(alpha: 0.08);
                           return null;

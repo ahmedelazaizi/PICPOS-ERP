@@ -497,7 +497,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
                           ),
                           if (mismatch)
                             const Padding(
-                              padding: EdgeInsets.only(right: 4),
+                              padding: EdgeInsetsDirectional.only(start: 4),
                               child: Tooltip(
                                 message: 'مجموع ضرائب الأصناف لا يساوي ضريبة الفاتورة',
                                 child: Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.warning),
@@ -655,8 +655,8 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [color.withValues(alpha: 0.8), color],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topEnd,
+          end: AlignmentDirectional.bottomStart,
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [

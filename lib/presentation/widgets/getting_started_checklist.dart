@@ -159,7 +159,7 @@ class _GettingStartedChecklistState
           children: [
             // ── Header with progress ──
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              padding: const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 12),
               child: Row(
                 children: [
                   Container(

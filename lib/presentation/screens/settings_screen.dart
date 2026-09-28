@@ -59,6 +59,7 @@ import '../../services/costing_method_service.dart';
 import '../../services/session_timeout_service.dart' show sessionTimeoutProvider;
 import '../../services/stock_shortage_policy_service.dart';
 import '../widgets/settings/branch_scope_admin_dialog.dart';
+import '../widgets/settings/party_balance_repair_dialog.dart';
 import '../widgets/settings/cheque_receipt_drift_admin_dialog.dart';
 import '../widgets/settings/mirror_parity_audit_dialog.dart';
 import '../widgets/settings/database_settings_widget.dart';
@@ -372,8 +373,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ),
                           trailing: const Icon(PhosphorIconsBold.caretLeft),
                           onTap: () => showBranchScopeAdminDialog(context),
-                        ),
-                        // Spec 131 FR-010 — mirror-only audit entry. Caller
+                         ),
+                         buildPartyBalanceRepairTileGuarded(
+                           onOpen: () {
+                             final userId = ref.read(authProvider).effectiveUser?.id;
+                             if (userId == null) return;
+                             showPartyBalanceRepairDialog(
+                               context,
+                               repository: ref.read(partiesRepositoryProvider),
+                               userId: userId,
+                             );
+                           },
+                         ),
+                         // Spec 131 FR-010 — mirror-only audit entry. Caller
                         // gates by mirror mode; the dialog itself shows an
                         // Arabic notice when invoked outside mirror mode.
                         if (NetworkService.instance.mode == NetworkMode.mirror)

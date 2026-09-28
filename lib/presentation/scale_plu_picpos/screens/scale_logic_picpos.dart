@@ -229,7 +229,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
                   ),
-                  child: Text('$e', style: const TextStyle(fontSize: 12, fontFamily: 'monospace')),
+                  child: Text('$e', style: const TextStyle(fontSize: 12, fontFamily: AppTypography.mono)),
                 ),
               ],
             ),
@@ -281,7 +281,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: SingleChildScrollView(
-                  child: Text(result.errors.join('\n'), style: const TextStyle(fontSize: 11, fontFamily: 'monospace')),
+                  child: Text(result.errors.join('\n'), style: const TextStyle(fontSize: 11, fontFamily: AppTypography.mono)),
                 ),
               ),
             ],
@@ -831,7 +831,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                                 decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)),
                                 child: const Text(
                                   'مثال: 2112345012345\n[21] بادئة  [12345] PLU  [01234] وزن  [5] تحقق\nالوزن = 01234 ÷ 1000 = 1.234 كجم',
-                                  style: TextStyle(fontSize: 11, fontFamily: 'monospace', height: 1.4),
+                                  style: TextStyle(fontSize: 11, fontFamily: AppTypography.mono, height: 1.4),
                                 ),
                               ),
                             ]);
@@ -920,7 +920,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                   ),
                   child: SelectableText(
                     filePath,
-                    style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                    style: const TextStyle(fontSize: 12, fontFamily: AppTypography.mono),
                   ),
                 ),
                 const SizedBox(height: 12),

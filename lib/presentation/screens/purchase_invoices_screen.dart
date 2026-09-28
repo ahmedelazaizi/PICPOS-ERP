@@ -311,7 +311,7 @@ class _PurchaseInvoicesScreenState
                           data: (branches) {
                             if (branches.length <= 1) return const SizedBox.shrink();
                             return Padding(
-                              padding: const EdgeInsets.only(left: 12),
+                              padding: const EdgeInsetsDirectional.only(end: 12),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
                                 decoration: BoxDecoration(
@@ -369,7 +369,7 @@ class _PurchaseInvoicesScreenState
                           data: (centers) {
                             if (centers.isEmpty) return const SizedBox.shrink();
                             return Padding(
-                              padding: const EdgeInsets.only(left: 12),
+                              padding: const EdgeInsetsDirectional.only(end: 12),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
                                 decoration: BoxDecoration(
@@ -820,7 +820,7 @@ class _PurchaseInvoicesScreenState
                       child: AlertDialog(
                         title: const Row(
                           children: [
-                            Icon(PhosphorIconsBold.warning, color: Colors.red),
+                            Icon(PhosphorIconsBold.warning, color: AppColors.error),
                             SizedBox(width: 8),
                             Text('تأكيد الحذف المجمع'),
                           ],
@@ -833,7 +833,7 @@ class _PurchaseInvoicesScreenState
                           ),
                           ElevatedButton(
                             onPressed: () => Navigator.pop(ctx, true),
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
                             child: const Text('حذف الجميع'),
                           ),
                         ],
@@ -856,7 +856,7 @@ class _PurchaseInvoicesScreenState
                 icon: const Icon(PhosphorIconsBold.trash, size: 18),
                 label: const Text('حذف المحددة'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade600,
+                  backgroundColor: AppColors.error,
                   foregroundColor: Colors.white,
                 ),
               ),

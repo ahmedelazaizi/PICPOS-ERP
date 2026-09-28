@@ -41,8 +41,8 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF00695C), Color(0xFF00897B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topEnd,
+          end: AlignmentDirectional.bottomStart,
         ),
       ),
       child: Row(

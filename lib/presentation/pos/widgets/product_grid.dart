@@ -651,9 +651,9 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                             dimWhenOutOfStock: Brand.isPicPos,
                           ),
                           // Order badge
-                          Positioned(
+                          PositionedDirectional(
                             top: 4,
-                            left: 4,
+                            end: 4,
                             child: Container(
                               padding: const EdgeInsets.all(4),
                               decoration: BoxDecoration(

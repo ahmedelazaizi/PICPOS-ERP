@@ -167,7 +167,7 @@ class _DeliveryManagementBodyState
               children: [
                 // Summary banner: total receivable across all delivery companies
                 Container(
-                  margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  margin: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 0),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(

@@ -204,7 +204,7 @@ class HelpPanelOverlay extends StatelessWidget {
           SizedBox(
             width: 100,
             child: Align(
-              alignment: Alignment.centerRight,
+              alignment: AlignmentDirectional.centerStart,
               child: _keyBadge(shortcut.keys),
             ),
           ),

@@ -43,7 +43,7 @@ class PicPosDocumentHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 10),
       child: Wrap(
         spacing: 12,
         runSpacing: 8,

@@ -323,7 +323,7 @@ class PicPosPanelStrength extends StatelessWidget {
   final List<({String label, bool ok})> rules;
 
   /// ⚠️ التصميمُ يرسم الحالةَ القويّةَ وحدَها (‏`#22C55E`)، فألوانُ الحالات
-  /// الأضعف ليست فيه — وأُخذت من لوحة العلامة لا من `Colors.red` وأخواتها
+  /// الأضعف ليست فيه — وأُخذت من لوحة العلامة لا من `AppColors.error` وأخواتها
   /// التي لا تتبع الثيم.
   Color get _tone => strength < 30
       ? AppColors.error

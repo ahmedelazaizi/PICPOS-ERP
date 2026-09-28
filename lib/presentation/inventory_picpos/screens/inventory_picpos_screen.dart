@@ -120,7 +120,7 @@ class _InventoryPicposScreenState extends ConsumerState<InventoryPicposScreen>
       title: 'المخزون',
       icon: PhosphorIconsBold.warehouse,
       subHeader: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 4),
         child: Column(
           children: [
             _buildKpiRow(),

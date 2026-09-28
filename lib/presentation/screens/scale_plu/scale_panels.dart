@@ -496,7 +496,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                                 DataCell(Text(item.unitPrice.toStringAsFixed(AppConstants.decimalPlaces))),
                                 DataCell(Text(item.isByWeight ? 'وزن' : 'عدد')),
                                 DataCell(Text('${item.department}')),
-                                DataCell(Text(item.barcode ?? '—', style: const TextStyle(fontFamily: 'monospace'))),
+                                DataCell(Text(item.barcode ?? '—', style: const TextStyle(fontFamily: AppTypography.mono))),
                                 DataCell(Text(item.productCode ?? '—')),
                               ]);
                             }).toList(),

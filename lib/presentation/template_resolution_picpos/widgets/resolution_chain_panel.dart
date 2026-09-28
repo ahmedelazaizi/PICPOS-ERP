@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 // لوحةُ سلسلة السقوط — المستوياتُ الستّةُ بالترتيب، وأوّلُ مطابقٍ يفوز.
 //
 // ── لماذا تُعرض المستوياتُ المخفِقةُ أيضاً ────────────────────────────────
@@ -102,7 +103,7 @@ class ResolutionChainPanel extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 4, 14, 14),
+            padding: const EdgeInsetsDirectional.fromSTEB(14, 4, 14, 14),
             child: _Verdict(row: r),
           ),
         ],
@@ -127,7 +128,7 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: context.picposHairline)),
       ),
@@ -244,7 +245,7 @@ class _ChainStep extends StatelessWidget {
                   style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w600,
-                      fontFamily: 'monospace',
+                      fontFamily: AppTypography.mono,
                       height: 1.6,
                       color: context.picposMuted),
                 ),
@@ -332,7 +333,7 @@ class _Verdict extends StatelessWidget {
   Widget build(BuildContext context) {
     final tone = resolutionTone(context, row.health);
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: tone.withValues(alpha: 0.07),
         border: Border.all(color: tone.withValues(alpha: 0.4), width: 1.5),

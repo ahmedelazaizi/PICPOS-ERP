@@ -605,7 +605,7 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
                 );
               }
               return Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+                padding: const EdgeInsetsDirectional.fromSTEB(20, 18, 20, 20),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -1136,7 +1136,7 @@ class _SearchPickerDialogState extends State<_SearchPickerDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 8),
                 child: Row(
                   children: [
                     Expanded(

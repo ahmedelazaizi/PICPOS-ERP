@@ -198,7 +198,7 @@ class ProductFormState extends State<ProductForm> {
             icon: PhosphorIconsBold.barcode,
           ),
           const Padding(
-            padding: EdgeInsets.only(right: 12, top: 4, bottom: 8),
+            padding: EdgeInsetsDirectional.only(start: 12, top: 4, bottom: 8),
             child: Text(
               'كود الصنف الداخلي — يُستخدم في باركود الميزان. أدخل نفس الكود المبرمج على الميزان.',
               style: TextStyle(fontSize: 11, color: AppColors.textMuted),
@@ -350,7 +350,7 @@ class ProductFormState extends State<ProductForm> {
               icon: PhosphorIconsBold.hash,
             ),
             const Padding(
-              padding: EdgeInsets.only(right: 12, top: 4, bottom: 4),
+              padding: EdgeInsetsDirectional.only(start: 12, top: 4, bottom: 4),
               child: Text(
                 'الرقم المخزن على الميزان لهذا الصنف — يُستخدم لتصدير الأصناف للميزان',
                 style: TextStyle(fontSize: 11, color: AppColors.textMuted),

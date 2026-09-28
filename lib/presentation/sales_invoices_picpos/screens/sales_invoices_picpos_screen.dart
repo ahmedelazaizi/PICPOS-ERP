@@ -189,7 +189,7 @@ class _SalesInvoicesPicposScreenState
         // unlike the original which hardcodes white for its primary-colored
         // AppBar background).
         subHeader: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 0),
           child: TabBar(
             controller: _tabController,
             tabs: const [

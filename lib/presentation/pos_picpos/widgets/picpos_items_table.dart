@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -233,7 +233,7 @@ class _TableHeader extends StatelessWidget {
         children: [
           _HeaderCell('م', _kFlexIndex, scale: scale),
           _HeaderCell('المادة', _kFlexName,
-              align: TextAlign.right, scale: scale),
+              align: TextAlign.start, scale: scale),
           _HeaderCell('الكمية', _kFlexQty, scale: scale),
           _HeaderCell('السعر', _kFlexPrice, scale: scale),
           _HeaderCell('الخصم %', _kFlexDiscount, scale: scale),
@@ -262,8 +262,8 @@ class _HeaderCell extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
         child: Align(
-          alignment: align == TextAlign.right
-              ? Alignment.centerRight
+          alignment: align == TextAlign.start
+              ? AlignmentDirectional.centerStart
               : Alignment.center,
           child: Text(
             label,

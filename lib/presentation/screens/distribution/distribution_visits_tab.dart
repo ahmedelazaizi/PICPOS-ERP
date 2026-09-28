@@ -331,7 +331,7 @@ class _VisitsTabState extends State<_VisitsTab> {
   };
   Color _statusColor(String s) => switch (s) {
     'completed' => Colors.green,
-    'cancelled' => Colors.red,
+    'cancelled' => AppColors.error,
     'skipped' => Colors.orange,
     _ => Colors.blue,
   };

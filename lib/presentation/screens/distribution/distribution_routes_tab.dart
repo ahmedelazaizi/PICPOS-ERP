@@ -145,9 +145,8 @@ class _RoutesTab extends StatelessWidget {
                             actionName: 'حذف مسار توزيع',
                             onGranted: () => _confirmDelete(context, ctrl, r),
                             child: IconButton(
-                              icon: Icon(
-                                PhosphorIconsBold.trash,
-                                color: Colors.red.shade400,
+                              icon: const Icon(PhosphorIconsBold.trash,
+                                color: AppColors.error,
                               ),
                               tooltip: 'حذف',
                               onPressed: () => _confirmDelete(context, ctrl, r),
@@ -198,7 +197,7 @@ class _RoutesTab extends StatelessWidget {
                         if (ctx.mounted) setDialogState(() => saving = false);
                       }
                     },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
               child: const Text('حذف'),
             ),
           ],

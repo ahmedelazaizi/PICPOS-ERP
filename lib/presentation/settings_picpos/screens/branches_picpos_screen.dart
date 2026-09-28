@@ -214,7 +214,7 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
   }
 
   Widget _scroll(Widget child) => SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 26),
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 20, 20, 26),
         child: child,
       );
 

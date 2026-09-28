@@ -206,8 +206,8 @@ class EnhancedCategoryFilter extends StatelessWidget {
                 gradient: isSelected
                     ? LinearGradient(
                         colors: [color, color.withValues(alpha: 0.8)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                        begin: AlignmentDirectional.topEnd,
+                        end: AlignmentDirectional.bottomStart,
                       )
                     : null,
                 color: isSelected ? null : context.picposField,
@@ -441,8 +441,8 @@ class _EnhancedSummaryCardState extends State<EnhancedSummaryCard> {
                       widget.color.withValues(alpha: 0.2),
                       widget.color.withValues(alpha: 0.1),
                     ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    begin: AlignmentDirectional.topEnd,
+                    end: AlignmentDirectional.bottomStart,
                   ),
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -706,8 +706,8 @@ class EmptyStateWidget extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                  begin: AlignmentDirectional.topEnd,
+                  end: AlignmentDirectional.bottomStart,
                   colors: [
                     AppColors.primary.withValues(alpha: 0.10),
                     AppColors.primary.withValues(alpha: 0.03),

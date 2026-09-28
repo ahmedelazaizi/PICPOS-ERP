@@ -22,8 +22,8 @@ class TablePosHeader extends ConsumerWidget {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0F172A)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+          begin: AlignmentDirectional.centerEnd,
+          end: AlignmentDirectional.centerStart,
         ),
         border: Border(
           bottom: BorderSide(

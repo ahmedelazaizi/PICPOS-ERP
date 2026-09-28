@@ -286,7 +286,7 @@ class _BranchPerformanceScreenState
     return periods.entries.map((e) {
       final isActive = _period == e.key;
       return Padding(
-        padding: const EdgeInsets.only(left: 4),
+        padding: const EdgeInsetsDirectional.only(end: 4),
         child: ChoiceChip(
           label: Text(e.value, style: const TextStyle(fontSize: 12)),
           selected: isActive,
@@ -344,7 +344,7 @@ class _BranchPerformanceScreenState
                   const SizedBox(height: 4),
                   FittedBox(
                     fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerRight,
+                    alignment: AlignmentDirectional.centerStart,
                     child: Text(value,
                         style: TextStyle(
                             fontSize: 18,

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -250,9 +251,9 @@ class _ProductCardState extends ConsumerState<ProductCard>
                     if (widget.product.isSoldByWeight && !widget.saleTypeDot)
                       _buildWeightBadge(scaleFactor),
 
-                    Positioned(
+                    PositionedDirectional(
                       top: 10,
-                      left: 10,
+                      end: 10,
                       child: widget.saleTypeDot
                           ? _buildSaleTypeDot()
                           : _buildStockDot(isOutOfStock),
@@ -453,7 +454,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                               fontSize: priceFontSize,
                               fontWeight: FontWeight.w900,
                               color: AppColors.primary,
-                              fontFamily: 'monospace',
+                              fontFamily: AppTypography.mono,
                             ),
                           ),
                           TextSpan(
@@ -517,9 +518,9 @@ class _ProductCardState extends ConsumerState<ProductCard>
   }
 
   Widget _buildWeightBadge(double scaleFactor) {
-    return Positioned(
+    return PositionedDirectional(
       top: 8 * scaleFactor,
-      right: 8 * scaleFactor,
+      start: 8 * scaleFactor,
       child: Container(
         padding: EdgeInsets.all(6 * scaleFactor),
         decoration: BoxDecoration(

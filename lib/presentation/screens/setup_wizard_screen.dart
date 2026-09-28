@@ -303,8 +303,8 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         body: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              begin: AlignmentDirectional.topEnd,
+              end: AlignmentDirectional.bottomStart,
               colors: [
                 AppColors.primary.withValues(alpha: 0.05),
                 Theme.of(context).scaffoldBackgroundColor,
@@ -415,7 +415,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                     // Content
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(30, 26, 30, 24),
+                        padding: const EdgeInsetsDirectional.fromSTEB(30, 26, 30, 24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -1635,7 +1635,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(commitResult.reasonAr),
-              backgroundColor: Colors.red.shade700,
+              backgroundColor: AppColors.error,
               duration: const Duration(seconds: 6),
             ),
           );

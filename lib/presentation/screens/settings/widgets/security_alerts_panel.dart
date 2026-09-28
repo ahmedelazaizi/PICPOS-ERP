@@ -40,7 +40,7 @@ class SecurityAlertsPanel extends ConsumerWidget {
       data: (alerts) {
         if (alerts.isEmpty) return const SizedBox.shrink();
         return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 0),
           child: Card(
             elevation: 1,
             color: Colors.orange.shade50,

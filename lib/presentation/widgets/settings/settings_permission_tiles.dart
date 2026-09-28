@@ -126,6 +126,26 @@ Widget buildCurrencyTileGuarded({
   );
 }
 
+/// تدقيق وإصلاح أرصدة الأطراف — نفس صلاحية DAO (`accounting_journal`).
+Widget buildPartyBalanceRepairTileGuarded({required VoidCallback onOpen}) {
+  return PermissionGuard(
+    permission: PermissionCodes.accountingJournal,
+    allowManagerOverride: true,
+    actionName: 'إصلاح أرصدة الأطراف',
+    onGranted: onOpen,
+    child: ListTile(
+      leading: const Icon(
+        PhosphorIconsBold.scales,
+        color: AppColors.warning,
+      ),
+      title: const Text('تدقيق أرصدة الأطراف'),
+      subtitle: const Text('مقارنة أرصدة العملاء والموردين بالأستاذ وإعادة احتسابها'),
+      trailing: const Icon(PhosphorIconsBold.caretLeft),
+      onTap: onOpen,
+    ),
+  );
+}
+
 /// «قاعدة البيانات» — `system_database`.
 ///
 /// الديالوج بيبدّل محرك قاعدة البيانات وبيحفظ بيانات اتصال PostgreSQL (كلمة

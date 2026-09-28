@@ -256,7 +256,7 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
                     horizontal: 12,
                     vertical: 6,
                   ),
-                  margin: const EdgeInsets.only(left: 12),
+                  margin: const EdgeInsetsDirectional.only(end: 12),
                   decoration: BoxDecoration(
                     color: AppColors.warning.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),

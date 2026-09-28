@@ -195,7 +195,7 @@ class _BudgetDetailsDialogState extends ConsumerState<BudgetDetailsDialog> {
                               Expanded(
                                 flex: 2, 
                                 child: Padding(
-                                  padding: const EdgeInsets.only(left: 16),
+                                  padding: const EdgeInsetsDirectional.only(end: 16),
                                   child: TextField(
                                     controller: _controllers[line.id],
                                     keyboardType: TextInputType.number,

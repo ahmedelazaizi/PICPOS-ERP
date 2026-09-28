@@ -63,7 +63,7 @@ class _TableLogSheetState extends ConsumerState<TableLogSheet> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+              padding: const EdgeInsetsDirectional.fromSTEB(8, 12, 16, 8),
               child: Row(
                 children: [
                   const Icon(

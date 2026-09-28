@@ -115,7 +115,7 @@ class CoaTreeNode extends StatelessWidget {
                     children: [
                       if (hasChildren)
                         Padding(
-                          padding: const EdgeInsets.only(left: 4),
+                          padding: const EdgeInsetsDirectional.only(end: 4),
                           child: Icon(PhosphorIconsBold.folder, size: 14, color: typeInfo.color.withValues(alpha: 0.6)),
                         ),
                       Expanded(

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 // شاشةُ «الفوترة الإلكترونية» بهويّة PicPos — على تصميم
 // `PicPos E-Invoicing.dc.html`.
 //
@@ -67,12 +68,12 @@ final _money = NumberFormat('#,##0.00', 'en');
 final _money0 = NumberFormat('#,##0', 'en');
 final _stamp = DateFormat('yyyy-MM-dd HH:mm');
 
-const _ok = Color(0xFF22C55E);
-const _warn = Color(0xFFF59E0B);
-const _err = Color(0xFFEF4444);
-const _purple = Color(0xFF8B5CF6);
-const _idle = Color(0xFF6B7280);
-const _blue = Color(0xFF4A80E8);
+const _ok = AppColors.success;
+const _warn = AppColors.warning;
+const _err = AppColors.error;
+const _purple = AppColors.booking;
+const _idle = AppColors.textMuted;
+const _blue = AppColors.info;
 
 String _ar(Object n) =>
     '$n'.replaceAllMapped(RegExp(r'\d'), (m) => '٠١٢٣٤٥٦٧٨٩'[int.parse(m[0]!)]);
@@ -527,7 +528,7 @@ class _EInvoicingPicposScreenState
                     style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w600,
-                        fontFamily: 'monospace',
+                        fontFamily: AppTypography.mono,
                         color: context.picposMuted),
                     overflow: TextOverflow.ellipsis),
               ],
@@ -843,7 +844,7 @@ class _EInvoicingPicposScreenState
                       style: const TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w800,
-                          fontFamily: 'monospace'),
+                          fontFamily: AppTypography.mono),
                       overflow: TextOverflow.ellipsis),
                   Text(r.invoiceNumber ?? 'فاتورة #${r.saleId}',
                       style: TextStyle(
@@ -977,7 +978,7 @@ class _EInvoicingPicposScreenState
                               style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w800,
-                                  fontFamily: 'monospace'),
+                                  fontFamily: AppTypography.mono),
                               overflow: TextOverflow.ellipsis),
                         ),
                         const SizedBox(width: 8),
@@ -1219,7 +1220,7 @@ class _EInvoicingPicposScreenState
                         style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            fontFamily: 'monospace',
+                            fontFamily: AppTypography.mono,
                             color: context.picposText)),
                   ),
                   IconButton(
@@ -1328,7 +1329,7 @@ class _EInvoicingPicposScreenState
                   style: const TextStyle(
                     fontSize: 11,
                     height: 1.75,
-                    fontFamily: 'monospace',
+                    fontFamily: AppTypography.mono,
                     color: Color(0xFFA5C4F7),
                   ),
                 ),
@@ -1532,7 +1533,7 @@ class _EInvoicingPicposScreenState
                           style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
-                              fontFamily: 'monospace',
+                              fontFamily: AppTypography.mono,
                               color: context.picposBrandInk)),
                     ),
                     const SizedBox(width: 10),

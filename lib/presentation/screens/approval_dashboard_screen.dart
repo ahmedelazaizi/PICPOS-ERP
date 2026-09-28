@@ -40,7 +40,7 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFFE65100), Color(0xFFFF6D00)],
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topEnd, end: AlignmentDirectional.bottomStart,
         ),
       ),
       child: Row(

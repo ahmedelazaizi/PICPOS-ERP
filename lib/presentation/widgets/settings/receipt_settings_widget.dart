@@ -321,7 +321,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
                 Container(
                   width: 80,
                   height: 80,
-                  margin: const EdgeInsets.only(left: 16),
+                  margin: const EdgeInsetsDirectional.only(end: 16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppColors.border),
@@ -350,7 +350,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
                         }),
                         child: const Text(
                           'حذف الشعار',
-                          style: TextStyle(color: Colors.red, fontSize: 12),
+                          style: TextStyle(color: AppColors.error, fontSize: 12),
                         ),
                       ),
                   ],

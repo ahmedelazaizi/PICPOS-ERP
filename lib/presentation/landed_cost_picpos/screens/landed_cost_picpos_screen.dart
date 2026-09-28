@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 // شاشةُ «التكاليف المحمَّلة» بهويّة PicPos — على تصميم `PicPos Landed Costs.dc.html`.
 //
 // ═══ إعادةُ تنسيقٍ لا بناء ═══
@@ -840,7 +841,7 @@ class _LandedCostPicposScreenState
                 style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w800,
-                    fontFamily: 'monospace',
+                    fontFamily: AppTypography.mono,
                     color: fg)),
           ],
         ),

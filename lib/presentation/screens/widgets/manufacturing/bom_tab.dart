@@ -122,7 +122,7 @@ class _BomTab extends ConsumerWidget {
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
               child:
-                  const Text('حذف', style: TextStyle(color: Colors.red)),
+                  const Text('حذف', style: TextStyle(color: AppColors.error)),
             ),
           ],
         ),
@@ -214,7 +214,7 @@ class _BomCard extends ConsumerWidget {
               actionName: 'حذف قائمة مواد',
               onGranted: onDelete,
               child: IconButton(
-                icon: const Icon(PhosphorIconsBold.trash, size: 18, color: Colors.red),
+                icon: const Icon(PhosphorIconsBold.trash, size: 18, color: AppColors.error),
                 onPressed: onDelete,
                 tooltip: 'حذف',
               ),
@@ -246,7 +246,7 @@ class _BomCard extends ConsumerWidget {
       BuildContext context, WidgetRef ref, List<BomComponentData> components) {
     final products = ref.watch(allProductsProvider).value ?? [];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 12),
       child: Table(
         border: TableBorder.all(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(8)),
         columnWidths: const {
@@ -594,7 +594,7 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                         },
                         optionsViewBuilder: (context, onSelected, options) {
                           return Align(
-                            alignment: Alignment.topRight,
+                            alignment: AlignmentDirectional.topStart,
                             child: Material(
                               elevation: 4,
                               borderRadius: BorderRadius.circular(8),
@@ -738,7 +738,7 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                                     },
                                     optionsViewBuilder: (context, onSelected, options) {
                                       return Align(
-                                        alignment: Alignment.topRight,
+                                        alignment: AlignmentDirectional.topStart,
                                         child: Material(
                                           elevation: 4,
                                           borderRadius: BorderRadius.circular(8),
@@ -883,7 +883,7 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                                 // Delete
                                 IconButton(
                                   icon: const Icon(PhosphorIconsBold.trash,
-                                      size: 16, color: Colors.red),
+                                      size: 16, color: AppColors.error),
                                   onPressed: () =>
                                       setState(() => _components.removeAt(i)),
                                 ),

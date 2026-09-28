@@ -89,7 +89,7 @@ class _VatReconciliationScreenState
                     padding: const EdgeInsets.all(16),
                     child: Text(
                       'خطأ في تحميل بيانات الضريبة: $e',
-                      style: const TextStyle(color: Colors.red),
+                      style: const TextStyle(color: AppColors.error),
                     ),
                   ),
                 ),
@@ -188,7 +188,7 @@ class _VatReconciliationScreenState
             _row('صافي (أستاذ عام)', netGl),
             _divider(),
             _row('الضريبة المستحقة للدفع', netInvoice,
-                color: netInvoice > 0 ? Colors.red : Colors.green,
+                color: netInvoice > 0 ? AppColors.error : Colors.green,
                 bold: true),
           ]),
           if (diffOutput.abs() > 0.01 || diffInput.abs() > 0.01)

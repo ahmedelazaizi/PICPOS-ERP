@@ -51,7 +51,7 @@ class PurchasesTotalsBar extends ConsumerWidget {
         '${AppConstants.currencySymbolEn}';
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 6),
       child: PicPosTotalsBar(
         items: [
           PicPosTotal(

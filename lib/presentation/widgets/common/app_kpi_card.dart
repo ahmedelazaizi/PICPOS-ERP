@@ -55,8 +55,8 @@ class AppKpiCard extends StatelessWidget {
         gradient: isGradient
             ? LinearGradient(
                 colors: [color, Color.lerp(color, Colors.black, 0.22)!],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                begin: AlignmentDirectional.topEnd,
+                end: AlignmentDirectional.bottomStart,
               )
             : null,
         color: isGradient ? null : Colors.white,

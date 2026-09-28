@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -227,7 +228,7 @@ class _KeyBadge extends StatelessWidget {
           style: TextStyle(
             fontSize: 9.5,
             fontWeight: FontWeight.w700,
-            fontFamily: 'monospace',
+            fontFamily: AppTypography.mono,
             color: context.picposMuted,
           ),
         ),

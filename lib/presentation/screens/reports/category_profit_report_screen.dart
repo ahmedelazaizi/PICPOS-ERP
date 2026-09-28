@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'dart:async';
@@ -380,7 +381,7 @@ class _CategoryProfitReportScreenState
                       DataCell(Text(
                         _currencyFormat.format(item.profit),
                         style: TextStyle(
-                          color: item.profit >= 0 ? Colors.green : Colors.red,
+                          color: item.profit >= 0 ? Colors.green : AppColors.error,
                           fontWeight: FontWeight.bold,
                         ),
                       )),

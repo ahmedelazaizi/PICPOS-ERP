@@ -67,8 +67,8 @@ class _TableOrderDialogState extends State<TableOrderDialog> {
       textDirection: TextDirection.rtl,
       child: AlertDialog(
         insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-        contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-        actionsPadding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+        contentPadding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 0),
+        actionsPadding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 8),
         title: Row(
           children: [
             const Icon(PhosphorIconsBold.circlesThree, color: AppColors.info, size: 20),

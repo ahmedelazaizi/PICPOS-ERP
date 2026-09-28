@@ -371,7 +371,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                             ),
                             ElevatedButton(
                               onPressed: () => Navigator.pop(c, true),
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
                               child: const Text('نعم، إلغاء'),
                             ),
                           ],

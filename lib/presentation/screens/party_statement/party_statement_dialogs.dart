@@ -159,7 +159,7 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                     child: Align(
-                      alignment: Alignment.centerRight,
+                      alignment: AlignmentDirectional.centerStart,
                       child: Text('رقم وثيقة المورد: ${inv.supplierInvoiceNumber!}', style: const TextStyle(fontWeight: FontWeight.w600)),
                     ),
                   ),
@@ -167,7 +167,7 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                     child: Align(
-                      alignment: Alignment.centerRight,
+                      alignment: AlignmentDirectional.centerStart,
                       child: Text('ملاحظات: ${inv.notes!}'),
                     ),
                   ),

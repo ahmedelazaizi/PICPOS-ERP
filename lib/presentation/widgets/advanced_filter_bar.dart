@@ -92,7 +92,7 @@ class AdvancedFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 6),
       decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border(bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.3))),
@@ -114,7 +114,7 @@ class AdvancedFilterBar extends StatelessWidget {
                 child: _buildDateRangeButton(context),
               ),
               if (trailing != null) ...trailing!.map((w) => Padding(
-                padding: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsetsDirectional.only(start: 8),
                 child: w,
               )),
             ],

@@ -104,7 +104,7 @@ mixin _PluTableMixin on ConsumerState<PluManagerScreen> {
               children: [
                 if (product.isSoldByWeight)
                   const Padding(
-                    padding: EdgeInsets.only(left: 4),
+                    padding: EdgeInsetsDirectional.only(end: 4),
                     child: Icon(PhosphorIconsBold.scales, size: 14, color: AppColors.warning),
                   ),
                 Expanded(
@@ -113,7 +113,7 @@ mixin _PluTableMixin on ConsumerState<PluManagerScreen> {
               ],
             ),
           ),
-          SizedBox(width: 100, child: Text(product.code, style: const TextStyle(fontSize: 12, fontFamily: 'monospace', color: AppColors.textMuted))),
+          SizedBox(width: 100, child: Text(product.code, style: const TextStyle(fontSize: 12, fontFamily: AppTypography.mono, color: AppColors.textMuted))),
           SizedBox(width: 80, child: Text(product.salePrice.toStringAsFixed(AppConstants.decimalPlaces), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
           SizedBox(
             width: 60,
@@ -139,7 +139,7 @@ mixin _PluTableMixin on ConsumerState<PluManagerScreen> {
               ),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              style: const TextStyle(fontSize: 13, fontFamily: 'monospace', fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 13, fontFamily: AppTypography.mono, fontWeight: FontWeight.bold),
               onSubmitted: (v) => _savePlu(product, v),
             ),
           ),

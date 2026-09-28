@@ -94,8 +94,8 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [AppColors.primaryDark, AppColors.primary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topEnd,
+          end: AlignmentDirectional.bottomStart,
         ),
         boxShadow: [
           BoxShadow(
@@ -311,7 +311,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                 if (hasChildren)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                    margin: const EdgeInsets.only(right: 4),
+                    margin: const EdgeInsetsDirectional.only(start: 4),
                     decoration: BoxDecoration(
                       color: AppColors.textMuted.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(3),
@@ -367,7 +367,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
         : null;
 
     return Container(
-      margin: const EdgeInsets.only(top: 12, bottom: 12, left: 12),
+      margin: const EdgeInsetsDirectional.only(top: 12, bottom: 12, end: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -620,7 +620,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                       decoration: BoxDecoration(
                         color: isOpening
                             ? AppColors.primary.withValues(alpha: 0.06)
-                            : (i.isEven ? AppColors.surface : Colors.white),
+                            : (i.isEven ? AppColors.surface : Theme.of(context).cardColor),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(

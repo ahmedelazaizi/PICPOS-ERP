@@ -313,7 +313,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(firstPersistentFailure.toUserMessageAr()),
-                  backgroundColor: Colors.red.shade700,
+                  backgroundColor: AppColors.error,
                   duration: const Duration(seconds: 5),
                 ),
               );
@@ -544,8 +544,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   AppColors.primary,
                   AppColors.primaryLight,
                 ],
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
+                begin: AlignmentDirectional.topStart,
+                end: AlignmentDirectional.bottomEnd,
               ),
             ),
             child: Stack(
@@ -553,11 +553,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Subtle decorative shapes for depth — same low-opacity
                 // treatment used by the marketing slides in the brand
                 // book. Keeps the screen from looking like a flat rectangle.
-                Positioned(top: -90, left: -80, child: _decorBlob(260, 0.08)),
-                Positioned(bottom: -70, right: -60, child: _decorBlob(200, 0.06)),
-                Positioned(
+                PositionedDirectional(top: -90, end: -80, child: _decorBlob(260, 0.08)),
+                PositionedDirectional(bottom: -70, start: -60, child: _decorBlob(200, 0.06)),
+                PositionedDirectional(
                   top: 80,
-                  right: 60,
+                  start: 60,
                   child: _decorBlob(36, 0.05, square: true),
                 ),
 
@@ -615,7 +615,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _buildLoginCard() {
     return Container(
       width: 460,
-      padding: const EdgeInsets.fromLTRB(32, 28, 32, 28),
+      padding: const EdgeInsetsDirectional.fromSTEB(32, 28, 32, 28),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(24),
@@ -703,10 +703,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               margin: const EdgeInsets.only(bottom: 14),
               // BUG-U39: stronger contrast so login errors are not missed.
               decoration: BoxDecoration(
-                color: Colors.red.shade700.withValues(alpha: 0.35),
+                color: AppColors.error.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: Colors.red.shade200,
+                  color: AppColors.error,
                 ),
               ),
               child: Row(
@@ -850,22 +850,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   height: 40,
                   child: OutlinedButton.icon(
                     onPressed: _confirmExitApp,
-                    icon: Icon(
-                      PhosphorIconsBold.power,
+                    icon: const Icon(PhosphorIconsBold.power,
                       size: 16,
-                      color: Colors.red.shade100,
+                      color: AppColors.error,
                     ),
-                    label: Text(
+                    label: const Text(
                       'إغلاق البرنامج',
                       style: TextStyle(
-                        color: Colors.red.shade100,
+                        color: AppColors.error,
                         fontSize: 12,
                       ),
                     ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red.shade100,
+                      foregroundColor: AppColors.error,
                       side: BorderSide(
-                        color: Colors.red.shade100.withValues(alpha: 0.55),
+                        color: AppColors.error.withValues(alpha: 0.55),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -891,7 +890,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _buildContactFooter() {
     if (!Brand.hasVendorInfo) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 18),
       child: Column(
         children: [
           Container(

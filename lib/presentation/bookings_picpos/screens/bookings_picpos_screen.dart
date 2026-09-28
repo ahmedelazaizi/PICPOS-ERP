@@ -57,7 +57,7 @@ class BookingsPicPosScreen extends ConsumerWidget {
         ),
       ],
       subHeader: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 0),
         child: PicPosKpiRow(kpis: _kpisFor(rows)),
       ),
       body: Column(

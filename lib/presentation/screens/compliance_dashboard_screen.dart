@@ -44,7 +44,7 @@ class _ComplianceDashboardScreenState extends ConsumerState<ComplianceDashboardS
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topEnd, end: AlignmentDirectional.bottomStart,
         ),
       ),
       child: Row(

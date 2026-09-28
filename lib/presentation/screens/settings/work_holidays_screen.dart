@@ -353,7 +353,7 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
                     )
                   else
                     Align(
-                      alignment: Alignment.centerRight,
+                      alignment: AlignmentDirectional.centerStart,
                       child: OutlinedButton.icon(
                         icon: const Icon(PhosphorIconsBold.calendar),
                         label:

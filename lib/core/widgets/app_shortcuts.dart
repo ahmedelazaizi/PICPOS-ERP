@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -167,7 +168,7 @@ class ShortcutHintBar extends StatelessWidget {
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             color: Colors.grey.shade700,
-                            fontFamily: 'monospace',
+                            fontFamily: AppTypography.mono,
                           ),
                         ),
                       ),

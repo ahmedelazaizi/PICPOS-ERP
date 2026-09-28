@@ -251,7 +251,7 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
                 ),
                 // Delete button
                 IconButton(
-                  icon: const Icon(PhosphorIconsBold.trash, color: Colors.red),
+                  icon: const Icon(PhosphorIconsBold.trash, color: AppColors.error),
                   onPressed: () => _confirmDelete(printer),
                   tooltip: 'حذف',
                 ),
@@ -798,7 +798,7 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
             ),
             child: const Text('حذف'),

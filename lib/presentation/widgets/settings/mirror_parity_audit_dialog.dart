@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // MIRROR PARITY AUDIT DIALOG — Spec 131 FR-010
 // ═══════════════════════════════════════════════════════════════════════════
@@ -289,7 +290,7 @@ class _MirrorParityAuditDialogState
                                       PhosphorIconsBold.arrowsCounterClockwise),
                               label: const Text('إعادة المزامنة الآن'),
                               style: FilledButton.styleFrom(
-                                backgroundColor: Colors.red.shade700,
+                                backgroundColor: AppColors.error,
                               ),
                             ),
                           ],

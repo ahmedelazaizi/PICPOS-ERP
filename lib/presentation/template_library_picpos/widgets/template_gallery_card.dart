@@ -52,15 +52,15 @@ class TemplateGalleryCard extends StatelessWidget {
                   Positioned.fill(
                     child: TemplateThumbnailView(thumbnail: card.thumbnail),
                   ),
-                  Positioned(
+                  PositionedDirectional(
                     top: 0,
-                    right: 0,
+                    start: 0,
                     child: _Badge(text: card.paperLabel, tone: brand),
                   ),
                   if (card.layoutVersion < 2)
-                    Positioned(
+                    PositionedDirectional(
                       bottom: 0,
-                      right: 0,
+                      start: 0,
                       child: Tooltip(
                         // صدقٌ لا تزيين: هذا القالبُ يُطبع بالراسم التدفّقيّ،
                         // والمصغَّرةُ تخطيطُ المحرّك. الشكلان متقاربان

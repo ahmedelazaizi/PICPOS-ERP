@@ -1097,7 +1097,7 @@ class _EntryCard extends StatelessWidget {
                     //    كشفُ البنك، إقرارُ المراجع). فقفلُه بالترحيل
                     //    يمنع الورقةَ في اللحظة التي تأتي فيها.
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 4, 14, 12),
+                      padding: const EdgeInsetsDirectional.fromSTEB(14, 4, 14, 12),
                       child: PicPosAttachmentsPanel(
                         entityType: 'journal_entry',
                         entityId: entry.id,
@@ -1169,7 +1169,7 @@ class _EntryFooter extends StatelessWidget {
 
     return Container(
       color: context.picposField,
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 12, 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -1235,7 +1235,7 @@ class _NumCell extends StatelessWidget {
         journalMoney.format(value),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.left,
+        textAlign: TextAlign.end,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: tint,
               fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
@@ -1308,7 +1308,7 @@ class _LinesTable extends StatelessWidget {
 
     return Container(
       color: context.picposField,
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 12, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

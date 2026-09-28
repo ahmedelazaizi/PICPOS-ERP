@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../picpos_shell/picpos_surface.dart';
@@ -157,7 +158,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                   IconButton(
                     icon: const Icon(
                       PhosphorIconsBold.trash,
-                      color: Colors.red,
+                      color: AppColors.error,
                     ),
                     onPressed: widget.onDelete,
                     tooltip: 'حذف العنصر',

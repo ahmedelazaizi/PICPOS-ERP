@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/utils/friendly_error.dart';
@@ -66,7 +67,7 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
       case 'merged':
         return Colors.orange;
       case 'skipped':
-        return Colors.red;
+        return AppColors.error;
       default:
         return Colors.grey;
     }
@@ -197,7 +198,7 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
                               .convert(clientData)
                           : conflict.clientPayload,
                       style: const TextStyle(
-                          fontFamily: 'monospace', fontSize: 11),
+                          fontFamily: AppTypography.mono, fontSize: 11),
                     ),
                   ),
                   if (serverData != null || conflict.serverPayload != null) ...[
@@ -219,7 +220,7 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
                                 .convert(serverData)
                             : conflict.serverPayload ?? '',
                         style: const TextStyle(
-                            fontFamily: 'monospace', fontSize: 11),
+                            fontFamily: AppTypography.mono, fontSize: 11),
                       ),
                     ),
                   ],
@@ -294,7 +295,7 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.red,
+                    color: AppColors.error,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text('$unresolvedCount',

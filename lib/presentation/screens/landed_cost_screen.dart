@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -110,7 +111,7 @@ class LandedCostScreen extends ConsumerWidget {
     final statusColor = sheet.status == 'applied'
         ? Colors.green
         : (sheet.status == 'cancelled' || sheet.status == 'voided')
-            ? Colors.red
+            ? AppColors.error
             : Colors.amber;
     final statusLabel = sheet.status == 'applied'
         ? 'مطبق'
@@ -207,7 +208,7 @@ class LandedCostScreen extends ConsumerWidget {
               itemBuilder: (ctx, i) {
                 final item = state.costItems[i];
                 return Card(
-                  margin: const EdgeInsets.only(left: 8),
+                  margin: const EdgeInsetsDirectional.only(end: 8),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Column(

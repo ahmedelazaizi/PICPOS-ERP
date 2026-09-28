@@ -244,7 +244,7 @@ class _ManualAttendanceButton extends StatelessWidget {
                                   tooltip: 'تعليم غياب غير مدفوع',
                                   icon: const Icon(
                                     PhosphorIconsBold.minusCircle,
-                                    color: Colors.red,
+                                    color: AppColors.error,
                                   ),
                                   onPressed: () =>
                                       _confirmAbsence(ctx, notifier, e,
@@ -294,7 +294,7 @@ class _ManualAttendanceButton extends StatelessWidget {
               if (confirmCtx.mounted) Navigator.pop(confirmCtx);
               if (dialogCtx.mounted) Navigator.pop(dialogCtx);
             },
-            child: const Text('تأكيد', style: TextStyle(color: Colors.red)),
+            child: const Text('تأكيد', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),

@@ -41,6 +41,7 @@ class AppColors {
   static const Color warning = Color(0xFFF59E0B); // Amber
   static const Color warningDark = Color(0xFFD97706);
   static const Color error = Color(0xFFEF4444); // Red
+  static const Color errorLight = Color(0xFFFEE2E2);
   static const Color errorDark = Color(0xFFDC2626);
   // مشتق من لون العلامة الفاتح — بيتبدّل معاها.
   static const Color info =
@@ -49,6 +50,16 @@ class AppColors {
     0xFF8B5CF6,
   ); // Purple (Vibrant Purple for booking)
   static const Color bookingDark = Color(0xFF7C3AED);
+
+  /// Theme-aware semantic status colors shared by dashboards and forms.
+  static Color statusSuccess(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? successDark : success;
+  static Color statusWarning(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? warningDark : warning;
+  static Color statusError(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? errorDark : error;
+  static Color statusInfo(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? primaryLight : info;
 
   // Surface Colors
   static const Color surface = Color(0xFFF8FAFC); // Slate 50

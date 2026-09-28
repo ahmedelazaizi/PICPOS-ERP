@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -88,7 +89,7 @@ class _InlineErrorCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 10,
                 color: AppColors.textMuted,
-                fontFamily: 'monospace',
+                fontFamily: AppTypography.mono,
               ),
             ),
           ],
@@ -169,7 +170,7 @@ class AppErrorWidget extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textMuted.withValues(alpha: 0.8),
-                    fontFamily: 'monospace',
+                    fontFamily: AppTypography.mono,
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 3,

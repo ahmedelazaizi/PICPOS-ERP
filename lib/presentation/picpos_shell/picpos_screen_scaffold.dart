@@ -24,7 +24,7 @@ class PicPosScreenScaffold extends StatelessWidget {
     this.subHeader,
     this.toolbar,
     required this.body,
-    this.bodyPadding = const EdgeInsets.fromLTRB(16, 12, 16, 12),
+    this.bodyPadding = const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 12),
   });
 
   @override

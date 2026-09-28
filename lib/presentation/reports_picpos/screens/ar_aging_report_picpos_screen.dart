@@ -249,7 +249,7 @@ class _ArAgingReportPicposScreenState
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(26, 14, 26, 10),
+          padding: const EdgeInsetsDirectional.fromSTEB(26, 14, 26, 10),
           child: Row(
             children: [
               _chip('0-30 يوم', t0_30, _kBucketFresh),

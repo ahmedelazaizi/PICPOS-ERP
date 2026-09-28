@@ -55,8 +55,8 @@ class TableCard extends ConsumerWidget {
                     cs.onSurfaceVariant.withValues(alpha: 0.04),
                     cs.onSurfaceVariant.withValues(alpha: 0.01)
                   ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: AlignmentDirectional.topEnd,
+            end: AlignmentDirectional.bottomStart,
           ),
           borderRadius: BorderRadius.circular(isRound ? 80 : 18),
           border: Border.all(
@@ -189,9 +189,9 @@ class TableCard extends ConsumerWidget {
             ),
 
             if (isActive)
-              Positioned(
+              PositionedDirectional(
                 top: 8,
-                left: 8,
+                end: 8,
                 child: FutureBuilder<TableOrder?>(
                   future: restaurantRepo.getActiveOrderForTable(table.id),
                   builder: (context, snap) {

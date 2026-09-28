@@ -60,8 +60,8 @@ class _TreasuryClosingTabState extends State<TreasuryClosingTab> {
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFFF6B6B), Color(0xFFEE5A24)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    begin: AlignmentDirectional.topEnd,
+                    end: AlignmentDirectional.bottomStart,
                   ),
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: [
@@ -132,7 +132,7 @@ class _TreasuryClosingTabState extends State<TreasuryClosingTab> {
                 thumbVisibility: true,
                 child: GridView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.only(left: 6),
+                  padding: const EdgeInsetsDirectional.only(end: 6),
                   gridDelegate:
                       const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 4,

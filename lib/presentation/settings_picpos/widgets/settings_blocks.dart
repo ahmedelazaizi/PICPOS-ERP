@@ -3,6 +3,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../picpos_shell/picpos_surface.dart';
+import '../../widgets/permission_guard.dart';
 
 /// بلوكاتُ شاشة الإعدادات — على تصميم `PicPos-Settings`.
 ///
@@ -113,7 +114,7 @@ class SettingsBlock extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 15, 18, 13),
+            padding: const EdgeInsetsDirectional.fromSTEB(18, 15, 18, 13),
             child: Row(
               children: [
                 Container(
@@ -207,7 +208,7 @@ class SettingsChoiceBlock<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 2, 18, 18),
+      padding: const EdgeInsetsDirectional.fromSTEB(18, 2, 18, 18),
       child: LayoutBuilder(
         builder: (context, c) {
           final cols = c.maxWidth < 520 ? 1 : columns;
@@ -444,7 +445,7 @@ class SettingsRowsBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 6),
+      padding: const EdgeInsetsDirectional.fromSTEB(18, 0, 18, 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: children,
@@ -536,6 +537,7 @@ class SettingsTile {
     required this.sub,
     required this.meta,
     required this.onTap,
+    this.permission,
     this.tint = AppColors.primary,
     this.dot,
   });
@@ -547,6 +549,7 @@ class SettingsTile {
   /// سطرُ الحالة أسفلَ المربّع.
   final String meta;
   final VoidCallback onTap;
+  final String? permission;
   final Color tint;
 
   /// لونُ نقطة الحالة — `null` يعني لا نقطة.
@@ -567,7 +570,7 @@ class SettingsTilesBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 2, 14, 16),
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 2, 14, 16),
       child: LayoutBuilder(
         builder: (context, c) {
           final cols = switch (c.maxWidth) {
@@ -601,7 +604,7 @@ class _Tile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    final tileWidget = InkWell(
       onTap: tile.onTap,
       borderRadius: BorderRadius.circular(14),
       child: Container(
@@ -684,6 +687,14 @@ class _Tile extends StatelessWidget {
         ),
       ),
     );
+    if (tile.permission == null) return tileWidget;
+    return PermissionGuard(
+      permission: tile.permission!,
+      allowManagerOverride: true,
+      actionName: tile.title,
+      onGranted: tile.onTap,
+      child: tileWidget,
+    );
   }
 }
 
@@ -711,7 +722,7 @@ class SettingsDangerRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 2, 18, 18),
+      padding: const EdgeInsetsDirectional.fromSTEB(18, 2, 18, 18),
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(

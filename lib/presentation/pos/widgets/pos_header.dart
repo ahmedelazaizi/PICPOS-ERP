@@ -75,8 +75,8 @@ class PosHeader extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topEnd,
+          end: AlignmentDirectional.bottomStart,
           colors: isBooking
               ? [AppColors.booking, AppColors.bookingDark]
               : [AppColors.primary, AppColors.primaryDark],
@@ -404,7 +404,7 @@ class PosHeader extends ConsumerWidget {
       allowManagerOverride: true,
       actionName: 'إغلاق الوردية',
       child: Padding(
-        padding: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsetsDirectional.only(start: 8),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),

@@ -331,7 +331,7 @@ mixin _InvoiceDesignerTemplatesMixin
                         itemBuilder: (context) => [
                           const PopupMenuItem(value: 'edit', child: Row(children: [Icon(PhosphorIconsBold.pencil, size: 18), SizedBox(width: 8), Text('تعديل')])),
                           if (!t.isDefault) const PopupMenuItem(value: 'default', child: Row(children: [Icon(PhosphorIconsBold.star, size: 18), SizedBox(width: 8), Text('تعيين كافتراضي')])),
-                          const PopupMenuItem(value: 'delete', child: Row(children: [Icon(PhosphorIconsBold.trash, size: 18, color: Colors.red), SizedBox(width: 8), Text('حذف', style: TextStyle(color: Colors.red))])),
+                          const PopupMenuItem(value: 'delete', child: Row(children: [Icon(PhosphorIconsBold.trash, size: 18, color: AppColors.error), SizedBox(width: 8), Text('حذف', style: TextStyle(color: AppColors.error))])),
                         ],
                       ),
                       onTap: () { Navigator.pop(ctx); loadTemplateById(t.id); },
@@ -381,7 +381,7 @@ mixin _InvoiceDesignerTemplatesMixin
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
             child: const Text('حذف'),
           ),
         ],

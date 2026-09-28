@@ -61,7 +61,7 @@ class StaffListTab extends ConsumerWidget {
             ),
             error: (e, _) => Center(
               child: Text('خطأ في تحميل الموظفين: $e',
-                  style: const TextStyle(color: Colors.red)),
+                  style: const TextStyle(color: AppColors.error)),
             ),
             data: (employees) {
               if (employees.isEmpty) {

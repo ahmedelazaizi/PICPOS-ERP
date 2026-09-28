@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -57,7 +58,7 @@ Future<bool> runModifierMutation(
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('$failureMessage: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     }
@@ -268,7 +269,7 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
           TextButton(onPressed: () => Navigator.pop(c), child: const Text('إلغاء')),
           FilledButton(
             onPressed: () => Navigator.pop(c, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('حذف'),
           ),
         ],
@@ -330,8 +331,8 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
                 ),
                 const SizedBox(width: 8),
                 if (g.isRequired) ...[
-                  const Icon(PhosphorIconsBold.asteriskSimple, size: 12, color: Colors.red),
-                  const Text(' مطلوب', style: TextStyle(fontSize: 10, color: Colors.red)),
+                  const Icon(PhosphorIconsBold.asteriskSimple, size: 12, color: AppColors.error),
+                  const Text(' مطلوب', style: TextStyle(fontSize: 10, color: AppColors.error)),
                   const SizedBox(width: 8),
                 ],
                 Text('${g.minSelect}-${g.maxSelect} اختيار', style: theme.textTheme.bodySmall),

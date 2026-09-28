@@ -114,7 +114,7 @@ class _ProductionOrdersTab extends ConsumerWidget {
     return statuses.entries.map((e) {
       final isSelected = e.key == selectedFilter;
       return Padding(
-        padding: const EdgeInsets.only(left: 8),
+        padding: const EdgeInsetsDirectional.only(end: 8),
         child: FilterChip(
           label: Text(e.value, style: const TextStyle(fontSize: 12)),
           selected: isSelected,
@@ -255,7 +255,7 @@ class _ProductionOrderCard extends ConsumerWidget {
             data: (breakdown) {
               if (breakdown.isEmpty) return const SizedBox.shrink();
               return Padding(
-                padding: const EdgeInsets.only(top: 10, right: 18),
+                padding: const EdgeInsetsDirectional.only(top: 10, start: 18),
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 4,
@@ -352,7 +352,7 @@ class _ProductionOrderCard extends ConsumerWidget {
               ref,
               icon: PhosphorIconsBold.x,
               label: 'إلغاء',
-              color: Colors.red,
+              color: AppColors.error,
               onTap: () => _cancelOrder(context, ref),
             ),
           ],
@@ -546,7 +546,7 @@ class _ProductionOrderCard extends ConsumerWidget {
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
               child:
-                  const Text('إلغاء الأمر', style: TextStyle(color: Colors.red)),
+                  const Text('إلغاء الأمر', style: TextStyle(color: AppColors.error)),
             ),
           ],
         ),
@@ -694,7 +694,7 @@ class _ProductionOrderCard extends ConsumerWidget {
       case 'completed':
         return Colors.green;
       case 'cancelled':
-        return Colors.red;
+        return AppColors.error;
       default:
         return Colors.grey;
     }
@@ -713,7 +713,7 @@ class _StatusChip extends StatelessWidget {
       'draft' => ('مسودة', Colors.grey),
       'in_progress' => ('قيد التنفيذ', Colors.blue),
       'completed' => ('مكتمل', Colors.green),
-      'cancelled' => ('ملغي', Colors.red),
+      'cancelled' => ('ملغي', AppColors.error),
       _ => ('غير معروف', Colors.grey),
     };
 

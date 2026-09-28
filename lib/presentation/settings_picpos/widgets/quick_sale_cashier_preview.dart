@@ -330,7 +330,7 @@ class QuickSaleCashierPreview extends StatelessWidget {
             for (final amount in const ['٥٠', '١٠٠', '٢٠٠', '٥٠٠'])
               Expanded(
                 child: Container(
-                  margin: const EdgeInsets.only(left: 5),
+                  margin: const EdgeInsetsDirectional.only(end: 5),
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
                     color: _field,

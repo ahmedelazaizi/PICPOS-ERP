@@ -180,7 +180,7 @@ abstract class AppFormDialogState<T, W extends AppFormDialog<T>>
             ),
           ),
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actionsPadding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 16),
         actions: [
           Row(
             children: [

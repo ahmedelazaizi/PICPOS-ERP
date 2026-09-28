@@ -163,7 +163,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
       body: Column(
         children: [
           const Padding(
-            padding: EdgeInsets.fromLTRB(24, 24, 24, 16),
+            padding: EdgeInsetsDirectional.fromSTEB(24, 24, 24, 16),
             child: InventorySummaryRow(),
           ),
           Padding(

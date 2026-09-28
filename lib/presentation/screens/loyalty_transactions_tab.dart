@@ -126,7 +126,7 @@ class _TransactionsTabState extends State<_TransactionsTab> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
-                          color: tx.points > 0 ? Colors.green : Colors.red,
+                          color: tx.points > 0 ? Colors.green : AppColors.error,
                         ),
                       ),
                     ),
@@ -153,7 +153,7 @@ class _TransactionsTabState extends State<_TransactionsTab> {
   Color _typeColor(String t) => switch (t) {
     'earn' => Colors.green,
     'redeem' => Colors.orange,
-    'expire' => Colors.red,
+    'expire' => AppColors.error,
     'adjust' => Colors.blue,
     _ => Colors.grey,
   };

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class ShortcutHintDef {
@@ -53,11 +54,11 @@ class PosShortcutBar extends StatelessWidget {
     final color = hint.isHot
         ? Colors.orange
         : hint.isReturn
-        ? Colors.red
+        ? AppColors.error
         : Theme.of(context).colorScheme.primary;
 
     return Container(
-      margin: const EdgeInsets.only(left: 20),
+      margin: const EdgeInsetsDirectional.only(end: 20),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

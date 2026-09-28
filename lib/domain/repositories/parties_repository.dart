@@ -1,4 +1,5 @@
 import '../../data/database/database.dart';
+import '../models/party_balance_mismatch.dart' as domain_models;
 
 /// Parties repository interface
 ///
@@ -89,6 +90,12 @@ abstract class IPartiesRepository {
 
   /// Get calculated balance from movements (PIR Integrity)
   Future<double> getCalculatedPartyBalance(int partyId);
+
+  /// Find stored party balances that differ from the posted ledger.
+  Future<List<domain_models.PartyBalanceMismatch>> getPartyBalanceMismatches();
+
+  /// Recalculate stored party balances from the posted ledger.
+  Future<int> recalculatePartyBalancesFromLedger(int userId);
 
   /// Update party balance directly (Manual adjustment or reconciliation)
   Future<void> updatePartyBalance(int partyId, double balance);

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/design_system/typography.dart';
 // اللوحةُ اليمنى — خصائصُ ما هو محدَّد: عنصرٌ أو نطاقٌ أو الجدول.
 //
 // ── كلُّ حقلٍ هنا يصل الورقةَ ────────────────────────────────────────────
@@ -348,7 +349,7 @@ class _ElementPropertiesState extends State<_ElementProperties> {
                       label: Text(c,
                           style: const TextStyle(
                               fontSize: 10,
-                              fontFamily: 'monospace',
+                              fontFamily: AppTypography.mono,
                               fontWeight: FontWeight.w700)),
                       onPressed: () {
                         _cond.text = c;

@@ -41,7 +41,7 @@ class _SodMatrixScreenState extends ConsumerState<SodMatrixScreen> {
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFFB71C1C), Color(0xFFD32F2F)],
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topEnd, end: AlignmentDirectional.bottomStart,
         ),
       ),
       child: Row(

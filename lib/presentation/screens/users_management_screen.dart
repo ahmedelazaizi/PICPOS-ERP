@@ -184,14 +184,14 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                         ),
                         margin: const EdgeInsets.only(top: 4),
                         decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.15),
+                          color: AppColors.error.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text(
                           'معطل',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.red,
+                            color: AppColors.error,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -319,7 +319,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                           IconButton(
                             icon: const Icon(
                               PhosphorIconsBold.x,
-                              color: Colors.red,
+                              color: AppColors.error,
                               size: 18,
                             ),
                             tooltip: 'إزالة الحد',
@@ -415,7 +415,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                             icon: const Icon(PhosphorIconsBold.trash),
                             label: const Text('حذف'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
+                              backgroundColor: AppColors.error,
                               foregroundColor: Colors.white,
                             ),
                           ),
@@ -745,7 +745,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
           'سيتم تعطيل الحساب وقفله نهائياً.',
       confirmLabel: 'حذف',
       icon: PhosphorIconsBold.trash,
-      color: Colors.red,
+      color: AppColors.error,
     );
     if (!confirmed) return;
 

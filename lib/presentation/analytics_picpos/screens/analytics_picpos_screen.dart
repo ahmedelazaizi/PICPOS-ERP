@@ -52,10 +52,10 @@ import '../../picpos_shell/picpos_surface.dart';
 final _money0 = NumberFormat('#,##0', 'en');
 final _num1 = NumberFormat('#,##0.0', 'en');
 
-const _ok = Color(0xFF22C55E);
-const _warn = Color(0xFFF59E0B);
-const _err = Color(0xFFEF4444);
-const _purple = Color(0xFF8B5CF6);
+const _ok = AppColors.success;
+const _warn = AppColors.warning;
+const _err = AppColors.error;
+const _purple = AppColors.booking;
 
 String _ar(Object n) =>
     '$n'.replaceAllMapped(RegExp(r'\d'), (m) => '٠١٢٣٤٥٦٧٨٩'[int.parse(m[0]!)]);
@@ -362,7 +362,7 @@ class _AnalyticsPicposScreenState
         : PerformanceAnalyticsService.forecast(f.points, 3);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 20),
       children: [
         _metricCards(all),
         const SizedBox(height: 12),

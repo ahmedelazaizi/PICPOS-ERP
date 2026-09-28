@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers/providers.dart';
@@ -196,7 +197,7 @@ class _EInvoiceDashboardScreenState
                   title: 'مرفوضة',
                   value: '${data['invalid'] ?? 0}',
                   icon: Icons.cancel,
-                  color: Colors.red,
+                  color: AppColors.error,
                 ),
               ],
             ),
@@ -439,7 +440,7 @@ class _EInvoiceDashboardScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(ok ? 'الاتصال ناجح ✅' : 'فشل الاتصال ❌'),
-        backgroundColor: ok ? Colors.green : Colors.red,
+        backgroundColor: ok ? Colors.green : AppColors.error,
       ),
     );
   }
@@ -573,7 +574,7 @@ class _EInvoiceDashboardScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(ok ? 'تم الإلغاء ✅' : 'فشل الإلغاء ❌'),
-        backgroundColor: ok ? Colors.green : Colors.red,
+        backgroundColor: ok ? Colors.green : AppColors.error,
       ),
     );
   }
@@ -686,7 +687,7 @@ class _EInvoiceDashboardScreenState
                                 style: const TextStyle(
                                   fontSize: 36,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.red,
+                                  color: AppColors.error,
                                 ),
                               ),
                               const Text('معدل الرفض', style: TextStyle(color: Colors.grey)),
@@ -702,7 +703,7 @@ class _EInvoiceDashboardScreenState
                       child: LinearProgressIndicator(
                         value: total > 0 ? valid / total : 0,
                         minHeight: 12,
-                        backgroundColor: Colors.red.withValues(alpha: 0.2),
+                        backgroundColor: AppColors.error.withValues(alpha: 0.2),
                         valueColor: const AlwaysStoppedAnimation(Colors.green),
                       ),
                     ),
@@ -731,7 +732,7 @@ class _EInvoiceDashboardScreenState
                     const SizedBox(height: 8),
                     _buildAnalyticsRow('معلقة', pending, total, Colors.orange),
                     const SizedBox(height: 8),
-                    _buildAnalyticsRow('مرفوضة', invalid, total, Colors.red),
+                    _buildAnalyticsRow('مرفوضة', invalid, total, AppColors.error),
                     const SizedBox(height: 8),
                     _buildAnalyticsRow('ملغاة', cancelled, total, Colors.grey),
                   ],

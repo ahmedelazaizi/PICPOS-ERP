@@ -254,7 +254,7 @@ class _TabBody extends StatelessWidget {
               PicPosTabNote(note: tab.note, icon: tab.icon),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(26, 18, 26, 22),
+                padding: const EdgeInsetsDirectional.fromSTEB(26, 18, 26, 22),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [

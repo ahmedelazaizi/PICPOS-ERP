@@ -1547,7 +1547,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                 // Add unit button (max 5)
                 if (_unitRows.length < 5)
                   Align(
-                    alignment: Alignment.centerRight,
+                    alignment: AlignmentDirectional.centerStart,
                     child: TextButton.icon(
                       onPressed: () {
                         setState(() {
@@ -1732,8 +1732,8 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                       _warehousePriceRows.removeAt(index);
                     });
                   },
-                  child: Icon(PhosphorIconsBold.trash, size: 16,
-                      color: Colors.red.shade400),
+                  child: const Icon(PhosphorIconsBold.trash, size: 16,
+                      color: AppColors.error),
                 ),
               ],
             ),

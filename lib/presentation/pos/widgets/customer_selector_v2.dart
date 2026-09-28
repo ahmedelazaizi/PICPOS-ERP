@@ -68,7 +68,7 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
     final size = renderBox.size;
 
     _overlayEntry = OverlayEntry(
-      builder: (overlayContext) => Positioned(
+      builder: (overlayContext) => PositionedDirectional(
         width: size.width,
         child: CompositedTransformFollower(
           link: _layerLink,
@@ -189,8 +189,8 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
                   ),
                   // Red badge for debt
                   if (hasDebt)
-                    Positioned(
-                      right: -4,
+                    PositionedDirectional(
+                      start: -4,
                       top: -4,
                       child: Container(
                         width: 12,
@@ -218,7 +218,7 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
                   ),
                   if (c.isFavorite)
                     const Padding(
-                      padding: EdgeInsets.only(right: 4),
+                      padding: EdgeInsetsDirectional.only(start: 4),
                       child: Icon(
                         PhosphorIconsBold.star,
                         size: 14,

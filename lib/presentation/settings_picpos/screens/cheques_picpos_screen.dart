@@ -361,7 +361,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
           // **محسوبٌ** من نفس القائمة، فشريحةٌ بصفرٍ تقول «لا كمبيالاتِ
           // عندك» بدل أن تفتح جدولاً فارغاً بلا تفسير.
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
             child: Row(
               children: [
                 const Icon(PhosphorIconsBold.funnel,
@@ -411,7 +411,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
   }
 
   Widget _scroll(Widget child) => SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 26),
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 20, 20, 26),
         child: child,
       );
 

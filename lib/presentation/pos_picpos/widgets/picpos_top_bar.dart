@@ -62,8 +62,8 @@ class PicPosTopBar extends ConsumerWidget {
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.primaryDark, AppColors.primary],
-          begin: Alignment.centerRight,
-          end: Alignment.centerLeft,
+          begin: AlignmentDirectional.centerStart,
+          end: AlignmentDirectional.centerEnd,
         ),
       ),
       child: Row(

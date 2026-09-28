@@ -49,7 +49,7 @@ class _ManufacturingScreenState extends ConsumerState<ManufacturingScreen>
           children: [
             // ─── Header ──────────────────────────────────────────────
             Container(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 0),
               child: Row(
                 children: [
                   Container(

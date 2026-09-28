@@ -77,6 +77,14 @@ String windowFrom(String src, String signature, [int chars = 2500]) {
   return src.substring(start, end > src.length ? src.length : end);
 }
 
+/// Extract one complete Future method so a growing method cannot hide its
+/// dialog behind an arbitrary character window.
+String functionBodyFrom(String src, String signature) {
+  final start = at(src, signature);
+  final next = src.indexOf('\n  Future<void>', start + signature.length);
+  return src.substring(start, next < 0 ? src.length : next);
+}
+
 void main() {
   // ⚠️ **الحارسُ انتقل ولم يسقط — والمرساةُ تتبعه.**
   //
@@ -159,7 +167,10 @@ void main() {
       final signature = spec[0], code = spec[1], action = spec[2];
       final window = spec.length > 3 ? int.parse(spec[3]) : 2500;
       test('${path.split('/').last} — الفحصُ قبل فتح الحوار', () {
-        final body = windowFrom(_code(path), signature, window);
+        final source = _code(path);
+        final body = path.endsWith('purchases_picpos_crud.dart')
+            ? functionBodyFrom(source, signature)
+            : windowFrom(source, signature, window);
         expect(at(body, code), lessThan(at(body, action)),
             reason: 'الفحصُ يجب أن يسبق فتحَ حوار الإنشاء. وبلا فحصٍ في '
                 'الدالّة يتخطّى **F5** لفّةَ الزرّ كلياً.');
@@ -170,12 +181,11 @@ void main() {
       // 🔴 بابٌ واحدٌ يخدم فعلَين: التحريرُ يعكس قيداً ويعيد ترحيلَه، فلا
       //    يحكمه إذنُ **الإنشاء**. وفحصُ `purchasesCreate` وحدَه كان سيفتح
       //    التحريرَ لمن لا يملكه — ثمّ يرفض المحرّكُ الحفظَ بعد ملءِ شاشة.
-      final body = windowFrom(
-        _code(
-            'lib/presentation/purchases_picpos/screens/purchases_picpos_crud.dart'),
-        'Future<void> openPicPosInvoiceForm({',
-        3200,
-      );
+      final body = functionBodyFrom(
+         _code(
+             'lib/presentation/purchases_picpos/screens/purchases_picpos_crud.dart'),
+         'Future<void> openPicPosInvoiceForm({',
+       );
       expect(body.contains('PermissionCodes.purchasesEdit'), isTrue,
           reason: 'إذنُ التحرير لا يُفحَص — والبابُ واحدٌ للفعلَين');
       expect(at(body, 'PermissionCodes.purchasesEdit'),

@@ -235,7 +235,7 @@ class _ExpensesTab extends ConsumerWidget {
                                       if (id != null) _confirmDelete(context, ref, id);
                                     },
                                     icon: const Icon(PhosphorIconsBold.trash,
-                                        size: 16, color: Colors.red),
+                                        size: 16, color: AppColors.error),
                                   ),
                                 ],
                               ),
