@@ -37,6 +37,7 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
           direction: _currentDirection,
           form: result,
         );
+        if (!mounted) return;
         _invalidateStreams();
         setState(() {});
         AppToast.show(context, 'تم إنشاء الشيك بنجاح', type: ToastType.success);

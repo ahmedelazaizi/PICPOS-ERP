@@ -96,6 +96,7 @@ class _SalesBatchActionBarState extends ConsumerState<SalesBatchActionBar> {
                   if (confirm == true) {
                     // 063 (D1-005): dual-approval gate (settings-flag gated;
                     // OFF by default = no dialog, no UX change).
+                                        if (!context.mounted) return;
                     final approved = await DualApprovalService.requireApprovalForOp(
                       context,
                       ref,

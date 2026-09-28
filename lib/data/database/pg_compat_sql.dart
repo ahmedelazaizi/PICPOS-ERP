@@ -110,6 +110,15 @@ class PgCompatSql {
   /// Idempotent: already-translated SQL is unchanged because the SQLite
   /// patterns no longer appear after the first pass.
   static String fixSql(String sql) {
+    // The compatibility layer itself creates `strftime` overloads. Do not
+    // rewrite the function declaration into `CREATE FUNCTION EXTRACT(...)`;
+    // only rewrite calls in ordinary SQLite-derived statements.
+    if (RegExp(
+      r'CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+strftime',
+      caseSensitive: false,
+    ).hasMatch(sql)) {
+      return sql;
+    }
     var result = sql;
 
     // 1 & 2. strftime

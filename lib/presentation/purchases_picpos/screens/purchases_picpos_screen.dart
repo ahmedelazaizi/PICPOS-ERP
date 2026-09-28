@@ -354,9 +354,8 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
                         await controller.deleteInvoice(invoiceId, inv.invoiceNumber, inv.total);
                      }
                      controller.clearSelection();
-                     if (context.mounted) {
-                       AppToast.show(context, 'تم حذف الفواتير المحددة بنجاح', type: ToastType.success);
-                     }
+                      if (!mounted) return;
+                      AppToast.show(context, 'تم حذف الفواتير المحددة بنجاح', type: ToastType.success);
                   }
                 },
                 icon: const Icon(PhosphorIconsBold.trash, size: 18),

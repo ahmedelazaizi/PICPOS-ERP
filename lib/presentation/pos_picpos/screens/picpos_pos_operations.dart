@@ -579,6 +579,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         _refocusScanner();
         return;
       }
+      if (!mounted) return;
       final weight = await PosDialogs.showWeightInput(context, ref, product);
       // null = cashier cancelled. Adding nothing is the correct outcome.
       if (weight == null || weight <= 0) {
@@ -1386,6 +1387,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         // الفرعُ **بلا فحص** بينما جاراه فوقه محروسان، فمن رُفع عنه الخصمُ
         // كان يطبّقه من هنا. (مقيسٌ 2026-08-13)
         // §٤ `disccap` — والسقفُ قبل الصلاحية (‏حوارٌ واحدٌ لا اثنان).
+        if (!mounted) return;
         final verdict = await ensureDiscountWithinPolicy(
             ref, context, disc,
             scope: 'line_edit_discount');
@@ -1463,6 +1465,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       // كما كان (‏لا يُطلب منه أن يكتب نسبةً ثمّ يُرفض لأنه لا يملك الخصمَ
       // أصلاً)، فمن لا يملك الصلاحيةَ **ويتجاوز السقفَ** يرى حوارَين —
       // وهما قراران مختلفان فعلاً: «أتخصم أصلاً؟» ثمّ «أتتجاوز الحدَّ؟».
+             if (!mounted) return;
       final verdict = await ensureDiscountWithinPolicy(
           ref, context, result,
           scope: 'invoice_discount');

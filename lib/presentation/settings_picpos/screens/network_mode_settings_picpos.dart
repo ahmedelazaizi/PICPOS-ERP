@@ -767,9 +767,8 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                   // Re-init sync service so it picks up the new branch_id
                   // without requiring an app restart.
                   await SyncService.instance?.initialize();
-                  if (mounted) {
-                    AppToast.show(context, 'تم حفظ الفرع المعين', type: ToastType.success);
-                  }
+                  if (!context.mounted) return;
+                  AppToast.show(context, 'تم حفظ الفرع المعين', type: ToastType.success);
                 },
               ),
             ),

@@ -587,6 +587,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
         'products=${products.length} categories=${categories.length} '
         'warehouses=${filteredWarehouses.length}'));
 
+    if (!mounted) return;
     final dialogFuture = showGeneralDialog<void>(
       context: context,
       barrierDismissible: false,

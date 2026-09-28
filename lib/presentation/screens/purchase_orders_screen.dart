@@ -480,6 +480,8 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
 
     bool saving = false;
 
+        if (!context.mounted) return;
+
     showDialog(
       context: context,
       builder: (ctx) => Directionality(

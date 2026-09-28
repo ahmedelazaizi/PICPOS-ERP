@@ -202,6 +202,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   }
                 } catch (e) {
                   if (ctx.mounted) setDialogState(() => saving = false);
+                  if (!ctx.mounted) return;
                   AppToast.show(ctx, 'خطأ: $e', type: ToastType.error);
                 }
               },
@@ -235,6 +236,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
     final currentDeprecAccount = cat.depreciationAccountId != null
         ? await accountingRepo.getAccountById(cat.depreciationAccountId!)
         : null;
+    if (!mounted) return;
     Account? selectedAssetAccount = currentAssetAccount;
     Account? selectedDeprecAccount = currentDeprecAccount;
     String method = cat.defaultDepreciationMethod;
@@ -401,6 +403,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   }
                 } catch (e) {
                   if (ctx.mounted) setDialogState(() => saving = false);
+                  if (!ctx.mounted) return;
                   AppToast.show(ctx, 'خطأ: $e', type: ToastType.error);
                 }
               },
@@ -790,6 +793,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   }
                 } catch (e) {
                   if (ctx.mounted) setDialogState(() => saving = false);
+                  if (!ctx.mounted) return;
                   AppToast.show(ctx, 'خطأ: $e', type: ToastType.error);
                 }
               },
@@ -819,6 +823,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
     final linkedAccount = asset.linkedAccountId != null
         ? await accountingRepo.getAccountById(asset.linkedAccountId!)
         : null;
+    if (!mounted) return;
 
     await showDialog(
       context: context,
@@ -1114,6 +1119,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   }
                 } catch (e) {
                   if (ctx.mounted) setDialogState(() => saving = false);
+                  if (!ctx.mounted) return;
                   AppToast.show(ctx, 'خطأ: $e', type: ToastType.error);
                 }
               },

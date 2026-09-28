@@ -140,6 +140,7 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
     setState(() => _savingReturn = true);
     bool success = false;
     try {
+      if (!mounted) return;
       // ح‑١ (مواصفة 2026-08-18): مرتجعٌ يصرف نقداً بلا ورديّةٍ مفتوحة يُرفَض
       // كاملاً. المساعدُ يترجم الرفضَ إلى عرضِ فتحِ ورديّةٍ ثمّ يعيد المحاولةَ
       // مرّةً — والتوأمُ في `sales_returns_picpos_logic` يستدعي نفسَه.

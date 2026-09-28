@@ -33,7 +33,7 @@ void main() {
   setUpAll(() {
     src = {
       for (final p in const [
-        'lib/services/interceptor/cwi_sync.dart',
+        'lib/services/interceptor/cwi_sync_foundation.dart',
         'lib/services/interceptor/cwi_core.dart',
         'lib/services/server_proxy.dart',
         'lib/services/offline_sync_worker.dart',
@@ -57,7 +57,7 @@ void main() {
     test('ومرساةٌ موجبة — مستندُ مخطَّط القاعة موصولٌ في الخمسة', () {
       // لو انكسر الكشفُ لسقطت هذه أوّلاً، لا أن يمرّ المرفقُ أخضرَ بلا
       // توصيل.
-      expect(src['lib/services/interceptor/cwi_sync.dart'],
+      expect(src['lib/services/interceptor/cwi_sync_foundation.dart'],
           contains('submitFloorPlan'));
       expect(src['lib/services/server_proxy.dart'],
           contains("post('/api/floor-plan'"));
@@ -68,7 +68,7 @@ void main() {
 
   group('🔴 المواضعُ الخمسة', () {
     test('١ — `_CwiSync` يطابور الرفعَ والحذف باسم الجدول', () {
-      final s = src['lib/services/interceptor/cwi_sync.dart']!;
+      final s = src['lib/services/interceptor/cwi_sync_foundation.dart']!;
       expect(s, contains('static Future<void> submitAttachment('));
       expect(s, contains('static Future<void> submitAttachmentDelete('));
       expect(s, contains("tableName: 'attachments'"));
@@ -78,8 +78,8 @@ void main() {
 
     test('٢ — والمُمرِّرُ الساكنُ موجود', () {
       final s = src['lib/services/interceptor/cwi_core.dart']!;
-      expect(s, contains('_CwiSync.submitAttachment(document)'));
-      expect(s, contains('_CwiSync.submitAttachmentDelete(document)'));
+      expect(s, contains('_CwiSyncFoundation.submitAttachment(document)'));
+      expect(s, contains('_CwiSyncFoundation.submitAttachmentDelete(document)'));
     });
 
     test('٣ — والنداءاتُ الثلاثةُ في الوكيل', () {

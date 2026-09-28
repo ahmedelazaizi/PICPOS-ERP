@@ -627,7 +627,7 @@ void main() {
       // operation success. Fix: kick drainOutbox(force: true) in BOTH
       // _tryOrQueue and _tryOrQueueVoid right after the serverCall
       // succeeds.
-      const relPath = 'lib/services/interceptor/cwi_core.dart';
+      const relPath = 'lib/services/interceptor/cwi_core_support.dart';
        final libraryEntry = File('lib/services/client_write_interceptor.dart').readAsStringSync();
       final source = File(relPath).readAsStringSync();
 
@@ -851,7 +851,7 @@ void main() {
       // The repo-level resolution is wasted unless the interceptor
       // includes branchId in the wire payload — server reads it at
       // api_data_handler.dart:1510.
-      const relPath = 'lib/services/interceptor/cwi_sync.dart';
+      const relPath = 'lib/services/interceptor/cwi_sync_foundation.dart';
       final source = File(relPath).readAsStringSync();
 
       final methodStart = source.indexOf('submitJournalEntry(');

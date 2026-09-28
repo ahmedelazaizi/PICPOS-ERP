@@ -688,8 +688,8 @@ mixin _PurchaseReturnLogicMixin on ConsumerState<PurchaseReturnsScreen> {
                             invoice: invoice,
                             newReturnItems: newItems,
                           );
-                          if (!mounted) return;
-                          Navigator.pop(ctx);
+                           if (!ctx.mounted || !mounted) return;
+                           Navigator.pop(ctx);
                           AppToast.show(
                             context,
                             'تم تعديل المرتجع بنجاح',

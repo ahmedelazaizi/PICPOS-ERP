@@ -320,10 +320,11 @@ mixin _InvoiceDesignerTemplatesMixin
                             case 'edit': loadTemplateById(t.id); break;
                             case 'default':
                               await templatesRepo.setDefaultTemplate(t.id);
+                               if (!mounted) return;
                               // Reload the newly-defaulted template into memory
                               loadTemplateById(t.id);
-                              // ignore: use_build_context_synchronously
-                              if (mounted) AppToast.show(context, 'تم تعيين القالب كافتراضي');
+                               if (!context.mounted) return;
+                               AppToast.show(context, 'تم تعيين القالب كافتراضي');
                               break;
                             case 'delete': await confirmDeleteTemplate(t); break;
                           }
@@ -401,7 +402,7 @@ mixin _InvoiceDesignerTemplatesMixin
         entityId: t.id,
         description: 'حذف قالب فاتورة: ${t.name}',
       );
-      // ignore: use_build_context_synchronously
+      if (!mounted) return;
       AppToast.show(context, 'تم حذف القالب', type: ToastType.success);
     }
   }

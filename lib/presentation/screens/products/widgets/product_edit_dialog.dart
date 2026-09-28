@@ -1140,6 +1140,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
     // GAP-P3-FIX-16: Warn when costPrice is zero (inflates COGS reports)
     final parsedCostPrice = NumberUtils.tryParseLocale(costPriceController.text) ?? widget.product.costPrice;
     if (parsedCostPrice == 0) {
+      if (!mounted) return;
       final proceed = await showDialog<bool>(
         context: context,
         builder: (ctx) => Directionality(

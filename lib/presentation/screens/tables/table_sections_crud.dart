@@ -240,6 +240,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
     IRestaurantRepository restaurantRepo,
     TableSection section,
   ) async {
+        if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => Directionality(
@@ -526,6 +527,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
     RestaurantTable table,
   ) async {
     if (table.status != 'available' && table.status != 'reserved') {
+              if (!mounted) return;
       AppToast.show(
         context,
         table.status == 'billing'
@@ -542,9 +544,9 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
       final items = await restaurantRepo.getTableOrderItems(activeOrder.id);
       if (!context.mounted) return;
       if (items.isNotEmpty) {
+                if (!mounted) return;
         AppToast.show(
-          // ignore: use_build_context_synchronously
-          context,
+                    context,
           'لا يمكن حذف طاولة بها طلبات نشطة',
           type: ToastType.error,
         );
@@ -554,9 +556,10 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
 
     if (!context.mounted) return;
 
+        if (!mounted) return;
+
     final confirmed = await showDialog<bool>(
-      // ignore: use_build_context_synchronously
-      context: context,
+            context: context,
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
@@ -596,9 +599,9 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
         entityId: table.id,
         description: 'حذف طاولة: ${table.name}',
       );
+            if (!mounted) return;
       if (context.mounted) {
-        // ignore: use_build_context_synchronously
-        AppToast.show(context, 'تم حذف الطاولة', type: ToastType.success);
+                AppToast.show(context, 'تم حذف الطاولة', type: ToastType.success);
       }
     }
   }

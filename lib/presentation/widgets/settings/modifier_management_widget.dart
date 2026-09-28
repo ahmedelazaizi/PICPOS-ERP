@@ -217,6 +217,7 @@ class _ModifierManagementWidgetState extends ConsumerState<ModifierManagementWid
     );
 
     if (result == true && nameCtrl.text.isNotEmpty) {
+      if (!mounted) return;
       final repo = ref.read(modifierRepositoryProvider);
       final ok = await runModifierMutation(
         context,
@@ -276,6 +277,7 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
       ),
     );
     if (confirm == true) {
+      if (!context.mounted) return;
       final ok = await runModifierMutation(
         context,
         () => widget.repo.deleteGroup(g.id),
@@ -528,6 +530,7 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
     );
 
     if (result != null) {
+      if (!mounted) return;
       // Update links: for each product, set its modifier groups
       final groupId = widget.group.id;
 
@@ -603,6 +606,7 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
     );
 
     if (result == true && nameCtrl.text.isNotEmpty) {
+      if (!mounted) return;
       final ok = await runModifierMutation(
         context,
         () => widget.repo.createItem(

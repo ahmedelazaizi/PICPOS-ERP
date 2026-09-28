@@ -62,7 +62,7 @@ const _plan = 'lib/domain/models/import_purchase_plan.dart';
 const _screen =
     'lib/presentation/import_purchases_picpos/screens/import_purchases_picpos_screen.dart';
 const _repoImpl = 'lib/data/repositories/purchases_repository_impl.dart';
-const _cwi = 'lib/services/interceptor/cwi_trading.dart';
+const _cwi = 'lib/services/interceptor/cwi_trading_purchases.dart';
 const _apiHandler = 'lib/services/api/api_purchase_handler.dart';
 
 void main() {

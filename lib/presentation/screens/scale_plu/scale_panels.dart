@@ -445,6 +445,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
 
     // Generate CSV content for preview
     final csvContent = LabelScaleService.instance.generatePLUCsv(pluItems);
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -531,6 +532,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
               // Write as UTF-16 LE — matches PLU Manager's native TSV format (2.xls)
               final transport = ScaleTransport();
               await File(filePath).writeAsBytes(transport.encodeUtf16LE(csvContent));
+                             if (!mounted) return;
               if (ctx.mounted) {
                 Navigator.pop(ctx);
                 AppToast.show(context, 'تم حفظ CSV على سطح المكتب', type: ToastType.success);

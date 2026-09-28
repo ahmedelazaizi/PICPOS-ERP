@@ -1295,6 +1295,7 @@ class _PicposCashierClosingDialogState
             ),
           );
         }
+        if (!mounted) return;
         Navigator.pop(context); // Close dialog
         // مسار تحويل المستخدم بيمرّر `false`: الوردية اتقفلت واتصفّت، والجلسة
         // الجاية هتتحدّد من ديالوج التحويل — الخروج هنا كان بيقطع المسار ويودّي

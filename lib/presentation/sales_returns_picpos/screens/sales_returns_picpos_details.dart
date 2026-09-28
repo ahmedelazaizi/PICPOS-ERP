@@ -644,10 +644,9 @@ mixin _SalesReturnsPicposDetailsPanel
                       onTap: () async {
                         final productRepo = ref.read(productRepositoryProvider);
                         final products = await productRepo.getAllProducts();
-                        if (!context.mounted) return;
+                         if (!mounted) return;
                         final selected = await showDialog<ProductEntity>(
-                          // ignore: use_build_context_synchronously
-                          context: context,
+                                                    context: context,
                           builder: (ctx) => Directionality(
                             textDirection: TextDirection.rtl,
                             child: AlertDialog(
@@ -670,7 +669,7 @@ mixin _SalesReturnsPicposDetailsPanel
                             ),
                           ),
                         );
-                        if (!context.mounted) return;
+                         if (!mounted) return;
                         if (selected != null) {
                           notifier.setExchangeProduct(selected);
                         }

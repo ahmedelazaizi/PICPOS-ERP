@@ -459,6 +459,7 @@ class _CategoryFilterButtonState extends ConsumerState<_CategoryFilterButton> {
       return;
     }
     try {
+      if (!mounted) return;
       final picked = await showDialog<_CategoryPick>(
         context: context,
         builder: (_) {

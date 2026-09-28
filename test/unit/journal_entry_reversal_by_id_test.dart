@@ -104,6 +104,36 @@ void main() {
       expect(sales.balance, closeTo(0, 1e-9));
     });
 
+    test('audit failure rolls back the reversal journal entry', () async {
+      final manualId = await db.createJournalEntry(
+        description: 'قيد يدوي لاختبار التراجع',
+        date: DateTime.now(),
+        lines: [
+          JournalLine(accountId: cashId, debit: 25),
+          JournalLine(accountId: salesId, credit: 25),
+        ],
+      );
+      await db.customStatement('''
+        CREATE TRIGGER fail_journal_audit
+        BEFORE INSERT ON activity_logs
+        BEGIN
+          SELECT RAISE(ABORT, 'forced audit failure');
+        END
+      ''');
+
+      await expectLater(
+        db.reverseJournalEntryById(entryId: manualId),
+        throwsA(anything),
+      );
+
+      final entries = await db.select(db.journalEntries).get();
+      expect(entries, hasLength(1),
+          reason: 'the reversal JE must roll back with its audit row');
+      final lines = await db.select(db.journalEntryLines).get();
+      expect(lines, hasLength(2),
+          reason: 'reversal lines must roll back with the JE');
+    });
+
     test('reversing the same entry twice is idempotent — no duplicate reversal',
         () async {
       final manualId = await db.createJournalEntry(

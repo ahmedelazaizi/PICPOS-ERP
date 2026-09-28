@@ -336,11 +336,10 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
 
     if (confirm == true) {
       await accountingRepo.deleteJournalTemplate(template.id);
-      if (mounted) {
-        AppToast.show(context, 'تم حذف القالب بنجاح', type: ToastType.warning);
+      if (!context.mounted) return;
+      AppToast.show(context, 'تم حذف القالب بنجاح', type: ToastType.warning);
       }
     }
-  }
 
   void _showCreateTemplateDialog(BuildContext context, IAccountingRepository accountingRepo, {JournalEntryTemplateData? templateToEdit, List<Map<String, dynamic>>? lines}) {
     showDialog(

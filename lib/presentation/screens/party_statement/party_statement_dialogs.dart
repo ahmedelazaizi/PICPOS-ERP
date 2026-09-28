@@ -123,10 +123,9 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
                     description: '$typeLabel — ${entry.description}',
                   );
                 } catch (e) {
-                  if (mounted) {
-                    AppToast.show(context, 'خطأ في الطباعة: $e',
-                        type: ToastType.error);
-                  }
+                  if (!mounted) return;
+                  AppToast.show(context, 'خطأ في الطباعة: $e',
+                      type: ToastType.error);
                 }
               },
             ),
@@ -212,10 +211,9 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
                       .read(printingServiceProvider)
                       .printPurchaseInvoiceA4(inv.id);
                 } catch (e) {
-                  if (mounted) {
-                    AppToast.show(context, 'خطأ في الطباعة: $e',
-                        type: ToastType.error);
-                  }
+                  if (!context.mounted) return;
+                  AppToast.show(context, 'خطأ في الطباعة: $e',
+                      type: ToastType.error);
                 }
               },
             ),
@@ -291,10 +289,9 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
                       .read(printingServiceProvider)
                       .printSalesInvoiceA4(inv.id);
                 } catch (e) {
-                  if (mounted) {
-                    AppToast.show(context, 'خطأ في الطباعة: $e',
-                        type: ToastType.error);
-                  }
+                  if (!context.mounted) return;
+                  AppToast.show(context, 'خطأ في الطباعة: $e',
+                      type: ToastType.error);
                 }
               },
             ),

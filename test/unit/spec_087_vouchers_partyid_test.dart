@@ -40,10 +40,10 @@ void main() {
 
     test('cwi_sync passes partyId/partyGlobalId to the proxy', () {
       final src =
-          File('lib/services/interceptor/cwi_sync.dart').readAsStringSync();
+          File('lib/services/interceptor/cwi_sync_foundation.dart').readAsStringSync();
       final start = src.indexOf('static Future<void> submitSafeTransaction');
       expect(start, isNot(-1));
-      final block = src.substring(start, start + 2500);
+      final block = src.substring(start);
       expect(block, contains('partyId: partyId'),
           reason: 'Forwarding partyId on the serverCall keeps the '
               'party link intact when the outbox replays the request.');

@@ -89,6 +89,7 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
   void _handleProductTap(ProductEntity product) async {
     if (product.isSoldByWeight) {
       if (!await ensurePosWeightDialogPermission(ref, context)) return;
+      if (!mounted) return;
       final weight = await PosDialogs.showWeightInput(context, ref, product);
       if (weight != null && weight > 0) {
         await _addProductWithModifiers(product, quantity: weight);
@@ -290,6 +291,7 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
     }
 
     final tableItems = await restaurantRepo.getTableOrderItems(orderId);
+    if (!mounted) return;
     if (tableItems.isEmpty) {
       AppToast.show(context, 'لا يوجد أصناف في الطلب للتحصيل',
           type: ToastType.warning);

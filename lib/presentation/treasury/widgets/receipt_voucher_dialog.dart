@@ -904,6 +904,8 @@ class _ReceiptVoucherDialogState extends ConsumerState<ReceiptVoucherDialog> {
       }
     }
 
+        if (!context.mounted) return;
+
     if (selectedSafe == null) {
       AppToast.show(context, 'الرجاء اختيار الخزينة');
       return;

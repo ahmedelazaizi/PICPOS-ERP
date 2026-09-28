@@ -615,8 +615,9 @@ class _ChartOfAccountsPicPosScreenState
     try {
       final repo = ref.read(accountingRepositoryProvider);
       final accounts = await repo.getAllAccounts();
+      if (!context.mounted) return;
       if (accounts.isEmpty) {
-        if (mounted) AppToast.show(context, 'لا توجد حسابات للطباعة', type: ToastType.warning);
+        AppToast.show(context, 'لا توجد حسابات للطباعة', type: ToastType.warning);
         return;
       }
 
@@ -674,7 +675,9 @@ class _ChartOfAccountsPicPosScreenState
         }).toList(),
       );
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+      if (context.mounted) {
+        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+      }
     }
   }
 

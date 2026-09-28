@@ -1,4 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
 import 'dart:async';
 import 'dart:io';
 import 'package:drift/drift.dart';
@@ -54,6 +53,7 @@ class AppErrorHandler {
       }
       return result;
     } catch (e, stack) {
+      if (!context.mounted) return null;
       handle(context, e, stack);
       return null;
     }

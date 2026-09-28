@@ -1342,8 +1342,13 @@ class AppDatabase extends _$AppDatabase {
       await customStatement(r'''
         CREATE OR REPLACE FUNCTION strftime(fmt text, ts text)
         RETURNS bigint AS $fn$
-          SELECT EXTRACT(EPOCH FROM NOW())::bigint;
-        $fn$ LANGUAGE sql STABLE
+          SELECT CASE
+            WHEN fmt = '%Y-%m' THEN
+              EXTRACT(YEAR FROM COALESCE(NULLIF(lower(ts), 'now')::timestamptz, NOW()))::bigint * 100
+              + EXTRACT(MONTH FROM COALESCE(NULLIF(lower(ts), 'now')::timestamptz, NOW()))::bigint
+            ELSE EXTRACT(EPOCH FROM NOW())::bigint
+          END;
+        $fn$ LANGUAGE sql STABLE;
       ''');
     } catch (e) { debugPrint('[PG-COMPAT] strftime(text,text): $e'); }
 
@@ -1351,8 +1356,12 @@ class AppDatabase extends _$AppDatabase {
       await customStatement(r'''
         CREATE OR REPLACE FUNCTION strftime(fmt text, ts timestamptz)
         RETURNS bigint AS $fn$
-          SELECT EXTRACT(EPOCH FROM ts)::bigint;
-        $fn$ LANGUAGE sql STABLE
+          SELECT CASE
+            WHEN fmt = '%Y-%m' THEN
+              EXTRACT(YEAR FROM ts)::bigint * 100 + EXTRACT(MONTH FROM ts)::bigint
+            ELSE EXTRACT(EPOCH FROM ts)::bigint
+          END;
+        $fn$ LANGUAGE sql STABLE;
       ''');
     } catch (e) { debugPrint('[PG-COMPAT] strftime(text,timestamptz): $e'); }
 
@@ -2070,6 +2079,10 @@ class AppDatabase extends _$AppDatabase {
   /// **DO NOT** wrap the body in `db.transaction(...)` — FR-008 requires
   /// DDL to run outside any active transaction. Static test T025
   /// grep-asserts the absence of `transaction(` here.
+  @visibleForTesting
+  Future<void> runPostgresSchemaParityForTesting() =>
+      _ensurePostgresSchemaParity();
+
   Future<void> _ensurePostgresSchemaParity() async {
     if (!_isPostgres) return;
 
@@ -2260,9 +2273,17 @@ class AppDatabase extends _$AppDatabase {
     }
 
     // Extras detection — PG tables not in Drift schema. CREATE-only policy
-    // means we never drop them (FR-004); warn-only.
+    // means we never drop them (FR-004); warn-only. These tables are managed
+    // by raw SQL migrations/boot infrastructure rather than Drift entities.
+    const rawSqlManagedTables = <String>{
+      '__schema',
+      'modifier_groups',
+      'modifier_items',
+      'product_modifier_groups',
+    };
     for (final pgTable in pgTables) {
-      if (!driftTableNames.contains(pgTable)) {
+      if (!driftTableNames.contains(pgTable) &&
+          !rawSqlManagedTables.contains(pgTable)) {
         await DiagnosticLogger.log(
           'PG-PARITY-EXTRA',
           'table=$pgTable reason=not_in_drift_schema action=preserved',

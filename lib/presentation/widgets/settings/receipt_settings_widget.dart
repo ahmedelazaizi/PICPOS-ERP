@@ -141,6 +141,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
           'receipt_paperWidth': _paperWidth.toString(),
           'receipt_currencySymbol': _currencyController.text,
         });
+        if (!mounted) return;
         AppToast.show(
           context,
           'تم حفظ إعدادات الإيصال بنجاح',

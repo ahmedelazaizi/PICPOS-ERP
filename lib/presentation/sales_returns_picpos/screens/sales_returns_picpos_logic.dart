@@ -144,6 +144,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
     setState(() => _savingReturn = true);
     bool success = false;
     try {
+      if (!mounted) return;
       // ح‑١ (مواصفة 2026-08-18) — نسخةُ المنطقِ واحدةٌ في
       // `runWithOpenShiftPrompt`، والتوأمُ في `screens/sales_returns` يستدعي
       // نفسَه. لا تنسخ هنا (مصيدةُ النسخ §٥.٥).

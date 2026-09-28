@@ -174,6 +174,16 @@ void main() {
       addTearDown(() async => db.close());
       await db.customSelect('SELECT 1').get();
 
+      final compat = await _adminConnect(config);
+      try {
+        final strftimeRows =
+            await compat.execute("SELECT strftime('%Y-%m', now())");
+        expect(strftimeRows, isNotEmpty,
+            reason: 'PostgreSQL strftime compatibility function must exist');
+      } finally {
+        await compat.close();
+      }
+
       final okLines = DiagnosticLogger.testLog
           .where((l) => l.contains('PG-PARITY-OK'))
           .toList();
@@ -194,16 +204,16 @@ void main() {
 
     test('3f — idempotency: second run emits OK with healed=0', () async {
       DiagnosticLogger.enableTestMode();
-      // First open.
-      final db1 = _reopenDb(config);
-      await db1.customSelect('SELECT 1').get();
-      await db1.close();
+      // Open once, then invoke the idempotent parity pass a second time on
+      // the same live executor. Reopening here races DatabaseStartup's
+      // intentionally non-blocking deferred phase and can close a pooled
+      // connection while that phase is still querying.
+      final db = _reopenDb(config);
+      addTearDown(() async => db.close());
+      await db.customSelect('SELECT 1').get();
 
       DiagnosticLogger.enableTestMode(); // reset
-      // Second open — clean schema, no healing should happen.
-      final db2 = _reopenDb(config);
-      addTearDown(() async => db2.close());
-      await db2.customSelect('SELECT 1').get();
+      await db.runPostgresSchemaParityForTesting();
 
       final heals = DiagnosticLogger.testLog
           .where((l) => l.contains('PG-PARITY-HEAL'))

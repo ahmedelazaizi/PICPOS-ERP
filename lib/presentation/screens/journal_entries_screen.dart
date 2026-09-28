@@ -938,13 +938,11 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
     try {
       final user = ref.read(authProvider).user;
       await repo.approveJournalEntry(entry.id, user?.id ?? 0);
-      if (mounted) {
-        AppToast.show(context, 'تم اعتماد القيد بنجاح', type: ToastType.success);
-      }
+      if (!context.mounted) return;
+      AppToast.show(context, 'تم اعتماد القيد بنجاح', type: ToastType.success);
     } catch (e) {
-      if (mounted) {
-        AppToast.show(context, 'خطأ في اعتماد القيد: $e', type: ToastType.error);
-      }
+      if (!context.mounted) return;
+      AppToast.show(context, 'خطأ في اعتماد القيد: $e', type: ToastType.error);
     }
   }
 
@@ -1042,8 +1040,8 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
         entryId: entry.id,
         descriptionPrefix: 'عكس قيد: ${entry.entryNumber}',
       );
-      if (mounted) {
-        if (newEntryId > 0) {
+      if (!context.mounted) return;
+      if (newEntryId > 0) {
           AppToast.show(context, 'تم عكس القيد بنجاح', type: ToastType.success);
         } else {
           AppToast.show(
@@ -1052,11 +1050,9 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
             type: ToastType.warning,
           );
         }
-      }
     } catch (e) {
-      if (mounted) {
-        AppToast.show(context, 'خطأ في عكس القيد: $e', type: ToastType.error);
-      }
+      if (!context.mounted) return;
+      AppToast.show(context, 'خطأ في عكس القيد: $e', type: ToastType.error);
     }
   }
 }

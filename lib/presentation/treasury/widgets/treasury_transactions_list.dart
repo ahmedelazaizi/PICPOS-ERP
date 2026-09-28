@@ -116,7 +116,7 @@ class _TreasuryTransactionsListState
       }
 
       // Build description with category
-      // ignore: use_build_context_synchronously
+      if (!context.mounted) return;
       final categoryLabel = _getCategoryLabel(context, t.category);
       final fullDescription = t.description != null
           ? '$categoryLabel - ${t.description}'

@@ -450,6 +450,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       }
     }
 
+    if (!mounted) return;
     final controller = TextEditingController();
     final password = await showDialog<String>(
       context: context,

@@ -98,12 +98,14 @@ class _SalesBatchActionBarState extends ConsumerState<SalesBatchActionBar> {
                   if (confirm == true) {
                     // 063 (D1-005): dual-approval gate (settings-flag gated;
                     // OFF by default = no dialog, no UX change).
+                                        if (!context.mounted) return;
                     final approved = await DualApprovalService.requireApprovalForOp(
                       context,
                       ref,
                       operation: DualApprovalOperation.voidInvoice,
                       details: 'حذف ${selectedInvoices.length} فاتورة',
                     );
+                    if (!mounted) return;
                     if (!approved) {
                       if (context.mounted) {
                         AppToast.show(context, 'الموافقة الثنائية مرفوضة — لم يتم الحذف', type: ToastType.warning);
@@ -117,9 +119,8 @@ class _SalesBatchActionBarState extends ConsumerState<SalesBatchActionBar> {
                         await controller.deleteInvoice(invoiceId, inv.invoiceNumber, inv.total);
                       }
                       controller.clearSelection();
-                      if (context.mounted) {
-                        AppToast.show(context, 'تم حذف الفواتير المحددة بنجاح', type: ToastType.success);
-                      }
+                      if (!context.mounted) return;
+                      AppToast.show(context, 'تم حذف الفواتير المحددة بنجاح', type: ToastType.success);
                     } finally {
                       if (mounted) setState(() => _saving = false);
                     }

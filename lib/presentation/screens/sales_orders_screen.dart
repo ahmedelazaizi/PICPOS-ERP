@@ -337,6 +337,8 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
       item['total'] = lineTotal + taxAmt;
     }
 
+        if (!mounted) return;
+
     showDialog(
       context: context,
       builder: (ctx) => Directionality(

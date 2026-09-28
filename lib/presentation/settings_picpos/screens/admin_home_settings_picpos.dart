@@ -80,6 +80,7 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
                 final adminPwd = ref.read(adminPasswordServiceProvider);
                 // Validate
                 if (!(await adminPwd.verify(oldPasswordController.text))) {
+                  if (!ctx.mounted) return;
                   AppToast.show(
                     ctx,
                     'كلمة السر الحالية غير صحيحة',
@@ -88,6 +89,7 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
                   return;
                 }
                 if (newPasswordController.text.isEmpty) {
+                  if (!ctx.mounted) return;
                   AppToast.show(
                     ctx,
                     'يرجى إدخال كلمة سر جديدة',
@@ -97,6 +99,7 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
                 }
                 if (newPasswordController.text !=
                     confirmPasswordController.text) {
+                  if (!ctx.mounted) return;
                   AppToast.show(
                     ctx,
                     'كلمة السر غير متطابقة',

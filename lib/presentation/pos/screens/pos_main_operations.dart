@@ -126,6 +126,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
 
     if (product.isSoldByWeight) {
       if (!await ensurePosWeightDialogPermission(ref, context)) return;
+      if (!mounted) return;
       final weight = await PosDialogs.showWeightInput(context, ref, product);
       if (weight != null && weight > 0) {
         await _addProductWithModifiers(product, quantity: weight);
@@ -514,6 +515,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
       return;
     }
 
+    if (!mounted) return;
     final success = await PosDialogs.showPaymentDialog(
       context,
       totalAmount: cartState.total,
@@ -756,6 +758,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
     final hasPermission = await _userHasPermissionFresh(
       PermissionCodes.posSave,
     );
+    if (!mounted) return;
     if (!hasPermission) {
       final approved = await requestManagerApproval(
         context,
@@ -764,6 +767,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
       );
       if (!approved) return;
     }
+    if (!mounted) return;
 
     final total = cartState.total;
 
@@ -857,10 +861,12 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         }
         
         await drawerFuture; // Ensure drawer is at least attempted
+        if (!mounted) return;
         showPosToast(context, ref, 'تم حفظ وطباعة الفاتورة', type: PosNotificationType.success);
       } else {
         // Trigger cash drawer for "Save Only" as requested by user
         await _openCashDrawerQuietly();
+        if (!mounted) return;
         showPosToast(context, ref, 'تم حفظ الفاتورة بنجاح', type: PosNotificationType.success);
       }
       
@@ -869,6 +875,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
       (this as _PosScreenV2State)._barcodeFocus.requestFocus();
     } else {
       final err = ref.read(checkoutControllerProvider).error ?? 'فشل حفظ الفاتورة';
+      if (!mounted) return;
       showPosToast(context, ref, err, type: PosNotificationType.error);
     }
   }

@@ -455,10 +455,12 @@ class _ItemRow extends ConsumerWidget {
                   if (v < 0) return;
                   // §٤ `priceedit` — «ممنوع» قبل أيّ حوارِ مصادقة.
                   if (await priceEditBlockedByPolicy(ref)) {
+                    if (!context.mounted) return;
                     showPosToast(context, ref, kPriceEditBlockedMessage,
                         type: PosNotificationType.error);
                     return;
                   }
+                  if (!context.mounted) return;
                   if (!await ensureCartPricePermission(ref, context,
                       scope: 'cell_line_price')) {
                     return;

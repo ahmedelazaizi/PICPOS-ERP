@@ -1057,6 +1057,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
             ),
           );
         }
+        if (!mounted) return;
         Navigator.pop(context); // Close dialog
         ref.read(authProvider.notifier).logout();
         showPosToast(context, ref, 'تم إغلاق الوردية وطباعة التقرير بنجاح', type: PosNotificationType.success);

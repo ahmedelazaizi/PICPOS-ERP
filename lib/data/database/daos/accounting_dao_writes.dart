@@ -1545,26 +1545,35 @@ extension AccountingDaoWritesExt on AppDatabase {
         .toList();
 
     final prefix = descriptionPrefix ?? 'عكس قيد';
-    final newId = await createJournalEntry(
-      description: '$prefix - ${original.description ?? original.entryNumber}',
-      date: DateTime.now(),
-      lines: reversalLines,
-      referenceType: 'reversal',
-      // Use the ORIGINAL JE's own PK (unique) — NOT original.referenceId
-      // (a source-doc id that two auto-posted JEs of different types can
-      // share, e.g. sale#5 + purchase#5). createJournalEntry's auto-post
-      // dedup is keyed on (referenceType, referenceId, isAutoPosted) and an
-      // explicit globalId does NOT bypass it; keying on referenceId would
-      // collapse both reversals to (reversal, 5, true) and silently drop
-      // the second. entry.id makes each reversal's key unique and also
-      // gives a correct per-JE in-transaction idempotency backstop.
-      // No consumer reads a reversal's referenceId as a source-doc id.
-      referenceId: original.id,
-      isAutoPosted: true,
-      costCenterId: original.costCenterId,
-      branchId: original.branchId,
-      globalId: reversalGid,
-    );
+    final newId = await transaction(() async {
+      final reversalId = await createJournalEntry(
+        description: '$prefix - ${original.description ?? original.entryNumber}',
+        date: DateTime.now(),
+        lines: reversalLines,
+        referenceType: 'reversal',
+        // Use the ORIGINAL JE's own PK (unique) — NOT original.referenceId
+        // (a source-doc id that two auto-posted JEs of different types can
+        // share, e.g. sale#5 + purchase#5). createJournalEntry's auto-post
+        // dedup is keyed on (referenceType, referenceId, isAutoPosted) and an
+        // explicit globalId does NOT bypass it; keying on referenceId would
+        // collapse both reversals to (reversal, 5, true) and silently drop
+        // the second. entry.id makes each reversal's key unique and also
+        // gives a correct per-JE in-transaction idempotency backstop.
+        // No consumer reads a reversal's referenceId as a source-doc id.
+        referenceId: original.id,
+        isAutoPosted: true,
+        costCenterId: original.costCenterId,
+        branchId: original.branchId,
+        globalId: reversalGid,
+      );
+      await _auditJournalMutation(
+        action: 'journal_entry_reversed',
+        entryId: entryId,
+        userId: null,
+        description: 'عكس القيد #$entryId إلى #$reversalId',
+      );
+      return reversalId;
+    });
     await _auditJournalMutation(
       action: 'journal_entry_reversed',
       entryId: entryId,
@@ -1632,24 +1641,25 @@ extension AccountingDaoWritesExt on AppDatabase {
           .toList();
 
       if (reverseLines.isNotEmpty) {
-        await _auditJournalMutation(
-          action: 'journal_entry_reversal_requested',
-          entryId: entry.id,
-          userId: actingUserId,
-          description: '$descriptionPrefix للقيد #${entry.id}',
-        );
-  // ignore: unused_local_variable
-        final reversalId = await createJournalEntry(
-          description: '$descriptionPrefix - ${entry.description}',
-          date: DateTime.now(),
-          lines: reverseLines,
-          referenceType: newReferenceType,
-          referenceId: referenceId,
-          isAutoPosted: true,
-          costCenterId: entry.costCenterId,
-          branchId: entry.branchId,
-          globalId: reversalGid,
-        );
+        await transaction(() async {
+          final reversalId = await createJournalEntry(
+            description: '$descriptionPrefix - ${entry.description}',
+            date: DateTime.now(),
+            lines: reverseLines,
+            referenceType: newReferenceType,
+            referenceId: referenceId,
+            isAutoPosted: true,
+            costCenterId: entry.costCenterId,
+            branchId: entry.branchId,
+            globalId: reversalGid,
+          );
+          await _auditJournalMutation(
+            action: 'journal_entry_reversal_requested',
+            entryId: entry.id,
+            userId: actingUserId,
+            description: '$descriptionPrefix للقيد #${entry.id} إلى #$reversalId',
+          );
+        });
       }
     }
   }

@@ -368,7 +368,7 @@ void main() {
 
     test('interceptor exposes submitVoidSalesInvoice → sales/void queue',
         () {
-      final trading = read('lib/services/interceptor/cwi_trading.dart');
+      final trading = read('lib/services/interceptor/cwi_trading_sales.dart');
       expect(
         trading.contains('submitVoidSalesInvoice'),
         isTrue,

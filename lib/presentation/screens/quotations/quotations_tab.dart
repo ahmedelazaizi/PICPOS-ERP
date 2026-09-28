@@ -248,15 +248,13 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                         .read(quotationsRepositoryProvider)
                         .deleteQuotationAndItems(loaded.id);
                     if (dialogCtx.mounted) {
-                      // ignore: use_build_context_synchronously
-                      Navigator.pop(dialogCtx);
+                                            Navigator.pop(dialogCtx);
                       ref
                           .read(quotationsControllerProvider.notifier)
                           .loadQuotations();
                     }
-                    if (!context.mounted) return;
+                    if (!mounted) return;
                     AppToast.show(
-                      // ignore: use_build_context_synchronously
                       context,
                       'تم حذف عرض السعر بنجاح',
                       type: ToastType.success,

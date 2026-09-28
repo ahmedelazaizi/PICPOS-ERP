@@ -151,7 +151,8 @@ class _PicposSwitchUserDialogState
         );
       } catch (_) {}
 
-      if (mounted) Navigator.of(context).pop(true);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
 
       // الكاشير الجاي لازم يتسأل يفتح ورديته. `switchUser` ما بتهدّش الشجرة
       // عن قصد (عشان الديالوج ده ما يموتش مع مفتاح `MaterialApp`)، فـ
@@ -162,6 +163,7 @@ class _PicposSwitchUserDialogState
       //
       // بعد الـ`pop` عشان ديالوج التبديل ما يكونش لسه فوق ديالوج فتح
       // الوردية.
+             if (!mounted) return;
       if (context.mounted) {
         await enforceShiftForUser(context, ref, callSite: 'switchUser');
       }
