@@ -1,4 +1,4 @@
-﻿; ═══════════════════════════════════════════════════════════════════════════
+; ═══════════════════════════════════════════════════════════════════════════
 ;  Windows installer (Inno Setup 6) — one script, one installer per brand.
 ;  Installs the app + publisher certificate, auto-installs the Visual C++
 ;  runtime if missing, and optionally downloads/installs PostgreSQL (server
@@ -102,7 +102,7 @@
 ;    detection and it is what Add/Remove Programs shows. A stale number
 ;    means support cannot tell which build a customer is running, and two
 ;    different builds can claim the same version.
-#define AppVersion    "3.1.4.261"
+#define AppVersion    "3.1.4.262"
 
 ; ── Brand-derived paths — no brand names below this line ─────────────────
 #define ReleaseDir    "..\build\windows\x64\runner\Release"
