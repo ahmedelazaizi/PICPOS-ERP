@@ -144,6 +144,7 @@ class ApiPartyHandler extends ApiHandlerBase {
           ),
           priceLevel: Value(data['priceLevel'] as String? ?? 'default'),
           groupId: Value(parseIntNullable(data['groupId'])),
+           currencyId: Value(parseIntNullable(data['currencyId'] ?? data['currency_id'])),
         ),
       );
       broadcast('parties');

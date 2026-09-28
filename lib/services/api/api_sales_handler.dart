@@ -289,6 +289,8 @@ class ApiSalesHandler extends ApiHandlerBase {
           tax: (parseDoubleNullable(data['tax']))?.toDouble() ?? 0,
           total: (parseDoubleNullable(data['total']))?.toDouble() ?? 0,
           paid: (parseDoubleNullable(data['paid']))?.toDouble() ?? 0,
+           currencyId: parseIntNullable(data['currencyId'] ?? data['currency_id']),
+           exchangeRate: parseDoubleNullable(data['exchangeRate'] ?? data['exchange_rate']),
           // ⚠️ **بدونه يرحّل الخادمُ قيداً مخالفاً لقيد العميل.** الخادمُ
           // يعيد بناءَ القيد من الحمولة، فغيابُ الفرق يجعله يرى `total > paid`
           // فيفتح ذمّةً مدينةً لا وجودَ لها ويترك الفاتورةَ `pending` —
@@ -583,6 +585,8 @@ class ApiSalesHandler extends ApiHandlerBase {
         tax: (parseDoubleNullable(data['tax']))?.toDouble() ?? 0,
         total: (parseDoubleNullable(data['total']))?.toDouble() ?? 0,
         paid: (parseDoubleNullable(data['paid']))?.toDouble() ?? 0,
+           currencyId: parseIntNullable(data['currencyId'] ?? data['currency_id']),
+           exchangeRate: parseDoubleNullable(data['exchangeRate'] ?? data['exchange_rate']),
         paymentMethod: data['paymentMethod'] as String? ?? 'cash',
         saleType: 'return',
         // Carry the original's UUID so the client can re-resolve this link
@@ -1314,6 +1318,8 @@ class ApiSalesHandler extends ApiHandlerBase {
           final salesGlobalId = data['salesGlobalId'] as String?;
           final invoiceNumber = data['invoiceNumber'] as String?;
           final amount = parseDouble(data['amount']);
+           final paymentRate = parseDoubleNullable(data['paymentRate'] ?? data['payment_rate']);
+           final foreignAmount = parseDoubleNullable(data['foreignAmount'] ?? data['foreign_amount']);
           // R9 — the SAME deterministic per-event id the client stamped on the
           // local collection context. addSalesPayment dedups on it.
           final paymentGlobalId = data['globalId'] as String?;
@@ -1367,6 +1373,8 @@ class ApiSalesHandler extends ApiHandlerBase {
             amount: amount,
             userId: resolvedUserId,
             globalId: paymentGlobalId,
+            paymentRate: paymentRate,
+            foreignAmount: foreignAmount,
           );
 
           db.markTablesUpdated({db.salesInvoices, db.safeTransactions});

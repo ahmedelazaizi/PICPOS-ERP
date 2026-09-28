@@ -51,6 +51,8 @@ extension SalesMutationsDao on AppDatabase {
     String? adhocCustomerName,
     String? adhocCustomerPhone,
     String? adhocCustomerNote,
+    int? currencyId,
+    double? exchangeRate,
 
     /// يؤجّل قيدَ «Phase 8» لأن المنادي سيصدره بنفسه **بعد** أن يعرف تكلفةَ
     /// الخامات.
@@ -239,6 +241,8 @@ extension SalesMutationsDao on AppDatabase {
           tax: Value(tax),
           total: Value(total),
           paid: Value(paid),
+           currencyId: Value(currencyId),
+           exchangeRate: Value(exchangeRate),
           // v175 — لا تخصيصاتِ دفعاتٍ لفاتورةٍ تُولَد الآن، فالقاعدةُ هي
           // المسدَّدُ كلُّه. راجع `paidUnallocated` في تعريف الجدول.
           paidUnallocated: Value(paid),
@@ -440,6 +444,8 @@ extension SalesMutationsDao on AppDatabase {
             await _recordSalesReceipt(
               invoiceId, cashRec, 'cash',
               userId: userId, specificSafeId: cashSafeId, warehouseId: warehouseId, customerId: customerId,
+               paymentRate: exchangeRate,
+               foreignAmount: currencyId != null && exchangeRate != null && exchangeRate > 0 ? cashRec.abs() / exchangeRate : null,
             );
           }
           if (bankAmount != 0) {
@@ -449,6 +455,8 @@ extension SalesMutationsDao on AppDatabase {
             await _recordSalesReceipt(
               invoiceId, bankRec, 'bank',
               userId: userId, specificSafeId: bankSafeId, warehouseId: warehouseId, customerId: customerId,
+               paymentRate: exchangeRate,
+               foreignAmount: currencyId != null && exchangeRate != null && exchangeRate > 0 ? bankRec.abs() / exchangeRate : null
             );
           }
           if (clickAmount != null && clickAmount != 0) {
@@ -458,6 +466,8 @@ extension SalesMutationsDao on AppDatabase {
             await _recordSalesReceipt(
               invoiceId, clickRec, 'click',
               userId: userId, specificSafeId: clickSafeId, warehouseId: warehouseId, customerId: customerId,
+               paymentRate: exchangeRate,
+               foreignAmount: currencyId != null && exchangeRate != null && exchangeRate > 0 ? clickRec.abs() / exchangeRate : null
             );
           }
         } else {
@@ -467,6 +477,8 @@ extension SalesMutationsDao on AppDatabase {
               paymentMethod == 'bank';
           await _recordSalesReceipt(
             invoiceId, amountToRecord, paymentMethod,
+             paymentRate: exchangeRate,
+             foreignAmount: currencyId != null && exchangeRate != null && exchangeRate > 0 ? amountToRecord.abs() / exchangeRate : null,
             userId: userId,
             specificSafeId: isBankMethod
               ? bankSafeId
@@ -753,6 +765,8 @@ extension SalesMutationsDao on AppDatabase {
     int? specificSafeId, // Override: use this safe instead of default
     int? warehouseId,    // Branch-aware safe resolution: prefer branch safe over system default
     int? customerId,     // P1-6: link safe transaction to party for traceability
+    double? paymentRate,
+    double? foreignAmount,
   }) async {
     final isNegative = amount < 0;
     final absAmount = amount.abs();
@@ -789,9 +803,13 @@ extension SalesMutationsDao on AppDatabase {
     // Deterministic UUID — prevents duplicate safe transactions when the
     // same sale is submitted via multiple paths (POS + server sync).
     // Format: safe_txn:sales_invoice:<invoiceId>:<safeId>:<safeType>
+    final invoice = await (select(salesInvoices)
+          ..where((i) => i.id.equals(invoiceId)))
+        .getSingle();
+    final invoiceIdentity = invoice.globalId ?? 'id:$invoiceId';
     final txnGlobalId = const Uuid().v5(
       Uuid.NAMESPACE_URL,
-      'safe_txn:sales_invoice:$invoiceId:${targetSafe.id}:$safeType',
+      'safe_txn:sales_invoice:$invoiceIdentity:${targetSafe.id}:$safeType',
     );
 
     await (into(safeTransactions).insertOnConflictUpdate(
@@ -807,10 +825,29 @@ extension SalesMutationsDao on AppDatabase {
         userId: Value(userId),
         partyId: Value(customerId),
         globalId: Value(txnGlobalId),
+         currencyId: Value(invoice.currencyId),
+         exchangeRate: Value(paymentRate),
+         foreignAmount: Value(foreignAmount),
       ),
     ));
 
-    // H15 · `adjustSafeBalance` لا `updateSafeBalance`: الثاني كتابةٌ مطلقة
+    if (paymentRate != null && foreignAmount != null) {
+       final bookingRate = invoice.exchangeRate;
+       if (invoice.currencyId != null && bookingRate != null && bookingRate > 0) {
+         await _postRealizedFxDifference(
+           invoiceType: 'sales',
+           invoiceId: invoiceId,
+           transactionId: txnGlobalId,
+           foreignAmount: foreignAmount,
+           bookingRate: bookingRate,
+           settlementRate: paymentRate,
+           partyId: customerId,
+           entryDate: DateTime.now(),
+         );
+       }
+     }
+
+     // H15 · `adjustSafeBalance` لا `updateSafeBalance`: الثاني كتابةٌ مطلقة
     // بعد قراءة (`safe.balance + amount`) — وهو سباقُ «التحديث الضائع» تحت
     // عزل PostgreSQL الافتراضيّ Read-Committed: بيعتان متزامنتان بـ١٠٠ على
     // نفس الخزنة تنزلان +١٠٠ لا +٢٠٠. الأول يُجري الحسابَ في SQL نفسِه.
@@ -1517,6 +1554,8 @@ extension SalesMutationsDao on AppDatabase {
     int? safeId,
     int? userId,
     String? globalId,
+    double? paymentRate,
+    double? foreignAmount,
   }) async {
     return transaction(() async {
       // Spec 151 C-05 idempotency (mirrors addPurchasePayment): a collection is
@@ -1556,7 +1595,13 @@ extension SalesMutationsDao on AppDatabase {
       await accountingDao.validateFinancialPeriod(invoice.invoiceDate,
           operation: 'تحصيل دفعة مبيعات');
 
-      final newPaid = invoice.paid + amount;
+      final settledAtBooking = invoice.currencyId != null &&
+              invoice.exchangeRate != null &&
+              invoice.exchangeRate! > 0 &&
+              foreignAmount != null
+          ? foreignAmount * invoice.exchangeRate!
+          : amount;
+      final newPaid = invoice.paid + settledAtBooking;
       final newRemaining = invoice.total - newPaid;
       final newStatus = newRemaining <= 0 ? 'paid' : 'partial';
 
@@ -1578,6 +1623,9 @@ extension SalesMutationsDao on AppDatabase {
         costCenterId: invoice.costCenterId,
         globalId: globalId,
         operatingBranchId: invoice.branchId,
+        currencyId: invoice.currencyId,
+        paymentRate: paymentRate,
+        foreignAmount: foreignAmount,
       );
 
       // B7 (S-FAILLOUD) parity: a collection must move cash AND post a balanced
@@ -1586,6 +1634,24 @@ extension SalesMutationsDao on AppDatabase {
       // guard is a defensive belt: the full money post returns the inserted
       // safe_transaction id (>0), so a 0 could only come from a future skip path
       // — reject it loudly rather than leave paid advanced with no treasury/GL.
+      if (paymentRate != null && foreignAmount != null &&
+          invoice.currencyId != null &&
+          invoice.exchangeRate != null &&
+          invoice.exchangeRate! > 0) {
+        await _postRealizedFxDifference(
+          invoiceType: 'sales',
+          invoiceId: invoice.id,
+          transactionId: globalId ?? 'sales-payment:$invoiceId:$receiptTxnId',
+          foreignAmount: foreignAmount,
+          bookingRate: invoice.exchangeRate!,
+          settlementRate: paymentRate,
+          partyId: invoice.customerId,
+          entryDate: DateTime.now(),
+        );
+        final bookingAmount = foreignAmount * invoice.exchangeRate!;
+        await adjustPartyBalance(invoice.customerId!, -(bookingAmount - amount));
+      }
+
       if (receiptTxnId <= 0) {
         throw StateError(
           'تعذّر تسجيل تحصيل الفاتورة #${invoice.invoiceNumber}: '

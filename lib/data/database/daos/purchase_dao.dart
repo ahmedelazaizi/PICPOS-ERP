@@ -688,6 +688,8 @@ extension PurchaseDao on AppDatabase {
     int? safeId,
     // UUID-First (Phase 1)
     String? globalId,
+     double? paymentRate,
+     double? foreignAmount,
     // 062 (D1-004): caller's userId for the overrideCreditLimit gate.
     int? userId,
     // أمرُ الشراء المصدر — «ربط أمر شراء» من داخل الفاتورة (قرارُ المالك
@@ -1086,7 +1088,19 @@ extension PurchaseDao on AppDatabase {
       // amount is what actually left the safe (fixes ح-3).
       SafeTransactionData? paymentTxn;
       if (paid > 0) {
-        paymentTxn = await _recordPurchasePayment(invoiceId, paid, paymentMethod, costCenterId, safeId: safeId, supplierId: supplierId);
+        paymentTxn = await _recordPurchasePayment(
+           invoiceId,
+           paid,
+           paymentMethod,
+           costCenterId,
+           safeId: safeId,
+           supplierId: supplierId,
+           paymentRate: exchangeRate,
+           foreignAmount: currencyId != null && exchangeRate != null && exchangeRate > 0
+               ? paid / exchangeRate
+               : null,
+           globalId: globalId,
+         );
         if (paymentTxn == null) {
           // Symmetry with addPurchasePayment: a payment we cannot attribute to
           // a safe must not silently reduce the GL with no treasury movement.
@@ -1382,6 +1396,8 @@ extension PurchaseDao on AppDatabase {
     int? costCenterId,
     // UUID-First (Phase 1): pass-through from the server's submission
     String? globalId,
+     double? paymentRate,
+     double? foreignAmount,
     // ح-1: mirror the server's net total in the local cache row, otherwise the
     // mirror's invoice list shows a gross total the server never stored.
     double discount = 0,
@@ -1568,6 +1584,8 @@ extension PurchaseDao on AppDatabase {
     int? supplierId,
     int? userId,
     String? globalId,
+     double? paymentRate,
+     double? foreignAmount,
   }) async {
     final safeType = (paymentMethod == 'transfer' || paymentMethod == 'card')
         ? 'bank'
@@ -1621,12 +1639,32 @@ extension PurchaseDao on AppDatabase {
           // (offline replay / mirror re-submit match on this globalId).
           userId: Value(userId),
           globalId: Value(globalId),
+           currencyId: Value((await (select(purchaseInvoices)..where((i) => i.id.equals(invoiceId))).getSingle()).currencyId),
+           exchangeRate: Value(paymentRate),
+           foreignAmount: Value(foreignAmount),
         ),
       );
 
       // H15 — خصمُ سدادٍ ذرّيّ: سدادان متزامنان على نفس الخزنة كانا
       // يقرآن نفسَ الرصيد فيضيع أحدُهما. `newBalance` لقطةُ `balanceAfter`.
       await adjustSafeBalance(targetSafe.id, -amount);
+
+       if (paymentRate != null && foreignAmount != null) {
+         final invoice = await (select(purchaseInvoices)..where((i) => i.id.equals(invoiceId))).getSingleOrNull();
+         final bookingRate = invoice?.exchangeRate;
+         if (invoice?.currencyId != null && bookingRate != null && bookingRate > 0) {
+           await _postRealizedFxDifference(
+             invoiceType: 'purchase',
+             invoiceId: invoiceId,
+             transactionId: globalId ?? 'purchase-payment:$invoiceId:$txnId',
+             foreignAmount: foreignAmount,
+             bookingRate: bookingRate,
+             settlementRate: paymentRate,
+             partyId: supplierId,
+             entryDate: DateTime.now(),
+           );
+         }
+       }
 
       return (select(safeTransactions)..where((t) => t.id.equals(txnId)))
           .getSingle();
@@ -2227,6 +2265,8 @@ extension PurchaseDao on AppDatabase {
     int? safeId,
     int? userId,
     String? globalId,
+     double? paymentRate,
+     double? foreignAmount,
   }) async {
     return transaction(() async {
       // Spec 151 C-03 idempotency: a payment is ADDITIVE, so an offline-outbox
@@ -2251,7 +2291,13 @@ extension PurchaseDao on AppDatabase {
       // 0. Soft/Hard Period Closing Gating
       await accountingDao.validateFinancialPeriod(invoice.invoiceDate, operation: 'سداد دفعة مشتريات');
 
-      final newPaid = invoice.paid + amount;
+      final settledAtBooking = invoice.currencyId != null &&
+               invoice.exchangeRate != null &&
+               invoice.exchangeRate! > 0 &&
+               foreignAmount != null
+           ? foreignAmount * invoice.exchangeRate!
+           : amount;
+       final newPaid = invoice.paid + settledAtBooking;
       final newRemaining = invoice.total - newPaid;
       final newStatus = newRemaining <= 0 ? 'paid' : 'partial';
 
@@ -2271,6 +2317,8 @@ extension PurchaseDao on AppDatabase {
         supplierId: invoice.supplierId,
         userId: userId,
         globalId: globalId,
+         paymentRate: paymentRate,
+         foreignAmount: foreignAmount,
       );
 
       // B7 (S-FAILLOUD): a payment must move cash AND post a balanced JE.
@@ -2302,7 +2350,7 @@ extension PurchaseDao on AppDatabase {
       // sales-collection twin, which credits the customer's balance via
       // createReceiptVoucher). Inside the transaction → rolls back with the JE
       // on any failure; idempotent because the whole method dedups on globalId.
-      await adjustPartyBalance(invoice.supplierId, -amount);
+      await adjustPartyBalance(invoice.supplierId, -settledAtBooking);
     });
   }
 

@@ -167,6 +167,7 @@ import '../widgets/settings_nav_rail.dart';
 import '../widgets/settings_section_pane.dart';
 import '../../template_library_picpos/screens/template_library_picpos_screen.dart';
 import '../../template_resolution_picpos/screens/template_resolution_picpos_screen.dart';
+import '../../screens/exchange_rate_screen.dart';
 import 'quick_sale_policy_screen_picpos.dart';
 
 // Part files — copied verbatim from lib/presentation/screens/settings/*
@@ -2270,6 +2271,18 @@ class _AdvancedTiles extends ConsumerWidget {
           meta: 'أدوات تشخيصية',
           tint: AppColors.warning,
           onTap: () => showBranchScopeAdminDialog(context),
+         ),
+         SettingsTile(
+           icon: PhosphorIconsBold.currencyCircleDollar,
+           title: 'أسعار الصرف وإعادة التقييم',
+           sub: 'إدارة العملات وقيد فروق الصرف الدوري',
+           meta: 'معاينة ثم تنفيذ محمي',
+           tint: AppColors.info,
+           permission: PermissionCodes.accountingJournal,
+           onTap: () => Navigator.push(
+             context,
+             MaterialPageRoute(builder: (_) => const ExchangeRateScreen()),
+           ),
          ),
          SettingsTile(
            icon: PhosphorIconsBold.scales,

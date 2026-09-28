@@ -5,7 +5,9 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import '../../core/theme/app_colors.dart';
-import '../../data/providers/repository_providers.dart';
+import '../../data/providers/providers.dart';
+import '../../core/permissions/permission_codes.dart';
+import '../widgets/permission_guard.dart';
 
 /// Exchange Rate Management Screen — إدارة أسعار الصرف
 class ExchangeRateScreen extends ConsumerStatefulWidget {
@@ -66,8 +68,19 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
             ],
           ),
           const Spacer(),
-          ElevatedButton.icon(
-            onPressed: () => _showAddCurrencyDialog(context, repo),
+          PermissionGuard(
+            permission: PermissionCodes.accountingJournal,
+            fallback: const SizedBox.shrink(),
+            child: ElevatedButton.icon(
+              onPressed: () => _showRevaluationDialog(context),
+             icon: const Icon(PhosphorIconsBold.calculator, size: 18),
+             label: Text('إعادة تقييم نهاية الفترة', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+             style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white)),
+           ),
+           ),
+           const SizedBox(width: 10),
+           ElevatedButton.icon(
+             onPressed: () => _showAddCurrencyDialog(context, repo),
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
             label: Text('عملة جديدة', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(
@@ -80,6 +93,68 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showRevaluationDialog(BuildContext context) async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      helpText: 'اختر تاريخ نهاية الفترة',
+    );
+    if (date == null || !context.mounted) return;
+    try {
+      final db = ref.read(databaseProvider);
+      final currencies = await db.getActiveCurrencies();
+      final rates = <int, double>{
+        for (final c in currencies) c.id: await db.getExchangeRate(c.id),
+      };
+      final userId = ref.read(authProvider).effectiveUser?.id;
+      if (userId == null) {
+        throw StateError('يجب تسجيل الدخول لتنفيذ إعادة التقييم.');
+      }
+      final preview = await db.previewOpenForeignBalances(
+        asOf: date,
+        rates: rates,
+        userId: userId,
+      );
+      if (!context.mounted) return;
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('معاينة إعادة تقييم الأرصدة الأجنبية'),
+          content: Text(
+            'الفترة: ${preview.periodKey}\n'
+            'الفواتير المتأثرة: ${preview.invoiceCount}\n'
+            'صافي الفرق المحلي: ${preview.totalAdjustment.toStringAsFixed(2)}\n\n'
+            '${preview.alreadyPosted ? 'هذه الفترة مرحّلة بالفعل وستبقى بلا تغيير.' : 'سيُنشأ قيد إعادة تقييم وعكسه في أول يوم من الفترة التالية.'}',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+            if (!preview.alreadyPosted)
+              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تنفيذ')),
+          ],
+        ),
+      );
+      if (proceed != true || !context.mounted || preview.alreadyPosted) return;
+      final revaluationResult = await db.revalueOpenForeignBalances(
+        asOf: date,
+        rates: rates,
+        userId: userId,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تمت إعادة التقييم للفترة ${revaluationResult.periodKey} مع قيد عكسي.')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Widget _buildCurrencyList(dynamic repo) {

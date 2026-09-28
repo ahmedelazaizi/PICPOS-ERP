@@ -159,6 +159,9 @@ abstract class SyncInterceptor {
     // still hit.
     int? partyId,
     String? partyGlobalId,
+     int? currencyId,
+     double? exchangeRate,
+     double? foreignAmount,
   });
 
   // UOM AND BARCODE METHODS (Added for ClientMode reconciliation)

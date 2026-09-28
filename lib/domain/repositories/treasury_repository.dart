@@ -120,6 +120,9 @@ abstract class ITreasuryRepository {
     String? globalId,
     // Spec 135 BUG-C — operator's working branch for JE attribution
     int? operatingBranchId,
+    int? currencyId,
+    double? paymentRate,
+    double? foreignAmount,
   });
 
   /// Create payment voucher (سند صرف)
@@ -146,6 +149,9 @@ abstract class ITreasuryRepository {
     String? paperBankName,
     // Spec 135 BUG-C — operator's working branch for JE attribution
     int? operatingBranchId,
+    int? currencyId,
+    double? paymentRate,
+    double? foreignAmount,
   });
 
   /// Close safe daily (اقفال يومي)

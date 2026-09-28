@@ -3340,6 +3340,9 @@ class ApiDataHandler extends ApiHandlerBase {
             userId: Value(userId),
             // Phase 5B.4 — persist the cost center the dialog selected.
             costCenterId: Value(costCenterId),
+             currencyId: Value(parseIntNullable(data['currencyId'] ?? data['currency_id'])),
+             exchangeRate: Value(parseDoubleNullable(data['exchangeRate'] ?? data['exchange_rate'])),
+             foreignAmount: Value(parseDoubleNullable(data['foreignAmount'] ?? data['foreign_amount'])),
             // Spec 087 (F2) — persist the resolved partyId so the
             // voucher appears in the right customer/supplier statement.
             partyId: Value(resolvedStPartyId),

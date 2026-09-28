@@ -121,6 +121,8 @@ class SalesSyncStrategy extends SyncStrategy {
               // لتصحيح صفٍّ موجودٍ محلّيّاً عبر هذا المسار أبداً — والمرآةُ
               // تُشغِّل هذه الاستراتيجيّةَ فعلاً (‏`isClient` تُكذَب للمرآة).
               existing.roundingAdjustment != serverRoundingAdjustment ||
+              existing.currencyId != parseIntNullable(saleMap['currencyId'] ?? saleMap['currency_id']) ||
+              existing.exchangeRate != parseDoubleNullable(saleMap['exchangeRate'] ?? saleMap['exchange_rate']) ||
               existing.deletedAt != serverDeletedAt;
 
           if (needsUpdate) {
@@ -138,6 +140,8 @@ class SalesSyncStrategy extends SyncStrategy {
               roundingAdjustment: Value(serverRoundingAdjustment),
               updatedAt: Value(serverUpdatedAt ?? DateTime.now()),
               customerId: Value(resolvedCustomerId),
+               currencyId: Value(parseIntNullable(saleMap['currencyId'] ?? saleMap['currency_id'])),
+               exchangeRate: Value(parseDoubleNullable(saleMap['exchangeRate'] ?? saleMap['exchange_rate'])),
             ));
             result = _SyncResult.updated;
             debugPrint('[Sync] Updated existing invoice $invoiceNumber '
@@ -192,6 +196,8 @@ class SalesSyncStrategy extends SyncStrategy {
             id: Value(serverId),
             invoiceNumber: Value(invoiceNumber),
             customerId: Value(resolvedCustomerId),
+               currencyId: Value(parseIntNullable(saleMap['currencyId'] ?? saleMap['currency_id'])),
+               exchangeRate: Value(parseDoubleNullable(saleMap['exchangeRate'] ?? saleMap['exchange_rate'])),
             warehouseId: Value(saleWarehouseId),
             branchId: Value(parseIntNullable(saleMap['branchId'])),
             userId: Value(parseInt(saleMap['userId'], 1)),

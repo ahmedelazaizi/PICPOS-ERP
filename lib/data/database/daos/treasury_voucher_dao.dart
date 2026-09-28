@@ -142,6 +142,7 @@ extension TreasuryVoucherDao on AppDatabase {
     // NOT an R9-gate issue (the push predicate is correct) — purely JE branch
     // attribution. Mirrors the manual-JE fix in drift_accounting_repository.
     int? operatingBranchId,
+     int? currencyId, double? paymentRate, double? foreignAmount,
   }) async {
     return transaction(() async {
       // 0. Soft/Hard Period Closing Gating
@@ -235,6 +236,7 @@ extension TreasuryVoucherDao on AppDatabase {
             userId: Value(userId),
             costCenterId: Value(effectiveCostCenterId),
             globalId: Value(effectiveGlobalId),
+             currencyId: Value(currencyId), exchangeRate: Value(paymentRate), foreignAmount: Value(foreignAmount),
           ),
         );
 
@@ -307,6 +309,7 @@ extension TreasuryVoucherDao on AppDatabase {
             costCenterId: effectiveCostCenterId,
             partyId: partyId,
             partyGlobalId: receiptPartyGid,
+             currencyId: currencyId, exchangeRate: paymentRate, foreignAmount: foreignAmount,
           );
         } catch (e) {
           debugPrint('[TREASURY-SYNC] Receipt voucher sync failed: $e');
@@ -347,6 +350,7 @@ extension TreasuryVoucherDao on AppDatabase {
     // Spec 135 BUG-C — operator's working branch (see createReceiptVoucher).
     // Prefer it for the JE branch; fall back to targetSafe.branchId.
     int? operatingBranchId,
+     int? currencyId, double? paymentRate, double? foreignAmount,
   }) async {
     return transaction(() async {
       // 0. Soft/Hard Period Closing Gating
@@ -425,6 +429,7 @@ extension TreasuryVoucherDao on AppDatabase {
             userId: Value(userId),
             costCenterId: Value(effectiveCostCenterId),
             globalId: Value(effectiveGlobalId),
+             currencyId: Value(currencyId), exchangeRate: Value(paymentRate), foreignAmount: Value(foreignAmount),
           ),
         );
 
@@ -481,6 +486,7 @@ extension TreasuryVoucherDao on AppDatabase {
             costCenterId: effectiveCostCenterId,
             partyId: partyId,
             partyGlobalId: paymentPartyGid,
+             currencyId: currencyId, exchangeRate: paymentRate, foreignAmount: foreignAmount,
           );
         } catch (e) {
           debugPrint('[TREASURY-SYNC] Payment voucher sync failed: $e');

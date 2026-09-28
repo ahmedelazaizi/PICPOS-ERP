@@ -246,6 +246,9 @@ class _CwiSyncFoundation {
     // partyId=null and was missing from the party's statement.
     int? partyId,
     String? partyGlobalId,
+     int? currencyId,
+     double? exchangeRate,
+     double? foreignAmount,
   }) async {
     if (!SyncInterceptor.isClientMode) return;
     debugPrint('[ClientInterceptor] Routing safe transaction to server');
@@ -266,6 +269,9 @@ class _CwiSyncFoundation {
           'safeGlobalId': safeGlobalId,
         'costCenterId': ?costCenterId,
         'partyId': ?partyId,
+         'currencyId': ?currencyId,
+         'exchangeRate': ?exchangeRate,
+         'foreignAmount': ?foreignAmount,
         if (partyGlobalId != null && partyGlobalId.isNotEmpty)
           'partyGlobalId': partyGlobalId,
       },
@@ -283,6 +289,9 @@ class _CwiSyncFoundation {
         costCenterId: costCenterId,
         partyId: partyId,
         partyGlobalId: partyGlobalId,
+         currencyId: currencyId,
+         exchangeRate: exchangeRate,
+         foreignAmount: foreignAmount,
         idempotencyKey: reqIdemKey,
       ),
     );

@@ -89,6 +89,7 @@ class Parties extends Table {
   )(); // default, talabat, careem, ashyae
   IntColumn get accountId =>
       integer().nullable().references(Accounts, #id)(); // NEW: Link to GL Account (Task 10)
+  IntColumn get currencyId => integer().nullable().references(Currencies, #id)();
   IntColumn get groupId =>
       integer().nullable().references(PartyGroups, #id)(); // تصنيف العميل/المورد
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
@@ -155,9 +156,8 @@ class PurchaseInvoices extends Table {
 
   // === v174 — عملةُ الفاتورة ولقطةُ سعرِها (المشتريات الخارجيّة) ===
   //
-  // بقرار المالك 2026-09-18 (الخيارُ أ): تُدخَل بالعملة الأجنبيّة وتُحوَّل
-  // **فوراً** بسعر يومها، والذمّةُ تُقيَّد بالمحلّيّة — فلا فروقَ صرفٍ لاحقةً
-  // ولا محرّكَ إعادةِ ترجمةٍ عند السداد.
+  // تُدخَل بالعملة الأجنبيّة وتُحوَّل فوراً بسعر يومها، مع حفظ لقطة
+  // الحجز؛ وتُسجَّل فروق التسوية المحققة وإعادة تقييم الرصيد المفتوح دورياً.
   //
   // ⚠️ و[exchangeRate] **لقطةٌ لا مرجع**: قراءةُ السعر وقتَ العرض تُعيد تقييمَ
   // فاتورةٍ رُحِّلت — وهو عينُ ما تحذّر منه فقرةُ [dueDate] أعلاه. وهو أيضاً
@@ -311,6 +311,10 @@ class SalesInvoices extends Table {
   RealColumn get tax => real().withDefault(const Constant(0))();
   RealColumn get total => real().withDefault(const Constant(0))();
   RealColumn get paid => real().withDefault(const Constant(0))();
+
+  /// العملة وسعر الحجز للفواتير الأجنبية؛ null تعني العملة الأساسية.
+  IntColumn get currencyId => integer().nullable().references(Currencies, #id)();
+  RealColumn get exchangeRate => real().nullable()();
 
   /// v175 — المسدَّدُ **خارجَ التخصيصات**، وقاعدةُ حسابِ [paid].
   ///

@@ -47,6 +47,29 @@ class _PaymentVoucherDialogPicposState extends ConsumerState<PaymentVoucherDialo
   final discountController = TextEditingController();
   final paperNumberController = TextEditingController();
   final paperBankController = TextEditingController();
+  final foreignAmountController = TextEditingController();
+  final paymentRateController = TextEditingController();
+  Currency? _foreignCurrency;
+
+  bool get _showForeignFields => selectedParty?.currencyId != null && _foreignCurrency != null;
+
+  Future<void> _loadPartyCurrency(Party? party) async {
+    final currencyId = party?.currencyId;
+    if (currencyId == null) {
+      if (mounted) setState(() => _foreignCurrency = null);
+      return;
+    }
+    final db = ref.read(databaseProvider);
+    final currency = await (db.select(db.currencies)..where((c) => c.id.equals(currencyId))).getSingleOrNull();
+    if (!mounted) return;
+    final rate = await db.getExchangeRate(currencyId);
+    setState(() {
+      _foreignCurrency = currency?.isDefault == true ? null : currency;
+      if (_foreignCurrency != null && paymentRateController.text.isEmpty) {
+        paymentRateController.text = rate.toString();
+      }
+    });
+  }
 
   String paymentMethod = 'cash'; // cash, check, bank
   DateTime? paperDueDate;
@@ -90,6 +113,7 @@ class _PaymentVoucherDialogPicposState extends ConsumerState<PaymentVoucherDialo
     // Initialize with provided party
     if (widget.initialParty != null) {
       selectedParty = widget.initialParty;
+      _loadPartyCurrency(selectedParty);
       searchController.text = selectedParty!.name;
       category = 'supplier_payment';
     }
@@ -508,6 +532,7 @@ class _PaymentVoucherDialogPicposState extends ConsumerState<PaymentVoucherDialo
                                 onTap: () {
                                   setState(() {
                                     selectedParty = p;
+                                    _loadPartyCurrency(p);
                                     searchController.text = p.name;
                                     filteredParties = [];
                                   });
@@ -577,6 +602,17 @@ class _PaymentVoucherDialogPicposState extends ConsumerState<PaymentVoucherDialo
                   onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 16),
+
+                if (_showForeignFields) ...[
+                  Text('عملة التسوية: ${_foreignCurrency!.code} — ${_foreignCurrency!.name}'),
+                  Row(children: [
+                    Expanded(child: TextField(controller: foreignAmountController, decoration: const InputDecoration(labelText: 'المبلغ الأجنبي'), keyboardType: TextInputType.number, onChanged: (_) => setState(() {}))),
+                    const SizedBox(width: 12),
+                    Expanded(child: TextField(controller: paymentRateController, decoration: const InputDecoration(labelText: 'سعر الدفع'), keyboardType: TextInputType.number, onChanged: (_) => setState(() {}))),
+                  ]),
+                  Text('المبلغ المحلي المحسوب: ${((double.tryParse(foreignAmountController.text) ?? 0) * (double.tryParse(paymentRateController.text) ?? 0)).toStringAsFixed(AppConstants.decimalPlaces)}'),
+                  const SizedBox(height: 12),
+                ],
 
                 // Discount (Settlement Discount Received)
                 if (category == 'supplier_payment' || category == 'expense') ...[
@@ -907,6 +943,9 @@ class _PaymentVoucherDialogPicposState extends ConsumerState<PaymentVoucherDialo
           paperDueDate: paymentMethod == 'check' ? paperDueDate : null,
           paperIssueDate: paymentMethod == 'check' ? DateTime.now() : null,
           operatingBranchId: operatingBranchId, // Spec 135 BUG-C
+          currencyId: _showForeignFields ? _foreignCurrency!.id : null,
+          paymentRate: _showForeignFields ? double.tryParse(paymentRateController.text) : null,
+          foreignAmount: _showForeignFields ? double.tryParse(foreignAmountController.text) : null,
         );
       }
 

@@ -447,6 +447,9 @@ class ServerProxy {
     // Feature 044 — let server remap to its own party id when the
     // mirror's local autoincrement diverges (`resolvePartyId` pattern).
     String? partyGlobalId,
+     int? currencyId,
+     double? exchangeRate,
+     double? foreignAmount,
     String? partyName,
     int? safeId,
     int? userId,
@@ -490,6 +493,9 @@ class ServerProxy {
     int? partyId,
     // Feature 044 — `resolvePartyId` on server side maps to its own id.
     String? partyGlobalId,
+     int? currencyId,
+     double? exchangeRate,
+     double? foreignAmount,
     String? partyName,
     int? safeId,
     String? safeGlobalId, // Issue 12: lets server resolve to its own safe id
@@ -1513,6 +1519,9 @@ class ServerProxy {
     // voucher appears in customer/supplier statements.
     int? partyId,
     String? partyGlobalId,
+     int? currencyId,
+     double? exchangeRate,
+     double? foreignAmount,
   }) async {
     // PHASE-3 FIX: Treasury operations use retry logic for network resilience
     await _postWithRetry('/api/safes/transaction', {
@@ -1529,6 +1538,9 @@ class ServerProxy {
         'safeGlobalId': safeGlobalId,
       'costCenterId': ?costCenterId,
       'partyId': ?partyId,
+       'currencyId': ?currencyId,
+       'exchangeRate': ?exchangeRate,
+       'foreignAmount': ?foreignAmount,
       if (partyGlobalId != null && partyGlobalId.isNotEmpty)
         'partyGlobalId': partyGlobalId,
     }, idempotencyKey: idempotencyKey);

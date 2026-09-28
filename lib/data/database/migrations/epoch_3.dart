@@ -3530,5 +3530,38 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v178: salary payment dedup guard verified');
       });
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // v179 — فروق صرف التسوية وإعادة التقييم
+    // ═══════════════════════════════════════════════════════════════════
+    if (from < 179) {
+      await _safeMigrate('v179 أعمدة فروق الصرف', () async {
+        const columns = <String, List<String>>{
+          'parties': [
+            'currency_id INTEGER REFERENCES currencies(id)',
+          ],
+          'sales_invoices': [
+            'currency_id INTEGER REFERENCES currencies(id)',
+            'exchange_rate REAL',
+          ],
+          'safe_transactions': [
+            'currency_id INTEGER REFERENCES currencies(id)',
+            'exchange_rate REAL',
+            'foreign_amount REAL',
+          ],
+        };
+        for (final table in columns.entries) {
+          for (final column in table.value) {
+            try {
+              await m.database.customStatement(
+                'ALTER TABLE ${table.key} ADD COLUMN $column',
+              );
+            } catch (e) {
+              debugPrint('[Migration] v179 ${table.key}.$column (safe-skip): $e');
+            }
+          }
+        }
+      });
+    }
   }
 }

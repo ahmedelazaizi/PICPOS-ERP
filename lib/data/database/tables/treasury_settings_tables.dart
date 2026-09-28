@@ -62,6 +62,12 @@ class SafeTransactions extends Table {
   IntColumn get costCenterId => integer().nullable().references(CostCenters, #id)(); // مركز التكلفة
   IntColumn get employeeId => integer().nullable().references(Employees, #id)(); // الموظف (للرواتب والسلف)
   TextColumn get disbursementType => text().nullable()(); // salary, advance, expense — نوع الصرفية
+
+  /// لقطة تسوية العملة الأجنبية على حركة الخزينة.
+  IntColumn get currencyId => integer().nullable().references(Currencies, #id)();
+  RealColumn get exchangeRate => real().nullable()();
+  RealColumn get foreignAmount => real().nullable()();
+
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
   DateTimeColumn get lastModifiedAt => dateTime().nullable()();

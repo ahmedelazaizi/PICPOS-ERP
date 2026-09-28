@@ -384,7 +384,7 @@ class _ImportDocumentPanelState extends State<ImportDocumentPanel> {
             Text(
               'الأسعارُ في الجدول بـ${picked.code}. يُحوَّل الإجماليُّ إلى '
               '${AppConstants.currencySymbolEn} بسعرِ يومِه عند الحفظ، '
-              'والذمّةُ محلّيّةٌ — فلا فروقَ صرفٍ لاحقاً.',
+              'وتُحفظ لقطة السعر لفروق التسوية وإعادة التقييم.',
               key: const Key('import_rate_hint'),
               style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
             ),

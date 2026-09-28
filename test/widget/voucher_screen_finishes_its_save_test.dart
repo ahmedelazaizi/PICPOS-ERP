@@ -98,6 +98,9 @@ class _CountingTreasuryRepo implements ITreasuryRepository {
     String? globalId,
     int? userId,
     bool manualEntry = false,
+    int? currencyId,
+    double? paymentRate,
+    double? foreignAmount,
   }) async {
     receipts.add(amount);
     return receipts.length;
@@ -121,6 +124,9 @@ class _CountingTreasuryRepo implements ITreasuryRepository {
     int? operatingBranchId,
     String? globalId,
     bool manualEntry = false,
+    int? currencyId,
+    double? paymentRate,
+    double? foreignAmount,
   }) async {
     payments.add(amount);
     return payments.length;

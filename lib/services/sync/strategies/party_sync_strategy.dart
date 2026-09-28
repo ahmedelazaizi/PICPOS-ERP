@@ -58,6 +58,7 @@ class PartySyncStrategy extends SyncStrategy {
         fixedDiscount: Value(parseDouble(p['fixedDiscount'])),
         priceLevel: Value(p['priceLevel'] as String? ?? 'default'),
         accountId: Value(parseIntNullable(p['accountId'])),
+         currencyId: Value(parseIntNullable(p['currencyId'])),
         groupId: Value(parseIntNullable(p['groupId'])),
         isActive: Value(parseBool(p['isActive'], true)),
       );

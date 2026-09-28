@@ -213,6 +213,9 @@ class SafeTransactionSyncStrategy extends SyncStrategy {
               description: Value(txnMap['description'] as String? ?? txnMap['notes'] as String?),
               userId: Value(parseIntNullable(txnMap['userId'])),
               costCenterId: Value(parseIntNullable(txnMap['costCenterId'])),
+               currencyId: Value(parseIntNullable(txnMap['currencyId'])),
+               exchangeRate: Value(parseDoubleNullable(txnMap['exchangeRate'])),
+               foreignAmount: Value(parseDoubleNullable(txnMap['foreignAmount'])),
               employeeId: Value(parseIntNullable(txnMap['employeeId'])),
               disbursementType: Value(txnMap['disbursementType'] as String?),
               globalId: Value(incomingGlobalId), // Preserve UUID from server

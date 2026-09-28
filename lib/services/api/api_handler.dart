@@ -1025,6 +1025,8 @@ class ApiHandler {
           'tax': inv.tax,
           'total': inv.total,
           'paid': inv.paid,
+           'currencyId': inv.currencyId,
+           'exchangeRate': inv.exchangeRate,
           // فرقُ التقريب يسافر مع الفاتورة، وإلّا قرأه العميلُ صفراً بعد
           // السحب فرأى `total > paid` ⇒ فاتورةٌ مكتملةٌ تعود `pending`.
           'roundingAdjustment': inv.roundingAdjustment,
@@ -1151,6 +1153,9 @@ class ApiHandler {
               'costCenterId': t.costCenterId,
               'employeeId': t.employeeId,
               'disbursementType': t.disbursementType,
+               'currencyId': t.currencyId,
+               'exchangeRate': t.exchangeRate,
+               'foreignAmount': t.foreignAmount,
               // Carry globalId so clients can dedupe/match by UUID across
               // installs, and deletedAt so client-side pull can replicate
               // admin soft-deletes done on the server.
@@ -1287,6 +1292,8 @@ class ApiHandler {
           'tax': inv.tax,
           'total': inv.total,
           'paid': inv.paid,
+           'currencyId': inv.currencyId,
+           'exchangeRate': inv.exchangeRate,
           'status': inv.status,
           'notes': inv.notes,
           'costCenterId': inv.costCenterId,
@@ -1477,6 +1484,7 @@ class ApiHandler {
               'priceLevel': p.priceLevel,
               'isActive': p.isActive,
               'accountId': p.accountId,
+               'currencyId': p.currencyId,
               'groupId': p.groupId,
             },
           )

@@ -167,6 +167,9 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
     String? globalId,
     // Spec 135 BUG-C — operator's working branch for JE attribution
     int? operatingBranchId, // voucher method
+    int? currencyId,
+    double? paymentRate,
+    double? foreignAmount,
   }) async {
     await _accountingService.ensureOpenFiscalPeriod(DateTime.now());
 
@@ -215,6 +218,9 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
         // في «إدارة الشيكات». يُطلَب للشيك وحدَه، فالنقديُّ له صفُّه أصلاً.
         chequeVoucherSafeId: isCheckPayment ? targetSafeId : null,
         operatingBranchId: operatingBranchId, // Spec 135 BUG-C
+        currencyId: currencyId,
+        paymentRate: paymentRate,
+        foreignAmount: foreignAmount,
       );
 
       // Spec 133 (FR-010) — when a cheque receipt also carries a
@@ -284,6 +290,9 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
     String? paperBankName,
     // Spec 135 BUG-C — operator's working branch for JE attribution
     int? operatingBranchId, // voucher method
+    int? currencyId,
+    double? paymentRate,
+    double? foreignAmount,
   }) async {
     await _accountingService.ensureOpenFiscalPeriod(DateTime.now());
 
@@ -329,6 +338,9 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
         // سندُ الشيك — نظيرُ ما في [createReceiptVoucher].
         chequeVoucherSafeId: isCheckPayment ? resolvedSafeId : null,
         operatingBranchId: operatingBranchId, // Spec 135 BUG-C
+        currencyId: currencyId,
+        paymentRate: paymentRate,
+        foreignAmount: foreignAmount,
       );
 
       // Commercial paper creation is intentionally NOT done here.

@@ -155,6 +155,7 @@ part 'daos/sales_orders_dao.dart';
 part 'daos/bank_reconciliation_dao.dart';
 part 'daos/data_maintenance_dao.dart';
 part 'daos/multi_currency_dao.dart';
+part 'daos/fx_revaluation_dao.dart';
 part 'daos/budgeting_dao.dart';
 part 'daos/deferred_schedule_dao.dart';
 part 'daos/approval_workflow_dao.dart';
@@ -1168,7 +1169,7 @@ class AppDatabase extends _$AppDatabase {
   //
   // Schema v177: sale reposts after an authorized edit may legitimately
   // produce multiple auto-posted JEs for one invoice reference.
-  int get schemaVersion => 178;
+  int get schemaVersion => 179;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.

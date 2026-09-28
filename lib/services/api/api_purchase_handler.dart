@@ -1270,6 +1270,8 @@ class ApiPurchaseHandler extends ApiHandlerBase {
           final purchaseGlobalId = data['purchaseGlobalId'] as String?;
           final invoiceNumber = data['invoiceNumber'] as String?;
           final amount = parseDouble(data['amount']);
+           final paymentRate = parseDoubleNullable(data['paymentRate'] ?? data['payment_rate']);
+           final foreignAmount = parseDoubleNullable(data['foreignAmount'] ?? data['foreign_amount']);
           // R9 — the SAME deterministic per-event id the client stamped on the
           // local payment context. addPurchasePayment dedups on it.
           final paymentGlobalId = data['globalId'] as String?;
@@ -1319,6 +1321,8 @@ class ApiPurchaseHandler extends ApiHandlerBase {
             amount: amount,
             userId: resolvedUserId,
             globalId: paymentGlobalId,
+            paymentRate: paymentRate,
+            foreignAmount: foreignAmount,
           );
 
           db.markTablesUpdated({db.purchaseInvoices, db.safeTransactions});
