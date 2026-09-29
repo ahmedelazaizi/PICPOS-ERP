@@ -330,7 +330,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: depreciationPercent / 100,
-                  backgroundColor: Colors.grey.shade200,
+                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     depreciationPercent >= 100
                         ? AppColors.error

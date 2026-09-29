@@ -87,7 +87,7 @@ class _TouchKeyboardState extends State<TouchKeyboard> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // Display
-          _buildDisplay(),
+          _buildDisplay(context),
           const SizedBox(height: 8),
           // Numeric keys
           ..._numericKeys.map((row) => _buildKeyRow(row, isNumeric: true)),
@@ -107,7 +107,7 @@ class _TouchKeyboardState extends State<TouchKeyboard> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // Display
-          _buildDisplay(),
+          _buildDisplay(context),
           const SizedBox(height: 8),
           // Keyboard rows
           ...keys.map((row) => _buildKeyRow(row)),
@@ -121,12 +121,12 @@ class _TouchKeyboardState extends State<TouchKeyboard> {
     );
   }
 
-  Widget _buildDisplay() {
+  Widget _buildDisplay(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.primary),
       ),
@@ -429,7 +429,7 @@ class _TouchKeyboardSheetState extends State<_TouchKeyboardSheet> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(

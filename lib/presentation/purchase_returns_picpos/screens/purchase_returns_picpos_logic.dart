@@ -474,7 +474,7 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
                       // Header
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        color: Colors.grey.shade200,
+                        color: Theme.of(context).colorScheme.surfaceContainerLow,
                         child:  Row(
                           children: [
                             Expanded(flex: 3, child: Text(tr('الصنف'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
@@ -523,7 +523,7 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
                       // Total footer
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        color: Colors.grey.shade100,
+                        color: Theme.of(context).colorScheme.surfaceContainerLowest,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -619,7 +619,7 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    color: Colors.grey.shade200,
+                    color: Theme.of(context).colorScheme.surfaceContainerLow,
                     child:  Row(
                       children: [
                         Expanded(flex: 3, child: Text(tr('الصنف'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),

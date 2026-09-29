@@ -730,7 +730,7 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.withValues(alpha: 0.12)),
         boxShadow: [
@@ -877,7 +877,7 @@ class _HoverableStatCardState extends State<_HoverableStatCard> {
         curve: Curves.easeOut,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           border: Border.all(
             color: _isHovered
                 ? widget.color.withValues(alpha: 0.3)

@@ -735,7 +735,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(color: AppColors.border),
-                                    color: Colors.white,
+                                    color: Theme.of(context).cardColor,
                                   ),
                                   child: _selectedImage != null
                                       ? ClipRRect(
@@ -1455,7 +1455,10 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                     child: Text(u.name, style: const TextStyle(fontSize: 12)),
                                   )).toList(),
                                   onChanged: (v) => setState(() => row.unitName = v ?? ''),
-                                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                  style: TextStyle(
+                                     fontSize: 12,
+                                     color: Theme.of(context).colorScheme.onSurface,
+                                   ),
                                 ),
                               );
                             },

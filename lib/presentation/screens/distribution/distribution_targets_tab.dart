@@ -156,7 +156,7 @@ class _TargetsTabState extends State<_TargetsTab> {
                                     CircularProgressIndicator(
                                       value: pct / 100,
                                       strokeWidth: 8,
-                                      backgroundColor: Colors.grey.shade200,
+                                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
                                       color: pct >= 100
                                           ? Colors.green
                                           : AppColors.primary,

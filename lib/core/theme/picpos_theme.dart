@@ -605,6 +605,66 @@ class PicPosTheme {
         dividerColor: _hairlineDark,
       ),
 
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: _cardDark,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: _hairlineDark),
+        ),
+        headerBackgroundColor: AppColors.primaryDark,
+        headerForegroundColor: Colors.white,
+        headerHeadlineStyle:
+            GoogleFonts.cairo(fontSize: 19, fontWeight: FontWeight.w700),
+        headerHelpStyle: GoogleFonts.cairo(fontSize: 12),
+        dayStyle: GoogleFonts.cairo(fontSize: 13, color: Colors.white),
+        weekdayStyle: GoogleFonts.cairo(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: Colors.white70,
+        ),
+        yearStyle: GoogleFonts.cairo(fontSize: 14, color: Colors.white),
+        dayOverlayColor:
+            WidgetStateProperty.all(AppColors.primary.withValues(alpha: 0.18)),
+        todayBorder:
+            const BorderSide(color: AppColors.primaryLight, width: 1.5),
+        todayForegroundColor: WidgetStateProperty.all(AppColors.primaryLight),
+        rangePickerHeaderBackgroundColor: AppColors.primaryDark,
+        rangePickerHeaderForegroundColor: Colors.white,
+        rangePickerHeaderHeadlineStyle:
+            GoogleFonts.cairo(fontSize: 17, fontWeight: FontWeight.w700),
+        rangePickerHeaderHelpStyle: GoogleFonts.cairo(fontSize: 12),
+        rangeSelectionBackgroundColor:
+            AppColors.primary.withValues(alpha: 0.22),
+        rangePickerSurfaceTintColor: Colors.transparent,
+        rangePickerBackgroundColor: _cardDark,
+        rangePickerShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: _hairlineDark),
+        ),
+      ),
+
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.selected)
+                ? Colors.white
+                : Colors.white70),
+        trackColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.selected)
+                ? AppColors.primary
+                : _fieldFillDark),
+        trackOutlineColor: WidgetStateProperty.all(_hairlineDark),
+      ),
+
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.selected)
+                ? AppColors.primary
+                : Colors.transparent),
+        side: const BorderSide(color: _hairlineDark, width: 1.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+      ),
+
       scrollbarTheme: _scrollbar(),
 
       popupMenuTheme: PopupMenuThemeData(

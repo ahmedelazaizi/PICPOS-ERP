@@ -292,7 +292,9 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
           child: Text(t, textAlign: TextAlign.center, style: headerStyle),
         );
     return TableRow(
-      decoration: BoxDecoration(color: Colors.grey.shade100),
+      decoration: BoxDecoration(
+         color: Theme.of(context).colorScheme.surfaceContainerLow,
+       ),
       children: [
         h(tr('البند')),
         h(tr('نقد'), bg: AppColors.primary.withValues(alpha: 0.08)),
@@ -688,7 +690,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
   Widget _buildReconciliationSection(bool canViewDetails, PosClosingState state) {
     if (!canViewDetails) {
       return Card(
-        color: Colors.grey.shade50,
+        color: Theme.of(context).cardColor,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -712,7 +714,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
     }
 
     return Card(
-      color: Colors.grey.shade50,
+      color: Theme.of(context).cardColor,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

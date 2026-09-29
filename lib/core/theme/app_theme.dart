@@ -358,6 +358,19 @@ class AppTheme {
           color: Colors.white,
         ),
       ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: AppColors.primaryLight,
+        foregroundColor: Colors.white,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.secondaryLight,
+        contentTextStyle: GoogleFonts.cairo(
+          color: Colors.white,
+          fontSize: 12,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      ),
       dividerTheme: const DividerThemeData(
         color: AppColors.borderDark,
         thickness: 0.8,

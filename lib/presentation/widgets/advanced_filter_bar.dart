@@ -105,7 +105,7 @@ class AdvancedFilterBar extends StatelessWidget {
               // Search field
               Expanded(
                 flex: 3,
-                child: _buildSearchField(),
+                child: _buildSearchField(context),
               ),
               const SizedBox(width: 10),
               // Date range
@@ -150,7 +150,7 @@ class AdvancedFilterBar extends StatelessWidget {
                     ),
                     selected: isSelected,
                     selectedColor: AppColors.primary,
-                    backgroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).cardColor,
                     labelStyle: TextStyle(color: isSelected ? Colors.white : AppColors.textPrimary),
                     labelPadding: const EdgeInsets.symmetric(horizontal: 4),
                     padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -166,7 +166,7 @@ class AdvancedFilterBar extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchField() {
+  Widget _buildSearchField(BuildContext context) {
     return TextField(
       onChanged: onSearchChanged,
       decoration: InputDecoration(
@@ -183,7 +183,7 @@ class AdvancedFilterBar extends StatelessWidget {
             : null,
         isDense: true,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -219,7 +219,7 @@ class AdvancedFilterBar extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.border),
         ),

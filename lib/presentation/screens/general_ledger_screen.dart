@@ -309,7 +309,7 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
             const SizedBox(height: 6),
             Text(
               _fmt.format(value),
-              style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700, color: isDark ? Colors.white : Colors.black87),
+              style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
             ),
           ],
         ),

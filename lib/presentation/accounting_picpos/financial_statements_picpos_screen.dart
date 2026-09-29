@@ -1334,7 +1334,7 @@ class _FinancialStatementsPicPosScreenState
             // Summary Row
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: Colors.grey.shade100,
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [

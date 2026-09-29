@@ -296,7 +296,7 @@ class CartView extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 14 * scaleFactor,
                   fontWeight: FontWeight.w900,
-                  color: Theme.of(context).colorScheme.secondary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const Spacer(),

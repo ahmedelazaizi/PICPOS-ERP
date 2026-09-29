@@ -67,9 +67,11 @@ class FieldAuditHistoryWidget extends ConsumerWidget {
                 return Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
+                    color: Theme.of(context).colorScheme.surfaceContainerLowest,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(
+                       color: Theme.of(context).colorScheme.outlineVariant,
+                     ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

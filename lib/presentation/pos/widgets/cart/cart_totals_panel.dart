@@ -338,7 +338,7 @@ class CartTotalsPanel extends ConsumerWidget {
         // Checkout Actions Section (Extracted from _buildCheckoutButton)
         Container(
           padding: EdgeInsets.all(padding),
-          decoration: const BoxDecoration(color: Colors.white),
+          decoration: BoxDecoration(color: Theme.of(context).cardColor),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

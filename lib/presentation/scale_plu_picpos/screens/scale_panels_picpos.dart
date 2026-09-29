@@ -513,7 +513,7 @@ mixin _ScalePanelsPicposMixin on ConsumerState<ScalePluPicposScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                          color: Theme.of(context).colorScheme.surfaceContainerLow,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: SelectableText(

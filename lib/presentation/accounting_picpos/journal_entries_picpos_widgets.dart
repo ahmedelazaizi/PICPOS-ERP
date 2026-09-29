@@ -197,7 +197,7 @@ class _AccountAutocompleteFieldState extends State<AccountAutocompleteField> {
                 width: constraints.maxWidth,
                 constraints: const BoxConstraints(maxHeight: 250),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                 ),

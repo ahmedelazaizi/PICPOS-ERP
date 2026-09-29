@@ -139,7 +139,7 @@ class _QuickAddProductDialogState
                   labelText: tr('الباركود'),
                   prefixIcon: const Icon(PhosphorIconsBold.barcode),
                   border: const OutlineInputBorder(),
-                  fillColor: Colors.grey.shade100,
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
                   filled: true,
                 ),
               ),

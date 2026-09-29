@@ -731,7 +731,9 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                  color: isSelected
+                       ? Colors.white
+                       : Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),

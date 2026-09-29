@@ -341,7 +341,10 @@ PurchaseReturnState state, PurchaseReturnNotifier notifier) {
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
-            style: const TextStyle(fontSize: 13, color: Colors.black87),
+            style: TextStyle(
+               fontSize: 13,
+               color: Theme.of(context).colorScheme.onSurface,
+             ),
             items: AppConstants.purchaseReturnReasons
                 .map((r) => DropdownMenuItem(value: r, child: Text(r)))
                 .toList(),
