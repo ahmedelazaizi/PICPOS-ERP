@@ -8,16 +8,16 @@ PAGE 1 204.09x548.42
   TXT 112.68,455.63 NotoNaskhArabic-Bold 24.00 «ﻃﻠﺐ»
   TXT 86.49,455.63 NotoNaskhArabic-Bold 24.00 «:#»
   TXT 54.00,455.63 NotoNaskhArabic-Bold 24.00 «17»
-  TXT 136.14,395.03 NotoNaskhArabic-Bold 20.00 «ﻃﺎﻭﻟﺔ:»
-  TXT 94.76,395.03 NotoNaskhArabic-Bold 20.00 «ﺃﺣﻤﺪ»
-  TXT 63.80,395.03 NotoNaskhArabic-Bold 20.00 «ﻋﺒﺪ»
-  TXT 9.58,395.03 NotoNaskhArabic-Bold 20.00 «ﺍﻟﺮﺣﻤﻦ»
+  TXT 141.14,395.03 NotoNaskhArabic-Bold 20.00 «ﻃﺎﻭﻟﺔ:»
+  TXT 99.76,395.03 NotoNaskhArabic-Bold 20.00 «ﺃﺣﻤﺪ»
+  TXT 68.80,395.03 NotoNaskhArabic-Bold 20.00 «ﻋﺒﺪ»
+  TXT 14.58,395.03 NotoNaskhArabic-Bold 20.00 «ﺍﻟﺮﺣﻤﻦ»
   TXT 167.73,345.52 NotoNaskhArabic-Regular 12.00 «ﺍﻟﺘﺎﺭﻳﺦ:»
   TXT 111.34,345.52 NotoNaskhArabic-Regular 12.00 «14/3/2026»
   TXT 13.57,322.95 NotoNaskhArabic-Bold 14.00 «09:26»
   TXT 7.31,322.95 NotoNaskhArabic-Bold 14.00 «:»
-  TXT 100.54,275.11 NotoNaskhArabic-Bold 14.00 «ﺍﻷﺻﻨﺎﻑ»
-  TXT 54.20,275.11 NotoNaskhArabic-Bold 14.00 «ﺍﻟﻤﻄﻠﻮﺑﺔ»
+  TXT 104.04,275.11 NotoNaskhArabic-Bold 14.00 «ﺍﻷﺻﻨﺎﻑ»
+  TXT 57.70,275.11 NotoNaskhArabic-Bold 14.00 «ﺍﻟﻤﻄﻠﻮﺑﺔ»
   TXT 14.81,226.34 NotoNaskhArabic-Bold 13.00 «ﺍﻟﻌﺪﺩ»
   TXT 91.59,226.34 NotoNaskhArabic-Bold 13.00 «ﺍﻟﺼﻨﻒ»
   TXT 180.20,226.34 NotoNaskhArabic-Bold 13.00 «ﻡ»
@@ -50,31 +50,16 @@ PAGE 1 204.09x548.42
   TXT 99.51,14.55 NotoNaskhArabic-Bold 14.00 «ﺧﻼﻝ»
   TXT 82.43,14.55 NotoNaskhArabic-Bold 14.00 «٨٤»
   TXT 52.32,14.55 NotoNaskhArabic-Bold 14.00 «ﺳﺎﻋﺔ»
-  LIN 152.79,519.23 -> 163.79,541.23
-  LIN 152.79,541.23 -> 163.79,519.23
-  LIN 40.30,519.23 -> 51.30,541.23
-  LIN 40.30,541.23 -> 51.30,519.23
   LIN 198.42,493.03 -> 5.67,493.03
   LIN 198.42,428.16 -> 5.67,428.16
-  LIN 187.06,395.03 -> 197.06,415.03
-  LIN 187.06,415.03 -> 197.06,395.03
   LIN 198.42,370.10 -> 5.67,370.10
-  LIN 47.74,322.95 -> 54.74,336.95
-  LIN 47.74,336.95 -> 54.74,322.95
   LIN 198.42,301.82 -> 5.67,301.82
-  LIN 144.67,275.11 -> 151.67,289.11
-  LIN 144.67,289.11 -> 151.67,275.11
   LIN 198.42,253.98 -> 5.67,253.98
   LIN 45.83,29.51 -> 45.83,242.23
   LIN 166.30,29.51 -> 166.30,242.23
   LIN 5.67,216.09 -> 198.42,216.09
   LIN 5.67,160.41 -> 198.42,160.41
   LIN 5.67,61.35 -> 198.42,61.35
-  REC 152.79,519.23 11.00x22.00
-  REC 40.30,519.23 11.00x22.00
-  REC 187.06,395.03 10.00x20.00
-  REC 47.74,322.95 7.00x14.00
-  REC 144.67,275.11 7.00x14.00
   REC 5.67,216.09 40.16x26.14
   REC 45.83,216.09 120.47x26.14
   REC 166.30,216.09 32.13x26.14
