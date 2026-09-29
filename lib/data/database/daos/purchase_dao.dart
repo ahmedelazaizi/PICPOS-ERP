@@ -952,8 +952,6 @@ extension PurchaseDao on AppDatabase {
         ),
       );
 
-      await _refreshPurchaseInvoiceIntegrity(invoiceId);
-
       // ═══ وسمُ الاستيراد — في معاملة الفاتورة لا بعدَها ═══
       //
       // 🔴 صفُّ `ImportPurchaseDetails` هو **الفارقُ الوحيد** بين فاتورةِ
@@ -1377,7 +1375,7 @@ extension PurchaseDao on AppDatabase {
       if (sourceOrderId != null) {
         await _markPurchaseOrderConverted(sourceOrderId, invoiceId);
       }
-
+      await resignPurchaseInvoice(invoiceId);
       return invoiceId;
     });
   }
@@ -1496,8 +1494,6 @@ extension PurchaseDao on AppDatabase {
         ),
       );
 
-      await _refreshPurchaseInvoiceIntegrity(invoiceId);
-
       // نفسُ حكمِ مسار الإنشاء: الوسمُ في المعاملة لا بعدَها.
       if (importDetails != null) {
         await _writeImportPurchaseDetails(invoiceId, importDetails);
@@ -1514,7 +1510,7 @@ extension PurchaseDao on AppDatabase {
           ),
         );
       }
-
+      await resignPurchaseInvoice(invoiceId);
       return invoiceId;
     });
   }
@@ -1949,17 +1945,6 @@ extension PurchaseDao on AppDatabase {
           discount: Value(effectiveDiscount),
           tax: Value(newTaxTotal),
           total: Value(newTotal),
-           integrityHash: Value(InvoiceIntegrityService.computePurchaseInvoiceHash(
-             invoiceNumber: oldInvoice.invoiceNumber,
-             invoiceDate: oldInvoice.invoiceDate,
-             total: newTotal,
-             subtotal: netSubtotal,
-             discount: effectiveDiscount,
-             tax: newTaxTotal,
-             paid: paid,
-             supplierId: supplierId,
-             paymentMethod: paymentMethod,
-           )),
           paid: Value(paid),
           paymentMethod: Value(paymentMethod),
           status: Value(newStatus),
@@ -1967,6 +1952,7 @@ extension PurchaseDao on AppDatabase {
           supplierInvoiceNumber: Value(supplierInvoiceNumber),
         ),
       );
+      await resignPurchaseInvoice(invoiceId);
 
       // Insert new items and update stock
       final newProductIds = items.map((i) => i.productId.present ? i.productId.value : 0)
@@ -2124,6 +2110,7 @@ extension PurchaseDao on AppDatabase {
           );
         }
       }
+      await resignPurchaseInvoice(invoiceId);
     });
   }
 
@@ -2309,8 +2296,7 @@ extension PurchaseDao on AppDatabase {
           status: Value(newStatus),
         ),
       );
-
-      await _refreshPurchaseInvoiceIntegrity(invoiceId);
+      await resignPurchaseInvoice(invoiceId);
        final safeTxn = await _recordPurchasePayment(
         invoiceId, amount, paymentMethod, invoice.costCenterId,
         safeId: safeId,
@@ -2351,27 +2337,8 @@ extension PurchaseDao on AppDatabase {
       // createReceiptVoucher). Inside the transaction → rolls back with the JE
       // on any failure; idempotent because the whole method dedups on globalId.
       await adjustPartyBalance(invoice.supplierId, -settledAtBooking);
+      await resignPurchaseInvoice(invoiceId);
     });
-  }
-
-  Future<void> _refreshPurchaseInvoiceIntegrity(int invoiceId) async {
-    final invoice = await (select(purchaseInvoices)
-          ..where((row) => row.id.equals(invoiceId)))
-        .getSingleOrNull();
-    if (invoice == null) return;
-    final hash = InvoiceIntegrityService.computePurchaseInvoiceHash(
-      invoiceNumber: invoice.invoiceNumber,
-      invoiceDate: invoice.invoiceDate,
-      total: invoice.total,
-      subtotal: invoice.subtotal,
-      discount: invoice.discount,
-      tax: invoice.tax,
-      paid: invoice.paid,
-      supplierId: invoice.supplierId,
-      paymentMethod: invoice.paymentMethod,
-    );
-    await (update(purchaseInvoices)..where((row) => row.id.equals(invoiceId)))
-        .write(PurchaseInvoicesCompanion(integrityHash: Value(hash)));
   }
 
   /// Update payment amount for a purchase invoice (simple update)
@@ -2396,19 +2363,9 @@ extension PurchaseDao on AppDatabase {
       PurchaseInvoicesCompanion(
          paid: Value(newPaid),
          status: Value(newStatus),
-         integrityHash: Value(InvoiceIntegrityService.computePurchaseInvoiceHash(
-           invoiceNumber: invoice.invoiceNumber,
-           invoiceDate: invoice.invoiceDate,
-           total: invoice.total,
-           subtotal: invoice.subtotal,
-           discount: invoice.discount,
-           tax: invoice.tax,
-           paid: newPaid,
-           supplierId: invoice.supplierId,
-           paymentMethod: invoice.paymentMethod,
-         )),
        ),
     );
+    await resignPurchaseInvoice(invoiceId);
   }
 
   /// Update purchase invoice status intentionally (e.g. for returns)

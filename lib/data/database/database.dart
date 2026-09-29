@@ -99,6 +99,7 @@ part 'daos/product_crud_dao.dart';
 part 'daos/product_barcode_units_dao.dart';
 part 'daos/sales_dao.dart';
 part 'daos/sales_mutations_dao.dart';
+part 'daos/invoice_integrity_dao.dart';
 part 'daos/payment_allocations_dao.dart';
 part 'daos/sales_actions_dao.dart';
 part 'daos/sales_held_orders_dao.dart';

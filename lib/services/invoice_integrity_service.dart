@@ -152,8 +152,16 @@ class InvoiceIntegrityService {
       ].join('|');
 
   static String _computeHash(String payload) {
-    final key = utf8.encode(_installSecret ?? _legacySecretKey);
-    return 'v2:${Hmac(sha256, key).convert(utf8.encode(payload))}';
+    final secret = _installSecret;
+    if (secret == null) {
+      // Test and recovery callers may sign before startup initialization. Keep
+      // the fallback in the legacy format so verification remains consistent;
+      // production startup always initializes the per-install v2 secret first.
+      return Hmac(sha256, utf8.encode(_legacySecretKey))
+          .convert(utf8.encode(payload))
+          .toString();
+    }
+    return 'v2:${Hmac(sha256, utf8.encode(secret)).convert(utf8.encode(payload))}';
   }
 
   static bool _verify(String stored, String payload) {

@@ -130,6 +130,18 @@ extension PaymentAllocationsDao on AppDatabase {
         );
         await _advanceInvoicePaid(a);
       }
+      for (final invoiceId in allocations
+          .where((a) => a.invoiceType == 'sales')
+          .map((a) => a.invoiceId)
+          .toSet()) {
+        await resignSalesInvoice(invoiceId);
+      }
+      for (final invoiceId in allocations
+          .where((a) => a.invoiceType == 'purchase')
+          .map((a) => a.invoiceId)
+          .toSet()) {
+        await resignPurchaseInvoice(invoiceId);
+      }
 
       markTablesUpdated({payments, paymentAllocations, salesInvoices});
       return paymentId;

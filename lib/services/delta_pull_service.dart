@@ -780,6 +780,15 @@ class DeltaPullService {
     }
   }
 
+  Future<void> _resignInvoiceRow(String table, int? localId) async {
+    if (localId == null) return;
+    if (table == 'sales_invoices') {
+      await _db!.resignSalesInvoice(localId);
+    } else if (table == 'purchase_invoices') {
+      await _db!.resignPurchaseInvoice(localId);
+    }
+  }
+
   Future<void> _upsertRow(String table, Map<String, dynamic> row) async {
     // Feature 006 / MM.E hot-fix: journal_entries arrives with its child
     // lines embedded under `lines`. Pop them out BEFORE the generic
@@ -1037,14 +1046,17 @@ class DeltaPullService {
       if (updateCols.isEmpty) return;
       final setClause = updateCols.map((c) => '$c = ?').join(', ');
       final values = updateCols.map((c) => row[c]).toList()..add(localId);
+      var applied = false;
       try {
         await _db!.customStatement(
           'UPDATE $table SET $setClause WHERE id = ?',
           values,
         );
+        applied = true;
       } catch (e) {
         debugPrint('[DeltaPull] in-place update $table local=$localId server=$serverId: $e');
       }
+      if (applied) await _resignInvoiceRow(table, localId);
       return;
     }
 
@@ -1224,14 +1236,18 @@ class DeltaPullService {
     // Normal path: server row wins — INSERT OR REPLACE by id.
     final cols = row.keys.join(', ');
     final placeholders = List.filled(row.length, '?').join(', ');
+    var applied = false;
     try {
       await _db!.customStatement(
         'INSERT OR REPLACE INTO $table ($cols) VALUES ($placeholders)',
         row.values.toList(),
       );
+      applied = true;
     } catch (e) {
       debugPrint('[DeltaPull] upsert $table id=${row['id']}: $e');
     }
+
+    if (applied) await _resignInvoiceRow(table, localId ?? serverId);
 
     // Replay embedded journal_entry_lines now that the parent header
     // exists. We DELETE-then-INSERT per entry so a server-side line

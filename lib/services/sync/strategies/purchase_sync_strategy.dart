@@ -34,6 +34,10 @@ class PurchaseSyncStrategy extends SyncStrategy {
   }
 
   Future<void> _syncSinglePurchase(Map<String, dynamic> purchaseMap) async {
+    await db.transaction(() => _applySinglePurchase(purchaseMap));
+  }
+
+  Future<void> _applySinglePurchase(Map<String, dynamic> purchaseMap) async {
     try {
       final serverId = parseInt(purchaseMap['id']);
 
@@ -72,6 +76,7 @@ class PurchaseSyncStrategy extends SyncStrategy {
               supplierId: Value(resolvedSupplierId), // heal stale server id
               updatedAt: Value(DateTime.tryParse(purchaseMap['updatedAt']?.toString() ?? '') ?? DateTime.now()),
             ));
+        await db.resignPurchaseInvoice(serverId);
         debugPrint('[Sync] Updated existing purchase #$serverId');
         return;
       }
@@ -224,6 +229,7 @@ class PurchaseSyncStrategy extends SyncStrategy {
           debugPrint('[Sync] Materialized stock: product=$productId, qty=$quantity, warehouse=$warehouseId');
         }
       }
+      await db.resignPurchaseInvoice(serverId);
     } catch (e) {
       debugPrint('[Sync] Error in PurchaseSyncStrategy: $e');
     }

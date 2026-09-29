@@ -143,6 +143,7 @@ class SalesSyncStrategy extends SyncStrategy {
                currencyId: Value(parseIntNullable(saleMap['currencyId'] ?? saleMap['currency_id'])),
                exchangeRate: Value(parseDoubleNullable(saleMap['exchangeRate'] ?? saleMap['exchange_rate'])),
             ));
+            await db.resignSalesInvoice(serverId);
             result = _SyncResult.updated;
             debugPrint('[Sync] Updated existing invoice $invoiceNumber '
                 '(isDeleted=$serverIsDeleted, isLocked=$serverIsLocked, '
@@ -314,6 +315,7 @@ class SalesSyncStrategy extends SyncStrategy {
           }
         }
       });
+      await db.resignSalesInvoice(serverId);
       return result;
     } on Exception catch (e) {
       if (e.toString().contains('UNIQUE constraint failed') ||

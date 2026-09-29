@@ -275,23 +275,6 @@ extension SalesMutationsDao on AppDatabase {
           ),
         ),
       );
-      // S02: Compute and store integrity hash for tamper detection
-      // PostgreSQL-compatible: uses Drift API, NO try-catch (aborts PG transactions)
-      final hash = InvoiceIntegrityService.computeSalesInvoiceHash(
-        invoiceNumber: invNumber,
-        invoiceDate: effectiveInvoiceDate,
-        total: total,
-        subtotal: subtotal,
-        discount: discount,
-        tax: tax,
-        paid: paid,
-        customerId: customerId,
-        userId: userId,
-        paymentMethod: paymentMethod,
-      );
-      await (update(salesInvoices)..where((s) => s.id.equals(invoiceId))).write(
-        SalesInvoicesCompanion(integrityHash: Value(hash)),
-      );
       // Insert items and update stock
       for (final item in items) {
         // PIR Phase 0: Auto-populate costPrice from product's current WAC
@@ -490,6 +473,7 @@ extension SalesMutationsDao on AppDatabase {
       }
 
       // Phase 7: (Removed redundant outbox queuing since submitSale handles offline Syncing)
+      await resignSalesInvoice(invoiceId);
 
       return invoiceId;
     });
@@ -752,6 +736,7 @@ extension SalesMutationsDao on AppDatabase {
           salesInvoiceItems,
         ).insertOnConflictUpdate(item.copyWith(invoiceId: Value(id)));
       }
+      await resignSalesInvoice(id);
       return id;
     });
   }
@@ -1002,7 +987,7 @@ extension SalesMutationsDao on AppDatabase {
       // v175 — `paid` يُكتَب عبر الثابت وحدَه: تحريرُ فاتورةٍ لا يمسّ
       // تخصيصاتِها، فالقاعدةُ تُعاد حسابُها من الفرق.
       await _writeSalesInvoicePaid(invoiceId, paid);
-       await _refreshSalesInvoiceIntegrity(invoiceId);
+      await resignSalesInvoice(invoiceId);
 
       // Insert new items and update stock
       for (final item in items) {
@@ -1168,6 +1153,7 @@ extension SalesMutationsDao on AppDatabase {
            }
         }
       }
+      await resignSalesInvoice(invoiceId);
     });
   }
 
@@ -1205,8 +1191,6 @@ extension SalesMutationsDao on AppDatabase {
 
       final oldPaymentMethod = invoice.paymentMethod;
       final paidAmount = invoice.paid;
-       await _refreshSalesInvoiceIntegrity(invoiceId);
-
       // Skip if no payment method change or no paid amount
       if (oldPaymentMethod == newPaymentMethod) {
         // Just update the payment method and notes
@@ -1218,6 +1202,7 @@ extension SalesMutationsDao on AppDatabase {
             notes: Value(notes),
           ),
         );
+        await resignSalesInvoice(invoiceId);
         return;
       }
 
@@ -1333,21 +1318,10 @@ extension SalesMutationsDao on AppDatabase {
           cashPaid: Value(newCash),
           bankPaid: Value(newBank),
           clickPaid: Value(newClick),
-           integrityHash: Value(InvoiceIntegrityService.computeSalesInvoiceHash(
-             invoiceNumber: invoice.invoiceNumber,
-             invoiceDate: invoice.invoiceDate,
-             total: invoice.total,
-             subtotal: invoice.subtotal,
-             discount: invoice.discount,
-             tax: invoice.tax,
-             paid: invoice.paid,
-             customerId: invoice.customerId,
-             userId: invoice.userId,
-             paymentMethod: newPaymentMethod,
-           )),
           notes: Value(notes),
         ),
       );
+      await resignSalesInvoice(invoiceId);
 
       // Re-post journal entry with new payment method for locked invoices
       if (needsJournalReversal) {
@@ -1375,6 +1349,7 @@ extension SalesMutationsDao on AppDatabase {
           debugPrint('[SalesMutations] Re-posted journal entry for payment=$newPaymentMethod');
         }
       }
+      await resignSalesInvoice(invoiceId);
     });
   }
 
@@ -1463,7 +1438,7 @@ extension SalesMutationsDao on AppDatabase {
     }
 
     await _writeSalesInvoicePaid(invoiceId, newPaid, status: newStatus);
-    await _refreshSalesInvoiceIntegrity(invoiceId);
+    await resignSalesInvoice(invoiceId);
   }
 
   /// يكتب `paid` **ويُبقي الثابتَ** — الموضعُ الوحيدُ الذي يكتب العمودَين معاً.
@@ -1487,26 +1462,6 @@ extension SalesMutationsDao on AppDatabase {
   /// إعادةَ الحساب تُرجع `paid` إلى المجموع، أي أنّ **التخصيصاتِ تفوز**.
   /// وهو عينُ ما تفعله الاستراتيجيّةُ اليوم (`serverWins`)، ولا يُفقَد به
   /// شيءٌ لم يكن يُفقَد قبل العمود.
-  Future<void> _refreshSalesInvoiceIntegrity(int invoiceId) async {
-    final invoice = await (select(salesInvoices)
-          ..where((row) => row.id.equals(invoiceId)))
-        .getSingle();
-    final hash = InvoiceIntegrityService.computeSalesInvoiceHash(
-      invoiceNumber: invoice.invoiceNumber,
-      invoiceDate: invoice.invoiceDate,
-      total: invoice.total,
-      subtotal: invoice.subtotal,
-      discount: invoice.discount,
-      tax: invoice.tax,
-      paid: invoice.paid,
-      customerId: invoice.customerId,
-      userId: invoice.userId,
-      paymentMethod: invoice.paymentMethod,
-    );
-    await (update(salesInvoices)..where((row) => row.id.equals(invoiceId)))
-        .write(SalesInvoicesCompanion(integrityHash: Value(hash)));
-  }
-
   Future<void> _writeSalesInvoicePaid(
     int invoiceId,
     double newPaid, {
@@ -1608,8 +1563,7 @@ extension SalesMutationsDao on AppDatabase {
       // v175 — تحصيلٌ **بلا تخصيص**، فالقاعدةُ تزيد بنفس المبلغ:
       // `base' = newPaid − Σ = (paid + amount) − Σ = base + amount`.
       await _writeSalesInvoicePaid(invoiceId, newPaid, status: newStatus);
-    await _refreshSalesInvoiceIntegrity(invoiceId);
-
+      await resignSalesInvoice(invoiceId);
       // Post the MONEY via the receipt path: Dr Safe / Cr Customer-AR + safe
       // balance + parties.balance + balanced JE. Thread the SAME globalId so the
       // receipt's safe_transaction carries it for the dedup guard above. Both
@@ -1659,6 +1613,7 @@ extension SalesMutationsDao on AppDatabase {
           'راجع إعدادات الصناديق قبل تسجيل التحصيل.',
         );
       }
+      await resignSalesInvoice(invoiceId);
     });
   }
 

@@ -367,6 +367,7 @@ class ApiSalesHandler extends ApiHandlerBase {
           await db.autoPostCashSale(createdInv, costCenterId: clientCostCenterId);
           debugPrint('[API] Accounting entry created for sale $id');
         }
+        await db.resignSalesInvoice(id);
         return id;
       });
 
@@ -668,6 +669,7 @@ class ApiSalesHandler extends ApiHandlerBase {
         debugPrint('[API] postSalesReturn: BOM reversal failed: $e');
       }
 
+      await db.resignSalesInvoice(serverId);
       return jsonResponse({'success': true, 'serverId': serverId});
         },
       );
@@ -806,6 +808,7 @@ class ApiSalesHandler extends ApiHandlerBase {
               debugPrint('[API] postSalesExchange: original invoice '
                   '(id=$fallbackOriginalId) not found — status flip skipped');
             }
+            await db.resignSalesInvoice(saleId);
             return saleId;
           });
 
@@ -954,6 +957,7 @@ class ApiSalesHandler extends ApiHandlerBase {
         );
       }
     }
+    await db.resignSalesInvoice(returnId);
     return returnId;
   }
 
@@ -1055,6 +1059,7 @@ class ApiSalesHandler extends ApiHandlerBase {
     if (createdInv != null) {
       await db.autoPostCashSale(createdInv, costCenterId: clientCostCenterId);
     }
+    await db.resignSalesInvoice(saleId);
     return saleId;
   }
 
