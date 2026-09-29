@@ -137,6 +137,10 @@ class DeltaPullService {
     'fixed_assets',            // → asset_categories, cost_centers, accounts
     'manufacturing_orders',    // → bill_of_materials, warehouses
     'bom_components',          // → bill_of_materials, products
+     'butchery_templates',     // → products
+     'butchery_template_lines', // → butchery_templates, products
+     'butchery_orders',        // → butchery_templates, products, warehouses
+     'butchery_order_lines',   // → butchery_orders, products
     'op_expenses',             // → op_expense_categories, branches, cost_centers
     'asset_depreciations',     // → fixed_assets
     // v175 / المرحلة ٧ — طلبُ استبعاد أصل. **موضعُه بعد `fixed_assets`
@@ -271,6 +275,7 @@ class DeltaPullService {
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
     'fixed_assets', 'asset_depreciations', 'op_expenses',
     'manufacturing_orders', 'mfg_order_costs',
+     'butchery_orders', 'butchery_order_lines',
     // v175 / المرحلة ٧ — طلبُ استبعاد أصل. **بياناتُ عملٍ لا مرجعيّة**:
     // يحمل ثمنَ بيعٍ ومشترياً وسببَ استبعاد، فلا يُسلَّم لمستدعٍ بلا هويّةٍ
     // متحقَّقة. (وهو خلافُ `cheque_books` المرجعيّ في المرحلة ٦.)
@@ -373,6 +378,7 @@ class DeltaPullService {
 
     'asset_categories', 'op_expense_categories', 'bill_of_materials',
     'fixed_assets', 'manufacturing_orders', 'bom_components',
+     'butchery_templates', 'butchery_template_lines', 'butchery_orders', 'butchery_order_lines',
     'op_expenses', 'asset_depreciations', 'mfg_order_costs',
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
 

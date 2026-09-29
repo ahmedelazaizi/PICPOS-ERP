@@ -87,6 +87,12 @@ extension ManufacturingDao on AppDatabase {
     // is enforced inside the transaction by T015.
     bool autoDepleteOnSale = false,
     String depletionPolicy = 'prefer_finished_stock',
+    double overheadPercent = 0,
+    double profitPercent = 0,
+    String profitBasis = 'after_overhead',
+    double? pieceWeight,
+    double? outputQuantityOverride,
+    String outputUnit = 'g',
     bool isActive = true,
     /// v166 — هويّةُ القائمة. تُسَكّ على العميل وتُمرَّر إلى الخادم، وإلّا
     /// سكّ كلُّ طرفٍ هويّةً فعادت القائمةُ بسحب الدلتا مكرَّرةً — وأمرا
@@ -102,20 +108,11 @@ extension ManufacturingDao on AppDatabase {
         'لا يمكن تفعيل خصم الخامات تلقائيًا على قائمة تصنيع غير مفعّلة (FR-004)',
       );
     }
+    await ensureManufacturingV180Schema();
     return transaction(() async {
-      // Calculate estimated cost from components using last purchase price
-      final materialIds = components.map((c) => c['rawMaterialId'] as int).toList();
-      final lastPrices = await _getLastPurchasePricesByIds(materialIds);
-      final productMap = await getProductsByIds(materialIds);
-
-      double estimatedCost = 0;
-      for (final c in components) {
-        final materialId = c['rawMaterialId'] as int;
-        final unitCost = lastPrices[materialId] ?? productMap[materialId]?.costPrice ?? 0;
-        final qty = c['quantity'] as double;
-        final wastage = (c['wastagePercent'] as double?) ?? 0;
-        estimatedCost += unitCost * qty * (1 + wastage / 100);
-      }
+      final materialsCost = await calculateBomMaterialsCostFromMaps(components);
+      final overheadAmount = materialsCost * overheadPercent / 100;
+      final estimatedCost = materialsCost + overheadAmount;
 
       final bomId = await into(billOfMaterials).insert(
         BillOfMaterialsCompanion.insert(
@@ -136,15 +133,22 @@ extension ManufacturingDao on AppDatabase {
           BomComponentsCompanion.insert(
             bomId: bomId,
             rawMaterialId: c['rawMaterialId'] as int,
-            quantity: c['quantity'] as double,
+            quantity: _mfgNumber(c['quantity']),
             unit: Value((c['unit'] as String?) ?? 'قطعة'),
-            quantityInBase: Value((c['quantityInBase'] as double?) ?? 1.0),
-            wastagePercent: Value((c['wastagePercent'] as double?) ?? 0),
+            quantityInBase: Value(_mfgNumber(c['quantityInBase'] ?? 1)),
+            wastagePercent: Value(_mfgNumber(c['wastagePercent'] ?? 0)),
             // v166 — المكوّنُ يُزامَن استقلالاً عن قائمته.
             globalId: Value((c['globalId'] as String?) ?? UuidV7.generate()),
           ),
         );
       }
+      await customStatement(
+        '''UPDATE bill_of_materials SET overhead_percent = ?, materials_cost = ?,
+           overhead_amount = ?, profit_percent = ?, profit_basis = ?, piece_weight = ?,
+           output_quantity_override = ?, output_unit = ? WHERE id = ?''',
+        [overheadPercent, materialsCost, overheadAmount, profitPercent, profitBasis,
+         pieceWeight, outputQuantityOverride, outputUnit, bomId],
+      );
 
       return bomId;
     });
@@ -163,7 +167,14 @@ extension ManufacturingDao on AppDatabase {
     bool? autoDepleteOnSale,
     String? depletionPolicy,
     bool? isActive,
+    double? overheadPercent,
+    double? profitPercent,
+    String? profitBasis,
+    double? pieceWeight,
+    double? outputQuantityOverride,
+    String? outputUnit,
   }) async {
+    await ensureManufacturingV180Schema();
     await transaction(() async {
       // FR-004 (defense-in-depth): compute the EFFECTIVE post-update state
       // because the caller may flip only one of (autoDepleteOnSale, isActive)
@@ -184,18 +195,17 @@ extension ManufacturingDao on AppDatabase {
       }
 
       // Calculate estimated cost from components using last purchase price
-      final materialIds = components.map((c) => c['rawMaterialId'] as int).toList();
-      final lastPrices = await _getLastPurchasePricesByIds(materialIds);
-      final productMap = await getProductsByIds(materialIds);
-
-      double estimatedCost = 0;
-      for (final c in components) {
-        final materialId = c['rawMaterialId'] as int;
-        final unitCost = lastPrices[materialId] ?? productMap[materialId]?.costPrice ?? 0;
-        final qty = c['quantity'] as double;
-        final wastage = (c['wastagePercent'] as double?) ?? 0;
-        estimatedCost += unitCost * qty * (1 + wastage / 100);
-      }
+      final materialsCost = await calculateBomMaterialsCostFromMaps(components);
+      final bomSettings = await customSelect(
+        '''SELECT overhead_percent, profit_percent, profit_basis, piece_weight,
+                output_quantity_override, output_unit FROM bill_of_materials WHERE id = ?''',
+        variables: [Variable<int>(bomId)],
+      ).getSingle();
+      final effectiveOverhead = overheadPercent ?? _mfgNumber(bomSettings.data['overhead_percent']);
+      final effectiveProfit = profitPercent ?? _mfgNumber(bomSettings.data['profit_percent']);
+      final effectiveBasis = profitBasis ?? bomSettings.data['profit_basis'].toString();
+      final overheadAmount = materialsCost * effectiveOverhead / 100;
+      final estimatedCost = materialsCost + overheadAmount;
 
       // Update BOM header
       await (update(billOfMaterials)..where((b) => b.id.equals(bomId))).write(
@@ -223,15 +233,26 @@ extension ManufacturingDao on AppDatabase {
           BomComponentsCompanion.insert(
             bomId: bomId,
             rawMaterialId: c['rawMaterialId'] as int,
-            quantity: c['quantity'] as double,
+            quantity: _mfgNumber(c['quantity']),
             unit: Value((c['unit'] as String?) ?? 'قطعة'),
-            quantityInBase: Value((c['quantityInBase'] as double?) ?? 1.0),
-            wastagePercent: Value((c['wastagePercent'] as double?) ?? 0),
+            quantityInBase: Value(_mfgNumber(c['quantityInBase'] ?? 1)),
+            wastagePercent: Value(_mfgNumber(c['wastagePercent'] ?? 0)),
             // v166 — المكوّنُ يُزامَن استقلالاً عن قائمته.
             globalId: Value((c['globalId'] as String?) ?? UuidV7.generate()),
           ),
         );
       }
+      await customStatement(
+        '''UPDATE bill_of_materials SET overhead_percent = ?, materials_cost = ?,
+           overhead_amount = ?, profit_percent = ?, profit_basis = ?, piece_weight = ?,
+           output_quantity_override = ?, output_unit = ? WHERE id = ?''',
+        [
+          effectiveOverhead, materialsCost, overheadAmount, effectiveProfit,
+          effectiveBasis, pieceWeight ?? bomSettings.data['piece_weight'],
+          outputQuantityOverride ?? bomSettings.data['output_quantity_override'],
+          outputUnit ?? bomSettings.data['output_unit'], bomId,
+        ],
+      );
     });
   }
 
@@ -510,9 +531,28 @@ extension ManufacturingDao on AppDatabase {
         for (final comp in components) {
           final product = costProductMap[comp.rawMaterialId];
           if (product != null) {
-            totalMaterialCost += product.costPrice * comp.quantity * comp.quantityInBase * multiplier;
+            totalMaterialCost += product.costPrice * comp.quantity * comp.quantityInBase *
+                multiplier * (1 + comp.wastagePercent / 100);
           }
         }
+      }
+
+      final bomOverheadRow = await customSelect(
+        'SELECT overhead_percent FROM bill_of_materials WHERE id = ?',
+        variables: [Variable<int>(order.bomId)],
+      ).getSingle();
+      final bomOverhead = totalMaterialCost *
+          _mfgNumber(bomOverheadRow.data['overhead_percent']) / 100;
+      if (bomOverhead > 0) {
+        await customStatement(
+          '''INSERT INTO mfg_order_costs
+             (order_id, cost_type, description, amount, global_id)
+             VALUES (?, 'overhead', ?, ?, ?)''',
+          [
+            orderId, 'تحميل تصنيع حسب قائمة المكونات', bomOverhead,
+            'mfg-overhead-order-$orderId',
+          ],
+        );
       }
 
       // GAP-4 FIX: Aggregate MfgOrderCosts (labor, overhead, depreciation) into additionalCosts

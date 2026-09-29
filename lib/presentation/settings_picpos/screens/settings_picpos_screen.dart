@@ -157,6 +157,8 @@ import '../../widgets/settings/party_balance_repair_dialog.dart';
 import '../../widgets/settings/cheque_receipt_drift_admin_dialog.dart';
 import '../../widgets/settings/mirror_parity_audit_dialog.dart';
 import '../../widgets/settings/database_settings_widget.dart';
+import '../../widgets/settings/lan_pairing_dialog.dart';
+import '../../../services/api/lan_pairing_service.dart';
 import '../../touch_keyboard/providers/touch_mode_provider.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';

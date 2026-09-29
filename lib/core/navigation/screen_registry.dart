@@ -43,6 +43,7 @@ class ScreenRegistry {
     // أيُّ قالبٍ يخرج مع أيِّ مستند. وحصرُها في نطاقٍ يترك البقيّةَ بلا
     // جوابٍ لسؤالٍ يقع فيها جميعاً.
     ScreenId.templateResolution,
+    ScreenId.manufacturing,
   ];
 
   static const List<ScreenId> cafe = restaurant;
@@ -80,6 +81,7 @@ class ScreenRegistry {
     // أيُّ قالبٍ يخرج مع أيِّ مستند. وحصرُها في نطاقٍ يترك البقيّةَ بلا
     // جوابٍ لسؤالٍ يقع فيها جميعاً.
     ScreenId.templateResolution,
+    ScreenId.manufacturing,
   ];
 
   /// Supermarket + HR module (no tables/kitchen)
@@ -117,6 +119,7 @@ class ScreenRegistry {
     // أيُّ قالبٍ يخرج مع أيِّ مستند. وحصرُها في نطاقٍ يترك البقيّةَ بلا
     // جوابٍ لسؤالٍ يقع فيها جميعاً.
     ScreenId.templateResolution,
+    ScreenId.manufacturing,
   ];
 
   /// Supermarket + Restaurant features (tables, kitchen, delivery) + HR
@@ -159,6 +162,7 @@ class ScreenRegistry {
     // أيُّ قالبٍ يخرج مع أيِّ مستند. وحصرُها في نطاقٍ يترك البقيّةَ بلا
     // جوابٍ لسؤالٍ يقع فيها جميعاً.
     ScreenId.templateResolution,
+    ScreenId.manufacturing,
   ];
 
   static const List<ScreenId> commercial = [
@@ -345,6 +349,7 @@ class ScreenRegistry {
     // أيُّ قالبٍ يخرج مع أيِّ مستند. وحصرُها في نطاقٍ يترك البقيّةَ بلا
     // جوابٍ لسؤالٍ يقع فيها جميعاً.
     ScreenId.templateResolution,
+    ScreenId.manufacturing,
   ];
 
   /// PicPos-only widening of `lite`: adds the PLU scale-export screen.

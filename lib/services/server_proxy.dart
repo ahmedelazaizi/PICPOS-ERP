@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ural_erp/data/database/sync_interceptor.dart';
 import '../core/logging/diagnostic_logger.dart';
 import 'network_service.dart';
+import 'device_identity_service.dart';
 import '../core/config/brand.dart';
 
 /// Centralized proxy for all write operations in client mode.
@@ -134,10 +135,12 @@ class ServerProxy {
   /// session token here is harmless for that call.
   Map<String, String> get _authHeaders {
     final userId = SyncInterceptor.currentUserId;
+    final deviceId = DeviceIdentityService.instance.tryGetDeviceId();
     final sessionToken = userId != null ? _sessionTokens[userId] : null;
     return {
       'Content-Type': 'application/json',
       if (_apiToken != null) 'Authorization': 'Bearer $_apiToken',
+      if (deviceId != null && deviceId.isNotEmpty) 'X-Device-Id': deviceId,
       'X-Session-Token': ?sessionToken,
     };
   }
@@ -957,6 +960,10 @@ class ServerProxy {
         final request = await client.getUrl(url);
         if (_apiToken != null && _apiToken!.isNotEmpty) {
           request.headers.set('Authorization', 'Bearer $_apiToken');
+        }
+        final deviceId = DeviceIdentityService.instance.tryGetDeviceId();
+        if (deviceId != null && deviceId.isNotEmpty) {
+          request.headers.set('X-Device-Id', deviceId);
         }
         request.headers.set('Content-Type', 'application/json');
         request.headers.set('ngrok-skip-browser-warning', 'true');

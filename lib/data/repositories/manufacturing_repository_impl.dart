@@ -30,6 +30,12 @@ class ManufacturingRepositoryImpl implements ManufacturingRepository {
     bool autoDepleteOnSale = false,
     String depletionPolicy = 'prefer_finished_stock',
     bool isActive = true,
+     double overheadPercent = 0,
+     double profitPercent = 0,
+     String profitBasis = 'after_overhead',
+     double? pieceWeight,
+     double? outputQuantityOverride,
+     String outputUnit = 'g',
   }) =>
       _db.createBOM(
         finishedProductId: finishedProductId,
@@ -39,6 +45,12 @@ class ManufacturingRepositoryImpl implements ManufacturingRepository {
         components: components,
         autoDepleteOnSale: autoDepleteOnSale,
         depletionPolicy: depletionPolicy,
+         overheadPercent: overheadPercent,
+         profitPercent: profitPercent,
+         profitBasis: profitBasis,
+         pieceWeight: pieceWeight,
+         outputQuantityOverride: outputQuantityOverride,
+         outputUnit: outputUnit,
         isActive: isActive,
       );
 
@@ -200,6 +212,12 @@ class ManufacturingRepositoryImpl implements ManufacturingRepository {
     bool? autoDepleteOnSale,
     String? depletionPolicy,
     bool? isActive,
+     double? overheadPercent,
+     double? profitPercent,
+     String? profitBasis,
+     double? pieceWeight,
+     double? outputQuantityOverride,
+     String? outputUnit,
   }) =>
       _db.updateBOM(
         bomId: bomId,
@@ -210,6 +228,12 @@ class ManufacturingRepositoryImpl implements ManufacturingRepository {
         components: components,
         autoDepleteOnSale: autoDepleteOnSale,
         depletionPolicy: depletionPolicy,
+         overheadPercent: overheadPercent,
+         profitPercent: profitPercent,
+         profitBasis: profitBasis,
+         pieceWeight: pieceWeight,
+         outputQuantityOverride: outputQuantityOverride,
+         outputUnit: outputUnit,
         isActive: isActive,
       );
 
@@ -235,6 +259,10 @@ class ManufacturingRepositoryImpl implements ManufacturingRepository {
       // in_progress cancel restores consumed raw + reverses the WIP entry
       // instead of the old status-only write (which left stock deducted and a
       // dangling WIP debit). draft still cancels with no stock/GL effect.
+      _db.reverseManufacturingOrder(orderId);
+
+  @override
+  Future<void> reverseManufacturingOrder(int orderId) =>
       _db.reverseManufacturingOrder(orderId);
 
   @override
@@ -267,6 +295,101 @@ class ManufacturingRepositoryImpl implements ManufacturingRepository {
       additionalCosts: Value(additionalCosts),
     ));
   }
+
+  @override
+  Future<void> allocateMonthlyExpenses({required DateTime month}) =>
+      _db.allocateMonthlyExpenses(month: month);
+
+  @override
+  Future<BomCostPreview> getBomCostPreview(int bomId) =>
+      _db.getBomCostPreview(bomId);
+
+  @override
+  Future<List<Map<String, dynamic>>> getButcheryTemplates() =>
+      _db.getButcheryTemplates();
+
+  @override
+  Future<List<Map<String, dynamic>>> getButcheryTemplateLines(int templateId) =>
+      _db.getButcheryTemplateLines(templateId);
+
+  @override
+  Future<List<Map<String, dynamic>>> getButcheryOrders() =>
+      _db.getButcheryOrders();
+
+  @override
+  Future<List<Map<String, dynamic>>> getButcheryOrderLines(int orderId) =>
+      _db.getButcheryOrderLines(orderId);
+
+  @override
+  Future<List<Map<String, dynamic>>> getButcheryYieldReport({
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      _db.getButcheryYieldReport(from: from, to: to);
+
+  @override
+  Future<int> createButcheryTemplate({
+    required int carcassProductId,
+    required String name,
+    String valuationMethod = 'sales_value',
+    double varianceThresholdPercent = 2,
+  }) =>
+      _db.createButcheryTemplate(
+        carcassProductId: carcassProductId,
+        name: name,
+        valuationMethod: valuationMethod,
+        varianceThresholdPercent: varianceThresholdPercent,
+      );
+
+  @override
+  Future<int> addButcheryTemplateLine({
+    required int templateId,
+    required int outputProductId,
+    required double expectedYieldPercent,
+    required bool isByProduct,
+    double valuationPrice = 0,
+    String unit = 'كجم',
+  }) =>
+      _db.addButcheryTemplateLine(
+        templateId: templateId,
+        outputProductId: outputProductId,
+        expectedYieldPercent: expectedYieldPercent,
+        isByProduct: isByProduct,
+        valuationPrice: valuationPrice,
+        unit: unit,
+      );
+
+  @override
+  Future<int> createButcheryOrder({
+    required int carcassProductId,
+    required int warehouseId,
+    required double carcassQuantity,
+    required double carcassWeight,
+    required double carcassTotalCost,
+    required List<Map<String, dynamic>> outputs,
+    int? templateId,
+    String weightUnit = 'g',
+    String? notes,
+  }) =>
+      _db.createButcheryOrder(
+        carcassProductId: carcassProductId,
+        warehouseId: warehouseId,
+        carcassQuantity: carcassQuantity,
+        carcassWeight: carcassWeight,
+        carcassTotalCost: carcassTotalCost,
+        outputs: outputs,
+        templateId: templateId,
+        weightUnit: weightUnit,
+        notes: notes,
+      );
+
+  @override
+  Future<Map<String, dynamic>> postButcheryOrder(int orderId) =>
+      _db.postButcheryOrder(orderId);
+
+  @override
+  Future<void> reverseButcheryOrder(int orderId) =>
+      _db.reverseButcheryOrder(orderId);
 
   @override
   Future<double?> getLastPurchasePrice(int productId) =>

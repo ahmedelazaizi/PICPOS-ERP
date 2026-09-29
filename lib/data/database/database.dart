@@ -139,6 +139,8 @@ part 'daos/attachments_dao.dart';
 part 'daos/import_purchases_dao.dart';
 part 'daos/multi_currency_pricelist_dao.dart';
 part 'daos/manufacturing_dao.dart';
+part 'daos/manufacturing_v180_dao.dart';
+part 'lan_pairing_schema.dart';
 part 'daos/fixed_assets_dao_ext.dart';
 part 'daos/e_invoicing_dao.dart';
 part 'daos/activity_logs_dao.dart';
@@ -1169,7 +1171,7 @@ class AppDatabase extends _$AppDatabase {
   //
   // Schema v177: sale reposts after an authorized edit may legitimately
   // produce multiple auto-posted JEs for one invoice reference.
-  int get schemaVersion => 179;
+  int get schemaVersion => 181;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.
@@ -1500,6 +1502,7 @@ class AppDatabase extends _$AppDatabase {
     // v166 / المرحلة ٢ — مستنداتُ الأثر المحاسبيّ (كانت غائبةً هنا).
     'asset_categories', 'op_expense_categories', 'bill_of_materials',
     'fixed_assets', 'manufacturing_orders', 'bom_components',
+     'butchery_templates', 'butchery_template_lines', 'butchery_orders', 'butchery_order_lines',
     'op_expenses', 'asset_depreciations', 'mfg_order_costs',
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
     // v175 / المرحلة ٧ — طلبُ استبعاد أصل.
@@ -2281,6 +2284,8 @@ class AppDatabase extends _$AppDatabase {
       'modifier_groups',
       'modifier_items',
       'product_modifier_groups',
+       'butchery_templates', 'butchery_template_lines', 'butchery_orders',
+       'butchery_order_lines',
     };
     for (final pgTable in pgTables) {
       if (!driftTableNames.contains(pgTable) &&
@@ -2437,6 +2442,8 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(kCreateEInvoiceStatusLogSql);
           await customStatement(kCreateEInvoiceStatusLogIndexSql);
         }
+        await ensureManufacturingV180Schema();
+        await ensureLanPairingSchema();
         // seedInitialData + syncDefaultAccounts moved to beforeOpen
         // (after defensive v110 column additions)
       },

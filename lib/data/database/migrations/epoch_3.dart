@@ -3563,5 +3563,31 @@ extension Epoch3Migrations on AppDatabase {
         }
       });
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // v180 — BOM costing, output weights, and carcass breakdown
+    // ═══════════════════════════════════════════════════════════════════
+    if (from < 180) {
+      await _safeMigrate('v180 manufacturing raw schema', () async {
+        for (final statement in [
+          ..._manufacturingV180CreateStatements,
+          ..._manufacturingV180ColumnStatements,
+          ..._manufacturingV180IndexStatements,
+        ]) {
+          try {
+            await m.database.customStatement(statement);
+          } catch (error) {
+            if (!isIdempotentMigrationError(error.toString())) rethrow;
+          }
+        }
+        await ensureManufacturingV180Schema();
+        await recalculateStoredBomCosts();
+      });
+    }
+
+    // v181 — raw LAN pairing registry (kept outside Drift codegen).
+    if (from < 181) {
+      await _safeMigrate('v181 LAN pairing registry', ensureLanPairingSchema);
+    }
   }
 }

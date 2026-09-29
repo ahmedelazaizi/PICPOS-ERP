@@ -84,6 +84,7 @@ import 'presentation/screens/distribution_screen.dart';
 import 'presentation/settings_picpos/screens/distribution_picpos_screen.dart';
 
 import 'presentation/screens/manufacturing_screen.dart';
+import 'presentation/manufacturing_picpos/manufacturing_picpos_screen.dart';
 import 'presentation/screens/operational_expenses_screen.dart';
 import 'presentation/screens/chart_of_accounts_screen.dart';
 import 'presentation/screens/fiscal_year_screen.dart';
@@ -867,7 +868,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.manufacturing,
-        builder: (_) => const ManufacturingScreen(),
+        builder: (_) => Brand.isPicPos
+             ? const ManufacturingPicposScreen()
+             : const ManufacturingScreen(),
         label: 'التصنيع',
         icon: PhosphorIconsBold.factory,
       ),

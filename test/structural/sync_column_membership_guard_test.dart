@@ -86,6 +86,10 @@ const _rawSqlProvenAtRuntime = <String, String>{
   'modifier_groups': 'test/unit/modifiers_sync_contract_test.dart',
   'modifier_items': 'test/unit/modifiers_sync_contract_test.dart',
   'product_modifier_groups': 'test/unit/modifiers_sync_contract_test.dart',
+  'butchery_templates': 'test/unit/manufacturing_phase17_test.dart',
+  'butchery_template_lines': 'test/unit/manufacturing_phase17_test.dart',
+  'butchery_orders': 'test/unit/manufacturing_phase17_test.dart',
+  'butchery_order_lines': 'test/unit/manufacturing_phase17_test.dart',
 };
 
 /// جداولُ ليست في `pullTables` وتُرقَّم مع ذلك — الطرفُ الآخرُ من العقد.

@@ -191,6 +191,8 @@ const _unsyncedBaseline = <String>{
   // · `Notifications` إشعاراتُ جهازٍ لا رسائلُ نظام.
   'SavedReportRuns', 'ProcessedMessages', 'LabelScales', 'ReceiptSettings',
   'ApiKeys', 'Notifications',
+  // ⚪ سجل أمني محلي للخادم، لا يُنقل إلى العملاء.
+  'lan_paired_devices',
 
   // ═══ ⚪ بايتاتٌ **خارجَ السلك عمداً** — v176 / §٨ ═══
   //

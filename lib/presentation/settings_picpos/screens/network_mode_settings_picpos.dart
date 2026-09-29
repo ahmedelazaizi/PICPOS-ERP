@@ -20,6 +20,7 @@ class _NetworkModeSettings extends ConsumerStatefulWidget {
 class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
   final _addressController = TextEditingController();
   final _portController = TextEditingController(text: '8080');
+  final _pairingCodeController = TextEditingController();
   bool _loading = true;
   bool _isServerStarting = false;
   bool _isTesting = false;
@@ -48,6 +49,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
   void dispose() {
     _addressController.dispose();
     _portController.dispose();
+    _pairingCodeController.dispose();
     super.dispose();
   }
 
@@ -300,6 +302,12 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                         ),
                       ),
                       const SizedBox(height: 6),
+                      OutlinedButton.icon(
+                        onPressed: () => LanPairingDialog.showServer(context),
+                        icon: const Icon(Icons.devices_other, size: 16),
+                        label: const Text('إقران جهاز'),
+                      ),
+                      const SizedBox(height: 6),
                       // A-SEC-1: the API token is only exposed via /api/health
                       // while this window is open — click it before pairing a
                       // brand-new client/mirror device.
@@ -369,6 +377,21 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
             ),
           ),
         ],
+        if (syncRepo.isServerRunning)
+          FutureBuilder<List<LanPairingDevice>>(
+            future: NetworkService.instance.unpairedLanDevices(),
+            builder: (context, snapshot) {
+              final count = snapshot.data?.length ?? 0;
+              return Card(
+                color: count == 0 ? null : AppColors.warning.withValues(alpha: 0.12),
+                child: ListTile(
+                  leading: Icon(count == 0 ? Icons.verified_user : Icons.warning),
+                  title: Text('أجهزة لم تُقرن بعد: $count'),
+                  subtitle: count == 0 ? null : Text(snapshot.data!.map((d) => d.name).join('، ')),
+                ),
+              );
+            },
+          ),
         const Divider(height: 24),
         _buildTlsPanel(),
       ],
@@ -585,6 +608,37 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
               ),
             ],
           ],
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _pairingCodeController,
+          textCapitalization: TextCapitalization.characters,
+          decoration: const InputDecoration(
+            isDense: true,
+            border: OutlineInputBorder(),
+            labelText: 'رمز إقران الجهاز',
+            hintText: 'XXXXXXXX',
+          ),
+        ),
+        const SizedBox(height: 8),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: OutlinedButton.icon(
+            onPressed: () async {
+              final result = await NetworkService.instance.pairLanClient(
+                address: _addressController.text,
+                port: int.tryParse(_portController.text) ?? 8080,
+                code: _pairingCodeController.text,
+              );
+              if (mounted) {
+                setState(() => _testResult = result['success'] == true
+                    ? '✅ تم إقران الجهاز بنجاح'
+                    : '❌ ${result['error']}');
+              }
+            },
+            icon: const Icon(Icons.link),
+            label: const Text('إقران الجهاز بالرمز'),
+          ),
         ),
         const SizedBox(height: 12),
         // Actions

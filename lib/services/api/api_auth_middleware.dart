@@ -4,24 +4,33 @@ import 'package:shelf/shelf.dart';
 
 import 'api_session_token.dart';
 import 'api_user_context.dart';
+import 'lan_pairing_api_handler.dart';
+import 'lan_pairing_service.dart';
 
 /// API Authentication middleware for the embedded multi-device server.
 ///
-/// Generates a shared secret token based on the server's machine fingerprint
-/// and validates it on every `/api/*` request (except health check).
+/// Verifies per-device pairing tokens and, during migration, the old shared
+/// token on every `/api/*` request (except health and pairing).
 ///
 /// **Flow:**
-/// 1. Server starts → generates token from machine ID + app salt
-/// 2. Health endpoint returns the token for client handshake
-/// 3. Client stores token → sends as `Authorization: Bearer <token>` header
-/// 4. Middleware validates on every request
+/// 1. Server starts → loads a random install secret from secure storage
+/// 2. Operator issues a one-time code at `/api/pair`
+/// 3. Client stores its HMAC-derived token and sends it with its device id
+/// 4. Middleware validates the paired device, or the legacy token in-window
 ///
 /// **Exempt paths:** `/api/health`, `/cfd`, `/menu`, `/ws`
 class ApiAuthMiddleware {
   ApiAuthMiddleware._();
 
-  /// The current valid API token (generated at server startup).
+  /// The legacy shared token, retained only during the migration window.
   static String? _activeToken;
+  static LanPairingService? _pairingService;
+
+  static void setPairingService(LanPairingService service) {
+    _pairingService = service;
+  }
+
+  static void clearPairingService() => _pairingService = null;
 
   /// Paths that do NOT require authentication.
   ///
@@ -32,6 +41,7 @@ class ApiAuthMiddleware {
   /// **ليست** معفاةً من محدّد المعدّل — بخلاف `/menu` و`/cfd`.
   static const _exemptPrefixes = [
     '/api/health',
+    '/api/pair',
     '/cfd',
     '/menu',
     '/ws',
@@ -83,76 +93,72 @@ class ApiAuthMiddleware {
   /// Clear the active token (for testing).
   static void clearToken() => _activeToken = null;
 
-  /// Create a shelf [Middleware] that validates the Authorization header.
+  /// Create a shelf [Middleware] that validates paired or legacy credentials.
   static Middleware createMiddleware() {
     return (Handler innerHandler) {
-      return (Request request) {
+      return (Request request) async {
         final path = '/${request.url.path}';
-
-        // Allow exempt paths
+        if (path == '/api/pair' && request.method == 'POST') {
+          return LanPairingApiHandler.pair(request);
+        }
         for (final prefix in _exemptPrefixes) {
-          if (path.startsWith(prefix) || path == prefix) {
-            return innerHandler(request);
-          }
+          if (path.startsWith(prefix) || path == prefix) return innerHandler(request);
         }
-
-        // Non-API paths pass through
-        if (!path.startsWith('/api/')) {
-          return innerHandler(request);
-        }
-
-        // A-SEC-2 (H-3): FAIL CLOSED. A null token used to pass every /api/*
-        // request through unauthenticated — a mis-started/never-generated
-        // token turned the server wide open. In production the token is always
-        // generated at server startup (NetworkService.startServer), so a null
-        // token here means "not a live server" and must be rejected. Exempt
-        // paths (health/cfd/menu/ws) already returned above.
+        if (!path.startsWith('/api/')) return innerHandler(request);
         if (_activeToken == null) {
-          return Response(
-            403,
-            body: '{"error": "Server not accepting API requests"}',
-            headers: {'content-type': 'application/json'},
-          );
+          return _json(403, 'Server not accepting API requests');
         }
 
-        // Validate Authorization header
         final authHeader = request.headers['authorization'];
         if (authHeader == null || !authHeader.startsWith('Bearer ')) {
-          return Response(
-            401,
-            body: '{"error": "Missing or invalid Authorization header"}',
-            headers: {'content-type': 'application/json'},
-          );
+          return _json(401, 'Missing or invalid Authorization header');
+        }
+        final token = authHeader.substring(7);
+        final pairing = _pairingService;
+        final deviceId = request.headers['x-device-id'] ?? '';
+        final deviceName = request.headers['x-device-name'] ?? '';
+        final ip = request.headers['x-forwarded-for']?.split(',').first.trim() ??
+            request.headers['x-real-ip'] ??
+            request.headers['host']?.split(':').first ??
+            'unknown';
+
+        if (pairing != null &&
+            await pairing.verifyDeviceToken(token: token, deviceId: deviceId)) {
+          await pairing.recordSeen(deviceId: deviceId, name: deviceName, ip: ip);
+        } else if (token == _activeToken) {
+          if (pairing != null) {
+            if (!await pairing.legacyAllowed()) {
+              return _json(403, 'انتهت فترة المفتاح القديم. يجب إقران هذا الجهاز أولاً.');
+            }
+            await pairing.recordLegacyDevice(
+              deviceId: deviceId,
+              name: deviceName,
+              ip: ip,
+            );
+          }
+        } else {
+          return _json(403, 'Invalid API token');
         }
 
-        final token = authHeader.substring(7); // Remove 'Bearer '
-        if (token != _activeToken) {
-          return Response(
-            403,
-            body: '{"error": "Invalid API token"}',
-            headers: {'content-type': 'application/json'},
-          );
-        }
-
-        // Spec 151 (P1-8): derive the acting userId from a SIGNED session
-        // token, NOT the old forgeable, client-asserted `X-User-Id`. The token
-        // is minted server-side by `POST /api/auth/session` only after a
-        // credential check, and HMAC-signed with a server-only key
-        // ([ApiSessionToken]) — so a holder of the shared bearer token can no
-        // longer assert an arbitrary uid (e.g. admin `1`) nor omit identity to
-        // read cross-branch. Absent/invalid/expired token → no identity stamped
-        // (uid null); `_extractBranchId` then fails CLOSED and
-        // `requirePermission` returns 401. `X-User-Id` is no longer trusted.
+        // The signed session token remains the user-identity layer.
         final uid = ApiSessionToken.verify(
           request.headers[ApiSessionToken.headerName],
         );
-        Request enriched = request;
+        Request enriched = request.change(context: {
+          if (deviceId.isNotEmpty) 'lanDeviceId': deviceId,
+          if (deviceName.isNotEmpty) 'lanDeviceName': deviceName,
+        });
         if (uid != null) {
-          enriched = request.change(context: {ApiUserCtx.userIdKey: uid});
+          enriched = enriched.change(context: {ApiUserCtx.userIdKey: uid});
         }
-
         return innerHandler(enriched);
       };
     };
   }
+
+  static Response _json(int status, String error) => Response(
+        status,
+        body: jsonEncode({'error': error}),
+        headers: {'content-type': 'application/json'},
+      );
 }

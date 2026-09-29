@@ -28,6 +28,8 @@ extension DatabaseStartup on AppDatabase {
 
     // Phase 2: Schema safety — ensure v110 columns exist (BLOCKING)
     await ensureSchemaDefaults();
+    await ensureManufacturingV180Schema();
+    await ensureLanPairingSchema();
 
     // Phase 2b: Database integrity — ensure critical PK/UNIQUE constraints
     // exist on PG installs whose schema was created by an older or crashed

@@ -8,6 +8,7 @@ import '../data/database/database.dart';
 import '../domain/entities/sync_dtos.dart';
 import 'delta_pull_service.dart';
 import 'server_proxy.dart';
+import 'device_identity_service.dart';
 import 'tls_trust.dart';
 import 'network_service.dart';
 import 'sync/sync_strategy.dart';
@@ -652,6 +653,10 @@ class SyncService {
       if (token != null) {
         request.headers.set('Authorization', 'Bearer $token');
       }
+      final deviceId = DeviceIdentityService.instance.tryGetDeviceId();
+      if (deviceId != null && deviceId.isNotEmpty) {
+        request.headers.set('X-Device-Id', deviceId);
+      }
       // Spec 151 P1-8b — stamp the signed per-user session token so the server
       // can derive the acting identity and honour branch-scoped
       // (transactional) endpoints. This raw-HttpClient path bypasses
@@ -721,6 +726,10 @@ class SyncService {
         request.headers.set('Authorization', 'Bearer $token');
       } else {
         debugPrint('[Sync] ⚠️ WARNING: No API token! POST will likely fail auth');
+      }
+      final deviceId = DeviceIdentityService.instance.tryGetDeviceId();
+      if (deviceId != null && deviceId.isNotEmpty) {
+        request.headers.set('X-Device-Id', deviceId);
       }
       // Skip ngrok interstitial page
       request.headers.set('ngrok-skip-browser-warning', 'true');

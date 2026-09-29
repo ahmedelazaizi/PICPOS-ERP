@@ -30,6 +30,12 @@ abstract class ManufacturingRepository {
     bool autoDepleteOnSale = false,
     String depletionPolicy = 'prefer_finished_stock',
     bool isActive = true,
+     double overheadPercent = 0,
+     double profitPercent = 0,
+     String profitBasis = 'after_overhead',
+     double? pieceWeight,
+     double? outputQuantityOverride,
+     String outputUnit = 'g',
   });
 
   /// Delete a BOM and its components.
@@ -48,6 +54,12 @@ abstract class ManufacturingRepository {
     bool? autoDepleteOnSale,
     String? depletionPolicy,
     bool? isActive,
+     double? overheadPercent,
+     double? profitPercent,
+     String? profitBasis,
+     double? pieceWeight,
+     double? outputQuantityOverride,
+     String? outputUnit,
   });
 
   /// Update a draft manufacturing order.
@@ -82,6 +94,9 @@ abstract class ManufacturingRepository {
   /// Cancel a manufacturing order.
   Future<void> cancelManufacturingOrder(int orderId);
 
+  /// Reverse a posted or in-progress manufacturing order.
+  Future<void> reverseManufacturingOrder(int orderId);
+
   /// Add a cost entry to a manufacturing order.
   ///
   /// ⚠️ **و[expenseId] ليس زينة**: بدونه يصير سطرُ التكلفة يتيماً — يُعرَف
@@ -104,6 +119,49 @@ abstract class ManufacturingRepository {
 
   /// Update the additionalCosts total on a manufacturing order.
   Future<void> updateManufacturingOrderCosts(int orderId, double additionalCosts);
+
+  /// Allocate indirect production expenses for a month.
+  Future<void> allocateMonthlyExpenses({required DateTime month});
+
+  /// Read cost figures for a BOM.
+  Future<BomCostPreview> getBomCostPreview(int bomId);
+
+  /// Read butchery lookup and report rows.
+  Future<List<Map<String, dynamic>>> getButcheryTemplates();
+  Future<List<Map<String, dynamic>>> getButcheryTemplateLines(int templateId);
+  Future<List<Map<String, dynamic>>> getButcheryOrders();
+  Future<List<Map<String, dynamic>>> getButcheryOrderLines(int orderId);
+  Future<List<Map<String, dynamic>>> getButcheryYieldReport({
+    required DateTime from,
+    required DateTime to,
+  });
+  Future<int> createButcheryTemplate({
+    required int carcassProductId,
+    required String name,
+    String valuationMethod = 'sales_value',
+    double varianceThresholdPercent = 2,
+  });
+  Future<int> addButcheryTemplateLine({
+    required int templateId,
+    required int outputProductId,
+    required double expectedYieldPercent,
+    required bool isByProduct,
+    double valuationPrice = 0,
+    String unit = 'كجم',
+  });
+  Future<int> createButcheryOrder({
+    required int carcassProductId,
+    required int warehouseId,
+    required double carcassQuantity,
+    required double carcassWeight,
+    required double carcassTotalCost,
+    required List<Map<String, dynamic>> outputs,
+    int? templateId,
+    String weightUnit = 'g',
+    String? notes,
+  });
+  Future<Map<String, dynamic>> postButcheryOrder(int orderId);
+  Future<void> reverseButcheryOrder(int orderId);
 
   /// Get the last purchase price for a product.
   Future<double?> getLastPurchasePrice(int productId);

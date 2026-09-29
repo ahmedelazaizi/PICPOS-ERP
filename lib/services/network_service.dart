@@ -11,6 +11,9 @@ import 'api/api_handler.dart';
 import 'e_invoicing/e_invoice_submission_worker.dart';
 import 'api/api_auth_middleware.dart';
 import 'api/api_session_token.dart';
+import 'api/lan_pairing_api_handler.dart';
+import 'api/lan_pairing_service.dart';
+import 'api/lan_pairing_client.dart';
 import 'api/table_bill_token.dart';
 import 'api/api_rate_limiter.dart';
 import 'deployment/reconcile_result.dart';
@@ -130,6 +133,9 @@ class NetworkService {
 
   // API handler reference for broadcasting
   ApiHandler? _apiHandler;
+  LanPairingService? _lanPairing;
+
+  LanPairingService? get lanPairingService => _lanPairing;
 
   /// Get count of active clients (auto-prunes stale entries > 60s)
   int get connectedClientCount {
@@ -648,6 +654,12 @@ class NetworkService {
     final serverPort = port ?? _serverPort;
 
     try {
+      final pairing = LanPairingService(db);
+      await pairing.initialize();
+      await pairing.initializeLegacyTransition();
+      _lanPairing = pairing;
+      ApiAuthMiddleware.setPairingService(pairing);
+      LanPairingApiHandler.setService(pairing);
       final apiHandler = ApiHandler(db);
       _apiHandler = apiHandler;
       final router = apiHandler.buildRouter();
@@ -732,6 +744,42 @@ class NetworkService {
         '[NetworkService] Device pairing window opened for ${ttl.inMinutes} min');
   }
 
+  PairingOffer? issueLanPairingCode() {
+    final pairing = _lanPairing;
+    if (pairing == null || !pairing.isInitialized) return null;
+    return pairing.issuePairingCode(
+      serverHost: _serverAddress ?? 'localhost',
+      port: _serverPort,
+      serverFingerprint: _serverCertFingerprint,
+    );
+  }
+
+  Future<List<LanPairingDevice>> unpairedLanDevices() async {
+    final pairing = _lanPairing;
+    return pairing == null ? const [] : pairing.listUnpairedDevices();
+  }
+
+  Future<void> revokeLanDevice(String deviceId) async {
+    await _lanPairing?.revoke(deviceId);
+  }
+
+  Future<void> endLegacyLanTransition() async {
+    await _lanPairing?.endLegacyTransition();
+  }
+
+  Future<Map<String, dynamic>> pairLanClient({
+    required String address,
+    required int port,
+    required String code,
+    String? deviceName,
+  }) =>
+      LanPairingClient.pair(
+        address: address,
+        port: port,
+        code: code,
+        deviceName: deviceName,
+      );
+
   /// نبضةُ تقديم الفاتورة الإلكترونيّة — **على الخادم وحدَه**.
   ///
   /// قرارُ المالك: الخادمُ وحدَه يحمل السرَّ ويرسل. والفواتيرُ تصل بالمزامنة
@@ -770,6 +818,9 @@ class NetworkService {
       _httpServer = null;
       _serverStartTime = null;
       _apiHandler = null;
+      _lanPairing = null;
+      ApiAuthMiddleware.clearPairingService();
+      LanPairingApiHandler.clearService();
       _activeServerIsTls = false;
       _connectedClients.clear();
       debugPrint('[NetworkService] Server stopped');

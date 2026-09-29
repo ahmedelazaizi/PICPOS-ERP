@@ -45,10 +45,11 @@ import '../guest_order_approval.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../table_session_service.dart';
 import '../../core/config/app_config.dart';
+import '../manufacturing_sync_tables.dart';
 
-/// REST API handler for the embedded server.
+/// REST API handler for embedded server.
 /// Exposes read-only endpoints for products, categories, units,
-/// and delegates write endpoints to domain-specific handlers.
+/// and delegates write endpoints to domain handlers.
 class ApiHandler {
   final AppDatabase _db;
 
@@ -2732,6 +2733,7 @@ class ApiHandler {
     // فالترتيبُ لا يعني شيئاً، والقائمةُ هناك مرتّبةٌ بالمفاتيح.
     'asset_categories', 'op_expense_categories', 'bill_of_materials',
     'fixed_assets', 'manufacturing_orders', 'bom_components',
+    ...manufacturingV180SyncTables,
     'op_expenses', 'asset_depreciations', 'mfg_order_costs',
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
     // v175 / المرحلة ٧ — طلبُ استبعاد أصل. يقابل الإدراجَ نفسَه في
@@ -2877,7 +2879,7 @@ class ApiHandler {
     // التزويدُ قبلَ الدخول.
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
     'fixed_assets', 'asset_depreciations', 'op_expenses',
-    'manufacturing_orders', 'mfg_order_costs',
+    ...manufacturingV180TransactionalTables,
     // v175 / المرحلة ٧ — طلبُ استبعاد أصل. تقابل الإدراجَ نفسَه في
     // `DeltaPullService.branchScopedPullTables` حرفاً.
     'asset_disposals',

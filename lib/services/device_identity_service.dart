@@ -136,6 +136,14 @@ class DeviceIdentityService {
     debugPrint('[DeviceIdentity] warmed up — device_id=$id');
   }
 
+  /// Adopt the identity used by the LAN pairing handshake when pairing runs
+  /// before the normal application warmup path.
+  void adoptForPairing(String id) {
+    if (id.isEmpty) return;
+    _cachedDeviceId = id;
+    _warmedUp = true;
+  }
+
   /// Test-only: clears the cached id so a subsequent [warmup] re-reads
   /// or re-generates. Production code should never call this.
   @visibleForTesting

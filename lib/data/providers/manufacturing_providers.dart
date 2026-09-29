@@ -192,3 +192,10 @@ final mfgOrderCostsProvider =
   return db.watchMfgOrderCosts(orderId);
 });
 
+/// All additional production costs for the manufacturing workbench.
+final allMfgOrderCostsProvider =
+    StreamProvider.autoDispose<List<MfgOrderCostData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.watchAllMfgOrderCosts();
+});
+
