@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
@@ -23,11 +24,11 @@ class QrMenuDialog extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.qrCode, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text('أكواد المنيو الرقمي للطاولات'),
+            const Icon(PhosphorIconsBold.qrCode, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(tr('أكواد المنيو الرقمي للطاولات')),
           ],
         ),
         content: SizedBox(
@@ -53,7 +54,7 @@ class QrMenuDialog extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'يمكن للعملاء مسح هذه الأكواد للوصول إلى المنيو الرقمي على هواتفهم. الرابط الأساسي: $menuUrl',
+                        tr('يمكن للعملاء مسح هذه الأكواد للوصول إلى المنيو الرقمي على هواتفهم. الرابط الأساسي: {menuUrl}', {'menuUrl': menuUrl}),
                         style: const TextStyle(fontSize: 13),
                       ),
                     ),
@@ -140,7 +141,7 @@ class QrMenuDialog extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
           ElevatedButton.icon(
             onPressed: () async {
@@ -159,7 +160,7 @@ class QrMenuDialog extends StatelessWidget {
                         mainAxisAlignment: pw.MainAxisAlignment.center,
                         children: [
                           pw.Text(
-                            'طاولة ${table.name}',
+                            tr('طاولة {p0}', {'p0': table.name}),
                             style: pw.TextStyle(
                               fontSize: 24,
                               fontWeight: pw.FontWeight.bold,
@@ -186,7 +187,7 @@ class QrMenuDialog extends StatelessWidget {
               await PdfComputeHelper.layoutPdf(pdf);
             },
             icon: const Icon(PhosphorIconsBold.printer),
-            label: const Text('طباعة الكل'),
+            label:  Text(tr('طباعة الكل')),
           ),
         ],
       ),

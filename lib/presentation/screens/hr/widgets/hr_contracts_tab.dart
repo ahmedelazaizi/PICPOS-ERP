@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,7 +38,7 @@ class ContractsTab extends ConsumerWidget {
                     const Icon(PhosphorIconsBold.fileText,
                         color: AppColors.primary),
                     const SizedBox(width: 8),
-                    Text('عقود العمل',
+                    Text(tr('عقود العمل'),
                         style: GoogleFonts.cairo(
                             fontSize: 18, fontWeight: FontWeight.w700)),
                     const Spacer(),
@@ -62,7 +63,7 @@ class ContractsTab extends ConsumerWidget {
                               const Icon(PhosphorIconsBold.warning,
                                   size: 14, color: Color(0xFFF59E0B)),
                               const SizedBox(width: 6),
-                              Text('$count عقود تنتهي خلال 30 يوم',
+                              Text(tr('{count} عقود تنتهي خلال 30 يوم', {'count': count}),
                                   style: GoogleFonts.cairo(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
@@ -77,7 +78,7 @@ class ContractsTab extends ConsumerWidget {
                       onPressed: () =>
                           _showAddContractDialog(context, ref, employees),
                       icon: const Icon(PhosphorIconsBold.plus, size: 16),
-                      label: const Text('عقد جديد'),
+                      label:  Text(tr('عقد جديد')),
                       style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white),
@@ -120,7 +121,7 @@ class ContractsTab extends ConsumerWidget {
         builder: (ctx, setState) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: Text('عقد عمل جديد',
+            title: Text(tr('عقد عمل جديد'),
                 style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             content: SizedBox(
               width: 450,
@@ -129,8 +130,8 @@ class ContractsTab extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     DropdownButtonFormField<Employee>(
-                      decoration: const InputDecoration(
-                          labelText: 'الموظف', border: OutlineInputBorder()),
+                      decoration:  InputDecoration(
+                          labelText: tr('الموظف'), border: const OutlineInputBorder()),
                       items: employees
                           .map((e) => DropdownMenuItem(
                               value: e, child: Text(e.name)))
@@ -144,18 +145,18 @@ class ContractsTab extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                          labelText: 'نوع العقد', border: OutlineInputBorder()),
+                      decoration:  InputDecoration(
+                          labelText: tr('نوع العقد'), border: const OutlineInputBorder()),
                       initialValue: contractType,
-                      items: const [
+                      items:  [
                         DropdownMenuItem(
-                            value: 'permanent', child: Text('دائم')),
+                            value: 'permanent', child: Text(tr('دائم'))),
                         DropdownMenuItem(
-                            value: 'temporary', child: Text('مؤقت')),
+                            value: 'temporary', child: Text(tr('مؤقت'))),
                         DropdownMenuItem(
-                            value: 'part_time', child: Text('دوام جزئي')),
+                            value: 'part_time', child: Text(tr('دوام جزئي'))),
                         DropdownMenuItem(
-                            value: 'freelance', child: Text('حر')),
+                            value: 'freelance', child: Text(tr('حر'))),
                       ],
                       onChanged: (v) => setState(() => contractType = v!),
                     ),
@@ -163,8 +164,8 @@ class ContractsTab extends ConsumerWidget {
                     TextField(
                       controller: salaryCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                          labelText: 'الراتب', border: OutlineInputBorder()),
+                      decoration:  InputDecoration(
+                          labelText: tr('الراتب'), border: const OutlineInputBorder()),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -183,9 +184,9 @@ class ContractsTab extends ConsumerWidget {
                               }
                             },
                             child: InputDecorator(
-                              decoration: const InputDecoration(
-                                  labelText: 'تاريخ البداية',
-                                  border: OutlineInputBorder()),
+                              decoration:  InputDecoration(
+                                  labelText: tr('تاريخ البداية'),
+                                  border: const OutlineInputBorder()),
                               child: Text(
                                   '${startDate.day}/${startDate.month}/${startDate.year}'),
                             ),
@@ -207,12 +208,12 @@ class ContractsTab extends ConsumerWidget {
                               }
                             },
                             child: InputDecorator(
-                              decoration: const InputDecoration(
-                                  labelText: 'تاريخ الانتهاء',
-                                  border: OutlineInputBorder()),
+                              decoration:  InputDecoration(
+                                  labelText: tr('تاريخ الانتهاء'),
+                                  border: const OutlineInputBorder()),
                               child: Text(endDate != null
                                   ? '${endDate!.day}/${endDate!.month}/${endDate!.year}'
-                                  : 'غير محدد (دائم)'),
+                                  : tr('غير محدد (دائم)')),
                             ),
                           ),
                         ),
@@ -222,15 +223,15 @@ class ContractsTab extends ConsumerWidget {
                     TextField(
                       controller: benefitsCtrl,
                       maxLines: 2,
-                      decoration: const InputDecoration(
-                          labelText: 'المزايا', border: OutlineInputBorder()),
+                      decoration:  InputDecoration(
+                          labelText: tr('المزايا'), border: const OutlineInputBorder()),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: notesCtrl,
                       maxLines: 2,
-                      decoration: const InputDecoration(
-                          labelText: 'ملاحظات', border: OutlineInputBorder()),
+                      decoration:  InputDecoration(
+                          labelText: tr('ملاحظات'), border: const OutlineInputBorder()),
                     ),
                   ],
                 ),
@@ -239,7 +240,7 @@ class ContractsTab extends ConsumerWidget {
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('إلغاء')),
+                  child:  Text(tr('إلغاء'))),
               ElevatedButton(
                 onPressed: selectedEmployee == null
                     ? null
@@ -263,7 +264,7 @@ class ContractsTab extends ConsumerWidget {
                 style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white),
-                child: const Text('حفظ العقد'),
+                child:  Text(tr('حفظ العقد')),
               ),
             ],
           ),
@@ -293,10 +294,10 @@ class _EmployeeContractCard extends StatelessWidget {
         }
 
         final contractTypes = {
-          'permanent': 'دائم',
-          'temporary': 'مؤقت',
-          'part_time': 'دوام جزئي',
-          'freelance': 'حر',
+          'permanent': tr('دائم'),
+          'temporary': tr('مؤقت'),
+          'part_time': tr('دوام جزئي'),
+          'freelance': tr('حر'),
         };
 
         final statusColors = {
@@ -307,10 +308,10 @@ class _EmployeeContractCard extends StatelessWidget {
         };
 
         final statusLabels = {
-          'active': 'نشط',
-          'expired': 'منتهي',
-          'terminated': 'منهي',
-          'renewed': 'مجدد',
+          'active': tr('نشط'),
+          'expired': tr('منتهي'),
+          'terminated': tr('منهي'),
+          'renewed': tr('مجدد'),
         };
 
         return Card(
@@ -339,7 +340,7 @@ class _EmployeeContractCard extends StatelessWidget {
                     style: GoogleFonts.cairo(
                         fontSize: 11, color: AppColors.textMuted),
                   )
-                : Text('بدون عقد نشط',
+                : Text(tr('بدون عقد نشط'),
                     style: GoogleFonts.cairo(
                         fontSize: 11, color: AppColors.textMuted)),
             children: contracts.map((c) {

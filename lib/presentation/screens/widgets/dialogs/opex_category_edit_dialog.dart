@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -27,17 +28,17 @@ class _OpexCategoryEditDialogState extends ConsumerState<OpexCategoryEditDialog>
   bool _isSaving = false;
 
   final Map<String, String> _types = {
-    'direct': 'مباشرة',
-    'indirect': 'غير مباشرة',
-    'fixed': 'ثابتة',
-    'variable': 'متغيرة',
+    'direct': tr('مباشرة'),
+    'indirect': tr('غير مباشرة'),
+    'fixed': tr('ثابتة'),
+    'variable': tr('متغيرة'),
   };
 
   final Map<String, String> _allocations = {
-    'per_unit': 'لكل وحدة',
-    'per_hour': 'بالساعة',
-    'per_order': 'لكل أمر تصنيع',
-    'fixed_monthly': 'توزيع شهري ثابت',
+    'per_unit': tr('لكل وحدة'),
+    'per_hour': tr('بالساعة'),
+    'per_order': tr('لكل أمر تصنيع'),
+    'fixed_monthly': tr('توزيع شهري ثابت'),
   };
 
   @override
@@ -62,7 +63,7 @@ class _OpexCategoryEditDialogState extends ConsumerState<OpexCategoryEditDialog>
   Future<void> _handleSave() async {
     if (_isSaving) return;
     if (_nameController.text.isEmpty) {
-      AppToast.show(context, 'يرجى إدخال اسم الفئة', type: ToastType.error);
+      AppToast.show(context, tr('يرجى إدخال اسم الفئة'), type: ToastType.error);
       return;
     }
 
@@ -95,12 +96,12 @@ class _OpexCategoryEditDialogState extends ConsumerState<OpexCategoryEditDialog>
 
       if (mounted) {
         Navigator.pop(context, true);
-        AppToast.show(context, 'تم الحفظ بنجاح', type: ToastType.success);
+        AppToast.show(context, tr('تم الحفظ بنجاح'), type: ToastType.success);
       }
       ref.invalidate(expenseCategoriesProvider);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -130,7 +131,7 @@ class _OpexCategoryEditDialogState extends ConsumerState<OpexCategoryEditDialog>
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        widget.existing == null ? 'فئة مصروف جديدة' : 'تعديل فئة',
+                        widget.existing == null ? tr('فئة مصروف جديدة') : tr('تعديل فئة'),
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                       ),
                     ),
@@ -143,11 +144,11 @@ class _OpexCategoryEditDialogState extends ConsumerState<OpexCategoryEditDialog>
                 const Divider(height: 24),
                 TextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'اسم الفئة *',
-                    hintText: 'مثال: كهرباء المصنع',
-                    prefixIcon: Icon(PhosphorIconsBold.textT),
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('اسم الفئة *'),
+                    hintText: tr('مثال: كهرباء المصنع'),
+                    prefixIcon: const Icon(PhosphorIconsBold.textT),
+                    border: const OutlineInputBorder(),
                   ),
                   autofocus: true,
                 ),
@@ -157,10 +158,10 @@ class _OpexCategoryEditDialogState extends ConsumerState<OpexCategoryEditDialog>
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _type,
-                        decoration: const InputDecoration(
-                          labelText: 'النوع',
-                          prefixIcon: Icon(PhosphorIconsBold.tag),
-                          border: OutlineInputBorder(),
+                        decoration:  InputDecoration(
+                          labelText: tr('النوع'),
+                          prefixIcon: const Icon(PhosphorIconsBold.tag),
+                          border: const OutlineInputBorder(),
                         ),
                         items: _types.entries
                             .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
@@ -172,10 +173,10 @@ class _OpexCategoryEditDialogState extends ConsumerState<OpexCategoryEditDialog>
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _allocation,
-                        decoration: const InputDecoration(
-                          labelText: 'طريقة التوزيع',
-                          prefixIcon: Icon(PhosphorIconsBold.arrowsOutLineHorizontal),
-                          border: OutlineInputBorder(),
+                        decoration:  InputDecoration(
+                          labelText: tr('طريقة التوزيع'),
+                          prefixIcon: const Icon(PhosphorIconsBold.arrowsOutLineHorizontal),
+                          border: const OutlineInputBorder(),
                         ),
                         items: _allocations.entries
                             .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
@@ -191,10 +192,10 @@ class _OpexCategoryEditDialogState extends ConsumerState<OpexCategoryEditDialog>
                     Expanded(
                       child: TextField(
                         controller: _rateController,
-                        decoration: const InputDecoration(
-                          labelText: 'المعدل الافتراضي',
-                          prefixIcon: Icon(PhosphorIconsBold.currencyCircleDollar),
-                          border: OutlineInputBorder(),
+                        decoration:  InputDecoration(
+                          labelText: tr('المعدل الافتراضي'),
+                          prefixIcon: const Icon(PhosphorIconsBold.currencyCircleDollar),
+                          border: const OutlineInputBorder(),
                         ),
                         keyboardType: TextInputType.number,
                       ),
@@ -204,7 +205,7 @@ class _OpexCategoryEditDialogState extends ConsumerState<OpexCategoryEditDialog>
                       child: CheckboxListTile(
                         value: _isProduction,
                         onChanged: (v) => setState(() => _isProduction = v ?? true),
-                        title: const Text('متعلقة بالإنتاج', style: TextStyle(fontSize: 13)),
+                        title:  Text(tr('متعلقة بالإنتاج'), style: const TextStyle(fontSize: 13)),
                         controlAffinity: ListTileControlAffinity.leading,
                         contentPadding: EdgeInsets.zero,
                       ),
@@ -224,7 +225,7 @@ class _OpexCategoryEditDialogState extends ConsumerState<OpexCategoryEditDialog>
                     ),
                     child: _isSaving
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('حفظ', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                        :  Text(tr('حفظ'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                   ),
                 ),
               ],

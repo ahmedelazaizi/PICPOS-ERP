@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -100,7 +101,7 @@ class _PosScaleInputState extends State<PosScaleInput> {
     }
 
     final statusColor = _isStable ? AppColors.success : AppColors.error;
-    final statusText = _isStable ? 'ثابت' : 'غير ثابت';
+    final statusText = _isStable ? tr('ثابت') : tr('غير ثابت');
     final statusIcon = _isStable
         ? PhosphorIconsBold.checkCircle
         : PhosphorIconsBold.warning;
@@ -132,9 +133,9 @@ class _PosScaleInputState extends State<PosScaleInput> {
           const SizedBox(width: 12),
 
           // Label
-          const Text(
-            'الوزن:',
-            style: TextStyle(fontSize: 14, color: AppColors.textMuted),
+           Text(
+            tr('الوزن:'),
+            style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
           ),
           const SizedBox(width: 8),
 
@@ -162,9 +163,9 @@ class _PosScaleInputState extends State<PosScaleInput> {
                     child: Text(_currentWeight.toStringAsFixed(3)),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'كجم',
-                    style: TextStyle(fontSize: 14, color: AppColors.textMuted),
+                   Text(
+                    tr('كجم'),
+                    style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
                   ),
                 ],
               ),

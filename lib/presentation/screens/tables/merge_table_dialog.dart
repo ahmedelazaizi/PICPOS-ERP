@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
@@ -21,11 +22,11 @@ class MergeTableDialog extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.intersect, color: AppColors.warning),
-            SizedBox(width: 8),
-            Text('دمج الطاولات'),
+            const Icon(PhosphorIconsBold.intersect, color: AppColors.warning),
+            const SizedBox(width: 8),
+            Text(tr('دمج الطاولات')),
           ],
         ),
         content: SizedBox(
@@ -35,7 +36,7 @@ class MergeTableDialog extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'سيتم نقل جميع أصناف "${sourceTable.name}" إلى الطاولة التي ستختارها:',
+                tr('سيتم نقل جميع أصناف "{p0}" إلى الطاولة التي ستختارها:', {'p0': sourceTable.name}),
                 style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textMuted,
@@ -44,8 +45,8 @@ class MergeTableDialog extends StatelessWidget {
               const SizedBox(height: 16),
               Expanded(
                 child: otherOccupiedTables.isEmpty
-                    ? const Center(
-                        child: Text('لا توجد طاولات مشغولة أخرى للدمج معها'),
+                    ?  Center(
+                        child: Text(tr('لا توجد طاولات مشغولة أخرى للدمج معها')),
                       )
                     : ListView.separated(
                         itemCount: otherOccupiedTables.length,
@@ -71,7 +72,7 @@ class MergeTableDialog extends StatelessWidget {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            subtitle: Text('السعة: ${table.capacity} أشخاص'),
+                            subtitle: Text(tr('السعة: {p0} أشخاص', {'p0': table.capacity})),
                             // ⚠️ **طردٌ واحدٌ لا اثنان — و[onMerge] هو من
                             // يطرد.**
                             //
@@ -95,7 +96,7 @@ class MergeTableDialog extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
         ],
       ),

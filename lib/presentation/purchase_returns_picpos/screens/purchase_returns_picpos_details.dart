@@ -24,9 +24,9 @@ mixin _PurchaseReturnsPicposDetailsPanel
           children: [
             Icon(PhosphorIconsBold.receipt, size: 80, color: AppColors.textMuted.withValues(alpha: 0.3)),
             const SizedBox(height: 24),
-            const Text(
-              'اختر فاتورة مشتريات لعرض تفاصيل الارتجاع',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 16),
+             Text(
+              tr('اختر فاتورة مشتريات لعرض تفاصيل الارتجاع'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 16),
             ),
           ],
         ),
@@ -43,7 +43,7 @@ mixin _PurchaseReturnsPicposDetailsPanel
           const SizedBox(height: 16),
 
           // Items List
-          const Text('الأصناف في الفاتورة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+           Text(tr('الأصناف في الفاتورة:'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 8),
           Expanded(
             child: state.isLoading
@@ -73,7 +73,7 @@ mixin _PurchaseReturnsPicposDetailsPanel
   Widget _buildInvoiceHeader(PurchaseInvoiceData invoice) {
     final d = invoice.invoiceDate;
     return PicPosDocumentHeader(
-      title: 'مردود مشتريات',
+      title: tr('مردود مشتريات'),
       icon: PhosphorIconsBold.arrowUUpLeft,
       note: 'من فاتورة ${invoice.invoiceNumber} • '
           '${d.day}/${d.month}/${d.year} • '
@@ -102,7 +102,7 @@ mixin _PurchaseReturnsPicposDetailsPanel
 
   Widget _buildItemsList(PurchaseReturnState state, PurchaseReturnNotifier notifier) {
     if (state.invoiceItems.isEmpty) {
-      return const Center(child: Text('لا توجد أصناف في هذه الفاتورة'));
+      return  Center(child: Text(tr('لا توجد أصناف في هذه الفاتورة')));
     }
 
     return ListView.builder(
@@ -166,8 +166,8 @@ mixin _PurchaseReturnsPicposDetailsPanel
                           const SizedBox(width: 4),
                           Text(
                             item.item.taxAmount > 0
-                                ? 'ضريبة ${item.item.taxRate.toStringAsFixed(0)}% = ${item.item.taxAmount.toStringAsFixed(AppConstants.decimalPlaces)}'
-                                : 'معفى من الضريبة',
+                                ? tr('ضريبة {p0}% = {p1}', {'p0': item.item.taxRate.toStringAsFixed(0), 'p1': item.item.taxAmount.toStringAsFixed(AppConstants.decimalPlaces)})
+                                : tr('معفى من الضريبة'),
                             style: TextStyle(
                               fontSize: 11,
                               color: item.item.taxAmount > 0
@@ -217,7 +217,7 @@ mixin _PurchaseReturnsPicposDetailsPanel
                       const SizedBox(width: 8),
                       TextButton(
                         onPressed: () => notifier.updateReturnQuantity(item.item.id, maxQty),
-                        child: const Text('الكل', style: TextStyle(fontSize: 12)),
+                        child:  Text(tr('الكل'), style: const TextStyle(fontSize: 12)),
                       ),
                     ],
                   ),
@@ -286,16 +286,16 @@ mixin _PurchaseReturnsPicposDetailsPanel
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'تسوية المبلغ مع المورد',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+           Text(
+            tr('تسوية المبلغ مع المورد'),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
-          row('طريقة التسوية', s.methodLabel),
-          row('الرصيد المستحق حالياً', money(s.remainingBefore)),
-          if (s.touchesPayable) row('تخفيض الذمة', money(s.apPortion)),
-          if (s.touchesCash) row('استرداد نقدي', money(s.cashPortion)),
-          row('الرصيد بعد التسوية', money(s.remainingAfter),
+          row(tr('طريقة التسوية'), s.methodLabel),
+          row(tr('الرصيد المستحق حالياً'), money(s.remainingBefore)),
+          if (s.touchesPayable) row(tr('تخفيض الذمة'), money(s.apPortion)),
+          if (s.touchesCash) row(tr('استرداد نقدي'), money(s.cashPortion)),
+          row(tr('الرصيد بعد التسوية'), money(s.remainingAfter),
               emphasis: true),
         ],
       ),
@@ -333,13 +333,13 @@ PurchaseReturnState state, PurchaseReturnNotifier notifier) {
           // الآن عبر المزوّد إلى المستودع إلى صفّ المستند.
           DropdownButtonFormField<String>(
             initialValue: state.returnReason,
-            decoration: const InputDecoration(
-              labelText: 'سبب المردود *',
-              prefixIcon: Icon(PhosphorIconsBold.notepad, size: 18),
-              border: OutlineInputBorder(),
+            decoration:  InputDecoration(
+              labelText: tr('سبب المردود *'),
+              prefixIcon: const Icon(PhosphorIconsBold.notepad, size: 18),
+              border: const OutlineInputBorder(),
               isDense: true,
               contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
             style: const TextStyle(fontSize: 13, color: Colors.black87),
             items: AppConstants.purchaseReturnReasons
@@ -360,17 +360,17 @@ PurchaseReturnState state, PurchaseReturnNotifier notifier) {
           PicPosTotalsBar(
             items: [
               PicPosTotal(
-                label: 'صافي المرتجع',
+                label: tr('صافي المرتجع'),
                 value: total.toStringAsFixed(AppConstants.decimalPlaces),
               ),
               PicPosTotal(
-                label: 'الضريبة',
+                label: tr('الضريبة'),
                 value: notifier
                     .calculateReturnVat()
                     .toStringAsFixed(AppConstants.decimalPlaces),
               ),
               PicPosTotal(
-                label: 'إجمالي المرتجع',
+                label: tr('إجمالي المرتجع'),
                 value: (total + notifier.calculateReturnVat())
                     .toStringAsFixed(AppConstants.decimalPlaces),
                 emphasis: true,
@@ -390,14 +390,14 @@ PurchaseReturnState state, PurchaseReturnNotifier notifier) {
           // يبحث عن فعلٍ يظنّه غائباً، والتلميحُ يقول ما ينقص.
           Tooltip(
             message: state.returnReason == null
-                ? 'اختر سبب المردود أولاً'
+                ? tr('اختر سبب المردود أولاً')
                 : (total <= 0
-                    ? 'حدّد كميات المرتجع'
-                    : 'تنفيذ المرتجع'),
+                    ? tr('حدّد كميات المرتجع')
+                    : tr('تنفيذ المرتجع')),
             child: PicPosFormActionBar(
               busy: state.isProcessing,
               primary: PicPosFormAction(
-                label: 'تنفيذ المرتجع',
+                label: tr('تنفيذ المرتجع'),
                 icon: PhosphorIconsBold.arrowUUpLeft,
                 onPressed:
                     (total > 0 && state.returnReason != null)

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // MIRROR PARITY AUDIT DIALOG — Spec 131 FR-010
@@ -58,7 +59,7 @@ class _MirrorParityAuditDialogState
   bool _repairing = false;
   String _confirmText = '';
 
-  static const _confirmPhrase = 'إعادة المزامنة';
+  static String get _confirmPhrase => tr('إعادة المزامنة');
 
   static const List<String> _tablesToAudit = [
     'warehouses',
@@ -70,14 +71,14 @@ class _MirrorParityAuditDialogState
     'accounts',
   ];
 
-  static const Map<String, String> _arabicTableNames = {
-    'warehouses': 'المخازن',
-    'branches': 'الفروع',
-    'safes': 'الخزائن',
-    'parties': 'العملاء/الموردين',
-    'units': 'الوحدات',
-    'categories': 'الفئات',
-    'accounts': 'دليل الحسابات',
+  static Map<String, String> get _arabicTableNames => {
+    'warehouses': tr('المخازن'),
+    'branches': tr('الفروع'),
+    'safes': tr('الخزائن'),
+    'parties': tr('العملاء/الموردين'),
+    'units': tr('الوحدات'),
+    'categories': tr('الفئات'),
+    'accounts': tr('دليل الحسابات'),
   };
 
   Future<void> _runAudit() async {
@@ -119,7 +120,7 @@ class _MirrorParityAuditDialogState
       );
       if (!mounted) return;
       setState(() => _scanning = false);
-      AppToast.show(context, 'فشل التدقيق: $e', type: ToastType.error);
+      AppToast.show(context, tr('فشل التدقيق: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -127,7 +128,7 @@ class _MirrorParityAuditDialogState
     if (_repairing) return;
     if (_confirmText.trim() != _confirmPhrase) {
       AppToast.show(context,
-          'يجب كتابة "$_confirmPhrase" فى صندوق التأكيد قبل المتابعة',
+          tr('يجب كتابة "{_confirmPhrase}" فى صندوق التأكيد قبل المتابعة', {'_confirmPhrase': _confirmPhrase}),
           type: ToastType.warning);
       return;
     }
@@ -155,7 +156,7 @@ class _MirrorParityAuditDialogState
       await firstSyncService.performFirstSync(syncService: syncService);
 
       if (!mounted) return;
-      AppToast.show(context, '✓ تم إعادة المزامنة بنجاح');
+      AppToast.show(context, tr('✓ تم إعادة المزامنة بنجاح'));
       setState(() {
         _repairing = false;
         _confirmText = '';
@@ -165,7 +166,7 @@ class _MirrorParityAuditDialogState
     } catch (e) {
       if (!mounted) return;
       setState(() => _repairing = false);
-      AppToast.show(context, 'فشل إعادة المزامنة: $e',
+      AppToast.show(context, tr('فشل إعادة المزامنة: {e}', {'e': e}),
           type: ToastType.error);
     }
   }
@@ -194,7 +195,7 @@ class _MirrorParityAuditDialogState
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'تدقيق مزامنة المرآة',
+                        tr('تدقيق مزامنة المرآة'),
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -236,7 +237,7 @@ class _MirrorParityAuditDialogState
                             FilledButton.icon(
                               onPressed: _runAudit,
                               icon: const Icon(PhosphorIconsBold.magnifyingGlass),
-                              label: const Text('بدء التدقيق'),
+                              label:  Text(tr('بدء التدقيق')),
                             )
                           else if (_scanning)
                             const Padding(
@@ -249,7 +250,7 @@ class _MirrorParityAuditDialogState
                             const Divider(),
                             const SizedBox(height: 8),
                             Text(
-                              'إعادة المزامنة الكاملة',
+                              tr('إعادة المزامنة الكاملة'),
                               style: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -262,10 +263,10 @@ class _MirrorParityAuditDialogState
                             ),
                             const SizedBox(height: 12),
                             TextField(
-                              decoration: const InputDecoration(
+                              decoration:  InputDecoration(
                                 labelText:
-                                    'اكتب "$_confirmPhrase" لتأكيد العملية',
-                                border: OutlineInputBorder(),
+                                    tr('اكتب "{_confirmPhrase}" لتأكيد العملية', {'_confirmPhrase': _confirmPhrase}),
+                                border: const OutlineInputBorder(),
                                 isDense: true,
                               ),
                               onChanged: (v) =>
@@ -288,7 +289,7 @@ class _MirrorParityAuditDialogState
                                     )
                                   : const Icon(
                                       PhosphorIconsBold.arrowsCounterClockwise),
-                              label: const Text('إعادة المزامنة الآن'),
+                              label:  Text(tr('إعادة المزامنة الآن')),
                               style: FilledButton.styleFrom(
                                 backgroundColor: AppColors.error,
                               ),
@@ -337,7 +338,7 @@ class _MirrorParityAuditDialogState
                     ),
                   ),
                   Text(
-                    'محلى = ${_localCounts![table]}',
+                    tr('محلى = {p0}', {'p0': _localCounts![table]}),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -353,13 +354,13 @@ class _MirrorParityAuditDialogState
   String _arabicMode(NetworkMode mode) {
     switch (mode) {
       case NetworkMode.standalone:
-        return 'مستقل';
+        return tr('مستقل');
       case NetworkMode.server:
-        return 'سيرفر';
+        return tr('سيرفر');
       case NetworkMode.client:
-        return 'عميل';
+        return tr('عميل');
       case NetworkMode.mirror:
-        return 'مرآة';
+        return tr('مرآة');
     }
   }
 }

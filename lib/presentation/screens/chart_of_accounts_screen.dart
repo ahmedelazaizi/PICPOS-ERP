@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -166,7 +167,7 @@ class _ChartOfAccountsScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'دليل الحسابات',
+                tr('دليل الحسابات'),
                 style: GoogleFonts.cairo(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
@@ -174,7 +175,7 @@ class _ChartOfAccountsScreenState
                 ),
               ),
               Text(
-                'IFRS / IAS 1 - شجرة الحسابات المحاسبية',
+                tr('IFRS / IAS 1 - شجرة الحسابات المحاسبية'),
                 style: GoogleFonts.cairo(
                   fontSize: 11,
                   color: Colors.white.withValues(alpha: 0.7),
@@ -208,7 +209,7 @@ class _ChartOfAccountsScreenState
               size: 16,
             ),
             label: Text(
-              _expandedAccounts.isEmpty ? 'توسيع الكل' : 'طي الكل',
+              _expandedAccounts.isEmpty ? tr('توسيع الكل') : tr('طي الكل'),
               style: GoogleFonts.cairo(fontWeight: FontWeight.w600),
             ),
             style: OutlinedButton.styleFrom(
@@ -229,7 +230,7 @@ class _ChartOfAccountsScreenState
               color: _showTaxAccountsOnly ? Colors.white : AppColors.warning,
             ),
             label: Text(
-              'حسابات الضريبة',
+              tr('حسابات الضريبة'),
               style: GoogleFonts.cairo(
                 fontWeight: FontWeight.w600,
                 fontSize: 12,
@@ -250,7 +251,7 @@ class _ChartOfAccountsScreenState
           OutlinedButton.icon(
             onPressed: () => _printChartOfAccounts(context),
             icon: const Icon(PhosphorIconsBold.printer, size: 16),
-            label: Text('طباعة/PDF', style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
+            label: Text(tr('طباعة/PDF'), style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.white,
               side: BorderSide(color: Colors.white.withValues(alpha: 0.4)),
@@ -263,20 +264,20 @@ class _ChartOfAccountsScreenState
           IconButton(
             onPressed: _handleExport,
             icon: const Icon(PhosphorIconsBold.microsoftExcelLogo, color: Colors.white),
-            tooltip: 'تصدير للدليل (Excel)',
+            tooltip: tr('تصدير للدليل (Excel)'),
           ),
           // Import COA
           IconButton(
             onPressed: _handleImport,
             icon: const Icon(PhosphorIconsBold.fileArrowUp, color: Colors.white),
-            tooltip: 'استيراد الدليل (Excel)',
+            tooltip: tr('استيراد الدليل (Excel)'),
           ),
           const SizedBox(width: 8),
           ElevatedButton.icon(
             onPressed: () => showAddAccountDialog(context, ref,
                 ref.read(accountingRepositoryProvider), null, null),
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label: Text('إضافة حساب رئيسي', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            label: Text(tr('إضافة حساب رئيسي'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: AppColors.primary,
@@ -302,7 +303,7 @@ class _ChartOfAccountsScreenState
         controller: _searchController,
         onChanged: (v) => setState(() => _searchQuery = v),
         decoration: InputDecoration(
-          hintText: 'بحث بالرمز أو الاسم...',
+          hintText: tr('بحث بالرمز أو الاسم...'),
           prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
@@ -392,7 +393,7 @@ class _ChartOfAccountsScreenState
                           ),
                         ),
                         Text(
-                          '${accounts.length} حساب',
+                          tr('{p0} حساب', {'p0': accounts.length}),
                           style: GoogleFonts.cairo(
                             fontSize: 11,
                             color: AppColors.textMuted,
@@ -494,14 +495,14 @@ class _ChartOfAccountsScreenState
         AppToast.show(
           context,
           newValue
-              ? 'تم إخفاء "${account.name}" من سندات القيد'
-              : 'تم إظهار "${account.name}" في سندات القيد',
+              ? tr('تم إخفاء "{p0}" من سندات القيد', {'p0': account.name})
+              : tr('تم إظهار "{p0}" في سندات القيد', {'p0': account.name}),
           type: ToastType.info,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -513,7 +514,7 @@ class _ChartOfAccountsScreenState
       final accounts = await repo.getAllAccounts();
       if (!context.mounted) return;
       if (accounts.isEmpty) {
-        AppToast.show(context, 'لا توجد حسابات للطباعة', type: ToastType.warning);
+        AppToast.show(context, tr('لا توجد حسابات للطباعة'), type: ToastType.warning);
         return;
       }
 
@@ -545,13 +546,13 @@ class _ChartOfAccountsScreenState
       }
 
       await ReportPdfGenerator.printGeneralLedger(
-        accountName: 'دليل الحسابات الكامل',
+        accountName: tr('دليل الحسابات الكامل'),
         data: rows.map((r) {
           if (r['is_header'] == true) {
             return {
               'entry_date': DateTime.now(),
               'entry_number': '',
-              'description': '═══ ${r['label']} (${r['count']} حساب) ═══',
+              'description': tr('═══ {p0} ({p1} حساب) ═══', {'p0': r['label'], 'p1': r['count']}),
               'debit': 0.0,
               'credit': 0.0,
               'balance': (r['balance'] as double?) ?? 0.0,
@@ -563,7 +564,7 @@ class _ChartOfAccountsScreenState
           return {
             'entry_date': DateTime.now(),
             'entry_number': r['code'] ?? '',
-            'description': '$prefix${r['name']}${r['is_system'] == true ? ' [نظام]' : ''}',
+            'description': tr('{prefix}{p0}{p1}', {'prefix': prefix, 'p0': r['name'], 'p1': r['is_system'] == true ? ' [نظام]' : ''}),
             'debit': 0.0,
             'credit': 0.0,
             'balance': (r['balance'] as double?) ?? 0.0,
@@ -572,7 +573,7 @@ class _ChartOfAccountsScreenState
       );
     } catch (e) {
       if (context.mounted) {
-        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -581,10 +582,10 @@ class _ChartOfAccountsScreenState
     try {
       final path = await _coaService.exportCoa();
       if (path != null && mounted) {
-        AppToast.show(context, 'تم تصدير الدليل بنجاح إلى: $path', type: ToastType.success);
+        AppToast.show(context, tr('تم تصدير الدليل بنجاح إلى: {path}', {'path': path}), type: ToastType.success);
       }
     } catch (e) {
-      if (mounted) AppToast.show(context, 'فشل التصدير: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('فشل التصدير: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -593,11 +594,11 @@ class _ChartOfAccountsScreenState
       final result = await _coaService.pickAndImportCoa(context);
       if (result.totalRows > 0 && mounted) {
         if (result.failed == 0) {
-          AppToast.show(context, 'تم استيراد ${result.success} سجل بنجاح ✓');
+          AppToast.show(context, tr('تم استيراد {p0} سجل بنجاح ✓', {'p0': result.success}));
         } else {
           AppToast.show(
             context,
-            'تم استيراد ${result.success} سجل (${result.failed} فشل)',
+            tr('تم استيراد {p0} سجل ({p1} فشل)', {'p0': result.success, 'p1': result.failed}),
             type: ToastType.warning,
           );
           // Show errors in an alert if many
@@ -607,7 +608,7 @@ class _ChartOfAccountsScreenState
         }
       }
     } catch (e) {
-      if (mounted) AppToast.show(context, 'فشل الاستيراد: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('فشل الاستيراد: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -617,7 +618,7 @@ class _ChartOfAccountsScreenState
       builder: (context) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: Text('أخطاء الاستيراد', style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+          title: Text(tr('أخطاء الاستيراد'), style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
           content: SizedBox(
             width: 400,
             child: ListView.builder(
@@ -629,7 +630,7 @@ class _ChartOfAccountsScreenState
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),

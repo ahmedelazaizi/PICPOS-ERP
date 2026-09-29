@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,7 +30,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: Text(
-          'قوالب القيود',
+          tr('قوالب القيود'),
           style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
         ),
         centerTitle: true,
@@ -43,7 +44,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
               child: ElevatedButton.icon(
                 onPressed: () => _showCreateTemplateDialog(context, accountingRepo),
                 icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                label: const Text('قالب جديد'),
+                label:  Text(tr('قالب جديد')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -59,7 +60,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
         stream: accountingRepo.watchAllTemplates(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text('خطأ: ${snapshot.error}', style: GoogleFonts.cairo()));
+            return Center(child: Text(tr('خطأ: {p0}', {'p0': snapshot.error}), style: GoogleFonts.cairo()));
           }
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -74,12 +75,12 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
                   Icon(PhosphorIconsLight.notebook, size: 80, color: AppColors.textMuted.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
                   Text(
-                    'لا توجد قوالب قيود',
+                    tr('لا توجد قوالب قيود'),
                     style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textMuted),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'استخدم القوالب لتسريع إنشاء القيود المتكررة كرواتب الموظفين أو الإيجارات.',
+                    tr('استخدم القوالب لتسريع إنشاء القيود المتكررة كرواتب الموظفين أو الإيجارات.'),
                     style: GoogleFonts.cairo(fontSize: 14, color: AppColors.textMuted),
                     textAlign: TextAlign.center,
                   ),
@@ -162,7 +163,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
                   color: AppColors.textMuted.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text('غير نشط', style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                child: Text(tr('غير نشط'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
               ),
           ],
         ),
@@ -214,11 +215,11 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
                             TableRow(
                               decoration: const BoxDecoration(color: AppColors.surface),
                               children: [
-                                _tableHeaderCell('رمز الحساب'),
-                                _tableHeaderCell('اسم الحساب'),
-                                _tableHeaderCell('البيان'),
-                                _tableHeaderCell('مدين'),
-                                _tableHeaderCell('دائن'),
+                                _tableHeaderCell(tr('رمز الحساب')),
+                                _tableHeaderCell(tr('اسم الحساب')),
+                                _tableHeaderCell(tr('البيان')),
+                                _tableHeaderCell(tr('مدين')),
+                                _tableHeaderCell(tr('دائن')),
                               ],
                             ),
                             ...lines.map((line) => TableRow(
@@ -235,7 +236,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
                               decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.05)),
                               children: [
                                 _tableHeaderCell(''),
-                                _tableHeaderCell('الإجمالي', color: AppColors.success),
+                                _tableHeaderCell(tr('الإجمالي'), color: AppColors.success),
                                 _tableHeaderCell(''),
                                 _tableHeaderCell(totalDebit.toStringAsFixed(AppConstants.decimalPlaces), color: AppColors.success),
                                 _tableHeaderCell(totalCredit.toStringAsFixed(AppConstants.decimalPlaces), color: AppColors.success),
@@ -252,7 +253,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
                         TextButton.icon(
                           onPressed: () => _deleteTemplate(context, accountingRepo, template),
                           icon: const Icon(PhosphorIconsBold.trash, size: 16, color: AppColors.error),
-                          label: Text('حذف', style: GoogleFonts.cairo(color: AppColors.error, fontWeight: FontWeight.w600)),
+                          label: Text(tr('حذف'), style: GoogleFonts.cairo(color: AppColors.error, fontWeight: FontWeight.w600)),
                           style: TextButton.styleFrom(
                             foregroundColor: AppColors.error,
                             backgroundColor: AppColors.error.withValues(alpha: 0.1),
@@ -262,7 +263,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
                         ElevatedButton.icon(
                           onPressed: () => _showCreateTemplateDialog(context, accountingRepo, templateToEdit: template, lines: lines),
                           icon: const Icon(PhosphorIconsBold.pencilSimple, size: 16),
-                          label: Text('تعديل القالب', style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
+                          label: Text(tr('تعديل القالب'), style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
@@ -317,17 +318,17 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: Text('تأكيد الحذف', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, color: AppColors.error)),
-          content: Text('هل أنت متأكد من حذف القالب "${template.name}"؟', style: GoogleFonts.cairo()),
+          title: Text(tr('تأكيد الحذف'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, color: AppColors.error)),
+          content: Text(tr('هل أنت متأكد من حذف القالب "{p0}"؟', {'p0': template.name}), style: GoogleFonts.cairo()),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('حذف'),
+              child:  Text(tr('حذف')),
             ),
           ],
         ),
@@ -337,7 +338,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
     if (confirm == true) {
       await accountingRepo.deleteJournalTemplate(template.id);
       if (!context.mounted) return;
-      AppToast.show(context, 'تم حذف القالب بنجاح', type: ToastType.warning);
+      AppToast.show(context, tr('تم حذف القالب بنجاح'), type: ToastType.warning);
       }
     }
 

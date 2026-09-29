@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -35,9 +36,9 @@ class SalesItemsTable extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'إضافة صنف:',
-                style: TextStyle(fontWeight: FontWeight.bold),
+               Text(
+                tr('إضافة صنف:'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Autocomplete<ProductEntity>(
@@ -59,10 +60,10 @@ class SalesItemsTable extends ConsumerWidget {
                       return TextField(
                         controller: controller,
                         focusNode: focusNode,
-                        decoration: const InputDecoration(
-                          hintText: 'ابحث عن صنف بالاسم أو الباركود...',
-                          prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass),
-                          border: OutlineInputBorder(),
+                        decoration:  InputDecoration(
+                          hintText: tr('ابحث عن صنف بالاسم أو الباركود...'),
+                          prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass),
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                       );
@@ -77,9 +78,9 @@ class SalesItemsTable extends ConsumerWidget {
         const SizedBox(height: 16),
 
         // Items Table
-        const Text(
-          'الأصناف في الفاتورة:',
-          style: TextStyle(fontWeight: FontWeight.bold),
+         Text(
+          tr('الأصناف في الفاتورة:'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         if (state.cart.isEmpty)
@@ -93,10 +94,10 @@ class SalesItemsTable extends ConsumerWidget {
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Center(
+            child:  Center(
               child: Text(
-                'لم يتم إضافة أصناف بعد',
-                style: TextStyle(color: AppColors.textMuted),
+                tr('لم يتم إضافة أصناف بعد'),
+                style: const TextStyle(color: AppColors.textMuted),
               ),
             ),
           )
@@ -105,15 +106,15 @@ class SalesItemsTable extends ConsumerWidget {
             clipBehavior: Clip.antiAlias,
             child: DataTable(
               columnSpacing: 12,
-              columns: const [
-                DataColumn(label: Text('الصنف')),
-                DataColumn(label: Text('الوحدة')),
-                DataColumn(label: Text('الكمية')),
-                DataColumn(label: Text('السعر')),
-                DataColumn(label: Text('الضريبة %')),
-                DataColumn(label: Text('قيمة الضريبة')),
-                DataColumn(label: Text('الإجمالي')),
-                DataColumn(label: Text('')),
+              columns:  [
+                DataColumn(label: Text(tr('الصنف'))),
+                DataColumn(label: Text(tr('الوحدة'))),
+                DataColumn(label: Text(tr('الكمية'))),
+                DataColumn(label: Text(tr('السعر'))),
+                DataColumn(label: Text(tr('الضريبة %'))),
+                DataColumn(label: Text(tr('قيمة الضريبة'))),
+                DataColumn(label: Text(tr('الإجمالي'))),
+                const DataColumn(label: Text('')),
               ],
               rows: state.cart.asMap().entries.map((entry) {
                 final idx = entry.key;
@@ -176,7 +177,7 @@ class SalesItemsTable extends ConsumerWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                item.selectedUnitName ?? 'قطعة',
+                                item.selectedUnitName ?? tr('قطعة'),
                                 style: const TextStyle(
                                   color: AppColors.info,
                                   fontWeight: FontWeight.bold,

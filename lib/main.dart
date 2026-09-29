@@ -17,6 +17,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/config/app_config.dart';
+import 'core/i18n/locale_provider.dart';
+import 'core/i18n/tr.dart';
 import 'core/auth/admin_password_heal.dart';
 import 'core/config/brand.dart';
 import 'core/config/business_profile_provider.dart';
@@ -67,6 +69,7 @@ import 'app_main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await I18nCatalog.load();
   // All Cairo weights are bundled; never depend on network access at POS startup.
   GoogleFonts.config.allowRuntimeFetching = false;
 
@@ -1323,7 +1326,9 @@ class _CashierMarketAppState extends ConsumerState<CashierMarketApp> {
     // doesn't need a build-phase subscription because it isn't
     // autoDispose.
 
-    final isAuthenticated = ref.watch(authProvider).isAuthenticated;
+    final authState = ref.watch(authProvider);
+    final isAuthenticated = authState.isAuthenticated;
+    final locale = ref.watch(userLocaleProvider);
 
     return MaterialApp(
       key: ValueKey('app_auth_$isAuthenticated'),
@@ -1332,7 +1337,7 @@ class _CashierMarketAppState extends ConsumerState<CashierMarketApp> {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      locale: const Locale('ar', 'EG'),
+      locale: locale,
       supportedLocales: const [Locale('ar', 'EG'), Locale('en', 'US')],
       localizationsDelegates: const [
         AppLocalizations.delegate,

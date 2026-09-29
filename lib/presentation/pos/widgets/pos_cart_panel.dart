@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
@@ -72,7 +73,7 @@ class PosCartPanel extends ConsumerWidget {
           final logger = ref.read(activityLoggerProvider);
           await logger.logCashDrawerOpen(
             user?.id ?? 0,
-            user?.displayName ?? 'مستخدم',
+            user?.displayName ?? tr('مستخدم'),
           );
         },
         onSave: onSave,

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 // شاشةُ «التكاليف المحمَّلة» بهويّة PicPos — على تصميم `PicPos Landed Costs.dc.html`.
 //
@@ -63,7 +64,7 @@ import '../../widgets/permission_guard.dart';
 final _money = NumberFormat('#,##0.00', 'en');
 final _money0 = NumberFormat('#,##0', 'en');
 
-String _pct(double v) => '${v.toStringAsFixed(1)}٪';
+String _pct(double v) => tr('{p0}٪', {'p0': v.toStringAsFixed(1)});
 
 // ── ألوانُ التصميم ───────────────────────────────────────────────────────
 const _ok = Color(0xFF22C55E);
@@ -73,28 +74,28 @@ const _purple = Color(0xFF8B5CF6);
 const _idle = Color(0xFF6B7280);
 
 /// أنواعُ بنود التكلفة الستّة — نفسُ الرموز التي يكتبها `LandedCostItems`.
-const Map<String, ({String label, IconData icon, Color tint})> _kTypes = {
-  'shipping': (label: 'شحن', icon: PhosphorIconsBold.boat, tint: AppColors.primary),
-  'customs': (label: 'جمارك', icon: PhosphorIconsBold.stamp, tint: _err),
-  'insurance': (label: 'تأمين', icon: PhosphorIconsBold.shieldCheck, tint: _purple),
-  'freight': (label: 'نقل', icon: PhosphorIconsBold.truck, tint: _warn),
-  'handling': (label: 'مناولة', icon: PhosphorIconsBold.handGrabbing, tint: _ok),
-  'other': (label: 'أخرى', icon: PhosphorIconsBold.dotsThreeCircle, tint: _idle),
+Map<String, ({String label, IconData icon, Color tint})> get _kTypes => {
+  'shipping': (label: tr('شحن'), icon: PhosphorIconsBold.boat, tint: AppColors.primary),
+  'customs': (label: tr('جمارك'), icon: PhosphorIconsBold.stamp, tint: _err),
+  'insurance': (label: tr('تأمين'), icon: PhosphorIconsBold.shieldCheck, tint: _purple),
+  'freight': (label: tr('نقل'), icon: PhosphorIconsBold.truck, tint: _warn),
+  'handling': (label: tr('مناولة'), icon: PhosphorIconsBold.handGrabbing, tint: _ok),
+  'other': (label: tr('أخرى'), icon: PhosphorIconsBold.dotsThreeCircle, tint: _idle),
 };
 
 /// حالاتُ الورقة الأربع — نفسُ الرموز التي يكتبها عمودُ `status`.
-const Map<String, ({String label, Color tint})> _kStatuses = {
-  'draft': (label: 'مسوّدة', tint: _warn),
-  'applied': (label: 'مُطبَّقة', tint: _ok),
-  'cancelled': (label: 'ملغاة', tint: _idle),
-  'voided': (label: 'مُبطَلة', tint: _err),
+Map<String, ({String label, Color tint})> get _kStatuses => {
+  'draft': (label: tr('مسوّدة'), tint: _warn),
+  'applied': (label: tr('مُطبَّقة'), tint: _ok),
+  'cancelled': (label: tr('ملغاة'), tint: _idle),
+  'voided': (label: tr('مُبطَلة'), tint: _err),
 };
 
 /// طرقُ التوزيع. `by_weight` **مقفولةٌ صراحةً** — والقفلُ ليس زينةً: عمودُ
 /// `allocationMethod` يوثّق أنّها مؤجَّلةٌ لأنّها تحتاج وزناً مسجَّلاً لكلّ
 /// منتج، و`calculateAllocations` لا تعرفها فتسقط على `by_value` صامتةً.
 /// فإظهارُها قابلةً للنقر يعطي زرّاً يكذب.
-const List<
+List<
     ({
       String id,
       String label,
@@ -102,37 +103,37 @@ const List<
       String sub,
       String formula,
       bool locked
-    })> _kMethods = [
+    })> get _kMethods => [
   (
     id: 'by_value',
-    label: 'بالقيمة',
+    label: tr('بالقيمة'),
     icon: PhosphorIconsBold.currencyCircleDollar,
-    sub: 'الصنف الأغلى يحمل أكثر — الافتراضي ويناسب الشحن والتأمين',
-    formula: 'التكلفة × (قيمة البند ÷ إجمالي القيمة)',
+    sub: tr('الصنف الأغلى يحمل أكثر — الافتراضي ويناسب الشحن والتأمين'),
+    formula: tr('التكلفة × (قيمة البند ÷ إجمالي القيمة)'),
     locked: false,
   ),
   (
     id: 'by_quantity',
-    label: 'بالكمية',
+    label: tr('بالكمية'),
     icon: PhosphorIconsBold.stack,
-    sub: 'كل وحدة تحمل بالتساوي — يناسب المناولة والنقل',
-    formula: 'التكلفة × (كمية البند ÷ إجمالي الكمية)',
+    sub: tr('كل وحدة تحمل بالتساوي — يناسب المناولة والنقل'),
+    formula: tr('التكلفة × (كمية البند ÷ إجمالي الكمية)'),
     locked: false,
   ),
   (
     id: 'equal',
-    label: 'بالتساوي',
+    label: tr('بالتساوي'),
     icon: PhosphorIconsBold.equals,
-    sub: 'كل بند يحمل نفس المبلغ — يناسب رسوم الفحص لكل صنف',
-    formula: 'التكلفة ÷ عدد البنود',
+    sub: tr('كل بند يحمل نفس المبلغ — يناسب رسوم الفحص لكل صنف'),
+    formula: tr('التكلفة ÷ عدد البنود'),
     locked: false,
   ),
   (
     id: 'by_weight',
-    label: 'بالوزن',
+    label: tr('بالوزن'),
     icon: PhosphorIconsBold.scales,
-    sub: 'غير متاح — يحتاج وزناً مسجَّلاً لكل منتج',
-    formula: 'مؤجَّل في هذا الإصدار',
+    sub: tr('غير متاح — يحتاج وزناً مسجَّلاً لكل منتج'),
+    formula: tr('مؤجَّل في هذا الإصدار'),
     locked: true,
   ),
 ];
@@ -262,9 +263,9 @@ class _LandedCostPicposScreenState
     final selected = state.selectedView;
 
     return PicPosScreenScaffold(
-      title: 'التكاليف المحملة',
+      title: tr('التكاليف المحملة'),
       subtitle:
-          'ورقة تحميل تكاليف على فاتورة شراء — تُوزَّع على الأصناف فتغيّر تكلفة الوحدة',
+          tr('ورقة تحميل تكاليف على فاتورة شراء — تُوزَّع على الأصناف فتغيّر تكلفة الوحدة'),
       icon: PhosphorIconsBold.stackPlus,
       headerSearch: selected != null ? null : _searchField(),
       headerActions: [
@@ -274,7 +275,7 @@ class _LandedCostPicposScreenState
                 .read(landedCostControllerProvider.notifier)
                 .clearSelection(),
             icon: const Icon(PhosphorIconsBold.files, size: 16),
-            label: const Text('كل الأوراق'),
+            label:  Text(tr('كل الأوراق')),
           ),
       ],
       body: state.isLoading
@@ -288,9 +289,9 @@ class _LandedCostPicposScreenState
   Widget _searchField() => TextField(
         controller: _searchCtrl,
         onChanged: (v) => setState(() => _query = v.trim()),
-        decoration: const InputDecoration(
-          hintText: 'ابحث برقم الورقة...',
-          prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 17),
+        decoration:  InputDecoration(
+          hintText: tr('ابحث برقم الورقة...'),
+          prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 17),
           isDense: true,
         ),
       );
@@ -309,8 +310,8 @@ class _LandedCostPicposScreenState
       return PicPosEmptyState(
         icon: PhosphorIconsBold.stackPlus,
         title: _query.isEmpty
-            ? 'لا أوراقَ تحميلٍ بعد'
-            : 'لا ورقةَ تطابق «$_query»',
+            ? tr('لا أوراقَ تحميلٍ بعد')
+            : tr('لا ورقةَ تطابق «{_query}»', {'_query': _query}),
         hint: _query.isEmpty
             ? 'ورقةُ التحميل تُنشأ على فاتورة شراءٍ قائمة، ثمّ تُضاف بنودُ '
                 'التكلفة فتُوزَّع على أصناف الفاتورة.'
@@ -371,7 +372,7 @@ class _LandedCostPicposScreenState
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'طريقة التوزيع: ${method?.label ?? s.method}',
+                      tr('طريقة التوزيع: {p0}', {'p0': method?.label ?? s.method}),
                       style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
@@ -475,21 +476,21 @@ class _LandedCostPicposScreenState
 
     final stats = <({String label, String value, Color fg})>[
       (
-        label: 'قيمة الفاتورة الأصلية',
+        label: tr('قيمة الفاتورة الأصلية'),
         value: _money0.format(c.origSum),
         fg: context.picposText
       ),
       (
-        label: 'التكلفة الإضافية',
+        label: tr('التكلفة الإضافية'),
         value: _money0.format(s.totalCost),
         fg: _warn
       ),
       (
-        label: 'قيمة المخزون الجديدة',
+        label: tr('قيمة المخزون الجديدة'),
         value: _money0.format(c.origSum + s.totalCost),
         fg: context.picposBrandInk
       ),
-      (label: 'نسبة التحميل', value: _pct(loadPct), fg: _err),
+      (label: tr('نسبة التحميل'), value: _pct(loadPct), fg: _err),
     ];
 
     return PicPosContentCard(
@@ -535,13 +536,13 @@ class _LandedCostPicposScreenState
                       Text(
                         invoice.when(
                           data: (inv) => inv == null
-                              ? 'فاتورة الشراء #${s.purchaseInvoiceId}'
+                              ? tr('فاتورة الشراء #{p0}', {'p0': s.purchaseInvoiceId})
                               : 'فاتورة الشراء ${inv.invoiceNumber}'
                                   '${inv.partyName == null ? '' : ' · ${inv.partyName}'}'
                                   ' · ${DateFormat('yyyy-MM-dd').format(inv.invoiceDate)}',
                           // العارضُ يبتلع رمْيَ SQL في بطاقة، فالإخفاقُ يُقال
                           // صراحةً بدل أن يبدو التقريرُ عاملاً وهو ليس كذلك.
-                          error: (_, _) => 'تعذّر قراءةُ فاتورة الشراء',
+                          error: (_, _) => tr('تعذّر قراءةُ فاتورة الشراء'),
                           loading: () => '…',
                         ),
                         style: TextStyle(
@@ -606,7 +607,7 @@ class _LandedCostPicposScreenState
                   ? null
                   : () => _confirmApply(s),
               icon: const Icon(PhosphorIconsBold.checkCircle, size: 16),
-              label: Text(applied ? 'مُطبَّقة' : 'تطبيق الورقة'),
+              label: Text(applied ? tr('مُطبَّقة') : tr('تطبيق الورقة')),
               style: FilledButton.styleFrom(
                   backgroundColor: applied ? _idle : _ok),
             ),
@@ -625,8 +626,8 @@ class _LandedCostPicposScreenState
         mainAxisSize: MainAxisSize.min,
         children: [
           PicPosSectionHeader(
-            title: 'بنود التكلفة',
-            subtitle: 'كل بند بنوعه — المجموع هو ما يُوزَّع',
+            title: tr('بنود التكلفة'),
+            subtitle: tr('كل بند بنوعه — المجموع هو ما يُوزَّع'),
             icon: PhosphorIconsBold.listPlus,
             actions: [
               // زرٌّ يظهر ولا يفعل أسوأُ من زرٍّ غائب: الإضافةُ تُعرَض على
@@ -635,14 +636,14 @@ class _LandedCostPicposScreenState
                 IconButton(
                   onPressed: () => _openAddItem(s),
                   icon: const Icon(PhosphorIconsBold.plus, size: 15),
-                  tooltip: 'بند تكلفة جديد',
+                  tooltip: tr('بند تكلفة جديد'),
                 ),
             ],
           ),
           if (items.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 26),
-              child: Text('لا بنودَ تكلفةٍ بعد',
+              child: Text(tr('لا بنودَ تكلفةٍ بعد'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 12.5,
@@ -664,7 +665,7 @@ class _LandedCostPicposScreenState
                     size: 15, color: context.picposBrandInk),
                 const SizedBox(width: 9),
                 Expanded(
-                  child: Text('إجمالي التكلفة الإضافية',
+                  child: Text(tr('إجمالي التكلفة الإضافية'),
                       style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w800,
@@ -747,9 +748,9 @@ class _LandedCostPicposScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const PicPosSectionHeader(
-            title: 'طريقة التوزيع',
-            subtitle: 'تغيير الطريقة يعيد حساب تكلفة كل وحدة',
+           PicPosSectionHeader(
+            title: tr('طريقة التوزيع'),
+            subtitle: tr('تغيير الطريقة يعيد حساب تكلفة كل وحدة'),
             icon: PhosphorIconsBold.arrowsSplit,
           ),
           LayoutBuilder(builder: (context, box) {
@@ -855,22 +856,22 @@ class _LandedCostPicposScreenState
     final spread = c.maxDelta - c.minDelta;
 
     final stats = <({String label, String value, Color fg})>[
-      (label: 'أدنى نسبة تحميل', value: _pct(c.minDelta), fg: _ok),
+      (label: tr('أدنى نسبة تحميل'), value: _pct(c.minDelta), fg: _ok),
       (
-        label: 'أعلى نسبة تحميل',
+        label: tr('أعلى نسبة تحميل'),
         value: _pct(c.maxDelta),
         fg: spread < 0.05 ? _ok : _err
       ),
       (
-        label: 'تباعد النسب',
-        value: spread < 0.05 ? 'متساوية' : _pct(spread),
+        label: tr('تباعد النسب'),
+        value: spread < 0.05 ? tr('متساوية') : _pct(spread),
         fg: spread < 0.05 ? _ok : _warn
       ),
       // مقيسٌ من الصفوف: إجماليُّ الورقة ناقصَ مجموعِ ما وُزِّع. وبعد أن صار
       // الـDAO يقرّب ويُلقي الباقيَ على أكبر بندٍ يقرأ صفراً — وبقاؤه محسوباً
       // لا مكتوباً هو ما يجعله يكشف الخللَ إن عاد.
       (
-        label: 'فرق التقريب',
+        label: tr('فرق التقريب'),
         value: _money.format(drift.abs()),
         fg: drift.abs() < 0.005 ? _ok : _warn
       ),
@@ -882,10 +883,10 @@ class _LandedCostPicposScreenState
         mainAxisSize: MainAxisSize.min,
         children: [
           PicPosSectionHeader(
-            title: 'أثر الطريقة على تكلفة الوحدة',
+            title: tr('أثر الطريقة على تكلفة الوحدة'),
             subtitle: c.hasLines
-                ? 'مقيسٌ من صفوف التوزيع المكتوبة لهذه الورقة'
-                : 'لا صفوفَ توزيعٍ محسوبةً بعد',
+                ? tr('مقيسٌ من صفوف التوزيع المكتوبة لهذه الورقة')
+                : tr('لا صفوفَ توزيعٍ محسوبةً بعد'),
             icon: PhosphorIconsBold.scales,
           ),
           Wrap(
@@ -930,22 +931,22 @@ class _LandedCostPicposScreenState
   /// جدولُ التوزيع على الأصناف.
   Widget _allocationTable(LandedCostSheetView s, _Computed c) {
     return PicPosDataTable(
-      title: 'جدول التوزيع على الأصناف',
+      title: tr('جدول التوزيع على الأصناف'),
       subtitle: 'التكلفة الأصلية زائد المحمَّل يساوي التكلفة الجديدة — وهي ما '
           'يُقيَّد في المخزون · فرق التقريب يُحمَّل على أكبر بند',
       minWidth: 980,
-      columns: const [
-        PicPosTableColumn('الصنف', flex: 2),
-        PicPosTableColumn('الكمية', align: PicPosCellAlign.end),
-        PicPosTableColumn('تكلفة الوحدة',
+      columns:  [
+        PicPosTableColumn(tr('الصنف'), flex: 2),
+        PicPosTableColumn(tr('الكمية'), align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('تكلفة الوحدة'),
             flex: 1.2, align: PicPosCellAlign.end),
-        PicPosTableColumn('قيمة البند', flex: 1.3, align: PicPosCellAlign.end),
-        PicPosTableColumn('المحمَّل', flex: 1.5),
-        PicPosTableColumn('التكلفة الجديدة',
+        PicPosTableColumn(tr('قيمة البند'), flex: 1.3, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('المحمَّل'), flex: 1.5),
+        PicPosTableColumn(tr('التكلفة الجديدة'),
             flex: 1.3, align: PicPosCellAlign.end),
-        PicPosTableColumn('الزيادة', flex: 1.1, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('الزيادة'), flex: 1.1, align: PicPosCellAlign.end),
       ],
-      emptyLabel: 'لا صفوفَ توزيعٍ — أضف بندَ تكلفةٍ ثمّ احسب التوزيع',
+      emptyLabel: tr('لا صفوفَ توزيعٍ — أضف بندَ تكلفةٍ ثمّ احسب التوزيع'),
       rows: [
         for (final l in c.lines)
           PicPosTableRow(cells: [
@@ -966,7 +967,7 @@ class _LandedCostPicposScreenState
       ],
       totals: c.hasLines
           ? [
-              '${c.lines.length} صنفاً',
+              tr('{p0} صنفاً', {'p0': c.lines.length}),
               _money0.format(c.qtySum),
               '—',
               _money0.format(c.origSum),
@@ -992,28 +993,28 @@ class _LandedCostPicposScreenState
       String amount
     })>[
       (
-        account: '1301 · المخزون',
-        note: 'يرتفع بقيمة التكلفة المحمَّلة كاملة',
-        side: 'مدين',
+        account: tr('1301 · المخزون'),
+        note: tr('يرتفع بقيمة التكلفة المحمَّلة كاملة'),
+        side: tr('مدين'),
         icon: PhosphorIconsBold.package,
         tint: _ok,
         amount: _money0.format(s.totalCost),
       ),
       (
-        account: '2101 · موردو خدمات',
-        note: 'مقابلُ بنود التكلفة',
-        side: 'دائن',
+        account: tr('2101 · موردو خدمات'),
+        note: tr('مقابلُ بنود التكلفة'),
+        side: tr('دائن'),
         icon: PhosphorIconsBold.usersThree,
         tint: _err,
         amount: _money0.format(s.totalCost),
       ),
       (
-        account: 'متوسط التكلفة المرجَّح',
-        note: 'يُعاد حسابه لكلّ صنفٍ في الورقة',
-        side: 'تحديث',
+        account: tr('متوسط التكلفة المرجَّح'),
+        note: tr('يُعاد حسابه لكلّ صنفٍ في الورقة'),
+        side: tr('تحديث'),
         icon: PhosphorIconsBold.arrowsClockwise,
         tint: AppColors.primary,
-        amount: '${c.lines.length} صنفاً',
+        amount: tr('{p0} صنفاً', {'p0': c.lines.length}),
       ),
     ];
 
@@ -1022,9 +1023,9 @@ class _LandedCostPicposScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const PicPosSectionHeader(
-            title: 'القيد الذي يُنشأ عند التطبيق',
-            subtitle: 'التطبيق يرفع قيمة المخزون ويُقيَّد في مواجهة أطراف التكلفة',
+           PicPosSectionHeader(
+            title: tr('القيد الذي يُنشأ عند التطبيق'),
+            subtitle: tr('التطبيق يرفع قيمة المخزون ويُقيَّد في مواجهة أطراف التكلفة'),
             icon: PhosphorIconsBold.scales,
           ),
           for (final j in rows)
@@ -1079,26 +1080,26 @@ class _LandedCostPicposScreenState
     final steps = <({String key, String label, String sub, IconData icon})>[
       (
         key: 'draft',
-        label: 'مسوّدة',
-        sub: 'قابلةٌ للتعديل ولا قيدَ لها ولا أثرَ على تكلفة المخزون',
+        label: tr('مسوّدة'),
+        sub: tr('قابلةٌ للتعديل ولا قيدَ لها ولا أثرَ على تكلفة المخزون'),
         icon: PhosphorIconsBold.fileDashed
       ),
       (
         key: 'applied',
-        label: 'مُطبَّقة',
-        sub: 'القيدُ يُنشأ وتكلفةُ الوحدة تتغيّر',
+        label: tr('مُطبَّقة'),
+        sub: tr('القيدُ يُنشأ وتكلفةُ الوحدة تتغيّر'),
         icon: PhosphorIconsBold.checkCircle
       ),
       (
         key: 'cancelled',
-        label: 'ملغاة',
-        sub: 'إلغاءٌ قبل التطبيق — تبقى للسجلّ بلا أثر',
+        label: tr('ملغاة'),
+        sub: tr('إلغاءٌ قبل التطبيق — تبقى للسجلّ بلا أثر'),
         icon: PhosphorIconsBold.xCircle
       ),
       (
         key: 'voided',
-        label: 'مُبطَلة',
-        sub: 'تُبطَل تلقائيّاً لو أُبطلت فاتورةُ الشراء الأصليّة',
+        label: tr('مُبطَلة'),
+        sub: tr('تُبطَل تلقائيّاً لو أُبطلت فاتورةُ الشراء الأصليّة'),
         icon: PhosphorIconsBold.prohibit
       ),
     ];
@@ -1108,8 +1109,8 @@ class _LandedCostPicposScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const PicPosSectionHeader(
-            title: 'حالة الورقة',
+           PicPosSectionHeader(
+            title: tr('حالة الورقة'),
             icon: PhosphorIconsBold.flowArrow,
           ),
           for (final st in steps) ...[
@@ -1185,10 +1186,10 @@ class _LandedCostPicposScreenState
     try {
       await notifier.changeAllocationMethod(s.id, method);
       if (!mounted) return;
-      AppToast.show(context, 'أُعيد حسابُ التوزيع بالطريقة الجديدة');
+      AppToast.show(context, tr('أُعيد حسابُ التوزيع بالطريقة الجديدة'));
     } catch (e) {
       if (!mounted) return;
-      AppToast.show(context, 'تعذّر تغييرُ طريقة التوزيع: $e');
+      AppToast.show(context, tr('تعذّر تغييرُ طريقة التوزيع: {e}', {'e': e}));
     }
   }
 
@@ -1197,7 +1198,7 @@ class _LandedCostPicposScreenState
       context: context,
       builder: (ctx) => AlertDialog(
         icon: const Icon(PhosphorIconsBold.warning, color: _warn),
-        title: const Text('تطبيق ورقة التحميل'),
+        title:  Text(tr('تطبيق ورقة التحميل')),
         content: Text(
           'سيُنشأ قيدٌ بقيمة ${_money0.format(s.totalCost)} وتتغيّر تكلفةُ '
           'الوحدة لكلّ صنفٍ في الورقة. ولا رجوعَ عن ذلك إلّا بإلغاء التطبيق.',
@@ -1205,10 +1206,10 @@ class _LandedCostPicposScreenState
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء')),
+              child:  Text(tr('إلغاء'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('تطبيق')),
+              child:  Text(tr('تطبيق'))),
         ],
       ),
     );
@@ -1218,10 +1219,10 @@ class _LandedCostPicposScreenState
     try {
       await notifier.applySheet(s.id);
       if (!mounted) return;
-      AppToast.show(context, 'طُبِّقت الورقة وأُنشئ قيدُها');
+      AppToast.show(context, tr('طُبِّقت الورقة وأُنشئ قيدُها'));
     } catch (e) {
       if (!mounted) return;
-      AppToast.show(context, 'تعذّر تطبيقُ الورقة: $e');
+      AppToast.show(context, tr('تعذّر تطبيقُ الورقة: {e}', {'e': e}));
     }
   }
 
@@ -1234,7 +1235,7 @@ class _LandedCostPicposScreenState
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialog) => AlertDialog(
-          title: const Text('بند تكلفة جديد'),
+          title:  Text(tr('بند تكلفة جديد')),
           content: SizedBox(
             width: 420,
             child: Column(
@@ -1257,16 +1258,16 @@ class _LandedCostPicposScreenState
                 const SizedBox(height: 14),
                 TextField(
                   controller: descCtrl,
-                  decoration: const InputDecoration(
-                      labelText: 'الوصف', border: OutlineInputBorder()),
+                  decoration:  InputDecoration(
+                      labelText: tr('الوصف'), border: const OutlineInputBorder()),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: amountCtrl,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                      labelText: 'المبلغ', border: OutlineInputBorder()),
+                  decoration:  InputDecoration(
+                      labelText: tr('المبلغ'), border: const OutlineInputBorder()),
                 ),
               ],
             ),
@@ -1274,10 +1275,10 @@ class _LandedCostPicposScreenState
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('إلغاء')),
+                child:  Text(tr('إلغاء'))),
             FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('إضافة')),
+                child:  Text(tr('إضافة'))),
           ],
         ),
       ),
@@ -1290,7 +1291,7 @@ class _LandedCostPicposScreenState
 
     if (saved != true || !mounted) return;
     if (desc.isEmpty || amount <= 0) {
-      AppToast.show(context, 'الوصفُ مطلوبٌ والمبلغُ يجب أن يكون أكبرَ من صفر');
+      AppToast.show(context, tr('الوصفُ مطلوبٌ والمبلغُ يجب أن يكون أكبرَ من صفر'));
       return;
     }
 
@@ -1303,10 +1304,10 @@ class _LandedCostPicposScreenState
         amount: amount,
       );
       if (!mounted) return;
-      AppToast.show(context, 'أُضيف البندُ وأُعيد حسابُ التوزيع');
+      AppToast.show(context, tr('أُضيف البندُ وأُعيد حسابُ التوزيع'));
     } catch (e) {
       if (!mounted) return;
-      AppToast.show(context, 'تعذّرت إضافةُ البند: $e');
+      AppToast.show(context, tr('تعذّرت إضافةُ البند: {e}', {'e': e}));
     }
   }
 }

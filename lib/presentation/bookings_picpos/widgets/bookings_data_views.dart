@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // الوجهاتُ الأربعُ الباقية: العملاءُ والتذكيراتُ والتقاريرُ والإعدادات.
 import '../../../data/providers/feature_settings_providers.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +31,7 @@ class BookingsCustomersView extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => PicPosEmptyState(
             icon: PhosphorIconsBold.warningCircle,
-            title: 'تعذّر تحميل العملاء',
+            title: tr('تعذّر تحميل العملاء'),
             hint: '$e',
           ),
           data: (all) {
@@ -44,10 +45,10 @@ class BookingsCustomersView extends ConsumerWidget {
                     .toList();
 
             if (list.isEmpty) {
-              return const PicPosEmptyState(
+              return  PicPosEmptyState(
                 icon: PhosphorIconsBold.addressBook,
-                title: 'لا عملاءَ بعد',
-                hint: 'يظهر هنا كلُّ من انعقد له حجزٌ — والملغى ليس زيارة.',
+                title: tr('لا عملاءَ بعد'),
+                hint: tr('يظهر هنا كلُّ من انعقد له حجزٌ — والملغى ليس زيارة.'),
               );
             }
 
@@ -57,15 +58,15 @@ class BookingsCustomersView extends ConsumerWidget {
                   height: 34,
                   color: AppColors.primaryDark,
                   padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: const Row(
+                  child:  Row(
                     children: [
-                      Expanded(flex: 3, child: _Head('العميل')),
-                      Expanded(flex: 2, child: _Head('الهاتف')),
-                      SizedBox(width: 92, child: _Head('الزيارات')),
-                      SizedBox(width: 130, child: _Head('إجمالي الإنفاق')),
-                      Expanded(flex: 2, child: _Head('الخدمة المفضلة')),
-                      SizedBox(width: 110, child: _Head('آخر زيارة')),
-                      SizedBox(width: 92, child: _Head('الفئة')),
+                      Expanded(flex: 3, child: _Head(tr('العميل'))),
+                      Expanded(flex: 2, child: _Head(tr('الهاتف'))),
+                      SizedBox(width: 92, child: _Head(tr('الزيارات'))),
+                      SizedBox(width: 130, child: _Head(tr('إجمالي الإنفاق'))),
+                      Expanded(flex: 2, child: _Head(tr('الخدمة المفضلة'))),
+                      SizedBox(width: 110, child: _Head(tr('آخر زيارة'))),
+                      SizedBox(width: 92, child: _Head(tr('الفئة'))),
                     ],
                   ),
                 ),
@@ -225,14 +226,14 @@ class BookingsRemindersView extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => PicPosEmptyState(
             icon: PhosphorIconsBold.warningCircle,
-            title: 'تعذّر تحميل التذكيرات',
+            title: tr('تعذّر تحميل التذكيرات'),
             hint: '$e',
           ),
           data: (list) => list.isEmpty
-              ? const PicPosEmptyState(
+              ?  PicPosEmptyState(
                   icon: PhosphorIconsBold.bellRinging,
-                  title: 'لا تذكيرات مجدولة',
-                  hint: 'يُجدوَل التذكيرُ مع الحجز، ويُفتَح رابطُه من هنا.',
+                  title: tr('لا تذكيرات مجدولة'),
+                  hint: tr('يُجدوَل التذكيرُ مع الحجز، ويُفتَح رابطُه من هنا.'),
                 )
               : ListView.separated(
                   padding: const EdgeInsets.all(12),
@@ -300,7 +301,7 @@ class _ReminderCard extends ConsumerWidget {
                 Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: Text(
-                    row.customerPhone ?? 'بلا رقم',
+                    row.customerPhone ?? tr('بلا رقم'),
                     textDirection: TextDirection.ltr,
                     style: const TextStyle(
                       fontSize: 10.5,
@@ -315,19 +316,19 @@ class _ReminderCard extends ConsumerWidget {
           ),
           SizedBox(
             width: 150,
-            child: _kv('موعد الحجز', bookingTimeLabel(row.bookingStartsAt)),
+            child: _kv(tr('موعد الحجز'), bookingTimeLabel(row.bookingStartsAt)),
           ),
           SizedBox(
             width: 170,
             child: _kv(
-              'القناة والتوقيت',
+              tr('القناة والتوقيت'),
               '${bookingReminderChannelLabel(row.channel)} · '
                   'قبل ${row.offsetMinutes} دقيقة',
             ),
           ),
           SizedBox(
             width: 130,
-            child: _kv('الحالة', bookingReminderStateLabel(row.state)),
+            child: _kv(tr('الحالة'), bookingReminderStateLabel(row.state)),
           ),
           // ⚠️ زرٌّ معطَّلٌ حين لا رابطَ ممكن (‏لا رقمَ أو رقمٌ بلا أرقام) —
           // رابطٌ يفتح محادثةً فارغةً يُوهم الموظَّفَ أنه أرسل ولم يُرسِل.
@@ -347,7 +348,7 @@ class _ReminderCard extends ConsumerWidget {
                             userId: auth.user?.id);
                   },
             icon: const Icon(PhosphorIconsBold.paperPlaneTilt, size: 14),
-            label: const Text('فتح الرابط'),
+            label:  Text(tr('فتح الرابط')),
             style: FilledButton.styleFrom(
               minimumSize: const Size(0, 32),
               textStyle:
@@ -397,10 +398,10 @@ class BookingsReportsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final held = rows.where((r) => r.occupiesTime).toList();
     if (held.isEmpty) {
-      return const PicPosEmptyState(
+      return  PicPosEmptyState(
         icon: PhosphorIconsBold.chartBar,
-        title: 'لا بياناتٍ لهذا اليوم',
-        hint: 'التقاريرُ تُشتقّ من حجوزات اليوم المعروض.',
+        title: tr('لا بياناتٍ لهذا اليوم'),
+        hint: tr('التقاريرُ تُشتقّ من حجوزات اليوم المعروض.'),
       );
     }
 
@@ -423,28 +424,28 @@ class BookingsReportsView extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       children: [
         Text(
-          'تقرير ${bookingDayLabel(day)}',
+          tr('تقرير {p0}', {'p0': bookingDayLabel(day)}),
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 10),
         Row(
           children: [
             Expanded(
-                child: _repCard('حجوزات منعقدة', '${held.length}',
+                child: _repCard(tr('حجوزات منعقدة'), '${held.length}',
                     AppColors.primary)),
             const SizedBox(width: 10),
             Expanded(
-                child: _repCard('إيراد متوقع', _money(total),
+                child: _repCard(tr('إيراد متوقع'), _money(total),
                     AppColors.success)),
             const SizedBox(width: 10),
             Expanded(
-                child: _repCard('عرابين مقبوضة', _money(deposits),
+                child: _repCard(tr('عرابين مقبوضة'), _money(deposits),
                     AppColors.info)),
           ],
         ),
         const SizedBox(height: 14),
-        const Text('الخدماتُ الأعلى إيراداً',
-            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800)),
+         Text(tr('الخدماتُ الأعلى إيراداً'),
+            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800)),
         const SizedBox(height: 8),
         for (final e in entries)
           Padding(

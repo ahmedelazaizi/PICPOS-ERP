@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 // اللوحةُ اليمنى — خصائصُ ما هو محدَّد: عنصرٌ أو نطاقٌ أو الجدول.
 //
@@ -109,10 +110,10 @@ class EditorPropertiesPanel extends StatelessWidget {
     final b = band;
     if (b != null) return _BandProperties(band: b, onEdit: onEditBand);
 
-    return const PicPosEmptyState(
+    return  PicPosEmptyState(
       icon: PhosphorIconsBold.cursorClick,
-      title: 'اختر عنصراً أو نطاقاً',
-      hint: 'خصائصُه تظهر هنا — وكلُّ حقلٍ فيها يصل الورقة',
+      title: tr('اختر عنصراً أو نطاقاً'),
+      hint: tr('خصائصُه تظهر هنا — وكلُّ حقلٍ فيها يصل الورقة'),
     );
   }
 }
@@ -196,7 +197,7 @@ class _ElementPropertiesState extends State<_ElementProperties> {
           icon: PhosphorIconsBold.textT,
           actions: [
             IconButton(
-              tooltip: 'حذف العنصر',
+              tooltip: tr('حذف العنصر'),
               icon: const Icon(PhosphorIconsBold.trash,
                   size: 15, color: AppColors.error),
               onPressed: widget.onRemove,
@@ -204,12 +205,12 @@ class _ElementPropertiesState extends State<_ElementProperties> {
           ],
         ),
         _Section(
-          title: 'التسمية المطبوعة',
+          title: tr('التسمية المطبوعة'),
           child: Row(
             children: [
               Expanded(
                 child: _Field(
-                  label: 'عربي',
+                  label: tr('عربي'),
                   controller: _ar,
                   onChanged: (v) => widget.onEdit(labelAr: v),
                 ),
@@ -227,13 +228,13 @@ class _ElementPropertiesState extends State<_ElementProperties> {
           ),
         ),
         _Section(
-          title: 'الموضع والحجم — بالمليمتر داخل النطاق',
+          title: tr('الموضع والحجم — بالمليمتر داخل النطاق'),
           child: Column(
             children: [
               Row(children: [
                 Expanded(
                   child: _Stepper(
-                    label: 'من البداية',
+                    label: tr('من البداية'),
                     value: el.xMm,
                     onDelta: (d) => widget.onMove(el.xMm + d, el.yMm),
                   ),
@@ -241,7 +242,7 @@ class _ElementPropertiesState extends State<_ElementProperties> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _Stepper(
-                    label: 'من أعلى',
+                    label: tr('من أعلى'),
                     value: el.yMm,
                     onDelta: (d) => widget.onMove(el.xMm, el.yMm + d),
                   ),
@@ -251,7 +252,7 @@ class _ElementPropertiesState extends State<_ElementProperties> {
               Row(children: [
                 Expanded(
                   child: _Stepper(
-                    label: 'العرض',
+                    label: tr('العرض'),
                     value: el.wMm,
                     step: 2,
                     onDelta: (d) => widget.onResize(el.wMm + d, el.hMm),
@@ -260,7 +261,7 @@ class _ElementPropertiesState extends State<_ElementProperties> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _Stepper(
-                    label: 'الارتفاع',
+                    label: tr('الارتفاع'),
                     value: el.hMm,
                     onDelta: (d) => widget.onResize(el.wMm, el.hMm + d),
                   ),
@@ -270,14 +271,14 @@ class _ElementPropertiesState extends State<_ElementProperties> {
           ),
         ),
         _Section(
-          title: 'المظهر',
+          title: tr('المظهر'),
           child: Column(
             children: [
               Row(
                 children: [
                   Expanded(
                     child: _Stepper(
-                      label: 'حجم الخط',
+                      label: tr('حجم الخط'),
                       value: el.fontSize,
                       step: 0.5,
                       decimals: 1,
@@ -288,7 +289,7 @@ class _ElementPropertiesState extends State<_ElementProperties> {
                   const SizedBox(width: 8),
                   _Toggle(
                     icon: PhosphorIconsBold.textB,
-                    label: 'عريض',
+                    label: tr('عريض'),
                     on: el.bold,
                     onTap: () => widget.onEdit(bold: !el.bold),
                   ),
@@ -319,7 +320,7 @@ class _ElementPropertiesState extends State<_ElementProperties> {
                 icon: el.visible
                     ? PhosphorIconsBold.eye
                     : PhosphorIconsBold.eyeSlash,
-                label: el.visible ? 'ظاهر' : 'مخفيّ',
+                label: el.visible ? tr('ظاهر') : tr('مخفيّ'),
                 on: el.visible,
                 wide: true,
                 onTap: () => widget.onEdit(visible: !el.visible),
@@ -328,7 +329,7 @@ class _ElementPropertiesState extends State<_ElementProperties> {
           ),
         ),
         _Section(
-          title: 'شرط الإظهار — اتركه فارغاً ليظهر دائماً',
+          title: tr('شرط الإظهار — اتركه فارغاً ليظهر دائماً'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -360,7 +361,7 @@ class _ElementPropertiesState extends State<_ElementProperties> {
               ),
               const SizedBox(height: 6),
               Text(
-                'العنصرُ الذي لا يتحقّق شرطُه لا يُطبع ولا يترك فراغاً.',
+                tr('العنصرُ الذي لا يتحقّق شرطُه لا يُطبع ولا يترك فراغاً.'),
                 style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w600,
@@ -394,57 +395,57 @@ class _BandProperties extends StatelessWidget {
       padding: EdgeInsets.zero,
       children: [
         PicPosSectionHeader(
-          title: 'نطاق ${bandLabel(band.id)}',
+          title: tr('نطاق {p0}', {'p0': bandLabel(band.id)}),
           subtitle: _noteOf(band.id),
           icon: PhosphorIconsBold.rows,
         ),
         _Section(
-          title: 'الارتفاع بالمليمتر',
+          title: tr('الارتفاع بالمليمتر'),
           child: _Stepper(
-            label: 'ارتفاع النطاق',
+            label: tr('ارتفاع النطاق'),
             value: band.heightMm,
             step: 2,
             onDelta: (d) => onEdit(heightMm: (band.heightMm + d).clamp(6, 200)),
           ),
         ),
         _Section(
-          title: 'السلوك',
+          title: tr('السلوك'),
           child: Column(
             children: [
               _OptionRow(
                 icon: PhosphorIconsBold.repeat,
-                title: 'تكرار على كل صفحة',
-                sub: 'يُعاد رسمُه على كل ورقةٍ عند انقسام الجدول',
+                title: tr('تكرار على كل صفحة'),
+                sub: tr('يُعاد رسمُه على كل ورقةٍ عند انقسام الجدول'),
                 on: band.repeatEachPage,
                 enabled: band.id == BandId.header || band.id == BandId.footer,
-                disabledNote: 'الرأسُ والتذييلُ وحدَهما يتكرّران',
+                disabledNote: tr('الرأسُ والتذييلُ وحدَهما يتكرّران'),
                 onTap: () => onEdit(repeatEachPage: !band.repeatEachPage),
               ),
               _OptionRow(
                 icon: PhosphorIconsBold.eye,
-                title: 'ظاهر',
-                sub: 'إخفاءُ النطاق يخفي كلَّ عناصره',
+                title: tr('ظاهر'),
+                sub: tr('إخفاءُ النطاق يخفي كلَّ عناصره'),
                 on: band.visible,
                 onTap: () => onEdit(visible: !band.visible),
               ),
               _OptionRow(
                 icon: PhosphorIconsBold.arrowsInLineVertical,
-                title: 'ارتفاع تلقائي',
-                sub: 'يتقلّص لأصغر ارتفاعٍ يسع عناصرَه',
+                title: tr('ارتفاع تلقائي'),
+                sub: tr('يتقلّص لأصغر ارتفاعٍ يسع عناصرَه'),
                 on: band.autoHeight,
                 onTap: () => onEdit(autoHeight: !band.autoHeight),
               ),
               _OptionRow(
                 icon: PhosphorIconsBold.arrowsOutLineVertical,
-                title: 'يتمدّد بالبيانات',
+                title: tr('يتمدّد بالبيانات'),
                 // ⚠️ **مقفلٌ عمداً** — عقدُ الأزرار: «إيقافُه يكسر كلَّ قالبٍ
                 //    فيه جدول». والضغطُ يشرح لماذا بدل أن يصمت.
                 sub: band.growsWithData
-                    ? 'مقفلٌ على نطاق التفاصيل — إيقافُه يجعل الجدولَ يدهس المجاميع'
-                    : 'نطاقُ التفاصيل وحدَه يتمدّد',
+                    ? tr('مقفلٌ على نطاق التفاصيل — إيقافُه يجعل الجدولَ يدهس المجاميع')
+                    : tr('نطاقُ التفاصيل وحدَه يتمدّد'),
                 on: band.growsWithData,
                 enabled: false,
-                disabledNote: 'لا يُبدَّل — هو ما يمنع الجدولَ من دهس ما بعده',
+                disabledNote: tr('لا يُبدَّل — هو ما يمنع الجدولَ من دهس ما بعده'),
                 onTap: () {},
               ),
             ],
@@ -455,12 +456,12 @@ class _BandProperties extends StatelessWidget {
   }
 
   String _noteOf(BandId id) => switch (id) {
-        BandId.header => 'يتكرر على كل صفحة',
-        BandId.info => 'بيانات المستند',
-        BandId.party => 'العميل أو المورد',
-        BandId.details => 'يتمدّد بعدد الأصناف ويدفع ما بعده',
-        BandId.totals => 'يلتصق أسفل الجدول',
-        BandId.footer => 'يتكرر على كل صفحة',
+        BandId.header => tr('يتكرر على كل صفحة'),
+        BandId.info => tr('بيانات المستند'),
+        BandId.party => tr('العميل أو المورد'),
+        BandId.details => tr('يتمدّد بعدد الأصناف ويدفع ما بعده'),
+        BandId.totals => tr('يلتصق أسفل الجدول'),
+        BandId.footer => tr('يتكرر على كل صفحة'),
       };
 }
 
@@ -494,19 +495,19 @@ class _TableProperties extends StatelessWidget {
       padding: EdgeInsets.zero,
       children: [
         PicPosSectionHeader(
-          title: 'جدول الأصناف',
+          title: tr('جدول الأصناف'),
           subtitle: '${table.visibleColumns.length} من ${table.columns.length}'
               ' عمودٍ مُفعَّل',
           icon: PhosphorIconsBold.table,
         ),
         _Section(
-          title: 'الخطوط والعناوين',
+          title: tr('الخطوط والعناوين'),
           child: Column(
             children: [
               Row(children: [
                 Expanded(
                   child: _Stepper(
-                    label: 'خط البدن',
+                    label: tr('خط البدن'),
                     value: table.fontSize,
                     step: 0.5,
                     decimals: 1,
@@ -517,7 +518,7 @@ class _TableProperties extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _Stepper(
-                    label: 'العناوين',
+                    label: tr('العناوين'),
                     value: table.headerFontSize,
                     step: 0.5,
                     decimals: 1,
@@ -529,24 +530,24 @@ class _TableProperties extends StatelessWidget {
               const SizedBox(height: 8),
               _OptionRow(
                 icon: PhosphorIconsBold.translate,
-                title: 'عناوين ثنائية',
-                sub: 'سطرٌ إنجليزيٌّ تحت العربي — يُطفأ تلقائياً على الحراري',
+                title: tr('عناوين ثنائية'),
+                sub: tr('سطرٌ إنجليزيٌّ تحت العربي — يُطفأ تلقائياً على الحراري'),
                 on: table.bilingualHeaders,
                 onTap: () => onEditTable(
                     bilingualHeaders: !table.bilingualHeaders),
               ),
               _OptionRow(
                 icon: PhosphorIconsBold.repeat,
-                title: 'تكرار رأس الجدول',
-                sub: 'رؤوسُ الأعمدة تُعاد على كل صفحة',
+                title: tr('تكرار رأس الجدول'),
+                sub: tr('رؤوسُ الأعمدة تُعاد على كل صفحة'),
                 on: table.repeatHeader,
                 onTap: () =>
                     onEditTable(repeatHeader: !table.repeatHeader),
               ),
               _OptionRow(
                 icon: PhosphorIconsBold.scissors,
-                title: 'منع قطع الصف',
-                sub: 'الصفُّ لا ينقسم بين صفحتين',
+                title: tr('منع قطع الصف'),
+                sub: tr('الصفُّ لا ينقسم بين صفحتين'),
                 on: table.keepRowTogether,
                 onTap: () =>
                     onEditTable(keepRowTogether: !table.keepRowTogether),
@@ -672,7 +673,7 @@ class _ColumnRowState extends State<_ColumnRow> {
               const SizedBox(width: 8),
               Expanded(
                 child: _Field(
-                  label: 'عربي',
+                  label: tr('عربي'),
                   controller: _ar,
                   dense: true,
                   onChanged: (v) => widget.onEdit(labelAr: v),
@@ -695,7 +696,7 @@ class _ColumnRowState extends State<_ColumnRow> {
             children: [
               Expanded(
                 child: _Stepper(
-                  label: 'عرض',
+                  label: tr('عرض'),
                   value: c.flex,
                   step: 0.2,
                   decimals: 1,
@@ -705,7 +706,7 @@ class _ColumnRowState extends State<_ColumnRow> {
               const SizedBox(width: 8),
               Expanded(
                 child: _Stepper(
-                  label: 'خانات',
+                  label: tr('خانات'),
                   value: c.decimals.toDouble(),
                   step: 1,
                   decimals: 0,

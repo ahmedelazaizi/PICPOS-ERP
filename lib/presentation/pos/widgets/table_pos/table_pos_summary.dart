@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,7 +66,7 @@ class TablePosSummary extends ConsumerWidget {
                 child: PermissionGuard(
                   permission: PermissionCodes.tablesAddItems,
                   allowManagerOverride: true,
-                  actionName: 'إرسال للمطبخ',
+                  actionName: tr('إرسال للمطبخ'),
                   child: _kitchenButton(hasItems),
                 ),
               ),
@@ -75,7 +76,7 @@ class TablePosSummary extends ConsumerWidget {
                 child: PermissionGuard(
                   permission: PermissionCodes.tablesCheckout,
                   allowManagerOverride: true,
-                  actionName: 'تحصيل الحساب',
+                  actionName: tr('تحصيل الحساب'),
                   child: _checkoutButton(),
                 ),
               ),
@@ -91,9 +92,9 @@ class TablePosSummary extends ConsumerWidget {
                 child: PermissionGuard(
                   permission: PermissionCodes.tablesCancel,
                   allowManagerOverride: true,
-                  actionName: 'إفراغ / إلغاء طلب الطاولة',
+                  actionName: tr('إفراغ / إلغاء طلب الطاولة'),
                   child: _secondaryButton(
-                    label: 'إفراغ',
+                    label: tr('إفراغ'),
                     icon: PhosphorIconsBold.trash,
                     color: const Color(0xFFEF4444),
                     onTap: onClear,
@@ -103,7 +104,7 @@ class TablePosSummary extends ConsumerWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: _secondaryButton(
-                  label: 'رجوع',
+                  label: tr('رجوع'),
                   icon: PhosphorIconsBold.arrowRight,
                   color: const Color(0xFF6B7280),
                   onTap: onBack,
@@ -163,11 +164,11 @@ class TablePosSummary extends ConsumerWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('ضريبة المبيعات',
+                    Text(tr('ضريبة المبيعات'),
                         style: GoogleFonts.cairo(
                             fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold)),
                     Text(
-                      cartState.taxEnabled ? 'مفعلة ($taxRatePercent%)' : 'معطلة',
+                      cartState.taxEnabled ? tr('مفعلة ({taxRatePercent}%)', {'taxRatePercent': taxRatePercent}) : tr('معطلة'),
                       style: GoogleFonts.cairo(
                         fontSize: 10,
                         color: cartState.taxEnabled 
@@ -202,7 +203,7 @@ class TablePosSummary extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('الإجمالي',
+          Text(tr('الإجمالي'),
               style: GoogleFonts.cairo(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -244,7 +245,7 @@ class TablePosSummary extends ConsumerWidget {
                   size: 20,
                   color: hasItems ? Colors.white : Colors.white.withValues(alpha: 0.2)),
               const SizedBox(width: 8),
-              Text('إرسال للمطبخ',
+              Text(tr('إرسال للمطبخ'),
                   style: GoogleFonts.cairo(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
@@ -280,7 +281,7 @@ class TablePosSummary extends ConsumerWidget {
             children: [
               const Icon(PhosphorIconsBold.receipt, size: 20, color: Colors.white),
               const SizedBox(width: 8),
-              Text('تحصيل الحساب',
+              Text(tr('تحصيل الحساب'),
                   style: GoogleFonts.cairo(
                       fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white)),
             ],

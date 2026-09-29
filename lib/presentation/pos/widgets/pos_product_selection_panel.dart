@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/pos_layout_policy.dart';
@@ -44,7 +45,7 @@ class PosProductSelectionPanel extends ConsumerWidget {
     final barcodeInput = PermissionGuard(
       permission: PermissionCodes.posSearch,
       allowManagerOverride: true,
-      actionName: 'البحث بالباركود',
+      actionName: tr('البحث بالباركود'),
       child: PosBarcodeInput(
         controller: barcodeController,
         focusNode: barcodeFocus,
@@ -108,7 +109,7 @@ class PosProductSelectionPanel extends ConsumerWidget {
             child: PermissionGuard(
               permission: PermissionCodes.posAddProduct,
               allowManagerOverride: true,
-              actionName: 'إضافة صنف للسلة',
+              actionName: tr('إضافة صنف للسلة'),
               // ‏`false` هنا تمنع ظهورَ حقلَي بحثٍ يكتبان في نفس الحالة.
               child: ProductGrid(
                 onProductTap: onProductTap,

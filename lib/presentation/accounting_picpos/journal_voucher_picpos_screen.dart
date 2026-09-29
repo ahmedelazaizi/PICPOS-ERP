@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ «سند قيد» — تصميمُ المالك `(14)`، مدخلٌ جانبيٌّ ثالثٌ بجوار سندَي
 // القبض والصرف.
 //
@@ -96,13 +97,13 @@ final _voucherMoney =
 final _dateFmt = DateFormat('dd-MM-yyyy');
 
 /// رقمُ السند قبل الحفظ — **لا يُخمَّن**. راجع رأسَ الملفّ (‏Spec 066).
-const String kJournalVoucherNumberPlaceholder = 'يُولَّد عند الحفظ';
+String get kJournalVoucherNumberPlaceholder => tr('يُولَّد عند الحفظ');
 
 /// أنواعُ القيد كما يقبلها `referenceType` في المحرّك.
-const _entryTypes = <({String value, String label})>[
-  (value: 'daily', label: 'يومية'),
-  (value: 'adjustment', label: 'تسوية'),
-  (value: 'salary', label: 'رواتب'),
+List<({String value, String label})> get _entryTypes => <({String value, String label})>[
+  (value: 'daily', label: tr('يومية')),
+  (value: 'adjustment', label: tr('تسوية')),
+  (value: 'salary', label: tr('رواتب')),
 ];
 
 class JournalVoucherPicposScreen extends ConsumerStatefulWidget {
@@ -147,21 +148,21 @@ class _JournalVoucherPicposScreenState
   /// ⚠️ **يُعرَض ولا يُبتلَع**: زرٌّ معطَّلٌ بلا سببٍ ظاهرٍ يُقرأ «معطوب»،
   /// فيُعاد الضغطُ عليه ويُبلَّغ عن عطبٍ لا وجودَ له.
   String? get blockReason {
-    if (_descCtrl.text.trim().isEmpty) return 'اكتب بيان القيد.';
+    if (_descCtrl.text.trim().isEmpty) return tr('اكتب بيان القيد.');
     for (var i = 0; i < _lines.length; i++) {
       final l = _lines[i];
-      if (l.account == null) return 'السطر ${i + 1}: اختر الحساب.';
+      if (l.account == null) return tr('السطر {p0}: اختر الحساب.', {'p0': i + 1});
       if (l.debit <= 0 && l.credit <= 0) {
-        return 'السطر ${i + 1}: أدخل مديناً أو دائناً.';
+        return tr('السطر {p0}: أدخل مديناً أو دائناً.', {'p0': i + 1});
       }
       // 🔴 سطرٌ يحمل الطرفَين معاً يتّزن بنفسه ولا يعني شيئاً — وهو نفسُ
       //    حارس BUG-U13 في المسار القديم.
       if (l.debit > 0 && l.credit > 0) {
-        return 'السطر ${i + 1}: مدينٌ ودائنٌ معاً في سطرٍ واحد.';
+        return tr('السطر {p0}: مدينٌ ودائنٌ معاً في سطرٍ واحد.', {'p0': i + 1});
       }
     }
     if (!_balance.isPostable) {
-      return 'القيد غير متوازن — الفرق ${_voucherMoney.format(_balance.difference)}';
+      return tr('القيد غير متوازن — الفرق {p0}', {'p0': _voucherMoney.format(_balance.difference)});
     }
     return null;
   }
@@ -173,9 +174,9 @@ class _JournalVoucherPicposScreenState
     final balanced = balance.isPostable;
 
     return PicPosScreenScaffold(
-      title: 'سند قيد',
+      title: tr('سند قيد'),
       // 🔴 لا رقمَ ولا شارةَ «مسودة» قبل أن يوجد مستند — راجع رأسَ الملفّ.
-      subtitle: 'رقم السند: $kJournalVoucherNumberPlaceholder',
+      subtitle: tr('رقم السند: {kJournalVoucherNumberPlaceholder}', {'kJournalVoucherNumberPlaceholder': kJournalVoucherNumberPlaceholder}),
       icon: PhosphorIconsBold.notebook,
       bodyPadding: EdgeInsets.zero,
       body: Column(
@@ -192,22 +193,22 @@ class _JournalVoucherPicposScreenState
                   const SizedBox(height: 12),
                   PicPosTotalsBar(items: [
                     PicPosTotal(
-                      label: 'إجمالي المدين',
+                      label: tr('إجمالي المدين'),
                       value: _voucherMoney.format(balance.debit),
                     ),
                     PicPosTotal(
-                      label: 'إجمالي الدائن',
+                      label: tr('إجمالي الدائن'),
                       value: _voucherMoney.format(balance.credit),
                     ),
                     PicPosTotal(
-                      label: 'الفرق',
+                      label: tr('الفرق'),
                       // ⚠️ **بإشارته**: «٥٠» لا يقول أيَّ الطرفَين ناقص.
                       value: _voucherMoney.format(balance.difference),
                       tone: balanced ? AppColors.success : AppColors.error,
                     ),
                     PicPosTotal(
-                      label: 'حالة القيد',
-                      value: balanced ? 'متوازن' : 'غير متوازن',
+                      label: tr('حالة القيد'),
+                      value: balanced ? tr('متوازن') : tr('غير متوازن'),
                       emphasis: true,
                       tone: balanced ? AppColors.success : AppColors.error,
                     ),
@@ -218,25 +219,25 @@ class _JournalVoucherPicposScreenState
           ),
           PicPosFormActionBar(
             onBack: _saving ? null : () => Navigator.maybePop(context),
-            backLabel: 'إلغاء',
+            backLabel: tr('إلغاء'),
             busy: _saving,
-            hint: reason ?? 'يتطلّب الترحيلُ تساويَ المدين والدائن',
+            hint: reason ?? tr('يتطلّب الترحيلُ تساويَ المدين والدائن'),
             extras: [
               OutlinedButton.icon(
                 onPressed: _saving ? null : _preview,
                 icon: const Icon(PhosphorIconsBold.eye, size: 15),
-                label: const Text('معاينة'),
+                label:  Text(tr('معاينة')),
               ),
             ],
             draft: PicPosFormAction(
-              label: 'حفظ مسودة',
+              label: tr('حفظ مسودة'),
               icon: PhosphorIconsBold.floppyDisk,
               onPressed: (_saving || reason != null)
                   ? null
                   : () => _save(asDraft: true),
             ),
             primary: PicPosFormAction(
-              label: 'مراجعة وترحيل',
+              label: tr('مراجعة وترحيل'),
               icon: PhosphorIconsBold.paperPlaneTilt,
               onPressed: (_saving || reason != null)
                   ? null
@@ -261,9 +262,9 @@ class _JournalVoucherPicposScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const PicPosSectionHeader(
+           PicPosSectionHeader(
             icon: PhosphorIconsBold.info,
-            title: 'معلومات القيد',
+            title: tr('معلومات القيد'),
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -281,11 +282,11 @@ class _JournalVoucherPicposScreenState
             key: const Key('journal_voucher_description'),
             controller: _descCtrl,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: 'البيان',
-              hintText: 'مثال: إثبات مصروف إيجار',
+            decoration:  InputDecoration(
+              labelText: tr('البيان'),
+              hintText: tr('مثال: إثبات مصروف إيجار'),
               isDense: true,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
         ],
@@ -304,11 +305,11 @@ class _JournalVoucherPicposScreenState
           if (picked != null) setState(() => _date = picked);
         },
         child: InputDecorator(
-          decoration: const InputDecoration(
-            labelText: 'تاريخ القيد',
+          decoration:  InputDecoration(
+            labelText: tr('تاريخ القيد'),
             isDense: true,
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(PhosphorIconsBold.calendar, size: 15),
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(PhosphorIconsBold.calendar, size: 15),
           ),
           child: Text(_dateFmt.format(_date)),
         ),
@@ -325,15 +326,15 @@ class _JournalVoucherPicposScreenState
         key: const Key('journal_voucher_branch'),
         initialValue: _branchId,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'الفرع',
+        decoration:  InputDecoration(
+          labelText: tr('الفرع'),
           isDense: true,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         items: [
-          const DropdownMenuItem<int?>(
+           DropdownMenuItem<int?>(
             value: null,
-            child: Text('فرع الجهاز'),
+            child: Text(tr('فرع الجهاز')),
           ),
           for (final b in branches)
             DropdownMenuItem<int?>(value: b.id, child: Text(b.name)),
@@ -345,10 +346,10 @@ class _JournalVoucherPicposScreenState
         key: const Key('journal_voucher_type'),
         initialValue: _entryType,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'نوع القيد',
+        decoration:  InputDecoration(
+          labelText: tr('نوع القيد'),
           isDense: true,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         items: [
           for (final t in _entryTypes)
@@ -360,11 +361,11 @@ class _JournalVoucherPicposScreenState
   Widget _referenceField() => TextField(
         key: const Key('journal_voucher_reference'),
         controller: _referenceCtrl,
-        decoration: const InputDecoration(
-          labelText: 'المرجع',
-          hintText: 'اختياري — رقم عقد أو إشعار',
+        decoration:  InputDecoration(
+          labelText: tr('المرجع'),
+          hintText: tr('اختياري — رقم عقد أو إشعار'),
           isDense: true,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
       );
 
@@ -381,16 +382,16 @@ class _JournalVoucherPicposScreenState
         children: [
           Row(
             children: [
-              const Expanded(
+               Expanded(
                 child: PicPosSectionHeader(
                   icon: PhosphorIconsBold.listBullets,
-                  title: 'تفاصيل القيد',
+                  title: tr('تفاصيل القيد'),
                 ),
               ),
               TextButton.icon(
                 onPressed: () => setState(() => _lines.add(JournalLineInput())),
                 icon: const Icon(PhosphorIconsBold.plus, size: 14),
-                label: const Text('إضافة سطر'),
+                label:  Text(tr('إضافة سطر')),
               ),
             ],
           ),
@@ -416,13 +417,13 @@ class _JournalVoucherPicposScreenState
         children: [
           Row(
             children: [
-              Text('سطر ${i + 1}',
+              Text(tr('سطر {p0}', {'p0': i + 1}),
                   style: const TextStyle(
                       fontSize: 11, fontWeight: FontWeight.w700)),
               const Spacer(),
               // «نسخ السطر» — قيدُ الرواتب عشرةُ سطورٍ تختلف في رقمٍ واحد.
               IconButton(
-                tooltip: 'نسخ السطر',
+                tooltip: tr('نسخ السطر'),
                 onPressed: () => _duplicateLine(i),
                 icon: const Icon(PhosphorIconsBold.copy, size: 14),
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -431,7 +432,7 @@ class _JournalVoucherPicposScreenState
               // ⚠️ **سطران لا ينقصان**: قيدٌ بسطرٍ واحدٍ لا يتّزن أبداً،
               //    وزرٌّ يحذف آخرَ سطرَين يترك نموذجاً لا يُحفَظ.
               IconButton(
-                tooltip: _lines.length > 2 ? 'حذف السطر' : 'لا يقلّ القيد عن سطرين',
+                tooltip: _lines.length > 2 ? tr('حذف السطر') : tr('لا يقلّ القيد عن سطرين'),
                 onPressed: _lines.length > 2
                     ? () => setState(() => _lines.removeAt(i))
                     : null,
@@ -457,10 +458,10 @@ class _JournalVoucherPicposScreenState
                 width: 260,
                 child: TextField(
                   controller: line.descCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'البيان',
+                  decoration:  InputDecoration(
+                    labelText: tr('البيان'),
                     isDense: true,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -478,10 +479,10 @@ class _JournalVoucherPicposScreenState
                   controller: line.debitCtrl,
                   keyboardType: TextInputType.number,
                   onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    labelText: 'مدين',
+                  decoration:  InputDecoration(
+                    labelText: tr('مدين'),
                     isDense: true,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -491,10 +492,10 @@ class _JournalVoucherPicposScreenState
                   controller: line.creditCtrl,
                   keyboardType: TextInputType.number,
                   onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    labelText: 'دائن',
+                  decoration:  InputDecoration(
+                    labelText: tr('دائن'),
                     isDense: true,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -537,7 +538,7 @@ class _JournalVoucherPicposScreenState
     await ReportPdfGenerator.printJournalEntry(
       entryNumber: '—',
       entryDate: _date,
-      description: '${_descCtrl.text.trim()} — معاينة غير محفوظة',
+      description: tr('{p0} — معاينة غير محفوظة', {'p0': _descCtrl.text.trim()}),
       referenceType: _entryType,
       isAutoPosted: false,
       lines: [
@@ -562,14 +563,14 @@ class _JournalVoucherPicposScreenState
       //    يحتاج `accounting_journal`.
       final userId = ref.read(authProvider).user?.id;
       if (userId == null) {
-        _toast('يجب تسجيل الدخول لتنفيذ هذا الإجراء', ToastType.error);
+        _toast(tr('يجب تسجيل الدخول لتنفيذ هذا الإجراء'), ToastType.error);
         return;
       }
       final allowed = await ref
           .read(authRepositoryProvider)
           .userHasPermission(userId, PermissionCodes.accountingJournal);
       if (!allowed) {
-        _toast('لا تملك صلاحية إنشاء قيود يومية', ToastType.error);
+        _toast(tr('لا تملك صلاحية إنشاء قيود يومية'), ToastType.error);
         return;
       }
 
@@ -602,13 +603,13 @@ class _JournalVoucherPicposScreenState
       if (!mounted) return;
       _toast(
         asDraft
-            ? 'حُفظت المسودّة — لا تؤثّر على الأرصدة حتى تُعتمَد'
-            : 'رُحِّل القيد',
+            ? tr('حُفظت المسودّة — لا تؤثّر على الأرصدة حتى تُعتمَد')
+            : tr('رُحِّل القيد'),
         ToastType.success,
       );
       _resetForm();
     } catch (e) {
-      _toast('خطأ: $e', ToastType.error);
+      _toast(tr('خطأ: {e}', {'e': e}), ToastType.error);
     } finally {
       if (mounted) setState(() => _saving = false);
     }

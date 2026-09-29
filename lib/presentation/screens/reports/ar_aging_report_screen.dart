@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -68,15 +69,15 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
         backgroundColor: const Color(0xFFF1F5F9),
         appBar: AppBar(
           backgroundColor: AppColors.surface,
-          title: const Text(
-            'تقرير تقادم الذمم',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          title:  Text(
+            tr('تقرير تقادم الذمم'),
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           bottom: TabBar(
             controller: _tabController,
-            tabs: const [
-              Tab(text: 'ذمم العملاء (AR)'),
-              Tab(text: 'ذمم الموردين (AP)'),
+            tabs:  [
+              Tab(text: tr('ذمم العملاء (AR)')),
+              Tab(text: tr('ذمم الموردين (AP)')),
             ],
           ),
           actions: [
@@ -93,7 +94,7 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
             IconButton(
               icon: const Icon(PhosphorIconsBold.arrowClockwise,
                   color: AppColors.primary),
-              tooltip: 'تحديث',
+              tooltip: tr('تحديث'),
               onPressed: () {
                 ref.invalidate(arAgingReportProvider(arParams));
                 ref.invalidate(arAgingReportProvider(apParams));
@@ -107,7 +108,7 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'خطأ في تحميل بيانات التقادم: $e',
+                tr('خطأ في تحميل بيانات التقادم: {e}', {'e': e}),
                 style: const TextStyle(color: AppColors.error),
               ),
             ),
@@ -121,7 +122,7 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
   }
 
   Widget _buildEmpty() {
-    final label = _tabController.index == 0 ? 'العملاء' : 'الموردين';
+    final label = _tabController.index == 0 ? tr('العملاء') : tr('الموردين');
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -130,12 +131,12 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
               size: 56, color: AppColors.success),
           const SizedBox(height: 12),
           Text(
-            'لا توجد ذمم متأخرة لـ$label',
+            tr('لا توجد ذمم متأخرة لـ{label}', {'label': label}),
             style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600),
           ),
           Text(
-            'بتاريخ ${_dateFmt.format(_asOfDate)}',
+            tr('بتاريخ {p0}', {'p0': _dateFmt.format(_asOfDate)}),
             style: const TextStyle(color: AppColors.textSecondary),
           ),
         ],
@@ -167,13 +168,13 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             children: [
-              _chip('0-30 يوم', t0_30, const Color(0xFF059669)),
+              _chip(tr('0-30 يوم'), t0_30, const Color(0xFF059669)),
               const SizedBox(width: 6),
-              _chip('31-60 يوم', t31_60, const Color(0xFFF59E0B)),
+              _chip(tr('31-60 يوم'), t31_60, const Color(0xFFF59E0B)),
               const SizedBox(width: 6),
-              _chip('61-90 يوم', t61_90, const Color(0xFFEF4444)),
+              _chip(tr('61-90 يوم'), t61_90, const Color(0xFFEF4444)),
               const SizedBox(width: 6),
-              _chip('+90 يوم', t90p, const Color(0xFF7C3AED)),
+              _chip(tr('+90 يوم'), t90p, const Color(0xFF7C3AED)),
             ],
           ),
         ),
@@ -181,12 +182,12 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
           color: AppColors.surface,
           child: Row(
             children: [
-              _headerCell('اسم الطرف', flex: 3, style: headerStyle),
+              _headerCell(tr('اسم الطرف'), flex: 3, style: headerStyle),
               _headerCell('0-30', flex: 1, style: headerStyle),
               _headerCell('31-60', flex: 1, style: headerStyle),
               _headerCell('61-90', flex: 1, style: headerStyle),
               _headerCell('+90', flex: 1, style: headerStyle),
-              _headerCell('الإجمالي', flex: 1, style: headerStyle),
+              _headerCell(tr('الإجمالي'), flex: 1, style: headerStyle),
             ],
           ),
         ),
@@ -234,7 +235,7 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
           color: AppColors.surface,
           child: Row(
             children: [
-              _dataCell('الإجمالي (${rows.length} طرف)',
+              _dataCell(tr('الإجمالي ({p0} طرف)', {'p0': rows.length}),
                   flex: 3, bold: true),
               _dataCell(_fmt(t0_30), flex: 1, style: totalStyle),
               _dataCell(_fmt(t31_60), flex: 1, style: totalStyle),

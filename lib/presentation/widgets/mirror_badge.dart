@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/mirror_state.dart';
@@ -68,9 +69,9 @@ class MirrorBadge extends StatelessWidget {
       MirrorConnectivity.offline => AppColors.error,
     };
     final statusLabel = switch (connectivity) {
-      MirrorConnectivity.online => 'الآن',
-      MirrorConnectivity.slow => 'بطىء',
-      MirrorConnectivity.offline => 'خارج الاتصال',
+      MirrorConnectivity.online => tr('الآن'),
+      MirrorConnectivity.slow => tr('بطىء'),
+      MirrorConnectivity.offline => tr('خارج الاتصال'),
     };
 
     final badge = Container(

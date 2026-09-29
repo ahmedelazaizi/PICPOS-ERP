@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // جدولُ لوحة الحجوزات — سبعةُ أعمدةٍ كما في التصميم.
 //
 // ═══ ⚠️ `ListView.builder` لا `Column` ═══
@@ -80,21 +81,21 @@ class _HeaderRow extends StatelessWidget {
       height: 36,
       color: AppColors.primaryDark,
       padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: const Row(
+      child:  Row(
         children: [
-          SizedBox(width: _kTimeW, child: Text('الوقت', style: style)),
-          Expanded(child: Text('العميل', style: style)),
-          SizedBox(width: _kServiceW, child: Text('الخدمة', style: style)),
+          SizedBox(width: _kTimeW, child: Text(tr('الوقت'), style: style)),
+          Expanded(child: Text(tr('العميل'), style: style)),
+          SizedBox(width: _kServiceW, child: Text(tr('الخدمة'), style: style)),
           SizedBox(
-              width: _kResourceW, child: Text('الموظف / المورد', style: style)),
-          SizedBox(width: _kStatusW, child: Text('الحالة', style: style)),
+              width: _kResourceW, child: Text(tr('الموظف / المورد'), style: style)),
+          SizedBox(width: _kStatusW, child: Text(tr('الحالة'), style: style)),
           SizedBox(
             width: _kDepositW,
-            child: Text('العربون', style: style, textAlign: TextAlign.end),
+            child: Text(tr('العربون'), style: style, textAlign: TextAlign.end),
           ),
           SizedBox(
             width: _kActionsW,
-            child: Text('الإجراءات', style: style, textAlign: TextAlign.center),
+            child: Text(tr('الإجراءات'), style: style, textAlign: TextAlign.center),
           ),
         ],
       ),
@@ -174,7 +175,7 @@ class _BoardRow extends StatelessWidget {
                   Expanded(
                     child: _twoLines(
                       row.serviceName,
-                      '${row.durationMinutes} دقيقة',
+                      tr('{p0} دقيقة', {'p0': row.durationMinutes}),
                     ),
                   ),
                 ],
@@ -184,9 +185,9 @@ class _BoardRow extends StatelessWidget {
               width: _kResourceW,
               child: row.resourceName == null
                   // حجزٌ بلا موظَّفٍ مسموحٌ — ويُقال صراحةً لا يُترك فراغاً.
-                  ? const Text(
-                      'بلا إسناد',
-                      style: TextStyle(
+                  ?  Text(
+                      tr('بلا إسناد'),
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textMuted,
@@ -200,7 +201,7 @@ class _BoardRow extends StatelessWidget {
                           child: _twoLines(
                             row.resourceName!,
                             row.resourceRole ??
-                                (row.resourceKind == 'device' ? 'جهاز' : '—'),
+                                (row.resourceKind == 'device' ? tr('جهاز') : '—'),
                           ),
                         ),
                       ],
@@ -253,9 +254,9 @@ class _BoardRow extends StatelessWidget {
   }
 
   static String _depositLabel(String depositStatus) => switch (depositStatus) {
-        'refunded' => 'مُعاد',
-        'forfeited' => 'مُصادَر',
-        _ => 'محتجَز',
+        'refunded' => tr('مُعاد'),
+        'forfeited' => tr('مُصادَر'),
+        _ => tr('محتجَز'),
       };
 
   Widget _avatar(BookingBoardRow row) {
@@ -353,7 +354,7 @@ class _BoardRow extends StatelessWidget {
             child: Text(action.label),
           )
         else if (row.isInvoiced)
-          const _Tag(label: 'مُفوتَر', color: AppColors.success)
+           _Tag(label: tr('مُفوتَر'), color: AppColors.success)
         else
           const SizedBox.shrink(),
       ],
@@ -405,7 +406,7 @@ class _FooterRow extends StatelessWidget {
       child: Text(
         // ‏لا مُرقِّمَ صفحاتٍ: يومٌ واحدٌ يبلغ عشراتِ الصفوف لا آلافَها،
         // والقائمةُ مُفهرَسةٌ فتنزلق. ومُرقِّمٌ لصفحةٍ واحدةٍ ضجيج.
-        'إجمالي $count حجزاً في هذا اليوم',
+        tr('إجمالي {count} حجزاً في هذا اليوم', {'count': count}),
         style: const TextStyle(
           fontSize: 11.5,
           fontWeight: FontWeight.w700,

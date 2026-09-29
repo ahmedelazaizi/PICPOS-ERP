@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 
 import 'package:drift/drift.dart' show Value, Uint8List;
@@ -159,7 +160,7 @@ class ProductsController extends Notifier<ProductsState> {
       logger.error('Failed to load products', e, stack, 'PRODUCTS');
       // Spec 118 (Bug Y) — لا state access لو الـ provider تُحلَّل أثناء الـ catch
       if (ref.mounted) {
-        state = state.copyWith(isLoading: false, error: 'فشل تحميل المنتجات: $e');
+        state = state.copyWith(isLoading: false, error: tr('فشل تحميل المنتجات: {e}', {'e': e}));
       }
     }
   }
@@ -284,7 +285,7 @@ class ProductsController extends Notifier<ProductsState> {
       return id;
     } catch (e, stack) {
       logger.error('Failed to create product', e, stack, 'PRODUCTS');
-      state = state.copyWith(isLoading: false, error: 'فشل إنشاء المنتج: $e');
+      state = state.copyWith(isLoading: false, error: tr('فشل إنشاء المنتج: {e}', {'e': e}));
       return null;
     }
   }
@@ -392,7 +393,7 @@ class ProductsController extends Notifier<ProductsState> {
         stack,
         'PRODUCTS',
       );
-      state = state.copyWith(isLoading: false, error: 'فشل تحديث المنتج: $e');
+      state = state.copyWith(isLoading: false, error: tr('فشل تحديث المنتج: {e}', {'e': e}));
       return false;
     }
   }
@@ -436,7 +437,7 @@ class ProductsController extends Notifier<ProductsState> {
       return true;
     } catch (e, stack) {
       logger.error('Failed to delete product #$id', e, stack, 'PRODUCTS');
-      state = state.copyWith(isLoading: false, error: 'فشل حذف المنتج: $e');
+      state = state.copyWith(isLoading: false, error: tr('فشل حذف المنتج: {e}', {'e': e}));
       return false;
     }
   }
@@ -534,7 +535,7 @@ class ProductsController extends Notifier<ProductsState> {
       logger.info('Bulk deleted $count products', correlationId: 'PRODUCTS');
     } catch (e, stack) {
       logger.error('Failed bulk delete', e, stack, 'PRODUCTS');
-      state = state.copyWith(isLoading: false, error: 'فشل حذف المنتجات المحددة: $e');
+      state = state.copyWith(isLoading: false, error: tr('فشل حذف المنتجات المحددة: {e}', {'e': e}));
     }
   }
 
@@ -564,7 +565,7 @@ class ProductsController extends Notifier<ProductsState> {
       state = state.copyWith(isLoading: false, selectedIds: {});
     } catch (e, stack) {
       logger.error('Failed bulk update', e, stack, 'PRODUCTS');
-      state = state.copyWith(isLoading: false, error: 'فشل تحديث المنتجات: $e');
+      state = state.copyWith(isLoading: false, error: tr('فشل تحديث المنتجات: {e}', {'e': e}));
     }
   }
 }

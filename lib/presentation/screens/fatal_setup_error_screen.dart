@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 // ═══════════════════════════════════════════════════════════════════════════
@@ -138,10 +139,10 @@ class FatalSetupErrorScreen extends StatelessWidget {
     final accentText =
         isPgParity ? Colors.orange.shade900 : AppColors.errorDark;
     final titleAr = isPgParity
-        ? 'فشل التهيئة الذاتية لقاعدة البيانات'
+        ? tr('فشل التهيئة الذاتية لقاعدة البيانات')
         : isMirrorDivergence
-            ? 'تعارض فى بيانات المرآة'
-            : 'النظام يحتاج لإعادة الإعداد';
+            ? tr('تعارض فى بيانات المرآة')
+            : tr('النظام يحتاج لإعادة الإعداد');
     final subtitleAr = isPgParity
         ? 'تم اكتشاف انحراف فى مخطط قاعدة بيانات PostgreSQL لم يستطع '
             'الإصلاح الذاتى معالجته. الكتابة والقراءة محظورتان حتى الإصلاح.'
@@ -206,7 +207,7 @@ class FatalSetupErrorScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'التفاصيل:',
+                            tr('التفاصيل:'),
                             style: theme.textTheme.labelLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: accentText,
@@ -225,7 +226,7 @@ class FatalSetupErrorScreen extends StatelessWidget {
                               tilePadding: EdgeInsets.zero,
                               childrenPadding: EdgeInsets.zero,
                               title: Text(
-                                'تفاصيل تشخيصية (${result.details.length})',
+                                tr('تفاصيل تشخيصية ({p0})', {'p0': result.details.length}),
                                 style: theme.textTheme.labelMedium?.copyWith(
                                   color: accentText,
                                 ),
@@ -291,10 +292,10 @@ class FatalSetupErrorScreen extends StatelessWidget {
                     FilledButton.icon(
                       onPressed: onEnterDevTools,
                       icon: const Icon(PhosphorIconsBold.wrench),
-                      label: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                      label:  Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         child: Text(
-                          'ادخل خيارات المطور للإصلاح\n(يتطلب كلمة سر المطور)',
+                          tr('ادخل خيارات المطور للإصلاح\n(يتطلب كلمة سر المطور)'),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -303,10 +304,10 @@ class FatalSetupErrorScreen extends StatelessWidget {
                     OutlinedButton.icon(
                       onPressed: onResetWizard,
                       icon: const Icon(PhosphorIconsBold.arrowCounterClockwise),
-                      label: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                      label:  Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         child: Text(
-                          'إعادة اعداد البدء\n(يمسح البيانات المحلية ويبدأ من الصفر)',
+                          tr('إعادة اعداد البدء\n(يمسح البيانات المحلية ويبدأ من الصفر)'),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -321,10 +322,10 @@ class FatalSetupErrorScreen extends StatelessWidget {
                       textAlign: TextAlign.center,
                       child: Column(
                         children: [
-                          Text('رمز المشكلة: ${result.reasonCode}'),
+                          Text(tr('رمز المشكلة: {p0}', {'p0': result.reasonCode})),
                           Text('وضع النظام فى قاعدة البيانات: '
                               '${_arabicMode(result.dbMode)}'),
-                          const Text('يرجى تصوير هذه الشاشة عند طلب الدعم الفنى.'),
+                           Text(tr('يرجى تصوير هذه الشاشة عند طلب الدعم الفنى.')),
                         ],
                       ),
                     ),
@@ -341,13 +342,13 @@ class FatalSetupErrorScreen extends StatelessWidget {
   String _arabicMode(NetworkMode m) {
     switch (m) {
       case NetworkMode.standalone:
-        return 'مستقل';
+        return tr('مستقل');
       case NetworkMode.server:
-        return 'سيرفر';
+        return tr('سيرفر');
       case NetworkMode.client:
-        return 'عميل';
+        return tr('عميل');
       case NetworkMode.mirror:
-        return 'مرآة';
+        return tr('مرآة');
     }
   }
 }

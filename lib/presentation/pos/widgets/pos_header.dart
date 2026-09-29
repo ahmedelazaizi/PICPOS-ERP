@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -147,10 +148,10 @@ class PosHeader extends ConsumerWidget {
           children: [
             Text(
               tableName != null
-                  ? 'طاولة: $tableName'
+                  ? tr('طاولة: {tableName}', {'tableName': tableName})
                   : (posState.industryMode == IndustryMode.restaurant
-                        ? 'الصالات والطاولات'
-                        : (isBooking ? 'حجز مسبق' : 'البيع السريع')),
+                        ? tr('الصالات والطاولات')
+                        : (isBooking ? tr('حجز مسبق') : tr('البيع السريع'))),
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
@@ -160,7 +161,7 @@ class PosHeader extends ConsumerWidget {
             ),
             if (isBooking)
               Text(
-                'وضعية الحجز نشطة',
+                tr('وضعية الحجز نشطة'),
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 10,
@@ -195,10 +196,10 @@ class PosHeader extends ConsumerWidget {
           PermissionGuard(
             permission: PermissionCodes.posTableSelect,
             allowManagerOverride: true,
-            actionName: 'اختيار طاولة',
+            actionName: tr('اختيار طاولة'),
             child: PosHeaderButton(
               icon: PhosphorIconsBold.table,
-              label: 'اختيار طاولة',
+              label: tr('اختيار طاولة'),
               onTap: () => Navigator.pop(context),
               color: AppColors.warning,
             ),
@@ -213,10 +214,10 @@ class PosHeader extends ConsumerWidget {
           PermissionGuard(
             permission: PermissionCodes.posBooking,
             allowManagerOverride: true,
-            actionName: 'حجز مسبق',
+            actionName: tr('حجز مسبق'),
             child: PosHeaderButton(
               icon: PhosphorIconsBold.calendarCheck,
-              label: posState.isBooking ? 'إلغاء الحجز' : 'حجز مسبق',
+              label: posState.isBooking ? tr('إلغاء الحجز') : tr('حجز مسبق'),
               onTap: () => ref
                   .read(posControllerProvider.notifier)
                   .toggleBooking(!posState.isBooking),
@@ -231,10 +232,10 @@ class PosHeader extends ConsumerWidget {
           PermissionGuard(
           permission: PermissionCodes.posOffers,
           allowManagerOverride: true,
-          actionName: 'عرض العروض',
+          actionName: tr('عرض العروض'),
           child: PosHeaderButton(
             icon: PhosphorIconsBold.tag,
-            label: 'العروض',
+            label: tr('العروض'),
             onTap: onShowOffers,
           ),
         ),
@@ -246,10 +247,10 @@ class PosHeader extends ConsumerWidget {
           PermissionGuard(
             permission: PermissionCodes.posDelivery,
             allowManagerOverride: true,
-            actionName: 'توصيل',
+            actionName: tr('توصيل'),
             child: PosHeaderButton(
               icon: PhosphorIconsBold.moped,
-              label: 'توصيل',
+              label: tr('توصيل'),
               onTap: onShowDelivery,
               color: cartState.deliveryStatus != null ? AppColors.info : null,
             ),
@@ -262,10 +263,10 @@ class PosHeader extends ConsumerWidget {
           PermissionGuard(
             permission: PermissionCodes.posHoldOrder,
             allowManagerOverride: true,
-            actionName: 'تعليق السلة',
+            actionName: tr('تعليق السلة'),
             child: PosHeaderButton(
               icon: PhosphorIconsBold.pause,
-              label: 'تعليق السلة',
+              label: tr('تعليق السلة'),
               onTap: () async {
                 await ref.read(cartControllerProvider.notifier).holdOrder();
                 if (context.mounted) Navigator.pop(context);
@@ -276,14 +277,14 @@ class PosHeader extends ConsumerWidget {
           PermissionGuard(
             permission: PermissionCodes.posTableBill,
             allowManagerOverride: true,
-            actionName: 'طلب الحساب',
+            actionName: tr('طلب الحساب'),
             child: PosHeaderButton(
               icon: PhosphorIconsBold.money,
-              label: 'طلب الحساب',
+              label: tr('طلب الحساب'),
               onTap: () async {
                 final confirmed = await _confirmAction(
                   context,
-                  'هل تريد طلب الحساب لهذه الطاولة؟',
+                  tr('هل تريد طلب الحساب لهذه الطاولة؟'),
                 );
                 if (confirmed) {
                   await ref
@@ -302,10 +303,10 @@ class PosHeader extends ConsumerWidget {
           PermissionGuard(
           permission: PermissionCodes.posKeyboard,
           allowManagerOverride: true,
-          actionName: 'لوحة المفاتيح',
+          actionName: tr('لوحة المفاتيح'),
           child: PosHeaderButton(
             icon: PhosphorIconsBold.keyboard,
-            label: 'لوحة المفاتيح',
+            label: tr('لوحة المفاتيح'),
             onTap: _openOnScreenKeyboard,
           ),
         ),
@@ -319,10 +320,10 @@ class PosHeader extends ConsumerWidget {
             PermissionGuard(
               permission: PermissionCodes.posReturn,
               allowManagerOverride: true,
-              actionName: 'مرتجعات',
+              actionName: tr('مرتجعات'),
               child: PosHeaderButton(
                 icon: PhosphorIconsBold.arrowUUpLeft,
-                label: 'مرتجعات',
+                label: tr('مرتجعات'),
                 onTap: onViewReturns!,
                 color: AppColors.error.withValues(alpha: 0.8),
               ),
@@ -335,10 +336,10 @@ class PosHeader extends ConsumerWidget {
             PermissionGuard(
               permission: PermissionCodes.posHoldOrder,
               allowManagerOverride: true,
-              actionName: 'الطلبات المعلقة',
+              actionName: tr('الطلبات المعلقة'),
               child: PosHeaderButton(
                 icon: PhosphorIconsBold.clipboardText,
-                label: 'المعلقة',
+                label: tr('المعلقة'),
                 onTap: onShowHeldOrders,
                 color: AppColors.warning,
               ),
@@ -351,10 +352,10 @@ class PosHeader extends ConsumerWidget {
             PermissionGuard(
               permission: PermissionCodes.posHoldOrder,
               allowManagerOverride: true,
-              actionName: 'تعليق فاتورة',
+              actionName: tr('تعليق فاتورة'),
               child: PosHeaderButton(
                 icon: PhosphorIconsBold.pause,
-                label: 'تعليق',
+                label: tr('تعليق'),
                 onTap: onHoldOrder,
                 color: const Color(0xFF7E57C2),
               ),
@@ -367,10 +368,10 @@ class PosHeader extends ConsumerWidget {
             PermissionGuard(
               permission: PermissionCodes.posExchange,
               allowManagerOverride: true,
-              actionName: 'استبدال',
+              actionName: tr('استبدال'),
               child: PosHeaderButton(
                 icon: PhosphorIconsBold.arrowsLeftRight,
-                label: 'استبدال',
+                label: tr('استبدال'),
                 onTap: onExchange!,
                 color: AppColors.info,
               ),
@@ -383,10 +384,10 @@ class PosHeader extends ConsumerWidget {
             PermissionGuard(
               permission: PermissionCodes.posReturn,
               allowManagerOverride: true,
-              actionName: 'مرتجع',
+              actionName: tr('مرتجع'),
               child: PosHeaderButton(
                 icon: PhosphorIconsBold.arrowUUpLeft,
-                label: 'مرتجع',
+                label: tr('مرتجع'),
                 onTap: onQuickReturn!,
                 color: AppColors.error,
               ),
@@ -402,7 +403,7 @@ class PosHeader extends ConsumerWidget {
     return PermissionGuard(
       permission: PermissionCodes.posShiftClose,
       allowManagerOverride: true,
-      actionName: 'إغلاق الوردية',
+      actionName: tr('إغلاق الوردية'),
       child: Padding(
         padding: const EdgeInsetsDirectional.only(start: 8),
         child: Container(
@@ -417,9 +418,9 @@ class PosHeader extends ConsumerWidget {
               color: AppColors.error,
               size: 18,
             ),
-            label: const Text(
-              'إغلاق',
-              style: TextStyle(
+            label:  Text(
+              tr('إغلاق'),
+              style: const TextStyle(
                 color: AppColors.error,
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
@@ -441,16 +442,16 @@ class PosHeader extends ConsumerWidget {
           builder: (ctx) => Directionality(
             textDirection: TextDirection.rtl,
             child: AlertDialog(
-              title: const Text('تأكيد'),
+              title:  Text(tr('تأكيد')),
               content: Text(message),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('إلغاء'),
+                  child:  Text(tr('إلغاء')),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('تأكيد'),
+                  child:  Text(tr('تأكيد')),
                 ),
               ],
             ),

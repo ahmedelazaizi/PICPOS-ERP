@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -37,10 +38,10 @@ class LeavesTab extends ConsumerWidget {
                 child: ref.watch(hrEmployeesProvider).when(
                   data: (emps) => DropdownButtonFormField<int>(
                     initialValue: state.selectedEmployeeId,
-                    decoration: const InputDecoration(
-                      labelText: 'اختر موظف لعرض إجازاته',
+                    decoration:  InputDecoration(
+                      labelText: tr('اختر موظف لعرض إجازاته'),
                       isDense: true,
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
                     ),
                     items: emps
                         .map(
@@ -53,7 +54,7 @@ class LeavesTab extends ConsumerWidget {
                     onChanged: (v) => notifier.selectEmployee(v),
                   ),
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, s) => Text('خطأ: $e', style: const TextStyle(color: AppColors.error)),
+                  error: (e, s) => Text(tr('خطأ: {e}', {'e': e}), style: const TextStyle(color: AppColors.error)),
                 ),
               ),
               const SizedBox(width: 8),
@@ -70,11 +71,11 @@ class LeavesTab extends ConsumerWidget {
         if (state.selectedEmployeeId != null)
           _EmployeeLeaveDetails(employeeId: state.selectedEmployeeId!, db: hrRepo)
         else
-          const Expanded(
+           Expanded(
             child: Center(
               child: Text(
-                'اختر موظفاً لعرض رصيد إجازاته',
-                style: TextStyle(color: AppColors.textMuted),
+                tr('اختر موظفاً لعرض رصيد إجازاته'),
+                style: const TextStyle(color: AppColors.textMuted),
               ),
             ),
           ),
@@ -102,7 +103,7 @@ class LeavesTab extends ConsumerWidget {
           builder: (context, setDialogState) {
             final days = endDate.difference(startDate).inDays + 1;
             return AlertDialog(
-              title: const Text('طلب إجازة جديد'),
+              title:  Text(tr('طلب إجازة جديد')),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -112,7 +113,7 @@ class LeavesTab extends ConsumerWidget {
                         return ref.watch(hrEmployeesProvider).when(
                           data: (emps) => DropdownButtonFormField<int>(
                             initialValue: selectedEmpId,
-                            decoration: const InputDecoration(labelText: 'الموظف'),
+                            decoration:  InputDecoration(labelText: tr('الموظف')),
                             items: emps
                                 .map(
                                   (e) => DropdownMenuItem(
@@ -124,26 +125,26 @@ class LeavesTab extends ConsumerWidget {
                             onChanged: (v) => setDialogState(() => selectedEmpId = v),
                           ),
                           loading: () => const CircularProgressIndicator(),
-                          error: (e, s) => Text('خطأ: $e'),
+                          error: (e, s) => Text(tr('خطأ: {e}', {'e': e})),
                         );
                       },
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: leaveType,
-                      decoration: const InputDecoration(
-                        labelText: 'نوع الإجازة',
+                      decoration:  InputDecoration(
+                        labelText: tr('نوع الإجازة'),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'annual', child: Text('سنوية')),
-                        DropdownMenuItem(value: 'sick', child: Text('مرضية')),
+                      items:  [
+                        DropdownMenuItem(value: 'annual', child: Text(tr('سنوية'))),
+                        DropdownMenuItem(value: 'sick', child: Text(tr('مرضية'))),
                         DropdownMenuItem(
                           value: 'unpaid',
-                          child: Text('بدون راتب'),
+                          child: Text(tr('بدون راتب')),
                         ),
                         DropdownMenuItem(
                           value: 'emergency',
-                          child: Text('طارئة'),
+                          child: Text(tr('طارئة')),
                         ),
                       ],
                       onChanged: (v) => setDialogState(() => leaveType = v!),
@@ -151,7 +152,7 @@ class LeavesTab extends ConsumerWidget {
                     const SizedBox(height: 12),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('من'),
+                      title:  Text(tr('من')),
                       subtitle: Text(
                         DateFormat('yyyy/MM/dd').format(startDate),
                       ),
@@ -174,7 +175,7 @@ class LeavesTab extends ConsumerWidget {
                     ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('إلى'),
+                      title:  Text(tr('إلى')),
                       subtitle: Text(DateFormat('yyyy/MM/dd').format(endDate)),
                       leading: const Icon(PhosphorIconsBold.calendarCheck),
                       onTap: () async {
@@ -192,15 +193,15 @@ class LeavesTab extends ConsumerWidget {
                       },
                     ),
                     Text(
-                      'المدة: $days يوم',
+                      tr('المدة: {days} يوم', {'days': days}),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: notesCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'ملاحظات',
-                        border: OutlineInputBorder(),
+                      decoration:  InputDecoration(
+                        labelText: tr('ملاحظات'),
+                        border: const OutlineInputBorder(),
                       ),
                       maxLines: 2,
                     ),
@@ -210,7 +211,7 @@ class LeavesTab extends ConsumerWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('إلغاء'),
+                  child:  Text(tr('إلغاء')),
                 ),
                 ElevatedButton(
                   onPressed: () async {
@@ -227,12 +228,12 @@ class LeavesTab extends ConsumerWidget {
                       Navigator.pop(ctx);
                       AppToast.show(
                         context,
-                        'تم تقديم طلب الإجازة بنجاح',
+                        tr('تم تقديم طلب الإجازة بنجاح'),
                         type: ToastType.success,
                       );
                     }
                   },
-                  child: const Text('تقديم الطلب'),
+                  child:  Text(tr('تقديم الطلب')),
                 ),
               ],
             );
@@ -258,7 +259,7 @@ class _PendingLeavesSection extends StatelessWidget {
           child: Align(
             alignment: AlignmentDirectional.centerStart,
             child: Text(
-              'طلبات معلقة',
+              tr('طلبات معلقة'),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -274,10 +275,10 @@ class _PendingLeavesSection extends StatelessWidget {
             builder: (context, snapshot) {
               final pending = snapshot.data ?? [];
               if (pending.isEmpty) {
-                return const Center(
+                return  Center(
                   child: Text(
-                    'لا توجد طلبات معلقة',
-                    style: TextStyle(color: AppColors.textMuted),
+                    tr('لا توجد طلبات معلقة'),
+                    style: const TextStyle(color: AppColors.textMuted),
                   ),
                 );
               }
@@ -333,12 +334,12 @@ class _PendingLeaveCard extends ConsumerWidget {
                   emp?.name ?? '...',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                loading: () => const Text('جار التحميل...', style: TextStyle(fontWeight: FontWeight.bold)),
-                error: (e, s) => const Text('خطأ', style: TextStyle(color: AppColors.error)),
+                loading: () =>  Text(tr('جار التحميل...'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                error: (e, s) =>  Text(tr('خطأ'), style: const TextStyle(color: AppColors.error)),
               ),
               const SizedBox(height: 4),
               Text(
-                '${_leaveTypeName(leave.leaveType)} — ${leave.days} يوم',
+                tr('{p0} — {p1} يوم', {'p0': _leaveTypeName(leave.leaveType), 'p1': leave.days}),
                 style: const TextStyle(fontSize: 12),
               ),
               Text(
@@ -359,9 +360,9 @@ class _PendingLeaveCard extends ConsumerWidget {
                         backgroundColor: Colors.green,
                         padding: const EdgeInsets.symmetric(vertical: 4),
                       ),
-                      child: const Text(
-                        'موافقة',
-                        style: TextStyle(fontSize: 12),
+                      child:  Text(
+                        tr('موافقة'),
+                        style: const TextStyle(fontSize: 12),
                       ),
                     ),
                   ),
@@ -374,7 +375,7 @@ class _PendingLeaveCard extends ConsumerWidget {
                         backgroundColor: AppColors.error,
                         padding: const EdgeInsets.symmetric(vertical: 4),
                       ),
-                      child: const Text('رفض', style: TextStyle(fontSize: 12)),
+                      child:  Text(tr('رفض'), style: const TextStyle(fontSize: 12)),
                     ),
                   ),
                 ],
@@ -412,7 +413,7 @@ class _EmployeeLeaveDetails extends ConsumerWidget {
                         await db.initializeLeaveBalances(employeeId, year);
                         ref.invalidate(hrLeaveBalancesProvider);
                       },
-                      child: const Text('تهيئة رصيد الإجازات لهذا العام'),
+                      child:  Text(tr('تهيئة رصيد الإجازات لهذا العام')),
                     ),
                   );
                 }
@@ -444,7 +445,7 @@ class _EmployeeLeaveDetails extends ConsumerWidget {
                                     ),
                                   ),
                                   Text(
-                                    'من ${b.totalDays} يوم',
+                                    tr('من {p0} يوم', {'p0': b.totalDays}),
                                     style: const TextStyle(
                                       fontSize: 11,
                                       color: AppColors.textMuted,
@@ -460,7 +461,7 @@ class _EmployeeLeaveDetails extends ConsumerWidget {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Center(child: Text('خطأ: $e', style: const TextStyle(color: AppColors.error))),
+              error: (e, s) => Center(child: Text(tr('خطأ: {e}', {'e': e}), style: const TextStyle(color: AppColors.error))),
             ),
           ),
           const SizedBox(height: 8),
@@ -474,7 +475,7 @@ class _EmployeeLeaveDetails extends ConsumerWidget {
                   return ShimmerLoading.list(itemCount: 4);
                 }
                 if (leaves.isEmpty) {
-                  return const Center(child: Text('لا توجد إجازات مسجلة'));
+                  return  Center(child: Text(tr('لا توجد إجازات مسجلة')));
                 }
 
                 return ListView.separated(
@@ -498,7 +499,7 @@ class _EmployeeLeaveDetails extends ConsumerWidget {
                               : Colors.orange,
                         ),
                         title: Text(
-                          '${_leaveTypeName(l.leaveType)} — ${l.days} يوم',
+                          tr('{p0} — {p1} يوم', {'p0': _leaveTypeName(l.leaveType), 'p1': l.days}),
                         ),
                         subtitle: Text(
                           '${DateFormat('MM/dd').format(l.startDate)} → ${DateFormat('MM/dd').format(l.endDate)}',
@@ -523,10 +524,10 @@ class _EmployeeLeaveDetails extends ConsumerWidget {
   }
 
   String _statusName(String status) => status == 'approved'
-      ? 'موافق'
+      ? tr('موافق')
       : status == 'rejected'
-      ? 'مرفوض'
-      : 'معلق';
+      ? tr('مرفوض')
+      : tr('معلق');
   Color _statusColor(String status) => status == 'approved'
       ? Colors.green[50]!
       : status == 'rejected'
@@ -537,13 +538,13 @@ class _EmployeeLeaveDetails extends ConsumerWidget {
 String _leaveTypeName(String type) {
   switch (type) {
     case 'annual':
-      return 'سنوية';
+      return tr('سنوية');
     case 'sick':
-      return 'مرضية';
+      return tr('مرضية');
     case 'unpaid':
-      return 'بدون راتب';
+      return tr('بدون راتب');
     case 'emergency':
-      return 'طارئة';
+      return tr('طارئة');
     default:
       return type;
   }

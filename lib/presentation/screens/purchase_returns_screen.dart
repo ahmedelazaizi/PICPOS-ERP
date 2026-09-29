@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -90,21 +91,21 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SyncPendingBanner(
+                     SyncPendingBanner(
                       tableName: 'purchase_returns',
-                      label: 'مرتجع مشتريات',
+                      label: tr('مرتجع مشتريات'),
                     ),
                     // Header
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Row(
+                         Row(
                           children: [
-                            Icon(PhosphorIconsBold.arrowUUpLeft, size: 22, color: AppColors.primary),
-                            SizedBox(width: 8),
+                            const Icon(PhosphorIconsBold.arrowUUpLeft, size: 22, color: AppColors.primary),
+                            const SizedBox(width: 8),
                             Text(
-                              'مرتجع المشتريات',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              tr('مرتجع المشتريات'),
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -112,7 +113,7 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
                         IconButton.filledTonal(
                           onPressed: showReturnsHistoryDialog,
                           icon: const Icon(PhosphorIconsBold.clockCounterClockwise),
-                          tooltip: 'سجل المرتجعات',
+                          tooltip: tr('سجل المرتجعات'),
                           style: IconButton.styleFrom(
                             backgroundColor: AppColors.info.withValues(alpha: 0.1),
                             foregroundColor: AppColors.info,
@@ -143,7 +144,7 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
                                         children: [
                                           const Icon(PhosphorIconsBold.calendar, size: 16, color: AppColors.textMuted),
                                           const SizedBox(width: 8),
-                                          Text('من: ${state.fromDate.day}/${state.fromDate.month}/${state.fromDate.year}', style: const TextStyle(fontSize: 13)),
+                                          Text(tr('من: {p0}/{p1}/{p2}', {'p0': state.fromDate.day, 'p1': state.fromDate.month, 'p2': state.fromDate.year}), style: const TextStyle(fontSize: 13)),
                                         ],
                                       ),
                                     ),
@@ -163,7 +164,7 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
                                         children: [
                                           const Icon(PhosphorIconsBold.calendar, size: 16, color: AppColors.textMuted),
                                           const SizedBox(width: 8),
-                                          Text('إلى: ${state.toDate.day}/${state.toDate.month}/${state.toDate.year}', style: const TextStyle(fontSize: 13)),
+                                          Text(tr('إلى: {p0}/{p1}/{p2}', {'p0': state.toDate.day, 'p1': state.toDate.month, 'p2': state.toDate.year}), style: const TextStyle(fontSize: 13)),
                                         ],
                                       ),
                                     ),
@@ -178,7 +179,7 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
                             TextField(
                               controller: _searchController,
                               decoration: InputDecoration(
-                                hintText: 'البحث برقم الفاتورة (رقمنا أو رقم المورد)...',
+                                hintText: tr('البحث برقم الفاتورة (رقمنا أو رقم المورد)...'),
                                 prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
                                 isDense: true,
                                 contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
@@ -243,7 +244,7 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
           isDense: true,
           style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
           decoration: InputDecoration(
-            hintText: 'المورد',
+            hintText: tr('المورد'),
             prefixIcon: const Icon(PhosphorIconsBold.truck, size: 16),
             isDense: true,
             contentPadding:
@@ -251,9 +252,9 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
           items: [
-            const DropdownMenuItem<int?>(
+             DropdownMenuItem<int?>(
               value: null,
-              child: Text('كل الموردين', style: TextStyle(fontSize: 13)),
+              child: Text(tr('كل الموردين'), style: const TextStyle(fontSize: 13)),
             ),
             for (final s in suppliers)
               DropdownMenuItem<int?>(
@@ -282,7 +283,7 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
         isDense: true,
         style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
         decoration: InputDecoration(
-          hintText: 'الصنف',
+          hintText: tr('الصنف'),
           prefixIcon: const Icon(PhosphorIconsBold.package, size: 16),
           isDense: true,
           contentPadding:
@@ -290,9 +291,9 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         ),
         items: [
-          const DropdownMenuItem<int?>(
+           DropdownMenuItem<int?>(
             value: null,
-            child: Text('كل الأصناف', style: TextStyle(fontSize: 13)),
+            child: Text(tr('كل الأصناف'), style: const TextStyle(fontSize: 13)),
           ),
           for (final p in products)
             DropdownMenuItem<int?>(
@@ -317,7 +318,7 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
     return AppStateView(
       isLoading: state.isLoading && invoices.isEmpty,
       isEmpty: invoices.isEmpty,
-      emptyMessage: 'لا توجد فواتير مشتريات في هذه الفترة',
+      emptyMessage: tr('لا توجد فواتير مشتريات في هذه الفترة'),
       emptyIcon: PhosphorIconsBold.receipt,
       child: ListView.builder(
       itemCount: invoices.length,

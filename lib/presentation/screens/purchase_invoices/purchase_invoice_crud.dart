@@ -233,21 +233,21 @@ mixin _PurchaseInvoiceCrudMixin on ConsumerState<PurchaseInvoicesScreen> {
         action: editInvoiceId != null ? 'edit_purchase' : 'create_purchase',
         entityType: 'purchase_invoice',
         description: editInvoiceId != null
-            ? 'تعديل فاتورة مشتريات #$editInvoiceId'
-            : 'إنشاء فاتورة مشتريات',
+            ? tr('تعديل فاتورة مشتريات #{editInvoiceId}', {'editInvoiceId': editInvoiceId})
+            : tr('إنشاء فاتورة مشتريات'),
         amount: total,
       );
 
       if (mounted) {
         AppToast.show(
           context,
-          'تم الحفظ بنجاح',
+          tr('تم الحفظ بنجاح'),
           type: ToastType.success,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشلت العملية: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشلت العملية: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }

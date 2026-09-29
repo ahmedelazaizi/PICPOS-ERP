@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // لوحُ المرتجعات المشترك — عدّاداتٌ فوق، وقائمةُ فواتيرَ في بطاقةٍ واحدةٍ
 // تحمل رأسَها وترشيحَها، على تصميم `isReturns`.
 //
@@ -65,25 +66,25 @@ class PicPosReturnsSummaryCards extends StatelessWidget {
     return PicPosKpiRow(
       kpis: [
         PicPosKpi(
-          label: 'فواتير الفترة',
+          label: tr('فواتير الفترة'),
           value: '${kpis.invoiceCount}',
           icon: PhosphorIconsBold.receipt,
           tint: AppColors.primary,
         ),
         PicPosKpi(
-          label: 'إجمالي فواتير الفترة',
+          label: tr('إجمالي فواتير الفترة'),
           value: kpis.invoicesTotalLabel,
           icon: PhosphorIconsBold.coins,
           tint: AppColors.info,
         ),
         PicPosKpi(
-          label: 'مرتجعة كليّاً',
+          label: tr('مرتجعة كليّاً'),
           value: '${kpis.fullyReturned}',
           icon: PhosphorIconsBold.arrowUUpLeft,
           tint: AppColors.error,
         ),
         PicPosKpi(
-          label: 'مرتجعة جزئيّاً',
+          label: tr('مرتجعة جزئيّاً'),
           value: '${kpis.partiallyReturned}',
           icon: PhosphorIconsBold.arrowsClockwise,
           tint: Colors.orange,
@@ -280,7 +281,7 @@ class PicPosReturnsInvoicePanel extends StatelessWidget {
                     size: 14, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text(
-                  'الفواتير',
+                  tr('الفواتير'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,

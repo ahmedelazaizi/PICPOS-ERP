@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/widgets/app_shortcuts.dart';
@@ -98,22 +99,22 @@ class _SalesInvoicesScreenState extends ConsumerState<SalesInvoicesScreen> {
         child: Scaffold(
           backgroundColor: AppColors.surface,
           appBar: AppBar(
-            title: const Text('المبيعات وعروض الأسعار'),
+            title:  Text(tr('المبيعات وعروض الأسعار')),
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
-            bottom: const TabBar(
+            bottom:  TabBar(
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white70,
               indicatorColor: Colors.white,
               tabs: [
-                Tab(text: 'فواتير المبيعات'),
-                Tab(text: 'عروض الأسعار'),
+                Tab(text: tr('فواتير المبيعات')),
+                Tab(text: tr('عروض الأسعار')),
               ],
             ),
             actions: [
               IconButton(
                 icon: const Icon(PhosphorIconsBold.arrowClockwise),
-                tooltip: 'تحديث',
+                tooltip: tr('تحديث'),
                 onPressed: () => ref.read(salesInvoicesControllerProvider.notifier).refresh(),
               ),
               // Recovery tool: push local sales that haven't reached the
@@ -129,12 +130,12 @@ class _SalesInvoicesScreenState extends ConsumerState<SalesInvoicesScreen> {
                   NetworkService.instance.isMirror)
                 IconButton(
                   icon: const Icon(PhosphorIconsBold.cloudArrowUp),
-                  tooltip: 'دفع الفواتير المحلية للسيرفر',
+                  tooltip: tr('دفع الفواتير المحلية للسيرفر'),
                   onPressed: () async {
                     final syncRepo = ref.read(syncRepositoryProvider);
                     AppToast.show(
                       context,
-                      'جارى دفع الفواتير المحلية إلى السيرفر...',
+                      tr('جارى دفع الفواتير المحلية إلى السيرفر...'),
                       type: ToastType.info,
                     );
                     final result = await syncRepo.pushLocalSalesToServer();
@@ -155,7 +156,7 @@ class _SalesInvoicesScreenState extends ConsumerState<SalesInvoicesScreen> {
                   );
                 },
                 icon: const Icon(PhosphorIconsBold.clipboardText, size: 16),
-                label: const Text('طلبات البيع'),
+                label:  Text(tr('طلبات البيع')),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: const BorderSide(color: Colors.white54),
@@ -165,7 +166,7 @@ class _SalesInvoicesScreenState extends ConsumerState<SalesInvoicesScreen> {
               ElevatedButton.icon(
                 onPressed: _createNewInvoice,
                 icon: const Icon(PhosphorIconsBold.plus),
-                label: const Text('فاتورة جديدة'),
+                label:  Text(tr('فاتورة جديدة')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: AppColors.primary,
@@ -180,13 +181,13 @@ class _SalesInvoicesScreenState extends ConsumerState<SalesInvoicesScreen> {
               AppStateView(
                 isLoading: state.isLoading,
                 isEmpty: state.allInvoices.isEmpty && !state.isLoading,
-                emptyMessage: 'لا توجد فواتير مبيعات',
+                emptyMessage: tr('لا توجد فواتير مبيعات'),
                 emptyIcon: PhosphorIconsBold.receipt,
                 child: Column(
                   children: [
-                    const SyncPendingBanner(
+                     SyncPendingBanner(
                       tableName: 'sales',
-                      label: 'فاتورة مبيعات',
+                      label: tr('فاتورة مبيعات'),
                     ),
                     const SalesSummaryRow(),
                     SalesFilterBar(

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/presentation/widgets/dialogs/app_confirm_dialog.dart';
@@ -235,8 +236,8 @@ class _PosScreenV2State extends ConsumerState<PosScreenV2>
             MaterialBanner(
               backgroundColor: AppColors.success.withValues(alpha: 0.95),
               leading: const Icon(PhosphorIconsBold.cookingPot, color: Colors.white, size: 28),
-              content: Text('🍽️ الطلب ${newest.orderNumber} جاهز!', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              actions: [TextButton(onPressed: () => ScaffoldMessenger.of(context).clearMaterialBanners(), child: const Text('حسناً', style: TextStyle(color: Colors.white)))],
+              content: Text(tr('🍽️ الطلب {p0} جاهز!', {'p0': newest.orderNumber}), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              actions: [TextButton(onPressed: () => ScaffoldMessenger.of(context).clearMaterialBanners(), child:  Text(tr('حسناً'), style: const TextStyle(color: Colors.white)))],
             ),
           );
         Future.delayed(const Duration(seconds: 8), () { if (mounted) ScaffoldMessenger.of(context).clearMaterialBanners(); });
@@ -272,9 +273,9 @@ class _PosScreenV2State extends ConsumerState<PosScreenV2>
     if (cartState.items.isEmpty) return;
     final ok = await AppConfirmDialog.show(
       context,
-      title: 'مسح السلة',
-      message: 'هل أنت متأكد من مسح جميع المنتجات؟',
-      confirmLabel: 'مسح',
+      title: tr('مسح السلة'),
+      message: tr('هل أنت متأكد من مسح جميع المنتجات؟'),
+      confirmLabel: tr('مسح'),
       isDangerous: true,
     );
     if (!ok || !mounted) return;
@@ -291,11 +292,11 @@ class _PosScreenV2State extends ConsumerState<PosScreenV2>
         builder: (ctx) => Directionality(
            textDirection: TextDirection.rtl,
            child: AlertDialog(
-             title: const Text('تنبيه'),
-             content: const Text('يوجد أصناف في السلة. هل تريد المتابعة بدون حفظ؟'),
+             title:  Text(tr('تنبيه')),
+             content:  Text(tr('يوجد أصناف في السلة. هل تريد المتابعة بدون حفظ؟')),
              actions: [
-               TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('لا')),
-               ElevatedButton(onPressed: () => Navigator.pop(ctx, true), style: ElevatedButton.styleFrom(backgroundColor: AppColors.error), child: const Text('خروج وتجاهل')),
+               TextButton(onPressed: () => Navigator.pop(ctx, false), child:  Text(tr('لا'))),
+               ElevatedButton(onPressed: () => Navigator.pop(ctx, true), style: ElevatedButton.styleFrom(backgroundColor: AppColors.error), child:  Text(tr('خروج وتجاهل'))),
              ],
            ),
         ),
@@ -353,7 +354,7 @@ class _PosScreenV2State extends ConsumerState<PosScreenV2>
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 const CircularProgressIndicator(),
                 const SizedBox(height: 16),
-                Text('جاري المعالجة...', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                Text(tr('جاري المعالجة...'), style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
               ]),
             ),
           ),

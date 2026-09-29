@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/utils/number_utils.dart';
@@ -185,7 +186,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('إضافة صنف جديد', style: TextStyle(fontSize: 18)),
+             Text(tr('إضافة صنف جديد'), style: const TextStyle(fontSize: 18)),
           ],
         ),
         content: SizedBox(
@@ -197,7 +198,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
               children: [
                 // Basic Data Section
                 _buildSectionHeader(
-                  'البيانات الأساسية',
+                  tr('البيانات الأساسية'),
                   PhosphorIconsBold.package,
                   AppColors.primary,
                 ),
@@ -208,19 +209,19 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                       flex: 2,
                       child: _buildCompactTextField(
                         _nameController,
-                        'اسم الصنف *',
+                        tr('اسم الصنف *'),
                         icon: PhosphorIconsBold.tag,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: _buildCompactTextField(_codeController, 'الكود'),
+                      child: _buildCompactTextField(_codeController, tr('الكود')),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: _buildCompactTextField(
                         _barcodeController,
-                        'الباركود',
+                        tr('الباركود'),
                         icon: PhosphorIconsBold.barcode,
                       ),
                     ),
@@ -232,7 +233,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                     Expanded(
                       child: _buildCompactTextField(
                         _salePriceController,
-                        'سعر البيع *',
+                        tr('سعر البيع *'),
                         isNumber: true,
                         icon: PhosphorIconsBold.currencyDollar,
                       ),
@@ -241,7 +242,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                     Expanded(
                       child: _buildCompactTextField(
                         _costPriceController,
-                        'سعر التكلفة',
+                        tr('سعر التكلفة'),
                         isNumber: true,
                       ),
                     ),
@@ -257,7 +258,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                     Expanded(
                       child: _buildCompactTextField(
                         _minStockController,
-                        'الحد الأدنى',
+                        tr('الحد الأدنى'),
                         isNumber: true,
                         icon: PhosphorIconsBold.warning,
                       ),
@@ -270,7 +271,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                     Expanded(
                       child: _buildCompactTextField(
                         _openingBalanceController,
-                        'الرصيد الافتتاحى',
+                        tr('الرصيد الافتتاحى'),
                         isNumber: true,
                         icon: PhosphorIconsBold.stack,
                       ),
@@ -281,9 +282,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                 // Platform Prices (hidden in simplified mode)
                 if (!widget.simplified) ...[
                   const SizedBox(height: 8),
-                  const Text(
-                    'أسعار المنصات',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                   Text(
+                    tr('أسعار المنصات'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -291,7 +292,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                       Expanded(
                         child: _buildCompactTextField(
                           _priceTalabatController,
-                          'سعر طلبات',
+                          tr('سعر طلبات'),
                           isNumber: true,
                         ),
                       ),
@@ -299,7 +300,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                       Expanded(
                         child: _buildCompactTextField(
                           _priceCareemController,
-                          'سعر كريم',
+                          tr('سعر كريم'),
                           isNumber: true,
                         ),
                       ),
@@ -307,7 +308,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                       Expanded(
                         child: _buildCompactTextField(
                           _priceAshyaeController,
-                          'سعر أشيائي',
+                          tr('سعر أشيائي'),
                           isNumber: true,
                         ),
                       ),
@@ -315,7 +316,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                       Expanded(
                         child: _buildCompactTextField(
                           _wholesalePriceController,
-                          'سعر الجملة',
+                          tr('سعر الجملة'),
                           isNumber: true,
                         ),
                       ),
@@ -352,8 +353,8 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                             controller: controller,
                             focusNode: focusNode,
                             decoration: InputDecoration(
-                              labelText: 'التصنيف *',
-                              hintText: 'ابحث عن التصنيف...',
+                              labelText: tr('التصنيف *'),
+                              hintText: tr('ابحث عن التصنيف...'),
                               prefixIcon: const Icon(PhosphorIconsBold.squaresFour, size: 18),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -381,17 +382,17 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                         child: DropdownButtonFormField<String>(
                           initialValue: _productType,
                           decoration: InputDecoration(
-                            labelText: 'نوع الصنف',
+                            labelText: tr('نوع الصنف'),
                             prefixIcon: const Icon(PhosphorIconsBold.factory, size: 18),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             isDense: true,
                           ),
-                          items: const [
-                            DropdownMenuItem(value: 'general', child: Text('عام', style: TextStyle(fontSize: 13))),
-                            DropdownMenuItem(value: 'raw_material', child: Text('خامة', style: TextStyle(fontSize: 13))),
-                            DropdownMenuItem(value: 'finished_goods', child: Text('منتج تام', style: TextStyle(fontSize: 13))),
-                            DropdownMenuItem(value: 'service', child: Text('خدمة', style: TextStyle(fontSize: 13))),
+                          items:  [
+                            DropdownMenuItem(value: 'general', child: Text(tr('عام'), style: const TextStyle(fontSize: 13))),
+                            DropdownMenuItem(value: 'raw_material', child: Text(tr('خامة'), style: const TextStyle(fontSize: 13))),
+                            DropdownMenuItem(value: 'finished_goods', child: Text(tr('منتج تام'), style: const TextStyle(fontSize: 13))),
+                            DropdownMenuItem(value: 'service', child: Text(tr('خدمة'), style: const TextStyle(fontSize: 13))),
                           ],
                           onChanged: (v) => setState(() => _productType = v ?? 'general'),
                         ),
@@ -411,14 +412,14 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                             child: DropdownButtonFormField<int?>(
                               initialValue: _selectedWarehouseId,
                               decoration: InputDecoration(
-                                labelText: 'المخزن الافتراضي',
+                                labelText: tr('المخزن الافتراضي'),
                                 prefixIcon: const Icon(PhosphorIconsBold.warehouse, size: 18),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                 isDense: true,
                               ),
                               items: [
-                                const DropdownMenuItem<int?>(value: null, child: Text('بدون', style: TextStyle(fontSize: 13))),
+                                 DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'), style: const TextStyle(fontSize: 13))),
                                 ...warehouses.map((w) => DropdownMenuItem<int?>(value: w.id, child: Text(w.name, style: const TextStyle(fontSize: 13)))),
                               ],
                               onChanged: (v) => setState(() => _selectedWarehouseId = v),
@@ -459,8 +460,8 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                             controller: controller,
                             focusNode: focusNode,
                             decoration: InputDecoration(
-                              labelText: 'المورد',
-                              hintText: 'ابحث عن المورد...',
+                              labelText: tr('المورد'),
+                              hintText: tr('ابحث عن المورد...'),
                               prefixIcon: const Icon(PhosphorIconsBold.truck, size: 18),
                               isDense: true,
                               suffixIcon: _selectedSupplierId != null
@@ -516,7 +517,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildSectionHeader(
-                                  'إدارة الصلاحية',
+                                  tr('إدارة الصلاحية'),
                                   PhosphorIconsBold.calendarBlank,
                                   AppColors.info,
                                 ),
@@ -532,9 +533,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                     children: [
                                       Row(
                                         children: [
-                                          const Text(
-                                            'تتبع الصلاحية',
-                                            style: TextStyle(fontSize: 12),
+                                           Text(
+                                            tr('تتبع الصلاحية'),
+                                            style: const TextStyle(fontSize: 12),
                                           ),
                                           const Spacer(),
                                           SizedBox(
@@ -557,14 +558,14 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                             Expanded(
                                               child: _buildMiniTextField(
                                                 _shelfDaysController,
-                                                'مدة الصلاحية (يوم)',
+                                                tr('مدة الصلاحية (يوم)'),
                                               ),
                                             ),
                                             const SizedBox(width: 8),
                                             Expanded(
                                               child: _buildMiniTextField(
                                                 _alertDaysController,
-                                                'تنبيه قبل (يوم)',
+                                                tr('تنبيه قبل (يوم)'),
                                               ),
                                             ),
                                           ],
@@ -581,7 +582,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
 
                           // Weight / Scale Section
                           _buildSectionHeader(
-                            'نوع البيع والميزان',
+                            tr('نوع البيع والميزان'),
                             PhosphorIconsBold.scales,
                             AppColors.warning,
                           ),
@@ -597,33 +598,33 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 SegmentedButton<String>(
-                                  segments: const [
+                                  segments:  [
                                     ButtonSegment(
                                       value: 'count',
                                       label: Text(
-                                        'عدد',
-                                        style: TextStyle(fontSize: 11),
+                                        tr('عدد'),
+                                        style: const TextStyle(fontSize: 11),
                                       ),
                                     ),
                                     ButtonSegment(
                                       value: 'weight',
                                       label: Text(
-                                        'ميزان',
-                                        style: TextStyle(fontSize: 11),
+                                        tr('ميزان'),
+                                        style: const TextStyle(fontSize: 11),
                                       ),
                                     ),
                                     ButtonSegment(
                                       value: 'weightByPiece',
                                       label: Text(
-                                        'ميزان بالحبة',
-                                        style: TextStyle(fontSize: 11),
+                                        tr('ميزان بالحبة'),
+                                        style: const TextStyle(fontSize: 11),
                                       ),
                                     ),
                                     ButtonSegment(
                                       value: 'display',
                                       label: Text(
-                                        'عرض',
-                                        style: TextStyle(fontSize: 11),
+                                        tr('عرض'),
+                                        style: const TextStyle(fontSize: 11),
                                       ),
                                     ),
                                   ],
@@ -645,14 +646,14 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                       Expanded(
                                         child: _buildMiniTextField(
                                           _pricePerUnitController,
-                                          'سعر الكيلو',
+                                          tr('سعر الكيلو'),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: _buildMiniTextField(
                                           _scalePluNumberController,
-                                          'رقم PLU',
+                                          tr('رقم PLU'),
                                         ),
                                       ),
                                     ],
@@ -683,9 +684,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                   color: AppColors.error,
                                 ),
                                 const SizedBox(width: 4),
-                                const Text(
-                                  'البيع بالسالب',
-                                  style: TextStyle(fontSize: 12),
+                                 Text(
+                                  tr('البيع بالسالب'),
+                                  style: const TextStyle(fontSize: 12),
                                 ),
                                 const Spacer(),
                                 SizedBox(
@@ -714,7 +715,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildSectionHeader(
-                            'صورة المنتج',
+                            tr('صورة المنتج'),
                             PhosphorIconsBold.image,
                             AppColors.success,
                           ),
@@ -766,9 +767,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                             PhosphorIconsBold.upload,
                                             size: 12,
                                           ),
-                                          label: const Text(
-                                            'اختيار',
-                                            style: TextStyle(fontSize: 11),
+                                          label:  Text(
+                                            tr('اختيار'),
+                                            style: const TextStyle(fontSize: 11),
                                           ),
                                           style: OutlinedButton.styleFrom(
                                             padding:
@@ -814,7 +815,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton(
             onPressed: _isLoading ? null : _saveProduct,
@@ -824,7 +825,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('حفظ'),
+                :  Text(tr('حفظ')),
           ),
         ],
       ),
@@ -848,7 +849,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
         _selectedCategoryId == null) {
       AppToast.show(
         context,
-        'يرجى ملء الحقول المطلوبة (الاسم، السعر، التصنيف)',
+        tr('يرجى ملء الحقول المطلوبة (الاسم، السعر، التصنيف)'),
         type: ToastType.error,
       );
       return;
@@ -866,7 +867,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
     if (enteredOpeningBalance > 0 && _selectedWarehouseId == null) {
       AppToast.show(
         context,
-        'اختر المخزن لتسجيل الرصيد الافتتاحي للصنف',
+        tr('اختر المخزن لتسجيل الرصيد الافتتاحي للصنف'),
         type: ToastType.error,
       );
       return;
@@ -890,7 +891,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
             if (mounted) {
               AppToast.show(
                 context,
-                'النسخة التجريبية: الحد الأقصى للأصناف (${AppConfig.maxDemoProducts} صنف). قم بتفعيل النسخة لرفع الحد.',
+                tr('النسخة التجريبية: الحد الأقصى للأصناف ({p0} صنف). قم بتفعيل النسخة لرفع الحد.', {'p0': AppConfig.maxDemoProducts}),
                 type: ToastType.warning,
               );
             }
@@ -919,7 +920,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
           if (mounted) {
             AppToast.show(
               context,
-              'هذا الكود مستخدم بالفعل لصنف آخر',
+              tr('هذا الكود مستخدم بالفعل لصنف آخر'),
               type: ToastType.error,
             );
           }
@@ -934,7 +935,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
           if (mounted) {
             AppToast.show(
               context,
-              'هذا الباركود مستخدم بالفعل',
+              tr('هذا الباركود مستخدم بالفعل'),
               type: ToastType.error,
             );
           }
@@ -1232,7 +1233,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
               'ADD-PROD', 'step4.7 createBOM FAILED (non-fatal): $e\n$st');
           if (mounted) {
             AppToast.show(context,
-                'تم إنشاء الصنف لكن فشل تسجيل قائمة الخامات: $e',
+                tr('تم إنشاء الصنف لكن فشل تسجيل قائمة الخامات: {e}', {'e': e}),
                 type: ToastType.warning);
           }
         }
@@ -1254,7 +1255,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
             warehouseId: _selectedWarehouseId!,
             quantity: openingBalance,
             type: 'opening_stock',
-            notes: 'رصيد افتتاحى — إضافة صنف',
+            notes: tr('رصيد افتتاحى — إضافة صنف'),
           );
           // Fire-and-forget server sync (client mode only; no-op otherwise).
           unawaited(ClientWriteInterceptor.adjustStock(
@@ -1262,7 +1263,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
             warehouseId: _selectedWarehouseId!,
             quantity: openingBalance,
             type: 'opening_stock',
-            notes: 'رصيد افتتاحى — إضافة صنف',
+            notes: tr('رصيد افتتاحى — إضافة صنف'),
           ).catchError((e) {
             debugPrint('[AddProductDialog] server adjustStock failed (queued): $e');
             return false;
@@ -1273,7 +1274,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
           await DiagnosticLogger.log(
               'ADD-PROD', 'step4.5 opening_stock FAILED (non-fatal): $e\n$st');
           if (mounted) {
-            AppToast.show(context, 'تم إنشاء الصنف لكن فشل تسجيل الرصيد الافتتاحى: $e',
+            AppToast.show(context, tr('تم إنشاء الصنف لكن فشل تسجيل الرصيد الافتتاحى: {e}', {'e': e}),
                 type: ToastType.warning);
           }
         }
@@ -1285,12 +1286,12 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
         final activityLogRepo = ref.read(activityLogRepositoryProvider);
         await activityLogRepo.logActivity(
           userId: user?.id,
-          userName: user?.displayName ?? 'مجهول',
+          userName: user?.displayName ?? tr('مجهول'),
           action: 'add_product',
           entityType: 'product',
           entityId: productId,
           description:
-              'إضافة منتج: ${_nameController.text} بسعر ${salePrice.toStringAsFixed(2)}',
+              tr('إضافة منتج: {p0} بسعر {p1}', {'p0': _nameController.text, 'p1': salePrice.toStringAsFixed(2)}),
         );
         await DiagnosticLogger.log('ADD-PROD', 'step5 logActivity OK');
       } catch (e, st) {
@@ -1306,7 +1307,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
       );
 
       if (mounted) {
-        AppToast.show(context, 'تم إضافة الصنف بنجاح', type: ToastType.success);
+        AppToast.show(context, tr('تم إضافة الصنف بنجاح'), type: ToastType.success);
 
         widget.onProductAdded?.call(result);
         Navigator.pop(context, result);
@@ -1314,7 +1315,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
     } catch (e, st) {
       await DiagnosticLogger.log('ADD-PROD', 'OUTER CATCH: $e\nSTACK:\n$st');
       if (mounted) {
-        AppToast.show(context, 'خطأ في حفظ الصنف: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في حفظ الصنف: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -1353,7 +1354,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
               if (_showPackagingUnits && _unitRows.isEmpty) {
                 // Auto-add first row as base unit (قطعة)
                 _unitRows.add(_ProductUnitRow(
-                  unitName: 'قطعة',
+                  unitName: tr('قطعة'),
                   factor: '1',
                 ));
               }
@@ -1370,13 +1371,13 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
               children: [
                 const Icon(PhosphorIconsBold.package, size: 18, color: AppColors.info),
                 const SizedBox(width: 8),
-                const Text(
-                  'وحدات التعبئة',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.info),
+                 Text(
+                  tr('وحدات التعبئة'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.info),
                 ),
-                const Text(
-                  '  (قطعة → علبة → كرتونة → صندوق)',
-                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                 Text(
+                  tr('  (قطعة → علبة → كرتونة → صندوق)'),
+                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
                 ),
                 const Spacer(),
                 Icon(
@@ -1400,16 +1401,16 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
             child: Column(
               children: [
                 // Column headers
-                const Row(
+                 Row(
                   children: [
-                    SizedBox(width: 40, child: Text('افتراضي', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
-                    SizedBox(width: 8),
-                    Expanded(flex: 2, child: Text('اسم الوحدة', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
-                    SizedBox(width: 8),
-                    Expanded(flex: 2, child: Text('الباركود', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
-                    SizedBox(width: 8),
-                    Expanded(child: Text('عامل التحويل', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
-                    SizedBox(width: 30),
+                    SizedBox(width: 40, child: Text(tr('افتراضي'), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
+                    const SizedBox(width: 8),
+                    Expanded(flex: 2, child: Text(tr('اسم الوحدة'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
+                    const SizedBox(width: 8),
+                    Expanded(flex: 2, child: Text(tr('الباركود'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(tr('عامل التحويل'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
+                    const SizedBox(width: 30),
                   ],
                 ),
                 const Divider(height: 12),
@@ -1446,7 +1447,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
                                     isDense: true,
-                                    hintText: 'الوحدة ${index + 1}',
+                                    hintText: tr('الوحدة {p0}', {'p0': index + 1}),
                                     hintStyle: const TextStyle(fontSize: 12),
                                   ),
                                   items: units.map((u) => DropdownMenuItem(
@@ -1472,7 +1473,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
                                 isDense: true,
-                                hintText: 'باركود ${index + 1}',
+                                hintText: tr('باركود {p0}', {'p0': index + 1}),
                                 hintStyle: const TextStyle(fontSize: 12),
                               ),
                               style: const TextStyle(fontSize: 12),
@@ -1492,7 +1493,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
                                 isDense: true,
-                                hintText: 'مثال: 12',
+                                hintText: tr('مثال: 12'),
                                 hintStyle: const TextStyle(fontSize: 12),
                               ),
                               style: const TextStyle(fontSize: 12),
@@ -1515,7 +1516,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                 border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(6)),
                                 isDense: true,
-                                hintText: 'سعر الوحدة',
+                                hintText: tr('سعر الوحدة'),
                                 hintStyle: const TextStyle(fontSize: 11),
                               ),
                               style: const TextStyle(fontSize: 12),
@@ -1555,7 +1556,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                         });
                       },
                       icon: const Icon(PhosphorIconsBold.plus, size: 14),
-                      label: const Text('إضافة وحدة', style: TextStyle(fontSize: 12)),
+                      label:  Text(tr('إضافة وحدة'), style: const TextStyle(fontSize: 12)),
                       style: TextButton.styleFrom(
                         visualDensity: VisualDensity.compact,
                         foregroundColor: AppColors.info,
@@ -1594,9 +1595,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'أسعار المخازن',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                   Text(
+                    tr('أسعار المخازن'),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                   const Spacer(),
                   if (_warehousePriceRows.isNotEmpty)
@@ -1651,9 +1652,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                         });
                       },
                       icon: const Icon(PhosphorIconsBold.plus, size: 14),
-                      label: const Text(
-                        'إضافة سعر مخزن',
-                        style: TextStyle(fontSize: 12),
+                      label:  Text(
+                        tr('إضافة سعر مخزن'),
+                        style: const TextStyle(fontSize: 12),
                       ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1703,7 +1704,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                         child: DropdownButtonFormField<int?>(
                           initialValue: row.warehouseId,
                           decoration: InputDecoration(
-                            labelText: 'المخزن',
+                            labelText: tr('المخزن'),
                             labelStyle: const TextStyle(fontSize: 11),
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 6),
@@ -1742,17 +1743,17 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
               children: [
                 Expanded(
                   child: _buildMiniTextField(
-                      row.salePriceController, 'سعر البيع'),
+                      row.salePriceController, tr('سعر البيع')),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: _buildMiniTextField(
-                      row.costPriceController, 'التكلفة'),
+                      row.costPriceController, tr('التكلفة')),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: _buildMiniTextField(
-                      row.wholesalePriceController, 'سعر الجملة'),
+                      row.wholesalePriceController, tr('سعر الجملة')),
                 ),
               ],
             ),
@@ -1792,16 +1793,16 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                 const Icon(PhosphorIconsBold.factory,
                     size: 18, color: AppColors.success),
                 const SizedBox(width: 8),
-                const Text(
-                  'المواد التجميعية (BOM)',
-                  style: TextStyle(
+                 Text(
+                  tr('المواد التجميعية (BOM)'),
+                  style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                       color: AppColors.success),
                 ),
-                const Text(
-                  '  (يتم خصم الخامات تلقائيًا عند البيع)',
-                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                 Text(
+                  tr('  (يتم خصم الخامات تلقائيًا عند البيع)'),
+                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
                 ),
                 const Spacer(),
                 Icon(
@@ -1826,24 +1827,24 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
             ),
             child: Column(
               children: [
-                const Row(
+                 Row(
                   children: [
                     Expanded(
                         flex: 3,
-                        child: Text('الخامة',
-                            style: TextStyle(
+                        child: Text(tr('الخامة'),
+                            style: const TextStyle(
                                 fontSize: 11, fontWeight: FontWeight.bold))),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Expanded(
-                        child: Text('الكمية',
-                            style: TextStyle(
+                        child: Text(tr('الكمية'),
+                            style: const TextStyle(
                                 fontSize: 11, fontWeight: FontWeight.bold))),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Expanded(
-                        child: Text('الفاقد %',
-                            style: TextStyle(
+                        child: Text(tr('الفاقد %'),
+                            style: const TextStyle(
                                 fontSize: 11, fontWeight: FontWeight.bold))),
-                    SizedBox(width: 30),
+                    const SizedBox(width: 30),
                   ],
                 ),
                 const Divider(height: 12),
@@ -1882,12 +1883,12 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                       controller: controller,
                                       focusNode: focusNode,
                                       style: const TextStyle(fontSize: 12),
-                                      decoration: const InputDecoration(
-                                        hintText: 'ابحث عن خامة...',
-                                        hintStyle: TextStyle(fontSize: 11),
-                                        contentPadding: EdgeInsets.symmetric(
+                                      decoration:  InputDecoration(
+                                        hintText: tr('ابحث عن خامة...'),
+                                        hintStyle: const TextStyle(fontSize: 11),
+                                        contentPadding: const EdgeInsets.symmetric(
                                             horizontal: 8, vertical: 6),
-                                        border: OutlineInputBorder(),
+                                        border: const OutlineInputBorder(),
                                         isDense: true,
                                       ),
                                     ),
@@ -1964,8 +1965,8 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                       });
                     },
                     icon: const Icon(PhosphorIconsBold.plus, size: 14),
-                    label: const Text('إضافة خامة',
-                        style: TextStyle(fontSize: 12)),
+                    label:  Text(tr('إضافة خامة'),
+                        style: const TextStyle(fontSize: 12)),
                   ),
                 ),
               ],

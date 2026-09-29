@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/foundation.dart';
 import '../../../core/constants/app_constants.dart';
@@ -300,13 +301,13 @@ class ScaleBarcodeHandler {
           return null;
         }
         quantity = totalPrice / product.salePrice;
-        displayText = 'سعر ميزان: ${totalPrice.toStringAsFixed(AppConstants.decimalPlaces)}';
+        displayText = tr('سعر ميزان: {p0}', {'p0': totalPrice.toStringAsFixed(AppConstants.decimalPlaces)});
         debugPrint(
           '[ScaleBarcode] ✓ PRICE mode: totalPrice=$totalPrice qty=$quantity',
         );
       } else {
         quantity = value / divider;
-        displayText = 'وزن ميزان: ${quantity.toStringAsFixed(3)} kg';
+        displayText = tr('وزن ميزان: {p0} kg', {'p0': quantity.toStringAsFixed(3)});
         debugPrint(
           '[ScaleBarcode] ✓ WEIGHT mode: weight=${quantity.toStringAsFixed(3)} kg',
         );

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // «الشيكات والأوراق التجارية» — نسخةُ PicPos على «PicPos Cheques.dc.html».
 //
 // ملفُّ تصميمٍ **مستقلٌّ** (`MODULES = []`) بخمس تبويبات: الواردة · الصادرة ·
@@ -48,12 +49,12 @@ import '../../../data/providers/screen_navigation_provider.dart';
 ///
 /// كلُّها قواعدُ محاسبةٍ تشرح سلوكاً قد يبدو خطأً: «الشيك الوارد لا يقلّل ذمة
 /// العميل إلا عند التحصيل» تفسّر لماذا لم ينقص الرصيدُ بعد استلام الشيك.
-const _tabNotes = [
-  'الشيك الوارد لا يقلّل ذمة العميل إلا عند التحصيل',
-  'الشيك الصادر يُقيَّد كالتزام حتى يُخصم من البنك',
-  'الاستحقاق يُحسب من dueDate لا من تاريخ الإصدار',
-  'الارتجاع يعيد الذمة ويسجّل مصروف عمولة',
-  'كل انتقال حالة يُسجَّل بمن نفّذه — لا يُحذف',
+List<String> get _tabNotes => [
+  tr('الشيك الوارد لا يقلّل ذمة العميل إلا عند التحصيل'),
+  tr('الشيك الصادر يُقيَّد كالتزام حتى يُخصم من البنك'),
+  tr('الاستحقاق يُحسب من dueDate لا من تاريخ الإصدار'),
+  tr('الارتجاع يعيد الذمة ويسجّل مصروف عمولة'),
+  tr('كل انتقال حالة يُسجَّل بمن نفّذه — لا يُحذف'),
 ];
 
 /// الحالاتُ كما يكتبها الكودُ — لا كما يسمّيها التصميم.
@@ -66,16 +67,16 @@ const _tabNotes = [
 ///
 /// 🔴 وإسقاطُ الطويلة كان يُظهر السلسلةَ الإنجليزيّةَ خامّةً في رقاقة الحالة،
 /// ويُسقط الورقةَ من شريحة «مودعة» — أيْ أنّ الإيداعَ ينجح والورقةُ تختفي.
-const _statusLabels = <String, (String, Color)>{
-  'pending': ('بالخزنة', AppColors.warning),
-  'in_portfolio': ('بالحافظة', Color(0xFF6366F1)),
-  'deposited': ('مودع', Color(0xFF4A80E8)),
-  'deposited_for_collection': ('برسم التحصيل', Color(0xFF4A80E8)),
-  'partial_collected': ('محصَّل جزئيّاً', Color(0xFF14B8A6)),
-  'cashed': ('محصَّل', AppColors.success),
-  'bounced': ('مرتجع', AppColors.error),
-  'endorsed': ('مظهَّر', Color(0xFF8B5CF6)),
-  'cancelled': ('ملغى', AppColors.textMuted),
+Map<String, (String, Color)> get _statusLabels => <String, (String, Color)>{
+  'pending': (tr('بالخزنة'), AppColors.warning),
+  'in_portfolio': (tr('بالحافظة'), const Color(0xFF6366F1)),
+  'deposited': (tr('مودع'), const Color(0xFF4A80E8)),
+  'deposited_for_collection': (tr('برسم التحصيل'), const Color(0xFF4A80E8)),
+  'partial_collected': (tr('محصَّل جزئيّاً'), const Color(0xFF14B8A6)),
+  'cashed': (tr('محصَّل'), AppColors.success),
+  'bounced': (tr('مرتجع'), AppColors.error),
+  'endorsed': (tr('مظهَّر'), const Color(0xFF8B5CF6)),
+  'cancelled': (tr('ملغى'), AppColors.textMuted),
 };
 
 /// الحالتان اللتان تعنيان «عند البنك تحت التحصيل».
@@ -91,10 +92,10 @@ bool _isDeposited(String s) =>
 /// `updatePaperStatus(id,'deposited')` — وهو ما يفعله زرُّ «إعادة إيداع».
 bool _canDeposit(String s) => s == 'pending' || s == 'in_portfolio';
 
-const _typeLabels = <String, String>{
-  'cheque': 'شيك',
-  'promissory_note': 'كمبيالة',
-  'bill_of_exchange': 'سند سحب',
+Map<String, String> get _typeLabels => <String, String>{
+  'cheque': tr('شيك'),
+  'promissory_note': tr('كمبيالة'),
+  'bill_of_exchange': tr('سند سحب'),
 };
 
 final _papersProvider =
@@ -159,7 +160,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
       _query.isEmpty || (s ?? '').toLowerCase().contains(_query);
 
   String _partyName(List<Party> parties, int id) =>
-      parties.where((p) => p.id == id).firstOrNull?.name ?? 'طرف #$id';
+      parties.where((p) => p.id == id).firstOrNull?.name ?? tr('طرف #{id}', {'id': id});
 
   static String _d(DateTime x) =>
       '${x.year}-${x.month.toString().padLeft(2, '0')}-${x.day.toString().padLeft(2, '0')}';
@@ -194,10 +195,10 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
       );
       if (!mounted) return;
       ref.invalidate(_papersProvider);
-      _snack('أُنشئت الورقة');
+      _snack(tr('أُنشئت الورقة'));
     } catch (e) {
       if (!mounted) return;
-      _snack('تعذّر الإنشاء: $e');
+      _snack(tr('تعذّر الإنشاء: {e}', {'e': e}));
     }
   }
 
@@ -250,7 +251,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
       bankSafeId: form.bankSafeId,
       changedBy: userId,
       // رقمُ القسيمة يخصّ الدفعةَ كلَّها فيُكتَب على كلّ ورقةٍ فيها.
-      notes: voucher.isEmpty ? null : 'إيداع برسم التحصيل — قسيمة $voucher',
+      notes: voucher.isEmpty ? null : tr('إيداع برسم التحصيل — قسيمة {voucher}', {'voucher': voucher}),
     );
     if (!mounted) return;
 
@@ -259,7 +260,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
     //    «تمّ الإيداع» فيظنّ المشغّلُ القسيمةَ كاملةً وهي ناقصة.
     _snack(
       result.allSucceeded
-          ? 'أُودعت ${result.count} ورقة'
+          ? tr('أُودعت {p0} ورقة', {'p0': result.count})
           : 'أُودعت ${result.count} من ${form.paperIds.length} — '
               'تعذّر: ${result.failed.keys.join('، ')}',
     );
@@ -278,7 +279,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
     return PicPosScreenScaffold(
       // الاسمُ من الثابت المشترك — راجع [chequesScreenLabel] لِمَ موضعٌ واحد.
       title: chequesScreenLabel,
-      subtitle: 'الوارد والصادر والاستحقاق والتجيير والارتجاع',
+      subtitle: tr('الوارد والصادر والاستحقاق والتجيير والارتجاع'),
       icon: PhosphorIconsBold.note,
       // ⚠️ **رأسُ التصميم فعلان، وكان الفوركُ بلا أيٍّ منهما.** فالشاشةُ
       //    تعرض الأوراقَ ولا تُنشئ ورقةً — والمستخدمُ يرجع إلى الشاشة
@@ -293,7 +294,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
           child: OutlinedButton.icon(
             onPressed: () => _depositBatch(papers, parties),
             icon: const Icon(PhosphorIconsBold.vault, size: 15),
-            label: const Text('إيداع دفعة شيكات'),
+            label:  Text(tr('إيداع دفعة شيكات')),
           ),
         ),
         PermissionGuard(
@@ -301,7 +302,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
           child: FilledButton.icon(
             onPressed: () => _createPaper(parties),
             icon: const Icon(PhosphorIconsBold.plus, size: 15),
-            label: const Text('ورقة جديدة'),
+            label:  Text(tr('ورقة جديدة')),
           ),
         ),
       ],
@@ -310,7 +311,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
         onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'ابحث برقم الشيك أو الطرف...',
+          hintText: tr('ابحث برقم الشيك أو الطرف...'),
           prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
           suffixIcon: _query.isEmpty
               ? null
@@ -331,27 +332,27 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
             controller: _tabs,
             tabs: [
               (
-                label: 'الواردة',
+                label: tr('الواردة'),
                 icon: PhosphorIconsBold.arrowCircleDown,
                 badge: '${incoming.length}'
               ),
               (
-                label: 'الصادرة',
+                label: tr('الصادرة'),
                 icon: PhosphorIconsBold.arrowCircleUp,
                 badge: '${outgoing.length}'
               ),
               (
-                label: 'جدول الاستحقاق',
+                label: tr('جدول الاستحقاق'),
                 icon: PhosphorIconsBold.calendarCheck,
                 badge: null
               ),
               (
-                label: 'المرتجعة',
+                label: tr('المرتجعة'),
                 icon: PhosphorIconsBold.warningOctagon,
                 badge: '${bounced.length}'
               ),
               (
-                label: 'سجل الحالات',
+                label: tr('سجل الحالات'),
                 icon: PhosphorIconsBold.clockCounterClockwise,
                 badge: null
               ),
@@ -372,7 +373,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
                   style: const ButtonStyle(visualDensity: VisualDensity.compact),
                   segments: [
                     ButtonSegment(
-                        value: 'all', label: Text('الكل (${papers.length})')),
+                        value: 'all', label: Text(tr('الكل ({p0})', {'p0': papers.length}))),
                     for (final e in _typeLabels.entries)
                       ButtonSegment(
                         value: e.key,
@@ -398,10 +399,10 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
       body: TabBarView(
         controller: _tabs,
         children: [
-          _scroll(_directionTab(context, incoming, parties, 0, 'الواردة',
-              'من العملاء — تُودع بالبنك ثمّ تُحصَّل')),
-          _scroll(_directionTab(context, outgoing, parties, 1, 'الصادرة',
-              'للموردين — التزامٌ حتّى يُخصم من البنك')),
+          _scroll(_directionTab(context, incoming, parties, 0, tr('الواردة'),
+              tr('من العملاء — تُودع بالبنك ثمّ تُحصَّل'))),
+          _scroll(_directionTab(context, outgoing, parties, 1, tr('الصادرة'),
+              tr('للموردين — التزامٌ حتّى يُخصم من البنك'))),
           _scroll(_dueTab(context, papers, parties)),
           _scroll(_bouncedTab(context, bounced, parties)),
           _scroll(_historyTab(context, papers, parties)),
@@ -417,27 +418,27 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
 
   /// أعمدةُ الجدول **مع** خانةِ الاختيار — والعرضُ ضيّقٌ مقصود: زرُّ راديو
   /// لا نصّ. وطولُ [PicPosDataTable.totals] يجب أن يطابقها خانةً بخانة.
-  List<PicPosTableColumn> get _selectableCols => const [
-        PicPosTableColumn('', flex: 0.35),
-        PicPosTableColumn('رقم الورقة', flex: 1.3),
-        PicPosTableColumn('الطرف', flex: 1.7),
-        PicPosTableColumn('البنك', flex: 1.4),
-        PicPosTableColumn('الإصدار', flex: 1.2),
-        PicPosTableColumn('الاستحقاق', flex: 1.2),
-        PicPosTableColumn('المبلغ', flex: 1.2, align: PicPosCellAlign.end),
-        PicPosTableColumn('الحالة', flex: 1.2),
-        PicPosTableColumn('إجراء', flex: 1.3),
+  List<PicPosTableColumn> get _selectableCols =>  [
+        const PicPosTableColumn('', flex: 0.35),
+        PicPosTableColumn(tr('رقم الورقة'), flex: 1.3),
+        PicPosTableColumn(tr('الطرف'), flex: 1.7),
+        PicPosTableColumn(tr('البنك'), flex: 1.4),
+        PicPosTableColumn(tr('الإصدار'), flex: 1.2),
+        PicPosTableColumn(tr('الاستحقاق'), flex: 1.2),
+        PicPosTableColumn(tr('المبلغ'), flex: 1.2, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('الحالة'), flex: 1.2),
+        PicPosTableColumn(tr('إجراء'), flex: 1.3),
       ];
 
-  List<PicPosTableColumn> get _paperCols => const [
-        PicPosTableColumn('رقم الورقة', flex: 1.3),
-        PicPosTableColumn('الطرف', flex: 1.7),
-        PicPosTableColumn('البنك', flex: 1.4),
-        PicPosTableColumn('الإصدار', flex: 1.2),
-        PicPosTableColumn('الاستحقاق', flex: 1.2),
-        PicPosTableColumn('المبلغ', flex: 1.2, align: PicPosCellAlign.end),
-        PicPosTableColumn('الحالة', flex: 1.2),
-        PicPosTableColumn('إجراء', flex: 1.3),
+  List<PicPosTableColumn> get _paperCols =>  [
+        PicPosTableColumn(tr('رقم الورقة'), flex: 1.3),
+        PicPosTableColumn(tr('الطرف'), flex: 1.7),
+        PicPosTableColumn(tr('البنك'), flex: 1.4),
+        PicPosTableColumn(tr('الإصدار'), flex: 1.2),
+        PicPosTableColumn(tr('الاستحقاق'), flex: 1.2),
+        PicPosTableColumn(tr('المبلغ'), flex: 1.2, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('الحالة'), flex: 1.2),
+        PicPosTableColumn(tr('إجراء'), flex: 1.3),
       ];
 
   /// صفوفُ الجدول **باختيارٍ مفرد**.
@@ -528,7 +529,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
         false;
 
     PicPosCell view() => PicPosButtonCell(
-          'عرض',
+          tr('عرض'),
           icon: PhosphorIconsBold.eye,
           tint: AppColors.textMuted,
           onPressed: () => _showHistoryOf(p.id),
@@ -539,7 +540,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
 
     if (p.status == 'bounced') {
       return PicPosButtonCell(
-        'إعادة إيداع',
+        tr('إعادة إيداع'),
         icon: PhosphorIconsBold.arrowClockwise,
         tint: AppColors.warning,
         onPressed: () => _redeposit(p),
@@ -548,7 +549,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
 
     if (_isDeposited(p.status) || p.status == 'partial_collected') {
       return PicPosButtonCell(
-        p.direction == 'issued' ? 'تسجيل خصم' : 'تحصيل',
+        p.direction == 'issued' ? tr('تسجيل خصم') : tr('تحصيل'),
         icon: p.direction == 'issued'
             ? PhosphorIconsBold.bank
             : PhosphorIconsBold.checkCircle,
@@ -561,7 +562,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
       // الصادرةُ لا تُودَع — تُخصَم. راجع تعليقَ الرأس.
       if (p.direction == 'issued') {
         return PicPosButtonCell(
-          'تسجيل خصم',
+          tr('تسجيل خصم'),
           icon: PhosphorIconsBold.bank,
           tint: AppColors.primary,
           onPressed: () => _markCashed(p),
@@ -571,14 +572,14 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
       // فالإيداعُ البنكيُّ لورقةٍ لا بنكَ لها بلا معنى.
       if (p.type == 'promissory_note') {
         return PicPosButtonCell(
-          'تجيير',
+          tr('تجيير'),
           icon: PhosphorIconsBold.arrowBendUpLeft,
           tint: const Color(0xFF8B5CF6),
           onPressed: () => _endorse(p, parties),
         );
       }
       return PicPosButtonCell(
-        'إيداع',
+        tr('إيداع'),
         icon: PhosphorIconsBold.vault,
         tint: AppColors.primary,
         onPressed: () => _depositBatch(
@@ -617,7 +618,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
       _snack(done);
     } catch (e) {
       if (!mounted) return;
-      _snack('تعذّر التنفيذ: $e');
+      _snack(tr('تعذّر التنفيذ: {e}', {'e': e}));
     }
   }
 
@@ -627,7 +628,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
           paperId: p.id,
           changedBy: _userId,
         ),
-        'أُعيد إيداعُ ${p.paperNumber}',
+        tr('أُعيد إيداعُ {p0}', {'p0': p.paperNumber}),
       );
 
   Future<void> _markCashed(CommercialPaperData p) => _write(
@@ -637,8 +638,8 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
           changedBy: _userId,
         ),
         p.direction == 'issued'
-            ? 'سُجّل خصمُ ${p.paperNumber}'
-            : 'حُصّلت ${p.paperNumber}',
+            ? tr('سُجّل خصمُ {p0}', {'p0': p.paperNumber})
+            : tr('حُصّلت {p0}', {'p0': p.paperNumber}),
       );
 
   Future<void> _endorse(CommercialPaperData p, List<Party> parties) async {
@@ -667,7 +668,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
         changedBy: _userId,
         notes: form.notes.isEmpty ? null : form.notes,
       ),
-      'جُيّرت ${p.paperNumber}',
+      tr('جُيّرت {p0}', {'p0': p.paperNumber}),
     );
   }
 
@@ -686,11 +687,11 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
   ) {
     // شرائحُ الترشيح — وعدّادُ كلٍّ منها **محسوبٌ** من نفس القائمة.
     final chipDefs = <(String, bool Function(CommercialPaperData))>[
-      ('الكل', (p) => true),
-      ('بالخزنة', (p) => p.status == 'pending'),
-      ('مودعة', (p) => _isDeposited(p.status)),
-      ('محصَّلة', (p) => p.status == 'cashed'),
-      ('مرتجعة', (p) => p.status == 'bounced'),
+      (tr('الكل'), (p) => true),
+      (tr('بالخزنة'), (p) => p.status == 'pending'),
+      (tr('مودعة'), (p) => _isDeposited(p.status)),
+      (tr('محصَّلة'), (p) => p.status == 'cashed'),
+      (tr('مرتجعة'), (p) => p.status == 'bounced'),
     ];
     final pick = _chip[tabIndex] ?? 0;
     final shown = papers
@@ -722,7 +723,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
           items: [
             PicPosHubKpi(
               icon: PhosphorIconsBold.note,
-              label: 'عددُ الأوراق',
+              label: tr('عددُ الأوراق'),
               value: '${papers.length}',
               tint: AppColors.primary,
               vs: '${papers.where((p) => p.status == 'pending').length} '
@@ -730,13 +731,13 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.currencyCircleDollar,
-              label: 'قيمتها',
+              label: tr('قيمتها'),
               value: _sum(papers).toStringAsFixed(0),
               tint: AppColors.success,
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.vault,
-              label: 'مودعة بالبنك',
+              label: tr('مودعة بالبنك'),
               value:
                   '${papers.where((p) => _isDeposited(p.status)).length}',
               tint: const Color(0xFF4A80E8),
@@ -745,7 +746,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.hourglass,
-              label: 'تستحقّ خلال أسبوع',
+              label: tr('تستحقّ خلال أسبوع'),
               value: '${dueSoon.length}',
               tint: AppColors.warning,
               up: false,
@@ -757,7 +758,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
         PicPosDataTable(
           title: title,
           subtitle: subtitle,
-          emptyLabel: 'لا أوراقَ مطابقة',
+          emptyLabel: tr('لا أوراقَ مطابقة'),
           columns: _selectableCols,
           chips: [
             for (var i = 0; i < chipDefs.length; i++)
@@ -776,7 +777,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
           //    خانتِها هنا يُزيح الإجماليَّ عموداً كاملاً تحت «الاستحقاق».
           totals: [
             '',
-            '${shown.length} ورقة',
+            tr('{p0} ورقة', {'p0': shown.length}),
             '',
             '',
             '',
@@ -838,14 +839,14 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
           items: [
             PicPosHubKpi(
               icon: PhosphorIconsBold.calendarCheck,
-              label: 'أوراقٌ مفتوحة',
+              label: tr('أوراقٌ مفتوحة'),
               value: '${open.length}',
               tint: AppColors.primary,
               vs: _sum(open).toStringAsFixed(0),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.warningOctagon,
-              label: 'تجاوزت الاستحقاق',
+              label: tr('تجاوزت الاستحقاق'),
               value: '${overdue.length}',
               tint: AppColors.error,
               up: false,
@@ -855,17 +856,17 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
         ),
         const SizedBox(height: 16),
         PicPosDataTable(
-          title: 'جدول الاستحقاق',
-          subtitle: 'الاستحقاق يُحسب من dueDate لا من تاريخ الإصدار',
-          emptyLabel: 'لا أوراقَ مفتوحة',
-          columns: const [
-            PicPosTableColumn('رقم الورقة', flex: 1.3),
-            PicPosTableColumn('الطرف', flex: 1.7),
-            PicPosTableColumn('الاتّجاه', flex: 1.1),
-            PicPosTableColumn('الاستحقاق', flex: 1.3),
-            PicPosTableColumn('المبلغ', flex: 1.2,
+          title: tr('جدول الاستحقاق'),
+          subtitle: tr('الاستحقاق يُحسب من dueDate لا من تاريخ الإصدار'),
+          emptyLabel: tr('لا أوراقَ مفتوحة'),
+          columns:  [
+            PicPosTableColumn(tr('رقم الورقة'), flex: 1.3),
+            PicPosTableColumn(tr('الطرف'), flex: 1.7),
+            PicPosTableColumn(tr('الاتّجاه'), flex: 1.1),
+            PicPosTableColumn(tr('الاستحقاق'), flex: 1.3),
+            PicPosTableColumn(tr('المبلغ'), flex: 1.2,
                 align: PicPosCellAlign.end),
-            PicPosTableColumn('الحالة', flex: 1.2),
+            PicPosTableColumn(tr('الحالة'), flex: 1.2),
           ],
           rows: [
             for (final p in open)
@@ -881,7 +882,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
                   ),
                   PicPosTextCell(_partyName(parties, p.partyId)),
                   PicPosPillCell(
-                    p.direction == 'received' ? 'وارد' : 'صادر',
+                    p.direction == 'received' ? tr('وارد') : tr('صادر'),
                     p.direction == 'received'
                         ? AppColors.success
                         : const Color(0xFF8B5CF6),
@@ -895,7 +896,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
                     //    يعدّ الاثنين، ويجعل المشغّلَ يظنّ العنوانَ صفّاً.
                     // نفسُ حدِّ بطاقة المؤشّر أعلاه — `today` لا `now`. ولو
                     // افترقا لقالت البطاقةُ عدداً والجدولُ تحتها آخر.
-                    sub: p.dueDate.isBefore(today) ? 'متأخّرة عن موعدها' : null,
+                    sub: p.dueDate.isBefore(today) ? tr('متأخّرة عن موعدها') : null,
                   ),
                   PicPosTextCell(p.amount.toStringAsFixed(0)),
                   PicPosPillCell(
@@ -906,7 +907,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
               ),
           ],
           totals: [
-            '${open.length} ورقة',
+            tr('{p0} ورقة', {'p0': open.length}),
             '',
             '',
             '',
@@ -937,7 +938,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
           items: [
             PicPosHubKpi(
               icon: PhosphorIconsBold.warningOctagon,
-              label: 'أوراقٌ مرتجعة',
+              label: tr('أوراقٌ مرتجعة'),
               value: '${bounced.length}',
               tint: AppColors.error,
               up: false,
@@ -947,9 +948,9 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
         ),
         const SizedBox(height: 16),
         PicPosDataTable(
-          title: 'الأوراق المرتجعة',
-          subtitle: 'الارتجاع يعيد الذمة ويسجّل مصروف عمولة',
-          emptyLabel: 'لا أوراقَ مرتجعة',
+          title: tr('الأوراق المرتجعة'),
+          subtitle: tr('الارتجاع يعيد الذمة ويسجّل مصروف عمولة'),
+          emptyLabel: tr('لا أوراقَ مرتجعة'),
           columns: _paperCols,
           rows: _paperRows(shown, parties),
         ),
@@ -965,7 +966,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
     List<Party> parties,
   ) {
     if (papers.isEmpty) {
-      return _empty(context, 'لا أوراقَ بعد — سجلُّ الحالات يظهر بعد أوّل ورقة');
+      return _empty(context, tr('لا أوراقَ بعد — سجلُّ الحالات يظهر بعد أوّل ورقة'));
     }
     final id = _historyPaperId ?? papers.first.id;
     final history = ref.watch(_historyProvider(id)).value ?? const [];
@@ -978,10 +979,10 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
         // ⚠️ منتقي الورقة **ليس زينة**: `watchPaperHistory` تقرأ ورقةً واحدة،
         //    ولا واجهةَ تقرأ السجلَّ كلَّه. فالمشغّلُ يختار.
         PicPosBlockHeader(
-          title: 'سجل الحالات',
+          title: tr('سجل الحالات'),
           subtitle: paper == null
               ? null
-              : 'الورقةُ المعروضة: ${paper.paperNumber}',
+              : tr('الورقةُ المعروضة: {p0}', {'p0': paper.paperNumber}),
         ),
         Wrap(
           spacing: 8,
@@ -997,14 +998,14 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
         ),
         const SizedBox(height: 14),
         PicPosDataTable(
-          title: 'انتقالات الحالة',
-          subtitle: 'كل انتقال حالة يُسجَّل بمن نفّذه — لا يُحذف',
-          emptyLabel: 'لا انتقالاتٍ مسجَّلةٍ لهذه الورقة',
-          columns: const [
-            PicPosTableColumn('من', flex: 1.2),
-            PicPosTableColumn('إلى', flex: 1.2),
-            PicPosTableColumn('التاريخ', flex: 1.4),
-            PicPosTableColumn('ملاحظات', flex: 2.2),
+          title: tr('انتقالات الحالة'),
+          subtitle: tr('كل انتقال حالة يُسجَّل بمن نفّذه — لا يُحذف'),
+          emptyLabel: tr('لا انتقالاتٍ مسجَّلةٍ لهذه الورقة'),
+          columns:  [
+            PicPosTableColumn(tr('من'), flex: 1.2),
+            PicPosTableColumn(tr('إلى'), flex: 1.2),
+            PicPosTableColumn(tr('التاريخ'), flex: 1.4),
+            PicPosTableColumn(tr('ملاحظات'), flex: 2.2),
           ],
           rows: [
             for (final h in history)
@@ -1088,7 +1089,7 @@ class _SelectionBar extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          Text('الشيك',
+          Text(tr('الشيك'),
               style: text.labelSmall?.copyWith(color: AppColors.textMuted)),
           const SizedBox(width: 8),
           Text(paper.paperNumber,
@@ -1097,7 +1098,7 @@ class _SelectionBar extends ConsumerWidget {
           Container(width: 1, height: 22, color: context.picposHairline),
           const SizedBox(width: 18),
           Text(
-            paper.direction == 'issued' ? 'سند الصرف' : 'سند القبض',
+            paper.direction == 'issued' ? tr('سند الصرف') : tr('سند القبض'),
             style: text.labelSmall?.copyWith(color: AppColors.textMuted),
           ),
           const SizedBox(width: 8),
@@ -1122,14 +1123,14 @@ class _SelectionBar extends ConsumerWidget {
             FilledButton.icon(
               onPressed: onDeposit,
               icon: const Icon(PhosphorIconsBold.vault, size: 15),
-              label: const Text('إيداع للتحصيل'),
+              label:  Text(tr('إيداع للتحصيل')),
             ),
           if (voucherId != null) ...[
             const SizedBox(width: 8),
             OutlinedButton.icon(
               onPressed: onOpenVoucher,
               icon: const Icon(PhosphorIconsBold.arrowSquareOut, size: 15),
-              label: const Text('عرض السند'),
+              label:  Text(tr('عرض السند')),
             ),
           ],
         ],

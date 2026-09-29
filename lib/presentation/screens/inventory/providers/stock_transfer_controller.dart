@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../domain/repositories/inventory_repository.dart';
 import '../../../../data/providers/providers.dart';
@@ -88,7 +89,7 @@ class StockTransferNotifier extends Notifier<StockTransferState> {
         fromWarehouseId: fromWarehouseId,
         toWarehouseId: toWarehouseId,
         items: transferItems,
-        notes: notes.isEmpty ? 'تحويل مخزني' : notes,
+        notes: notes.isEmpty ? tr('تحويل مخزني') : notes,
         userId: userId,
       );
 
@@ -98,10 +99,10 @@ class StockTransferNotifier extends Notifier<StockTransferState> {
         final activityLogRepo = ref.read(activityLogRepositoryProvider);
         await activityLogRepo.logActivity(
           userId: user?.id,
-          userName: user?.displayName ?? 'مستخدم',
+          userName: user?.displayName ?? tr('مستخدم'),
           action: 'stock_adjust',
           entityType: 'stock',
-          description: 'تحويل مخزني: ${items.length} أصناف من مخزن $fromWarehouseId إلى مخزن $toWarehouseId',
+          description: tr('تحويل مخزني: {p0} أصناف من مخزن {fromWarehouseId} إلى مخزن {toWarehouseId}', {'p0': items.length, 'fromWarehouseId': fromWarehouseId, 'toWarehouseId': toWarehouseId}),
         );
       } catch (_) {}
 
@@ -109,7 +110,7 @@ class StockTransferNotifier extends Notifier<StockTransferState> {
       return true;
     } catch (e, st) {
       logger.error('Failed to execute stock transfer', e, st, 'STOCK_TRANSFER');
-      state = state.copyWith(isLoading: false, error: 'حدث خطأ: $e');
+      state = state.copyWith(isLoading: false, error: tr('حدث خطأ: {e}', {'e': e}));
       return false;
     }
   }

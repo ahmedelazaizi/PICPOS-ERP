@@ -37,8 +37,11 @@ Map<String, String> _codeToConstantName(List<String> codes) {
 
 /// استخراجُ قسمِ masterList من ملف permission_codes.dart
 String _extractMasterList(String src) {
-  final match = RegExp(r'static final List<Map<String, String>> masterList = \[([\s\S]*?)\];')
-      .firstMatch(src);
+  final match = RegExp(
+    r'static\s+(?:final\s+)?List<Map<String, String>>\s+'
+    r'(?:masterList\s*=\s*|get\s+masterList\s*=>\s*)'
+    r'\[([\s\S]*?)\];',
+  ).firstMatch(src);
   expect(match, isNotNull,
       reason: 'تعذّر العثورُ على masterList في permission_codes.dart — تغيّرَ '
           'شكلُ القائمة، حدِّث نمطَ البحث في هذا الحارس');

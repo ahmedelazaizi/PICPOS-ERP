@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
@@ -37,14 +38,14 @@ enum ApplyOfferOutcome {
 }
 
 /// بادئة سطر العرض **التلقائي** — كل جولة تطبيق بتصفّره وتعيد حسابه.
-const String kAutoOfferNotePrefix = 'عرض:';
+String get kAutoOfferNotePrefix => tr('عرض:');
 
 /// بادئة سطر العرض **اليدوي** — إنسان طبّقه، فما بيتلمسش.
 ///
 /// ⚠️ `'عرض (يدوي):'` **ما بيبدأش** بـ`'عرض:'` — بعد «عرض» بييجي « (» مش «:».
 /// اللي بيسأل «هل ده سطر عرض؟» بـ`startsWith(kAutoOfferNotePrefix)` لوحدها
 /// بيرجّع false للسطر اليدوي فيعامله كسطر أساس عادي. ده كان مصدر عطل ٣-٣.
-const String kManualOfferNotePrefix = 'عرض (يدوي):';
+String get kManualOfferNotePrefix => tr('عرض (يدوي):');
 
 /// هل السطر ده سطر عرض بأي شكل — تلقائي أو يدوي؟
 ///
@@ -341,7 +342,7 @@ class CartController extends Notifier<CartState> {
     state = state.copyWith(allowOversell: value);
     if (value) {
       _logAction('cart_allow_oversell', 0,
-          'سمح ببيع أصناف غير متوفرة في هذه الفاتورة', 0);
+          tr('سمح ببيع أصناف غير متوفرة في هذه الفاتورة'), 0);
     }
   }
 
@@ -398,7 +399,7 @@ class CartController extends Notifier<CartState> {
     _logAction(
       'cart_add',
       product.id,
-      'إضافة للسلة: ${product.name} × $quantity',
+      tr('إضافة للسلة: {p0} × {quantity}', {'p0': product.name, 'quantity': quantity}),
       (customPrice ?? effectivePrice) * quantity,
     );
 
@@ -450,7 +451,7 @@ class CartController extends Notifier<CartState> {
       _logAction(
         'price_edit',
         item.productId,
-        'تعديل سعر: ${item.productName}',
+        tr('تعديل سعر: {p0}', {'p0': item.productName}),
         newPrice * item.quantity,
       );
     }
@@ -710,13 +711,13 @@ class CartController extends Notifier<CartState> {
           // Entire item at offer price
           items[i] = item.copyWith(
             customPrice: offerUnitPrice,
-            note: 'عرض: ${offer.name}${multiplier > 1 ? ' x$multiplier' : ''}',
+            note: tr('عرض: {p0}{p1}', {'p0': offer.name, 'p1': multiplier > 1 ? ' x$multiplier' : ''}),
           );
           remaining -= item.quantity;
         } else {
           // Split: part at offer, part at regular
           items[i] = item.copyWith(quantity: remaining, customPrice: offerUnitPrice,
-            note: 'عرض: ${offer.name}${multiplier > 1 ? ' x$multiplier' : ''}',
+            note: tr('عرض: {p0}{p1}', {'p0': offer.name, 'p1': multiplier > 1 ? ' x$multiplier' : ''}),
           );
           items.insert(i + 1, item.copyWith(quantity: item.quantity - remaining));
           remaining = 0;
@@ -765,7 +766,7 @@ class CartController extends Notifier<CartState> {
         quantity: freeQty.toDouble(),
         customPrice: 0, // Free!
         isSoldByWeight: product.isSoldByWeight,
-        note: 'عرض: ${offer.name} (مجاني)',
+        note: tr('عرض: {p0} (مجاني)', {'p0': offer.name}),
       ));
       appliedOfferIds.add(offer.id);
     }
@@ -807,7 +808,7 @@ class CartController extends Notifier<CartState> {
       if (matches) {
         items[i] = item.copyWith(
           customPrice: item.effectivePrice * discountFactor,
-          note: 'عرض: ${offer.name} (-${offer.discountValue!.toStringAsFixed(0)}%)',
+          note: tr('عرض: {p0} (-{p1}%)', {'p0': offer.name, 'p1': offer.discountValue!.toStringAsFixed(0)}),
         );
         applied = true;
       }
@@ -848,7 +849,7 @@ class CartController extends Notifier<CartState> {
         final newPrice = (item.effectivePrice - offer.discountValue!).clamp(0.0, double.infinity);
         items[i] = item.copyWith(
           customPrice: newPrice,
-          note: 'عرض: ${offer.name} (-${offer.discountValue!.toStringAsFixed(AppConstants.decimalPlaces)})',
+          note: tr('عرض: {p0} (-{p1})', {'p0': offer.name, 'p1': offer.discountValue!.toStringAsFixed(AppConstants.decimalPlaces)}),
         );
         applied = true;
       }
@@ -887,7 +888,7 @@ class CartController extends Notifier<CartState> {
     // manually, refuse to add it again. Without this, every press of the
     // offer card produced another set of items in the cart, silently
     // doubling/tripling the discount the cashier intended.
-    final manualNote = 'عرض (يدوي): ${offer.name}';
+    final manualNote = tr('عرض (يدوي): {p0}', {'p0': offer.name});
     final alreadyApplied = state.items.any((i) => i.note == manualNote);
     if (alreadyApplied) {
       debugPrint('[applyOffer] offer "${offer.name}" already in cart — skipping duplicate manual add');
@@ -949,7 +950,7 @@ class CartController extends Notifier<CartState> {
     _logAction(
       'cart_remove',
       item.productId,
-      'إزالة من السلة: ${item.productName} × ${item.quantity}',
+      tr('إزالة من السلة: {p0} × {p1}', {'p0': item.productName, 'p1': item.quantity}),
       item.total,
     );
 
@@ -973,7 +974,7 @@ class CartController extends Notifier<CartState> {
     _logAction(
       'pos_item_qty_change',
       item.productId,
-      'تغيير كمية: ${item.productName} إلى $quantity',
+      tr('تغيير كمية: {p0} إلى {quantity}', {'p0': item.productName, 'quantity': quantity}),
       item.effectivePrice * quantity,
     );
   }
@@ -993,7 +994,7 @@ class CartController extends Notifier<CartState> {
     _logAction(
       'item_discount',
       item.productId,
-      'خصم على صنف: ${item.productName} — ${percent.toStringAsFixed(0)}%',
+      tr('خصم على صنف: {p0} — {p1}%', {'p0': item.productName, 'p1': percent.toStringAsFixed(0)}),
       item.subtotal * (percent / 100),
     );
   }
@@ -1184,7 +1185,7 @@ class CartController extends Notifier<CartState> {
     _logAction(
       'unit_change',
       item.productId,
-      'تغيير وحدة: ${item.productName} → $unitName (×$quantityInBase)',
+      tr('تغيير وحدة: {p0} → {unitName} (×{quantityInBase})', {'p0': item.productName, 'unitName': unitName, 'quantityInBase': quantityInBase}),
       unitSalePrice * item.quantity,
     );
   }
@@ -1283,7 +1284,7 @@ class CartController extends Notifier<CartState> {
       // Keep layout-neutral settings
     );
     _lastWeightByProduct.clear();  // reset duplicate-weight tracking
-    _logAction('cart_clear', 0, 'مسح السلة بالكامل', total);
+    _logAction('cart_clear', 0, tr('مسح السلة بالكامل'), total);
   }
 
   void _logAction(
@@ -1345,8 +1346,8 @@ class CartController extends Notifier<CartState> {
       final categoryId = entry.key;
       final categoryItems = entry.value;
       final categoryName = categoryId != null
-          ? (categoryMap[categoryId] ?? 'غير مصنف')
-          : 'غير مصنف';
+          ? (categoryMap[categoryId] ?? tr('غير مصنف'))
+          : tr('غير مصنف');
 
       final invoiceItems = categoryItems
           .map(

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/repositories/i_products_repository.dart';
 import '../../../data/providers/repository_providers.dart';
@@ -79,12 +80,12 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
         branchIds: branchIds,
       );
 
-      _logActivity('category_add', 'إضافة تصنيف جديد: $name');
+      _logActivity('category_add', tr('إضافة تصنيف جديد: {name}', {'name': name}));
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e, st) {
       logger.error('Failed to create category', e, st, 'CATEGORIES');
-      state = state.copyWith(isLoading: false, error: 'فشل إضافة التصنيف: $e');
+      state = state.copyWith(isLoading: false, error: tr('فشل إضافة التصنيف: {e}', {'e': e}));
       return false;
     }
   }
@@ -139,12 +140,12 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
         branchIds: branchIds,
       );
 
-      _logActivity('category_edit', 'تعديل تصنيف: $name', entityId: id);
+      _logActivity('category_edit', tr('تعديل تصنيف: {name}', {'name': name}), entityId: id);
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e, st) {
       logger.error('Failed to update category', e, st, 'CATEGORIES');
-      state = state.copyWith(isLoading: false, error: 'فشل تعديل التصنيف: $e');
+      state = state.copyWith(isLoading: false, error: tr('فشل تعديل التصنيف: {e}', {'e': e}));
       return false;
     }
   }
@@ -214,13 +215,13 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
 
       final moveSuffix = moveToCategoryId == null
           ? ''
-          : ' (نُقلت الأصناف إلى تصنيف #$moveToCategoryId)';
-      _logActivity('category_delete', 'حذف تصنيف: $name$moveSuffix');
+          : tr(' (نُقلت الأصناف إلى تصنيف #{moveToCategoryId})', {'moveToCategoryId': moveToCategoryId});
+      _logActivity('category_delete', tr('حذف تصنيف: {name}{moveSuffix}', {'name': name, 'moveSuffix': moveSuffix}));
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e, st) {
       logger.error('Failed to delete category', e, st, 'CATEGORIES');
-      state = state.copyWith(isLoading: false, error: 'فشل حذف التصنيف: $e');
+      state = state.copyWith(isLoading: false, error: tr('فشل حذف التصنيف: {e}', {'e': e}));
       return false;
     }
   }
@@ -230,7 +231,7 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
       await _repository.setCategoryLocked(id, isLocked);
       _logActivity(
         'category_lock_toggle',
-        '${isLocked ? "إقفال" : "فتح"} تصنيف: $name',
+        tr('{p0} تصنيف: {name}', {'p0': isLocked ? "إقفال" : "فتح", 'name': name}),
         entityId: id,
       );
     } catch (e, st) {
@@ -251,7 +252,7 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
       }
       _logActivity(
         'category_exclude_toggle',
-        '${isExcluded ? "استثناء" : "إلغاء استثناء"} تصنيف: $name',
+        tr('{p0} تصنيف: {name}', {'p0': isExcluded ? "استثناء" : "إلغاء استثناء", 'name': name}),
         entityId: id,
       );
     } catch (e, st) {
@@ -262,7 +263,7 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
   Future<void> updateSortOrders(List<int> categoryIds) async {
     try {
       await _repository.updateCategorySortOrders(categoryIds);
-      _logActivity('category_reorder', 'إعادة ترتيب التصنيفات');
+      _logActivity('category_reorder', tr('إعادة ترتيب التصنيفات'));
     } catch (e, st) {
       logger.error('Failed to update sort orders', e, st, 'CATEGORIES');
     }
@@ -273,7 +274,7 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
       await _repository.setCategoryShowInPos(id, showInPos);
       _logActivity(
         'category_pos_visibility',
-        '${showInPos ? "إظهار" : "إخفاء"} تصنيف في البيع السريع: $name',
+        tr('{p0} تصنيف في البيع السريع: {name}', {'p0': showInPos ? "إظهار" : "إخفاء", 'name': name}),
         entityId: id,
       );
     } catch (e, st) {
@@ -286,7 +287,7 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
     _repository
         .logActivity(
           userId: user?.id,
-          userName: user?.displayName ?? 'مستخدم',
+          userName: user?.displayName ?? tr('مستخدم'),
           action: action,
           entityId: entityId ?? 0,
           description: description,

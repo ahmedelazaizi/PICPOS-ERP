@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
@@ -48,7 +49,7 @@ class _CartDiscountDialogState extends State<CartDiscountDialog> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Text('الخصم'),
+        title:  Text(tr('الخصم')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -60,10 +61,10 @@ class _CartDiscountDialogState extends State<CartDiscountDialog> {
               ),
               child: Row(
                 children: [
-                  Expanded(child: _buildTab('نسبة %', true)),
+                  Expanded(child: _buildTab(tr('نسبة %'), true)),
                   Expanded(
                     child: _buildTab(
-                      'قيمة ${AppConstants.currencySymbolEn}',
+                      tr('قيمة {p0}', {'p0': AppConstants.currencySymbolEn}),
                       false,
                     ),
                   ),
@@ -93,7 +94,7 @@ class _CartDiscountDialogState extends State<CartDiscountDialog> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'الحد الأقصى: ${widget.maxDiscountPercent!.toStringAsFixed(0)}%',
+                      tr('الحد الأقصى: {p0}%', {'p0': widget.maxDiscountPercent!.toStringAsFixed(0)}),
                       style: const TextStyle(
                         color: Colors.orange,
                         fontWeight: FontWeight.bold,
@@ -110,7 +111,7 @@ class _CartDiscountDialogState extends State<CartDiscountDialog> {
               keyboardType: TextInputType.number,
               autofocus: true,
               decoration: InputDecoration(
-                labelText: _isPercentMode ? 'نسبة الخصم' : 'قيمة الخصم',
+                labelText: _isPercentMode ? tr('نسبة الخصم') : tr('قيمة الخصم'),
                 suffixText: _isPercentMode
                     ? '%'
                     : AppConstants.currencySymbolEn,
@@ -134,9 +135,9 @@ class _CartDiscountDialogState extends State<CartDiscountDialog> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'قيمة الخصم:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                     Text(
+                      tr('قيمة الخصم:'),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(
                       '${_calculateDiscountAmount().toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
@@ -174,9 +175,9 @@ class _CartDiscountDialogState extends State<CartDiscountDialog> {
         actions: [
           TextButton(
             onPressed: widget.onRemove,
-            child: const Text('إزالة الخصم'),
+            child:  Text(tr('إزالة الخصم')),
           ),
-          ElevatedButton(onPressed: _apply, child: const Text('تطبيق')),
+          ElevatedButton(onPressed: _apply, child:  Text(tr('تطبيق'))),
         ],
       ),
     );
@@ -241,7 +242,7 @@ class _CartDiscountDialogState extends State<CartDiscountDialog> {
     }
 
     if (percent > widget.maxDiscountPercent!) {
-      return 'تجاوز الحد الأقصى (${widget.maxDiscountPercent!.toStringAsFixed(0)}%)';
+      return tr('تجاوز الحد الأقصى ({p0}%)', {'p0': widget.maxDiscountPercent!.toStringAsFixed(0)});
     }
     return null;
   }

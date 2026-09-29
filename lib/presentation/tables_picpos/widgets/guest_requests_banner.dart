@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -49,8 +50,8 @@ class GuestRequestsBanner extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const Text('مراجعة',
-                    style: TextStyle(
+                 Text(tr('مراجعة'),
+                    style: const TextStyle(
                       color: AppColors.warning,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -84,19 +85,19 @@ class GuestRequestsDialog extends ConsumerWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.bellRinging, color: AppColors.warning),
-            SizedBox(width: 8),
-            Text('طلباتُ الضيوف'),
+            const Icon(PhosphorIconsBold.bellRinging, color: AppColors.warning),
+            const SizedBox(width: 8),
+            Text(tr('طلباتُ الضيوف')),
           ],
         ),
         content: SizedBox(
           width: 520,
           child: pending.isEmpty
-              ? const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 28),
-                  child: Text('لا طلباتٍ معلَّقة', textAlign: TextAlign.center),
+              ?  Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 28),
+                  child: Text(tr('لا طلباتٍ معلَّقة'), textAlign: TextAlign.center),
                 )
               : ListView.separated(
                   shrinkWrap: true,
@@ -109,7 +110,7 @@ class GuestRequestsDialog extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -179,7 +180,7 @@ class _RequestTileState extends ConsumerState<_RequestTile> {
               child: OutlinedButton.icon(
                 onPressed: _busy ? null : () => _act(approve: false),
                 icon: const Icon(PhosphorIconsBold.x, size: 15),
-                label: const Text('رفض'),
+                label:  Text(tr('رفض')),
                 style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error),
               ),
@@ -189,7 +190,7 @@ class _RequestTileState extends ConsumerState<_RequestTile> {
               child: ElevatedButton.icon(
                 onPressed: _busy ? null : () => _act(approve: true),
                 icon: const Icon(PhosphorIconsBold.check, size: 15),
-                label: const Text('اعتماد'),
+                label:  Text(tr('اعتماد')),
               ),
             ),
           ],
@@ -210,12 +211,12 @@ class _RequestTileState extends ConsumerState<_RequestTile> {
       if (approve) {
         error = switch (await service.approve(widget.request.id)) {
           GuestApprovalOutcome.approved => null,
-          GuestApprovalOutcome.notPending => 'الطلبُ لم يعد معلَّقاً',
-          GuestApprovalOutcome.orderClosed => 'الطاولةُ أُغلقت',
-          GuestApprovalOutcome.failed => 'تعذّر الاعتماد',
+          GuestApprovalOutcome.notPending => tr('الطلبُ لم يعد معلَّقاً'),
+          GuestApprovalOutcome.orderClosed => tr('الطاولةُ أُغلقت'),
+          GuestApprovalOutcome.failed => tr('تعذّر الاعتماد'),
         };
       } else {
-        error = service.reject(widget.request.id) ? null : 'الطلبُ لم يعد معلَّقاً';
+        error = service.reject(widget.request.id) ? null : tr('الطلبُ لم يعد معلَّقاً');
       }
       // ⚠️ والبثُّ من هنا: الكتابةُ لم تمرّ بطبقة HTTP، فبدونه لا يعلم أيُّ
       // جهازٍ مقترنٍ بالبند الجديد حتى دورةِ المزامنة التالية.

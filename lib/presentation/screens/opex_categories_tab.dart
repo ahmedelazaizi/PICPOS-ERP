@@ -13,7 +13,7 @@ class _CategoriesTab extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCategoryDialog(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('فئة جديدة'),
+        label:  Text(tr('فئة جديدة')),
         backgroundColor: AppColors.primary,
       ),
       body: categoriesAsync.when(
@@ -26,11 +26,11 @@ class _CategoriesTab extends ConsumerWidget {
                   Icon(PhosphorIconsBold.folder,
                       size: 64, color: AppColors.textMuted.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
-                  const Text('لا توجد فئات مصروفات بعد',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 16)),
+                   Text(tr('لا توجد فئات مصروفات بعد'),
+                      style: const TextStyle(color: AppColors.textMuted, fontSize: 16)),
                   const SizedBox(height: 8),
-                  const Text('أضف فئات مثل: إيجار، رواتب، كهرباء، صيانة',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                   Text(tr('أضف فئات مثل: إيجار، رواتب، كهرباء، صيانة'),
+                      style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
                 ],
               ),
             );
@@ -43,7 +43,7 @@ class _CategoriesTab extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('خطأ: $e')),
+        error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
       ),
     );
   }
@@ -64,16 +64,16 @@ class _CategoryCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final typeLabels = {
-      'direct': 'مباشرة',
-      'indirect': 'غير مباشرة',
-      'fixed': 'ثابتة',
-      'variable': 'متغيرة',
+      'direct': tr('مباشرة'),
+      'indirect': tr('غير مباشرة'),
+      'fixed': tr('ثابتة'),
+      'variable': tr('متغيرة'),
     };
     final allocationLabels = {
-      'per_unit': 'لكل وحدة',
-      'per_hour': 'بالساعة',
-      'per_order': 'لكل أمر',
-      'fixed_monthly': 'شهري ثابت',
+      'per_unit': tr('لكل وحدة'),
+      'per_hour': tr('بالساعة'),
+      'per_order': tr('لكل أمر'),
+      'fixed_monthly': tr('شهري ثابت'),
     };
 
     return Container(
@@ -131,8 +131,8 @@ class _CategoryCard extends ConsumerWidget {
                             category.allocationMethod,
                         Colors.teal),
                     if (category.isProductionRelated)
-                      _chip('إنتاج', Colors.blue),
-                    if (!category.isActive) _chip('معطلة', AppColors.error),
+                      _chip(tr('إنتاج'), Colors.blue),
+                    if (!category.isActive) _chip(tr('معطلة'), AppColors.error),
                   ],
                 ),
               ],
@@ -173,17 +173,17 @@ class _CategoryCard extends ConsumerWidget {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('حذف الفئة'),
-          content: Text('هل أنت متأكد من حذف فئة "${category.name}"؟'),
+          title:  Text(tr('حذف الفئة')),
+          content: Text(tr('هل أنت متأكد من حذف فئة "{p0}"؟', {'p0': category.name})),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('حذف', style: TextStyle(color: Colors.white)),
+              child:  Text(tr('حذف'), style: const TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -196,11 +196,11 @@ class _CategoryCard extends ConsumerWidget {
         await repo.deleteExpenseCategory(category.id);
         ref.invalidate(expenseCategoriesProvider);
         if (context.mounted) {
-          AppToast.show(context, 'تم حذف الفئة بنجاح', type: ToastType.success);
+          AppToast.show(context, tr('تم حذف الفئة بنجاح'), type: ToastType.success);
         }
       } catch (e) {
         if (context.mounted) {
-          AppToast.show(context, 'خطأ في الحذف: $e', type: ToastType.error);
+          AppToast.show(context, tr('خطأ في الحذف: {e}', {'e': e}), type: ToastType.error);
         }
       }
     }

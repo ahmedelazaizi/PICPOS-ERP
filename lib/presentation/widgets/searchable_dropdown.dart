@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -195,7 +196,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                             ? Padding(
                                 padding: const EdgeInsets.all(16),
                                 child: Text(
-                                  'لا توجد نتائج',
+                                  tr('لا توجد نتائج'),
                                   style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 12),
                                 ),
                               )
@@ -367,8 +368,8 @@ class PartySearchableDropdown extends StatelessWidget {
       hint: hint,
       isRequired: isRequired,
       showClearButton: showClearButton,
-      searchHint: 'بحث بالاسم أو الهاتف...',
-      labelBuilder: (party) => party.name ?? 'بدون اسم',
+      searchHint: tr('بحث بالاسم أو الهاتف...'),
+      labelBuilder: (party) => party.name ?? tr('بدون اسم'),
       secondarySearchBuilder: (party) => party.phone ?? '',
       itemBuilder: (party) => Row(
         children: [
@@ -384,7 +385,7 @@ class PartySearchableDropdown extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  party.name ?? 'بدون اسم',
+                  party.name ?? tr('بدون اسم'),
                   style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
                 if (party.phone != null && party.phone.isNotEmpty)
@@ -440,7 +441,7 @@ class AccountSearchableDropdown extends StatelessWidget {
       hint: hint,
       isRequired: isRequired,
       showClearButton: showClearButton,
-      searchHint: 'بحث بالاسم أو الرمز...',
+      searchHint: tr('بحث بالاسم أو الرمز...'),
       labelBuilder: (a) => '${a.code} - ${a.name}',
       secondarySearchBuilder: (a) => a.code ?? '',
       itemBuilder: (a) => Row(

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // أزرارُ الخزينة الأربعة في شبكة ٢×٢ — يسارَ البطاقة الداكنة كما في التصميم.
 //
 // كانت في `headerActions` (شريطُ الهيدر العلويّ) أزراراً نصّيّةً صغيرة؛
@@ -46,11 +47,11 @@ class TreasuryActionsGridPicpos extends StatelessWidget {
       PermissionGuard(
         permission: PermissionCodes.treasuryReceiptsCreate,
         allowManagerOverride: true,
-        actionName: 'إنشاء سند قبض',
+        actionName: tr('إنشاء سند قبض'),
         onGranted: onReceipt,
         child: TreasuryActionCardPicpos(
-          title: 'سند قبض',
-          subtitle: 'تحصيل من عميل أو جهة',
+          title: tr('سند قبض'),
+          subtitle: tr('تحصيل من عميل أو جهة'),
           icon: PhosphorIconsBold.arrowCircleDown,
           tint: AppColors.success,
           borderTinted: true,
@@ -60,11 +61,11 @@ class TreasuryActionsGridPicpos extends StatelessWidget {
       PermissionGuard(
         permission: PermissionCodes.treasuryPaymentsCreate,
         allowManagerOverride: true,
-        actionName: 'إنشاء سند صرف',
+        actionName: tr('إنشاء سند صرف'),
         onGranted: onPayment,
         child: TreasuryActionCardPicpos(
-          title: 'سند صرف',
-          subtitle: 'سداد مورد أو مصروف',
+          title: tr('سند صرف'),
+          subtitle: tr('سداد مورد أو مصروف'),
           icon: PhosphorIconsBold.arrowCircleUp,
           tint: AppColors.error,
           borderTinted: true,
@@ -72,15 +73,15 @@ class TreasuryActionsGridPicpos extends StatelessWidget {
         ),
       ),
       TreasuryActionCardPicpos(
-        title: 'إدارة الصناديق',
-        subtitle: 'إنشاء وربط طرق التحصيل',
+        title: tr('إدارة الصناديق'),
+        subtitle: tr('إنشاء وربط طرق التحصيل'),
         icon: PhosphorIconsBold.vault,
         tint: AppColors.primary,
         onTap: onSafes,
       ),
       TreasuryActionCardPicpos(
-        title: 'مراجعة الأرصدة',
-        subtitle: 'مطابقة مع دفتر الأستاذ',
+        title: tr('مراجعة الأرصدة'),
+        subtitle: tr('مطابقة مع دفتر الأستاذ'),
         icon: PhosphorIconsBold.scales,
         tint: AppColors.info,
         onTap: onReconcile,

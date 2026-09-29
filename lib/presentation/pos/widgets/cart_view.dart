@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/presentation/widgets/dialogs/app_confirm_dialog.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
@@ -39,13 +40,13 @@ Widget buildPosGridToggleButton({
     permission: PermissionCodes.posGridToggle,
     fallback: const SizedBox.shrink(),
     child: Tooltip(
-      message: 'توسيع القائمة / إظهار المنتجات',
+      message: tr('توسيع القائمة / إظهار المنتجات'),
       child: TextButton.icon(
         onPressed: onToggle,
         icon: Icon(PhosphorIconsBold.caretDoubleRight,
             size: 16 * scaleFactor, color: AppColors.primary),
         label: Text(
-          'إظهار المنتجات',
+          tr('إظهار المنتجات'),
           style: TextStyle(
             fontSize: 12 * scaleFactor,
             color: AppColors.primary,
@@ -193,9 +194,9 @@ class CartView extends ConsumerWidget {
       'ashyae',
     ].contains(cartState.priceLevel);
     final deliveryCompanyName = switch (cartState.priceLevel) {
-      'talabat' => 'طلبات',
-      'careem' => 'كريم',
-      'ashyae' => 'أشيائي',
+      'talabat' => tr('طلبات'),
+      'careem' => tr('كريم'),
+      'ashyae' => tr('أشيائي'),
       _ => null,
     };
 
@@ -240,7 +241,7 @@ class CartView extends ConsumerWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '$deliveryCompanyName (آجل)',
+                    tr('{deliveryCompanyName} (آجل)', {'deliveryCompanyName': deliveryCompanyName}),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
@@ -260,8 +261,8 @@ class CartView extends ConsumerWidget {
                     .setPlatformOrderNumber(value.isEmpty ? null : value),
                 decoration: InputDecoration(
                   isDense: true,
-                  labelText: 'رقم طلب $deliveryCompanyName',
-                  hintText: 'أدخل رقم الطلب من التطبيق...',
+                  labelText: tr('رقم طلب {deliveryCompanyName}', {'deliveryCompanyName': deliveryCompanyName}),
+                  hintText: tr('أدخل رقم الطلب من التطبيق...'),
                   prefixIcon: const Icon(PhosphorIconsBold.hashStraight, size: 18),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   border: OutlineInputBorder(
@@ -291,7 +292,7 @@ class CartView extends ConsumerWidget {
               ),
               SizedBox(width: 8 * scaleFactor),
               Text(
-                'السلة (${cart.length})',
+                tr('السلة ({p0})', {'p0': cart.length}),
                 style: TextStyle(
                   fontSize: 14 * scaleFactor,
                   fontWeight: FontWeight.w900,
@@ -312,7 +313,7 @@ class CartView extends ConsumerWidget {
               PermissionGuard(
                 permission: PermissionCodes.posClearCart,
                 allowManagerOverride: true,
-                actionName: 'مسح السلة',
+                actionName: tr('مسح السلة'),
                 child: TextButton.icon(
                   onPressed: () => _showClearConfirmation(
                     context,
@@ -324,7 +325,7 @@ class CartView extends ConsumerWidget {
                     color: AppColors.error,
                   ),
                   label: Text(
-                    'مسح الكل',
+                    tr('مسح الكل'),
                     style: TextStyle(
                       fontSize: 12 * scaleFactor,
                       color: AppColors.error,
@@ -362,13 +363,13 @@ class CartView extends ConsumerWidget {
             color: AppColors.textMuted.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'السلة فارغة',
-            style: TextStyle(fontSize: 16, color: AppColors.textMuted),
+           Text(
+            tr('السلة فارغة'),
+            style: const TextStyle(fontSize: 16, color: AppColors.textMuted),
           ),
           const SizedBox(height: 8),
           Text(
-            'اختر منتجات من القائمة أو امسح الباركود',
+            tr('اختر منتجات من القائمة أو امسح الباركود'),
             style: TextStyle(
               fontSize: 12,
               color: AppColors.textMuted.withValues(alpha: 0.7),
@@ -398,9 +399,9 @@ class CartView extends ConsumerWidget {
       BuildContext context, CartController controller) async {
     final ok = await AppConfirmDialog.show(
       context,
-      title: 'مسح السلة',
-      message: 'هل أنت متأكد من مسح جميع المنتجات؟',
-      confirmLabel: 'مسح',
+      title: tr('مسح السلة'),
+      message: tr('هل أنت متأكد من مسح جميع المنتجات؟'),
+      confirmLabel: tr('مسح'),
       isDangerous: true,
     );
     if (!ok) return;
@@ -424,7 +425,7 @@ class CartView extends ConsumerWidget {
           ),
         ),
         Text(
-          'الضريبة (${(cartState.taxRate * 100).toStringAsFixed(0)}%)',
+          tr('الضريبة ({p0}%)', {'p0': (cartState.taxRate * 100).toStringAsFixed(0)}),
           style: TextStyle(
             fontSize: 11 * scaleFactor,
             color: Colors.grey[600],
@@ -445,7 +446,7 @@ class CartView extends ConsumerWidget {
     return PermissionGuard(
       permission: PermissionCodes.posDiscount,
       allowManagerOverride: true,
-      actionName: 'تطبيق خصم',
+      actionName: tr('تطبيق خصم'),
       child: InkWell(
         onTap: () => showDialog(
           context: context,
@@ -477,7 +478,7 @@ class CartView extends ConsumerWidget {
               ),
               SizedBox(width: 4 * scaleFactor),
               Text(
-                'خصم %${cartState.discountPercent.toStringAsFixed(0)}',
+                tr('خصم %{p0}', {'p0': cartState.discountPercent.toStringAsFixed(0)}),
                 style: TextStyle(
                   fontSize: 11 * scaleFactor,
                   color: AppColors.primary,

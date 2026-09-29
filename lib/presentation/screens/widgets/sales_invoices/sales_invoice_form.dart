@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // Spec 090 — sales invoice form extraction.
 //
 // Ports the working PurchaseInvoiceForm pattern to sales:
@@ -421,12 +422,12 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
             ? AppColors.error
             : AppColors.success;
     final title = isEditQuotation
-        ? 'تعديل عرض سعر #${editQ?.quotationNumber ?? ''}'
+        ? tr('تعديل عرض سعر #{p0}', {'p0': editQ?.quotationNumber ?? ''})
         : widget.isConvert
-            ? 'تحويل عرض سعر #${editQ?.quotationNumber ?? ''} لفاتورة'
+            ? tr('تحويل عرض سعر #{p0} لفاتورة', {'p0': editQ?.quotationNumber ?? ''})
             : _isReturnMode
-                ? 'مرتجع مبيعات'
-                : 'فاتورة مبيعات جديدة';
+                ? tr('مرتجع مبيعات')
+                : tr('فاتورة مبيعات جديدة');
     return Row(
       children: [
         Icon(iconData, color: color, size: 28),
@@ -442,7 +443,7 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
           ),
         ),
         IconButton(
-          tooltip: 'إغلاق',
+          tooltip: tr('إغلاق'),
           icon: const Icon(PhosphorIconsBold.x),
           onPressed: _isLoading ? null : _handleCancel,
         ),
@@ -455,16 +456,16 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 16),
       child: SegmentedButton<bool>(
-        segments: const [
+        segments:  [
           ButtonSegment<bool>(
             value: false,
-            icon: Icon(PhosphorIconsBold.receipt),
-            label: Text('فاتورة بيع'),
+            icon: const Icon(PhosphorIconsBold.receipt),
+            label: Text(tr('فاتورة بيع')),
           ),
           ButtonSegment<bool>(
             value: true,
-            icon: Icon(PhosphorIconsBold.arrowCounterClockwise),
-            label: Text('مرتجع مبيعات'),
+            icon: const Icon(PhosphorIconsBold.arrowCounterClockwise),
+            label: Text(tr('مرتجع مبيعات')),
           ),
         ],
         selected: {_isReturnMode},
@@ -503,10 +504,10 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
                 controller: controller,
                 focusNode: focusNode,
                 decoration: InputDecoration(
-                  labelText: 'العميل',
+                  labelText: tr('العميل'),
                   prefixIcon: const Icon(PhosphorIconsBold.user),
                   border: const OutlineInputBorder(),
-                  hintText: 'ابحث عن العميل (اتركه فارغاً للنقدي)...',
+                  hintText: tr('ابحث عن العميل (اتركه فارغاً للنقدي)...'),
                   suffixIcon: _selectedCustomerName != null
                       ? IconButton(
                           icon: const Icon(PhosphorIconsBold.x, size: 16),
@@ -535,7 +536,7 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
           child: TextFormField(
             readOnly: true,
             decoration: InputDecoration(
-              labelText: 'التاريخ',
+              labelText: tr('التاريخ'),
               prefixIcon: const Icon(PhosphorIconsBold.calendar),
               border: const OutlineInputBorder(),
               hintText: DateTime.now().toString().substring(0, 10),
@@ -552,10 +553,10 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<int>(
         initialValue: _selectedWarehouseId,
-        decoration: const InputDecoration(
-          labelText: 'المخزن',
-          prefixIcon: Icon(PhosphorIconsBold.warehouse, size: 20),
-          border: OutlineInputBorder(),
+        decoration:  InputDecoration(
+          labelText: tr('المخزن'),
+          prefixIcon: const Icon(PhosphorIconsBold.warehouse, size: 20),
+          border: const OutlineInputBorder(),
           isDense: true,
         ),
         items: widget.warehouses
@@ -581,14 +582,14 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<int?>(
         value: _selectedCostCenterId,
-        decoration: const InputDecoration(
-          labelText: 'مركز التكلفة',
-          prefixIcon: Icon(PhosphorIconsBold.buildings, size: 20),
-          border: OutlineInputBorder(),
+        decoration:  InputDecoration(
+          labelText: tr('مركز التكلفة'),
+          prefixIcon: const Icon(PhosphorIconsBold.buildings, size: 20),
+          border: const OutlineInputBorder(),
           isDense: true,
         ),
         items: [
-          const DropdownMenuItem<int?>(value: null, child: Text('بدون')),
+           DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'))),
           ...widget.costCenters.map((cc) => DropdownMenuItem<int?>(
                 value: cc.id,
                 child: Text(cc.name),
@@ -608,15 +609,15 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
           children: [
             Row(
               children: [
-                const Text(
-                  'إضافة صنف:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                 Text(
+                  tr('إضافة صنف:'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 OutlinedButton.icon(
                   onPressed: _handleAddNewProduct,
                   icon: const Icon(PhosphorIconsBold.plusCircle, size: 16),
-                  label: const Text('إضافة صنف جديد'),
+                  label:  Text(tr('إضافة صنف جديد')),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.success,
                     side: const BorderSide(color: AppColors.success),
@@ -644,10 +645,10 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
                   return TextField(
                     controller: acController,
                     focusNode: focusNode,
-                    decoration: const InputDecoration(
-                      hintText: 'ابحث عن صنف بالاسم أو الباركود...',
-                      prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass),
-                      border: OutlineInputBorder(),
+                    decoration:  InputDecoration(
+                      hintText: tr('ابحث عن صنف بالاسم أو الباركود...'),
+                      prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass),
+                      border: const OutlineInputBorder(),
                     ),
                   );
                 },
@@ -669,7 +670,7 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('الأصناف:', style: TextStyle(fontWeight: FontWeight.bold)),
+         Text(tr('الأصناف:'), style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         if (_invoiceItems.isEmpty)
           Container(
@@ -678,10 +679,10 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
               border: Border.all(color: AppColors.border),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Center(
+            child:  Center(
               child: Text(
-                'لم يتم إضافة أصناف بعد',
-                style: TextStyle(color: AppColors.textMuted),
+                tr('لم يتم إضافة أصناف بعد'),
+                style: const TextStyle(color: AppColors.textMuted),
               ),
             ),
           )
@@ -691,16 +692,16 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 columnSpacing: 12,
-                columns: const [
-                  DataColumn(label: Text('الصنف')),
-                  DataColumn(label: Text('الوحدة')),
-                  DataColumn(label: Text('التصنيف')),
-                  DataColumn(label: Text('الكمية')),
-                  DataColumn(label: Text('سعر البيع')),
-                  DataColumn(label: Text('الضريبة %')),
-                  DataColumn(label: Text('قيمة الضريبة')),
-                  DataColumn(label: Text('الإجمالي')),
-                  DataColumn(label: Text('')),
+                columns:  [
+                  DataColumn(label: Text(tr('الصنف'))),
+                  DataColumn(label: Text(tr('الوحدة'))),
+                  DataColumn(label: Text(tr('التصنيف'))),
+                  DataColumn(label: Text(tr('الكمية'))),
+                  DataColumn(label: Text(tr('سعر البيع'))),
+                  DataColumn(label: Text(tr('الضريبة %'))),
+                  DataColumn(label: Text(tr('قيمة الضريبة'))),
+                  DataColumn(label: Text(tr('الإجمالي'))),
+                  const DataColumn(label: Text('')),
                 ],
                 rows: _invoiceItems.asMap().entries.map(_buildItemRow).toList(),
               ),
@@ -753,7 +754,7 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    (item['selectedUnitName'] as String?) ?? 'قطعة',
+                    (item['selectedUnitName'] as String?) ?? tr('قطعة'),
                     style: const TextStyle(
                       color: AppColors.info,
                       fontWeight: FontWeight.bold,
@@ -846,14 +847,14 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('المجموع الفرعي:'),
+                 Text(tr('المجموع الفرعي:')),
                 Text(_subtotal.toStringAsFixed(AppConstants.decimalPlaces)),
               ],
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Text('الخصم:'),
+                 Text(tr('الخصم:')),
                 const SizedBox(width: 16),
                 SizedBox(
                   width: 100,
@@ -875,7 +876,7 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
             Row(
               children: [
                 Text(
-                  'الضريبة (${(widget.systemTaxRate * 100).toStringAsFixed(0)}%):',
+                  tr('الضريبة ({p0}%):', {'p0': (widget.systemTaxRate * 100).toStringAsFixed(0)}),
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(width: 8),
@@ -904,9 +905,9 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'الإجمالي:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                 Text(
+                  tr('الإجمالي:'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
                 Text(
                   _total.toStringAsFixed(AppConstants.decimalPlaces),
@@ -921,7 +922,7 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
             const SizedBox(height: 16),
             Row(
               children: [
-                const Text('المدفوع:'),
+                 Text(tr('المدفوع:')),
                 const SizedBox(width: 16),
                 SizedBox(
                   width: 120,
@@ -945,10 +946,10 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
                 const SizedBox(width: 16),
                 DropdownButton<String>(
                   value: _paymentMethod,
-                  items: const [
-                    DropdownMenuItem(value: 'cash', child: Text('نقدي')),
-                    DropdownMenuItem(value: 'credit', child: Text('آجل')),
-                    DropdownMenuItem(value: 'bank', child: Text('تحويل')),
+                  items:  [
+                    DropdownMenuItem(value: 'cash', child: Text(tr('نقدي'))),
+                    DropdownMenuItem(value: 'credit', child: Text(tr('آجل'))),
+                    DropdownMenuItem(value: 'bank', child: Text(tr('تحويل'))),
                   ],
                   onChanged: (val) {
                     setState(() {
@@ -968,10 +969,10 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
   Widget _buildNotesField() {
     return TextFormField(
       initialValue: _notes,
-      decoration: const InputDecoration(
-        labelText: 'ملاحظات',
-        prefixIcon: Icon(PhosphorIconsBold.note),
-        border: OutlineInputBorder(),
+      decoration:  InputDecoration(
+        labelText: tr('ملاحظات'),
+        prefixIcon: const Icon(PhosphorIconsBold.note),
+        border: const OutlineInputBorder(),
       ),
       maxLines: 2,
       onChanged: (val) => _notes = val,
@@ -995,13 +996,13 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
           TextButton.icon(
             onPressed: _isLoading ? null : _handleCancel,
             icon: const Icon(PhosphorIconsBold.x),
-            label: const Text('إلغاء'),
+            label:  Text(tr('إلغاء')),
           ),
           const SizedBox(width: 8),
           ElevatedButton.icon(
             onPressed: _isLoading ? null : _runSaveQuotation,
             icon: loadingSpinner ?? const Icon(PhosphorIconsBold.floppyDisk),
-            label: const Text('حفظ التعديلات'),
+            label:  Text(tr('حفظ التعديلات')),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
           ),
         ],
@@ -1018,7 +1019,7 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
           ElevatedButton.icon(
             onPressed: _isLoading ? null : _runSaveQuotation,
             icon: const Icon(PhosphorIconsBold.fileText),
-            label: const Text('حفظ مسودة عرض أسعار'),
+            label:  Text(tr('حفظ مسودة عرض أسعار')),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.purple.shade50,
               foregroundColor: Colors.purple.shade700,
@@ -1029,20 +1030,20 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
         TextButton.icon(
           onPressed: _isLoading ? null : _handleCancel,
           icon: const Icon(PhosphorIconsBold.x),
-          label: const Text('إلغاء'),
+          label:  Text(tr('إلغاء')),
         ),
         ElevatedButton.icon(
           onPressed:
               _isLoading ? null : () => _runSaveInvoice(printAfterSave: true),
           icon: loadingSpinner ?? const Icon(PhosphorIconsBold.printer),
-          label: Text(widget.isConvert ? 'تأكيد التحويل وطباعة' : 'حفظ وطباعة'),
+          label: Text(widget.isConvert ? tr('تأكيد التحويل وطباعة') : tr('حفظ وطباعة')),
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
         ),
         ElevatedButton.icon(
           onPressed:
               _isLoading ? null : () => _runSaveInvoice(printAfterSave: false),
           icon: loadingSpinner ?? const Icon(PhosphorIconsBold.floppyDisk),
-          label: const Text('حفظ الفاتورة (F12)'),
+          label:  Text(tr('حفظ الفاتورة (F12)')),
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
         ),
       ],

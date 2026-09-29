@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // صفُّ ملخّص المخزون بهويّة PicPos — **فوركٌ بقرار المالك 2026-08-22**.
 //
 // المصدر: `screens/inventory/widgets/inventory_summary_row.dart`، ويبقى بلا
@@ -33,21 +34,21 @@ class InventorySummaryRowPicpos extends ConsumerWidget {
         return Row(
           children: [
             InventorySummaryCard(
-              title: 'إجمالي الأصناف',
+              title: tr('إجمالي الأصناف'),
               value: totalActive.toString(),
               icon: PhosphorIconsBold.listBullets,
               color: AppColors.primary,
             ),
             const SizedBox(width: 16),
             InventorySummaryCard(
-              title: 'تنبيهات انخفاض المخزون',
+              title: tr('تنبيهات انخفاض المخزون'),
               value: lowStock.toString(),
               icon: PhosphorIconsBold.warningCircle,
               color: AppColors.warning,
             ),
             const SizedBox(width: 16),
             InventorySummaryCard(
-              title: 'إجمالي قيمة المخزون',
+              title: tr('إجمالي قيمة المخزون'),
               value:
                   '${totalValue.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
               icon: PhosphorIconsBold.coins,

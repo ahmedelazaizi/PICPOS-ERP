@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -74,7 +75,7 @@ class _PosProductSearchFieldState extends ConsumerState<PosProductSearchField> {
           onChanged: ref.read(posControllerProvider.notifier).setSearchQuery,
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           decoration: InputDecoration(
-            hintText: 'بحث عن منتج...',
+            hintText: tr('بحث عن منتج...'),
             hintStyle: TextStyle(
               color: AppColors.textMuted.withValues(alpha: 0.7),
               fontSize: 13,

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,9 +63,9 @@ class _AnalyticsDashboardScreenState
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
@@ -189,7 +190,7 @@ class _AnalyticsDashboardScreenState
       return Directionality(
         textDirection: ui.TextDirection.rtl,
         child: Scaffold(
-          body: Center(child: Text('تعذر تحديد صلاحيات الفرع: ${scopeAsync.error}')),
+          body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
         ),
       );
     }
@@ -202,7 +203,7 @@ class _AnalyticsDashboardScreenState
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: const Text('التحليلات والتقارير'),
+          title:  Text(tr('التحليلات والتقارير')),
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -276,13 +277,13 @@ class _AnalyticsDashboardScreenState
           const VerticalDivider(width: 1, thickness: 1),
           const SizedBox(width: 16),
           // Quick period buttons
-          _buildPeriodButton('today', 'اليوم'),
+          _buildPeriodButton('today', tr('اليوم')),
           const SizedBox(width: 8),
-          _buildPeriodButton('yesterday', 'أمس'),
+          _buildPeriodButton('yesterday', tr('أمس')),
           const SizedBox(width: 8),
-          _buildPeriodButton('month', 'الشهر'),
+          _buildPeriodButton('month', tr('الشهر')),
           const SizedBox(width: 8),
-          _buildPeriodButton('year', 'السنة'),
+          _buildPeriodButton('year', tr('السنة')),
           const Spacer(),
           // GAP-04: Cost Center filter
           SizedBox(
@@ -296,10 +297,10 @@ class _AnalyticsDashboardScreenState
                   child: DropdownButton<int?>(
                     value: _selectedCostCenterId,
                     isExpanded: true,
-                    hint: const Text('مركز التكلفة', style: TextStyle(fontSize: 12)),
+                    hint:  Text(tr('مركز التكلفة'), style: const TextStyle(fontSize: 12)),
                     style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
                     items: [
-                      const DropdownMenuItem<int?>(value: null, child: Text('الكل')),
+                       DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
                       ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name))),
                     ],
                     onChanged: (v) {
@@ -324,10 +325,10 @@ class _AnalyticsDashboardScreenState
                   child: DropdownButton<int?>(
                     value: _selectedBranchId,
                     isExpanded: true,
-                    hint: const Text('الفرع', style: TextStyle(fontSize: 12)),
+                    hint:  Text(tr('الفرع'), style: const TextStyle(fontSize: 12)),
                     style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
                     items: [
-                      const DropdownMenuItem<int?>(value: null, child: Text('الكل')),
+                       DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
                       // Feature 004 — branch chips in the analytics filter
                       // dropdown so the operator picks a branch by colour,
                       // not by reading the name. Same colour mapping as
@@ -463,26 +464,26 @@ class _AnalyticsDashboardScreenState
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('خطأ: ${snapshot.error}'));
+            return Center(child: Text(tr('خطأ: {p0}', {'p0': snapshot.error})));
           }
 
           final data = snapshot.data ?? [];
           if (data.isEmpty) {
-            return const Center(child: Text('لا توجد بيانات مبيعات'));
+            return  Center(child: Text(tr('لا توجد بيانات مبيعات')));
           }
 
           // Chart title based on period
-          String chartTitle = 'المبيعات اليومية';
+          String chartTitle = tr('المبيعات اليومية');
           if (_selectedPeriod == 'today') {
-            chartTitle = 'مبيعات اليوم';
+            chartTitle = tr('مبيعات اليوم');
           } else if (_selectedPeriod == 'yesterday') {
-            chartTitle = 'مبيعات أمس';
+            chartTitle = tr('مبيعات أمس');
           } else if (_selectedPeriod == 'month') {
-            chartTitle = 'مبيعات الشهر';
+            chartTitle = tr('مبيعات الشهر');
           } else if (_selectedPeriod == 'year') {
-            chartTitle = 'مبيعات السنة';
+            chartTitle = tr('مبيعات السنة');
           } else {
-            chartTitle = 'المبيعات للفترة المحددة';
+            chartTitle = tr('المبيعات للفترة المحددة');
           }
 
           return Column(
@@ -619,7 +620,7 @@ class _AnalyticsDashboardScreenState
 
           final products = snapshot.data ?? [];
           if (products.isEmpty) {
-            return const Center(child: Text('لا توجد مبيعات'));
+            return  Center(child: Text(tr('لا توجد مبيعات')));
           }
 
           final maxSales = products
@@ -629,9 +630,9 @@ class _AnalyticsDashboardScreenState
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'الأكثر مبيعاً',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+               Text(
+                tr('الأكثر مبيعاً'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -768,9 +769,9 @@ class _AnalyticsDashboardScreenState
                 children: [
                   const Icon(PhosphorIconsBold.coins, color: Colors.deepOrange),
                   const SizedBox(width: 8),
-                  const Text(
-                    'تفصيل المصروفات',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                   Text(
+                    tr('تفصيل المصروفات'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
                   Container(
@@ -780,7 +781,7 @@ class _AnalyticsDashboardScreenState
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      'الإجمالي: ${totalExpenses.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                      tr('الإجمالي: {p0} {p1}', {'p0': totalExpenses.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
                       style: const TextStyle(
                         color: Colors.deepOrange,
                         fontWeight: FontWeight.bold,
@@ -794,12 +795,12 @@ class _AnalyticsDashboardScreenState
               if (!snapshot.hasData)
                 const Center(child: CircularProgressIndicator())
               else if (activeCategories.isEmpty)
-                const Center(
+                 Center(
                   child: Padding(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     child: Text(
-                      'لا توجد مصروفات في هذه الفترة',
-                      style: TextStyle(color: AppColors.textMuted),
+                      tr('لا توجد مصروفات في هذه الفترة'),
+                      style: const TextStyle(color: AppColors.textMuted),
                     ),
                   ),
                 )
@@ -816,7 +817,7 @@ class _AnalyticsDashboardScreenState
                   itemCount: activeCategories.length,
                   itemBuilder: (context, index) {
                     final cat = activeCategories[index];
-                    final name = (cat['name'] as String?) ?? 'مصروف';
+                    final name = (cat['name'] as String?) ?? tr('مصروف');
                     final amount = (cat['total_amount'] as num?)?.toDouble() ?? 0.0;
                     final count = (cat['entry_count'] as num?)?.toInt() ?? 0;
                     final pct = totalExpenses > 0 ? (amount / totalExpenses * 100) : 0.0;
@@ -862,7 +863,7 @@ class _AnalyticsDashboardScreenState
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
-                                  '$count قيد',
+                                  tr('{count} قيد', {'count': count}),
                                   style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
                                 ),
                               ],
@@ -915,20 +916,20 @@ class _AnalyticsDashboardScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+           Row(
             children: [
-              Icon(PhosphorIconsBold.clock, color: AppColors.primary),
-              SizedBox(width: 8),
+              const Icon(PhosphorIconsBold.clock, color: AppColors.primary),
+              const SizedBox(width: 8),
               Text(
-                'ساعات الذروة',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                tr('ساعات الذروة'),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          _buildPeakHourRow('12:00 - 14:00', 0.85, 'الغداء'),
-          _buildPeakHourRow('18:00 - 20:00', 0.72, 'العشاء'),
-          _buildPeakHourRow('09:00 - 11:00', 0.58, 'الفطور'),
+          _buildPeakHourRow('12:00 - 14:00', 0.85, tr('الغداء')),
+          _buildPeakHourRow('18:00 - 20:00', 0.72, tr('العشاء')),
+          _buildPeakHourRow('09:00 - 11:00', 0.58, tr('الفطور')),
         ],
       ),
     );
@@ -1000,12 +1001,12 @@ class _AnalyticsDashboardScreenState
             final amount = s.total;
             final percent = totalAll > 0 ? (amount / totalAll * 100) : 0.0;
             final (Color color, String label) = switch (s.channel) {
-              PaymentChannel.cash => (Colors.green, 'نقدي'),
-              PaymentChannel.card => (Colors.blue, 'بطاقة/تحويل'),
-              PaymentChannel.click => (const Color(0xFF7E57C2), 'كليك'),
-              PaymentChannel.credit => (Colors.orange, 'آجل'),
-              PaymentChannel.multiple => (Colors.purple, 'متعدد'),
-              PaymentChannel.other => (Colors.grey, 'أخرى'),
+              PaymentChannel.cash => (Colors.green, tr('نقدي')),
+              PaymentChannel.card => (Colors.blue, tr('بطاقة/تحويل')),
+              PaymentChannel.click => (const Color(0xFF7E57C2), tr('كليك')),
+              PaymentChannel.credit => (Colors.orange, tr('آجل')),
+              PaymentChannel.multiple => (Colors.purple, tr('متعدد')),
+              PaymentChannel.other => (Colors.grey, tr('أخرى')),
             };
 
             sections.add(PieChartSectionData(
@@ -1021,16 +1022,16 @@ class _AnalyticsDashboardScreenState
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+               Row(
                 children: [
-                  Icon(PhosphorIconsBold.creditCard, color: Colors.green),
-                  SizedBox(width: 8),
-                  Text('طرق الدفع', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const Icon(PhosphorIconsBold.creditCard, color: Colors.green),
+                  const SizedBox(width: 8),
+                  Text(tr('طرق الدفع'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               ),
               const SizedBox(height: 12),
               if (stats.isEmpty)
-                const Text('لا توجد بيانات')
+                 Text(tr('لا توجد بيانات'))
               else ...[              
                 SizedBox(
                   height: 120,
@@ -1103,24 +1104,24 @@ class _AnalyticsDashboardScreenState
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+               Row(
                 children: [
-                  Icon(PhosphorIconsBold.lightning, color: Colors.amber),
-                  SizedBox(width: 8),
+                  const Icon(PhosphorIconsBold.lightning, color: Colors.amber),
+                  const SizedBox(width: 8),
                   Text(
-                    'إحصائيات سريعة',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    tr('إحصائيات سريعة'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
               _buildQuickStatRow(
-                'متوسط الفاتورة',
+                tr('متوسط الفاتورة'),
                 '${(stats['avgInvoice'] as double).toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
               ),
-              _buildQuickStatRow('عدد العملاء', '${stats['customerCount']}'),
+              _buildQuickStatRow(tr('عدد العملاء'), '${stats['customerCount']}'),
               _buildQuickStatRow(
-                'نسبة الإرجاع',
+                tr('نسبة الإرجاع'),
                 '${(stats['returnRate'] as double).toStringAsFixed(1)}%',
               ),
             ],
@@ -1347,71 +1348,71 @@ class _AnalyticsDashboardScreenState
           // REP-5 (spec 149 B15): value is GL income-statement revenue (net of
           // VAT + returns), so «صافي الإيراد» not «إجمالي المبيعات» — same
           // disambiguation spec 142 applied to dashboard_screen.
-          label: 'صافي الإيراد',
+          label: tr('صافي الإيراد'),
           value:
               '${glRevenue.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
           trend: salesTrend,
           color: AppColors.primary,
-          subtitle: 'إيراد دفتر الأستاذ — صافي الضريبة والمردودات',
+          subtitle: tr('إيراد دفتر الأستاذ — صافي الضريبة والمردودات'),
         ),
         KPIData(
           icon: PhosphorIconsBold.receipt,
-          label: 'عدد الفواتير',
+          label: tr('عدد الفواتير'),
           value: '${analytics.invoiceCount}',
           trend: countTrend,
           color: Colors.blue,
         ),
         KPIData(
           icon: PhosphorIconsBold.coins,
-          label: 'تكلفة البضاعة المباعة',
+          label: tr('تكلفة البضاعة المباعة'),
           value:
               '${glCOGS.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
           trend: calcTrend(glCOGS, prevGlCOGS),
           color: const Color(0xFFD97706),
-          subtitle: 'من دفتر الأستاذ (حساب التكلفة)',
+          subtitle: tr('من دفتر الأستاذ (حساب التكلفة)'),
         ),
         KPIData(
           icon: PhosphorIconsBold.trendUp,
-          label: 'صافي الربح',
+          label: tr('صافي الربح'),
           value:
               '${glNetProfit.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
           trend: profitTrend,
           color: glNetProfit >= 0 ? Colors.green : AppColors.error,
-          subtitle: 'هامش الربح: ${glRevenue > 0 ? ((glNetProfit / glRevenue) * 100).toStringAsFixed(1) : '0.0'}% | مصروفات: ${glExpenses.toStringAsFixed(AppConstants.decimalPlaces)}',
+          subtitle: tr('هامش الربح: {p0}% | مصروفات: {p1}', {'p0': glRevenue > 0 ? ((glNetProfit / glRevenue) * 100).toStringAsFixed(1) : '0.0', 'p1': glExpenses.toStringAsFixed(AppConstants.decimalPlaces)}),
         ),
         KPIData(
           icon: PhosphorIconsBold.shoppingCart,
-          label: 'إجمالي المشتريات',
+          label: tr('إجمالي المشتريات'),
           value:
               '${purchasesAnalytics.totalPurchases.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
           trend: purchaseTrend,
           color: const Color(0xFF0891B2),
-          subtitle: 'عدد: ${purchasesAnalytics.invoiceCount} | متوسط: ${purchasesAnalytics.averagePurchaseValue.toStringAsFixed(AppConstants.decimalPlaces)}',
+          subtitle: tr('عدد: {p0} | متوسط: {p1}', {'p0': purchasesAnalytics.invoiceCount, 'p1': purchasesAnalytics.averagePurchaseValue.toStringAsFixed(AppConstants.decimalPlaces)}),
         ),
         KPIData(
           icon: PhosphorIconsBold.usersThree,
-          label: 'عملاء نشطين',
+          label: tr('عملاء نشطين'),
           value: '$activeCustomers',
           trend: customerTrend,
           color: Colors.purple,
         ),
         KPIData(
           icon: PhosphorIconsBold.arrowUUpLeft,
-          label: 'مرتجع المبيعات',
+          label: tr('مرتجع المبيعات'),
           value:
               '${salesReturns.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
           trend: 0,
           color: Colors.orange,
-          subtitle: 'عدد: ${salesReturns.count}',
+          subtitle: tr('عدد: {p0}', {'p0': salesReturns.count}),
         ),
         KPIData(
           icon: PhosphorIconsBold.arrowUDownLeft,
-          label: 'مرتجع المشتريات',
+          label: tr('مرتجع المشتريات'),
           value:
               '${purchaseReturns.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
           trend: 0,
           color: AppColors.error,
-          subtitle: 'عدد: ${purchaseReturns.count}',
+          subtitle: tr('عدد: {p0}', {'p0': purchaseReturns.count}),
         ),
       ];
     } catch (e) {
@@ -1423,56 +1424,56 @@ class _AnalyticsDashboardScreenState
   List<KPIData> get _defaultKPIs => [
     KPIData(
       icon: PhosphorIconsBold.currencyCircleDollar,
-      label: 'صافي الإيراد', // REP-5: matches the live GL-net-revenue card above
+      label: tr('صافي الإيراد'), // REP-5: matches the live GL-net-revenue card above
       value: '0.00 ${AppConstants.currencySymbolEn}',
       trend: 0,
       color: AppColors.primary,
     ),
     KPIData(
       icon: PhosphorIconsBold.receipt,
-      label: 'عدد الفواتير',
+      label: tr('عدد الفواتير'),
       value: '0',
       trend: 0,
       color: Colors.blue,
     ),
     KPIData(
       icon: PhosphorIconsBold.coins,
-      label: 'تكلفة البضاعة المباعة',
+      label: tr('تكلفة البضاعة المباعة'),
       value: '0.00 ${AppConstants.currencySymbolEn}',
       trend: 0,
       color: const Color(0xFFD97706),
     ),
     KPIData(
       icon: PhosphorIconsBold.trendUp,
-      label: 'صافي الربح',
+      label: tr('صافي الربح'),
       value: '0.00 ${AppConstants.currencySymbolEn}',
       trend: 0,
       color: Colors.green,
     ),
     KPIData(
       icon: PhosphorIconsBold.shoppingCart,
-      label: 'إجمالي المشتريات',
+      label: tr('إجمالي المشتريات'),
       value: '0.00 ${AppConstants.currencySymbolEn}',
       trend: 0,
       color: const Color(0xFF0891B2),
     ),
     KPIData(
       icon: PhosphorIconsBold.usersThree,
-      label: 'عملاء',
+      label: tr('عملاء'),
       value: '0',
       trend: 0,
       color: Colors.purple,
     ),
     KPIData(
       icon: PhosphorIconsBold.arrowUUpLeft,
-      label: 'مرتجع المبيعات',
+      label: tr('مرتجع المبيعات'),
       value: '0.00 ${AppConstants.currencySymbolEn}',
       trend: 0,
       color: Colors.orange,
     ),
     KPIData(
       icon: PhosphorIconsBold.arrowUDownLeft,
-      label: 'مرتجع المشتريات',
+      label: tr('مرتجع المشتريات'),
       value: '0.00 ${AppConstants.currencySymbolEn}',
       trend: 0,
       color: AppColors.error,

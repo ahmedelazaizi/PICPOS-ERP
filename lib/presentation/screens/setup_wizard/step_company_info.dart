@@ -8,53 +8,53 @@ part of '../setup_wizard_screen.dart';
 /// ⚠️ **وهذا غيرُ «ملفّ النشاط»** في الخطوة ٨ (`BusinessProfile`). ذاك يقرّر
 /// أيَّ **شاشاتٍ** تظهر وهو محميٌّ بكلمة مرور المطوّر؛ وهذا وسمٌ وصفيٌّ
 /// للمنشأة. واسماهما متقاربان والأثرُ مختلفٌ تماماً.
-const _businessTypeCards = <(String, String, String, IconData)>[
+List<(String, String, String, IconData)> get _businessTypeCards => <(String, String, String, IconData)>[
   (
     'retail',
-    'تجزئة',
-    'سوبر ماركت وبقالة — بيعٌ بالباركود والميزان',
+    tr('تجزئة'),
+    tr('سوبر ماركت وبقالة — بيعٌ بالباركود والميزان'),
     PhosphorIconsBold.shoppingCart,
   ),
   (
     'restaurant',
-    'مطعم / كافيه',
-    'طاولاتٌ وطلباتٌ وحجوزات',
+    tr('مطعم / كافيه'),
+    tr('طاولاتٌ وطلباتٌ وحجوزات'),
     PhosphorIconsBold.forkKnife,
   ),
   (
     'wholesale',
-    'جملة وتوزيع',
-    'عملاءُ آجلون ومندوبو توزيع',
+    tr('جملة وتوزيع'),
+    tr('عملاءُ آجلون ومندوبو توزيع'),
     PhosphorIconsBold.truck,
   ),
   (
     'manufacturing',
-    'تصنيع',
-    'أوامرُ إنتاجٍ ومكوّناتٌ وتكلفةُ وحدة',
+    tr('تصنيع'),
+    tr('أوامرُ إنتاجٍ ومكوّناتٌ وتكلفةُ وحدة'),
     PhosphorIconsBold.factory,
   ),
   (
     'services',
-    'خدمات',
-    'فواتيرُ خدماتٍ بلا مخزون',
+    tr('خدمات'),
+    tr('فواتيرُ خدماتٍ بلا مخزون'),
     PhosphorIconsBold.wrench,
   ),
   (
     'other',
-    'أخرى',
-    'نشاطٌ لا يطابق ما سبق',
+    tr('أخرى'),
+    tr('نشاطٌ لا يطابق ما سبق'),
     PhosphorIconsBold.dotsThreeCircle,
   ),
 ];
 
 /// العملاتُ الستُّ — `BLOCKS` في التصميم، والمفتاحُ رمزُ ISO.
-const _currencyChips = <(String, String)>[
-  ('EGP', 'جنيه مصري'),
-  ('SAR', 'ريال سعودي'),
-  ('AED', 'درهم إماراتي'),
-  ('JOD', 'دينار أردني'),
-  ('KWD', 'دينار كويتي'),
-  ('USD', 'دولار أمريكي'),
+List<(String, String)> get _currencyChips => <(String, String)>[
+  ('EGP', tr('جنيه مصري')),
+  ('SAR', tr('ريال سعودي')),
+  ('AED', tr('درهم إماراتي')),
+  ('JOD', tr('دينار أردني')),
+  ('KWD', tr('دينار كويتي')),
+  ('USD', tr('دولار أمريكي')),
 ];
 
 extension _SetupWizardCompanyInfoExt on _SetupWizardScreenState {
@@ -65,35 +65,35 @@ extension _SetupWizardCompanyInfoExt on _SetupWizardScreenState {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'معلومات الشركة',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+         Text(
+          tr('معلومات الشركة'),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
-          'أدخل بيانات شركتك الأساسية — ستظهر في الفواتير والتقارير.',
+          tr('أدخل بيانات شركتك الأساسية — ستظهر في الفواتير والتقارير.'),
           style: TextStyle(color: _mutedInk(context)),
         ),
         const SizedBox(height: 32),
         _buildTextField(
           controller: _companyNameController,
-          label: 'اسم الشركة / المحل',
-          hint: 'مثال: سوبر ماركت النيل',
+          label: tr('اسم الشركة / المحل'),
+          hint: tr('مثال: سوبر ماركت النيل'),
           icon: PhosphorIconsBold.storefront,
           isRequired: true,
         ),
         const SizedBox(height: 20),
         _buildTextField(
           controller: _companyPhoneController,
-          label: 'رقم الهاتف',
+          label: tr('رقم الهاتف'),
           hint: '01xxxxxxxxx',
           icon: PhosphorIconsBold.phone,
         ),
         const SizedBox(height: 20),
         _buildTextField(
           controller: _companyAddressController,
-          label: 'العنوان',
-          hint: 'القاهرة، مصر',
+          label: tr('العنوان'),
+          hint: tr('القاهرة، مصر'),
           icon: PhosphorIconsBold.mapPin,
         ),
         const SizedBox(height: 28),
@@ -103,7 +103,7 @@ extension _SetupWizardCompanyInfoExt on _SetupWizardScreenState {
         // التصميمُ يجعلها ستَّ بطاقاتٍ داخلَ هذه الخطوة. والقائمةُ المنسدلةُ
         // تُخفي الوصفَ الذي يفرّق بينها خلفَ نقرة — والفرقُ بين «تجزئة»
         // و«جملة وتوزيع» ليس بديهيّاً لمن يُنصّب أوّلَ مرّة.
-        _stepFieldLabel('نوع النشاط'),
+        _stepFieldLabel(tr('نوع النشاط')),
         const SizedBox(height: 10),
         LayoutBuilder(
           builder: (context, c) {
@@ -134,7 +134,7 @@ extension _SetupWizardCompanyInfoExt on _SetupWizardScreenState {
         const SizedBox(height: 28),
 
         // ── العملة — رقاقاتٌ وتحذيرٌ ─────────────────────────────────────
-        _stepFieldLabel('العملة'),
+        _stepFieldLabel(tr('العملة')),
         const SizedBox(height: 10),
         Wrap(
           spacing: 8,
@@ -161,7 +161,7 @@ extension _SetupWizardCompanyInfoExt on _SetupWizardScreenState {
           context,
           icon: PhosphorIconsBold.warningCircle,
           tone: AppColors.error,
-          title: 'العملة قرار نهائي',
+          title: tr('العملة قرار نهائي'),
           body: 'تدخل كلَّ فاتورةٍ وكلَّ قيدٍ محاسبيّ، ولا تحويلَ بأثرٍ '
               'رجعيّ. تبديلُها بعد أوّل فاتورةٍ يترك دفتراً بعملتَين.',
         ),

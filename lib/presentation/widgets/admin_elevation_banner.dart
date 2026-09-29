@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // ADMIN ELEVATION BANNER — Feature 004 (Multi-Branch Governance, US3)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -84,7 +85,7 @@ class _AdminElevationBannerState extends ConsumerState<AdminElevationBanner> {
                     )
                   : const Icon(PhosphorIconsBold.arrowsClockwise, size: 16),
               label: Text(
-                _retrying ? 'جارى المحاولة…' : 'إعادة المحاولة الآن',
+                _retrying ? tr('جارى المحاولة…') : tr('إعادة المحاولة الآن'),
                 textDirection: TextDirection.rtl,
               ),
               style: TextButton.styleFrom(

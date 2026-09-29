@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -44,7 +45,7 @@ Future<void> notifyOpenShift({
 
   AppToast.show(
     context,
-    'ورديتك (#${openShift.id}) لسه مفتوحة $reason — تقدر تكمّلها لما ترجع.',
+    tr('ورديتك (#{p0}) لسه مفتوحة {reason} — تقدر تكمّلها لما ترجع.', {'p0': openShift.id, 'reason': reason}),
     type: ToastType.warning,
   );
 }

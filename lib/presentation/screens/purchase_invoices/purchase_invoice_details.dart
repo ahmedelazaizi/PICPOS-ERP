@@ -23,7 +23,7 @@ mixin _PurchaseInvoiceDetailsMixin
             children: [
               const Icon(PhosphorIconsBold.receipt, color: AppColors.warning),
               const SizedBox(width: 8),
-              Text('فاتورة شراء #${invoice.invoiceNumber}'),
+              Text(tr('فاتورة شراء #{p0}', {'p0': invoice.invoiceNumber})),
             ],
           ),
           content: SizedBox(
@@ -33,44 +33,44 @@ mixin _PurchaseInvoiceDetailsMixin
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  detailRow('المورد', supplier?.name ?? 'غير محدد'),
+                  detailRow(tr('المورد'), supplier?.name ?? tr('غير محدد')),
                   detailRow(
-                    'التاريخ',
+                    tr('التاريخ'),
                     invoice.invoiceDate.toString().substring(0, 10),
                   ),
                   detailRow(
-                    'الإجمالي',
+                    tr('الإجمالي'),
                     '${invoice.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                   ),
                   detailRow(
-                    'المدفوع',
+                    tr('المدفوع'),
                     '${invoice.paid.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                   ),
                   detailRow(
-                    'المتبقي',
+                    tr('المتبقي'),
                     '${(invoice.total - invoice.paid).toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                   ),
                   const Divider(height: 24),
-                  const Text(
-                    'الأصناف:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                   Text(
+                    tr('الأصناف:'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   DataTable(
                     columnSpacing: 20,
-                    columns: const [
-                      DataColumn(label: Text('الصنف')),
-                      DataColumn(label: Text('الوحدة')),
-                      DataColumn(label: Text('الكمية')),
-                      DataColumn(label: Text('السعر')),
-                      DataColumn(label: Text('الإجمالي')),
+                    columns:  [
+                      DataColumn(label: Text(tr('الصنف'))),
+                      DataColumn(label: Text(tr('الوحدة'))),
+                      DataColumn(label: Text(tr('الكمية'))),
+                      DataColumn(label: Text(tr('السعر'))),
+                      DataColumn(label: Text(tr('الإجمالي'))),
                     ],
                     rows: items
                         .map(
                           (item) => DataRow(
                             cells: [
                               DataCell(Text(item.product.name)),
-                              DataCell(Text(item.item.unitName ?? 'قطعة')),
+                              DataCell(Text(item.item.unitName ?? tr('قطعة'))),
                               DataCell(
                                 Text(item.item.quantity.toStringAsFixed(2)),
                               ),
@@ -96,7 +96,7 @@ mixin _PurchaseInvoiceDetailsMixin
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -127,7 +127,7 @@ mixin _PurchaseInvoiceDetailsMixin
       await InvoiceGenerator.printPurchaseInvoice(
         invoiceNumber: invoice.invoiceNumber,
         date: invoice.invoiceDate,
-        supplierName: supplier?.name ?? 'غير محدد',
+        supplierName: supplier?.name ?? tr('غير محدد'),
         items: items
             .map(
               // فاتورةٌ كاملةٌ لا مرتجعٌ جزئيّ ⇒ الخصمُ والضريبةُ بلا تقسيط.
@@ -151,7 +151,7 @@ mixin _PurchaseInvoiceDetailsMixin
       );
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }

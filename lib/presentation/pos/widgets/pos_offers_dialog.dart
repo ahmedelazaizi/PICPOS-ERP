@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -43,7 +44,7 @@ class PosOffersDialog extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('عروض خاصة'),
+             Text(tr('عروض خاصة')),
           ],
         ),
         content: SizedBox(
@@ -74,9 +75,9 @@ class PosOffersDialog extends ConsumerWidget {
                         color: AppColors.textMuted.withValues(alpha: 0.3),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'لا توجد عروض نشطة حالياً',
-                        style: TextStyle(color: AppColors.textMuted),
+                       Text(
+                        tr('لا توجد عروض نشطة حالياً'),
+                        style: const TextStyle(color: AppColors.textMuted),
                       ),
                     ],
                   ),
@@ -102,7 +103,7 @@ class PosOffersDialog extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -154,7 +155,7 @@ class PosOffersDialog extends ConsumerWidget {
               builder: (ctx, snap) {
                 final count = snap.data?.length ?? 0;
                 return Text(
-                  '$count أصناف',
+                  tr('{count} أصناف', {'count': count}),
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textMuted,
@@ -210,7 +211,7 @@ class PosOffersDialog extends ConsumerWidget {
       showPosToast(
         context,
         ref,
-        'العرض لا يحتوي على أصناف',
+        tr('العرض لا يحتوي على أصناف'),
         type: PosNotificationType.warning,
       );
       return;
@@ -227,11 +228,11 @@ class PosOffersDialog extends ConsumerWidget {
     if (outcome != ApplyOfferOutcome.added) {
       final message = switch (outcome) {
         ApplyOfferOutcome.alreadyInCart =>
-          'العرض "${offer.name}" مضاف بالفعل إلى السلة',
+          tr('العرض "{p0}" مضاف بالفعل إلى السلة', {'p0': offer.name}),
         ApplyOfferOutcome.notADiscount =>
           'العرض "${offer.name}" سعره أعلى من مجموع أسعار بيع أصنافه — '
               'اترفض عشان ما يرفعش الأسعار. راجع سعر العرض.',
-        _ => 'تعذّر تطبيق العرض "${offer.name}" — تأكد من أصناف العرض',
+        _ => tr('تعذّر تطبيق العرض "{p0}" — تأكد من أصناف العرض', {'p0': offer.name}),
       };
       showPosToast(
         context,
@@ -244,7 +245,7 @@ class PosOffersDialog extends ConsumerWidget {
     showPosToast(
       context,
       ref,
-      'تمت إضافة عرض "${offer.name}" (${items.length} أصناف) بسعر ${offer.offerPrice.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+      tr('تمت إضافة عرض "{p0}" ({p1} أصناف) بسعر {p2} {p3}', {'p0': offer.name, 'p1': items.length, 'p2': offer.offerPrice.toStringAsFixed(AppConstants.decimalPlaces), 'p3': AppConstants.currencySymbolEn}),
       type: PosNotificationType.success,
     );
   }

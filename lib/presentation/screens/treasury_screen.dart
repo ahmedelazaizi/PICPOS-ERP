@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
@@ -116,7 +117,7 @@ class _TreasuryScreenState extends ConsumerState<TreasuryScreen>
                       PhosphorIconsBold.arrowCircleDown,
                       color: AppColors.success,
                     ),
-                    label: const Text('سند قبض'),
+                    label:  Text(tr('سند قبض')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.success,
                     ),
@@ -131,7 +132,7 @@ class _TreasuryScreenState extends ConsumerState<TreasuryScreen>
                       PhosphorIconsBold.arrowCircleUp,
                       color: AppColors.error,
                     ),
-                    label: const Text('سند صرف'),
+                    label:  Text(tr('سند صرف')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,
                     ),
@@ -148,7 +149,7 @@ class _TreasuryScreenState extends ConsumerState<TreasuryScreen>
                       PhosphorIconsBold.vault,
                       color: AppColors.primary,
                     ),
-                    label: const Text('إدارة الصناديق'),
+                    label:  Text(tr('إدارة الصناديق')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
                     ),
@@ -160,7 +161,7 @@ class _TreasuryScreenState extends ConsumerState<TreasuryScreen>
                       PhosphorIconsBold.scales,
                       color: AppColors.info,
                     ),
-                    label: const Text('مراجعة الأرصدة'),
+                    label:  Text(tr('مراجعة الأرصدة')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.info,
                     ),
@@ -179,7 +180,7 @@ class _TreasuryScreenState extends ConsumerState<TreasuryScreen>
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'بحث في الخزينة (سندات، صناديق)...',
+                    hintText: tr('بحث في الخزينة (سندات، صناديق)...'),
                     prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); })
@@ -213,17 +214,17 @@ class _TreasuryScreenState extends ConsumerState<TreasuryScreen>
                       icon: const Icon(PhosphorIconsBold.bank),
                       text: AppLocalizations.of(context)!.bankAccounts,
                     ),
-                    const Tab(
-                      icon: Icon(PhosphorIconsBold.cellSignalFull),
-                      text: 'تحويل كليك',
+                     Tab(
+                      icon: const Icon(PhosphorIconsBold.cellSignalFull),
+                      text: tr('تحويل كليك'),
                     ),
                     Tab(
                       icon: const Icon(PhosphorIconsBold.lockKey),
                       text: AppLocalizations.of(context)!.dailyClosing,
                     ),
-                    const Tab(
-                      icon: Icon(PhosphorIconsBold.chartLineUp),
-                      text: 'تدفقات نقدية',
+                     Tab(
+                      icon: const Icon(PhosphorIconsBold.chartLineUp),
+                      text: tr('تدفقات نقدية'),
                     ),
                   ],
                 ),
@@ -304,9 +305,9 @@ class _TreasuryClickTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'صناديق تحويل كليك',
-                style: TextStyle(
+               Text(
+                tr('صناديق تحويل كليك'),
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -319,10 +320,10 @@ class _TreasuryClickTab extends StatelessWidget {
                         .where((s) => s.safeType == 'click')
                         .toList();
                     if (clickSafes.isEmpty) {
-                      return const Center(
+                      return  Center(
                         child: Text(
-                          'لا توجد صناديق كليك',
-                          style: TextStyle(color: AppColors.textMuted),
+                          tr('لا توجد صناديق كليك'),
+                          style: const TextStyle(color: AppColors.textMuted),
                         ),
                       );
                     }
@@ -387,11 +388,11 @@ class _CashFlowTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return transactions.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('خطأ: $e')),
+      error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
       data: (list) {
         if (list.isEmpty) {
           return Center(
-            child: Text('لا توجد حركات مالية',
+            child: Text(tr('لا توجد حركات مالية'),
                 style: GoogleFonts.cairo(color: AppColors.textMuted)),
           );
         }
@@ -400,14 +401,14 @@ class _CashFlowTab extends ConsumerWidget {
         final result = cashFlowUseCase.executeFromTransactions(list);
 
         final catLabels = <String, String>{
-          'customer_payment': 'عملاء',
-          'supplier_payment': 'موردين',
-          'sales': 'مبيعات',
-          'purchase': 'مشتريات',
-          'expense': 'مصروفات',
-          'salary': 'رواتب',
-          'advance': 'سلف',
-          'loan': 'قروض',
+          'customer_payment': tr('عملاء'),
+          'supplier_payment': tr('موردين'),
+          'sales': tr('مبيعات'),
+          'purchase': tr('مشتريات'),
+          'expense': tr('مصروفات'),
+          'salary': tr('رواتب'),
+          'advance': tr('سلف'),
+          'loan': tr('قروض'),
         };
 
         return SingleChildScrollView(
@@ -418,15 +419,15 @@ class _CashFlowTab extends ConsumerWidget {
               // KPI Row
               Row(
                 children: [
-                  _flowCard('إجمالي الواردات', result.totalInflows,
+                  _flowCard(tr('إجمالي الواردات'), result.totalInflows,
                       PhosphorIconsBold.arrowCircleDown,
                       const Color(0xFF059669)),
                   const SizedBox(width: 16),
-                  _flowCard('إجمالي الصادرات', result.totalOutflows,
+                  _flowCard(tr('إجمالي الصادرات'), result.totalOutflows,
                       PhosphorIconsBold.arrowCircleUp,
                       const Color(0xFFDC2626)),
                   const SizedBox(width: 16),
-                  _flowCard('صافي التدفق', result.netFlow,
+                  _flowCard(tr('صافي التدفق'), result.netFlow,
                       PhosphorIconsBold.arrowsLeftRight,
                       result.netFlow >= 0
                           ? const Color(0xFF059669)
@@ -437,7 +438,7 @@ class _CashFlowTab extends ConsumerWidget {
 
               // Inflow Categories
               if (result.inflowsByCategory.isNotEmpty) ...[
-                Text('تفصيل الواردات',
+                Text(tr('تفصيل الواردات'),
                     style: GoogleFonts.cairo(
                         fontSize: 14, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
@@ -452,7 +453,7 @@ class _CashFlowTab extends ConsumerWidget {
 
               // Outflow Categories
               if (result.outflowsByCategory.isNotEmpty) ...[
-                Text('تفصيل الصادرات',
+                Text(tr('تفصيل الصادرات'),
                     style: GoogleFonts.cairo(
                         fontSize: 14, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
@@ -574,7 +575,7 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
         children: [
           const Icon(PhosphorIconsBold.scales, color: AppColors.info, size: 22),
           const SizedBox(width: 8),
-          Text('مراجعة الأرصدة',
+          Text(tr('مراجعة الأرصدة'),
               style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 18)),
         ],
       ),
@@ -584,18 +585,18 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _reports == null
-                ? const Center(child: Text('لم يتم تشغيل المراجعة بعد'))
+                ?  Center(child: Text(tr('لم يتم تشغيل المراجعة بعد')))
                 : _buildReportsView(),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إغلاق'),
+          child:  Text(tr('إغلاق')),
         ),
         OutlinedButton.icon(
           onPressed: _loading ? null : () => _runReconciliation(),
           icon: const Icon(PhosphorIconsBold.arrowsClockwise, size: 16),
-          label: const Text('إعادة الفحص'),
+          label:  Text(tr('إعادة الفحص')),
         ),
         if (_reports != null && _reports!.any((r) => r.discrepanciesFound > 0))
           ElevatedButton.icon(
@@ -603,7 +604,7 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
             icon: _fixing
                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Icon(PhosphorIconsBold.wrench, size: 16),
-            label: const Text('إصلاح تلقائي'),
+            label:  Text(tr('إصلاح تلقائي')),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
           ),
       ],
@@ -643,8 +644,8 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
               Expanded(
                 child: Text(
                   totalDiscrepancies == 0
-                      ? 'جميع الأرصدة متطابقة ✅'
-                      : '$totalDiscrepancies فرق مكتشف${totalFixed > 0 ? ' — تم إصلاح $totalFixed' : ''}',
+                      ? tr('جميع الأرصدة متطابقة ✅')
+                      : tr('{totalDiscrepancies} فرق مكتشف{p0}', {'totalDiscrepancies': totalDiscrepancies, 'p0': totalFixed > 0 ? ' — تم إصلاح $totalFixed' : ''}),
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.w700,
                     color: totalDiscrepancies == 0 ? AppColors.success : AppColors.warning,
@@ -677,14 +678,14 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
         ),
         title: Text(report.entityType, style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
         subtitle: Text(
-          'تم فحص ${report.totalChecked} — ${report.discrepanciesFound} فرق${report.fixed > 0 ? ' — تم إصلاح ${report.fixed}' : ''}',
+          tr('تم فحص {p0} — {p1} فرق{p2}', {'p0': report.totalChecked, 'p1': report.discrepanciesFound, 'p2': report.fixed > 0 ? ' — تم إصلاح ${report.fixed}' : ''}),
           style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
         ),
         children: report.discrepancies.map((d) => ListTile(
           dense: true,
           title: Text(d.entityName, style: GoogleFonts.cairo(fontSize: 12)),
           subtitle: Text(
-            'مخزّن: ${d.cachedValue.toStringAsFixed(AppConstants.decimalPlaces)} | محسوب: ${d.calculatedValue.toStringAsFixed(AppConstants.decimalPlaces)} | فرق: ${d.difference.toStringAsFixed(AppConstants.decimalPlaces)}',
+            tr('مخزّن: {p0} | محسوب: {p1} | فرق: {p2}', {'p0': d.cachedValue.toStringAsFixed(AppConstants.decimalPlaces), 'p1': d.calculatedValue.toStringAsFixed(AppConstants.decimalPlaces), 'p2': d.difference.toStringAsFixed(AppConstants.decimalPlaces)}),
             style: GoogleFonts.cairo(fontSize: 10, color: AppColors.error),
           ),
         )).toList(),

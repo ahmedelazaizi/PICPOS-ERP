@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,7 +37,7 @@ class _OpexRecordEditDialogState extends ConsumerState<OpexRecordEditDialog> {
   Future<void> _handleSave() async {
     final amount = double.tryParse(_amountController.text) ?? 0;
     if (amount <= 0 || _selectedCategoryId == null) {
-      AppToast.show(context, 'يرجى إدخال مبلغ صحيح واختيار فئة', type: ToastType.error);
+      AppToast.show(context, tr('يرجى إدخال مبلغ صحيح واختيار فئة'), type: ToastType.error);
       return;
     }
 
@@ -84,12 +85,12 @@ class _OpexRecordEditDialogState extends ConsumerState<OpexRecordEditDialog> {
 
       ref.invalidate(expenseCategoriesProvider);
       if (mounted) {
-        AppToast.show(context, 'تم تسجيل المصروف بنجاح', type: ToastType.success);
+        AppToast.show(context, tr('تم تسجيل المصروف بنجاح'), type: ToastType.success);
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -118,10 +119,10 @@ class _OpexRecordEditDialogState extends ConsumerState<OpexRecordEditDialog> {
                   children: [
                     const Icon(PhosphorIconsBold.coins, color: AppColors.primary),
                     const SizedBox(width: 10),
-                    const Expanded(
+                     Expanded(
                       child: Text(
-                        'تسجيل مصروف تشغيلي',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                        tr('تسجيل مصروف تشغيلي'),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                       ),
                     ),
                     IconButton(
@@ -135,18 +136,18 @@ class _OpexRecordEditDialogState extends ConsumerState<OpexRecordEditDialog> {
                 categoriesAsync.when(
                   data: (categories) {
                     if (categories.isEmpty) {
-                      return const Text(
-                        'أضف فئات مصروفات أولاً من تبويب "فئات المصروفات"',
-                        style: TextStyle(color: AppColors.error),
+                      return  Text(
+                        tr('أضف فئات مصروفات أولاً من تبويب "فئات المصروفات"'),
+                        style: const TextStyle(color: AppColors.error),
                       );
                     }
                     _selectedCategoryId ??= categories.first.id;
                     return DropdownButtonFormField<int>(
                       value: _selectedCategoryId,
-                      decoration: const InputDecoration(
-                        labelText: 'فئة المصروف',
-                        prefixIcon: Icon(PhosphorIconsBold.tag),
-                        border: OutlineInputBorder(),
+                      decoration:  InputDecoration(
+                        labelText: tr('فئة المصروف'),
+                        prefixIcon: const Icon(PhosphorIconsBold.tag),
+                        border: const OutlineInputBorder(),
                       ),
                       items: categories
                           .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
@@ -155,14 +156,14 @@ class _OpexRecordEditDialogState extends ConsumerState<OpexRecordEditDialog> {
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Text('خطأ: $e'),
+                  error: (e, _) => Text(tr('خطأ: {e}', {'e': e})),
                 ),
                 const SizedBox(height: 16),
                 // Amount
                 TextField(
                   controller: _amountController,
                   decoration: InputDecoration(
-                    labelText: 'المبلغ *',
+                    labelText: tr('المبلغ *'),
                     suffixText: AppConstants.currencySymbol,
                     prefixIcon: const Icon(PhosphorIconsBold.currencyCircleDollar),
                     border: const OutlineInputBorder(),
@@ -185,10 +186,10 @@ class _OpexRecordEditDialogState extends ConsumerState<OpexRecordEditDialog> {
                     }
                   },
                   child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'التاريخ',
-                      prefixIcon: Icon(PhosphorIconsBold.calendarBlank),
-                      border: OutlineInputBorder(),
+                    decoration:  InputDecoration(
+                      labelText: tr('التاريخ'),
+                      prefixIcon: const Icon(PhosphorIconsBold.calendarBlank),
+                      border: const OutlineInputBorder(),
                     ),
                     child: Text(DateFormat('yyyy/MM/dd').format(_selectedDate)),
                   ),
@@ -197,10 +198,10 @@ class _OpexRecordEditDialogState extends ConsumerState<OpexRecordEditDialog> {
                 // Notes
                 TextField(
                   controller: _notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'ملاحظات (اختياري)',
-                    prefixIcon: Icon(PhosphorIconsBold.note),
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('ملاحظات (اختياري)'),
+                    prefixIcon: const Icon(PhosphorIconsBold.note),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -211,13 +212,13 @@ class _OpexRecordEditDialogState extends ConsumerState<OpexRecordEditDialog> {
                     final ccList = ccSnap.data ?? [];
                     return DropdownButtonFormField<int?>(
                       value: _selectedCostCenterId,
-                      decoration: const InputDecoration(
-                        labelText: 'مركز التكلفة',
-                        prefixIcon: Icon(PhosphorIconsBold.treeStructure),
-                        border: OutlineInputBorder(),
+                      decoration:  InputDecoration(
+                        labelText: tr('مركز التكلفة'),
+                        prefixIcon: const Icon(PhosphorIconsBold.treeStructure),
+                        border: const OutlineInputBorder(),
                       ),
                       items: [
-                        const DropdownMenuItem<int?>(value: null, child: Text('بدون')),
+                         DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'))),
                         ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name))),
                       ],
                       onChanged: (v) => setState(() => _selectedCostCenterId = v),
@@ -229,13 +230,13 @@ class _OpexRecordEditDialogState extends ConsumerState<OpexRecordEditDialog> {
                 ref.watch(allBranchesProvider).when(
                   data: (branches) => DropdownButtonFormField<int?>(
                     value: _selectedBranchId,
-                    decoration: const InputDecoration(
-                      labelText: 'الفرع (اختياري)',
-                      prefixIcon: Icon(PhosphorIconsBold.buildings),
-                      border: OutlineInputBorder(),
+                    decoration:  InputDecoration(
+                      labelText: tr('الفرع (اختياري)'),
+                      prefixIcon: const Icon(PhosphorIconsBold.buildings),
+                      border: const OutlineInputBorder(),
                     ),
                     items: [
-                      const DropdownMenuItem<int?>(value: null, child: Text('كل الفروع')),
+                       DropdownMenuItem<int?>(value: null, child: Text(tr('كل الفروع'))),
                       ...branches.map((b) => DropdownMenuItem<int?>(value: b.id, child: Text(b.name))),
                     ],
                     onChanged: (v) => setState(() => _selectedBranchId = v),
@@ -260,7 +261,7 @@ class _OpexRecordEditDialogState extends ConsumerState<OpexRecordEditDialog> {
                             width: 20, height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('حفظ المصروف', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                        :  Text(tr('حفظ المصروف'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                   ),
                 ),
               ],

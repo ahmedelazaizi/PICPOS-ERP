@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -807,7 +808,7 @@ class PurchaseInvoicesController extends Notifier<PurchaseInvoicesScreenState> {
       action: 'delete_purchase',
       entityType: 'purchase_invoice',
       entityId: invoiceId,
-      description: 'حذف فاتورة مشتريات $invoiceNumber',
+      description: tr('حذف فاتورة مشتريات {invoiceNumber}', {'invoiceNumber': invoiceNumber}),
       amount: total,
     );
   }

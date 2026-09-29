@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // صفُّ «طباعة أكواد الحساب» في الإعدادات — نُقل من رأس شاشة الطاولات.
 //
 // ═══ 🔴 لماذا نُقل (قرارُ الخطّة ٢، قسمُ ٧) ═══
@@ -46,14 +47,14 @@ class _TableBillQrLauncherRowState
           if (t.isActive) t,
       ];
       if (active.isEmpty) {
-        AppToast.show(context, 'لا طاولاتٍ بعد — أنشئها من شاشة الطاولات',
+        AppToast.show(context, tr('لا طاولاتٍ بعد — أنشئها من شاشة الطاولات'),
             type: ToastType.warning);
         return;
       }
       TableBillQrDialog.show(context, active);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'تعذّر تحميلُ الطاولات: $e',
+        AppToast.show(context, tr('تعذّر تحميلُ الطاولات: {e}', {'e': e}),
             type: ToastType.error);
       }
     } finally {
@@ -66,7 +67,7 @@ class _TableBillQrLauncherRowState
     return PermissionGuard(
       permission: PermissionCodes.tablesManage,
       allowManagerOverride: true,
-      actionName: 'طباعة أكواد حساب الطاولات',
+      actionName: tr('طباعة أكواد حساب الطاولات'),
       onGranted: _open,
       child: SettingsRowsBody(
         children: [
@@ -74,8 +75,8 @@ class _TableBillQrLauncherRowState
             key: const Key('settings_table_bill_qr'),
             first: true,
             icon: PhosphorIconsBold.qrCode,
-            title: 'طباعة أكواد الحساب',
-            sub: 'ورقةٌ برموزِ الطاولات تُلصَق على كلِّ طاولة',
+            title: tr('طباعة أكواد الحساب'),
+            sub: tr('ورقةٌ برموزِ الطاولات تُلصَق على كلِّ طاولة'),
             tint: AppColors.info,
             onTap: _open,
           ),

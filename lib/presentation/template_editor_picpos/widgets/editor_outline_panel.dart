@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 // اللوحةُ اليسرى — بنيةُ المستند، ومكتبةُ الحقول.
 //
@@ -13,61 +14,61 @@ import '../../picpos_shell/picpos_surface.dart';
 import 'editor_canvas.dart' show bandLabel, bandTint;
 
 /// حقولُ المكتبة مجموعةً — نفسُ ترتيب التصميم.
-const editorFieldGroups = <({String label, Color tint, List<({String key, String label, IconData icon})> items})>[
+List<({String label, Color tint, List<({String key, String label, IconData icon})> items})> get editorFieldGroups => <({String label, Color tint, List<({String key, String label, IconData icon})> items})>[
   (
-    label: 'الشركة',
-    tint: Color(0xFF0250D3),
+    label: tr('الشركة'),
+    tint: const Color(0xFF0250D3),
     items: [
-      (key: 'company_name', label: 'اسم الشركة', icon: PhosphorIconsBold.buildings),
-      (key: 'company_address', label: 'العنوان', icon: PhosphorIconsBold.mapPin),
-      (key: 'company_phone', label: 'الهاتف', icon: PhosphorIconsBold.phone),
-      (key: 'company_tax_number', label: 'الرقم الضريبي', icon: PhosphorIconsBold.identificationBadge),
-      (key: 'branch_name', label: 'الفرع', icon: PhosphorIconsBold.storefront),
-      (key: 'logo', label: 'الشعار', icon: PhosphorIconsBold.image),
+      (key: 'company_name', label: tr('اسم الشركة'), icon: PhosphorIconsBold.buildings),
+      (key: 'company_address', label: tr('العنوان'), icon: PhosphorIconsBold.mapPin),
+      (key: 'company_phone', label: tr('الهاتف'), icon: PhosphorIconsBold.phone),
+      (key: 'company_tax_number', label: tr('الرقم الضريبي'), icon: PhosphorIconsBold.identificationBadge),
+      (key: 'branch_name', label: tr('الفرع'), icon: PhosphorIconsBold.storefront),
+      (key: 'logo', label: tr('الشعار'), icon: PhosphorIconsBold.image),
     ],
   ),
   (
-    label: 'المستند',
-    tint: Color(0xFF8B5CF6),
+    label: tr('المستند'),
+    tint: const Color(0xFF8B5CF6),
     items: [
-      (key: 'invoice_number', label: 'رقم الفاتورة', icon: PhosphorIconsBold.hash),
-      (key: 'order_number', label: 'رقم الطلب', icon: PhosphorIconsBold.listNumbers),
-      (key: 'date', label: 'التاريخ', icon: PhosphorIconsBold.calendar),
-      (key: 'time', label: 'الوقت', icon: PhosphorIconsBold.clock),
-      (key: 'cashier_name', label: 'الكاشير', icon: PhosphorIconsBold.user),
-      (key: 'payment_method', label: 'طريقة الدفع', icon: PhosphorIconsBold.creditCard),
+      (key: 'invoice_number', label: tr('رقم الفاتورة'), icon: PhosphorIconsBold.hash),
+      (key: 'order_number', label: tr('رقم الطلب'), icon: PhosphorIconsBold.listNumbers),
+      (key: 'date', label: tr('التاريخ'), icon: PhosphorIconsBold.calendar),
+      (key: 'time', label: tr('الوقت'), icon: PhosphorIconsBold.clock),
+      (key: 'cashier_name', label: tr('الكاشير'), icon: PhosphorIconsBold.user),
+      (key: 'payment_method', label: tr('طريقة الدفع'), icon: PhosphorIconsBold.creditCard),
     ],
   ),
   (
-    label: 'الطرف',
-    tint: Color(0xFF4A80E8),
+    label: tr('الطرف'),
+    tint: const Color(0xFF4A80E8),
     items: [
-      (key: 'customer_name', label: 'العميل', icon: PhosphorIconsBold.user),
-      (key: 'customer_phone', label: 'الهاتف', icon: PhosphorIconsBold.phone),
-      (key: 'customer_address', label: 'العنوان', icon: PhosphorIconsBold.mapPin),
+      (key: 'customer_name', label: tr('العميل'), icon: PhosphorIconsBold.user),
+      (key: 'customer_phone', label: tr('الهاتف'), icon: PhosphorIconsBold.phone),
+      (key: 'customer_address', label: tr('العنوان'), icon: PhosphorIconsBold.mapPin),
     ],
   ),
   (
-    label: 'المجاميع',
-    tint: Color(0xFF22C55E),
+    label: tr('المجاميع'),
+    tint: const Color(0xFF22C55E),
     items: [
-      (key: 'subtotal', label: 'الفرعي', icon: PhosphorIconsBold.currencyCircleDollar),
-      (key: 'discount', label: 'الخصم', icon: PhosphorIconsBold.tag),
-      (key: 'tax_amount', label: 'الضريبة', icon: PhosphorIconsBold.percent),
-      (key: 'total', label: 'الإجمالي', icon: PhosphorIconsBold.coins),
-      (key: 'paid', label: 'المدفوع', icon: PhosphorIconsBold.money),
-      (key: 'remaining', label: 'المتبقي', icon: PhosphorIconsBold.arrowsLeftRight),
+      (key: 'subtotal', label: tr('الفرعي'), icon: PhosphorIconsBold.currencyCircleDollar),
+      (key: 'discount', label: tr('الخصم'), icon: PhosphorIconsBold.tag),
+      (key: 'tax_amount', label: tr('الضريبة'), icon: PhosphorIconsBold.percent),
+      (key: 'total', label: tr('الإجمالي'), icon: PhosphorIconsBold.coins),
+      (key: 'paid', label: tr('المدفوع'), icon: PhosphorIconsBold.money),
+      (key: 'remaining', label: tr('المتبقي'), icon: PhosphorIconsBold.arrowsLeftRight),
     ],
   ),
   (
-    label: 'عناصر حرة',
-    tint: Color(0xFFF59E0B),
+    label: tr('عناصر حرة'),
+    tint: const Color(0xFFF59E0B),
     items: [
-      (key: 'line', label: 'خط فاصل', icon: PhosphorIconsBold.minus),
-      (key: 'qr_code', label: 'كود QR', icon: PhosphorIconsBold.qrCode),
-      (key: 'barcode', label: 'باركود', icon: PhosphorIconsBold.barcode),
-      (key: 'notes', label: 'ملاحظات', icon: PhosphorIconsBold.notepad),
-      (key: 'page_number', label: 'رقم الصفحة', icon: PhosphorIconsBold.file),
+      (key: 'line', label: tr('خط فاصل'), icon: PhosphorIconsBold.minus),
+      (key: 'qr_code', label: tr('كود QR'), icon: PhosphorIconsBold.qrCode),
+      (key: 'barcode', label: tr('باركود'), icon: PhosphorIconsBold.barcode),
+      (key: 'notes', label: tr('ملاحظات'), icon: PhosphorIconsBold.notepad),
+      (key: 'page_number', label: tr('رقم الصفحة'), icon: PhosphorIconsBold.file),
     ],
   ),
 ];
@@ -117,12 +118,12 @@ class EditorOutlinePanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const TabBar(
+           TabBar(
             labelStyle:
-                TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
             tabs: [
-              Tab(height: 42, text: 'بنية المستند'),
-              Tab(height: 42, text: 'مكتبة الحقول'),
+              Tab(height: 42, text: tr('بنية المستند')),
+              Tab(height: 42, text: tr('مكتبة الحقول')),
             ],
           ),
           Expanded(
@@ -195,7 +196,7 @@ class _Outline extends StatelessWidget {
                             fontWeight: FontWeight.w800,
                             color: bandTint(band.id))),
                   ),
-                  Text('${band.heightMm.toStringAsFixed(0)}مم',
+                  Text(tr('{p0}مم', {'p0': band.heightMm.toStringAsFixed(0)}),
                       style: TextStyle(
                           fontSize: 9.5,
                           fontWeight: FontWeight.w700,
@@ -238,14 +239,14 @@ class _Outline extends StatelessWidget {
                         size: 13, color: Color(0xFFF59E0B)),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text('جدول الأصناف',
+                      child: Text(tr('جدول الأصناف'),
                           style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
                               color: context.picposText)),
                     ),
                     Text(
-                      '${document.table!.visibleColumns.length} عمود',
+                      tr('{p0} عمود', {'p0': document.table!.visibleColumns.length}),
                       style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
@@ -342,7 +343,7 @@ class _FieldLibrary extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: Text(
-            'يُضاف الحقلُ إلى النطاق المحدَّد — اختر نطاقاً أوّلاً.',
+            tr('يُضاف الحقلُ إلى النطاق المحدَّد — اختر نطاقاً أوّلاً.'),
             style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,

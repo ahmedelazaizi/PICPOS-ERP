@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 import 'dart:io' show Platform;
 
@@ -64,13 +65,13 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
         Navigator.pop(context, true);
         AppToast.show(
           context,
-          'تم تفعيل النسخة الكاملة بنجاح!',
+          tr('تم تفعيل النسخة الكاملة بنجاح!'),
           type: ToastType.success,
         );
       } else {
         AppToast.show(
           context,
-          'كود التفعيل غير صحيح لهذه النسخة',
+          tr('كود التفعيل غير صحيح لهذه النسخة'),
           type: ToastType.error,
         );
       }
@@ -100,11 +101,11 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
     final groups = _picposGroups(muted);
     return PicPosDialog(
       icon: PhosphorIconsBold.key,
-      title: 'تفعيل الترخيص',
-      subtitle: 'أدخل مفتاح الترخيص المرسل من الدعم الفني',
+      title: tr('تفعيل الترخيص'),
+      subtitle: tr('أدخل مفتاح الترخيص المرسل من الدعم الفني'),
       width: 660,
       primaryAction: PicPosDialogAction(
-        label: 'تفعيل الآن',
+        label: tr('تفعيل الآن'),
         icon: PhosphorIconsBold.sealCheck,
         busy: _loading,
         onPressed: _loading ? null : _handleActivate,
@@ -118,8 +119,8 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
   /// الأرقام على جانب اللوحة، فلا يمكن أن يعِدَ العمودُ بمجموعةٍ لا وجودَ لها.
   List<PicPosPanelGroup> _picposGroups(Color muted) => [
         PicPosPanelGroup(
-          label: 'مفتاح الترخيص',
-          hint: 'مفتاح موقّع طويل',
+          label: tr('مفتاح الترخيص'),
+          hint: tr('مفتاح موقّع طويل'),
           child: TextField(
             controller: _keyController,
             maxLength: 512,
@@ -139,8 +140,8 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
           ),
         ),
         PicPosPanelGroup(
-          label: 'بيانات هذا الجهاز',
-          hint: 'أرسلها للدعم الفنّي',
+          label: tr('بيانات هذا الجهاز'),
+          hint: tr('أرسلها للدعم الفنّي'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
@@ -148,22 +149,22 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
               PicPosDialogSummary(
                 rows: [
                   (
-                    label: 'رقم الجهاز',
-                    value: _machineId ?? 'جاري التحميل...',
+                    label: tr('رقم الجهاز'),
+                    value: _machineId ?? tr('جاري التحميل...'),
                     color: AppColors.primary,
                   ),
                   (
-                    label: 'اسم الجهاز',
+                    label: tr('اسم الجهاز'),
                     value: Platform.localHostname,
                     color: null,
                   ),
                   (
-                    label: 'نظام التشغيل',
+                    label: tr('نظام التشغيل'),
                     value: Platform.operatingSystem,
                     color: null,
                   ),
                   (
-                    label: 'إصدار البرنامج',
+                    label: tr('إصدار البرنامج'),
                     value: AppConstants.appVersion,
                     color: null,
                   ),
@@ -174,12 +175,12 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
                 alignment: AlignmentDirectional.centerStart,
                 child: TextButton.icon(
                   icon: const Icon(PhosphorIconsBold.copy, size: 15),
-                  label: const Text('نسخ رقم التعريف'),
+                  label:  Text(tr('نسخ رقم التعريف')),
                   onPressed: _machineId == null
                       ? null
                       : () {
                           Clipboard.setData(ClipboardData(text: _machineId!));
-                          AppToast.show(context, 'تم نسخ رقم التعريف');
+                          AppToast.show(context, tr('تم نسخ رقم التعريف'));
                         },
                 ),
               ),
@@ -189,9 +190,9 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
         // ⚠️ التنبيهُ **مجموعةٌ بعنوان** لا لافتتان عاريتان: في التصميم
         //    `{label:'تنبيه', kind:'note'}`. ولو بقي بلا عنوانٍ لصار في
         //    اللوحة كتلةٌ ظاهرةٌ بلا رقمٍ يقابلها في العمود.
-        const PicPosPanelGroup(
-          label: 'تنبيه',
-          child: Column(
+         PicPosPanelGroup(
+          label: tr('تنبيه'),
+          child: const Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -221,11 +222,11 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.key, color: AppColors.primary),
-            SizedBox(width: 12),
-            Text('تفعيل النسخة الكاملة'),
+            const Icon(PhosphorIconsBold.key, color: AppColors.primary),
+            const SizedBox(width: 12),
+            Text(tr('تفعيل النسخة الكاملة')),
           ],
         ),
         content: SizedBox(
@@ -234,15 +235,15 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'للحصول على كود التفعيل، يرجى إرسال رقم تعريف الجهاز الموضح أدناه للمطور.',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+               Text(
+                tr('للحصول على كود التفعيل، يرجى إرسال رقم تعريف الجهاز الموضح أدناه للمطور.'),
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
               ),
               const SizedBox(height: 20),
               // Machine ID Field
-              const Text(
-                'رقم تعريف الجهاز (Machine ID):',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+               Text(
+                tr('رقم تعريف الجهاز (Machine ID):'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               ),
               const SizedBox(height: 8),
               Container(
@@ -259,7 +260,7 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
                   children: [
                     Expanded(
                       child: Text(
-                        _machineId ?? 'جاري التحميل...',
+                        _machineId ?? tr('جاري التحميل...'),
                         style: const TextStyle(
                           fontFamily: AppTypography.mono,
                           fontSize: 16,
@@ -277,18 +278,18 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
                               Clipboard.setData(
                                 ClipboardData(text: _machineId!),
                               );
-                              AppToast.show(context, 'تم نسخ رقم التعريف');
+                              AppToast.show(context, tr('تم نسخ رقم التعريف'));
                             },
-                      tooltip: 'نسخ رقم التعريف',
+                      tooltip: tr('نسخ رقم التعريف'),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
               // Key Input Field
-              const Text(
-                'كود التفعيل:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+               Text(
+                tr('كود التفعيل:'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -318,7 +319,7 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton(
             onPressed: _loading ? null : _handleActivate,
@@ -336,7 +337,7 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
                       color: Colors.white,
                     ),
                   )
-                : const Text('تفعيل الآن'),
+                :  Text(tr('تفعيل الآن')),
           ),
         ],
       ),

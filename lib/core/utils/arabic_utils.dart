@@ -10,7 +10,7 @@ class ArabicUtils {
     normalized = normalized.replaceAll(RegExp(r'[\u064B-\u0652]'), '');
 
     // Normalize Alef (أ, إ, آ -> ا)
-    normalized = normalized.replaceAll(RegExp(r'[أإآ]'), 'ا');
+    normalized = normalized.replaceAll(RegExp('[أإآ]'), 'ا');
 
     // Normalize Teh Marbuta (ة -> ه)
     normalized = normalized.replaceAll('ة', 'ه');

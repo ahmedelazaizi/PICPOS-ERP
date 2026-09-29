@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/utils/friendly_error.dart';
 import 'package:ural_erp/presentation/widgets/dialogs/app_confirm_dialog.dart';
@@ -49,19 +50,19 @@ class _DeliveryManagementScreenState extends State<DeliveryManagementScreen>
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: const Text('إدارة الشركات والمناديب'),
+          title:  Text(tr('إدارة الشركات والمناديب')),
           bottom: TabBar(
             controller: _tabController,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
             indicatorColor: Colors.white,
             indicatorWeight: 3,
-            tabs: const [
+            tabs:  [
               Tab(
-                icon: Icon(PhosphorIconsBold.buildings),
-                text: 'شركات التوصيل',
+                icon: const Icon(PhosphorIconsBold.buildings),
+                text: tr('شركات التوصيل'),
               ),
-              Tab(icon: Icon(PhosphorIconsBold.moped), text: 'المناديب'),
+              Tab(icon: const Icon(PhosphorIconsBold.moped), text: tr('المناديب')),
             ],
           ),
         ),
@@ -162,7 +163,7 @@ class _DeliveryManagementBodyState
 
     return partiesAsync.when(
       data: (parties) => parties.isEmpty
-          ? _buildEmptyState('لا توجد شركات توصيل\nأضف شركة من شاشة العملاء والموردين وفعّل خيار "شركة توصيل"')
+          ? _buildEmptyState(tr('لا توجد شركات توصيل\nأضف شركة من شاشة العملاء والموردين وفعّل خيار "شركة توصيل"'))
           : Column(
               children: [
                 // Summary banner: total receivable across all delivery companies
@@ -190,9 +191,9 @@ class _DeliveryManagementBodyState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'إجمالى المستحَق على شركات التوصيل',
-                              style: TextStyle(
+                             Text(
+                              tr('إجمالى المستحَق على شركات التوصيل'),
+                              style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 12,
                               ),
@@ -212,7 +213,7 @@ class _DeliveryManagementBodyState
                         ),
                       ),
                       Text(
-                        '${parties.length} شركة',
+                        tr('{p0} شركة', {'p0': parties.length}),
                         style: const TextStyle(color: Colors.white70),
                       ),
                     ],
@@ -231,10 +232,10 @@ class _DeliveryManagementBodyState
                               ? AppColors.success
                               : AppColors.textMuted;
                       final balLabel = balance > 0
-                          ? 'مستحَق علينا'
+                          ? tr('مستحَق علينا')
                           : balance < 0
-                              ? 'مدفوع زائد'
-                              : 'مسوّى';
+                              ? tr('مدفوع زائد')
+                              : tr('مسوّى');
                       return Card(
                         child: InkWell(
                           borderRadius: BorderRadius.circular(8),
@@ -260,7 +261,7 @@ class _DeliveryManagementBodyState
                               party.name,
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            subtitle: Text(party.phone ?? 'لا يوجد هاتف'),
+                            subtitle: Text(party.phone ?? tr('لا يوجد هاتف')),
                             trailing: Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               mainAxisSize: MainAxisSize.min,
@@ -301,7 +302,7 @@ class _DeliveryManagementBodyState
 
     return couriersAsync.when(
       data: (couriers) => couriers.isEmpty
-          ? _buildEmptyState('لا يوجد مناديب')
+          ? _buildEmptyState(tr('لا يوجد مناديب'))
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: couriers.length,
@@ -312,7 +313,7 @@ class _DeliveryManagementBodyState
                     (c) => c.id == courier.companyId,
                     orElse: () => DeliveryCompany(
                       id: 0,
-                      name: 'توصيل داخلي',
+                      name: tr('توصيل داخلي'),
                       isActive: true,
                       createdAt: DateTime.now(),
                       rowVersion: 0, // v173
@@ -334,7 +335,7 @@ class _DeliveryManagementBodyState
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
-                      '${courier.phone ?? "-"} | ${company?.name ?? "توصيل داخلي"}',
+                      tr('{p0} | {p1}', {'p0': courier.phone ?? "-", 'p1': company?.name ?? "توصيل داخلي"}),
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -392,28 +393,28 @@ class _DeliveryManagementBodyState
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('إضافة شركة توصيل'),
+          title:  Text(tr('إضافة شركة توصيل')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'اسم الشركة *'),
+                decoration:  InputDecoration(labelText: tr('اسم الشركة *')),
               ),
               TextField(
                 controller: phoneController,
-                decoration: const InputDecoration(labelText: 'الهاتف'),
+                decoration:  InputDecoration(labelText: tr('الهاتف')),
               ),
               TextField(
                 controller: addressController,
-                decoration: const InputDecoration(labelText: 'العنوان'),
+                decoration:  InputDecoration(labelText: tr('العنوان')),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: _savingCompany ? null : () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: _savingCompany
@@ -422,7 +423,7 @@ class _DeliveryManagementBodyState
                       if (nameController.text.trim().isEmpty) {
                         // BUG-U12: explain the no-op instead of failing silently.
                         ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('أدخل اسم الشركة أولاً')),
+                           SnackBar(content: Text(tr('أدخل اسم الشركة أولاً'))),
                         );
                         return;
                       }
@@ -446,10 +447,10 @@ class _DeliveryManagementBodyState
                         final activityLogRepo = ref.read(activityLogRepositoryProvider);
                         await activityLogRepo.logActivity(
                           userId: user?.id,
-                          userName: user?.displayName ?? 'مجهول',
+                          userName: user?.displayName ?? tr('مجهول'),
                           action: 'add_delivery_company',
                           entityType: 'delivery_company',
-                          description: 'إضافة شركة توصيل: ${nameController.text}',
+                          description: tr('إضافة شركة توصيل: {p0}', {'p0': nameController.text}),
                         );
                         if (ctx.mounted) Navigator.pop(ctx);
                       } finally {
@@ -462,7 +463,7 @@ class _DeliveryManagementBodyState
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('حفظ'),
+                  :  Text(tr('حفظ')),
             ),
           ],
         ),
@@ -482,28 +483,28 @@ class _DeliveryManagementBodyState
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('تعديل شركة توصيل'),
+          title:  Text(tr('تعديل شركة توصيل')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'اسم الشركة *'),
+                decoration:  InputDecoration(labelText: tr('اسم الشركة *')),
               ),
               TextField(
                 controller: phoneController,
-                decoration: const InputDecoration(labelText: 'الهاتف'),
+                decoration:  InputDecoration(labelText: tr('الهاتف')),
               ),
               TextField(
                 controller: addressController,
-                decoration: const InputDecoration(labelText: 'العنوان'),
+                decoration:  InputDecoration(labelText: tr('العنوان')),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: _savingCompany ? null : () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: _savingCompany
@@ -512,7 +513,7 @@ class _DeliveryManagementBodyState
                       if (nameController.text.trim().isEmpty) {
                         // BUG-U12: explain the no-op instead of failing silently.
                         ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('أدخل اسم الشركة أولاً')),
+                           SnackBar(content: Text(tr('أدخل اسم الشركة أولاً'))),
                         );
                         return;
                       }
@@ -536,11 +537,11 @@ class _DeliveryManagementBodyState
                         final activityLogRepo = ref.read(activityLogRepositoryProvider);
                         await activityLogRepo.logActivity(
                           userId: user?.id,
-                          userName: user?.displayName ?? 'مجهول',
+                          userName: user?.displayName ?? tr('مجهول'),
                           action: 'update_delivery_company',
                           entityType: 'delivery_company',
                           entityId: company.id,
-                          description: 'تعديل شركة توصيل: ${nameController.text}',
+                          description: tr('تعديل شركة توصيل: {p0}', {'p0': nameController.text}),
                           oldValue: company.name,
                           newValue: nameController.text,
                         );
@@ -555,7 +556,7 @@ class _DeliveryManagementBodyState
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('حفظ'),
+                  :  Text(tr('حفظ')),
             ),
           ],
         ),
@@ -573,17 +574,17 @@ class _DeliveryManagementBodyState
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('إضافة مندوب جديد'),
+          title:  Text(tr('إضافة مندوب جديد')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'اسم المندوب *'),
+                decoration:  InputDecoration(labelText: tr('اسم المندوب *')),
               ),
               TextField(
                 controller: phoneController,
-                decoration: const InputDecoration(labelText: 'الهاتف'),
+                decoration:  InputDecoration(labelText: tr('الهاتف')),
               ),
               Autocomplete<Party>(
                 optionsBuilder: (textValue) {
@@ -601,8 +602,8 @@ class _DeliveryManagementBodyState
                         controller: controller,
                         focusNode: focusNode,
                         decoration: InputDecoration(
-                          labelText: 'شركة التوصيل',
-                          hintText: 'ابحث عن الشركة...',
+                          labelText: tr('شركة التوصيل'),
+                          hintText: tr('ابحث عن الشركة...'),
                           suffixIcon: selectedCompanyPartyId != null
                               ? IconButton(
                                   icon: const Icon(
@@ -627,7 +628,7 @@ class _DeliveryManagementBodyState
           actions: [
             TextButton(
               onPressed: _savingCourier ? null : () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: _savingCourier
@@ -652,10 +653,10 @@ class _DeliveryManagementBodyState
                         final activityLogRepo = ref.read(activityLogRepositoryProvider);
                         await activityLogRepo.logActivity(
                           userId: user?.id,
-                          userName: user?.displayName ?? 'مجهول',
+                          userName: user?.displayName ?? tr('مجهول'),
                           action: 'add_courier',
                           entityType: 'courier',
-                          description: 'إضافة مندوب: ${nameController.text}',
+                          description: tr('إضافة مندوب: {p0}', {'p0': nameController.text}),
                         );
                         if (ctx.mounted) Navigator.pop(ctx);
                       } finally {
@@ -668,7 +669,7 @@ class _DeliveryManagementBodyState
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('حفظ'),
+                  :  Text(tr('حفظ')),
             ),
           ],
         ),
@@ -686,17 +687,17 @@ class _DeliveryManagementBodyState
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('تعديل المندوب'),
+          title:  Text(tr('تعديل المندوب')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'اسم المندوب *'),
+                decoration:  InputDecoration(labelText: tr('اسم المندوب *')),
               ),
               TextField(
                 controller: phoneController,
-                decoration: const InputDecoration(labelText: 'الهاتف'),
+                decoration:  InputDecoration(labelText: tr('الهاتف')),
               ),
               Autocomplete<Party>(
                 optionsBuilder: (textValue) {
@@ -724,8 +725,8 @@ class _DeliveryManagementBodyState
                         controller: controller,
                         focusNode: focusNode,
                         decoration: InputDecoration(
-                          labelText: 'شركة التوصيل',
-                          hintText: 'ابحث عن الشركة...',
+                          labelText: tr('شركة التوصيل'),
+                          hintText: tr('ابحث عن الشركة...'),
                           suffixIcon: selectedCompanyPartyId != null
                               ? IconButton(
                                   icon: const Icon(
@@ -750,7 +751,7 @@ class _DeliveryManagementBodyState
           actions: [
             TextButton(
               onPressed: _savingCourier ? null : () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: _savingCourier
@@ -775,11 +776,11 @@ class _DeliveryManagementBodyState
                         final activityLogRepo = ref.read(activityLogRepositoryProvider);
                         await activityLogRepo.logActivity(
                           userId: user?.id,
-                          userName: user?.displayName ?? 'مجهول',
+                          userName: user?.displayName ?? tr('مجهول'),
                           action: 'update_courier',
                           entityType: 'courier',
                           entityId: courier.id,
-                          description: 'تعديل مندوب: ${nameController.text}',
+                          description: tr('تعديل مندوب: {p0}', {'p0': nameController.text}),
                           oldValue: courier.name,
                           newValue: nameController.text,
                         );
@@ -794,7 +795,7 @@ class _DeliveryManagementBodyState
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('حفظ'),
+                  :  Text(tr('حفظ')),
             ),
           ],
         ),
@@ -813,11 +814,11 @@ class _DeliveryManagementBodyState
       final activityLogRepo = ref.read(activityLogRepositoryProvider);
       await activityLogRepo.logActivity(
         userId: user?.id,
-        userName: user?.displayName ?? 'مجهول',
+        userName: user?.displayName ?? tr('مجهول'),
         action: 'delete_delivery_company',
         entityType: 'delivery_company',
         entityId: id,
-        description: 'حذف شركة توصيل: $name',
+        description: tr('حذف شركة توصيل: {name}', {'name': name}),
       );
     } finally {
       if (mounted) setState(() => _deletingCompany = false);
@@ -829,9 +830,9 @@ class _DeliveryManagementBodyState
     // BUG-U05: confirm before the irreversible courier delete.
     final ok = await AppConfirmDialog.show(
       context,
-      title: 'حذف مندوب',
-      message: 'هل تريد حذف المندوب "$name"؟ لا يمكن التراجع عن هذا الإجراء.',
-      confirmLabel: 'حذف',
+      title: tr('حذف مندوب'),
+      message: tr('هل تريد حذف المندوب "{name}"؟ لا يمكن التراجع عن هذا الإجراء.', {'name': name}),
+      confirmLabel: tr('حذف'),
       isDangerous: true,
     );
     if (!ok || !mounted) return;
@@ -843,11 +844,11 @@ class _DeliveryManagementBodyState
       final activityLogRepo = ref.read(activityLogRepositoryProvider);
       await activityLogRepo.logActivity(
         userId: user?.id,
-        userName: user?.displayName ?? 'مجهول',
+        userName: user?.displayName ?? tr('مجهول'),
         action: 'delete_courier',
         entityType: 'courier',
         entityId: id,
-        description: 'حذف مندوب: $name',
+        description: tr('حذف مندوب: {name}', {'name': name}),
       );
     } finally {
       if (mounted) setState(() => _deletingCourier = false);

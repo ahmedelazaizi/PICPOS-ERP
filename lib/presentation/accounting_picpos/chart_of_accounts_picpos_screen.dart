@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -136,15 +137,15 @@ class _ChartOfAccountsPicPosScreenState
                       .length;
 
                   return PicPosScreenScaffold(
-                    title: 'دليل الحسابات',
-                    subtitle: 'IFRS / IAS 1 — شجرةُ الحسابات المحاسبية',
+                    title: tr('دليل الحسابات'),
+                    subtitle: tr('IFRS / IAS 1 — شجرةُ الحسابات المحاسبية'),
                     icon: PhosphorIconsBold.treeStructure,
                     headerSearch: TextField(
                       controller: _searchController,
                       onChanged: (v) => setState(() => _searchQuery = v),
                       decoration: InputDecoration(
                         isDense: true,
-                        hintText: 'بحث بالرمز أو الاسم...',
+                        hintText: tr('بحث بالرمز أو الاسم...'),
                         prefixIcon: const Icon(
                             PhosphorIconsBold.magnifyingGlass, size: 16),
                         suffixIcon: _searchQuery.isNotEmpty
@@ -179,7 +180,7 @@ class _ChartOfAccountsPicPosScreenState
                               setState(() => _showTaxAccountsOnly = v),
                           avatar: const Icon(PhosphorIconsBold.percent,
                               size: 14),
-                          label: const Text('حسابات الضريبة'),
+                          label:  Text(tr('حسابات الضريبة')),
                           labelStyle: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.w700),
                           showCheckmark: false,
@@ -190,25 +191,25 @@ class _ChartOfAccountsPicPosScreenState
                     subHeader: PicPosKpiRow(
                       kpis: [
                         PicPosKpi(
-                          label: 'إجمالي الحسابات',
+                          label: tr('إجمالي الحسابات'),
                           value: '${allAccounts.length}',
                           icon: PhosphorIconsBold.treeStructure,
                           tint: AppColors.primary,
                         ),
                         PicPosKpi(
-                          label: 'حسابات رئيسية',
+                          label: tr('حسابات رئيسية'),
                           value: '$roots',
                           icon: PhosphorIconsBold.folder,
                           tint: AppColors.info,
                         ),
                         PicPosKpi(
-                          label: 'حسابات تفصيليّة',
+                          label: tr('حسابات تفصيليّة'),
                           value: '$leaves',
                           icon: PhosphorIconsBold.file,
                           tint: AppColors.success,
                         ),
                         PicPosKpi(
-                          label: 'المعروض بعد الترشيح',
+                          label: tr('المعروض بعد الترشيح'),
                           value: '${filtered.length}',
                           icon: PhosphorIconsBold.funnel,
                           tint: AppColors.textMuted,
@@ -326,7 +327,7 @@ class _ChartOfAccountsPicPosScreenState
             );
             NetworkService.instance.broadcastChange('accounts');
             if (!mounted) return;
-            AppToast.show(context, 'تم إنشاء الحساب');
+            AppToast.show(context, tr('تم إنشاء الحساب'));
             // يُفتَح المُنشأُ في اللوح: المستخدمُ يرى ما صنع، ويُتابع تحريرَه.
             _openPanelFor(id);
           } else {
@@ -342,11 +343,11 @@ class _ChartOfAccountsPicPosScreenState
             );
             NetworkService.instance.broadcastChange('accounts');
             if (!mounted) return;
-            AppToast.show(context, 'تم تحديث الحساب');
+            AppToast.show(context, tr('تم تحديث الحساب'));
           }
         } catch (e) {
           if (mounted) {
-            AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+            AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
           }
         }
       },
@@ -357,7 +358,7 @@ class _ChartOfAccountsPicPosScreenState
   Widget _addAccountButton(BuildContext context) => ElevatedButton.icon(
         onPressed: () => _startCreate(),
         icon: const Icon(PhosphorIconsBold.plus, size: 16),
-        label: const Text('إضافة حساب رئيسي'),
+        label:  Text(tr('إضافة حساب رئيسي')),
         style: ElevatedButton.styleFrom(
           minimumSize: const Size(0, 36),
           padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -396,7 +397,7 @@ class _ChartOfAccountsPicPosScreenState
               : PhosphorIconsBold.arrowsIn,
           size: 15,
         ),
-        label: Text(_expandedAccounts.isEmpty ? 'توسيع الكل' : 'طي الكل'),
+        label: Text(_expandedAccounts.isEmpty ? tr('توسيع الكل') : tr('طي الكل')),
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(0, 34),
           textStyle:
@@ -406,7 +407,7 @@ class _ChartOfAccountsPicPosScreenState
       OutlinedButton.icon(
         onPressed: () => _printChartOfAccounts(context),
         icon: const Icon(PhosphorIconsBold.printer, size: 15),
-        label: const Text('طباعة/PDF'),
+        label:  Text(tr('طباعة/PDF')),
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(0, 34),
           textStyle:
@@ -416,12 +417,12 @@ class _ChartOfAccountsPicPosScreenState
       IconButton(
         onPressed: _handleExport,
         icon: const Icon(PhosphorIconsBold.microsoftExcelLogo, size: 18),
-        tooltip: 'تصدير الدليل (Excel)',
+        tooltip: tr('تصدير الدليل (Excel)'),
       ),
       IconButton(
         onPressed: _handleImport,
         icon: const Icon(PhosphorIconsBold.fileArrowUp, size: 18),
-        tooltip: 'استيراد الدليل (Excel)',
+        tooltip: tr('استيراد الدليل (Excel)'),
       ),
     ];
   }
@@ -494,7 +495,7 @@ class _ChartOfAccountsPicPosScreenState
                           ),
                         ),
                         Text(
-                          '${accounts.length} حساب',
+                          tr('{p0} حساب', {'p0': accounts.length}),
                           style: GoogleFonts.cairo(
                             fontSize: 11,
                             color: AppColors.textMuted,
@@ -598,14 +599,14 @@ class _ChartOfAccountsPicPosScreenState
         AppToast.show(
           context,
           newValue
-              ? 'تم إخفاء "${account.name}" من سندات القيد'
-              : 'تم إظهار "${account.name}" في سندات القيد',
+              ? tr('تم إخفاء "{p0}" من سندات القيد', {'p0': account.name})
+              : tr('تم إظهار "{p0}" في سندات القيد', {'p0': account.name}),
           type: ToastType.info,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -617,7 +618,7 @@ class _ChartOfAccountsPicPosScreenState
       final accounts = await repo.getAllAccounts();
       if (!context.mounted) return;
       if (accounts.isEmpty) {
-        AppToast.show(context, 'لا توجد حسابات للطباعة', type: ToastType.warning);
+        AppToast.show(context, tr('لا توجد حسابات للطباعة'), type: ToastType.warning);
         return;
       }
 
@@ -649,13 +650,13 @@ class _ChartOfAccountsPicPosScreenState
       }
 
       await ReportPdfGenerator.printGeneralLedger(
-        accountName: 'دليل الحسابات الكامل',
+        accountName: tr('دليل الحسابات الكامل'),
         data: rows.map((r) {
           if (r['is_header'] == true) {
             return {
               'entry_date': DateTime.now(),
               'entry_number': '',
-              'description': '═══ ${r['label']} (${r['count']} حساب) ═══',
+              'description': tr('═══ {p0} ({p1} حساب) ═══', {'p0': r['label'], 'p1': r['count']}),
               'debit': 0.0,
               'credit': 0.0,
               'balance': (r['balance'] as double?) ?? 0.0,
@@ -667,7 +668,7 @@ class _ChartOfAccountsPicPosScreenState
           return {
             'entry_date': DateTime.now(),
             'entry_number': r['code'] ?? '',
-            'description': '$prefix${r['name']}${r['is_system'] == true ? ' [نظام]' : ''}',
+            'description': tr('{prefix}{p0}{p1}', {'prefix': prefix, 'p0': r['name'], 'p1': r['is_system'] == true ? ' [نظام]' : ''}),
             'debit': 0.0,
             'credit': 0.0,
             'balance': (r['balance'] as double?) ?? 0.0,
@@ -676,7 +677,7 @@ class _ChartOfAccountsPicPosScreenState
       );
     } catch (e) {
       if (context.mounted) {
-        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -685,10 +686,10 @@ class _ChartOfAccountsPicPosScreenState
     try {
       final path = await _coaService.exportCoa();
       if (path != null && mounted) {
-        AppToast.show(context, 'تم تصدير الدليل بنجاح إلى: $path', type: ToastType.success);
+        AppToast.show(context, tr('تم تصدير الدليل بنجاح إلى: {path}', {'path': path}), type: ToastType.success);
       }
     } catch (e) {
-      if (mounted) AppToast.show(context, 'فشل التصدير: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('فشل التصدير: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -697,11 +698,11 @@ class _ChartOfAccountsPicPosScreenState
       final result = await _coaService.pickAndImportCoa(context);
       if (result.totalRows > 0 && mounted) {
         if (result.failed == 0) {
-          AppToast.show(context, 'تم استيراد ${result.success} سجل بنجاح ✓');
+          AppToast.show(context, tr('تم استيراد {p0} سجل بنجاح ✓', {'p0': result.success}));
         } else {
           AppToast.show(
             context,
-            'تم استيراد ${result.success} سجل (${result.failed} فشل)',
+            tr('تم استيراد {p0} سجل ({p1} فشل)', {'p0': result.success, 'p1': result.failed}),
             type: ToastType.warning,
           );
           // Show errors in an alert if many
@@ -711,7 +712,7 @@ class _ChartOfAccountsPicPosScreenState
         }
       }
     } catch (e) {
-      if (mounted) AppToast.show(context, 'فشل الاستيراد: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('فشل الاستيراد: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -722,16 +723,16 @@ class _ChartOfAccountsPicPosScreenState
         textDirection: TextDirection.rtl,
         child: PicPosDialog(
           icon: PhosphorIconsBold.warningCircle,
-          title: 'أخطاء الاستيراد',
+          title: tr('أخطاء الاستيراد'),
           // ⚠️ العددُ الكاملُ في السطر الخافت: القائمةُ تعرض عشرةً فقط،
           //    فمن رأى عشرةً ظنّها كلَّ الأخطاء وأصلحها ثمّ فوجئ بالباقي.
           subtitle: errors.length > 10
-              ? 'أوّلُ ١٠ من ${errors.length} خطأً'
-              : '${errors.length} خطأ',
+              ? tr('أوّلُ ١٠ من {p0} خطأً', {'p0': errors.length})
+              : tr('{p0} خطأ', {'p0': errors.length}),
           accent: AppColors.error,
           width: 520,
           onCancel: () => Navigator.pop(context),
-          cancelLabel: 'إغلاق',
+          cancelLabel: tr('إغلاق'),
           body: [
             for (final e in errors.take(10)) Text('• $e'),
           ],

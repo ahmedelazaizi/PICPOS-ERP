@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -63,7 +64,7 @@ class _AuditDashboardScreenState
         setState(() {
           _verificationResult = {
             'isValid': false,
-            'brokenReason': 'خطأ في الفحص: $e',
+            'brokenReason': tr('خطأ في الفحص: {e}', {'e': e}),
           };
           _isVerifying = false;
         });
@@ -79,12 +80,12 @@ class _AuditDashboardScreenState
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: const Text('لوحة التدقيق'),
+          title:  Text(tr('لوحة التدقيق')),
           actions: [
             IconButton(
               icon: const Icon(PhosphorIconsBold.arrowClockwise),
               onPressed: _loadStats,
-              tooltip: 'تحديث',
+              tooltip: tr('تحديث'),
             ),
           ],
         ),
@@ -100,28 +101,28 @@ class _AuditDashboardScreenState
                       children: [
                         Expanded(child: _buildStatCard(
                           icon: PhosphorIconsBold.shieldCheck,
-                          title: 'قيود موقّعة',
+                          title: tr('قيود موقّعة'),
                           value: '${_hashStats?['signed'] ?? 0}',
                           color: Colors.green,
                         )),
                         const SizedBox(width: 12),
                         Expanded(child: _buildStatCard(
                           icon: PhosphorIconsBold.shieldWarning,
-                          title: 'قيود غير موقّعة',
+                          title: tr('قيود غير موقّعة'),
                           value: '${_hashStats?['unsigned'] ?? 0}',
                           color: Colors.orange,
                         )),
                         const SizedBox(width: 12),
                         Expanded(child: _buildStatCard(
                           icon: PhosphorIconsBold.bookOpen,
-                          title: 'إجمالي القيود',
+                          title: tr('إجمالي القيود'),
                           value: '${_hashStats?['total'] ?? 0}',
                           color: AppColors.primary,
                         )),
                         const SizedBox(width: 12),
                         Expanded(child: _buildStatCard(
                           icon: PhosphorIconsBold.warning,
-                          title: 'تعارضات معلّقة',
+                          title: tr('تعارضات معلّقة'),
                           value: '$_conflictCount',
                           color: _conflictCount > 0 ? AppColors.error : Colors.green,
                         )),
@@ -143,8 +144,8 @@ class _AuditDashboardScreenState
                                 const Icon(PhosphorIconsBold.linkSimpleHorizontal,
                                     color: AppColors.primary),
                                 const SizedBox(width: 8),
-                                const Text('فحص سلسلة التجزئة (Hash Chain)',
-                                    style: TextStyle(
+                                 Text(tr('فحص سلسلة التجزئة (Hash Chain)'),
+                                    style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold)),
                                 const Spacer(),
@@ -158,8 +159,8 @@ class _AuditDashboardScreenState
                                               strokeWidth: 2))
                                       : const Icon(PhosphorIconsBold.play, size: 16),
                                   label: Text(_isVerifying
-                                      ? 'جارٍ الفحص...'
-                                      : 'فحص سلامة السلسلة'),
+                                      ? tr('جارٍ الفحص...')
+                                      : tr('فحص سلامة السلسلة')),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primary,
                                     foregroundColor: Colors.white,
@@ -194,13 +195,13 @@ class _AuditDashboardScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Row(
+                             Row(
                               children: [
-                                Icon(PhosphorIconsBold.heartbeat,
+                                const Icon(PhosphorIconsBold.heartbeat,
                                     color: AppColors.primary),
-                                SizedBox(width: 8),
-                                Text('صحة النظام',
-                                    style: TextStyle(
+                                const SizedBox(width: 8),
+                                Text(tr('صحة النظام'),
+                                    style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold)),
                               ],
@@ -208,17 +209,17 @@ class _AuditDashboardScreenState
                             const SizedBox(height: 16),
                             _buildHealthItem(
                               'Hash Chain SHA-256',
-                              'سلسلة تجزئة غير قابلة للتعديل على كل قيد',
+                              tr('سلسلة تجزئة غير قابلة للتعديل على كل قيد'),
                               true,
                             ),
                             _buildHealthItem(
                               'Idempotency Keys',
-                              'مفاتيح فريدة على 50+ endpoint لمنع التكرار',
+                              tr('مفاتيح فريدة على 50+ endpoint لمنع التكرار'),
                               true,
                             ),
                             _buildHealthItem(
                               'Dead Letter Queue',
-                              'عزل العمليات الفاشلة لمراجعتها',
+                              tr('عزل العمليات الفاشلة لمراجعتها'),
                               true,
                             ),
                             // ⚠️ قيمةٌ **حيّة** لا ثابتة: كانت `true` مثبَّتةً
@@ -227,33 +228,33 @@ class _AuditDashboardScreenState
                             _buildHealthItem(
                               'SQLCipher Encryption',
                               SecurityService.databaseEncryptionVerified
-                                  ? 'تشفير قاعدة البيانات المحلية — مُثبَت'
-                                  : 'غير مُثبَت (PostgreSQL أو محرّك بلا تشفير)',
+                                  ? tr('تشفير قاعدة البيانات المحلية — مُثبَت')
+                                  : tr('غير مُثبَت (PostgreSQL أو محرّك بلا تشفير)'),
                               SecurityService.databaseEncryptionVerified,
                             ),
                             _buildHealthItem(
                               'Secure Token Storage',
-                              'تخزين التوكنات في Windows Credential Store',
+                              tr('تخزين التوكنات في Windows Credential Store'),
                               true,
                             ),
                             _buildHealthItem(
                               'Global UUID (Products)',
-                              'معرف عالمي فريد لمنع تعارض IDs',
+                              tr('معرف عالمي فريد لمنع تعارض IDs'),
                               true,
                             ),
                             _buildHealthItem(
                               'Global UUID (Parties)',
-                              'معرف عالمي فريد للعملاء والموردين',
+                              tr('معرف عالمي فريد للعملاء والموردين'),
                               true,
                             ),
                             _buildHealthItem(
                               'Negative Stock Guard',
-                              'منع البيع بالسالب (per-warehouse)',
+                              tr('منع البيع بالسالب (per-warehouse)'),
                               true,
                             ),
                             _buildHealthItem(
                               'Trial Balance Validation',
-                              'فحص تلقائي لتوازن ميزان المراجعة',
+                              tr('فحص تلقائي لتوازن ميزان المراجعة'),
                               true,
                             ),
                           ],
@@ -327,8 +328,8 @@ class _AuditDashboardScreenState
               const SizedBox(width: 8),
               Text(
                 isValid
-                    ? '✅ السلسلة سليمة — لا يوجد أي تلاعب'
-                    : '❌ تم اكتشاف كسر في السلسلة!',
+                    ? tr('✅ السلسلة سليمة — لا يوجد أي تلاعب')
+                    : tr('❌ تم اكتشاف كسر في السلسلة!'),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -339,17 +340,17 @@ class _AuditDashboardScreenState
           ),
           const SizedBox(height: 8),
           if (result['totalEntries'] != null)
-            Text('إجمالي القيود: ${result['totalEntries']}'),
+            Text(tr('إجمالي القيود: {p0}', {'p0': result['totalEntries']})),
           if (result['signedEntries'] != null)
-            Text('قيود موقّعة: ${result['signedEntries']}'),
+            Text(tr('قيود موقّعة: {p0}', {'p0': result['signedEntries']})),
           if (result['unsignedEntries'] != null)
-            Text('قيود غير موقّعة: ${result['unsignedEntries']}'),
+            Text(tr('قيود غير موقّعة: {p0}', {'p0': result['unsignedEntries']})),
           if (!isValid && result['brokenAt'] != null)
-            Text('الكسر في قيد رقم: ${result['brokenAt']}',
+            Text(tr('الكسر في قيد رقم: {p0}', {'p0': result['brokenAt']}),
                 style: const TextStyle(
                     color: AppColors.error, fontWeight: FontWeight.bold)),
           if (!isValid && result['brokenReason'] != null)
-            Text('السبب: ${result['brokenReason']}',
+            Text(tr('السبب: {p0}', {'p0': result['brokenReason']}),
                 style: const TextStyle(color: AppColors.error)),
         ],
       ),

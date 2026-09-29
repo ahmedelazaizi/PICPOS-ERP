@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'dart:io';
@@ -23,20 +24,20 @@ class BackupRestoreWidget extends ConsumerWidget {
             PhosphorIconsBold.cloudArrowUp,
             color: AppColors.success,
           ),
-          title: const Text('نسخ احتياطي', style: AppTypography.bodyLarge),
-          subtitle: const Text(
-            'حفظ نسخة من قاعدة البيانات',
+          title:  Text(tr('نسخ احتياطي'), style: AppTypography.bodyLarge),
+          subtitle:  Text(
+            tr('حفظ نسخة من قاعدة البيانات'),
             style: AppTypography.bodySmall,
           ),
           trailing: ElevatedButton(
             onPressed: () => _backupDatabase(context, ref),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
-            child: const Row(
+            child:  Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(PhosphorIconsBold.download, size: 16),
-                SizedBox(width: 4),
-                Text('نسخ'),
+                const Icon(PhosphorIconsBold.download, size: 16),
+                const SizedBox(width: 4),
+                Text(tr('نسخ')),
               ],
             ),
           ),
@@ -46,19 +47,19 @@ class BackupRestoreWidget extends ConsumerWidget {
             PhosphorIconsBold.cloudArrowDown,
             color: AppColors.info,
           ),
-          title: const Text('استعادة', style: AppTypography.bodyLarge),
-          subtitle: const Text(
-            'استعادة نسخة احتياطية سابقة',
+          title:  Text(tr('استعادة'), style: AppTypography.bodyLarge),
+          subtitle:  Text(
+            tr('استعادة نسخة احتياطية سابقة'),
             style: AppTypography.bodySmall,
           ),
           trailing: OutlinedButton(
             onPressed: () => _showRestoreDialog(context, ref),
-            child: const Row(
+            child:  Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(PhosphorIconsBold.upload, size: 16),
-                SizedBox(width: 4),
-                Text('استعادة'),
+                const Icon(PhosphorIconsBold.upload, size: 16),
+                const SizedBox(width: 4),
+                Text(tr('استعادة')),
               ],
             ),
           ),
@@ -90,7 +91,7 @@ class BackupRestoreWidget extends ConsumerWidget {
       final repo = ref.read(settingsRepositoryProvider);
 
       String? selectedDirectory = await FilePicker.getDirectoryPath(
-        dialogTitle: 'اختر مجلد حفظ النسخة الاحتياطية',
+        dialogTitle: tr('اختر مجلد حفظ النسخة الاحتياطية'),
       );
 
       if (selectedDirectory == null) return;
@@ -102,7 +103,7 @@ class BackupRestoreWidget extends ConsumerWidget {
         if (context.mounted) {
           AppToast.show(
             context,
-            'تعذّر إنشاء النسخة الاحتياطية',
+            tr('تعذّر إنشاء النسخة الاحتياطية'),
             type: ToastType.error,
           );
         }
@@ -115,8 +116,8 @@ class BackupRestoreWidget extends ConsumerWidget {
         AppToast.show(
           context,
           exported
-              ? 'تم حفظ النسخة الاحتياطية في: $selectedDirectory'
-              : 'تعذّر نسخ الملف إلى المجلد المحدد',
+              ? tr('تم حفظ النسخة الاحتياطية في: {selectedDirectory}', {'selectedDirectory': selectedDirectory})
+              : tr('تعذّر نسخ الملف إلى المجلد المحدد'),
           type: exported ? ToastType.success : ToastType.error,
         );
       }
@@ -124,7 +125,7 @@ class BackupRestoreWidget extends ConsumerWidget {
       if (context.mounted) {
         AppToast.show(
           context,
-          'خطأ في النسخ الاحتياطي: $e',
+          tr('خطأ في النسخ الاحتياطي: {e}', {'e': e}),
           type: ToastType.error,
         );
       }
@@ -136,7 +137,7 @@ class BackupRestoreWidget extends ConsumerWidget {
       FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['db'],
-        dialogTitle: 'اختر ملف النسخة الاحتياطية',
+        dialogTitle: tr('اختر ملف النسخة الاحتياطية'),
       );
 
       if (result == null || result.files.isEmpty) return;
@@ -151,7 +152,7 @@ class BackupRestoreWidget extends ConsumerWidget {
       _confirmRestore(context, ref, selectedFile.path!, filename);
     } catch (e) {
       if (context.mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -171,19 +172,19 @@ class BackupRestoreWidget extends ConsumerWidget {
     final confirmed = await showPicPosDangerConfirm(
       context,
       icon: PhosphorIconsBold.arrowCounterClockwise,
-      title: 'استعادة نسخة احتياطية',
+      title: tr('استعادة نسخة احتياطية'),
       subtitle: filename,
       message: 'يُستبدل محتوى قاعدة البيانات الحاليّة بمحتوى النسخة '
           'المختارة. والاستعادةُ تكتمل عند إعادة تشغيل البرنامج — قبلها '
           'لا يتغيّر شيءٌ على الشاشة.',
-      actionLabel: 'استعادة النسخة',
-      typedWord: 'استعادة',
+      actionLabel: tr('استعادة النسخة'),
+      typedWord: tr('استعادة'),
       warnTone: true,
-      willDeleteLabel: 'ما سيحدث بالترتيب',
-      willDelete: const [
-        'تُؤخذ نسخةُ أمانٍ تلقائيّةٌ من الوضع الحاليّ أوّلاً',
-        'يُستبدَل ملفُّ قاعدة البيانات بمحتوى النسخة المختارة',
-        'تكتمل الاستعادةُ عند إعادة تشغيل البرنامج',
+      willDeleteLabel: tr('ما سيحدث بالترتيب'),
+      willDelete:  [
+        tr('تُؤخذ نسخةُ أمانٍ تلقائيّةٌ من الوضع الحاليّ أوّلاً'),
+        tr('يُستبدَل ملفُّ قاعدة البيانات بمحتوى النسخة المختارة'),
+        tr('تكتمل الاستعادةُ عند إعادة تشغيل البرنامج'),
       ],
     );
     if (!confirmed || !context.mounted) return;
@@ -202,7 +203,7 @@ class BackupRestoreWidget extends ConsumerWidget {
         if (context.mounted) {
           AppToast.show(
             context,
-            'ملف النسخة الاحتياطية غير موجود',
+            tr('ملف النسخة الاحتياطية غير موجود'),
             type: ToastType.error,
           );
         }
@@ -222,14 +223,14 @@ class BackupRestoreWidget extends ConsumerWidget {
         AppToast.show(
           context,
           ok
-              ? 'تم تجهيز الاستعادة. أغلق البرنامج وأعد تشغيله لتطبيقها.'
-              : 'فشل تجهيز الاستعادة — البيانات الحالية لم تتغيّر.',
+              ? tr('تم تجهيز الاستعادة. أغلق البرنامج وأعد تشغيله لتطبيقها.')
+              : tr('فشل تجهيز الاستعادة — البيانات الحالية لم تتغيّر.'),
           type: ok ? ToastType.success : ToastType.error,
         );
       }
     } catch (e) {
       if (context.mounted) {
-        AppToast.show(context, 'خطأ في الاستعادة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الاستعادة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }

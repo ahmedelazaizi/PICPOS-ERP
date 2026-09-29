@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
@@ -32,7 +33,7 @@ class _RegionEditDialogState
 
   @override
   String get dialogTitle =>
-      _isEdit ? 'تعديل المنطقة' : 'إضافة منطقة جديدة';
+      _isEdit ? tr('تعديل المنطقة') : tr('إضافة منطقة جديدة');
 
   @override
   IconData get dialogIcon => PhosphorIconsBold.mapPin;
@@ -47,26 +48,26 @@ class _RegionEditDialogState
       children: [
         TextField(
           controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'اسم المنطقة *',
-            prefixIcon: Icon(PhosphorIconsBold.mapPin),
+          decoration:  InputDecoration(
+            labelText: tr('اسم المنطقة *'),
+            prefixIcon: const Icon(PhosphorIconsBold.mapPin),
           ),
           autofocus: true,
         ),
         const SizedBox(height: 16),
         TextField(
           controller: addressController,
-          decoration: const InputDecoration(
-            labelText: 'العنوان (اختياري)',
-            prefixIcon: Icon(PhosphorIconsBold.mapPinArea),
+          decoration:  InputDecoration(
+            labelText: tr('العنوان (اختياري)'),
+            prefixIcon: const Icon(PhosphorIconsBold.mapPinArea),
           ),
         ),
         const SizedBox(height: 16),
         TextField(
           controller: phoneController,
-          decoration: const InputDecoration(
-            labelText: 'الهاتف (اختياري)',
-            prefixIcon: Icon(PhosphorIconsBold.phone),
+          decoration:  InputDecoration(
+            labelText: tr('الهاتف (اختياري)'),
+            prefixIcon: const Icon(PhosphorIconsBold.phone),
           ),
           keyboardType: TextInputType.phone,
         ),
@@ -80,14 +81,14 @@ class _RegionEditDialogState
                 : null;
             return DropdownButtonFormField<int?>(
               value: validId,
-              decoration: const InputDecoration(
-                labelText: 'مركز التكلفة (اختياري)',
-                prefixIcon: Icon(PhosphorIconsBold.target),
+              decoration:  InputDecoration(
+                labelText: tr('مركز التكلفة (اختياري)'),
+                prefixIcon: const Icon(PhosphorIconsBold.target),
               ),
               items: [
-                const DropdownMenuItem<int?>(
+                 DropdownMenuItem<int?>(
                   value: null,
-                  child: Text('بدون مركز تكلفة'),
+                  child: Text(tr('بدون مركز تكلفة')),
                 ),
                 ...centers.map(
                   (c) => DropdownMenuItem<int?>(

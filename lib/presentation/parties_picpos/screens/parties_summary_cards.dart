@@ -24,19 +24,19 @@ class PartiesSummaryCards extends StatelessWidget {
     return PicPosKpiRow(
       kpis: [
         PicPosKpi(
-          label: 'إجمالي الأطراف',
+          label: tr('إجمالي الأطراف'),
           value: '${kpis.total}',
           icon: PhosphorIconsBold.usersThree,
           tint: AppColors.primary,
         ),
         PicPosKpi(
-          label: 'عملاء',
+          label: tr('عملاء'),
           value: '${kpis.customers}',
           icon: PhosphorIconsBold.user,
           tint: AppColors.info,
         ),
         PicPosKpi(
-          label: 'موردين',
+          label: tr('موردين'),
           value: '${kpis.suppliers}',
           icon: PhosphorIconsBold.truck,
           tint: AppColors.warning,
@@ -45,7 +45,7 @@ class PartiesSummaryCards extends StatelessWidget {
         // رقمٌ يجمع مديناً ودائناً في خانةٍ واحدةٍ فيقرأ خطأً، وهذا عدٌّ
         // صريحٌ قابلٌ للتصرّف.
         PicPosKpi(
-          label: 'تجاوزوا حد الائتمان',
+          label: tr('تجاوزوا حد الائتمان'),
           value: '${kpis.overLimitCount}',
           icon: PhosphorIconsBold.warning,
           tint: kpis.overLimitCount > 0 ? AppColors.error : AppColors.success,

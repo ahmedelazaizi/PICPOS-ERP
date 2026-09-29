@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,9 +62,9 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('أسعار الصرف',
+              Text(tr('أسعار الصرف'),
                   style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
-              Text('IAS 21 — العملات الأجنبية وأسعار التحويل',
+              Text(tr('IAS 21 — العملات الأجنبية وأسعار التحويل'),
                   style: GoogleFonts.cairo(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
             ],
           ),
@@ -74,7 +75,7 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
             child: ElevatedButton.icon(
               onPressed: () => _showRevaluationDialog(context),
              icon: const Icon(PhosphorIconsBold.calculator, size: 18),
-             label: Text('إعادة تقييم نهاية الفترة', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+             label: Text(tr('إعادة تقييم نهاية الفترة'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
              style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white)),
            ),
            ),
@@ -82,7 +83,7 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
            ElevatedButton.icon(
              onPressed: () => _showAddCurrencyDialog(context, repo),
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label: Text('عملة جديدة', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            label: Text(tr('عملة جديدة'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: const Color(0xFF00695C),
@@ -101,7 +102,7 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
-      helpText: 'اختر تاريخ نهاية الفترة',
+      helpText: tr('اختر تاريخ نهاية الفترة'),
     );
     if (date == null || !context.mounted) return;
     try {
@@ -123,7 +124,7 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
       final proceed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('معاينة إعادة تقييم الأرصدة الأجنبية'),
+          title:  Text(tr('معاينة إعادة تقييم الأرصدة الأجنبية')),
           content: Text(
             'الفترة: ${preview.periodKey}\n'
             'الفواتير المتأثرة: ${preview.invoiceCount}\n'
@@ -131,9 +132,9 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
             '${preview.alreadyPosted ? 'هذه الفترة مرحّلة بالفعل وستبقى بلا تغيير.' : 'سيُنشأ قيد إعادة تقييم وعكسه في أول يوم من الفترة التالية.'}',
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child:  Text(tr('إلغاء'))),
             if (!preview.alreadyPosted)
-              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تنفيذ')),
+              FilledButton(onPressed: () => Navigator.pop(ctx, true), child:  Text(tr('تنفيذ'))),
           ],
         ),
       );
@@ -145,7 +146,7 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
       );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تمت إعادة التقييم للفترة ${revaluationResult.periodKey} مع قيد عكسي.')),
+          SnackBar(content: Text(tr('تمت إعادة التقييم للفترة {p0} مع قيد عكسي.', {'p0': revaluationResult.periodKey}))),
         );
       }
     } catch (e) {
@@ -170,7 +171,7 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
               children: [
                 const Icon(PhosphorIconsBold.currencyCircleDollar, size: 64, color: AppColors.textMuted),
                 const SizedBox(height: 16),
-                Text('لا توجد عملات', style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
+                Text(tr('لا توجد عملات'), style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
               ],
             ),
           );
@@ -236,20 +237,20 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
                             color: AppColors.success.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text('أساسية',
+                          child: Text(tr('أساسية'),
                               style: GoogleFonts.cairo(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w700)),
                         ),
                       ],
                     ],
                   ),
-                  Text('سعر الصرف: ${currency.exchangeRate}',
+                  Text(tr('سعر الصرف: {p0}', {'p0': currency.exchangeRate}),
                       style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
                 ],
               ),
             ),
             IconButton(
               icon: const Icon(PhosphorIconsBold.pencilSimple, size: 18),
-              tooltip: 'تحديث سعر الصرف',
+              tooltip: tr('تحديث سعر الصرف'),
               onPressed: () => _showUpdateRateDialog(context, currency, repo),
             ),
           ],
@@ -275,7 +276,7 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
               children: [
                 const Icon(PhosphorIconsBold.currencyCircleDollar, color: AppColors.primary, size: 20),
                 const SizedBox(width: 8),
-                Text('عملة جديدة', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+                Text(tr('عملة جديدة'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
               ],
             ),
             content: SizedBox(
@@ -283,19 +284,19 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextField(controller: codeCtrl, decoration: const InputDecoration(labelText: 'رمز العملة (مثال: USD)')),
+                  TextField(controller: codeCtrl, decoration:  InputDecoration(labelText: tr('رمز العملة (مثال: USD)'))),
                   const SizedBox(height: 12),
-                  TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'اسم العملة')),
+                  TextField(controller: nameCtrl, decoration:  InputDecoration(labelText: tr('اسم العملة'))),
                   const SizedBox(height: 12),
-                  TextField(controller: symbolCtrl, decoration: const InputDecoration(labelText: 'الرمز (مثال: \$)')),
+                  TextField(controller: symbolCtrl, decoration:  InputDecoration(labelText: tr('الرمز (مثال: \$)'))),
                   const SizedBox(height: 12),
                   TextField(controller: rateCtrl, keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'سعر الصرف مقابل العملة الأساسية')),
+                      decoration:  InputDecoration(labelText: tr('سعر الصرف مقابل العملة الأساسية'))),
                 ],
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
               ElevatedButton(
                 onPressed: saving ? null : () async {
                   setDialogState(() => saving = true);
@@ -307,7 +308,7 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
                     rethrow;
                   }
                 },
-                child: const Text('إضافة'),
+                child:  Text(tr('إضافة')),
               ),
             ],
           );
@@ -326,14 +327,14 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
         textDirection: TextDirection.rtl,
         child: StatefulBuilder(builder: (ctx, setDialogState) {
           return AlertDialog(
-            title: Text('تحديث سعر ${currency.name}', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            title: Text(tr('تحديث سعر {p0}', {'p0': currency.name}), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             content: TextField(
               controller: rateCtrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'سعر الصرف الجديد'),
+              decoration:  InputDecoration(labelText: tr('سعر الصرف الجديد')),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
               ElevatedButton(
                 onPressed: saving ? null : () async {
                   setDialogState(() => saving = true);
@@ -347,7 +348,7 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
                     rethrow;
                   }
                 },
-                child: const Text('تحديث'),
+                child:  Text(tr('تحديث')),
               ),
             ],
           );

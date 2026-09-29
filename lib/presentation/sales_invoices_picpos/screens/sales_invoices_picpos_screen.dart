@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../picpos_shell/picpos_surface.dart';
@@ -132,13 +133,13 @@ class _SalesInvoicesPicposScreenState
       searchController: _searchController,
       onNew: _createNewInvoice, // من الملف المنسوخ sales_invoice_dialogs.dart
       child: PicPosScreenScaffold(
-        title: 'فواتير البيع',
-        subtitle: 'إدارة فواتير المبيعات ومتابعة التحصيل',
+        title: tr('فواتير البيع'),
+        subtitle: tr('إدارة فواتير المبيعات ومتابعة التحصيل'),
         icon: PhosphorIconsBold.receipt,
         headerActions: [
           IconButton(
             icon: const Icon(PhosphorIconsBold.arrowClockwise),
-            tooltip: 'تحديث',
+            tooltip: tr('تحديث'),
             onPressed: () =>
                 ref.read(salesInvoicesControllerProvider.notifier).refresh(),
           ),
@@ -148,12 +149,12 @@ class _SalesInvoicesPicposScreenState
               NetworkService.instance.isMirror)
             IconButton(
               icon: const Icon(PhosphorIconsBold.cloudArrowUp),
-              tooltip: 'دفع الفواتير المحلية للسيرفر',
+              tooltip: tr('دفع الفواتير المحلية للسيرفر'),
               onPressed: () async {
                 final syncRepo = ref.read(syncRepositoryProvider);
                 AppToast.show(
                   context,
-                  'جارى دفع الفواتير المحلية إلى السيرفر...',
+                  tr('جارى دفع الفواتير المحلية إلى السيرفر...'),
                   type: ToastType.info,
                 );
                 final result = await syncRepo.pushLocalSalesToServer();
@@ -174,13 +175,13 @@ class _SalesInvoicesPicposScreenState
               );
             },
             icon: const Icon(PhosphorIconsBold.clipboardText, size: 16),
-            label: const Text('طلبات البيع'),
+            label:  Text(tr('طلبات البيع')),
           ),
           const SizedBox(width: 8),
           ElevatedButton.icon(
             onPressed: _createNewInvoice,
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label: const Text('فاتورة جديدة'),
+            label:  Text(tr('فاتورة جديدة')),
           ),
         ],
         // Fix round 1 — parity tab bar. Unconditional, same order/text as
@@ -192,9 +193,9 @@ class _SalesInvoicesPicposScreenState
           padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 0),
           child: TabBar(
             controller: _tabController,
-            tabs: const [
-              Tab(text: 'فواتير المبيعات'),
-              Tab(text: 'عروض الأسعار'),
+            tabs:  [
+              Tab(text: tr('فواتير المبيعات')),
+              Tab(text: tr('عروض الأسعار')),
             ],
           ),
         ),
@@ -205,13 +206,13 @@ class _SalesInvoicesPicposScreenState
             AppStateView(
               isLoading: state.isLoading,
               isEmpty: state.allInvoices.isEmpty && !state.isLoading,
-              emptyMessage: 'لا توجد فواتير مبيعات',
+              emptyMessage: tr('لا توجد فواتير مبيعات'),
               emptyIcon: PhosphorIconsBold.receipt,
               child: Column(
                 children: [
-                  const SyncPendingBanner(
+                   SyncPendingBanner(
                     tableName: 'sales',
-                    label: 'فاتورة مبيعات',
+                    label: tr('فاتورة مبيعات'),
                   ),
                   const SalesSummaryRow(),
                   SalesFilterBar(

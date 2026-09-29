@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 /// Input validators for form validation and data sanitization
 /// Provides consistent validation across all screens
 class InputValidators {
@@ -10,12 +11,12 @@ class InputValidators {
   /// Validate required text field
   static String? validateRequired(String? value, String fieldName) {
     if (value == null || value.trim().isEmpty) {
-      return '$fieldName مطلوب';
+      return tr('{fieldName} مطلوب', {'fieldName': fieldName});
     }
     // BUG-U15: a single character is a legitimate name/code — only emptiness
     // is rejected here.
     if (value.length > 200) {
-      return '$fieldName طويل جداً (الحد الأقصى 200 حرف)';
+      return tr('{fieldName} طويل جداً (الحد الأقصى 200 حرف)', {'fieldName': fieldName});
     }
     return null;
   }
@@ -31,10 +32,10 @@ class InputValidators {
       return null; // Optional, so empty is valid
     }
     if (value.trim().length < minLength) {
-      return '$fieldName قصير جداً ($minLength أحرف على الأقل)';
+      return tr('{fieldName} قصير جداً ({minLength} أحرف على الأقل)', {'fieldName': fieldName, 'minLength': minLength});
     }
     if (value.length > maxLength) {
-      return '$fieldName طويل جداً (الحد الأقصى $maxLength حرف)';
+      return tr('{fieldName} طويل جداً (الحد الأقصى {maxLength} حرف)', {'fieldName': fieldName, 'maxLength': maxLength});
     }
     return null;
   }
@@ -46,14 +47,14 @@ class InputValidators {
   /// Validate positive number
   static String? validatePositiveNumber(String? value, String fieldName) {
     if (value == null || value.isEmpty) {
-      return '$fieldName مطلوب';
+      return tr('{fieldName} مطلوب', {'fieldName': fieldName});
     }
     final number = double.tryParse(value);
     if (number == null) {
-      return '$fieldName يجب أن يكون رقماً';
+      return tr('{fieldName} يجب أن يكون رقماً', {'fieldName': fieldName});
     }
     if (number < 0) {
-      return '$fieldName يجب أن يكون موجباً';
+      return tr('{fieldName} يجب أن يكون موجباً', {'fieldName': fieldName});
     }
     return null;
   }
@@ -61,17 +62,17 @@ class InputValidators {
   /// Validate price (positive, within reasonable range)
   static String? validatePrice(String? value, {bool required = true}) {
     if (value == null || value.isEmpty) {
-      return required ? 'السعر مطلوب' : null;
+      return required ? tr('السعر مطلوب') : null;
     }
     final price = double.tryParse(value);
     if (price == null) {
-      return 'السعر يجب أن يكون رقماً';
+      return tr('السعر يجب أن يكون رقماً');
     }
     if (price < 0) {
-      return 'السعر يجب أن يكون موجباً';
+      return tr('السعر يجب أن يكون موجباً');
     }
     if (price > 999999999) {
-      return 'السعر كبير جداً';
+      return tr('السعر كبير جداً');
     }
     return null;
   }
@@ -83,20 +84,20 @@ class InputValidators {
     bool allowZero = false,
   }) {
     if (value == null || value.isEmpty) {
-      return required ? 'الكمية مطلوبة' : null;
+      return required ? tr('الكمية مطلوبة') : null;
     }
     final qty = double.tryParse(value);
     if (qty == null) {
-      return 'الكمية يجب أن تكون رقماً';
+      return tr('الكمية يجب أن تكون رقماً');
     }
     if (!allowZero && qty <= 0) {
-      return 'الكمية يجب أن تكون أكبر من صفر';
+      return tr('الكمية يجب أن تكون أكبر من صفر');
     }
     if (allowZero && qty < 0) {
-      return 'الكمية يجب أن تكون موجبة';
+      return tr('الكمية يجب أن تكون موجبة');
     }
     if (qty > 999999) {
-      return 'الكمية كبيرة جداً';
+      return tr('الكمية كبيرة جداً');
     }
     return null;
   }
@@ -104,14 +105,14 @@ class InputValidators {
   /// Validate percentage (0-100)
   static String? validatePercentage(String? value, {bool required = false}) {
     if (value == null || value.isEmpty) {
-      return required ? 'النسبة مطلوبة' : null;
+      return required ? tr('النسبة مطلوبة') : null;
     }
     final percentage = double.tryParse(value);
     if (percentage == null) {
-      return 'النسبة يجب أن تكون رقماً';
+      return tr('النسبة يجب أن تكون رقماً');
     }
     if (percentage < 0 || percentage > 100) {
-      return 'النسبة يجب أن تكون بين 0 و 100';
+      return tr('النسبة يجب أن تكون بين 0 و 100');
     }
     return null;
   }
@@ -126,13 +127,13 @@ class InputValidators {
       return null; // Optional
     }
     if (!RegExp(r'^[0-9A-Za-z\-]+$').hasMatch(value)) {
-      return 'الباركود يحتوي على حروف غير صالحة';
+      return tr('الباركود يحتوي على حروف غير صالحة');
     }
     if (value.length > 50) {
-      return 'الباركود طويل جداً (الحد الأقصى 50 حرف)';
+      return tr('الباركود طويل جداً (الحد الأقصى 50 حرف)');
     }
     if (value.length < 3) {
-      return 'الباركود قصير جداً (3 أحرف على الأقل)';
+      return tr('الباركود قصير جداً (3 أحرف على الأقل)');
     }
     return null;
   }
@@ -145,7 +146,7 @@ class InputValidators {
     // Remove spaces for validation
     final cleaned = value.replaceAll(' ', '');
     if (!RegExp(r'^[\+]?[0-9\-]{7,20}$').hasMatch(cleaned)) {
-      return 'رقم هاتف غير صالح';
+      return tr('رقم هاتف غير صالح');
     }
     return null;
   }
@@ -156,7 +157,7 @@ class InputValidators {
       return null; // Optional
     }
     if (!RegExp(r'^[\w\.\-]+@[\w\-]+(\.[a-zA-Z]{2,})+$').hasMatch(value)) {
-      return 'بريد إلكتروني غير صالح';
+      return tr('بريد إلكتروني غير صالح');
     }
     return null;
   }
@@ -164,16 +165,16 @@ class InputValidators {
   /// Validate username
   static String? validateUsername(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'اسم المستخدم مطلوب';
+      return tr('اسم المستخدم مطلوب');
     }
     if (value.length < 3) {
-      return 'اسم المستخدم قصير جداً (3 أحرف على الأقل)';
+      return tr('اسم المستخدم قصير جداً (3 أحرف على الأقل)');
     }
     if (value.length > 50) {
-      return 'اسم المستخدم طويل جداً';
+      return tr('اسم المستخدم طويل جداً');
     }
     if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
-      return 'اسم المستخدم يجب أن يحتوي على أحرف إنجليزية وأرقام فقط';
+      return tr('اسم المستخدم يجب أن يحتوي على أحرف إنجليزية وأرقام فقط');
     }
     return null;
   }
@@ -181,13 +182,13 @@ class InputValidators {
   /// Validate password
   static String? validatePassword(String? value, {int minLength = 4}) {
     if (value == null || value.isEmpty) {
-      return 'كلمة المرور مطلوبة';
+      return tr('كلمة المرور مطلوبة');
     }
     if (value.length < minLength) {
-      return 'كلمة المرور يجب أن تكون $minLength أحرف على الأقل';
+      return tr('كلمة المرور يجب أن تكون {minLength} أحرف على الأقل', {'minLength': minLength});
     }
     if (value.length > 100) {
-      return 'كلمة المرور طويلة جداً';
+      return tr('كلمة المرور طويلة جداً');
     }
     return null;
   }
@@ -195,10 +196,10 @@ class InputValidators {
   /// Validate password confirmation
   static String? validatePasswordConfirmation(String? value, String? password) {
     if (value == null || value.isEmpty) {
-      return 'تأكيد كلمة المرور مطلوب';
+      return tr('تأكيد كلمة المرور مطلوب');
     }
     if (value != password) {
-      return 'كلمات المرور غير متطابقة';
+      return tr('كلمات المرور غير متطابقة');
     }
     return null;
   }
@@ -209,10 +210,10 @@ class InputValidators {
       return null; // Optional
     }
     if (!RegExp(r'^[0-9\-]+$').hasMatch(value)) {
-      return 'الرقم الضريبي غير صالح';
+      return tr('الرقم الضريبي غير صالح');
     }
     if (value.length < 5 || value.length > 30) {
-      return 'طول الرقم الضريبي غير صحيح';
+      return tr('طول الرقم الضريبي غير صحيح');
     }
     return null;
   }

@@ -26,7 +26,7 @@ Future<bool> ensurePosWorkOrderPermission(
           const <String>[];
   if (canPrintPosWorkOrder(permissions)) return true;
   if (context.mounted) {
-    AppToast.show(context, 'ليس لديك صلاحية طباعة أوامر الشغل',
+    AppToast.show(context, tr('ليس لديك صلاحية طباعة أوامر الشغل'),
         type: ToastType.error);
   }
   return false;
@@ -90,7 +90,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
                     color: AppColors.info,
                   ),
                   const SizedBox(width: 8),
-                  Text('فتح ${table.name}'),
+                  Text(tr('فتح {p0}', {'p0': table.name})),
                 ],
               ),
               content: Column(
@@ -100,11 +100,11 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
                   Text(table.status == TableStatus.paid
                       ? 'حسابُ هذه الطاولة سُدِّد. سيُغلَق طلبُها المدفوع '
                           'ويُفتح طلبٌ جديدٌ بفاتورةٍ ثانية.'
-                      : 'هل تريد فتح طلب جديد لهذه الطاولة؟'),
+                      : tr('هل تريد فتح طلب جديد لهذه الطاولة؟')),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Text('عدد الأشخاص: '),
+                       Text(tr('عدد الأشخاص: ')),
                       IconButton(
                         onPressed: guestCount > 1
                             ? () => setState(() => guestCount--)
@@ -148,7 +148,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
                         );
                       },
                       displayStringForOption: (e) =>
-                          '${e.name}${e.role == 'waiter' ? ' (نادل)' : ''}',
+                          tr('{p0}{p1}', {'p0': e.name, 'p1': e.role == 'waiter' ? ' (نادل)' : ''}),
                       initialValue: selectedEmployeeId != null
                           ? TextEditingValue(
                               text:
@@ -165,10 +165,10 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
                               controller: controller,
                               focusNode: focusNode,
                               decoration: InputDecoration(
-                                labelText: 'النادل (الويتر)',
+                                labelText: tr('النادل (الويتر)'),
                                 prefixIcon: const Icon(PhosphorIconsBold.user),
                                 border: const OutlineInputBorder(),
-                                hintText: 'ابحث عن موظف...',
+                                hintText: tr('ابحث عن موظف...'),
                                 suffixIcon: selectedEmployeeId != null
                                     ? IconButton(
                                         icon: const Icon(
@@ -197,18 +197,18 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
                         color: AppColors.warning.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Row(
+                      child:  Row(
                         children: [
-                          Icon(
+                          const Icon(
                             PhosphorIconsBold.warning,
                             color: AppColors.warning,
                             size: 20,
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'لا يوجد موظفين. أضف موظفين من شاشة الموارد البشرية.',
-                              style: TextStyle(fontSize: 13),
+                              tr('لا يوجد موظفين. أضف موظفين من شاشة الموارد البشرية.'),
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                         ],
@@ -219,14 +219,14 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('إلغاء'),
+                  child:  Text(tr('إلغاء')),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(ctx, true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
                   ),
-                  child: const Text('فتح'),
+                  child:  Text(tr('فتح')),
                 ),
               ],
             );
@@ -246,7 +246,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
         // حيّان و`getActiveOrderForTable` ترمي على كلّ قراءةٍ بعدها.
         final user = ref.read(authProvider).user;
         final session = ref.read(tableSessionServiceProvider);
-        final userName = user?.displayName ?? 'مجهول';
+        final userName = user?.displayName ?? tr('مجهول');
         // نسبةُ الضريبة تُلقَط **هنا** لحظةَ الفتح وتُثبَّت على الطلب. الخدمةُ
         // لا تملك `ref` فتقرأ الإعداد بنفسها، والقارئُ هو من يمرّره. وتغييرُ
         // الإعداد بعد الفتح لا يمسّ هذا الطلب — الوجبةُ تمتدّ ساعةً وقد
@@ -288,7 +288,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
         if (mounted) {
           AppToast.show(
             context,
-            'تعذّر فتحُ ${table.name}: $e',
+            tr('تعذّر فتحُ {p0}: {e}', {'p0': table.name, 'e': e}),
             type: ToastType.error,
           );
         }
@@ -344,10 +344,10 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
             width: 400,
             height: 300,
             child: items.isEmpty
-                ? const Center(
+                ?  Center(
                     child: Text(
-                      'لا توجد أصناف في الطلب',
-                      style: TextStyle(color: AppColors.textMuted),
+                      tr('لا توجد أصناف في الطلب'),
+                      style: const TextStyle(color: AppColors.textMuted),
                     ),
                   )
                 : ListView.separated(
@@ -364,7 +364,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
                             contentPadding: EdgeInsets.zero,
                             leading: const Icon(PhosphorIconsBold.package),
                             title: Text(
-                              product?.name ?? 'صنف #${item.productId}',
+                              product?.name ?? tr('صنف #{p0}', {'p0': item.productId}),
                             ),
                             subtitle: Text(
                               '${item.unitPrice.toStringAsFixed(AppConstants.decimalPlaces)} × ${item.quantity.toStringAsFixed(0)}',
@@ -388,14 +388,14 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
                 _onMergeTable(restaurantRepo, table, order);
               },
               icon: const Icon(PhosphorIconsBold.intersect),
-              label: const Text('دمج مع طاولة أخرى'),
+              label:  Text(tr('دمج مع طاولة أخرى')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.warning,
               ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
             ElevatedButton.icon(
               onPressed: () async {
@@ -414,7 +414,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
                 }
               },
               icon: const Icon(PhosphorIconsBold.plus),
-              label: const Text('إضافة أصناف'),
+              label:  Text(tr('إضافة أصناف')),
             ),
             ElevatedButton.icon(
               onPressed: () {
@@ -433,7 +433,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
                 }
               },
               icon: const Icon(PhosphorIconsBold.currencyCircleDollar),
-              label: const Text('تحصيل الحساب'),
+              label:  Text(tr('تحصيل الحساب')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.success,
               ),
@@ -461,7 +461,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
         final product = await productRepo.getProductById(item.productId);
         invoiceItems.add(
           InvoiceItem(
-            name: product?.name ?? 'صنف #${item.productId}',
+            name: product?.name ?? tr('صنف #{p0}', {'p0': item.productId}),
             quantity: item.quantity,
             price: item.unitPrice,
             total: item.total,
@@ -472,7 +472,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
       final now = DateTime.now();
       final orderNumber =
           'T${table.id}-${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
-      final headerInfo = 'طاولة: ${table.name}';
+      final headerInfo = tr('طاولة: {p0}', {'p0': table.name});
 
       await InvoiceGenerator.printWorkOrderReceipt(
         orderNumber: orderNumber,
@@ -502,13 +502,13 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
       await ref.read(tableSessionServiceProvider).closeTable(
             tableId: table.id,
             userId: user?.id,
-            userName: user?.displayName ?? 'مجهول',
+            userName: user?.displayName ?? tr('مجهول'),
           );
 
       if (mounted) {
         AppToast.show(
           context,
-          'تم إغلاق ${table.name} - الإجمالي: ${order.total.toStringAsFixed(AppConstants.decimalPlaces)}',
+          tr('تم إغلاق {p0} - الإجمالي: {p1}', {'p0': table.name, 'p1': order.total.toStringAsFixed(AppConstants.decimalPlaces)}),
           type: ToastType.success,
         );
       }
@@ -516,7 +516,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
       if (mounted) {
         AppToast.show(
           context,
-          'فشل إغلاق ${table.name}: $e',
+          tr('فشل إغلاق {p0}: {e}', {'p0': table.name, 'e': e}),
           type: ToastType.error,
         );
       }
@@ -551,7 +551,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
       unawaited(DiagnosticLogger.log('TABLE-MERGE', '10/ لا طاولاتٍ — توقّف'));
       AppToast.show(
         context,
-        'لا توجد طاولات مشغولة أخرى للدمج معها',
+        tr('لا توجد طاولات مشغولة أخرى للدمج معها'),
         type: ToastType.warning,
       );
       return;
@@ -582,7 +582,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
               sourceTableId: sourceTable.id,
               targetTableId: targetTable.id,
               userId: user?.id,
-              userName: user?.displayName ?? 'مجهول',
+              userName: user?.displayName ?? tr('مجهول'),
             );
         unawaited(DiagnosticLogger.log('TABLE-MERGE',
             '13/ mergeOrders تمّت droppedDiscount=${outcome.droppedDiscount}'));
@@ -591,11 +591,11 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
           // خصمُ الطاولة المصدر يسقط في الدمج — يجب أن يصل الكاشيرَ، لا أن
           // يضيع صامتاً.
           final discountNote = outcome.droppedDiscount
-              ? ' — تنبيه: أُسقط خصمُ ${sourceTable.name} (${outcome.droppedDiscountLabel})'
+              ? tr(' — تنبيه: أُسقط خصمُ {p0} ({p1})', {'p0': sourceTable.name, 'p1': outcome.droppedDiscountLabel})
               : '';
           AppToast.show(
             context,
-            'تم دمج ${sourceTable.name} بنجاح مع ${targetTable.name}$discountNote',
+            tr('تم دمج {p0} بنجاح مع {p1}{discountNote}', {'p0': sourceTable.name, 'p1': targetTable.name, 'discountNote': discountNote}),
             type: outcome.droppedDiscount
                 ? ToastType.warning
                 : ToastType.success,
@@ -607,7 +607,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
         if (mounted) {
           AppToast.show(
             context,
-            'فشل دمج الطاولات: $e',
+            tr('فشل دمج الطاولات: {e}', {'e': e}),
             type: ToastType.error,
           );
         }

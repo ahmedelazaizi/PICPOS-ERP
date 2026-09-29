@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // لوحةُ مصمّم القاعة — نسخةٌ مستقلّةٌ عن `screens/tables/floor_plan_designer.dart`.
 //
 // ═══ ⚠️ نسخةٌ لا مشاركة (ح‑٣) ═══
@@ -443,7 +444,7 @@ class _FloorPlanEditorCanvasState extends State<FloorPlanEditorCanvas> {
         child: MouseRegion(
           cursor: SystemMouseCursors.resizeDownRight,
           child: Tooltip(
-            message: 'اسحب لتغيير مقاس الصالة',
+            message: tr('اسحب لتغيير مقاس الصالة'),
             child: Container(
               width: 22,
               height: 22,
@@ -712,12 +713,12 @@ Color floorPlanStatusColor(String status) => switch (status) {
 
 /// اسمُ نوعِ المعلَم بالعربيّة.
 String floorPlanKindLabel(String kind) => switch (kind) {
-      'wall' => 'جدار',
-      'door' => 'باب',
-      'bar' => 'بار',
-      'kitchen' => 'مطبخ',
-      'pillar' => 'عمود',
-      'text' => 'نصّ',
+      'wall' => tr('جدار'),
+      'door' => tr('باب'),
+      'bar' => tr('بار'),
+      'kitchen' => tr('مطبخ'),
+      'pillar' => tr('عمود'),
+      'text' => tr('نصّ'),
       _ => kind,
     };
 

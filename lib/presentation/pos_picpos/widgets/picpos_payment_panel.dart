@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // PICPOS — لوحة المجاميع والدفع
 // ═══════════════════════════════════════════════════════════════════════════
@@ -202,7 +203,7 @@ class _CustomerRow extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  isSet ? name : 'عميل نقدي — اضغط للاختيار',
+                  isSet ? name : tr('عميل نقدي — اضغط للاختيار'),
                   overflow: TextOverflow.ellipsis,
                   style: isSet
                       ? PicPosText.v(context, 13 * scale, color: AppColors.primary)
@@ -243,7 +244,7 @@ class _OrderTypeRow extends ConsumerWidget {
         children: [
           Expanded(
             child: _TypeChip(
-              label: 'داخلي',
+              label: tr('داخلي'),
               icon: PhosphorIconsBold.storefront,
               selected: cart.orderType == 'internal',
               onTap: () => controller.setOrderType('internal'),
@@ -253,7 +254,7 @@ class _OrderTypeRow extends ConsumerWidget {
           SizedBox(width: 6 * scale),
           Expanded(
             child: _TypeChip(
-              label: 'توصيل',
+              label: tr('توصيل'),
               icon: PhosphorIconsBold.moped,
               selected: cart.orderType == 'delivery',
               // ── `pos_delivery` — قرارُ المالك 2026-08-13 ─────────────────
@@ -363,7 +364,7 @@ class _TotalsBlock extends ConsumerWidget {
                 if (showTax)
                   Expanded(
                     child: _ToggleTile(
-                      label: 'ضريبة',
+                      label: tr('ضريبة'),
                       icon: PhosphorIconsBold.receipt,
                       active: cart.taxEnabled,
                       // نفس الاستدعاء اللي شاشة UralCash بتعمله — الحساب كله
@@ -387,8 +388,8 @@ class _TotalsBlock extends ConsumerWidget {
                   Expanded(
                     child: _ToggleTile(
                       label: cart.discountPercent > 0
-                          ? 'خصم ${NumberUtils.formatPercent(cart.discountPercent)}'
-                          : 'خصم',
+                          ? tr('خصم {p0}', {'p0': NumberUtils.formatPercent(cart.discountPercent)})
+                          : tr('خصم'),
                       icon: PhosphorIconsBold.percent,
                       active: cart.discountPercent > 0,
                       onTap: onEditDiscount,
@@ -408,13 +409,13 @@ class _TotalsBlock extends ConsumerWidget {
             children: [
               if (showSubtotal)
                 _Line(
-                  label: 'المجموع الفرعي',
+                  label: tr('المجموع الفرعي'),
                   value: totals.subtotal,
                   scale: scale,
                 ),
               if (totals.totalDiscount > 0)
                 _Line(
-                  label: 'الخصم',
+                  label: tr('الخصم'),
                   value: totals.totalDiscount,
                   scale: scale,
                   color: AppColors.error,
@@ -422,13 +423,13 @@ class _TotalsBlock extends ConsumerWidget {
                 ),
               if (showTax && cart.taxEnabled)
                 _Line(
-                  label: 'ضريبة القيمة المضافة',
+                  label: tr('ضريبة القيمة المضافة'),
                   value: totals.taxAmount,
                   scale: scale,
                 ),
               if (cart.deliveryFee > 0)
                 _Line(
-                  label: 'رسوم التوصيل',
+                  label: tr('رسوم التوصيل'),
                   value: cart.deliveryFee,
                   scale: scale,
                 ),
@@ -439,7 +440,7 @@ class _TotalsBlock extends ConsumerWidget {
               Row(
                 children: [
                   Text(
-                    'الإجمالي النهائي',
+                    tr('الإجمالي النهائي'),
                     style: PicPosText.l(context, 
                       13 * scale,
                       color: AppColors.textSecondary,
@@ -588,7 +589,7 @@ class _SafeChipRow extends ConsumerWidget {
       return _SafeChip(
         icon: PhosphorIconsBold.bank,
         color: AppColors.info,
-        label: _bankName(bankSafes) ?? 'لا يوجد حساب بنكي',
+        label: _bankName(bankSafes) ?? tr('لا يوجد حساب بنكي'),
         scale: scale,
         onTap: bankSafes.length > 1
             ? () => _pickBank(context, ref, bankSafes)
@@ -599,7 +600,7 @@ class _SafeChipRow extends ConsumerWidget {
       return _SafeChip(
         icon: PhosphorIconsBold.timer,
         color: AppColors.warning,
-        label: 'آجل — ${cart.selectedCustomerName ?? 'بدون عميل'}',
+        label: tr('آجل — {p0}', {'p0': cart.selectedCustomerName ?? 'بدون عميل'}),
         scale: scale,
       );
     }
@@ -607,8 +608,8 @@ class _SafeChipRow extends ConsumerWidget {
       icon: PhosphorIconsBold.vault,
       color: AppColors.success,
       label: cashSafes.isEmpty
-          ? 'نقدي'
-          : 'الصندوق: ${cashSafes.first.name}',
+          ? tr('نقدي')
+          : tr('الصندوق: {p0}', {'p0': cashSafes.first.name}),
       scale: scale,
     );
   }
@@ -665,7 +666,7 @@ class _SafeChipRow extends ConsumerWidget {
       final m = bankSafes.where((s) => s.id == cart.bankSafeId);
       if (m.isNotEmpty) return m.first.name;
     }
-    return bankSafes.length == 1 ? bankSafes.first.name : 'اختر البنك';
+    return bankSafes.length == 1 ? bankSafes.first.name : tr('اختر البنك');
   }
 }
 
@@ -810,7 +811,7 @@ class _ActionButtons extends ConsumerWidget {
                       const SizedBox(width: 5),
                       // «دفع» بقى بيحفظ **ويطبع ويفتح الدرج** (طلب ١)، فما
                       // بقاش فيه زرار طباعة منفصل يتلغبط معاه.
-                      Text('دفع F4',
+                      Text(tr('دفع F4'),
                           style: TextStyle(
                               fontSize: btnFont + 1,
                               fontWeight: FontWeight.bold)),
@@ -823,7 +824,7 @@ class _ActionButtons extends ConsumerWidget {
               SizedBox(width: 5 * scale),
               Expanded(
                 child: _Action(
-                  label: 'حفظ F2',
+                  label: tr('حفظ F2'),
                   icon: PhosphorIconsBold.floppyDisk,
                   onTap: isEmpty ? null : onSave,
                   height: btnHeight + 6,
@@ -841,7 +842,7 @@ class _ActionButtons extends ConsumerWidget {
             SizedBox(width: 5 * scale),
             Expanded(
               child: _Action(
-                label: 'الفاتورة السابقة',
+                label: tr('الفاتورة السابقة'),
                 icon: PhosphorIconsBold.receipt,
                 onTap: onLastInvoice,
                 height: btnHeight + 6,
@@ -859,7 +860,7 @@ class _ActionButtons extends ConsumerWidget {
             SizedBox(width: 5 * scale),
             Expanded(
               child: _Action(
-                label: 'مرتجع سريع',
+                label: tr('مرتجع سريع'),
                 icon: PhosphorIconsBold.arrowUUpLeft,
                 onTap: (returnMode != null || exchangeMode != null)
                     ? null
@@ -874,7 +875,7 @@ class _ActionButtons extends ConsumerWidget {
             SizedBox(width: 5 * scale),
             Expanded(
               child: _Action(
-                label: 'استبدال',
+                label: tr('استبدال'),
                 icon: PhosphorIconsBold.arrowsLeftRight,
                 onTap: (returnMode != null || exchangeMode != null)
                     ? null
@@ -891,7 +892,7 @@ class _ActionButtons extends ConsumerWidget {
           children: [
             Expanded(
               child: _MiniAction(
-                label: 'فواتير',
+                label: tr('فواتير'),
                 icon: PhosphorIconsBold.receipt,
                 onTap: onPreviousInvoices,
                 height: btnHeight,
@@ -902,7 +903,7 @@ class _ActionButtons extends ConsumerWidget {
               SizedBox(width: 4 * scale),
               Expanded(
                 child: _MiniAction(
-                  label: 'تعليق',
+                  label: tr('تعليق'),
                   icon: PhosphorIconsBold.pauseCircle,
                   onTap: isEmpty ? null : onHold,
                   height: btnHeight,
@@ -912,7 +913,7 @@ class _ActionButtons extends ConsumerWidget {
               SizedBox(width: 4 * scale),
               Expanded(
                 child: _MiniAction(
-                  label: 'معلقة',
+                  label: tr('معلقة'),
                   icon: PhosphorIconsBold.listChecks,
                   // وضعُ المرتجع (جولةُ إصلاح ٢ — مانعٌ ١): استرجاعُ فاتورةٍ
                   // معلَّقة يحذفها من القاعدة فوراً (`hold_order_usecase.
@@ -931,7 +932,7 @@ class _ActionButtons extends ConsumerWidget {
               SizedBox(width: 4 * scale),
               Expanded(
                 child: _MiniAction(
-                  label: 'الدرج',
+                  label: tr('الدرج'),
                   icon: PhosphorIconsBold.money,
                   onTap: onOpenDrawer,
                   height: btnHeight,
@@ -943,7 +944,7 @@ class _ActionButtons extends ConsumerWidget {
               SizedBox(width: 4 * scale),
               Expanded(
                 child: _MiniAction(
-                  label: 'مصاريف',
+                  label: tr('مصاريف'),
                   icon: PhosphorIconsBold.coins,
                   onTap: onExpense,
                   height: btnHeight,

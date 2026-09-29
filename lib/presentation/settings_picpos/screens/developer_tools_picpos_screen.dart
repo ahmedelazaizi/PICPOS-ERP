@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -41,15 +42,15 @@ class _DeveloperToolsPicposScreenState
   @override
   Widget build(BuildContext context) {
     return PicPosScreenScaffold(
-      title: 'أدوات المطور',
-      subtitle: 'الإعدادات ← عن البرنامج',
+      title: tr('أدوات المطور'),
+      subtitle: tr('الإعدادات ← عن البرنامج'),
       icon: PhosphorIconsBold.code,
       headerSearch: TextField(
         controller: _searchCtrl,
         onChanged: (v) => setState(() => _query = v),
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'بحث في الأدوات...',
+          hintText: tr('بحث في الأدوات...'),
           prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
           suffixIcon: _query.isNotEmpty
               ? IconButton(
@@ -64,7 +65,7 @@ class _DeveloperToolsPicposScreenState
       ),
       headerActions: [
         IconButton(
-          tooltip: 'إنهاء الجلسة',
+          tooltip: tr('إنهاء الجلسة'),
           icon: const Icon(PhosphorIconsBold.signOut),
           onPressed: () {
             ref.read(developerSessionProvider.notifier).clear();

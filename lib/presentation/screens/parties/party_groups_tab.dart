@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // PARTY GROUPS TAB — Phase 2
 // ═══════════════════════════════════════════════════════════════════════════
@@ -35,7 +36,7 @@ class PartyGroupsTab extends ConsumerWidget {
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => _showEditDialog(context, ref, group: null),
           icon: const Icon(PhosphorIconsBold.plus),
-          label: const Text('مجموعة جديدة'),
+          label:  Text(tr('مجموعة جديدة')),
           backgroundColor: AppColors.primary,
         ),
         body: groupsAsync.when(
@@ -73,9 +74,9 @@ class PartyGroupsTab extends ConsumerWidget {
                       context,
                       ok
                           ? (row.group.isActive
-                              ? 'تم تعطيل المجموعة'
-                              : 'تم تفعيل المجموعة')
-                          : 'فشل تعديل الحالة',
+                              ? tr('تم تعطيل المجموعة')
+                              : tr('تم تفعيل المجموعة'))
+                          : tr('فشل تعديل الحالة'),
                       type:
                           ok ? ToastType.success : ToastType.error,
                     );
@@ -87,7 +88,7 @@ class PartyGroupsTab extends ConsumerWidget {
           loading: () =>
               const Center(child: CircularProgressIndicator()),
           error: (err, _) => Center(
-            child: Text('خطأ فى تحميل المجموعات: $err'),
+            child: Text(tr('خطأ فى تحميل المجموعات: {err}', {'err': err})),
           ),
         ),
       ),
@@ -129,7 +130,7 @@ class PartyGroupsTab extends ConsumerWidget {
                   color: AppColors.primary,
                 ),
                 const SizedBox(width: 8),
-                Text(group == null ? 'مجموعة جديدة' : 'تعديل المجموعة'),
+                Text(group == null ? tr('مجموعة جديدة') : tr('تعديل المجموعة')),
               ],
             ),
             content: SizedBox(
@@ -139,28 +140,28 @@ class PartyGroupsTab extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'نوع المجموعة',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                     Text(
+                      tr('نوع المجموعة'),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     SegmentedButton<String>(
-                      segments: const [
+                      segments:  [
                         ButtonSegment(
                           value: 'customer',
-                          label: Text('عملاء'),
-                          icon: Icon(PhosphorIconsBold.user, size: 16),
+                          label: Text(tr('عملاء')),
+                          icon: const Icon(PhosphorIconsBold.user, size: 16),
                         ),
                         ButtonSegment(
                           value: 'supplier',
-                          label: Text('موردين'),
-                          icon: Icon(PhosphorIconsBold.truck, size: 16),
+                          label: Text(tr('موردين')),
+                          icon: const Icon(PhosphorIconsBold.truck, size: 16),
                         ),
                         ButtonSegment(
                           value: 'both',
-                          label: Text('الاثنين'),
+                          label: Text(tr('الاثنين')),
                           icon:
-                              Icon(PhosphorIconsBold.usersThree, size: 16),
+                              const Icon(PhosphorIconsBold.usersThree, size: 16),
                         ),
                       ],
                       selected: {type},
@@ -170,35 +171,35 @@ class PartyGroupsTab extends ConsumerWidget {
                     const SizedBox(height: 16),
                     TextField(
                       controller: nameCtl,
-                      decoration: const InputDecoration(
-                        labelText: 'اسم المجموعة *',
-                        prefixIcon: Icon(PhosphorIconsBold.tag),
+                      decoration:  InputDecoration(
+                        labelText: tr('اسم المجموعة *'),
+                        prefixIcon: const Icon(PhosphorIconsBold.tag),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: descCtl,
                       maxLines: 2,
-                      decoration: const InputDecoration(
-                        labelText: 'الوصف',
+                      decoration:  InputDecoration(
+                        labelText: tr('الوصف'),
                         prefixIcon:
-                            Icon(PhosphorIconsBold.textAlignLeft),
+                            const Icon(PhosphorIconsBold.textAlignLeft),
                       ),
                     ),
                     const SizedBox(height: 12),
                     const Divider(),
                     const SizedBox(height: 4),
-                    const Text(
-                      'الافتراضيات التجارية (للاستخدام اليدوى)',
-                      style: TextStyle(
+                     Text(
+                      tr('الافتراضيات التجارية (للاستخدام اليدوى)'),
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'هذه الحقول مرجعية فقط — تُطبَّق يدوياً عبر العمليات المجمعة ولا تُفرض تلقائياً على كل فاتورة.',
-                      style: TextStyle(
+                     Text(
+                      tr('هذه الحقول مرجعية فقط — تُطبَّق يدوياً عبر العمليات المجمعة ولا تُفرض تلقائياً على كل فاتورة.'),
+                      style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.textMuted,
                       ),
@@ -210,10 +211,10 @@ class PartyGroupsTab extends ConsumerWidget {
                           child: TextField(
                             controller: discountCtl,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'خصم افتراضى %',
+                            decoration:  InputDecoration(
+                              labelText: tr('خصم افتراضى %'),
                               prefixIcon:
-                                  Icon(PhosphorIconsBold.percent),
+                                  const Icon(PhosphorIconsBold.percent),
                             ),
                           ),
                         ),
@@ -221,11 +222,11 @@ class PartyGroupsTab extends ConsumerWidget {
                         Expanded(
                           child: TextField(
                             controller: termsCtl,
-                            decoration: const InputDecoration(
-                              labelText: 'شروط الدفع',
-                              hintText: 'مثال: 30 يوم',
+                            decoration:  InputDecoration(
+                              labelText: tr('شروط الدفع'),
+                              hintText: tr('مثال: 30 يوم'),
                               prefixIcon:
-                                  Icon(PhosphorIconsBold.calendar),
+                                  const Icon(PhosphorIconsBold.calendar),
                             ),
                           ),
                         ),
@@ -234,30 +235,30 @@ class PartyGroupsTab extends ConsumerWidget {
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String?>(
                       initialValue: priceLevel,
-                      decoration: const InputDecoration(
-                        labelText: 'مستوى السعر الافتراضى',
-                        prefixIcon: Icon(PhosphorIconsBold.tag),
+                      decoration:  InputDecoration(
+                        labelText: tr('مستوى السعر الافتراضى'),
+                        prefixIcon: const Icon(PhosphorIconsBold.tag),
                       ),
-                      items: const [
-                        DropdownMenuItem<String?>(
+                      items:  [
+                        const DropdownMenuItem<String?>(
                           value: null,
                           child: Text('—'),
                         ),
                         DropdownMenuItem(
                           value: 'default',
-                          child: Text('عادى'),
+                          child: Text(tr('عادى')),
                         ),
                         DropdownMenuItem(
                           value: 'talabat',
-                          child: Text('طلبات'),
+                          child: Text(tr('طلبات')),
                         ),
                         DropdownMenuItem(
                           value: 'careem',
-                          child: Text('كريم'),
+                          child: Text(tr('كريم')),
                         ),
                         DropdownMenuItem(
                           value: 'ashyae',
-                          child: Text('أشيائى'),
+                          child: Text(tr('أشيائى')),
                         ),
                       ],
                       onChanged: (v) => setSt(() => priceLevel = v),
@@ -266,9 +267,9 @@ class PartyGroupsTab extends ConsumerWidget {
                     TextField(
                       controller: notesCtl,
                       maxLines: 2,
-                      decoration: const InputDecoration(
-                        labelText: 'ملاحظات',
-                        prefixIcon: Icon(PhosphorIconsBold.note),
+                      decoration:  InputDecoration(
+                        labelText: tr('ملاحظات'),
+                        prefixIcon: const Icon(PhosphorIconsBold.note),
                       ),
                     ),
                   ],
@@ -279,7 +280,7 @@ class PartyGroupsTab extends ConsumerWidget {
               TextButton(
                 onPressed:
                     isSaving ? null : () => Navigator.pop(ctx),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton.icon(
                 onPressed: isSaving
@@ -288,7 +289,7 @@ class PartyGroupsTab extends ConsumerWidget {
                         if (nameCtl.text.trim().isEmpty) {
                           AppToast.show(
                             ctx,
-                            'يرجى إدخال اسم المجموعة',
+                            tr('يرجى إدخال اسم المجموعة'),
                             type: ToastType.error,
                           );
                           return;
@@ -333,9 +334,9 @@ class PartyGroupsTab extends ConsumerWidget {
                           context,
                           ok
                               ? (group == null
-                                  ? 'تم إنشاء المجموعة'
-                                  : 'تم تعديل المجموعة')
-                              : 'فشل الحفظ',
+                                  ? tr('تم إنشاء المجموعة')
+                                  : tr('تم تعديل المجموعة'))
+                              : tr('فشل الحفظ'),
                           type: ok
                               ? ToastType.success
                               : ToastType.error,
@@ -349,7 +350,7 @@ class PartyGroupsTab extends ConsumerWidget {
                             strokeWidth: 2, color: Colors.white),
                       )
                     : const Icon(PhosphorIconsBold.floppyDisk),
-                label: const Text('حفظ'),
+                label:  Text(tr('حفظ')),
               ),
             ],
           ),
@@ -380,7 +381,7 @@ class PartyGroupsTab extends ConsumerWidget {
               color: AppColors.warning,
               size: 40,
             ),
-            title: const Text('لا يمكن الحذف'),
+            title:  Text(tr('لا يمكن الحذف')),
             content: Text(
               'المجموعة "${group.name}" بها $memberCount طرف. '
               'انقل الأطراف لمجموعة أخرى أولاً، أو قم بتعطيلها بدلاً من الحذف.',
@@ -389,7 +390,7 @@ class PartyGroupsTab extends ConsumerWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('موافق'),
+                child:  Text(tr('موافق')),
               ),
             ],
           ),
@@ -403,19 +404,19 @@ class PartyGroupsTab extends ConsumerWidget {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('تأكيد الحذف'),
-          content: Text('هل تريد حذف المجموعة "${group.name}"؟'),
+          title:  Text(tr('تأكيد الحذف')),
+          content: Text(tr('هل تريد حذف المجموعة "{p0}"؟', {'p0': group.name})),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.error,
               ),
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('حذف'),
+              child:  Text(tr('حذف')),
             ),
           ],
         ),
@@ -429,7 +430,7 @@ class PartyGroupsTab extends ConsumerWidget {
     if (!context.mounted) return;
     AppToast.show(
       context,
-      ok ? 'تم حذف المجموعة' : 'فشل الحذف',
+      ok ? tr('تم حذف المجموعة') : tr('فشل الحذف'),
       type: ok ? ToastType.success : ToastType.error,
     );
   }
@@ -453,7 +454,7 @@ class PartyGroupsTab extends ConsumerWidget {
                 color: AppColors.primary,
               ),
               const SizedBox(width: 8),
-              Text('أعضاء: ${group.name}'),
+              Text(tr('أعضاء: {p0}', {'p0': group.name})),
             ],
           ),
           content: SizedBox(
@@ -507,7 +508,7 @@ class PartyGroupsTab extends ConsumerWidget {
                               size: 16,
                               color: AppColors.error,
                             ),
-                            tooltip: 'إزالة من المجموعة',
+                            tooltip: tr('إزالة من المجموعة'),
                             onPressed: () => ref
                                 .read(partyGroupsControllerProvider
                                     .notifier)
@@ -520,7 +521,7 @@ class PartyGroupsTab extends ConsumerWidget {
                   loading: () => const Center(
                       child: CircularProgressIndicator()),
                   error: (e, _) =>
-                      Center(child: Text('خطأ: $e')),
+                      Center(child: Text(tr('خطأ: {e}', {'e': e}))),
                 );
               },
             ),
@@ -528,7 +529,7 @@ class PartyGroupsTab extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -557,9 +558,9 @@ class _EmptyState extends StatelessWidget {
             color: AppColors.textMuted,
           ),
           const SizedBox(height: 12),
-          const Text(
-            'لا توجد مجموعات بعد',
-            style: TextStyle(
+           Text(
+            tr('لا توجد مجموعات بعد'),
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -582,7 +583,7 @@ class _EmptyState extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: onCreate,
             icon: const Icon(PhosphorIconsBold.plus),
-            label: const Text('إنشاء أول مجموعة'),
+            label:  Text(tr('إنشاء أول مجموعة')),
           ),
         ],
       ),
@@ -612,9 +613,9 @@ class _GroupCard extends StatelessWidget {
   });
 
   String get _typeLabel => switch (group.type) {
-        'customer' => 'عملاء',
-        'supplier' => 'موردين',
-        _ => 'عملاء وموردين',
+        'customer' => tr('عملاء'),
+        'supplier' => tr('موردين'),
+        _ => tr('عملاء وموردين'),
       };
 
   Color get _typeColor => switch (group.type) {
@@ -685,9 +686,9 @@ class _GroupCard extends StatelessWidget {
                                   borderRadius:
                                       BorderRadius.circular(4),
                                 ),
-                                child: const Text(
-                                  'معطّلة',
-                                  style: TextStyle(
+                                child:  Text(
+                                  tr('معطّلة'),
+                                  style: const TextStyle(
                                     fontSize: 10,
                                     color: AppColors.warning,
                                   ),
@@ -721,7 +722,7 @@ class _GroupCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 2),
                             Text(
-                              '$memberCount عضو',
+                              tr('{memberCount} عضو', {'memberCount': memberCount}),
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: AppColors.textMuted,
@@ -733,7 +734,7 @@ class _GroupCard extends StatelessWidget {
                     ),
                   ),
                   PopupMenuButton<String>(
-                    tooltip: 'إجراءات',
+                    tooltip: tr('إجراءات'),
                     icon: const Icon(PhosphorIconsBold.dotsThreeVertical),
                     onSelected: (v) {
                       switch (v) {
@@ -752,19 +753,19 @@ class _GroupCard extends StatelessWidget {
                       }
                     },
                     itemBuilder: (_) => [
-                      const PopupMenuItem(
+                       PopupMenuItem(
                         value: 'members',
                         child: ListTile(
-                          leading: Icon(PhosphorIconsBold.users),
-                          title: Text('عرض الأعضاء'),
+                          leading: const Icon(PhosphorIconsBold.users),
+                          title: Text(tr('عرض الأعضاء')),
                           dense: true,
                         ),
                       ),
-                      const PopupMenuItem(
+                       PopupMenuItem(
                         value: 'edit',
                         child: ListTile(
-                          leading: Icon(PhosphorIconsBold.pencil),
-                          title: Text('تعديل'),
+                          leading: const Icon(PhosphorIconsBold.pencil),
+                          title: Text(tr('تعديل')),
                           dense: true,
                         ),
                       ),
@@ -775,22 +776,22 @@ class _GroupCard extends StatelessWidget {
                               ? PhosphorIconsBold.pause
                               : PhosphorIconsBold.play),
                           title: Text(group.isActive
-                              ? 'تعطيل'
-                              : 'تفعيل'),
+                              ? tr('تعطيل')
+                              : tr('تفعيل')),
                           dense: true,
                         ),
                       ),
-                      const PopupMenuItem(
+                       PopupMenuItem(
                         value: 'delete',
                         child: ListTile(
-                          leading: Icon(
+                          leading: const Icon(
                             PhosphorIconsBold.trash,
                             color: AppColors.error,
                           ),
                           title: Text(
-                            'حذف',
+                            tr('حذف'),
                             style:
-                                TextStyle(color: AppColors.error),
+                                const TextStyle(color: AppColors.error),
                           ),
                           dense: true,
                         ),
@@ -820,7 +821,7 @@ class _GroupCard extends StatelessWidget {
                     if (group.defaultDiscount > 0)
                       _MiniChip(
                         icon: PhosphorIconsBold.percent,
-                        label: 'خصم ${group.defaultDiscount}%',
+                        label: tr('خصم {p0}%', {'p0': group.defaultDiscount}),
                       ),
                     if ((group.defaultPaymentTerms ?? '').isNotEmpty)
                       _MiniChip(

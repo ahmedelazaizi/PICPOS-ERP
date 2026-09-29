@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:ural_erp/core/utils/number_utils.dart';
 import 'package:flutter/material.dart';
@@ -29,15 +30,15 @@ class TableOrderPanel extends ConsumerWidget {
     required this.onSplit,
   });
 
-  static const Map<String, _StatusInfo> _statusMap = {
-    'available': _StatusInfo('متاحة', Color(0xFF10B981), PhosphorIconsBold.checkCircle),
-    'reserved': _StatusInfo('محجوزة', Color(0xFFF59E0B), PhosphorIconsBold.calendarCheck),
-    'occupied': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
-    'seated': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
-    'ordered': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
-    'eating': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
-    'billing': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
-    'cleaning': _StatusInfo('تنظيف', Color(0xFF6366F1), PhosphorIconsBold.broom),
+  static Map<String, _StatusInfo> get _statusMap => {
+    'available': _StatusInfo(tr('متاحة'), const Color(0xFF10B981), PhosphorIconsBold.checkCircle),
+    'reserved': _StatusInfo(tr('محجوزة'), const Color(0xFFF59E0B), PhosphorIconsBold.calendarCheck),
+    'occupied': _StatusInfo(tr('مشغولة'), const Color(0xFF3B82F6), PhosphorIconsBold.users),
+    'seated': _StatusInfo(tr('مشغولة'), const Color(0xFF3B82F6), PhosphorIconsBold.users),
+    'ordered': _StatusInfo(tr('مشغولة'), const Color(0xFF3B82F6), PhosphorIconsBold.users),
+    'eating': _StatusInfo(tr('مشغولة'), const Color(0xFF3B82F6), PhosphorIconsBold.users),
+    'billing': _StatusInfo(tr('مشغولة'), const Color(0xFF3B82F6), PhosphorIconsBold.users),
+    'cleaning': _StatusInfo(tr('تنظيف'), const Color(0xFF6366F1), PhosphorIconsBold.broom),
   };
 
   @override
@@ -143,19 +144,19 @@ class TableOrderPanel extends ConsumerWidget {
               Row(
                 children: [
                   if (table.status == 'available')
-                    _panelAction('فتح طلب', PhosphorIconsBold.notepad,
+                    _panelAction(tr('فتح طلب'), PhosphorIconsBold.notepad,
                         const Color(0xFF10B981), onOpenOrder),
                   if (isActive) ...[
                     PermissionGuard(
                       permission: PermissionCodes.tablesPosAccess,
-                      child: _panelAction('الطلب', PhosphorIconsBold.shoppingCart,
+                      child: _panelAction(tr('الطلب'), PhosphorIconsBold.shoppingCart,
                           const Color(0xFF3B82F6), onShowOrder),
                     ),
                     const SizedBox(width: 6),
                     PermissionGuard(
                       permission: PermissionCodes.tablesTransfer,
                       child: _panelAction(
-                          'تحويل',
+                          tr('تحويل'),
                           PhosphorIconsBold.arrowsLeftRight,
                           const Color(0xFF8B5CF6), onTransfer),
                     ),
@@ -163,13 +164,13 @@ class TableOrderPanel extends ConsumerWidget {
                     PermissionGuard(
                       permission: PermissionCodes.tablesTransfer,
                       child: _panelAction(
-                          'تقسيم',
+                          tr('تقسيم'),
                           PhosphorIconsBold.splitHorizontal,
                           const Color(0xFFF59E0B), onSplit),
                     ),
                   ],
                   if (table.status == 'cleaning')
-                    _panelAction('جاهزة', PhosphorIconsBold.checkCircle,
+                    _panelAction(tr('جاهزة'), PhosphorIconsBold.checkCircle,
                         const Color(0xFF10B981), () async {
                       await restaurantRepo.updateTableStatus(
                           table.id, 'available');
@@ -202,7 +203,7 @@ class TableOrderPanel extends ConsumerWidget {
           Icon(PhosphorIconsBold.selection,
               size: 40, color: Colors.white.withValues(alpha: 0.1)),
           const SizedBox(height: 12),
-          Text(table.status == 'reserved' ? 'طاولة محجوزة' : 'الطاولة متاحة',
+          Text(table.status == 'reserved' ? tr('طاولة محجوزة') : tr('الطاولة متاحة'),
               style: GoogleFonts.cairo(
                   color: Colors.white.withValues(alpha: 0.2))),
         ],
@@ -220,7 +221,7 @@ class TableOrderPanel extends ConsumerWidget {
           future: repo.getTableOrderItems(order.id),
           builder: (context, itemsSnap) {
             final items = itemsSnap.data ?? [];
-            if (items.isEmpty) return Center(child: Text('الطلب فارغ', style: GoogleFonts.cairo(color: Colors.white.withValues(alpha: 0.2))));
+            if (items.isEmpty) return Center(child: Text(tr('الطلب فارغ'), style: GoogleFonts.cairo(color: Colors.white.withValues(alpha: 0.2))));
             return ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: items.length,
@@ -249,7 +250,7 @@ class TableOrderPanel extends ConsumerWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('الإجمالي', style: GoogleFonts.cairo(color: Colors.white.withValues(alpha: 0.5))),
+              Text(tr('الإجمالي'), style: GoogleFonts.cairo(color: Colors.white.withValues(alpha: 0.5))),
               Text(total.toStringAsFixed(AppConstants.decimalPlaces), style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.primary)),
             ],
           ),

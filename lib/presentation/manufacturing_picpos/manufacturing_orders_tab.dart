@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -41,8 +42,8 @@ class ManufacturingOrdersTab extends ConsumerWidget {
     }
 
     return PicPosDataTable(
-      title: 'أوامر الإنتاج',
-      subtitle: 'إنشاء، بدء، إكمال، وعكس أوامر الإنتاج مع قيد المخزون',
+      title: tr('أوامر الإنتاج'),
+      subtitle: tr('إنشاء، بدء، إكمال، وعكس أوامر الإنتاج مع قيد المخزون'),
       headerAction: AppButton.primary(
         onPressed: () async {
           final form = await showProductionOrderDialog(
@@ -59,18 +60,18 @@ class ManufacturingOrdersTab extends ConsumerWidget {
               startDate: DateTime.now(),
               notes: form.notes,
             ).then((_) {}),
-            'تم إنشاء أمر الإنتاج',
+            tr('تم إنشاء أمر الإنتاج'),
           );
         },
         icon: const Icon(PhosphorIconsBold.plus),
-        child: const Text('أمر إنتاج جديد'),
+        child:  Text(tr('أمر إنتاج جديد')),
       ),
-      columns: const [
-        PicPosTableColumn('الأمر', flex: 1.3),
-        PicPosTableColumn('قائمة المكونات', flex: 1.4),
-        PicPosTableColumn('الكمية'),
-        PicPosTableColumn('الحالة'),
-        PicPosTableColumn('الإجراء', flex: 1.5),
+      columns:  [
+        PicPosTableColumn(tr('الأمر'), flex: 1.3),
+        PicPosTableColumn(tr('قائمة المكونات'), flex: 1.4),
+        PicPosTableColumn(tr('الكمية')),
+        PicPosTableColumn(tr('الحالة')),
+        PicPosTableColumn(tr('الإجراء'), flex: 1.5),
       ],
       rows: [
         for (final order in orders)
@@ -93,18 +94,18 @@ class ManufacturingOrdersTab extends ConsumerWidget {
   ) {
     if (order.status == 'draft') {
       return PicPosButtonCell(
-        'بدء',
+        tr('بدء'),
         icon: PhosphorIconsBold.play,
         tint: Colors.blue,
         onPressed: () => runAction(
           () => repository.startProduction(order.id),
-          'بدأ أمر الإنتاج وتم صرف الخامات',
+          tr('بدأ أمر الإنتاج وتم صرف الخامات'),
         ),
       );
     }
     if (order.status == 'in_progress') {
       return PicPosButtonCell(
-        'إكمال',
+        tr('إكمال'),
         icon: PhosphorIconsBold.check,
         tint: Colors.green,
         onPressed: () async {
@@ -112,29 +113,29 @@ class ManufacturingOrdersTab extends ConsumerWidget {
           if (quantity == null) return;
           await runAction(
             () => repository.completeProduction(order.id, actualProducedQty: quantity),
-            'اكتمل أمر الإنتاج',
+            tr('اكتمل أمر الإنتاج'),
           );
         },
       );
     }
     if (order.status == 'completed') {
       return PicPosButtonCell(
-        'عكس',
+        tr('عكس'),
         icon: PhosphorIconsBold.arrowUUpLeft,
         tint: AppColors.error,
         onPressed: () async {
           final confirmed = await showPicPosConfirm(
             context,
             icon: PhosphorIconsBold.arrowUUpLeft,
-            title: 'عكس أمر الإنتاج',
-            message: 'سيُعكس أثر المخزون والقيد المحاسبي للأمر ${order.orderNumber}.',
+            title: tr('عكس أمر الإنتاج'),
+            message: tr('سيُعكس أثر المخزون والقيد المحاسبي للأمر {p0}.', {'p0': order.orderNumber}),
             danger: true,
-            confirmLabel: 'عكس الأمر',
+            confirmLabel: tr('عكس الأمر'),
           );
           if (!confirmed) return;
           await runAction(
             () => repository.reverseManufacturingOrder(order.id),
-            'تم عكس أمر الإنتاج',
+            tr('تم عكس أمر الإنتاج'),
           );
         },
       );
@@ -201,12 +202,12 @@ class _ProductionOrderDialogState extends State<_ProductionOrderDialog> {
   @override
   Widget build(BuildContext context) => PicPosDialog(
         icon: PhosphorIconsBold.factory,
-        title: 'أمر إنتاج جديد',
-        subtitle: 'اختر القائمة والكمية والمخزن قبل الترحيل',
+        title: tr('أمر إنتاج جديد'),
+        subtitle: tr('اختر القائمة والكمية والمخزن قبل الترحيل'),
         body: [
           DropdownButtonFormField<int>(
             value: _bomId,
-            decoration: const InputDecoration(labelText: 'قائمة المكونات'),
+            decoration:  InputDecoration(labelText: tr('قائمة المكونات')),
             items: [
               for (final bom in widget.boms)
                 DropdownMenuItem(value: bom.id, child: Text(bom.bomCode)),
@@ -216,21 +217,21 @@ class _ProductionOrderDialogState extends State<_ProductionOrderDialog> {
           TextField(
             controller: _quantity,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'الكمية المطلوبة'),
+            decoration:  InputDecoration(labelText: tr('الكمية المطلوبة')),
           ),
           DropdownButtonFormField<int>(
             value: _warehouseId,
-            decoration: const InputDecoration(labelText: 'المخزن'),
+            decoration:  InputDecoration(labelText: tr('المخزن')),
             items: [
               for (final warehouse in widget.warehouses)
                 DropdownMenuItem(value: warehouse.id, child: Text(warehouse.name)),
             ],
             onChanged: (value) => setState(() => _warehouseId = value),
           ),
-          TextField(controller: _notes, decoration: const InputDecoration(labelText: 'ملاحظات (اختياري)')),
+          TextField(controller: _notes, decoration:  InputDecoration(labelText: tr('ملاحظات (اختياري)'))),
         ],
         primaryAction: PicPosDialogAction(
-          label: 'إنشاء',
+          label: tr('إنشاء'),
           icon: PhosphorIconsBold.floppyDisk,
           onPressed: () {
             final quantity = double.tryParse(_quantity.text);
@@ -277,16 +278,16 @@ class _ActualQuantityDialogState extends State<_ActualQuantityDialog> {
   @override
   Widget build(BuildContext context) => PicPosDialog(
         icon: PhosphorIconsBold.check,
-        title: 'إكمال أمر الإنتاج',
+        title: tr('إكمال أمر الإنتاج'),
         body: [
           TextField(
             controller: _quantity,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'الكمية الفعلية'),
+            decoration:  InputDecoration(labelText: tr('الكمية الفعلية')),
           ),
         ],
         primaryAction: PicPosDialogAction(
-          label: 'إكمال',
+          label: tr('إكمال'),
           icon: PhosphorIconsBold.check,
           onPressed: () {
             final value = double.tryParse(_quantity.text);
@@ -299,15 +300,15 @@ class _ActualQuantityDialogState extends State<_ActualQuantityDialog> {
 
 String _arabicError(Object error) {
   final text = error.toString().replaceFirst('Exception: ', '');
-  return text.isEmpty ? 'تعذر تنفيذ العملية' : text;
+  return text.isEmpty ? tr('تعذر تنفيذ العملية') : text;
 }
 
 String _statusLabel(String status) => switch (status) {
-      'draft' => 'مسودة',
-      'in_progress' => 'قيد التنفيذ',
-      'completed' => 'مكتمل',
-      'reversed' => 'معكوس',
-      'cancelled' => 'ملغى',
+      'draft' => tr('مسودة'),
+      'in_progress' => tr('قيد التنفيذ'),
+      'completed' => tr('مكتمل'),
+      'reversed' => tr('معكوس'),
+      'cancelled' => tr('ملغى'),
       _ => status,
     };
 

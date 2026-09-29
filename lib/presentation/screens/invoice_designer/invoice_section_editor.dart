@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
@@ -258,55 +259,55 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
       // ── HEADER ──
       InvoiceSection(
         id: 'header',
-        title: 'الترويسة',
+        title: tr('الترويسة'),
         icon: PhosphorIconsBold.buildings,
         color: const Color(0xFF2563EB),
         fields: [
-          SectionField(key: 'logo', label: 'شعار الشركة', icon: PhosphorIconsBold.image, elementType: 'image', variableContent: 'logo', sizePercent: 0.4),
-          SectionField(key: 'company_name', label: 'اسم الشركة', icon: PhosphorIconsBold.buildings, elementType: 'variable', variableContent: 'company_name'),
-          SectionField(key: 'company_address', label: 'عنوان الشركة', icon: PhosphorIconsBold.mapPin, elementType: 'variable', variableContent: 'company_address'),
-          SectionField(key: 'company_phone', label: 'هاتف الشركة', icon: PhosphorIconsBold.phone, elementType: 'variable', variableContent: 'company_phone'),
-          SectionField(key: 'company_tax_number', label: 'الرقم الضريبي', icon: PhosphorIconsBold.identificationBadge, elementType: 'variable', variableContent: 'company_tax_number'),
-          SectionField(key: 'branch_name', label: 'اسم الفرع', icon: PhosphorIconsBold.storefront, elementType: 'variable', variableContent: 'branch_name'),
+          SectionField(key: 'logo', label: tr('شعار الشركة'), icon: PhosphorIconsBold.image, elementType: 'image', variableContent: 'logo', sizePercent: 0.4),
+          SectionField(key: 'company_name', label: tr('اسم الشركة'), icon: PhosphorIconsBold.buildings, elementType: 'variable', variableContent: 'company_name'),
+          SectionField(key: 'company_address', label: tr('عنوان الشركة'), icon: PhosphorIconsBold.mapPin, elementType: 'variable', variableContent: 'company_address'),
+          SectionField(key: 'company_phone', label: tr('هاتف الشركة'), icon: PhosphorIconsBold.phone, elementType: 'variable', variableContent: 'company_phone'),
+          SectionField(key: 'company_tax_number', label: tr('الرقم الضريبي'), icon: PhosphorIconsBold.identificationBadge, elementType: 'variable', variableContent: 'company_tax_number'),
+          SectionField(key: 'branch_name', label: tr('اسم الفرع'), icon: PhosphorIconsBold.storefront, elementType: 'variable', variableContent: 'branch_name'),
         ],
       ),
 
       // ── INVOICE INFO ──
       InvoiceSection(
         id: 'invoice_info',
-        title: isShiftClosing ? 'بيانات الوردية' : 'بيانات الفاتورة',
+        title: isShiftClosing ? tr('بيانات الوردية') : tr('بيانات الفاتورة'),
         icon: PhosphorIconsBold.fileText,
         color: const Color(0xFF059669),
         fields: [
-          SectionField(key: 'invoice_number', label: 'رقم الفاتورة', icon: PhosphorIconsBold.hash, elementType: 'variable', variableContent: 'invoice_number'),
-          SectionField(key: 'order_number', label: 'رقم الطلب', icon: PhosphorIconsBold.listNumbers, elementType: 'variable', variableContent: 'order_number'),
-          SectionField(key: 'date', label: 'التاريخ', icon: PhosphorIconsBold.calendar, elementType: 'variable', variableContent: 'date'),
-          SectionField(key: 'time', label: 'الوقت', icon: PhosphorIconsBold.clock, elementType: 'variable', variableContent: 'time'),
-          SectionField(key: 'cashier_name', label: 'الكاشير', icon: PhosphorIconsBold.user, elementType: 'variable', variableContent: 'cashier_name'),
-          SectionField(key: 'warehouse_name', label: 'المخزن', icon: PhosphorIconsBold.warehouse, elementType: 'variable', variableContent: 'warehouse_name'),
-          SectionField(key: 'payment_method', label: 'طريقة الدفع', icon: PhosphorIconsBold.creditCard, elementType: 'variable', variableContent: 'payment_method'),
-          SectionField(key: 'sale_type', label: 'نوع البيع', icon: PhosphorIconsBold.shoppingCart, elementType: 'variable', variableContent: 'sale_type'),
-          SectionField(key: 'invoice_type_label', label: 'نوع الفاتورة', icon: PhosphorIconsBold.tag, elementType: 'variable', variableContent: 'invoice_type_label'),
+          SectionField(key: 'invoice_number', label: tr('رقم الفاتورة'), icon: PhosphorIconsBold.hash, elementType: 'variable', variableContent: 'invoice_number'),
+          SectionField(key: 'order_number', label: tr('رقم الطلب'), icon: PhosphorIconsBold.listNumbers, elementType: 'variable', variableContent: 'order_number'),
+          SectionField(key: 'date', label: tr('التاريخ'), icon: PhosphorIconsBold.calendar, elementType: 'variable', variableContent: 'date'),
+          SectionField(key: 'time', label: tr('الوقت'), icon: PhosphorIconsBold.clock, elementType: 'variable', variableContent: 'time'),
+          SectionField(key: 'cashier_name', label: tr('الكاشير'), icon: PhosphorIconsBold.user, elementType: 'variable', variableContent: 'cashier_name'),
+          SectionField(key: 'warehouse_name', label: tr('المخزن'), icon: PhosphorIconsBold.warehouse, elementType: 'variable', variableContent: 'warehouse_name'),
+          SectionField(key: 'payment_method', label: tr('طريقة الدفع'), icon: PhosphorIconsBold.creditCard, elementType: 'variable', variableContent: 'payment_method'),
+          SectionField(key: 'sale_type', label: tr('نوع البيع'), icon: PhosphorIconsBold.shoppingCart, elementType: 'variable', variableContent: 'sale_type'),
+          SectionField(key: 'invoice_type_label', label: tr('نوع الفاتورة'), icon: PhosphorIconsBold.tag, elementType: 'variable', variableContent: 'invoice_type_label'),
         ],
       ),
 
       // ── CUSTOMER / SUPPLIER ──
       InvoiceSection(
         id: 'customer',
-        title: isPurchase ? 'بيانات المورد' : 'بيانات العميل',
+        title: isPurchase ? tr('بيانات المورد') : tr('بيانات العميل'),
         icon: PhosphorIconsBold.userCircle,
         color: const Color(0xFFD97706),
         fields: [
-          SectionField(key: 'customer_name', label: isPurchase ? 'اسم المورد' : 'اسم العميل', icon: PhosphorIconsBold.user, elementType: 'variable', variableContent: isPurchase ? 'supplier_name' : 'customer_name'),
-          SectionField(key: 'customer_phone', label: 'الهاتف', icon: PhosphorIconsBold.phone, elementType: 'variable', variableContent: 'customer_phone'),
-          SectionField(key: 'customer_address', label: 'العنوان', icon: PhosphorIconsBold.mapPin, elementType: 'variable', variableContent: 'customer_address'),
+          SectionField(key: 'customer_name', label: isPurchase ? tr('اسم المورد') : tr('اسم العميل'), icon: PhosphorIconsBold.user, elementType: 'variable', variableContent: isPurchase ? 'supplier_name' : 'customer_name'),
+          SectionField(key: 'customer_phone', label: tr('الهاتف'), icon: PhosphorIconsBold.phone, elementType: 'variable', variableContent: 'customer_phone'),
+          SectionField(key: 'customer_address', label: tr('العنوان'), icon: PhosphorIconsBold.mapPin, elementType: 'variable', variableContent: 'customer_address'),
           if (!isPurchase) ...[
-            SectionField(key: 'adhoc_customer_name', label: 'اسم العميل النصي', icon: PhosphorIconsBold.userCircle, elementType: 'variable', variableContent: 'adhoc_customer_name'),
-            SectionField(key: 'adhoc_customer_phone', label: 'هاتف العميل النصي', icon: PhosphorIconsBold.phoneCall, elementType: 'variable', variableContent: 'adhoc_customer_phone'),
+            SectionField(key: 'adhoc_customer_name', label: tr('اسم العميل النصي'), icon: PhosphorIconsBold.userCircle, elementType: 'variable', variableContent: 'adhoc_customer_name'),
+            SectionField(key: 'adhoc_customer_phone', label: tr('هاتف العميل النصي'), icon: PhosphorIconsBold.phoneCall, elementType: 'variable', variableContent: 'adhoc_customer_phone'),
           ],
           if (isKitchen) ...[
-            SectionField(key: 'table_number', label: 'رقم الطاولة', icon: PhosphorIconsBold.table, elementType: 'variable', variableContent: 'table_number'),
-            SectionField(key: 'waiter_name', label: 'اسم الويتر', icon: PhosphorIconsBold.user, elementType: 'variable', variableContent: 'waiter_name'),
+            SectionField(key: 'table_number', label: tr('رقم الطاولة'), icon: PhosphorIconsBold.table, elementType: 'variable', variableContent: 'table_number'),
+            SectionField(key: 'waiter_name', label: tr('اسم الويتر'), icon: PhosphorIconsBold.user, elementType: 'variable', variableContent: 'waiter_name'),
           ],
         ],
       ),
@@ -315,15 +316,15 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
       if (!isShiftClosing && !isKitchen)
         InvoiceSection(
           id: 'delivery',
-          title: 'التوصيل',
+          title: tr('التوصيل'),
           icon: PhosphorIconsBold.truck,
           color: const Color(0xFF0891B2),
           isVisible: false,
           fields: [
-            SectionField(key: 'delivery_type', label: 'نوع التوصيل', icon: PhosphorIconsBold.truck, elementType: 'variable', variableContent: 'delivery_type'),
-            SectionField(key: 'delivery_address', label: 'عنوان التوصيل', icon: PhosphorIconsBold.mapPin, elementType: 'variable', variableContent: 'delivery_address'),
-            SectionField(key: 'delivery_fee', label: 'رسوم التوصيل', icon: PhosphorIconsBold.currencyDollar, elementType: 'variable', variableContent: 'delivery_fee'),
-            SectionField(key: 'courier_name', label: 'اسم المندوب', icon: PhosphorIconsBold.motorcycle, elementType: 'variable', variableContent: 'courier_name'),
+            SectionField(key: 'delivery_type', label: tr('نوع التوصيل'), icon: PhosphorIconsBold.truck, elementType: 'variable', variableContent: 'delivery_type'),
+            SectionField(key: 'delivery_address', label: tr('عنوان التوصيل'), icon: PhosphorIconsBold.mapPin, elementType: 'variable', variableContent: 'delivery_address'),
+            SectionField(key: 'delivery_fee', label: tr('رسوم التوصيل'), icon: PhosphorIconsBold.currencyDollar, elementType: 'variable', variableContent: 'delivery_fee'),
+            SectionField(key: 'courier_name', label: tr('اسم المندوب'), icon: PhosphorIconsBold.motorcycle, elementType: 'variable', variableContent: 'courier_name'),
           ],
         ),
 
@@ -331,7 +332,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
       if (!isShiftClosing)
         InvoiceSection(
           id: 'items_table',
-          title: 'جدول الأصناف',
+          title: tr('جدول الأصناف'),
           icon: PhosphorIconsBold.table,
           color: const Color(0xFF7C3AED),
           isExpanded: true,
@@ -339,53 +340,53 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
             // `variableContent` يربطه بعنصرِ القاعدة `variable`/`items_table`
             // فيدخل في إعادة الترقيم — بلا ذلك كان المالكُ يحرّك جدولاً لا
             // يُحفَظ له موضع. و`elementType` يبقى علامةً لواجهةِ القسم.
-            SectionField(key: 'items_table', label: 'جدول الأصناف', icon: PhosphorIconsBold.table, elementType: 'items_table', variableContent: 'items_table'),
+            SectionField(key: 'items_table', label: tr('جدول الأصناف'), icon: PhosphorIconsBold.table, elementType: 'items_table', variableContent: 'items_table'),
           ],
         ),
 
       // ── SHIFT CLOSING sections ──
       if (isShiftClosing) ...[
         InvoiceSection(
-          id: 'shift_sales', title: 'ملخص المبيعات', icon: PhosphorIconsBold.chartBar, color: const Color(0xFF7C3AED),
+          id: 'shift_sales', title: tr('ملخص المبيعات'), icon: PhosphorIconsBold.chartBar, color: const Color(0xFF7C3AED),
           fields: [
-            SectionField(key: 'shift_invoice_count', label: 'عدد الفواتير', icon: PhosphorIconsBold.receipt, elementType: 'variable', variableContent: 'shift_invoice_count'),
-            SectionField(key: 'shift_total_sales', label: 'إجمالي المبيعات', icon: PhosphorIconsBold.currencyDollar, elementType: 'variable', variableContent: 'shift_total_sales'),
-            SectionField(key: 'shift_total_expenses', label: 'مصروفات الوردية', icon: PhosphorIconsBold.arrowDown, elementType: 'variable', variableContent: 'shift_total_expenses'),
-            SectionField(key: 'shift_cash_refunds', label: 'مرتجعات نقدية', icon: PhosphorIconsBold.arrowUUpLeft, elementType: 'variable', variableContent: 'shift_cash_refunds'),
+            SectionField(key: 'shift_invoice_count', label: tr('عدد الفواتير'), icon: PhosphorIconsBold.receipt, elementType: 'variable', variableContent: 'shift_invoice_count'),
+            SectionField(key: 'shift_total_sales', label: tr('إجمالي المبيعات'), icon: PhosphorIconsBold.currencyDollar, elementType: 'variable', variableContent: 'shift_total_sales'),
+            SectionField(key: 'shift_total_expenses', label: tr('مصروفات الوردية'), icon: PhosphorIconsBold.arrowDown, elementType: 'variable', variableContent: 'shift_total_expenses'),
+            SectionField(key: 'shift_cash_refunds', label: tr('مرتجعات نقدية'), icon: PhosphorIconsBold.arrowUUpLeft, elementType: 'variable', variableContent: 'shift_cash_refunds'),
           ],
         ),
         InvoiceSection(
-          id: 'shift_cash', title: 'تسوية النقد', icon: PhosphorIconsBold.coins, color: const Color(0xFF059669),
+          id: 'shift_cash', title: tr('تسوية النقد'), icon: PhosphorIconsBold.coins, color: const Color(0xFF059669),
           fields: [
-            SectionField(key: 'shift_system_cash', label: 'رصيد النظام (نقد)', icon: PhosphorIconsBold.coins, elementType: 'variable', variableContent: 'shift_system_cash'),
-            SectionField(key: 'shift_actual_cash', label: 'النقد الفعلي', icon: PhosphorIconsBold.money, elementType: 'variable', variableContent: 'shift_actual_cash'),
-            SectionField(key: 'shift_cash_variance', label: 'فارق النقد', icon: PhosphorIconsBold.plusMinus, elementType: 'variable', variableContent: 'shift_cash_variance'),
+            SectionField(key: 'shift_system_cash', label: tr('رصيد النظام (نقد)'), icon: PhosphorIconsBold.coins, elementType: 'variable', variableContent: 'shift_system_cash'),
+            SectionField(key: 'shift_actual_cash', label: tr('النقد الفعلي'), icon: PhosphorIconsBold.money, elementType: 'variable', variableContent: 'shift_actual_cash'),
+            SectionField(key: 'shift_cash_variance', label: tr('فارق النقد'), icon: PhosphorIconsBold.plusMinus, elementType: 'variable', variableContent: 'shift_cash_variance'),
           ],
         ),
         InvoiceSection(
-          id: 'shift_card', title: 'تسوية البطاقة', icon: PhosphorIconsBold.creditCard, color: const Color(0xFF2563EB),
+          id: 'shift_card', title: tr('تسوية البطاقة'), icon: PhosphorIconsBold.creditCard, color: const Color(0xFF2563EB),
           fields: [
-            SectionField(key: 'shift_system_card', label: 'رصيد النظام (بطاقة)', icon: PhosphorIconsBold.creditCard, elementType: 'variable', variableContent: 'shift_system_card'),
-            SectionField(key: 'shift_actual_card', label: 'البطاقة الفعلي', icon: PhosphorIconsBold.creditCard, elementType: 'variable', variableContent: 'shift_actual_card'),
-            SectionField(key: 'shift_card_variance', label: 'فارق البطاقة', icon: PhosphorIconsBold.plusMinus, elementType: 'variable', variableContent: 'shift_card_variance'),
+            SectionField(key: 'shift_system_card', label: tr('رصيد النظام (بطاقة)'), icon: PhosphorIconsBold.creditCard, elementType: 'variable', variableContent: 'shift_system_card'),
+            SectionField(key: 'shift_actual_card', label: tr('البطاقة الفعلي'), icon: PhosphorIconsBold.creditCard, elementType: 'variable', variableContent: 'shift_actual_card'),
+            SectionField(key: 'shift_card_variance', label: tr('فارق البطاقة'), icon: PhosphorIconsBold.plusMinus, elementType: 'variable', variableContent: 'shift_card_variance'),
           ],
         ),
         // §٥-٢ — «كليك» تدخل في الإجماليات تحت، ولم يكن لها قسمٌ هنا.
         InvoiceSection(
-          id: 'shift_click', title: 'تسوية كليك', icon: PhosphorIconsBold.deviceMobile, color: const Color(0xFF7C3AED),
+          id: 'shift_click', title: tr('تسوية كليك'), icon: PhosphorIconsBold.deviceMobile, color: const Color(0xFF7C3AED),
           fields: [
-            SectionField(key: 'shift_system_click', label: 'رصيد النظام (كليك)', icon: PhosphorIconsBold.deviceMobile, elementType: 'variable', variableContent: 'shift_system_click'),
-            SectionField(key: 'shift_actual_click', label: 'كليك الفعلي', icon: PhosphorIconsBold.deviceMobile, elementType: 'variable', variableContent: 'shift_actual_click'),
-            SectionField(key: 'shift_click_variance', label: 'فارق كليك', icon: PhosphorIconsBold.plusMinus, elementType: 'variable', variableContent: 'shift_click_variance'),
+            SectionField(key: 'shift_system_click', label: tr('رصيد النظام (كليك)'), icon: PhosphorIconsBold.deviceMobile, elementType: 'variable', variableContent: 'shift_system_click'),
+            SectionField(key: 'shift_actual_click', label: tr('كليك الفعلي'), icon: PhosphorIconsBold.deviceMobile, elementType: 'variable', variableContent: 'shift_actual_click'),
+            SectionField(key: 'shift_click_variance', label: tr('فارق كليك'), icon: PhosphorIconsBold.plusMinus, elementType: 'variable', variableContent: 'shift_click_variance'),
           ],
         ),
         InvoiceSection(
-          id: 'shift_totals', title: 'الإجماليات', icon: PhosphorIconsBold.calculator, color: const Color(0xFFDC2626),
+          id: 'shift_totals', title: tr('الإجماليات'), icon: PhosphorIconsBold.calculator, color: const Color(0xFFDC2626),
           fields: [
-            SectionField(key: 'shift_total_system', label: 'إجمالي النظام', icon: PhosphorIconsBold.calculator, elementType: 'variable', variableContent: 'shift_total_system'),
-            SectionField(key: 'shift_total_actual', label: 'إجمالي الفعلي', icon: PhosphorIconsBold.wallet, elementType: 'variable', variableContent: 'shift_total_actual'),
-            SectionField(key: 'shift_total_variance', label: 'الفارق الكلي', icon: PhosphorIconsBold.chartBar, elementType: 'variable', variableContent: 'shift_total_variance'),
-            SectionField(key: 'shift_status', label: 'الحالة', icon: PhosphorIconsBold.checkCircle, elementType: 'variable', variableContent: 'shift_status'),
+            SectionField(key: 'shift_total_system', label: tr('إجمالي النظام'), icon: PhosphorIconsBold.calculator, elementType: 'variable', variableContent: 'shift_total_system'),
+            SectionField(key: 'shift_total_actual', label: tr('إجمالي الفعلي'), icon: PhosphorIconsBold.wallet, elementType: 'variable', variableContent: 'shift_total_actual'),
+            SectionField(key: 'shift_total_variance', label: tr('الفارق الكلي'), icon: PhosphorIconsBold.chartBar, elementType: 'variable', variableContent: 'shift_total_variance'),
+            SectionField(key: 'shift_status', label: tr('الحالة'), icon: PhosphorIconsBold.checkCircle, elementType: 'variable', variableContent: 'shift_status'),
           ],
         ),
       ],
@@ -394,45 +395,45 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
       if (!isShiftClosing)
         InvoiceSection(
           id: 'totals',
-          title: 'المبالغ والإجماليات',
+          title: tr('المبالغ والإجماليات'),
           icon: PhosphorIconsBold.currencyDollar,
           color: const Color(0xFFDC2626),
           fields: [
-            SectionField(key: 'subtotal', label: 'الإجمالي الفرعي', icon: PhosphorIconsBold.currencyDollar, elementType: 'variable', variableContent: 'subtotal'),
-            SectionField(key: 'discount', label: 'الخصم', icon: PhosphorIconsBold.tag, elementType: 'variable', variableContent: 'discount'),
-            SectionField(key: 'tax_amount', label: 'الضريبة', icon: PhosphorIconsBold.percent, elementType: 'variable', variableContent: 'tax_amount'),
-            SectionField(key: 'total_amount', label: 'الإجمالي النهائي', icon: PhosphorIconsBold.coins, elementType: 'variable', variableContent: 'total_amount'),
-            SectionField(key: 'paid', label: 'المدفوع', icon: PhosphorIconsBold.money, elementType: 'variable', variableContent: 'paid'),
-            SectionField(key: 'remaining', label: 'المتبقي', icon: PhosphorIconsBold.arrowsLeftRight, elementType: 'variable', variableContent: 'remaining'),
-            SectionField(key: 'cash_amount', label: 'مدفوع نقداً', icon: PhosphorIconsBold.money, elementType: 'variable', variableContent: 'cash_amount'),
-            SectionField(key: 'bank_amount', label: 'مدفوع بنكياً', icon: PhosphorIconsBold.bank, elementType: 'variable', variableContent: 'bank_amount'),
-            SectionField(key: 'click_amount', label: 'مدفوع كليك', icon: PhosphorIconsBold.deviceMobile, elementType: 'variable', variableContent: 'click_amount'),
+            SectionField(key: 'subtotal', label: tr('الإجمالي الفرعي'), icon: PhosphorIconsBold.currencyDollar, elementType: 'variable', variableContent: 'subtotal'),
+            SectionField(key: 'discount', label: tr('الخصم'), icon: PhosphorIconsBold.tag, elementType: 'variable', variableContent: 'discount'),
+            SectionField(key: 'tax_amount', label: tr('الضريبة'), icon: PhosphorIconsBold.percent, elementType: 'variable', variableContent: 'tax_amount'),
+            SectionField(key: 'total_amount', label: tr('الإجمالي النهائي'), icon: PhosphorIconsBold.coins, elementType: 'variable', variableContent: 'total_amount'),
+            SectionField(key: 'paid', label: tr('المدفوع'), icon: PhosphorIconsBold.money, elementType: 'variable', variableContent: 'paid'),
+            SectionField(key: 'remaining', label: tr('المتبقي'), icon: PhosphorIconsBold.arrowsLeftRight, elementType: 'variable', variableContent: 'remaining'),
+            SectionField(key: 'cash_amount', label: tr('مدفوع نقداً'), icon: PhosphorIconsBold.money, elementType: 'variable', variableContent: 'cash_amount'),
+            SectionField(key: 'bank_amount', label: tr('مدفوع بنكياً'), icon: PhosphorIconsBold.bank, elementType: 'variable', variableContent: 'bank_amount'),
+            SectionField(key: 'click_amount', label: tr('مدفوع كليك'), icon: PhosphorIconsBold.deviceMobile, elementType: 'variable', variableContent: 'click_amount'),
           ],
         ),
 
       // ── NOTES (from POS) ──
       InvoiceSection(
         id: 'notes_section',
-        title: 'الملاحظات',
+        title: tr('الملاحظات'),
         icon: PhosphorIconsBold.notepad,
         color: const Color(0xFF9333EA),
         fields: [
-          SectionField(key: 'notes', label: 'ملاحظات الفاتورة', icon: PhosphorIconsBold.notepad, elementType: 'variable', variableContent: 'notes'),
+          SectionField(key: 'notes', label: tr('ملاحظات الفاتورة'), icon: PhosphorIconsBold.notepad, elementType: 'variable', variableContent: 'notes'),
           if (isKitchen)
-            SectionField(key: 'kitchen_notes', label: 'ملاحظات المطبخ', icon: PhosphorIconsBold.cookingPot, elementType: 'variable', variableContent: 'kitchen_notes'),
+            SectionField(key: 'kitchen_notes', label: tr('ملاحظات المطبخ'), icon: PhosphorIconsBold.cookingPot, elementType: 'variable', variableContent: 'kitchen_notes'),
         ],
       ),
 
       // ── FOOTER ──
       InvoiceSection(
         id: 'footer',
-        title: 'التذييل',
+        title: tr('التذييل'),
         icon: PhosphorIconsBold.textAlignCenter,
         color: const Color(0xFF6B7280),
         fields: [
-          SectionField(key: 'footer_text', label: 'نص التذييل', icon: PhosphorIconsBold.textT, elementType: 'text', variableContent: 'footer_text'),
+          SectionField(key: 'footer_text', label: tr('نص التذييل'), icon: PhosphorIconsBold.textT, elementType: 'text', variableContent: 'footer_text'),
           SectionField(key: 'qr_code', label: 'QR Code', icon: PhosphorIconsBold.qrCode, elementType: 'variable', variableContent: 'qr_code'),
-          SectionField(key: 'tax_registration', label: 'الرقم الضريبي (تذييل)', icon: PhosphorIconsBold.identificationBadge, elementType: 'variable', variableContent: 'tax_registration'),
+          SectionField(key: 'tax_registration', label: tr('الرقم الضريبي (تذييل)'), icon: PhosphorIconsBold.identificationBadge, elementType: 'variable', variableContent: 'tax_registration'),
         ],
       ),
     ];
@@ -611,7 +612,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
         children: [
           const Icon(PhosphorIconsBold.layout, size: 16, color: AppColors.primary),
           const SizedBox(width: 6),
-          const Text('أقسام الفاتورة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+           Text(tr('أقسام الفاتورة'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
           const Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -675,7 +676,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(section.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: section.color)),
-                        Text('$visibleFields/$totalFields مفعل', style: TextStyle(fontSize: 9, color: Colors.grey.shade500)),
+                        Text(tr('{visibleFields}/{totalFields} مفعل', {'visibleFields': visibleFields, 'totalFields': totalFields}), style: TextStyle(fontSize: 9, color: Colors.grey.shade500)),
                       ],
                     ),
                   ),
@@ -772,7 +773,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                     icon: PhosphorIconsBold.columns,
                     isActive: field.isInline,
                     color: section.color,
-                    tooltip: 'جنب العنصر التالي',
+                    tooltip: tr('جنب العنصر التالي'),
                     onTap: () { setState(() => field.isInline = !field.isInline); _pushFieldToElement(field); },
                   ),
                   const SizedBox(width: 2),
@@ -781,7 +782,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                     icon: PhosphorIconsBold.textB,
                     isActive: field.isBold,
                     color: section.color,
-                    tooltip: 'عريض',
+                    tooltip: tr('عريض'),
                     onTap: () { setState(() => field.isBold = !field.isBold); _pushFieldToElement(field); },
                   ),
                   const SizedBox(width: 2),
@@ -790,7 +791,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                     icon: PhosphorIconsBold.minus,
                     isActive: false,
                     color: section.color,
-                    tooltip: 'تصغير الخط',
+                    tooltip: tr('تصغير الخط'),
                     onTap: () { setState(() => field.fontSize = (field.fontSize > 0 ? field.fontSize : 11) - 1); _pushFieldToElement(field); },
                   ),
                   if (field.fontSize > 0)
@@ -802,7 +803,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                     icon: PhosphorIconsBold.plus,
                     isActive: false,
                     color: section.color,
-                    tooltip: 'تكبير الخط',
+                    tooltip: tr('تكبير الخط'),
                     onTap: () { setState(() => field.fontSize = (field.fontSize > 0 ? field.fontSize : 11) + 1); _pushFieldToElement(field); },
                   ),
                   const SizedBox(width: 4),
@@ -831,7 +832,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
               padding: const EdgeInsets.only(right: 32, left: 16, bottom: 6),
               child: Row(
                 children: [
-                  Text('الحجم:', style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+                  Text(tr('الحجم:'), style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
                   Expanded(
                     child: SliderTheme(
                       data: SliderThemeData(overlayShape: SliderComponentShape.noOverlay, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6)),
@@ -975,43 +976,43 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
             children: [
               Icon(PhosphorIconsBold.table, size: 14, color: sectionColor),
               const SizedBox(width: 6),
-              Text('جدول الأصناف', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: sectionColor)),
+              Text(tr('جدول الأصناف'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: sectionColor)),
             ],
           ),
           const SizedBox(height: 8),
           // Column toggles
-          Text('الأعمدة:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
+          Text(tr('الأعمدة:'), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
           const SizedBox(height: 4),
           if (ts != null) ...[
             Wrap(spacing: 4, runSpacing: 4, children: [
-              _colChip('م', ts.showIndex, (v) => widget.onUpdateTableSettings(ts.copyWith(showIndex: v))),
-              _colChip('المنتج', ts.showProductName, (v) => widget.onUpdateTableSettings(ts.copyWith(showProductName: v))),
-              _colChip('كود', ts.showProductCode, (v) => widget.onUpdateTableSettings(ts.copyWith(showProductCode: v))),
-              _colChip('الكمية', ts.showQuantity, (v) => widget.onUpdateTableSettings(ts.copyWith(showQuantity: v))),
-              _colChip('السعر', ts.showUnitPrice, (v) => widget.onUpdateTableSettings(ts.copyWith(showUnitPrice: v))),
-              _colChip('الوحدة', ts.showUnit, (v) => widget.onUpdateTableSettings(ts.copyWith(showUnit: v))),
-              _colChip('الخصم', ts.showDiscount, (v) => widget.onUpdateTableSettings(ts.copyWith(showDiscount: v))),
-              _colChip('الضريبة', ts.showTax, (v) => widget.onUpdateTableSettings(ts.copyWith(showTax: v))),
-              _colChip('الإجمالي', ts.showTotal, (v) => widget.onUpdateTableSettings(ts.copyWith(showTotal: v))),
-              _colChip('الباركود', ts.showBarcode, (v) => widget.onUpdateTableSettings(ts.copyWith(showBarcode: v))),
-              _colChip('ملاحظات', ts.showNotes, (v) => widget.onUpdateTableSettings(ts.copyWith(showNotes: v))),
+              _colChip(tr('م'), ts.showIndex, (v) => widget.onUpdateTableSettings(ts.copyWith(showIndex: v))),
+              _colChip(tr('المنتج'), ts.showProductName, (v) => widget.onUpdateTableSettings(ts.copyWith(showProductName: v))),
+              _colChip(tr('كود'), ts.showProductCode, (v) => widget.onUpdateTableSettings(ts.copyWith(showProductCode: v))),
+              _colChip(tr('الكمية'), ts.showQuantity, (v) => widget.onUpdateTableSettings(ts.copyWith(showQuantity: v))),
+              _colChip(tr('السعر'), ts.showUnitPrice, (v) => widget.onUpdateTableSettings(ts.copyWith(showUnitPrice: v))),
+              _colChip(tr('الوحدة'), ts.showUnit, (v) => widget.onUpdateTableSettings(ts.copyWith(showUnit: v))),
+              _colChip(tr('الخصم'), ts.showDiscount, (v) => widget.onUpdateTableSettings(ts.copyWith(showDiscount: v))),
+              _colChip(tr('الضريبة'), ts.showTax, (v) => widget.onUpdateTableSettings(ts.copyWith(showTax: v))),
+              _colChip(tr('الإجمالي'), ts.showTotal, (v) => widget.onUpdateTableSettings(ts.copyWith(showTotal: v))),
+              _colChip(tr('الباركود'), ts.showBarcode, (v) => widget.onUpdateTableSettings(ts.copyWith(showBarcode: v))),
+              _colChip(tr('ملاحظات'), ts.showNotes, (v) => widget.onUpdateTableSettings(ts.copyWith(showNotes: v))),
             ]),
             const SizedBox(height: 6),
             // Table header visibility toggle
-            _colChip('عنوان الجدول', _getJsonBool(ts, '_showHeader', true), (v) => _setJsonBool(ts, '_showHeader', v)),
+            _colChip(tr('عنوان الجدول'), _getJsonBool(ts, '_showHeader', true), (v) => _setJsonBool(ts, '_showHeader', v)),
             const SizedBox(height: 8),
             // Extra rows: additions & options
-            Text('صفوف إضافية:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
+            Text(tr('صفوف إضافية:'), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
             const SizedBox(height: 4),
             Wrap(spacing: 4, runSpacing: 4, children: [
-              _colChip('إضافات الصنف', _showAdditions, (v) => setState(() => _showAdditions = v)),
-              _colChip('خيارات الصنف', _showOptions, (v) => setState(() => _showOptions = v)),
+              _colChip(tr('إضافات الصنف'), _showAdditions, (v) => setState(() => _showAdditions = v)),
+              _colChip(tr('خيارات الصنف'), _showOptions, (v) => setState(() => _showOptions = v)),
             ]),
             const SizedBox(height: 8),
             // Header font size
             Row(
               children: [
-                Text('خط العنوان:', style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+                Text(tr('خط العنوان:'), style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
                 Expanded(
                   child: SliderTheme(
                     data: SliderThemeData(overlayShape: SliderComponentShape.noOverlay, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6)),
@@ -1027,12 +1028,12 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
               ],
             ),
             // Header bold toggle
-            _boldToggle('عنوان بولد', _getJsonBool(ts, '_headerBold', true), (v) => _setJsonBool(ts, '_headerBold', v), sectionColor),
+            _boldToggle(tr('عنوان بولد'), _getJsonBool(ts, '_headerBold', true), (v) => _setJsonBool(ts, '_headerBold', v), sectionColor),
             const SizedBox(height: 6),
             // Body font size
             Row(
               children: [
-                Text('خط البيانات:', style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+                Text(tr('خط البيانات:'), style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
                 Expanded(
                   child: SliderTheme(
                     data: SliderThemeData(overlayShape: SliderComponentShape.noOverlay, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6)),
@@ -1048,12 +1049,12 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
               ],
             ),
             // Body bold toggle
-            _boldToggle('بيانات بولد', _getJsonBool(ts, '_bodyBold', false), (v) => _setJsonBool(ts, '_bodyBold', v), sectionColor),
+            _boldToggle(tr('بيانات بولد'), _getJsonBool(ts, '_bodyBold', false), (v) => _setJsonBool(ts, '_bodyBold', v), sectionColor),
             const SizedBox(height: 8),
             // Decimal precision
             Row(
               children: [
-                Text('العلامة العشرية:', style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+                Text(tr('العلامة العشرية:'), style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
                 const SizedBox(width: 8),
                 ...List.generate(4, (i) {
                   final isActive = _decimalPlaces == i;
@@ -1090,24 +1091,24 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                 children: [
                   Icon(PhosphorIconsBold.textAa, size: 14, color: sectionColor),
                   const SizedBox(width: 6),
-                  Text('تعديل عناوين الأعمدة', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: sectionColor)),
+                  Text(tr('تعديل عناوين الأعمدة'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: sectionColor)),
                 ],
               ),
               children: [
-                _headerLabelRow('index', 'م', ts, sectionColor, visible: ts.showIndex),
-                _headerLabelRow('product', 'الصنف', ts, sectionColor, visible: ts.showProductName),
-                _headerLabelRow('code', 'الكود', ts, sectionColor, visible: ts.showProductCode),
-                _headerLabelRow('quantity', 'العدد', ts, sectionColor, visible: ts.showQuantity),
-                _headerLabelRow('price', 'السعر', ts, sectionColor, visible: ts.showUnitPrice),
-                _headerLabelRow('discount', 'الخصم', ts, sectionColor, visible: ts.showDiscount),
-                _headerLabelRow('tax', 'الضريبة', ts, sectionColor, visible: ts.showTax),
-                _headerLabelRow('total', 'الإجمالي', ts, sectionColor, visible: ts.showTotal),
-                _headerLabelRow('unit', 'الوحدة', ts, sectionColor, visible: ts.showUnit),
-                _headerLabelRow('barcode', 'الباركود', ts, sectionColor, visible: ts.showBarcode),
+                _headerLabelRow('index', tr('م'), ts, sectionColor, visible: ts.showIndex),
+                _headerLabelRow('product', tr('الصنف'), ts, sectionColor, visible: ts.showProductName),
+                _headerLabelRow('code', tr('الكود'), ts, sectionColor, visible: ts.showProductCode),
+                _headerLabelRow('quantity', tr('العدد'), ts, sectionColor, visible: ts.showQuantity),
+                _headerLabelRow('price', tr('السعر'), ts, sectionColor, visible: ts.showUnitPrice),
+                _headerLabelRow('discount', tr('الخصم'), ts, sectionColor, visible: ts.showDiscount),
+                _headerLabelRow('tax', tr('الضريبة'), ts, sectionColor, visible: ts.showTax),
+                _headerLabelRow('total', tr('الإجمالي'), ts, sectionColor, visible: ts.showTotal),
+                _headerLabelRow('unit', tr('الوحدة'), ts, sectionColor, visible: ts.showUnit),
+                _headerLabelRow('barcode', tr('الباركود'), ts, sectionColor, visible: ts.showBarcode),
               ],
             ),
           ] else
-            Text('سيتم إنشاء إعدادات الجدول تلقائياً عند الحفظ', style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+            Text(tr('سيتم إنشاء إعدادات الجدول تلقائياً عند الحفظ'), style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
         ],
       ),
     );
@@ -1301,7 +1302,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
               children: [
                 const Icon(PhosphorIconsBold.eye, size: 14, color: AppColors.primary),
                 const SizedBox(width: 6),
-                const Text('معاينة مباشرة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                 Text(tr('معاينة مباشرة'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1392,7 +1393,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Icon(PhosphorIconsBold.fileX, size: 40, color: Colors.grey.shade300),
           const SizedBox(height: 6),
-          Text('لا توجد عناصر مفعلة', style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
+          Text(tr('لا توجد عناصر مفعلة'), style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
         ]),
       );
     }
@@ -1495,27 +1496,27 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
     final ts = widget.tableSettings;
     final headers = <String>[];
     if (ts != null) {
-      if (ts.showIndex) headers.add('م');
-      if (ts.showProductName) headers.add('المنتج');
-      if (ts.showProductCode) headers.add('كود');
-      if (ts.showQuantity) headers.add('الكمية');
-      if (ts.showUnitPrice) headers.add('السعر');
-      if (ts.showUnit) headers.add('الوحدة');
-      if (ts.showDiscount) headers.add('خصم');
-      if (ts.showTax) headers.add('ض');
-      if (ts.showTotal) headers.add('الإجمالي');
-      if (ts.showBarcode) headers.add('باركود');
-      if (ts.showNotes) headers.add('ملاحظات');
+      if (ts.showIndex) headers.add(tr('م'));
+      if (ts.showProductName) headers.add(tr('المنتج'));
+      if (ts.showProductCode) headers.add(tr('كود'));
+      if (ts.showQuantity) headers.add(tr('الكمية'));
+      if (ts.showUnitPrice) headers.add(tr('السعر'));
+      if (ts.showUnit) headers.add(tr('الوحدة'));
+      if (ts.showDiscount) headers.add(tr('خصم'));
+      if (ts.showTax) headers.add(tr('ض'));
+      if (ts.showTotal) headers.add(tr('الإجمالي'));
+      if (ts.showBarcode) headers.add(tr('باركود'));
+      if (ts.showNotes) headers.add(tr('ملاحظات'));
     }
-    if (headers.isEmpty) headers.addAll(['م', 'المنتج', 'الكمية', 'السعر', 'الإجمالي']);
+    if (headers.isEmpty) headers.addAll([tr('م'), tr('المنتج'), tr('الكمية'), tr('السعر'), tr('الإجمالي')]);
 
     final fontSize = (ts?.fontSize ?? 10).clamp(8, 14).toDouble();
 
     // Sample data: 3 items
     final items = [
-      {'idx': '1', 'name': 'أرز بسمتي 5كجم', 'code': 'P001', 'qty': '2', 'price': '100', 'unit': 'كجم', 'disc': '0', 'tax': '14', 'total': '214', 'barcode': '622115', 'notes': '', 'additions': '+ كيس تعبئة (2 ج)', 'options': 'حجم: كبير'},
-      {'idx': '2', 'name': 'زيت ذرة 1لتر', 'code': 'P002', 'qty': '1', 'price': '50', 'unit': 'قطعة', 'disc': '5', 'tax': '7', 'total': '52', 'barcode': '622116', 'notes': '', 'additions': '', 'options': ''},
-      {'idx': '3', 'name': 'برجر لحم', 'code': 'P003', 'qty': '1', 'price': '85', 'unit': 'قطعة', 'disc': '0', 'tax': '12', 'total': '97', 'barcode': '622117', 'notes': 'حار', 'additions': '+ جبنة شيدر (+5 ج)\n+ بطاطس (+10 ج)', 'options': 'حجم: وسط | صوص: باربكيو'},
+      {'idx': '1', 'name': tr('أرز بسمتي 5كجم'), 'code': 'P001', 'qty': '2', 'price': '100', 'unit': tr('كجم'), 'disc': '0', 'tax': '14', 'total': '214', 'barcode': '622115', 'notes': '', 'additions': tr('+ كيس تعبئة (2 ج)'), 'options': tr('حجم: كبير')},
+      {'idx': '2', 'name': tr('زيت ذرة 1لتر'), 'code': 'P002', 'qty': '1', 'price': '50', 'unit': tr('قطعة'), 'disc': '5', 'tax': '7', 'total': '52', 'barcode': '622116', 'notes': '', 'additions': '', 'options': ''},
+      {'idx': '3', 'name': tr('برجر لحم'), 'code': 'P003', 'qty': '1', 'price': '85', 'unit': tr('قطعة'), 'disc': '0', 'tax': '12', 'total': '97', 'barcode': '622117', 'notes': tr('حار'), 'additions': tr('+ جبنة شيدر (+5 ج)\n+ بطاطس (+10 ج)'), 'options': tr('حجم: وسط | صوص: باربكيو')},
     ];
 
     return Container(
@@ -1618,32 +1619,32 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
   }
 
   Map<String, String> _placeholders() => {
-    'company_name': 'سوبر ماركت المدينة',
-    'company_address': 'شارع الملك فيصل - الجيزة',
+    'company_name': tr('سوبر ماركت المدينة'),
+    'company_address': tr('شارع الملك فيصل - الجيزة'),
     'company_phone': '01099999999',
     'company_tax_number': '123-456-789',
-    'branch_name': 'الفرع الرئيسي',
+    'branch_name': tr('الفرع الرئيسي'),
     'invoice_number': 'R-1234',
     'order_number': '5678',
     'date': '2026/01/01',
     'time': '14:30',
-    'cashier_name': 'أحمد محمد',
-    'warehouse_name': 'المخزن الرئيسي',
-    'payment_method': 'نقدي',
-    'sale_type': 'مبيعات',
-    'invoice_type_label': 'فاتورة مبيعات',
-    'customer_name': 'عميل نقدي',
+    'cashier_name': tr('أحمد محمد'),
+    'warehouse_name': tr('المخزن الرئيسي'),
+    'payment_method': tr('نقدي'),
+    'sale_type': tr('مبيعات'),
+    'invoice_type_label': tr('فاتورة مبيعات'),
+    'customer_name': tr('عميل نقدي'),
     'customer_phone': '01012345678',
-    'customer_address': 'القاهرة',
-    'supplier_name': 'شركة التوريدات',
-    'adhoc_customer_name': 'محمد أحمد',
+    'customer_address': tr('القاهرة'),
+    'supplier_name': tr('شركة التوريدات'),
+    'adhoc_customer_name': tr('محمد أحمد'),
     'adhoc_customer_phone': '01023456789',
-    'table_number': 'طاولة 5',
-    'waiter_name': 'خالد',
-    'delivery_type': 'توصيل منزلي',
-    'delivery_address': 'شارع التحرير - الدقي',
+    'table_number': tr('طاولة 5'),
+    'waiter_name': tr('خالد'),
+    'delivery_type': tr('توصيل منزلي'),
+    'delivery_address': tr('شارع التحرير - الدقي'),
     'delivery_fee': '15.00',
-    'courier_name': 'محمد السائق',
+    'courier_name': tr('محمد السائق'),
     'subtotal': '351.50',
     'discount': '5.00',
     'tax_amount': '49.21',
@@ -1653,11 +1654,11 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
     'cash_amount': '300.00',
     'bank_amount': '100.00',
     'click_amount': '0.00',
-    'notes': 'شكراً لزيارتكم',
-    'footer_text': 'البضاعة المباعة لا ترد ولا تستبدل',
+    'notes': tr('شكراً لزيارتكم'),
+    'footer_text': tr('البضاعة المباعة لا ترد ولا تستبدل'),
     'qr_code': '[QR Code]',
     'tax_registration': '123-456-789',
-    'kitchen_notes': 'بدون بصل — حار',
+    'kitchen_notes': tr('بدون بصل — حار'),
     'shift_invoice_count': '45',
     'shift_total_sales': '12,500.00',
     'shift_total_expenses': '350.00',
@@ -1677,6 +1678,6 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
     'shift_total_system': '13,200.00',
     'shift_total_actual': '13,170.00',
     'shift_total_variance': '-30.00',
-    'shift_status': 'عجز: -30.00',
+    'shift_status': tr('عجز: -30.00'),
   };
 }

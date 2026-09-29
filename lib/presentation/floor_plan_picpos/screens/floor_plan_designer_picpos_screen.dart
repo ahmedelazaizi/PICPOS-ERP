@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ «مصمّم القاعة» — بلاغُ المالك 2026-09-18 وقسمُ ٧ من خطّة إعادة
 // تصميم الشاشات.
 //
@@ -190,7 +191,7 @@ class _FloorPlanDesignerPicposScreenState
       });
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'تعذّر فتحُ المخطَّط: $e', type: ToastType.error);
+        AppToast.show(context, tr('تعذّر فتحُ المخطَّط: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -239,7 +240,7 @@ class _FloorPlanDesignerPicposScreenState
           rotation: 0,
           // معلَمُ النصّ **يُرفَض بلا نصّ** في التحقّق، فيُولَد بنصٍّ
           // ابتدائيٍّ بدل أن يمنع الحفظَ برسالةٍ لا يعرف المستخدمُ سببَها.
-          label: kind == 'text' ? 'نصّ' : null,
+          label: kind == 'text' ? tr('نصّ') : null,
         ),
       ],
     ));
@@ -258,7 +259,7 @@ class _FloorPlanDesignerPicposScreenState
     if (items.length == d.items.length) {
       // ⚠️ **الطاولاتُ لا تُحذَف من هنا.** حذفُها يمسّ سجلَّ طلباتٍ وفواتيرَ
       //    (`deleteTable` يفحص ذلك)، والمصمّمُ يرتّب لا يُصفّي.
-      AppToast.show(context, 'الطاولاتُ تُحذَف من شاشة الطاولات لا من المصمّم',
+      AppToast.show(context, tr('الطاولاتُ تُحذَف من شاشة الطاولات لا من المصمّم'),
           type: ToastType.warning);
       return;
     }
@@ -445,11 +446,11 @@ class _FloorPlanDesignerPicposScreenState
       ref.invalidate(floorPlanShopBoxesProvider);
       ref.invalidate(floorPlanTablesProvider);
       if (mounted) {
-        AppToast.show(context, 'حُفظ مخطَّطُ القاعة', type: ToastType.success);
+        AppToast.show(context, tr('حُفظ مخطَّطُ القاعة'), type: ToastType.success);
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل الحفظ: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل الحفظ: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -463,19 +464,19 @@ class _FloorPlanDesignerPicposScreenState
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('تغييراتٌ لم تُحفَظ'),
-          content: const Text(
-            'مغادرةُ هذا القسم الآن تُسقط ما رسمتَه فيه. أتريد المتابعة؟',
+          title:  Text(tr('تغييراتٌ لم تُحفَظ')),
+          content:  Text(
+            tr('مغادرةُ هذا القسم الآن تُسقط ما رسمتَه فيه. أتريد المتابعة؟'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('ابقَ'),
+              child:  Text(tr('ابقَ')),
             ),
             TextButton(
               key: const Key('floor_plan_discard_ok'),
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('غادِر واترك التغييرات'),
+              child:  Text(tr('غادِر واترك التغييرات')),
             ),
           ],
         ),
@@ -510,11 +511,11 @@ class _FloorPlanDesignerPicposScreenState
       if (!mounted) return;
       setState(_shopOrigins.clear);
       ref.invalidate(floorPlanShopBoxesProvider);
-      AppToast.show(context, 'حُفظت مواضعُ الأقسام',
+      AppToast.show(context, tr('حُفظت مواضعُ الأقسام'),
           type: ToastType.success);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل الحفظ: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل الحفظ: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -534,17 +535,17 @@ class _FloorPlanDesignerPicposScreenState
             const <TableSection>[];
 
     return PicPosScreenScaffold(
-      title: 'مصمم القاعة',
+      title: tr('مصمم القاعة'),
       subtitle: _shopView
-          ? 'نظرةُ المحلّ كلِّه — اسحب القسمَ لتضعه على الأرضيّة'
-          : (_dirty ? 'تغييراتٌ لم تُحفَظ' : 'ارسم الصالةَ كما هي على الأرض'),
+          ? tr('نظرةُ المحلّ كلِّه — اسحب القسمَ لتضعه على الأرضيّة')
+          : (_dirty ? tr('تغييراتٌ لم تُحفَظ') : tr('ارسم الصالةَ كما هي على الأرض')),
       icon: PhosphorIconsBold.squaresFour,
       headerActions: [
         SegmentedButton<bool>(
           key: const Key('floor_plan_shop_view'),
-          segments: const [
-            ButtonSegment(value: false, label: Text('قسم')),
-            ButtonSegment(value: true, label: Text('المحلّ كلّه')),
+          segments:  [
+            ButtonSegment(value: false, label: Text(tr('قسم'))),
+            ButtonSegment(value: true, label: Text(tr('المحلّ كلّه'))),
           ],
           selected: {_shopView},
           showSelectedIcon: false,
@@ -575,9 +576,9 @@ class _FloorPlanDesignerPicposScreenState
                 key: const Key('floor_plan_section_picker'),
                 initialValue: _sectionId,
                 isDense: true,
-                decoration: const InputDecoration(
-                  labelText: 'القسم',
-                  border: OutlineInputBorder(),
+                decoration:  InputDecoration(
+                  labelText: tr('القسم'),
+                  border: const OutlineInputBorder(),
                   isDense: true,
                 ),
                 items: [
@@ -592,29 +593,29 @@ class _FloorPlanDesignerPicposScreenState
               ),
             ),
             const SizedBox(width: 12),
-            _btn('floor_plan_undo', PhosphorIconsBold.arrowUUpLeft, 'تراجع',
+            _btn('floor_plan_undo', PhosphorIconsBold.arrowUUpLeft, tr('تراجع'),
                 (stack?.canUndo ?? false) ? () => setState(stack!.undo) : null),
-            _btn('floor_plan_redo', PhosphorIconsBold.arrowUUpRight, 'إعادة',
+            _btn('floor_plan_redo', PhosphorIconsBold.arrowUUpRight, tr('إعادة'),
                 (stack?.canRedo ?? false) ? () => setState(stack!.redo) : null),
             _divider(),
             for (final kind in kFloorPlanItemKinds)
               _btn(
                 'floor_plan_add_$kind',
                 floorPlanKindIcon(kind),
-                'أضف ${floorPlanKindLabel(kind)}',
+                tr('أضف {p0}', {'p0': floorPlanKindLabel(kind)}),
                 _draft == null ? null : () => _addItem(kind),
               ),
             _divider(),
             _btn('floor_plan_rotate', PhosphorIconsBold.arrowClockwise,
-                'تدوير ٩٠°', _selection.isEmpty ? null : _rotateSelection),
-            _btn('floor_plan_delete', PhosphorIconsBold.trash, 'حذف المحدَّد',
+                tr('تدوير ٩٠°'), _selection.isEmpty ? null : _rotateSelection),
+            _btn('floor_plan_delete', PhosphorIconsBold.trash, tr('حذف المحدَّد'),
                 _selection.isEmpty ? null : _deleteSelection),
             _divider(),
             // المحاذاةُ والتوزيعُ على **المحدَّد** — ومعطّلان دونَ اثنين.
             _btn(
               'floor_plan_align_h',
               PhosphorIconsBold.alignCenterHorizontal,
-              'محاذاة أفقية',
+              tr('محاذاة أفقية'),
               _selection.length < 2
                   ? null
                   : () => _arrange((b) => alignBoxes(b, horizontal: true)),
@@ -622,7 +623,7 @@ class _FloorPlanDesignerPicposScreenState
             _btn(
               'floor_plan_align_v',
               PhosphorIconsBold.alignCenterVertical,
-              'محاذاة رأسية',
+              tr('محاذاة رأسية'),
               _selection.length < 2
                   ? null
                   : () => _arrange((b) => alignBoxes(b, horizontal: false)),
@@ -630,7 +631,7 @@ class _FloorPlanDesignerPicposScreenState
             _btn(
               'floor_plan_distribute_h',
               PhosphorIconsBold.columns,
-              'توزيع أفقي',
+              tr('توزيع أفقي'),
               _selection.length < 3
                   ? null
                   : () =>
@@ -639,7 +640,7 @@ class _FloorPlanDesignerPicposScreenState
             _btn(
               'floor_plan_distribute_v',
               PhosphorIconsBold.rows,
-              'توزيع رأسي',
+              tr('توزيع رأسي'),
               _selection.length < 3
                   ? null
                   : () =>
@@ -649,13 +650,13 @@ class _FloorPlanDesignerPicposScreenState
             _btn(
               'floor_plan_fit',
               PhosphorIconsBold.cornersOut,
-              'ملاءمة الشاشة',
+              tr('ملاءمة الشاشة'),
               _draft == null ? null : () => setState(() => _fitToken++),
             ),
             _btn(
               'floor_plan_grid_toggle',
               _showGrid ? PhosphorIconsBold.gridFour : PhosphorIconsBold.square,
-              _showGrid ? 'إخفاء الشبكة' : 'إظهار الشبكة',
+              _showGrid ? tr('إخفاء الشبكة') : tr('إظهار الشبكة'),
               () => setState(() => _showGrid = !_showGrid),
             ),
             SizedBox(
@@ -664,9 +665,9 @@ class _FloorPlanDesignerPicposScreenState
                 key: const Key('floor_plan_grid_step'),
                 initialValue: _gridStep,
                 isDense: true,
-                decoration: const InputDecoration(
-                  labelText: 'الشبكة',
-                  border: OutlineInputBorder(),
+                decoration:  InputDecoration(
+                  labelText: tr('الشبكة'),
+                  border: const OutlineInputBorder(),
                   isDense: true,
                 ),
                 items: [
@@ -681,13 +682,13 @@ class _FloorPlanDesignerPicposScreenState
             PermissionGuard(
               permission: PermissionCodes.tablesManage,
               allowManagerOverride: true,
-              actionName: 'حفظ مخطط القاعة',
+              actionName: tr('حفظ مخطط القاعة'),
               onGranted: _save,
               child: FilledButton.icon(
                 key: const Key('floor_plan_save'),
                 onPressed: (_busy || _draft == null) ? null : _save,
                 icon: const Icon(PhosphorIconsBold.floppyDisk, size: 18),
-                label: Text(_dirty ? 'حفظ *' : 'حفظ'),
+                label: Text(_dirty ? tr('حفظ *') : tr('حفظ')),
               ),
             ),
           ],
@@ -713,7 +714,7 @@ class _FloorPlanDesignerPicposScreenState
             onPressed:
                 (_busy || _shopOrigins.isEmpty) ? null : _saveShopOrigins,
             icon: const Icon(PhosphorIconsBold.floppyDisk, size: 18),
-            label: const Text('حفظ المواضع'),
+            label:  Text(tr('حفظ المواضع')),
           ),
         ],
       ),
@@ -742,12 +743,12 @@ class _FloorPlanDesignerPicposScreenState
   // ─── جسمُ المحرّر ──────────────────────────────────────────────────────
   Widget _editorBody(List<TableSection> sections) {
     if (sections.isEmpty) {
-      return const PicPosContentCard(
+      return  PicPosContentCard(
         child: PicPosEmptyState(
-          key: Key('floor_plan_no_sections'),
+          key: const Key('floor_plan_no_sections'),
           icon: PhosphorIconsBold.mapPinArea,
-          title: 'لا أقسامَ بعد',
-          hint: 'أنشئ قسماً من شاشة الطاولات ثمّ ارسم صالتَه هنا',
+          title: tr('لا أقسامَ بعد'),
+          hint: tr('أنشئ قسماً من شاشة الطاولات ثمّ ارسم صالتَه هنا'),
         ),
       );
     }
@@ -765,7 +766,7 @@ class _FloorPlanDesignerPicposScreenState
       return Center(
         child: _busy
             ? const CircularProgressIndicator()
-            : const Text('تعذّر تحميلُ مخطَّط هذا القسم'),
+            :  Text(tr('تعذّر تحميلُ مخطَّط هذا القسم')),
       );
     }
 
@@ -854,12 +855,12 @@ class _FloorPlanDesignerPicposScreenState
     final boxes = boxesAsync.asData?.value ?? const <FloorPlanSectionBox>[];
 
     if (boxes.isEmpty) {
-      return const PicPosContentCard(
+      return  PicPosContentCard(
         child: PicPosEmptyState(
-          key: Key('floor_plan_shop_empty'),
+          key: const Key('floor_plan_shop_empty'),
           icon: PhosphorIconsBold.buildings,
-          title: 'لا أقسامَ تُرسَم',
-          hint: 'أنشئ قسماً أوّلاً',
+          title: tr('لا أقسامَ تُرسَم'),
+          hint: tr('أنشئ قسماً أوّلاً'),
         ),
       );
     }

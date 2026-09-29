@@ -63,23 +63,23 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
             children: [
               const Icon(PhosphorIconsBold.wifiHigh, color: AppColors.primary),
               const SizedBox(width: 12),
-              const Text('وضع التشغيل', style: AppTypography.bodyLarge),
+               Text(tr('وضع التشغيل'), style: AppTypography.bodyLarge),
               const Spacer(),
               _buildModeChip(
                 NetworkMode.standalone,
-                'مستقل',
+                tr('مستقل'),
                 PhosphorIconsBold.monitor,
               ),
               const SizedBox(width: 8),
               _buildModeChip(
                 NetworkMode.server,
-                'سيرفر',
+                tr('سيرفر'),
                 PhosphorIconsBold.cloud,
               ),
               const SizedBox(width: 8),
               _buildModeChip(
                 NetworkMode.client,
-                'عميل',
+                tr('عميل'),
                 PhosphorIconsBold.devices,
               ),
             ],
@@ -147,17 +147,17 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
+                     Row(
                       children: [
-                        Icon(
+                        const Icon(
                           PhosphorIconsBold.monitor,
                           color: AppColors.primary,
                           size: 20,
                         ),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text(
-                          'شاشة العميل والمنيو (Quick Access)',
-                          style: TextStyle(
+                          tr('شاشة العميل والمنيو (Quick Access)'),
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
@@ -176,7 +176,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        syncRepo.isServerRunning ? 'متصل' : 'غير متصل',
+                        syncRepo.isServerRunning ? tr('متصل') : tr('غير متصل'),
                         style: TextStyle(
                           color: syncRepo.isServerRunning
                               ? AppColors.success
@@ -197,18 +197,18 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                         color: AppColors.warning.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Row(
+                      child:  Row(
                         children: [
-                          Icon(
+                          const Icon(
                             PhosphorIconsBold.warningCircle,
                             color: AppColors.warning,
                             size: 16,
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'يجب بدء تشغيل السيرفر من "إعدادات الربط" أدناه لتفعيل الروابط.',
-                              style: TextStyle(
+                              tr('يجب بدء تشغيل السيرفر من "إعدادات الربط" أدناه لتفعيل الروابط.'),
+                              style: const TextStyle(
                                 fontSize: 11,
                                 color: AppColors.warning,
                               ),
@@ -220,7 +220,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                   ),
                 const SizedBox(height: 16),
                 _buildUrlLink(
-                  title: 'شاشة العميل (CFD)',
+                  title: tr('شاشة العميل (CFD)'),
                   url: '${syncRepo.buildServerUrl()}/cfd',
                   icon: PhosphorIconsBold.monitor,
                   color: Colors.blue,
@@ -228,7 +228,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                 ),
                 const SizedBox(height: 12),
                 _buildUrlLink(
-                  title: 'منيو الطاولات (QR Menu)',
+                  title: tr('منيو الطاولات (QR Menu)'),
                   url: '${syncRepo.buildServerUrl()}/menu',
                   icon: PhosphorIconsBold.qrCode,
                   color: Colors.purple,
@@ -239,7 +239,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
           ),
         ),
 
-        const Text('إعدادات الربط والشبكة', style: AppTypography.h3),
+         Text(tr('إعدادات الربط والشبكة'), style: AppTypography.h3),
         const SizedBox(height: 16), // Added spacing
       ],
     );
@@ -278,7 +278,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      syncRepo.isServerRunning ? 'السيرفر يعمل' : 'السيرفر متوقف',
+                      syncRepo.isServerRunning ? tr('السيرفر يعمل') : tr('السيرفر متوقف'),
                       style: AppTypography.bodyLarge,
                     ),
                     if (syncRepo.isServerRunning) ...[
@@ -291,7 +291,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                         ),
                       ),
                       Text(
-                        'العملاء المتصلين: ${syncRepo.connectedClientCount}',
+                        tr('العملاء المتصلين: {p0}', {'p0': syncRepo.connectedClientCount}),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textMuted,
@@ -301,7 +301,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                       OutlinedButton.icon(
                         onPressed: () => LanPairingDialog.showServer(context),
                         icon: const Icon(Icons.devices_other, size: 16),
-                        label: const Text('إقران جهاز'),
+                        label:  Text(tr('إقران جهاز')),
                       ),
                       const SizedBox(height: 6),
                       // A-SEC-1: the API token is only exposed via /api/health
@@ -312,15 +312,15 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                           syncRepo.openDevicePairingWindow();
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
+                               SnackBar(
                                 content: Text(
-                                    'نافذة اقتران جهاز جديد مفتوحة لمدة 5 دقائق'),
+                                    tr('نافذة اقتران جهاز جديد مفتوحة لمدة 5 دقائق')),
                               ),
                             );
                           }
                         },
                         icon: const Icon(Icons.devices, size: 16),
-                        label: const Text('افتح نافذة اقتران جهاز جديد'),
+                        label:  Text(tr('افتح نافذة اقتران جهاز جديد')),
                       ),
                     ],
                   ],
@@ -346,7 +346,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                       : PhosphorIconsBold.play,
                   size: 18,
                 ),
-                label: Text(syncRepo.isServerRunning ? 'إيقاف' : 'تشغيل'),
+                label: Text(syncRepo.isServerRunning ? tr('إيقاف') : tr('تشغيل')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: syncRepo.isServerRunning
                       ? AppColors.error
@@ -362,8 +362,8 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
           Center(
             child: Text(
               syncRepo.isServerUsingTls
-                  ? '🔒 السيرفر يعمل عبر HTTPS (TLS مفعَّل)'
-                  : 'السيرفر قيد التشغيل (HTTP — غير مشفَّر)',
+                  ? tr('🔒 السيرفر يعمل عبر HTTPS (TLS مفعَّل)')
+                  : tr('السيرفر قيد التشغيل (HTTP — غير مشفَّر)'),
               style: TextStyle(
                 fontSize: 11,
                 color: syncRepo.isServerUsingTls
@@ -382,8 +382,8 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                 color: count == 0 ? null : AppColors.warning.withValues(alpha: 0.12),
                 child: ListTile(
                   leading: Icon(count == 0 ? Icons.verified_user : Icons.warning),
-                  title: Text('أجهزة لم تُقرن بعد: $count'),
-                  subtitle: count == 0 ? null : Text(snapshot.data!.map((d) => d.name).join('، ')),
+                  title: Text(tr('أجهزة لم تُقرن بعد: {count}', {'count': count})),
+                  subtitle: count == 0 ? null : Text(snapshot.data!.map((d) => d.name).join(tr('، '))),
                 ),
               );
             },
@@ -411,8 +411,8 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
             children: [
               const Icon(PhosphorIconsBold.lock, color: AppColors.primary),
               const SizedBox(width: 8),
-              const Text(
-                'أمان TLS / HTTPS',
+               Text(
+                tr('أمان TLS / HTTPS'),
                 style: AppTypography.bodyLarge,
               ),
               const Spacer(),
@@ -434,14 +434,14 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
           const SizedBox(height: 8),
           Text(
             syncRepo.tlsCertPath == null
-                ? 'لم يُحدَّد ملف شهادة'
-                : 'شهادة: ${syncRepo.tlsCertPath}',
+                ? tr('لم يُحدَّد ملف شهادة')
+                : tr('شهادة: {p0}', {'p0': syncRepo.tlsCertPath}),
             style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
           ),
           Text(
             syncRepo.tlsKeyPath == null
-                ? 'لم يُحدَّد ملف مفتاح'
-                : 'مفتاح: ${syncRepo.tlsKeyPath}',
+                ? tr('لم يُحدَّد ملف مفتاح')
+                : tr('مفتاح: {p0}', {'p0': syncRepo.tlsKeyPath}),
             style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
           ),
           const SizedBox(height: 8),
@@ -450,7 +450,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(PhosphorIconsBold.fileArrowUp, size: 16),
-                  label: const Text('اختر ملف الشهادة (cert.pem)'),
+                  label:  Text(tr('اختر ملف الشهادة (cert.pem)')),
                   onPressed: syncRepo.isServerRunning
                       ? null
                       : () => _pickTlsFile(isCert: true),
@@ -460,7 +460,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(PhosphorIconsBold.key, size: 16),
-                  label: const Text('اختر ملف المفتاح (key.pem)'),
+                  label:  Text(tr('اختر ملف المفتاح (key.pem)')),
                   onPressed: syncRepo.isServerRunning
                       ? null
                       : () => _pickTlsFile(isCert: false),
@@ -476,9 +476,9 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
             ),
           ],
           const SizedBox(height: 8),
-          const Text(
-            'لتوليد شهادة ذاتية: scripts/generate_self_signed_cert.ps1 — راجع docs/DEPLOYMENT.md',
-            style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+           Text(
+            tr('لتوليد شهادة ذاتية: scripts/generate_self_signed_cert.ps1 — راجع docs/DEPLOYMENT.md'),
+            style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -488,7 +488,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
   Future<void> _pickTlsFile({required bool isCert}) async {
     final result = await FilePicker.pickFiles(
       type: FileType.any,
-      dialogTitle: isCert ? 'اختر ملف الشهادة' : 'اختر ملف المفتاح الخاص',
+      dialogTitle: isCert ? tr('اختر ملف الشهادة') : tr('اختر ملف المفتاح الخاص'),
     );
     if (result == null || result.files.single.path == null) return;
     final path = result.files.single.path!;
@@ -557,7 +557,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
               color: enabled ? null : Colors.grey,
             ),
             onPressed: enabled ? () => launchUrl(Uri.parse(url)) : null,
-            tooltip: enabled ? 'فتح في المتصفح' : 'السيرفر متوقف',
+            tooltip: enabled ? tr('فتح في المتصفح') : tr('السيرفر متوقف'),
           ),
         ],
       ),
@@ -573,16 +573,16 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
         // Server address
         Row(
           children: [
-            const Text('عنوان السيرفر: ', style: AppTypography.bodyLarge),
+             Text(tr('عنوان السيرفر: '), style: AppTypography.bodyLarge),
             Expanded(
               child: TextField(
                 controller: _addressController,
                 onChanged: (_) => setState(() {}), // refresh port visibility
-                decoration: const InputDecoration(
+                decoration:  InputDecoration(
                   isDense: true,
-                  border: OutlineInputBorder(),
-                  hintText: '192.168.1.100  أو  https://xxx.ngrok-free.app',
-                  hintStyle: TextStyle(fontSize: 12),
+                  border: const OutlineInputBorder(),
+                  hintText: tr('192.168.1.100  أو  https://xxx.ngrok-free.app'),
+                  hintStyle: const TextStyle(fontSize: 12),
                 ),
               ),
             ),
@@ -609,10 +609,10 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
         TextField(
           controller: _pairingCodeController,
           textCapitalization: TextCapitalization.characters,
-          decoration: const InputDecoration(
+          decoration:  InputDecoration(
             isDense: true,
-            border: OutlineInputBorder(),
-            labelText: 'رمز إقران الجهاز',
+            border: const OutlineInputBorder(),
+            labelText: tr('رمز إقران الجهاز'),
             hintText: 'XXXXXXXX',
           ),
         ),
@@ -628,12 +628,12 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
               );
               if (mounted) {
                 setState(() => _testResult = result['success'] == true
-                    ? '✅ تم إقران الجهاز بنجاح'
+                    ? tr('✅ تم إقران الجهاز بنجاح')
                     : '❌ ${result['error']}');
               }
             },
             icon: const Icon(Icons.link),
-            label: const Text('إقران الجهاز بالرمز'),
+            label:  Text(tr('إقران الجهاز بالرمز')),
           ),
         ),
         const SizedBox(height: 12),
@@ -657,8 +657,8 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                         setState(() {
                           _isTesting = false;
                           _testResult = result['success'] == true
-                              ? '✅ تم الاتصال بنجاح'
-                              : '❌ فشل: ${result['error']}';
+                              ? tr('✅ تم الاتصال بنجاح')
+                              : tr('❌ فشل: {p0}', {'p0': result['error']});
                         });
                       }
                     },
@@ -669,7 +669,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(PhosphorIconsBold.plugs, size: 18),
-              label: const Text('اختبار الاتصال'),
+              label:  Text(tr('اختبار الاتصال')),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.info),
             ),
             const SizedBox(width: 12),
@@ -684,7 +684,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                       );
                       await syncRepo.saveSettings();
                       setState(() {
-                        _testResult = '✅ تم حفظ الإعدادات — جاري الاتصال...';
+                        _testResult = tr('✅ تم حفظ الإعدادات — جاري الاتصال...');
                         _isSyncing = true;
                       });
 
@@ -697,7 +697,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                         if (mounted) {
                           setState(() {
                             _isSyncing = false;
-                            _testResult = '❌ فشل الاتصال: ${testResult['error']}';
+                            _testResult = tr('❌ فشل الاتصال: {p0}', {'p0': testResult['error']});
                           });
                         }
                         return;
@@ -716,7 +716,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                           setState(() {
                             _isSyncing = false;
                             _testResult = result.success
-                                ? '✅ تمت المزامنة — ${result.itemsSynced} عنصر'
+                                ? tr('✅ تمت المزامنة — {p0} عنصر', {'p0': result.itemsSynced})
                                 : '⚠️ ${result.message}';
                           });
                         }
@@ -724,7 +724,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                         if (mounted) {
                           setState(() {
                             _isSyncing = false;
-                            _testResult = '❌ فشلت المزامنة: $e';
+                            _testResult = tr('❌ فشلت المزامنة: {e}', {'e': e});
                           });
                         }
                       }
@@ -739,7 +739,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                       ),
                     )
                   : const Icon(PhosphorIconsBold.floppyDisk, size: 18),
-              label: Text(_isSyncing ? 'جاري المزامنة...' : 'حفظ وربط'),
+              label: Text(_isSyncing ? tr('جاري المزامنة...') : tr('حفظ وربط')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.success,
               ),
@@ -772,9 +772,9 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
       builder: (context, snapshot) {
         final branches = snapshot.data ?? [];
         if (branches.isEmpty) {
-          return const Text(
-            '⚠️ لا توجد فروع — قم بالمزامنة أولاً',
-            style: TextStyle(color: Colors.grey, fontSize: 12),
+          return  Text(
+            tr('⚠️ لا توجد فروع — قم بالمزامنة أولاً'),
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
           );
         }
         // Validate current selection
@@ -784,7 +784,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
           children: [
             const Icon(PhosphorIconsBold.buildings, color: AppColors.primary, size: 20),
             const SizedBox(width: 8),
-            const Text('الفرع المعين: ', style: AppTypography.bodyLarge),
+             Text(tr('الفرع المعين: '), style: AppTypography.bodyLarge),
             const SizedBox(width: 8),
             Expanded(
               child: DropdownButtonFormField<int?>(
@@ -795,9 +795,9 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                   contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 items: [
-                  const DropdownMenuItem<int?>(
+                   DropdownMenuItem<int?>(
                     value: null,
-                    child: Text('غير محدد'),
+                    child: Text(tr('غير محدد')),
                   ),
                   ...branches.map(
                     (b) => DropdownMenuItem<int?>(
@@ -818,7 +818,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                   // without requiring an app restart.
                   await SyncService.instance?.initialize();
                   if (!context.mounted) return;
-                  AppToast.show(context, 'تم حفظ الفرع المعين', type: ToastType.success);
+                  AppToast.show(context, tr('تم حفظ الفرع المعين'), type: ToastType.success);
                 },
               ),
             ),

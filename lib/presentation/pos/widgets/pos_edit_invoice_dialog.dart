@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -49,12 +50,12 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
   /// Verified against `SalesPaymentCalculator.getSafeType`, which already
   /// accepts every key offered here, so the DAO can post all of them.
   final Map<String, String> _paymentMethods = {
-    'cash': 'نقدي',
-    'card': 'بطاقة (بنك)',
-    'transfer': 'تحويل',
-    'click': 'كليك',
-    'credit': 'آجل',
-    'multiple': 'متعدد',
+    'cash': tr('نقدي'),
+    'card': tr('بطاقة (بنك)'),
+    'transfer': tr('تحويل'),
+    'click': tr('كليك'),
+    'credit': tr('آجل'),
+    'multiple': tr('متعدد'),
   };
 
   /// Historic spellings the POS and this dialog disagree on.
@@ -87,7 +88,7 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
       // Truly unknown value (bad import, older build, hand-edited row): keep it
       // selectable and visible rather than asserting. Showing the raw string
       // also tells whoever reports the bug what the column actually holds.
-      _paymentMethods[stored] = 'غير معروف ($stored)';
+      _paymentMethods[stored] = tr('غير معروف ({stored})', {'stored': stored});
       _selectedPaymentMethod = stored;
     }
   }
@@ -114,7 +115,7 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                'تعديل فاتورة #${widget.invoice.invoiceNumber}',
+                tr('تعديل فاتورة #{p0}', {'p0': widget.invoice.invoiceNumber}),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -139,9 +140,9 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
                   // do not control. Without this the selected-item row
                   // overflowed the 450 px dialog instead of truncating.
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'طريقة الدفع',
-                    prefixIcon: Icon(PhosphorIconsBold.wallet),
+                  decoration:  InputDecoration(
+                    labelText: tr('طريقة الدفع'),
+                    prefixIcon: const Icon(PhosphorIconsBold.wallet),
                   ),
                   items: _paymentMethods.entries
                       .map(
@@ -158,17 +159,17 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
                 // the DAO resolves the click safe from the method, so say so
                 // rather than leaving the operator to wonder which field it is.
                 if (_selectedPaymentMethod == 'click')
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
+                   Padding(
+                    padding: const EdgeInsets.only(top: 8),
                     child: Row(
                       children: [
-                        Icon(PhosphorIconsBold.info,
+                        const Icon(PhosphorIconsBold.info,
                             size: 14, color: AppColors.info),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'مبلغ كليك يُرحَّل بالكامل على صندوق كليك تلقائياً',
-                            style: TextStyle(
+                            tr('مبلغ كليك يُرحَّل بالكامل على صندوق كليك تلقائياً'),
+                            style: const TextStyle(
                                 fontSize: 11, color: AppColors.textMuted),
                           ),
                         ),
@@ -179,9 +180,9 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
                 // Multiple payment fields
                 if (_selectedPaymentMethod == 'multiple') ...[
                   const SizedBox(height: 16),
-                  const Text(
-                    'تقسيم المبالغ:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                   Text(
+                    tr('تقسيم المبالغ:'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -190,9 +191,9 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
                         child: TextField(
                           controller: _cashController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'نقدي',
-                            prefixIcon: Icon(
+                          decoration:  InputDecoration(
+                            labelText: tr('نقدي'),
+                            prefixIcon: const Icon(
                               PhosphorIconsBold.money,
                               color: AppColors.success,
                             ),
@@ -205,9 +206,9 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
                         child: TextField(
                           controller: _bankController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'بطاقة/تحويل',
-                            prefixIcon: Icon(
+                          decoration:  InputDecoration(
+                            labelText: tr('بطاقة/تحويل'),
+                            prefixIcon: const Icon(
                               PhosphorIconsBold.creditCard,
                               color: AppColors.info,
                             ),
@@ -225,10 +226,10 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
                 // Notes
                 TextField(
                   controller: _notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'ملاحظات',
-                    prefixIcon: Icon(PhosphorIconsBold.notepad),
-                    hintText: 'أضف ملاحظات اختيارية...',
+                  decoration:  InputDecoration(
+                    labelText: tr('ملاحظات'),
+                    prefixIcon: const Icon(PhosphorIconsBold.notepad),
+                    hintText: tr('أضف ملاحظات اختيارية...'),
                   ),
                   maxLines: 2,
                 ),
@@ -239,12 +240,12 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton.icon(
             onPressed: _saveChanges,
             icon: const Icon(PhosphorIconsBold.check),
-            label: const Text('حفظ التغييرات'),
+            label:  Text(tr('حفظ التغييرات')),
           ),
         ],
       ),
@@ -265,9 +266,9 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'الإجمالي:',
-                style: TextStyle(color: AppColors.textMuted),
+               Text(
+                tr('الإجمالي:'),
+                style: const TextStyle(color: AppColors.textMuted),
               ),
               Text(
                 '${widget.invoice.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
@@ -282,9 +283,9 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'المدفوع حالياً:',
-                style: TextStyle(color: AppColors.textMuted),
+               Text(
+                tr('المدفوع حالياً:'),
+                style: const TextStyle(color: AppColors.textMuted),
               ),
               Text(
                 '${widget.invoice.paid.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
@@ -296,9 +297,9 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'المتبقي:',
-                style: TextStyle(color: AppColors.textMuted),
+               Text(
+                tr('المتبقي:'),
+                style: const TextStyle(color: AppColors.textMuted),
               ),
               Text(
                 '${(widget.invoice.total - widget.invoice.paid).toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
@@ -374,7 +375,7 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
         showPosToast(
           context,
           ref,
-          'تم تحديث الفاتورة والمبالغ بنجاح',
+          tr('تم تحديث الفاتورة والمبالغ بنجاح'),
           type: PosNotificationType.success,
         );
       }
@@ -383,7 +384,7 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
         showPosToast(
           context,
           ref,
-          'خطأ تحديث الفاتورة: $e',
+          tr('خطأ تحديث الفاتورة: {e}', {'e': e}),
           type: PosNotificationType.error,
         );
       }

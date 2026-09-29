@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
@@ -87,18 +88,18 @@ class _CategoryCardState extends State<CategoryCard> {
                     color: AppColors.error,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Row(
+                  child:  Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      const Icon(
                         PhosphorIconsBold.lock,
                         color: Colors.white,
                         size: 12,
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
-                        'مقفل',
-                        style: TextStyle(
+                        tr('مقفل'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -122,18 +123,18 @@ class _CategoryCardState extends State<CategoryCard> {
                     color: AppColors.warning,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Row(
+                  child:  Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      const Icon(
                         PhosphorIconsBold.eyeSlash,
                         color: Colors.white,
                         size: 12,
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
-                        'مستثنى',
-                        style: TextStyle(
+                        tr('مستثنى'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -157,18 +158,18 @@ class _CategoryCardState extends State<CategoryCard> {
                     color: AppColors.textMuted.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Row(
+                  child:  Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      const Icon(
                         PhosphorIconsBold.prohibit,
                         color: Colors.white,
                         size: 12,
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
-                        'مخفي',
-                        style: TextStyle(
+                        tr('مخفي'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -184,7 +185,7 @@ class _CategoryCardState extends State<CategoryCard> {
                 top: 8,
                 start: 8,
                 child: Tooltip(
-                  message: 'مرتبط بطابعة',
+                  message: tr('مرتبط بطابعة'),
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
@@ -270,7 +271,7 @@ class _CategoryCardState extends State<CategoryCard> {
                         // Edit
                         _ActionChip(
                           icon: PhosphorIconsBold.pencilSimple,
-                          label: 'تعديل',
+                          label: tr('تعديل'),
                           color: AppColors.primary,
                           onTap: widget.onEdit,
                         ),
@@ -278,7 +279,7 @@ class _CategoryCardState extends State<CategoryCard> {
                         // Delete
                         _ActionChip(
                           icon: PhosphorIconsBold.trash,
-                          label: 'حذف',
+                          label: tr('حذف'),
                           color: AppColors.error,
                           onTap: widget.onDelete,
                         ),
@@ -347,7 +348,7 @@ class _CategoryCardState extends State<CategoryCard> {
               ),
               const SizedBox(width: 10),
               Text(
-                widget.isLocked ? 'فتح التصنيف' : 'قفل التصنيف',
+                widget.isLocked ? tr('فتح التصنيف') : tr('قفل التصنيف'),
                 style: const TextStyle(fontSize: 13),
               ),
             ],
@@ -367,7 +368,7 @@ class _CategoryCardState extends State<CategoryCard> {
               ),
               const SizedBox(width: 10),
               Text(
-                widget.isExcluded ? 'إلغاء الاستثناء' : 'استثناء من العرض',
+                widget.isExcluded ? tr('إلغاء الاستثناء') : tr('استثناء من العرض'),
                 style: const TextStyle(fontSize: 13),
               ),
             ],
@@ -391,8 +392,8 @@ class _CategoryCardState extends State<CategoryCard> {
                 const SizedBox(width: 10),
                 Text(
                   widget.cat.showInPos
-                      ? 'إخفاء من البيع السريع'
-                      : 'إظهار في البيع السريع',
+                      ? tr('إخفاء من البيع السريع')
+                      : tr('إظهار في البيع السريع'),
                   style: const TextStyle(fontSize: 13),
                 ),
               ],
@@ -400,19 +401,19 @@ class _CategoryCardState extends State<CategoryCard> {
           ),
         const PopupMenuDivider(),
         // Scale Upload
-        const PopupMenuItem(
+         PopupMenuItem(
           value: 'scale',
           child: Row(
             children: [
-              Icon(
+              const Icon(
                 PhosphorIconsBold.upload,
                 size: 18,
                 color: AppColors.info,
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Text(
-                'ترحيل للميزان',
-                style: TextStyle(fontSize: 13),
+                tr('ترحيل للميزان'),
+                style: const TextStyle(fontSize: 13),
               ),
             ],
           ),

@@ -22,7 +22,7 @@ class _ExpensesTab extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showExpenseDialog(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('مصروف جديد'),
+        label:  Text(tr('مصروف جديد')),
         backgroundColor: Colors.orange,
       ),
       body: Padding(
@@ -43,7 +43,7 @@ class _ExpensesTab extends ConsumerWidget {
                       size: 18, color: AppColors.primary),
                   const SizedBox(width: 8),
                   Text(
-                    'من ${_formatDate(dateRange.start)} إلى ${_formatDate(dateRange.end)}',
+                    tr('من {p0} إلى {p1}', {'p0': _formatDate(dateRange.start), 'p1': _formatDate(dateRange.end)}),
                     style: const TextStyle(fontSize: 13),
                   ),
                   const Spacer(),
@@ -57,7 +57,7 @@ class _ExpensesTab extends ConsumerWidget {
                       );
                       if (picked != null) onDateRangeChanged(picked);
                     },
-                    child: const Text('تغيير'),
+                    child:  Text(tr('تغيير')),
                   ),
                 ],
               ),
@@ -100,8 +100,8 @@ class _ExpensesTab extends ConsumerWidget {
                               size: 64,
                               color: AppColors.textMuted.withValues(alpha: 0.3)),
                           const SizedBox(height: 16),
-                          const Text('لا توجد مصروفات في هذه الفترة',
-                              style: TextStyle(
+                           Text(tr('لا توجد مصروفات في هذه الفترة'),
+                              style: const TextStyle(
                                   color: AppColors.textMuted, fontSize: 16)),
                         ],
                       ),
@@ -135,8 +135,8 @@ class _ExpensesTab extends ConsumerWidget {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('إجمالي المصروفات',
-                                    style: TextStyle(
+                                 Text(tr('إجمالي المصروفات'),
+                                    style: const TextStyle(
                                         color: Colors.white70, fontSize: 12)),
                                 Text(
                                   '${total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
@@ -148,7 +148,7 @@ class _ExpensesTab extends ConsumerWidget {
                               ],
                             ),
                             const Spacer(),
-                            Text('${expenses.length} سجل',
+                            Text(tr('{p0} سجل', {'p0': expenses.length}),
                                 style: const TextStyle(
                                     color: Colors.white70, fontSize: 13)),
                           ],
@@ -266,9 +266,9 @@ class _ExpensesTab extends ConsumerWidget {
 
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: 'تأكيد الحذف',
-      message: 'هل أنت متأكد من حذف هذا المصروف؟',
-      confirmLabel: 'حذف',
+      title: tr('تأكيد الحذف'),
+      message: tr('هل أنت متأكد من حذف هذا المصروف؟'),
+      confirmLabel: tr('حذف'),
       isDangerous: true,
     );
 

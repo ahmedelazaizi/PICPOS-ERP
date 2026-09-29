@@ -92,7 +92,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
     if (!context.mounted) return;
 
     if (order == null) {
-      AppToast.show(context, 'لا يوجد طلبٌ نشطٌ لتقسيمه', type: ToastType.warning);
+      AppToast.show(context, tr('لا يوجد طلبٌ نشطٌ لتقسيمه'), type: ToastType.warning);
       return;
     }
 
@@ -110,11 +110,11 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
         final activityLogRepo = ref.read(activityLogRepositoryProvider);
         await activityLogRepo.logActivity(
           userId: user?.id,
-          userName: user?.displayName ?? 'مجهول',
+          userName: user?.displayName ?? tr('مجهول'),
           action: 'split_bill',
           entityType: 'table',
           entityId: table.id,
-          description: 'تقسيمُ فاتورة ${table.name}',
+          description: tr('تقسيمُ فاتورة {p0}', {'p0': table.name}),
         );
       } catch (_) {}
     }
@@ -135,7 +135,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
     if (availableTables.isEmpty) {
       AppToast.show(
         context,
-        'لا توجد طاولات متاحة للنقل إليها',
+        tr('لا توجد طاولات متاحة للنقل إليها'),
         type: ToastType.warning,
       );
       return;
@@ -167,7 +167,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                 fromTableId: table.id,
                 toTableId: targetTable.id,
                 userId: user?.id,
-                userName: user?.displayName ?? 'مجهول',
+                userName: user?.displayName ?? tr('مجهول'),
               );
         } else {
           final Map<int, double> itemQuantities = {};
@@ -190,7 +190,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                 toTableId: targetTable.id,
                 itemQuantities: itemQuantities,
                 userId: user?.id,
-                userName: user?.displayName ?? 'مجهول',
+                userName: user?.displayName ?? tr('مجهول'),
               );
         }
 
@@ -198,8 +198,8 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
           AppToast.show(
             context,
             transferAll
-                ? 'تم نقل الطلب من ${table.name} إلى ${targetTable.name}'
-                : 'تم نقل ${itemIds.length} صنف من ${table.name} إلى ${targetTable.name}',
+                ? tr('تم نقل الطلب من {p0} إلى {p1}', {'p0': table.name, 'p1': targetTable.name})
+                : tr('تم نقل {p0} صنف من {p1} إلى {p2}', {'p0': itemIds.length, 'p1': table.name, 'p2': targetTable.name}),
             type: ToastType.success,
           );
         }
@@ -207,7 +207,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
         if (context.mounted) {
           AppToast.show(
             context,
-            'خطأ في نقل الطلب: $e',
+            tr('خطأ في نقل الطلب: {e}', {'e': e}),
             type: ToastType.error,
           );
         }
@@ -271,7 +271,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                         child: PermissionGuard(
                           permission: PermissionCodes.tablesManage,
                           allowManagerOverride: true,
-                          actionName: 'تعديل طاولة',
+                          actionName: tr('تعديل طاولة'),
                           onGranted: () {
                             Navigator.pop(ctx);
                             _showEditTableDialog(context, restaurantRepo, table);
@@ -282,7 +282,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                               _showEditTableDialog(context, restaurantRepo, table);
                             },
                             icon: const Icon(PhosphorIconsBold.pencil, size: 16),
-                            label: const Text('تعديل'),
+                            label:  Text(tr('تعديل')),
                           ),
                         ),
                       ),
@@ -290,7 +290,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                         child: PermissionGuard(
                           permission: PermissionCodes.tablesManage,
                           allowManagerOverride: true,
-                          actionName: 'حذف طاولة',
+                          actionName: tr('حذف طاولة'),
                           onGranted: () {
                             Navigator.pop(ctx);
                             _confirmDeleteTable(restaurantRepo, table);
@@ -301,7 +301,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                               _confirmDeleteTable(restaurantRepo, table);
                             },
                             icon: const Icon(PhosphorIconsBold.trash, size: 16, color: AppColors.error),
-                            label: const Text('حذف', style: TextStyle(color: AppColors.error)),
+                            label:  Text(tr('حذف'), style: const TextStyle(color: AppColors.error)),
                           ),
                         ),
                       ),
@@ -314,7 +314,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -364,7 +364,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
         if (order != null) {
           _onMergeTable(restaurantRepo, table, order);
         } else {
-          AppToast.show(screenContext, 'لا يوجد طلبٌ لدمجه', type: ToastType.warning);
+          AppToast.show(screenContext, tr('لا يوجد طلبٌ لدمجه'), type: ToastType.warning);
         }
         break;
       case TableAction.splitBill:
@@ -379,7 +379,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
         if (order != null) {
           await _closeTable(restaurantRepo, table, order);
         } else {
-          AppToast.show(screenContext, 'لا يوجد طلبٌ لإغلاقه', type: ToastType.warning);
+          AppToast.show(screenContext, tr('لا يوجد طلبٌ لإغلاقه'), type: ToastType.warning);
         }
         break;
       case TableAction.log:
@@ -424,7 +424,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
             const <String>[];
     if (hasTableActionPermission(permissions, permission)) return true;
     if (screenContext.mounted) {
-      AppToast.show(screenContext, 'ليس لديك صلاحية $actionName',
+      AppToast.show(screenContext, tr('ليس لديك صلاحية {actionName}', {'actionName': actionName}),
           type: ToastType.error);
     }
     return false;
@@ -438,7 +438,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
     RestaurantTable table,
   ) async {
     if (!await _ensureTablePermission(
-        screenContext, PermissionCodes.tablesCancel, 'إلغاء طلب الطاولة')) {
+        screenContext, PermissionCodes.tablesCancel, tr('إلغاء طلب الطاولة'))) {
       return;
     }
     if (!screenContext.mounted) return;
@@ -448,11 +448,11 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
           builder: (ctx) => Directionality(
             textDirection: TextDirection.rtl,
             child: AlertDialog(
-              title: const Row(
+              title:  Row(
                 children: [
-                  Icon(PhosphorIconsBold.warning, color: AppColors.error),
-                  SizedBox(width: 8),
-                  Text('إلغاء الطلب'),
+                  const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+                  const SizedBox(width: 8),
+                  Text(tr('إلغاء الطلب')),
                 ],
               ),
               content: Text(
@@ -463,14 +463,14 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('تراجع'),
+                  child:  Text(tr('تراجع')),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(ctx, true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.error,
                   ),
-                  child: const Text('إلغاء الطلب'),
+                  child:  Text(tr('إلغاء الطلب')),
                 ),
               ],
             ),
@@ -484,15 +484,15 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
       await ref.read(tableSessionServiceProvider).cancelOrder(
             tableId: table.id,
             userId: user?.id,
-            userName: user?.displayName ?? 'مجهول',
+            userName: user?.displayName ?? tr('مجهول'),
           );
       if (screenContext.mounted) {
-        AppToast.show(screenContext, 'تم إلغاء طلب ${table.name}',
+        AppToast.show(screenContext, tr('تم إلغاء طلب {p0}', {'p0': table.name}),
             type: ToastType.warning);
       }
     } catch (e) {
       if (screenContext.mounted) {
-        AppToast.show(screenContext, 'تعذّر إلغاءُ الطلب: $e',
+        AppToast.show(screenContext, tr('تعذّر إلغاءُ الطلب: {e}', {'e': e}),
             type: ToastType.error);
       }
     }
@@ -504,7 +504,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
     RestaurantTable table,
   ) async {
     if (!await _ensureTablePermission(
-        screenContext, PermissionCodes.tablesManage, 'تغيير حالة الطاولة')) {
+        screenContext, PermissionCodes.tablesManage, tr('تغيير حالة الطاولة'))) {
       return;
     }
     if (!screenContext.mounted) return;
@@ -513,19 +513,19 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
         ? TableStatus.available
         : TableStatus.outOfService;
     final targetLabel =
-        target == TableStatus.available ? 'متاحة' : 'خارج الخدمة';
+        target == TableStatus.available ? tr('متاحة') : tr('خارج الخدمة');
 
     final confirmed = await showDialog<bool>(
           context: screenContext,
           builder: (ctx) => Directionality(
             textDirection: TextDirection.rtl,
             child: AlertDialog(
-              title: Text('تغيير حالة ${table.name}'),
-              content: Text('ستصبح الطاولةُ «$targetLabel».'),
+              title: Text(tr('تغيير حالة {p0}', {'p0': table.name})),
+              content: Text(tr('ستصبح الطاولةُ «{targetLabel}».', {'targetLabel': targetLabel})),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('إلغاء'),
+                  child:  Text(tr('إلغاء')),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(ctx, true),
@@ -544,15 +544,15 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
             tableId: table.id,
             status: target,
             userId: user?.id,
-            userName: user?.displayName ?? 'مجهول',
+            userName: user?.displayName ?? tr('مجهول'),
           );
       if (screenContext.mounted) {
-        AppToast.show(screenContext, 'صارت ${table.name} «$targetLabel»',
+        AppToast.show(screenContext, tr('صارت {p0} «{targetLabel}»', {'p0': table.name, 'targetLabel': targetLabel}),
             type: ToastType.success);
       }
     } catch (e) {
       if (screenContext.mounted) {
-        AppToast.show(screenContext, 'تعذّر تغييرُ الحالة: $e',
+        AppToast.show(screenContext, tr('تعذّر تغييرُ الحالة: {e}', {'e': e}),
             type: ToastType.error);
       }
     }
@@ -567,14 +567,14 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
     RestaurantTable table,
   ) async {
     if (!await _ensureTablePermission(
-        screenContext, PermissionCodes.tablesPrintBill, 'طباعة فاتورة الطاولة')) {
+        screenContext, PermissionCodes.tablesPrintBill, tr('طباعة فاتورة الطاولة'))) {
       return;
     }
 
     final order = await restaurantRepo.getActiveOrderForTable(table.id);
     if (order == null) {
       if (screenContext.mounted) {
-        AppToast.show(screenContext, 'لا يوجد طلبٌ لطباعة فاتورته',
+        AppToast.show(screenContext, tr('لا يوجد طلبٌ لطباعة فاتورته'),
             type: ToastType.warning);
       }
       return;
@@ -582,7 +582,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
     final items = await restaurantRepo.getTableOrderItems(order.id);
     if (items.isEmpty) {
       if (screenContext.mounted) {
-        AppToast.show(screenContext, 'لا توجد أصنافٌ في الطلب',
+        AppToast.show(screenContext, tr('لا توجد أصنافٌ في الطلب'),
             type: ToastType.warning);
       }
       return;
@@ -595,7 +595,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
       await session.requestBill(
         orderId: order.id,
         userId: user?.id,
-        userName: user?.displayName ?? 'مجهول',
+        userName: user?.displayName ?? tr('مجهول'),
       );
 
       final productRepo = ref.read(productRepositoryProvider);
@@ -604,7 +604,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
         final product = await productRepo.getProductById(item.productId);
         invoiceItems.add(
           InvoiceItem(
-            name: product?.name ?? 'صنف #${item.productId}',
+            name: product?.name ?? tr('صنف #{p0}', {'p0': item.productId}),
             quantity: item.quantity,
             price: item.unitPrice,
             total: item.total,
@@ -650,7 +650,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
         tax: totals.taxAmount,
         customerName: table.name,
         employeeName: user?.displayName,
-        notes: 'فاتورةٌ مبدئيّةٌ — ليست إيصالَ سداد',
+        notes: tr('فاتورةٌ مبدئيّةٌ — ليست إيصالَ سداد'),
         db: db,
         logoBytes: logoBytes,
         receiptQr: receiptQr,
@@ -660,13 +660,13 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
         AppToast.show(
             screenContext,
             printed
-                ? 'تمت طباعةُ فاتورة ${table.name}'
-                : 'أُلغيت طباعةُ فاتورة ${table.name}',
+                ? tr('تمت طباعةُ فاتورة {p0}', {'p0': table.name})
+                : tr('أُلغيت طباعةُ فاتورة {p0}', {'p0': table.name}),
             type: printed ? ToastType.success : ToastType.warning);
       }
     } catch (e) {
       if (screenContext.mounted) {
-        AppToast.show(screenContext, 'تعذّرت طباعةُ الفاتورة: $e',
+        AppToast.show(screenContext, tr('تعذّرت طباعةُ الفاتورة: {e}', {'e': e}),
             type: ToastType.error);
       }
     }
@@ -706,26 +706,26 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
             children: [
               const Icon(PhosphorIconsBold.calendarCheck, color: Colors.orange),
               const SizedBox(width: 8),
-              Text('${table.name} - محجوزة'),
+              Text(tr('{p0} - محجوزة', {'p0': table.name})),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInfoRow('العميل', reservation.customerName),
+              _buildInfoRow(tr('العميل'), reservation.customerName),
               if (reservation.customerPhone != null)
-                _buildInfoRow('الهاتف', reservation.customerPhone!),
-              _buildInfoRow('الوقت', _formatTime(reservation.reservationTime)),
-              _buildInfoRow('عدد الأشخاص', '${reservation.partySize}'),
+                _buildInfoRow(tr('الهاتف'), reservation.customerPhone!),
+              _buildInfoRow(tr('الوقت'), _formatTime(reservation.reservationTime)),
+              _buildInfoRow(tr('عدد الأشخاص'), '${reservation.partySize}'),
               if (reservation.notes != null && reservation.notes!.isNotEmpty)
-                _buildInfoRow('ملاحظات', reservation.notes!),
+                _buildInfoRow(tr('ملاحظات'), reservation.notes!),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
             OutlinedButton.icon(
               onPressed: () async {
@@ -735,23 +735,23 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                 final activityLogRepo = ref.read(activityLogRepositoryProvider);
                 await activityLogRepo.logActivity(
                   userId: user?.id,
-                  userName: user?.displayName ?? 'مجهول',
+                  userName: user?.displayName ?? tr('مجهول'),
                   action: 'cancel_reservation',
                   entityType: 'reservation',
                   entityId: reservation.id,
                   description:
-                      'إلغاء حجز: ${reservation.customerName} - ${table.name}',
+                      tr('إلغاء حجز: {p0} - {p1}', {'p0': reservation.customerName, 'p1': table.name}),
                 );
                 if (context.mounted) {
                   AppToast.show(
                     context,
-                    'تم إلغاء الحجز',
+                    tr('تم إلغاء الحجز'),
                     type: ToastType.warning,
                   );
                 }
               },
               icon: const Icon(PhosphorIconsBold.x, size: 18),
-              label: const Text('إلغاء الحجز'),
+              label:  Text(tr('إلغاء الحجز')),
               style: OutlinedButton.styleFrom(foregroundColor: AppColors.error),
             ),
             ElevatedButton.icon(
@@ -778,7 +778,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                 }
               },
               icon: const Icon(PhosphorIconsBold.users, size: 18),
-              label: const Text('استقبال الضيوف'),
+              label:  Text(tr('استقبال الضيوف')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.success,
               ),
@@ -840,7 +840,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                   color: Colors.orange,
                 ),
                 const SizedBox(width: 8),
-                Text('حجز ${table.name}'),
+                Text(tr('حجز {p0}', {'p0': table.name})),
               ],
             ),
             content: SizedBox(
@@ -851,18 +851,18 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                   children: [
                     TextField(
                       controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'اسم العميل *',
-                        prefixIcon: Icon(PhosphorIconsBold.user),
+                      decoration:  InputDecoration(
+                        labelText: tr('اسم العميل *'),
+                        prefixIcon: const Icon(PhosphorIconsBold.user),
                       ),
                       autofocus: true,
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: phoneController,
-                      decoration: const InputDecoration(
-                        labelText: 'رقم الهاتف',
-                        prefixIcon: Icon(PhosphorIconsBold.phone),
+                      decoration:  InputDecoration(
+                        labelText: tr('رقم الهاتف'),
+                        prefixIcon: const Icon(PhosphorIconsBold.phone),
                       ),
                       keyboardType: TextInputType.phone,
                     ),
@@ -893,9 +893,9 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                               }
                             },
                             child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'التاريخ',
-                                prefixIcon: Icon(PhosphorIconsBold.calendar),
+                              decoration:  InputDecoration(
+                                labelText: tr('التاريخ'),
+                                prefixIcon: const Icon(PhosphorIconsBold.calendar),
                               ),
                               child: Text(
                                 '${reservationTime.day}/${reservationTime.month}/${reservationTime.year}',
@@ -926,9 +926,9 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                               }
                             },
                             child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'الوقت',
-                                prefixIcon: Icon(PhosphorIconsBold.clock),
+                              decoration:  InputDecoration(
+                                labelText: tr('الوقت'),
+                                prefixIcon: const Icon(PhosphorIconsBold.clock),
                               ),
                               child: Text(
                                 '${reservationTime.hour.toString().padLeft(2, '0')}:${reservationTime.minute.toString().padLeft(2, '0')}',
@@ -941,7 +941,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Text('عدد الأشخاص: '),
+                         Text(tr('عدد الأشخاص: ')),
                         IconButton(
                           onPressed: partySize > 1
                               ? () => setDialogState(() => partySize--)
@@ -974,9 +974,9 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                     const SizedBox(height: 12),
                     TextField(
                       controller: notesController,
-                      decoration: const InputDecoration(
-                        labelText: 'ملاحظات',
-                        prefixIcon: Icon(PhosphorIconsBold.notepad),
+                      decoration:  InputDecoration(
+                        labelText: tr('ملاحظات'),
+                        prefixIcon: const Icon(PhosphorIconsBold.notepad),
                       ),
                       maxLines: 2,
                     ),
@@ -987,14 +987,14 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton.icon(
                 onPressed: saving ? null : () async {
                   if (nameController.text.trim().isEmpty) {
                     AppToast.show(
                       ctx,
-                      'يرجى إدخال اسم العميل',
+                      tr('يرجى إدخال اسم العميل'),
                       type: ToastType.warning,
                     );
                     return;
@@ -1019,26 +1019,26 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                               ? notesController.text.trim()
                               : null,
                           userId: user?.id,
-                          userName: user?.displayName ?? 'مجهول',
+                          userName: user?.displayName ?? tr('مجهول'),
                         );
 
                     if (ctx.mounted) {
                       Navigator.pop(ctx);
                       AppToast.show(
                         context,
-                        'تم حجز ${table.name} بنجاح',
+                        tr('تم حجز {p0} بنجاح', {'p0': table.name}),
                         type: ToastType.success,
                       );
                     }
                   } catch (e) {
                     setDialogState(() => saving = false);
                     if (ctx.mounted) {
-                      AppToast.show(ctx, 'خطأ: $e', type: ToastType.error);
+                      AppToast.show(ctx, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
                     }
                   }
                 },
                 icon: const Icon(PhosphorIconsBold.calendarCheck, size: 18),
-                label: const Text('تأكيد الحجز'),
+                label:  Text(tr('تأكيد الحجز')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
                 ),

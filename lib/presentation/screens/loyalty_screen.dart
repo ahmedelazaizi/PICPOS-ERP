@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -44,19 +45,19 @@ class _LoyaltyScreenState extends ConsumerState<LoyaltyScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('نقاط العملاء'),
+        title:  Text(tr('نقاط العملاء')),
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: 'البرامج', icon: Icon(PhosphorIconsBold.star)),
-            Tab(text: 'أرصدة العملاء', icon: Icon(PhosphorIconsBold.users)),
+          tabs:  [
+            Tab(text: tr('البرامج'), icon: const Icon(PhosphorIconsBold.star)),
+            Tab(text: tr('أرصدة العملاء'), icon: const Icon(PhosphorIconsBold.users)),
             Tab(
-              text: 'سجل الحركات',
-              icon: Icon(PhosphorIconsBold.clockCounterClockwise),
+              text: tr('سجل الحركات'),
+              icon: const Icon(PhosphorIconsBold.clockCounterClockwise),
             ),
           ],
         ),
@@ -68,7 +69,7 @@ class _LoyaltyScreenState extends ConsumerState<LoyaltyScreen>
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'بحث في برامج الولاء...',
+                hintText: tr('بحث في برامج الولاء...'),
                 prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); })

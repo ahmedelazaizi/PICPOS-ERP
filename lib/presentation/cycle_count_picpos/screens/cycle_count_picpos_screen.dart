@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 // شاشة الجرد الميداني بهوية PicPos — semi-modular fork.
 //
@@ -95,17 +96,17 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
     final notifier = ref.read(cycleCountControllerProvider.notifier);
 
     return PicPosScreenScaffold(
-      title: 'الجرد الميداني',
-      subtitle: 'خطط ومهام جرد المخزون',
+      title: tr('الجرد الميداني'),
+      subtitle: tr('خطط ومهام جرد المخزون'),
       icon: PhosphorIconsBold.clipboardText,
       subHeader: Container(
         color: theme.colorScheme.surfaceContainerLow,
         child: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(PhosphorIconsBold.listChecks), text: 'الخطط'),
-            Tab(icon: Icon(PhosphorIconsBold.clipboardText), text: 'المهام'),
-            Tab(icon: Icon(PhosphorIconsBold.chartBar), text: 'التحليلات'),
+          tabs:  [
+            Tab(icon: const Icon(PhosphorIconsBold.listChecks), text: tr('الخطط')),
+            Tab(icon: const Icon(PhosphorIconsBold.clipboardText), text: tr('المهام')),
+            Tab(icon: const Icon(PhosphorIconsBold.chartBar), text: tr('التحليلات')),
           ],
         ),
       ),
@@ -123,7 +124,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
                   },
                   icon: const Icon(Icons.add),
                   label: Text(
-                      _tabController.index == 0 ? 'خطة جديدة' : 'مهمة جديدة'),
+                      _tabController.index == 0 ? tr('خطة جديدة') : tr('مهمة جديدة')),
                 ),
               ],
             ),
@@ -149,9 +150,9 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
           Icon(PhosphorIconsBold.listChecks,
               size: 64, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
-          Text('لا توجد خطط جرد', style: theme.textTheme.titleMedium),
+          Text(tr('لا توجد خطط جرد'), style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
-          Text('أنشئ خطة جرد دوري لمتابعة دقة المخزون',
+          Text(tr('أنشئ خطة جرد دوري لمتابعة دقة المخزون'),
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         ]),
@@ -189,7 +190,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 2),
                 Text(
-                  'التكرار: ${_freqLabel(plan.frequency)} | عدد الأصناف: ${plan.productsPerTask}',
+                  tr('التكرار: {p0} | عدد الأصناف: {p1}', {'p0': _freqLabel(plan.frequency), 'p1': plan.productsPerTask}),
                   style: theme.textTheme.bodySmall,
                 ),
               ]),
@@ -201,17 +202,17 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                plan.status == 'active' ? 'نشط' : plan.status == 'paused' ? 'متوقف' : 'مكتمل',
+                plan.status == 'active' ? tr('نشط') : plan.status == 'paused' ? tr('متوقف') : tr('مكتمل'),
                 style: TextStyle(fontSize: 12, color: statusColor, fontWeight: FontWeight.w600),
               ),
             ),
           ]),
           const SizedBox(height: 12),
           Row(children: [
-            _infoChip(theme, 'التصنيف', plan.abcClassification == 'all' ? 'الكل' : plan.abcClassification),
+            _infoChip(theme, tr('التصنيف'), plan.abcClassification == 'all' ? tr('الكل') : plan.abcClassification),
             const SizedBox(width: 8),
             if (plan.nextDueDate != null)
-              _infoChip(theme, 'الموعد القادم', DateFormat('yyyy/MM/dd').format(plan.nextDueDate!)),
+              _infoChip(theme, tr('الموعد القادم'), DateFormat('yyyy/MM/dd').format(plan.nextDueDate!)),
             const Spacer(),
             if (plan.status == 'active')
               OutlinedButton.icon(
@@ -221,13 +222,13 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
                     productsPerTask: plan.productsPerTask, abcClassification: plan.abcClassification,
                   );
                   if (taskId > 0 && mounted) {
-                    AppToast.show(context, 'تم إنشاء مهمة جرد جديدة');
+                    AppToast.show(context, tr('تم إنشاء مهمة جرد جديدة'));
                     notifier.refresh();
                     _tabController.animateTo(1);
                   }
                 },
                 icon: const Icon(Icons.play_arrow, size: 18),
-                label: const Text('بدء جرد'),
+                label:  Text(tr('بدء جرد')),
               ),
           ]),
         ]),
@@ -257,7 +258,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
       SizedBox(
         width: 350,
         child: state.tasks.isEmpty
-            ? Center(child: Text('لا توجد مهام جرد', style: theme.textTheme.bodyMedium))
+            ? Center(child: Text(tr('لا توجد مهام جرد'), style: theme.textTheme.bodyMedium))
             : ListView.builder(
                 itemCount: state.tasks.length,
                 itemBuilder: (ctx, i) {
@@ -269,7 +270,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
       VerticalDivider(width: 1, color: theme.dividerColor),
       Expanded(
         child: state.selectedTask == null
-            ? Center(child: Text('اختر مهمة من القائمة', style: theme.textTheme.bodyLarge))
+            ? Center(child: Text(tr('اختر مهمة من القائمة'), style: theme.textTheme.bodyLarge))
             : _buildCountingPanel(theme, repo, state, notifier),
       ),
     ]);
@@ -288,7 +289,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
         LinearProgressIndicator(
             value: progress, backgroundColor: theme.colorScheme.surfaceContainerHigh),
         const SizedBox(height: 4),
-        Text('${task.countedCount}/${task.productCount} أصناف | ${task.varianceCount} فروقات',
+        Text(tr('{p0}/{p1} أصناف | {p2} فروقات', {'p0': task.countedCount, 'p1': task.productCount, 'p2': task.varianceCount}),
             style: theme.textTheme.bodySmall),
       ]),
       trailing: _taskStatusIcon(task.status),
@@ -302,14 +303,14 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
         padding: const EdgeInsets.all(16),
         color: theme.colorScheme.surfaceContainerLow,
         child: Row(children: [
-          Text('مهمة ${DateFormat('yyyy/MM/dd').format(task.taskDate)}',
+          Text(tr('مهمة {p0}', {'p0': DateFormat('yyyy/MM/dd').format(task.taskDate)}),
               style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
           const Spacer(),
           if (task.status == 'pending')
             FilledButton.icon(
               onPressed: () async { await repo.startCycleCountTask(task.id); notifier.refresh(); },
               icon: const Icon(Icons.play_arrow, size: 18),
-              label: const Text('بدء'),
+              label:  Text(tr('بدء')),
             ),
           if (task.status == 'in_progress')
             FilledButton.icon(
@@ -328,7 +329,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
                       // محلّيٌّ يمحوه أوّلُ سحب — وهو ما يمنعه هذا الحارسُ أصلاً.
                       if (NetworkService.instance.isBranchScopedDevice) {
                         AppToast.show(context,
-                            'لا يمكن اعتماد الجرد من جهاز عميل أو مرآة — نفّذه على الخادم الرئيسي');
+                            tr('لا يمكن اعتماد الجرد من جهاز عميل أو مرآة — نفّذه على الخادم الرئيسي'));
                         return;
                       }
                       setState(() => _finalizing = true);
@@ -340,12 +341,12 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
                         await _flushPendingCounts(repo, state);
                         await repo.finalizeCycleCountTask(task.id);
                         if (mounted) {
-                          AppToast.show(context, 'تم إكمال المهمة وتعديل المخزون');
+                          AppToast.show(context, tr('تم إكمال المهمة وتعديل المخزون'));
                           notifier.refresh();
                         }
                       } catch (e) {
                         if (mounted) {
-                          AppToast.show(context, 'تعذّر إكمال المهمة: $e');
+                          AppToast.show(context, tr('تعذّر إكمال المهمة: {e}', {'e': e}));
                         }
                       } finally {
                         if (mounted) setState(() => _finalizing = false);
@@ -356,7 +357,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
                       width: 18, height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.check, size: 18),
-              label: const Text('إكمال'),
+              label:  Text(tr('إكمال')),
               style: FilledButton.styleFrom(backgroundColor: Colors.green),
             ),
         ]),
@@ -408,7 +409,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
           SizedBox(
             width: 80,
             child: Column(children: [
-              Text('المتوقع', style: theme.textTheme.bodySmall),
+              Text(tr('المتوقع'), style: theme.textTheme.bodySmall),
               Text(_fmt.format(item.expectedQty),
                   style: const TextStyle(fontWeight: FontWeight.bold)),
             ]),
@@ -419,7 +420,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
               controller: countCtrl,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'العدد الفعلي',
+                labelText: tr('العدد الفعلي'),
                 isDense: true,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -489,7 +490,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(children: [
-                  Text('دقة الجرد',
+                  Text(tr('دقة الجرد'),
                       style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -510,14 +511,14 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
             ),
             const SizedBox(height: 16),
             Row(children: [
-              _statCard(theme, 'إجمالي الخطط', state.plans.length.toString(),
+              _statCard(theme, tr('إجمالي الخطط'), state.plans.length.toString(),
                   PhosphorIconsBold.listChecks, Colors.blue),
               const SizedBox(width: 12),
-              _statCard(theme, 'المهام المكتملة',
+              _statCard(theme, tr('المهام المكتملة'),
                   state.tasks.where((t) => t.status == 'completed').length.toString(),
                   PhosphorIconsBold.checkCircle, Colors.green),
               const SizedBox(width: 12),
-              _statCard(theme, 'المهام المعلقة',
+              _statCard(theme, tr('المهام المعلقة'),
                   state.tasks.where((t) => t.status == 'pending').length.toString(),
                   PhosphorIconsBold.clock, Colors.amber),
             ]),
@@ -558,21 +559,21 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(children: [
-          Icon(PhosphorIconsBold.listChecks, color: Colors.indigo),
-          SizedBox(width: 8),
-          Text('خطة جرد جديدة'),
+        title:  Row(children: [
+          const Icon(PhosphorIconsBold.listChecks, color: Colors.indigo),
+          const SizedBox(width: 8),
+          Text(tr('خطة جرد جديدة')),
         ]),
         content: SizedBox(
           width: 400,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'اسم الخطة', border: OutlineInputBorder()),
+              decoration:  InputDecoration(labelText: tr('اسم الخطة'), border: const OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<int>(
-              decoration: const InputDecoration(labelText: 'المستودع', border: OutlineInputBorder()),
+              decoration:  InputDecoration(labelText: tr('المستودع'), border: const OutlineInputBorder()),
               items: warehouses.map((w) {
                 return DropdownMenuItem(
                     value: w.id,
@@ -583,19 +584,19 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: frequency,
-              decoration: const InputDecoration(labelText: 'التكرار', border: OutlineInputBorder()),
-              items: const [
-                DropdownMenuItem(value: 'daily', child: Text('يومي')),
-                DropdownMenuItem(value: 'weekly', child: Text('أسبوعي')),
-                DropdownMenuItem(value: 'monthly', child: Text('شهري')),
-                DropdownMenuItem(value: 'quarterly', child: Text('ربع سنوي')),
+              decoration:  InputDecoration(labelText: tr('التكرار'), border: const OutlineInputBorder()),
+              items:  [
+                DropdownMenuItem(value: 'daily', child: Text(tr('يومي'))),
+                DropdownMenuItem(value: 'weekly', child: Text(tr('أسبوعي'))),
+                DropdownMenuItem(value: 'monthly', child: Text(tr('شهري'))),
+                DropdownMenuItem(value: 'quarterly', child: Text(tr('ربع سنوي'))),
               ],
               onChanged: (v) { if (v != null) frequency = v; },
             ),
             const SizedBox(height: 12),
             TextField(
-              decoration: const InputDecoration(
-                  labelText: 'عدد الأصناف لكل مهمة', border: OutlineInputBorder()),
+              decoration:  InputDecoration(
+                  labelText: tr('عدد الأصناف لكل مهمة'), border: const OutlineInputBorder()),
               keyboardType: TextInputType.number,
               controller: TextEditingController(text: '20'),
               onChanged: (v) => productsPerTask = int.tryParse(v) ?? 20,
@@ -603,11 +604,11 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
           ]),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
           FilledButton(
             onPressed: () async {
               if (nameCtrl.text.isEmpty || warehouseId == null) {
-                AppToast.show(ctx, 'يرجى ملء جميع الحقول', type: ToastType.error);
+                AppToast.show(ctx, tr('يرجى ملء جميع الحقول'), type: ToastType.error);
                 return;
               }
               await repo.createCycleCountPlan(
@@ -617,7 +618,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
               if (ctx.mounted) Navigator.pop(ctx);
               notifier.refresh();
             },
-            child: const Text('إنشاء'),
+            child:  Text(tr('إنشاء')),
           ),
         ],
       ),
@@ -626,7 +627,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
 
   Future<void> _showGenerateTaskDialog(ICycleCountRepository repo, CycleCountState state, CycleCountController notifier) async {
     if (state.plans.isEmpty) {
-      AppToast.show(context, 'أنشئ خطة جرد أولاً', type: ToastType.error);
+      AppToast.show(context, tr('أنشئ خطة جرد أولاً'), type: ToastType.error);
       return;
     }
     // Second guard: state may have become empty due to a Riverpod rebuild race
@@ -638,17 +639,17 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
       productsPerTask: plan.productsPerTask,
     );
     if (taskId > 0 && mounted) {
-      AppToast.show(context, 'تم إنشاء مهمة جرد جديدة');
+      AppToast.show(context, tr('تم إنشاء مهمة جرد جديدة'));
       notifier.refresh();
     } else if (mounted) {
-      AppToast.show(context, 'لا توجد أصناف بمخزون لجردها', type: ToastType.error);
+      AppToast.show(context, tr('لا توجد أصناف بمخزون لجردها'), type: ToastType.error);
     }
   }
 
   // ─── Helpers ──
 
   String _freqLabel(String f) =>
-      {'daily': 'يومي', 'weekly': 'أسبوعي', 'monthly': 'شهري', 'quarterly': 'ربع سنوي'}[f] ?? f;
+      {'daily': tr('يومي'), 'weekly': tr('أسبوعي'), 'monthly': tr('شهري'), 'quarterly': tr('ربع سنوي')}[f] ?? f;
 
   Icon _taskStatusIcon(String s) => switch (s) {
     'completed' => const Icon(Icons.check_circle, color: Colors.green, size: 20),

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -14,15 +15,15 @@ import '../../widgets/dialogs/app_confirm_dialog.dart';
 
 /// أسماءُ أيام الأسبوع باصطلاح `DateTime.weekday` (‏١ = الاثنين … ٧ = الأحد).
 /// الفهرسُ صفرٌ غيرُ مستعمَل — يبدأ العدُّ من ١ فيتّسق الفهرسُ مع القيمة.
-const List<String> _kWeekdayNames = [
+List<String> get _kWeekdayNames => [
   '',
-  'الاثنين',
-  'الثلاثاء',
-  'الأربعاء',
-  'الخميس',
-  'الجمعة',
-  'السبت',
-  'الأحد',
+  tr('الاثنين'),
+  tr('الثلاثاء'),
+  tr('الأربعاء'),
+  tr('الخميس'),
+  tr('الجمعة'),
+  tr('السبت'),
+  tr('الأحد'),
 ];
 
 /// شاشةُ تعريف عطلات العمل — أساسُ حساب أيام العمل الفعلية شهرياً
@@ -54,11 +55,11 @@ class _WorkHolidaysScreenState extends State<WorkHolidaysScreen> {
       textDirection: ui.TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('عطلات العمل'),
+          title:  Text(tr('عطلات العمل')),
           actions: [
             IconButton(
               icon: const Icon(PhosphorIconsBold.plus),
-              tooltip: 'إضافة عطلة',
+              tooltip: tr('إضافة عطلة'),
               onPressed: handle.invoke,
             ),
           ],
@@ -125,7 +126,7 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        AppToast.show(context, 'خطأ في تحميل العطلات: $e',
+        AppToast.show(context, tr('خطأ في تحميل العطلات: {e}', {'e': e}),
             type: ToastType.error);
       }
     }
@@ -134,9 +135,9 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
   Future<void> _delete(WorkHoliday holiday) async {
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: 'حذف عطلة',
-      message: 'هل أنت متأكد من حذف "${holiday.name}"؟',
-      confirmLabel: 'حذف',
+      title: tr('حذف عطلة'),
+      message: tr('هل أنت متأكد من حذف "{p0}"؟', {'p0': holiday.name}),
+      confirmLabel: tr('حذف'),
       color: AppColors.error,
       icon: PhosphorIconsBold.trash,
     );
@@ -148,7 +149,7 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
       _load();
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في الحذف: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الحذف: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -184,32 +185,32 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
           builder: (ctx, setDialogState) {
             final groups = <PicPosPanelGroup>[
               PicPosPanelGroup(
-                label: 'بيانات العطلة',
+                label: tr('بيانات العطلة'),
                 child: TextField(
                   controller: nameCtrl,
                   autofocus: true,
-                  decoration: const InputDecoration(
-                    labelText: 'اسم العطلة',
-                    hintText: 'مثال: عيد الفطر',
-                    prefixIcon: Icon(PhosphorIconsLight.calendarStar),
+                  decoration:  InputDecoration(
+                    labelText: tr('اسم العطلة'),
+                    hintText: tr('مثال: عيد الفطر'),
+                    prefixIcon: const Icon(PhosphorIconsLight.calendarStar),
                   ),
                 ),
               ),
               PicPosPanelGroup(
-                label: 'التكرار',
-                hint: 'يومٌ أسبوعيٌّ يتكرّر، أو تاريخٌ واحد',
+                label: tr('التكرار'),
+                hint: tr('يومٌ أسبوعيٌّ يتكرّر، أو تاريخٌ واحد'),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     PicPosPanelChips(children: [
                       PicPosPanelChip(
-                        label: 'يومٌ أسبوعيٌّ متكرّر',
+                        label: tr('يومٌ أسبوعيٌّ متكرّر'),
                         selected: isWeekday,
                         onTap: () => setDialogState(() => isWeekday = true),
                       ),
                       PicPosPanelChip(
-                        label: 'تاريخٌ محدَّد',
+                        label: tr('تاريخٌ محدَّد'),
                         selected: !isWeekday,
                         onTap: () => setDialogState(() => isWeekday = false),
                       ),
@@ -249,11 +250,11 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
                 ),
               ),
               PicPosPanelGroup(
-                label: 'الفرع المتأثّر',
-                hint: 'فرعٌ واحدٌ أو كلُّ الفروع',
+                label: tr('الفرع المتأثّر'),
+                hint: tr('فرعٌ واحدٌ أو كلُّ الفروع'),
                 child: PicPosPanelChips(children: [
                   PicPosPanelChip(
-                    label: 'كل الفروع',
+                    label: tr('كل الفروع'),
                     selected: branchId == null,
                     onTap: () => setDialogState(() => branchId = null),
                   ),
@@ -269,15 +270,15 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
 
             return PicPosDialog(
               icon: PhosphorIconsBold.calendarPlus,
-              title: 'إضافة عطلة',
+              title: tr('إضافة عطلة'),
               // ⚠️ وصفُ التصميم «يُغلق البيع في هذه المدة ويُحسب الأجر حسب
               //    النوع» لم يُنقَل: العطلةُ تُقرأ من `holidaysInMonth` في
               //    حساب الرواتب، ولا يمنع البيعَ شيءٌ بسببها.
-              subtitle: 'يومُ العطلة يُستثنى من حسم الغياب في حساب الرواتب',
+              subtitle: tr('يومُ العطلة يُستثنى من حسم الغياب في حساب الرواتب'),
               width: 660,
               onCancel: () => Navigator.pop(dialogCtx, false),
               primaryAction: PicPosDialogAction(
-                label: 'إضافة العطلة',
+                label: tr('إضافة العطلة'),
                 icon: PhosphorIconsBold.check,
                 onPressed: () async {
                   if (nameCtrl.text.trim().isEmpty) return;
@@ -314,7 +315,7 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
         textDirection: ui.TextDirection.rtl,
         child: StatefulBuilder(
           builder: (context, setState) => AlertDialog(
-            title: const Text('إضافة عطلة'),
+            title:  Text(tr('إضافة عطلة')),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -322,15 +323,15 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
                   TextField(
                     controller: nameCtrl,
                     decoration:
-                        const InputDecoration(labelText: 'اسم العطلة'),
+                         InputDecoration(labelText: tr('اسم العطلة')),
                   ),
                   const SizedBox(height: 12),
                   SegmentedButton<bool>(
-                    segments: const [
+                    segments:  [
                       ButtonSegment(
-                          value: true, label: Text('يومٌ أسبوعيٌّ متكرّر')),
+                          value: true, label: Text(tr('يومٌ أسبوعيٌّ متكرّر'))),
                       ButtonSegment(
-                          value: false, label: Text('تاريخٌ محدَّد')),
+                          value: false, label: Text(tr('تاريخٌ محدَّد'))),
                     ],
                     selected: {isWeekday},
                     onSelectionChanged: (s) =>
@@ -341,7 +342,7 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
                     DropdownButtonFormField<int>(
                       initialValue: weekday,
                       decoration:
-                          const InputDecoration(labelText: 'يوم الأسبوع'),
+                           InputDecoration(labelText: tr('يوم الأسبوع')),
                       items: [
                         for (var d = 1; d <= 7; d++)
                           DropdownMenuItem(
@@ -372,11 +373,11 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<int?>(
                     initialValue: branchId,
-                    decoration: const InputDecoration(labelText: 'الفرع'),
+                    decoration:  InputDecoration(labelText: tr('الفرع')),
                     items: [
-                      const DropdownMenuItem<int?>(
+                       DropdownMenuItem<int?>(
                         value: null,
-                        child: Text('كل الفروع'),
+                        child: Text(tr('كل الفروع')),
                       ),
                       ...visibleBranches.map(
                         (b) => DropdownMenuItem<int?>(
@@ -393,7 +394,7 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogCtx, false),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -415,7 +416,7 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
                     }
                   }
                 },
-                child: const Text('حفظ'),
+                child:  Text(tr('حفظ')),
               ),
             ],
           ),
@@ -438,8 +439,8 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
     if (q.isEmpty) return _holidays;
     return _holidays.where((h) {
       final branchLabel = h.branchId == null
-          ? 'كل الفروع'
-          : (branchNames[h.branchId] ?? 'فرعٌ محذوف');
+          ? tr('كل الفروع')
+          : (branchNames[h.branchId] ?? tr('فرعٌ محذوف'));
       return h.name.contains(q) ||
           _describe(h).contains(q) ||
           branchLabel.contains(q);
@@ -463,14 +464,14 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
                             size: 80, color: Colors.grey.shade400),
                         const SizedBox(height: 16),
                         Text(
-                          'لا توجد عطلاتٌ معرَّفة بعد',
+                          tr('لا توجد عطلاتٌ معرَّفة بعد'),
                           style: TextStyle(
                               fontSize: 18, color: Colors.grey.shade600),
                         ),
                         const SizedBox(height: 8),
                         ElevatedButton.icon(
                           icon: const Icon(PhosphorIconsBold.plus),
-                          label: const Text('إضافة عطلة'),
+                          label:  Text(tr('إضافة عطلة')),
                           onPressed: _showAddDialog,
                         ),
                       ],
@@ -479,7 +480,7 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
                 : shown.isEmpty
                 ? Center(
                     child: Text(
-                      'لا توجد عطلةٌ تطابق «${widget.searchQuery.trim()}»',
+                      tr('لا توجد عطلةٌ تطابق «{p0}»', {'p0': widget.searchQuery.trim()}),
                       style: TextStyle(
                           fontSize: 14, color: Colors.grey.shade600),
                     ),
@@ -493,8 +494,8 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
                         itemBuilder: (context, index) {
                           final holiday = shown[index];
                           final branchLabel = holiday.branchId == null
-                              ? 'كل الفروع'
-                              : (branchNames[holiday.branchId] ?? 'فرعٌ محذوف');
+                              ? tr('كل الفروع')
+                              : (branchNames[holiday.branchId] ?? tr('فرعٌ محذوف'));
                           return ListTile(
                             leading: CircleAvatar(
                               backgroundColor:
@@ -519,7 +520,7 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
                             trailing: IconButton(
                               icon: const Icon(PhosphorIconsLight.trash,
                                   color: AppColors.error),
-                              tooltip: 'حذف',
+                              tooltip: tr('حذف'),
                               onPressed: () => _delete(holiday),
                             ),
                           );

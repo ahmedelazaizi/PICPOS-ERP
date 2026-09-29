@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -53,7 +54,7 @@ class CartDeliveryPanel extends ConsumerWidget {
               ),
               SizedBox(width: spacing),
               Text(
-                'توصيل الطلب',
+                tr('توصيل الطلب'),
                 style: TextStyle(
                   fontSize: fontSize,
                   fontWeight: FontWeight.bold,
@@ -82,21 +83,21 @@ class CartDeliveryPanel extends ConsumerWidget {
                       value: companies
                           .where((c) => c.id == state.deliveryCompanyId)
                           .firstOrNull,
-                      hint: 'اختر شركة التوصيل',
-                      searchHint: 'ابحث عن شركة...',
+                      hint: tr('اختر شركة التوصيل'),
+                      searchHint: tr('ابحث عن شركة...'),
                       labelBuilder: (c) => c.name,
                       onChanged: (c) =>
                           controller.setDeliveryInfo(companyId: c?.id),
                     ),
-                    loading: () => const Text('جاري التحميل...'),
-                    error: (_, _) => const Text('خطأ'),
+                    loading: () =>  Text(tr('جاري التحميل...')),
+                    error: (_, _) =>  Text(tr('خطأ')),
                   ),
                 ),
                 SizedBox(width: spacing),
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
-                      labelText: 'رسوم التوصيل',
+                      labelText: tr('رسوم التوصيل'),
                       isDense: true,
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 8 * scaleFactor,

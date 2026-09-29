@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ---------------------------------------------------------------------------
 // منطق منسوخ من reports_screen.dart (monolith) — أي إصلاح منطقي يتصلّح في
 // المصدر أولاً ثم يُنقل بـ patch لهذا الملف (مصيدة النسخ §٥.٨). لا يُنسخ أبداً
@@ -289,7 +290,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
     );
 
     return PicPosScreenScaffold(
-      title: 'التقارير',
+      title: tr('التقارير'),
       // ⚠️ العددُ **مقيسٌ من الشجرة** لا مكتوبٌ نصّاً: «كل تقارير المبيعات
       //    والمخزون والمالية» جملةٌ لا تتغيّر مهما أُضيف أو حُذف.
       subtitle: '${_allItems.length} تقريراً واختصاراً '
@@ -349,7 +350,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
         ),
       ),
       icon: const Icon(PhosphorIconsBold.plus, size: 17),
-      label: const Text('تقرير مخصص'),
+      label:  Text(tr('تقرير مخصص')),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -380,7 +381,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
         onChanged: (v) => setState(() => _query = v),
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
-          hintText: 'بحث في جميع التقارير...',
+          hintText: tr('بحث في جميع التقارير...'),
           prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
           suffixIcon: _query.isEmpty
               ? null
@@ -598,8 +599,8 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
 
   /// «٣ تقارير · ٨ اختصارات» — **مقيسٌ من الفئة** لا مكتوبٌ بيد.
   String _catMeta(PicposReportCategory c) {
-    final r = '${c.mainReports.length} تقرير';
-    return c.shortcuts.isEmpty ? r : '$r · ${c.shortcuts.length} اختصار';
+    final r = tr('{p0} تقرير', {'p0': c.mainReports.length});
+    return c.shortcuts.isEmpty ? r : tr('{r} · {p0} اختصار', {'r': r, 'p0': c.shortcuts.length});
   }
 
   /// تذييلُ الشريط.
@@ -633,7 +634,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                   ),
                 ),
                 Text(
-                  'كلُّ تقريرٍ يُحسَب لحظةَ فتحه',
+                  tr('كلُّ تقريرٍ يُحسَب لحظةَ فتحه'),
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -691,19 +692,19 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
       error: (e, _) => PicPosDialogBanner(
         icon: PhosphorIconsBold.warningCircle,
         color: AppColors.warning,
-        text: 'تعذّر حسابُ مؤشّرات اليوم: $e',
+        text: tr('تعذّر حسابُ مؤشّرات اليوم: {e}', {'e': e}),
       ),
       data: (k) {
         final cards = <Widget>[
-          _kpiCard(PhosphorIconsBold.currencyCircleDollar, 'مبيعات اليوم',
-              _money(k.revenue.today), 'ج.م', k.revenue, AppColors.success),
-          _kpiCard(PhosphorIconsBold.trendUp, 'صافي الربح',
-              _money(k.netProfit.today), 'ج.م', k.netProfit, AppColors.primary),
-          _kpiCard(PhosphorIconsBold.receipt, 'عدد الفواتير',
-              k.invoices.today.toStringAsFixed(0), 'فاتورة', k.invoices,
+          _kpiCard(PhosphorIconsBold.currencyCircleDollar, tr('مبيعات اليوم'),
+              _money(k.revenue.today), tr('ج.م'), k.revenue, AppColors.success),
+          _kpiCard(PhosphorIconsBold.trendUp, tr('صافي الربح'),
+              _money(k.netProfit.today), tr('ج.م'), k.netProfit, AppColors.primary),
+          _kpiCard(PhosphorIconsBold.receipt, tr('عدد الفواتير'),
+              k.invoices.today.toStringAsFixed(0), tr('فاتورة'), k.invoices,
               AppColors.info),
-          _kpiCard(PhosphorIconsBold.arrowUUpLeft, 'المرتجعات',
-              _money(k.salesReturns.today), 'ج.م', k.salesReturns,
+          _kpiCard(PhosphorIconsBold.arrowUUpLeft, tr('المرتجعات'),
+              _money(k.salesReturns.today), tr('ج.م'), k.salesReturns,
               AppColors.error,
               upIsGood: false),
         ];
@@ -839,7 +840,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  '${delta.abs().toStringAsFixed(0)}٪',
+                  tr('{p0}٪', {'p0': delta.abs().toStringAsFixed(0)}),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
@@ -1099,7 +1100,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Text(
-            'اختصارات سريعة',
+            tr('اختصارات سريعة'),
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w800,
@@ -1165,7 +1166,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                 const SizedBox(width: 11),
                 Expanded(
                   child: Text(
-                    'المفضّلة وآخر ما فُتح',
+                    tr('المفضّلة وآخر ما فُتح'),
                     style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w800,
@@ -1174,7 +1175,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                   ),
                 ),
                 Text(
-                  'تُحفظ لكل مستخدم على حدة',
+                  tr('تُحفظ لكل مستخدم على حدة'),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -1249,8 +1250,8 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                   // ⚠️ التصميمُ يكتب «مفضّل · فُتح 14:20»، ولا وقتَ فتحٍ
                   //    مخزَّناً — المحفوظُ ترتيبٌ لا طابعُ وقت. فيُكتب ما
                   //    يُعرَف: أمفضّلٌ هو أم مفتوحٌ مؤخّراً، واسمُ فئته.
-                  fav ? 'مفضّل · ${item.category.title}'
-                      : 'فُتح مؤخّراً · ${item.category.title}',
+                  fav ? tr('مفضّل · {p0}', {'p0': item.category.title})
+                      : tr('فُتح مؤخّراً · {p0}', {'p0': item.category.title}),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1327,7 +1328,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                   size: 56,
                   color: AppColors.textMuted.withValues(alpha: 0.5)),
               const SizedBox(height: 12),
-              Text('لا توجد تقارير مطابقة لـ "$_query"',
+              Text(tr('لا توجد تقارير مطابقة لـ "{_query}"', {'_query': _query}),
                   style: const TextStyle(color: AppColors.textMuted)),
             ],
           ),
@@ -1340,7 +1341,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _miniHeader(PhosphorIconsBold.magnifyingGlass,
-              'نتائج البحث (${results.length})', AppColors.primary),
+              tr('نتائج البحث ({p0})', {'p0': results.length}), AppColors.primary),
           const SizedBox(height: 10),
           GridView.builder(
             shrinkWrap: true,
@@ -1403,8 +1404,8 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                             color: AppColors.warning.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(5),
                           ),
-                          child: const Text('اختصار',
-                              style: TextStyle(
+                          child:  Text(tr('اختصار'),
+                              style: const TextStyle(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.warningDark,
@@ -1427,7 +1428,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             ),
             if (!item.isShortcut)
               IconButton(
-                tooltip: isFav ? 'إزالة من المفضلة' : 'إضافة للمفضلة',
+                tooltip: isFav ? tr('إزالة من المفضلة') : tr('إضافة للمفضلة'),
                 padding: EdgeInsets.zero,
                 constraints:
                     const BoxConstraints.tightFor(width: 22, height: 22),
@@ -1457,18 +1458,18 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
       builder: (context) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('أصناف منخفضة المخزون'),
+              const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('أصناف منخفضة المخزون')),
             ],
           ),
           content: SizedBox(
             width: 500,
             height: 400,
             child: lowStockProducts.isEmpty
-                ? const Center(child: Text('لا توجد أصناف منخفضة المخزون 🎉'))
+                ?  Center(child: Text(tr('لا توجد أصناف منخفضة المخزون 🎉')))
                 : ListView.builder(
                     itemCount: lowStockProducts.length,
                     itemBuilder: (context, index) {
@@ -1486,7 +1487,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                           ),
                         ),
                         title: Text(p.name),
-                        subtitle: Text('الحد الأدنى: ${p.minStock.toInt()}'),
+                        subtitle: Text(tr('الحد الأدنى: {p0}', {'p0': p.minStock.toInt()})),
                         trailing: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
@@ -1497,7 +1498,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            p.currentStock <= 0 ? 'نفذ' : 'منخفض',
+                            p.currentStock <= 0 ? tr('نفذ') : tr('منخفض'),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
@@ -1511,7 +1512,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -1529,19 +1530,19 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
       builder: (context) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.xCircle, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('منتجات منتهية الصلاحية'),
+              const Icon(PhosphorIconsBold.xCircle, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('منتجات منتهية الصلاحية')),
             ],
           ),
           content: SizedBox(
             width: 500,
             height: 400,
             child: expiredBatches.isEmpty
-                ? const Center(
-                    child: Text('🎉 لا توجد منتجات منتهية الصلاحية'))
+                ?  Center(
+                    child: Text(tr('🎉 لا توجد منتجات منتهية الصلاحية')))
                 : ListView.builder(
                     itemCount: expiredBatches.length,
                     itemBuilder: (context, index) {
@@ -1559,13 +1560,13 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                           ),
                         ),
                         title: Text(
-                          product?.name ?? 'منتج #${batch.productId}',
+                          product?.name ?? tr('منتج #{p0}', {'p0': batch.productId}),
                         ),
                         subtitle: Text(
-                          'الباتش: ${batch.batchNumber} - انتهى في ${DateFormat('dd/MM/yyyy').format(batch.expiryDate)}',
+                          tr('الباتش: {p0} - انتهى في {p1}', {'p0': batch.batchNumber, 'p1': DateFormat('dd/MM/yyyy').format(batch.expiryDate)}),
                         ),
                         trailing: Text(
-                          '${batch.quantity.toStringAsFixed(0)} وحدة',
+                          tr('{p0} وحدة', {'p0': batch.quantity.toStringAsFixed(0)}),
                           style: const TextStyle(
                             color: AppColors.error,
                             fontWeight: FontWeight.bold,
@@ -1578,7 +1579,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -1596,19 +1597,19 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
       builder: (context) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.clock, color: AppColors.warning),
-              SizedBox(width: 8),
-              Text('تنتهي خلال 30 يوم'),
+              const Icon(PhosphorIconsBold.clock, color: AppColors.warning),
+              const SizedBox(width: 8),
+              Text(tr('تنتهي خلال 30 يوم')),
             ],
           ),
           content: SizedBox(
             width: 500,
             height: 400,
             child: expiringBatches.isEmpty
-                ? const Center(
-                    child: Text('🎉 لا توجد منتجات قاربت على الانتهاء'),
+                ?  Center(
+                    child: Text(tr('🎉 لا توجد منتجات قاربت على الانتهاء')),
                   )
                 : ListView.builder(
                     itemCount: expiringBatches.length,
@@ -1636,13 +1637,13 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                           ),
                         ),
                         title: Text(
-                          product?.name ?? 'منتج #${batch.productId}',
+                          product?.name ?? tr('منتج #{p0}', {'p0': batch.productId}),
                         ),
                         subtitle: Text(
-                          'الباتش: ${batch.batchNumber} - ينتهي في ${DateFormat('dd/MM/yyyy').format(batch.expiryDate)}',
+                          tr('الباتش: {p0} - ينتهي في {p1}', {'p0': batch.batchNumber, 'p1': DateFormat('dd/MM/yyyy').format(batch.expiryDate)}),
                         ),
                         trailing: Text(
-                          '${batch.quantity.toStringAsFixed(0)} وحدة',
+                          tr('{p0} وحدة', {'p0': batch.quantity.toStringAsFixed(0)}),
                           style: TextStyle(
                             color: daysLeft <= 7
                                 ? AppColors.error
@@ -1657,7 +1658,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -1673,13 +1674,13 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
         showDialog(
           context: context,
           builder: (dialogCtx) => AlertDialog(
-            title: const Text('تسوية الذمم'),
-            content: const Text(
-                'لم يتم تعيين حساب الذمم (receivables) في الربط المحاسبي.'),
+            title:  Text(tr('تسوية الذمم')),
+            content:  Text(
+                tr('لم يتم تعيين حساب الذمم (receivables) في الربط المحاسبي.')),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogCtx),
-                child: const Text('حسناً'),
+                child:  Text(tr('حسناً')),
               ),
             ],
           ),
@@ -1689,36 +1690,36 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
       showDialog(
         context: context,
         builder: (dialogCtx) => AlertDialog(
-          title: const Text('تسوية الذمم مع الأستاذ العام'),
+          title:  Text(tr('تسوية الذمم مع الأستاذ العام')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                  'حساب الذمم: ${result.receivablesAccountCode} — ${result.receivablesAccountName}'),
+                  tr('حساب الذمم: {p0} — {p1}', {'p0': result.receivablesAccountCode, 'p1': result.receivablesAccountName})),
               const Divider(),
-              _reconcRow('رصيد بطاقات العملاء', result.totalCardBalance),
-              _reconcRow('رصيد الأستاذ العام', result.totalGlBalance),
+              _reconcRow(tr('رصيد بطاقات العملاء'), result.totalCardBalance),
+              _reconcRow(tr('رصيد الأستاذ العام'), result.totalGlBalance),
               const Divider(),
-              _reconcRow('الفرق', result.difference,
+              _reconcRow(tr('الفرق'), result.difference,
                   highlight: !result.isBalanced),
               if (result.isBalanced)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
+                 Padding(
+                  padding: const EdgeInsets.only(top: 8),
                   child: Row(children: [
-                    Icon(Icons.check_circle, color: Colors.green, size: 16),
-                    SizedBox(width: 4),
-                    Text('مُتسوٍّ', style: TextStyle(color: Colors.green)),
+                    const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                    const SizedBox(width: 4),
+                    Text(tr('مُتسوٍّ'), style: const TextStyle(color: Colors.green)),
                   ]),
                 )
               else
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
+                 Padding(
+                  padding: const EdgeInsets.only(top: 8),
                   child: Row(children: [
-                    Icon(Icons.warning, color: Colors.orange, size: 16),
-                    SizedBox(width: 4),
-                    Text('يوجد فرق — راجع القيود',
-                        style: TextStyle(color: Colors.orange)),
+                    const Icon(Icons.warning, color: Colors.orange, size: 16),
+                    const SizedBox(width: 4),
+                    Text(tr('يوجد فرق — راجع القيود'),
+                        style: const TextStyle(color: Colors.orange)),
                   ]),
                 ),
             ],
@@ -1726,7 +1727,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -1734,7 +1735,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('خطأ: $e')));
+          .showSnackBar(SnackBar(content: Text(tr('خطأ: {e}', {'e': e}))));
     }
   }
 
@@ -1751,13 +1752,13 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
         showDialog(
           context: context,
           builder: (dialogCtx) => AlertDialog(
-            title: const Text('تسوية المخزون'),
-            content: const Text(
-                'لم يتم تعيين حساب المخزون (inventory) في الربط المحاسبي.'),
+            title:  Text(tr('تسوية المخزون')),
+            content:  Text(
+                tr('لم يتم تعيين حساب المخزون (inventory) في الربط المحاسبي.')),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogCtx),
-                child: const Text('حسناً'),
+                child:  Text(tr('حسناً')),
               ),
             ],
           ),
@@ -1767,24 +1768,24 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
       showDialog(
         context: context,
         builder: (dialogCtx) => AlertDialog(
-          title: const Text('تسوية المخزون مع الأستاذ العام'),
+          title:  Text(tr('تسوية المخزون مع الأستاذ العام')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                  'حساب المخزون: ${result.inventoryAccountCode} — ${result.inventoryAccountName}'),
+                  tr('حساب المخزون: {p0} — {p1}', {'p0': result.inventoryAccountCode, 'p1': result.inventoryAccountName})),
               const Divider(),
-              _reconcRow('قيمة المخزون (بالتكلفة)', result.reportValue),
-              _reconcRow('رصيد الأستاذ العام', result.glBalance),
+              _reconcRow(tr('قيمة المخزون (بالتكلفة)'), result.reportValue),
+              _reconcRow(tr('رصيد الأستاذ العام'), result.glBalance),
               const Divider(),
-              _reconcRow('الفرق', result.delta, highlight: !result.isBalanced),
+              _reconcRow(tr('الفرق'), result.delta, highlight: !result.isBalanced),
               const SizedBox(height: 8),
-              const Text('مصادر الفروق المحتملة:',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              _reconcRow('فرق أساس التكلفة (متوسط المخزن مقابل التكلفة)',
+               Text(tr('مصادر الفروق المحتملة:'),
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              _reconcRow(tr('فرق أساس التكلفة (متوسط المخزن مقابل التكلفة)'),
                   result.costBasisDivergence),
-              _reconcRow('فرق الرصيد الدفتري مقابل حركات المخازن',
+              _reconcRow(tr('فرق الرصيد الدفتري مقابل حركات المخازن'),
                   result.stockVsLedgerDivergence),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
@@ -1793,22 +1794,22 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                     '(كمية ${result.zeroCostStockQty.toStringAsFixed(2)})'),
               ),
               if (result.isBalanced)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
+                 Padding(
+                  padding: const EdgeInsets.only(top: 8),
                   child: Row(children: [
-                    Icon(Icons.check_circle, color: Colors.green, size: 16),
-                    SizedBox(width: 4),
-                    Text('مُتسوٍّ', style: TextStyle(color: Colors.green)),
+                    const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                    const SizedBox(width: 4),
+                    Text(tr('مُتسوٍّ'), style: const TextStyle(color: Colors.green)),
                   ]),
                 )
               else
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
+                 Padding(
+                  padding: const EdgeInsets.only(top: 8),
                   child: Row(children: [
-                    Icon(Icons.warning, color: Colors.orange, size: 16),
-                    SizedBox(width: 4),
-                    Text('يوجد فرق — راجع مصادر الفروق أعلاه',
-                        style: TextStyle(color: Colors.orange)),
+                    const Icon(Icons.warning, color: Colors.orange, size: 16),
+                    const SizedBox(width: 4),
+                    Text(tr('يوجد فرق — راجع مصادر الفروق أعلاه'),
+                        style: const TextStyle(color: Colors.orange)),
                   ]),
                 ),
             ],
@@ -1816,7 +1817,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -1824,7 +1825,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('خطأ: $e')));
+          .showSnackBar(SnackBar(content: Text(tr('خطأ: {e}', {'e': e}))));
     }
   }
 
@@ -1924,12 +1925,12 @@ class _HoverCardState extends State<_HoverCard> {
 // Data classes (منسوخة حرفياً من الأصل).
 // ---------------------------------------------------------------------------
 /// مجموعاتُ فئات التقارير في الشريط الجانبيّ — ترتيبُها ترتيبُ العرض.
-const List<String> _kGroupOrder = [
-  'البيع والربح',
-  'المخزون والشراء',
-  'العملاء والموردون',
-  'المال والضرائب',
-  'المتابعة والتحليل',
+List<String> get _kGroupOrder => [
+  tr('البيع والربح'),
+  tr('المخزون والشراء'),
+  tr('العملاء والموردون'),
+  tr('المال والضرائب'),
+  tr('المتابعة والتحليل'),
 ];
 
 /// فئةُ التقارير ← مجموعتُها.
@@ -1937,20 +1938,20 @@ const List<String> _kGroupOrder = [
 /// ⚠️ **كلُّ فئةٍ لا بدّ لها من مدخلٍ هنا**: الشريطُ يرسم المجموعاتِ بترتيب
 /// [_kGroupOrder]، وفئةٌ بلا مجموعةٍ تسقط في آخر مجموعةٍ صامتةً. يقيس ذلك
 /// حارسٌ في `test/widget/picpos_reports_hub_test.dart`.
-const Map<String, String> _kCatGroup = {
-  'sales': 'البيع والربح',
-  'profit': 'البيع والربح',
-  'returns': 'البيع والربح',
-  'inventory': 'المخزون والشراء',
-  'purchases': 'المخزون والشراء',
-  'customers': 'العملاء والموردون',
-  'suppliers': 'العملاء والموردون',
-  'cashbox': 'المال والضرائب',
-  'taxes': 'المال والضرائب',
-  'users': 'المتابعة والتحليل',
-  'branches': 'المتابعة والتحليل',
-  'audit': 'المتابعة والتحليل',
-  'analytics': 'المتابعة والتحليل',
+Map<String, String> get _kCatGroup => {
+  'sales': tr('البيع والربح'),
+  'profit': tr('البيع والربح'),
+  'returns': tr('البيع والربح'),
+  'inventory': tr('المخزون والشراء'),
+  'purchases': tr('المخزون والشراء'),
+  'customers': tr('العملاء والموردون'),
+  'suppliers': tr('العملاء والموردون'),
+  'cashbox': tr('المال والضرائب'),
+  'taxes': tr('المال والضرائب'),
+  'users': tr('المتابعة والتحليل'),
+  'branches': tr('المتابعة والتحليل'),
+  'audit': tr('المتابعة والتحليل'),
+  'analytics': tr('المتابعة والتحليل'),
 };
 
 /// وصفُ الفئة في رأس لوحة التفصيل.
@@ -1962,24 +1963,24 @@ const Map<String, String> _kCatGroup = {
 ///
 /// و«القوائم المالية» فئةٌ مستقلّةٌ في التصميم وهي هنا **تقريرٌ داخل
 /// التحليلات** — فلم تُخترَع فئةٌ جديدةٌ لتطابق الرسم.
-const Map<String, String> _kCatDesc = {
+Map<String, String> get _kCatDesc => {
   'sales': 'كل ما يخص حركة البيع: الفواتير، الكاشير، الأصناف، المجموعات، '
       'وطرق الدفع',
-  'profit': 'تكلفة المبيعات وصافي الربح وهامش الربح على مستوى الصنف والتصنيف',
-  'returns': 'مرتجعات المبيعات والمشتريات والمبالغ المستردة',
-  'inventory': 'أرصدة وقيم المخزون، كرت الصنف، الجرد، والصلاحيات',
-  'purchases': 'المشتريات بفلاتر كاملة ومتابعة أوامر الشراء المفتوحة',
+  'profit': tr('تكلفة المبيعات وصافي الربح وهامش الربح على مستوى الصنف والتصنيف'),
+  'returns': tr('مرتجعات المبيعات والمشتريات والمبالغ المستردة'),
+  'inventory': tr('أرصدة وقيم المخزون، كرت الصنف، الجرد، والصلاحيات'),
+  'purchases': tr('المشتريات بفلاتر كاملة ومتابعة أوامر الشراء المفتوحة'),
   'customers': 'كشوف الحساب، تقادم الذمم، سلوك الشراء، وتسوية الذمم مع '
       'الأستاذ العام',
-  'suppliers': 'كشوف حساب الموردين وحجم التعامل',
+  'suppliers': tr('كشوف حساب الموردين وحجم التعامل'),
   'cashbox': 'حركة الخزينة، الورديات وعجز النقدية، التوصيل، والمصروفات '
       'التشغيلية',
   'taxes': 'الضريبة المحصلة والمدفوعة وصافي الالتزام وحالة الفاتورة '
       'الإلكترونية',
-  'users': 'نشاط المستخدمين وسجل الدخول ومصفوفة الصلاحيات لكل دور',
-  'branches': 'مقارنة أداء الفروع والتحويلات المخزنية بينها',
-  'audit': 'سجل العمليات والتعديلات والطباعة والإلغاءات — أثر كامل لكل حركة',
-  'analytics': 'اتجاهات وأنماط المبيعات وتقسيم العملاء ودوران المخزون',
+  'users': tr('نشاط المستخدمين وسجل الدخول ومصفوفة الصلاحيات لكل دور'),
+  'branches': tr('مقارنة أداء الفروع والتحويلات المخزنية بينها'),
+  'audit': tr('سجل العمليات والتعديلات والطباعة والإلغاءات — أثر كامل لكل حركة'),
+  'analytics': tr('اتجاهات وأنماط المبيعات وتقسيم العملاء ودوران المخزون'),
 };
 
 class PicposReportCategory {
@@ -2138,21 +2139,21 @@ List<PicposReportCategory> buildPicposReportCatalog({
     return [
       PicposReportCategory(
         id: 'sales',
-        title: 'تقارير المبيعات',
+        title: tr('تقارير المبيعات'),
         icon: PhosphorIconsBold.chartLineUp,
         color: AppColors.success,
         mainReports: [
           PicposReportEntry(
             id: 'sales_main',
-            title: 'تقرير المبيعات',
-            subtitle: 'تقرير المبيعات الرئيسي بكافة الفلاتر',
+            title: tr('تقرير المبيعات'),
+            subtitle: tr('تقرير المبيعات الرئيسي بكافة الفلاتر'),
             permission: PermissionCodes.reportsSales,
             action: () => actions.open(() => const SalesReportScreen()),
           ),
           PicposReportEntry(
             id: 'sales_summary',
-            title: 'ملخص المبيعات',
-            subtitle: 'نظرة سريعة بأرقام اليوم',
+            title: tr('ملخص المبيعات'),
+            subtitle: tr('نظرة سريعة بأرقام اليوم'),
             permission: PermissionCodes.reportsSales,
             action: () => actions.open(() => const SalesReportScreen()),
           ),
@@ -2161,98 +2162,98 @@ List<PicposReportCategory> buildPicposReportCatalog({
           // الاثنين معاً وإلّا ظهر التقريرُ في هويّةٍ وغاب عن الأخرى.
           PicposReportEntry(
             id: 'tables_report',
-            title: 'تقرير الطاولات',
-            subtitle: 'الإيراد ودوران الطاولة ونصيب الضيف لكل قسم وطاولة',
+            title: tr('تقرير الطاولات'),
+            subtitle: tr('الإيراد ودوران الطاولة ونصيب الضيف لكل قسم وطاولة'),
             permission: PermissionCodes.reportsSales,
             action: () => actions.open(() => const TablesReportScreen()),
           ),
         ],
         shortcuts: [
-          const PicposReportShortcut('s_today', 'مبيعات اليوم', 'sales_main'),
-          const PicposReportShortcut('s_range', 'من تاريخ إلى تاريخ', 'sales_main'),
+           PicposReportShortcut('s_today', tr('مبيعات اليوم'), 'sales_main'),
+           PicposReportShortcut('s_range', tr('من تاريخ إلى تاريخ'), 'sales_main'),
           // ⚠️ كانت بلا `action` فتسقط على `parent.action()` = تقريرُ
           // المبيعات العامّ **بلا أيّ ترشيحٍ بالكاشير** — وهو بعينه العطبُ
           // الموثَّقُ فوق لشريحة «حسب المجموعة»، ومصدرُ بلاغ المالك
           // 2026-08-14 «التقريرُ حسب المستخدم غيرُ دقيق»: الشريحةُ تَعِد
           // بترشيحٍ لا يقع.
-          PicposReportShortcut('s_cashier', 'حسب الكاشير', 'sales_main',
+          PicposReportShortcut('s_cashier', tr('حسب الكاشير'), 'sales_main',
               action: () => actions.open(() => const ShiftsReportScreen())),
-          const PicposReportShortcut('s_branch', 'حسب الفرع', 'sales_main'),
-          PicposReportShortcut('s_product', 'حسب الصنف', 'sales_main',
+           PicposReportShortcut('s_branch', tr('حسب الفرع'), 'sales_main'),
+          PicposReportShortcut('s_product', tr('حسب الصنف'), 'sales_main',
               action: () => actions.open(() => const TopProductsReportScreen())),
-          PicposReportShortcut('s_group', 'حسب المجموعة', 'sales_main',
+          PicposReportShortcut('s_group', tr('حسب المجموعة'), 'sales_main',
               action: () => actions.open(() => const SalesByClassificationReport())),
-          const PicposReportShortcut('s_payment', 'حسب طريقة الدفع', 'sales_main'),
-          const PicposReportShortcut(
-              's_credit', 'مبيعات آجل / نقدي / فيزا', 'sales_main'),
+           PicposReportShortcut('s_payment', tr('حسب طريقة الدفع'), 'sales_main'),
+           PicposReportShortcut(
+              's_credit', tr('مبيعات آجل / نقدي / فيزا'), 'sales_main'),
         ],
       ),
       PicposReportCategory(
         id: 'profit',
-        title: 'تقارير الأرباح',
+        title: tr('تقارير الأرباح'),
         icon: PhosphorIconsBold.money,
         color: AppColors.successDark,
         mainReports: [
           PicposReportEntry(
             id: 'category_profit',
-            title: 'أرباح التصنيفات',
-            subtitle: 'تحليل تكلفة المبيعات وصافي الربح لكل تصنيف',
+            title: tr('أرباح التصنيفات'),
+            subtitle: tr('تحليل تكلفة المبيعات وصافي الربح لكل تصنيف'),
             permission: 'reports_category_profit',
             action: () => actions.open(() => const CategoryProfitReportScreen()),
           ),
           PicposReportEntry(
             id: 'consumption',
-            title: 'تقرير استهلاك الخامات',
-            subtitle: 'استهلاك الخامات وربحية المنتجات (auto-deplete)',
+            title: tr('تقرير استهلاك الخامات'),
+            subtitle: tr('استهلاك الخامات وربحية المنتجات (auto-deplete)'),
             permission: 'reports_category_profit',
             action: () => actions.open(() => const ConsumptionReportScreen()),
           ),
           PicposReportEntry(
             id: 'top_profitable',
-            title: 'الأصناف الأكثر ربحية',
-            subtitle: 'ترتيب المنتجات حسب الربح',
+            title: tr('الأصناف الأكثر ربحية'),
+            subtitle: tr('ترتيب المنتجات حسب الربح'),
             action: () => actions.open(() => const TopProductsReportScreen()),
           ),
           PicposReportEntry(
             id: 'profit_margin',
-            title: 'هامش الربح',
-            subtitle: 'تحليل هامش الربح حسب الفئة',
+            title: tr('هامش الربح'),
+            subtitle: tr('تحليل هامش الربح حسب الفئة'),
             action: () => actions.open(
               () => ReportViewPicposScreen(definition: profitMarginReport()),
             ),
           ),
         ],
         shortcuts: [
-          const PicposReportShortcut('p_invoice', 'ربح كل فاتورة', 'category_profit'),
-          PicposReportShortcut('p_product', 'ربح كل صنف', 'category_profit',
+           PicposReportShortcut('p_invoice', tr('ربح كل فاتورة'), 'category_profit'),
+          PicposReportShortcut('p_product', tr('ربح كل صنف'), 'category_profit',
               action: () => actions.open(() => const TopProductsReportScreen())),
-          PicposReportShortcut('p_group', 'حسب المجموعة', 'category_profit',
+          PicposReportShortcut('p_group', tr('حسب المجموعة'), 'category_profit',
               action: () => actions.open(() => const CategoryProfitReportScreen())),
           // تقريرُ أرباح التصنيفات **لا مرشِّحَ مستخدمٍ فيه أصلاً** (مقيسٌ:
           // صفرُ ذكرٍ لـ`_selectedUserId`)، فالشريحةُ كانت تَعِد بما لا
           // يستطيعه المصدر. وجهتُها «الإغلاق حسب المستخدم» حيث الأرقامُ
           // مبوّبةٌ بالاسم فعلاً.
-          PicposReportShortcut('p_cashier', 'حسب الكاشير', 'category_profit',
+          PicposReportShortcut('p_cashier', tr('حسب الكاشير'), 'category_profit',
               action: () => actions.open(() => const ShiftsReportScreen())),
-          const PicposReportShortcut('p_branch', 'حسب الفرع', 'category_profit'),
+           PicposReportShortcut('p_branch', tr('حسب الفرع'), 'category_profit'),
         ],
       ),
       PicposReportCategory(
         id: 'returns',
-        title: 'تقارير المرتجعات',
+        title: tr('تقارير المرتجعات'),
         icon: PhosphorIconsBold.arrowUUpLeft,
         color: AppColors.error,
         mainReports: [
           PicposReportEntry(
             id: 'sales_returns',
-            title: 'مرتجعات المبيعات',
-            subtitle: 'تحليل مرتجعات المبيعات والمبالغ المستردة',
+            title: tr('مرتجعات المبيعات'),
+            subtitle: tr('تحليل مرتجعات المبيعات والمبالغ المستردة'),
             action: () => actions.open(() => const SalesReturnsReportScreen()),
           ),
           PicposReportEntry(
             id: 'purchase_returns',
-            title: 'مرتجعات المشتريات',
-            subtitle: 'تحليل مرتجعات المشتريات من الموردين',
+            title: tr('مرتجعات المشتريات'),
+            subtitle: tr('تحليل مرتجعات المشتريات من الموردين'),
             action: () => actions.open(() => const PurchaseReturnsReportScreen()),
           ),
         ],
@@ -2263,148 +2264,148 @@ List<PicposReportCategory> buildPicposReportCatalog({
         // «حسب الكاشير». وهذا بعينه بلاغُ المالك «التقريرُ حسب المستخدم غيرُ
         // دقيق». وإعادتُها تحتاج مرشِّحَ مستخدمٍ في التقرير نفسِه — بندٌ
         // مستقلٌّ مصرَّحٌ به عند التسليم، لا شريحةٌ تكذب.
-        shortcuts: const [
-          PicposReportShortcut('r_today', 'مرتجعات اليوم', 'sales_returns'),
-          PicposReportShortcut('r_product', 'حسب الصنف', 'sales_returns'),
-          PicposReportShortcut('r_customer', 'حسب العميل', 'sales_returns'),
+        shortcuts:  [
+          PicposReportShortcut('r_today', tr('مرتجعات اليوم'), 'sales_returns'),
+          PicposReportShortcut('r_product', tr('حسب الصنف'), 'sales_returns'),
+          PicposReportShortcut('r_customer', tr('حسب العميل'), 'sales_returns'),
         ],
       ),
       PicposReportCategory(
         id: 'inventory',
-        title: 'تقارير المخزون',
+        title: tr('تقارير المخزون'),
         icon: PhosphorIconsBold.warehouse,
         color: AppColors.info,
         mainReports: [
           PicposReportEntry(
             id: 'inv_current',
-            title: 'تقرير المخزون الحالي',
-            subtitle: 'أرصدة وقيم المخزون بالتكلفة والبيع',
+            title: tr('تقرير المخزون الحالي'),
+            subtitle: tr('أرصدة وقيم المخزون بالتكلفة والبيع'),
             action: () => actions.open(() => const InventoryReportScreen()),
           ),
           PicposReportEntry(
             id: 'inv_gl_reconciliation',
-            title: 'تسوية المخزون مع الأستاذ العام',
-            subtitle: 'مقارنة قيمة المخزون بحساب 1136 ومصادر الفروق',
+            title: tr('تسوية المخزون مع الأستاذ العام'),
+            subtitle: tr('مقارنة قيمة المخزون بحساب 1136 ومصادر الفروق'),
             action: actions.showInventoryGlReconciliation,
           ),
           PicposReportEntry(
             id: 'inv_movement',
-            title: 'حركة الأصناف',
-            subtitle: 'كرت صنف تفصيلي مع كل العمليات',
+            title: tr('حركة الأصناف'),
+            subtitle: tr('كرت صنف تفصيلي مع كل العمليات'),
             action: () => actions.open(() => const StockMovementsScreen()),
           ),
           PicposReportEntry(
             id: 'inv_stocktake',
-            title: 'تقرير الجرد',
-            subtitle: 'تقرير الجرد الدوري والفروق',
+            title: tr('تقرير الجرد'),
+            subtitle: tr('تقرير الجرد الدوري والفروق'),
             action: () => actions.open(() => const StockAuditScreen()),
           ),
           PicposReportEntry(
             id: 'inv_top_selling',
-            title: 'الأصناف الأكثر مبيعاً',
-            subtitle: 'تحليل الأصناف الأعلى طلباً والأكثر ربحية',
+            title: tr('الأصناف الأكثر مبيعاً'),
+            subtitle: tr('تحليل الأصناف الأعلى طلباً والأكثر ربحية'),
             action: () => actions.open(() => const TopProductsReportScreen()),
           ),
           PicposReportEntry(
             id: 'low_stock',
-            title: 'أصناف منخفضة المخزون',
-            subtitle: 'قائمة الأصناف التي وصلت لحد الطلب',
+            title: tr('أصناف منخفضة المخزون'),
+            subtitle: tr('قائمة الأصناف التي وصلت لحد الطلب'),
             action: actions.showLowStock,
           ),
           PicposReportEntry(
             id: 'expired_products',
-            title: 'منتجات منتهية الصلاحية',
-            subtitle: 'قائمة الأصناف التي انتهت صلاحيتها وتحتاج إعدام',
+            title: tr('منتجات منتهية الصلاحية'),
+            subtitle: tr('قائمة الأصناف التي انتهت صلاحيتها وتحتاج إعدام'),
             action: actions.showExpired,
           ),
           PicposReportEntry(
             id: 'expiring_products',
-            title: 'منتجات قاربت على الانتهاء',
-            subtitle: 'تنتهي صلاحيتها خلال الـ 30 يوماً القادمة',
+            title: tr('منتجات قاربت على الانتهاء'),
+            subtitle: tr('تنتهي صلاحيتها خلال الـ 30 يوماً القادمة'),
             action: actions.showExpiring,
           ),
         ],
-        shortcuts: const [
-          PicposReportShortcut('i_low', 'قليلة المخزون', 'low_stock'),
-          PicposReportShortcut('i_dead', 'الأصناف الراكدة', 'inv_movement'),
+        shortcuts:  [
+          PicposReportShortcut('i_low', tr('قليلة المخزون'), 'low_stock'),
+          PicposReportShortcut('i_dead', tr('الأصناف الراكدة'), 'inv_movement'),
         ],
       ),
       PicposReportCategory(
         id: 'purchases',
-        title: 'تقارير المشتريات',
+        title: tr('تقارير المشتريات'),
         icon: PhosphorIconsBold.shoppingCart,
         color: const Color(0xFFD97706),
         mainReports: [
           PicposReportEntry(
             id: 'purch_main',
-            title: 'تقرير المشتريات',
-            subtitle: 'تقرير المشتريات بفلاتر كاملة',
+            title: tr('تقرير المشتريات'),
+            subtitle: tr('تقرير المشتريات بفلاتر كاملة'),
             action: () => actions.open(() => const PurchasesReportScreen()),
           ),
           PicposReportEntry(
             id: 'purch_orders',
-            title: 'أوامر الشراء',
-            subtitle: 'متابعة أوامر الشراء المفتوحة',
+            title: tr('أوامر الشراء'),
+            subtitle: tr('متابعة أوامر الشراء المفتوحة'),
             action: () => actions.open(() => const PurchaseOrdersScreen()),
           ),
         ],
-        shortcuts: const [
-          PicposReportShortcut('pu_today', 'مشتريات اليوم', 'purch_main'),
-          PicposReportShortcut('pu_supplier', 'حسب المورد', 'purch_main'),
-          PicposReportShortcut('pu_product', 'حسب الصنف', 'purch_main'),
-          PicposReportShortcut('pu_branch', 'حسب الفرع', 'purch_main'),
+        shortcuts:  [
+          PicposReportShortcut('pu_today', tr('مشتريات اليوم'), 'purch_main'),
+          PicposReportShortcut('pu_supplier', tr('حسب المورد'), 'purch_main'),
+          PicposReportShortcut('pu_product', tr('حسب الصنف'), 'purch_main'),
+          PicposReportShortcut('pu_branch', tr('حسب الفرع'), 'purch_main'),
         ],
       ),
       PicposReportCategory(
         id: 'customers',
-        title: 'تقارير العملاء',
+        title: tr('تقارير العملاء'),
         icon: PhosphorIconsBold.users,
         color: const Color(0xFF8B5CF6),
         mainReports: [
           PicposReportEntry(
             id: 'cust_statement',
-            title: 'كشف حساب العميل',
-            subtitle: 'كشف حساب تفصيلي بالحركات',
+            title: tr('كشف حساب العميل'),
+            subtitle: tr('كشف حساب تفصيلي بالحركات'),
             action: () => actions.open(() => const PartyStatementPicposScreen()),
           ),
           PicposReportEntry(
             id: 'cust_aging',
-            title: 'تقادم ذمم العملاء',
-            subtitle: 'الذمم المتأخرة بشرائح الأيام',
+            title: tr('تقادم ذمم العملاء'),
+            subtitle: tr('الذمم المتأخرة بشرائح الأيام'),
             action: () => actions.open(() => const ArAgingReportPicposScreen()),
           ),
           PicposReportEntry(
             id: 'cust_behavior',
-            title: 'تحليل سلوك العملاء',
-            subtitle: 'تكرار الشراء ومتوسط الفاتورة',
+            title: tr('تحليل سلوك العملاء'),
+            subtitle: tr('تكرار الشراء ومتوسط الفاتورة'),
             action: () => actions.open(
               () => ReportViewPicposScreen(definition: partyBehaviorReport(suppliers: false)),
             ),
           ),
           PicposReportEntry(
             id: 'cust_reconciliation',
-            title: 'تسوية الذمم مع الأستاذ العام',
-            subtitle: 'مقارنة أرصدة العملاء مع حساب الذمم',
+            title: tr('تسوية الذمم مع الأستاذ العام'),
+            subtitle: tr('مقارنة أرصدة العملاء مع حساب الذمم'),
             action: actions.showArReconciliation,
           ),
         ],
-        shortcuts: const [
-          PicposReportShortcut('c_sales', 'مبيعات العميل', 'cust_statement'),
-          PicposReportShortcut('c_collect', 'تحصيلات العملاء', 'cust_statement'),
-          PicposReportShortcut('c_debt', 'العملاء المديونين', 'cust_aging'),
-          PicposReportShortcut('c_top', 'حسب حجم المبيعات', 'cust_behavior'),
+        shortcuts:  [
+          PicposReportShortcut('c_sales', tr('مبيعات العميل'), 'cust_statement'),
+          PicposReportShortcut('c_collect', tr('تحصيلات العملاء'), 'cust_statement'),
+          PicposReportShortcut('c_debt', tr('العملاء المديونين'), 'cust_aging'),
+          PicposReportShortcut('c_top', tr('حسب حجم المبيعات'), 'cust_behavior'),
         ],
       ),
       PicposReportCategory(
         id: 'suppliers',
-        title: 'تقارير الموردين',
+        title: tr('تقارير الموردين'),
         icon: PhosphorIconsBold.truck,
         color: const Color(0xFFEA580C),
         mainReports: [
           PicposReportEntry(
             id: 'sup_statement',
-            title: 'كشف حساب المورد',
-            subtitle: 'كشف تفصيلي بالحركات',
+            title: tr('كشف حساب المورد'),
+            subtitle: tr('كشف تفصيلي بالحركات'),
             // دفعة ١٢ — الفئة كلها كانت بتترسم لأي حد معاه reports_view
             // (حقل permission اختياري، ولما يبقى null التايل بيظهر بلا فحص).
             permission: PermissionCodes.reportsSuppliers,
@@ -2413,64 +2414,64 @@ List<PicposReportCategory> buildPicposReportCatalog({
           ),
           PicposReportEntry(
             id: 'sup_behavior',
-            title: 'تحليل سلوك الموردين',
-            subtitle: 'الموردون النشطون وحجم التعامل',
+            title: tr('تحليل سلوك الموردين'),
+            subtitle: tr('الموردون النشطون وحجم التعامل'),
             permission: PermissionCodes.reportsSuppliers,
             action: () => actions.open(
               () => ReportViewPicposScreen(definition: partyBehaviorReport(suppliers: true)),
             ),
           ),
         ],
-        shortcuts: const [
-          PicposReportShortcut('su_purch', 'مشتريات المورد', 'sup_statement'),
-          PicposReportShortcut('su_debt', 'مديونية الموردين', 'sup_statement'),
-          PicposReportShortcut('su_pay', 'دفعات الموردين', 'sup_statement'),
-          PicposReportShortcut('su_top', 'حسب حجم الشراء', 'sup_behavior'),
+        shortcuts:  [
+          PicposReportShortcut('su_purch', tr('مشتريات المورد'), 'sup_statement'),
+          PicposReportShortcut('su_debt', tr('مديونية الموردين'), 'sup_statement'),
+          PicposReportShortcut('su_pay', tr('دفعات الموردين'), 'sup_statement'),
+          PicposReportShortcut('su_top', tr('حسب حجم الشراء'), 'sup_behavior'),
         ],
       ),
       PicposReportCategory(
         id: 'cashbox',
-        title: 'الصناديق والكاش',
+        title: tr('الصناديق والكاش'),
         icon: PhosphorIconsBold.wallet,
         color: AppColors.primary,
         mainReports: [
           PicposReportEntry(
             id: 'cb_treasury',
-            title: 'حركة الخزينة',
-            subtitle: 'سجل المقبوضات والمدفوعات والمصروفات',
+            title: tr('حركة الخزينة'),
+            subtitle: tr('سجل المقبوضات والمدفوعات والمصروفات'),
             permission: PermissionCodes.reportsTreasury,
             action: () => actions.open(() => const TreasuryReportScreen()),
           ),
           PicposReportEntry(
             id: 'cb_shifts',
-            title: 'تقرير الورديات',
-            subtitle: 'فتح وتسكير الورديات وعجز النقدية',
+            title: tr('تقرير الورديات'),
+            subtitle: tr('فتح وتسكير الورديات وعجز النقدية'),
             permission: PermissionCodes.reportsSales,
             action: () => actions.open(() => const ShiftsReportScreen()),
           ),
           PicposReportEntry(
             id: 'cb_delivery',
-            title: 'تقرير عمليات التوصيل',
-            subtitle: 'إحصائيات المناديب ورسوم شركات التوصيل',
+            title: tr('تقرير عمليات التوصيل'),
+            subtitle: tr('إحصائيات المناديب ورسوم شركات التوصيل'),
             action: () => actions.open(() => const DeliveryReportScreen()),
           ),
           PicposReportEntry(
             id: 'cb_expenses',
-            title: 'تقرير المصروفات التشغيلية',
-            subtitle: 'إجمالي المصروفات حسب الفئة والفرع والفترة',
+            title: tr('تقرير المصروفات التشغيلية'),
+            subtitle: tr('إجمالي المصروفات حسب الفئة والفرع والفترة'),
             action: () => actions.open(() => const ExpensesReportScreen()),
           ),
         ],
-        shortcuts: const [
-          PicposReportShortcut('cb_open', 'فتح وإغلاق الصندوق', 'cb_shifts'),
-          PicposReportShortcut('cb_diff', 'العجز والزيادة', 'cb_shifts'),
-          PicposReportShortcut('cb_in_out', 'المقبوضات والمدفوعات', 'cb_treasury'),
-          PicposReportShortcut('cb_methods', 'نقدي / فيزا / آجل', 'cb_treasury'),
+        shortcuts:  [
+          PicposReportShortcut('cb_open', tr('فتح وإغلاق الصندوق'), 'cb_shifts'),
+          PicposReportShortcut('cb_diff', tr('العجز والزيادة'), 'cb_shifts'),
+          PicposReportShortcut('cb_in_out', tr('المقبوضات والمدفوعات'), 'cb_treasury'),
+          PicposReportShortcut('cb_methods', tr('نقدي / فيزا / آجل'), 'cb_treasury'),
         ],
       ),
       PicposReportCategory(
         id: 'users',
-        title: 'تقارير المستخدمين',
+        title: tr('تقارير المستخدمين'),
         icon: PhosphorIconsBold.userCircle,
         color: const Color(0xFF7C3AED),
         mainReports: [
@@ -2482,8 +2483,8 @@ List<PicposReportCategory> buildPicposReportCatalog({
           // لنفس الشاشة محروسٌ في `settings_picpos_screen.dart:654`.
           PicposReportEntry(
             id: 'u_activity',
-            title: 'نشاط المستخدمين',
-            subtitle: 'العمليات لكل مستخدم',
+            title: tr('نشاط المستخدمين'),
+            subtitle: tr('العمليات لكل مستخدم'),
             permission: PermissionCodes.auditView,
             action: () => actions.open(
               () => ReportViewPicposScreen(definition: userActivityReport()),
@@ -2491,21 +2492,21 @@ List<PicposReportCategory> buildPicposReportCatalog({
           ),
           PicposReportEntry(
             id: 'u_login',
-            title: 'سجل دخول المستخدمين',
-            subtitle: 'متى دخل كل مستخدم وخرج',
+            title: tr('سجل دخول المستخدمين'),
+            subtitle: tr('متى دخل كل مستخدم وخرج'),
             permission: PermissionCodes.auditView,
             action: () => actions.open(
-              () => const ActivityLogPicposScreen(
-                presetTitle: 'سجل دخول المستخدمين',
-                presetSubtitle: 'من دخل ومتى خرج — بما فيه ترقية الصلاحيات',
+              () =>  ActivityLogPicposScreen(
+                presetTitle: tr('سجل دخول المستخدمين'),
+                presetSubtitle: tr('من دخل ومتى خرج — بما فيه ترقية الصلاحيات'),
                 presetCategory: 'auth',
               ),
             ),
           ),
           PicposReportEntry(
             id: 'u_perms',
-            title: 'صلاحيات المستخدمين',
-            subtitle: 'مصفوفة صلاحيات لكل دور ومستخدم',
+            title: tr('صلاحيات المستخدمين'),
+            subtitle: tr('مصفوفة صلاحيات لكل دور ومستخدم'),
             // مهمة 14: هذا الفورك (reports_picpos_screen.dart) خاص بـ PicPos
             // فقط (Brand.isPicPos) — فالـ push يروح مباشرة لشاشة المستخدمين
             // بهوية PicPos، بلا حاجة لفحص العلامة هنا.
@@ -2516,106 +2517,106 @@ List<PicposReportCategory> buildPicposReportCatalog({
       ),
       PicposReportCategory(
         id: 'branches',
-        title: 'تقارير الفروع',
+        title: tr('تقارير الفروع'),
         icon: PhosphorIconsBold.buildings,
         color: const Color(0xFF0891B2),
         mainReports: [
           PicposReportEntry(
             id: 'br_performance',
-            title: 'أداء الفروع',
-            subtitle: 'مقارنة مبيعات وأرباح الفروع',
+            title: tr('أداء الفروع'),
+            subtitle: tr('مقارنة مبيعات وأرباح الفروع'),
             action: () => actions.open(() => const BranchPerformanceScreen()),
           ),
           PicposReportEntry(
             id: 'br_transfers',
-            title: 'التحويلات بين الفروع',
-            subtitle: 'سجل التحويلات وحركة المخزون',
+            title: tr('التحويلات بين الفروع'),
+            subtitle: tr('سجل التحويلات وحركة المخزون'),
             action: () => actions.open(() => const StockMovementsScreen()),
           ),
         ],
       ),
       PicposReportCategory(
         id: 'taxes',
-        title: 'تقارير الضرائب',
+        title: tr('تقارير الضرائب'),
         icon: PhosphorIconsBold.percent,
         color: const Color(0xFF0369A1),
         mainReports: [
           PicposReportEntry(
             id: 'tx_main',
-            title: 'تقرير ضريبة المبيعات',
-            subtitle: 'الضرائب المحصلة والمدفوعة وصافي الالتزام',
+            title: tr('تقرير ضريبة المبيعات'),
+            subtitle: tr('الضرائب المحصلة والمدفوعة وصافي الالتزام'),
             permission: PermissionCodes.reportsTaxes,
             action: () => actions.open(() => const TaxReportScreen()),
           ),
           PicposReportEntry(
             id: 'tx_vat_recon',
-            title: 'تسوية ضريبة القيمة المضافة',
-            subtitle: 'مقارنة ضريبة الفواتير مع الأستاذ العام',
+            title: tr('تسوية ضريبة القيمة المضافة'),
+            subtitle: tr('مقارنة ضريبة الفواتير مع الأستاذ العام'),
             permission: PermissionCodes.reportsTaxes,
             action: () => actions.open(() => const VatReconciliationScreen()),
           ),
           if (eInvoicePlatform != null)
             PicposReportEntry(
               id: 'tx_einvoice',
-              title: 'تقرير الفوترة الإلكترونية',
-              subtitle: 'متابعة حالات الإرسال والقبول من الضرائب',
+              title: tr('تقرير الفوترة الإلكترونية'),
+              subtitle: tr('متابعة حالات الإرسال والقبول من الضرائب'),
               action: () => actions.open(() => const EInvoiceDashboardScreen()),
             ),
         ],
-        shortcuts: const [
-          PicposReportShortcut('tx_sales', 'ضرائب المبيعات', 'tx_main'),
-          PicposReportShortcut('tx_purch', 'ضرائب المشتريات', 'tx_main'),
+        shortcuts:  [
+          PicposReportShortcut('tx_sales', tr('ضرائب المبيعات'), 'tx_main'),
+          PicposReportShortcut('tx_purch', tr('ضرائب المشتريات'), 'tx_main'),
         ],
       ),
       PicposReportCategory(
         id: 'audit',
-        title: 'الحركة والسجلات',
+        title: tr('الحركة والسجلات'),
         icon: PhosphorIconsBold.listChecks,
         color: AppColors.errorDark,
         mainReports: [
           PicposReportEntry(
             id: 'a_ops',
-            title: 'سجل العمليات',
-            subtitle: 'كل العمليات في النظام',
+            title: tr('سجل العمليات'),
+            subtitle: tr('كل العمليات في النظام'),
             action: () => actions.open(
-              () => const ActivityLogPicposScreen(
-                presetTitle: 'سجل العمليات',
-                presetSubtitle: 'كل ما جرى على النظام بلا ترشيح',
+              () =>  ActivityLogPicposScreen(
+                presetTitle: tr('سجل العمليات'),
+                presetSubtitle: tr('كل ما جرى على النظام بلا ترشيح'),
               ),
             ),
           ),
           PicposReportEntry(
             id: 'a_edits',
-            title: 'سجل التعديلات',
-            subtitle: 'الفواتير والمستندات المعدلة',
+            title: tr('سجل التعديلات'),
+            subtitle: tr('الفواتير والمستندات المعدلة'),
             action: () => actions.open(
-              () => const ActivityLogPicposScreen(
-                presetTitle: 'سجل التعديلات',
-                presetSubtitle: 'تعديلٌ وقع على مستندٍ صادر',
+              () =>  ActivityLogPicposScreen(
+                presetTitle: tr('سجل التعديلات'),
+                presetSubtitle: tr('تعديلٌ وقع على مستندٍ صادر'),
                 presetActions: ActivityLogPresets.documentEdits,
               ),
             ),
           ),
           PicposReportEntry(
             id: 'a_print',
-            title: 'سجل الطباعة',
-            subtitle: 'متى طُبع كل مستند ومن قبل من',
+            title: tr('سجل الطباعة'),
+            subtitle: tr('متى طُبع كل مستند ومن قبل من'),
             action: () => actions.open(
-              () => const ActivityLogPicposScreen(
-                presetTitle: 'سجل الطباعة',
-                presetSubtitle: 'كل طباعةٍ بمن نفّذها ووقتها',
+              () =>  ActivityLogPicposScreen(
+                presetTitle: tr('سجل الطباعة'),
+                presetSubtitle: tr('كل طباعةٍ بمن نفّذها ووقتها'),
                 presetActions: ActivityLogPresets.printed,
               ),
             ),
           ),
           PicposReportEntry(
             id: 'a_void',
-            title: 'سجل الإلغاءات',
-            subtitle: 'الفواتير الملغاة وأسبابها',
+            title: tr('سجل الإلغاءات'),
+            subtitle: tr('الفواتير الملغاة وأسبابها'),
             action: () => actions.open(
-              () => const ActivityLogPicposScreen(
-                presetTitle: 'سجل الإلغاءات',
-                presetSubtitle: 'إلغاءُ مستندٍ صادرٍ أو حذفُه',
+              () =>  ActivityLogPicposScreen(
+                presetTitle: tr('سجل الإلغاءات'),
+                presetSubtitle: tr('إلغاءُ مستندٍ صادرٍ أو حذفُه'),
                 presetActions: ActivityLogPresets.voided,
               ),
             ),
@@ -2624,45 +2625,45 @@ List<PicposReportCategory> buildPicposReportCatalog({
       ),
       PicposReportCategory(
         id: 'analytics',
-        title: 'التحليلات والإحصائيات',
+        title: tr('التحليلات والإحصائيات'),
         icon: PhosphorIconsBold.chartDonut,
         color: const Color(0xFFA21CAF),
         mainReports: [
           PicposReportEntry(
             id: 'an_sales',
-            title: 'تحليل المبيعات',
-            subtitle: 'اتجاهات وأنماط المبيعات',
+            title: tr('تحليل المبيعات'),
+            subtitle: tr('اتجاهات وأنماط المبيعات'),
             action: () => actions.open(
               () => ReportViewPicposScreen(definition: salesTrendReport()),
             ),
           ),
           PicposReportEntry(
             id: 'an_classifications',
-            title: 'المبيعات حسب التصنيف',
-            subtitle: 'تحليل المبيعات حسب المجموعات أو أنواع البيع',
+            title: tr('المبيعات حسب التصنيف'),
+            subtitle: tr('تحليل المبيعات حسب المجموعات أو أنواع البيع'),
             permission: PermissionCodes.reportsSales,
             action: () => actions.open(() => const SalesByClassificationReport()),
           ),
           PicposReportEntry(
             id: 'an_financial',
-            title: 'القوائم المالية الختامية',
-            subtitle: 'الميزانية، قائمة الدخل، وميزان المراجعة (Real-time)',
+            title: tr('القوائم المالية الختامية'),
+            subtitle: tr('الميزانية، قائمة الدخل، وميزان المراجعة (Real-time)'),
             action: () => actions.open(() => Brand.isPicPos
                 ? const FinancialStatementsPicPosScreen()
                 : const FinancialStatementsScreen()),
           ),
           PicposReportEntry(
             id: 'an_customers',
-            title: 'تحليل العملاء',
-            subtitle: 'تقسيم العملاء (RFM)',
+            title: tr('تحليل العملاء'),
+            subtitle: tr('تقسيم العملاء (RFM)'),
             action: () => actions.open(
               () => ReportViewPicposScreen(definition: customerSegmentsReport()),
             ),
           ),
           PicposReportEntry(
             id: 'an_inventory',
-            title: 'تحليل المخزون',
-            subtitle: 'دوران وكفاءة المخزون',
+            title: tr('تحليل المخزون'),
+            subtitle: tr('دوران وكفاءة المخزون'),
             action: () => actions.open(
               () => ReportViewPicposScreen(definition: inventoryTurnoverReport()),
             ),

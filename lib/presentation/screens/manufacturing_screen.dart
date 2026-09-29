@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -63,7 +64,7 @@ class _ManufacturingScreenState extends ConsumerState<ManufacturingScreen>
                   ),
                   const SizedBox(width: 14),
                   Text(
-                    'التصنيع',
+                    tr('التصنيع'),
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.5,
@@ -93,39 +94,39 @@ class _ManufacturingScreenState extends ConsumerState<ManufacturingScreen>
                       dividerHeight: 0,
                       tabAlignment: TabAlignment.start,
                       padding: const EdgeInsets.all(4),
-                      tabs: const [
+                      tabs:  [
                         Tab(
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
                               children: [
-                                Icon(PhosphorIconsBold.listDashes, size: 16),
-                                SizedBox(width: 8),
-                                Text('قوائم المواد (BOM)'),
+                                const Icon(PhosphorIconsBold.listDashes, size: 16),
+                                const SizedBox(width: 8),
+                                Text(tr('قوائم المواد (BOM)')),
                               ],
                             ),
                           ),
                         ),
                         Tab(
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
                               children: [
-                                Icon(PhosphorIconsBold.gearSix, size: 16),
-                                SizedBox(width: 8),
-                                Text('أوامر الإنتاج'),
+                                const Icon(PhosphorIconsBold.gearSix, size: 16),
+                                const SizedBox(width: 8),
+                                Text(tr('أوامر الإنتاج')),
                               ],
                             ),
                           ),
                         ),
                         Tab(
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
                               children: [
-                                Icon(PhosphorIconsBold.chartBar, size: 16),
-                                SizedBox(width: 8),
-                                Text('تحليلات'),
+                                const Icon(PhosphorIconsBold.chartBar, size: 16),
+                                const SizedBox(width: 8),
+                                Text(tr('تحليلات')),
                               ],
                             ),
                           ),

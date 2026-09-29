@@ -46,7 +46,7 @@ mixin _HardwareScaleMixin on ConsumerState<HardwareSettingsWidget> {
     bool success;
     if (scaleConnectionType == ScaleConnectionType.tcp) {
       if (scaleTcpHost.isEmpty) {
-        if (mounted) AppToast.show(context, 'يرجى إدخال عنوان IP الميزان', type: ToastType.error);
+        if (mounted) AppToast.show(context, tr('يرجى إدخال عنوان IP الميزان'), type: ToastType.error);
         return;
       }
       success = await ScaleService.instance.connectTcp(
@@ -55,7 +55,7 @@ mixin _HardwareScaleMixin on ConsumerState<HardwareSettingsWidget> {
       );
     } else {
       if (selectedScalePort == null) {
-        if (mounted) AppToast.show(context, 'يرجى اختيار منفذ COM', type: ToastType.error);
+        if (mounted) AppToast.show(context, tr('يرجى اختيار منفذ COM'), type: ToastType.error);
         return;
       }
       success = await ScaleService.instance.connect(
@@ -70,11 +70,11 @@ mixin _HardwareScaleMixin on ConsumerState<HardwareSettingsWidget> {
     if (mounted) {
       if (success) {
         final mode = ScaleService.instance.detectedMode;
-        final modeStr = mode == ScaleMode.continuous ? 'بث مستمر' : 'أوامر';
+        final modeStr = mode == ScaleMode.continuous ? tr('بث مستمر') : tr('أوامر');
         final connStr = scaleConnectionType == ScaleConnectionType.tcp ? 'TCP' : 'COM';
-        AppToast.show(context, 'تم الاتصال بالميزان ($connStr - وضع: $modeStr)', type: ToastType.success);
+        AppToast.show(context, tr('تم الاتصال بالميزان ({connStr} - وضع: {modeStr})', {'connStr': connStr, 'modeStr': modeStr}), type: ToastType.success);
       } else {
-        AppToast.show(context, 'فشل الاتصال بالميزان — تأكد من الإعدادات', type: ToastType.error);
+        AppToast.show(context, tr('فشل الاتصال بالميزان — تأكد من الإعدادات'), type: ToastType.error);
       }
     }
   }
@@ -89,21 +89,21 @@ mixin _HardwareScaleMixin on ConsumerState<HardwareSettingsWidget> {
     if (success) {
       final weight = await ScaleService.instance.readWeight();
       if (mounted) {
-        AppToast.show(context, weight != null ? 'الميزان يعمل \u2713 الوزن: ${weight.toStringAsFixed(3)} كجم' : 'الميزان يعمل \u2713', type: ToastType.success);
+        AppToast.show(context, weight != null ? tr('الميزان يعمل ✓ الوزن: {p0} كجم', {'p0': weight.toStringAsFixed(3)}) : tr('الميزان يعمل ✓'), type: ToastType.success);
       }
     } else {
-      if (mounted) AppToast.show(context, 'فشل اختبار الميزان - تأكد من التوصيل', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('فشل اختبار الميزان - تأكد من التوصيل'), type: ToastType.error);
     }
   }
 
   void tareScale() {
     ScaleService.instance.tare();
-    if (mounted) AppToast.show(context, 'تم تصفير الميزان \u2713', type: ToastType.success);
+    if (mounted) AppToast.show(context, tr('تم تصفير الميزان ✓'), type: ToastType.success);
   }
 
   Future<void> calibrateScale() async {
     if (!ScaleService.instance.isBinaryProtocol) {
-      if (mounted) AppToast.show(context, 'المعايرة متاحة فقط لموازين البروتوكول الثنائي', type: ToastType.info);
+      if (mounted) AppToast.show(context, tr('المعايرة متاحة فقط لموازين البروتوكول الثنائي'), type: ToastType.info);
       return;
     }
 
@@ -113,22 +113,22 @@ mixin _HardwareScaleMixin on ConsumerState<HardwareSettingsWidget> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('معايرة الميزان'),
+          title:  Text(tr('معايرة الميزان')),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('1. تأكد أن الميزان فارغ واضغط تصفير أولاً'),
-            const Text('2. ضع وزن معروف على الميزان'),
-            const Text('3. أدخل الوزن الفعلي بالكيلو'),
+             Text(tr('1. تأكد أن الميزان فارغ واضغط تصفير أولاً')),
+             Text(tr('2. ضع وزن معروف على الميزان')),
+             Text(tr('3. أدخل الوزن الفعلي بالكيلو')),
             const SizedBox(height: 16),
             TextField(
               controller: controller,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(hintText: 'مثال: 0.5 (لـ 500 جرام)', labelText: 'الوزن الفعلي (كجم)', suffixText: 'كجم'),
+              decoration:  InputDecoration(hintText: tr('مثال: 0.5 (لـ 500 جرام)'), labelText: tr('الوزن الفعلي (كجم)'), suffixText: tr('كجم')),
               autofocus: true,
             ),
           ]),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-            FilledButton(onPressed: () { final val = double.tryParse(controller.text); Navigator.pop(ctx, val); }, child: const Text('معايرة')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
+            FilledButton(onPressed: () { final val = double.tryParse(controller.text); Navigator.pop(ctx, val); }, child:  Text(tr('معايرة'))),
           ],
         ),
       ),
@@ -137,8 +137,8 @@ mixin _HardwareScaleMixin on ConsumerState<HardwareSettingsWidget> {
     if (result != null && result > 0) {
       final ok = await ScaleService.instance.calibrate(result);
       if (mounted) {
-        if (ok) { AppToast.show(context, 'تمت المعايرة بنجاح \u2713', type: ToastType.success); }
-        else { AppToast.show(context, 'فشلت المعايرة — تأكد من تصفير الميزان ووضع الوزن عليه', type: ToastType.error); }
+        if (ok) { AppToast.show(context, tr('تمت المعايرة بنجاح ✓'), type: ToastType.success); }
+        else { AppToast.show(context, tr('فشلت المعايرة — تأكد من تصفير الميزان ووضع الوزن عليه'), type: ToastType.error); }
       }
     }
   }
@@ -164,43 +164,43 @@ mixin _HardwareScaleMixin on ConsumerState<HardwareSettingsWidget> {
           Row(children: [
             Icon(PhosphorIconsBold.scales, color: scaleConnected ? AppColors.success : AppColors.primary, size: 20),
             const SizedBox(width: 8),
-            const Text('الميزان الرقمي', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+             Text(tr('الميزان الرقمي'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             const Spacer(),
-            if (scaleConnected) buildStatusBadge('متصل', AppColors.success, PhosphorIconsBold.checkCircle),
+            if (scaleConnected) buildStatusBadge(tr('متصل'), AppColors.success, PhosphorIconsBold.checkCircle),
           ]),
           const Divider(height: 20),
 
           // Row 1: Scale model + Read type + Connection type
           Row(children: [
-            Expanded(child: DropdownButtonFormField<String>(initialValue: scaleModel, decoration: const InputDecoration(labelText: 'نوع الميزان', isDense: true),
-              items: const [
-                DropdownMenuItem(value: 'auto', child: Text('اكتشاف تلقائي')),
-                DropdownMenuItem(value: 'dibalG310', child: Text('Dibal G310')),
-                DropdownMenuItem(value: 'aclasOS2X', child: Text('Aclas OS2X')),
-                DropdownMenuItem(value: 'aclasPS1X', child: Text('Aclas PS1X')),
-                DropdownMenuItem(value: 'posScale', child: Text('POS Scale')),
-                DropdownMenuItem(value: 'marta', child: Text('Marta')),
-                DropdownMenuItem(value: 'tem', child: Text('TEM')),
+            Expanded(child: DropdownButtonFormField<String>(initialValue: scaleModel, decoration:  InputDecoration(labelText: tr('نوع الميزان'), isDense: true),
+              items:  [
+                DropdownMenuItem(value: 'auto', child: Text(tr('اكتشاف تلقائي'))),
+                const DropdownMenuItem(value: 'dibalG310', child: Text('Dibal G310')),
+                const DropdownMenuItem(value: 'aclasOS2X', child: Text('Aclas OS2X')),
+                const DropdownMenuItem(value: 'aclasPS1X', child: Text('Aclas PS1X')),
+                const DropdownMenuItem(value: 'posScale', child: Text('POS Scale')),
+                const DropdownMenuItem(value: 'marta', child: Text('Marta')),
+                const DropdownMenuItem(value: 'tem', child: Text('TEM')),
               ],
               onChanged: (v) => setState(() => scaleModel = v ?? 'auto'),
             )),
             const SizedBox(width: 12),
-            Expanded(child: DropdownButtonFormField<String>(initialValue: scaleReadType, decoration: const InputDecoration(labelText: 'نوع القراءة', isDense: true),
-              items: const [
-                DropdownMenuItem(value: 'auto', child: Text('تلقائي')),
-                DropdownMenuItem(value: 'continuous', child: Text('مستمر')),
-                DropdownMenuItem(value: 'stable', child: Text('عند الاستقرار')),
-                DropdownMenuItem(value: 'onEnter', child: Text('عند الضغط Enter')),
+            Expanded(child: DropdownButtonFormField<String>(initialValue: scaleReadType, decoration:  InputDecoration(labelText: tr('نوع القراءة'), isDense: true),
+              items:  [
+                DropdownMenuItem(value: 'auto', child: Text(tr('تلقائي'))),
+                DropdownMenuItem(value: 'continuous', child: Text(tr('مستمر'))),
+                DropdownMenuItem(value: 'stable', child: Text(tr('عند الاستقرار'))),
+                DropdownMenuItem(value: 'onEnter', child: Text(tr('عند الضغط Enter'))),
               ],
               onChanged: (v) => setState(() => scaleReadType = v ?? 'auto'),
             )),
             const SizedBox(width: 12),
             Expanded(child: DropdownButtonFormField<ScaleConnectionType>(
               value: scaleConnectionType,
-              decoration: const InputDecoration(labelText: 'طريقة الاتصال', isDense: true),
-              items: const [
-                DropdownMenuItem(value: ScaleConnectionType.serial, child: Text('COM Port (USB/RS232)')),
-                DropdownMenuItem(value: ScaleConnectionType.tcp, child: Text('شبكة (TCP/IP)')),
+              decoration:  InputDecoration(labelText: tr('طريقة الاتصال'), isDense: true),
+              items:  [
+                const DropdownMenuItem(value: ScaleConnectionType.serial, child: Text('COM Port (USB/RS232)')),
+                DropdownMenuItem(value: ScaleConnectionType.tcp, child: Text(tr('شبكة (TCP/IP)'))),
               ],
               onChanged: (v) => setState(() => scaleConnectionType = v ?? ScaleConnectionType.serial),
             )),
@@ -213,19 +213,19 @@ mixin _HardwareScaleMixin on ConsumerState<HardwareSettingsWidget> {
             Row(children: [
               Expanded(flex: 3, child: TextFormField(
                 initialValue: scaleTcpHost,
-                decoration: const InputDecoration(
-                  labelText: 'عنوان IP الميزان',
-                  hintText: 'مثال: 192.168.1.100',
+                decoration:  InputDecoration(
+                  labelText: tr('عنوان IP الميزان'),
+                  hintText: tr('مثال: 192.168.1.100'),
                   isDense: true,
-                  prefixIcon: Icon(PhosphorIconsBold.globe, size: 18),
+                  prefixIcon: const Icon(PhosphorIconsBold.globe, size: 18),
                 ),
                 onChanged: (v) => scaleTcpHost = v.trim(),
               )),
               const SizedBox(width: 12),
               Expanded(flex: 1, child: TextFormField(
                 initialValue: '$scaleTcpPort',
-                decoration: const InputDecoration(
-                  labelText: 'المنفذ (Port)',
+                decoration:  InputDecoration(
+                  labelText: tr('المنفذ (Port)'),
                   hintText: '4001',
                   isDense: true,
                 ),
@@ -240,12 +240,12 @@ mixin _HardwareScaleMixin on ConsumerState<HardwareSettingsWidget> {
                 color: AppColors.info.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Row(children: [
-                Icon(PhosphorIconsBold.info, size: 14, color: AppColors.info),
-                SizedBox(width: 6),
+              child:  Row(children: [
+                const Icon(PhosphorIconsBold.info, size: 14, color: AppColors.info),
+                const SizedBox(width: 6),
                 Expanded(child: Text(
-                  'أدخل عنوان IP الميزان فقط. المنافذ الشائعة: 4001, 8000, 9100. لا حاجة لـ COM Port.',
-                  style: TextStyle(fontSize: 11, color: AppColors.info),
+                  tr('أدخل عنوان IP الميزان فقط. المنافذ الشائعة: 4001, 8000, 9100. لا حاجة لـ COM Port.'),
+                  style: const TextStyle(fontSize: 11, color: AppColors.info),
                 )),
               ]),
             ),
@@ -254,7 +254,7 @@ mixin _HardwareScaleMixin on ConsumerState<HardwareSettingsWidget> {
             Row(children: [
               Expanded(flex: 2, child: DropdownButtonFormField<String>(initialValue: selectedScalePort, decoration: const InputDecoration(labelText: 'COM Port', isDense: true),
                 items: availablePorts.map((port) => DropdownMenuItem(value: port, child: Text(port))).toList(),
-                onChanged: (v) => setState(() => selectedScalePort = v), hint: const Text('اختر المنفذ'),
+                onChanged: (v) => setState(() => selectedScalePort = v), hint:  Text(tr('اختر المنفذ')),
               )),
               const SizedBox(width: 12),
               Expanded(child: DropdownButtonFormField<int>(initialValue: selectedBaudRate, decoration: const InputDecoration(labelText: 'Baud Rate', isDense: true),
@@ -315,15 +315,15 @@ mixin _HardwareScaleMixin on ConsumerState<HardwareSettingsWidget> {
 
           // Row: Wait Time + Min Weight + Weight Alert (shared for both modes)
           Row(children: [
-            Expanded(child: TextFormField(initialValue: '$scaleWaitTime', decoration: const InputDecoration(labelText: 'مدة الانتظار (ث)', isDense: true),
+            Expanded(child: TextFormField(initialValue: '$scaleWaitTime', decoration:  InputDecoration(labelText: tr('مدة الانتظار (ث)'), isDense: true),
               keyboardType: TextInputType.number, onChanged: (v) => scaleWaitTime = int.tryParse(v) ?? 30,
             )),
             const SizedBox(width: 12),
-            Expanded(child: TextFormField(initialValue: scaleMinWeight > 0 ? scaleMinWeight.toString() : '', decoration: const InputDecoration(labelText: 'أقل وزن (كغ)', isDense: true),
+            Expanded(child: TextFormField(initialValue: scaleMinWeight > 0 ? scaleMinWeight.toString() : '', decoration:  InputDecoration(labelText: tr('أقل وزن (كغ)'), isDense: true),
               keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (v) => scaleMinWeight = double.tryParse(v) ?? 0.0,
             )),
             const SizedBox(width: 12),
-            Expanded(child: TextFormField(initialValue: scaleWeightAlert > 0 ? scaleWeightAlert.toString() : '', decoration: const InputDecoration(labelText: 'تنبيه الوزن (كغ)', isDense: true),
+            Expanded(child: TextFormField(initialValue: scaleWeightAlert > 0 ? scaleWeightAlert.toString() : '', decoration:  InputDecoration(labelText: tr('تنبيه الوزن (كغ)'), isDense: true),
               keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (v) => scaleWeightAlert = double.tryParse(v) ?? 0.0,
             )),
           ]),
@@ -333,22 +333,22 @@ mixin _HardwareScaleMixin on ConsumerState<HardwareSettingsWidget> {
           Row(children: [
             if (scaleConnected)
               Expanded(child: OutlinedButton.icon(
-                onPressed: disconnectScale, icon: const Icon(PhosphorIconsBold.plugsConnected, size: 16), label: const Text('قطع الاتصال'),
+                onPressed: disconnectScale, icon: const Icon(PhosphorIconsBold.plugsConnected, size: 16), label:  Text(tr('قطع الاتصال')),
                 style: OutlinedButton.styleFrom(foregroundColor: AppColors.error),
               ))
             else
               Expanded(child: ElevatedButton.icon(
                 onPressed: _canConnect() ? connectScale : null,
-                icon: const Icon(PhosphorIconsBold.plugs, size: 16), label: const Text('اتصال'),
+                icon: const Icon(PhosphorIconsBold.plugs, size: 16), label:  Text(tr('اتصال')),
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
               )),
             const SizedBox(width: 8),
-            ElevatedButton.icon(onPressed: !scaleConnected ? null : testScale, icon: const Icon(PhosphorIconsBold.scales, size: 16), label: const Text('اختبار')),
+            ElevatedButton.icon(onPressed: !scaleConnected ? null : testScale, icon: const Icon(PhosphorIconsBold.scales, size: 16), label:  Text(tr('اختبار'))),
             const SizedBox(width: 8),
-            ElevatedButton.icon(onPressed: !scaleConnected ? null : tareScale, icon: const Icon(PhosphorIconsBold.arrowCounterClockwise, size: 16), label: const Text('تصفير'),
+            ElevatedButton.icon(onPressed: !scaleConnected ? null : tareScale, icon: const Icon(PhosphorIconsBold.arrowCounterClockwise, size: 16), label:  Text(tr('تصفير')),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning)),
             const SizedBox(width: 8),
-            ElevatedButton.icon(onPressed: !scaleConnected ? null : calibrateScale, icon: const Icon(PhosphorIconsBold.wrench, size: 16), label: const Text('معايرة'),
+            ElevatedButton.icon(onPressed: !scaleConnected ? null : calibrateScale, icon: const Icon(PhosphorIconsBold.wrench, size: 16), label:  Text(tr('معايرة')),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple)),
           ]),
         ],

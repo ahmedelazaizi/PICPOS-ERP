@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -100,7 +101,7 @@ class _FiscalYearGateContentState
     if (_verifying) return;
     final input = _passwordCtrl.text.trim();
     if (input.isEmpty) {
-      setState(() => _errorText = 'يرجى إدخال كلمة المرور');
+      setState(() => _errorText = tr('يرجى إدخال كلمة المرور'));
       return;
     }
 
@@ -112,16 +113,16 @@ class _FiscalYearGateContentState
     try {
       final devAuth = ref.read(developerAuthServiceProvider);
       if (!devAuth.isConfigured) {
-        setState(() => _errorText = 'لم يتم إعداد كلمة مرور المطور. يرجى التواصل مع الدعم الفني.');
+        setState(() => _errorText = tr('لم يتم إعداد كلمة مرور المطور. يرجى التواصل مع الدعم الفني.'));
         return;
       }
       if (await devAuth.verify(input)) {
         if (mounted) Navigator.pop(context, true);
         return;
       }
-      setState(() => _errorText = 'كلمة المرور غير صحيحة');
+      setState(() => _errorText = tr('كلمة المرور غير صحيحة'));
     } catch (e) {
-      setState(() => _errorText = 'خطأ في التحقق: $e');
+      setState(() => _errorText = tr('خطأ في التحقق: {e}', {'e': e}));
     } finally {
       if (mounted) setState(() => _verifying = false);
     }
@@ -142,7 +143,7 @@ class _FiscalYearGateContentState
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'تنبيه السنة المالية',
+                tr('تنبيه السنة المالية'),
                 style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
               ),
             ),
@@ -202,7 +203,7 @@ class _FiscalYearGateContentState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'بيانات الشركة المصممة:',
+                      tr('بيانات الشركة المصممة:'),
                       style: GoogleFonts.cairo(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -228,7 +229,7 @@ class _FiscalYearGateContentState
               const SizedBox(height: 8),
 
               Text(
-                'أدخل كلمة مرور المطور للانتقال لإدارة السنوات المالية:',
+                tr('أدخل كلمة مرور المطور للانتقال لإدارة السنوات المالية:'),
                 style: GoogleFonts.cairo(
                     fontSize: 12, color: AppColors.textSecondary),
               ),
@@ -238,7 +239,7 @@ class _FiscalYearGateContentState
                 obscureText: _obscure,
                 autofocus: true,
                 decoration: InputDecoration(
-                  labelText: 'كلمة مرور المطور',
+                  labelText: tr('كلمة مرور المطور'),
                   prefixIcon: const Icon(PhosphorIconsBold.key, size: 18),
                   errorText: _errorText,
                   suffixIcon: IconButton(
@@ -262,7 +263,7 @@ class _FiscalYearGateContentState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('تخطي'),
+            child:  Text(tr('تخطي')),
           ),
           ElevatedButton.icon(
             onPressed: _verifying ? null : _verify,
@@ -273,7 +274,7 @@ class _FiscalYearGateContentState
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(PhosphorIconsBold.lockOpen, size: 16),
-            label: Text('فتح', style: GoogleFonts.cairo()),
+            label: Text(tr('فتح'), style: GoogleFonts.cairo()),
           ),
         ],
       ),

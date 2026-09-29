@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -76,13 +77,13 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
   String _resolutionLabel(String resolution) {
     switch (resolution) {
       case 'server_wins':
-        return 'السيرفر';
+        return tr('السيرفر');
       case 'client_wins':
-        return 'العميل';
+        return tr('العميل');
       case 'merged':
-        return 'دمج';
+        return tr('دمج');
       case 'skipped':
-        return 'معلّق';
+        return tr('معلّق');
       default:
         return resolution;
     }
@@ -91,17 +92,17 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
   // BUG-U35: map raw DB table names to Arabic module labels for display.
   String _tableLabel(String table) {
     final t = table.toLowerCase();
-    if (t.contains('product')) return 'المنتجات';
-    if (t.contains('customer') || t.contains('part')) return 'العملاء/الموردون';
-    if (t.contains('sale') || t.contains('invoice')) return 'الفواتير';
-    if (t.contains('journal')) return 'القيود المحاسبية';
-    if (t.contains('purchase')) return 'المشتريات';
-    if (t.contains('branch')) return 'الفروع';
-    if (t.contains('warehouse')) return 'المخازن';
-    if (t.contains('account')) return 'الحسابات';
-    if (t.contains('safe') || t.contains('treasury')) return 'الخزائن';
-    if (t.contains('stock') || t.contains('inventory')) return 'المخزون';
-    if (t.contains('setting')) return 'الإعدادات';
+    if (t.contains('product')) return tr('المنتجات');
+    if (t.contains('customer') || t.contains('part')) return tr('العملاء/الموردون');
+    if (t.contains('sale') || t.contains('invoice')) return tr('الفواتير');
+    if (t.contains('journal')) return tr('القيود المحاسبية');
+    if (t.contains('purchase')) return tr('المشتريات');
+    if (t.contains('branch')) return tr('الفروع');
+    if (t.contains('warehouse')) return tr('المخازن');
+    if (t.contains('account')) return tr('الحسابات');
+    if (t.contains('safe') || t.contains('treasury')) return tr('الخزائن');
+    if (t.contains('stock') || t.contains('inventory')) return tr('المخزون');
+    if (t.contains('setting')) return tr('الإعدادات');
     return table; // unknown -> raw name
   }
 
@@ -124,10 +125,10 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
     final choice = _resolutionLabel(resolution);
     final ok = await AppConfirmDialog.show(
       context,
-      title: 'تأكيد حل التعارض',
+      title: tr('تأكيد حل التعارض'),
       message:
-          'سيتم اعتماد بيانات "$choice" والكتابة فوق النسخة الأخرى نهائياً. هل تريد المتابعة؟',
-      confirmLabel: 'اعتماد',
+          tr('سيتم اعتماد بيانات "{choice}" والكتابة فوق النسخة الأخرى نهائياً. هل تريد المتابعة؟', {'choice': choice}),
+      confirmLabel: tr('اعتماد'),
       isDangerous: true,
     );
     if (!ok || !mounted) return;
@@ -160,7 +161,7 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
               Icon(_tableIcon(conflict.conflictTable), color: AppColors.primary),
               const SizedBox(width: 8),
               Expanded(
-                child: Text('تفاصيل التعارض — ${conflict.conflictTable}',
+                child: Text(tr('تفاصيل التعارض — {p0}', {'p0': conflict.conflictTable}),
                     style: const TextStyle(fontSize: 16)),
               ),
             ],
@@ -172,17 +173,17 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildInfoRow('السجل', conflict.recordId),
-                  _buildInfoRow('الحالة', _resolutionLabel(conflict.resolution)),
+                  _buildInfoRow(tr('السجل'), conflict.recordId),
+                  _buildInfoRow(tr('الحالة'), _resolutionLabel(conflict.resolution)),
                   if (conflict.reason != null)
-                    _buildInfoRow('السبب', conflict.reason!),
+                    _buildInfoRow(tr('السبب'), conflict.reason!),
                   if (conflict.clientId != null)
-                    _buildInfoRow('العميل', conflict.clientId!),
-                  _buildInfoRow('التاريخ', conflict.detectedAt.toString()),
+                    _buildInfoRow(tr('العميل'), conflict.clientId!),
+                  _buildInfoRow(tr('التاريخ'), conflict.detectedAt.toString()),
                   const SizedBox(height: 16),
                   const Divider(),
-                  const Text('📤 بيانات العميل',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                   Text(tr('📤 بيانات العميل'),
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   Container(
                     width: double.infinity,
@@ -203,8 +204,8 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
                   ),
                   if (serverData != null || conflict.serverPayload != null) ...[
                     const SizedBox(height: 12),
-                    const Text('📥 بيانات السيرفر',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                     Text(tr('📥 بيانات السيرفر'),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
                     Container(
                       width: double.infinity,
@@ -236,7 +237,7 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
                   _resolveConflict(conflict, 'server_wins');
                 },
                 icon: const Icon(PhosphorIconsBold.cloudArrowDown, size: 16),
-                label: const Text('قبول السيرفر'),
+                label:  Text(tr('قبول السيرفر')),
               ),
               TextButton.icon(
                 onPressed: () {
@@ -244,12 +245,12 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
                   _resolveConflict(conflict, 'client_wins');
                 },
                 icon: const Icon(PhosphorIconsBold.desktopTower, size: 16),
-                label: const Text('قبول العميل'),
+                label:  Text(tr('قبول العميل')),
               ),
             ],
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -288,7 +289,7 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
           foregroundColor: Colors.white,
           title: Row(
             children: [
-              const Text('تعارضات المزامنة'),
+               Text(tr('تعارضات المزامنة')),
               if (unresolvedCount > 0) ...[
                 const SizedBox(width: 8),
                 Container(
@@ -309,13 +310,13 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
             if (_tableNames.isNotEmpty)
               PopupMenuButton<String?>(
                 icon: const Icon(PhosphorIconsBold.funnel),
-                tooltip: 'فلتر حسب الجدول',
+                tooltip: tr('فلتر حسب الجدول'),
                 onSelected: (table) {
                   setState(() => _selectedTable = table);
                   _loadConflicts();
                 },
                 itemBuilder: (_) => [
-                  const PopupMenuItem(value: null, child: Text('الكل')),
+                   PopupMenuItem(value: null, child: Text(tr('الكل'))),
                   ..._tableNames.map((t) => PopupMenuItem(
                         value: t,
                         child: Row(
@@ -331,7 +332,7 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
             IconButton(
               icon: const Icon(PhosphorIconsBold.arrowClockwise),
               onPressed: _loadConflicts,
-              tooltip: 'تحديث',
+              tooltip: tr('تحديث'),
             ),
           ],
         ),
@@ -345,10 +346,10 @@ class _SyncConflictsScreenState extends ConsumerState<SyncConflictsScreen> {
                         Icon(PhosphorIconsBold.checkCircle,
                             size: 64, color: Colors.green[300]),
                         const SizedBox(height: 16),
-                        const Text('لا توجد تعارضات',
-                            style: TextStyle(fontSize: 18)),
+                         Text(tr('لا توجد تعارضات'),
+                            style: const TextStyle(fontSize: 18)),
                         const SizedBox(height: 4),
-                        Text('جميع البيانات متزامنة بنجاح',
+                        Text(tr('جميع البيانات متزامنة بنجاح'),
                             style: TextStyle(color: Colors.grey[500])),
                       ],
                     ),

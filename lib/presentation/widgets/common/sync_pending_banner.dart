@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -46,7 +47,7 @@ class SyncPendingBanner extends ConsumerWidget {
           onForceSync: () async {
             AppToast.show(
               context,
-              'جارى محاولة المزامنة...',
+              tr('جارى محاولة المزامنة...'),
               type: ToastType.info,
             );
             // BUG-U34: report the outcome — the banner itself stays visible if
@@ -58,7 +59,7 @@ class SyncPendingBanner extends ConsumerWidget {
                 // the banner stays visible while items remain — keep this
                 // neutral (info, not green success) so it doesn't imply the
                 // outbox fully drained.
-                AppToast.show(context, 'انتهت محاولة المزامنة — تحقّق من المؤشر',
+                AppToast.show(context, tr('انتهت محاولة المزامنة — تحقّق من المؤشر'),
                     type: ToastType.info);
               }
             } catch (e) {
@@ -103,7 +104,7 @@ class _SyncPendingBannerView extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'يوجد $count $label فى انتظار المزامنة مع السيرفر',
+              tr('يوجد {count} {label} فى انتظار المزامنة مع السيرفر', {'count': count, 'label': label}),
               style: TextStyle(
                 color: Colors.amber.shade900,
                 fontWeight: FontWeight.w600,
@@ -113,7 +114,7 @@ class _SyncPendingBannerView extends StatelessWidget {
           TextButton.icon(
             onPressed: onForceSync,
             icon: const Icon(PhosphorIconsBold.arrowClockwise, size: 16),
-            label: const Text('إعادة المزامنة'),
+            label:  Text(tr('إعادة المزامنة')),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.primary,
             ),

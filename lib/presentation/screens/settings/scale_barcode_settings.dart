@@ -112,7 +112,7 @@ class _ScaleBarcodeSettingsState extends ConsumerState<_ScaleBarcodeSettings> {
       await logger.logSettingsChange(
         auth.user?.id ?? 0,
         auth.user?.displayName ?? '',
-        'إعدادات باركود الميزان',
+        tr('إعدادات باركود الميزان'),
       );
     } catch (e) {
       debugPrint('[ActivityLog] Error: $e');
@@ -129,15 +129,15 @@ class _ScaleBarcodeSettingsState extends ConsumerState<_ScaleBarcodeSettings> {
             ? AppColors.primary
             : Colors.grey,
       ),
-      title: const Text('إعدادات باركود الميزان'),
+      title:  Text(tr('إعدادات باركود الميزان')),
       subtitle: Text(
         _weightEnabled && _priceEnabled
-            ? 'ميزان الوزن + ميزان المجموع مفعّلين'
+            ? tr('ميزان الوزن + ميزان المجموع مفعّلين')
             : _weightEnabled
-            ? 'ميزان الوزن مفعّل'
+            ? tr('ميزان الوزن مفعّل')
             : _priceEnabled
-            ? 'ميزان المجموع مفعّل'
-            : 'غير مفعّل',
+            ? tr('ميزان المجموع مفعّل')
+            : tr('غير مفعّل'),
         style: TextStyle(
           color: (_weightEnabled || _priceEnabled)
               ? AppColors.success
@@ -154,11 +154,11 @@ class _ScaleBarcodeSettingsState extends ConsumerState<_ScaleBarcodeSettings> {
             children: [
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text(
-                  'ميزان الوزن',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                title:  Text(
+                  tr('ميزان الوزن'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                subtitle: const Text('باركود يحتوي على وزن المنتج (كجم)'),
+                subtitle:  Text(tr('باركود يحتوي على وزن المنتج (كجم)')),
                 value: _weightEnabled,
                 onChanged: (v) {
                   setState(() => _weightEnabled = v);
@@ -170,8 +170,8 @@ class _ScaleBarcodeSettingsState extends ConsumerState<_ScaleBarcodeSettings> {
                   _weightPrefixController,
                   _weightCodeLenController,
                   _weightDividerController,
-                  'مثال: 21',
-                  'مثال: 1000 (جرام ← كجم)',
+                  tr('مثال: 21'),
+                  tr('مثال: 1000 (جرام ← كجم)'),
                 ),
               const SizedBox(height: 8),
               const Divider(height: 1),
@@ -179,12 +179,12 @@ class _ScaleBarcodeSettingsState extends ConsumerState<_ScaleBarcodeSettings> {
               // ---------- Price/Total Scale ----------
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text(
-                  'ميزان المجموع (السعر)',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                title:  Text(
+                  tr('ميزان المجموع (السعر)'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                subtitle: const Text(
-                  'باركود يحتوي على السعر الإجمالي — يحسب الكمية تلقائياً',
+                subtitle:  Text(
+                  tr('باركود يحتوي على السعر الإجمالي — يحسب الكمية تلقائياً'),
                 ),
                 value: _priceEnabled,
                 onChanged: (v) {
@@ -197,8 +197,8 @@ class _ScaleBarcodeSettingsState extends ConsumerState<_ScaleBarcodeSettings> {
                   _pricePrefixController,
                   _priceCodeLenController,
                   _priceDividerController,
-                  'مثال: 22',
-                  'مثال: 100 (فلس ← عملة)',
+                  tr('مثال: 22'),
+                  tr('مثال: 100 (فلس ← عملة)'),
                 ),
               const SizedBox(height: 16),
             ],
@@ -223,7 +223,7 @@ class _ScaleBarcodeSettingsState extends ConsumerState<_ScaleBarcodeSettings> {
             child: TextField(
               controller: prefixCtrl,
               decoration: InputDecoration(
-                labelText: 'البادئة (Prefix)',
+                labelText: tr('البادئة (Prefix)'),
                 hintText: prefixHint,
                 isDense: true,
                 border: const OutlineInputBorder(),
@@ -235,11 +235,11 @@ class _ScaleBarcodeSettingsState extends ConsumerState<_ScaleBarcodeSettings> {
           Expanded(
             child: TextField(
               controller: codeLenCtrl,
-              decoration: const InputDecoration(
-                labelText: 'طول كود المنتج',
-                hintText: 'مثال: 5',
+              decoration:  InputDecoration(
+                labelText: tr('طول كود المنتج'),
+                hintText: tr('مثال: 5'),
                 isDense: true,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,
               onChanged: (_) => _saveAll(),
@@ -250,7 +250,7 @@ class _ScaleBarcodeSettingsState extends ConsumerState<_ScaleBarcodeSettings> {
             child: TextField(
               controller: dividerCtrl,
               decoration: InputDecoration(
-                labelText: 'القسمة (Divider)',
+                labelText: tr('القسمة (Divider)'),
                 hintText: dividerHint,
                 isDense: true,
                 border: const OutlineInputBorder(),

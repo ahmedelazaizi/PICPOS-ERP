@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -30,8 +31,8 @@ class SalesInvoiceForm extends ConsumerWidget {
             children: [
               Text(
                 state.isReturnMode
-                    ? 'إنشاء مرتجع مبيعات'
-                    : 'فاتورة ضريبة مبيعات',
+                    ? tr('إنشاء مرتجع مبيعات')
+                    : tr('فاتورة ضريبة مبيعات'),
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -39,10 +40,10 @@ class SalesInvoiceForm extends ConsumerWidget {
                 ),
               ),
               if (state.isReturnMode)
-                const Chip(
-                  label: Text('وضع المرتجع (Return Mode)'),
+                 Chip(
+                  label: Text(tr('وضع المرتجع (Return Mode)')),
                   backgroundColor: AppColors.error,
-                  labelStyle: TextStyle(color: Colors.white),
+                  labelStyle: const TextStyle(color: Colors.white),
                 ),
             ],
           ),
@@ -63,9 +64,9 @@ class SalesInvoiceForm extends ConsumerWidget {
                         padding: const EdgeInsets.all(16.0),
                         child: Row(
                           children: [
-                            const Text(
-                              'العميل:',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                             Text(
+                              tr('العميل:'),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -78,7 +79,7 @@ class SalesInvoiceForm extends ConsumerWidget {
                                           : null;
                                       return Autocomplete<Party>(
                                         initialValue: TextEditingValue(
-                                          text: selected?.name ?? 'عميل نقدي',
+                                          text: selected?.name ?? tr('عميل نقدي'),
                                         ),
                                         optionsBuilder: (textValue) {
                                           final q = textValue.text.toLowerCase().trim();
@@ -93,14 +94,14 @@ class SalesInvoiceForm extends ConsumerWidget {
                                             controller: controller,
                                             focusNode: focusNode,
                                             decoration: InputDecoration(
-                                              hintText: 'ابحث عن العميل...',
+                                              hintText: tr('ابحث عن العميل...'),
                                               border: const OutlineInputBorder(),
                                               isDense: true,
                                               suffixIcon: state.selectedCustomerId != null
                                                   ? IconButton(
                                                       icon: const Icon(Icons.close, size: 16),
                                                       onPressed: () {
-                                                        controller.text = 'عميل نقدي';
+                                                        controller.text = tr('عميل نقدي');
                                                         notifier.selectCustomer(null);
                                                       },
                                                     )
@@ -145,21 +146,21 @@ class SalesInvoiceForm extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'ملخص الفاتورة',
-                              style: TextStyle(
+                             Text(
+                              tr('ملخص الفاتورة'),
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
                             ),
                             const Divider(height: 24),
                             _summaryRow(
-                              'الإجمالي الفرعي',
+                              tr('الإجمالي الفرعي'),
                               currencyFormat.format(state.subtotal),
                             ),
                             const SizedBox(height: 12),
                             _inputRow(
-                              'الخصم',
+                              tr('الخصم'),
                               state.discount,
                               (val) => notifier.updateDiscount(val),
                             ),
@@ -169,12 +170,12 @@ class SalesInvoiceForm extends ConsumerWidget {
                             // per row in the items table, so here we only
                             // display the rolled-up total.
                             _summaryRow(
-                              'إجمالي الضريبة',
+                              tr('إجمالي الضريبة'),
                               currencyFormat.format(state.calculatedTax),
                             ),
                             const Divider(height: 24),
                             _summaryRow(
-                              'الصافي الكلي',
+                              tr('الصافي الكلي'),
                               currencyFormat.format(state.grandTotal),
                               isBold: true,
                               color: AppColors.primary,
@@ -182,9 +183,9 @@ class SalesInvoiceForm extends ConsumerWidget {
                             const SizedBox(height: 24),
 
                             // Payment Method
-                            const Text(
-                              'طريقة الدفع:',
-                              style: TextStyle(
+                             Text(
+                              tr('طريقة الدفع:'),
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
@@ -196,22 +197,22 @@ class SalesInvoiceForm extends ConsumerWidget {
                                 border: OutlineInputBorder(),
                                 isDense: true,
                               ),
-                              items: const [
+                              items:  [
                                 DropdownMenuItem(
-                                  value: 'نقدي',
-                                  child: Text('نقدي'),
+                                  value: tr('نقدي'),
+                                  child: Text(tr('نقدي')),
                                 ),
                                 DropdownMenuItem(
-                                  value: 'تحويل',
-                                  child: Text('تحويل'),
+                                  value: tr('تحويل'),
+                                  child: Text(tr('تحويل')),
                                 ),
                                 DropdownMenuItem(
-                                  value: 'آجل',
-                                  child: Text('آجل'),
+                                  value: tr('آجل'),
+                                  child: Text(tr('آجل')),
                                 ),
                               ],
                               onChanged: (val) {
-                                notifier.updatePaymentMethod(val ?? 'نقدي');
+                                notifier.updatePaymentMethod(val ?? tr('نقدي'));
                                 // Auto-zero paid when switching to credit
                                 if (val == 'آجل') {
                                   notifier.updatePaidAmount(0);
@@ -221,9 +222,9 @@ class SalesInvoiceForm extends ConsumerWidget {
                             const SizedBox(height: 16),
 
                             // Paid Amount
-                            const Text(
-                              'المبلغ المدفوع:',
-                              style: TextStyle(
+                             Text(
+                              tr('المبلغ المدفوع:'),
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
@@ -250,7 +251,7 @@ class SalesInvoiceForm extends ConsumerWidget {
                                   PhosphorIconsBold.money,
                                   color: Colors.green,
                                 ),
-                                hintText: state.paymentMethod == 'آجل' ? 'آجل — لا يوجد دفع' : null,
+                                hintText: state.paymentMethod == 'آجل' ? tr('آجل — لا يوجد دفع') : null,
                               ),
                               onChanged: (val) => notifier.updatePaidAmount(
                                 double.tryParse(val) ?? 0,
@@ -259,9 +260,9 @@ class SalesInvoiceForm extends ConsumerWidget {
                             const SizedBox(height: 24),
 
                             // Notes
-                            const Text(
-                              'ملاحظات:',
-                              style: TextStyle(
+                             Text(
+                              tr('ملاحظات:'),
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
@@ -278,9 +279,9 @@ class SalesInvoiceForm extends ConsumerWidget {
                             const SizedBox(height: 16),
 
                             // Cost Center Selector
-                            const Text(
-                              'مركز التكلفة:',
-                              style: TextStyle(
+                             Text(
+                              tr('مركز التكلفة:'),
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
@@ -299,7 +300,7 @@ class SalesInvoiceForm extends ConsumerWidget {
                                     prefixIcon: Icon(PhosphorIconsLight.target, size: 20),
                                   ),
                                   items: [
-                                    const DropdownMenuItem<int?>(value: null, child: Text('بدون مركز تكلفة')),
+                                     DropdownMenuItem<int?>(value: null, child: Text(tr('بدون مركز تكلفة'))),
                                     ...centers.map((cc) => DropdownMenuItem<int?>(
                                       value: cc.id,
                                       child: Text(cc.name),
@@ -339,7 +340,7 @@ class SalesInvoiceForm extends ConsumerWidget {
                                 ),
                               )
                             : const Icon(PhosphorIconsBold.floppyDisk),
-                        label: const Text('حفظ الفاتورة'),
+                        label:  Text(tr('حفظ الفاتورة')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.success,
                         ),

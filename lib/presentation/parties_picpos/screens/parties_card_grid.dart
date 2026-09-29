@@ -174,7 +174,7 @@ class PartyCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'الرصيد',
+                tr('الرصيد'),
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
@@ -219,17 +219,17 @@ class PartyCard extends StatelessWidget {
         // ‏`Flexible` لا `mainAxisSize.min` عارياً: البطاقةُ في عمودٍ واحدٍ على
         // شاشةٍ ضيّقةٍ تُبقي للنصّ أقلَّ من عرضه، وبلا هذا كان يفيض بالشريط
         // الأصفر بدل أن يقصَّ بالحذف. (‏قِيس: ‏٩٫٥ بكسل عند عرضِ ٢٤٠.)
-        child: const Row(
+        child:  Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(PhosphorIconsBold.warning, size: 13, color: AppColors.error),
-            SizedBox(width: 6),
+            const Icon(PhosphorIconsBold.warning, size: 13, color: AppColors.error),
+            const SizedBox(width: 6),
             Flexible(
               child: Text(
-                'تجاوز حد الائتمان',
+                tr('تجاوز حد الائتمان'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
                   color: AppColors.error,
@@ -259,7 +259,7 @@ class PartyCard extends StatelessWidget {
               icon: const Icon(PhosphorIconsBold.fileText,
                   size: 13, color: AppColors.primary),
               label: Text(
-                'كشف حساب',
+                tr('كشف حساب'),
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
@@ -280,7 +280,7 @@ class PartyCard extends StatelessWidget {
           keyValue: 'party-edit',
           icon: PhosphorIconsBold.pencilSimple,
           color: AppColors.warning,
-          tooltip: 'تعديل',
+          tooltip: tr('تعديل'),
           onPressed: () => actions.onEdit(party),
         ),
         const SizedBox(width: 6),
@@ -290,7 +290,7 @@ class PartyCard extends StatelessWidget {
           height: 32,
           child: PopupMenuButton<String>(
             key: const Key('party-more'),
-            tooltip: 'المزيد',
+            tooltip: tr('المزيد'),
             padding: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -302,15 +302,15 @@ class PartyCard extends StatelessWidget {
               if (v == 'whatsapp') actions.onWhatsApp(party);
               if (v == 'delete') actions.onDelete(party);
             },
-            itemBuilder: (_) => const [
+            itemBuilder: (_) =>  [
               PopupMenuItem(
                 value: 'voucher',
                 child: Row(
                   children: [
-                    Icon(PhosphorIconsBold.money,
+                    const Icon(PhosphorIconsBold.money,
                         size: 16, color: AppColors.success),
-                    SizedBox(width: 8),
-                    Text('سند مالي', style: TextStyle(fontSize: 12)),
+                    const SizedBox(width: 8),
+                    Text(tr('سند مالي'), style: const TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
@@ -318,10 +318,10 @@ class PartyCard extends StatelessWidget {
                 value: 'whatsapp',
                 child: Row(
                   children: [
-                    Icon(PhosphorIconsBold.whatsappLogo,
+                    const Icon(PhosphorIconsBold.whatsappLogo,
                         size: 16, color: AppColors.success),
-                    SizedBox(width: 8),
-                    Text('إرسال واتساب', style: TextStyle(fontSize: 12)),
+                    const SizedBox(width: 8),
+                    Text(tr('إرسال واتساب'), style: const TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
@@ -329,10 +329,10 @@ class PartyCard extends StatelessWidget {
                 value: 'delete',
                 child: Row(
                   children: [
-                    Icon(PhosphorIconsBold.trash,
+                    const Icon(PhosphorIconsBold.trash,
                         size: 16, color: AppColors.error),
-                    SizedBox(width: 8),
-                    Text('حذف', style: TextStyle(fontSize: 12)),
+                    const SizedBox(width: 8),
+                    Text(tr('حذف'), style: const TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
@@ -389,10 +389,10 @@ class PartiesCardGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (parties.isEmpty) {
-      return const PicPosEmptyState(
+      return  PicPosEmptyState(
         icon: PhosphorIconsBold.users,
-        title: 'لا يوجد أطراف',
-        hint: 'جرّب تغيير الترشيح أو مسح خانة البحث.',
+        title: tr('لا يوجد أطراف'),
+        hint: tr('جرّب تغيير الترشيح أو مسح خانة البحث.'),
       );
     }
 

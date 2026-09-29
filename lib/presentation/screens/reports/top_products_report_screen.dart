@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -76,16 +77,16 @@ class _TopProductsReportScreenState
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
       }
       try {
         final user = ref.read(authProvider).user;
-        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? 'مجهول', 'الأصناف الأكثر مبيعاً');
+        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('الأصناف الأكثر مبيعاً'));
       } catch (_) {}
       _loadData();
     });
@@ -164,7 +165,7 @@ class _TopProductsReportScreenState
     }
     if (scopeAsync.hasError) {
       return Scaffold(
-        body: Center(child: Text('تعذر تحديد صلاحيات الفرع: ${scopeAsync.error}')),
+        body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
       );
     }
     final scope = scopeAsync.requireValue;
@@ -172,14 +173,14 @@ class _TopProductsReportScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الأصناف الأكثر مبيعاً'),
+        title:  Text(tr('الأصناف الأكثر مبيعاً')),
         actions: [
           buildReportExportAction(onExport: _exportToExcel),
           buildReportPrintAsExportAction(onExport: _exportToExcel),
           IconButton(
             icon: const Icon(PhosphorIconsBold.calendar),
             onPressed: _selectDateRange,
-            tooltip: 'تغيير الفترة',
+            tooltip: tr('تغيير الفترة'),
           ),
         ],
       ),
@@ -264,7 +265,7 @@ class _TopProductsReportScreenState
                   minWidth: 100,
                   minHeight: 40,
                 ),
-                children: const [Text('حسب القيمة'), Text('حسب الكمية')],
+                children:  [Text(tr('حسب القيمة')), Text(tr('حسب الكمية'))],
               ),
             ],
           ),
@@ -278,8 +279,8 @@ class _TopProductsReportScreenState
                     child: ShimmerLoading.list(itemCount: 6),
                   )
                 : _data == null || _data!.isEmpty
-                    ? const Center(
-                        child: Text('لا توجد بيانات لهذه الفترة'),
+                    ?  Center(
+                        child: Text(tr('لا توجد بيانات لهذه الفترة')),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.all(16),
@@ -309,11 +310,11 @@ class _TopProductsReportScreenState
                                 ),
                               ),
                               title: Text(
-                                item.name.isEmpty ? 'منتج غير معروف' : item.name,
+                                item.name.isEmpty ? tr('منتج غير معروف') : item.name,
                                 style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
                               subtitle: Text(
-                                'الكمية المباعة: ${qty.toStringAsFixed(0)}',
+                                tr('الكمية المباعة: {p0}', {'p0': qty.toStringAsFixed(0)}),
                               ),
                               trailing: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -327,9 +328,9 @@ class _TopProductsReportScreenState
                                       fontSize: 16,
                                     ),
                                   ),
-                                  const Text(
-                                    'إجمالي القيمة',
-                                    style: TextStyle(
+                                   Text(
+                                    tr('إجمالي القيمة'),
+                                    style: const TextStyle(
                                       fontSize: 10,
                                       color: AppColors.textMuted,
                                     ),
@@ -348,7 +349,7 @@ class _TopProductsReportScreenState
 
   Future<void> _exportToExcel() async {
     if (_data == null || _data!.isEmpty) {
-      AppToast.show(context, 'لا توجد بيانات للتصدير', type: ToastType.error);
+      AppToast.show(context, tr('لا توجد بيانات للتصدير'), type: ToastType.error);
       return;
     }
     final service = ref.read(excelServiceProvider);
@@ -358,28 +359,28 @@ class _TopProductsReportScreenState
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-      title: 'الأصناف الأكثر مبيعاً',
+      title: tr('الأصناف الأكثر مبيعاً'),
       headers: [
-        'الترتيب',
-        'اسم المنتج',
-        'الكمية المباعة',
-        'إجمالي القيمة',
+        tr('الترتيب'),
+        tr('اسم المنتج'),
+        tr('الكمية المباعة'),
+        tr('إجمالي القيمة'),
       ],
       rows: _data!.asMap().entries.map<List<dynamic>>((entry) {
         final item = entry.value;
         return [
           entry.key + 1,
-          item.name.isEmpty ? 'منتج غير معروف' : item.name,
+          item.name.isEmpty ? tr('منتج غير معروف') : item.name,
           item.totalQty.toStringAsFixed(0),
           item.totalValue,
         ];
       }).toList(),
     );
     if (path != null && mounted) {
-      AppToast.show(context, 'تم تصدير التقرير بنجاح: \$path', type: ToastType.success);
+      AppToast.show(context, tr('تم تصدير التقرير بنجاح: \$path'), type: ToastType.success);
       try {
         final user = ref.read(authProvider).user;
-        ref.read(activityLoggerProvider).logReportExport(user?.id ?? 0, user?.displayName ?? 'مجهول', 'الأصناف الأكثر مبيعاً', 'Excel');
+        ref.read(activityLoggerProvider).logReportExport(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('الأصناف الأكثر مبيعاً'), 'Excel');
       } catch (_) {}
     }
   }

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/repositories/hr_repository_interface.dart';
@@ -67,7 +68,7 @@ class HRNotifier extends Notifier<HRState> {
           branchId: branchId,
           hoursPerDay: hoursPerDay,
         );
-        await _log('add_employee', 'إضافة موظف: $name ($role)', entityId: id);
+        await _log('add_employee', tr('إضافة موظف: {name} ({role})', {'name': name, 'role': role}), entityId: id);
       } else {
         await _hrRepo.updateEmployee(
           id: existingEmployee.id,
@@ -81,7 +82,7 @@ class HRNotifier extends Notifier<HRState> {
         );
         await _log(
           'update_employee',
-          'تعديل موظف: $name',
+          tr('تعديل موظف: {name}', {'name': name}),
           entityId: existingEmployee.id,
           oldValue: existingEmployee.name,
           newValue: name,
@@ -96,7 +97,7 @@ class HRNotifier extends Notifier<HRState> {
     await _hrRepo.checkInEmployee(employee.id);
     await _log(
       'employee_checkin',
-      'تسجيل حضور: ${employee.name}',
+      tr('تسجيل حضور: {p0}', {'p0': employee.name}),
       entityId: employee.id,
     );
   }
@@ -118,7 +119,7 @@ class HRNotifier extends Notifier<HRState> {
     await _hrRepo.checkOutEmployee(employee.id);
     await _log(
       'employee_checkout',
-      'تسجيل انصراف: ${employee.name}',
+      tr('تسجيل انصراف: {p0}', {'p0': employee.name}),
       entityId: employee.id,
     );
   }
@@ -141,7 +142,7 @@ class HRNotifier extends Notifier<HRState> {
     );
     await _log(
       'employee_advance',
-      'سلفة: ${employee.name} - ${amount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+      tr('سلفة: {p0} - {p1} {p2}', {'p0': employee.name, 'p1': amount.toStringAsFixed(AppConstants.decimalPlaces), 'p2': AppConstants.currencySymbolEn}),
       entityId: employee.id,
       newValue: amount.toStringAsFixed(AppConstants.decimalPlaces),
     );
@@ -161,7 +162,7 @@ class HRNotifier extends Notifier<HRState> {
     );
     await _log(
       'employee_deduction',
-      'خصم: ${employee.name} - ${amount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+      tr('خصم: {p0} - {p1} {p2}', {'p0': employee.name, 'p1': amount.toStringAsFixed(AppConstants.decimalPlaces), 'p2': AppConstants.currencySymbolEn}),
       entityId: employee.id,
       newValue: amount.toStringAsFixed(AppConstants.decimalPlaces),
     );
@@ -180,7 +181,7 @@ class HRNotifier extends Notifier<HRState> {
     );
     await _log(
       'salary_payment',
-      'صرف راتب: ${calc.employee.name} - ${calc.netSalary.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+      tr('صرف راتب: {p0} - {p1} {p2}', {'p0': calc.employee.name, 'p1': calc.netSalary.toStringAsFixed(AppConstants.decimalPlaces), 'p2': AppConstants.currencySymbolEn}),
       entityId: calc.employee.id,
       newValue: calc.netSalary.toStringAsFixed(AppConstants.decimalPlaces),
     );
@@ -238,7 +239,7 @@ class HRNotifier extends Notifier<HRState> {
       return 'تعذّر احتسابُ المبلغ تلقائياً: ${e.message}. '
           'أدخِل ساعاتِ العمل اليومية للموظف، أو أدخِل المبلغَ يدوياً.';
     } catch (e) {
-      return 'تعذّر تسجيلُ الوقت الإضافي: $e';
+      return tr('تعذّر تسجيلُ الوقت الإضافي: {e}', {'e': e});
     }
   }
 
@@ -253,7 +254,7 @@ class HRNotifier extends Notifier<HRState> {
     final user = auth.user;
     await _auditRepo.logActivity(
       userId: user?.id,
-      userName: user?.displayName ?? 'مجهول',
+      userName: user?.displayName ?? tr('مجهول'),
       action: action,
       entityType: 'employee',
       entityId: entityId,

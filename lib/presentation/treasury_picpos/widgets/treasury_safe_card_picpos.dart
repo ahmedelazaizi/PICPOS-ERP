@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // بطاقةُ صندوقٍ بهويّة PicPos — **فوركٌ بقرار المالك 2026-08-22**.
 //
 // المصدر: `treasury/widgets/treasury_safe_card.dart`، ويبقى بلا مساسٍ لشاشة
@@ -164,9 +165,9 @@ class _DefaultBadge extends StatelessWidget {
         color: AppColors.primary.withValues(alpha: .10),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: const Text(
-        'افتراضي',
-        style: TextStyle(
+      child:  Text(
+        tr('افتراضي'),
+        style: const TextStyle(
           fontSize: 9.5,
           fontWeight: FontWeight.w800,
           color: AppColors.primary,

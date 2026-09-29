@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
@@ -20,18 +21,18 @@ class PosCustomerSelectionDialog extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.user, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text('اختيار عميل'),
+            const Icon(PhosphorIconsBold.user, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(tr('اختيار عميل')),
           ],
         ),
         content: const SizedBox(width: 500, child: CustomerSelectorV2()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),

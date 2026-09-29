@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // منطق منسوخ من dashboard_screen.dart (lib/presentation/screens/,
 // ١٠٩٦ سطر) — أي إصلاح منطقي يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ
 // §٥.٨). الشاشة دي الاستثناء الوحيد في دفعة إعادة التصميم اللي عندها
@@ -91,7 +92,7 @@ class DashboardPicposScreen extends ConsumerWidget {
     final dashFilter = ref.watch(dashboardFilterProvider);
     final cashBalance = ref.watch(dashboardCashBalanceProvider);
     final cashCardTitle =
-        dashFilter.branchId == null ? 'كل الصناديق' : 'صناديق الفرع';
+        dashFilter.branchId == null ? tr('كل الصناديق') : tr('صناديق الفرع');
     final features = ref.watch(featureFlagsProvider);
     final numberFmt = NumberFormat('#,##0.00', 'ar');
 
@@ -150,7 +151,7 @@ class DashboardPicposScreen extends ConsumerWidget {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  'تنبيه: ${products.length} صنف وصل للحد الأدنى من المخزون',
+                                  tr('تنبيه: {p0} صنف وصل للحد الأدنى من المخزون', {'p0': products.length}),
                                   style: const TextStyle(
                                       fontWeight: FontWeight.w500,
                                       fontSize: 13),
@@ -160,8 +161,8 @@ class DashboardPicposScreen extends ConsumerWidget {
                                 onPressed: () {
                                   if (onNavigate != null) onNavigate!(8);
                                 },
-                                child: const Text('عرض المخزون',
-                                    style: TextStyle(fontSize: 12)),
+                                child:  Text(tr('عرض المخزون'),
+                                    style: const TextStyle(fontSize: 12)),
                               ),
                             ],
                           ),
@@ -244,7 +245,7 @@ class DashboardPicposScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 10, top: 4),
               child: Text(
-                'إجراءات سريعة',
+                tr('إجراءات سريعة'),
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -259,8 +260,8 @@ class DashboardPicposScreen extends ConsumerWidget {
                 children: [
                   _QuickActionCard(
                     title: features.invoiceModeEnabled
-                        ? 'فاتورة مبيعات'
-                        : 'نقطة بيع',
+                        ? tr('فاتورة مبيعات')
+                        : tr('نقطة بيع'),
                     icon: features.invoiceModeEnabled
                         ? PhosphorIconsBold.fileText
                         : PhosphorIconsBold.shoppingCart,
@@ -273,7 +274,7 @@ class DashboardPicposScreen extends ConsumerWidget {
                   ),
                   const SizedBox(width: 10),
                   _QuickActionCard(
-                    title: 'إضافة صنف',
+                    title: tr('إضافة صنف'),
                     icon: PhosphorIconsBold.plusCircle,
                     color: const Color(0xFF6366F1),
                     onTap: () {
@@ -282,7 +283,7 @@ class DashboardPicposScreen extends ConsumerWidget {
                   ),
                   const SizedBox(width: 10),
                   _QuickActionCard(
-                    title: 'فاتورة مشتريات',
+                    title: tr('فاتورة مشتريات'),
                     icon: PhosphorIconsBold.shoppingBag,
                     color: const Color(0xFFF59E0B),
                     onTap: () {
@@ -291,7 +292,7 @@ class DashboardPicposScreen extends ConsumerWidget {
                   ),
                   const SizedBox(width: 10),
                   _QuickActionCard(
-                    title: 'التقارير',
+                    title: tr('التقارير'),
                     icon: PhosphorIconsBold.chartBar,
                     color: const Color(0xFF3B82F6),
                     onTap: () {
@@ -307,7 +308,7 @@ class DashboardPicposScreen extends ConsumerWidget {
               child: Row(
                 children: [
                   _QuickActionCard(
-                    title: 'مرتجع مبيعات',
+                    title: tr('مرتجع مبيعات'),
                     icon: PhosphorIconsBold.arrowUDownLeft,
                     color: const Color(0xFFEF4444),
                     onTap: () {
@@ -316,7 +317,7 @@ class DashboardPicposScreen extends ConsumerWidget {
                   ),
                   const SizedBox(width: 10),
                   _QuickActionCard(
-                    title: 'مرتجع مشتريات',
+                    title: tr('مرتجع مشتريات'),
                     icon: PhosphorIconsBold.arrowUDownRight,
                     color: const Color(0xFFEC4899),
                     onTap: () {
@@ -327,7 +328,7 @@ class DashboardPicposScreen extends ConsumerWidget {
                   ),
                   const SizedBox(width: 10),
                   _QuickActionCard(
-                    title: 'المخزون',
+                    title: tr('المخزون'),
                     icon: PhosphorIconsBold.warehouse,
                     color: const Color(0xFF8B5CF6),
                     onTap: () {
@@ -336,7 +337,7 @@ class DashboardPicposScreen extends ConsumerWidget {
                   ),
                   const SizedBox(width: 10),
                   _QuickActionCard(
-                    title: 'التصنيع',
+                    title: tr('التصنيع'),
                     icon: PhosphorIconsBold.factory,
                     color: const Color(0xFF14B8A6),
                     onTap: () {
@@ -390,9 +391,9 @@ class PicPosScreenScaffoldDashboard extends StatelessWidget {
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const PicPosPageHeader(
-              title: 'لوحة القيادة',
-              subtitle: 'نظرة سريعة على المبيعات والمخزون والصناديق',
+             PicPosPageHeader(
+              title: tr('لوحة القيادة'),
+              subtitle: tr('نظرة سريعة على المبيعات والمخزون والصناديق'),
               icon: PhosphorIconsBold.gauge,
             ),
             Expanded(child: child),
@@ -440,16 +441,16 @@ class _PicPosKpiGrid extends StatelessWidget {
                 child: PermissionGuard(
                   permission: PermissionCodes.dashboardSalesToday,
                   allowManagerOverride: true,
-                  actionName: 'عرض صافي الإيراد',
+                  actionName: tr('عرض صافي الإيراد'),
                   fallback: _PicPosKpiTile(
-                    title: 'صافي الإيراد',
+                    title: tr('صافي الإيراد'),
                     value: '---',
                     suffix: AppConstants.currencySymbolEn,
                     icon: PhosphorIconsBold.chartLineUp,
                     color: AppColors.success,
                   ),
                   child: _PicPosKpiTile(
-                    title: 'صافي الإيراد',
+                    title: tr('صافي الإيراد'),
                     value: kpi.when(
                       data: (k) => numberFmt.format(k.revenue),
                       loading: () => '...',
@@ -464,13 +465,13 @@ class _PicPosKpiGrid extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _PicPosKpiTile(
-                  title: 'عدد الفواتير',
+                  title: tr('عدد الفواتير'),
                   value: kpi.when(
                     data: (k) => k.invoiceCount.toString(),
                     loading: () => '...',
                     error: (e, s) => '0',
                   ),
-                  suffix: 'فاتورة',
+                  suffix: tr('فاتورة'),
                   icon: PhosphorIconsBold.receipt,
                   color: AppColors.primary,
                 ),
@@ -484,7 +485,7 @@ class _PicPosKpiGrid extends StatelessWidget {
                 child: PermissionGuard(
                   permission: PermissionCodes.treasuryBalanceView,
                   allowManagerOverride: true,
-                  actionName: 'عرض أرصدة جميع الصناديق',
+                  actionName: tr('عرض أرصدة جميع الصناديق'),
                   fallback: _PicPosKpiTile(
                     title: cashCardTitle,
                     value: '---',
@@ -510,16 +511,16 @@ class _PicPosKpiGrid extends StatelessWidget {
                 child: PermissionGuard(
                   permission: PermissionCodes.dashboardProfit,
                   allowManagerOverride: true,
-                  actionName: 'عرض صافي الأرباح',
+                  actionName: tr('عرض صافي الأرباح'),
                   fallback: _PicPosKpiTile(
-                    title: 'صافي الربح',
+                    title: tr('صافي الربح'),
                     value: '---',
                     suffix: AppConstants.currencySymbolEn,
                     icon: PhosphorIconsBold.money,
                     color: AppColors.secondary,
                   ),
                   child: _PicPosKpiTile(
-                    title: 'صافي الربح',
+                    title: tr('صافي الربح'),
                     value: kpi.when(
                       data: (k) => numberFmt.format(k.netProfit),
                       loading: () => '...',
@@ -652,7 +653,7 @@ class _ProfitMarginGaugeCard extends StatelessWidget {
           return Center(
             child: PicPosGauge(
               value: clamped,
-              label: 'هامش الربح',
+              label: tr('هامش الربح'),
               valueLabel: '${(rawMargin * 100).toStringAsFixed(1)}%',
               color: rawMargin < 0 ? AppColors.error : AppColors.success,
               size: 128,
@@ -666,10 +667,10 @@ class _ProfitMarginGaugeCard extends StatelessWidget {
             child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
           ),
         ),
-        error: (e, s) => const Center(
+        error: (e, s) =>  Center(
           child: PicPosGauge(
             value: 0,
-            label: 'هامش الربح',
+            label: tr('هامش الربح'),
             valueLabel: '—',
             color: AppColors.textMuted,
             size: 128,
@@ -703,12 +704,12 @@ class _RevenueCompositionDonutCard extends StatelessWidget {
         data: (k) {
           final segments = [
             PicPosDonutSegment(
-              label: 'صافي الإيراد',
+              label: tr('صافي الإيراد'),
               value: k.revenue < 0 ? 0 : k.revenue,
               color: AppColors.success,
             ),
             PicPosDonutSegment(
-              label: 'ضريبة المخرجات',
+              label: tr('ضريبة المخرجات'),
               value: k.outputVatNet < 0 ? 0 : k.outputVatNet,
               color: AppColors.info,
             ),
@@ -719,7 +720,7 @@ class _RevenueCompositionDonutCard extends StatelessWidget {
               PicPosDonut(
                 segments: segments,
                 size: 118,
-                centerLabel: 'شامل الضريبة',
+                centerLabel: tr('شامل الضريبة'),
                 centerValue:
                     NumberFormat('#,##0', 'ar').format(k.netRevenueInclVat),
               ),
@@ -732,11 +733,11 @@ class _RevenueCompositionDonutCard extends StatelessWidget {
           height: 118,
           child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
-        error: (e, s) => const SizedBox(
+        error: (e, s) =>  SizedBox(
           height: 118,
           child: Center(
-            child: Text('تعذّر تحميل تركيبة الإيراد',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+            child: Text(tr('تعذّر تحميل تركيبة الإيراد'),
+                style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
           ),
         ),
       ),
@@ -785,10 +786,10 @@ class _DeferredMetricsNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const deferred = [
-      'نسبة التحصيل',
-      'توزيع طرق الدفع',
-      'تحقيق الهدف الشهري',
+    final deferred = [
+      tr('نسبة التحصيل'),
+      tr('توزيع طرق الدفع'),
+      tr('تحقيق الهدف الشهري'),
     ];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -976,10 +977,10 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
               ),
             ),
           ),
-          _periodChip('today', 'اليوم'),
-          _periodChip('yesterday', 'أمس'),
-          _periodChip('month', 'الشهر'),
-          _periodChip('year', 'السنة'),
+          _periodChip('today', tr('اليوم')),
+          _periodChip('yesterday', tr('أمس')),
+          _periodChip('month', tr('الشهر')),
+          _periodChip('year', tr('السنة')),
           SizedBox(
             width: 170,
             child: FutureBuilder<List<Branche>>(
@@ -995,12 +996,12 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
                   child: DropdownButton<int?>(
                     value: effectiveBranch,
                     isExpanded: true,
-                    hint: const Text('الفرع', style: TextStyle(fontSize: 12)),
+                    hint:  Text(tr('الفرع'), style: const TextStyle(fontSize: 12)),
                     style: const TextStyle(
                         fontSize: 12, color: AppColors.textPrimary),
                     items: [
-                      const DropdownMenuItem<int?>(
-                          value: null, child: Text('كل الفروع')),
+                       DropdownMenuItem<int?>(
+                          value: null, child: Text(tr('كل الفروع'))),
                       ...branches.map((b) => DropdownMenuItem<int?>(
                             value: b.id,
                             child:

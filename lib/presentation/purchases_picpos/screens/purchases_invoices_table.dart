@@ -151,8 +151,8 @@ class PurchasesInvoicesTable extends ConsumerWidget {
               const SizedBox(height: 16),
               Text(
                 hasFilters
-                    ? 'لا نتائج تطابق الفلاتر الحالية'
-                    : 'لا توجد فواتير مشتريات',
+                    ? tr('لا نتائج تطابق الفلاتر الحالية')
+                    : tr('لا توجد فواتير مشتريات'),
                 style: const TextStyle(color: AppColors.textMuted),
               ),
               if (hasFilters) ...[
@@ -160,7 +160,7 @@ class PurchasesInvoicesTable extends ConsumerWidget {
                 OutlinedButton.icon(
                   icon: const Icon(PhosphorIconsBold.arrowsCounterClockwise,
                       size: 16),
-                  label: const Text('إعادة تعيين الفلاتر'),
+                  label:  Text(tr('إعادة تعيين الفلاتر')),
                   onPressed: notifier.clearAllFilters,
                 ),
               ],
@@ -272,16 +272,16 @@ class _PurHeaderRow extends StatelessWidget {
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
-          label('رقم الفاتورة', _kPurColNum),
-          label('المورد', _kPurColParty),
-          label('التاريخ', _kPurColDate),
-          label('الفرع · المخزن · مركز التكلفة', _kPurColPlace),
-          label('الإجمالي', _kPurColTotal, align: TextAlign.end),
-          label('السداد', _kPurColPay),
+          label(tr('رقم الفاتورة'), _kPurColNum),
+          label(tr('المورد'), _kPurColParty),
+          label(tr('التاريخ'), _kPurColDate),
+          label(tr('الفرع · المخزن · مركز التكلفة'), _kPurColPlace),
+          label(tr('الإجمالي'), _kPurColTotal, align: TextAlign.end),
+          label(tr('السداد'), _kPurColPay),
           SizedBox(
             width: _kPurColPostedW,
             child: Text(
-              'حالة الترحيل',
+              tr('حالة الترحيل'),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -292,7 +292,7 @@ class _PurHeaderRow extends StatelessWidget {
           SizedBox(
             width: _kPurColStatusW,
             child: Text(
-              'حالة السداد',
+              tr('حالة السداد'),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -303,7 +303,7 @@ class _PurHeaderRow extends StatelessWidget {
           SizedBox(
             width: _kPurColActionsW,
             child: Text(
-              'الإجراءات',
+              tr('الإجراءات'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,
@@ -359,8 +359,8 @@ class _PurInvoiceCard extends StatelessWidget {
   /// شراءٍ بلا مورّدٍ مسجَّلٍ حالةٌ واردةٌ لا خطأُ بحثٍ في خريطة.
   String get _supplierName {
     final id = invoice.partyId;
-    if (id == null) return 'غير محدد';
-    return supplierNames[id] ?? 'غير محدد';
+    if (id == null) return tr('غير محدد');
+    return supplierNames[id] ?? tr('غير محدد');
   }
 
   @override
@@ -381,12 +381,12 @@ class _PurInvoiceCard extends StatelessWidget {
             ? AppColors.warning
             : AppColors.error;
     final statusLabel = isPaid
-        ? 'مدفوع'
+        ? tr('مدفوع')
         : isPartial
-            ? 'جزئي'
+            ? tr('جزئي')
             : isCancelled
-                ? 'ملغي'
-                : 'غير مدفوع';
+                ? tr('ملغي')
+                : tr('غير مدفوع');
     final statusIcon = isPaid
         ? PhosphorIconsBold.checkCircle
         : isPartial
@@ -401,7 +401,7 @@ class _PurInvoiceCard extends StatelessWidget {
     // القديمة التي لم تُعبَّأ بعد.
     final brId =
         invoice.branchId ?? (whId != null ? warehouseBranchId[whId] : null);
-    final brName = brId != null ? (branchNames[brId] ?? 'فرع #$brId') : null;
+    final brName = brId != null ? (branchNames[brId] ?? tr('فرع #{brId}', {'brId': brId})) : null;
     // Spec 119 (Bug K) — «—» أنظفُ من «م.ت #6» حين يغيب مركزُ التكلفة.
     final ccName = invoice.costCenterId != null
         ? (costCenterNames[invoice.costCenterId] ?? '—')
@@ -462,7 +462,7 @@ class _PurInvoiceCard extends StatelessWidget {
                     if (invoice.isLocked) ...[
                       const SizedBox(width: 5),
                       Tooltip(
-                        message: 'مُرحّلة محاسبياً',
+                        message: tr('مُرحّلة محاسبياً'),
                         child: Icon(PhosphorIconsBold.lockSimple,
                             size: 11, color: muted),
                       ),
@@ -644,7 +644,7 @@ class _PurInvoiceCard extends StatelessWidget {
                 _PurRowAction(
                   icon: PhosphorIconsBold.eye,
                   color: AppColors.info,
-                  tooltip: 'عرض التفاصيل',
+                  tooltip: tr('عرض التفاصيل'),
                   onTap: () => onView(invoice),
                 ),
                 const SizedBox(width: 5),
@@ -655,8 +655,8 @@ class _PurInvoiceCard extends StatelessWidget {
                   // التي لا يرفعها مسارُ الإنشاء أصلاً. و`posted == null`
                   // («لم يُعرَف بعد») تُقرأ تلميحاً محايداً لا ادّعاءَ فيه.
                   tooltip: canEdit
-                      ? (posted == true ? 'تعديل فاتورة مُرحّلة' : 'تعديل')
-                      : 'لا تملك صلاحية تعديل فواتير المشتريات',
+                      ? (posted == true ? tr('تعديل فاتورة مُرحّلة') : tr('تعديل'))
+                      : tr('لا تملك صلاحية تعديل فواتير المشتريات'),
                   onTap: canEdit ? () => onEdit(invoice) : null,
                 ),
                 const SizedBox(width: 5),
@@ -665,12 +665,12 @@ class _PurInvoiceCard extends StatelessWidget {
                 PermissionGuard(
                   permission: PermissionCodes.purchasesPrint,
                   allowManagerOverride: true,
-                  actionName: 'طباعة فاتورة مشتريات',
+                  actionName: tr('طباعة فاتورة مشتريات'),
                   onGranted: () => onPrint(invoice),
                   child: _PurRowAction(
                     icon: PhosphorIconsBold.printer,
                     color: AppColors.primary,
-                    tooltip: 'طباعة',
+                    tooltip: tr('طباعة'),
                     onTap: () => onPrint(invoice),
                   ),
                 ),
@@ -711,11 +711,11 @@ class _PurOrderCard extends StatelessWidget {
 
   /// تسميةُ حالة الأمر ولونُها — مفرداتٌ خاصّةٌ به لا مفرداتُ السداد.
   static (String, Color) _statusOf(String raw) => switch (raw) {
-        'draft' => ('مسودة', AppColors.textMuted),
-        'sent' => ('مُرسَل', AppColors.info),
-        'confirmed' => ('مؤكَّد', AppColors.primary),
-        'received' => ('مُستلَم', AppColors.success),
-        'cancelled' => ('ملغى', AppColors.error),
+        'draft' => (tr('مسودة'), AppColors.textMuted),
+        'sent' => (tr('مُرسَل'), AppColors.info),
+        'confirmed' => (tr('مؤكَّد'), AppColors.primary),
+        'received' => (tr('مُستلَم'), AppColors.success),
+        'cancelled' => (tr('ملغى'), AppColors.error),
         _ => (raw, AppColors.textMuted),
       };
 
@@ -779,7 +779,7 @@ class _PurOrderCard extends StatelessWidget {
                     _PurOrderStatusBadge(label: statusLabel, color: statusColor),
                     if (order.isConverted)
                       Tooltip(
-                        message: 'حُوِّل إلى فاتورة مشتريات',
+                        message: tr('حُوِّل إلى فاتورة مشتريات'),
                         child: Icon(PhosphorIconsBold.arrowBendUpLeft,
                             size: 11, color: muted),
                       ),
@@ -802,7 +802,7 @@ class _PurOrderCard extends StatelessWidget {
           Expanded(
             flex: _kPurColParty,
             child: Text(
-              supplierNames[order.supplierId] ?? 'مورد #${order.supplierId}',
+              supplierNames[order.supplierId] ?? tr('مورد #{p0}', {'p0': order.supplierId}),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
@@ -850,7 +850,7 @@ class _PurOrderCard extends StatelessWidget {
             flex: _kPurColPay,
             child: Align(
               alignment: AlignmentDirectional.centerStart,
-              child: dash('أمرُ الشراء التزامٌ — لا سدادَ عليه حتى يُفوتَر'),
+              child: dash(tr('أمرُ الشراء التزامٌ — لا سدادَ عليه حتى يُفوتَر')),
             ),
           ),
 
@@ -858,7 +858,7 @@ class _PurOrderCard extends StatelessWidget {
             width: _kPurColPostedW,
             child: Align(
               alignment: AlignmentDirectional.centerStart,
-              child: dash('أمرُ الشراء لا يُرحَّل إلى دفتر الأستاذ'),
+              child: dash(tr('أمرُ الشراء لا يُرحَّل إلى دفتر الأستاذ')),
             ),
           ),
 
@@ -866,7 +866,7 @@ class _PurOrderCard extends StatelessWidget {
             width: _kPurColStatusW,
             child: Align(
               alignment: AlignmentDirectional.centerStart,
-              child: dash('حالةُ الأمر موسومةٌ بجوار رقمه'),
+              child: dash(tr('حالةُ الأمر موسومةٌ بجوار رقمه')),
             ),
           ),
 
@@ -890,9 +890,9 @@ class _PurDocKindBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.info.withValues(alpha: 0.4)),
       ),
-      child: const Text(
-        'أمر شراء',
-        style: TextStyle(
+      child:  Text(
+        tr('أمر شراء'),
+        style: const TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.bold,
           color: AppColors.info,
@@ -945,7 +945,7 @@ class _PurPostedPill extends StatelessWidget {
     final muted = _purMuted(context);
     if (posted == null) {
       return Tooltip(
-        message: 'حالة الترحيل قيد القراءة من دفتر الأستاذ',
+        message: tr('حالة الترحيل قيد القراءة من دفتر الأستاذ'),
         child: Text('—',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800,
                 color: muted)),
@@ -955,8 +955,8 @@ class _PurPostedPill extends StatelessWidget {
     final color = ok ? AppColors.success : AppColors.error;
     return Tooltip(
       message: ok
-          ? 'لها قيدٌ مُرحَّلٌ في دفتر الأستاذ'
-          : 'لا قيدَ مُرحَّلاً لها — راجعها قبل الإقفال',
+          ? tr('لها قيدٌ مُرحَّلٌ في دفتر الأستاذ')
+          : tr('لا قيدَ مُرحَّلاً لها — راجعها قبل الإقفال'),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
@@ -978,7 +978,7 @@ class _PurPostedPill extends StatelessWidget {
             const SizedBox(width: 5),
             Flexible(
               child: Text(
-                ok ? 'مُرحَّل' : 'غير مُرحَّل',
+                ok ? tr('مُرحَّل') : tr('غير مُرحَّل'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -1049,7 +1049,7 @@ class _PurPaymentCell extends StatelessWidget {
             const SizedBox(width: 6),
             Flexible(
               child: Text(
-                'متبقي ${fmt(remaining)}',
+                tr('متبقي {p0}', {'p0': fmt(remaining)}),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end,

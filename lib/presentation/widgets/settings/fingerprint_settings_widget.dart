@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -20,7 +21,7 @@ class _FingerprintSettingsWidgetState
     extends ConsumerState<FingerprintSettingsWidget> {
   final _ipController = TextEditingController();
   final _portController = TextEditingController(text: '4370');
-  final _nameController = TextEditingController(text: 'جهاز البصمة الرئيسي');
+  final _nameController = TextEditingController(text: tr('جهاز البصمة الرئيسي'));
   bool _isExpanded = false;
   bool _isTesting = false;
   bool _isSyncing = false;
@@ -63,7 +64,7 @@ class _FingerprintSettingsWidgetState
     if (ip.isEmpty) {
       AppToast.show(
         context,
-        'الرجاء إدخال عنوان IP للجهاز',
+        tr('الرجاء إدخال عنوان IP للجهاز'),
         type: ToastType.warning,
       );
       return;
@@ -78,10 +79,10 @@ class _FingerprintSettingsWidgetState
       setState(() {
         _isTesting = false;
         if (success) {
-          _statusMessage = 'تم الاتصال بنجاح ✅';
+          _statusMessage = tr('تم الاتصال بنجاح ✅');
           _isStatusError = false;
         } else {
-          _statusMessage = 'فشل الاتصال — تأكد من IP والمنفذ';
+          _statusMessage = tr('فشل الاتصال — تأكد من IP والمنفذ');
           _isStatusError = true;
         }
       });
@@ -90,13 +91,13 @@ class _FingerprintSettingsWidgetState
         if (!mounted) return;
         AppToast.show(
           context,
-          'تم الاتصال بالجهاز بنجاح ✅',
+          tr('تم الاتصال بالجهاز بنجاح ✅'),
           type: ToastType.success,
         );
       } else {
         AppToast.show(
           context,
-          'فشل الاتصال بالجهاز — تأكد من IP والمنفذ',
+          tr('فشل الاتصال بالجهاز — تأكد من IP والمنفذ'),
           type: ToastType.error,
         );
       }
@@ -110,7 +111,7 @@ class _FingerprintSettingsWidgetState
     if (ip.isEmpty) {
       AppToast.show(
         context,
-        'الرجاء إدخال عنوان IP أولاً',
+        tr('الرجاء إدخال عنوان IP أولاً'),
         type: ToastType.warning,
       );
       return;
@@ -125,10 +126,10 @@ class _FingerprintSettingsWidgetState
       final connected = await repo.connect(ip, port);
       if (!connected) {
         if (mounted) {
-          AppToast.show(context, 'فشل الاتصال بالجهاز', type: ToastType.error);
+          AppToast.show(context, tr('فشل الاتصال بالجهاز'), type: ToastType.error);
           setState(() {
             _isSyncing = false;
-            _statusMessage = 'فشل الاتصال بالجهاز';
+            _statusMessage = tr('فشل الاتصال بالجهاز');
             _isStatusError = true;
           });
         }
@@ -168,12 +169,12 @@ class _FingerprintSettingsWidgetState
         setState(() {
           _isSyncing = false;
           _lastSyncCount = imported;
-          _statusMessage = 'تم ترحيل $imported سجل حضور';
+          _statusMessage = tr('تم ترحيل {imported} سجل حضور', {'imported': imported});
           _isStatusError = false;
         });
         AppToast.show(
           context,
-          'تم ترحيل $imported سجل حضور من الجهاز',
+          tr('تم ترحيل {imported} سجل حضور من الجهاز', {'imported': imported}),
           type: imported > 0 ? ToastType.success : ToastType.info,
         );
       }
@@ -181,10 +182,10 @@ class _FingerprintSettingsWidgetState
       if (mounted) {
         setState(() {
           _isSyncing = false;
-          _statusMessage = 'خطأ في الترحيل: $e';
+          _statusMessage = tr('خطأ في الترحيل: {e}', {'e': e});
           _isStatusError = true;
         });
-        AppToast.show(context, 'خطأ في الترحيل: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الترحيل: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -196,7 +197,7 @@ class _FingerprintSettingsWidgetState
     if (ip.isEmpty) {
       AppToast.show(
         context,
-        'الرجاء إدخال عنوان IP أولاً',
+        tr('الرجاء إدخال عنوان IP أولاً'),
         type: ToastType.warning,
       );
       return;
@@ -209,10 +210,10 @@ class _FingerprintSettingsWidgetState
       final connected = await repo.connect(ip, port);
       if (!connected) {
         if (mounted) {
-          AppToast.show(context, 'فشل الاتصال بالجهاز', type: ToastType.error);
+          AppToast.show(context, tr('فشل الاتصال بالجهاز'), type: ToastType.error);
           setState(() {
             _isUploading = false;
-            _statusMessage = 'فشل الاتصال بالجهاز';
+            _statusMessage = tr('فشل الاتصال بالجهاز');
             _isStatusError = true;
           });
         }
@@ -239,12 +240,12 @@ class _FingerprintSettingsWidgetState
       if (mounted) {
         setState(() {
           _isUploading = false;
-          _statusMessage = 'تم رفع $uploaded موظف إلى الجهاز';
+          _statusMessage = tr('تم رفع {uploaded} موظف إلى الجهاز', {'uploaded': uploaded});
           _isStatusError = false;
         });
         AppToast.show(
           context,
-          'تم رفع $uploaded موظف إلى الجهاز',
+          tr('تم رفع {uploaded} موظف إلى الجهاز', {'uploaded': uploaded}),
           type: ToastType.success,
         );
       }
@@ -252,12 +253,12 @@ class _FingerprintSettingsWidgetState
       if (mounted) {
         setState(() {
           _isUploading = false;
-          _statusMessage = 'خطأ في رفع الموظفين: $e';
+          _statusMessage = tr('خطأ في رفع الموظفين: {e}', {'e': e});
           _isStatusError = true;
         });
         AppToast.show(
           context,
-          'خطأ في رفع الموظفين: $e',
+          tr('خطأ في رفع الموظفين: {e}', {'e': e}),
           type: ToastType.error,
         );
       }
@@ -276,10 +277,10 @@ class _FingerprintSettingsWidgetState
   Widget build(BuildContext context) {
     return ExpansionTile(
       leading: const Icon(PhosphorIconsBold.fingerprint, color: AppColors.info),
-      title: const Text('أجهزة الحضور والبصمة'),
-      subtitle: const Text(
-        'اضغط لإعداد جهاز البصمة',
-        style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+      title:  Text(tr('أجهزة الحضور والبصمة')),
+      subtitle:  Text(
+        tr('اضغط لإعداد جهاز البصمة'),
+        style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
       ),
       initiallyExpanded: _isExpanded,
       onExpansionChanged: (v) => setState(() => _isExpanded = v),
@@ -293,12 +294,12 @@ class _FingerprintSettingsWidgetState
               // Device Name
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'اسم الجهاز',
-                  hintText: 'مثال: جهاز بصمة الاستقبال',
-                  prefixIcon: Icon(PhosphorIconsBold.tag),
+                decoration:  InputDecoration(
+                  labelText: tr('اسم الجهاز'),
+                  hintText: tr('مثال: جهاز بصمة الاستقبال'),
+                  prefixIcon: const Icon(PhosphorIconsBold.tag),
                   isDense: true,
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
                 onChanged: (_) => _saveSettings(),
               ),
@@ -310,12 +311,12 @@ class _FingerprintSettingsWidgetState
                     flex: 3,
                     child: TextField(
                       controller: _ipController,
-                      decoration: const InputDecoration(
-                        labelText: 'عنوان IP',
+                      decoration:  InputDecoration(
+                        labelText: tr('عنوان IP'),
                         hintText: '192.168.1.201',
-                        prefixIcon: Icon(PhosphorIconsBold.globe),
+                        prefixIcon: const Icon(PhosphorIconsBold.globe),
                         isDense: true,
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,
                       onChanged: (_) => _saveSettings(),
@@ -325,11 +326,11 @@ class _FingerprintSettingsWidgetState
                   Expanded(
                     child: TextField(
                       controller: _portController,
-                      decoration: const InputDecoration(
-                        labelText: 'المنفذ',
+                      decoration:  InputDecoration(
+                        labelText: tr('المنفذ'),
                         hintText: '4370',
                         isDense: true,
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,
                       onChanged: (_) => _saveSettings(),
@@ -345,21 +346,21 @@ class _FingerprintSettingsWidgetState
                 children: [
                   _ActionButton(
                     icon: PhosphorIconsBold.wifiHigh,
-                    label: 'اختبار الاتصال',
+                    label: tr('اختبار الاتصال'),
                     color: AppColors.info,
                     isLoading: _isTesting,
                     onPressed: _isTesting ? null : _testConnection,
                   ),
                   _ActionButton(
                     icon: PhosphorIconsBold.arrowsClockwise,
-                    label: 'ترحيل الحضور',
+                    label: tr('ترحيل الحضور'),
                     color: AppColors.success,
                     isLoading: _isSyncing,
                     onPressed: _isSyncing ? null : _syncAttendance,
                   ),
                   _ActionButton(
                     icon: PhosphorIconsBold.uploadSimple,
-                    label: 'رفع الموظفين',
+                    label: tr('رفع الموظفين'),
                     color: AppColors.primary,
                     isLoading: _isUploading,
                     onPressed: _isUploading ? null : _uploadEmployees,
@@ -391,7 +392,7 @@ class _FingerprintSettingsWidgetState
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          _statusMessage ?? 'آخر ترحيل: $_lastSyncCount سجل',
+                          _statusMessage ?? tr('آخر ترحيل: {_lastSyncCount} سجل', {'_lastSyncCount': _lastSyncCount}),
                           style: TextStyle(
                             fontSize: 12,
                             color: _isStatusError

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -254,15 +255,15 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
 
       switch (result.status) {
         case SplitRunStatus.success:
-          AppToast.show(context, 'تم تقسيم الفاتورة بنجاح',
+          AppToast.show(context, tr('تم تقسيم الفاتورة بنجاح'),
               type: ToastType.success);
           Navigator.pop(context, true);
         case SplitRunStatus.alreadyComplete:
-          AppToast.show(context, 'التقسيمُ مكتملٌ بالفعل — كلُّ الحصص مسوّاة',
+          AppToast.show(context, tr('التقسيمُ مكتملٌ بالفعل — كلُّ الحصص مسوّاة'),
               type: ToastType.info);
           Navigator.pop(context, true);
         case SplitRunStatus.aborted:
-          AppToast.show(context, result.message ?? 'تعذّر إتمام التقسيم',
+          AppToast.show(context, result.message ?? tr('تعذّر إتمام التقسيم'),
               type: ToastType.error);
           setState(() => _processing = false);
         case SplitRunStatus.reconcileNeeded:
@@ -285,7 +286,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'تعذّر إتمام التقسيم: $e', type: ToastType.error);
+        AppToast.show(context, tr('تعذّر إتمام التقسيم: {e}', {'e': e}), type: ToastType.error);
         setState(() => _processing = false);
       }
     }
@@ -300,7 +301,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
       final user = ref.read(authProvider).user;
       await ref.read(activityLogRepositoryProvider).logActivity(
             userId: user?.id,
-            userName: user?.displayName ?? 'مجهول',
+            userName: user?.displayName ?? tr('مجهول'),
             action: 'table_payment_reconcile_needed',
             entityType: 'table',
             entityId: widget.sourceTable.id,
@@ -421,7 +422,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
           children: [
             const Icon(PhosphorIconsBold.columns, color: AppColors.info),
             const SizedBox(width: 8),
-            Expanded(child: Text('تقسيم فاتورة ${widget.sourceTable.name}')),
+            Expanded(child: Text(tr('تقسيم فاتورة {p0}', {'p0': widget.sourceTable.name}))),
           ],
         ),
         content: SizedBox(
@@ -430,8 +431,8 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
           child: _loading
               ? const Center(child: CircularProgressIndicator())
               : _order == null
-                  ? const Center(
-                      child: Text('لا يوجد طلبٌ نشطٌ على هذه الطاولة'),
+                  ?  Center(
+                      child: Text(tr('لا يوجد طلبٌ نشطٌ على هذه الطاولة')),
                     )
                   : _buildBody(),
         ),
@@ -439,7 +440,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
             ? [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('إغلاق'),
+                  child:  Text(tr('إغلاق')),
                 ),
               ]
             : _buildActions(),
@@ -459,18 +460,18 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
             TabBar(
               controller: _tabController,
               labelColor: AppColors.primary,
-              tabs: const [
+              tabs:  [
                 Tab(
-                  icon: Icon(PhosphorIconsBold.usersThree, size: 18),
-                  text: 'بالتساوي',
+                  icon: const Icon(PhosphorIconsBold.usersThree, size: 18),
+                  text: tr('بالتساوي'),
                 ),
                 Tab(
-                  icon: Icon(PhosphorIconsBold.coins, size: 18),
-                  text: 'بمبلغ',
+                  icon: const Icon(PhosphorIconsBold.coins, size: 18),
+                  text: tr('بمبلغ'),
                 ),
                 Tab(
-                  icon: Icon(PhosphorIconsBold.listBullets, size: 18),
-                  text: 'بالأصناف',
+                  icon: const Icon(PhosphorIconsBold.listBullets, size: 18),
+                  text: tr('بالأصناف'),
                 ),
               ],
             ),
@@ -530,7 +531,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
                       fontSize: 12, fontWeight: FontWeight.bold),
                 ),
                 if (done.isNotEmpty)
-                  Text('الحصصُ المسوّاة — $done',
+                  Text(tr('الحصصُ المسوّاة — {done}', {'done': done}),
                       style: const TextStyle(fontSize: 12)),
                 Text(
                   done.isEmpty
@@ -557,7 +558,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
     final editable = !_processing;
     return Row(
       children: [
-        const Text('عددُ الحصص: ', style: TextStyle(fontWeight: FontWeight.bold)),
+         Text(tr('عددُ الحصص: '), style: const TextStyle(fontWeight: FontWeight.bold)),
         IconButton(
           icon: const Icon(PhosphorIconsBold.minus, size: 16),
           onPressed: _ways > 1 && editable ? () => _setWays(_ways - 1) : null,
@@ -623,7 +624,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
                 enabled: !_processing,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
-                  labelText: 'ضيف ${i + 1}',
+                  labelText: tr('ضيف {p0}', {'p0': i + 1}),
                   isDense: true,
                   border: const OutlineInputBorder(),
                 ),
@@ -656,7 +657,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
 
   Widget _itemsTabView() {
     if (_orderItems.isEmpty) {
-      return const Center(child: Text('لا توجد أصنافٌ في الطلب'));
+      return  Center(child: Text(tr('لا توجد أصنافٌ في الطلب')));
     }
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -668,7 +669,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
         final owner = _itemAssignment[item.id];
         return ListTile(
           dense: true,
-          title: Text(product?.name ?? 'صنف #${item.productId}'),
+          title: Text(product?.name ?? tr('صنف #{p0}', {'p0': item.productId})),
           subtitle: Text(
             '${item.quantity.toStringAsFixed(0)} × '
             '${item.unitPrice.toStringAsFixed(AppConstants.decimalPlaces)} = '
@@ -676,11 +677,11 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
           ),
           trailing: DropdownButton<int>(
             value: owner,
-            hint: const Text('لمن؟'),
+            hint:  Text(tr('لمن؟')),
             underline: const SizedBox.shrink(),
             items: [
               for (var g = 0; g < _ways; g++)
-                DropdownMenuItem(value: g, child: Text('ضيف ${g + 1}')),
+                DropdownMenuItem(value: g, child: Text(tr('ضيف {p0}', {'p0': g + 1}))),
             ],
             onChanged: _processing
                 ? null
@@ -738,7 +739,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
     }
     final plan = preview.plan!;
     final message = plan.producesSeparateInvoices
-        ? 'سيصدر لكلّ ضيفٍ فاتورةٌ مستقلّةٌ بأصنافه — ${plan.parts.length} فواتيرَ منفصلة.'
+        ? tr('سيصدر لكلّ ضيفٍ فاتورةٌ مستقلّةٌ بأصنافه — {p0} فواتيرَ منفصلة.', {'p0': plan.parts.length})
         : 'الفاتورةُ واحدةٌ لكلّ الأصناف، ولكلّ دافعٍ إيصالُ حصّته — '
             'فاتورةٌ واحدة و${plan.parts.length} إيصالات.';
     return Container(
@@ -797,7 +798,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
     return [
       TextButton(
         onPressed: _processing ? null : () => Navigator.pop(context),
-        child: const Text('إلغاء'),
+        child:  Text(tr('إلغاء')),
       ),
       ElevatedButton.icon(
         onPressed: canConfirm ? () => _confirm(mode) : null,
@@ -808,7 +809,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
               )
             : const Icon(PhosphorIconsBold.checkCircle),
-        label: const Text('تأكيد التقسيم'),
+        label:  Text(tr('تأكيد التقسيم')),
       ),
     ];
   }

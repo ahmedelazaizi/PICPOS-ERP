@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -53,20 +54,20 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
       // لا تجاوزَ للخلفيّة: الثيمُ يعرّف `scaffoldBackgroundColor` للوضعَين.
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('طلبات صرف المخزون بين الفروع'),
+          title:  Text(tr('طلبات صرف المخزون بين الفروع')),
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           actions: [
             IconButton(
               icon: const Icon(PhosphorIconsBold.arrowClockwise),
-              tooltip: 'تحديث',
+              tooltip: tr('تحديث'),
               onPressed: () => ref.invalidate(stockRequisitionsControllerProvider),
             ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
               onPressed: _createNewRequisition,
               icon: const Icon(PhosphorIconsBold.plus),
-              label: const Text('طلب جديد'),
+              label:  Text(tr('طلب جديد')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.primary,
@@ -93,7 +94,7 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
                           child: TextField(
                             controller: _searchController,
                             decoration: InputDecoration(
-                              hintText: 'بحث برقم الطلب أو اسم الفرع...',
+                              hintText: tr('بحث برقم الطلب أو اسم الفرع...'),
                               prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                               isDense: true,
@@ -103,12 +104,12 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
                         ),
                         const SizedBox(width: 12),
                         SegmentedButton<String>(
-                          segments: const [
-                            ButtonSegment(value: 'all', label: Text('الكل')),
-                            ButtonSegment(value: 'pending', label: Text('معلق')),
-                            ButtonSegment(value: 'approved', label: Text('معتمد')),
-                            ButtonSegment(value: 'fulfilled', label: Text('منفذ')),
-                            ButtonSegment(value: 'rejected', label: Text('مرفوض')),
+                          segments:  [
+                            ButtonSegment(value: 'all', label: Text(tr('الكل'))),
+                            ButtonSegment(value: 'pending', label: Text(tr('معلق'))),
+                            ButtonSegment(value: 'approved', label: Text(tr('معتمد'))),
+                            ButtonSegment(value: 'fulfilled', label: Text(tr('منفذ'))),
+                            ButtonSegment(value: 'rejected', label: Text(tr('مرفوض'))),
                           ],
                           selected: {state.statusFilter},
                           onSelectionChanged: (val) {
@@ -123,30 +124,30 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
                   // Data Table Section
                   Expanded(
                     child: state.filteredRequisitions.isEmpty
-                        ? const Center(child: Text('لا توجد طلبات صرف مخزون تطابق البحث'))
+                        ?  Center(child: Text(tr('لا توجد طلبات صرف مخزون تطابق البحث')))
                         : Card(
                             margin: const EdgeInsets.all(16),
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: SingleChildScrollView(
                                 child: DataTable(
-                                  columns: const [
-                                    DataColumn(label: Text('رقم الطلب', style: TextStyle(fontWeight: FontWeight.bold))),
-                                    DataColumn(label: Text('التاريخ', style: TextStyle(fontWeight: FontWeight.bold))),
-                                    DataColumn(label: Text('من فرع', style: TextStyle(fontWeight: FontWeight.bold))),
-                                    DataColumn(label: Text('إلى فرع', style: TextStyle(fontWeight: FontWeight.bold))),
-                                    DataColumn(label: Text('المستخدم', style: TextStyle(fontWeight: FontWeight.bold))),
-                                    DataColumn(label: Text('الحالة', style: TextStyle(fontWeight: FontWeight.bold))),
-                                    DataColumn(label: Text('الإجراءات', style: TextStyle(fontWeight: FontWeight.bold))),
+                                  columns:  [
+                                    DataColumn(label: Text(tr('رقم الطلب'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text(tr('التاريخ'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text(tr('من فرع'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text(tr('إلى فرع'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text(tr('المستخدم'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text(tr('الحالة'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text(tr('الإجراءات'), style: const TextStyle(fontWeight: FontWeight.bold))),
                                   ],
                                   rows: state.filteredRequisitions.map((req) {
                                     return DataRow(
                                       cells: [
                                         DataCell(Text(req.requisitionNumber, style: const TextStyle(fontWeight: FontWeight.w600))),
                                         DataCell(Text(req.requisitionDate.toString().substring(0, 10))),
-                                        DataCell(Text(req.fromBranchName ?? 'غير محدد')),
-                                        DataCell(Text(req.toBranchName ?? 'غير محدد')),
-                                        DataCell(Text(req.createdByUserName ?? 'مجهول')),
+                                        DataCell(Text(req.fromBranchName ?? tr('غير محدد'))),
+                                        DataCell(Text(req.toBranchName ?? tr('غير محدد'))),
+                                        DataCell(Text(req.createdByUserName ?? tr('مجهول'))),
                                         DataCell(_buildStatusBadge(statusToDb(req.status))),
                                         DataCell(
                                           Row(
@@ -155,14 +156,14 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
                                               IconButton(
                                                 icon: const Icon(PhosphorIconsBold.eye, size: 18),
                                                 color: AppColors.info,
-                                                tooltip: 'عرض التفاصيل',
+                                                tooltip: tr('عرض التفاصيل'),
                                                 onPressed: () => _showRequisitionDetails(req),
                                               ),
                                               if (req.status == RequisitionStatus.pending) ...[
                                                 IconButton(
                                                   icon: const Icon(PhosphorIconsBold.checkCircle, size: 18),
                                                   color: AppColors.success,
-                                                  tooltip: 'اعتماد وصرف',
+                                                  tooltip: tr('اعتماد وصرف'),
                                                   onPressed: state.processingIds.contains(req.id)
                                                       ? null
                                                       : () async {
@@ -175,7 +176,7 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
                                                 IconButton(
                                                   icon: const Icon(PhosphorIconsBold.xCircle, size: 18),
                                                   color: AppColors.error,
-                                                  tooltip: 'رفض',
+                                                  tooltip: tr('رفض'),
                                                   onPressed: state.processingIds.contains(req.id)
                                                       ? null
                                                       : () async {
@@ -226,7 +227,7 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text('تفاصيل طلب ${request.requisitionNumber}'),
+          title: Text(tr('تفاصيل طلب {p0}', {'p0': request.requisitionNumber})),
           content: SizedBox(
             width: 620,
             child: FutureBuilder<_RequisitionDetails>(
@@ -239,7 +240,7 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
                   );
                 }
                 if (snapshot.hasError || !snapshot.hasData) {
-                  return Text(snapshot.error?.toString() ?? 'تعذر تحميل التفاصيل');
+                  return Text(snapshot.error?.toString() ?? tr('تعذر تحميل التفاصيل'));
                 }
                 final details = snapshot.data!;
                 final requisition = details.requisition;
@@ -247,25 +248,25 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('التاريخ: ${requisition.requisitionDate.toString().substring(0, 10)}'),
-                      Text('الحالة: ${statusToDb(requisition.status)}'),
-                      Text('من فرع: ${requisition.fromBranchName ?? requisition.fromBranchId}'),
-                      Text('إلى فرع: ${requisition.toBranchName ?? requisition.toBranchId}'),
+                      Text(tr('التاريخ: {p0}', {'p0': requisition.requisitionDate.toString().substring(0, 10)})),
+                      Text(tr('الحالة: {p0}', {'p0': statusToDb(requisition.status)})),
+                      Text(tr('من فرع: {p0}', {'p0': requisition.fromBranchName ?? requisition.fromBranchId})),
+                      Text(tr('إلى فرع: {p0}', {'p0': requisition.toBranchName ?? requisition.toBranchId})),
                       if (requisition.notes?.isNotEmpty == true)
-                        Text('ملاحظات: ${requisition.notes}'),
+                        Text(tr('ملاحظات: {p0}', {'p0': requisition.notes})),
                       const Divider(),
                       if (details.items.isEmpty)
-                        const Text('لا توجد أصناف في هذا الطلب')
+                         Text(tr('لا توجد أصناف في هذا الطلب'))
                       else
                         ...details.items.map((item) {
                           final product = details.products[item.productId];
                           return ListTile(
                             dense: true,
                             contentPadding: EdgeInsets.zero,
-                            title: Text(product?.name ?? 'منتج #${item.productId}'),
+                            title: Text(product?.name ?? tr('منتج #{p0}', {'p0': item.productId})),
                             subtitle: Text(product?.code ?? ''),
                             trailing: Text(
-                              '${item.quantity} / منفذ ${item.fulfilledQuantity}',
+                              tr('{p0} / منفذ {p1}', {'p0': item.quantity, 'p1': item.fulfilledQuantity}),
                             ),
                           );
                         }),
@@ -278,7 +279,7 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         );
@@ -292,19 +293,19 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
     switch (status) {
       case 'pending':
         color = AppColors.warning;
-        label = 'معلق';
+        label = tr('معلق');
         break;
       case 'approved':
         color = AppColors.primary;
-        label = 'معتمد';
+        label = tr('معتمد');
         break;
       case 'fulfilled':
         color = AppColors.success;
-        label = 'تم الصرف';
+        label = tr('تم الصرف');
         break;
       case 'rejected':
         color = AppColors.error;
-        label = 'مرفوض';
+        label = tr('مرفوض');
         break;
       default:
         color = Colors.grey;

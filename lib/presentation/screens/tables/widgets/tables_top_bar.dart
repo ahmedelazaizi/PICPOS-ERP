@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -69,11 +70,11 @@ Widget buildTablesManageAddTableButton({required VoidCallback onPressed}) {
   return PermissionGuard(
     permission: PermissionCodes.tablesManage,
     allowManagerOverride: true,
-    actionName: 'إضافة طاولة',
+    actionName: tr('إضافة طاولة'),
     onGranted: onPressed,
     child: _tablesActionButtonChip(
       PhosphorIconsBold.plus,
-      'طاولة',
+      tr('طاولة'),
       onPressed,
       highlight: true,
     ),
@@ -142,7 +143,7 @@ class TablesTopBar extends ConsumerWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('إدارة الطاولات',
+              Text(tr('إدارة الطاولات'),
                   style: GoogleFonts.cairo(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -164,7 +165,7 @@ class TablesTopBar extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Text('نشط',
+                  Text(tr('نشط'),
                       style: GoogleFonts.cairo(
                           fontSize: 10,
                           color: const Color(0xFF10B981),
@@ -190,14 +191,14 @@ class TablesTopBar extends ConsumerWidget {
                   tables.where((t) => t.status == 'reserved').length;
               return Row(
                 children: [
-                  _statBadge('$available', 'متاحة', const Color(0xFF10B981)),
+                  _statBadge('$available', tr('متاحة'), const Color(0xFF10B981)),
                   const SizedBox(width: 8),
-                  _statBadge('$occupied', 'مشغولة', const Color(0xFF3B82F6)),
+                  _statBadge('$occupied', tr('مشغولة'), const Color(0xFF3B82F6)),
                   const SizedBox(width: 8),
-                  _statBadge('$reserved', 'محجوزة', const Color(0xFFF59E0B)),
+                  _statBadge('$reserved', tr('محجوزة'), const Color(0xFFF59E0B)),
                   const SizedBox(width: 8),
                   _statBadge(
-                      '${tables.length}', 'إجمالي', const Color(0xFF94A3B8)),
+                      '${tables.length}', tr('إجمالي'), const Color(0xFF94A3B8)),
                 ],
               );
             },
@@ -208,7 +209,7 @@ class TablesTopBar extends ConsumerWidget {
           // Action buttons
           _actionBtn(
             uiState.isVisualView ? PhosphorIconsBold.gridFour : PhosphorIconsBold.squaresFour,
-            uiState.isVisualView ? 'شبكي' : 'مخطط',
+            uiState.isVisualView ? tr('شبكي') : tr('مخطط'),
             () => uiNotifier.toggleView(),
           ),
           if (uiState.isVisualView)
@@ -216,11 +217,11 @@ class TablesTopBar extends ConsumerWidget {
               uiState.isDesignerMode
                   ? PhosphorIconsBold.check
                   : PhosphorIconsBold.pencilLine,
-              uiState.isDesignerMode ? 'حفظ' : 'تصميم',
+              uiState.isDesignerMode ? tr('حفظ') : tr('تصميم'),
               () => uiNotifier.toggleDesignerMode(),
               highlight: uiState.isDesignerMode,
             ),
-          _actionBtn(PhosphorIconsBold.layout, 'أقسام', onManageSections),
+          _actionBtn(PhosphorIconsBold.layout, tr('أقسام'), onManageSections),
           buildTablesManageAddTableButton(onPressed: onAddTable),
         ],
       ),

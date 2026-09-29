@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,22 +31,22 @@ mixin PosCredentialHandler {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.shieldStar, color: AppColors.warning),
-              SizedBox(width: 8),
-              Text('تسجيل دخول المدير'),
+              const Icon(PhosphorIconsBold.shieldStar, color: AppColors.warning),
+              const SizedBox(width: 8),
+              Text(tr('تسجيل دخول المدير')),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('أدخل بيانات حساب المدير للحصول على صلاحيات'),
+               Text(tr('أدخل بيانات حساب المدير للحصول على صلاحيات')),
               const SizedBox(height: 16),
               TextField(
                 controller: usernameController,
                 decoration: InputDecoration(
-                  labelText: 'اسم المستخدم',
+                  labelText: tr('اسم المستخدم'),
                   prefixIcon: const Icon(PhosphorIconsBold.user),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -58,7 +59,7 @@ mixin PosCredentialHandler {
                 controller: passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
-                  labelText: 'كلمة المرور',
+                  labelText: tr('كلمة المرور'),
                   prefixIcon: const Icon(PhosphorIconsBold.lock),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -76,7 +77,7 @@ mixin PosCredentialHandler {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             FilledButton(
               onPressed: () => validateCredentials(
@@ -85,7 +86,7 @@ mixin PosCredentialHandler {
                 usernameController.text,
                 passwordController.text,
               ),
-              child: const Text('تأكيد'),
+              child:  Text(tr('تأكيد')),
             ),
           ],
         ),
@@ -105,7 +106,7 @@ mixin PosCredentialHandler {
       showPosToast(
         ctx,
         ref,
-        'يرجى إدخال المستخدم وكلمة المرور',
+        tr('يرجى إدخال المستخدم وكلمة المرور'),
         type: PosNotificationType.error,
       );
       return;
@@ -120,7 +121,7 @@ mixin PosCredentialHandler {
         showPosToast(
           ctx,
           ref,
-          'محاولات كثيرة — انتظر $minutes:${seconds.toString().padLeft(2, '0')} دقيقة',
+          tr('محاولات كثيرة — انتظر {minutes}:{p0} دقيقة', {'minutes': minutes, 'p0': seconds.toString().padLeft(2, '0')}),
           type: PosNotificationType.error,
         );
       }
@@ -148,11 +149,11 @@ mixin PosCredentialHandler {
           final activityLogRepo = ref.read(activityLogRepositoryProvider);
           await activityLogRepo.logActivity(
             userId: auth.user?.id,
-            userName: auth.user?.displayName ?? 'مستخدم',
+            userName: auth.user?.displayName ?? tr('مستخدم'),
             action: 'admin_per_action_approval',
             entityType: 'session',
             description:
-                'موافقة المدير ${userWithRole.user.displayName} على إجراء واحد',
+                tr('موافقة المدير {p0} على إجراء واحد', {'p0': userWithRole.user.displayName}),
           );
 
           if (ctx.mounted) Navigator.pop(ctx, true);
@@ -161,7 +162,7 @@ mixin PosCredentialHandler {
             showPosToast(
               ctx,
               ref,
-              'هذا المستخدم ليس لديه صلاحية المدير',
+              tr('هذا المستخدم ليس لديه صلاحية المدير'),
               type: PosNotificationType.error,
             );
           }
@@ -173,15 +174,15 @@ mixin PosCredentialHandler {
             ctx,
             ref,
             remaining <= 0
-                ? 'تم قفل الحساب لمدة 15 دقيقة'
-                : 'اسم المستخدم أو كلمة المرور غير صحيحة ($remaining متبقية)',
+                ? tr('تم قفل الحساب لمدة 15 دقيقة')
+                : tr('اسم المستخدم أو كلمة المرور غير صحيحة ({remaining} متبقية)', {'remaining': remaining}),
             type: PosNotificationType.error,
           );
         }
       }
     } catch (e) {
       if (ctx.mounted) {
-        showPosToast(ctx, ref, 'خطأ: $e', type: PosNotificationType.error);
+        showPosToast(ctx, ref, tr('خطأ: {e}', {'e': e}), type: PosNotificationType.error);
       }
     }
   }

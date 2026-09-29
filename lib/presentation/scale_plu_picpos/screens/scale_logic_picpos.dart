@@ -78,7 +78,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
   Future<void> exportToScale() async {
     if (selectedScaleIndex < 0 || selectedScaleIndex >= scales.length) {
       if (mounted) {
-        AppToast.show(context, 'اختر ميزان أولاً', type: ToastType.warning);
+        AppToast.show(context, tr('اختر ميزان أولاً'), type: ToastType.warning);
       }
       return;
     }
@@ -86,7 +86,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
     final scale = scales[selectedScaleIndex];
     if (!scale.isActive) {
       if (mounted) {
-        AppToast.show(context, 'الميزان المحدد غير مفعّل', type: ToastType.warning);
+        AppToast.show(context, tr('الميزان المحدد غير مفعّل'), type: ToastType.warning);
       }
       return;
     }
@@ -94,17 +94,17 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
     // Validate connection settings before attempting
     final conn = LabelScaleService.connectionFromString(scale.connectionType);
     if ((conn == LabelScaleConnection.tcp || conn == LabelScaleConnection.aclasSDK) && (scale.ipAddress == null || scale.ipAddress!.isEmpty)) {
-      if (mounted) AppToast.show(context, 'يجب إدخال عنوان IP للميزان "${scale.name}" أولاً', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('يجب إدخال عنوان IP للميزان "{p0}" أولاً', {'p0': scale.name}), type: ToastType.error);
       return;
     }
     if (conn == LabelScaleConnection.serial && (scale.comPort == null || scale.comPort!.isEmpty)) {
-      if (mounted) AppToast.show(context, 'يجب إدخال منفذ COM للميزان "${scale.name}" أولاً', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('يجب إدخال منفذ COM للميزان "{p0}" أولاً', {'p0': scale.name}), type: ToastType.error);
       return;
     }
 
     if (selectedProductIds.isEmpty) {
       if (mounted) {
-        AppToast.show(context, 'حدد أصناف للترحيل أولاً', type: ToastType.warning);
+        AppToast.show(context, tr('حدد أصناف للترحيل أولاً'), type: ToastType.warning);
       }
       return;
     }
@@ -119,7 +119,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
 
       if (selectedProducts.isEmpty) {
         if (mounted) {
-          AppToast.show(context, 'لم يتم العثور على الأصناف المحددة', type: ToastType.warning);
+          AppToast.show(context, tr('لم يتم العثور على الأصناف المحددة'), type: ToastType.warning);
         }
         return;
       }
@@ -160,7 +160,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
 
       if (pluItems.isEmpty) {
         if (mounted) {
-          AppToast.show(context, 'لم يتم العثور على أصناف صالحة للترحيل (تحقق من أرقام الـ PLU)', type: ToastType.warning);
+          AppToast.show(context, tr('لم يتم العثور على أصناف صالحة للترحيل (تحقق من أرقام الـ PLU)'), type: ToastType.warning);
         }
         setState(() => isExporting = false);
         return;
@@ -170,7 +170,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
       if (pluItems.length > maxPlu) {
         debugPrint('[ScaleExport] Warning: ${pluItems.length} items exceed maxPlu=$maxPlu for scale "${scale.name}"');
         if (mounted) {
-          AppToast.show(context, 'تحذير: عدد الأصناف (${pluItems.length}) يتجاوز سعة الميزان ($maxPlu) — سيتم إرسال أول $maxPlu صنف فقط', type: ToastType.warning);
+          AppToast.show(context, tr('تحذير: عدد الأصناف ({p0}) يتجاوز سعة الميزان ({maxPlu}) — سيتم إرسال أول {maxPlu} صنف فقط', {'p0': pluItems.length, 'maxPlu': maxPlu}), type: ToastType.warning);
         }
         pluItems.removeRange(maxPlu, pluItems.length);
       }
@@ -191,12 +191,12 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
 
       if (mounted) {
         if (result.failed == 0 && result.success > 0) {
-          AppToast.show(context, 'تم ترحيل ${result.success} صنف بنجاح إلى ${scale.name}', type: ToastType.success);
+          AppToast.show(context, tr('تم ترحيل {p0} صنف بنجاح إلى {p1}', {'p0': result.success, 'p1': scale.name}), type: ToastType.success);
         } else if (result.success == 0) {
           final brand = LabelScaleService.brandFromString(scale.brand);
           _showExportErrorDialog(scale, brand, conn, result);
         } else {
-          AppToast.show(context, 'تم ترحيل ${result.success} من ${result.total} — فشل ${result.failed}', type: ToastType.warning);
+          AppToast.show(context, tr('تم ترحيل {p0} من {p1} — فشل {p2}', {'p0': result.success, 'p1': result.total, 'p2': result.failed}), type: ToastType.warning);
         }
       }
     } catch (e, stack) {
@@ -206,21 +206,21 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Row(
+            title:  Row(
               children: [
-                Icon(PhosphorIconsBold.warning, color: AppColors.error),
-                SizedBox(width: 8),
-                Text('فشل الترحيل'),
+                const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+                const SizedBox(width: 8),
+                Text(tr('فشل الترحيل')),
               ],
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('الميزان: ${scale.name}'),
+                Text(tr('الميزان: {p0}', {'p0': scale.name})),
                 Text('IP: ${scale.ipAddress}:${scale.port}'),
                 const SizedBox(height: 12),
-                const Text('تفاصيل الخطأ:', style: TextStyle(fontWeight: FontWeight.bold)),
+                 Text(tr('تفاصيل الخطأ:'), style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -234,7 +234,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('حسناً')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('حسناً'))),
             ],
           ),
         );
@@ -253,26 +253,26 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.warning, color: AppColors.error),
-            SizedBox(width: 8),
-            Text('فشل ترحيل جميع الأصناف'),
+            const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+            const SizedBox(width: 8),
+            Text(tr('فشل ترحيل جميع الأصناف')),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('الميزان: ${scale.name}'),
-            Text('العلامة التجارية: ${brand.name.toUpperCase()}'),
-            Text('نوع الاتصال: ${connection == LabelScaleConnection.tcp ? "TCP/IP" : "Serial"}'),
+            Text(tr('الميزان: {p0}', {'p0': scale.name})),
+            Text(tr('العلامة التجارية: {p0}', {'p0': brand.name.toUpperCase()})),
+            Text(tr('نوع الاتصال: {p0}', {'p0': connection == LabelScaleConnection.tcp ? "TCP/IP" : "Serial"})),
             Text('IP: ${scale.ipAddress}:${scale.port}'),
             const SizedBox(height: 12),
-            Text('الأصناف: ${result.total} — نجاح: ${result.success} — فشل: ${result.failed}'),
+            Text(tr('الأصناف: {p0} — نجاح: {p1} — فشل: {p2}', {'p0': result.total, 'p1': result.success, 'p2': result.failed})),
             if (result.errors.isNotEmpty) ...[
               const SizedBox(height: 8),
-              const Text('الأخطاء:', style: TextStyle(fontWeight: FontWeight.bold)),
+               Text(tr('الأخطاء:'), style: const TextStyle(fontWeight: FontWeight.bold)),
               Container(
                 constraints: const BoxConstraints(maxHeight: 150),
                 padding: const EdgeInsets.all(8),
@@ -292,15 +292,15 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                 color: AppColors.info.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
-                'تأكد من:\n• الميزان متصل بالشبكة\n• عنوان IP والمنفذ صحيح\n• العلامة التجارية مطابقة للميزان',
-                style: TextStyle(fontSize: 12),
+              child:  Text(
+                tr('تأكد من:\n• الميزان متصل بالشبكة\n• عنوان IP والمنفذ صحيح\n• العلامة التجارية مطابقة للميزان'),
+                style: const TextStyle(fontSize: 12),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('حسناً')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('حسناً'))),
         ],
       ),
     );
@@ -309,14 +309,14 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
   Future<void> verifyConnection() async {
     if (selectedScaleIndex < 0 || selectedScaleIndex >= scales.length) {
       if (mounted) {
-        AppToast.show(context, 'اختر ميزان أولاً', type: ToastType.warning);
+        AppToast.show(context, tr('اختر ميزان أولاً'), type: ToastType.warning);
       }
       return;
     }
 
     final scale = scales[selectedScaleIndex];
     if (mounted) {
-      AppToast.show(context, 'جاري اختبار الاتصال بـ ${scale.ipAddress}:${scale.port}...', type: ToastType.info);
+      AppToast.show(context, tr('جاري اختبار الاتصال بـ {p0}:{p1}...', {'p0': scale.ipAddress, 'p1': scale.port}), type: ToastType.info);
     }
 
     try {
@@ -324,14 +324,14 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
 
       if (mounted) {
         if (result['success'] == true) {
-          AppToast.show(context, 'الاتصال بـ ${scale.name} ناجح ✓', type: ToastType.success);
+          AppToast.show(context, tr('الاتصال بـ {p0} ناجح ✓', {'p0': scale.name}), type: ToastType.success);
         } else {
-          AppToast.show(context, 'فشل الاتصال: ${result['error'] ?? 'غير معروف'}', type: ToastType.error);
+          AppToast.show(context, tr('فشل الاتصال: {p0}', {'p0': result['error'] ?? 'غير معروف'}), type: ToastType.error);
         }
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل الاتصال — $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل الاتصال — {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -349,10 +349,10 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('حذف الميزان'),
-        content: Text('هل تريد حذف "${scale.name}"؟'),
+        title:  Text(tr('حذف الميزان')),
+        content: Text(tr('هل تريد حذف "{p0}"؟', {'p0': scale.name})),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
           FilledButton(
             onPressed: () async {
               Navigator.pop(ctx);
@@ -363,7 +363,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
               }
             },
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('حذف'),
+            child:  Text(tr('حذف')),
           ),
         ],
       ),
@@ -416,7 +416,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
           // Helper to build a LabelScale from current dialog state
           LabelScale buildScaleFromDialog() => LabelScale(
             id: existing?.id ?? 0,
-            name: nameCtrl.text.isEmpty ? 'ميزان ${scales.length + 1}' : nameCtrl.text,
+            name: nameCtrl.text.isEmpty ? tr('ميزان {p0}', {'p0': scales.length + 1}) : nameCtrl.text,
             brand: selectedBrand,
             connectionType: selectedConnection,
             ipAddress: ipCtrl.text.isEmpty ? null : ipCtrl.text,
@@ -439,7 +439,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
             children: [
               Icon(isEdit ? PhosphorIconsBold.pencilSimple : PhosphorIconsBold.plusCircle, size: 20, color: AppColors.primary),
               const SizedBox(width: 8),
-              Text(isEdit ? 'تعديل ميزان' : 'إضافة ميزان جديد'),
+              Text(isEdit ? tr('تعديل ميزان') : tr('إضافة ميزان جديد')),
             ],
           ),
           content: SizedBox(
@@ -452,12 +452,12 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                   // ── Basic Info ──
                   TextField(
                     controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: 'اسم الميزان', hintText: 'مثال: ميزان ديلي', border: OutlineInputBorder(), isDense: true, prefixIcon: Icon(PhosphorIconsBold.tag, size: 18)),
+                    decoration:  InputDecoration(labelText: tr('اسم الميزان'), hintText: tr('مثال: ميزان ديلي'), border: const OutlineInputBorder(), isDense: true, prefixIcon: const Icon(PhosphorIconsBold.tag, size: 18)),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     value: selectedBrand,
-                    decoration: const InputDecoration(labelText: 'العلامة التجارية', border: OutlineInputBorder(), isDense: true),
+                    decoration:  InputDecoration(labelText: tr('العلامة التجارية'), border: const OutlineInputBorder(), isDense: true),
                     items: _brandOptions.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value, style: const TextStyle(fontSize: 13)))).toList(),
                     onChanged: (v) {
                       if (v == null) return;
@@ -472,13 +472,13 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     value: selectedConnection,
-                    decoration: const InputDecoration(labelText: 'طريقة الاتصال', border: OutlineInputBorder(), isDense: true),
-                    items: const [
-                      DropdownMenuItem(value: 'aclassdk', child: Text('AclasSDK — كشف تلقائي بالـ IP فقط')),
-                      DropdownMenuItem(value: 'tcp', child: Text('TCP/IP (شبكة)')),
-                      DropdownMenuItem(value: 'serial', child: Text('Serial (COM)')),
-                      DropdownMenuItem(value: 'ftp', child: Text('FTP (رفع ملف)')),
-                      DropdownMenuItem(value: 'file', child: Text('تصدير ملف CSV')),
+                    decoration:  InputDecoration(labelText: tr('طريقة الاتصال'), border: const OutlineInputBorder(), isDense: true),
+                    items:  [
+                      DropdownMenuItem(value: 'aclassdk', child: Text(tr('AclasSDK — كشف تلقائي بالـ IP فقط'))),
+                      DropdownMenuItem(value: 'tcp', child: Text(tr('TCP/IP (شبكة)'))),
+                      const DropdownMenuItem(value: 'serial', child: Text('Serial (COM)')),
+                      DropdownMenuItem(value: 'ftp', child: Text(tr('FTP (رفع ملف)'))),
+                      DropdownMenuItem(value: 'file', child: Text(tr('تصدير ملف CSV'))),
                     ],
                     onChanged: (v) => setDialogState(() { selectedConnection = v ?? 'tcp'; testResult = null; }),
                   ),
@@ -533,15 +533,15 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: ipCtrl,
-                      decoration: const InputDecoration(labelText: 'عنوان IP', hintText: '192.168.1.90', border: OutlineInputBorder(), isDense: true, prefixIcon: Icon(PhosphorIconsBold.globe, size: 18)),
+                      decoration:  InputDecoration(labelText: tr('عنوان IP'), hintText: '192.168.1.90', border: const OutlineInputBorder(), isDense: true, prefixIcon: const Icon(PhosphorIconsBold.globe, size: 18)),
                     ),
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.success.withValues(alpha: 0.3))),
-                      child: const Row(children: [
-                        Icon(PhosphorIconsBold.info, size: 16, color: AppColors.success), SizedBox(width: 8),
-                        Expanded(child: Text('يكفي إدخال عنوان IP فقط. النظام يكتشف الميزان والبروتوكول تلقائياً عبر AclasSDK.', style: TextStyle(fontSize: 12, color: AppColors.success))),
+                      child:  Row(children: [
+                        const Icon(PhosphorIconsBold.info, size: 16, color: AppColors.success), const SizedBox(width: 8),
+                        Expanded(child: Text(tr('يكفي إدخال عنوان IP فقط. النظام يكتشف الميزان والبروتوكول تلقائياً عبر AclasSDK.'), style: const TextStyle(fontSize: 12, color: AppColors.success))),
                       ]),
                     ),
                     const SizedBox(height: 8),
@@ -551,10 +551,10 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                         icon: isScanning
                             ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                             : const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
-                        label: Text(isScanning ? 'جاري الكشف...' : 'اكتشاف الميزان'),
+                        label: Text(isScanning ? tr('جاري الكشف...') : tr('اكتشاف الميزان')),
                         onPressed: isScanning ? null : () async {
                           final ip = ipCtrl.text.trim();
-                          if (ip.isEmpty) { AppToast.show(ctx, 'أدخل عنوان IP أولاً', type: ToastType.info); return; }
+                          if (ip.isEmpty) { AppToast.show(ctx, tr('أدخل عنوان IP أولاً'), type: ToastType.info); return; }
                           setDialogState(() { isScanning = true; testResult = null; });
                           try {
                             final result = await LabelScaleService.instance.testConnection(
@@ -567,12 +567,12 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                                 setDialogState(() => testResult = 'تم كشف الميزان بنجاح!\n'
                                     'البروتوكول: ${result['protocol'] ?? '-'} | المنفذ: ${result['port'] ?? '-'} | أقصى PLU: ${result['maxPlu'] ?? '-'}');
                               } else {
-                                final errDetail = result['error']?.toString() ?? 'لم يتم العثور على الميزان';
-                                setDialogState(() => testResult = '$errDetail\nتأكد من: (1) AclasSDK.dll موجود بجوار البرنامج  (2) الميزان مُشغّل  (3) الـ IP صحيح');
+                                final errDetail = result['error']?.toString() ?? tr('لم يتم العثور على الميزان');
+                                setDialogState(() => testResult = tr('{errDetail}\nتأكد من: (1) AclasSDK.dll موجود بجوار البرنامج  (2) الميزان مُشغّل  (3) الـ IP صحيح', {'errDetail': errDetail}));
                               }
                             }
                           } catch (e) {
-                            if (ctx.mounted) setDialogState(() => testResult = 'خطأ: $e');
+                            if (ctx.mounted) setDialogState(() => testResult = tr('خطأ: {e}', {'e': e}));
                           } finally {
                             if (ctx.mounted) setDialogState(() => isScanning = false);
                           }
@@ -587,39 +587,39 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                     Row(children: [
                       Expanded(flex: 2, child: TextField(
                         controller: ipCtrl,
-                        decoration: const InputDecoration(labelText: 'عنوان IP', hintText: '192.168.1.90', border: OutlineInputBorder(), isDense: true, prefixIcon: Icon(PhosphorIconsBold.globe, size: 18)),
+                        decoration:  InputDecoration(labelText: tr('عنوان IP'), hintText: '192.168.1.90', border: const OutlineInputBorder(), isDense: true, prefixIcon: const Icon(PhosphorIconsBold.globe, size: 18)),
                       )),
                       const SizedBox(width: 8),
                       Expanded(child: TextField(
                         controller: portCtrl,
                         decoration: InputDecoration(
-                          labelText: 'المنفذ',
+                          labelText: tr('المنفذ'),
                           hintText: '${_defaultPortFor(selectedBrand)}',
                           border: const OutlineInputBorder(), isDense: true,
                           suffixIcon: isScanning
                               ? const Padding(padding: EdgeInsets.all(10), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))
                               : IconButton(
                                   icon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
-                                  tooltip: 'بحث تلقائي عن المنفذ',
+                                  tooltip: tr('بحث تلقائي عن المنفذ'),
                                   onPressed: () async {
                                     final ip = ipCtrl.text.trim();
-                                    if (ip.isEmpty) { AppToast.show(ctx, 'أدخل عنوان IP أولاً', type: ToastType.info); return; }
+                                    if (ip.isEmpty) { AppToast.show(ctx, tr('أدخل عنوان IP أولاً'), type: ToastType.info); return; }
                                     setDialogState(() { isScanning = true; testResult = null; });
                                     try {
                                       final brand = LabelScaleService.brandFromString(selectedBrand);
                                       final ports = await LabelScaleService.instance.scanForOpenPort(ip, brand: brand);
                                       if (ctx.mounted) {
                                         if (ports.isEmpty) {
-                                          setDialogState(() => testResult = 'لم يتم العثور على منافذ مفتوحة على $ip — أدخل رقم المنفذ يدوياً واضغط اختبار الاتصال');
+                                          setDialogState(() => testResult = tr('لم يتم العثور على منافذ مفتوحة على {ip} — أدخل رقم المنفذ يدوياً واضغط اختبار الاتصال', {'ip': ip}));
                                         } else {
                                           setDialogState(() {
                                             portCtrl.text = '${ports.first}';
-                                            testResult = 'تم العثور على ${ports.length == 1 ? "المنفذ: ${ports.first}" : "منافذ: ${ports.join(", ")} — تم اختيار ${ports.first}"}';
+                                            testResult = tr('تم العثور على {p0}', {'p0': ports.length == 1 ? "المنفذ: ${ports.first}" : "منافذ: ${ports.join(", ")} — تم اختيار ${ports.first}"});
                                           });
                                         }
                                       }
                                     } catch (e) {
-                                      if (ctx.mounted) setDialogState(() => testResult = 'خطأ أثناء البحث: $e');
+                                      if (ctx.mounted) setDialogState(() => testResult = tr('خطأ أثناء البحث: {e}', {'e': e}));
                                     } finally {
                                       if (ctx.mounted) setDialogState(() => isScanning = false);
                                     }
@@ -635,9 +635,9 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                   if (selectedConnection == 'ftp') ...[
                     const SizedBox(height: 12),
                     Row(children: [
-                      Expanded(child: TextField(controller: ftpUserCtrl, decoration: const InputDecoration(labelText: 'مستخدم FTP', border: OutlineInputBorder(), isDense: true))),
+                      Expanded(child: TextField(controller: ftpUserCtrl, decoration:  InputDecoration(labelText: tr('مستخدم FTP'), border: const OutlineInputBorder(), isDense: true))),
                       const SizedBox(width: 8),
-                      Expanded(child: TextField(controller: ftpPassCtrl, decoration: const InputDecoration(labelText: 'كلمة مرور FTP', border: OutlineInputBorder(), isDense: true), obscureText: true)),
+                      Expanded(child: TextField(controller: ftpPassCtrl, decoration:  InputDecoration(labelText: tr('كلمة مرور FTP'), border: const OutlineInputBorder(), isDense: true), obscureText: true)),
                     ]),
                   ],
 
@@ -647,12 +647,12 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                     Row(children: [
                       Expanded(child: TextField(
                         controller: comPortCtrl,
-                        decoration: const InputDecoration(labelText: 'منفذ COM', hintText: 'COM3', border: OutlineInputBorder(), isDense: true, prefixIcon: Icon(PhosphorIconsBold.plugs, size: 18)),
+                        decoration:  InputDecoration(labelText: tr('منفذ COM'), hintText: 'COM3', border: const OutlineInputBorder(), isDense: true, prefixIcon: const Icon(PhosphorIconsBold.plugs, size: 18)),
                       )),
                       const SizedBox(width: 8),
                       Expanded(child: DropdownButtonFormField<int>(
                         value: selectedBaudRate,
-                        decoration: const InputDecoration(labelText: 'سرعة الاتصال', border: OutlineInputBorder(), isDense: true),
+                        decoration:  InputDecoration(labelText: tr('سرعة الاتصال'), border: const OutlineInputBorder(), isDense: true),
                         items: _baudRates.map((r) => DropdownMenuItem(value: r, child: Text('$r'))).toList(),
                         onChanged: (v) => setDialogState(() => selectedBaudRate = v ?? 9600),
                       )),
@@ -692,7 +692,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
 
                   // ── Max PLU ──
                   const SizedBox(height: 12),
-                  TextField(controller: maxPluCtrl, decoration: const InputDecoration(labelText: 'سعة PLU القصوى', border: OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number),
+                  TextField(controller: maxPluCtrl, decoration:  InputDecoration(labelText: tr('سعة PLU القصوى'), border: const OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number),
 
                   // ── File mode info ──
                   if (selectedConnection == 'file') ...[
@@ -700,9 +700,9 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(color: AppColors.info.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.info.withValues(alpha: 0.3))),
-                      child: const Row(children: [
-                        Icon(PhosphorIconsBold.info, size: 16, color: AppColors.info), SizedBox(width: 8),
-                        Expanded(child: Text('سيتم تصدير ملف CSV يمكن استيراده في برنامج PLU Manager الخاص بالميزان', style: TextStyle(fontSize: 12, color: AppColors.info))),
+                      child:  Row(children: [
+                        const Icon(PhosphorIconsBold.info, size: 16, color: AppColors.info), const SizedBox(width: 8),
+                        Expanded(child: Text(tr('سيتم تصدير ملف CSV يمكن استيراده في برنامج PLU Manager الخاص بالميزان'), style: const TextStyle(fontSize: 12, color: AppColors.info))),
                       ]),
                     ),
                   ],
@@ -719,10 +719,10 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                             final result = await _scaleRepo.testConnection(scale);
                             if (ctx.mounted) {
                               final ok = result['success'] == true;
-                              setDialogState(() => testResult = ok ? 'الاتصال ناجح ✓' : 'فشل: ${result['error'] ?? 'غير معروف'}');
+                              setDialogState(() => testResult = ok ? tr('الاتصال ناجح ✓') : tr('فشل: {p0}', {'p0': result['error'] ?? 'غير معروف'}));
                             }
                           } catch (e) {
-                            if (ctx.mounted) setDialogState(() => testResult = 'خطأ: $e');
+                            if (ctx.mounted) setDialogState(() => testResult = tr('خطأ: {e}', {'e': e}));
                           } finally {
                             if (ctx.mounted) setDialogState(() => isTesting = false);
                           }
@@ -730,7 +730,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                         icon: isTesting
                             ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                             : const Icon(PhosphorIconsBold.plugsConnected, size: 16),
-                        label: const Text('اختبار الاتصال', style: TextStyle(fontSize: 12)),
+                        label:  Text(tr('اختبار الاتصال'), style: const TextStyle(fontSize: 12)),
                       )),
                       if (isEdit) ...[
                         const SizedBox(width: 8),
@@ -741,11 +741,11 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                               builder: (c) => Directionality(
                                 textDirection: ui.TextDirection.rtl,
                                 child: AlertDialog(
-                                  title: const Text('مسح ذاكرة الميزان'),
-                                  content: const Text('هل تريد مسح جميع الأصناف المحفوظة على الميزان؟\nهذا الإجراء لا يمكن التراجع عنه.'),
+                                  title:  Text(tr('مسح ذاكرة الميزان')),
+                                  content:  Text(tr('هل تريد مسح جميع الأصناف المحفوظة على الميزان؟\nهذا الإجراء لا يمكن التراجع عنه.')),
                                   actions: [
-                                    TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('إلغاء')),
-                                    FilledButton(onPressed: () => Navigator.pop(c, true), style: FilledButton.styleFrom(backgroundColor: AppColors.error), child: const Text('مسح')),
+                                    TextButton(onPressed: () => Navigator.pop(c, false), child:  Text(tr('إلغاء'))),
+                                    FilledButton(onPressed: () => Navigator.pop(c, true), style: FilledButton.styleFrom(backgroundColor: AppColors.error), child:  Text(tr('مسح'))),
                                   ],
                                 ),
                               ),
@@ -754,12 +754,12 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                               final scale = buildScaleFromDialog();
                               final ok = await _scaleRepo.clearScaleMemory(scale);
                               if (ctx.mounted) {
-                                setDialogState(() => testResult = ok ? 'تم مسح ذاكرة الميزان ✓' : 'فشل مسح الذاكرة');
+                                setDialogState(() => testResult = ok ? tr('تم مسح ذاكرة الميزان ✓') : tr('فشل مسح الذاكرة'));
                               }
                             }
                           },
                           icon: const Icon(PhosphorIconsBold.trash, size: 16),
-                          label: const Text('مسح الذاكرة', style: TextStyle(fontSize: 12)),
+                          label:  Text(tr('مسح الذاكرة'), style: const TextStyle(fontSize: 12)),
                           style: OutlinedButton.styleFrom(foregroundColor: AppColors.error, side: const BorderSide(color: AppColors.error)),
                         ),
                       ],
@@ -795,12 +795,12 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(children: [
-                          Icon(PhosphorIconsBold.barcode, size: 16, color: Colors.deepPurple), SizedBox(width: 8),
-                          Text('إعدادات باركود الميزان (EAN-13)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.deepPurple)),
+                         Row(children: [
+                          const Icon(PhosphorIconsBold.barcode, size: 16, color: Colors.deepPurple), const SizedBox(width: 8),
+                          Text(tr('إعدادات باركود الميزان (EAN-13)'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.deepPurple)),
                         ]),
                         const SizedBox(height: 4),
-                        const Text('تحدد كيف يفك POS باركود الميزان عند مسحه بالاسكانر', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                         Text(tr('تحدد كيف يفك POS باركود الميزان عند مسحه بالاسكانر'), style: const TextStyle(fontSize: 11, color: Colors.grey)),
                         const SizedBox(height: 10),
                         FutureBuilder<Map<String, String>>(
                           future: _loadBarcodeSettings(),
@@ -813,25 +813,25 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                             final pDivCtrl = TextEditingController(text: data['scale_price_divider'] ?? '100');
                             return Column(children: [
                               Row(children: [
-                                Expanded(child: TextField(controller: pricePfxCtrl, decoration: const InputDecoration(labelText: 'بادئة السعر', hintText: '20', border: OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number, onChanged: (v) => _settingsRepo.saveSetting('scale_price_prefix', v))),
+                                Expanded(child: TextField(controller: pricePfxCtrl, decoration:  InputDecoration(labelText: tr('بادئة السعر'), hintText: '20', border: const OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number, onChanged: (v) => _settingsRepo.saveSetting('scale_price_prefix', v))),
                                 const SizedBox(width: 8),
-                                Expanded(child: TextField(controller: weightPfxCtrl, decoration: const InputDecoration(labelText: 'بادئة الوزن', hintText: '21', border: OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number, onChanged: (v) => _settingsRepo.saveSetting('scale_weight_prefix', v))),
+                                Expanded(child: TextField(controller: weightPfxCtrl, decoration:  InputDecoration(labelText: tr('بادئة الوزن'), hintText: '21', border: const OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number, onChanged: (v) => _settingsRepo.saveSetting('scale_weight_prefix', v))),
                                 const SizedBox(width: 8),
-                                Expanded(child: TextField(controller: pluLenCtrl, decoration: const InputDecoration(labelText: 'طول كود PLU', hintText: '5', border: OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number, onChanged: (v) { _settingsRepo.saveSetting('scale_weight_item_code_len', v); _settingsRepo.saveSetting('scale_price_item_code_len', v); })),
+                                Expanded(child: TextField(controller: pluLenCtrl, decoration:  InputDecoration(labelText: tr('طول كود PLU'), hintText: '5', border: const OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number, onChanged: (v) { _settingsRepo.saveSetting('scale_weight_item_code_len', v); _settingsRepo.saveSetting('scale_price_item_code_len', v); })),
                               ]),
                               const SizedBox(height: 8),
                               Row(children: [
-                                Expanded(child: TextField(controller: wDivCtrl, decoration: const InputDecoration(labelText: 'مقسوم الوزن', hintText: '1000', border: OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number, onChanged: (v) => _settingsRepo.saveSetting('scale_weight_divider', v))),
+                                Expanded(child: TextField(controller: wDivCtrl, decoration:  InputDecoration(labelText: tr('مقسوم الوزن'), hintText: '1000', border: const OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number, onChanged: (v) => _settingsRepo.saveSetting('scale_weight_divider', v))),
                                 const SizedBox(width: 8),
-                                Expanded(child: TextField(controller: pDivCtrl, decoration: const InputDecoration(labelText: 'مقسوم السعر', hintText: '100', border: OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number, onChanged: (v) => _settingsRepo.saveSetting('scale_price_divider', v))),
+                                Expanded(child: TextField(controller: pDivCtrl, decoration:  InputDecoration(labelText: tr('مقسوم السعر'), hintText: '100', border: const OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number, onChanged: (v) => _settingsRepo.saveSetting('scale_price_divider', v))),
                               ]),
                               const SizedBox(height: 6),
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)),
-                                child: const Text(
-                                  'مثال: 2112345012345\n[21] بادئة  [12345] PLU  [01234] وزن  [5] تحقق\nالوزن = 01234 ÷ 1000 = 1.234 كجم',
-                                  style: TextStyle(fontSize: 11, fontFamily: AppTypography.mono, height: 1.4),
+                                child:  Text(
+                                  tr('مثال: 2112345012345\n[21] بادئة  [12345] PLU  [01234] وزن  [5] تحقق\nالوزن = 01234 ÷ 1000 = 1.234 كجم'),
+                                  style: const TextStyle(fontSize: 11, fontFamily: AppTypography.mono, height: 1.4),
                                 ),
                               ),
                             ]);
@@ -846,9 +846,9 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.orange.withValues(alpha: 0.3))),
-                      child: const Row(children: [
-                        Icon(PhosphorIconsBold.lightbulb, size: 16, color: Colors.orange), SizedBox(width: 8),
-                        Expanded(child: Text('لميزان Rongta: يُنصح باستخدام FTP بدلاً من TCP للترحيل المباشر', style: TextStyle(fontSize: 12, color: Colors.orange))),
+                      child:  Row(children: [
+                        const Icon(PhosphorIconsBold.lightbulb, size: 16, color: Colors.orange), const SizedBox(width: 8),
+                        Expanded(child: Text(tr('لميزان Rongta: يُنصح باستخدام FTP بدلاً من TCP للترحيل المباشر'), style: const TextStyle(fontSize: 12, color: Colors.orange))),
                       ]),
                     ),
                   ],
@@ -857,7 +857,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
             FilledButton(
               onPressed: () async {
                 Navigator.pop(ctx);
@@ -868,7 +868,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                   setState(() => selectedScaleIndex = scales.length - 1);
                 }
               },
-              child: Text(isEdit ? 'حفظ' : 'إضافة'),
+              child: Text(isEdit ? tr('حفظ') : tr('إضافة')),
             ),
           ],
         );
@@ -899,18 +899,18 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Row(
+            title:  Row(
               children: [
-                Icon(PhosphorIconsBold.checkCircle, color: AppColors.success),
-                SizedBox(width: 8),
-                Text('تم تصدير ملف CSV'),
+                const Icon(PhosphorIconsBold.checkCircle, color: AppColors.success),
+                const SizedBox(width: 8),
+                Text(tr('تم تصدير ملف CSV')),
               ],
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('تم تصدير ${pluItems.length} صنف بنجاح'),
+                Text(tr('تم تصدير {p0} صنف بنجاح', {'p0': pluItems.length})),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -930,9 +930,9 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                     color: AppColors.warning.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
-                    'الخطوة التالية: افتح برنامج PLU Manager الخاص بالميزان واستورد هذا الملف',
-                    style: TextStyle(fontSize: 12),
+                  child:  Text(
+                    tr('الخطوة التالية: افتح برنامج PLU Manager الخاص بالميزان واستورد هذا الملف'),
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ),
               ],
@@ -944,11 +944,11 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                   // Open the folder in Explorer
                   Process.run('explorer.exe', ['/select,', filePath]);
                 },
-                child: const Text('فتح الموقع'),
+                child:  Text(tr('فتح الموقع')),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('حسناً'),
+                child:  Text(tr('حسناً')),
               ),
             ],
           ),
@@ -956,7 +956,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل تصدير CSV: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل تصدير CSV: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }

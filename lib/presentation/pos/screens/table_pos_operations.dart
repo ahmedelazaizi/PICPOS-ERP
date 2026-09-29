@@ -27,7 +27,7 @@ Future<bool> ensurePosWeightDialogPermission(
     showPosToast(
       context,
       ref,
-      'ليس لديك صلاحية استخدام الميزان',
+      tr('ليس لديك صلاحية استخدام الميزان'),
       type: PosNotificationType.error,
     );
   }
@@ -56,20 +56,20 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
             builder: (ctx) => Directionality(
               textDirection: TextDirection.rtl,
               child: AlertDialog(
-                title: const Text('تنبيه'),
-                content: const Text(
-                    'يوجد أصناف في السلة. هل تريد الخروج من شاشة الطاولة؟ (ستبقى مشغولة)'),
+                title:  Text(tr('تنبيه')),
+                content:  Text(
+                    tr('يوجد أصناف في السلة. هل تريد الخروج من شاشة الطاولة؟ (ستبقى مشغولة)')),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, false),
-                    child: const Text('لا'),
+                    child:  Text(tr('لا')),
                   ),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(ctx, true),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.error,
                     ),
-                    child: const Text('خروج'),
+                    child:  Text(tr('خروج')),
                   ),
                 ],
               ),
@@ -214,23 +214,23 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
         builder: (ctx) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: const Row(
+            title:  Row(
               children: [
-                Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
-                SizedBox(width: 8),
-                Text('صنف غير معرف'),
+                const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+                const SizedBox(width: 8),
+                Text(tr('صنف غير معرف')),
               ],
             ),
-            content: Text('الباركود "$barcode" غير مسجل في النظام.\nهل تريد إضافته كصنف جديد؟'),
+            content: Text(tr('الباركود "{barcode}" غير مسجل في النظام.\nهل تريد إضافته كصنف جديد؟', {'barcode': barcode})),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('لا'),
+                child:  Text(tr('لا')),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, true),
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
-                child: const Text('نعم — إضافة سريعة'),
+                child:  Text(tr('نعم — إضافة سريعة')),
               ),
             ],
           ),
@@ -257,7 +257,7 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
   Future<void> _toggleOrderTax(bool enabled) async {
     final orderId = ref.read(posControllerProvider).orderId;
     if (orderId == null) {
-      AppToast.show(context, 'لا يوجد طلب مفتوح لهذه الطاولة',
+      AppToast.show(context, tr('لا يوجد طلب مفتوح لهذه الطاولة'),
           type: ToastType.warning);
       return;
     }
@@ -267,11 +267,11 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
             orderId: orderId,
             enabled: enabled,
             userId: user?.id,
-            userName: user?.displayName ?? 'مجهول',
+            userName: user?.displayName ?? tr('مجهول'),
           );
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'تعذّر تعديلُ الضريبة: $e',
+        AppToast.show(context, tr('تعذّر تعديلُ الضريبة: {e}', {'e': e}),
             type: ToastType.error);
       }
       return;
@@ -285,7 +285,7 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
     final orderId = posState.orderId;
 
     if (orderId == null) {
-      AppToast.show(context, 'لا يوجد طلب مفتوح لهذه الطاولة',
+      AppToast.show(context, tr('لا يوجد طلب مفتوح لهذه الطاولة'),
           type: ToastType.warning);
       return;
     }
@@ -293,7 +293,7 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
     final tableItems = await restaurantRepo.getTableOrderItems(orderId);
     if (!mounted) return;
     if (tableItems.isEmpty) {
-      AppToast.show(context, 'لا يوجد أصناف في الطلب للتحصيل',
+      AppToast.show(context, tr('لا يوجد أصناف في الطلب للتحصيل'),
           type: ToastType.warning);
       return;
     }
@@ -357,7 +357,7 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
       due = await ref.read(tableSessionServiceProvider).amountDue(orderId);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'تعذّر قراءةُ مستحقِّ الطلب: $e',
+        AppToast.show(context, tr('تعذّر قراءةُ مستحقِّ الطلب: {e}', {'e': e}),
             type: ToastType.error);
       }
       return;
@@ -435,13 +435,13 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
     switch (outcome.status) {
       case TableSettleStatus.rejected:
         // لم يُرحَّل شيء — رسالةٌ واحدةٌ تكفي ولا تسويةَ تُطلَب.
-        AppToast.show(context, outcome.message ?? 'تعذّر التحصيل',
+        AppToast.show(context, outcome.message ?? tr('تعذّر التحصيل'),
             type: ToastType.error);
         return;
 
       case TableSettleStatus.aborted:
         final error = ref.read(checkoutControllerProvider).error;
-        AppToast.show(context, outcome.message ?? 'فشل الدفع: $error',
+        AppToast.show(context, outcome.message ?? tr('فشل الدفع: {error}', {'error': error}),
             type: ToastType.error);
         return;
 
@@ -451,7 +451,7 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
         try {
           await ref.read(activityLogRepositoryProvider).logActivity(
                 userId: user?.id,
-                userName: user?.displayName ?? 'مجهول',
+                userName: user?.displayName ?? tr('مجهول'),
                 action: 'table_payment_reconcile_needed',
                 entityType: 'table',
                 entityId: widget.tableId,
@@ -482,7 +482,7 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
       barcodeFocus.requestFocus();
       AppToast.show(
         context,
-        '✅ تم تحصيل ${widget.tableName} — فاتورة #$invoiceId — الطاولةُ مدفوعةٌ بانتظار الإغلاق',
+        tr('✅ تم تحصيل {p0} — فاتورة #{invoiceId} — الطاولةُ مدفوعةٌ بانتظار الإغلاق', {'p0': widget.tableName, 'invoiceId': invoiceId}),
         type: ToastType.success,
       );
       Navigator.pop(context);
@@ -566,21 +566,21 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
         final activityLogRepo = ref.read(activityLogRepositoryProvider);
         await activityLogRepo.logActivity(
           userId: user?.id,
-          userName: user?.displayName ?? 'مجهول',
+          userName: user?.displayName ?? tr('مجهول'),
           action: 'send_to_kitchen',
           entityType: 'table_order',
           entityId: widget.tableId,
           description:
-              'إرسال طلب للمطبخ: ${widget.tableName} (${cartState.items.length} أصناف)',
+              tr('إرسال طلب للمطبخ: {p0} ({p1} أصناف)', {'p0': widget.tableName, 'p1': cartState.items.length}),
         );
       } catch (_) {}
 
       if (mounted) {
-        AppToast.show(context, '✅ تم إرسال الطلب للمطبخ', type: ToastType.success);
+        AppToast.show(context, tr('✅ تم إرسال الطلب للمطبخ'), type: ToastType.success);
         Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) AppToast.show(context, 'فشل الإرسال: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('فشل الإرسال: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -593,14 +593,14 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('إفراغ الطاولة', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
-          content: const Text('هل أنت متأكد من إفراغ هذه الطاولة؟ سيتم حذف جميع الطلبات وإرجاع الطاولة لحالة (متاحة).'),
+          title:  Text(tr('إفراغ الطاولة'), style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+          content:  Text(tr('هل أنت متأكد من إفراغ هذه الطاولة؟ سيتم حذف جميع الطلبات وإرجاع الطاولة لحالة (متاحة).')),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child:  Text(tr('إلغاء'))),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('إفراغ وتحويل لمتاحة'),
+              child:  Text(tr('إفراغ وتحويل لمتاحة')),
             ),
           ],
         ),
@@ -628,11 +628,11 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
           action: 'clear_table',
           entityType: 'table',
           entityId: widget.tableId,
-          description: 'تم إفراغ وتصفير طاولة (${widget.tableName})',
+          description: tr('تم إفراغ وتصفير طاولة ({p0})', {'p0': widget.tableName}),
         );
     } catch (_) {}
 
-    if (mounted) AppToast.show(context, 'تم إفراغ السلة');
+    if (mounted) AppToast.show(context, tr('تم إفراغ السلة'));
   }
 
   void _autoSelectFirstCategory() {

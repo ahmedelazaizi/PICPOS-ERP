@@ -35,7 +35,7 @@ class SalesFilterBar extends ConsumerWidget {
               controller: searchController,
               focusNode: searchFocusNode,
               decoration: InputDecoration(
-                hintText: 'بحث برقم الفاتورة أو اسم العميل...',
+                hintText: tr('بحث برقم الفاتورة أو اسم العميل...'),
                 prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -53,7 +53,7 @@ class SalesFilterBar extends ConsumerWidget {
               label: Text(
                 dateRange != null
                     ? '${dateRange.start.day}/${dateRange.start.month} - ${dateRange.end.day}/${dateRange.end.month}'
-                    : 'تاريخ',
+                    : tr('تاريخ'),
               ),
               onPressed: () async {
                 final range = await showDateRangePicker(
@@ -93,7 +93,7 @@ class SalesFilterBar extends ConsumerWidget {
             const SizedBox(width: 4),
             IconButton(
               icon: const Icon(PhosphorIconsBold.x, size: 16),
-              tooltip: 'إلغاء فلتر التاريخ',
+              tooltip: tr('إلغاء فلتر التاريخ'),
               onPressed: () => controller.updateDateRange(null),
             ),
           ],
@@ -113,10 +113,10 @@ class SalesFilterBar extends ConsumerWidget {
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<int?>(
                       value: selectedBranchId,
-                      hint: const Text('كل الفروع'),
+                      hint:  Text(tr('كل الفروع')),
                       isDense: true,
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('كل الفروع')),
+                         DropdownMenuItem(value: null, child: Text(tr('كل الفروع'))),
                         ...branches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name))),
                       ],
                       onChanged: (v) {
@@ -128,7 +128,7 @@ class SalesFilterBar extends ConsumerWidget {
                         if (cleared) {
                           AppToast.show(
                             context,
-                            'تم إلغاء فلتر المستودع لأنه يتبع فرعاً مختلفاً',
+                            tr('تم إلغاء فلتر المستودع لأنه يتبع فرعاً مختلفاً'),
                             type: ToastType.info,
                           );
                         }
@@ -154,10 +154,10 @@ class SalesFilterBar extends ConsumerWidget {
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<int?>(
                     value: selectedWarehouseId,
-                    hint: const Text('كل المستودعات'),
+                    hint:  Text(tr('كل المستودعات')),
                     isDense: true,
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('كل المستودعات')),
+                       DropdownMenuItem(value: null, child: Text(tr('كل المستودعات'))),
                       ...warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(w.name))),
                     ],
                     onChanged: (v) {
@@ -170,7 +170,7 @@ class SalesFilterBar extends ConsumerWidget {
                       if (cleared) {
                         AppToast.show(
                           context,
-                          'تم إلغاء فلتر الفرع لأن المستودع يتبع فرعاً آخر',
+                          tr('تم إلغاء فلتر الفرع لأن المستودع يتبع فرعاً آخر'),
                           type: ToastType.info,
                         );
                       }
@@ -198,10 +198,10 @@ class SalesFilterBar extends ConsumerWidget {
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<int?>(
                       value: selectedCostCenterId,
-                      hint: const Text('كل مراكز التكلفة'),
+                      hint:  Text(tr('كل مراكز التكلفة')),
                       isDense: true,
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('كل مراكز التكلفة')),
+                         DropdownMenuItem(value: null, child: Text(tr('كل مراكز التكلفة'))),
                         ...centers.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
                       ],
                       onChanged: (v) => controller.updateCostCenterFilter(v),
@@ -228,14 +228,14 @@ class SalesFilterBar extends ConsumerWidget {
               child: DropdownButton<SalesInvoiceSortMode>(
                 value: sortMode,
                 isDense: true,
-                items: const [
+                items:  [
                   DropdownMenuItem(
                     value: SalesInvoiceSortMode.dateDesc,
-                    child: Text('الأحدث أولاً'),
+                    child: Text(tr('الأحدث أولاً')),
                   ),
                   DropdownMenuItem(
                     value: SalesInvoiceSortMode.byClientReceiveOrder,
-                    child: Text('ترتيب الاستقبال (لكل عميل)'),
+                    child: Text(tr('ترتيب الاستقبال (لكل عميل)')),
                   ),
                 ],
                 onChanged: (v) {
@@ -251,10 +251,10 @@ class SalesFilterBar extends ConsumerWidget {
           Wrap(
             spacing: 6,
             children: [
-              for (final entry in const [
-                ('paid', 'مدفوع'),
-                ('partial', 'جزئي'),
-                ('unpaid', 'غير مدفوع'),
+              for (final entry in  [
+                ('paid', tr('مدفوع')),
+                ('partial', tr('جزئي')),
+                ('unpaid', tr('غير مدفوع')),
               ])
                 FilterChip(
                   label: Text(entry.$2),

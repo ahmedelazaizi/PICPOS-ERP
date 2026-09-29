@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'dart:convert';
@@ -136,13 +137,13 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          title: const Text('مدير أرقام PLU'),
+          title:  Text(tr('مدير أرقام PLU')),
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           leading: IconButton(
             icon: const Icon(PhosphorIconsBold.arrowRight),
             onPressed: () => Navigator.of(context).pop(),
-            tooltip: 'رجوع',
+            tooltip: tr('رجوع'),
           ),
         ),
         body: Padding(
@@ -188,16 +189,16 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'مدير أرقام PLU',
+              tr('مدير أرقام PLU'),
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).textTheme.headlineMedium?.color,
               ),
             ),
-            const Text(
-              'ربط أرقام PLU بالمنتجات للموازين',
-              style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+             Text(
+              tr('ربط أرقام PLU بالمنتجات للموازين'),
+              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
             ),
           ],
         ),
@@ -207,7 +208,7 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'بحث بالاسم أو الكود أو PLU...',
+              hintText: tr('بحث بالاسم أو الكود أو PLU...'),
               prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               isDense: true,
@@ -235,13 +236,13 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
   Widget _buildStatsBar() {
     return Row(
       children: [
-        _buildStatChip('إجمالي الأصناف', '${_allProducts.where((p) => p.isActive).length}', PhosphorIconsBold.package, AppColors.primary),
+        _buildStatChip(tr('إجمالي الأصناف'), '${_allProducts.where((p) => p.isActive).length}', PhosphorIconsBold.package, AppColors.primary),
         const SizedBox(width: 8),
-        _buildStatChip('أصناف بـ PLU', '$_assignedCount', PhosphorIconsBold.barcode, AppColors.success),
+        _buildStatChip(tr('أصناف بـ PLU'), '$_assignedCount', PhosphorIconsBold.barcode, AppColors.success),
         const SizedBox(width: 8),
-        _buildStatChip('أصناف الوزن', '$_weightItemsCount', PhosphorIconsBold.scales, AppColors.warning),
+        _buildStatChip(tr('أصناف الوزن'), '$_weightItemsCount', PhosphorIconsBold.scales, AppColors.warning),
         const SizedBox(width: 8),
-        _buildStatChip('بدون PLU', '${_allProducts.where((p) => p.scalePluNumber == null && p.isActive).length}', PhosphorIconsBold.warning, AppColors.error),
+        _buildStatChip(tr('بدون PLU'), '${_allProducts.where((p) => p.scalePluNumber == null && p.isActive).length}', PhosphorIconsBold.warning, AppColors.error),
       ],
     );
   }
@@ -290,14 +291,14 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
             child: DropdownButtonFormField<int?>(
               initialValue: _selectedCategoryId,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'التصنيف',
+              decoration:  InputDecoration(
+                labelText: tr('التصنيف'),
                 isDense: true,
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                border: const OutlineInputBorder(),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               ),
               items: [
-                const DropdownMenuItem<int?>(value: null, child: Text('الكل')),
+                 DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
                 ..._allCategories.map(
                   (c) => DropdownMenuItem<int?>(value: c.id, child: Text(c.name, overflow: TextOverflow.ellipsis)),
                 ),
@@ -307,14 +308,14 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
           ),
           const SizedBox(width: 8),
           FilterChip(
-            label: const Text('PLU مُعيّن', style: TextStyle(fontSize: 12)),
+            label:  Text(tr('PLU مُعيّن'), style: const TextStyle(fontSize: 12)),
             selected: _showOnlyAssigned,
             onSelected: (v) => setState(() => _showOnlyAssigned = v),
             selectedColor: AppColors.success.withValues(alpha: 0.2),
           ),
           const SizedBox(width: 4),
           FilterChip(
-            label: const Text('أصناف وزن', style: TextStyle(fontSize: 12)),
+            label:  Text(tr('أصناف وزن'), style: const TextStyle(fontSize: 12)),
             selected: _showOnlyWeightItems,
             onSelected: (v) => setState(() => _showOnlyWeightItems = v),
             selectedColor: AppColors.warning.withValues(alpha: 0.2),
@@ -323,7 +324,7 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
           OutlinedButton.icon(
             onPressed: _showAutoAssignDialog,
             icon: const Icon(PhosphorIconsBold.lightning, size: 16),
-            label: const Text('ترقيم تلقائي', style: TextStyle(fontSize: 12)),
+            label:  Text(tr('ترقيم تلقائي'), style: const TextStyle(fontSize: 12)),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.warning,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -333,14 +334,14 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
           OutlinedButton.icon(
             onPressed: _importPluFromCsv,
             icon: const Icon(PhosphorIconsBold.fileArrowDown, size: 16),
-            label: const Text('استيراد CSV', style: TextStyle(fontSize: 12)),
+            label:  Text(tr('استيراد CSV'), style: const TextStyle(fontSize: 12)),
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
           ),
           const SizedBox(width: 4),
           OutlinedButton.icon(
             onPressed: _exportPluToCsv,
             icon: const Icon(PhosphorIconsBold.fileArrowUp, size: 16),
-            label: const Text('تصدير CSV', style: TextStyle(fontSize: 12)),
+            label:  Text(tr('تصدير CSV'), style: const TextStyle(fontSize: 12)),
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
           ),
           const SizedBox(width: 8),
@@ -349,7 +350,7 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
             icon: _isUploading
                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Icon(PhosphorIconsBold.upload, size: 16),
-            label: Text(_isUploading ? 'جاري الترحيل...' : 'ترحيل للميزان', style: const TextStyle(fontSize: 12)),
+            label: Text(_isUploading ? tr('جاري الترحيل...') : tr('ترحيل للميزان'), style: const TextStyle(fontSize: 12)),
             style: FilledButton.styleFrom(
               backgroundColor: Colors.teal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -359,7 +360,7 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
           IconButton(
             icon: const Icon(PhosphorIconsBold.arrowsClockwise, size: 18),
             onPressed: _loadData,
-            tooltip: 'تحديث',
+            tooltip: tr('تحديث'),
           ),
         ],
       ),
@@ -374,7 +375,7 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
   Future<void> _savePlu(Product product, String pluText) async {
     final plu = int.tryParse(pluText.trim());
     if (plu == null && pluText.trim().isNotEmpty) {
-      AppToast.show(context, 'رقم PLU يجب أن يكون رقماً صحيحاً', type: ToastType.error);
+      AppToast.show(context, tr('رقم PLU يجب أن يكون رقماً صحيحاً'), type: ToastType.error);
       return;
     }
 
@@ -382,7 +383,7 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
       final existing = await _controller.getProductByScalePlu(plu);
       if (existing != null && existing.id != product.id) {
         if (!mounted) return;
-        AppToast.show(context, 'رقم PLU $plu مستخدم بالفعل في: ${existing.name}', type: ToastType.error);
+        AppToast.show(context, tr('رقم PLU {plu} مستخدم بالفعل في: {p0}', {'plu': plu, 'p0': existing.name}), type: ToastType.error);
         return;
       }
     }
@@ -392,7 +393,7 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
     if (mounted) {
       AppToast.show(
         context,
-        plu != null ? 'تم حفظ PLU #$plu لـ ${product.name}' : 'تم حذف PLU من ${product.name}',
+        plu != null ? tr('تم حفظ PLU #{plu} لـ {p0}', {'plu': plu, 'p0': product.name}) : tr('تم حذف PLU من {p0}', {'p0': product.name}),
         type: ToastType.success,
       );
     }
@@ -404,7 +405,7 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
     _pluControllers[product.id]?.clear();
     await _loadData();
     if (mounted) {
-      AppToast.show(context, 'تم حذف PLU من ${product.name}', type: ToastType.success);
+      AppToast.show(context, tr('تم حذف PLU من {p0}', {'p0': product.name}), type: ToastType.success);
     }
   }
 

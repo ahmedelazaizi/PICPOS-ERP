@@ -71,8 +71,8 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
     final accentColor = widget.isSupplier ? AppColors.warning : AppColors.primary;
     final balanceAmount = party!.balance;
     final balanceLabel = balanceAmount > 0
-        ? (widget.isSupplier ? 'مستحق للمورد' : 'مستحق على العميل')
-        : (balanceAmount < 0 ? 'رصيد لصالحه' : 'الحساب متزن');
+        ? (widget.isSupplier ? tr('مستحق للمورد') : tr('مستحق على العميل'))
+        : (balanceAmount < 0 ? tr('رصيد لصالحه') : tr('الحساب متزن'));
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -118,13 +118,13 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
           ),
           // Summary metrics inline
           _buildInlineMetric(
-            widget.isSupplier ? 'المشتريات' : 'المبيعات',
+            widget.isSupplier ? tr('المشتريات') : tr('المبيعات'),
             summary?.totalInvoices ?? 0,
             Colors.white,
           ),
           const SizedBox(width: 24),
           _buildInlineMetric(
-            widget.isSupplier ? 'المدفوعات' : 'التحصيلات',
+            widget.isSupplier ? tr('المدفوعات') : tr('التحصيلات'),
             summary?.totalPayments ?? 0,
             Colors.white,
           ),
@@ -183,13 +183,13 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
       ),
       child: Row(
         children: [
-          _buildQuickFilter('اليوم', () => setDateRange(DateTime.now(), DateTime.now())),
-          _buildQuickFilter('أمس', () {
+          _buildQuickFilter(tr('اليوم'), () => setDateRange(DateTime.now(), DateTime.now())),
+          _buildQuickFilter(tr('أمس'), () {
             final y = DateTime.now().subtract(const Duration(days: 1));
             setDateRange(y, y);
           }),
-          _buildQuickFilter('هذا الشهر', () => setDateRange(DateTime(DateTime.now().year, DateTime.now().month, 1), DateTime.now())),
-          _buildQuickFilter('هذا العام', () => setDateRange(DateTime(DateTime.now().year, 1, 1), DateTime.now())),
+          _buildQuickFilter(tr('هذا الشهر'), () => setDateRange(DateTime(DateTime.now().year, DateTime.now().month, 1), DateTime.now())),
+          _buildQuickFilter(tr('هذا العام'), () => setDateRange(DateTime(DateTime.now().year, 1, 1), DateTime.now())),
           const Spacer(),
           TextButton.icon(
             onPressed: selectDateRange,
@@ -197,7 +197,7 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
             label: Text(
               fromDate != null && toDate != null
                   ? '${dateFormat.format(fromDate!)} - ${dateFormat.format(toDate!)}'
-                  : 'تخصيص الفترة',
+                  : tr('تخصيص الفترة'),
               style: const TextStyle(fontSize: 12),
             ),
             style: TextButton.styleFrom(
@@ -208,7 +208,7 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
             IconButton(
               icon: const Icon(PhosphorIconsBold.x, size: 16, color: AppColors.error),
               onPressed: clearDateFilter,
-              tooltip: 'إلغاء الفلتر',
+              tooltip: tr('إلغاء الفلتر'),
               constraints: const BoxConstraints(maxHeight: 32, maxWidth: 32),
               padding: EdgeInsets.zero,
             ),
@@ -235,11 +235,11 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
     if (entries.isEmpty) {
       return Container(
         decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(12)),
-        child: const Center(
+        child:  Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(PhosphorIconsBold.fileX, size: 48, color: AppColors.textMuted),
-            SizedBox(height: 12),
-            Text('لا توجد سجلات خلال هذه الفترة', style: TextStyle(color: AppColors.textMuted, fontSize: 16)),
+            const Icon(PhosphorIconsBold.fileX, size: 48, color: AppColors.textMuted),
+            const SizedBox(height: 12),
+            Text(tr('لا توجد سجلات خلال هذه الفترة'), style: const TextStyle(color: AppColors.textMuted, fontSize: 16)),
           ]),
         ),
       );
@@ -260,14 +260,14 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
               color: AppColors.primary.withValues(alpha: 0.04),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             ),
-            child: const Row(
+            child:  Row(
               children: [
-                Expanded(flex: 2, child: Text('التاريخ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
-                Expanded(flex: 4, child: Text('البيان', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
-                Expanded(flex: 2, child: Text('رقم المستند', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13), textAlign: TextAlign.center)),
-                Expanded(flex: 2, child: Text('مدين (+)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.error), textAlign: TextAlign.center)),
-                Expanded(flex: 2, child: Text('دائن (-)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.success), textAlign: TextAlign.center)),
-                Expanded(flex: 2, child: Text('الرصيد', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13), textAlign: TextAlign.center)),
+                Expanded(flex: 2, child: Text(tr('التاريخ'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
+                Expanded(flex: 4, child: Text(tr('البيان'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
+                Expanded(flex: 2, child: Text(tr('رقم المستند'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), textAlign: TextAlign.center)),
+                Expanded(flex: 2, child: Text(tr('مدين (+)'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.error), textAlign: TextAlign.center)),
+                Expanded(flex: 2, child: Text(tr('دائن (-)'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.success), textAlign: TextAlign.center)),
+                Expanded(flex: 2, child: Text(tr('الرصيد'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), textAlign: TextAlign.center)),
               ],
             ),
           ),
@@ -418,13 +418,13 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
         children: [
           const Icon(PhosphorIconsBold.calculator, color: AppColors.textMuted, size: 18),
           const SizedBox(width: 8),
-          const Text('إجمالي الفترة', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12)),
+           Text(tr('إجمالي الفترة'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12)),
           const Spacer(),
-          _buildTotalItem('مدين (+)', totalDebit, AppColors.error),
+          _buildTotalItem(tr('مدين (+)'), totalDebit, AppColors.error),
           const SizedBox(width: 32),
-          _buildTotalItem('دائن (-)', totalCredit, AppColors.success),
+          _buildTotalItem(tr('دائن (-)'), totalCredit, AppColors.success),
           const SizedBox(width: 32),
-          _buildTotalItem('صافي الحركة', finalBalance, finalBalance > 0 ? AppColors.error : AppColors.success, isBold: true),
+          _buildTotalItem(tr('صافي الحركة'), finalBalance, finalBalance > 0 ? AppColors.error : AppColors.success, isBold: true),
         ],
       ),
     );

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // نسخةُ PicPos من receipt_voucher_dialog.dart — فوركٌ مقصود.
 //
 // ═══ لماذا نسخٌ لا مشاركة ═══
@@ -227,12 +228,12 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
       cancelLabel: localizations.cancel,
       secondaryActions: [
         PicPosDialogAction(
-          label: 'طباعة A4',
+          label: tr('طباعة A4'),
           icon: PhosphorIconsBold.printer,
           onPressed: () => _printA4Preview(),
         ),
         PicPosDialogAction(
-          label: 'حفظ + حراري',
+          label: tr('حفظ + حراري'),
           icon: PhosphorIconsBold.receipt,
           onPressed: () =>
               _saveVoucher(context, ref, localizations, printMode: 'thermal'),
@@ -289,30 +290,30 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                 const SizedBox(height: 16),
 
                 // Payment Method selection
-                const Text(
-                  'طريقة الدفع',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                 Text(
+                  tr('طريقة الدفع'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     _buildPaymentMethodButton(
                       id: 'cash',
-                      label: 'نقدي',
+                      label: tr('نقدي'),
                       icon: PhosphorIconsFill.money,
                       color: AppColors.success,
                     ),
                     const SizedBox(width: 8),
                     _buildPaymentMethodButton(
                       id: 'bank',
-                      label: 'تحويل بنكي',
+                      label: tr('تحويل بنكي'),
                       icon: PhosphorIconsFill.bank,
                       color: AppColors.primary,
                     ),
                     const SizedBox(width: 8),
                     _buildPaymentMethodButton(
                       id: 'check',
-                      label: 'شيك',
+                      label: tr('شيك'),
                       icon: PhosphorIconsFill.newspaper,
                       color: AppColors.warning,
                     ),
@@ -338,7 +339,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                               child: TextField(
                                 controller: paperNumberController,
                                 decoration: InputDecoration(
-                                  labelText: 'رقم الشيك',
+                                  labelText: tr('رقم الشيك'),
                                   prefixIcon: const Icon(PhosphorIconsLight.hash, size: 20),
                                   suffixIcon: IconButton(
                                     icon: const Icon(PhosphorIconsBold.plus, size: 18, color: AppColors.success),
@@ -352,7 +353,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                                       }
                                     },
                                   ),
-                                  hintText: 'أدخل رقم الشيك + إضافة',
+                                  hintText: tr('أدخل رقم الشيك + إضافة'),
                                 ),
                                 onSubmitted: (v) {
                                   final num = v.trim();
@@ -384,9 +385,9 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                         const SizedBox(height: 12),
                         TextField(
                           controller: paperBankController,
-                          decoration: const InputDecoration(
-                            labelText: 'البنك المسحوب عليه',
-                            prefixIcon: Icon(PhosphorIconsLight.bank, size: 20),
+                          decoration:  InputDecoration(
+                            labelText: tr('البنك المسحوب عليه'),
+                            prefixIcon: const Icon(PhosphorIconsLight.bank, size: 20),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -401,12 +402,12 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                             if (date != null) setState(() => paperDueDate = date);
                           },
                           child: InputDecorator(
-                            decoration: const InputDecoration(
-                                labelText: 'تاريخ الاستحقاق',
-                                prefixIcon: Icon(PhosphorIconsLight.calendar, size: 20)),
+                            decoration:  InputDecoration(
+                                labelText: tr('تاريخ الاستحقاق'),
+                                prefixIcon: const Icon(PhosphorIconsLight.calendar, size: 20)),
                             child: Text(
                               paperDueDate == null
-                                  ? 'اختر التاريخ'
+                                  ? tr('اختر التاريخ')
                                   : '${paperDueDate!.day}/${paperDueDate!.month}/${paperDueDate!.year}',
                             ),
                           ),
@@ -441,8 +442,8 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                           controller: controller,
                           focusNode: focusNode,
                           decoration: InputDecoration(
-                            labelText: 'الحساب المقابل (من دليل الحسابات)',
-                            hintText: 'ابحث بالاسم أو الرمز...',
+                            labelText: tr('الحساب المقابل (من دليل الحسابات)'),
+                            hintText: tr('ابحث بالاسم أو الرمز...'),
                             prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             isDense: true,
@@ -472,7 +473,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                   TextField(
                     controller: searchController,
                     decoration: InputDecoration(
-                      hintText: 'ابحث بالاسم أو الهاتف...',
+                      hintText: tr('ابحث بالاسم أو الهاتف...'),
                       prefixIcon:
                           const Icon(PhosphorIconsBold.magnifyingGlass),
                       suffixIcon: selectedParty != null
@@ -512,7 +513,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                                         color: AppColors.primary, size: 18),
                                 title: Text(p.name),
                                 subtitle: Text(
-                                  'رصيد: ${p.balance.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                                  tr('رصيد: {p0} {p1}', {'p0': p.balance.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
                                 ),
                                 trailing: Text(
                                   p.phone ?? '',
@@ -575,9 +576,9 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                                           borderRadius:
                                               BorderRadius.circular(4),
                                         ),
-                                        child: const Text(
-                                          'شركة توصيل',
-                                          style: TextStyle(
+                                        child:  Text(
+                                          tr('شركة توصيل'),
+                                          style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 10,
                                             fontWeight: FontWeight.bold,
@@ -588,7 +589,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                                   ],
                                 ),
                                 Text(
-                                  'الرصيد المستحق: ${selectedParty!.balance.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                                  tr('الرصيد المستحق: {p0} {p1}', {'p0': selectedParty!.balance.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
                                   style: TextStyle(
                                     color: selectedParty!.balance > 0
                                         ? AppColors.error
@@ -609,7 +610,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                   controller: amountController,
                   decoration: InputDecoration(
                     labelText: _isDeliveryCompany
-                        ? 'المبلغ الكلي (قبل العمولة)'
+                        ? tr('المبلغ الكلي (قبل العمولة)')
                         : localizations.amount,
                     prefixIcon:
                         const Icon(PhosphorIconsLight.money, size: 20),
@@ -620,13 +621,13 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                 const SizedBox(height: 16),
 
                 if (_showForeignFields) ...[
-                  Text('عملة التسوية: ${_foreignCurrency!.code} — ${_foreignCurrency!.name}'),
+                  Text(tr('عملة التسوية: {p0} — {p1}', {'p0': _foreignCurrency!.code, 'p1': _foreignCurrency!.name})),
                   Row(children: [
-                    Expanded(child: TextField(controller: foreignAmountController, decoration: const InputDecoration(labelText: 'المبلغ الأجنبي'), keyboardType: TextInputType.number, onChanged: (_) => setState(() {}))),
+                    Expanded(child: TextField(controller: foreignAmountController, decoration:  InputDecoration(labelText: tr('المبلغ الأجنبي')), keyboardType: TextInputType.number, onChanged: (_) => setState(() {}))),
                     const SizedBox(width: 12),
-                    Expanded(child: TextField(controller: paymentRateController, decoration: const InputDecoration(labelText: 'سعر الدفع'), keyboardType: TextInputType.number, onChanged: (_) => setState(() {}))),
+                    Expanded(child: TextField(controller: paymentRateController, decoration:  InputDecoration(labelText: tr('سعر الدفع')), keyboardType: TextInputType.number, onChanged: (_) => setState(() {}))),
                   ]),
-                  Text('المبلغ المحلي المحسوب: ${((double.tryParse(foreignAmountController.text) ?? 0) * (double.tryParse(paymentRateController.text) ?? 0)).toStringAsFixed(AppConstants.decimalPlaces)}'),
+                  Text(tr('المبلغ المحلي المحسوب: {p0}', {'p0': ((double.tryParse(foreignAmountController.text) ?? 0) * (double.tryParse(paymentRateController.text) ?? 0)).toStringAsFixed(AppConstants.decimalPlaces)})),
                   const SizedBox(height: 12),
                 ],
 
@@ -634,9 +635,9 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                 if (category == 'customer_payment' || category == 'other') ...[
                   TextField(
                     controller: discountController,
-                    decoration: const InputDecoration(
-                      labelText: 'خصم معجل دفع (Settlement Discount)',
-                      prefixIcon: Icon(PhosphorIconsLight.tag, size: 20),
+                    decoration:  InputDecoration(
+                      labelText: tr('خصم معجل دفع (Settlement Discount)'),
+                      prefixIcon: const Icon(PhosphorIconsLight.tag, size: 20),
                       hintText: '0.00',
                     ),
                     keyboardType: TextInputType.number,
@@ -652,11 +653,11 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                     showDisabled: true,
                     child: TextField(
                       controller: commissionController,
-                      decoration: const InputDecoration(
-                        labelText: 'نسبة العمولة %',
+                      decoration:  InputDecoration(
+                        labelText: tr('نسبة العمولة %'),
                         prefixIcon:
-                            Icon(PhosphorIconsLight.percent, size: 20),
-                        hintText: 'مثال: 15',
+                            const Icon(PhosphorIconsLight.percent, size: 20),
+                        hintText: tr('مثال: 15'),
                       ),
                       keyboardType: TextInputType.number,
                       onChanged: (_) => setState(() {}),
@@ -678,18 +679,18 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                       child: Column(
                         children: [
                           _buildCalcRow(
-                            'المبلغ الكلي',
+                            tr('المبلغ الكلي'),
                             _grossAmount.toStringAsFixed(AppConstants.decimalPlaces),
                           ),
                           const Divider(height: 8),
                           _buildCalcRow(
-                            'العمولة (${_commissionPercent.toStringAsFixed(1)}%)',
+                            tr('العمولة ({p0}%)', {'p0': _commissionPercent.toStringAsFixed(1)}),
                             '- ${_commissionAmount.toStringAsFixed(AppConstants.decimalPlaces)}',
                             color: AppColors.error,
                           ),
                           const Divider(height: 8),
                           _buildCalcRow(
-                            'صافي التحصيل',
+                            tr('صافي التحصيل'),
                             _netAmount.toStringAsFixed(AppConstants.decimalPlaces),
                             color: AppColors.success,
                             isBold: true,
@@ -724,7 +725,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                         // to a default safe on client mode (5B.5).
                         decoration: InputDecoration(
                           labelText: '${localizations.safe} *',
-                          helperText: 'مطلوب',
+                          helperText: tr('مطلوب'),
                         ),
                         items: safes.whereType<SafeData>().map((s) {
                           return DropdownMenuItem<int>(
@@ -767,11 +768,11 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                           // تكلفة" option let users skip the picker
                           // entirely and was the source of the
                           // wrong-centre complaint in the field.
-                          decoration: const InputDecoration(
-                            labelText: 'مركز التكلفة *',
-                            helperText: 'مطلوب',
+                          decoration:  InputDecoration(
+                            labelText: tr('مركز التكلفة *'),
+                            helperText: tr('مطلوب'),
                             prefixIcon:
-                                Icon(PhosphorIconsLight.target, size: 20),
+                                const Icon(PhosphorIconsLight.target, size: 20),
                           ),
                           items: _costCenters
                               .map((cc) => DropdownMenuItem<int?>(
@@ -835,7 +836,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
   Future<void> _printA4Preview() async {
     final amount = double.tryParse(amountController.text) ?? 0;
     if (amount <= 0) {
-      AppToast.show(context, 'يرجى إدخال مبلغ صحيح للمعاينة');
+      AppToast.show(context, tr('يرجى إدخال مبلغ صحيح للمعاينة'));
       return;
     }
 
@@ -959,7 +960,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
         if (!context.mounted) return;
 
     if (selectedSafe == null) {
-      AppToast.show(context, 'الرجاء اختيار الخزينة');
+      AppToast.show(context, tr('الرجاء اختيار الخزينة'));
       return;
     }
 
@@ -969,7 +970,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
     // accounting fallback picks (often "GEN"), which the user reported
     // as "the entry went to the wrong cost center".
     if (_costCenters.isNotEmpty && selectedCostCenterId == null) {
-      AppToast.show(context, 'الرجاء اختيار مركز التكلفة');
+      AppToast.show(context, tr('الرجاء اختيار مركز التكلفة'));
       return;
     }
 
@@ -980,7 +981,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
     }
 
     if (category == 'customer_payment' && selectedParty == null) {
-      AppToast.show(context, 'الرجاء اختيار العميل');
+      AppToast.show(context, tr('الرجاء اختيار العميل'));
       return;
     }
 
@@ -991,19 +992,19 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
         checkNumbers.add(currentText);
       }
       if (checkNumbers.isEmpty) {
-        AppToast.show(context, 'يرجى إدخال رقم شيك واحد على الأقل');
+        AppToast.show(context, tr('يرجى إدخال رقم شيك واحد على الأقل'));
         return;
       }
     }
 
     final discount = _discountAmount;
     if (discount < 0) {
-      AppToast.show(context, 'الخصم لا يمكن أن يكون سالباً');
+      AppToast.show(context, tr('الخصم لا يمكن أن يكون سالباً'));
       return;
     }
     final commissionPct = _commissionPercent;
     if (commissionPct < 0 || commissionPct > 100) {
-      AppToast.show(context, 'نسبة العمولة يجب أن تكون بين 0 و 100');
+      AppToast.show(context, tr('نسبة العمولة يجب أن تكون بين 0 و 100'));
       return;
     }
 
@@ -1012,7 +1013,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
     final netAmount = grossAmount - totalDiscount;
 
     if (netAmount <= 0) {
-      AppToast.show(context, 'صافي المبلغ يجب أن يكون أكبر من صفر');
+      AppToast.show(context, tr('صافي المبلغ يجب أن يكون أكبر من صفر'));
       return;
     }
 
@@ -1050,23 +1051,23 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
       // Build description
       String description = descriptionController.text.isEmpty
           ? (category == 'customer_payment'
-              ? 'تحصيل من عميل: ${selectedParty!.name}'
+              ? tr('تحصيل من عميل: {p0}', {'p0': selectedParty!.name})
               : localizations.receiptVoucher)
           : descriptionController.text;
 
       if (_isDeliveryCompany && commissionPct > 0) {
         description +=
-            ' | المبلغ الكلي: ${grossAmount.toStringAsFixed(AppConstants.decimalPlaces)} | عمولة: ${commissionPct.toStringAsFixed(1)}% (${commissionAmt.toStringAsFixed(AppConstants.decimalPlaces)})';
+            tr(' | المبلغ الكلي: {p0} | عمولة: {p1}% ({p2})', {'p0': grossAmount.toStringAsFixed(AppConstants.decimalPlaces), 'p1': commissionPct.toStringAsFixed(1), 'p2': commissionAmt.toStringAsFixed(AppConstants.decimalPlaces)});
       }
       if (discount > 0) {
-        description += ' | خصم: ${discount.toStringAsFixed(AppConstants.decimalPlaces)}';
+        description += tr(' | خصم: {p0}', {'p0': discount.toStringAsFixed(AppConstants.decimalPlaces)});
       }
       // Build check numbers string for description
       final allCheckNumbers = checkNumbers.join(', ');
       if (paymentMethod == 'check') {
-        description += ' | شيك رقم: $allCheckNumbers';
+        description += tr(' | شيك رقم: {allCheckNumbers}', {'allCheckNumbers': allCheckNumbers});
         if (selectedAccount != null) {
-          description += ' | حساب: ${selectedAccount!.code} - ${selectedAccount!.name}';
+          description += tr(' | حساب: {p0} - {p1}', {'p0': selectedAccount!.code, 'p1': selectedAccount!.name});
         }
       }
 
@@ -1159,7 +1160,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                 ? paperBankController.text
                 : null;
             const notesForPaper = null; // built per-cheque below
-            final paperNotes = 'ترحيل تلقائي من سند قبض $voucherNumber';
+            final paperNotes = tr('ترحيل تلقائي من سند قبض {voucherNumber}', {'voucherNumber': voucherNumber});
 
             // 1. Server-side authoritative write (no-op in standalone).
             await ClientWriteInterceptor.createCommercialPaper(
@@ -1194,7 +1195,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
           }
         } catch (e) {
           if (context.mounted) {
-            AppToast.show(context, 'خطأ في الأوراق التجارية: $e', type: ToastType.error);
+            AppToast.show(context, tr('خطأ في الأوراق التجارية: {e}', {'e': e}), type: ToastType.error);
           }
         }
       }
@@ -1203,11 +1204,11 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
       final activityLogRepo = ref.read(activityLogRepositoryProvider);
       await activityLogRepo.logActivity(
         userId: user?.id,
-        userName: user?.displayName ?? 'مجهول',
+        userName: user?.displayName ?? tr('مجهول'),
         action: 'receipt',
         entityType: 'payment',
         description:
-            'سند قبض $paymentMethod رقم $voucherNumber بمبلغ ${grossAmount.toStringAsFixed(AppConstants.decimalPlaces)}',
+            tr('سند قبض {paymentMethod} رقم {voucherNumber} بمبلغ {p0}', {'paymentMethod': paymentMethod, 'voucherNumber': voucherNumber, 'p0': grossAmount.toStringAsFixed(AppConstants.decimalPlaces)}),
         amount: grossAmount,
       );
 
@@ -1257,11 +1258,11 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
 
       if (context.mounted) {
         Navigator.pop(context);
-        AppToast.show(context, 'تم حفظ سند القبض بنجاح');
+        AppToast.show(context, tr('تم حفظ سند القبض بنجاح'));
       }
     } catch (e) {
       if (context.mounted) {
-        AppToast.show(context, 'خطأ في الحفظ: $e');
+        AppToast.show(context, tr('خطأ في الحفظ: {e}', {'e': e}));
       }
     }
 

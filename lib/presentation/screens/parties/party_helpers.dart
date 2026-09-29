@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
@@ -8,23 +9,23 @@ import '../../../data/providers/providers.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Price levels for customers.
-const kPriceLevels = <String, String>{
-  'default': 'افتراضي (عام)',
-  'wholesale': 'جملة',
-  'talabat': 'طلبات',
-  'careem': 'كريم',
-  'ashyae': 'أشيائي',
+Map<String, String> get kPriceLevels => <String, String>{
+  'default': tr('افتراضي (عام)'),
+  'wholesale': tr('جملة'),
+  'talabat': tr('طلبات'),
+  'careem': tr('كريم'),
+  'ashyae': tr('أشيائي'),
 };
 
 /// Get party type display text.
 String getPartyTypeLabel(Party party) {
-  if (party.isDeliveryCompany == true) return 'شركة توصيل';
+  if (party.isDeliveryCompany == true) return tr('شركة توصيل');
   final isCustomer = party.isCustomer;
   final isSupplier = party.isSupplier;
-  if (isCustomer && isSupplier) return 'عميل مورد';
-  if (isCustomer) return 'عميل';
-  if (isSupplier) return 'مورد';
-  return 'غير محدد';
+  if (isCustomer && isSupplier) return tr('عميل مورد');
+  if (isCustomer) return tr('عميل');
+  if (isSupplier) return tr('مورد');
+  return tr('غير محدد');
 }
 
 /// Get party type color.
@@ -53,11 +54,11 @@ IconData getPartyIcon(Party party) {
 String getTypeArabicName(String type) {
   switch (type) {
     case 'customer':
-      return 'العميل';
+      return tr('العميل');
     case 'supplier':
-      return 'المورد';
+      return tr('المورد');
     case 'both':
-      return 'العميل المورد';
+      return tr('العميل المورد');
     default:
       return 'الطرف';
   }

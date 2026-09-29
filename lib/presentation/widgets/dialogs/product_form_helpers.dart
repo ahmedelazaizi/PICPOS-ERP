@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // PRODUCT FORM HELPERS — ISS-13 Shared UI Building Blocks
 // ═══════════════════════════════════════════════════════════════════════════
@@ -118,11 +119,11 @@ class ProductFormHelpers {
     }
 
     String labelFor(double r) {
-      if (r == 0) return 'معفي / صفر ٪';
+      if (r == 0) return tr('معفي / صفر ٪');
       final txt = r == r.roundToDouble() ? r.toStringAsFixed(0) : r.toString();
       return TaxRatePolicy.isAllowed(r, allowed: allowedRates ?? TaxRatePolicy.defaultAllowedRates)
-          ? '$txt ٪'
-          : '$txt ٪ (غير قياسية)';
+          ? tr('{txt} ٪', {'txt': txt})
+          : tr('{txt} ٪ (غير قياسية)', {'txt': txt});
     }
 
     return SizedBox(
@@ -223,7 +224,7 @@ class ProductFormHelpers {
       children: [
         TextButton(
           onPressed: isLoading ? null : onCancel,
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         const SizedBox(width: 8),
         ElevatedButton.icon(
@@ -240,7 +241,7 @@ class ProductFormHelpers {
               : Icon(isEditing
                   ? Icons.save
                   : Icons.add_circle_outline),
-          label: Text(isEditing ? 'حفظ التعديلات' : 'إضافة الصنف'),
+          label: Text(isEditing ? tr('حفظ التعديلات') : tr('إضافة الصنف')),
           style: ElevatedButton.styleFrom(
             backgroundColor: isEditing ? AppColors.warning : AppColors.success,
             foregroundColor: Colors.white,

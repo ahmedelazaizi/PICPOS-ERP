@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -38,15 +39,15 @@ class _PosTerminalsPicposScreenState extends State<PosTerminalsPicposScreen> {
   @override
   Widget build(BuildContext context) {
     return PicPosScreenScaffold(
-      title: 'نقاط البيع',
-      subtitle: 'الإعدادات ← الأجهزة والطباعة',
+      title: tr('نقاط البيع'),
+      subtitle: tr('الإعدادات ← الأجهزة والطباعة'),
       icon: PhosphorIconsBold.cashRegister,
       headerSearch: TextField(
         controller: _searchCtrl,
         onChanged: (v) => setState(() => _query = v),
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'بحث باسم نقطة البيع...',
+          hintText: tr('بحث باسم نقطة البيع...'),
           prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
           suffixIcon: _query.isNotEmpty
               ? IconButton(

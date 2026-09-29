@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -72,6 +73,7 @@ class _DailyCashClosingDialogState
       String? lastUser;
       if (lastClosing != null) {
         final desc = lastClosing.description ?? '';
+        // i18n-ignore: persisted and parsed
         final userMatch = RegExp(r'المستخدم: (.+?) \|').firstMatch(desc);
         if (userMatch != null) {
           lastUser = userMatch.group(1);
@@ -148,7 +150,7 @@ class _DailyCashClosingDialogState
       final currentUser = authState.user;
       final currentUserId = currentUser?.id ?? 1;
       final currentUserName =
-          currentUser?.displayName ?? currentUser?.username ?? 'مستخدم';
+          currentUser?.displayName ?? currentUser?.username ?? tr('مستخدم');
 
       // Get terminal-specific safe from POS settings, fallback to system default
       final settingsRepo = ref.read(settingsRepositoryProvider);
@@ -178,7 +180,7 @@ class _DailyCashClosingDialogState
           amount: _cashSales,
           balanceAfter: 0,
           referenceType: 'daily_closing',
-          description:
+          description: // i18n-ignore: persisted and parsed
               'المستخدم: $currentUserName | إقفال الكاش | المسجل: ${_cashSales.toStringAsFixed(AppConstants.decimalPlaces)} | الفعلي: ${actualCash.toStringAsFixed(AppConstants.decimalPlaces)} | الفرق: ${cashDifference >= 0 ? '+' : ''}${cashDifference.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
           userId: currentUserId,
         );
@@ -194,7 +196,7 @@ class _DailyCashClosingDialogState
           amount: _bankSales,
           balanceAfter: 0,
           referenceType: 'daily_closing',
-          description:
+          description: // i18n-ignore: persisted and parsed
               'المستخدم: $currentUserName | إقفال البنك | المسجل: ${_bankSales.toStringAsFixed(AppConstants.decimalPlaces)} | الفعلي: ${actualBank.toStringAsFixed(AppConstants.decimalPlaces)} | الفرق: ${bankDifference >= 0 ? '+' : ''}${bankDifference.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
           userId: currentUserId,
         );
@@ -207,7 +209,7 @@ class _DailyCashClosingDialogState
 
         AppToast.show(
           context,
-          'تم الإقفال ✓ بواسطة $currentUserName | كاش: ${_cashSales.toStringAsFixed(AppConstants.decimalPlaces)}',
+          tr('تم الإقفال ✓ بواسطة {currentUserName} | كاش: {p0}', {'currentUserName': currentUserName, 'p0': _cashSales.toStringAsFixed(AppConstants.decimalPlaces)}),
           type: ToastType.success,
         );
 
@@ -216,7 +218,7 @@ class _DailyCashClosingDialogState
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -225,7 +227,7 @@ class _DailyCashClosingDialogState
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final currentUserName =
-        authState.user?.displayName ?? authState.user?.username ?? 'مستخدم';
+        authState.user?.displayName ?? authState.user?.username ?? tr('مستخدم');
     final canViewDetails = ref.watch(
       hasPermissionProvider(PermissionCodes.viewDailyClosingDetails),
     );
@@ -252,7 +254,7 @@ class _DailyCashClosingDialogState
               ),
             ),
             const SizedBox(width: 12),
-            const Text('الإقفال اليومي'),
+             Text(tr('الإقفال اليومي')),
           ],
         ),
         content: _isLoading
@@ -287,7 +289,7 @@ class _DailyCashClosingDialogState
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  'الكاشير: $currentUserName',
+                                  tr('الكاشير: {currentUserName}', {'currentUserName': currentUserName}),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -305,8 +307,8 @@ class _DailyCashClosingDialogState
                                 const SizedBox(width: 6),
                                 Text(
                                   _lastClosingTime != null
-                                      ? 'من: ${DateFormat('yyyy/MM/dd HH:mm').format(_lastClosingTime!)}${_lastClosingUser != null ? ' ($_lastClosingUser)' : ''}'
-                                      : 'من: بداية اليوم (أول إقفال)',
+                                      ? tr('من: {p0}{p1}', {'p0': DateFormat('yyyy/MM/dd HH:mm').format(_lastClosingTime!), 'p1': _lastClosingUser != null ? ' ($_lastClosingUser)' : ''})
+                                      : tr('من: بداية اليوم (أول إقفال)'),
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.grey.shade700,
@@ -323,13 +325,13 @@ class _DailyCashClosingDialogState
                       if (showDetails) ...[
                         _SummaryCard(
                           icon: PhosphorIconsBold.receipt,
-                          label: 'عدد الفواتير',
+                          label: tr('عدد الفواتير'),
                           value: '$_invoiceCount',
                           color: AppColors.info,
                         ),
                         _SummaryCard(
                           icon: PhosphorIconsBold.chartLineUp,
-                          label: 'إجمالي المبيعات',
+                          label: tr('إجمالي المبيعات'),
                           value:
                               '${_totalSales.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                           color: AppColors.success,
@@ -337,7 +339,7 @@ class _DailyCashClosingDialogState
                         if (_totalExpenses > 0)
                           _SummaryCard(
                             icon: PhosphorIconsBold.arrowCircleUp,
-                            label: 'المصروفات',
+                            label: tr('المصروفات'),
                             value:
                                 '-${_totalExpenses.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                             color: AppColors.error,
@@ -357,16 +359,16 @@ class _DailyCashClosingDialogState
                         ),
                         child: Column(
                           children: [
-                            const Row(
+                             Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   PhosphorIconsBold.money,
                                   color: AppColors.warning,
                                 ),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
                                 Text(
-                                  'الكاش',
-                                  style: TextStyle(
+                                  tr('الكاش'),
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
@@ -379,7 +381,7 @@ class _DailyCashClosingDialogState
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('المسجل (من الفواتير):'),
+                                   Text(tr('المسجل (من الفواتير):')),
                                   Text(
                                     '${_cashSales.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                                     style: const TextStyle(
@@ -393,7 +395,7 @@ class _DailyCashClosingDialogState
                             TextField(
                               controller: _actualCashController,
                               decoration: InputDecoration(
-                                labelText: 'الجرد الفعلي للكاش',
+                                labelText: tr('الجرد الفعلي للكاش'),
                                 prefixIcon: const Icon(PhosphorIconsBold.money),
                                 suffixText: AppConstants.currencySymbolEn,
                                 isDense: true,
@@ -408,7 +410,7 @@ class _DailyCashClosingDialogState
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('الفرق عن المُسجل:'),
+                                   Text(tr('الفرق عن المُسجل:')),
                                   Text(
                                     '${(double.tryParse(_actualCashController.text) ?? 0) - _cashSales >= 0 ? '+' : ''}${((double.tryParse(_actualCashController.text) ?? 0) - _cashSales).toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                                     style: TextStyle(
@@ -454,16 +456,16 @@ class _DailyCashClosingDialogState
                         ),
                         child: Column(
                           children: [
-                            const Row(
+                             Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   PhosphorIconsBold.bank,
                                   color: AppColors.info,
                                 ),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
                                 Text(
-                                  'البنك (بطاقة/تحويل)',
-                                  style: TextStyle(
+                                  tr('البنك (بطاقة/تحويل)'),
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
@@ -476,7 +478,7 @@ class _DailyCashClosingDialogState
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('المسجل (من الفواتير):'),
+                                   Text(tr('المسجل (من الفواتير):')),
                                   Text(
                                     '${_bankSales.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                                     style: const TextStyle(
@@ -490,7 +492,7 @@ class _DailyCashClosingDialogState
                             TextField(
                               controller: _actualBankController,
                               decoration: InputDecoration(
-                                labelText: 'الجرد الفعلي للبنك',
+                                labelText: tr('الجرد الفعلي للبنك'),
                                 prefixIcon: const Icon(PhosphorIconsBold.bank),
                                 suffixText: AppConstants.currencySymbolEn,
                                 isDense: true,
@@ -505,7 +507,7 @@ class _DailyCashClosingDialogState
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('الفرق عن المُسجل:'),
+                                   Text(tr('الفرق عن المُسجل:')),
                                   Text(
                                     '${(double.tryParse(_actualBankController.text) ?? 0) - _bankSales >= 0 ? '+' : ''}${((double.tryParse(_actualBankController.text) ?? 0) - _bankSales).toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                                     style: TextStyle(
@@ -566,9 +568,9 @@ class _DailyCashClosingDialogState
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text(
-                                    'إجمالي الفرق عن المُسجل:',
-                                    style: TextStyle(
+                                   Text(
+                                    tr('إجمالي الفرق عن المُسجل:'),
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -593,9 +595,9 @@ class _DailyCashClosingDialogState
 
                       // Notes
                       TextField(
-                        decoration: const InputDecoration(
-                          labelText: 'ملاحظات (اختياري)',
-                          prefixIcon: Icon(PhosphorIconsBold.notepad),
+                        decoration:  InputDecoration(
+                          labelText: tr('ملاحظات (اختياري)'),
+                          prefixIcon: const Icon(PhosphorIconsBold.notepad),
                         ),
                         onChanged: (v) {},
                       ),
@@ -606,14 +608,14 @@ class _DailyCashClosingDialogState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           FilledButton.icon(
             onPressed: _actualCashController.text.isEmpty
                 ? null
                 : _performClosing,
             icon: const Icon(PhosphorIconsBold.checkCircle),
-            label: const Text('تأكيد الإقفال'),
+            label:  Text(tr('تأكيد الإقفال')),
           ),
         ],
       ),

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -56,7 +57,7 @@ class _TableOrderDialogState extends State<TableOrderDialog> {
     final uniqueIds = widget.items.map((i) => i.productId).toSet();
     for (final id in uniqueIds) {
       final name = await widget.resolveProductName(id);
-      _productNames[id] = name ?? 'صنف #$id';
+      _productNames[id] = name ?? tr('صنف #{id}', {'id': id});
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -98,10 +99,10 @@ class _TableOrderDialogState extends State<TableOrderDialog> {
           child: _loading
               ? const Center(child: CircularProgressIndicator())
               : widget.items.isEmpty
-                  ? const Center(
+                  ?  Center(
                       child: Text(
-                        'لا توجد أصناف في الطلب',
-                        style: TextStyle(color: AppColors.textMuted),
+                        tr('لا توجد أصناف في الطلب'),
+                        style: const TextStyle(color: AppColors.textMuted),
                       ),
                     )
                   : ListView.separated(
@@ -109,7 +110,7 @@ class _TableOrderDialogState extends State<TableOrderDialog> {
                       separatorBuilder: (_, _) => const Divider(height: 1),
                       itemBuilder: (ctx, idx) {
                         final item = widget.items[idx];
-                        final productName = _productNames[item.productId] ?? 'صنف #${item.productId}';
+                        final productName = _productNames[item.productId] ?? tr('صنف #{p0}', {'p0': item.productId});
                         return ListTile(
                           dense: true,
                           visualDensity: VisualDensity.compact,
@@ -141,23 +142,23 @@ class _TableOrderDialogState extends State<TableOrderDialog> {
               TextButton.icon(
                 onPressed: () => widget.onMerge(widget.table, widget.order),
                 icon: const Icon(PhosphorIconsBold.intersect, size: 16),
-                label: const Text('دمج', style: TextStyle(fontSize: 12)),
+                label:  Text(tr('دمج'), style: const TextStyle(fontSize: 12)),
                 style: TextButton.styleFrom(foregroundColor: AppColors.warning, padding: const EdgeInsets.symmetric(horizontal: 8)),
               ),
               TextButton.icon(
                 onPressed: () async {
                   await widget.onPrintKitchen(widget.table, widget.order);
                   if (context.mounted) {
-                    AppToast.show(context, 'تم إرسال الطلب للمطبخ', type: ToastType.success);
+                    AppToast.show(context, tr('تم إرسال الطلب للمطبخ'), type: ToastType.success);
                   }
                 },
                 icon: const Icon(PhosphorIconsBold.cookingPot, size: 16),
-                label: const Text('المطبخ', style: TextStyle(fontSize: 12)),
+                label:  Text(tr('المطبخ'), style: const TextStyle(fontSize: 12)),
                 style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('إغلاق', style: TextStyle(fontSize: 12)),
+                child:  Text(tr('إغلاق'), style: const TextStyle(fontSize: 12)),
               ),
               ElevatedButton.icon(
                 onPressed: () async {
@@ -176,7 +177,7 @@ class _TableOrderDialogState extends State<TableOrderDialog> {
                   }
                 },
                 icon: const Icon(PhosphorIconsBold.plus, size: 16),
-                label: const Text('إضافة', style: TextStyle(fontSize: 12)),
+                label:  Text(tr('إضافة'), style: const TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 10)),
               ),
               ElevatedButton.icon(
@@ -185,7 +186,7 @@ class _TableOrderDialogState extends State<TableOrderDialog> {
                   widget.onCloseTable(widget.table, widget.order);
                 },
                 icon: const Icon(PhosphorIconsBold.receipt, size: 16),
-                label: const Text('إغلاق طاولة', style: TextStyle(fontSize: 12)),
+                label:  Text(tr('إغلاق طاولة'), style: const TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, padding: const EdgeInsets.symmetric(horizontal: 10)),
               ),
             ],

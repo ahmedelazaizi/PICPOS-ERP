@@ -28,10 +28,10 @@ extension _OutcomeMeta on _FollowUpOutcome {
       };
 
   String get label => switch (this) {
-        _FollowUpOutcome.promise => 'وعد بالسداد',
-        _FollowUpOutcome.noAnswer => 'لم يُرد',
-        _FollowUpOutcome.disputed => 'اعتراض على المبلغ',
-        _FollowUpOutcome.refused => 'رفض السداد',
+        _FollowUpOutcome.promise => tr('وعد بالسداد'),
+        _FollowUpOutcome.noAnswer => tr('لم يُرد'),
+        _FollowUpOutcome.disputed => tr('اعتراض على المبلغ'),
+        _FollowUpOutcome.refused => tr('رفض السداد'),
       };
 
   IconData get icon => switch (this) {
@@ -111,7 +111,7 @@ class _FollowUpDialogState extends ConsumerState<_FollowUpDialog> {
   Future<void> _save() async {
     final promisedAmount = double.tryParse(_amountCtrl.text.trim());
     if (_isPromise && (promisedAmount == null || promisedAmount <= 0)) {
-      AppToast.show(context, 'المبلغ الموعود غير صالح', type: ToastType.error);
+      AppToast.show(context, tr('المبلغ الموعود غير صالح'), type: ToastType.error);
       return;
     }
     setState(() => _saving = true);
@@ -136,11 +136,11 @@ class _FollowUpDialogState extends ConsumerState<_FollowUpDialog> {
           );
       if (!mounted) return;
       Navigator.pop(context, true);
-      AppToast.show(context, 'سُجّلت المتابعة', type: ToastType.success);
+      AppToast.show(context, tr('سُجّلت المتابعة'), type: ToastType.success);
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      AppToast.show(context, 'تعذّر حفظ المتابعة: $e', type: ToastType.error);
+      AppToast.show(context, tr('تعذّر حفظ المتابعة: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -150,13 +150,13 @@ class _FollowUpDialogState extends ConsumerState<_FollowUpDialog> {
     final df = DateFormat('yyyy/MM/dd');
     return PicPosDialog(
       icon: PhosphorIconsBold.phone,
-      title: 'متابعة تحصيل',
-      subtitle: 'تسجيل محاولة تحصيل وتحديد الخطوة التالية',
+      title: tr('متابعة تحصيل'),
+      subtitle: tr('تسجيل محاولة تحصيل وتحديد الخطوة التالية'),
       width: 720,
       accent: AppColors.primary,
       onCancel: _saving ? null : () => Navigator.pop(context),
       primaryAction: PicPosDialogAction(
-        label: 'حفظ المتابعة',
+        label: tr('حفظ المتابعة'),
         icon: PhosphorIconsBold.check,
         busy: _saving,
         onPressed: _saving ? null : _save,
@@ -165,29 +165,29 @@ class _FollowUpDialogState extends ConsumerState<_FollowUpDialog> {
           'لا تنبيه تلقائي',
       body: [
         PicPosPanelGroup(
-          label: 'موضوع المتابعة',
+          label: tr('موضوع المتابعة'),
           child: Wrap(
             spacing: 12,
             runSpacing: 10,
             children: [
-              _readOnly('الفاتورة', inv.invoiceNumber,
+              _readOnly(tr('الفاتورة'), inv.invoiceNumber,
                   PhosphorIconsBold.receipt),
-              _readOnly('المتبقي', _money(inv.remaining),
+              _readOnly(tr('المتبقي'), _money(inv.remaining),
                   PhosphorIconsBold.money),
               _readOnly(
-                inv.overdue ? 'عمر التأخر' : 'يستحق بعد',
-                _count(inv.daysLate.abs(), 'يوماً'),
+                inv.overdue ? tr('عمر التأخر') : tr('يستحق بعد'),
+                _count(inv.daysLate.abs(), tr('يوماً')),
                 PhosphorIconsBold.hourglass,
               ),
               // **عدٌّ مقيسٌ** لا رقمٌ مكتوبٌ كما في التصميم.
-              _readOnly('محاولات سابقة', '${widget.priorAttempts}',
+              _readOnly(tr('محاولات سابقة'), '${widget.priorAttempts}',
                   PhosphorIconsBold.phoneCall),
             ],
           ),
         ),
         const SizedBox(height: 14),
         PicPosPanelGroup(
-          label: 'نتيجة الاتصال',
+          label: tr('نتيجة الاتصال'),
           child: Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -209,7 +209,7 @@ class _FollowUpDialogState extends ConsumerState<_FollowUpDialog> {
         if (_isPromise) ...[
           const SizedBox(height: 14),
           PicPosPanelGroup(
-            label: 'تفاصيل الوعد',
+            label: tr('تفاصيل الوعد'),
             child: Wrap(
               spacing: 12,
               runSpacing: 10,
@@ -217,7 +217,7 @@ class _FollowUpDialogState extends ConsumerState<_FollowUpDialog> {
                 SizedBox(
                   width: 320,
                   child: PicPosDialogField(
-                    label: 'تاريخ السداد الموعود',
+                    label: tr('تاريخ السداد الموعود'),
                     child: InkWell(
                       onTap: () async {
                         final now = DateTime.now();
@@ -235,7 +235,7 @@ class _FollowUpDialogState extends ConsumerState<_FollowUpDialog> {
                         alignment: AlignmentDirectional.centerStart,
                         child: Text(
                           _promisedDate == null
-                              ? 'اختر تاريخاً'
+                              ? tr('اختر تاريخاً')
                               : df.format(_promisedDate!),
                         ),
                       ),
@@ -245,7 +245,7 @@ class _FollowUpDialogState extends ConsumerState<_FollowUpDialog> {
                 SizedBox(
                   width: 320,
                   child: PicPosDialogField(
-                    label: 'المبلغ الموعود',
+                    label: tr('المبلغ الموعود'),
                     child: TextField(
                       controller: _amountCtrl,
                       keyboardType:
@@ -264,23 +264,23 @@ class _FollowUpDialogState extends ConsumerState<_FollowUpDialog> {
         ],
         const SizedBox(height: 14),
         PicPosPanelGroup(
-          label: 'من تُكلِّم وملاحظات',
+          label: tr('من تُكلِّم وملاحظات'),
           child: Column(
             children: [
               PicPosDialogField(
-                label: 'من تكلّم معه',
+                label: tr('من تكلّم معه'),
                 child: TextField(
                   controller: _personCtrl,
-                  decoration: const InputDecoration(
+                  decoration:  InputDecoration(
                     border: InputBorder.none,
                     isDense: true,
-                    hintText: 'اسم المسؤول عند العميل',
+                    hintText: tr('اسم المسؤول عند العميل'),
                   ),
                 ),
               ),
               const SizedBox(height: 10),
               PicPosDialogField(
-                label: 'ملاحظات',
+                label: tr('ملاحظات'),
                 height: 76,
                 child: TextField(
                   controller: _notesCtrl,

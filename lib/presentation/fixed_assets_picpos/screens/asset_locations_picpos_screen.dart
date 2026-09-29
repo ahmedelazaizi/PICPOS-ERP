@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ «التوزيع والمواقع» — مدخلٌ جانبيٌّ مستقلٌّ بقرار المالك 2026-09-18.
 //
 // ═══ 🔴 ولماذا ليست نسخةً من التبويبة التي خرجت منها ═══
@@ -54,7 +55,7 @@ const double _nearEndThreshold = 0.85;
 String _ar(Object n) =>
     '$n'.replaceAllMapped(RegExp(r'\d'), (m) => '٠١٢٣٤٥٦٧٨٩'[int.parse(m[0]!)]);
 
-String _pct(double v) => '${_ar(v.toStringAsFixed(0))}٪';
+String _pct(double v) => tr('{p0}٪', {'p0': _ar(v.toStringAsFixed(0))});
 
 final _assetsProvider = StreamProvider.autoDispose<List<FixedAssetData>>(
     (ref) => ref.watch(fixedAssetsRepositoryProvider).watchFixedAssets());
@@ -92,32 +93,32 @@ class _AssetLocationsPicposScreenState
     return PermissionGuard(
       permission: PermissionCodes.assetsView,
       child: PicPosScreenScaffold(
-        title: 'التوزيع والمواقع',
+        title: tr('التوزيع والمواقع'),
         subtitle: 'الأصل يتبع موقعاً ومركزَ تكلفة — ويُستعمل ذلك في توزيع '
             'الإهلاك',
         icon: PhosphorIconsBold.mapPin,
         subHeader: PicPosKpiRow(
           kpis: [
             PicPosKpi(
-              label: 'المواقع',
+              label: tr('المواقع'),
               value: _ar(entries.length),
               icon: PhosphorIconsBold.mapPin,
               tint: AppColors.primary,
             ),
             PicPosKpi(
-              label: 'أصولٌ على الدفاتر',
+              label: tr('أصولٌ على الدفاتر'),
               value: _ar(onBooks.length),
               icon: PhosphorIconsBold.buildings,
               tint: AppColors.info,
             ),
             PicPosKpi(
-              label: 'بلا موقع',
+              label: tr('بلا موقع'),
               value: _ar(unassigned),
               icon: PhosphorIconsBold.warningCircle,
               tint: unassigned == 0 ? AppColors.success : _warn,
             ),
             PicPosKpi(
-              label: 'القيمة الدفترية',
+              label: tr('القيمة الدفترية'),
               value: _money0.format(totalBook),
               icon: PhosphorIconsBold.coins,
               tint: AppColors.success,
@@ -125,9 +126,9 @@ class _AssetLocationsPicposScreenState
           ],
         ),
         body: onBooks.isEmpty
-            ? const PicPosEmptyState(
+            ?  PicPosEmptyState(
                 icon: PhosphorIconsBold.mapPin,
-                title: 'لا أصولَ نشطةً لتوزَّع',
+                title: tr('لا أصولَ نشطةً لتوزَّع'),
                 hint: 'الأصل يتبع موقعاً ومركزَ تكلفة — ويُستعمل ذلك في '
                     'توزيع الإهلاك على مراكز التكلفة.',
               )
@@ -138,18 +139,18 @@ class _AssetLocationsPicposScreenState
                   children: [
                     PicPosContentCard(
                       child: PicPosBarList(
-                        title: 'القيمة الدفترية حسب الموقع',
-                        subtitle: 'الأصل يتبع موقعاً ومركز تكلفة · ج.م',
-                        emptyHint: 'لا مواقعَ مسجَّلة',
+                        title: tr('القيمة الدفترية حسب الموقع'),
+                        subtitle: tr('الأصل يتبع موقعاً ومركز تكلفة · ج.م'),
+                        emptyHint: tr('لا مواقعَ مسجَّلة'),
                         items: [
                           for (final e in entries)
                             PicPosBarItem(
                               label: e.key,
-                              sub: '${_ar(e.value.length)} أصول',
+                              sub: tr('{p0} أصول', {'p0': _ar(e.value.length)}),
                               value: _sumBook(e.value),
                               display: _money0.format(_sumBook(e.value)),
                               caption: totalBook > 0
-                                  ? '${_pct(_sumBook(e.value) / totalBook * 100)} من الدفترية'
+                                  ? tr('{p0} من الدفترية', {'p0': _pct(_sumBook(e.value) / totalBook * 100)})
                                   : '',
                               icon: PhosphorIconsBold.storefront,
                             ),
@@ -172,16 +173,16 @@ class _AssetLocationsPicposScreenState
     double totalBook,
   ) {
     return PicPosDataTable(
-      title: 'الأصول حسب الموقع',
-      subtitle: 'يُستخدم في توزيع الإهلاك على مراكز التكلفة',
+      title: tr('الأصول حسب الموقع'),
+      subtitle: tr('يُستخدم في توزيع الإهلاك على مراكز التكلفة'),
       minWidth: 980,
-      columns: const [
-        PicPosTableColumn('الموقع', flex: 1.6),
-        PicPosTableColumn('الأصول', align: PicPosCellAlign.end),
-        PicPosTableColumn('التكلفة', flex: 1.3, align: PicPosCellAlign.end),
-        PicPosTableColumn('الدفترية', flex: 1.3, align: PicPosCellAlign.end),
-        PicPosTableColumn('نسبة الاستهلاك', flex: 1.4),
-        PicPosTableColumn('', flex: 1.1),
+      columns:  [
+        PicPosTableColumn(tr('الموقع'), flex: 1.6),
+        PicPosTableColumn(tr('الأصول'), align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('التكلفة'), flex: 1.3, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('الدفترية'), flex: 1.3, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('نسبة الاستهلاك'), flex: 1.4),
+        const PicPosTableColumn('', flex: 1.1),
       ],
       rows: [
         for (final e in entries)
@@ -209,7 +210,7 @@ class _AssetLocationsPicposScreenState
               ),
               PicPosButtonCell(
                 // «بلا موقع» تسميتُها **إسنادٌ** لا تصحيح — والزرُّ يقولها.
-                e.key == kUnassignedAssetLocation ? 'إسناد موقع' : 'إعادة تسمية',
+                e.key == kUnassignedAssetLocation ? tr('إسناد موقع') : tr('إعادة تسمية'),
                 icon: PhosphorIconsBold.pencilSimple,
                 tint: AppColors.primary,
                 onPressed: () => _rename(e.key, onBooks),
@@ -218,7 +219,7 @@ class _AssetLocationsPicposScreenState
           }(),
       ],
       totals: [
-        '${_ar(entries.length)} مواقع',
+        tr('{p0} مواقع', {'p0': _ar(entries.length)}),
         _ar(onBooks.length),
         _money0.format(totalCost),
         _money0.format(totalBook),
@@ -249,14 +250,14 @@ class _AssetLocationsPicposScreenState
         done++;
       }
       if (!mounted) return;
-      AppToast.show(context, 'نُقل ${_ar(done)} أصلاً إلى «${plan.target}»');
+      AppToast.show(context, tr('نُقل {p0} أصلاً إلى «{p1}»', {'p0': _ar(done), 'p1': plan.target}));
     } catch (e) {
       if (!mounted) return;
       // ⚠️ **يُقال كم وقع فعلاً**: الكتابةُ صفٌّ صفّاً، فالإخفاقُ في
       //    المنتصف يترك الموقعَ مقسوماً — و«فشل» وحدَها تُقرأ «لم يقع شيء».
       AppToast.show(
         context,
-        'توقّف بعد ${_ar(done)} من ${_ar(plan.assetIds.length)}: $e',
+        tr('توقّف بعد {p0} من {p1}: {e}', {'p0': _ar(done), 'p1': _ar(plan.assetIds.length), 'e': e}),
         type: ToastType.error,
       );
     }
@@ -299,8 +300,8 @@ class _RenameLocationDialogState extends State<_RenameLocationDialog> {
     return PicPosDialog(
       icon: PhosphorIconsBold.mapPin,
       title: widget.from == kUnassignedAssetLocation
-          ? 'إسنادُ موقعٍ للأصول بلا موقع'
-          : 'إعادةُ تسميةِ موقع',
+          ? tr('إسنادُ موقعٍ للأصول بلا موقع')
+          : tr('إعادةُ تسميةِ موقع'),
       subtitle: '«${widget.from}» · ${_ar(moving)} أصلاً',
       width: 560,
       body: [
@@ -308,10 +309,10 @@ class _RenameLocationDialogState extends State<_RenameLocationDialog> {
             controller: _to,
             autofocus: true,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: 'الاسم الجديد',
+            decoration:  InputDecoration(
+              labelText: tr('الاسم الجديد'),
               isDense: true,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
@@ -328,13 +329,13 @@ class _RenameLocationDialogState extends State<_RenameLocationDialog> {
             )
           else
             Text(
-              'سيُكتَب الاسمُ على ${_ar(plan.assetIds.length)} أصلاً.',
+              tr('سيُكتَب الاسمُ على {p0} أصلاً.', {'p0': _ar(plan.assetIds.length)}),
               style: const TextStyle(
                   fontSize: 12, color: AppColors.textMuted),
             ),
       ],
       primaryAction: PicPosDialogAction(
-        label: plan.isMerge ? 'دمج' : 'حفظ',
+        label: plan.isMerge ? tr('دمج') : tr('حفظ'),
         icon: PhosphorIconsBold.check,
         onPressed:
             plan.isAllowed ? () => Navigator.pop(context, plan) : null,

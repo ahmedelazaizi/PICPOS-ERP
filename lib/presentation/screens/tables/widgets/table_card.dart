@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -34,8 +35,8 @@ class TableCard extends ConsumerWidget {
     // Calculate elapsed time
     final elapsed = DateTime.now().difference(table.lastStatusAt);
     final elapsedStr = elapsed.inMinutes > 0
-        ? '${elapsed.inHours > 0 ? '${elapsed.inHours}س ' : ''}${elapsed.inMinutes % 60}د'
-        : 'الآن';
+        ? tr('{p0}{p1}د', {'p0': elapsed.inHours > 0 ? '${elapsed.inHours}س ' : '', 'p1': elapsed.inMinutes % 60})
+        : tr('الآن');
 
     final isRound = table.capacity <= 4;
 
@@ -176,7 +177,7 @@ class TableCard extends ConsumerWidget {
                       return Padding(
                         padding: const EdgeInsets.only(top: 3),
                         child: Text(
-                          'دُفع ${progress.paid.toStringAsFixed(AppConstants.decimalPlaces)} من ${progress.effective.toStringAsFixed(AppConstants.decimalPlaces)}',
+                          tr('دُفع {p0} من {p1}', {'p0': progress.paid.toStringAsFixed(AppConstants.decimalPlaces), 'p1': progress.effective.toStringAsFixed(AppConstants.decimalPlaces)}),
                           style: GoogleFonts.cairo(
                               fontSize: 8,
                               color: const Color(0xFFF97316),

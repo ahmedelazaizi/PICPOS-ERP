@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -19,11 +20,11 @@ class StatusBadge extends StatelessWidget {
   factory StatusBadge.fromPaymentStatus(PaymentStatus status) {
     switch (status) {
       case PaymentStatus.paid:
-        return const StatusBadge(text: 'مدفوع', color: AppColors.success);
+        return  StatusBadge(text: tr('مدفوع'), color: AppColors.success);
       case PaymentStatus.partial:
-        return const StatusBadge(text: 'جزئي', color: AppColors.warning);
+        return  StatusBadge(text: tr('جزئي'), color: AppColors.warning);
       case PaymentStatus.pending:
-        return const StatusBadge(text: 'معلق', color: AppColors.error);
+        return  StatusBadge(text: tr('معلق'), color: AppColors.error);
     }
   }
 
@@ -31,9 +32,9 @@ class StatusBadge extends StatelessWidget {
   factory StatusBadge.fromPaymentStatusString(String status) {
     switch (status) {
       case 'paid':
-        return const StatusBadge(text: 'مدفوع', color: AppColors.success);
+        return  StatusBadge(text: tr('مدفوع'), color: AppColors.success);
       case 'partial':
-        return const StatusBadge(text: 'جزئي', color: AppColors.warning);
+        return  StatusBadge(text: tr('جزئي'), color: AppColors.warning);
       default:
         return const StatusBadge(text: 'معلق', color: AppColors.error);
     }
@@ -43,11 +44,11 @@ class StatusBadge extends StatelessWidget {
   factory StatusBadge.fromStockStatus(StockStatus status) {
     switch (status) {
       case StockStatus.available:
-        return const StatusBadge(text: 'متوفر', color: AppColors.success);
+        return  StatusBadge(text: tr('متوفر'), color: AppColors.success);
       case StockStatus.low:
-        return const StatusBadge(text: 'منخفض', color: AppColors.warning);
+        return  StatusBadge(text: tr('منخفض'), color: AppColors.warning);
       case StockStatus.outOfStock:
-        return const StatusBadge(text: 'نفذ', color: AppColors.error);
+        return  StatusBadge(text: tr('نفذ'), color: AppColors.error);
     }
   }
 

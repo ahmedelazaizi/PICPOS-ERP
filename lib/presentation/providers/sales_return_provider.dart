@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:ural_erp/core/errors/app_exceptions.dart';
 import 'package:ural_erp/core/utils/financial_utils.dart';
@@ -192,12 +193,12 @@ class SalesReturnNotifier extends Notifier<SalesReturnState> {
 
   Future<void> selectInvoice(SalesInvoiceData invoice) async {
     if (invoice.status == 'returned') {
-      state = state.copyWith(error: 'هذه الفاتورة تم إرجاعها بالكامل سابقاً');
+      state = state.copyWith(error: tr('هذه الفاتورة تم إرجاعها بالكامل سابقاً'));
       return;
     }
 
     if (invoice.deliveryStatus != null && invoice.deliveryStatus!.isNotEmpty) {
-      state = state.copyWith(error: 'لا يمكن إرجاع فواتير التوصيل');
+      state = state.copyWith(error: tr('لا يمكن إرجاع فواتير التوصيل'));
       return;
     }
 

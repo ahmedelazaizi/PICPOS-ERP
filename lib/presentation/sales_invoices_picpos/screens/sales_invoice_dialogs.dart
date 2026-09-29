@@ -33,7 +33,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
         SnackBar(
           backgroundColor: AppColors.error,
           duration: const Duration(seconds: 8),
-          content: Text('تعذّر فتح تفاصيل الفاتورة: $e'),
+          content: Text(tr('تعذّر فتح تفاصيل الفاتورة: {e}', {'e': e})),
         ),
       );
     }
@@ -45,7 +45,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
     final customer = invoice.partyId != null
         ? await controller.getCustomerById(invoice.partyId!)
         : null;
-    final customerName = customer?.name ?? 'عميل نقدي';
+    final customerName = customer?.name ?? tr('عميل نقدي');
 
     if (!mounted) return;
 
@@ -58,7 +58,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
             children: [
               const Icon(PhosphorIconsBold.receipt, color: AppColors.info),
               const SizedBox(width: 8),
-              Text('فاتورة بيع #${invoice.invoiceNumber}'),
+              Text(tr('فاتورة بيع #{p0}', {'p0': invoice.invoiceNumber})),
             ],
           ),
           content: SizedBox(
@@ -95,21 +95,21 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                         spacing: 26,
                         runSpacing: 10,
                         children: [
-                          _metaField('العميل', customerName),
+                          _metaField(tr('العميل'), customerName),
                           _metaField(
-                            'التاريخ',
+                            tr('التاريخ'),
                             (invoice.createdAt ?? invoice.invoiceDate)
                                 .toString()
                                 .substring(0, 16),
                           ),
-                          _metaField('الحالة', invoice.status.name),
-                          if (brName != null) _metaField('الفرع', brName),
-                          if (whName != null) _metaField('المخزن', whName),
+                          _metaField(tr('الحالة'), invoice.status.name),
+                          if (brName != null) _metaField(tr('الفرع'), brName),
+                          if (whName != null) _metaField(tr('المخزن'), whName),
                           if (ccName != null)
-                            _metaField('مركز التكلفة', ccName),
+                            _metaField(tr('مركز التكلفة'), ccName),
                           if (invoice.originClientId != null &&
                               invoice.originClientId!.isNotEmpty)
-                            _metaField('الجهاز', invoice.originClientId!),
+                            _metaField(tr('الجهاز'), invoice.originClientId!),
                         ],
                       ),
                     );
@@ -117,7 +117,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                   if (invoice.notes != null && invoice.notes!.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(
-                      'ملاحظات: ${invoice.notes}',
+                      tr('ملاحظات: {p0}', {'p0': invoice.notes}),
                       style: const TextStyle(
                           fontSize: 12, color: AppColors.textSecondary),
                     ),
@@ -145,32 +145,32 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                     },
                   ),
 
-                  const Text(
-                    'الأصناف:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                   Text(
+                    tr('الأصناف:'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   if (items.isEmpty)
-                    const Text(
-                      'لا توجد أصناف',
-                      style: TextStyle(color: AppColors.textMuted),
+                     Text(
+                      tr('لا توجد أصناف'),
+                      style: const TextStyle(color: AppColors.textMuted),
                     )
                   else
                     DataTable(
                       columnSpacing: 20,
-                      columns: const [
-                        DataColumn(label: Text('الصنف')),
-                        DataColumn(label: Text('الوحدة')),
-                        DataColumn(label: Text('الكمية')),
-                        DataColumn(label: Text('السعر')),
-                        DataColumn(label: Text('الإجمالي')),
+                      columns:  [
+                        DataColumn(label: Text(tr('الصنف'))),
+                        DataColumn(label: Text(tr('الوحدة'))),
+                        DataColumn(label: Text(tr('الكمية'))),
+                        DataColumn(label: Text(tr('السعر'))),
+                        DataColumn(label: Text(tr('الإجمالي'))),
                       ],
                       rows: items
                           .map(
                             (item) => DataRow(
                               cells: [
                                 DataCell(Text(item.displayName)),
-                                DataCell(Text(item.item.unitName ?? 'قطعة')),
+                                DataCell(Text(item.item.unitName ?? tr('قطعة'))),
                                 DataCell(
                                   Text(item.item.quantity.toStringAsFixed(AppConstants.decimalPlaces)),
                                 ),
@@ -195,19 +195,19 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                       constraints: const BoxConstraints(maxWidth: 300),
                       child: Column(
                         children: [
-                          _totalRow('المجموع الفرعي', invoice.subtotal),
+                          _totalRow(tr('المجموع الفرعي'), invoice.subtotal),
                           if (invoice.discountAmount != 0)
-                            _totalRow('الخصم', invoice.discountAmount,
+                            _totalRow(tr('الخصم'), invoice.discountAmount,
                                 color: AppColors.warning),
                           if (invoice.taxAmount != 0)
-                            _totalRow('الضريبة', invoice.taxAmount),
+                            _totalRow(tr('الضريبة'), invoice.taxAmount),
                           const Divider(height: 18),
-                          _totalRow('الإجمالي', invoice.total,
+                          _totalRow(tr('الإجمالي'), invoice.total,
                               emphasize: true),
-                          _totalRow('المدفوع', invoice.paid,
+                          _totalRow(tr('المدفوع'), invoice.paid,
                               color: AppColors.success),
                           _totalRow(
-                            'المتبقي',
+                            tr('المتبقي'),
                             invoice.total - invoice.paid,
                             color: (invoice.total - invoice.paid) > 0.001
                                 ? AppColors.error
@@ -234,11 +234,11 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
             TextButton.icon(
               onPressed: () => _printInvoice(invoice),
               icon: const Icon(PhosphorIconsBold.printer, size: 16),
-              label: const Text('طباعة'),
+              label:  Text(tr('طباعة')),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -320,14 +320,14 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
     if (!mounted) return;
 
     if (party == null) {
-      AppToast.show(context, 'الفاتورةُ بلا عميلٍ مسجَّل — لا رقمَ يُرسَل إليه');
+      AppToast.show(context, tr('الفاتورةُ بلا عميلٍ مسجَّل — لا رقمَ يُرسَل إليه'));
       return;
     }
 
     await WhatsAppSendDialog.show(
       context,
       ref,
-      title: 'إرسال الفاتورة',
+      title: tr('إرسال الفاتورة'),
       rawPhone: party.phone,
       message: composeInvoiceMessage(
         shopName: shopName,
@@ -336,7 +336,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
         total: invoice.total,
         issuedAt: invoice.invoiceDate,
       ),
-      actionLogLabel: 'فاتورة ${invoice.invoiceNumber}',
+      actionLogLabel: tr('فاتورة {p0}', {'p0': invoice.invoiceNumber}),
     );
   }
 
@@ -350,12 +350,12 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
       // تماماً**: لا رسالةَ نجاحٍ ولا خطأ، والمستخدمُ ينتظر ورقةً لن تخرج.
       final printed = await printingService.printReceipt(invoice.id!);
       if (!printed && mounted) {
-        AppToast.show(context, 'تعذّرت الطباعة — تأكد من الطابعة',
+        AppToast.show(context, tr('تعذّرت الطباعة — تأكد من الطابعة'),
             type: ToastType.error);
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -373,7 +373,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
     // `api_sales_handler` خلف رايةٍ مطفأةٍ افتراضياً. والفحصُ في القِمع
     // يغطّي المدخلَين وتحويلَ عرض السعر معاً.
     if (!await ensurePermission(ref, context, PermissionCodes.salesCreate,
-        actionName: 'فاتورة بيع جديدة')) {
+        actionName: tr('فاتورة بيع جديدة'))) {
       return;
     }
     if (!mounted) return;
@@ -478,7 +478,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
       if (mounted) {
         AppToast.show(
           context,
-          'انتهت مهلة تحميل البيانات — تأكد من الاتصال بالسيرفر',
+          tr('انتهت مهلة تحميل البيانات — تأكد من الاتصال بالسيرفر'),
           type: ToastType.error,
         );
       }
@@ -488,7 +488,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
       if (mounted) {
         AppToast.show(
           context,
-          'فشل تحميل بيانات الفاتورة: $e',
+          tr('فشل تحميل بيانات الفاتورة: {e}', {'e': e}),
           type: ToastType.error,
         );
       }
@@ -747,7 +747,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
           PicPosNamedOption(id: c.id, name: c.name),
       ],
       systemTaxRate: systemTaxPercent,
-      invoiceNumberPreview: 'يُولَّد تلقائياً',
+      invoiceNumberPreview: tr('يُولَّد تلقائياً'),
       userName: ref.read(authProvider).user?.displayName ?? '',
       initialWarehouseId: warehouses.length == 1 ? warehouses.first.id : null,
       // الأرصدةُ الحقيقيّةُ من `Products.currentStock` — فتنبيهُ الكفاية
@@ -838,7 +838,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
               notes: notes,
             );
         if (!ok && ctx.mounted) {
-          AppToast.show(ctx, 'تعذّرت معاينة الفاتورة',
+          AppToast.show(ctx, tr('تعذّرت معاينة الفاتورة'),
               type: ToastType.warning);
         }
       },

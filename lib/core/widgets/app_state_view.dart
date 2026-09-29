@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // AppStateView — Day 11 PIR: Unified Loading / Error / Empty / Content states
 // ═══════════════════════════════════════════════════════════════════════════
@@ -93,7 +94,7 @@ class AppErrorView extends StatelessWidget {
                 TextButton.icon(
                   onPressed: onRetry,
                   icon: const Icon(PhosphorIconsBold.arrowClockwise),
-                  label: const Text('إعادة المحاولة'),
+                  label:  Text(tr('إعادة المحاولة')),
                 ),
               ],
             ],

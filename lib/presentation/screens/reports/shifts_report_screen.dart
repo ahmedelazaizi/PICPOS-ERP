@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -94,9 +95,9 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
@@ -104,7 +105,7 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
       _loadData();
       try {
         final user = ref.read(authProvider).user;
-        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? 'مجهول', 'تقرير الورديات');
+        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('تقرير الورديات'));
       } catch (_) {}
     });
   }
@@ -185,7 +186,7 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
       return Directionality(
         textDirection: ui.TextDirection.rtl,
         child: Scaffold(
-          body: Center(child: Text('تعذر تحديد صلاحيات الفرع: ${scopeAsync.error}')),
+          body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
         ),
       );
     }
@@ -194,8 +195,8 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
 
     return reportScaffold(
       context: context,
-      title: 'تقرير الورديات المطول',
-      subtitle: 'فتحُ الورديّات وإغلاقُها والفروقُ النقديّة',
+      title: tr('تقرير الورديات المطول'),
+      subtitle: tr('فتحُ الورديّات وإغلاقُها والفروقُ النقديّة'),
       icon: PhosphorIconsBold.clockCountdown,
       actions: [
             buildReportExportAction(onExport: _exportToExcel),
@@ -219,19 +220,19 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                   child: DropdownButtonFormField<int?>(
                     initialValue: _selectedUserId,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'المستخدم / الكاشير',
+                    decoration:  InputDecoration(
+                      labelText: tr('المستخدم / الكاشير'),
                       isDense: true,
-                      prefixIcon: Icon(PhosphorIconsBold.user, size: 16),
-                      contentPadding: EdgeInsets.symmetric(
+                      prefixIcon: const Icon(PhosphorIconsBold.user, size: 16),
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 8,
                       ),
                     ),
                     items: [
-                      const DropdownMenuItem<int?>(
+                       DropdownMenuItem<int?>(
                         value: null,
-                        child: Text('الكل'),
+                        child: Text(tr('الكل')),
                       ),
                       ..._allUsers.map(
                         (u) => DropdownMenuItem<int?>(
@@ -335,9 +336,9 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'سجل الورديات',
-                            style: TextStyle(
+                           Text(
+                            tr('سجل الورديات'),
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -355,20 +356,20 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                             child: SizedBox(
                               width: double.infinity,
                               child: DataTable(
-                                columns: const [
-                                  DataColumn(label: Text('# الوردية')),
-                                  DataColumn(label: Text('المستخدم')),
-                                  DataColumn(label: Text('بداية الشفت')),
-                                  DataColumn(label: Text('نهاية الشفت')),
-                                  DataColumn(label: Text('رصيد الإفتتاح')),
+                                columns:  [
+                                  DataColumn(label: Text(tr('# الوردية'))),
+                                  DataColumn(label: Text(tr('المستخدم'))),
+                                  DataColumn(label: Text(tr('بداية الشفت'))),
+                                  DataColumn(label: Text(tr('نهاية الشفت'))),
+                                  DataColumn(label: Text(tr('رصيد الإفتتاح'))),
                                   DataColumn(
-                                    label: Text('نقدي النظام (متوقع)'),
+                                    label: Text(tr('نقدي النظام (متوقع)')),
                                   ),
-                                  DataColumn(label: Text('نقدي فعلي (مُدخل)')),
+                                  DataColumn(label: Text(tr('نقدي فعلي (مُدخل)'))),
                                   DataColumn(
-                                    label: Text('الفرق (العجز/الزيادة)'),
+                                    label: Text(tr('الفرق (العجز/الزيادة)')),
                                   ),
-                                  DataColumn(label: Text('الحالة')),
+                                  DataColumn(label: Text(tr('الحالة'))),
                                 ],
                                 rows: _shifts.map((s) {
                                   final varColor = s.variance == null
@@ -467,8 +468,8 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                                           ),
                                           child: Text(
                                             s.status == 'closed'
-                                                ? 'مغلق'
-                                                : 'مفتوح',
+                                                ? tr('مغلق')
+                                                : tr('مفتوح'),
                                             style: TextStyle(
                                               color: s.status == 'closed'
                                                   ? AppColors.success
@@ -500,7 +501,7 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
       builder: (context) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: AlertDialog(
-          title: Text('تفاصيل الوردية #${shift.id}'),
+          title: Text(tr('تفاصيل الوردية #{p0}', {'p0': shift.id})),
           content: SizedBox(
             width: 500,
             child: Column(
@@ -508,19 +509,19 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'الكاشير: ${shift.userName}',
+                  tr('الكاشير: {p0}', {'p0': shift.userName}),
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 8),
-                Text('البداية: ${_dateFormat.format(shift.startTime)}'),
+                Text(tr('البداية: {p0}', {'p0': _dateFormat.format(shift.startTime)})),
                 if (shift.endTime != null)
-                  Text('النهاية: ${_dateFormat.format(shift.endTime!)}'),
+                  Text(tr('النهاية: {p0}', {'p0': _dateFormat.format(shift.endTime!)})),
                 const Divider(),
                 if (shift.status == 'closed') ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('النقدي المتوقع (نظام):'),
+                       Text(tr('النقدي المتوقع (نظام):')),
                       Text(
                         '${_currencyFormat.format(shift.expectedCash ?? 0)} ${AppConstants.currencySymbolEn}',
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -530,7 +531,7 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('النقدي الفعلي (مُدخل):'),
+                       Text(tr('النقدي الفعلي (مُدخل):')),
                       Text(
                         '${_currencyFormat.format(shift.actualCash ?? 0)} ${AppConstants.currencySymbolEn}',
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -541,9 +542,9 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'الفرق:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                       Text(
+                        tr('الفرق:'),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
                         '${_currencyFormat.format(shift.variance ?? 0)} ${AppConstants.currencySymbolEn}',
@@ -562,9 +563,9 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                   ),
                   if (shift.notes != null && shift.notes!.isNotEmpty) ...[
                     const SizedBox(height: 16),
-                    const Text(
-                      'الملاحظات / تفاصيل بطاقات الدفع:',
-                      style: TextStyle(
+                     Text(
+                      tr('الملاحظات / تفاصيل بطاقات الدفع:'),
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: AppColors.textMuted,
                       ),
@@ -572,12 +573,12 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                     Text(shift.notes!),
                   ],
                 ] else
-                  const Center(
+                   Center(
                     child: Padding(
-                      padding: EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
                       child: Text(
-                        'الوردية ما زالت مفتوحة',
-                        style: TextStyle(
+                        tr('الوردية ما زالت مفتوحة'),
+                        style: const TextStyle(
                           color: AppColors.warning,
                           fontWeight: FontWeight.bold,
                         ),
@@ -590,7 +591,7 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -615,33 +616,33 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(16, 16, 16, 4),
+           Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 4),
             child: Text(
-              'الإغلاق حسب المستخدم',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              tr('الإغلاق حسب المستخدم'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
-          const Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 12),
+           Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 12),
             child: Text(
-              'العجز والزيادة منفصلان — الصافي وحده يخفي خطأين يتقاصّان.',
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              tr('العجز والزيادة منفصلان — الصافي وحده يخفي خطأين يتقاصّان.'),
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
           ),
           SizedBox(
             width: double.infinity,
             child: DataTable(
-              columns: const [
-                DataColumn(label: Text('المستخدم')),
-                DataColumn(label: Text('الورديات')),
-                DataColumn(label: Text('مغلقة')),
-                DataColumn(label: Text('مفتوحة')),
-                DataColumn(label: Text('نقدي متوقع')),
-                DataColumn(label: Text('نقدي فعلي')),
-                DataColumn(label: Text('العجز')),
-                DataColumn(label: Text('الزيادة')),
-                DataColumn(label: Text('الصافي')),
+              columns:  [
+                DataColumn(label: Text(tr('المستخدم'))),
+                DataColumn(label: Text(tr('الورديات'))),
+                DataColumn(label: Text(tr('مغلقة'))),
+                DataColumn(label: Text(tr('مفتوحة'))),
+                DataColumn(label: Text(tr('نقدي متوقع'))),
+                DataColumn(label: Text(tr('نقدي فعلي'))),
+                DataColumn(label: Text(tr('العجز'))),
+                DataColumn(label: Text(tr('الزيادة'))),
+                DataColumn(label: Text(tr('الصافي'))),
               ],
               rows: _byUser
                   .map(
@@ -695,7 +696,7 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
 
   Future<void> _exportToExcel() async {
     if (_shifts.isEmpty) {
-      AppToast.show(context, 'لا توجد بيانات للتصدير', type: ToastType.error);
+      AppToast.show(context, tr('لا توجد بيانات للتصدير'), type: ToastType.error);
       return;
     }
     final service = ref.read(excelServiceProvider);
@@ -705,22 +706,22 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-      title: 'تقرير الورديات',
+      title: tr('تقرير الورديات'),
       // الورقةُ تحمل الجدولَين بنفس ترتيب الشاشة: التلخيصُ حسب المستخدم
       // أوّلاً ثم التفصيل. وكلاهما تسعةُ أعمدةٍ فيتّسقان في ورقةٍ واحدة.
       // ⚠️ ولا يُبنى أيٌّ منهما من استعلامٍ ثانٍ — كلاهما من `_shifts`
       // نفسِها، وإلا افترقت الورقةُ عن الشاشة كما وقع مراراً في هذا
       // المستودع (`report_export_matches_screen_test`).
-      headers: const [
-        'المستخدم',
-        'عدد الورديات',
-        'مغلقة',
-        'مفتوحة',
-        'نقدي متوقع',
-        'نقدي فعلي',
-        'العجز',
-        'الزيادة',
-        'الصافي',
+      headers:  [
+        tr('المستخدم'),
+        tr('عدد الورديات'),
+        tr('مغلقة'),
+        tr('مفتوحة'),
+        tr('نقدي متوقع'),
+        tr('نقدي فعلي'),
+        tr('العجز'),
+        tr('الزيادة'),
+        tr('الصافي'),
       ],
       rows: <List<dynamic>>[
         ..._byUser.map<List<dynamic>>((u) => [
@@ -735,16 +736,16 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
               u.varianceTotal,
             ]),
         const <dynamic>['', '', '', '', '', '', '', '', ''],
-        const <dynamic>[
-          '# الوردية',
-          'المستخدم',
-          'بداية الشفت',
-          'نهاية الشفت',
-          'رصيد الإفتتاح',
-          'نقدي متوقع',
-          'نقدي فعلي',
-          'الفرق',
-          'الحالة',
+         <dynamic>[
+          tr('# الوردية'),
+          tr('المستخدم'),
+          tr('بداية الشفت'),
+          tr('نهاية الشفت'),
+          tr('رصيد الإفتتاح'),
+          tr('نقدي متوقع'),
+          tr('نقدي فعلي'),
+          tr('الفرق'),
+          tr('الحالة'),
         ],
         ..._shifts.map<List<dynamic>>((s) => [
               s.id,
@@ -755,22 +756,22 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
               s.expectedCash ?? 0,
               s.actualCash ?? 0,
               s.variance ?? 0,
-              s.status == 'closed' ? 'مغلق' : 'مفتوح',
+              s.status == 'closed' ? tr('مغلق') : tr('مفتوح'),
             ]),
       ],
     );
     if (path != null && mounted) {
-      AppToast.show(context, 'تم تصدير التقرير بنجاح: \$path', type: ToastType.success);
+      AppToast.show(context, tr('تم تصدير التقرير بنجاح: \$path'), type: ToastType.success);
       try {
         final user = ref.read(authProvider).user;
-        ref.read(activityLoggerProvider).logReportExport(user?.id ?? 0, user?.displayName ?? 'مجهول', 'تقرير الورديات', 'Excel');
+        ref.read(activityLoggerProvider).logReportExport(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('تقرير الورديات'), 'Excel');
       } catch (_) {}
     }
   }
 
   Future<void> _printReport() async {
     if (_shifts.isEmpty) {
-      AppToast.show(context, 'لا توجد بيانات للطباعة', type: ToastType.error);
+      AppToast.show(context, tr('لا توجد بيانات للطباعة'), type: ToastType.error);
       return;
     }
     // Use the same Excel export as a workaround for print — the user can open and print the file

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // لوحُ «حجز جديد».
 //
 // ⚠️ **والمدّةُ تُعرَض ولا تُكتب**: التصميمُ يرسمها حقلَ إدخال، لكنّ
@@ -77,18 +78,18 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
     //    للتفويتر لا مصدرٌ لهذه القائمة. فالرسالةُ تسمّي الحقيقةَ وتدلّ على
     //    الزرّ الذي يُنشئها (‏بلاغُ المالك 2026-08-23).
     if (services.isEmpty) {
-      return 'لا خدمات معرَّفة — أضِفها من زرّ «الخدمات» أعلى الشاشة';
+      return tr('لا خدمات معرَّفة — أضِفها من زرّ «الخدمات» أعلى الشاشة');
     }
-    if (_serviceId == null) return 'اختر الخدمة';
-    if (_name.text.trim().isEmpty) return 'اكتب اسم العميل';
+    if (_serviceId == null) return tr('اختر الخدمة');
+    if (_name.text.trim().isEmpty) return tr('اكتب اسم العميل');
     if (_startsAt.isBefore(DateTime.now())) {
-      return 'لا يمكن الحجز في الماضي — اختر وقتاً قادماً';
+      return tr('لا يمكن الحجز في الماضي — اختر وقتاً قادماً');
     }
     final svc = services.where((s) => s.id == _serviceId).firstOrNull;
     if (svc != null && _depositValue > svc.price) {
-      return 'العربون أكبر من سعر الخدمة';
+      return tr('العربون أكبر من سعر الخدمة');
     }
-    if (_depositValue < 0) return 'العربون لا يكون سالباً';
+    if (_depositValue < 0) return tr('العربون لا يكون سالباً');
     return null;
   }
 
@@ -101,11 +102,11 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
 
     return PicPosDialog(
       icon: PhosphorIconsBold.calendarPlus,
-      title: 'حجز جديد',
-      subtitle: 'المدّة والسعر يأتيان من الخدمة المختارة',
+      title: tr('حجز جديد'),
+      subtitle: tr('المدّة والسعر يأتيان من الخدمة المختارة'),
       width: 720,
       primaryAction: PicPosDialogAction(
-        label: 'حفظ الحجز',
+        label: tr('حفظ الحجز'),
         icon: PhosphorIconsBold.check,
         busy: _saving,
         onPressed: blocked != null || _saving ? null : _save,
@@ -113,10 +114,10 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
       body: [
         Row(
           children: [
-            Expanded(child: _field('اسم العميل', _name)),
+            Expanded(child: _field(tr('اسم العميل'), _name)),
             const SizedBox(width: 10),
             Expanded(
-              child: _field('رقم الهاتف', _phone,
+              child: _field(tr('رقم الهاتف'), _phone,
                   keyboard: TextInputType.phone, ltr: true),
             ),
           ],
@@ -126,7 +127,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
           children: [
             Expanded(
               child: _labelled(
-                'الخدمة',
+                tr('الخدمة'),
                 DropdownButtonFormField<int>(
                   initialValue: _serviceId,
                   isExpanded: true,
@@ -134,8 +135,8 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
                   // ⚠️ والتلميحُ يتبع الحقيقةَ كالمنع: «اختر» فوق قائمةٍ
                   //    فارغةٍ دعوةٌ إلى فعلٍ غيرِ ممكن.
                   hint: Text(services.isEmpty
-                      ? 'لا خدمات معرَّفة'
-                      : 'اختر الخدمة'),
+                      ? tr('لا خدمات معرَّفة')
+                      : tr('اختر الخدمة')),
                   items: [
                     for (final s in services)
                       DropdownMenuItem(value: s.id, child: Text(s.name)),
@@ -147,7 +148,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
             const SizedBox(width: 10),
             Expanded(
               child: _labelled(
-                'الموظف / المورد',
+                tr('الموظف / المورد'),
                 DropdownButtonFormField<int?>(
                   initialValue: _resourceId,
                   isExpanded: true,
@@ -155,7 +156,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
                   // ‏«بلا إسناد» خيارٌ حقيقيٌّ لا نقص: حجزٌ بلا موردٍ مسموحٌ
                   // في المحرّك (لا أحدَ يتعارض عليه) وهو نموذجُ الانتظار.
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('بلا إسناد')),
+                     DropdownMenuItem(value: null, child: Text(tr('بلا إسناد'))),
                     for (final r in resources)
                       DropdownMenuItem(value: r.id, child: Text(r.name)),
                   ],
@@ -170,7 +171,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
           children: [
             Expanded(
               child: _labelled(
-                'التاريخ',
+                tr('التاريخ'),
                 _tappable(
                   '${_date.year}/${_two(_date.month)}/${_two(_date.day)}',
                   PhosphorIconsBold.calendarBlank,
@@ -181,7 +182,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
             const SizedBox(width: 10),
             Expanded(
               child: _labelled(
-                'وقت البداية',
+                tr('وقت البداية'),
                 _tappable(
                   '${_two(_time.hour)}:${_two(_time.minute)}',
                   PhosphorIconsBold.clock,
@@ -192,7 +193,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
             const SizedBox(width: 10),
             Expanded(
               child: _labelled(
-                'المدة',
+                tr('المدة'),
                 _readOnly(
                   svc == null
                       ? '—'
@@ -208,7 +209,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
           children: [
             Expanded(
               child: _field(
-                'العربون (${AppConstants.currencySymbol})',
+                tr('العربون ({p0})', {'p0': AppConstants.currencySymbol}),
                 _deposit,
                 keyboard: const TextInputType.numberWithOptions(decimal: true),
               ),
@@ -216,7 +217,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
             const SizedBox(width: 10),
             Expanded(
               child: _labelled(
-                'إجمالي الخدمة',
+                tr('إجمالي الخدمة'),
                 _readOnly(svc == null
                     ? '—'
                     : '${svc.price.toStringAsFixed(AppConstants.decimalPlaces)} '
@@ -226,7 +227,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
           ],
         ),
         const SizedBox(height: 12),
-        _field('ملاحظات', _notes),
+        _field(tr('ملاحظات'), _notes),
         if (_depositValue > 0) ...[
           const SizedBox(height: 12),
           // ⚠️ يُقال صراحةً: العربونُ **مالٌ يُقبَض الآن** لا رقمٌ يُكتب.

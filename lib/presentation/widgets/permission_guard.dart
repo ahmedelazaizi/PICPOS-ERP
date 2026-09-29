@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
@@ -596,7 +597,7 @@ class _ManagerOverrideDialogState
   Future<void> _verifyPassword() async {
     final password = _passwordController.text.trim();
     if (password.isEmpty) {
-      setState(() => _errorMessage = 'الرجاء إدخال كلمة المرور');
+      setState(() => _errorMessage = tr('الرجاء إدخال كلمة المرور'));
       return;
     }
 
@@ -614,7 +615,7 @@ class _ManagerOverrideDialogState
       if (userWithRole == null) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'كلمة المرور غير صحيحة';
+          _errorMessage = tr('كلمة المرور غير صحيحة');
         });
         return;
       }
@@ -658,13 +659,13 @@ class _ManagerOverrideDialogState
         setState(() {
           _isLoading = false;
           _errorMessage =
-              'المستخدم "${userWithRole.user.displayName}" ليس لديه صلاحية لهذا الإجراء';
+              tr('المستخدم "{p0}" ليس لديه صلاحية لهذا الإجراء', {'p0': userWithRole.user.displayName});
         });
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'حدث خطأ: $e';
+        _errorMessage = tr('حدث خطأ: {e}', {'e': e});
       });
     }
   }
@@ -690,10 +691,10 @@ class _ManagerOverrideDialogState
               ),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+             Expanded(
               child: Text(
-                'تصريح المسؤول مطلوب',
-                style: TextStyle(fontSize: 18),
+                tr('تصريح المسؤول مطلوب'),
+                style: const TextStyle(fontSize: 18),
               ),
             ),
           ],
@@ -706,7 +707,7 @@ class _ManagerOverrideDialogState
             children: [
               if (widget.actionName != null) ...[
                 Text(
-                  'الإجراء: ${widget.actionName}',
+                  tr('الإجراء: {p0}', {'p0': widget.actionName}),
                   style: const TextStyle(
                     color: AppColors.textMuted,
                     fontSize: 14,
@@ -714,9 +715,9 @@ class _ManagerOverrideDialogState
                 ),
                 const SizedBox(height: 16),
               ],
-              const Text(
-                'هذا الإجراء يتطلب صلاحية خاصة.\nالرجاء إدخال كلمة مرور المسؤول للمتابعة.',
-                style: TextStyle(fontSize: 14),
+               Text(
+                tr('هذا الإجراء يتطلب صلاحية خاصة.\nالرجاء إدخال كلمة مرور المسؤول للمتابعة.'),
+                style: const TextStyle(fontSize: 14),
               ),
               const SizedBox(height: 20),
               TextField(
@@ -724,7 +725,7 @@ class _ManagerOverrideDialogState
                 obscureText: _obscurePassword,
                 autofocus: true,
                 decoration: InputDecoration(
-                  labelText: 'كلمة مرور المسؤول',
+                  labelText: tr('كلمة مرور المسؤول'),
                   prefixIcon: const Icon(PhosphorIconsBold.lock),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -750,7 +751,7 @@ class _ManagerOverrideDialogState
             onPressed: _isLoading
                 ? null
                 : () => Navigator.of(context).pop(false),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton.icon(
             onPressed: _isLoading ? null : _verifyPassword,
@@ -764,7 +765,7 @@ class _ManagerOverrideDialogState
                     ),
                   )
                 : const Icon(PhosphorIconsBold.checkCircle, size: 18),
-            label: const Text('تأكيد'),
+            label:  Text(tr('تأكيد')),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,

@@ -24,9 +24,9 @@ class _TouchInputSettings extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SwitchListTile(
-            title: const Text(
-              'جهاز لمسي / POS',
-              style: TextStyle(fontWeight: FontWeight.w600),
+            title:  Text(
+              tr('جهاز لمسي / POS'),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
             subtitle: const Text(
               'تظهر لوحة مفاتيح عربية / إنجليزية / رقمية على الشاشة عند '

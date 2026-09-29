@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ **سجلّ مردودات المشتريات** — خ‑٩.
 //
 // ═══ ما كان، وما صار ═══
@@ -96,22 +97,22 @@ class _PurchaseReturnRecordsPicPosScreenState
       // نفسُ كودِ الشاشة التي يفتحها — فلا دورٌ يفقد باباً كان يملكه.
       permission: PermissionCodes.purchasesReturnView,
       child: PicPosScreenScaffold(
-        title: 'مرتجع المشتريات',
-        subtitle: 'سجلُّ ما رُدّ — واضغط «جديد» لتنفيذ ارتجاع',
+        title: tr('مرتجع المشتريات'),
+        subtitle: tr('سجلُّ ما رُدّ — واضغط «جديد» لتنفيذ ارتجاع'),
         icon: PhosphorIconsBold.arrowUUpLeft,
         headerActions: [
           FilledButton.icon(
             key: const Key('return_records_new'),
             onPressed: _openForm,
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label: const Text('جديد'),
+            label:  Text(tr('جديد')),
           ),
         ],
         toolbar: _filters(),
         body: async.hasError
             ? PicPosEmptyState(
                 icon: PhosphorIconsBold.warning,
-                title: 'تعذّرت قراءةُ السجلّ',
+                title: tr('تعذّرت قراءةُ السجلّ'),
                 hint: '${async.error}',
               )
             : ListView(children: [
@@ -126,14 +127,14 @@ class _PurchaseReturnRecordsPicPosScreenState
           PicPosFilterPill(
             key: const Key('return_records_from'),
             icon: PhosphorIconsBold.calendarBlank,
-            label: 'من ${_dateFmt.format(_from)}',
+            label: tr('من {p0}', {'p0': _dateFmt.format(_from)}),
             tabular: true,
             onTap: () => _pickDate(isFrom: true),
           ),
           PicPosFilterPill(
             key: const Key('return_records_to'),
             icon: PhosphorIconsBold.calendarCheck,
-            label: 'إلى ${_dateFmt.format(_to)}',
+            label: tr('إلى {p0}', {'p0': _dateFmt.format(_to)}),
             tabular: true,
             onTap: () => _pickDate(isFrom: false),
           ),
@@ -143,10 +144,10 @@ class _PurchaseReturnRecordsPicPosScreenState
               key: const Key('return_records_search'),
               controller: _searchController,
               onChanged: (v) => setState(() => _search = v.trim()),
-              decoration: const InputDecoration(
+              decoration:  InputDecoration(
                 isDense: true,
-                hintText: 'رقمُ الفاتورة · المورّد · السبب',
-                prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
+                hintText: tr('رقمُ الفاتورة · المورّد · السبب'),
+                prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
               ),
             ),
           ),
@@ -184,28 +185,28 @@ class _PurchaseReturnRecordsPicPosScreenState
     final tax = rows.fold<double>(0, (s, r) => s + r.tax);
 
     return PicPosDataTable(
-      title: 'المردوداتُ المحفوظة',
-      subtitle: loading ? 'جارٍ القراءة…' : 'المعروضُ ${rows.length} مردوداً',
+      title: tr('المردوداتُ المحفوظة'),
+      subtitle: loading ? tr('جارٍ القراءة…') : tr('المعروضُ {p0} مردوداً', {'p0': rows.length}),
       // ⚠️ **العدُّ من غير المرشَّح** (`all`) لا من `rows`: لو عُدّ المرشَّحُ
       //    لقرأت كلُّ شريحةٍ نفسَ الرقم، فلا تقول شيئاً.
       chips: [
         for (var i = 0; i < _methods.length; i++)
           PicPosTableChip(
             label: _methods[i] == null
-                ? 'الكلّ'
+                ? tr('الكلّ')
                 : refundMethodLabelAr(_methods[i]!),
             count: '${_methods[i] == null ? all.length : all.where((r) => r.refundMethod == _methods[i]).length}',
             onTap: () => setState(() => _methodChip = i),
           ),
       ],
       selectedChip: _methodChip,
-      columns: const [
-        PicPosTableColumn('التاريخ', flex: 1.0),
-        PicPosTableColumn('الفاتورة الأصل', flex: 1.2),
-        PicPosTableColumn('المورّد', flex: 1.5),
-        PicPosTableColumn('الردّ', flex: 0.9),
-        PicPosTableColumn('الضريبة', flex: 1.0, align: PicPosCellAlign.end),
-        PicPosTableColumn('الإجمالي', flex: 1.1, align: PicPosCellAlign.end),
+      columns:  [
+        PicPosTableColumn(tr('التاريخ'), flex: 1.0),
+        PicPosTableColumn(tr('الفاتورة الأصل'), flex: 1.2),
+        PicPosTableColumn(tr('المورّد'), flex: 1.5),
+        PicPosTableColumn(tr('الردّ'), flex: 0.9),
+        PicPosTableColumn(tr('الضريبة'), flex: 1.0, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('الإجمالي'), flex: 1.1, align: PicPosCellAlign.end),
       ],
       totals: [
         '',
@@ -215,7 +216,7 @@ class _PurchaseReturnRecordsPicPosScreenState
         _money.format(tax),
         _money.format(total),
       ],
-      emptyLabel: 'لا مردوداتٍ في هذا المدى',
+      emptyLabel: tr('لا مردوداتٍ في هذا المدى'),
       rows: [
         for (final r in rows)
           PicPosTableRow(
@@ -223,7 +224,7 @@ class _PurchaseReturnRecordsPicPosScreenState
             cells: [
               PicPosTextCell(_dateFmt.format(r.returnDate)),
               PicPosTextCell(r.originalInvoiceNumber ?? '—',
-                  sub: r.isFullReturn ? 'ارتجاعٌ كامل' : 'ارتجاعٌ جزئيّ',
+                  sub: r.isFullReturn ? tr('ارتجاعٌ كامل') : tr('ارتجاعٌ جزئيّ'),
                   bold: true),
               PicPosTextCell(r.supplierName ?? '—', sub: r.reason),
               PicPosPillCell(
@@ -242,26 +243,26 @@ class _PurchaseReturnRecordsPicPosScreenState
     showDialog<void>(
       context: context,
       builder: (ctx) => PicPosDialog(
-        title: 'مردودُ فاتورة ${r.originalInvoiceNumber ?? r.originalInvoiceId}',
+        title: tr('مردودُ فاتورة {p0}', {'p0': r.originalInvoiceNumber ?? r.originalInvoiceId}),
         subtitle: _dateFmt.format(r.returnDate),
         icon: PhosphorIconsBold.arrowUUpLeft,
         width: 620,
-        cancelLabel: 'إغلاق',
+        cancelLabel: tr('إغلاق'),
         body: [
           Column(
             key: const Key('return_document_view'),
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _field('تاريخُ المردود', _dateFmt.format(r.returnDate)),
-              _field('المورّد', r.supplierName ?? '—'),
-              _field('الفاتورةُ الأصل', r.originalInvoiceNumber ?? '—'),
-              _field('المدى', r.isFullReturn ? 'ارتجاعٌ كامل' : 'ارتجاعٌ جزئيّ'),
-              _field('طريقةُ الردّ', refundMethodLabelAr(r.refundMethod)),
-              _field('ما قبلَ الضريبة', _money.format(r.subtotal)),
-              _field('ضريبةُ المدخلات المردودة', _money.format(r.tax)),
-              _field('الإجمالي', _money.format(r.total)),
-              if ((r.reason ?? '').isNotEmpty) _field('السبب', r.reason!),
+              _field(tr('تاريخُ المردود'), _dateFmt.format(r.returnDate)),
+              _field(tr('المورّد'), r.supplierName ?? '—'),
+              _field(tr('الفاتورةُ الأصل'), r.originalInvoiceNumber ?? '—'),
+              _field(tr('المدى'), r.isFullReturn ? tr('ارتجاعٌ كامل') : tr('ارتجاعٌ جزئيّ')),
+              _field(tr('طريقةُ الردّ'), refundMethodLabelAr(r.refundMethod)),
+              _field(tr('ما قبلَ الضريبة'), _money.format(r.subtotal)),
+              _field(tr('ضريبةُ المدخلات المردودة'), _money.format(r.tax)),
+              _field(tr('الإجمالي'), _money.format(r.total)),
+              if ((r.reason ?? '').isNotEmpty) _field(tr('السبب'), r.reason!),
               const SizedBox(height: 12),
               // §٨ (v176) — **إشعارُ الخصم ورقةُ المردود لا ورقةُ الفاتورة**،
               // وهو ما كان وسمُ `purchase_returns_picpos_screen.dart` يقوله:

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // حوارُ «أصل ثابت جديد» بهويّة PicPos — فورك `DLGS.asset` في
 // `PicPos Fixed Assets.dc.html`.
 //
@@ -153,19 +154,19 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
 
   String? get _blocker {
     if (widget.categories.isEmpty) {
-      return 'لا فئاتِ أصولٍ — أنشئ فئةً من تبويب «الفئات» أوّلاً';
+      return tr('لا فئاتِ أصولٍ — أنشئ فئةً من تبويب «الفئات» أوّلاً');
     }
-    if (_codeCtrl.text.trim().isEmpty) return 'كودُ الأصل مطلوب';
-    if (_nameCtrl.text.trim().isEmpty) return 'اسمُ الأصل مطلوب';
-    if (_categoryId == null) return 'اختر الفئة';
+    if (_codeCtrl.text.trim().isEmpty) return tr('كودُ الأصل مطلوب');
+    if (_nameCtrl.text.trim().isEmpty) return tr('اسمُ الأصل مطلوب');
+    if (_categoryId == null) return tr('اختر الفئة');
     final p = _price;
-    if (p == null || p <= 0) return 'ثمنُ الشراء مطلوبٌ وأكبرُ من صفر';
+    if (p == null || p <= 0) return tr('ثمنُ الشراء مطلوبٌ وأكبرُ من صفر');
     final l = _life;
-    if (l == null || l <= 0) return 'العمرُ الإنتاجيُّ مطلوبٌ وأكبرُ من صفر';
+    if (l == null || l <= 0) return tr('العمرُ الإنتاجيُّ مطلوبٌ وأكبرُ من صفر');
     // 🔴 تخريديّةٌ تساوي الثمنَ أو تتجاوزه ⇒ قابلٌ للإهلاك صفرٌ أو سالب،
     //    والمحرّكُ يتخطّى الأصلَ بـ`if (monthly <= 0) continue` — فيُنشَأ
     //    أصلٌ لا يُهلك أبداً بلا أن يقول أحدٌ لماذا.
-    if (_salvage >= p) return 'القيمةُ التخريديّة يجب أن تقلّ عن ثمن الشراء';
+    if (_salvage >= p) return tr('القيمةُ التخريديّة يجب أن تقلّ عن ثمن الشراء');
     return null;
   }
 
@@ -247,13 +248,13 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
 
     return PicPosDialog(
       icon: PhosphorIconsBold.package,
-      title: 'أصل ثابت جديد',
-      subtitle: 'الفئة تُملي العمر والطريقة — يمكن تجاوزها لهذا الأصل',
+      title: tr('أصل ثابت جديد'),
+      subtitle: tr('الفئة تُملي العمر والطريقة — يمكن تجاوزها لهذا الأصل'),
       width: 880,
       onCancel: () => Navigator.pop(context),
       footerHint: blocker,
       primaryAction: PicPosDialogAction(
-        label: 'إنشاء الأصل',
+        label: tr('إنشاء الأصل'),
         icon: PhosphorIconsBold.check,
         onPressed: blocker != null
             ? null
@@ -280,11 +281,11 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
                 ),
       ),
       body: [
-        _sectionLabel('بيانات الأصل'),
+        _sectionLabel(tr('بيانات الأصل')),
         PicPosDialogRow(
           children: [
-            _field(_codeCtrl, 'كود الأصل *', PhosphorIconsBold.hash),
-            _field(_nameCtrl, 'اسم الأصل *', PhosphorIconsBold.tag),
+            _field(_codeCtrl, tr('كود الأصل *'), PhosphorIconsBold.hash),
+            _field(_nameCtrl, tr('اسم الأصل *'), PhosphorIconsBold.tag),
           ],
         ),
         PicPosDialogRow(
@@ -292,11 +293,11 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
             DropdownButtonFormField<int>(
               initialValue: _categoryId,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'الفئة *',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('الفئة *'),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.folders, size: 16),
+                prefixIcon: const Icon(PhosphorIconsBold.folders, size: 16),
               ),
               items: [
                 for (final c in widget.categories)
@@ -304,7 +305,7 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
               ],
               onChanged: _onCategory,
             ),
-            _field(_locationCtrl, 'الموقع', PhosphorIconsBold.mapPin),
+            _field(_locationCtrl, tr('الموقع'), PhosphorIconsBold.mapPin),
           ],
         ),
         PicPosDialogRow(
@@ -312,11 +313,11 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
             DropdownButtonFormField<int>(
               initialValue: _costCenterId,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'مركز التكلفة',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('مركز التكلفة'),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.target, size: 16),
+                prefixIcon: const Icon(PhosphorIconsBold.target, size: 16),
               ),
               items: [
                 for (final cc in widget.costCenters)
@@ -327,11 +328,11 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
             InkWell(
               onTap: _pickDate,
               child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'تاريخ الشراء',
-                  border: OutlineInputBorder(),
+                decoration:  InputDecoration(
+                  labelText: tr('تاريخ الشراء'),
+                  border: const OutlineInputBorder(),
                   isDense: true,
-                  prefixIcon: Icon(PhosphorIconsBold.calendarBlank, size: 16),
+                  prefixIcon: const Icon(PhosphorIconsBold.calendarBlank, size: 16),
                 ),
                 child: Text(
                   _fmt.format(_purchase),
@@ -341,59 +342,59 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
             ),
           ],
         ),
-        _sectionLabel('التكلفة والعمر'),
+        _sectionLabel(tr('التكلفة والعمر')),
         PicPosDialogRow(
           children: [
             _field(
               _priceCtrl,
-              'ثمن الشراء *',
+              tr('ثمن الشراء *'),
               PhosphorIconsBold.currencyCircleDollar,
               number: true,
             ),
             _field(
               _lifeCtrl,
-              'العمر الإنتاجي (سنوات) *',
+              tr('العمر الإنتاجي (سنوات) *'),
               PhosphorIconsBold.hourglass,
               number: true,
               onChanged: () => _lifeTouched = true,
             ),
             _field(
               _salvageCtrl,
-              'القيمة التخريدية',
+              tr('القيمة التخريدية'),
               PhosphorIconsBold.recycle,
               number: true,
             ),
           ],
         ),
-        _sectionLabel('طريقة الإهلاك'),
+        _sectionLabel(tr('طريقة الإهلاك')),
         PicPosDialogRow(
           children: [
             PicPosDialogChoice(
               icon: PhosphorIconsBold.equals,
-              label: 'القسط الثابت',
+              label: tr('القسط الثابت'),
               selected: _method == kStraightLine,
               onTap: () => setState(() => _method = kStraightLine),
             ),
             PicPosDialogChoice(
               icon: PhosphorIconsBold.trendDown,
-              label: 'القسط المتناقص',
+              label: tr('القسط المتناقص'),
               selected: _method == kDecliningBalance,
               onTap: () => setState(() => _method = kDecliningBalance),
             ),
           ],
         ),
-        _sectionLabel('الربط المحاسبي'),
+        _sectionLabel(tr('الربط المحاسبي')),
         // ⚠️ الحسابُ المقابلُ هو **ما دُفع منه** ثمنُ الأصل (‏خزنةٌ أو بنكٌ أو
         //    ذمّةُ مورد). و`createFixedAsset` تمرّره `contraAccountId`، فتركُه
         //    فارغاً يدع الـDAO يختار الافتراضيّ.
         DropdownButtonFormField<int>(
           initialValue: _contraAccountId,
           isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'الحساب المقابل (ما دُفع منه)',
-            border: OutlineInputBorder(),
+          decoration:  InputDecoration(
+            labelText: tr('الحساب المقابل (ما دُفع منه)'),
+            border: const OutlineInputBorder(),
             isDense: true,
-            prefixIcon: Icon(PhosphorIconsBold.bank, size: 16),
+            prefixIcon: const Icon(PhosphorIconsBold.bank, size: 16),
           ),
           items: [
             for (final a in widget.accounts)
@@ -404,34 +405,34 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
           ],
           onChanged: (v) => setState(() => _contraAccountId = v),
         ),
-        _field(_notesCtrl, 'ملاحظات', PhosphorIconsBold.note),
-        _sectionLabel('جدول الإهلاك'),
+        _field(_notesCtrl, tr('ملاحظات'), PhosphorIconsBold.note),
+        _sectionLabel(tr('جدول الإهلاك')),
         // ⚠️ محسوبٌ بصيغة المحرّك لا بتقديرٍ يقاربها — راجع تعليقَ الرأس.
         PicPosDialogSummary(
           rows: [
-            (label: 'التكلفة', value: _money.format(price), color: null),
+            (label: tr('التكلفة'), value: _money.format(price), color: null),
             (
-              label: 'التخريدية',
+              label: tr('التخريدية'),
               value: _money.format(_salvage),
               color: AppColors.textMuted,
             ),
             (
-              label: 'القابل للإهلاك',
+              label: tr('القابل للإهلاك'),
               value: _money.format(depreciable < 0 ? 0 : depreciable),
               color: AppColors.primary,
             ),
             (
-              label: 'القسط الشهري',
+              label: tr('القسط الشهري'),
               value: _money.format(monthly),
               color: AppColors.warning,
             ),
             (
-              label: 'القسط السنوي',
+              label: tr('القسط السنوي'),
               value: _money.format(monthly * 12),
               color: AppColors.warning,
             ),
             (
-              label: 'نهاية العمر',
+              label: tr('نهاية العمر'),
               value: end == null
                   ? '—'
                   : '${end.year}-${end.month.toString().padLeft(2, '0')}',

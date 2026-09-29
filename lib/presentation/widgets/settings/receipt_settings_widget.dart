@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
@@ -144,13 +145,13 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
         if (!mounted) return;
         AppToast.show(
           context,
-          'تم حفظ إعدادات الإيصال بنجاح',
+          tr('تم حفظ إعدادات الإيصال بنجاح'),
           type: ToastType.success,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في الحفظ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الحفظ: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       setState(() => _isSaving = false);
@@ -198,31 +199,31 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 6.1: Template Selection Section
-          _buildSectionHeader('قالب الإيصال', PhosphorIconsLight.layout),
+          _buildSectionHeader(tr('قالب الإيصال'), PhosphorIconsLight.layout),
           const SizedBox(height: 12),
           Row(
             children: [
               _buildTemplateOption(
                 'minimal',
-                'بسيط',
+                tr('بسيط'),
                 PhosphorIconsLight.textAlignLeft,
               ),
               const SizedBox(width: 8),
               _buildTemplateOption(
                 'standard',
-                'قياسي',
+                tr('قياسي'),
                 PhosphorIconsLight.listDashes,
               ),
               const SizedBox(width: 8),
               _buildTemplateOption(
                 'detailed',
-                'مفصّل',
+                tr('مفصّل'),
                 PhosphorIconsLight.listChecks,
               ),
               const SizedBox(width: 8),
               _buildTemplateOption(
                 'elegant',
-                'أنيق',
+                tr('أنيق'),
                 PhosphorIconsLight.sparkle,
               ),
             ],
@@ -230,17 +231,17 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
           const Divider(height: 32),
 
           // Company Information Section
-          _buildSectionHeader('معلومات الشركة', PhosphorIconsLight.buildings),
+          _buildSectionHeader(tr('معلومات الشركة'), PhosphorIconsLight.buildings),
           const SizedBox(height: 12),
           _buildTextField(
             _companyNameController,
-            'اسم الشركة',
+            tr('اسم الشركة'),
             PhosphorIconsLight.storefront,
           ),
           const SizedBox(height: 8),
           _buildTextField(
             _companyAddressController,
-            'العنوان',
+            tr('العنوان'),
             PhosphorIconsLight.mapPin,
           ),
           const SizedBox(height: 8),
@@ -249,7 +250,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
               Expanded(
                 child: _buildTextField(
                   _companyPhoneController,
-                  'الهاتف 1',
+                  tr('الهاتف 1'),
                   PhosphorIconsLight.phone,
                 ),
               ),
@@ -257,7 +258,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
               Expanded(
                 child: _buildTextField(
                   _companyPhone2Controller,
-                  'الهاتف 2',
+                  tr('الهاتف 2'),
                   PhosphorIconsLight.phone,
                 ),
               ),
@@ -269,7 +270,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
               Expanded(
                 child: _buildTextField(
                   _companyEmailController,
-                  'البريد الإلكتروني',
+                  tr('البريد الإلكتروني'),
                   PhosphorIconsLight.envelope,
                 ),
               ),
@@ -277,7 +278,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
               Expanded(
                 child: _buildTextField(
                   _taxNumberController,
-                  'الرقم الضريبي',
+                  tr('الرقم الضريبي'),
                   PhosphorIconsLight.identificationCard,
                 ),
               ),
@@ -288,25 +289,25 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
 
           // Header & Footer Section
           _buildSectionHeader(
-            'الرأس والتذييل',
+            tr('الرأس والتذييل'),
             PhosphorIconsLight.textAlignCenter,
           ),
           const SizedBox(height: 12),
           _buildTextField(
             _headerTextController,
-            'نص الترحيب (الرأس)',
+            tr('نص الترحيب (الرأس)'),
             PhosphorIconsLight.chatText,
           ),
           const SizedBox(height: 8),
           _buildTextField(
             _footerTextController,
-            'نص الشكر (التذييل)',
+            tr('نص الشكر (التذييل)'),
             PhosphorIconsLight.handHeart,
           ),
           const SizedBox(height: 8),
           _buildTextField(
             _termsTextController,
-            'شروط الدفع (اختياري)',
+            tr('شروط الدفع (اختياري)'),
             PhosphorIconsLight.notepad,
             maxLines: 2,
           ),
@@ -314,7 +315,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
           const Divider(height: 32),
 
           // Logo Section
-          _buildSectionHeader('الشعار', PhosphorIconsLight.image),
+          _buildSectionHeader(tr('الشعار'), PhosphorIconsLight.image),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -340,7 +341,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
                       onPressed: _pickLogo,
                       icon: const Icon(PhosphorIconsLight.upload, size: 18),
                       label: Text(
-                        _logoImage != null ? 'تغيير الشعار' : 'اختيار شعار',
+                        _logoImage != null ? tr('تغيير الشعار') : tr('اختيار شعار'),
                       ),
                     ),
                     if (_logoImage != null)
@@ -349,9 +350,9 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
                           _logoImage = null;
                           _showLogo = false;
                         }),
-                        child: const Text(
-                          'حذف الشعار',
-                          style: TextStyle(color: AppColors.error, fontSize: 12),
+                        child:  Text(
+                          tr('حذف الشعار'),
+                          style: const TextStyle(color: AppColors.error, fontSize: 12),
                         ),
                       ),
                   ],
@@ -363,46 +364,46 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
                     ? (v) => setState(() => _showLogo = v)
                     : null,
               ),
-              const Text('إظهار الشعار', style: TextStyle(fontSize: 12)),
+               Text(tr('إظهار الشعار'), style: const TextStyle(fontSize: 12)),
             ],
           ),
 
           const Divider(height: 32),
 
           // Display Options Section
-          _buildSectionHeader('خيارات العرض', PhosphorIconsLight.eye),
+          _buildSectionHeader(tr('خيارات العرض'), PhosphorIconsLight.eye),
           const SizedBox(height: 12),
           Wrap(
             spacing: 16,
             runSpacing: 8,
             children: [
               _buildSwitch(
-                'كود QR',
+                tr('كود QR'),
                 _showQrCode,
                 (v) => setState(() => _showQrCode = v),
               ),
               _buildSwitch(
-                'باركود',
+                tr('باركود'),
                 _showBarcode,
                 (v) => setState(() => _showBarcode = v),
               ),
               _buildSwitch(
-                'تفاصيل الضريبة',
+                tr('تفاصيل الضريبة'),
                 _showTaxDetails,
                 (v) => setState(() => _showTaxDetails = v),
               ),
               _buildSwitch(
-                'كود المنتج',
+                tr('كود المنتج'),
                 _showItemCode,
                 (v) => setState(() => _showItemCode = v),
               ),
               _buildSwitch(
-                'البائع',
+                tr('البائع'),
                 _showSalesperson,
                 (v) => setState(() => _showSalesperson = v),
               ),
               _buildSwitch(
-                'معلومات العميل',
+                tr('معلومات العميل'),
                 _showCustomerInfo,
                 (v) => setState(() => _showCustomerInfo = v),
               ),
@@ -412,13 +413,13 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
           const Divider(height: 32),
 
           // Font Sizes & Paper Section
-          _buildSectionHeader('أحجام الخطوط والورق', PhosphorIconsLight.textT),
+          _buildSectionHeader(tr('أحجام الخطوط والورق'), PhosphorIconsLight.textT),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: _buildNumberField(
-                  'خط العنوان',
+                  tr('خط العنوان'),
                   _headerFontSize,
                   (v) => setState(() => _headerFontSize = v),
                 ),
@@ -426,7 +427,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
               const SizedBox(width: 8),
               Expanded(
                 child: _buildNumberField(
-                  'خط النص',
+                  tr('خط النص'),
                   _bodyFontSize,
                   (v) => setState(() => _bodyFontSize = v),
                 ),
@@ -434,7 +435,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
               const SizedBox(width: 8),
               Expanded(
                 child: _buildNumberField(
-                  'خط التذييل',
+                  tr('خط التذييل'),
                   _footerFontSize,
                   (v) => setState(() => _footerFontSize = v),
                 ),
@@ -447,14 +448,14 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
               Expanded(
                 child: DropdownButtonFormField<int>(
                   initialValue: _paperWidth,
-                  decoration: const InputDecoration(
-                    labelText: 'عرض الورق (مم)',
-                    prefixIcon: Icon(PhosphorIconsLight.file, size: 18),
+                  decoration:  InputDecoration(
+                    labelText: tr('عرض الورق (مم)'),
+                    prefixIcon: const Icon(PhosphorIconsLight.file, size: 18),
                     isDense: true,
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 58, child: Text('58 مم')),
-                    DropdownMenuItem(value: 80, child: Text('80 مم')),
+                  items:  [
+                    DropdownMenuItem(value: 58, child: Text(tr('58 مم'))),
+                    DropdownMenuItem(value: 80, child: Text(tr('80 مم'))),
                   ],
                   onChanged: (v) => setState(() => _paperWidth = v ?? 80),
                 ),
@@ -463,7 +464,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
               Expanded(
                 child: _buildTextField(
                   _currencyController,
-                  'رمز العملة',
+                  tr('رمز العملة'),
                   PhosphorIconsLight.currencyCircleDollar,
                 ),
               ),
@@ -484,7 +485,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(PhosphorIconsBold.floppyDisk, size: 18),
-              label: Text(_isSaving ? 'جاري الحفظ...' : 'حفظ الإعدادات'),
+              label: Text(_isSaving ? tr('جاري الحفظ...') : tr('حفظ الإعدادات')),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),

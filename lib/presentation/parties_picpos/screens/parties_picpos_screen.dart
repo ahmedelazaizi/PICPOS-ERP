@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // منطق منسوخ من unified_parties_screen.dart (monolith) — أي إصلاح منطقي
 // يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ §٥.٨).
 //
@@ -112,8 +113,8 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
   @override
   Widget build(BuildContext context) {
     return PicPosScreenScaffold(
-      title: 'العملاء والموردين',
-      subtitle: 'إدارة الأطراف والأرصدة',
+      title: tr('العملاء والموردين'),
+      subtitle: tr('إدارة الأطراف والأرصدة'),
       icon: PhosphorIconsBold.usersThree,
       headerActions: [
         OutlinedButton.icon(
@@ -124,7 +125,7 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
             ),
           ),
           icon: const Icon(PhosphorIconsBold.user, size: 18),
-          label: const Text('كشف حساب عميل'),
+          label:  Text(tr('كشف حساب عميل')),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.primary,
           ),
@@ -138,7 +139,7 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
             ),
           ),
           icon: const Icon(PhosphorIconsBold.truck, size: 18),
-          label: const Text('كشف حساب مورد'),
+          label:  Text(tr('كشف حساب مورد')),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.warning,
           ),
@@ -147,13 +148,13 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
         OutlinedButton.icon(
           onPressed: () => showExcelOptionsDialog(context, ref, isExport: true),
           icon: const Icon(PhosphorIconsBold.fileArrowUp, size: 18),
-          label: const Text('تصدير'),
+          label:  Text(tr('تصدير')),
         ),
         const SizedBox(width: 8),
         OutlinedButton.icon(
           onPressed: () => showExcelOptionsDialog(context, ref, isExport: false),
           icon: const Icon(PhosphorIconsBold.fileArrowDown, size: 18),
-          label: const Text('استيراد'),
+          label:  Text(tr('استيراد')),
         ),
         const SizedBox(width: 12),
         ElevatedButton.icon(
@@ -161,7 +162,7 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
           // كانت على التصميم والحوارُ وحدَه بقي `AlertDialog` خاماً.
           onPressed: () => showAddPartyDialogPicpos(context, ref),
           icon: const Icon(PhosphorIconsBold.plus),
-          label: const Text('إضافة'),
+          label:  Text(tr('إضافة')),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
@@ -182,7 +183,7 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
                 padding: const EdgeInsets.all(16),
                 child: ShimmerLoading.list(itemCount: 6),
               ),
-              error: (e, _) => Center(child: Text('خطأ: $e')),
+              error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
             );
           },
         ),
@@ -301,15 +302,15 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
             builder: (ctx) => Directionality(
               textDirection: TextDirection.rtl,
               child: SimpleDialog(
-                title: const Text('ماذا تُرسل؟'),
+                title:  Text(tr('ماذا تُرسل؟')),
                 children: [
                   SimpleDialogOption(
                     onPressed: () => Navigator.pop(ctx, 'statement'),
-                    child: const Text('كشف حساب'),
+                    child:  Text(tr('كشف حساب')),
                   ),
                   SimpleDialogOption(
                     onPressed: () => Navigator.pop(ctx, 'due'),
-                    child: const Text('مطالبة بالمستحقّ'),
+                    child:  Text(tr('مطالبة بالمستحقّ')),
                   ),
                 ],
               ),
@@ -337,10 +338,10 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
     await WhatsAppSendDialog.show(
       context,
       ref,
-      title: isDue ? 'مطالبة بالمستحقّ' : 'إرسال كشف الحساب',
+      title: isDue ? tr('مطالبة بالمستحقّ') : tr('إرسال كشف الحساب'),
       rawPhone: party.phone,
       message: message,
-      actionLogLabel: '${isDue ? 'مطالبة' : 'كشف حساب'} — ${party.name}',
+      actionLogLabel: tr('{p0} — {p1}', {'p0': isDue ? 'مطالبة' : 'كشف حساب', 'p1': party.name}),
     );
   }
 

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -217,7 +218,7 @@ class PosController extends Notifier<PosState> {
     } catch (e) {
       state = state.copyWith(
         isProcessing: false,
-        error: 'فشل تحميل طلب الطاولة',
+        error: tr('فشل تحميل طلب الطاولة'),
       );
     }
   }

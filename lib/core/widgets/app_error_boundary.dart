@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
@@ -64,10 +65,10 @@ class _InlineErrorCard extends StatelessWidget {
               size: 32,
             ),
             const SizedBox(height: 10),
-            const Text(
-              'تعذّر عرض هذا الجزء من الشاشة',
+             Text(
+              tr('تعذّر عرض هذا الجزء من الشاشة'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 15,
                 color: AppColors.error,
@@ -186,7 +187,7 @@ class AppErrorWidget extends StatelessWidget {
                   PhosphorIconsBold.arrowCounterClockwise,
                   size: 18,
                 ),
-                label: const Text('إعادة المحاولة'),
+                label:  Text(tr('إعادة المحاولة')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,

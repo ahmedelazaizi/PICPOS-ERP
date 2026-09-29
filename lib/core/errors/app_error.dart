@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // CENTRALIZED ERROR HANDLING — PIR Sprint 2
 // ═══════════════════════════════════════════════════════════════════════════
@@ -48,7 +49,7 @@ class SplitPaymentError extends AppError {
 
   @override
   String get messageAr =>
-      'المدفوع نقداً ($cashPaid) + بنك ($bankPaid) ≠ الإجمالي ($expectedTotal)';
+      tr('المدفوع نقداً ({cashPaid}) + بنك ({bankPaid}) ≠ الإجمالي ({expectedTotal})', {'cashPaid': cashPaid, 'bankPaid': bankPaid, 'expectedTotal': expectedTotal});
 
   @override
   String get messageTech =>
@@ -68,7 +69,7 @@ class FiscalPeriodError extends AppError {
 
   @override
   String get messageAr =>
-      'لا يمكن الكتابة في السنة المالية المقفلة: $fiscalYearName';
+      tr('لا يمكن الكتابة في السنة المالية المقفلة: {fiscalYearName}', {'fiscalYearName': fiscalYearName});
 
   @override
   String get messageTech =>
@@ -85,7 +86,7 @@ class UnbalancedJournalError extends AppError {
 
   @override
   String get messageAr =>
-      'القيد غير متوازن: مدين ($totalDebit) ≠ دائن ($totalCredit)';
+      tr('القيد غير متوازن: مدين ({totalDebit}) ≠ دائن ({totalCredit})', {'totalDebit': totalDebit, 'totalCredit': totalCredit});
 
   @override
   String get messageTech =>
@@ -112,7 +113,7 @@ class InsufficientStockError extends AppError {
 
   @override
   String get messageAr =>
-      'الكمية المطلوبة ($requested) أكبر من المتاح ($available) للصنف $productName';
+      tr('الكمية المطلوبة ({requested}) أكبر من المتاح ({available}) للصنف {productName}', {'requested': requested, 'available': available, 'productName': productName});
 
   @override
   String get messageTech =>
@@ -185,7 +186,7 @@ class PermissionDeniedError extends AppError {
   });
 
   @override
-  String get messageAr => 'ليس لديك صلاحية: ${permissionName ?? permissionCode}';
+  String get messageAr => tr('ليس لديك صلاحية: {p0}', {'p0': permissionName ?? permissionCode});
 
   @override
   String get messageTech =>

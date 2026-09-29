@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -5,19 +6,19 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/models/table_actions.dart';
 
 /// نصوصُ الكبسات — نصُّ المواصفة حرفياً، بترتيب [TableAction].
-const Map<TableAction, String> tableActionLabels = {
-  TableAction.open: 'فتح طاولة',
-  TableAction.addItems: 'إضافة طلب',
-  TableAction.transfer: 'نقل الطلب',
-  TableAction.merge: 'دمج الطاولات',
-  TableAction.splitBill: 'تقسيم الفاتورة',
-  TableAction.printBill: 'طباعة الفاتورة',
-  TableAction.reserve: 'حجز طاولة',
-  TableAction.pay: 'الدفع',
-  TableAction.changeStatus: 'تغيير الحالة',
-  TableAction.cancelOrder: 'إلغاء الطلب',
-  TableAction.closeTable: 'إغلاق الطاولة',
-  TableAction.log: 'سجل الطاولة',
+Map<TableAction, String> get tableActionLabels => {
+  TableAction.open: tr('فتح طاولة'),
+  TableAction.addItems: tr('إضافة طلب'),
+  TableAction.transfer: tr('نقل الطلب'),
+  TableAction.merge: tr('دمج الطاولات'),
+  TableAction.splitBill: tr('تقسيم الفاتورة'),
+  TableAction.printBill: tr('طباعة الفاتورة'),
+  TableAction.reserve: tr('حجز طاولة'),
+  TableAction.pay: tr('الدفع'),
+  TableAction.changeStatus: tr('تغيير الحالة'),
+  TableAction.cancelOrder: tr('إلغاء الطلب'),
+  TableAction.closeTable: tr('إغلاق الطاولة'),
+  TableAction.log: tr('سجل الطاولة'),
 };
 
 IconData tableActionIcon(TableAction action) {

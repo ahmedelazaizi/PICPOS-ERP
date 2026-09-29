@@ -60,17 +60,17 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     PhosphorIconsBold.monitor,
                     color: AppColors.primary,
                     size: 20,
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
-                    'شاشة العميل والمنيو',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    tr('شاشة العميل والمنيو'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ],
               ),
@@ -82,14 +82,14 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
           // ── Enable/Disable Toggle ──
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text(
-              'تفعيل شاشة العميل',
-              style: TextStyle(fontWeight: FontWeight.w600),
+            title:  Text(
+              tr('تفعيل شاشة العميل'),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
             subtitle: Text(
               _cfd.enabled
-                  ? 'الشاشة مفعلة - ${_selectedType.label}'
-                  : 'الشاشة معطلة',
+                  ? tr('الشاشة مفعلة - {p0}', {'p0': _selectedType.label})
+                  : tr('الشاشة معطلة'),
               style: const TextStyle(fontSize: 12),
             ),
             value: _cfd.enabled,
@@ -111,9 +111,9 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
           const Divider(height: 24),
 
           // ── Connection Type Selector ──
-          const Text(
-            'نوع الاتصال',
-            style: TextStyle(
+           Text(
+            tr('نوع الاتصال'),
+            style: const TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 13,
               color: AppColors.textSecondary,
@@ -176,7 +176,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(PhosphorIconsBold.plugsConnected, size: 16),
-                  label: Text(_testing ? 'جاري الاختبار...' : 'اختبار الاتصال'),
+                  label: Text(_testing ? tr('جاري الاختبار...') : tr('اختبار الاتصال')),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.info,
                     side: const BorderSide(color: AppColors.info),
@@ -188,7 +188,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                 child: ElevatedButton.icon(
                   onPressed: _saveAndConnect,
                   icon: const Icon(PhosphorIconsBold.floppyDisk, size: 16),
-                  label: const Text('حفظ وتطبيق'),
+                  label:  Text(tr('حفظ وتطبيق')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -208,9 +208,9 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
           // ── Network CFD Links (always shown) ──
           const Divider(),
           const SizedBox(height: 8),
-          const Text(
-            'روابط الشبكة (متاحة دائماً)',
-            style: TextStyle(
+           Text(
+            tr('روابط الشبكة (متاحة دائماً)'),
+            style: const TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 12,
               color: AppColors.textMuted,
@@ -218,14 +218,14 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
           ),
           const SizedBox(height: 8),
           _buildCFDLink(
-            title: 'شاشة العميل (CFD)',
+            title: tr('شاشة العميل (CFD)'),
             url: '${_ns.buildServerUrl()}/cfd',
             icon: PhosphorIconsBold.monitor,
             color: Colors.blue,
           ),
           const SizedBox(height: 8),
           _buildCFDLink(
-            title: 'منيو الطاولات (QR Menu)',
+            title: tr('منيو الطاولات (QR Menu)'),
             url: '${_ns.buildServerUrl()}/menu',
             icon: PhosphorIconsBold.qrCode,
             color: Colors.purple,
@@ -250,10 +250,10 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
       ),
       child: Text(
         !enabled
-            ? 'معطل'
+            ? tr('معطل')
             : connected
                 ? _cfd.statusText
-                : 'غير متصل',
+                : tr('غير متصل'),
         style: TextStyle(
           color: !enabled
               ? Colors.grey
@@ -282,23 +282,23 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
           size: 18,
           color: AppColors.primary,
         ),
-        title: const Text(
-          'تخصيص المحتوى المعروض',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        title:  Text(
+          tr('تخصيص المحتوى المعروض'),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
         ),
-        subtitle: const Text(
-          'تحكم فيما يظهر على شاشة العميل',
-          style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+        subtitle:  Text(
+          tr('تحكم فيما يظهر على شاشة العميل'),
+          style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
         ),
         childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
         children: [
           const Divider(height: 1),
           const SizedBox(height: 4),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
+           Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
-              'بيانات الأصناف',
-              style: TextStyle(
+              tr('بيانات الأصناف'),
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 11,
                 color: AppColors.textMuted,
@@ -306,35 +306,35 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
             ),
           ),
           _configToggle(
-            'اسم الصنف',
-            'إظهار اسم كل صنف في القائمة',
+            tr('اسم الصنف'),
+            tr('إظهار اسم كل صنف في القائمة'),
             config.showItemName,
             (v) => _updateConfig(config.copyWith(showItemName: v)),
           ),
           _configToggle(
-            'الكمية',
-            'إظهار كمية كل صنف',
+            tr('الكمية'),
+            tr('إظهار كمية كل صنف'),
             config.showItemQuantity,
             (v) => _updateConfig(config.copyWith(showItemQuantity: v)),
           ),
           _configToggle(
-            'سعر الوحدة',
-            'إظهار سعر الوحدة لكل صنف',
+            tr('سعر الوحدة'),
+            tr('إظهار سعر الوحدة لكل صنف'),
             config.showItemPrice,
             (v) => _updateConfig(config.copyWith(showItemPrice: v)),
           ),
           _configToggle(
-            'إجمالي الصنف',
-            'إظهار إجمالي سعر كل صنف (الكمية × السعر)',
+            tr('إجمالي الصنف'),
+            tr('إظهار إجمالي سعر كل صنف (الكمية × السعر)'),
             config.showItemTotal,
             (v) => _updateConfig(config.copyWith(showItemTotal: v)),
           ),
           const Divider(height: 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
+           Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
-              'ملخص الفاتورة',
-              style: TextStyle(
+              tr('ملخص الفاتورة'),
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 11,
                 color: AppColors.textMuted,
@@ -342,41 +342,41 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
             ),
           ),
           _configToggle(
-            'المجموع الفرعي',
-            'إظهار المجموع قبل الخصم والضريبة',
+            tr('المجموع الفرعي'),
+            tr('إظهار المجموع قبل الخصم والضريبة'),
             config.showSubtotal,
             (v) => _updateConfig(config.copyWith(showSubtotal: v)),
           ),
           _configToggle(
-            'الخصم',
-            'إظهار نسبة/قيمة الخصم',
+            tr('الخصم'),
+            tr('إظهار نسبة/قيمة الخصم'),
             config.showDiscount,
             (v) => _updateConfig(config.copyWith(showDiscount: v)),
           ),
           _configToggle(
-            'الضريبة',
-            'إظهار مبلغ الضريبة',
+            tr('الضريبة'),
+            tr('إظهار مبلغ الضريبة'),
             config.showTax,
             (v) => _updateConfig(config.copyWith(showTax: v)),
           ),
           _configToggle(
-            'الإجمالي النهائي',
-            'إظهار المبلغ الإجمالي للفاتورة',
+            tr('الإجمالي النهائي'),
+            tr('إظهار المبلغ الإجمالي للفاتورة'),
             config.showTotal,
             (v) => _updateConfig(config.copyWith(showTotal: v)),
           ),
           _configToggle(
-            'اسم العميل',
-            'إظهار اسم العميل المحدد',
+            tr('اسم العميل'),
+            tr('إظهار اسم العميل المحدد'),
             config.showCustomerName,
             (v) => _updateConfig(config.copyWith(showCustomerName: v)),
           ),
           const Divider(height: 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
+           Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
-              'رسالة الترحيب',
-              style: TextStyle(
+              tr('رسالة الترحيب'),
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 11,
                 color: AppColors.textMuted,
@@ -390,11 +390,11 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                 Expanded(
                   child: TextFormField(
                     initialValue: config.welcomeMessage,
-                    decoration: const InputDecoration(
-                      labelText: 'السطر الأول',
+                    decoration:  InputDecoration(
+                      labelText: tr('السطر الأول'),
                       isDense: true,
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 10),
                     ),
                     style: const TextStyle(fontSize: 12),
@@ -406,11 +406,11 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                 Expanded(
                   child: TextFormField(
                     initialValue: config.welcomeSubMessage,
-                    decoration: const InputDecoration(
-                      labelText: 'السطر الثاني',
+                    decoration:  InputDecoration(
+                      labelText: tr('السطر الثاني'),
                       isDense: true,
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 10),
                     ),
                     style: const TextStyle(fontSize: 12),
@@ -475,13 +475,13 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+           Row(
             children: [
-              Icon(PhosphorIconsBold.wifiHigh, size: 16, color: AppColors.info),
-              SizedBox(width: 6),
+              const Icon(PhosphorIconsBold.wifiHigh, size: 16, color: AppColors.info),
+              const SizedBox(width: 6),
               Text(
-                'اتصال الشبكة',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                tr('اتصال الشبكة'),
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
               ),
             ],
           ),
@@ -499,15 +499,15 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                 color: AppColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Row(
+              child:  Row(
                 children: [
-                  Icon(PhosphorIconsBold.warningCircle,
+                  const Icon(PhosphorIconsBold.warningCircle,
                       color: AppColors.warning, size: 14),
-                  SizedBox(width: 6),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'السيرفر غير مشغل. شغّل السيرفر من "وضع الشبكة" لتفعيل شاشة العميل عبر الشبكة.',
-                      style: TextStyle(fontSize: 10, color: AppColors.warning),
+                      tr('السيرفر غير مشغل. شغّل السيرفر من "وضع الشبكة" لتفعيل شاشة العميل عبر الشبكة.'),
+                      style: const TextStyle(fontSize: 10, color: AppColors.warning),
                     ),
                   ),
                 ],
@@ -544,7 +544,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
               ),
               const SizedBox(width: 6),
               Text(
-                isUsb ? 'إعدادات USB' : 'إعدادات Serial / COM',
+                isUsb ? tr('إعدادات USB') : tr('إعدادات Serial / COM'),
                 style: const TextStyle(
                     fontWeight: FontWeight.w600, fontSize: 12),
               ),
@@ -567,11 +567,11 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                   ),
                   items: ports.isEmpty
                       ? [
-                          const DropdownMenuItem(
+                           DropdownMenuItem(
                             value: null,
                             child: Text(
-                              'لا توجد منافذ',
-                              style: TextStyle(
+                              tr('لا توجد منافذ'),
+                              style: const TextStyle(
                                   color: AppColors.textMuted, fontSize: 12),
                             ),
                           ),
@@ -618,7 +618,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
           TextButton.icon(
             onPressed: () => setState(() {}),
             icon: const Icon(PhosphorIconsBold.arrowClockwise, size: 14),
-            label: const Text('تحديث المنافذ', style: TextStyle(fontSize: 11)),
+            label:  Text(tr('تحديث المنافذ'), style: const TextStyle(fontSize: 11)),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.textMuted,
               padding: EdgeInsets.zero,
@@ -640,8 +640,8 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                   Expanded(
                     child: Text(
                       isUsb
-                          ? 'لم يتم العثور على أجهزة USB. تأكد من توصيل الشاشة وتثبيت الدرايفر.'
-                          : 'لم يتم العثور على منافذ COM. تأكد من توصيل كابل Serial.',
+                          ? tr('لم يتم العثور على أجهزة USB. تأكد من توصيل الشاشة وتثبيت الدرايفر.')
+                          : tr('لم يتم العثور على منافذ COM. تأكد من توصيل كابل Serial.'),
                       style:
                           const TextStyle(fontSize: 10, color: AppColors.warning),
                     ),
@@ -668,34 +668,34 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+           Row(
             children: [
-              Icon(PhosphorIconsBold.screencast, size: 16, color: AppColors.info),
-              SizedBox(width: 6),
+              const Icon(PhosphorIconsBold.screencast, size: 16, color: AppColors.info),
+              const SizedBox(width: 6),
               Text(
-                'إعدادات HDMI / الشاشة الثانية',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                tr('إعدادات HDMI / الشاشة الثانية'),
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
               ),
             ],
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
             initialValue: _selectedMonitor < monitors.length ? _selectedMonitor : 0,
-            decoration: const InputDecoration(
-              labelText: 'اختر الشاشة',
+            decoration:  InputDecoration(
+              labelText: tr('اختر الشاشة'),
               isDense: true,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
               contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
             items: monitors.isEmpty
                 ? [
-                    const DropdownMenuItem(
+                     DropdownMenuItem(
                       value: 0,
                       child: Text(
-                        'شاشة واحدة فقط',
+                        tr('شاشة واحدة فقط'),
                         style:
-                            TextStyle(color: AppColors.textMuted, fontSize: 12),
+                            const TextStyle(color: AppColors.textMuted, fontSize: 12),
                       ),
                     ),
                   ]
@@ -720,23 +720,23 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                 color: AppColors.info.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Row(
+              child:  Row(
                 children: [
-                  Icon(PhosphorIconsBold.info, color: AppColors.info, size: 14),
-                  SizedBox(width: 6),
+                  const Icon(PhosphorIconsBold.info, color: AppColors.info, size: 14),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'قم بتوصيل شاشة ثانية عبر HDMI أو DisplayPort، ثم اضبط الشاشة كـ "Extended Display" من إعدادات Windows.',
-                      style: TextStyle(fontSize: 10, color: AppColors.info),
+                      tr('قم بتوصيل شاشة ثانية عبر HDMI أو DisplayPort، ثم اضبط الشاشة كـ "Extended Display" من إعدادات Windows.'),
+                      style: const TextStyle(fontSize: 10, color: AppColors.info),
                     ),
                   ),
                 ],
               ),
             ),
           const SizedBox(height: 8),
-          const Text(
-            'سيتم فتح نافذة شاشة العميل في متصفح الويب على الشاشة المحددة مع عرض بيانات السلة في الوقت الفعلي.',
-            style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+           Text(
+            tr('سيتم فتح نافذة شاشة العميل في متصفح الويب على الشاشة المحددة مع عرض بيانات السلة في الوقت الفعلي.'),
+            style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -752,27 +752,27 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
     String? errorDetail;
 
     try {
-      diagnostics['نوع الاتصال'] = _selectedType.label;
+      diagnostics[tr('نوع الاتصال')] = _selectedType.label;
 
       if (_selectedType == CfdConnectionType.network) {
-        diagnostics['عنوان السيرفر'] = '${_ns.serverAddress}:${_ns.serverPort}';
-        diagnostics['حالة السيرفر'] = _ns.isServerRunning ? 'يعمل ✓' : 'متوقف ✗';
+        diagnostics[tr('عنوان السيرفر')] = '${_ns.serverAddress}:${_ns.serverPort}';
+        diagnostics[tr('حالة السيرفر')] = _ns.isServerRunning ? tr('يعمل ✓') : tr('متوقف ✗');
         result = _ns.isServerRunning;
         if (!result) {
-          errorDetail = 'السيرفر غير مشغل. شغّل السيرفر من إعدادات الشبكة أولاً.';
+          errorDetail = tr('السيرفر غير مشغل. شغّل السيرفر من إعدادات الشبكة أولاً.');
         }
       } else if (_selectedType == CfdConnectionType.serial || _selectedType == CfdConnectionType.usb) {
         final ports = _selectedType == CfdConnectionType.usb
             ? CfdUsbTransport.getAvailablePorts()
             : CfdSerialTransport.getAvailablePorts();
-        diagnostics['المنافذ المتاحة'] = ports.isEmpty ? 'لا توجد' : ports.join(', ');
-        diagnostics['المنفذ المحدد'] = _selectedPort ?? 'غير محدد';
-        diagnostics['سرعة البث'] = '$_selectedBaudRate bps';
+        diagnostics[tr('المنافذ المتاحة')] = ports.isEmpty ? tr('لا توجد') : ports.join(', ');
+        diagnostics[tr('المنفذ المحدد')] = _selectedPort ?? tr('غير محدد');
+        diagnostics[tr('سرعة البث')] = '$_selectedBaudRate bps';
 
         if (_selectedPort == null || !ports.contains(_selectedPort)) {
           errorDetail = _selectedPort == null
-              ? 'لم يتم اختيار منفذ. حدد المنفذ الصحيح.'
-              : 'المنفذ "$_selectedPort" غير متاح. تحقق من التوصيل وأعد التحديث.';
+              ? tr('لم يتم اختيار منفذ. حدد المنفذ الصحيح.')
+              : tr('المنفذ "{_selectedPort}" غير متاح. تحقق من التوصيل وأعد التحديث.', {'_selectedPort': _selectedPort});
         } else {
           result = await _cfd.testConnection(
             _selectedType,
@@ -790,8 +790,8 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
       } else {
         // HDMI
         final monitors = CfdHdmiTransport.getAvailableMonitors();
-        diagnostics['عدد الشاشات'] = '${monitors.length}';
-        diagnostics['الشاشة المحددة'] = 'شاشة رقم $_selectedMonitor';
+        diagnostics[tr('عدد الشاشات')] = '${monitors.length}';
+        diagnostics[tr('الشاشة المحددة')] = tr('شاشة رقم {_selectedMonitor}', {'_selectedMonitor': _selectedMonitor});
 
         if (monitors.length <= 1) {
           errorDetail = 'لم يتم اكتشاف شاشة ثانية.\n'
@@ -805,14 +805,14 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
             monitorIndex: _selectedMonitor,
           );
           if (!result) {
-            errorDetail = 'فشل فتح الشاشة الثانية. تحقق من إعدادات العرض في Windows.';
+            errorDetail = tr('فشل فتح الشاشة الثانية. تحقق من إعدادات العرض في Windows.');
           }
         }
       }
 
-      diagnostics['النتيجة'] = result ? 'اتصال ناجح ✓' : 'فشل الاتصال ✗';
+      diagnostics[tr('النتيجة')] = result ? tr('اتصال ناجح ✓') : tr('فشل الاتصال ✗');
     } catch (e) {
-      diagnostics['النتيجة'] = 'خطأ ✗';
+      diagnostics[tr('النتيجة')] = tr('خطأ ✗');
       errorDetail = e.toString();
     } finally {
       if (mounted) {
@@ -836,7 +836,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                 size: 24,
               ),
               const SizedBox(width: 8),
-              Text(success ? 'اتصال ناجح' : 'فشل الاتصال'),
+              Text(success ? tr('اتصال ناجح') : tr('فشل الاتصال')),
             ],
           ),
           content: SizedBox(
@@ -845,9 +845,9 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'تشخيص الاتصال:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                 Text(
+                  tr('تشخيص الاتصال:'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
                 const SizedBox(height: 8),
                 ...diagnostics.entries.map((e) => Padding(
@@ -909,7 +909,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -930,16 +930,16 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
       final success = await _cfd.connectTransport();
       if (mounted) {
         if (success) {
-          AppToast.show(context, 'تم الحفظ والاتصال بنجاح ✓',
+          AppToast.show(context, tr('تم الحفظ والاتصال بنجاح ✓'),
               type: ToastType.success);
         } else {
-          AppToast.show(context, 'تم الحفظ لكن فشل الاتصال',
+          AppToast.show(context, tr('تم الحفظ لكن فشل الاتصال'),
               type: ToastType.warning);
         }
       }
     } else {
       if (mounted) {
-        AppToast.show(context, 'تم الحفظ ✓', type: ToastType.success);
+        AppToast.show(context, tr('تم الحفظ ✓'), type: ToastType.success);
       }
     }
     setState(() {});

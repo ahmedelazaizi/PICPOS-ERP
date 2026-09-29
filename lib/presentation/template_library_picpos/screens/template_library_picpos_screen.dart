@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // مكتبةُ النماذج — تصميمُ `PicPos Template Library.dc.html`.
 //
 // ── ما تحلّه ──────────────────────────────────────────────────────────────
@@ -60,14 +61,14 @@ class _TemplateLibraryPicposScreenState
     final active = ref.watch(templateFilterProvider);
 
     return PicPosScreenScaffold(
-      title: 'مكتبة النماذج',
+      title: tr('مكتبة النماذج'),
       subtitle: _subtitleFor(all),
       icon: PhosphorIconsBold.books,
       headerActions: [
         FilledButton.icon(
           onPressed: () => showNewTemplateSheet(context, ref),
           icon: const Icon(PhosphorIconsBold.filePlus, size: 17),
-          label: const Text('قالب جديد'),
+          label:  Text(tr('قالب جديد')),
         ),
       ],
       headerSearch: TextField(
@@ -75,7 +76,7 @@ class _TemplateLibraryPicposScreenState
         onChanged: (v) => ref.read(templateQueryProvider.notifier).set(v),
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'ابحث باسم القالب...',
+          hintText: tr('ابحث باسم القالب...'),
           prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
           suffixIcon: _searchCtrl.text.isEmpty
               ? null
@@ -103,7 +104,7 @@ class _TemplateLibraryPicposScreenState
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => PicPosEmptyState(
           icon: PhosphorIconsBold.warning,
-          title: 'تعذّرت قراءةُ المكتبة',
+          title: tr('تعذّرت قراءةُ المكتبة'),
           hint: '$e',
         ),
         data: (_) => LayoutBuilder(
@@ -136,9 +137,9 @@ class _TemplateLibraryPicposScreenState
   }
 
   String _subtitleFor(List<TemplateCard> all) {
-    if (all.isEmpty) return 'لا قوالبَ بعد';
+    if (all.isEmpty) return tr('لا قوالبَ بعد');
     final bound = all.where((c) => c.isBound).length;
-    return '${all.length} قالباً · $bound مربوطٌ بمستند';
+    return tr('{p0} قالباً · {bound} مربوطٌ بمستند', {'p0': all.length, 'bound': bound});
   }
 
   IconData _filterIcon(TemplateFilter f) {
@@ -171,10 +172,10 @@ class _Gallery extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (cards.isEmpty) {
-      return const PicPosEmptyState(
+      return  PicPosEmptyState(
         icon: PhosphorIconsBold.files,
-        title: 'لا قالبَ يطابق البحث',
-        hint: 'جرّب مرشِّحاً آخرَ أو امسح نصَّ البحث',
+        title: tr('لا قالبَ يطابق البحث'),
+        hint: tr('جرّب مرشِّحاً آخرَ أو امسح نصَّ البحث'),
       );
     }
 
@@ -183,8 +184,8 @@ class _Gallery extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PicPosSectionHeader(
-            title: 'النماذج',
-            subtitle: '${cards.length} معروضاً',
+            title: tr('النماذج'),
+            subtitle: tr('{p0} معروضاً', {'p0': cards.length}),
             icon: PhosphorIconsBold.gridFour,
           ),
           Expanded(
@@ -226,7 +227,7 @@ Color templateStatusTone(TemplateCard c) {
 }
 
 String templateStatusLabel(TemplateCard c) {
-  if (c.isBound) return 'مربوط';
-  if (c.isDefault) return 'افتراضي';
-  return 'مسوّدة';
+  if (c.isBound) return tr('مربوط');
+  if (c.isDefault) return tr('افتراضي');
+  return tr('مسوّدة');
 }

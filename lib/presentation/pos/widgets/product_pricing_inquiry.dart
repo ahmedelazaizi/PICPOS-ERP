@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -47,9 +48,9 @@ class ProductPricingInquiry extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(vertical: 12),
         ),
         icon: const Icon(PhosphorIconsBold.scan, size: 20),
-        label: const Text(
-          'تسعير الأصناف (إستعلام)',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        label:  Text(
+          tr('تسعير الأصناف (إستعلام)'),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -179,7 +180,7 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
               child: const Icon(PhosphorIconsBold.scan, color: AppColors.primary, size: 24),
             ),
             const SizedBox(width: 12),
-            const Text('استعلام تسعير المنتجات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+             Text(tr('استعلام تسعير المنتجات'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const Spacer(),
             IconButton(
               icon: const Icon(PhosphorIconsBold.x, size: 20),
@@ -198,7 +199,7 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
                 focusNode: _searchFocusNode,
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 decoration: InputDecoration(
-                  hintText: 'ابحث بالاسم أو الباركود ثم اضغط Enter...',
+                  hintText: tr('ابحث بالاسم أو الباركود ثم اضغط Enter...'),
                   hintStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
                   prefixIcon: const Icon(PhosphorIconsBold.barcode, size: 24, color: AppColors.primary),
                   suffixIcon: _searchController.text.isNotEmpty
@@ -254,14 +255,14 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                   ),
-                  child: const Row(
+                  child:  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(PhosphorIconsBold.warningCircle, color: AppColors.error),
-                      SizedBox(width: 8),
+                      const Icon(PhosphorIconsBold.warningCircle, color: AppColors.error),
+                      const SizedBox(width: 8),
                       Text(
-                        'لم يتم العثور على منتج يطابق عملية البحث',
-                        style: TextStyle(color: AppColors.error, fontSize: 14, fontWeight: FontWeight.bold),
+                        tr('لم يتم العثور على منتج يطابق عملية البحث'),
+                        style: const TextStyle(color: AppColors.error, fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -275,7 +276,7 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('إغلاق', style: TextStyle(color: AppColors.textPrimary)),
+            child:  Text(tr('إغلاق'), style: const TextStyle(color: AppColors.textPrimary)),
           ),
         ],
       ),
@@ -305,7 +306,7 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
                     size: 18, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text(
-                  'اختر الصنفَ المطلوب (${_candidates.length})',
+                  tr('اختر الصنفَ المطلوب ({p0})', {'p0': _candidates.length}),
                   style: const TextStyle(
                       fontSize: 13, fontWeight: FontWeight.bold),
                 ),
@@ -415,7 +416,7 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
                         if (taxRate > 0)
                           Expanded(
                             child: Text(
-                              'السعر شامل الضريبة: ${originalPriceWithTax.toStringAsFixed(AppConstants.decimalPlaces)} (${taxRate.toStringAsFixed(0)}%)',
+                              tr('السعر شامل الضريبة: {p0} ({p1}%)', {'p0': originalPriceWithTax.toStringAsFixed(AppConstants.decimalPlaces), 'p1': taxRate.toStringAsFixed(0)}),
                               style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
                             ),
                           ),
@@ -432,9 +433,9 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
           // Price Display Section (read-only)
           Row(
             children: [
-              const Text(
-                'سعر البيع:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+               Text(
+                tr('سعر البيع:'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(width: 12),
               Text(

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // PICPOS — إعدادات عرض السلة (زرار الترس أعلى السلة)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -54,7 +55,7 @@ class PicPosDisplaySettingsButton extends StatelessWidget {
             const Icon(PhosphorIconsBold.slidersHorizontal,
                 size: 13, color: AppColors.primary),
             const SizedBox(width: 4),
-            Text('العرض', style: PicPosText.v(context, 10, color: AppColors.primary)),
+            Text(tr('العرض'), style: PicPosText.v(context, 10, color: AppColors.primary)),
           ],
         ),
       ),
@@ -103,12 +104,12 @@ class _PicPosDisplaySettingsDialogState
     _payBtnHeight ??= ref.watch(paymentButtonHeightProvider).value ?? 36.0;
 
     return AlertDialog(
-      title: const Row(
+      title:  Row(
         children: [
-          Icon(PhosphorIconsBold.slidersHorizontal,
+          const Icon(PhosphorIconsBold.slidersHorizontal,
               size: 20, color: AppColors.primary),
-          SizedBox(width: 8),
-          Text('إعدادات عرض السلة'),
+          const SizedBox(width: 8),
+          Text(tr('إعدادات عرض السلة')),
         ],
       ),
       content: SizedBox(
@@ -118,7 +119,7 @@ class _PicPosDisplaySettingsDialogState
           children: [
             _Slider(
               icon: PhosphorIconsBold.textAa,
-              label: 'حجم نص الأصناف',
+              label: tr('حجم نص الأصناف'),
               value: _itemScale!,
               min: 0.7,
               max: 1.3,
@@ -132,7 +133,7 @@ class _PicPosDisplaySettingsDialogState
             ),
             _Slider(
               icon: PhosphorIconsBold.selectionAll,
-              label: 'حجم منطقة الدفع',
+              label: tr('حجم منطقة الدفع'),
               value: _panelScale!,
               min: 0.7,
               max: 1.0,
@@ -146,7 +147,7 @@ class _PicPosDisplaySettingsDialogState
             ),
             _Slider(
               icon: PhosphorIconsBold.arrowsVertical,
-              label: 'ارتفاع الأزرار',
+              label: tr('ارتفاع الأزرار'),
               value: _btnHeight!,
               min: 30,
               max: 50,
@@ -160,7 +161,7 @@ class _PicPosDisplaySettingsDialogState
             ),
             _Slider(
               icon: PhosphorIconsBold.textT,
-              label: 'حجم خط الأزرار',
+              label: tr('حجم خط الأزرار'),
               value: _btnFont!,
               min: 10,
               max: 16,
@@ -174,7 +175,7 @@ class _PicPosDisplaySettingsDialogState
             ),
             _Slider(
               icon: PhosphorIconsBold.creditCard,
-              label: 'ارتفاع أزرار الدفع',
+              label: tr('ارتفاع أزرار الدفع'),
               value: _payBtnHeight!,
               min: 30,
               max: 80,
@@ -192,11 +193,11 @@ class _PicPosDisplaySettingsDialogState
       actions: [
         TextButton(
           onPressed: _restoreDefaults,
-          child: const Text('استعادة الافتراضي'),
+          child:  Text(tr('استعادة الافتراضي')),
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('تم'),
+          child:  Text(tr('تم')),
         ),
       ],
     );

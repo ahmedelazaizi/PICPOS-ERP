@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -37,7 +38,7 @@ class _RenewPaperDialogState extends State<RenewPaperDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(
-        'تجديد شيك #${widget.paperNumber}',
+        tr('تجديد شيك #{p0}', {'p0': widget.paperNumber}),
         style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
       ),
       content: Column(
@@ -55,7 +56,7 @@ class _RenewPaperDialogState extends State<RenewPaperDialog> {
             },
             child: InputDecorator(
               decoration: InputDecoration(
-                labelText: 'تاريخ الاستحقاق الجديد',
+                labelText: tr('تاريخ الاستحقاق الجديد'),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(_dateFormat.format(_newDueDate)),
@@ -65,7 +66,7 @@ class _RenewPaperDialogState extends State<RenewPaperDialog> {
           TextField(
             controller: _notesCtrl,
             decoration: InputDecoration(
-              labelText: 'ملاحظات',
+              labelText: tr('ملاحظات'),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               isDense: true,
             ),
@@ -75,7 +76,7 @@ class _RenewPaperDialogState extends State<RenewPaperDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         ElevatedButton(
           onPressed: () {
@@ -85,7 +86,7 @@ class _RenewPaperDialogState extends State<RenewPaperDialog> {
               'notes': _notesCtrl.text,
             });
           },
-          child: const Text('تأكيد التجديد'),
+          child:  Text(tr('تأكيد التجديد')),
         ),
       ],
     );

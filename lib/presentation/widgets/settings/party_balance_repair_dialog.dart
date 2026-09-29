@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -45,18 +46,18 @@ class _PartyBalanceRepairDialogState extends State<_PartyBalanceRepairDialog> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('تأكيد إعادة الاحتساب'),
-        content: const Text(
-          'سيتم تحديث أرصدة الأطراف لتطابق القيود المرحّلة غير المحذوفة. هل تريد المتابعة؟',
+        title:  Text(tr('تأكيد إعادة الاحتساب')),
+        content:  Text(
+          tr('سيتم تحديث أرصدة الأطراف لتطابق القيود المرحّلة غير المحذوفة. هل تريد المتابعة؟'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('إعادة الاحتساب'),
+            child:  Text(tr('إعادة الاحتساب')),
           ),
         ],
       ),
@@ -73,14 +74,14 @@ class _PartyBalanceRepairDialogState extends State<_PartyBalanceRepairDialog> {
         _mismatches = widget.repository.getPartyBalanceMismatches();
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تم إصلاح $repaired من أرصدة الأطراف')),
+        SnackBar(content: Text(tr('تم إصلاح {repaired} من أرصدة الأطراف', {'repaired': repaired}))),
       );
     } catch (error) {
       if (!mounted) return;
       setState(() => _repairing = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('تعذر الإصلاح: $error'),
+          content: Text(tr('تعذر الإصلاح: {error}', {'error': error})),
           backgroundColor: AppColors.error,
         ),
       );
@@ -90,7 +91,7 @@ class _PartyBalanceRepairDialogState extends State<_PartyBalanceRepairDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('تدقيق أرصدة الأطراف'),
+      title:  Text(tr('تدقيق أرصدة الأطراف')),
       content: SizedBox(
         width: 620,
         child: FutureBuilder<List<PartyBalanceMismatch>>(
@@ -103,24 +104,24 @@ class _PartyBalanceRepairDialogState extends State<_PartyBalanceRepairDialog> {
               );
             }
             if (snapshot.hasError) {
-              return Text('تعذر تحميل الكاشف: ${snapshot.error}');
+              return Text(tr('تعذر تحميل الكاشف: {p0}', {'p0': snapshot.error}));
             }
             final rows = snapshot.data ?? const <PartyBalanceMismatch>[];
             if (rows.isEmpty) {
-              return const Text('لا توجد فروقات بين أرصدة الأطراف والأستاذ.');
+              return  Text(tr('لا توجد فروقات بين أرصدة الأطراف والأستاذ.'));
             }
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('عدد الفروقات: ${rows.length}'),
+                  Text(tr('عدد الفروقات: {p0}', {'p0': rows.length})),
                   const SizedBox(height: 8),
                   ...rows.map(
                     (row) => ListTile(
                       dense: true,
                       title: Text(row.partyName),
                       subtitle: Text(
-                        'الرصيد: ${row.cardBalance.toStringAsFixed(2)} | الأستاذ: ${row.glBalance.toStringAsFixed(2)}',
+                        tr('الرصيد: {p0} | الأستاذ: {p1}', {'p0': row.cardBalance.toStringAsFixed(2), 'p1': row.glBalance.toStringAsFixed(2)}),
                       ),
                       trailing: Text(row.delta.toStringAsFixed(2)),
                     ),
@@ -134,7 +135,7 @@ class _PartyBalanceRepairDialogState extends State<_PartyBalanceRepairDialog> {
       actions: [
         TextButton(
           onPressed: _repairing ? null : () => Navigator.pop(context),
-          child: const Text('إغلاق'),
+          child:  Text(tr('إغلاق')),
         ),
         FilledButton.icon(
           onPressed: _repairing ? null : _repair,
@@ -145,7 +146,7 @@ class _PartyBalanceRepairDialogState extends State<_PartyBalanceRepairDialog> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.autorenew),
-          label: const Text('إعادة احتساب الأرصدة من الأستاذ'),
+          label:  Text(tr('إعادة احتساب الأرصدة من الأستاذ')),
         ),
       ],
     );

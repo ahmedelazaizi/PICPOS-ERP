@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -46,9 +47,9 @@ class InventoryFiltersBar extends ConsumerWidget {
                   indicatorSize: TabBarIndicatorSize.tab,
                   labelColor: Colors.white,
                   unselectedLabelColor: AppColors.textMuted,
-                  tabs: const [
-                    Tab(text: 'أرصدة المستودع'),
-                    Tab(text: 'حركة الأصناف'),
+                  tabs:  [
+                    Tab(text: tr('أرصدة المستودع')),
+                    Tab(text: tr('حركة الأصناف')),
                   ],
                 ),
               ),
@@ -73,7 +74,7 @@ class InventoryFiltersBar extends ConsumerWidget {
         onChanged: (v) =>
             ref.read(inventoryNotifierProvider.notifier).setSearchQuery(v),
         decoration: InputDecoration(
-          hintText: 'بحث عن صنف أو كود...',
+          hintText: tr('بحث عن صنف أو كود...'),
           prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
           filled: true,
           fillColor: Theme.of(context).scaffoldBackgroundColor,
@@ -98,9 +99,9 @@ class InventoryFiltersBar extends ConsumerWidget {
         child: DropdownButtonHideUnderline(
           child: DropdownButton<int?>(
             value: ref.watch(inventoryNotifierProvider).selectedCategoryId,
-            hint: const Text('كل التصنيفات'),
+            hint:  Text(tr('كل التصنيفات')),
             items: [
-              const DropdownMenuItem(value: null, child: Text('كل التصنيفات')),
+               DropdownMenuItem(value: null, child: Text(tr('كل التصنيفات'))),
               ...cats.map(
                 (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
               ),
@@ -117,7 +118,7 @@ class InventoryFiltersBar extends ConsumerWidget {
 
   Widget _buildLowStockToggle(WidgetRef ref, InventoryState state) {
     return FilterChip(
-      label: const Text('نواقص المخزون'),
+      label:  Text(tr('نواقص المخزون')),
       selected: state.showLowStockOnly,
       onSelected: (v) =>
           ref.read(inventoryNotifierProvider.notifier).toggleLowStock(v),

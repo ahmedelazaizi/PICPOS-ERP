@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -240,7 +241,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                 ),
                                 if (isReturned)
                                   Text(
-                                    'مرتجع من العميل',
+                                    tr('مرتجع من العميل'),
                                     style: TextStyle(
                                       fontSize: smallFontSize - 2,
                                       color: AppColors.error.withValues(alpha: 0.8),
@@ -276,8 +277,8 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                     : AppColors.error,
                               ),
                               tooltip: isReturned
-                                  ? 'تبديل إلى بيع'
-                                  : 'تبديل إلى مرتجع',
+                                  ? tr('تبديل إلى بيع')
+                                  : tr('تبديل إلى مرتجع'),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                               splashRadius: 20,
@@ -302,7 +303,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                           PermissionGuard(
                             permission: PermissionCodes.posItemMinus,
                             allowManagerOverride: true,
-                            actionName: 'نقص كمية',
+                            actionName: tr('نقص كمية'),
                             child: _buildQtyBtn(
                               icon: PhosphorIconsBold.minus,
                               color: AppColors.error,
@@ -347,7 +348,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                   : PermissionGuard(
                                       permission: PermissionCodes.posQuantityEdit,
                                       allowManagerOverride: true,
-                                      actionName: 'تعديل الكمية يدوياً',
+                                      actionName: tr('تعديل الكمية يدوياً'),
                                       child: GestureDetector(
                                         onTap: () {
                                           _qtyController.text =
@@ -381,7 +382,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                           PermissionGuard(
                             permission: PermissionCodes.posItemPlus,
                             allowManagerOverride: true,
-                            actionName: 'زيادة كمية',
+                            actionName: tr('زيادة كمية'),
                             child: _buildQtyBtn(
                               icon: PhosphorIconsBold.plus,
                               color: AppColors.primary,
@@ -434,7 +435,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                           : PermissionGuard(
                               permission: PermissionCodes.posPriceEdit,
                               allowManagerOverride: true,
-                              actionName: 'تعديل سعر الصنف',
+                              actionName: tr('تعديل سعر الصنف'),
                               child: GestureDetector(
                                 onTap: widget.onPriceChanged != null
                                     ? () {
@@ -462,7 +463,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                       ),
                                     ),
                                     Text(
-                                      'سعر الوحدة',
+                                      tr('سعر الوحدة'),
                                       style: TextStyle(
                                         fontSize: smallFontSize - 3,
                                         color: AppColors.textMuted,
@@ -542,7 +543,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                               )
                             else
                               Text(
-                                'خصم',
+                                tr('خصم'),
                                 style: TextStyle(
                                   fontSize: smallFontSize - 3,
                                   color: AppColors.textMuted.withValues(alpha: 0.5),
@@ -553,7 +554,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                             // gross taxAmount field which goes stale on merge.
                             if (widget.item.calculatedTaxAmount > 0)
                               Text(
-                                '+ ${widget.item.calculatedTaxAmount.toStringAsFixed(AppConstants.decimalPlaces)} ضريبة',
+                                tr('+ {p0} ضريبة', {'p0': widget.item.calculatedTaxAmount.toStringAsFixed(AppConstants.decimalPlaces)}),
                                 style: TextStyle(
                                   fontSize: smallFontSize - 3,
                                   color: AppColors.textMuted,
@@ -570,10 +571,10 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                     PermissionGuard(
                       permission: PermissionCodes.posRemoveItem,
                       allowManagerOverride: true,
-                      actionName: 'حذف صنف',
+                      actionName: tr('حذف صنف'),
                       child: IconButton(
                         onPressed: widget.onRemove,
-                        tooltip: 'حذف الصنف', // BUG-U29/U37
+                        tooltip: tr('حذف الصنف'), // BUG-U29/U37
                         icon: Icon(
                           PhosphorIconsBold.trash,
                           size: 18 * scaleFactor,
@@ -631,7 +632,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
 
   /// Unit selector badge — shows current unit and allows switching
   Widget _buildUnitBadge(double scaleFactor) {
-    final unitName = widget.item.selectedUnitName ?? 'قطعة';
+    final unitName = widget.item.selectedUnitName ?? tr('قطعة');
     return FutureBuilder<List<ProductUnit>>(
       future: ref.read(productRepositoryProvider).getProductUnits(widget.item.productId),
       builder: (context, snapshot) {

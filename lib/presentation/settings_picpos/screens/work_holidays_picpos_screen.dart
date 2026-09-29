@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -33,15 +34,15 @@ class _WorkHolidaysPicposScreenState extends State<WorkHolidaysPicposScreen> {
   @override
   Widget build(BuildContext context) {
     return PicPosScreenScaffold(
-      title: 'العطلات وأيام العمل',
-      subtitle: 'الإعدادات ← النظام والمظهر',
+      title: tr('العطلات وأيام العمل'),
+      subtitle: tr('الإعدادات ← النظام والمظهر'),
       icon: PhosphorIconsBold.calendar,
       headerSearch: TextField(
         controller: _searchCtrl,
         onChanged: (v) => setState(() => _query = v),
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'بحث عن عطلة...',
+          hintText: tr('بحث عن عطلة...'),
           prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
           suffixIcon: _query.isNotEmpty
               ? IconButton(
@@ -60,7 +61,7 @@ class _WorkHolidaysPicposScreenState extends State<WorkHolidaysPicposScreen> {
           builder: (_, ready, _) => ElevatedButton.icon(
             onPressed: ready ? _addHandle.invoke : null,
             icon: const Icon(PhosphorIconsBold.plus, size: 15),
-            label: const Text('عطلة جديدة'),
+            label:  Text(tr('عطلة جديدة')),
           ),
         ),
       ],

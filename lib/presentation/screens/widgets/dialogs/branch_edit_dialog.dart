@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -35,7 +36,7 @@ class _BranchEditDialogState extends AppFormDialogState<bool, BranchEditDialog> 
   }
 
   @override
-  String get dialogTitle => widget.existing == null ? 'إضافة فرع جديد' : 'تعديل الفرع';
+  String get dialogTitle => widget.existing == null ? tr('إضافة فرع جديد') : tr('تعديل الفرع');
 
   @override
   IconData get dialogIcon => PhosphorIconsBold.buildings;
@@ -50,9 +51,9 @@ class _BranchEditDialogState extends AppFormDialogState<bool, BranchEditDialog> 
       children: [
         TextField(
           controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'اسم الفرع *',
-            prefixIcon: Icon(PhosphorIconsBold.buildings),
+          decoration:  InputDecoration(
+            labelText: tr('اسم الفرع *'),
+            prefixIcon: const Icon(PhosphorIconsBold.buildings),
           ),
         ),
         const SizedBox(height: 16),
@@ -60,27 +61,27 @@ class _BranchEditDialogState extends AppFormDialogState<bool, BranchEditDialog> 
           controller: codeController,
           textCapitalization: TextCapitalization.characters,
           maxLength: 5,
-          decoration: const InputDecoration(
-            labelText: 'كود الفرع (يُستخدم بادئة لرقم الفاتورة، مثل CAI أو ALX)',
+          decoration:  InputDecoration(
+            labelText: tr('كود الفرع (يُستخدم بادئة لرقم الفاتورة، مثل CAI أو ALX)'),
             hintText: 'CAI',
-            prefixIcon: Icon(PhosphorIconsBold.tag),
+            prefixIcon: const Icon(PhosphorIconsBold.tag),
             counterText: '',
           ),
         ),
         const SizedBox(height: 16),
         TextField(
           controller: addressController,
-          decoration: const InputDecoration(
-            labelText: 'العنوان',
-            prefixIcon: Icon(PhosphorIconsBold.mapPin),
+          decoration:  InputDecoration(
+            labelText: tr('العنوان'),
+            prefixIcon: const Icon(PhosphorIconsBold.mapPin),
           ),
         ),
         const SizedBox(height: 16),
         TextField(
           controller: phoneController,
-          decoration: const InputDecoration(
-            labelText: 'رقم الهاتف',
-            prefixIcon: Icon(PhosphorIconsBold.phone),
+          decoration:  InputDecoration(
+            labelText: tr('رقم الهاتف'),
+            prefixIcon: const Icon(PhosphorIconsBold.phone),
           ),
           keyboardType: TextInputType.phone,
         ),
@@ -95,14 +96,14 @@ class _BranchEditDialogState extends AppFormDialogState<bool, BranchEditDialog> 
                 : null;
             return DropdownButtonFormField<int?>(
               initialValue: validId,
-              decoration: const InputDecoration(
-                labelText: 'مركز التكلفة',
-                prefixIcon: Icon(PhosphorIconsBold.target),
+              decoration:  InputDecoration(
+                labelText: tr('مركز التكلفة'),
+                prefixIcon: const Icon(PhosphorIconsBold.target),
               ),
               items: [
-                const DropdownMenuItem<int?>(
+                 DropdownMenuItem<int?>(
                   value: null,
-                  child: Text('بدون مركز تكلفة'),
+                  child: Text(tr('بدون مركز تكلفة')),
                 ),
                 ...centers.map(
                   (c) => DropdownMenuItem<int?>(
@@ -125,14 +126,14 @@ class _BranchEditDialogState extends AppFormDialogState<bool, BranchEditDialog> 
                 : null;
             return DropdownButtonFormField<int?>(
               value: validRegionId,
-              decoration: const InputDecoration(
-                labelText: 'المنطقة (اختياري)',
-                prefixIcon: Icon(PhosphorIconsBold.mapPin),
+              decoration:  InputDecoration(
+                labelText: tr('المنطقة (اختياري)'),
+                prefixIcon: const Icon(PhosphorIconsBold.mapPin),
               ),
               items: [
-                const DropdownMenuItem<int?>(
+                 DropdownMenuItem<int?>(
                   value: null,
-                  child: Text('بدون منطقة'),
+                  child: Text(tr('بدون منطقة')),
                 ),
                 ...regions.map(
                   (r) => DropdownMenuItem<int?>(

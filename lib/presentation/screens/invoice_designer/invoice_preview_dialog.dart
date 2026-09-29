@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import 'dart:convert';
@@ -65,9 +66,9 @@ class InvoicePreviewDialog extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'معاينة الفاتورة',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                 Text(
+                  tr('معاينة الفاتورة'),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -115,9 +116,9 @@ class InvoicePreviewDialog extends StatelessWidget {
     final isThermal = templateType == 'thermal' || templateType == 'kitchen';
     final paperWidthMm = template?.paperWidth ?? (isThermal ? 80.0 : 210.0);
     final paperTypeName = templateType == 'kitchen'
-        ? 'مطبخ (حرارى)'
+        ? tr('مطبخ (حرارى)')
         : isThermal
-            ? 'حرارى'
+            ? tr('حرارى')
             : 'A4';
 
     // Check if any elements have large font sizes that might overflow
@@ -150,7 +151,7 @@ class InvoicePreviewDialog extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            'نوع الورقة: $paperTypeName  |  العرض: ${paperWidthMm.toStringAsFixed(0)}mm',
+            tr('نوع الورقة: {paperTypeName}  |  العرض: {p0}mm', {'paperTypeName': paperTypeName, 'p0': paperWidthMm.toStringAsFixed(0)}),
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -160,7 +161,7 @@ class InvoicePreviewDialog extends StatelessWidget {
           const Spacer(),
           if (hasOverflowRisk)
             Text(
-              'حجم الخط (${maxFontSize.toStringAsFixed(0)}) قد يتجاوز عرض الورقة',
+              tr('حجم الخط ({p0}) قد يتجاوز عرض الورقة', {'p0': maxFontSize.toStringAsFixed(0)}),
               style: TextStyle(
                 fontSize: 11,
                 color: Colors.orange.shade800,
@@ -169,7 +170,7 @@ class InvoicePreviewDialog extends StatelessWidget {
             )
           else
             Text(
-              'التصميم مناسب لعرض الورقة ✓',
+              tr('التصميم مناسب لعرض الورقة ✓'),
               style: TextStyle(
                 fontSize: 11,
                 color: Colors.green.shade700,
@@ -311,8 +312,8 @@ class InvoicePreviewDialog extends StatelessWidget {
     }
 
     if (widgets.isEmpty) {
-      return const Center(
-        child: Text('لا توجد عناصر', style: TextStyle(color: Colors.grey)),
+      return  Center(
+        child: Text(tr('لا توجد عناصر'), style: const TextStyle(color: Colors.grey)),
       );
     }
 
@@ -397,7 +398,7 @@ class InvoicePreviewDialog extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Text(
-            companyData['company_name'] ?? 'اسم الشركة',
+            companyData['company_name'] ?? tr('اسم الشركة'),
             textAlign: _getTextAlign(element.textAlign),
             style: style.copyWith(fontWeight: FontWeight.bold, fontSize: element.fontSize.clamp(12, 18)),
           ),
@@ -457,45 +458,45 @@ class InvoicePreviewDialog extends StatelessWidget {
   }
 
   String _getLabel(String type) {
-    const labels = {
-      'invoice_number': 'رقم الفاتورة',
-      'order_number': 'رقم الطلب',
-      'date': 'التاريخ',
-      'time': 'الوقت',
-      'customer_name': 'اسم العميل',
-      'customer_phone': 'الهاتف',
-      'customer_address': 'العنوان',
-      'cashier_name': 'الكاشير',
-      'payment_method': 'طريقة الدفع',
-      'sale_type': 'نوع البيع',
-      'warehouse_name': 'المخزن',
-      'branch_name': 'الفرع',
-      'company_address': 'عنوان الشركة',
-      'company_phone': 'هاتف الشركة',
-      'company_tax_number': 'الرقم الضريبي',
-      'adhoc_customer_name': 'اسم العميل النصي',
-      'adhoc_customer_phone': 'هاتف العميل النصي',
-      'supplier_name': 'المورد',
-      'subtotal': 'الإجمالي الفرعي',
-      'discount': 'الخصم',
-      'tax': 'الضريبة',
-      'tax_amount': 'الضريبة',
-      'total': 'الإجمالي النهائي',
-      'total_amount': 'الإجمالي النهائي',
-      'paid': 'المدفوع',
-      'remaining': 'المتبقي',
-      'cash_amount': 'مدفوع نقداً',
-      'bank_amount': 'مدفوع بنكياً',
-      'click_amount': 'مدفوع كليك',
-      'notes': 'ملاحظات الفاتورة',
-      'footer_text': 'نص التذييل',
-      'delivery_fee': 'رسوم التوصيل',
-      'delivery_type': 'نوع التوصيل',
-      'delivery_address': 'عنوان التوصيل',
-      'courier_name': 'المندوب',
-      'table_number': 'رقم الطاولة',
-      'waiter_name': 'الويتر',
-      'invoice_type_label': 'نوع الفاتورة',
+    final labels = {
+      'invoice_number': tr('رقم الفاتورة'),
+      'order_number': tr('رقم الطلب'),
+      'date': tr('التاريخ'),
+      'time': tr('الوقت'),
+      'customer_name': tr('اسم العميل'),
+      'customer_phone': tr('الهاتف'),
+      'customer_address': tr('العنوان'),
+      'cashier_name': tr('الكاشير'),
+      'payment_method': tr('طريقة الدفع'),
+      'sale_type': tr('نوع البيع'),
+      'warehouse_name': tr('المخزن'),
+      'branch_name': tr('الفرع'),
+      'company_address': tr('عنوان الشركة'),
+      'company_phone': tr('هاتف الشركة'),
+      'company_tax_number': tr('الرقم الضريبي'),
+      'adhoc_customer_name': tr('اسم العميل النصي'),
+      'adhoc_customer_phone': tr('هاتف العميل النصي'),
+      'supplier_name': tr('المورد'),
+      'subtotal': tr('الإجمالي الفرعي'),
+      'discount': tr('الخصم'),
+      'tax': tr('الضريبة'),
+      'tax_amount': tr('الضريبة'),
+      'total': tr('الإجمالي النهائي'),
+      'total_amount': tr('الإجمالي النهائي'),
+      'paid': tr('المدفوع'),
+      'remaining': tr('المتبقي'),
+      'cash_amount': tr('مدفوع نقداً'),
+      'bank_amount': tr('مدفوع بنكياً'),
+      'click_amount': tr('مدفوع كليك'),
+      'notes': tr('ملاحظات الفاتورة'),
+      'footer_text': tr('نص التذييل'),
+      'delivery_fee': tr('رسوم التوصيل'),
+      'delivery_type': tr('نوع التوصيل'),
+      'delivery_address': tr('عنوان التوصيل'),
+      'courier_name': tr('المندوب'),
+      'table_number': tr('رقم الطاولة'),
+      'waiter_name': tr('الويتر'),
+      'invoice_type_label': tr('نوع الفاتورة'),
     };
     return labels[type] ?? '';
   }
@@ -520,15 +521,15 @@ class InvoicePreviewDialog extends StatelessWidget {
       case 'order_number': return '5678';
       case 'date': return intl.DateFormat('yyyy/MM/dd').format(now);
       case 'time': return intl.DateFormat('HH:mm').format(now);
-      case 'invoice_type_label': return 'مبيعات';
-      case 'customer_name': return 'عميل نقدي';
+      case 'invoice_type_label': return tr('مبيعات');
+      case 'customer_name': return tr('عميل نقدي');
       case 'customer_phone': return '01012345678';
-      case 'customer_address': return 'القاهرة، مصر';
-      case 'adhoc_customer_name': return 'محمد أحمد';
+      case 'customer_address': return tr('القاهرة، مصر');
+      case 'adhoc_customer_name': return tr('محمد أحمد');
       case 'adhoc_customer_phone': return '01023456789';
-      case 'supplier_name': return 'مورد تجريبي';
-      case 'company_name': return companyData['company_name'] ?? 'سوبر ماركت المدينة';
-      case 'company_address': return companyData['company_address'] ?? 'عنوان الشركة';
+      case 'supplier_name': return tr('مورد تجريبي');
+      case 'company_name': return companyData['company_name'] ?? tr('سوبر ماركت المدينة');
+      case 'company_address': return companyData['company_address'] ?? tr('عنوان الشركة');
       case 'company_phone': return companyData['company_phone'] ?? '01000000000';
       case 'company_tax_number': return companyData['company_tax_number'] ?? '123-456-789';
       case 'subtotal': return formatter.format(351.50);
@@ -541,17 +542,17 @@ class InvoicePreviewDialog extends StatelessWidget {
       case 'bank_amount': return formatter.format(95.71);
       case 'click_amount': return formatter.format(0);
       case 'delivery_fee': return formatter.format(25.00);
-      case 'delivery_type': return 'توصيل للمنزل';
-      case 'delivery_address': return 'شارع التحرير';
-      case 'sale_type': return 'نقدي';
-      case 'payment_method': return 'نقدي';
-      case 'cashier_name': return 'أحمد محمد';
-      case 'warehouse_name': return 'المخزن الرئيسي';
-      case 'branch_name': return 'الفرع الرئيسي';
+      case 'delivery_type': return tr('توصيل للمنزل');
+      case 'delivery_address': return tr('شارع التحرير');
+      case 'sale_type': return tr('نقدي');
+      case 'payment_method': return tr('نقدي');
+      case 'cashier_name': return tr('أحمد محمد');
+      case 'warehouse_name': return tr('المخزن الرئيسي');
+      case 'branch_name': return tr('الفرع الرئيسي');
       case 'table_number': return '5';
-      case 'waiter_name': return 'محمد علي';
-      case 'notes': return 'شكراً لتعاملكم معنا';
-      case 'footer_text': return 'شكراً لزيارتكم';
+      case 'waiter_name': return tr('محمد علي');
+      case 'notes': return tr('شكراً لتعاملكم معنا');
+      case 'footer_text': return tr('شكراً لزيارتكم');
       default: return key;
     }
   }
@@ -592,9 +593,9 @@ class InvoicePreviewDialog extends StatelessWidget {
     // Sample items — use dynamic decimal formatting
     String fmt(num val) => val.toStringAsFixed(decimalPlaces);
     final items = [
-      {'idx': '1', 'name': 'أرز بسمتي 5كجم', 'code': 'P001', 'qty': fmt(2), 'price': fmt(100), 'disc': fmt(0), 'tax': fmt(14), 'total': fmt(214), 'unit': 'كجم', 'barcode': '622115', 'notes': ''},
-      {'idx': '2', 'name': 'زيت ذرة 1لتر', 'code': 'P002', 'qty': fmt(1), 'price': fmt(50), 'disc': fmt(5), 'tax': fmt(7), 'total': fmt(52), 'unit': 'قطعة', 'barcode': '622116', 'notes': ''},
-      {'idx': '3', 'name': 'برجر لحم', 'code': 'P003', 'qty': fmt(1), 'price': fmt(85), 'disc': fmt(0), 'tax': fmt(12), 'total': fmt(97), 'unit': 'قطعة', 'barcode': '622117', 'notes': 'حار'},
+      {'idx': '1', 'name': tr('أرز بسمتي 5كجم'), 'code': 'P001', 'qty': fmt(2), 'price': fmt(100), 'disc': fmt(0), 'tax': fmt(14), 'total': fmt(214), 'unit': tr('كجم'), 'barcode': '622115', 'notes': ''},
+      {'idx': '2', 'name': tr('زيت ذرة 1لتر'), 'code': 'P002', 'qty': fmt(1), 'price': fmt(50), 'disc': fmt(5), 'tax': fmt(7), 'total': fmt(52), 'unit': tr('قطعة'), 'barcode': '622116', 'notes': ''},
+      {'idx': '3', 'name': tr('برجر لحم'), 'code': 'P003', 'qty': fmt(1), 'price': fmt(85), 'disc': fmt(0), 'tax': fmt(12), 'total': fmt(97), 'unit': tr('قطعة'), 'barcode': '622117', 'notes': tr('حار')},
     ];
 
     return Container(
@@ -614,17 +615,17 @@ class InvoicePreviewDialog extends StatelessWidget {
               borderRadius: BorderRadius.vertical(top: Radius.circular(3)),
             ),
             child: Row(children: [
-              if (settings.showIndex) headerFlex('م', 'index'),
-              if (settings.showProductName) headerFlex('المنتج', 'product'),
-              if (settings.showProductCode) headerFlex('الكود', 'code'),
-              if (settings.showQuantity) headerFlex('العدد', 'quantity'),
-              if (settings.showUnitPrice) headerFlex('السعر', 'price'),
-              if (settings.showUnit) headerFlex('الوحدة', 'unit'),
-              if (settings.showDiscount) headerFlex('خصم', 'discount'),
-              if (settings.showTax) headerFlex('ض', 'tax'),
-              if (settings.showTotal) headerFlex('الإجمالي', 'total'),
-              if (settings.showBarcode) headerFlex('باركود', 'barcode'),
-              if (settings.showNotes) headerFlex('ملاحظات', 'notes'),
+              if (settings.showIndex) headerFlex(tr('م'), 'index'),
+              if (settings.showProductName) headerFlex(tr('المنتج'), 'product'),
+              if (settings.showProductCode) headerFlex(tr('الكود'), 'code'),
+              if (settings.showQuantity) headerFlex(tr('العدد'), 'quantity'),
+              if (settings.showUnitPrice) headerFlex(tr('السعر'), 'price'),
+              if (settings.showUnit) headerFlex(tr('الوحدة'), 'unit'),
+              if (settings.showDiscount) headerFlex(tr('خصم'), 'discount'),
+              if (settings.showTax) headerFlex(tr('ض'), 'tax'),
+              if (settings.showTotal) headerFlex(tr('الإجمالي'), 'total'),
+              if (settings.showBarcode) headerFlex(tr('باركود'), 'barcode'),
+              if (settings.showNotes) headerFlex(tr('ملاحظات'), 'notes'),
             ]),
           ),
           // Rows

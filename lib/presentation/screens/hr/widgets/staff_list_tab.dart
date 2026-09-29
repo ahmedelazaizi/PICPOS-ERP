@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -28,19 +29,19 @@ class StaffListTab extends ConsumerWidget {
             children: [
               const Icon(PhosphorIconsBold.users, color: AppColors.primary),
               const SizedBox(width: 8),
-              const Text(
-                'قائمة الموظفين',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+               Text(
+                tr('قائمة الموظفين'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               PermissionGuard(
                 permission: PermissionCodes.hrManage,
                 allowManagerOverride: true,
-                actionName: 'إضافة موظف جديد',
+                actionName: tr('إضافة موظف جديد'),
                 child: ElevatedButton.icon(
                   onPressed: () => HRDialogs.showEmployeeForm(context, ref),
                   icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                  label: const Text('موظف جديد'),
+                  label:  Text(tr('موظف جديد')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                   ),
@@ -60,12 +61,12 @@ class StaffListTab extends ConsumerWidget {
               child: ShimmerLoading.list(itemCount: 8),
             ),
             error: (e, _) => Center(
-              child: Text('خطأ في تحميل الموظفين: $e',
+              child: Text(tr('خطأ في تحميل الموظفين: {e}', {'e': e}),
                   style: const TextStyle(color: AppColors.error)),
             ),
             data: (employees) {
               if (employees.isEmpty) {
-                return const Center(child: Text('لا يوجد موظفين حالياً'));
+                return  Center(child: Text(tr('لا يوجد موظفين حالياً')));
               }
 
               return ListView.separated(
@@ -136,20 +137,20 @@ class _EmployeeCard extends ConsumerWidget {
                 PermissionGuard(
                   permission: PermissionCodes.hrManage,
                   allowManagerOverride: true,
-                  actionName: 'تعديل بيانات الموظف',
+                  actionName: tr('تعديل بيانات الموظف'),
                   child: IconButton(
                     icon: const Icon(PhosphorIconsBold.pencilSimple, size: 20, color: Colors.blue),
-                    tooltip: 'تعديل',
+                    tooltip: tr('تعديل'),
                     onPressed: () => HRDialogs.showEmployeeForm(context, ref, employee: employee),
                   ),
                 ),
                 PermissionGuard(
                   permission: PermissionCodes.hrManage,
                   allowManagerOverride: true,
-                  actionName: 'حذف/تعطيل الموظف',
+                  actionName: tr('حذف/تعطيل الموظف'),
                   child: IconButton(
                     icon: const Icon(PhosphorIconsBold.trash, size: 20, color: AppColors.error),
-                    tooltip: 'حذف',
+                    tooltip: tr('حذف'),
                     onPressed: () => _confirmDelete(context, ref),
                   ),
                 ),
@@ -166,9 +167,9 @@ class _EmployeeCard extends ConsumerWidget {
                 PermissionGuard(
                   permission: PermissionCodes.hrAdvanceRecord,
                   allowManagerOverride: true,
-                  actionName: 'تسجيل سلفة',
+                  actionName: tr('تسجيل سلفة'),
                   child: _ActionChip(
-                    label: 'سلفة',
+                    label: tr('سلفة'),
                     icon: PhosphorIconsBold.currencyCircleDollar,
                     color: AppColors.error,
                     onTap: () => HRDialogs.showTransactionDialog(context, ref, employee, 'advance'),
@@ -182,9 +183,9 @@ class _EmployeeCard extends ConsumerWidget {
                 PermissionGuard(
                   permission: PermissionCodes.hrView,
                   allowManagerOverride: false,
-                  actionName: 'طباعة سلفة',
+                  actionName: tr('طباعة سلفة'),
                   child: _ActionChip(
-                    label: 'طباعة سلفة',
+                    label: tr('طباعة سلفة'),
                     icon: PhosphorIconsBold.printer,
                     color: Colors.deepPurple,
                     onTap: () => _printLatestAdvance(context, ref, employee),
@@ -193,9 +194,9 @@ class _EmployeeCard extends ConsumerWidget {
                 PermissionGuard(
                   permission: PermissionCodes.hrAdvanceRecord,
                   allowManagerOverride: true,
-                  actionName: 'تسجيل خصم',
+                  actionName: tr('تسجيل خصم'),
                   child: _ActionChip(
-                    label: 'خصم',
+                    label: tr('خصم'),
                     icon: PhosphorIconsBold.minusCircle,
                     color: AppColors.warning,
                     onTap: () => HRDialogs.showTransactionDialog(context, ref, employee, 'deduction'),
@@ -204,9 +205,9 @@ class _EmployeeCard extends ConsumerWidget {
                 PermissionGuard(
                   permission: PermissionCodes.hrView,
                   allowManagerOverride: false,
-                  actionName: 'سجل العمليات الإدارية',
+                  actionName: tr('سجل العمليات الإدارية'),
                   child: _ActionChip(
-                    label: 'السجل',
+                    label: tr('السجل'),
                     icon: PhosphorIconsBold.clockCounterClockwise,
                     color: Colors.blue,
                     onTap: () => HRDialogs.showTransactionHistory(context, ref, employee),
@@ -245,7 +246,7 @@ class _EmployeeCard extends ConsumerWidget {
         if (context.mounted) {
           AppToast.show(
             context,
-            'لا يوجد سلفة لهذا الموظف',
+            tr('لا يوجد سلفة لهذا الموظف'),
             type: ToastType.warning,
           );
         }
@@ -263,7 +264,7 @@ class _EmployeeCard extends ConsumerWidget {
         date: latestAdvance.transactionDate,
         amount: latestAdvance.amount,
         partyName: employee.name,
-        description: latestAdvance.description ?? 'سلفة موظف',
+        description: latestAdvance.description ?? tr('سلفة موظف'),
         employeeName: ref.read(authProvider).user?.displayName,
         companyName: companyName,
         companyPhone: companyPhone,
@@ -274,7 +275,7 @@ class _EmployeeCard extends ConsumerWidget {
       if (context.mounted) {
         AppToast.show(
           context,
-          'تعذّر طباعة السلفة: $e',
+          tr('تعذّر طباعة السلفة: {e}', {'e': e}),
           type: ToastType.error,
         );
       }
@@ -285,12 +286,12 @@ class _EmployeeCard extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تعطيل موظف'),
-        content: Text('هل أنت متأكد من تعطيل ملف الموظف "${employee.name}"؟'),
+        title:  Text(tr('تعطيل موظف')),
+        content: Text(tr('هل أنت متأكد من تعطيل ملف الموظف "{p0}"؟', {'p0': employee.name})),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           TextButton(
             onPressed: () async {
@@ -299,9 +300,9 @@ class _EmployeeCard extends ConsumerWidget {
                   .updateEmployee(id: employee.id, isActive: false);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text(
-              'تعطيل',
-              style: TextStyle(color: AppColors.error),
+            child:  Text(
+              tr('تعطيل'),
+              style: const TextStyle(color: AppColors.error),
             ),
           ),
         ],
@@ -312,15 +313,15 @@ class _EmployeeCard extends ConsumerWidget {
   String _roleName(String role) {
     switch (role) {
       case 'manager':
-        return 'مدير';
+        return tr('مدير');
       case 'cashier':
-        return 'كاشير';
+        return tr('كاشير');
       case 'waiter':
-        return 'نادل';
+        return tr('نادل');
       case 'chef':
-        return 'شيف';
+        return tr('شيف');
       case 'cleaner':
-        return 'عامل';
+        return tr('عامل');
       default:
         return 'موظف';
     }

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -33,7 +34,7 @@ class _ReissuePaperDialogState extends State<ReissuePaperDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(
-        'إعادة إصدار شيك',
+        tr('إعادة إصدار شيك'),
         style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
       ),
       content: SizedBox(
@@ -42,7 +43,7 @@ class _ReissuePaperDialogState extends State<ReissuePaperDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'شيك رقم ${widget.paperNumber} — ${widget.amount.toStringAsFixed(2)}',
+              tr('شيك رقم {p0} — {p1}', {'p0': widget.paperNumber, 'p1': widget.amount.toStringAsFixed(2)}),
               style: GoogleFonts.cairo(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -63,8 +64,8 @@ class _ReissuePaperDialogState extends State<ReissuePaperDialog> {
                       controller: controller,
                       focusNode: focusNode,
                       decoration: InputDecoration(
-                        labelText: 'الطرف المستلم *',
-                        hintText: 'ابحث بالاسم أو الهاتف...',
+                        labelText: tr('الطرف المستلم *'),
+                        hintText: tr('ابحث بالاسم أو الهاتف...'),
                         prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         isDense: true,
@@ -80,7 +81,7 @@ class _ReissuePaperDialogState extends State<ReissuePaperDialog> {
               controller: _notesCtrl,
               maxLines: 2,
               decoration: InputDecoration(
-                labelText: 'ملاحظات',
+                labelText: tr('ملاحظات'),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 isDense: true,
               ),
@@ -91,11 +92,11 @@ class _ReissuePaperDialogState extends State<ReissuePaperDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         ElevatedButton.icon(
           icon: const Icon(PhosphorIconsBold.arrowBendDoubleUpRight, size: 16),
-          label: const Text('إعادة إصدار'),
+          label:  Text(tr('إعادة إصدار')),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.deepOrange,
             foregroundColor: Colors.white,

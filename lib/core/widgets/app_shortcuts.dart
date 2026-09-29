@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -135,10 +136,10 @@ class ShortcutHintBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hints = <String>[];
-    if (showSearch) hints.add('F2 بحث');
-    if (showNew) hints.add('F5 جديد');
-    if (showSave) hints.add('Ctrl+S حفظ');
-    hints.add('Esc إغلاق');
+    if (showSearch) hints.add(tr('F2 بحث'));
+    if (showNew) hints.add(tr('F5 جديد'));
+    if (showSave) hints.add(tr('Ctrl+S حفظ'));
+    hints.add(tr('Esc إغلاق'));
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),

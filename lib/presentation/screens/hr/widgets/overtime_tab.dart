@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -41,7 +42,7 @@ class OvertimeTab extends ConsumerWidget {
               const Icon(PhosphorIconsBold.timer, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(
-                'العمل الإضافي: ${DateFormat('MMMM yyyy', 'ar').format(state.selectedMonth)}',
+                tr('العمل الإضافي: {p0}', {'p0': DateFormat('MMMM yyyy', 'ar').format(state.selectedMonth)}),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -54,7 +55,7 @@ class OvertimeTab extends ConsumerWidget {
                 onPressed: () =>
                     _showAddOvertimeDialog(context, ref, notifier, hrRepo),
                 icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                label: const Text('تسجيل إضافي'),
+                label:  Text(tr('تسجيل إضافي')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                 ),
@@ -78,7 +79,7 @@ class OvertimeTab extends ConsumerWidget {
 
               final employees = snapshot.data ?? [];
               if (employees.isEmpty) {
-                return const Center(child: Text('لا يوجد موظفين'));
+                return  Center(child: Text(tr('لا يوجد موظفين')));
               }
 
               return ListView.separated(
@@ -121,7 +122,7 @@ class OvertimeTab extends ConsumerWidget {
         textDirection: ui.TextDirection.rtl,
         child: StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
-            title: const Text('تسجيل عمل إضافي'),
+            title:  Text(tr('تسجيل عمل إضافي')),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -134,7 +135,7 @@ class OvertimeTab extends ConsumerWidget {
                       final emps = snap.data ?? [];
                       return DropdownButtonFormField<int>(
                         initialValue: selectedEmpId,
-                        decoration: const InputDecoration(labelText: 'الموظف'),
+                        decoration:  InputDecoration(labelText: tr('الموظف')),
                         items: emps
                             .map(
                               (e) => DropdownMenuItem(
@@ -151,28 +152,28 @@ class OvertimeTab extends ConsumerWidget {
                   const SizedBox(height: 12),
                   TextField(
                     controller: hoursCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'عدد الساعات',
-                      prefixIcon: Icon(PhosphorIconsBold.timer),
+                    decoration:  InputDecoration(
+                      labelText: tr('عدد الساعات'),
+                      prefixIcon: const Icon(PhosphorIconsBold.timer),
                     ),
                     keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<double>(
                     initialValue: rate,
-                    decoration: const InputDecoration(labelText: 'المضاعف'),
-                    items: const [
-                      DropdownMenuItem(value: 1.0, child: Text('عادي (1x)')),
-                      DropdownMenuItem(value: 1.5, child: Text('إضافي (1.5x)')),
-                      DropdownMenuItem(value: 2.0, child: Text('مضاعف (2x)')),
-                      DropdownMenuItem(value: 3.0, child: Text('ثلاثي (3x)')),
+                    decoration:  InputDecoration(labelText: tr('المضاعف')),
+                    items:  [
+                      DropdownMenuItem(value: 1.0, child: Text(tr('عادي (1x)'))),
+                      DropdownMenuItem(value: 1.5, child: Text(tr('إضافي (1.5x)'))),
+                      DropdownMenuItem(value: 2.0, child: Text(tr('مضاعف (2x)'))),
+                      DropdownMenuItem(value: 3.0, child: Text(tr('ثلاثي (3x)'))),
                     ],
                     onChanged: (v) => setDialogState(() => rate = v!),
                   ),
                   const SizedBox(height: 12),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('التاريخ'),
+                    title:  Text(tr('التاريخ')),
                     subtitle: Text(DateFormat('yyyy/MM/dd').format(date)),
                     leading: const Icon(PhosphorIconsBold.calendar),
                     onTap: () async {
@@ -189,18 +190,18 @@ class OvertimeTab extends ConsumerWidget {
                   ),
                   TextField(
                     controller: notesCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'ملاحظات',
-                      border: OutlineInputBorder(),
+                    decoration:  InputDecoration(
+                      labelText: tr('ملاحظات'),
+                      border: const OutlineInputBorder(),
                     ),
                     maxLines: 2,
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: manualAmountCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'المبلغ (اتركه فارغاً للاحتساب التلقائي)',
-                      prefixIcon: Icon(PhosphorIconsBold.money),
+                    decoration:  InputDecoration(
+                      labelText: tr('المبلغ (اتركه فارغاً للاحتساب التلقائي)'),
+                      prefixIcon: const Icon(PhosphorIconsBold.money),
                     ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
@@ -212,7 +213,7 @@ class OvertimeTab extends ConsumerWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -237,11 +238,11 @@ class OvertimeTab extends ConsumerWidget {
                   Navigator.pop(ctx);
                   AppToast.show(
                     context,
-                    'تم تسجيل العمل الإضافي بنجاح',
+                    tr('تم تسجيل العمل الإضافي بنجاح'),
                     type: ToastType.success,
                   );
                 },
-                child: const Text('تسجيل'),
+                child:  Text(tr('تسجيل')),
               ),
             ],
           ),
@@ -295,8 +296,8 @@ class _OvertimeEmployeeExpansionTile extends StatelessWidget {
             ),
             subtitle: Text(
               totalHours > 0
-                  ? '${totalHours.toStringAsFixed(1)} ساعة — ${totalAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'
-                  : 'لا يوجد عمل إضافي هذا الشهر',
+                  ? tr('{p0} ساعة — {p1} {p2}', {'p0': totalHours.toStringAsFixed(1), 'p1': totalAmount.toStringAsFixed(AppConstants.decimalPlaces), 'p2': AppConstants.currencySymbolEn})
+                  : tr('لا يوجد عمل إضافي هذا الشهر'),
               style: TextStyle(
                 color: totalHours > 0
                     ? Colors.orange[700]
@@ -306,11 +307,11 @@ class _OvertimeEmployeeExpansionTile extends StatelessWidget {
             ),
             children: records.isEmpty
                 ? [
-                    const Padding(
-                      padding: EdgeInsets.all(16),
+                     Padding(
+                      padding: const EdgeInsets.all(16),
                       child: Text(
-                        'لا توجد سجلات',
-                        style: TextStyle(color: AppColors.textMuted),
+                        tr('لا توجد سجلات'),
+                        style: const TextStyle(color: AppColors.textMuted),
                       ),
                     ),
                   ]
@@ -323,7 +324,7 @@ class _OvertimeEmployeeExpansionTile extends StatelessWidget {
                             size: 18,
                           ),
                           title: Text(
-                            '${r.hours.toStringAsFixed(1)} ساعة × ${r.rate}x = ${r.amount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                            tr('{p0} ساعة × {p1}x = {p2} {p3}', {'p0': r.hours.toStringAsFixed(1), 'p1': r.rate, 'p2': r.amount.toStringAsFixed(AppConstants.decimalPlaces), 'p3': AppConstants.currencySymbolEn}),
                           ),
                           subtitle: Text(
                             DateFormat('yyyy/MM/dd').format(r.date),
@@ -357,7 +358,7 @@ class _MonthSelector extends StatelessWidget {
         if (picked != null) notifier.selectMonth(picked);
       },
       icon: const Icon(PhosphorIconsBold.calendar, size: 18),
-      label: const Text('تغيير الشهر'),
+      label:  Text(tr('تغيير الشهر')),
     );
   }
 }

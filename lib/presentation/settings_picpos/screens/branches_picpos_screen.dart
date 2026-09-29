@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // «الفروع والمنشآت» — نسخةُ PicPos على تصميم `PicPos Branches.dc.html`.
 //
 // ═══ ما قِيس قبل الكتابة ═══
@@ -76,12 +77,12 @@ final _warehouseRowsProvider = StreamProvider.autoDispose<List<Warehouse>>(
 /// جملةً تزيينيّة. وقِيس أنّ ثلاثاً منها تصف الكودَ كما هو:
 /// `Warehouses.branchId` قابلٌ للإفراغ، وعطلاتُ الفرع تُدمَج مع العامّة في
 /// `getWorkHolidays`، وغيابُ صفوف `user_branch_access` يعني وصولاً كاملاً.
-const _tabNotes = [
-  'الفرع يملك نقاط بيع ومخازن وتقويم عطلات مستقلاً',
-  'كل نقطة بيع مرتبطة بفرع وطابعة وخزينة',
-  'المخزن يتبع فرعاً واحداً — وبلا فرع يكون عاماً على المنشأة',
-  'عطلات الفرع = صفوفه + الصفوف العامة (دمج تراكمي)',
-  'بلا صفوف = وصول لكل الفروع (توافق خلفي)',
+List<String> get _tabNotes => [
+  tr('الفرع يملك نقاط بيع ومخازن وتقويم عطلات مستقلاً'),
+  tr('كل نقطة بيع مرتبطة بفرع وطابعة وخزينة'),
+  tr('المخزن يتبع فرعاً واحداً — وبلا فرع يكون عاماً على المنشأة'),
+  tr('عطلات الفرع = صفوفه + الصفوف العامة (دمج تراكمي)'),
+  tr('بلا صفوف = وصول لكل الفروع (توافق خلفي)'),
 ];
 
 class BranchesPicposScreen extends ConsumerStatefulWidget {
@@ -139,16 +140,16 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
         ref.watch(allUsersProvider).value ?? const [];
 
     return PicPosScreenScaffold(
-      title: 'الفروع والمنشآت',
+      title: tr('الفروع والمنشآت'),
       subtitle:
-          'الفروع ونقاط البيع والمخازن وتقويم العطلات وصلاحيات الوصول',
+          tr('الفروع ونقاط البيع والمخازن وتقويم العطلات وصلاحيات الوصول'),
       icon: PhosphorIconsBold.buildings,
       headerSearch: TextField(
         controller: _searchCtrl,
         onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'ابحث عن فرع أو نقطة بيع...',
+          hintText: tr('ابحث عن فرع أو نقطة بيع...'),
           prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
           suffixIcon: _query.isEmpty
               ? null
@@ -170,27 +171,27 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
             controller: _tabs,
             tabs: [
               (
-                label: 'الفروع',
+                label: tr('الفروع'),
                 icon: PhosphorIconsBold.buildings,
                 badge: '${branches.length}'
               ),
               (
-                label: 'نقاط البيع',
+                label: tr('نقاط البيع'),
                 icon: PhosphorIconsBold.desktopTower,
                 badge: null
               ),
               (
-                label: 'المخازن',
+                label: tr('المخازن'),
                 icon: PhosphorIconsBold.warehouse,
                 badge: '${warehouses.length}'
               ),
               (
-                label: 'تقويم العطلات',
+                label: tr('تقويم العطلات'),
                 icon: PhosphorIconsBold.calendarX,
                 badge: null
               ),
               (
-                label: 'صلاحيات الوصول',
+                label: tr('صلاحيات الوصول'),
                 icon: PhosphorIconsBold.lockKey,
                 badge: '${users.length}'
               ),
@@ -236,7 +237,7 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
               if (ok == true && mounted) setState(() {});
             },
             icon: const Icon(PhosphorIconsBold.plus, size: 15),
-            label: const Text('فرع جديد'),
+            label:  Text(tr('فرع جديد')),
           ),
         ];
       case 2:
@@ -250,7 +251,7 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
               if (ok == true && mounted) setState(() {});
             },
             icon: const Icon(PhosphorIconsBold.plus, size: 15),
-            label: const Text('مخزن جديد'),
+            label:  Text(tr('مخزن جديد')),
           ),
         ];
       case 3:
@@ -260,7 +261,7 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
             builder: (_, ready, _) => ElevatedButton.icon(
               onPressed: ready ? _holidayHandle.invoke : null,
               icon: const Icon(PhosphorIconsBold.plus, size: 15),
-              label: const Text('عطلة جديدة'),
+              label:  Text(tr('عطلة جديدة')),
             ),
           ),
         ];
@@ -288,44 +289,44 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
           items: [
             PicPosHubKpi(
               icon: PhosphorIconsBold.buildings,
-              label: 'الفروع النشطة',
+              label: tr('الفروع النشطة'),
               value: '$active',
               tint: AppColors.primary,
-              vs: 'من ${branches.length} مسجلة',
+              vs: tr('من {p0} مسجلة', {'p0': branches.length}),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.warehouse,
-              label: 'المخازن',
+              label: tr('المخازن'),
               value: '${warehouses.length}',
               tint: AppColors.warning,
-              vs: '$linked مرتبطٌ بفرع',
+              vs: tr('{linked} مرتبطٌ بفرع', {'linked': linked}),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.mapPin,
-              label: 'فروعٌ بمنطقة',
+              label: tr('فروعٌ بمنطقة'),
               value: '${branches.where((b) => b.regionId != null).length}',
               tint: const Color(0xFF8B5CF6),
-              vs: 'مرتبطةٌ بمنطقةٍ جغرافيّة',
+              vs: tr('مرتبطةٌ بمنطقةٍ جغرافيّة'),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.star,
-              label: 'الفرع الافتراضيّ',
+              label: tr('الفرع الافتراضيّ'),
               value: branches.any((b) => b.isSystemDefault == true)
-                  ? 'مضبوط'
-                  : 'غير مضبوط',
+                  ? tr('مضبوط')
+                  : tr('غير مضبوط'),
               tint: branches.any((b) => b.isSystemDefault == true)
                   ? AppColors.success
                   : AppColors.error,
-              vs: 'يُنشأ تلقائيّاً عند غيابه',
+              vs: tr('يُنشأ تلقائيّاً عند غيابه'),
             ),
           ],
         ),
         const SizedBox(height: 16),
         // ⚠️ بلا سطرٍ خافتٍ هنا: نصُّ القاعدة يقوله شريطُ ملاحظة التبويبة
         // فوقَه، وتكرارُه يجعل نفسَ الجملة مرّتين في شاشةٍ واحدة.
-        const PicPosBlockHeader(title: 'الفروع'),
+         PicPosBlockHeader(title: tr('الفروع')),
         if (shown.isEmpty)
-          _empty(context, 'لا فروعَ مطابقة')
+          _empty(context, tr('لا فروعَ مطابقة'))
         else
           PicPosEntityCardGrid(
             children: [
@@ -338,8 +339,8 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
                       : AppColors.textMuted,
                   icon: PhosphorIconsBold.storefront,
                   status: b.isSystemDefault == true
-                      ? 'افتراضيّ'
-                      : (b.isActive == true ? 'نشط' : 'موقوف'),
+                      ? tr('افتراضيّ')
+                      : (b.isActive == true ? tr('نشط') : tr('موقوف')),
                   statusTint: b.isSystemDefault == true
                       ? AppColors.primary
                       : (b.isActive == true
@@ -347,13 +348,13 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
                           : AppColors.textMuted),
                   stats: [
                     PicPosEntityStat(
-                      'المخازن',
+                      tr('المخازن'),
                       '${warehouses.where((w) => w.branchId == b.id).length}',
                     ),
-                    PicPosEntityStat('الرمز', b.code ?? '—'),
+                    PicPosEntityStat(tr('الرمز'), b.code ?? '—'),
                     PicPosEntityStat(
-                      'مركز التكلفة',
-                      b.costCenterId != null ? 'مرتبط' : '—',
+                      tr('مركز التكلفة'),
+                      b.costCenterId != null ? tr('مرتبط') : '—',
                     ),
                   ],
                   chips: [
@@ -361,8 +362,8 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
                       PicPosEntityChip(
                           PhosphorIconsBold.phone, b.phone!),
                     if (b.regionId != null)
-                      const PicPosEntityChip(
-                          PhosphorIconsBold.mapTrifold, 'ضمن منطقة'),
+                       PicPosEntityChip(
+                          PhosphorIconsBold.mapTrifold, tr('ضمن منطقة')),
                   ],
                 ),
             ],
@@ -379,10 +380,10 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
 
   // ── تبويبةُ المخازن ────────────────────────────────────────────────────
 
-  static const _whTypes = {
-    'raw_materials': ('خامات', Color(0xFFEA580C)),
-    'finished_goods': ('منتج تام', AppColors.info),
-    'retail': ('بيع', Color(0xFF8B5CF6)),
+  static Map<String, (String, Color)> get _whTypes => {
+    'raw_materials': (tr('خامات'), const Color(0xFFEA580C)),
+    'finished_goods': (tr('منتج تام'), AppColors.info),
+    'retail': (tr('بيع'), const Color(0xFF8B5CF6)),
   };
 
   Widget _warehousesTab(
@@ -394,10 +395,10 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
 
     // شرائحُ الترشيح — نفسُ شرائح التصميم، وعدّادُ كلٍّ منها **محسوب**.
     final chipDefs = <(String, bool Function(Warehouse))>[
-      ('كل المخازن', (w) => true),
-      ('يُباع منه', (w) => w.type == 'retail'),
-      ('خامات', (w) => w.type == 'raw_materials'),
-      ('بلا فرع', (w) => w.branchId == null),
+      (tr('كل المخازن'), (w) => true),
+      (tr('يُباع منه'), (w) => w.type == 'retail'),
+      (tr('خامات'), (w) => w.type == 'raw_materials'),
+      (tr('بلا فرع'), (w) => w.branchId == null),
     ];
     final pick = _chip[2] ?? 0;
     final shown = warehouses
@@ -412,14 +413,14 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
           items: [
             PicPosHubKpi(
               icon: PhosphorIconsBold.warehouse,
-              label: 'المخازن النشطة',
+              label: tr('المخازن النشطة'),
               value: '${warehouses.where((w) => w.isActive).length}',
               tint: AppColors.primary,
-              vs: 'من ${warehouses.length} مسجلة',
+              vs: tr('من {p0} مسجلة', {'p0': warehouses.length}),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.link,
-              label: 'مربوطة بفرع',
+              label: tr('مربوطة بفرع'),
               value: '${warehouses.where((w) => w.branchId != null).length}',
               tint: AppColors.success,
               vs: '${warehouses.where((w) => w.branchId == null).length} عامٌّ '
@@ -427,25 +428,25 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.star,
-              label: 'مخازنُ افتراضيّة',
+              label: tr('مخازنُ افتراضيّة'),
               value: '${warehouses.where((w) => w.isDefault == true).length}',
               tint: AppColors.warning,
-              vs: 'تُختار تلقائيّاً في العمليات',
+              vs: tr('تُختار تلقائيّاً في العمليات'),
             ),
           ],
         ),
         const SizedBox(height: 16),
         PicPosDataTable(
-          title: 'المخازن',
+          title: tr('المخازن'),
           // النصفُ الثاني من `sub` في التصميم — أمّا نصفُه الأوّلُ فهو نصُّ
           // ملاحظة التبويبة فوقَه، وتكرارُه يعيد الجملةَ مرّتين.
-          subtitle: 'المخزن الافتراضيُّ للفرع يُختار في كلّ عمليةٍ تلقائياً',
-          columns: const [
-            PicPosTableColumn('المخزن', flex: 1.9),
-            PicPosTableColumn('الفرع المرتبط', flex: 1.4),
-            PicPosTableColumn('النوع', flex: 1.2),
-            PicPosTableColumn('الحالة', flex: 1.1),
-            PicPosTableColumn('إجراء', flex: 1.1),
+          subtitle: tr('المخزن الافتراضيُّ للفرع يُختار في كلّ عمليةٍ تلقائياً'),
+          columns:  [
+            PicPosTableColumn(tr('المخزن'), flex: 1.9),
+            PicPosTableColumn(tr('الفرع المرتبط'), flex: 1.4),
+            PicPosTableColumn(tr('النوع'), flex: 1.2),
+            PicPosTableColumn(tr('الحالة'), flex: 1.1),
+            PicPosTableColumn(tr('إجراء'), flex: 1.1),
           ],
           chips: [
             for (var i = 0; i < chipDefs.length; i++)
@@ -456,32 +457,32 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
               ),
           ],
           selectedChip: pick,
-          emptyLabel: 'لا مخازنَ مطابقة',
+          emptyLabel: tr('لا مخازنَ مطابقة'),
           rows: [
             for (final w in shown)
               PicPosTableRow(
                 cells: [
                   PicPosTextCell(
                     w.name,
-                    sub: w.isDefault == true ? 'افتراضيّ للفرع' : null,
+                    sub: w.isDefault == true ? tr('افتراضيّ للفرع') : null,
                     icon: PhosphorIconsBold.warehouse,
                     tint: AppColors.primary,
                   ),
                   PicPosTextCell(
                     w.branchId == null
-                        ? 'عامٌّ على المنشأة'
+                        ? tr('عامٌّ على المنشأة')
                         : (names[w.branchId] ?? '—'),
                   ),
                   PicPosPillCell(
-                    _whTypes[w.type]?.$1 ?? 'عام',
+                    _whTypes[w.type]?.$1 ?? tr('عام'),
                     _whTypes[w.type]?.$2 ?? AppColors.textMuted,
                   ),
                   PicPosPillCell(
-                    w.isActive ? 'نشط' : 'موقوف',
+                    w.isActive ? tr('نشط') : tr('موقوف'),
                     w.isActive ? AppColors.success : AppColors.textMuted,
                   ),
                   PicPosButtonCell(
-                    'تعديل',
+                    tr('تعديل'),
                     icon: PhosphorIconsBold.pencilSimple,
                     tint: AppColors.primary,
                     onPressed: () => _editWarehouse(w),
@@ -504,7 +505,7 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
     // لا `setState` بعد النجاح: المصدرُ `StreamProvider` على الجدول، فيصل
     // الصفُّ المحدَّثُ من تلقائه. واستدعاؤها كان سيُعيد بناءً بلا سبب.
     if (ok == true && mounted) {
-      AppToast.show(context, 'تم تعديل المخزن', type: ToastType.success);
+      AppToast.show(context, tr('تم تعديل المخزن'), type: ToastType.success);
     }
   }
 
@@ -539,15 +540,15 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
               for (final b in branches) b.id: b.name
             };
             return PicPosDataTable(
-              title: 'صلاحيات الوصول للفروع',
-              subtitle: 'بلا صفوف = وصول لكل الفروع (توافق خلفي)',
-              columns: const [
-                PicPosTableColumn('المستخدم', flex: 1.8),
-                PicPosTableColumn('الدور', flex: 1.2),
-                PicPosTableColumn('الفروع المسموحة', flex: 2.4),
-                PicPosTableColumn('النطاق', flex: 1.2),
+              title: tr('صلاحيات الوصول للفروع'),
+              subtitle: tr('بلا صفوف = وصول لكل الفروع (توافق خلفي)'),
+              columns:  [
+                PicPosTableColumn(tr('المستخدم'), flex: 1.8),
+                PicPosTableColumn(tr('الدور'), flex: 1.2),
+                PicPosTableColumn(tr('الفروع المسموحة'), flex: 2.4),
+                PicPosTableColumn(tr('النطاق'), flex: 1.2),
               ],
-              emptyLabel: 'لا مستخدمينَ مطابقين',
+              emptyLabel: tr('لا مستخدمينَ مطابقين'),
               rows: [
                 for (final u in shown)
                   PicPosTableRow(
@@ -559,19 +560,19 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
                         tint: AppColors.primary,
                       ),
                       PicPosTextCell(
-                        u.role?.name ?? 'بدون دور',
+                        u.role?.name ?? tr('بدون دور'),
                       ),
                       PicPosTextCell(
                         (access[u.user.id] ?? const <int>[]).isEmpty
-                            ? 'كل الفروع'
+                            ? tr('كل الفروع')
                             : (access[u.user.id]!)
                                 .map((id) => names[id] ?? '#$id')
                                 .join(' · '),
                       ),
                       PicPosPillCell(
                         (access[u.user.id] ?? const <int>[]).isEmpty
-                            ? 'مفتوح'
-                            : 'محصور',
+                            ? tr('مفتوح')
+                            : tr('محصور'),
                         (access[u.user.id] ?? const <int>[]).isEmpty
                             ? AppColors.warning
                             : AppColors.success,

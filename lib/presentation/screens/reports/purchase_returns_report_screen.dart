@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -71,9 +72,9 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
@@ -132,14 +133,14 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
       try {
         final user = ref.read(authProvider).user;
         ref.read(activityLoggerProvider).logReportView(
-          user?.id ?? 0, 
-          user?.displayName ?? 'مجهول', 
-          'تقرير مرتجع المشتريات'
+          user?.id ?? 0,
+          user?.displayName ?? tr('مجهول'),
+          tr('تقرير مرتجع المشتريات')
         );
       } catch (_) {}
       
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في تحميل البيانات: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ في تحميل البيانات: {e}', {'e': e}), type: ToastType.error);
     } finally {
       setState(() => _isLoading = false);
     }
@@ -162,7 +163,7 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
       return Directionality(
         textDirection: ui.TextDirection.rtl,
         child: Scaffold(
-          body: Center(child: Text('تعذر تحديد صلاحيات الفرع: ${scopeAsync.error}')),
+          body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
         ),
       );
     }
@@ -173,7 +174,7 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
       textDirection: ui.TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('تقرير مرتجع المشتريات'),
+          title:  Text(tr('تقرير مرتجع المشتريات')),
           actions: [
             buildReportExportAction(onExport: _returns.isEmpty ? null : _exportToExcel),
             buildReportPrintAsExportAction(onExport: _returns.isEmpty ? null : _printReport),
@@ -282,7 +283,7 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
                             children: [
                               Expanded(
                                 child: ReportKpiCard(
-                                  title: 'إجمالي المردودات',
+                                  title: tr('إجمالي المردودات'),
                                   value: '${_currencyFormat.format(_returns.fold(0.0, (sum, item) => sum + item.total.abs()))} ${AppConstants.currencySymbolEn}',
                                   icon: PhosphorIconsBold.arrowUUpLeft,
                                   color: AppColors.error,
@@ -291,7 +292,7 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
                               const SizedBox(width: 16),
                               Expanded(
                                 child: ReportKpiCard(
-                                  title: 'عدد المستندات',
+                                  title: tr('عدد المستندات'),
                                   value: _returns.length.toString(),
                                   icon: PhosphorIconsBold.hash,
                                   color: AppColors.info,
@@ -304,24 +305,24 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
                           Expanded(
                             child: Card(
                               child: _returns.isEmpty
-                                  ? const Center(child: Text('لا توجد مردودات في هذه الفترة'))
+                                  ?  Center(child: Text(tr('لا توجد مردودات في هذه الفترة')))
                                   : SingleChildScrollView(
                                       scrollDirection: Axis.horizontal,
                                       child: SingleChildScrollView(
                                         child: DataTable(
-                                          columns: const [
-                                            DataColumn(label: Text('رقم المرجع')),
-                                            DataColumn(label: Text('التاريخ')),
-                                            DataColumn(label: Text('المورد')),
-                                            DataColumn(label: Text('المبلغ')),
-                                            DataColumn(label: Text('الحالة')),
+                                          columns:  [
+                                            DataColumn(label: Text(tr('رقم المرجع'))),
+                                            DataColumn(label: Text(tr('التاريخ'))),
+                                            DataColumn(label: Text(tr('المورد'))),
+                                            DataColumn(label: Text(tr('المبلغ'))),
+                                            DataColumn(label: Text(tr('الحالة'))),
                                           ],
                                           rows: _returns.map((r) {
                                             return DataRow(
                                               cells: [
                                                 DataCell(Text(r.invoiceNumber)),
                                                 DataCell(Text(_dateFormat.format(r.invoiceDate))),
-                                                DataCell(Text(_supplierNames[r.supplierId] ?? 'مورد #${r.supplierId}')),
+                                                DataCell(Text(_supplierNames[r.supplierId] ?? tr('مورد #{p0}', {'p0': r.supplierId}))),
                                                 DataCell(Text(_currencyFormat.format(r.total.abs()))),
                                                 DataCell(
                                                   Container(
@@ -330,7 +331,7 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
                                                       color: AppColors.error.withValues(alpha: 0.1),
                                                       borderRadius: BorderRadius.circular(4),
                                                     ),
-                                                    child: const Text('مرتجع', style: TextStyle(color: AppColors.error, fontSize: 12)),
+                                                    child:  Text(tr('مرتجع'), style: const TextStyle(color: AppColors.error, fontSize: 12)),
                                                   ),
                                                 ),
                                               ],
@@ -361,20 +362,20 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-        title: 'تقرير مرتجع المشتريات',
-        headers: ['رقم المرجع', 'التاريخ', 'المورد', 'المبلغ'],
+        title: tr('تقرير مرتجع المشتريات'),
+        headers: [tr('رقم المرجع'), tr('التاريخ'), tr('المورد'), tr('المبلغ')],
         rows: _returns.map<List<dynamic>>((r) => [
           r.invoiceNumber,
           _dateFormat.format(r.invoiceDate),
-          _supplierNames[r.supplierId] ?? 'مورد',
+          _supplierNames[r.supplierId] ?? tr('مورد'),
           r.total.abs(),
         ]).toList(),
       );
       if (path != null && mounted) {
-        AppToast.show(context, 'تم تصدير التقرير بنجاح', type: ToastType.success);
+        AppToast.show(context, tr('تم تصدير التقرير بنجاح'), type: ToastType.success);
       }
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في التصدير: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ في التصدير: {e}', {'e': e}), type: ToastType.error);
     }
   }
 

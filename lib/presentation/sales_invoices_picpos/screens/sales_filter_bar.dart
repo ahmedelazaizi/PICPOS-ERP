@@ -163,10 +163,10 @@ class SalesFilterBar extends ConsumerWidget {
     required this.searchFocusNode,
   });
 
-  static const _statuses = [
-    ('paid', 'مدفوع', AppColors.success),
-    ('partial', 'جزئي', AppColors.warning),
-    ('unpaid', 'غير مدفوع', AppColors.error),
+  static List<(String, String, Color)> get _statuses => [
+    ('paid', tr('مدفوع'), AppColors.success),
+    ('partial', tr('جزئي'), AppColors.warning),
+    ('unpaid', tr('غير مدفوع'), AppColors.error),
   ];
 
   @override
@@ -220,7 +220,7 @@ class SalesFilterBar extends ConsumerWidget {
                 focusNode: searchFocusNode,
                 style: const TextStyle(fontSize: 12.5),
                 decoration: InputDecoration(
-                  hintText: 'بحث برقم الفاتورة أو اسم العميل...',
+                  hintText: tr('بحث برقم الفاتورة أو اسم العميل...'),
                   hintStyle: TextStyle(fontSize: 12.5, color: muted),
                   prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass,
                       size: 15, color: muted),
@@ -294,7 +294,7 @@ class SalesFilterBar extends ConsumerWidget {
                         dateRange != null
                             ? '${dateRange.start.day}/${dateRange.start.month}'
                                 ' — ${dateRange.end.day}/${dateRange.end.month}'
-                            : 'كل التواريخ',
+                            : tr('كل التواريخ'),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -329,10 +329,10 @@ class SalesFilterBar extends ConsumerWidget {
                 return Padding(
                   padding: const EdgeInsetsDirectional.only(end: 8),
                   child: _FilterPill<int?>(
-                    label: 'الفرع',
+                    label: tr('الفرع'),
                     value: selectedBranchId,
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('الكل')),
+                       DropdownMenuItem(value: null, child: Text(tr('الكل'))),
                       ...branches.map((b) =>
                           DropdownMenuItem(value: b.id, child: Text(b.name))),
                     ],
@@ -348,7 +348,7 @@ class SalesFilterBar extends ConsumerWidget {
                       if (cleared) {
                         AppToast.show(
                           context,
-                          'تم إلغاء فلتر المستودع لأنه يتبع فرعاً مختلفاً',
+                          tr('تم إلغاء فلتر المستودع لأنه يتبع فرعاً مختلفاً'),
                           type: ToastType.info,
                         );
                       }
@@ -367,10 +367,10 @@ class SalesFilterBar extends ConsumerWidget {
                 return Padding(
                   padding: const EdgeInsetsDirectional.only(end: 8),
                   child: _FilterPill<int?>(
-                    label: 'المخزن',
+                    label: tr('المخزن'),
                     value: selectedWarehouseId,
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('الكل')),
+                       DropdownMenuItem(value: null, child: Text(tr('الكل'))),
                       ...warehouses.map((w) =>
                           DropdownMenuItem(value: w.id, child: Text(w.name))),
                     ],
@@ -385,7 +385,7 @@ class SalesFilterBar extends ConsumerWidget {
                       if (cleared) {
                         AppToast.show(
                           context,
-                          'تم إلغاء فلتر الفرع لأن المستودع يتبع فرعاً آخر',
+                          tr('تم إلغاء فلتر الفرع لأن المستودع يتبع فرعاً آخر'),
                           type: ToastType.info,
                         );
                       }
@@ -402,10 +402,10 @@ class SalesFilterBar extends ConsumerWidget {
               data: (centers) {
                 if (centers.isEmpty) return const SizedBox.shrink();
                 return _FilterPill<int?>(
-                  label: 'مركز التكلفة',
+                  label: tr('مركز التكلفة'),
                   value: selectedCostCenterId,
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('الكل')),
+                     DropdownMenuItem(value: null, child: Text(tr('الكل'))),
                     ...centers.map((c) =>
                         DropdownMenuItem(value: c.id, child: Text(c.name))),
                   ],
@@ -461,14 +461,14 @@ class SalesFilterBar extends ConsumerWidget {
                         fontWeight: FontWeight.w600,
                         color: theme.textTheme.bodyMedium?.color,
                       ),
-                      items: const [
+                      items:  [
                         DropdownMenuItem(
                           value: SalesInvoiceSortMode.dateDesc,
-                          child: Text('الأحدث أولاً'),
+                          child: Text(tr('الأحدث أولاً')),
                         ),
                         DropdownMenuItem(
                           value: SalesInvoiceSortMode.byClientReceiveOrder,
-                          child: Text('ترتيب الاستقبال (لكل عميل)'),
+                          child: Text(tr('ترتيب الاستقبال (لكل عميل)')),
                         ),
                       ],
                       onChanged: (v) {

@@ -70,7 +70,7 @@ void main() {
     );
     expect(footer.contains('repo.getJournalEntryCreator(entry.id)'), isTrue,
         reason: 'التذييلُ لا يقرأ المنشئَ أصلاً');
-    expect(footer.contains("entry.isAutoPosted ? 'ترحيل آلي' : '—'"), isTrue,
+    expect(footer.contains("entry.isAutoPosted ? tr('ترحيل آلي') : '—'"), isTrue,
         reason: 'المجهولُ والآليُّ يُعرضان سواءً — فيضيع الفرق');
   });
 

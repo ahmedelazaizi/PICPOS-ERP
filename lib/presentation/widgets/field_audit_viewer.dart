@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -107,7 +108,7 @@ class _FieldAuditViewerState extends State<FieldAuditViewer> {
                   child: DropdownButtonFormField<String?>(
                     initialValue: _filterField,
                     decoration: InputDecoration(
-                      hintText: 'كل الحقول',
+                      hintText: tr('كل الحقول'),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 8,
@@ -118,9 +119,9 @@ class _FieldAuditViewerState extends State<FieldAuditViewer> {
                       isDense: true,
                     ),
                     items: [
-                      const DropdownMenuItem(
+                       DropdownMenuItem(
                         value: null,
-                        child: Text('كل الحقول'),
+                        child: Text(tr('كل الحقول')),
                       ),
                       ..._availableFields.map(
                         (f) => DropdownMenuItem(value: f, child: Text(f)),
@@ -135,7 +136,7 @@ class _FieldAuditViewerState extends State<FieldAuditViewer> {
               ],
               const SizedBox(width: 8),
               Text(
-                '${_logs.length} تغيير',
+                tr('{p0} تغيير', {'p0': _logs.length}),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -162,7 +163,7 @@ class _FieldAuditViewerState extends State<FieldAuditViewer> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'لا توجد تغييرات مسجلة',
+                            tr('لا توجد تغييرات مسجلة'),
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -416,7 +417,7 @@ class FieldAuditButton extends StatelessWidget {
     return TextButton.icon(
       onPressed: () => _showAuditDialog(context),
       icon: const Icon(Icons.history, size: 18),
-      label: Text(label ?? 'سجل التغييرات'),
+      label: Text(label ?? tr('سجل التغييرات')),
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         textStyle: const TextStyle(fontSize: 13),

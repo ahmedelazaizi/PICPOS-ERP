@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -93,7 +94,7 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
                             padding: const EdgeInsets.all(16),
                             child: ShimmerLoading.list(itemCount: 6),
                           ),
-                          error: (e, _) => Center(child: Text('خطأ: $e')),
+                          error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
                         );
                       },
                     ),
@@ -121,7 +122,7 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
         ),
         const SizedBox(width: 12),
         Text(
-          'العملاء والموردين',
+          tr('العملاء والموردين'),
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
@@ -137,7 +138,7 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
             ),
           ),
           icon: const Icon(PhosphorIconsBold.user, size: 18),
-          label: const Text('كشف حساب عميل'),
+          label:  Text(tr('كشف حساب عميل')),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.primary,
           ),
@@ -151,7 +152,7 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
             ),
           ),
           icon: const Icon(PhosphorIconsBold.truck, size: 18),
-          label: const Text('كشف حساب مورد'),
+          label:  Text(tr('كشف حساب مورد')),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.warning,
           ),
@@ -168,7 +169,7 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
             ),
           ),
           icon: const Icon(PhosphorIconsBold.usersThree, size: 18),
-          label: const Text('المجموعات'),
+          label:  Text(tr('المجموعات')),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.info,
           ),
@@ -177,19 +178,19 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
         OutlinedButton.icon(
           onPressed: () => showExcelOptionsDialog(context, ref, isExport: true),
           icon: const Icon(PhosphorIconsBold.fileArrowUp, size: 18),
-          label: const Text('تصدير'),
+          label:  Text(tr('تصدير')),
         ),
         const SizedBox(width: 8),
         OutlinedButton.icon(
           onPressed: () => showExcelOptionsDialog(context, ref, isExport: false),
           icon: const Icon(PhosphorIconsBold.fileArrowDown, size: 18),
-          label: const Text('استيراد'),
+          label:  Text(tr('استيراد')),
         ),
         const SizedBox(width: 12),
         ElevatedButton.icon(
           onPressed: () => showAddPartyDialog(context, ref),
           icon: const Icon(PhosphorIconsBold.plus),
-          label: const Text('إضافة'),
+          label:  Text(tr('إضافة')),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
@@ -215,7 +216,7 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'البحث بالاسم أو رقم الهاتف...',
+              hintText: tr('البحث بالاسم أو رقم الهاتف...'),
               prefixIcon: const Icon(
                 PhosphorIconsBold.magnifyingGlass,
               ),
@@ -231,27 +232,27 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
         ),
         const SizedBox(width: 16),
         SegmentedButton<String>(
-          segments: const [
-            ButtonSegment(value: 'all', label: Text('الكل')),
+          segments:  [
+            ButtonSegment(value: 'all', label: Text(tr('الكل'))),
             ButtonSegment(
               value: 'customer',
-              label: Text('عملاء'),
-              icon: Icon(PhosphorIconsBold.user, size: 16),
+              label: Text(tr('عملاء')),
+              icon: const Icon(PhosphorIconsBold.user, size: 16),
             ),
             ButtonSegment(
               value: 'supplier',
-              label: Text('موردين'),
-              icon: Icon(PhosphorIconsBold.truck, size: 16),
+              label: Text(tr('موردين')),
+              icon: const Icon(PhosphorIconsBold.truck, size: 16),
             ),
             ButtonSegment(
               value: 'delivery',
-              label: Text('توصيل'),
-              icon: Icon(PhosphorIconsBold.moped, size: 16),
+              label: Text(tr('توصيل')),
+              icon: const Icon(PhosphorIconsBold.moped, size: 16),
             ),
             ButtonSegment(
               value: 'both',
-              label: Text('عميل مورد'),
-              icon: Icon(PhosphorIconsBold.usersThree, size: 16),
+              label: Text(tr('عميل مورد')),
+              icon: const Icon(PhosphorIconsBold.usersThree, size: 16),
             ),
           ],
           selected: {_typeFilter},
@@ -295,9 +296,9 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
               color: AppColors.textMuted.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'لا يوجد أطراف',
-              style: TextStyle(color: AppColors.textMuted),
+             Text(
+              tr('لا يوجد أطراف'),
+              style: const TextStyle(color: AppColors.textMuted),
             ),
           ],
         ),
@@ -362,7 +363,7 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
         children: [
           Expanded(
             child: Text(
-              party.phone ?? 'لا يوجد رقم',
+              party.phone ?? tr('لا يوجد رقم'),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -379,7 +380,7 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
           ),
           const SizedBox(width: 6),
           Text(
-            '(حد ${party.creditLimit.toStringAsFixed(0)})',
+            tr('(حد {p0})', {'p0': party.creditLimit.toStringAsFixed(0)}),
             style: const TextStyle(
               fontSize: 11,
               color: AppColors.textMuted,
@@ -398,7 +399,7 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
             icon: const Icon(PhosphorIconsBold.money),
             iconSize: 20,
             color: AppColors.success,
-            tooltip: 'سند مالي',
+            tooltip: tr('سند مالي'),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             onPressed: () {
@@ -431,7 +432,7 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
             icon: const Icon(PhosphorIconsBold.fileText),
             iconSize: 20,
             color: AppColors.info,
-            tooltip: 'كشف حساب',
+            tooltip: tr('كشف حساب'),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             onPressed: () {
@@ -460,7 +461,7 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
             icon: const Icon(PhosphorIconsBold.pencil),
             iconSize: 20,
             color: AppColors.primary,
-            tooltip: 'تعديل',
+            tooltip: tr('تعديل'),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             onPressed: () {
@@ -478,7 +479,7 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
             icon: const Icon(PhosphorIconsBold.trash),
             iconSize: 20,
             color: AppColors.error,
-            tooltip: 'حذف',
+            tooltip: tr('حذف'),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             onPressed: () {

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // DEVELOPER TOOLS SCREEN — locked behind the developer password
 // ═══════════════════════════════════════════════════════════════════════════
@@ -99,7 +100,7 @@ class _DeveloperPasswordGateState
     if (!ok) {
       setState(() {
         _verifying = false;
-        _error = 'كلمة المرور غير صحيحة';
+        _error = tr('كلمة المرور غير صحيحة');
       });
       return;
     }
@@ -124,8 +125,8 @@ class _DeveloperPasswordGateState
     if (pwd.length < 4 || pwd != cnf) {
       setState(() {
         _error = pwd.length < 4
-            ? 'يجب أن لا تقل كلمة المرور عن 4 أحرف'
-            : 'تأكيد كلمة المرور غير مطابق';
+            ? tr('يجب أن لا تقل كلمة المرور عن 4 أحرف')
+            : tr('تأكيد كلمة المرور غير مطابق');
       });
       return;
     }
@@ -142,7 +143,7 @@ class _DeveloperPasswordGateState
       if (mounted) {
         setState(() {
           _verifying = false;
-          _error = 'فشل التعيين: $e';
+          _error = tr('فشل التعيين: {e}', {'e': e});
         });
       }
     }
@@ -174,9 +175,9 @@ class _DeveloperPasswordGateState
                   color: AppColors.primary,
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'أدوات المطوّر',
-                  style: TextStyle(
+                 Text(
+                  tr('أدوات المطوّر'),
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -186,7 +187,7 @@ class _DeveloperPasswordGateState
                   isFirstTime
                       ? 'لم يتم تعيين كلمة مرور مطوّر على هذا التركيب. '
                           'عيّن واحدة الآن لحماية الشاشة وفتحها.'
-                      : 'هذه الشاشة محمية. أدخل كلمة مرور المطوّر للمتابعة.',
+                      : tr('هذه الشاشة محمية. أدخل كلمة مرور المطوّر للمتابعة.'),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 12,
@@ -201,8 +202,8 @@ class _DeveloperPasswordGateState
                       isFirstTime ? _createPassword() : _verify(),
                   decoration: InputDecoration(
                     labelText: isFirstTime
-                        ? 'كلمة مرور مطوّر جديدة'
-                        : 'كلمة مرور المطوّر',
+                        ? tr('كلمة مرور مطوّر جديدة')
+                        : tr('كلمة مرور المطوّر'),
                     prefixIcon: const Icon(PhosphorIconsBold.lock),
                     suffixIcon: IconButton(
                       icon: Icon(_visible
@@ -224,7 +225,7 @@ class _DeveloperPasswordGateState
                     obscureText: !_visible,
                     onSubmitted: (_) => _createPassword(),
                     decoration: InputDecoration(
-                      labelText: 'تأكيد كلمة المرور',
+                      labelText: tr('تأكيد كلمة المرور'),
                       prefixIcon: const Icon(PhosphorIconsBold.lockKey),
                       errorText: _error,
                       border: OutlineInputBorder(
@@ -238,7 +239,7 @@ class _DeveloperPasswordGateState
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('إلغاء'),
+                      child:  Text(tr('إلغاء')),
                     ),
                     const Spacer(),
                     ElevatedButton.icon(
@@ -257,7 +258,7 @@ class _DeveloperPasswordGateState
                           : Icon(isFirstTime
                               ? PhosphorIconsBold.key
                               : PhosphorIconsBold.signIn),
-                      label: Text(isFirstTime ? 'تعيين وفتح' : 'فتح'),
+                      label: Text(isFirstTime ? tr('تعيين وفتح') : tr('فتح')),
                     ),
                   ],
                 ),
@@ -288,18 +289,18 @@ class _DeveloperToolsBody extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.shieldStar),
-            SizedBox(width: 8),
-            Text('أدوات المطوّر'),
+            const Icon(PhosphorIconsBold.shieldStar),
+            const SizedBox(width: 8),
+            Text(tr('أدوات المطوّر')),
           ],
         ),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            tooltip: 'إنهاء الجلسة',
+            tooltip: tr('إنهاء الجلسة'),
             icon: const Icon(PhosphorIconsBold.signOut),
             onPressed: () {
               ref.read(developerSessionProvider.notifier).clear();
@@ -341,15 +342,15 @@ class DeveloperToolsPanels extends ConsumerWidget {
     // — لو تبدّل هناك فليتبدّل هنا، وإلّا رشّح البحثُ باسمٍ لا يراه المستخدم.
     final panels = <(String, Widget)>[
       (
-        'الحالة الحالية',
+        tr('الحالة الحالية'),
         _SnapshotPanel(snapshot: snapshot, hash: hash, session: session)
       ),
-      ('تغيير ملف النشاط', _ChangeProfileSection(snapshot: snapshot)),
-      ('تغيير نمط التشغيل', _ChangeModeSection(snapshot: snapshot)),
-      ('تخصيص الميزات', const _FeatureOverridesSection()),
-      ('تغيير كلمة مرور المطوّر', const _ChangeDeveloperPasswordSection()),
-      ('منطقة الخطر — إعادة ضبط', const _ResetWizardSection()),
-      ('تصفير البيانات — بلا رجعة', const _DataWipeSection()),
+      (tr('تغيير ملف النشاط'), _ChangeProfileSection(snapshot: snapshot)),
+      (tr('تغيير نمط التشغيل'), _ChangeModeSection(snapshot: snapshot)),
+      (tr('تخصيص الميزات'), const _FeatureOverridesSection()),
+      (tr('تغيير كلمة مرور المطوّر'), const _ChangeDeveloperPasswordSection()),
+      (tr('منطقة الخطر — إعادة ضبط'), const _ResetWizardSection()),
+      (tr('تصفير البيانات — بلا رجعة'), const _DataWipeSection()),
     ];
 
     final q = searchQuery.trim();
@@ -359,7 +360,7 @@ class DeveloperToolsPanels extends ConsumerWidget {
     if (shown.isEmpty) {
       return Center(
         child: Text(
-          'لا توجد أداةٌ تطابق «$q»',
+          tr('لا توجد أداةٌ تطابق «{q}»', {'q': q}),
           style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
         ),
       );
@@ -412,9 +413,9 @@ class _SnapshotPanel extends StatelessWidget {
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'الحالة الحالية',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                 Text(
+                  tr('الحالة الحالية'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 if (remaining > Duration.zero)
@@ -426,7 +427,7 @@ class _SnapshotPanel extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      'الجلسة: ${remaining.inMinutes}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')}',
+                      tr('الجلسة: {p0}:{p1}', {'p0': remaining.inMinutes, 'p1': (remaining.inSeconds % 60).toString().padLeft(2, '0')}),
                       style: const TextStyle(
                           fontSize: 10, color: AppColors.success),
                     ),
@@ -434,11 +435,11 @@ class _SnapshotPanel extends StatelessWidget {
               ],
             ),
             const Divider(),
-            _row('ملف النشاط',
+            _row(tr('ملف النشاط'),
                 BusinessProfileCatalog.metaFor(snapshot.profile).arabicName),
-            _row('نمط التشغيل', _modeLabel(snapshot.mode)),
+            _row(tr('نمط التشغيل'), _modeLabel(snapshot.mode)),
             _row('Config Hash', hash.substring(0, 12)),
-            _row('وقت اللقطة', _hhmm(snapshot.capturedAt)),
+            _row(tr('وقت اللقطة'), _hhmm(snapshot.capturedAt)),
           ],
         ),
       ),
@@ -459,10 +460,10 @@ class _SnapshotPanel extends StatelessWidget {
 
   String _modeLabel(DeploymentMode m) {
     switch (m) {
-      case DeploymentMode.standalone: return 'مستقل (Standalone)';
-      case DeploymentMode.server:     return 'سيرفر (Server)';
-      case DeploymentMode.client:     return 'عميل (Client)';
-      case DeploymentMode.mirror:     return 'مرآة (Mirror)';
+      case DeploymentMode.standalone: return tr('مستقل (Standalone)');
+      case DeploymentMode.server:     return tr('سيرفر (Server)');
+      case DeploymentMode.client:     return tr('عميل (Client)');
+      case DeploymentMode.mirror:     return tr('مرآة (Mirror)');
     }
   }
 }
@@ -489,7 +490,7 @@ class _ChangeProfileSectionState
       if (!mounted) return;
       AppToast.show(
         context,
-        'تم تغيير ملف النشاط إلى ${BusinessProfileCatalog.metaFor(_selected).arabicName}',
+        tr('تم تغيير ملف النشاط إلى {p0}', {'p0': BusinessProfileCatalog.metaFor(_selected).arabicName}),
         type: ToastType.success,
       );
     } catch (e) {
@@ -507,9 +508,9 @@ class _ChangeProfileSectionState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SectionHeader(
+             _SectionHeader(
               icon: PhosphorIconsBold.briefcase,
-              label: 'تغيير ملف النشاط',
+              label: tr('تغيير ملف النشاط'),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -520,10 +521,10 @@ class _ChangeProfileSectionState
             const SizedBox(height: 12),
             DropdownButtonFormField<BusinessProfile>(
               initialValue: _selected,
-              decoration: const InputDecoration(
-                labelText: 'ملف النشاط الجديد',
-                prefixIcon: Icon(PhosphorIconsBold.briefcase),
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('ملف النشاط الجديد'),
+                prefixIcon: const Icon(PhosphorIconsBold.briefcase),
+                border: const OutlineInputBorder(),
               ),
               items: BusinessProfileCatalog.all()
                   .map((m) => DropdownMenuItem(
@@ -549,7 +550,7 @@ class _ChangeProfileSectionState
                     ? null
                     : _apply,
                 icon: const Icon(PhosphorIconsBold.check),
-                label: const Text('تطبيق'),
+                label:  Text(tr('تطبيق')),
               ),
             ),
           ],
@@ -625,7 +626,7 @@ class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
       if (result is CommitFailed) {
         AppToast.show(
           context,
-          'فشل تغيير نمط التشغيل: ${result.reasonAr}',
+          tr('فشل تغيير نمط التشغيل: {p0}', {'p0': result.reasonAr}),
           type: ToastType.error,
         );
         return;
@@ -636,7 +637,7 @@ class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
       ref.read(deploymentModeProvider.notifier).applyFromService(_selected);
       AppToast.show(
         context,
-        'تم تغيير نمط التشغيل بنجاح — يفضّل إعادة تشغيل التطبيق',
+        tr('تم تغيير نمط التشغيل بنجاح — يفضّل إعادة تشغيل التطبيق'),
         type: ToastType.success,
       );
     } catch (e) {
@@ -650,7 +651,7 @@ class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تأكيد تغيير نمط التشغيل'),
+        title:  Text(tr('تأكيد تغيير نمط التشغيل')),
         content: Text(
           'سيتم تحويل النظام إلى وضع "${_modeLabelAr(target)}".\n\n'
           'تغيير نمط التشغيل يتطلّب إعادة تشغيل التطبيق ليأخذ تأثيره '
@@ -659,11 +660,11 @@ class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('تطبيق'),
+            child:  Text(tr('تطبيق')),
           ),
         ],
       ),
@@ -674,7 +675,7 @@ class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
   /// User must type "تأكيد" verbatim before the action button enables.
   Future<bool?> _showTypeToConfirmDialog(DeploymentMode target) {
     final controller = TextEditingController();
-    const sentinel = 'تأكيد';
+    final sentinel = tr('تأكيد');
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -682,7 +683,7 @@ class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
         builder: (ctx, setStateD) {
           final matches = controller.text.trim() == sentinel;
           return AlertDialog(
-            title: const Text('تأكيد تغيير نمط التشغيل (إجراء حرج)'),
+            title:  Text(tr('تأكيد تغيير نمط التشغيل (إجراء حرج)')),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -699,9 +700,9 @@ class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
                 TextField(
                   controller: controller,
                   textDirection: TextDirection.rtl,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'تأكيد',
+                  decoration:  InputDecoration(
+                    border: const OutlineInputBorder(),
+                    hintText: tr('تأكيد'),
                   ),
                   onChanged: (_) => setStateD(() {}),
                 ),
@@ -710,11 +711,11 @@ class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: matches ? () => Navigator.pop(ctx, true) : null,
-                child: const Text('تنفيذ التحويل'),
+                child:  Text(tr('تنفيذ التحويل')),
               ),
             ],
           );
@@ -734,10 +735,10 @@ class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
 
   String _modeLabelAr(DeploymentMode m) {
     switch (m) {
-      case DeploymentMode.standalone: return 'مستقل';
-      case DeploymentMode.server:     return 'سيرفر';
-      case DeploymentMode.client:     return 'عميل';
-      case DeploymentMode.mirror:     return 'مرآة';
+      case DeploymentMode.standalone: return tr('مستقل');
+      case DeploymentMode.server:     return tr('سيرفر');
+      case DeploymentMode.client:     return tr('عميل');
+      case DeploymentMode.mirror:     return tr('مرآة');
     }
   }
 
@@ -749,32 +750,32 @@ class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SectionHeader(
+             _SectionHeader(
               icon: PhosphorIconsBold.network,
-              label: 'تغيير نمط التشغيل',
+              label: tr('تغيير نمط التشغيل'),
             ),
             const SizedBox(height: 12),
             SegmentedButton<DeploymentMode>(
-              segments: const [
+              segments:  [
                 ButtonSegment(
                   value: DeploymentMode.standalone,
-                  label: Text('مستقل'),
-                  icon: Icon(PhosphorIconsBold.desktop, size: 16),
+                  label: Text(tr('مستقل')),
+                  icon: const Icon(PhosphorIconsBold.desktop, size: 16),
                 ),
                 ButtonSegment(
                   value: DeploymentMode.server,
-                  label: Text('سيرفر'),
-                  icon: Icon(PhosphorIconsBold.hardDrives, size: 16),
+                  label: Text(tr('سيرفر')),
+                  icon: const Icon(PhosphorIconsBold.hardDrives, size: 16),
                 ),
                 ButtonSegment(
                   value: DeploymentMode.client,
-                  label: Text('عميل'),
-                  icon: Icon(PhosphorIconsBold.deviceMobile, size: 16),
+                  label: Text(tr('عميل')),
+                  icon: const Icon(PhosphorIconsBold.deviceMobile, size: 16),
                 ),
                 ButtonSegment(
                   value: DeploymentMode.mirror,
-                  label: Text('مرآة'),
-                  icon: Icon(PhosphorIconsBold.copy, size: 16),
+                  label: Text(tr('مرآة')),
+                  icon: const Icon(PhosphorIconsBold.copy, size: 16),
                 ),
               ],
               selected: {_selected},
@@ -787,7 +788,7 @@ class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
               child: ElevatedButton.icon(
                 onPressed: _selected == widget.snapshot.mode ? null : _apply,
                 icon: const Icon(PhosphorIconsBold.check),
-                label: const Text('تطبيق'),
+                label:  Text(tr('تطبيق')),
               ),
             ),
           ],
@@ -819,9 +820,9 @@ class _FeatureOverridesSection extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SectionHeader(
+             _SectionHeader(
               icon: PhosphorIconsBold.toggleRight,
-              label: 'تخصيص الميزات',
+              label: tr('تخصيص الميزات'),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -858,9 +859,9 @@ class _FeatureOverridesSection extends ConsumerWidget {
 
   String _moduleLabel(String module) {
     switch (module) {
-      case 'pos':         return 'البيع السريع';
-      case 'restaurant':  return 'المطعم';
-      case 'enterprise':  return 'المؤسسة';
+      case 'pos':         return tr('البيع السريع');
+      case 'restaurant':  return tr('المطعم');
+      case 'enterprise':  return tr('المؤسسة');
       default:            return module;
     }
   }
@@ -901,7 +902,7 @@ class _FeatureRow extends ConsumerWidget {
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 6),
               child: IconButton(
-                tooltip: 'إزالة التوجيه (الرجوع للافتراضى)',
+                tooltip: tr('إزالة التوجيه (الرجوع للافتراضى)'),
                 icon: const Icon(PhosphorIconsBold.arrowCounterClockwise, size: 16),
                 onPressed: () {
                   ref.read(configServiceProvider).clearOverride(fk);
@@ -950,8 +951,8 @@ class _ChangeDeveloperPasswordSectionState
       AppToast.show(
         context,
         pwd.length < 4
-            ? 'يجب أن لا تقل كلمة المرور عن 4 أحرف'
-            : 'تأكيد كلمة المرور غير مطابق',
+            ? tr('يجب أن لا تقل كلمة المرور عن 4 أحرف')
+            : tr('تأكيد كلمة المرور غير مطابق'),
         type: ToastType.error,
       );
       return;
@@ -962,13 +963,13 @@ class _ChangeDeveloperPasswordSectionState
       if (!mounted) return;
       _newCtl.clear();
       _confirmCtl.clear();
-      AppToast.show(context, 'تم تغيير كلمة مرور المطوّر', type: ToastType.success);
+      AppToast.show(context, tr('تم تغيير كلمة مرور المطوّر'), type: ToastType.success);
       // Extend the active session — saves the user from re-entering the
       // (just-changed) password again.
       ref.read(developerSessionProvider.notifier).extend();
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل التغيير: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل التغيير: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -983,28 +984,28 @@ class _ChangeDeveloperPasswordSectionState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SectionHeader(
+             _SectionHeader(
               icon: PhosphorIconsBold.key,
-              label: 'تغيير كلمة مرور المطوّر',
+              label: tr('تغيير كلمة مرور المطوّر'),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _newCtl,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'كلمة مرور جديدة',
-                prefixIcon: Icon(PhosphorIconsBold.lock),
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('كلمة مرور جديدة'),
+                prefixIcon: const Icon(PhosphorIconsBold.lock),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _confirmCtl,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'تأكيد كلمة المرور',
-                prefixIcon: Icon(PhosphorIconsBold.lockKey),
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('تأكيد كلمة المرور'),
+                prefixIcon: const Icon(PhosphorIconsBold.lockKey),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
@@ -1020,7 +1021,7 @@ class _ChangeDeveloperPasswordSectionState
                             strokeWidth: 2, color: Colors.white),
                       )
                     : const Icon(PhosphorIconsBold.floppyDisk),
-                label: const Text('حفظ'),
+                label:  Text(tr('حفظ')),
               ),
             ),
           ],
@@ -1039,7 +1040,7 @@ class _ResetWizardSection extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('إعادة ضبط الإعداد'),
+        title:  Text(tr('إعادة ضبط الإعداد')),
         content: const Text(
           'سيتم تشغيل الـ wizard من جديد عند بدء التطبيق التالى. '
           'البيانات (مبيعات / مشتريات / عملاء…) لا تُحذف. هل تريد المتابعة؟',
@@ -1047,12 +1048,12 @@ class _ResetWizardSection extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('إعادة ضبط'),
+            child:  Text(tr('إعادة ضبط')),
           ),
         ],
       ),
@@ -1063,7 +1064,7 @@ class _ResetWizardSection extends ConsumerWidget {
       if (!context.mounted) return;
       AppToast.show(
         context,
-        'تم إعادة الضبط — أعد تشغيل التطبيق',
+        tr('تم إعادة الضبط — أعد تشغيل التطبيق'),
         type: ToastType.warning,
       );
     } catch (e) {
@@ -1082,9 +1083,9 @@ class _ResetWizardSection extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SectionHeader(
+             _SectionHeader(
               icon: PhosphorIconsBold.arrowsCounterClockwise,
-              label: 'منطقة الخطر — إعادة ضبط',
+              label: tr('منطقة الخطر — إعادة ضبط'),
               color: AppColors.error,
             ),
             const SizedBox(height: 8),
@@ -1103,7 +1104,7 @@ class _ResetWizardSection extends ConsumerWidget {
                 ),
                 onPressed: () => _reset(context, ref),
                 icon: const Icon(PhosphorIconsBold.arrowsCounterClockwise),
-                label: const Text('إعادة ضبط الإعداد'),
+                label:  Text(tr('إعادة ضبط الإعداد')),
               ),
             ),
           ],
@@ -1179,9 +1180,9 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SectionHeader(
+             _SectionHeader(
               icon: PhosphorIconsBold.warningOctagon,
-              label: 'تصفير البيانات — بلا رجعة',
+              label: tr('تصفير البيانات — بلا رجعة'),
               color: AppColors.error,
             ),
             const SizedBox(height: 8),
@@ -1206,121 +1207,121 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
             // ⚠️ قوائمُ الأثرِ مأخوذةٌ من توثيق `DataWipeService` نفسِه لا
             //    من التخمين — وكلُّ بندٍ هنا يقابل سطراً في تلك الدوالّ.
             _wipeTile(
-              label: 'حذف جميع فواتير المبيعات',
-              detail: 'الفواتير وبنودها والدفعات وقيود اليومية وحركات المخزون',
-              confirmWord: 'حذف المبيعات',
+              label: tr('حذف جميع فواتير المبيعات'),
+              detail: tr('الفواتير وبنودها والدفعات وقيود اليومية وحركات المخزون'),
+              confirmWord: tr('حذف المبيعات'),
               action: (s) => s.wipeSalesInvoices(),
-              willDelete: const [
-                'فواتير المبيعات وبنودها',
-                'دفعاتُها',
-                'قيودُ اليومية المرتبطة بها',
-                'حركاتُ المخزون الناتجةُ عنها',
+              willDelete:  [
+                tr('فواتير المبيعات وبنودها'),
+                tr('دفعاتُها'),
+                tr('قيودُ اليومية المرتبطة بها'),
+                tr('حركاتُ المخزون الناتجةُ عنها'),
               ],
-              willRemain: const [
-                'الأصناف والعملاء',
-                'فواتير المشتريات',
-                'الإعدادات والمستخدمون',
+              willRemain:  [
+                tr('الأصناف والعملاء'),
+                tr('فواتير المشتريات'),
+                tr('الإعدادات والمستخدمون'),
               ],
             ),
             _wipeTile(
-              label: 'حذف جميع فواتير المشتريات',
-              detail: 'الفواتير وبنودها والتكاليف المحملة وقيودها وحركاتها',
-              confirmWord: 'حذف المشتريات',
+              label: tr('حذف جميع فواتير المشتريات'),
+              detail: tr('الفواتير وبنودها والتكاليف المحملة وقيودها وحركاتها'),
+              confirmWord: tr('حذف المشتريات'),
               action: (s) => s.wipePurchaseInvoices(),
-              willDelete: const [
-                'فواتير المشتريات وبنودها',
-                'التكاليفُ المحمَّلة عليها',
-                'قيودُها وحركاتُها المخزنيّة',
+              willDelete:  [
+                tr('فواتير المشتريات وبنودها'),
+                tr('التكاليفُ المحمَّلة عليها'),
+                tr('قيودُها وحركاتُها المخزنيّة'),
               ],
-              willRemain: const [
-                'الأصناف والموردون',
-                'فواتير المبيعات',
-                'الإعدادات والمستخدمون',
+              willRemain:  [
+                tr('الأصناف والموردون'),
+                tr('فواتير المبيعات'),
+                tr('الإعدادات والمستخدمون'),
               ],
             ),
             _wipeTile(
-              label: 'حذف جميع الأصناف',
+              label: tr('حذف جميع الأصناف'),
               detail: 'الأصناف وأرصدتها وباركوداتها ووحداتها — بيُرفض لو فيه '
                   'بنود فواتير مرتبطة',
-              confirmWord: 'حذف الأصناف',
+              confirmWord: tr('حذف الأصناف'),
               action: (s) => s.wipeProducts(),
-              willDelete: const [
-                'الأصناف وأرصدتُها',
-                'باركوداتُها ووحداتُها',
+              willDelete:  [
+                tr('الأصناف وأرصدتُها'),
+                tr('باركوداتُها ووحداتُها'),
               ],
-              willRemain: const [
-                'الفواتير — بل تُرفَض العمليةُ إن وُجدت',
-                'العملاء والموردون',
-                'الإعدادات والمستخدمون',
+              willRemain:  [
+                tr('الفواتير — بل تُرفَض العمليةُ إن وُجدت'),
+                tr('العملاء والموردون'),
+                tr('الإعدادات والمستخدمون'),
               ],
             ),
             _wipeTile(
-              label: 'حذف جميع العملاء',
+              label: tr('حذف جميع العملاء'),
               detail: 'الطرف اللي هو عميل ومورد في نفس الوقت بتُلغى صفة '
                   'العميل عنه فقط ومبيتحذفش',
-              confirmWord: 'حذف العملاء',
+              confirmWord: tr('حذف العملاء'),
               action: (s) => s.wipeParties(customers: true),
-              willDelete: const [
-                'الأطرافُ التي هي عملاءُ فقط',
+              willDelete:  [
+                tr('الأطرافُ التي هي عملاءُ فقط'),
               ],
-              willRemain: const [
-                'الطرفُ الذي هو عميلٌ ومورّدٌ معاً — تُلغى صفةُ العميل فقط',
-                'الفواتير والأصناف',
-                'الإعدادات والمستخدمون',
+              willRemain:  [
+                tr('الطرفُ الذي هو عميلٌ ومورّدٌ معاً — تُلغى صفةُ العميل فقط'),
+                tr('الفواتير والأصناف'),
+                tr('الإعدادات والمستخدمون'),
               ],
             ),
             _wipeTile(
-              label: 'حذف جميع الموردين',
-              detail: 'بنفس قاعدة الأطراف المزدوجة',
-              confirmWord: 'حذف الموردين',
+              label: tr('حذف جميع الموردين'),
+              detail: tr('بنفس قاعدة الأطراف المزدوجة'),
+              confirmWord: tr('حذف الموردين'),
               action: (s) => s.wipeParties(customers: false),
-              willDelete: const [
-                'الأطرافُ التي هي موردون فقط',
+              willDelete:  [
+                tr('الأطرافُ التي هي موردون فقط'),
               ],
-              willRemain: const [
-                'الطرفُ الذي هو عميلٌ ومورّدٌ معاً — تُلغى صفةُ المورّد فقط',
-                'الفواتير والأصناف',
-                'الإعدادات والمستخدمون',
+              willRemain:  [
+                tr('الطرفُ الذي هو عميلٌ ومورّدٌ معاً — تُلغى صفةُ المورّد فقط'),
+                tr('الفواتير والأصناف'),
+                tr('الإعدادات والمستخدمون'),
               ],
             ),
             _wipeTile(
-              label: 'حذف الحسابات المضافة في دليل الحسابات',
+              label: tr('حذف الحسابات المضافة في دليل الحسابات'),
               detail: 'الحسابات وربطها وقوالب اليومية — بيُرفض لو فيه بنود '
                   'يومية مرتبطة',
-              confirmWord: 'حذف الحسابات',
+              confirmWord: tr('حذف الحسابات'),
               action: (s) => s.wipeChartOfAccounts(),
-              willDelete: const [
-                'الحساباتُ المُضافة',
-                'ربطُها بالعمليات',
-                'قوالبُ اليومية',
+              willDelete:  [
+                tr('الحساباتُ المُضافة'),
+                tr('ربطُها بالعمليات'),
+                tr('قوالبُ اليومية'),
               ],
-              willRemain: const [
-                'القيود — بل تُرفَض العمليةُ إن وُجدت بنودٌ مرتبطة',
-                'الحساباتُ الأصليّة',
-                'الإعدادات والمستخدمون',
+              willRemain:  [
+                tr('القيود — بل تُرفَض العمليةُ إن وُجدت بنودٌ مرتبطة'),
+                tr('الحساباتُ الأصليّة'),
+                tr('الإعدادات والمستخدمون'),
               ],
             ),
             const Divider(height: 24),
             _wipeTile(
-              label: 'تصفير كامل لقاعدة البيانات',
+              label: tr('تصفير كامل لقاعدة البيانات'),
               detail: 'كل البيانات الحركية. بيسيب الإعدادات والمستخدمين '
                   'والصلاحيات والفروع والمستودعات وتعريفات الصناديق — تركيب '
                   'بلا مستخدمين مش مصفّر، ده تركيب مكسور',
-              confirmWord: 'تصفير كامل',
+              confirmWord: tr('تصفير كامل'),
               action: (s) => s.wipeAllTransactionalData(),
               extraDanger: true,
-              willDelete: const [
-                'كلُّ الفواتير — مبيعاتٍ ومشترياتٍ ومرتجعات',
-                'حركاتُ المخزون والجرد',
-                'القيودُ المحاسبيّةُ وأرصدةُ العملاء والموردين',
-                'حركةُ الخزائن وسنداتُ القبض والصرف',
-                'سجلُّ العمليات والورديات',
+              willDelete:  [
+                tr('كلُّ الفواتير — مبيعاتٍ ومشترياتٍ ومرتجعات'),
+                tr('حركاتُ المخزون والجرد'),
+                tr('القيودُ المحاسبيّةُ وأرصدةُ العملاء والموردين'),
+                tr('حركةُ الخزائن وسنداتُ القبض والصرف'),
+                tr('سجلُّ العمليات والورديات'),
               ],
-              willRemain: const [
-                'الإعداداتُ كلُّها',
-                'المستخدمون والأدوارُ والصلاحيات',
-                'الفروعُ والمستودعاتُ وتعريفاتُ الصناديق',
-                'الأصنافُ والعملاءُ والموردون',
+              willRemain:  [
+                tr('الإعداداتُ كلُّها'),
+                tr('المستخدمون والأدوارُ والصلاحيات'),
+                tr('الفروعُ والمستودعاتُ وتعريفاتُ الصناديق'),
+                tr('الأصنافُ والعملاءُ والموردون'),
               ],
             ),
           ],
@@ -1412,7 +1413,7 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
       title: label,
       message: 'العمليةُ بلا رجعة. تُؤخَذ نسخةٌ احتياطيّةٌ تلقائيّاً قبل '
           'التنفيذ، وفشلُها يوقف العملية.',
-      actionLabel: 'نفّذ',
+      actionLabel: tr('نفّذ'),
       typedWord: confirmWord,
       willDelete: willDelete,
       willRemain: willRemain,
@@ -1439,7 +1440,7 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
                 size: 22,
               ),
               const SizedBox(width: 8),
-              Text(result.ok ? 'تم التنفيذ' : 'لم يتم التنفيذ'),
+              Text(result.ok ? tr('تم التنفيذ') : tr('لم يتم التنفيذ')),
             ],
           ),
           content: SizedBox(
@@ -1449,7 +1450,7 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('إجمالي الصفوف المحذوفة: ${result.totalRows}',
+                        Text(tr('إجمالي الصفوف المحذوفة: {p0}', {'p0': result.totalRows}),
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                         const Divider(),
@@ -1472,20 +1473,20 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
                           ),
                         if (result.backupPath != null) ...[
                           const Divider(),
-                          Text('النسخة الاحتياطية: ${result.backupPath}',
+                          Text(tr('النسخة الاحتياطية: {p0}', {'p0': result.backupPath}),
                               style: const TextStyle(
                                   fontSize: 11, color: AppColors.textMuted)),
                         ],
                       ],
                     )
-                  : Text(result.error ?? 'خطأ غير معروف',
+                  : Text(result.error ?? tr('خطأ غير معروف'),
                       style: const TextStyle(fontSize: 13, height: 1.6)),
             ),
           ),
           actions: [
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('حسناً'),
+              child:  Text(tr('حسناً')),
             ),
           ],
         ),

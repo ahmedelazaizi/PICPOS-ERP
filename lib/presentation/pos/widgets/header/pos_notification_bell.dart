@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -22,14 +23,14 @@ class PosNotificationBell extends ConsumerWidget {
         itemBuilder: (context) {
           if (notifications.isEmpty) {
             return [
-              const PopupMenuItem(
+               PopupMenuItem(
                 enabled: false,
                 child: Center(
                   child: Padding(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     child: Text(
-                      'لا توجد إشعارات',
-                      style: TextStyle(color: Colors.grey),
+                      tr('لا توجد إشعارات'),
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   ),
                 ),
@@ -43,9 +44,9 @@ class PosNotificationBell extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'الإشعارات',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                   Text(
+                    tr('الإشعارات'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   TextButton.icon(
                     onPressed: () {
@@ -53,9 +54,9 @@ class PosNotificationBell extends ConsumerWidget {
                       Navigator.pop(context);
                     },
                     icon: const Icon(Icons.clear_all, size: 16),
-                    label: const Text(
-                      'مسح الكل',
-                      style: TextStyle(fontSize: 12),
+                    label:  Text(
+                      tr('مسح الكل'),
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
                 ],
@@ -79,10 +80,10 @@ class PosNotificationBell extends ConsumerWidget {
               };
               final timeAgo = DateTime.now().difference(n.timestamp);
               final timeText = timeAgo.inMinutes < 1
-                  ? 'الآن'
+                  ? tr('الآن')
                   : timeAgo.inMinutes < 60
-                  ? 'منذ ${timeAgo.inMinutes} د'
-                  : 'منذ ${timeAgo.inHours} س';
+                  ? tr('منذ {p0} د', {'p0': timeAgo.inMinutes})
+                  : tr('منذ {p0} س', {'p0': timeAgo.inHours});
 
               return PopupMenuItem(
                 enabled: false,

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -85,7 +86,7 @@ class _PosCashTenderingDialogState extends State<PosCashTenderingDialog> {
               child: const Icon(PhosphorIconsBold.money, color: AppColors.success, size: 24),
             ),
             const SizedBox(width: 12),
-            const Text('الدفع نقدي'),
+             Text(tr('الدفع نقدي')),
           ],
         ),
         content: SizedBox(
@@ -105,9 +106,9 @@ class _PosCashTenderingDialogState extends State<PosCashTenderingDialog> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'المبلغ المطلوب:',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                     Text(
+                      tr('المبلغ المطلوب:'),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     Text(
                       '${widget.totalAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbol}',
@@ -130,7 +131,7 @@ class _PosCashTenderingDialogState extends State<PosCashTenderingDialog> {
                 autofocus: true,
                 style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 decoration: InputDecoration(
-                  labelText: 'المبلغ المدفوع',
+                  labelText: tr('المبلغ المدفوع'),
                   suffixText: AppConstants.currencySymbolEn,
                   prefixIcon: const Icon(PhosphorIconsBold.wallet, color: AppColors.success),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -182,7 +183,7 @@ class _PosCashTenderingDialogState extends State<PosCashTenderingDialog> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              _isValid ? 'الباقي (الفكة):' : 'المبلغ غير كافي!',
+                              _isValid ? tr('الباقي (الفكة):') : tr('المبلغ غير كافي!'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: _isValid ? AppColors.success : AppColors.error,
@@ -204,7 +205,7 @@ class _PosCashTenderingDialogState extends State<PosCashTenderingDialog> {
                     if (_change > 0) ...[
                       const SizedBox(height: 4),
                       Text(
-                        'أعط العميل ${_change.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn} فكة',
+                        tr('أعط العميل {p0} {p1} فكة', {'p0': _change.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textMuted,
@@ -236,14 +237,14 @@ class _PosCashTenderingDialogState extends State<PosCashTenderingDialog> {
         actions: [
           TextButton(
             onPressed: _isSubmitting ? null : () => Navigator.pop(context, null),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton.icon(
             onPressed: (_isValid && !_isSubmitting) ? _confirm : null,
             icon: _isSubmitting
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                 : const Icon(PhosphorIconsBold.checkCircle, size: 18),
-            label: const Text('تأكيد الدفع'),
+            label:  Text(tr('تأكيد الدفع')),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
               foregroundColor: Colors.white,

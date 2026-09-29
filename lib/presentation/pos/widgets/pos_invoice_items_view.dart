@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -56,7 +57,7 @@ class PosInvoiceItemsView extends ConsumerWidget {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
             child: Text(
-              'تعذّر تحميل أصناف الفاتورة: ${snapshot.error}',
+              tr('تعذّر تحميل أصناف الفاتورة: {p0}', {'p0': snapshot.error}),
               style: const TextStyle(color: AppColors.error),
             ),
           );
@@ -68,11 +69,11 @@ class PosInvoiceItemsView extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (rows.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
+               Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Text(
-                  'لا توجد أصناف في هذه الفاتورة',
-                  style: TextStyle(color: AppColors.textMuted),
+                  tr('لا توجد أصناف في هذه الفاتورة'),
+                  style: const TextStyle(color: AppColors.textMuted),
                 ),
               )
             else
@@ -110,7 +111,7 @@ class PosInvoiceItemsView extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'الإجمالي (${rows.length} صنف)',
+                    tr('الإجمالي ({p0} صنف)', {'p0': rows.length}),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(

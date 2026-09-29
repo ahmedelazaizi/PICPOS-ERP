@@ -13,7 +13,7 @@ mixin _PluCsvMixin on ConsumerState<PluManagerScreen> {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv', 'txt'],
-      dialogTitle: 'اختر ملف PLU (CSV)',
+      dialogTitle: tr('اختر ملف PLU (CSV)'),
     );
     if (result == null || result.files.isEmpty) return;
 
@@ -46,7 +46,7 @@ mixin _PluCsvMixin on ConsumerState<PluManagerScreen> {
 
         final parts = line.split(RegExp(r'[,;\t]'));
         if (parts.length < 2) {
-          errors.add('سطر ${i + 1}: تنسيق خاطئ');
+          errors.add(tr('سطر {p0}: تنسيق خاطئ', {'p0': i + 1}));
           continue;
         }
 
@@ -65,7 +65,7 @@ mixin _PluCsvMixin on ConsumerState<PluManagerScreen> {
         }
 
         if (pluNum == null) {
-          errors.add('سطر ${i + 1}: PLU غير صالح "${isCasFormat ? parts[1] : parts[0]}"');
+          errors.add(tr('سطر {p0}: PLU غير صالح "{p1}"', {'p0': i + 1, 'p1': isCasFormat ? parts[1] : parts[0]}));
           continue;
         }
 
@@ -81,7 +81,7 @@ mixin _PluCsvMixin on ConsumerState<PluManagerScreen> {
         }
 
         if (product == null) {
-          errors.add('سطر ${i + 1}: منتج "$productIdentifier" غير موجود');
+          errors.add(tr('سطر {p0}: منتج "{productIdentifier}" غير موجود', {'p0': i + 1, 'productIdentifier': productIdentifier}));
           skipped++;
           continue;
         }
@@ -98,27 +98,27 @@ mixin _PluCsvMixin on ConsumerState<PluManagerScreen> {
         builder: (ctx) => Directionality(
           textDirection: ui.TextDirection.rtl,
           child: AlertDialog(
-            title: const Text('نتيجة الاستيراد'),
+            title:  Text(tr('نتيجة الاستيراد')),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('✅ تم استيراد: $imported', style: const TextStyle(color: AppColors.success)),
-                if (skipped > 0) Text('⚠️ تم تخطي: $skipped', style: const TextStyle(color: AppColors.warning)),
+                Text(tr('✅ تم استيراد: {imported}', {'imported': imported}), style: const TextStyle(color: AppColors.success)),
+                if (skipped > 0) Text(tr('⚠️ تم تخطي: {skipped}', {'skipped': skipped}), style: const TextStyle(color: AppColors.warning)),
                 if (errors.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  const Text('أخطاء:', style: TextStyle(fontWeight: FontWeight.bold)),
+                   Text(tr('أخطاء:'), style: const TextStyle(fontWeight: FontWeight.bold)),
                   ...errors.take(10).map((e) => Text(e, style: const TextStyle(fontSize: 11, color: AppColors.error))),
-                  if (errors.length > 10) Text('... و${errors.length - 10} أخطاء أخرى'),
+                  if (errors.length > 10) Text(tr('... و{p0} أخطاء أخرى', {'p0': errors.length - 10})),
                 ],
               ],
             ),
-            actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('موافق'))],
+            actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('موافق')))],
           ),
         ),
       );
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في قراءة الملف: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ في قراءة الملف: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -126,11 +126,11 @@ mixin _PluCsvMixin on ConsumerState<PluManagerScreen> {
     final scaleProducts = await _controller.getScaleProducts();
     if (scaleProducts.isEmpty) {
       if (!mounted) return;
-      AppToast.show(context, 'لا توجد أصناف بأرقام PLU', type: ToastType.error);
+      AppToast.show(context, tr('لا توجد أصناف بأرقام PLU'), type: ToastType.error);
       return;
     }
 
-    final dir = await FilePicker.getDirectoryPath(dialogTitle: 'اختر مجلد التصدير');
+    final dir = await FilePicker.getDirectoryPath(dialogTitle: tr('اختر مجلد التصدير'));
     if (dir == null) return;
 
     try {
@@ -162,9 +162,9 @@ mixin _PluCsvMixin on ConsumerState<PluManagerScreen> {
       // Write as UTF-16 LE — matches PLU Manager's native TSV format (2.xls)
       await file.writeAsBytes(ScaleTransport().encodeUtf16LE(csvContent));
 
-      if (mounted) AppToast.show(context, 'تم تصدير ${scaleProducts.length} صنف PLU إلى ${file.path}', type: ToastType.success);
+      if (mounted) AppToast.show(context, tr('تم تصدير {p0} صنف PLU إلى {p1}', {'p0': scaleProducts.length, 'p1': file.path}), type: ToastType.success);
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في التصدير: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ في التصدير: {e}', {'e': e}), type: ToastType.error);
     }
   }
 }

@@ -106,8 +106,8 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
             textDirection: TextDirection.rtl,
           child: PicPosDialog(
             icon: PhosphorIconsBold.tag,
-            title: existingOffer == null ? 'إضافة عرض جديد' : 'تعديل العرض',
-            subtitle: 'الباقةُ تظهر في نقطة البيع ما دامت فعّالةً وفي مدّتها',
+            title: existingOffer == null ? tr('إضافة عرض جديد') : tr('تعديل العرض'),
+            subtitle: tr('الباقةُ تظهر في نقطة البيع ما دامت فعّالةً وفي مدّتها'),
             width: 700,
             // ⚠️ `onCancel` افتراضُها `null` = **لا زرَّ إلغاء**. الحوارُ
             //    القديمُ كان يحمل «إلغاء» صراحةً، فإسقاطُها هنا يترك
@@ -117,9 +117,9 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                     // Name
                     TextField(
                       controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'اسم العرض *',
-                        prefixIcon: Icon(PhosphorIconsBold.textT),
+                      decoration:  InputDecoration(
+                        labelText: tr('اسم العرض *'),
+                        prefixIcon: const Icon(PhosphorIconsBold.textT),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -161,9 +161,9 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                           flex: 3,
                           child: TextField(
                             controller: barcodeController,
-                            decoration: const InputDecoration(
-                              labelText: 'الباركود (اختياري)',
-                              prefixIcon: Icon(PhosphorIconsBold.barcode),
+                            decoration:  InputDecoration(
+                              labelText: tr('الباركود (اختياري)'),
+                              prefixIcon: const Icon(PhosphorIconsBold.barcode),
                               isDense: true,
                             ),
                           ),
@@ -174,8 +174,8 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                           child: TextField(
                             controller: copiesController,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'نسخ',
+                            decoration:  InputDecoration(
+                              labelText: tr('نسخ'),
                               isDense: true,
                             ),
                             textAlign: TextAlign.center,
@@ -198,7 +198,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                                         productName:
                                             nameController.text.isNotEmpty
                                             ? nameController.text
-                                            : 'عرض',
+                                            : tr('عرض'),
                                         price:
                                             double.tryParse(
                                               priceController.text,
@@ -210,8 +210,8 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                                         AppToast.show(
                                           ctx,
                                           printed
-                                              ? 'تم إرسال $copies نسخة للطباعة'
-                                              : 'أُلغيت الطباعة',
+                                              ? tr('تم إرسال {copies} نسخة للطباعة', {'copies': copies})
+                                              : tr('أُلغيت الطباعة'),
                                           type: printed
                                               ? ToastType.success
                                               : ToastType.warning,
@@ -221,7 +221,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                                       if (ctx.mounted) {
                                         AppToast.show(
                                           ctx,
-                                          'خطأ في الطباعة: $e',
+                                          tr('خطأ في الطباعة: {e}', {'e': e}),
                                           type: ToastType.error,
                                         );
                                       }
@@ -231,9 +231,9 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                               PhosphorIconsBold.printer,
                               size: 16,
                             ),
-                            label: const Text(
-                              'طباعة',
-                              style: TextStyle(fontSize: 12),
+                            label:  Text(
+                              tr('طباعة'),
+                              style: const TextStyle(fontSize: 12),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.warning,
@@ -256,8 +256,8 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           labelText: selectedOfferType == 'percentage'
-                              ? 'نسبة الخصم (%) *'
-                              : 'مبلغ الخصم *',
+                              ? tr('نسبة الخصم (%) *')
+                              : tr('مبلغ الخصم *'),
                           prefixIcon: const Icon(PhosphorIconsBold.percent),
                           suffixText: selectedOfferType == 'percentage'
                               ? '%'
@@ -273,9 +273,9 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                             child: TextField(
                               controller: buyQtyController,
                               keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'اشترِ (كمية) *',
-                                prefixIcon: Icon(
+                              decoration:  InputDecoration(
+                                labelText: tr('اشترِ (كمية) *'),
+                                prefixIcon: const Icon(
                                   PhosphorIconsBold.shoppingCart,
                                 ),
                               ),
@@ -286,9 +286,9 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                             child: TextField(
                               controller: getQtyController,
                               keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'واحصل على (كمية) *',
-                                prefixIcon: Icon(PhosphorIconsBold.gift),
+                              decoration:  InputDecoration(
+                                labelText: tr('واحصل على (كمية) *'),
+                                prefixIcon: const Icon(PhosphorIconsBold.gift),
                               ),
                             ),
                           ),
@@ -303,9 +303,9 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                           child: TextField(
                             controller: minQtyController,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'الحد الأدنى للكمية',
-                              prefixIcon: Icon(PhosphorIconsBold.listNumbers),
+                            decoration:  InputDecoration(
+                              labelText: tr('الحد الأدنى للكمية'),
+                              prefixIcon: const Icon(PhosphorIconsBold.listNumbers),
                               isDense: true,
                             ),
                           ),
@@ -315,9 +315,9 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                           child: TextField(
                             controller: maxUsesController,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'الحد الأقصى للاستخدام',
-                              prefixIcon: Icon(PhosphorIconsBold.usersThree),
+                            decoration:  InputDecoration(
+                              labelText: tr('الحد الأقصى للاستخدام'),
+                              prefixIcon: const Icon(PhosphorIconsBold.usersThree),
                               isDense: true,
                             ),
                           ),
@@ -331,9 +331,9 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                         Expanded(
                           child: TextField(
                             controller: timeStartController,
-                            decoration: const InputDecoration(
-                              labelText: 'من ساعة (HH:mm)',
-                              prefixIcon: Icon(PhosphorIconsBold.clock),
+                            decoration:  InputDecoration(
+                              labelText: tr('من ساعة (HH:mm)'),
+                              prefixIcon: const Icon(PhosphorIconsBold.clock),
                               isDense: true,
                             ),
                           ),
@@ -342,9 +342,9 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                         Expanded(
                           child: TextField(
                             controller: timeEndController,
-                            decoration: const InputDecoration(
-                              labelText: 'إلى ساعة (HH:mm)',
-                              prefixIcon: Icon(
+                            decoration:  InputDecoration(
+                              labelText: tr('إلى ساعة (HH:mm)'),
+                              prefixIcon: const Icon(
                                 PhosphorIconsBold.clockAfternoon,
                               ),
                               isDense: true,
@@ -360,7 +360,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                       controller: priceController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: 'سعر العرض *',
+                        labelText: tr('سعر العرض *'),
                         prefixIcon: const Icon(
                           PhosphorIconsBold.currencyCircleDollar,
                         ),
@@ -410,7 +410,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                                   Text(
                                     startDate != null
                                         ? '${startDate!.day}/${startDate!.month}/${startDate!.year}'
-                                        : 'تاريخ البداية',
+                                        : tr('تاريخ البداية'),
                                   ),
                                 ],
                               ),
@@ -458,7 +458,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                                   Text(
                                     endDate != null
                                         ? '${endDate!.day}/${endDate!.month}/${endDate!.year}'
-                                        : 'تاريخ النهاية',
+                                        : tr('تاريخ النهاية'),
                                   ),
                                 ],
                               ),
@@ -478,9 +478,9 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                           color: AppColors.primary,
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          'مكونات العرض',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                         Text(
+                          tr('مكونات العرض'),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const Spacer(),
                         TextButton.icon(
@@ -491,7 +491,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                             setDialogState,
                           ),
                           icon: const Icon(PhosphorIconsBold.plus, size: 16),
-                          label: const Text('إضافة صنف'),
+                          label:  Text(tr('إضافة صنف')),
                         ),
                       ],
                     ),
@@ -507,10 +507,10 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: selectedItems.isEmpty
-                          ? const Center(
+                          ?  Center(
                               child: Text(
-                                'لم يتم إضافة أصناف بعد',
-                                style: TextStyle(color: AppColors.textMuted),
+                                tr('لم يتم إضافة أصناف بعد'),
+                                style: const TextStyle(color: AppColors.textMuted),
                               ),
                             )
                           : ListView.separated(
@@ -529,7 +529,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                                   ),
                                   title: Text(item['productName'] ?? ''),
                                   subtitle: Text(
-                                    'الرصيد: ${(item['currentStock'] as double).toStringAsFixed(0)}',
+                                    tr('الرصيد: {p0}', {'p0': (item['currentStock'] as double).toStringAsFixed(0)}),
                                     style: const TextStyle(
                                       fontSize: 11,
                                       color: AppColors.textMuted,
@@ -610,17 +610,17 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'الفروع التي يطبق فيها العرض',
-                                style: TextStyle(
+                               Text(
+                                tr('الفروع التي يطبق فيها العرض'),
+                                style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              const Text(
-                                'اتركها فارغة لتطبيق العرض على كل الفروع',
-                                style: TextStyle(
+                               Text(
+                                tr('اتركها فارغة لتطبيق العرض على كل الفروع'),
+                                style: const TextStyle(
                                   fontSize: 11,
                                   color: AppColors.textMuted,
                                 ),
@@ -655,7 +655,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                     }),
             ],
             primaryAction: PicPosDialogAction(
-              label: existingOffer == null ? 'إضافة' : 'حفظ',
+              label: existingOffer == null ? tr('إضافة') : tr('حفظ'),
               icon: PhosphorIconsBold.check,
               // ⚠️ `busy` تُغني عن مؤشّرِ التحميل المحقونِ في `child` — وهي
               //    التي تُعطّل الزرَّ أيضاً، فالقفلُ ضدّ الدوسة المزدوجة
@@ -668,7 +668,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                         if (nameController.text.trim().isEmpty) {
                           AppToast.show(
                             ctx,
-                            'يرجى إدخال اسم العرض',
+                            tr('يرجى إدخال اسم العرض'),
                             type: ToastType.warning,
                           );
                           return;
@@ -677,7 +677,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                         if (price == null || price <= 0) {
                           AppToast.show(
                             ctx,
-                            'يرجى إدخال سعر صحيح',
+                            tr('يرجى إدخال سعر صحيح'),
                             type: ToastType.warning,
                           );
                           return;
@@ -685,7 +685,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                         if (selectedItems.isEmpty) {
                           AppToast.show(
                             ctx,
-                            'يرجى إضافة أصناف للعرض',
+                            tr('يرجى إضافة أصناف للعرض'),
                             type: ToastType.warning,
                           );
                           return;
@@ -874,8 +874,8 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                             AppToast.show(
                               context,
                               existingOffer == null
-                                  ? 'تم إضافة العرض بنجاح'
-                                  : 'تم تحديث العرض بنجاح',
+                                  ? tr('تم إضافة العرض بنجاح')
+                                  : tr('تم تحديث العرض بنجاح'),
                               type: ToastType.success,
                             );
                           }
@@ -884,7 +884,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                           if (ctx.mounted) {
                             AppToast.show(
                               ctx,
-                              'خطأ: $e',
+                              tr('خطأ: {e}', {'e': e}),
                               type: ToastType.error,
                             );
                           }
@@ -914,8 +914,8 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
           textDirection: TextDirection.rtl,
           child: PicPosDialog(
             icon: PhosphorIconsBold.magnifyingGlass,
-            title: 'اختر صنف',
-            subtitle: 'امسح الباركودَ أو ابحث بالاسم',
+            title: tr('اختر صنف'),
+            subtitle: tr('امسح الباركودَ أو ابحث بالاسم'),
             width: 560,
             onCancel: () => Navigator.pop(ctx),
             // ⚠️ `scrollable: false` مقصودة: الجسمُ عمودٌ بارتفاعٍ ثابتٍ
@@ -933,7 +933,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                     controller: barcodeController,
                     autofocus: true,
                     decoration: InputDecoration(
-                      hintText: 'امسح أو اكتب الباركود...',
+                      hintText: tr('امسح أو اكتب الباركود...'),
                       prefixIcon: const Icon(PhosphorIconsBold.barcode),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -956,7 +956,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                           if (ctx.mounted) {
                             AppToast.show(
                               ctx,
-                              'الصنف مضاف مسبقاً',
+                              tr('الصنف مضاف مسبقاً'),
                               type: ToastType.warning,
                             );
                           }
@@ -972,7 +972,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                             Navigator.pop(ctx);
                             AppToast.show(
                               parentCtx,
-                              'تمت إضافة: ${product.name}',
+                              tr('تمت إضافة: {p0}', {'p0': product.name}),
                               type: ToastType.success,
                             );
                           }
@@ -981,7 +981,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                         if (ctx.mounted) {
                           AppToast.show(
                             ctx,
-                            'لم يتم العثور على صنف بالباركود: $barcode',
+                            tr('لم يتم العثور على صنف بالباركود: {barcode}', {'barcode': barcode}),
                             type: ToastType.error,
                           );
                         }
@@ -996,7 +996,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                   TextField(
                     controller: searchController,
                     decoration: InputDecoration(
-                      hintText: 'أو ابحث بالاسم...',
+                      hintText: tr('أو ابحث بالاسم...'),
                       prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -1030,10 +1030,10 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                             .toList();
 
                         if (products.isEmpty) {
-                          return const Center(
+                          return  Center(
                             child: Text(
-                              'لا توجد أصناف',
-                              style: TextStyle(color: AppColors.textMuted),
+                              tr('لا توجد أصناف'),
+                              style: const TextStyle(color: AppColors.textMuted),
                             ),
                           );
                         }
@@ -1046,7 +1046,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                               leading: const Icon(PhosphorIconsBold.package),
                               title: Text(product.name),
                               subtitle: Text(
-                                '${product.code} | الرصيد: ${product.currentStock.toStringAsFixed(0)}',
+                                tr('{p0} | الرصيد: {p1}', {'p0': product.code, 'p1': product.currentStock.toStringAsFixed(0)}),
                               ),
                               trailing: Text(
                                 '${product.salePrice.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',

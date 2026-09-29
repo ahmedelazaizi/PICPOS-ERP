@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -40,7 +41,7 @@ class WarehouseDropdown extends ConsumerWidget {
         return DropdownButtonFormField<int>(
           initialValue: filtered.any((w) => w.id == effectiveId) ? effectiveId : null,
           decoration: InputDecoration(
-            labelText: showLabel ? 'المخزن' : null,
+            labelText: showLabel ? tr('المخزن') : null,
             prefixIcon: const Icon(PhosphorIconsBold.warehouse, size: 20),
             border: const OutlineInputBorder(),
             isDense: true,
@@ -70,11 +71,11 @@ class WarehouseDropdown extends ConsumerWidget {
   String _warehouseTypeLabel(String type) {
     switch (type) {
       case 'raw_materials':
-        return 'خامات';
+        return tr('خامات');
       case 'finished_goods':
-        return 'منتج تام';
+        return tr('منتج تام');
       case 'retail':
-        return 'بيع';
+        return tr('بيع');
       default:
         return '';
     }

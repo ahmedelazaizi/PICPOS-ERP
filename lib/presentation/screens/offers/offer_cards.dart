@@ -64,14 +64,14 @@ class OfferCardActionsMenu extends ConsumerWidget {
         try {
           if (value == 'edit') {
             if (!canEditOffer(perms)) {
-              AppToast.show(context, 'ليس لديك صلاحية تعديل العروض',
+              AppToast.show(context, tr('ليس لديك صلاحية تعديل العروض'),
                   type: ToastType.error);
               return;
             }
             onEdit();
           } else if (value == 'delete') {
             if (!canDeleteOffer(perms)) {
-              AppToast.show(context, 'ليس لديك صلاحية حذف العروض',
+              AppToast.show(context, tr('ليس لديك صلاحية حذف العروض'),
                   type: ToastType.error);
               return;
             }
@@ -82,7 +82,7 @@ class OfferCardActionsMenu extends ConsumerWidget {
             // `isActive` بدل فتح الفورم كله)، فبيتحمي بنفس كود
             // `offers_edit` مش كود جديد.
             if (!canEditOffer(perms)) {
-              AppToast.show(context, 'ليس لديك صلاحية تعديل العروض',
+              AppToast.show(context, tr('ليس لديك صلاحية تعديل العروض'),
                   type: ToastType.error);
               return;
             }
@@ -92,18 +92,18 @@ class OfferCardActionsMenu extends ConsumerWidget {
           }
         } catch (e) {
           debugPrint('[OfferCards] Action error: $e');
-          AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+          AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
         }
       },
       position: PopupMenuPosition.under,
       itemBuilder: (ctx) => [
-        const PopupMenuItem(
+         PopupMenuItem(
           value: 'edit',
           child: Row(
             children: [
-              Icon(PhosphorIconsBold.pencil, size: 18, color: AppColors.info),
-              SizedBox(width: 8),
-              Text('تعديل'),
+              const Icon(PhosphorIconsBold.pencil, size: 18, color: AppColors.info),
+              const SizedBox(width: 8),
+              Text(tr('تعديل')),
             ],
           ),
         ),
@@ -117,27 +117,27 @@ class OfferCardActionsMenu extends ConsumerWidget {
                 color: AppColors.warning,
               ),
               const SizedBox(width: 8),
-              Text(offerIsActive ? 'إيقاف' : 'تفعيل'),
+              Text(offerIsActive ? tr('إيقاف') : tr('تفعيل')),
             ],
           ),
         ),
-        const PopupMenuItem(
+         PopupMenuItem(
           value: 'print_barcode',
           child: Row(
             children: [
-              Icon(PhosphorIconsBold.barcode, size: 18, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('طباعة باركود'),
+              const Icon(PhosphorIconsBold.barcode, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(tr('طباعة باركود')),
             ],
           ),
         ),
-        const PopupMenuItem(
+         PopupMenuItem(
           value: 'delete',
           child: Row(
             children: [
-              Icon(PhosphorIconsBold.trash, size: 18, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('حذف'),
+              const Icon(PhosphorIconsBold.trash, size: 18, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('حذف')),
             ],
           ),
         ),
@@ -161,16 +161,16 @@ mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
     String statusText;
     Color statusColor;
     if (!offer.isActive) {
-      statusText = 'غير فعال';
+      statusText = tr('غير فعال');
       statusColor = AppColors.textMuted;
     } else if (isExpired) {
-      statusText = 'منتهي';
+      statusText = tr('منتهي');
       statusColor = AppColors.error;
     } else if (isNotStarted) {
-      statusText = 'لم يبدأ';
+      statusText = tr('لم يبدأ');
       statusColor = AppColors.info;
     } else {
-      statusText = 'فعال';
+      statusText = tr('فعال');
       statusColor = AppColors.success;
     }
 
@@ -280,9 +280,9 @@ mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
             // Price
             Row(
               children: [
-                const Text(
-                  'سعر العرض: ',
-                  style: TextStyle(color: AppColors.textMuted),
+                 Text(
+                  tr('سعر العرض: '),
+                  style: const TextStyle(color: AppColors.textMuted),
                 ),
                 Text(
                   '${offer.offerPrice.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
@@ -338,7 +338,7 @@ mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${items.length} أصناف في العرض',
+                            tr('{p0} أصناف في العرض', {'p0': items.length}),
                             style: const TextStyle(
                               fontSize: 12,
                               color: AppColors.textMuted,
@@ -375,7 +375,7 @@ mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
                                         Expanded(
                                           child: Text(
                                             product?.name ??
-                                                'صنف #${item.productId}',
+                                                tr('صنف #{p0}', {'p0': item.productId}),
                                             style: const TextStyle(
                                               fontSize: 12,
                                             ),
@@ -399,7 +399,7 @@ mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
                         ),
                       if (items.length > 3)
                         Text(
-                          '+${items.length - 3} أصناف أخرى',
+                          tr('+{p0} أصناف أخرى', {'p0': items.length - 3}),
                           style: const TextStyle(
                             fontSize: 11,
                             color: AppColors.textMuted,
@@ -417,12 +417,12 @@ mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
   }
 
   String formatDateRange(DateTime? start, DateTime? end) {
-    if (start == null && end == null) return 'غير محدد';
+    if (start == null && end == null) return tr('غير محدد');
     if (start != null && end == null) {
-      return 'يبدأ ${start.day}/${start.month}/${start.year}';
+      return tr('يبدأ {p0}/{p1}/{p2}', {'p0': start.day, 'p1': start.month, 'p2': start.year});
     }
     if (start == null && end != null) {
-      return 'ينتهي ${end.day}/${end.month}/${end.year}';
+      return tr('ينتهي {p0}/{p1}/{p2}', {'p0': end.day, 'p1': end.month, 'p2': end.year});
     }
     return '${start!.day}/${start.month} - ${end!.day}/${end.month}/${end.year}';
   }
@@ -450,23 +450,23 @@ mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('حذف العرض'),
+              const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('حذف العرض')),
             ],
           ),
-          content: Text('هل أنت متأكد من حذف العرض "${offer.name}"؟'),
+          content: Text(tr('هل أنت متأكد من حذف العرض "{p0}"؟', {'p0': offer.name})),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('حذف'),
+              child:  Text(tr('حذف')),
             ),
           ],
         ),
@@ -488,7 +488,7 @@ mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
         debugPrint('[ActivityLog] Error: $e');
       }
       if (mounted) {
-        AppToast.show(context, 'تم حذف العرض', type: ToastType.success);
+        AppToast.show(context, tr('تم حذف العرض'), type: ToastType.success);
       }
     }
   }
@@ -498,7 +498,7 @@ mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
       if (mounted) {
         AppToast.show(
           context,
-          'لا يوجد باركود مسجل لهذا العرض',
+          tr('لا يوجد باركود مسجل لهذا العرض'),
           type: ToastType.warning,
         );
       }
@@ -511,20 +511,20 @@ mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.printer, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('طباعة باركود العرض'),
+              const Icon(PhosphorIconsBold.printer, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(tr('طباعة باركود العرض')),
             ],
           ),
           content: TextField(
             controller: copiesController,
             keyboardType: TextInputType.number,
             autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'عدد النسخ',
-              prefixIcon: Icon(PhosphorIconsBold.copy),
+            decoration:  InputDecoration(
+              labelText: tr('عدد النسخ'),
+              prefixIcon: const Icon(PhosphorIconsBold.copy),
             ),
             onSubmitted: (_) =>
                 Navigator.pop(ctx, int.tryParse(copiesController.text) ?? 1),
@@ -532,12 +532,12 @@ mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () =>
                   Navigator.pop(ctx, int.tryParse(copiesController.text) ?? 1),
-              child: const Text('طباعة'),
+              child:  Text(tr('طباعة')),
             ),
           ],
         ),
@@ -559,24 +559,24 @@ mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
         final activityLogRepo = ref.read(activityLogRepositoryProvider);
         await activityLogRepo.logActivity(
           userId: user?.id,
-          userName: user?.displayName ?? 'مستخدم',
+          userName: user?.displayName ?? tr('مستخدم'),
           action: 'offer_print',
           entityType: 'offer',
           entityId: offer.id,
-          description: 'طباعة باركود عرض: ${offer.name} — $copies نسخة',
+          description: tr('طباعة باركود عرض: {p0} — {copies} نسخة', {'p0': offer.name, 'copies': copies}),
         );
       } catch (_) {}
 
       if (mounted) {
         AppToast.show(
           context,
-          'تم إرسال $copies نسخة للطباعة',
+          tr('تم إرسال {copies} نسخة للطباعة', {'copies': copies}),
           type: ToastType.success,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }

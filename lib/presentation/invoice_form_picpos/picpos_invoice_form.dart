@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ «فاتورة جديدة» بهوية PicPos — مبيعاتٍ ومشترياتٍ بنمطٍ واحد.
 //
 // المصدر: تصميمُ Claude Design «تصميم شاشات فواتير PicPos»، شاشتا
@@ -452,11 +453,11 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
   /// الترتيبُ مقصود: المخزنُ أوّلاً لأن غيابَه كان يمرّ صامتاً في النموذج
   /// القائم (`warehouseId ?? 1` كان يخترع المخزنَ رقم ١).
   String? _blockingReason() {
-    if (_warehouseId == null) return 'يجب اختيار المخزن قبل حفظ الفاتورة';
-    if (_partyId == null) return 'يجب اختيار ${widget.kind.partyLabel}';
-    if (_lines.isEmpty) return 'أضف صنفاً واحداً على الأقل';
+    if (_warehouseId == null) return tr('يجب اختيار المخزن قبل حفظ الفاتورة');
+    if (_partyId == null) return tr('يجب اختيار {p0}', {'p0': widget.kind.partyLabel});
+    if (_lines.isEmpty) return tr('أضف صنفاً واحداً على الأقل');
     if (_supplierInvoiceMissing) {
-      return 'أدخل رقم فاتورة المورد قبل الحفظ — مطلوب للمطابقة الضريبية';
+      return tr('أدخل رقم فاتورة المورد قبل الحفظ — مطلوب للمطابقة الضريبية');
     }
     return null;
   }
@@ -504,7 +505,7 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
     final cb = widget.onPreviewA4;
     if (cb == null) return;
     if (_lines.isEmpty) {
-      _toast('أضف صنفاً واحداً على الأقل قبل المعاينة');
+      _toast(tr('أضف صنفاً واحداً على الأقل قبل المعاينة'));
       return;
     }
     final t = _totals;
@@ -535,7 +536,7 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
     // تُطلَب لها المخزنُ ولا رقمُ فاتورةِ المورد. لكنّ سطراً واحداً على
     // الأقلّ شرطٌ باقٍ — مسودّةٌ فارغةٌ لا تعني شيئاً.
     if (_lines.isEmpty) {
-      _toast('أضف صنفاً واحداً على الأقل');
+      _toast(tr('أضف صنفاً واحداً على الأقل'));
       return;
     }
     final t = _totals;
@@ -651,7 +652,7 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
     final picked = await showDialog<int>(
       context: context,
       builder: (ctx) => _SearchPickerDialog(
-        title: 'اختر أمر شراء',
+        title: tr('اختر أمر شراء'),
         items: [
           for (final o in widget.purchaseOrders)
             (id: o.id, title: o.orderNumber, subtitle: o.subtitle),
@@ -664,17 +665,17 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
       final replace = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('استبدال البنود؟'),
+          title:  Text(tr('استبدال البنود؟')),
           content: const Text(
               'بنودُ أمر الشراء ستحلّ محلَّ البنود الحالية — لأنّ الأمرَ '
               'يُستهلَك كاملاً بهذه الفاتورة.'),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('إلغاء')),
+                child:  Text(tr('إلغاء'))),
             FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('استبدال')),
+                child:  Text(tr('استبدال'))),
           ],
         ),
       );
@@ -736,7 +737,7 @@ class _PicPosDocBar extends StatelessWidget {
       _field(
         context,
         icon: PhosphorIconsBold.calendarBlank,
-        label: 'التاريخ والوقت',
+        label: tr('التاريخ والوقت'),
         value: '${state._date.toString().substring(0, 10)} · '
             '${state._date.hour.toString().padLeft(2, '0')}:'
             '${state._date.minute.toString().padLeft(2, '0')}',
@@ -756,7 +757,7 @@ class _PicPosDocBar extends StatelessWidget {
       _field(
         context,
         icon: PhosphorIconsBold.hash,
-        label: 'رقم الفاتورة',
+        label: tr('رقم الفاتورة'),
         value: w.invoiceNumberPreview,
         // مقفولٌ كما في التصميم: الرقمُ يولّده الخادمُ تسلسليّاً، وحقلٌ
         // يقبل تحريراً ثمّ يُتجاهَل أسوأُ من حقلٍ مقفول.
@@ -769,7 +770,7 @@ class _PicPosDocBar extends StatelessWidget {
         _field(
           context,
           icon: PhosphorIconsBold.user,
-          label: 'البائع',
+          label: tr('البائع'),
           value: w.userName,
           // بلا سهمٍ: عرضٌ لا اختيار (اقرأ `userName` في الودجت).
           trailing: null,
@@ -785,10 +786,10 @@ class _PicPosDocBar extends StatelessWidget {
       _field(
         context,
         icon: PhosphorIconsBold.buildings,
-        label: 'الفرع',
+        label: tr('الفرع'),
         value: state._selectedWarehouse == null
-            ? 'يتبع المخزن'
-            : (state._selectedWarehouse!.branchName ?? 'غير مخصّص لفرع'),
+            ? tr('يتبع المخزن')
+            : (state._selectedWarehouse!.branchName ?? tr('غير مخصّص لفرع')),
         trailing: PhosphorIconsBold.lockSimple,
         // ⚠️ مخزنٌ بلا فرعٍ ليس عطباً في العرض: المستندُ يُختَم
         //    `branch_id = NULL` فيسقط من كلّ تقريرٍ مرشَّحٍ بفرع. وقولُ ذلك
@@ -801,17 +802,17 @@ class _PicPosDocBar extends StatelessWidget {
       _field(
         context,
         icon: PhosphorIconsBold.warehouse,
-        label: 'المخزن',
+        label: tr('المخزن'),
         value: w.warehouses
                 .where((x) => x.id == state._warehouseId)
                 .firstOrNull
                 ?.name ??
-            'اختر',
+            tr('اختر'),
         trailing: PhosphorIconsBold.caretDown,
         valueColor: state._warehouseId == null ? AppColors.error : null,
         onTap: () => _pick(
           context,
-          title: 'المخزن',
+          title: tr('المخزن'),
           options: w.warehouses,
           selected: state._warehouseId,
           onPick: (id) => state.setState(() => state._warehouseId = id),
@@ -820,16 +821,16 @@ class _PicPosDocBar extends StatelessWidget {
       _field(
         context,
         icon: PhosphorIconsBold.crosshair,
-        label: 'مركز التكلفة',
+        label: tr('مركز التكلفة'),
         value: w.costCenters
                 .where((x) => x.id == state._costCenterId)
                 .firstOrNull
                 ?.name ??
-            'بلا',
+            tr('بلا'),
         trailing: PhosphorIconsBold.caretDown,
         onTap: () => _pick(
           context,
-          title: 'مركز التكلفة',
+          title: tr('مركز التكلفة'),
           options: w.costCenters,
           selected: state._costCenterId,
           onPick: (id) => state.setState(() => state._costCenterId = id),
@@ -886,7 +887,7 @@ class _PicPosDocBar extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  party?.initials ?? '؟',
+                  party?.initials ?? tr('؟'),
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
@@ -909,7 +910,7 @@ class _PicPosDocBar extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      party?.name ?? 'اختر ${state.widget.kind.partyLabel}',
+                      party?.name ?? tr('اختر {p0}', {'p0': state.widget.kind.partyLabel}),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -960,7 +961,7 @@ class _PicPosDocBar extends StatelessWidget {
               const SizedBox(width: 5),
               Flexible(
                 child: Text(
-                  'رقم فاتورة المورد',
+                  tr('رقم فاتورة المورد'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -981,7 +982,7 @@ class _PicPosDocBar extends StatelessWidget {
               isDense: true,
               contentPadding: EdgeInsets.zero,
               border: InputBorder.none,
-              hintText: 'مطلوب',
+              hintText: tr('مطلوب'),
               hintStyle: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w700,
@@ -1064,7 +1065,7 @@ class _PicPosDocBar extends StatelessWidget {
     final picked = await showDialog<int>(
       context: context,
       builder: (ctx) => _SearchPickerDialog(
-        title: 'اختر ${w.kind.partyLabel}',
+        title: tr('اختر {p0}', {'p0': w.kind.partyLabel}),
         items: [
           for (final p in w.parties)
             (id: p.id, title: p.name, subtitle: p.meta),
@@ -1084,7 +1085,7 @@ class _PicPosDocBar extends StatelessWidget {
     final picked = await showDialog<int>(
       context: context,
       builder: (ctx) => _SearchPickerDialog(
-        title: 'اختر $title',
+        title: tr('اختر {title}', {'title': title}),
         items: [
           for (final o in options) (id: o.id, title: o.name, subtitle: ''),
         ],
@@ -1161,7 +1162,7 @@ class _SearchPickerDialogState extends State<_SearchPickerDialog> {
                   autofocus: true,
                   onChanged: (v) => setState(() => _q = v),
                   decoration: InputDecoration(
-                    hintText: 'بحث...',
+                    hintText: tr('بحث...'),
                     isDense: true,
                     prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass,
                         size: 15, color: muted),
@@ -1176,7 +1177,7 @@ class _SearchPickerDialogState extends State<_SearchPickerDialog> {
                 child: items.isEmpty
                     ? Padding(
                         padding: const EdgeInsets.all(24),
-                        child: Text('لا نتائج',
+                        child: Text(tr('لا نتائج'),
                             style: TextStyle(color: muted)),
                       )
                     : ListView.builder(

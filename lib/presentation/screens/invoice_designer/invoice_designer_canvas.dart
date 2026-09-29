@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../data/database/database.dart';
@@ -113,9 +114,9 @@ class InvoiceDesignerCanvas extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                             ),
-                            child: const Text(
-                              'أفلت هنا لإضافة العنصر',
-                              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                            child:  Text(
+                              tr('أفلت هنا لإضافة العنصر'),
+                              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
                             ),
                           ),
                         ),
@@ -145,10 +146,10 @@ class InvoiceDesignerCanvas extends StatelessWidget {
     final detailsEnd = canvasHeight * 0.70;   // ~70%
 
     final sections = [
-      _SectionInfo('الرأس (Header)', 0, headerEnd, const Color(0x0A2196F3)),
-      _SectionInfo('المحتوى (Body)', headerEnd, detailsStart, const Color(0x0A4CAF50)),
-      _SectionInfo('التفاصيل (Details)', detailsStart, detailsEnd, const Color(0x0AFF9800)),
-      _SectionInfo('التذييل (Footer)', detailsEnd, canvasHeight, const Color(0x0A9C27B0)),
+      _SectionInfo(tr('الرأس (Header)'), 0, headerEnd, const Color(0x0A2196F3)),
+      _SectionInfo(tr('المحتوى (Body)'), headerEnd, detailsStart, const Color(0x0A4CAF50)),
+      _SectionInfo(tr('التفاصيل (Details)'), detailsStart, detailsEnd, const Color(0x0AFF9800)),
+      _SectionInfo(tr('التذييل (Footer)'), detailsEnd, canvasHeight, const Color(0x0A9C27B0)),
     ];
 
     final widgets = <Widget>[];
@@ -233,8 +234,8 @@ class InvoiceDesignerCanvas extends StatelessWidget {
               Container(
                 height: 30,
                 color: Colors.grey.shade300,
-                child: const Center(
-                  child: Text('جدول الأصناف (اسحب للتحريك)', style: TextStyle(fontSize: 10)),
+                child:  Center(
+                  child: Text(tr('جدول الأصناف (اسحب للتحريك)'), style: const TextStyle(fontSize: 10)),
                 ),
               ),
               for (int i = 0; i < 3; i++)
@@ -435,76 +436,76 @@ class InvoiceDesignerCanvas extends StatelessWidget {
       final label = element.labelAr ?? element.labelEn ?? '';
       switch (element.elementType) {
         case 'logo':
-          return '🏪 شعار الشركة';
+          return tr('🏪 شعار الشركة');
         case 'company_name':
-          return '🏢 اسم الشركة';
+          return tr('🏢 اسم الشركة');
         case 'company_address':
-          return '📍 عنوان الشركة';
+          return tr('📍 عنوان الشركة');
         case 'company_phone':
-          return '📞 هاتف الشركة';
+          return tr('📞 هاتف الشركة');
         case 'invoice_number':
-          return label.isNotEmpty ? '$label: 123456' : 'رقم الفاتورة: 123456';
+          return label.isNotEmpty ? '$label: 123456' : tr('رقم الفاتورة: 123456');
         case 'date':
-          return label.isNotEmpty ? '$label: 2026/01/01' : 'التاريخ: 2026/01/01';
+          return label.isNotEmpty ? '$label: 2026/01/01' : tr('التاريخ: 2026/01/01');
         case 'time':
-          return label.isNotEmpty ? '$label: 12:00' : 'الوقت: 12:00';
+          return label.isNotEmpty ? '$label: 12:00' : tr('الوقت: 12:00');
         case 'customer':
-          return label.isNotEmpty ? '$label: عميل نقدي' : 'العميل: عميل نقدي';
+          return label.isNotEmpty ? tr('{label}: عميل نقدي', {'label': label}) : tr('العميل: عميل نقدي');
         case 'cashier_name':
-          return label.isNotEmpty ? '$label: اسم الكاشير' : 'الكاشير: اسم الكاشير';
+          return label.isNotEmpty ? tr('{label}: اسم الكاشير', {'label': label}) : tr('الكاشير: اسم الكاشير');
         case 'subtotal':
-          return label.isNotEmpty ? '$label: 100.00' : 'المجموع الفرعي: 100.00';
+          return label.isNotEmpty ? '$label: 100.00' : tr('المجموع الفرعي: 100.00');
         case 'discount':
-          return label.isNotEmpty ? '$label: 10.00' : 'الخصم: 10.00';
+          return label.isNotEmpty ? '$label: 10.00' : tr('الخصم: 10.00');
         case 'tax':
-          return label.isNotEmpty ? '$label: 14.00' : 'الضريبة: 14.00';
+          return label.isNotEmpty ? '$label: 14.00' : tr('الضريبة: 14.00');
         case 'total':
-          return label.isNotEmpty ? '$label: 104.00' : 'الإجمالي: 104.00';
+          return label.isNotEmpty ? '$label: 104.00' : tr('الإجمالي: 104.00');
         case 'paid':
-          return label.isNotEmpty ? '$label: 104.00' : 'المدفوع: 104.00';
+          return label.isNotEmpty ? '$label: 104.00' : tr('المدفوع: 104.00');
         case 'remaining':
-          return label.isNotEmpty ? '$label: 0.00' : 'المتبقي: 0.00';
+          return label.isNotEmpty ? '$label: 0.00' : tr('المتبقي: 0.00');
         case 'payment_method':
-          return label.isNotEmpty ? '$label: نقدي' : 'طريقة الدفع: نقدي';
+          return label.isNotEmpty ? tr('{label}: نقدي', {'label': label}) : tr('طريقة الدفع: نقدي');
         case 'notes':
-          return label.isNotEmpty ? '$label: ملاحظات' : 'ملاحظات: ملاحظات الفاتورة';
+          return label.isNotEmpty ? tr('{label}: ملاحظات', {'label': label}) : tr('ملاحظات: ملاحظات الفاتورة');
         case 'adhoc_customer_name':
-          return label.isNotEmpty ? '$label: اسم نصي' : 'اسم العميل النصي: اسم نصي';
+          return label.isNotEmpty ? tr('{label}: اسم نصي', {'label': label}) : tr('اسم العميل النصي: اسم نصي');
         case 'adhoc_customer_phone':
-          return label.isNotEmpty ? '$label: 01099999999' : 'هاتف العميل النصي: 01099999999';
+          return label.isNotEmpty ? '$label: 01099999999' : tr('هاتف العميل النصي: 01099999999');
         // New fields
         case 'item_additions':
-          return label.isNotEmpty ? '$label: كاتشب، مايونيز' : 'الإضافات: كاتشب، مايونيز';
+          return label.isNotEmpty ? tr('{label}: كاتشب، مايونيز', {'label': label}) : tr('الإضافات: كاتشب، مايونيز');
         case 'item_options':
-          return label.isNotEmpty ? '$label: قليل بندورة' : 'الخيارات: قليل بندورة، كثير جبنة';
+          return label.isNotEmpty ? tr('{label}: قليل بندورة', {'label': label}) : tr('الخيارات: قليل بندورة، كثير جبنة');
         case 'tax_registration':
-          return label.isNotEmpty ? '$label: 123-456-789' : 'الرقم الضريبي: 123-456-789';
+          return label.isNotEmpty ? '$label: 123-456-789' : tr('الرقم الضريبي: 123-456-789');
         case 'courier_name':
-          return label.isNotEmpty ? '$label: مندوب' : 'المندوب: اسم المندوب';
+          return label.isNotEmpty ? tr('{label}: مندوب', {'label': label}) : tr('المندوب: اسم المندوب');
         case 'shift_number':
-          return label.isNotEmpty ? '$label: 1' : 'رقم الوردية: 1';
+          return label.isNotEmpty ? '$label: 1' : tr('رقم الوردية: 1');
         case 'customer_name':
-          return label.isNotEmpty ? '$label: عميل نقدي' : 'اسم العميل: عميل نقدي';
+          return label.isNotEmpty ? tr('{label}: عميل نقدي', {'label': label}) : tr('اسم العميل: عميل نقدي');
         case 'customer_phone':
-          return label.isNotEmpty ? '$label: 01099999999' : 'هاتف العميل: 01099999999';
+          return label.isNotEmpty ? '$label: 01099999999' : tr('هاتف العميل: 01099999999');
         case 'customer_address':
-          return label.isNotEmpty ? '$label: العنوان' : 'عنوان العميل: القاهرة';
+          return label.isNotEmpty ? tr('{label}: العنوان', {'label': label}) : tr('عنوان العميل: القاهرة');
         case 'barcode':
-          return '||||| باركود |||||';
+          return tr('||||| باركود |||||');
         case 'qr_code':
           return '⬛ QR ⬛';
         case 'footer':
-          return element.content ?? 'شكراً لزيارتكم';
+          return element.content ?? tr('شكراً لزيارتكم');
         case 'order_number':
-          return label.isNotEmpty ? '$label: 001' : 'رقم الطلب: 001';
+          return label.isNotEmpty ? '$label: 001' : tr('رقم الطلب: 001');
         case 'table_number':
-          return label.isNotEmpty ? '$label: 5' : 'رقم الطاولة: 5';
+          return label.isNotEmpty ? '$label: 5' : tr('رقم الطاولة: 5');
         case 'supplier_name':
-          return label.isNotEmpty ? '$label: المورد' : 'المورد: اسم المورد';
+          return label.isNotEmpty ? tr('{label}: المورد', {'label': label}) : tr('المورد: اسم المورد');
         case 'text':
-          return element.content ?? 'نص';
+          return element.content ?? tr('نص');
         case 'variable':
-          return '{${element.content ?? 'متغير'}}';
+          return tr('{{p0}}', {'p0': element.content ?? 'متغير'});
         default:
           return element.content ?? element.elementType;
       }
@@ -536,7 +537,7 @@ class InvoiceDesignerCanvas extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.image, color: Colors.grey.shade400, size: 24),
-                Text('شعار', style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+                Text(tr('شعار'), style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
               ],
             ),
           ),

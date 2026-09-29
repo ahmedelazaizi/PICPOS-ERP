@@ -21,25 +21,25 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
         textDirection: TextDirection.rtl,
         child: StatefulBuilder(
           builder: (ctx, setDialogState) => AlertDialog(
-            title: const Row(
+            title:  Row(
               children: [
-                Icon(PhosphorIconsBold.layout, color: AppColors.primary),
-                SizedBox(width: 8),
-                Text('إضافة قسم جديد'),
+                const Icon(PhosphorIconsBold.layout, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(tr('إضافة قسم جديد')),
               ],
             ),
             content: TextField(
               controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'اسم القسم (مثلاً: الصالة)',
-                prefixIcon: Icon(PhosphorIconsBold.textT),
+              decoration:  InputDecoration(
+                labelText: tr('اسم القسم (مثلاً: الصالة)'),
+                prefixIcon: const Icon(PhosphorIconsBold.textT),
               ),
               autofocus: true,
             ),
             actions: [
               TextButton(
                 onPressed: _savingSection ? null : () => Navigator.pop(ctx),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: _savingSection
@@ -54,10 +54,10 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                               ref.read(activityLogRepositoryProvider);
                           await activityLogRepo.logActivity(
                             userId: user?.id,
-                            userName: user?.displayName ?? 'مجهول',
+                            userName: user?.displayName ?? tr('مجهول'),
                             action: 'add_section',
                             entityType: 'table_section',
-                            description: 'إضافة قسم: ${nameController.text.trim()}',
+                            description: tr('إضافة قسم: {p0}', {'p0': nameController.text.trim()}),
                           );
                           if (ctx.mounted) Navigator.pop(ctx);
                         } finally {
@@ -70,7 +70,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('إضافة'),
+                    :  Text(tr('إضافة')),
               ),
             ],
           ),
@@ -85,11 +85,11 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.pencilSimple, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('إدارة الأقسام'),
+              const Icon(PhosphorIconsBold.pencilSimple, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(tr('إدارة الأقسام')),
             ],
           ),
           content: SizedBox(
@@ -100,7 +100,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
               builder: (context, snapshot) {
                 final sections = snapshot.data ?? [];
                 if (sections.isEmpty) {
-                  return const Center(child: Text('لا توجد أقسام'));
+                  return  Center(child: Text(tr('لا توجد أقسام')));
                 }
                 return ListView.separated(
                   itemCount: sections.length,
@@ -152,11 +152,11 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
             TextButton.icon(
               onPressed: () => _showAddSectionDialog(ctx, restaurantRepo),
               icon: const Icon(PhosphorIconsBold.plus, size: 18),
-              label: const Text('إضافة قسم'),
+              label:  Text(tr('إضافة قسم')),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -176,19 +176,19 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
         textDirection: TextDirection.rtl,
         child: StatefulBuilder(
           builder: (ctx, setDialogState) => AlertDialog(
-            title: const Text('تعديل القسم'),
+            title:  Text(tr('تعديل القسم')),
             content: TextField(
               controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'اسم القسم',
-                prefixIcon: Icon(PhosphorIconsBold.textT),
+              decoration:  InputDecoration(
+                labelText: tr('اسم القسم'),
+                prefixIcon: const Icon(PhosphorIconsBold.textT),
               ),
               autofocus: true,
             ),
             actions: [
               TextButton(
                 onPressed: _savingSection ? null : () => Navigator.pop(ctx),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: _savingSection
@@ -207,11 +207,11 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                               ref.read(activityLogRepositoryProvider);
                           await activityLogRepo.logActivity(
                             userId: user?.id,
-                            userName: user?.displayName ?? 'مجهول',
+                            userName: user?.displayName ?? tr('مجهول'),
                             action: 'update_section',
                             entityType: 'table_section',
                             entityId: section.id,
-                            description: 'تعديل قسم: ${nameController.text.trim()}',
+                            description: tr('تعديل قسم: {p0}', {'p0': nameController.text.trim()}),
                             oldValue: oldName,
                             newValue: nameController.text.trim(),
                           );
@@ -226,7 +226,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('حفظ'),
+                    :  Text(tr('حفظ')),
               ),
             ],
           ),
@@ -246,23 +246,23 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('حذف القسم'),
+              const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('حذف القسم')),
             ],
           ),
-          content: Text('هل أنت متأكد من حذف قسم "${section.name}"؟'),
+          content: Text(tr('هل أنت متأكد من حذف قسم "{p0}"؟', {'p0': section.name})),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('حذف'),
+              child:  Text(tr('حذف')),
             ),
           ],
         ),
@@ -276,18 +276,18 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
         final activityLogRepo = ref.read(activityLogRepositoryProvider);
         await activityLogRepo.logActivity(
           userId: user?.id,
-          userName: user?.displayName ?? 'مجهول',
+          userName: user?.displayName ?? tr('مجهول'),
           action: 'delete_section',
           entityType: 'table_section',
           entityId: section.id,
-          description: 'حذف قسم: ${section.name}',
+          description: tr('حذف قسم: {p0}', {'p0': section.name}),
         );
         if (context.mounted) {
-          AppToast.show(context, 'تم حذف القسم بنجاح', type: ToastType.success);
+          AppToast.show(context, tr('تم حذف القسم بنجاح'), type: ToastType.success);
         }
       } catch (e) {
         if (context.mounted) {
-          AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+          AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
         }
       }
     }
@@ -343,7 +343,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                   color: AppColors.info,
                 ),
                 const SizedBox(width: 8),
-                Text(existingTable == null ? 'إضافة طاولة' : 'تعديل الطاولة'),
+                Text(existingTable == null ? tr('إضافة طاولة') : tr('تعديل الطاولة')),
               ],
             ),
             content: SizedBox(
@@ -357,9 +357,9 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                       final sections = snapshot.data ?? [];
                       return DropdownButtonFormField<int>(
                         initialValue: selectedSectionId,
-                        decoration: const InputDecoration(
-                          labelText: 'القسم',
-                          prefixIcon: Icon(PhosphorIconsBold.layout),
+                        decoration:  InputDecoration(
+                          labelText: tr('القسم'),
+                          prefixIcon: const Icon(PhosphorIconsBold.layout),
                         ),
                         items: sections
                             .map(
@@ -377,19 +377,19 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                   const SizedBox(height: 16),
                   TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'اسم الطاولة *',
-                      prefixIcon: Icon(PhosphorIconsBold.textT),
+                    decoration:  InputDecoration(
+                      labelText: tr('اسم الطاولة *'),
+                      prefixIcon: const Icon(PhosphorIconsBold.textT),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: capacityController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'السعة',
-                      prefixIcon: Icon(PhosphorIconsBold.users),
-                      suffixText: 'أشخاص',
+                    decoration:  InputDecoration(
+                      labelText: tr('السعة'),
+                      prefixIcon: const Icon(PhosphorIconsBold.users),
+                      suffixText: tr('أشخاص'),
                     ),
                   ),
                   if (existingTable == null) ...[
@@ -397,10 +397,10 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                     TextField(
                       controller: countController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'عدد الطاولات',
-                        prefixIcon: Icon(PhosphorIconsBold.stack),
-                        hintText: 'أدخل 1 لطاولة واحدة أو أكثر لإضافة دفعة',
+                      decoration:  InputDecoration(
+                        labelText: tr('عدد الطاولات'),
+                        prefixIcon: const Icon(PhosphorIconsBold.stack),
+                        hintText: tr('أدخل 1 لطاولة واحدة أو أكثر لإضافة دفعة'),
                       ),
                     ),
                   ],
@@ -410,7 +410,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
             actions: [
               TextButton(
                 onPressed: _savingTable ? null : () => Navigator.pop(ctx),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: _savingTable
@@ -419,7 +419,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                         if (nameController.text.trim().isEmpty) {
                           AppToast.show(
                             ctx,
-                            'يرجى إدخال اسم الطاولة',
+                            tr('يرجى إدخال اسم الطاولة'),
                             type: ToastType.warning,
                           );
                           return;
@@ -440,7 +440,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                         if (chosenSectionId == null) {
                           AppToast.show(
                             ctx,
-                            'يرجى اختيار القسم',
+                            tr('يرجى اختيار القسم'),
                             type: ToastType.warning,
                           );
                           return;
@@ -466,12 +466,12 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
 
                             await activityLogRepo.logActivity(
                               userId: user?.id,
-                              userName: user?.displayName ?? 'مجهول',
+                              userName: user?.displayName ?? tr('مجهول'),
                               action: 'add_table',
                               entityType: 'restaurant_table',
                               description: count > 1
-                                  ? 'إضافة $count طاولات: $baseName (سعة: $capacity)'
-                                  : 'إضافة طاولة: $baseName (سعة: $capacity)',
+                                  ? tr('إضافة {count} طاولات: {baseName} (سعة: {capacity})', {'count': count, 'baseName': baseName, 'capacity': capacity})
+                                  : tr('إضافة طاولة: {baseName} (سعة: {capacity})', {'baseName': baseName, 'capacity': capacity}),
                             );
                           } else {
                             await restaurantRepo.updateTable(
@@ -485,11 +485,11 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                                 ref.read(activityLogRepositoryProvider);
                             await activityLogRepo.logActivity(
                               userId: user?.id,
-                              userName: user?.displayName ?? 'مجهول',
+                              userName: user?.displayName ?? tr('مجهول'),
                               action: 'update_table',
                               entityType: 'restaurant_table',
                               entityId: existingTable.id,
-                              description: 'تعديل طاولة: ${nameController.text.trim()}',
+                              description: tr('تعديل طاولة: {p0}', {'p0': nameController.text.trim()}),
                               oldValue: existingTable.name,
                               newValue: nameController.text.trim(),
                             );
@@ -512,7 +512,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                           color: Colors.white,
                         ),
                       )
-                    : Text(existingTable == null ? 'إضافة' : 'حفظ'),
+                    : Text(existingTable == null ? tr('إضافة') : tr('حفظ')),
               ),
             ],
           ),
@@ -531,8 +531,8 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
       AppToast.show(
         context,
         table.status == 'billing'
-            ? 'لا يمكن حذف طاولة بانتظار الدفع'
-            : 'لا يمكن حذف طاولة مشغولة',
+            ? tr('لا يمكن حذف طاولة بانتظار الدفع')
+            : tr('لا يمكن حذف طاولة مشغولة'),
         type: ToastType.error,
       );
       return;
@@ -547,7 +547,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                 if (!mounted) return;
         AppToast.show(
                     context,
-          'لا يمكن حذف طاولة بها طلبات نشطة',
+          tr('لا يمكن حذف طاولة بها طلبات نشطة'),
           type: ToastType.error,
         );
         return;
@@ -563,23 +563,23 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('حذف الطاولة'),
+              const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('حذف الطاولة')),
             ],
           ),
-          content: Text('هل أنت متأكد من حذف "${table.name}"؟'),
+          content: Text(tr('هل أنت متأكد من حذف "{p0}"؟', {'p0': table.name})),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('حذف'),
+              child:  Text(tr('حذف')),
             ),
           ],
         ),
@@ -593,15 +593,15 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
       final activityLogRepo = ref.read(activityLogRepositoryProvider);
       await activityLogRepo.logActivity(
         userId: user?.id,
-        userName: user?.displayName ?? 'مجهول',
+        userName: user?.displayName ?? tr('مجهول'),
         action: 'delete_table',
         entityType: 'restaurant_table',
         entityId: table.id,
-        description: 'حذف طاولة: ${table.name}',
+        description: tr('حذف طاولة: {p0}', {'p0': table.name}),
       );
             if (!mounted) return;
       if (context.mounted) {
-                AppToast.show(context, 'تم حذف الطاولة', type: ToastType.success);
+                AppToast.show(context, tr('تم حذف الطاولة'), type: ToastType.success);
       }
     }
   }

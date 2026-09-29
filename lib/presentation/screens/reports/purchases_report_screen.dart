@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -91,9 +92,9 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
@@ -102,7 +103,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
       _loadData();
       try {
         final user = ref.read(authProvider).user;
-        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? 'مجهول', 'تقرير المشتريات');
+        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('تقرير المشتريات'));
       } catch (_) {}
     });
   }
@@ -227,7 +228,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
       return Directionality(
         textDirection: ui.TextDirection.rtl,
         child: Scaffold(
-          body: Center(child: Text('تعذر تحديد صلاحيات الفرع: ${scopeAsync.error}')),
+          body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
         ),
       );
     }
@@ -236,15 +237,15 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
 
     return reportScaffold(
       context: context,
-      title: 'تقرير المشتريات التفصيلي',
-      subtitle: 'فواتيرُ الشراء والموردون في المدى المحدَّد',
+      title: tr('تقرير المشتريات التفصيلي'),
+      subtitle: tr('فواتيرُ الشراء والموردون في المدى المحدَّد'),
       icon: PhosphorIconsBold.shoppingCart,
       actions: [
             buildReportExportAction(onExport: _exportToExcel),
             IconButton(
               onPressed: _printReport,
               icon: const Icon(PhosphorIconsBold.printer),
-              tooltip: 'طباعة/PDF',
+              tooltip: tr('طباعة/PDF'),
             ),
             const SizedBox(width: 8),
           ],
@@ -327,14 +328,14 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
                     child: DropdownButtonFormField<int?>(
                       initialValue: _selectedCostCenterId,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'مركز التكلفة',
+                      decoration:  InputDecoration(
+                        labelText: tr('مركز التكلفة'),
                         isDense: true,
-                        prefixIcon: Icon(PhosphorIconsBold.buildings, size: 16),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        prefixIcon: const Icon(PhosphorIconsBold.buildings, size: 16),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
                       items: [
-                        const DropdownMenuItem<int?>(value: null, child: Text('الكل')),
+                         DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
                         ..._costCenters.map((cc) => DropdownMenuItem<int?>(
                               value: cc.id,
                               child: Text(cc.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
@@ -365,7 +366,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
                               children: [
                                 Expanded(
                                   child: ReportKpiCard(
-                                    title: 'إجمالي المشتريات',
+                                    title: tr('إجمالي المشتريات'),
                                     value:
                                         '${_currencyFormat.format(_analytics!.totalPurchases)} ${AppConstants.currencySymbolEn}',
                                     icon: PhosphorIconsBold.shoppingBagOpen,
@@ -375,23 +376,23 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: ReportKpiCard(
-                                    title: 'مستحقات للموردين',
+                                    title: tr('مستحقات للموردين'),
                                     value:
                                         '${_currencyFormat.format(_analytics!.totalOutstanding)} ${AppConstants.currencySymbolEn}',
                                     icon: PhosphorIconsBold.money,
                                     color: AppColors.error,
-                                    subtitle: 'فواتير غير مسددة بالكامل',
+                                    subtitle: tr('فواتير غير مسددة بالكامل'),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: ReportKpiCard(
-                                    title: 'عدد فواتير الشراء',
+                                    title: tr('عدد فواتير الشراء'),
                                     value: _analytics!.invoiceCount.toString(),
                                     icon: PhosphorIconsBold.files,
                                     color: AppColors.info,
                                     subtitle:
-                                        'متوسط القيمة: ${_currencyFormat.format(_analytics!.averagePurchaseValue)}',
+                                        tr('متوسط القيمة: {p0}', {'p0': _currencyFormat.format(_analytics!.averagePurchaseValue)}),
                                   ),
                                 ),
                               ],
@@ -419,9 +420,9 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
                             ),
                             child: TextField(
                               controller: _searchController,
-                              decoration: const InputDecoration(
-                                hintText: 'بحث برقم الفاتورة أو اسم المورد...',
-                                prefixIcon: Icon(
+                              decoration:  InputDecoration(
+                                hintText: tr('بحث برقم الفاتورة أو اسم المورد...'),
+                                prefixIcon: const Icon(
                                   PhosphorIconsBold.magnifyingGlass,
                                 ),
                                 border: InputBorder.none,
@@ -436,7 +437,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
                           const SizedBox(height: 16),
 
                           Text(
-                            'سجل مشتريات الفترة',
+                            tr('سجل مشتريات الفترة'),
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -456,15 +457,15 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
                             child: SizedBox(
                               width: double.infinity,
                               child: DataTable(
-                                columns: const [
-                                  DataColumn(label: Text('رقم الفاتورة')),
-                                  DataColumn(label: Text('التاريخ')),
-                                  DataColumn(label: Text('المورد')),
-                                  DataColumn(label: Text('المخزن')),
-                                  DataColumn(label: Text('الإجمالي')),
-                                  DataColumn(label: Text('المدفوع')),
-                                  DataColumn(label: Text('المتبقي')),
-                                  DataColumn(label: Text('الحالة')),
+                                columns:  [
+                                  DataColumn(label: Text(tr('رقم الفاتورة'))),
+                                  DataColumn(label: Text(tr('التاريخ'))),
+                                  DataColumn(label: Text(tr('المورد'))),
+                                  DataColumn(label: Text(tr('المخزن'))),
+                                  DataColumn(label: Text(tr('الإجمالي'))),
+                                  DataColumn(label: Text(tr('المدفوع'))),
+                                  DataColumn(label: Text(tr('المتبقي'))),
+                                  DataColumn(label: Text(tr('الحالة'))),
                                 ],
                                 rows: _filteredInvoices.map((item) {
                                   final p = item.invoice;
@@ -477,12 +478,12 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
                                       ),
                                       DataCell(
                                         Text(
-                                          item.supplierName ?? 'مورد غير معروف',
+                                          item.supplierName ?? tr('مورد غير معروف'),
                                         ),
                                       ),
                                       DataCell(
                                         Text(
-                                          _warehouseNames[p.warehouseId] ?? 'غير محدد',
+                                          _warehouseNames[p.warehouseId] ?? tr('غير محدد'),
                                         ),
                                       ),
                                       DataCell(
@@ -513,7 +514,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
                                             ),
                                           ),
                                           child: Text(
-                                            remaining <= 0 ? 'مسددة' : 'آجلة',
+                                            remaining <= 0 ? tr('مسددة') : tr('آجلة'),
                                             style: TextStyle(
                                               color: remaining <= 0
                                                   ? AppColors.success
@@ -545,7 +546,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
         0, (s, e) => s + ((e['totalPurchases'] as num?)?.toDouble() ?? 0));
 
     return [
-      Text('تحليل الموردين',
+      Text(tr('تحليل الموردين'),
           style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700)),
       const SizedBox(height: 8),
       Card(
@@ -557,11 +558,11 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
         child: SizedBox(
           width: double.infinity,
           child: DataTable(
-            columns: const [
-              DataColumn(label: Text('المورد')),
-              DataColumn(label: Text('فواتير'), numeric: true),
-              DataColumn(label: Text('إجمالي'), numeric: true),
-              DataColumn(label: Text('النسبة'), numeric: true),
+            columns:  [
+              DataColumn(label: Text(tr('المورد'))),
+              DataColumn(label: Text(tr('فواتير')), numeric: true),
+              DataColumn(label: Text(tr('إجمالي')), numeric: true),
+              DataColumn(label: Text(tr('النسبة')), numeric: true),
             ],
             rows: _supplierAnalysis.take(10).map((s) {
               final total =
@@ -569,7 +570,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
               final pct =
                   totalAll > 0 ? (total / totalAll * 100) : 0.0;
               return DataRow(cells: [
-                DataCell(Text(s['name']?.toString() ?? 'غير معروف')),
+                DataCell(Text(s['name']?.toString() ?? tr('غير معروف'))),
                 DataCell(Text('${s['invoiceCount'] ?? 0}')),
                 DataCell(Text(
                     '${_currencyFormat.format(total)} ${AppConstants.currencySymbolEn}')),
@@ -616,7 +617,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
         monthlyTotals.values.fold<double>(0, (a, b) => a > b ? a : b);
 
     return [
-      Text('اتجاهات المشتريات الشهرية',
+      Text(tr('اتجاهات المشتريات الشهرية'),
           style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700)),
       const SizedBox(height: 8),
       Card(
@@ -659,7 +660,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
                     SizedBox(
                       width: 120,
                       child: Text(
-                          '${_currencyFormat.format(total)} ($countف)',
+                          tr('{p0} ({count}ف)', {'p0': _currencyFormat.format(total), 'count': count}),
                           textAlign: TextAlign.end,
                           style: GoogleFonts.cairo(
                               fontSize: 11,
@@ -685,16 +686,16 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-      title: 'تقرير المشتريات',
+      title: tr('تقرير المشتريات'),
       headers: [
-        'رقم الفاتورة',
-        'التاريخ',
-        'المورد',
-        'المخزن',
-        'الإجمالي',
-        'المدفوع',
-        'المتبقي',
-        'الحالة',
+        tr('رقم الفاتورة'),
+        tr('التاريخ'),
+        tr('المورد'),
+        tr('المخزن'),
+        tr('الإجمالي'),
+        tr('المدفوع'),
+        tr('المتبقي'),
+        tr('الحالة'),
       ],
       // ‏`_filteredInvoices` لا `_invoices`: الجدولُ والطباعةُ والتحليلاتُ كلُّها
       // تقرأ المفلترة، والفلترُ الباقي عميلاً هو **البحثُ النصّي**. فمن يبحث عن
@@ -704,12 +705,12 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
         return [
           p.invoiceNumber,
           _dateFormat.format(p.invoiceDate),
-          item.supplierName ?? 'غير معروف',
-          _warehouseNames[p.warehouseId] ?? 'غير محدد',
+          item.supplierName ?? tr('غير معروف'),
+          _warehouseNames[p.warehouseId] ?? tr('غير محدد'),
           p.total,
           p.paid,
           p.total - p.paid,
-          (p.total - p.paid) <= 0 ? 'مسددة' : 'آجلة',
+          (p.total - p.paid) <= 0 ? tr('مسددة') : tr('آجلة'),
         ];
       }).toList(),
     );
@@ -717,7 +718,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
     if (path != null && mounted) {
       AppToast.show(
         context,
-        'تم تصدير التقرير بنجاح: $path',
+        tr('تم تصدير التقرير بنجاح: {path}', {'path': path}),
         type: ToastType.success,
       );
     }
@@ -725,7 +726,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
 
   Future<void> _printReport() async {
     if (_analytics == null || _filteredInvoices.isEmpty) {
-      AppToast.show(context, 'لا توجد بيانات للطباعة', type: ToastType.error);
+      AppToast.show(context, tr('لا توجد بيانات للطباعة'), type: ToastType.error);
       return;
     }
 
@@ -740,7 +741,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
       );
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }

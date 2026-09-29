@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -36,18 +37,18 @@ class _ForceChangePasswordDialogState extends ConsumerState<ForceChangePasswordD
 
   Future<void> _changePassword() async {
     if (_passwordController.text.isEmpty) {
-      setState(() => _errorMessage = 'يرجى إدخال كلمة المرور الجديدة');
+      setState(() => _errorMessage = tr('يرجى إدخال كلمة المرور الجديدة'));
       return;
     }
 
     // BUG-U30: enforce a stronger minimum than 4.
     if (_passwordController.text.length < 6) {
-      setState(() => _errorMessage = 'يجب أن تكون كلمة المرور 6 خانات على الأقل');
+      setState(() => _errorMessage = tr('يجب أن تكون كلمة المرور 6 خانات على الأقل'));
       return;
     }
 
     if (_passwordController.text != _confirmController.text) {
-      setState(() => _errorMessage = 'كلمات المرور غير متطابقة');
+      setState(() => _errorMessage = tr('كلمات المرور غير متطابقة'));
       return;
     }
 
@@ -64,7 +65,7 @@ class _ForceChangePasswordDialogState extends ConsumerState<ForceChangePasswordD
       );
 
       if (!mounted) return;
-      AppToast.show(context, 'تم تغيير كلمة المرور بنجاح', type: ToastType.success);
+      AppToast.show(context, tr('تم تغيير كلمة المرور بنجاح'), type: ToastType.success);
       Navigator.of(context).pop(true);
     } catch (e) {
       setState(() => _errorMessage = e.toString().replaceFirst('Exception: ', ''));
@@ -79,11 +80,11 @@ class _ForceChangePasswordDialogState extends ConsumerState<ForceChangePasswordD
       textDirection: TextDirection.rtl,
       child: AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.shieldWarning, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text('تغيير كلمة المرور'),
+            const Icon(PhosphorIconsBold.shieldWarning, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(tr('تغيير كلمة المرور')),
           ],
         ),
         content: SizedBox(
@@ -92,9 +93,9 @@ class _ForceChangePasswordDialogState extends ConsumerState<ForceChangePasswordD
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'يجب عليك تغيير كلمة المرور الافتراضية للمتابعة.',
-                style: TextStyle(color: AppColors.textMuted),
+               Text(
+                tr('يجب عليك تغيير كلمة المرور الافتراضية للمتابعة.'),
+                style: const TextStyle(color: AppColors.textMuted),
               ),
               const SizedBox(height: 24),
               if (_errorMessage != null)
@@ -123,7 +124,7 @@ class _ForceChangePasswordDialogState extends ConsumerState<ForceChangePasswordD
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
-                  labelText: 'كلمة المرور الجديدة',
+                  labelText: tr('كلمة المرور الجديدة'),
                   prefixIcon: const Icon(PhosphorIconsBold.lock),
                   suffixIcon: IconButton(
                     icon: Icon(_obscurePassword ? PhosphorIconsBold.eye : PhosphorIconsBold.eyeSlash),
@@ -137,7 +138,7 @@ class _ForceChangePasswordDialogState extends ConsumerState<ForceChangePasswordD
                 controller: _confirmController,
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
-                  labelText: 'تأكيد كلمة المرور',
+                  labelText: tr('تأكيد كلمة المرور'),
                   prefixIcon: const Icon(PhosphorIconsBold.lockKey),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -149,7 +150,7 @@ class _ForceChangePasswordDialogState extends ConsumerState<ForceChangePasswordD
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton(
             onPressed: _isLoading ? null : _changePassword,
@@ -160,7 +161,7 @@ class _ForceChangePasswordDialogState extends ConsumerState<ForceChangePasswordD
             ),
             child: _isLoading
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('تغيير كلمة المرور'),
+                :  Text(tr('تغيير كلمة المرور')),
           ),
         ],
       ),

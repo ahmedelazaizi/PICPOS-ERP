@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -101,7 +102,7 @@ class _QuickSalePolicyScreenState
 
   Future<void> _save() async {
     if (_draft.isEmpty) {
-      AppToast.show(context, 'لا تغييرات لحفظها');
+      AppToast.show(context, tr('لا تغييرات لحفظها'));
       return;
     }
     setState(() => _saving = true);
@@ -130,12 +131,12 @@ class _QuickSalePolicyScreenState
         _draft.clear();
         _saving = false;
       });
-      AppToast.show(context, 'حُفظت سياسة البيع السريع',
+      AppToast.show(context, tr('حُفظت سياسة البيع السريع'),
           type: ToastType.success);
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      AppToast.show(context, 'تعذّر الحفظ: $e', type: ToastType.error);
+      AppToast.show(context, tr('تعذّر الحفظ: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -145,21 +146,21 @@ class _QuickSalePolicyScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إعدادات البيع السريع'),
+        title:  Text(tr('إعدادات البيع السريع')),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: FilledButton.icon(
               onPressed: _saving ? null : _save,
               icon: const Icon(PhosphorIconsBold.floppyDisk, size: 18),
-              label: Text(_draft.isEmpty ? 'حفظ' : 'حفظ (${_draft.length})'),
+              label: Text(_draft.isEmpty ? tr('حفظ') : tr('حفظ ({p0})', {'p0': _draft.length})),
             ),
           ),
         ],
       ),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('تعذّر تحميل الإعدادات: $e')),
+        error: (e, _) => Center(child: Text(tr('تعذّر تحميل الإعدادات: {e}', {'e': e}))),
         data: (stored) => _buildBody(_merged(stored)),
       ),
     );
@@ -190,7 +191,7 @@ class _QuickSalePolicyScreenState
         children: [
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(8, 6, 8, 8),
-            child: Text('خطوات البيع',
+            child: Text(tr('خطوات البيع'),
                 style: TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
@@ -317,8 +318,8 @@ class _QuickSalePolicyScreenState
             color: AppColors.warning.withValues(alpha: 0.13),
             borderRadius: BorderRadius.circular(6),
           ),
-          child: const Text('يُحفَظ ولا يُنفَّذ بعد',
-              style: TextStyle(
+          child:  Text(tr('يُحفَظ ولا يُنفَّذ بعد'),
+              style: const TextStyle(
                   fontSize: 9.5,
                   fontWeight: FontWeight.w800,
                   color: AppColors.warning)),
@@ -521,7 +522,7 @@ class _QuickSalePolicyScreenState
             const Icon(PhosphorIconsBold.eye, size: 18, color: AppColors.primary),
             const SizedBox(width: 8),
             Expanded(
-              child: Text('أثر الإعدادات الحالية',
+              child: Text(tr('أثر الإعدادات الحالية'),
                   style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
@@ -529,7 +530,7 @@ class _QuickSalePolicyScreenState
             ),
           ]),
           const SizedBox(height: 6),
-          Text('ما الذي يتغيّر فعلاً على شاشة الكاشير بهذه الإعدادات',
+          Text(tr('ما الذي يتغيّر فعلاً على شاشة الكاشير بهذه الإعدادات'),
               style:
                   TextStyle(fontSize: 11, color: context.picposMuted)),
           const SizedBox(height: 12),

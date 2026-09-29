@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -83,9 +84,9 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
@@ -96,7 +97,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
       // #Forensic Log: Report View
       try {
         final user = ref.read(authProvider).user;
-        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? 'مجهول', 'تقرير الخزينة');
+        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('تقرير الخزينة'));
       } catch (_) {}
     });
   }
@@ -245,22 +246,22 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
   String _getUserName(int? userId) {
     if (userId == null) return '-';
     final user = _users.where((u) => u.id == userId).firstOrNull;
-    return user?.displayName ?? 'مستخدم #$userId';
+    return user?.displayName ?? tr('مستخدم #{userId}', {'userId': userId});
   }
 
   @override
   Widget build(BuildContext context) {
     return reportScaffold(
       context: context,
-      title: 'تقرير حركة الخزينة والتدفق النقدي',
-      subtitle: 'الوارد والمنصرف وأرصدةُ الخزائن في المدى المحدَّد',
+      title: tr('تقرير حركة الخزينة والتدفق النقدي'),
+      subtitle: tr('الوارد والمنصرف وأرصدةُ الخزائن في المدى المحدَّد'),
       icon: PhosphorIconsBold.vault,
       actions: [
             buildReportExportAction(onExport: _exportToExcel),
             IconButton(
               onPressed: _printReport,
               icon: const Icon(PhosphorIconsBold.printer),
-              tooltip: 'طباعة/PDF',
+              tooltip: tr('طباعة/PDF'),
             ),
             const SizedBox(width: 8),
           ],
@@ -308,8 +309,8 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                             controller: controller,
                             focusNode: focusNode,
                             decoration: InputDecoration(
-                              labelText: 'المستخدم',
-                              hintText: 'ابحث عن مستخدم...',
+                              labelText: tr('المستخدم'),
+                              hintText: tr('ابحث عن مستخدم...'),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -352,13 +353,13 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                       isExpanded: true,
                       initialValue: _selectedCostCenterId,
                       decoration: InputDecoration(
-                        labelText: 'مركز التكلفة',
+                        labelText: tr('مركز التكلفة'),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         isDense: true,
                       ),
                       items: [
-                        const DropdownMenuItem<int?>(value: null, child: Text('الكل', style: TextStyle(fontSize: 13))),
+                         DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'), style: const TextStyle(fontSize: 13))),
                         ..._costCenters.map((cc) => DropdownMenuItem<int?>(
                               value: cc.id,
                               child: Text(cc.name, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
@@ -377,13 +378,13 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                       isExpanded: true,
                       initialValue: _selectedSafeId,
                       decoration: InputDecoration(
-                        labelText: 'الصندوق',
+                        labelText: tr('الصندوق'),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         isDense: true,
                       ),
                       items: [
-                        const DropdownMenuItem<int?>(value: null, child: Text('الكل', style: TextStyle(fontSize: 13))),
+                         DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'), style: const TextStyle(fontSize: 13))),
                         ..._safes.map((s) => DropdownMenuItem<int?>(
                               value: s.id,
                               child: Text(s.name, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
@@ -474,7 +475,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                               children: [
                                 Expanded(
                                   child: ReportKpiCard(
-                                    title: 'رصيد الخزينة الحالي',
+                                    title: tr('رصيد الخزينة الحالي'),
                                     value:
                                         '${_currencyFormat.format(_analytics!.totalBalance)} ${AppConstants.currencySymbolEn}',
                                     icon: PhosphorIconsBold.bank,
@@ -484,24 +485,24 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: ReportKpiCard(
-                                    title: 'إجمالي المقبوضات',
+                                    title: tr('إجمالي المقبوضات'),
                                     value:
                                         '${_currencyFormat.format(_analytics!.totalReceipts)} ${AppConstants.currencySymbolEn}',
                                     icon: PhosphorIconsBold.arrowDownLeft,
                                     color: AppColors.success,
-                                    subtitle: 'خلال الفترة المحددة',
+                                    subtitle: tr('خلال الفترة المحددة'),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: ReportKpiCard(
-                                    title: 'إجمالي المدفوعات',
+                                    title: tr('إجمالي المدفوعات'),
                                     value:
                                         '${_currencyFormat.format(_analytics!.totalPayments)} ${AppConstants.currencySymbolEn}',
                                     icon: PhosphorIconsBold.arrowUpRight,
                                     color: AppColors.error,
                                     subtitle:
-                                        'صافي التدفق: ${_currencyFormat.format(_analytics!.netFlow)}',
+                                        tr('صافي التدفق: {p0}', {'p0': _currencyFormat.format(_analytics!.netFlow)}),
                                   ),
                                 ),
                               ],
@@ -511,7 +512,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                           if (_perUserSummary.isNotEmpty) ...[
                             const SizedBox(height: 32),
                             Text(
-                              'تقرير حسب المستخدم',
+                              tr('تقرير حسب المستخدم'),
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -592,7 +593,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                                                       BorderRadius.circular(6),
                                                 ),
                                                 child: Text(
-                                                  '${us.transactionCount} عملية',
+                                                  tr('{p0} عملية', {'p0': us.transactionCount}),
                                                   style: TextStyle(
                                                     fontSize: 11,
                                                     color: isPositive
@@ -605,7 +606,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                                           ),
                                           const SizedBox(height: 12),
                                           _UserStatRow(
-                                            label: 'مقبوضات',
+                                            label: tr('مقبوضات'),
                                             value: _currencyFormat.format(
                                               us.totalReceipts,
                                             ),
@@ -613,7 +614,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                                           ),
                                           const SizedBox(height: 4),
                                           _UserStatRow(
-                                            label: 'مدفوعات',
+                                            label: tr('مدفوعات'),
                                             value: _currencyFormat.format(
                                               us.totalPayments,
                                             ),
@@ -621,7 +622,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                                           ),
                                           const Divider(height: 16),
                                           _UserStatRow(
-                                            label: 'صافي التدفق',
+                                            label: tr('صافي التدفق'),
                                             value:
                                                 '${isPositive ? "+" : ""}${_currencyFormat.format(us.netFlow)} ${AppConstants.currencySymbolEn}',
                                             color: isPositive
@@ -641,7 +642,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                           const SizedBox(height: 32),
 
                           Text(
-                            'سجل العمليات المالية',
+                            tr('سجل العمليات المالية'),
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -662,25 +663,25 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                               width: double.infinity,
                               child: DataTable(
                                 columns: [
-                                  const DataColumn(label: Text('رقم السند')),
-                                  const DataColumn(label: Text('التاريخ')),
-                                  const DataColumn(label: Text('الصندوق')),
-                                  const DataColumn(label: Text('النوع')),
-                                  const DataColumn(label: Text('الفئة')),
-                                  const DataColumn(label: Text('المبلغ')),
+                                   DataColumn(label: Text(tr('رقم السند'))),
+                                   DataColumn(label: Text(tr('التاريخ'))),
+                                   DataColumn(label: Text(tr('الصندوق'))),
+                                   DataColumn(label: Text(tr('النوع'))),
+                                   DataColumn(label: Text(tr('الفئة'))),
+                                   DataColumn(label: Text(tr('المبلغ'))),
                                   // الرصيدُ الافتتاحيُّ معلنٌ في العنوان:
                                   // عمودٌ جارٍ بلا مرساةٍ ظاهرةٍ لا يمكن
                                   // للمستخدم أن يتحقّق من أوّل صفٍّ فيه.
                                   DataColumn(
                                     label: Text(
                                       _runningBalances.isEmpty
-                                          ? 'الرصيد'
+                                          ? tr('الرصيد')
                                           : 'الرصيد (افتتاحي: '
                                               '${_currencyFormat.format(_openingBalance)})',
                                     ),
                                   ),
-                                  const DataColumn(label: Text('المستخدم')),
-                                  const DataColumn(label: Text('البيان')),
+                                   DataColumn(label: Text(tr('المستخدم'))),
+                                   DataColumn(label: Text(tr('البيان'))),
                                 ],
                                 rows: _transactions.map((t) {
                                   final isReceipt =
@@ -697,7 +698,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                                       )),
                                       DataCell(
                                         Text(
-                                          isReceipt ? 'قبض' : 'صرف',
+                                          isReceipt ? tr('قبض') : tr('صرف'),
                                           style: TextStyle(
                                             color: isReceipt
                                                 ? AppColors.success
@@ -753,13 +754,13 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
     final List<List<dynamic>> allRows = [];
 
     if (_perUserSummary.isNotEmpty) {
-      allRows.add(['تقرير حسب المستخدم', '', '', '', '', '', '', '']);
+      allRows.add([tr('تقرير حسب المستخدم'), '', '', '', '', '', '', '']);
       allRows.add([
-        'المستخدم',
-        'مقبوضات',
-        'مدفوعات',
-        'صافي',
-        'عدد العمليات',
+        tr('المستخدم'),
+        tr('مقبوضات'),
+        tr('مدفوعات'),
+        tr('صافي'),
+        tr('عدد العمليات'),
         '',
         '',
         '',
@@ -785,11 +786,11 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
         '',
         '',
         '',
-        'رصيد افتتاحي',
+        tr('رصيد افتتاحي'),
         '',
         _openingBalance,
         '',
-        'الرصيد قبل بداية الفترة',
+        tr('الرصيد قبل بداية الفترة'),
       ]);
     }
 
@@ -797,7 +798,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
       allRows.add([
         t.voucherNumber,
         _dateFormat.format(t.createdAt),
-        t.transactionType == 'receipt' ? 'قبض' : 'صرف',
+        t.transactionType == 'receipt' ? tr('قبض') : tr('صرف'),
         t.category,
         t.amount,
         // نفسُ عمود الشاشة: مشيٌ فوق الرصيد الافتتاحي، و«—» حين يُخفى.
@@ -814,16 +815,16 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-      title: 'تقرير الخزينة',
+      title: tr('تقرير الخزينة'),
       headers: [
-        'رقم السند',
-        'التاريخ',
-        'النوع',
-        'الفئة',
-        'المبلغ',
-        'الرصيد بعد',
-        'المستخدم',
-        'البيان',
+        tr('رقم السند'),
+        tr('التاريخ'),
+        tr('النوع'),
+        tr('الفئة'),
+        tr('المبلغ'),
+        tr('الرصيد بعد'),
+        tr('المستخدم'),
+        tr('البيان'),
       ],
       rows: allRows,
     );
@@ -831,7 +832,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
     if (path != null && mounted) {
       AppToast.show(
         context,
-        'تم تصدير التقرير بنجاح: $path',
+        tr('تم تصدير التقرير بنجاح: {path}', {'path': path}),
         type: ToastType.success,
       );
     }
@@ -843,7 +844,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
       // GAP-15: Use actual company name from settings instead of hardcoded value
       final settingsRepo = ref.read(settingsRepositoryProvider);
       final receiptSettings = await settingsRepo.getReceiptSettings();
-      final companyName = receiptSettings['companyName'] as String? ?? 'الشركة';
+      final companyName = receiptSettings['companyName'] as String? ?? tr('الشركة');
 
       await InvoiceGenerator.printTreasuryReport(
         transactions: _transactions,

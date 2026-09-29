@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/utils/friendly_error.dart';
 import 'package:ural_erp/presentation/widgets/dialogs/app_confirm_dialog.dart';
@@ -57,7 +58,7 @@ class _StockRequisitionCreateScreenState extends ConsumerState<StockRequisitionC
     if (product != null) {
       if (_items.any((item) => item.product.id == product.id)) {
         if (!mounted) return;
-        AppToast.show(context, 'هذا الصنف موجود بالفعل في القائمة', type: ToastType.warning);
+        AppToast.show(context, tr('هذا الصنف موجود بالفعل في القائمة'), type: ToastType.warning);
         return;
       }
       setState(() {
@@ -78,9 +79,9 @@ class _StockRequisitionCreateScreenState extends ConsumerState<StockRequisitionC
     // BUG-U38: confirm before dropping an entered requisition line.
     final ok = await AppConfirmDialog.show(
       context,
-      title: 'حذف السطر',
-      message: 'هل تريد حذف هذا الصنف من الطلب؟',
-      confirmLabel: 'حذف',
+      title: tr('حذف السطر'),
+      message: tr('هل تريد حذف هذا الصنف من الطلب؟'),
+      confirmLabel: tr('حذف'),
       isDangerous: true,
     );
     if (!ok || !mounted) return;
@@ -92,15 +93,15 @@ class _StockRequisitionCreateScreenState extends ConsumerState<StockRequisitionC
   Future<void> _saveRequisition() async {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
-      AppToast.show(context, 'يجب إضافة أصناف للطلب', type: ToastType.error);
+      AppToast.show(context, tr('يجب إضافة أصناف للطلب'), type: ToastType.error);
       return;
     }
     if (_fromBranchId == null || _toBranchId == null) {
-      AppToast.show(context, 'يرجى اختيار الفرع الطالب والمورد', type: ToastType.error);
+      AppToast.show(context, tr('يرجى اختيار الفرع الطالب والمورد'), type: ToastType.error);
       return;
     }
     if (_fromBranchId == _toBranchId) {
-      AppToast.show(context, 'لا يمكن الطلب من نفس الفرع', type: ToastType.error);
+      AppToast.show(context, tr('لا يمكن الطلب من نفس الفرع'), type: ToastType.error);
       return;
     }
 
@@ -126,11 +127,11 @@ class _StockRequisitionCreateScreenState extends ConsumerState<StockRequisitionC
     setState(() => _isSaving = false);
 
     if (error == null && mounted) {
-      AppToast.show(context, 'تم حفظ الطلب بنجاح', type: ToastType.success);
+      AppToast.show(context, tr('تم حفظ الطلب بنجاح'), type: ToastType.success);
       Navigator.pop(context, true); // Return true to indicate success
     } else if (mounted) {
       // BUG-U18: show the actual reason from the controller, not a generic line.
-      AppToast.show(context, error ?? 'حدث خطأ أثناء حفظ الطلب',
+      AppToast.show(context, error ?? tr('حدث خطأ أثناء حفظ الطلب'),
           type: ToastType.error);
     }
   }
@@ -144,13 +145,13 @@ class _StockRequisitionCreateScreenState extends ConsumerState<StockRequisitionC
       textDirection: ui.TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('إنشاء طلب صرف قيد الانتظار'),
+          title:  Text(tr('إنشاء طلب صرف قيد الانتظار')),
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           actions: [
             IconButton(
               icon: const Icon(PhosphorIconsBold.check),
-              tooltip: 'حفظ الطلب',
+              tooltip: tr('حفظ الطلب'),
               onPressed: _isSaving ? null : _saveRequisition,
             ),
           ],
@@ -171,18 +172,18 @@ class _StockRequisitionCreateScreenState extends ConsumerState<StockRequisitionC
                           child: branchesState.when(
                             data: (branches) {
                               return DropdownButtonFormField<int>(
-                                decoration: const InputDecoration(
-                                  labelText: 'الفرع الطالب (لي)',
-                                  border: OutlineInputBorder(),
+                                decoration:  InputDecoration(
+                                  labelText: tr('الفرع الطالب (لي)'),
+                                  border: const OutlineInputBorder(),
                                 ),
                                 initialValue: _fromBranchId,
                                 items: branches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name))).toList(),
                                 onChanged: (v) => setState(() => _fromBranchId = v),
-                                validator: (v) => v == null ? 'مطلوب' : null,
+                                validator: (v) => v == null ? tr('مطلوب') : null,
                               );
                             },
                             loading: () => const LinearProgressIndicator(),
-                            error: (err, stack) => const Text('خطأ في تحميل الفروع'),
+                            error: (err, stack) =>  Text(tr('خطأ في تحميل الفروع')),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -190,18 +191,18 @@ class _StockRequisitionCreateScreenState extends ConsumerState<StockRequisitionC
                           child: branchesState.when(
                             data: (branches) {
                               return DropdownButtonFormField<int>(
-                                decoration: const InputDecoration(
-                                  labelText: 'الفرع المورد (منه)',
-                                  border: OutlineInputBorder(),
+                                decoration:  InputDecoration(
+                                  labelText: tr('الفرع المورد (منه)'),
+                                  border: const OutlineInputBorder(),
                                 ),
                                 initialValue: _toBranchId,
                                 items: branches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name))).toList(),
                                 onChanged: (v) => setState(() => _toBranchId = v),
-                                validator: (v) => v == null ? 'مطلوب' : null,
+                                validator: (v) => v == null ? tr('مطلوب') : null,
                               );
                             },
                             loading: () => const LinearProgressIndicator(),
-                            error: (err, stack) => const Text('خطأ في تحميل الفروع'),
+                            error: (err, stack) =>  Text(tr('خطأ في تحميل الفروع')),
                           ),
                         ),
                       ],
@@ -210,9 +211,9 @@ class _StockRequisitionCreateScreenState extends ConsumerState<StockRequisitionC
                     TextFormField(
                       controller: _notesController,
                       maxLines: 2,
-                      decoration: const InputDecoration(
-                        labelText: 'ملاحظات (أسباب الطلب أو تفاصيل النقل)',
-                        border: OutlineInputBorder(),
+                      decoration:  InputDecoration(
+                        labelText: tr('ملاحظات (أسباب الطلب أو تفاصيل النقل)'),
+                        border: const OutlineInputBorder(),
                       ),
                     ),
                   ],
@@ -229,20 +230,20 @@ class _StockRequisitionCreateScreenState extends ConsumerState<StockRequisitionC
                     children: [
                       Card(
                         child: _items.isEmpty
-                            ? const Center(
+                            ?  Center(
                                 child: Padding(
-                                  padding: EdgeInsets.all(32.0),
-                                  child: Text('أضف الأصناف التي ترغب بطلبها', style: TextStyle(color: Colors.grey)),
+                                  padding: const EdgeInsets.all(32.0),
+                                  child: Text(tr('أضف الأصناف التي ترغب بطلبها'), style: const TextStyle(color: Colors.grey)),
                                 ),
                               )
                             : SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: DataTable(
-                                  columns: const [
-                                    DataColumn(label: Text('الصنف')),
-                                    DataColumn(label: Text('الكمية المطلوبة')),
-                                    DataColumn(label: Text('ملاحظات الصنف')),
-                                    DataColumn(label: Text('حذف')),
+                                  columns:  [
+                                    DataColumn(label: Text(tr('الصنف'))),
+                                    DataColumn(label: Text(tr('الكمية المطلوبة'))),
+                                    DataColumn(label: Text(tr('ملاحظات الصنف'))),
+                                    DataColumn(label: Text(tr('حذف'))),
                                   ],
                                   rows: _items.asMap().entries.map((e) {
                                     final index = e.key;
@@ -265,7 +266,7 @@ class _StockRequisitionCreateScreenState extends ConsumerState<StockRequisitionC
                                           width: 200,
                                           child: TextFormField(
                                             initialValue: item.notes,
-                                            decoration: const InputDecoration(hintText: 'ملاحظة', isDense: true, border: InputBorder.none),
+                                            decoration:  InputDecoration(hintText: tr('ملاحظة'), isDense: true, border: InputBorder.none),
                                             onChanged: (val) => item.notes = val,
                                           ),
                                         ),
@@ -290,7 +291,7 @@ class _StockRequisitionCreateScreenState extends ConsumerState<StockRequisitionC
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: _addItem,
-          label: const Text('إضافة صنف للطلب'),
+          label:  Text(tr('إضافة صنف للطلب')),
           icon: const Icon(PhosphorIconsBold.plus),
         ),
       ),
@@ -304,17 +305,17 @@ class _ProductSearchDialogRequisition extends ConsumerWidget {
     return Directionality(
       textDirection: ui.TextDirection.rtl,
       child: AlertDialog(
-        title: const Text('اختيار صنف للطلب'),
+        title:  Text(tr('اختيار صنف للطلب')),
         content: SizedBox(
           width: 500,
           height: 600,
           child: Column(
             children: [
               TextField(
-                decoration: const InputDecoration(
-                  labelText: 'بحث بالاسم أو الباركود...',
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(),
+                decoration:  InputDecoration(
+                  labelText: tr('بحث بالاسم أو الباركود...'),
+                  prefixIcon: const Icon(Icons.search),
+                  border: const OutlineInputBorder(),
                 ),
                 onChanged: (val) {
                   ref.invalidate(searchProductsProvider(val));
@@ -333,7 +334,7 @@ class _ProductSearchDialogRequisition extends ConsumerWidget {
                             final p = products[index];
                             return ListTile(
                               title: Text(p.name),
-                              subtitle: Text('باركود: ${p.code} | السعر: ${p.salePrice}'),
+                              subtitle: Text(tr('باركود: {p0} | السعر: {p1}', {'p0': p.code, 'p1': p.salePrice})),
                               trailing: const Icon(PhosphorIconsBold.plusCircle),
                               onTap: () => Navigator.pop(context, p),
                             );
@@ -355,7 +356,7 @@ class _ProductSearchDialogRequisition extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
         ],
       ),

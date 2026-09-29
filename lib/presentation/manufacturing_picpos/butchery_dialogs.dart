@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -88,14 +89,14 @@ class _ButcheryTemplateDialogState extends State<_ButcheryTemplateDialog> {
   @override
   Widget build(BuildContext context) => PicPosDialog(
         icon: PhosphorIconsBold.scissors,
-        title: 'قالب تشفية جديد',
-        subtitle: 'حدد الذبيحة وطريقة توزيع التكلفة والقطع المتوقعة',
+        title: tr('قالب تشفية جديد'),
+        subtitle: tr('حدد الذبيحة وطريقة توزيع التكلفة والقطع المتوقعة'),
         width: 900,
         body: [
-          TextField(controller: _name, decoration: const InputDecoration(labelText: 'اسم القالب')),
+          TextField(controller: _name, decoration:  InputDecoration(labelText: tr('اسم القالب'))),
           DropdownButtonFormField<int>(
             value: _carcassProductId,
-            decoration: const InputDecoration(labelText: 'منتج الذبيحة'),
+            decoration:  InputDecoration(labelText: tr('منتج الذبيحة')),
             items: [
               for (final product in widget.products)
                 DropdownMenuItem(value: product.id, child: Text(product.name)),
@@ -104,31 +105,31 @@ class _ButcheryTemplateDialogState extends State<_ButcheryTemplateDialog> {
           ),
           DropdownButtonFormField<String>(
             value: _valuationMethod,
-            decoration: const InputDecoration(labelText: 'طريقة توزيع التكلفة'),
-            items: const [
-              DropdownMenuItem(value: 'sales_value', child: Text('قيمة البيع')),
-              DropdownMenuItem(value: 'by_weight', child: Text('بالوزن')),
+            decoration:  InputDecoration(labelText: tr('طريقة توزيع التكلفة')),
+            items:  [
+              DropdownMenuItem(value: 'sales_value', child: Text(tr('قيمة البيع'))),
+              DropdownMenuItem(value: 'by_weight', child: Text(tr('بالوزن'))),
             ],
             onChanged: (value) => setState(() => _valuationMethod = value ?? 'sales_value'),
           ),
           TextField(
             controller: _threshold,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'حد variance %'),
+            decoration:  InputDecoration(labelText: tr('حد variance %')),
           ),
-          const Text('القطع ومعدلات العائد', style: TextStyle(fontWeight: FontWeight.w800)),
+           Text(tr('القطع ومعدلات العائد'), style: const TextStyle(fontWeight: FontWeight.w800)),
           for (var i = 0; i < _lines.length; i++) _lineEditor(i),
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: TextButton.icon(
               onPressed: () => setState(() => _lines.add(_TemplateLineDraft())),
               icon: const Icon(PhosphorIconsBold.plus),
-              label: const Text('إضافة قطعة'),
+              label:  Text(tr('إضافة قطعة')),
             ),
           ),
         ],
         primaryAction: PicPosDialogAction(
-          label: 'حفظ القالب',
+          label: tr('حفظ القالب'),
           icon: PhosphorIconsBold.floppyDisk,
           onPressed: _save,
         ),
@@ -150,7 +151,7 @@ class _ButcheryTemplateDialogState extends State<_ButcheryTemplateDialog> {
               width: 220,
               child: DropdownButtonFormField<int>(
                 value: line.productId,
-                decoration: const InputDecoration(labelText: 'القطعة'),
+                decoration:  InputDecoration(labelText: tr('القطعة')),
                 items: [
                   for (final product in widget.products)
                     DropdownMenuItem(value: product.id, child: Text(product.name)),
@@ -163,7 +164,7 @@ class _ButcheryTemplateDialogState extends State<_ButcheryTemplateDialog> {
               child: TextField(
                 controller: line.expected,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'العائد %'),
+                decoration:  InputDecoration(labelText: tr('العائد %')),
               ),
             ),
             SizedBox(
@@ -171,14 +172,14 @@ class _ButcheryTemplateDialogState extends State<_ButcheryTemplateDialog> {
               child: TextField(
                 controller: line.price,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'سعر التقييم'),
+                decoration:  InputDecoration(labelText: tr('سعر التقييم')),
               ),
             ),
             Row(mainAxisSize: MainAxisSize.min, children: [
               Checkbox(value: line.byProduct, onChanged: (value) => setState(() => line.byProduct = value ?? false)),
-              const Text('ثانوي'),
+               Text(tr('ثانوي')),
               IconButton(
-                tooltip: 'حذف القطعة',
+                tooltip: tr('حذف القطعة'),
                 onPressed: _lines.length == 1 ? null : () => setState(() {
                   final removed = _lines.removeAt(index);
                   removed.dispose();
@@ -304,13 +305,13 @@ class _ButcheryOrderDialogState extends State<_ButcheryOrderDialog> {
     final previewRows = _previewRows(inputWeight, outputsWeight);
     return PicPosDialog(
       icon: PhosphorIconsBold.scissors,
-      title: 'أمر تشفية جديد',
-      subtitle: 'راجع الأوزان والتكلفة قبل الإنشاء والترحيل',
+      title: tr('أمر تشفية جديد'),
+      subtitle: tr('راجع الأوزان والتكلفة قبل الإنشاء والترحيل'),
       width: 980,
       body: [
         DropdownButtonFormField<int>(
           value: _templateId,
-          decoration: const InputDecoration(labelText: 'قالب التشفية'),
+          decoration:  InputDecoration(labelText: tr('قالب التشفية')),
           items: [
             for (final template in widget.templates)
               DropdownMenuItem(value: template['id'] as int, child: Text('${template['name']}')),
@@ -325,18 +326,18 @@ class _ButcheryOrderDialogState extends State<_ButcheryOrderDialog> {
           },
         ),
         Row(children: [
-          Expanded(child: TextField(controller: _quantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'كمية الذبيحة'))),
+          Expanded(child: TextField(controller: _quantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration:  InputDecoration(labelText: tr('كمية الذبيحة')))),
           const SizedBox(width: 8),
-          Expanded(child: TextField(controller: _weight, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'وزن الذبيحة بالجرام'), onChanged: (_) => setState(() {}))),
+          Expanded(child: TextField(controller: _weight, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration:  InputDecoration(labelText: tr('وزن الذبيحة بالجرام')), onChanged: (_) => setState(() {}))),
           const SizedBox(width: 8),
-          Expanded(child: TextField(controller: _cost, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'التكلفة الكلية'))),
+          Expanded(child: TextField(controller: _cost, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration:  InputDecoration(labelText: tr('التكلفة الكلية')))),
         ]),
-        const Text('الأوزان الفعلية للقطع', style: TextStyle(fontWeight: FontWeight.w800)),
+         Text(tr('الأوزان الفعلية للقطع'), style: const TextStyle(fontWeight: FontWeight.w800)),
         for (var i = 0; i < _lines.length; i++) _weightLine(i),
         _preview(previewRows, loss, lossPercent),
       ],
       primaryAction: PicPosDialogAction(
-        label: 'حفظ وترحيل',
+        label: tr('حفظ وترحيل'),
         icon: PhosphorIconsBold.check,
         onPressed: () => _save(inputWeight),
       ),
@@ -347,13 +348,13 @@ class _ButcheryOrderDialogState extends State<_ButcheryOrderDialog> {
   Widget _weightLine(int index) {
     final line = _lines[index];
     return Row(children: [
-      Expanded(child: Text('${line['output_name'] ?? 'قطعة'} (متوقع ${_number(line['expected_yield_percent']).toStringAsFixed(1)}%)')),
+      Expanded(child: Text(tr('{p0} (متوقع {p1}%)', {'p0': line['output_name'] ?? 'قطعة', 'p1': _number(line['expected_yield_percent']).toStringAsFixed(1)}))),
       SizedBox(
         width: 170,
         child: TextField(
           controller: _actualWeights[index],
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(labelText: 'الوزن الفعلي'),
+          decoration:  InputDecoration(labelText: tr('الوزن الفعلي')),
           onChanged: (_) => setState(() {}),
         ),
       ),
@@ -365,11 +366,11 @@ class _ButcheryOrderDialogState extends State<_ButcheryOrderDialog> {
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const Text('المعاينة الحية', style: TextStyle(fontWeight: FontWeight.w800)),
+             Text(tr('المعاينة الحية'), style: const TextStyle(fontWeight: FontWeight.w800)),
             for (final row in rows)
-              Text('${row['name']}: تكلفة الوحدة ${_number(row['unitCost']).toStringAsFixed(2)} — قيمة ثانوية ${_number(row['byProductValue']).toStringAsFixed(2)}'),
-            Text('الفاقد: ${loss.toStringAsFixed(2)} جم (${lossPercent.toStringAsFixed(2)}%)'),
-            Text(lossPercent > 2 ? 'راية variance: تجاوز الحد' : 'راية variance: ضمن الحد', style: TextStyle(color: lossPercent > 2 ? AppColors.error : Colors.green)),
+              Text(tr('{p0}: تكلفة الوحدة {p1} — قيمة ثانوية {p2}', {'p0': row['name'], 'p1': _number(row['unitCost']).toStringAsFixed(2), 'p2': _number(row['byProductValue']).toStringAsFixed(2)})),
+            Text(tr('الفاقد: {p0} جم ({p1}%)', {'p0': loss.toStringAsFixed(2), 'p1': lossPercent.toStringAsFixed(2)})),
+            Text(lossPercent > 2 ? tr('راية variance: تجاوز الحد') : tr('راية variance: ضمن الحد'), style: TextStyle(color: lossPercent > 2 ? AppColors.error : Colors.green)),
           ]),
         ),
       );

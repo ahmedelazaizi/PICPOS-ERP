@@ -16,12 +16,12 @@
 part of 'settings_picpos_screen.dart';
 
 /// أسماءُ الطرق كما يقرؤها صاحبُ المحلّ — لا كما تُخزَّن.
-const Map<String, String> _paymentMethodLabels = <String, String>{
-  'cash': 'نقدي',
-  'card': 'بطاقة',
-  'click': 'تحويل / كليك',
-  'credit': 'آجل',
-  'multiple': 'دفع متعدّد',
+Map<String, String> get _paymentMethodLabels => <String, String>{
+  'cash': tr('نقدي'),
+  'card': tr('بطاقة'),
+  'click': tr('تحويل / كليك'),
+  'credit': tr('آجل'),
+  'multiple': tr('دفع متعدّد'),
 };
 
 /// إظهارُ «إغلاق سريع» أو إخفاؤه — طلبُ المالك 2026-08-14.
@@ -37,7 +37,7 @@ class _QuickCloseSettingTile extends ConsumerWidget {
     final enabled = ref.watch(posQuickCloseEnabledProvider).value ?? true;
     return SwitchListTile(
       value: enabled,
-      title: const Text('إظهار «إغلاق سريع»'),
+      title:  Text(tr('إظهار «إغلاق سريع»')),
       subtitle: const Text(
         'إغلاق بلا مصادقة يجعل الفرق صفراً — أطفئه ليمرّ كل إغلاق '
         'ببطاقة أو كلمة مرور.',
@@ -101,7 +101,7 @@ class _PaymentMethodsSettingsCardState
     if (next.isEmpty) {
       AppToast.show(
         context,
-        'لا بدّ من طريقة دفعٍ واحدةٍ على الأقلّ',
+        tr('لا بدّ من طريقة دفعٍ واحدةٍ على الأقلّ'),
         type: ToastType.warning,
       );
       return;

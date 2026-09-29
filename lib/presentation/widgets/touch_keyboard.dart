@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
@@ -48,11 +49,11 @@ class _TouchKeyboardState extends State<TouchKeyboard> {
   bool _isArabic = true;
 
   // Arabic keyboard layout
-  static const List<List<String>> _arabicKeys = [
-    ['١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩', '٠'],
-    ['ض', 'ص', 'ث', 'ق', 'ف', 'غ', 'ع', 'ه', 'خ', 'ح', 'ج'],
-    ['ش', 'س', 'ي', 'ب', 'ل', 'ا', 'ت', 'ن', 'م', 'ك'],
-    ['ء', 'ظ', 'ط', 'ذ', 'د', 'ز', 'ر', 'و', 'ة', 'ى'],
+  static List<List<String>> get _arabicKeys => [
+    [tr('١'), tr('٢'), tr('٣'), tr('٤'), tr('٥'), tr('٦'), tr('٧'), tr('٨'), tr('٩'), tr('٠')],
+    [tr('ض'), tr('ص'), tr('ث'), tr('ق'), tr('ف'), tr('غ'), tr('ع'), tr('ه'), tr('خ'), tr('ح'), tr('ج')],
+    [tr('ش'), tr('س'), tr('ي'), tr('ب'), tr('ل'), tr('ا'), tr('ت'), tr('ن'), tr('م'), tr('ك')],
+    [tr('ء'), tr('ظ'), tr('ط'), tr('ذ'), tr('د'), tr('ز'), tr('ر'), tr('و'), tr('ة'), tr('ى')],
   ];
 
   // English keyboard layout
@@ -141,7 +142,7 @@ class _TouchKeyboardState extends State<TouchKeyboard> {
           Expanded(
             child: Text(
               widget.controller.text.isEmpty
-                  ? 'أدخل القيمة...'
+                  ? tr('أدخل القيمة...')
                   : widget.controller.text,
               style: TextStyle(
                 fontSize: 20,
@@ -159,7 +160,7 @@ class _TouchKeyboardState extends State<TouchKeyboard> {
               widget.controller.clear();
               setState(() {});
             },
-            tooltip: 'مسح الكل',
+            tooltip: tr('مسح الكل'),
           ),
         ],
       ),
@@ -261,7 +262,7 @@ class _TouchKeyboardState extends State<TouchKeyboard> {
                 child: Container(
                   height: 48,
                   alignment: Alignment.center,
-                  child: const Text('مسافة'),
+                  child:  Text(tr('مسافة')),
                 ),
               ),
             ),
@@ -270,7 +271,7 @@ class _TouchKeyboardState extends State<TouchKeyboard> {
           // Language toggle
           _buildSpecialKey(
             icon: PhosphorIconsBold.globe,
-            label: _isArabic ? 'EN' : 'ع',
+            label: _isArabic ? 'EN' : tr('ع'),
             onTap: () => setState(() => _isArabic = !_isArabic),
             width: 50,
           ),
@@ -329,7 +330,7 @@ class _TouchKeyboardState extends State<TouchKeyboard> {
             child: ElevatedButton.icon(
               onPressed: widget.onCancel,
               icon: const Icon(PhosphorIconsBold.x),
-              label: const Text('إلغاء'),
+              label:  Text(tr('إلغاء')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey.shade300,
                 foregroundColor: Colors.black87,
@@ -343,7 +344,7 @@ class _TouchKeyboardState extends State<TouchKeyboard> {
           child: ElevatedButton.icon(
             onPressed: widget.onDone,
             icon: const Icon(PhosphorIconsBold.check),
-            label: const Text('تم'),
+            label:  Text(tr('تم')),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
               foregroundColor: Colors.white,

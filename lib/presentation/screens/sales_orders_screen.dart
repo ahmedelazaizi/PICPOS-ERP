@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,14 +46,14 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
       // لا تجاوزَ للخلفيّة: الثيمُ يعرّف `scaffoldBackgroundColor` للوضعَين.
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('طلبات البيع'),
+          title:  Text(tr('طلبات البيع')),
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           actions: [
             ElevatedButton.icon(
               onPressed: () => _showCreateOrderDialog(salesRepo, partiesRepo, branchRepo),
               icon: const Icon(PhosphorIconsBold.plus, size: 16),
-              label: const Text('طلب بيع جديد'),
+              label:  Text(tr('طلب بيع جديد')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.primary,
@@ -70,17 +71,17 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip('all', 'الكل', PhosphorIconsBold.list),
+                    _buildFilterChip('all', tr('الكل'), PhosphorIconsBold.list),
                     const SizedBox(width: 8),
-                    _buildFilterChip('draft', 'مسودة', PhosphorIconsBold.pencilSimple),
+                    _buildFilterChip('draft', tr('مسودة'), PhosphorIconsBold.pencilSimple),
                     const SizedBox(width: 8),
-                    _buildFilterChip('sent', 'مرسل', PhosphorIconsBold.paperPlaneRight),
+                    _buildFilterChip('sent', tr('مرسل'), PhosphorIconsBold.paperPlaneRight),
                     const SizedBox(width: 8),
-                    _buildFilterChip('confirmed', 'مؤكد', PhosphorIconsBold.checkCircle),
+                    _buildFilterChip('confirmed', tr('مؤكد'), PhosphorIconsBold.checkCircle),
                     const SizedBox(width: 8),
-                    _buildFilterChip('delivered', 'تم التسليم', PhosphorIconsBold.package),
+                    _buildFilterChip('delivered', tr('تم التسليم'), PhosphorIconsBold.package),
                     const SizedBox(width: 8),
-                    _buildFilterChip('cancelled', 'ملغي', PhosphorIconsBold.xCircle),
+                    _buildFilterChip('cancelled', tr('ملغي'), PhosphorIconsBold.xCircle),
                   ],
                 ),
               ),
@@ -91,7 +92,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'بحث عن طلب بيع...',
+                  hintText: tr('بحث عن طلب بيع...'),
                   prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); })
@@ -129,7 +130,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                           Icon(PhosphorIconsBold.clipboardText, size: 64,
                               color: AppColors.textMuted.withValues(alpha: 0.3)),
                           const SizedBox(height: 16),
-                          Text('لا توجد طلبات بيع',
+                          Text(tr('لا توجد طلبات بيع'),
                               style: GoogleFonts.cairo(color: AppColors.textMuted)),
                         ],
                       ),
@@ -210,7 +211,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
               ? partiesRepo.getPartyById(order.customerId!)
               : Future.value(null),
           builder: (ctx, snap) {
-            final customerName = snap.data?.name ?? 'بدون عميل';
+            final customerName = snap.data?.name ?? tr('بدون عميل');
             return Text(
               '$customerName  •  ${order.orderDate.toString().substring(0, 10)}  •  ${order.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
               style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
@@ -221,25 +222,25 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
           onSelected: (action) => _handleAction(salesRepo, order, action),
           itemBuilder: (_) => [
             if (order.status == 'draft') ...[
-              const PopupMenuItem(value: 'send', child: Text('إرسال للعميل')),
-              const PopupMenuItem(value: 'delete', child: Text('حذف', style: TextStyle(color: AppColors.error))),
+               PopupMenuItem(value: 'send', child: Text(tr('إرسال للعميل'))),
+               PopupMenuItem(value: 'delete', child: Text(tr('حذف'), style: const TextStyle(color: AppColors.error))),
             ],
             if (order.status == 'sent')
-              const PopupMenuItem(value: 'confirm', child: Text('تأكيد')),
+               PopupMenuItem(value: 'confirm', child: Text(tr('تأكيد'))),
             if (order.status == 'confirmed')
-              const PopupMenuItem(value: 'deliver', child: Text('تسليم')),
+               PopupMenuItem(value: 'deliver', child: Text(tr('تسليم'))),
             if (order.status != 'cancelled' && order.status != 'delivered')
-              const PopupMenuItem(value: 'cancel', child: Text('إلغاء', style: TextStyle(color: AppColors.error))),
+               PopupMenuItem(value: 'cancel', child: Text(tr('إلغاء'), style: const TextStyle(color: AppColors.error))),
             // Field-report 2026-05-14: previously a cancelled order had
             // no actions, so operators couldn't edit or recover from a
             // mis-click on إلغاء. Re-activating flips status back to
             // 'draft' (safest — operator must re-confirm to re-reserve
             // stock). The DAO already handles cancelled→draft cleanly.
             if (order.status == 'cancelled')
-              const PopupMenuItem(value: 'reactivate', child: Text('إعادة تفعيل')),
+               PopupMenuItem(value: 'reactivate', child: Text(tr('إعادة تفعيل'))),
             if (order.status == 'confirmed' || order.status == 'delivered')
               if (order.convertedToInvoiceId == null)
-                const PopupMenuItem(value: 'convert', child: Text('تحويل لفاتورة مبيعات')),
+                 PopupMenuItem(value: 'convert', child: Text(tr('تحويل لفاتورة مبيعات'))),
           ],
         ),
       ),
@@ -249,15 +250,15 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
   (String, Color, IconData) _getStatusInfo(String status) {
     switch (status) {
       case 'draft':
-        return ('مسودة', AppColors.textMuted, PhosphorIconsBold.pencilSimple);
+        return (tr('مسودة'), AppColors.textMuted, PhosphorIconsBold.pencilSimple);
       case 'sent':
-        return ('مرسل', AppColors.info, PhosphorIconsBold.paperPlaneRight);
+        return (tr('مرسل'), AppColors.info, PhosphorIconsBold.paperPlaneRight);
       case 'confirmed':
-        return ('مؤكد', AppColors.success, PhosphorIconsBold.checkCircle);
+        return (tr('مؤكد'), AppColors.success, PhosphorIconsBold.checkCircle);
       case 'delivered':
-        return ('تم التسليم', AppColors.primary, PhosphorIconsBold.package);
+        return (tr('تم التسليم'), AppColors.primary, PhosphorIconsBold.package);
       case 'cancelled':
-        return ('ملغي', AppColors.error, PhosphorIconsBold.xCircle);
+        return (tr('ملغي'), AppColors.error, PhosphorIconsBold.xCircle);
       default:
         return ('غير معروف', AppColors.textMuted, PhosphorIconsBold.question);
     }
@@ -283,7 +284,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
           if (mounted) {
             AppToast.show(
               context,
-              'تم تسليم الطلب وإنشاء فاتورة مبيعات #$invoiceId بنجاح',
+              tr('تم تسليم الطلب وإنشاء فاتورة مبيعات #{invoiceId} بنجاح', {'invoiceId': invoiceId}),
             );
           }
         case 'cancel':
@@ -291,19 +292,19 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
         case 'reactivate':
           await salesRepo.updateSalesOrderStatus(order.id, 'draft');
           if (mounted) {
-            AppToast.show(context, 'تم إعادة تفعيل الطلب كمسودة');
+            AppToast.show(context, tr('تم إعادة تفعيل الطلب كمسودة'));
           }
         case 'delete':
           await salesRepo.deleteSalesOrder(order.id);
         case 'convert':
           final invoiceId = await salesRepo.convertSOToInvoice(order.id);
           if (mounted) {
-            AppToast.show(context, 'تم إنشاء فاتورة مبيعات #$invoiceId بنجاح');
+            AppToast.show(context, tr('تم إنشاء فاتورة مبيعات #{invoiceId} بنجاح', {'invoiceId': invoiceId}));
           }
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -345,7 +346,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
         textDirection: ui.TextDirection.rtl,
         child: StatefulBuilder(builder: (ctx, setDialogState) {
           return AlertDialog(
-            title: Text('طلب بيع جديد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            title: Text(tr('طلب بيع جديد'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             content: SizedBox(
               width: 650,
               height: 550,
@@ -365,12 +366,12 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                           initialValue: selectedCustomerId,
                           isExpanded: true,
                           decoration: InputDecoration(
-                            labelText: 'العميل (اختياري)',
+                            labelText: tr('العميل (اختياري)'),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             isDense: true,
                           ),
                           items: [
-                            const DropdownMenuItem<int?>(value: null, child: Text('بدون عميل')),
+                             DropdownMenuItem<int?>(value: null, child: Text(tr('بدون عميل'))),
                             ...activeCustomers.map((c) => DropdownMenuItem<int?>(
                                   value: c.id,
                                   child: Text(c.name, overflow: TextOverflow.ellipsis),
@@ -399,7 +400,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                           initialValue: selectedWarehouseId,
                           isExpanded: true,
                           decoration: InputDecoration(
-                            labelText: 'المستودع *',
+                            labelText: tr('المستودع *'),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             isDense: true,
                           ),
@@ -413,7 +414,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                     ),
                     const SizedBox(height: 12),
                     // Product search
-                    Text('الأصناف:', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 13)),
+                    Text(tr('الأصناف:'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 13)),
                     const SizedBox(height: 6),
                     Builder(builder: (context) {
                       TextEditingController? acCtrl;
@@ -434,10 +435,10 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                           return TextField(
                             controller: controller,
                             focusNode: focusNode,
-                            decoration: const InputDecoration(
-                              hintText: 'ابحث بالاسم أو الكود أو الباركود...',
-                              prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
-                              border: OutlineInputBorder(),
+                            decoration:  InputDecoration(
+                              hintText: tr('ابحث بالاسم أو الكود أو الباركود...'),
+                              prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
+                              border: const OutlineInputBorder(),
                               isDense: true,
                             ),
                             style: const TextStyle(fontSize: 13),
@@ -477,14 +478,14 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                         headingRowHeight: 32,
                         dataRowMinHeight: 30,
                         dataRowMaxHeight: 40,
-                        columns: const [
-                          DataColumn(label: Text('الصنف', style: TextStyle(fontSize: 11))),
-                          DataColumn(label: Text('الكمية', style: TextStyle(fontSize: 11))),
-                          DataColumn(label: Text('السعر', style: TextStyle(fontSize: 11))),
-                          DataColumn(label: Text('الضريبة %', style: TextStyle(fontSize: 11))),
-                          DataColumn(label: Text('قيمة الضريبة', style: TextStyle(fontSize: 11))),
-                          DataColumn(label: Text('الإجمالي', style: TextStyle(fontSize: 11))),
-                          DataColumn(label: Text('', style: TextStyle(fontSize: 11))),
+                        columns:  [
+                          DataColumn(label: Text(tr('الصنف'), style: const TextStyle(fontSize: 11))),
+                          DataColumn(label: Text(tr('الكمية'), style: const TextStyle(fontSize: 11))),
+                          DataColumn(label: Text(tr('السعر'), style: const TextStyle(fontSize: 11))),
+                          DataColumn(label: Text(tr('الضريبة %'), style: const TextStyle(fontSize: 11))),
+                          DataColumn(label: Text(tr('قيمة الضريبة'), style: const TextStyle(fontSize: 11))),
+                          DataColumn(label: Text(tr('الإجمالي'), style: const TextStyle(fontSize: 11))),
+                          const DataColumn(label: Text('', style: TextStyle(fontSize: 11))),
                         ],
                         rows: orderItems.asMap().entries.map((entry) {
                           final i = entry.key;
@@ -580,7 +581,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            Text('الإجمالي: ', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+                            Text(tr('الإجمالي: '), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
                             Text(orderTotal.toStringAsFixed(AppConstants.decimalPlaces),
                                 style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primary)),
                           ],
@@ -591,7 +592,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                       controller: notesCtrl,
                       maxLines: 2,
                       decoration: InputDecoration(
-                        labelText: 'ملاحظات',
+                        labelText: tr('ملاحظات'),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         isDense: true,
                       ),
@@ -607,12 +608,12 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                           initialValue: selectedCostCenterId,
                           isExpanded: true,
                           decoration: InputDecoration(
-                            labelText: 'مركز التكلفة',
+                            labelText: tr('مركز التكلفة'),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             isDense: true,
                           ),
                           items: [
-                            const DropdownMenuItem<int?>(value: null, child: Text('بدون')),
+                             DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'))),
                             ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name))),
                           ],
                           onChanged: (v) => setDialogState(() => selectedCostCenterId = v),
@@ -624,13 +625,13 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
               ElevatedButton.icon(
                 onPressed: selectedWarehouseId == null
                     ? null
                     : () async {
                         if (orderItems.isEmpty) {
-                          AppToast.show(context, 'يرجى إضافة صنف واحد على الأقل', type: ToastType.info);
+                          AppToast.show(context, tr('يرجى إضافة صنف واحد على الأقل'), type: ToastType.info);
                           return;
                         }
                         try {
@@ -659,16 +660,16 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                           );
                           if (ctx.mounted) Navigator.pop(ctx);
                           if (mounted) {
-                            AppToast.show(context, 'تم إنشاء طلب البيع بنجاح');
+                            AppToast.show(context, tr('تم إنشاء طلب البيع بنجاح'));
                           }
                         } catch (e) {
                           if (mounted) {
-                            AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+                            AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
                           }
                         }
                       },
                 icon: const Icon(PhosphorIconsBold.floppyDisk, size: 16),
-                label: Text('إنشاء', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+                label: Text(tr('إنشاء'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
               ),
             ],
           );

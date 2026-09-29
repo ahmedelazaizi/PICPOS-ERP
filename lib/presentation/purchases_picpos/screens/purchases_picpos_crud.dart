@@ -74,7 +74,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
             taxRate: rows[i].item.taxRate,
             // سطرٌ معفىً يبقى معفىً: الحبّةُ تتبع المبلغَ المخزَّن لا النسبة.
             taxEnabled: rows[i].item.taxAmount > 0,
-            unitName: rows[i].item.unitName ?? 'قطعة',
+            unitName: rows[i].item.unitName ?? tr('قطعة'),
           ),
       ],
     );
@@ -107,8 +107,8 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
             ? PermissionCodes.purchasesCreate
             : PermissionCodes.purchasesEdit,
         actionName: editing == null
-            ? 'فاتورة مشتريات جديدة'
-            : 'تعديل فاتورة مشتريات')) {
+            ? tr('فاتورة مشتريات جديدة')
+            : tr('تعديل فاتورة مشتريات'))) {
       return;
     }
     if (!mounted) return;
@@ -229,7 +229,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
               id: o.id,
               orderNumber: o.orderNumber,
               supplierId: o.supplierId,
-              supplierName: byId[o.supplierId] ?? 'مورد #${o.supplierId}',
+              supplierName: byId[o.supplierId] ?? tr('مورد #{p0}', {'p0': o.supplierId}),
               orderDate: o.orderDate,
               total: o.total,
             ));
@@ -289,7 +289,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
           // الرقمُ يولّده الخادمُ تسلسليّاً عند الحفظ، فلا يُدَّعى رقمٌ
           // بعينه قبل أن يُحجَز.
           invoiceNumberPreview:
-              editing?.invoiceNumber ?? 'يُولَّد تلقائياً',
+              editing?.invoiceNumber ?? tr('يُولَّد تلقائياً'),
           initial: initial,
           initialWarehouseId:
               warehouses.length == 1 ? warehouses.first.id : null,
@@ -382,7 +382,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
       if (mounted) {
         AppToast.show(
           context,
-          'تعذّر فتحُ فاتورة المشتريات: $e',
+          tr('تعذّر فتحُ فاتورة المشتريات: {e}', {'e': e}),
           type: ToastType.error,
         );
       }
@@ -530,21 +530,21 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
         action: editInvoiceId != null ? 'edit_purchase' : 'create_purchase',
         entityType: 'purchase_invoice',
         description: editInvoiceId != null
-            ? 'تعديل فاتورة مشتريات #$editInvoiceId'
-            : 'إنشاء فاتورة مشتريات',
+            ? tr('تعديل فاتورة مشتريات #{editInvoiceId}', {'editInvoiceId': editInvoiceId})
+            : tr('إنشاء فاتورة مشتريات'),
         amount: total,
       );
 
       if (mounted) {
         AppToast.show(
           context,
-          'تم الحفظ بنجاح',
+          tr('تم الحفظ بنجاح'),
           type: ToastType.success,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشلت العملية: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشلت العملية: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }

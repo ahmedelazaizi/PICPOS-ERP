@@ -49,7 +49,7 @@ class SalesSummaryRow extends ConsumerWidget {
       buildMaskedAmountKpiCard(
         icon: PhosphorIconsBold.shoppingCart,
         // البند 2: الصفة صريحة حتى لا يُقارَن الرقم بمبلغ بدون ضريبة.
-        label: 'إجمالي المبيعات (شامل الضريبة)',
+        label: tr('إجمالي المبيعات (شامل الضريبة)'),
         value: '${totalAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
         color: AppColors.info,
       ),
@@ -59,10 +59,10 @@ class SalesSummaryRow extends ConsumerWidget {
         message: hasReceiptVouchers
             ? 'مدفوعات الفواتير: ${totalPaid.toStringAsFixed(AppConstants.decimalPlaces)}\n'
                 'سندات القبض: ${receiptVouchersTotal.toStringAsFixed(AppConstants.decimalPlaces)}'
-            : 'مدفوعات الفواتير',
+            : tr('مدفوعات الفواتير'),
         child: buildMaskedAmountKpiCard(
           icon: PhosphorIconsBold.wallet,
-          label: 'المحصّل',
+          label: tr('المحصّل'),
           value:
               '${collected.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
           color: AppColors.success,
@@ -72,13 +72,13 @@ class SalesSummaryRow extends ConsumerWidget {
       // (المتبقي = الإجمالي − المحصل − المرتجعات).
       buildMaskedAmountKpiCard(
         icon: PhosphorIconsBold.arrowUUpLeft,
-        label: 'إجمالي المرتجعات',
+        label: tr('إجمالي المرتجعات'),
         value: '${totalReturns.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
         color: AppColors.error,
       ),
       buildMaskedAmountKpiCard(
         icon: PhosphorIconsBold.clock,
-        label: 'المتبقي',
+        label: tr('المتبقي'),
         value: '${totalRemaining.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
         color: AppColors.warning,
       ),
@@ -86,13 +86,13 @@ class SalesSummaryRow extends ConsumerWidget {
       // المرتجعات» كانت موجودة أصلاً؛ الناقص كان النتيجة نفسها.
       buildMaskedAmountKpiCard(
         icon: PhosphorIconsBold.equals,
-        label: 'صافي المبيعات',
+        label: tr('صافي المبيعات'),
         value: '${(totalAmount - totalReturns).toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
         color: AppColors.primary,
       ),
       AppKpiCard(
         icon: PhosphorIconsBold.receipt,
-        label: 'عدد الفواتير',
+        label: tr('عدد الفواتير'),
         value: '$invoiceCount',
         color: AppColors.primary,
         style: KpiStyle.gradient,

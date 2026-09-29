@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -46,16 +47,16 @@ class _PartiesScreenState extends ConsumerState<PartiesScreen>
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: const Text('إدارة الأطراف (العملاء والموردين)'),
+          title:  Text(tr('إدارة الأطراف (العملاء والموردين)')),
           bottom: TabBar(
             controller: _tabController,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
             indicatorColor: Colors.white,
-            tabs: const [
-              Tab(icon: Icon(PhosphorIconsBold.users), text: 'العملاء'),
-              Tab(icon: Icon(PhosphorIconsBold.truck), text: 'الموردين'),
-              Tab(icon: Icon(PhosphorIconsBold.usersThree), text: 'المجموعات'),
+            tabs:  [
+              Tab(icon: const Icon(PhosphorIconsBold.users), text: tr('العملاء')),
+              Tab(icon: const Icon(PhosphorIconsBold.truck), text: tr('الموردين')),
+              Tab(icon: const Icon(PhosphorIconsBold.usersThree), text: tr('المجموعات')),
             ],
           ),
         ),

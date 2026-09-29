@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
@@ -137,7 +138,7 @@ class EnhancedCategoryFilter extends StatelessWidget {
       items.add(_buildCategoryItem(
         context: context,
         id: null,
-        name: 'الكل',
+        name: tr('الكل'),
         icon: PhosphorIconsBold.squaresFour,
         color: AppColors.primary,
         isSelected: selectedId == null,

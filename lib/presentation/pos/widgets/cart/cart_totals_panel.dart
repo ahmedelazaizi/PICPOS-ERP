@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -126,11 +127,11 @@ class CartTotalsPanel extends ConsumerWidget {
 
               // Customer selector
               if (ref.watch(showAddCustomerInPOSProvider).value ?? true)
-                const PermissionGuard(
+                 PermissionGuard(
                   permission: PermissionCodes.posCustomerSelect,
                   allowManagerOverride: true,
-                  actionName: 'اختيار عميل',
-                  child: CustomerSelectorV2(),
+                  actionName: tr('اختيار عميل'),
+                  child: const CustomerSelectorV2(),
                 ),
 
               // Phase 4: Ad-hoc customer info (name/phone text fields)
@@ -148,7 +149,7 @@ class CartTotalsPanel extends ConsumerWidget {
                         ),
                         decoration: InputDecoration(
                           isDense: true,
-                          hintText: 'اسم العميل',
+                          hintText: tr('اسم العميل'),
                           prefixIcon: const Icon(PhosphorIconsBold.user, size: 14, color: AppColors.textMuted),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -166,7 +167,7 @@ class CartTotalsPanel extends ConsumerWidget {
                         ),
                         decoration: InputDecoration(
                           isDense: true,
-                          hintText: 'رقم الهاتف',
+                          hintText: tr('رقم الهاتف'),
                           prefixIcon: const Icon(PhosphorIconsBold.phone, size: 14, color: AppColors.textMuted),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -185,7 +186,7 @@ class CartTotalsPanel extends ConsumerWidget {
                         ),
                         decoration: InputDecoration(
                           isDense: true,
-                          hintText: 'ملاحظات',
+                          hintText: tr('ملاحظات'),
                           prefixIcon: const Icon(PhosphorIconsBold.notepad, size: 14, color: AppColors.textMuted),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -202,10 +203,10 @@ class CartTotalsPanel extends ConsumerWidget {
                 SizedBox(height: spacing * 0.5),
                 Row(
                 children: [
-                  Text('نوع الطلب:', style: TextStyle(fontSize: 11 * effectiveScale, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+                  Text(tr('نوع الطلب:'), style: TextStyle(fontSize: 11 * effectiveScale, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
                   SizedBox(width: spacing * 0.5),
                   _OrderTypeChip(
-                    label: 'داخلي',
+                    label: tr('داخلي'),
                     icon: PhosphorIconsBold.house,
                     isSelected: cartState.orderType == 'internal',
                     onTap: () => cartController.setOrderType('internal'),
@@ -213,7 +214,7 @@ class CartTotalsPanel extends ConsumerWidget {
                   ),
                   const SizedBox(width: 6),
                   _OrderTypeChip(
-                    label: 'توصيل',
+                    label: tr('توصيل'),
                     icon: PhosphorIconsBold.motorcycle,
                     isSelected: cartState.orderType == 'delivery',
                     onTap: () => cartController.setOrderType('delivery'),
@@ -241,7 +242,7 @@ class CartTotalsPanel extends ConsumerWidget {
                           child: PermissionGuard(
                             permission: PermissionCodes.posTaxToggle,
                             allowManagerOverride: true,
-                            actionName: 'تغيير الضريبة',
+                            actionName: tr('تغيير الضريبة'),
                             child: buildTaxToggle(
                               cartState,
                               cartController,
@@ -285,13 +286,13 @@ class CartTotalsPanel extends ConsumerWidget {
                   children: [
                     if (ref.watch(showSubtotalInPOSProvider).value ?? true)
                       TotalRow(
-                        label: 'المجموع الفرعي',
+                        label: tr('المجموع الفرعي'),
                         value: totals.subtotal,
                         scaleFactor: effectiveScale,
                       ),
                     if (totals.totalDiscount > 0) ...[
                       TotalRow(
-                        label: 'الخصم المسموح به',
+                        label: tr('الخصم المسموح به'),
                         value: -totals.totalDiscount,
                         valueColor: AppColors.success,
                         scaleFactor: effectiveScale,
@@ -304,7 +305,7 @@ class CartTotalsPanel extends ConsumerWidget {
                         cartState.taxEnabled) ...[
                       if (totals.taxAmount > 0)
                         TotalRow(
-                          label: 'ضريبة القيمة المضافة',
+                          label: tr('ضريبة القيمة المضافة'),
                           value: totals.taxAmount,
                           scaleFactor: effectiveScale,
                           suffix:
@@ -313,7 +314,7 @@ class CartTotalsPanel extends ConsumerWidget {
                     ],
                     if (cartState.deliveryFee > 0)
                       TotalRow(
-                        label: 'رسوم التوصيل',
+                        label: tr('رسوم التوصيل'),
                         value: cartState.deliveryFee,
                         scaleFactor: effectiveScale,
                       ),
@@ -322,7 +323,7 @@ class CartTotalsPanel extends ConsumerWidget {
                       child: Divider(height: 1),
                     ),
                     TotalRow(
-                      label: 'الإجمالي النهائي',
+                      label: tr('الإجمالي النهائي'),
                       value: totals.total + cartState.deliveryFee,
                       isTotal: true,
                       scaleFactor: effectiveScale,
@@ -357,9 +358,9 @@ class CartTotalsPanel extends ConsumerWidget {
                         child: PermissionGuard(
                           permission: PermissionCodes.posOpenDrawer,
                           allowManagerOverride: true,
-                          actionName: 'فتح الدرج',
+                          actionName: tr('فتح الدرج'),
                           child: _buildSecondaryBtn(
-                            label: 'الدرج',
+                            label: tr('الدرج'),
                             icon: PhosphorIconsBold.stack,
                             color: AppColors.warning,
                             onTap: onOpenDrawer,
@@ -378,9 +379,9 @@ class CartTotalsPanel extends ConsumerWidget {
                       child: PermissionGuard(
                         permission: PermissionCodes.posPreviousInvoices,
                         allowManagerOverride: true,
-                        actionName: 'الفواتير السابقة',
+                        actionName: tr('الفواتير السابقة'),
                         child: _buildSecondaryBtn(
-                          label: 'فواتير',
+                          label: tr('فواتير'),
                           icon: PhosphorIconsBold.archive,
                           color: AppColors.info,
                           onTap: onPreviousInvoices,
@@ -399,9 +400,9 @@ class CartTotalsPanel extends ConsumerWidget {
                         child: PermissionGuard(
                           permission: PermissionCodes.posExpense,
                           allowManagerOverride: true,
-                          actionName: 'إضافة مصروف',
+                          actionName: tr('إضافة مصروف'),
                           child: _buildSecondaryBtn(
-                            label: 'مصاريف',
+                            label: tr('مصاريف'),
                             icon: PhosphorIconsBold.money,
                             color: AppColors.error,
                             onTap: onExpense,
@@ -429,11 +430,11 @@ class CartTotalsPanel extends ConsumerWidget {
                       child: PermissionGuard(
                         permission: PermissionCodes.posSave,
                         allowManagerOverride: true,
-                        actionName: 'حفظ البيع',
+                        actionName: tr('حفظ البيع'),
                         child: _buildPrimaryBtn(
                           label: checkoutState.isProcessing
-                              ? 'جاري...'
-                              : 'حفظ وفتح الدرج',
+                              ? tr('جاري...')
+                              : tr('حفظ وفتح الدرج'),
                           icon: PhosphorIconsBold.floppyDisk,
                           color: AppColors.primary,
                           onTap:
@@ -454,9 +455,9 @@ class CartTotalsPanel extends ConsumerWidget {
                     child: PermissionGuard(
                       permission: PermissionCodes.posPrint,
                       allowManagerOverride: true,
-                      actionName: 'حفظ وطباعة',
+                      actionName: tr('حفظ وطباعة'),
                       child: _buildPrimaryBtn(
-                        label: 'حفظ وطباعة',
+                        label: tr('حفظ وطباعة'),
                         icon: PhosphorIconsBold.printer,
                         color: AppColors.success,
                         onTap:

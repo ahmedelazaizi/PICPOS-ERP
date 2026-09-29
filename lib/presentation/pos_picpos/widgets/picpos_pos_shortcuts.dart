@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/services.dart';
 
 /// الخريطة القانونية لاختصارات نقطة بيع PicPos: المفتاح → معناه.
@@ -18,13 +19,13 @@ import 'package:flutter/services.dart';
 /// شغالين فعلاً — مش بتتحرك من هنا. دي مفاتيح تصميم PicPos.
 /// `final` مش `const`: `LogicalKeyboardKey` بيعمل override لـ `==`/`hashCode`،
 /// و Dart بيمنعه كمفتاح في map ثابتة.
-final picposShortcutLabels = <LogicalKeyboardKey, String>{
-  LogicalKeyboardKey.f2: 'حفظ',
-  LogicalKeyboardKey.f3: 'الفاتورة السابقة',
-  LogicalKeyboardKey.f4: 'دفع (حفظ + طباعة + درج)',
-  LogicalKeyboardKey.f6: 'تعديل السطر المحدَّد',
-  LogicalKeyboardKey.f8: 'حذف السطر المحدَّد',
-  LogicalKeyboardKey.escape: 'إلغاء الفاتورة',
-  LogicalKeyboardKey.arrowDown: 'السطر التالي',
-  LogicalKeyboardKey.arrowUp: 'السطر السابق',
+Map<LogicalKeyboardKey, String> get picposShortcutLabels => <LogicalKeyboardKey, String>{
+  LogicalKeyboardKey.f2: tr('حفظ'),
+  LogicalKeyboardKey.f3: tr('الفاتورة السابقة'),
+  LogicalKeyboardKey.f4: tr('دفع (حفظ + طباعة + درج)'),
+  LogicalKeyboardKey.f6: tr('تعديل السطر المحدَّد'),
+  LogicalKeyboardKey.f8: tr('حذف السطر المحدَّد'),
+  LogicalKeyboardKey.escape: tr('إلغاء الفاتورة'),
+  LogicalKeyboardKey.arrowDown: tr('السطر التالي'),
+  LogicalKeyboardKey.arrowUp: tr('السطر السابق'),
 };

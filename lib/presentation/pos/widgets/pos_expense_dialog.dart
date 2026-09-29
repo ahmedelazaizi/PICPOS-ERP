@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -32,7 +33,7 @@ Widget buildPosExpenseDescriptionField({
       TextField(
         controller: controller,
         decoration: InputDecoration(
-          labelText: 'الوصف (اختياري)',
+          labelText: tr('الوصف (اختياري)'),
           prefixIcon: const Icon(PhosphorIconsBold.note),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -75,17 +76,17 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
   String _salarySubType = 'salary'; // salary, advance, deduction
 
   final List<Map<String, String>> _salarySubTypes = [
-    {'value': 'salary', 'label': 'راتب'},
-    {'value': 'advance', 'label': 'سلفة'},
-    {'value': 'deduction', 'label': 'خصم'},
+    {'value': 'salary', 'label': tr('راتب')},
+    {'value': 'advance', 'label': tr('سلفة')},
+    {'value': 'deduction', 'label': tr('خصم')},
   ];
 
   final List<Map<String, String>> _categories = [
-    {'value': 'salary', 'label': 'رواتب'},
-    {'value': 'rent', 'label': 'إيجار'},
-    {'value': 'utilities', 'label': 'فواتير (كهرباء/ماء)'},
-    {'value': 'supplies', 'label': 'مستلزمات'},
-    {'value': 'other_expense', 'label': 'مصروفات أخرى'},
+    {'value': 'salary', 'label': tr('رواتب')},
+    {'value': 'rent', 'label': tr('إيجار')},
+    {'value': 'utilities', 'label': tr('فواتير (كهرباء/ماء)')},
+    {'value': 'supplies', 'label': tr('مستلزمات')},
+    {'value': 'other_expense', 'label': tr('مصروفات أخرى')},
   ];
 
   @override
@@ -148,22 +149,22 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
       return Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          content: const SizedBox(
+          content:  SizedBox(
             width: 200,
             height: 100,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 12),
-                Text('جاري التحميل...', style: TextStyle(fontSize: 13)),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 12),
+                Text(tr('جاري التحميل...'), style: const TextStyle(fontSize: 13)),
               ],
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
           ],
         ),
@@ -177,7 +178,7 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
           children: [
             const Icon(PhosphorIconsBold.money, color: AppColors.error),
             const SizedBox(width: 8),
-            const Text('إضافة مصروف'),
+             Text(tr('إضافة مصروف')),
             const Spacer(),
             TextButton.icon(
               onPressed: () {
@@ -188,9 +189,9 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
                 PhosphorIconsBold.clockCounterClockwise,
                 size: 18,
               ),
-              label: const Text(
-                'المصروفات السابقة',
-                style: TextStyle(fontSize: 12),
+              label:  Text(
+                tr('المصروفات السابقة'),
+                style: const TextStyle(fontSize: 12),
               ),
               style: TextButton.styleFrom(foregroundColor: AppColors.info),
             ),
@@ -206,7 +207,7 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
                 DropdownButtonFormField<String>(
                   initialValue: _selectedCategory,
                   decoration: InputDecoration(
-                    labelText: 'نوع المصروف',
+                    labelText: tr('نوع المصروف'),
                     prefixIcon: const Icon(PhosphorIconsBold.tag),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -236,7 +237,7 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
                 ),
                 autofocus: true,
                 decoration: InputDecoration(
-                  labelText: 'المبلغ',
+                  labelText: tr('المبلغ'),
                   prefixIcon: const Icon(
                     PhosphorIconsBold.currencyCircleDollar,
                   ),
@@ -260,7 +261,7 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
                 DropdownButtonFormField<String>(
                   initialValue: _salarySubType,
                   decoration: InputDecoration(
-                    labelText: 'نوع الصرف',
+                    labelText: tr('نوع الصرف'),
                     prefixIcon: const Icon(PhosphorIconsBold.wallet),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -286,12 +287,12 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton.icon(
             onPressed: _saveExpense,
             icon: const Icon(PhosphorIconsBold.check),
-            label: const Text('حفظ المصروف'),
+            label:  Text(tr('حفظ المصروف')),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
           ),
         ],
@@ -305,7 +306,7 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
       showPosToast(
         context,
         ref,
-        'أدخل مبلغ صحيح',
+        tr('أدخل مبلغ صحيح'),
         type: PosNotificationType.warning,
       );
       return;
@@ -316,7 +317,7 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
       showPosToast(
         context,
         ref,
-        'اختر الموظف أولاً',
+        tr('اختر الموظف أولاً'),
         type: PosNotificationType.warning,
       );
       return;
@@ -329,7 +330,7 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
     if (_selectedCategory == 'salary' && _selectedEmployeeName != null) {
       final subLabel = _salarySubTypes.firstWhere(
         (t) => t['value'] == _salarySubType,
-        orElse: () => {'label': 'راتب'},
+        orElse: () => {'label': tr('راتب')},
       )['label']!;
       description = '$subLabel - $_selectedEmployeeName${description != null ? ' - $description' : ''}';
     }
@@ -349,7 +350,7 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
           showPosToast(
             context,
             ref,
-            'لا يوجد خزنة افتراضية! يرجى إعداد خزنة من الإعدادات',
+            tr('لا يوجد خزنة افتراضية! يرجى إعداد خزنة من الإعدادات'),
             type: PosNotificationType.error,
           );
         }
@@ -467,7 +468,7 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
         showPosToast(
           context,
           ref,
-          'تم إنشاء سند مصروف ${amount.toStringAsFixed(AppConstants.decimalPlaces)} د.أ',
+          tr('تم إنشاء سند مصروف {p0} د.أ', {'p0': amount.toStringAsFixed(AppConstants.decimalPlaces)}),
           type: PosNotificationType.success,
         );
       }
@@ -478,7 +479,7 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
         showPosToast(
           context,
           ref,
-          'خطأ في حفظ المصروف: $e',
+          tr('خطأ في حفظ المصروف: {e}', {'e': e}),
           type: PosNotificationType.error,
         );
       }
@@ -489,7 +490,7 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
     final usersAsync = ref.watch(allUsersProvider);
     return usersAsync.when(
       loading: () => const LinearProgressIndicator(),
-      error: (e, _) => Text('خطأ: $e'),
+      error: (e, _) => Text(tr('خطأ: {e}', {'e': e})),
       data: (users) {
         return Autocomplete<UserWithRole>(
           optionsBuilder: (textEditingValue) {
@@ -509,9 +510,9 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
               controller: controller,
               focusNode: focusNode,
               decoration: InputDecoration(
-                labelText: 'اختر الموظف *',
+                labelText: tr('اختر الموظف *'),
                 prefixIcon: const Icon(PhosphorIconsBold.user),
-                hintText: 'ابحث عن موظف...',
+                hintText: tr('ابحث عن موظف...'),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

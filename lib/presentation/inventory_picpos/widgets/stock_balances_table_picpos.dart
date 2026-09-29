@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // جدولُ أرصدة المخزون بهويّة PicPos — **فوركٌ بقرار المالك 2026-08-22**
 // («انسخه إلى PicPos ولا تشارك تعديلاتِ PicPos على UralCash»).
 //
@@ -238,21 +239,21 @@ class _StockBalancesTableState extends ConsumerState<StockBalancesTablePicpos> {
             : filteredAll;
 
         if (filteredProducts.isEmpty) {
-          return const Center(
+          return  Center(
             child: Padding(
-              padding: EdgeInsets.all(32.0),
+              padding: const EdgeInsets.all(32.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
+                  const Icon(
                     PhosphorIconsBold.archive,
                     size: 48,
                     color: AppColors.textMuted,
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text(
-                    'لا توجد أصناف مطابقة للبحث',
-                    style: TextStyle(color: AppColors.textSecondary),
+                    tr('لا توجد أصناف مطابقة للبحث'),
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
                 ],
               ),
@@ -285,7 +286,7 @@ class _StockBalancesTableState extends ConsumerState<StockBalancesTablePicpos> {
         );
       },
       loading: () => ShimmerLoading.list(),
-      error: (e, _) => Center(child: Text('خطأ في تحميل المخزون: $e')),
+      error: (e, _) => Center(child: Text(tr('خطأ في تحميل المخزون: {e}', {'e': e}))),
     );
   }
 
@@ -348,8 +349,8 @@ class _StockBalancesTableState extends ConsumerState<StockBalancesTablePicpos> {
                   product: p,
                   stock: _stockFor(p),
                   categoryLabel:
-                      widget.categoryMap[p.categoryId] ?? 'غير مصنف',
-                  unitLabel: widget.unitMap[p.id] ?? 'قطعة',
+                      widget.categoryMap[p.categoryId] ?? tr('غير مصنف'),
+                  unitLabel: widget.unitMap[p.id] ?? tr('قطعة'),
                   expiryDate: widget.expiryMap[p.id],
                   isStriped: i.isOdd,
                   barcodeWidth: barcodeWidth,
@@ -437,15 +438,15 @@ class _StockBalancesHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _cell('كود', _kCodeColWidth, headerStyle),
-          _cell('الباركود', barcodeWidth, headerStyle),
-          _cell('الصنف', nameWidth, headerStyle),
-          _cell('التصنيف', categoryWidth, headerStyle),
-          _cell('الوحدة', _kUnitColWidth, headerStyle),
-          _cell('المخزون', _kStockColWidth, headerStyle, alignEnd: true),
-          _cell('الحالة', _kStatusColWidth, headerStyle),
-          _cell('الصلاحية', _kExpiryColWidth, headerStyle),
-          _cell('إجراءات', _kActionsColWidth, headerStyle),
+          _cell(tr('كود'), _kCodeColWidth, headerStyle),
+          _cell(tr('الباركود'), barcodeWidth, headerStyle),
+          _cell(tr('الصنف'), nameWidth, headerStyle),
+          _cell(tr('التصنيف'), categoryWidth, headerStyle),
+          _cell(tr('الوحدة'), _kUnitColWidth, headerStyle),
+          _cell(tr('المخزون'), _kStockColWidth, headerStyle, alignEnd: true),
+          _cell(tr('الحالة'), _kStatusColWidth, headerStyle),
+          _cell(tr('الصلاحية'), _kExpiryColWidth, headerStyle),
+          _cell(tr('إجراءات'), _kActionsColWidth, headerStyle),
         ],
       ),
     );
@@ -568,7 +569,7 @@ class _StockBalanceRow extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(PhosphorIconsRegular.plusMinus, size: 18),
-                  tooltip: 'تسوية الجرد',
+                  tooltip: tr('تسوية الجرد'),
                   color: AppColors.primary,
                   padding: const EdgeInsets.all(6),
                   constraints:
@@ -577,7 +578,7 @@ class _StockBalanceRow extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(PhosphorIconsRegular.barcode, size: 18),
-                  tooltip: 'طباعة باركود',
+                  tooltip: tr('طباعة باركود'),
                   color: AppColors.info,
                   padding: const EdgeInsets.all(6),
                   constraints:
@@ -683,7 +684,7 @@ class StockCellPicpos extends StatelessWidget {
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  'حد أدنى ${minStock.toStringAsFixed(0)}',
+                  tr('حد أدنى {p0}', {'p0': minStock.toStringAsFixed(0)}),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -724,13 +725,13 @@ class _StockStatusBadge extends StatelessWidget {
     String text;
     Color color;
     if (isOut) {
-      text = 'نفذ';
+      text = tr('نفذ');
       color = AppColors.error;
     } else if (isLow) {
-      text = 'منخفض';
+      text = tr('منخفض');
       color = AppColors.warning;
     } else {
-      text = 'متوفر';
+      text = tr('متوفر');
       color = AppColors.success;
     }
     return Container(
@@ -779,9 +780,9 @@ class _ExpiryBadge extends StatelessWidget {
           color: AppColors.success.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: const Text(
-          'سليم',
-          style: TextStyle(
+        child:  Text(
+          tr('سليم'),
+          style: const TextStyle(
             color: AppColors.success,
             fontSize: 12,
             fontWeight: FontWeight.w500,
@@ -794,13 +795,13 @@ class _ExpiryBadge extends StatelessWidget {
     String text;
     Color color;
     if (daysUntilExpiry < 0) {
-      text = 'منتهي';
+      text = tr('منتهي');
       color = AppColors.error;
     } else if (daysUntilExpiry <= 30) {
-      text = 'قرب الإنتهاء ($daysUntilExpiry يوم)';
+      text = tr('قرب الإنتهاء ({daysUntilExpiry} يوم)', {'daysUntilExpiry': daysUntilExpiry});
       color = AppColors.warning;
     } else {
-      text = 'سليم';
+      text = tr('سليم');
       color = AppColors.success;
     }
     return Container(

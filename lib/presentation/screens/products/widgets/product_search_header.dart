@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 
@@ -34,9 +35,9 @@ class ProductSearchHeader extends ConsumerWidget {
         // Title and Actions Row
         Row(
           children: [
-            const Text(
-              'إدارة الأصناف',
-              style: TextStyle(
+             Text(
+              tr('إدارة الأصناف'),
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -55,7 +56,7 @@ class ProductSearchHeader extends ConsumerWidget {
                 MaterialPageRoute(builder: (_) => const UnitsManagementScreen()),
               ),
               icon: const Icon(PhosphorIconsBold.package, size: 18),
-              label: const Text('وحدات القياس'),
+              label:  Text(tr('وحدات القياس')),
             ),
             const SizedBox(width: 12),
             _buildAddProductButton(context, ref),
@@ -70,7 +71,7 @@ class ProductSearchHeader extends ConsumerWidget {
           onChanged: (val) =>
               ref.read(productsControllerProvider.notifier).setSearchQuery(val),
           decoration: InputDecoration(
-            hintText: 'البحث عن صنف...',
+            hintText: tr('البحث عن صنف...'),
             prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
@@ -137,9 +138,9 @@ class ProductSearchHeader extends ConsumerWidget {
     return PermissionGuard(
       permission: PermissionCodes.productsExport,
       allowManagerOverride: true,
-      actionName: 'عمليات الميزان',
+      actionName: tr('عمليات الميزان'),
       child: PopupMenuButton<String>(
-        tooltip: 'عمليات الميزان',
+        tooltip: tr('عمليات الميزان'),
         onSelected: (value) async {
           final excelService = ref.read(excelServiceProvider);
           switch (value) {
@@ -148,7 +149,7 @@ class ProductSearchHeader extends ConsumerWidget {
               if (path != null && context.mounted) {
                 AppToast.show(
                   context,
-                  'تم تصدير قالب أصناف الميزان: $path',
+                  tr('تم تصدير قالب أصناف الميزان: {path}', {'path': path}),
                   type: ToastType.success,
                 );
               }
@@ -174,33 +175,33 @@ class ProductSearchHeader extends ConsumerWidget {
           }
         },
         itemBuilder: (context) => [
-          const PopupMenuItem(
+           PopupMenuItem(
             value: 'export_scale',
             child: ListTile(
-              leading: Icon(
+              leading: const Icon(
                 PhosphorIconsBold.fileArrowUp,
                 color: AppColors.warning,
               ),
-              title: Text('تصدير قالب الميزان'),
+              title: Text(tr('تصدير قالب الميزان')),
               dense: true,
             ),
           ),
-          const PopupMenuItem(
+           PopupMenuItem(
             value: 'import_scale',
             child: ListTile(
-              leading: Icon(
+              leading: const Icon(
                 PhosphorIconsBold.fileArrowDown,
                 color: AppColors.warning,
               ),
-              title: Text('استيراد أصناف الميزان'),
+              title: Text(tr('استيراد أصناف الميزان')),
               dense: true,
             ),
           ),
-          const PopupMenuItem(
+           PopupMenuItem(
             value: 'upload_scale',
             child: ListTile(
-              leading: Icon(PhosphorIconsBold.upload, color: AppColors.info),
-              title: Text('ترحيل للميزان'),
+              leading: const Icon(PhosphorIconsBold.upload, color: AppColors.info),
+              title: Text(tr('ترحيل للميزان')),
               dense: true,
             ),
           ),
@@ -209,7 +210,7 @@ class ProductSearchHeader extends ConsumerWidget {
           child: OutlinedButton.icon(
             onPressed: () {},
           icon: const Icon(PhosphorIconsBold.scales),
-          label: const Text('الميزان ▾'),
+          label:  Text(tr('الميزان ▾')),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.warning,
             side: const BorderSide(color: AppColors.warning),
@@ -224,7 +225,7 @@ class ProductSearchHeader extends ConsumerWidget {
     return PermissionGuard(
       permission: PermissionCodes.productsExport,
       allowManagerOverride: true,
-      actionName: 'تصدير الأصناف',
+      actionName: tr('تصدير الأصناف'),
       child: OutlinedButton.icon(
         onPressed: () async {
           final path = await ref
@@ -233,13 +234,13 @@ class ProductSearchHeader extends ConsumerWidget {
           if (path != null && context.mounted) {
             AppToast.show(
               context,
-              'تم تصدير النموذج بنجاح: $path',
+              tr('تم تصدير النموذج بنجاح: {path}', {'path': path}),
               type: ToastType.success,
             );
           }
         },
         icon: const Icon(PhosphorIconsBold.fileArrowUp),
-        label: const Text('تصدير الأصناف'),
+        label:  Text(tr('تصدير الأصناف')),
       ),
     );
   }
@@ -248,7 +249,7 @@ class ProductSearchHeader extends ConsumerWidget {
     return PermissionGuard(
       permission: PermissionCodes.productsImport,
       allowManagerOverride: true,
-      actionName: 'استيراد أصناف',
+      actionName: tr('استيراد أصناف'),
       child: OutlinedButton.icon(
         onPressed: () async {
           final result = await ref.read(excelServiceProvider).importProducts();
@@ -270,7 +271,7 @@ class ProductSearchHeader extends ConsumerWidget {
           }
         },
         icon: const Icon(PhosphorIconsBold.fileArrowDown),
-        label: const Text('استيراد أصناف'),
+        label:  Text(tr('استيراد أصناف')),
       ),
     );
   }
@@ -279,7 +280,7 @@ class ProductSearchHeader extends ConsumerWidget {
     return PermissionGuard(
       permission: PermissionCodes.productsAdd,
       allowManagerOverride: true,
-      actionName: 'إضافة صنف جديد',
+      actionName: tr('إضافة صنف جديد'),
       child: ElevatedButton.icon(
         onPressed: () async {
           // Assuming AddProductDialog.show exists
@@ -291,14 +292,14 @@ class ProductSearchHeader extends ConsumerWidget {
             if (context.mounted) {
               AppToast.show(
                 context,
-                'تم إضافة ${result.productName} بنجاح',
+                tr('تم إضافة {p0} بنجاح', {'p0': result.productName}),
                 type: ToastType.success,
               );
             }
           }
         },
         icon: const Icon(PhosphorIconsBold.plus),
-        label: const Text('إضافة صنف'),
+        label:  Text(tr('إضافة صنف')),
       ),
     );
   }
@@ -320,7 +321,7 @@ class ProductSearchHeader extends ConsumerWidget {
       if (context.mounted) {
         AppToast.show(
           context,
-          'لا توجد أصناف للميزان',
+          tr('لا توجد أصناف للميزان'),
           type: ToastType.warning,
         );
       }
@@ -350,7 +351,7 @@ class ProductSearchHeader extends ConsumerWidget {
     if (context.mounted) {
       AppToast.show(
         context,
-        'جاري ترحيل ${pluItems.length} صنف للميزان...',
+        tr('جاري ترحيل {p0} صنف للميزان...', {'p0': pluItems.length}),
         type: ToastType.info,
       );
     }
@@ -369,13 +370,13 @@ class ProductSearchHeader extends ConsumerWidget {
       if (context.mounted) {
         AppToast.show(
           context,
-          'تم ترحيل ${result.success}/${result.total} صنف بنجاح',
+          tr('تم ترحيل {p0}/{p1} صنف بنجاح', {'p0': result.success, 'p1': result.total}),
           type: result.failed == 0 ? ToastType.success : ToastType.warning,
         );
       }
     } catch (e) {
       if (context.mounted) {
-        AppToast.show(context, 'خطأ في الترحيل: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الترحيل: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -449,10 +450,10 @@ class _CategoryFilterButtonState extends ConsumerState<_CategoryFilterButton> {
         AppToast.show(
           context,
           widget.loadingFirstTime
-              ? 'جاري تحميل التصنيفات…'
+              ? tr('جاري تحميل التصنيفات…')
               : (widget.errorMessage != null
-                  ? 'خطأ في تحميل التصنيفات: ${widget.errorMessage}'
-                  : 'لا توجد تصنيفات متاحة'),
+                  ? tr('خطأ في تحميل التصنيفات: {p0}', {'p0': widget.errorMessage})
+                  : tr('لا توجد تصنيفات متاحة')),
           type: ToastType.info,
         );
       }
@@ -505,11 +506,11 @@ class _CategoryFilterButtonState extends ConsumerState<_CategoryFilterButton> {
     }
     final String label;
     if (widget.errorMessage != null && widget.categories.isEmpty) {
-      label = 'خطأ في التصنيفات';
+      label = tr('خطأ في التصنيفات');
     } else if (widget.loadingFirstTime) {
-      label = 'جاري التحميل…';
+      label = tr('جاري التحميل…');
     } else {
-      label = selected?.name ?? 'كل التصنيفات';
+      label = selected?.name ?? tr('كل التصنيفات');
     }
     return Listener(
       behavior: HitTestBehavior.translucent,
@@ -597,12 +598,12 @@ class _CategorySearchDialogState extends State<_CategorySearchDialog> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.squaresFour,
+            const Icon(PhosphorIconsBold.squaresFour,
                 size: 20, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text('اختر التصنيف'),
+            const SizedBox(width: 8),
+            Text(tr('اختر التصنيف')),
           ],
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -615,7 +616,7 @@ class _CategorySearchDialogState extends State<_CategorySearchDialog> {
                 controller: _ctrl,
                 autofocus: true,
                 decoration: InputDecoration(
-                  hintText: 'ابحث عن تصنيف...',
+                  hintText: tr('ابحث عن تصنيف...'),
                   prefixIcon:
                       const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                   isDense: true,
@@ -640,7 +641,7 @@ class _CategorySearchDialogState extends State<_CategorySearchDialog> {
                               isSelected ? AppColors.primary : AppColors.textMuted,
                         ),
                         title: Text(
-                          'كل التصنيفات',
+                          tr('كل التصنيفات'),
                           style: TextStyle(
                             fontWeight: isSelected
                                 ? FontWeight.bold
@@ -683,7 +684,7 @@ class _CategorySearchDialogState extends State<_CategorySearchDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
         ],
       ),

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
@@ -15,55 +16,55 @@ class CategoryIconPicker extends StatefulWidget {
   });
 
   // Available icons for categories with Arabic labels
-  static final Map<String, ({IconData icon, String label})> availableIcons = {
-    'hamburger': (icon: PhosphorIconsBold.hamburger, label: 'برجر'),
-    'pizza': (icon: PhosphorIconsBold.pizza, label: 'بيتزا'),
-    'coffee': (icon: PhosphorIconsBold.coffee, label: 'مشروبات ساخنة'),
-    'beer': (icon: PhosphorIconsBold.beerBottle, label: 'مشروبات'),
-    'cookingPot': (icon: PhosphorIconsBold.cookingPot, label: 'طبخ'),
-    'bowl': (icon: PhosphorIconsBold.bowlFood, label: 'أطباق'),
-    'iceCream': (icon: PhosphorIconsBold.iceCream, label: 'حلويات'),
-    'cake': (icon: PhosphorIconsBold.cake, label: 'كيك'),
-    'cookie': (icon: PhosphorIconsBold.cookie, label: 'معجنات'),
-    'bread': (icon: PhosphorIconsBold.bread, label: 'مخبوزات'),
-    'egg': (icon: PhosphorIconsBold.egg, label: 'فطور'),
-    'fish': (icon: PhosphorIconsBold.fish, label: 'مأكولات بحرية'),
-    'grains': (icon: PhosphorIconsBold.grains, label: 'حبوب'),
-    'orange': (icon: PhosphorIconsBold.orange, label: 'فواكه'),
-    'carrot': (icon: PhosphorIconsBold.carrot, label: 'خضروات'),
-    'wine': (icon: PhosphorIconsBold.wine, label: 'مشروبات فاخرة'),
-    'shoppingCart': (icon: PhosphorIconsBold.shoppingCart, label: 'تسوق'),
-    'tShirt': (icon: PhosphorIconsBold.tShirt, label: 'ملابس'),
-    'sneaker': (icon: PhosphorIconsBold.sneaker, label: 'أحذية'),
-    'bag': (icon: PhosphorIconsBold.handbag, label: 'حقائب'),
-    'watch': (icon: PhosphorIconsBold.watch, label: 'ساعات'),
-    'sparkle': (icon: PhosphorIconsBold.sparkle, label: 'إكسسوارات'),
-    'phone': (icon: PhosphorIconsBold.phone, label: 'هواتف'),
-    'laptop': (icon: PhosphorIconsBold.laptop, label: 'أجهزة'),
-    'headphones': (icon: PhosphorIconsBold.headphones, label: 'سماعات'),
-    'gameController': (icon: PhosphorIconsBold.gameController, label: 'ألعاب'),
-    'pill': (icon: PhosphorIconsBold.pill, label: 'أدوية'),
-    'heart': (icon: PhosphorIconsBold.heartbeat, label: 'صحة'),
-    'firstAid': (icon: PhosphorIconsBold.firstAid, label: 'إسعافات'),
-    'scissors': (icon: PhosphorIconsBold.scissors, label: 'تجميل'),
-    'sprayBottle': (icon: PhosphorIconsBold.sprayBottle, label: 'تنظيف'),
-    'baby': (icon: PhosphorIconsBold.baby, label: 'أطفال'),
-    'paw': (icon: PhosphorIconsBold.pawPrint, label: 'حيوانات'),
-    'house': (icon: PhosphorIconsBold.house, label: 'منزل'),
-    'car': (icon: PhosphorIconsBold.car, label: 'سيارات'),
-    'wrench': (icon: PhosphorIconsBold.wrench, label: 'أدوات'),
-    'gift': (icon: PhosphorIconsBold.gift, label: 'هدايا'),
-    'star': (icon: PhosphorIconsBold.star, label: 'مميز'),
-    'fire': (icon: PhosphorIconsBold.fire, label: 'عرض خاص'),
-    'tag': (icon: PhosphorIconsBold.tag, label: 'عروض'),
-    'percent': (icon: PhosphorIconsBold.percent, label: 'خصومات'),
-    'package': (icon: PhosphorIconsBold.package, label: 'منتجات'),
-    'box': (icon: PhosphorIconsBold.cube, label: 'صناديق'),
-    'flower': (icon: PhosphorIconsBold.flower, label: 'زهور'),
-    'sun': (icon: PhosphorIconsBold.sun, label: 'صيف'),
-    'snowflake': (icon: PhosphorIconsBold.snowflake, label: 'شتاء'),
-    'leaf': (icon: PhosphorIconsBold.leaf, label: 'طبيعي'),
-    'recycle': (icon: PhosphorIconsBold.recycle, label: 'بيئي'),
+  static Map<String, ({IconData icon, String label})> get availableIcons => {
+    'hamburger': (icon: PhosphorIconsBold.hamburger, label: tr('برجر')),
+    'pizza': (icon: PhosphorIconsBold.pizza, label: tr('بيتزا')),
+    'coffee': (icon: PhosphorIconsBold.coffee, label: tr('مشروبات ساخنة')),
+    'beer': (icon: PhosphorIconsBold.beerBottle, label: tr('مشروبات')),
+    'cookingPot': (icon: PhosphorIconsBold.cookingPot, label: tr('طبخ')),
+    'bowl': (icon: PhosphorIconsBold.bowlFood, label: tr('أطباق')),
+    'iceCream': (icon: PhosphorIconsBold.iceCream, label: tr('حلويات')),
+    'cake': (icon: PhosphorIconsBold.cake, label: tr('كيك')),
+    'cookie': (icon: PhosphorIconsBold.cookie, label: tr('معجنات')),
+    'bread': (icon: PhosphorIconsBold.bread, label: tr('مخبوزات')),
+    'egg': (icon: PhosphorIconsBold.egg, label: tr('فطور')),
+    'fish': (icon: PhosphorIconsBold.fish, label: tr('مأكولات بحرية')),
+    'grains': (icon: PhosphorIconsBold.grains, label: tr('حبوب')),
+    'orange': (icon: PhosphorIconsBold.orange, label: tr('فواكه')),
+    'carrot': (icon: PhosphorIconsBold.carrot, label: tr('خضروات')),
+    'wine': (icon: PhosphorIconsBold.wine, label: tr('مشروبات فاخرة')),
+    'shoppingCart': (icon: PhosphorIconsBold.shoppingCart, label: tr('تسوق')),
+    'tShirt': (icon: PhosphorIconsBold.tShirt, label: tr('ملابس')),
+    'sneaker': (icon: PhosphorIconsBold.sneaker, label: tr('أحذية')),
+    'bag': (icon: PhosphorIconsBold.handbag, label: tr('حقائب')),
+    'watch': (icon: PhosphorIconsBold.watch, label: tr('ساعات')),
+    'sparkle': (icon: PhosphorIconsBold.sparkle, label: tr('إكسسوارات')),
+    'phone': (icon: PhosphorIconsBold.phone, label: tr('هواتف')),
+    'laptop': (icon: PhosphorIconsBold.laptop, label: tr('أجهزة')),
+    'headphones': (icon: PhosphorIconsBold.headphones, label: tr('سماعات')),
+    'gameController': (icon: PhosphorIconsBold.gameController, label: tr('ألعاب')),
+    'pill': (icon: PhosphorIconsBold.pill, label: tr('أدوية')),
+    'heart': (icon: PhosphorIconsBold.heartbeat, label: tr('صحة')),
+    'firstAid': (icon: PhosphorIconsBold.firstAid, label: tr('إسعافات')),
+    'scissors': (icon: PhosphorIconsBold.scissors, label: tr('تجميل')),
+    'sprayBottle': (icon: PhosphorIconsBold.sprayBottle, label: tr('تنظيف')),
+    'baby': (icon: PhosphorIconsBold.baby, label: tr('أطفال')),
+    'paw': (icon: PhosphorIconsBold.pawPrint, label: tr('حيوانات')),
+    'house': (icon: PhosphorIconsBold.house, label: tr('منزل')),
+    'car': (icon: PhosphorIconsBold.car, label: tr('سيارات')),
+    'wrench': (icon: PhosphorIconsBold.wrench, label: tr('أدوات')),
+    'gift': (icon: PhosphorIconsBold.gift, label: tr('هدايا')),
+    'star': (icon: PhosphorIconsBold.star, label: tr('مميز')),
+    'fire': (icon: PhosphorIconsBold.fire, label: tr('عرض خاص')),
+    'tag': (icon: PhosphorIconsBold.tag, label: tr('عروض')),
+    'percent': (icon: PhosphorIconsBold.percent, label: tr('خصومات')),
+    'package': (icon: PhosphorIconsBold.package, label: tr('منتجات')),
+    'box': (icon: PhosphorIconsBold.cube, label: tr('صناديق')),
+    'flower': (icon: PhosphorIconsBold.flower, label: tr('زهور')),
+    'sun': (icon: PhosphorIconsBold.sun, label: tr('صيف')),
+    'snowflake': (icon: PhosphorIconsBold.snowflake, label: tr('شتاء')),
+    'leaf': (icon: PhosphorIconsBold.leaf, label: tr('طبيعي')),
+    'recycle': (icon: PhosphorIconsBold.recycle, label: tr('بيئي')),
   };
 
   /// Get icon data from icon name
@@ -130,8 +131,8 @@ class _CategoryIconPickerState extends State<CategoryIconPicker> {
                         ? CategoryIconPicker
                                   .availableIcons[_selectedIcon]
                                   ?.label ??
-                              'أيقونة مخصصة'
-                        : 'اختر أيقونة (اختياري)',
+                              tr('أيقونة مخصصة')
+                        : tr('اختر أيقونة (اختياري)'),
                     style: TextStyle(
                       color: _selectedIcon != null
                           ? AppColors.textPrimary
@@ -177,7 +178,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker> {
                         widget.onIconSelected(null);
                       },
                       icon: const Icon(PhosphorIconsBold.x, size: 16),
-                      label: const Text('إزالة الأيقونة'),
+                      label:  Text(tr('إزالة الأيقونة')),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.error,
                       ),

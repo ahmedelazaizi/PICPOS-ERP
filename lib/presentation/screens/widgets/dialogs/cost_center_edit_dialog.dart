@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -53,7 +54,7 @@ class _CostCenterEditDialogState extends ConsumerState<CostCenterEditDialog> {
     final name = _nameController.text.trim();
 
     if (code.isEmpty || name.isEmpty) {
-      AppToast.show(context, 'يرجى ملء جميع الحقول المطلوبة', type: ToastType.error);
+      AppToast.show(context, tr('يرجى ملء جميع الحقول المطلوبة'), type: ToastType.error);
       return;
     }
 
@@ -70,25 +71,25 @@ class _CostCenterEditDialogState extends ConsumerState<CostCenterEditDialog> {
           parentId: _selectedParentId,
           isActive: _isActive,
         );
-        _logActivity('update_cost_center', widget.existing!.id, 'تعديل مركز تكلفة: $name');
+        _logActivity('update_cost_center', widget.existing!.id, tr('تعديل مركز تكلفة: {name}', {'name': name}));
       } else {
         final id = await accountingRepo.createCostCenter(
           code: code,
           name: name,
           parentId: _selectedParentId,
         );
-        _logActivity('create_cost_center', id, 'إضافة مركز تكلفة: $name');
+        _logActivity('create_cost_center', id, tr('إضافة مركز تكلفة: {name}', {'name': name}));
       }
 
       if (mounted) {
-        AppToast.show(context, 'تم الحفظ بنجاح', type: ToastType.success);
+        AppToast.show(context, tr('تم الحفظ بنجاح'), type: ToastType.success);
         // Notify connected clients about cost center change
         NetworkService.instance.broadcastChange('cost_centers');
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -120,7 +121,7 @@ class _CostCenterEditDialogState extends ConsumerState<CostCenterEditDialog> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        widget.existing == null ? 'إضافة مركز تكلفة' : 'تعديل مركز تكلفة',
+                        widget.existing == null ? tr('إضافة مركز تكلفة') : tr('تعديل مركز تكلفة'),
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                       ),
                     ),
@@ -133,22 +134,22 @@ class _CostCenterEditDialogState extends ConsumerState<CostCenterEditDialog> {
                 const Divider(height: 24),
                 TextField(
                   controller: _codeController,
-                  decoration: const InputDecoration(
-                    labelText: 'الرمز *',
-                    hintText: 'مثال: BR-01',
-                    prefixIcon: Icon(PhosphorIconsBold.hash),
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('الرمز *'),
+                    hintText: tr('مثال: BR-01'),
+                    prefixIcon: const Icon(PhosphorIconsBold.hash),
+                    border: const OutlineInputBorder(),
                   ),
                   autofocus: true,
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'الاسم *',
-                    hintText: 'مثال: الفرع الرئيسي',
-                    prefixIcon: Icon(PhosphorIconsBold.textT),
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('الاسم *'),
+                    hintText: tr('مثال: الفرع الرئيسي'),
+                    prefixIcon: const Icon(PhosphorIconsBold.textT),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -162,13 +163,13 @@ class _CostCenterEditDialogState extends ConsumerState<CostCenterEditDialog> {
 
                     return DropdownButtonFormField<int?>(
                       initialValue: _selectedParentId,
-                      decoration: const InputDecoration(
-                        labelText: 'المركز الرئيسي (اختياري)',
-                        prefixIcon: Icon(PhosphorIconsBold.treeStructure),
-                        border: OutlineInputBorder(),
+                      decoration:  InputDecoration(
+                        labelText: tr('المركز الرئيسي (اختياري)'),
+                        prefixIcon: const Icon(PhosphorIconsBold.treeStructure),
+                        border: const OutlineInputBorder(),
                       ),
                       items: [
-                        const DropdownMenuItem<int?>(value: null, child: Text('بدون (مركز رئيسي)')),
+                         DropdownMenuItem<int?>(value: null, child: Text(tr('بدون (مركز رئيسي)'))),
                         ...validParents.map((c) => DropdownMenuItem<int?>(
                           value: c.id,
                           child: Text(c.name),
@@ -181,8 +182,8 @@ class _CostCenterEditDialogState extends ConsumerState<CostCenterEditDialog> {
                 if (widget.existing != null) ...[
                   const SizedBox(height: 16),
                   SwitchListTile(
-                    title: const Text('نشط'),
-                    subtitle: const Text('تعطيل المركز يمنع استخدامه في الحركات الجديدة'),
+                    title:  Text(tr('نشط')),
+                    subtitle:  Text(tr('تعطيل المركز يمنع استخدامه في الحركات الجديدة')),
                     value: _isActive,
                     onChanged: (val) => setState(() => _isActive = val),
                     contentPadding: EdgeInsets.zero,
@@ -201,7 +202,7 @@ class _CostCenterEditDialogState extends ConsumerState<CostCenterEditDialog> {
                     ),
                     child: _isSaving
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('حفظ', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                        :  Text(tr('حفظ'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                   ),
                 ),
               ],

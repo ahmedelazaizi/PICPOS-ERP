@@ -95,13 +95,13 @@ class _SubmissionTile extends StatelessWidget {
             size: 20,
           ),
         ),
-        title: Text('فاتورة #${submission.id}'),
+        title: Text(tr('فاتورة #{p0}', {'p0': submission.id})),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('المنصة: ${submission.platform.toUpperCase()}'),
+            Text(tr('المنصة: {p0}', {'p0': submission.platform.toUpperCase()})),
             if (submission.submittedAt != null)
-              Text('تاريخ: ${_formatDate(submission.submittedAt!)}'),
+              Text(tr('تاريخ: {p0}', {'p0': _formatDate(submission.submittedAt!)})),
             if (submission.errorMessage != null)
               Text(
                 submission.errorMessage!,
@@ -136,17 +136,17 @@ class _SubmissionTile extends StatelessWidget {
               itemBuilder: (_) => [
                 if (submission.status == 'pending' ||
                     submission.status == 'invalid')
-                  const PopupMenuItem(
+                   PopupMenuItem(
                     value: 'retry',
-                    child: Text('إعادة إرسال'),
+                    child: Text(tr('إعادة إرسال')),
                   ),
                 if (submission.status == 'submitted')
-                  const PopupMenuItem(
+                   PopupMenuItem(
                     value: 'status',
-                    child: Text('فحص الحالة'),
+                    child: Text(tr('فحص الحالة')),
                   ),
                 if (submission.status == 'valid')
-                  const PopupMenuItem(value: 'cancel', child: Text('إلغاء')),
+                   PopupMenuItem(value: 'cancel', child: Text(tr('إلغاء'))),
               ],
             ),
           ],
@@ -176,15 +176,15 @@ class _SubmissionTile extends StatelessWidget {
   String _statusLabel(String status) {
     switch (status) {
       case 'valid':
-        return 'مقبولة';
+        return tr('مقبولة');
       case 'submitted':
-        return 'مرسلة';
+        return tr('مرسلة');
       case 'pending':
-        return 'معلقة';
+        return tr('معلقة');
       case 'invalid':
-        return 'مرفوضة';
+        return tr('مرفوضة');
       case 'cancelled':
-        return 'ملغاة';
+        return tr('ملغاة');
       default:
         return status;
     }

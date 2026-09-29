@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -99,7 +100,7 @@ class TreasuryMetricsPanel extends ConsumerWidget {
               PermissionGuard(
                 permission: PermissionCodes.treasuryReceiptsCreate,
                 allowManagerOverride: true,
-                actionName: 'إنشاء سند قبض',
+                actionName: tr('إنشاء سند قبض'),
                 child: ElevatedButton.icon(
                   onPressed: () => _showReceiptVoucherDialog(context),
                   style: ElevatedButton.styleFrom(
@@ -114,7 +115,7 @@ class TreasuryMetricsPanel extends ConsumerWidget {
               PermissionGuard(
                 permission: PermissionCodes.treasuryPaymentsCreate,
                 allowManagerOverride: true,
-                actionName: 'إنشاء سند صرف',
+                actionName: tr('إنشاء سند صرف'),
                 child: OutlinedButton.icon(
                   onPressed: () => _showPaymentVoucherDialog(context),
                   style: OutlinedButton.styleFrom(

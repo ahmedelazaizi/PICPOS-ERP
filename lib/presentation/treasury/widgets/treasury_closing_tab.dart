@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -101,7 +102,7 @@ class _TreasuryClosingTabState extends State<TreasuryClosingTab> {
                             ),
                           ),
                           Text(
-                            'إدخال المبلغ الفعلي لمطابقته مع رصيد النظام  •  ${list.length} صندوق',
+                            tr('إدخال المبلغ الفعلي لمطابقته مع رصيد النظام  •  {p0} صندوق', {'p0': list.length}),
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 11,

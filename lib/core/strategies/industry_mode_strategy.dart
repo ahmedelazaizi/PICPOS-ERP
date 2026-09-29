@@ -3,6 +3,7 @@
 /// Encapsulates mode-specific POS behavior for Supermarket, Restaurant, and Cafe modes.
 /// This reduces conditional logic scattered across POS components.
 library;
+import 'package:ural_erp/core/i18n/tr.dart';
 
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -47,7 +48,7 @@ abstract class IndustryModeStrategy {
   bool get requireTableSelection => false;
 
   /// Primary action button label
-  String get primaryActionLabel => 'إتمام البيع';
+  String get primaryActionLabel => tr('إتمام البيع');
 
   /// Primary action button icon
   IconData get primaryActionIcon => PhosphorIconsBold.shoppingCartSimple;
@@ -79,7 +80,7 @@ class SupermarketStrategy extends IndustryModeStrategy {
   IndustryMode get mode => IndustryMode.supermarket;
 
   @override
-  String get displayName => 'سوبر ماركت / بيع بالتجزئة';
+  String get displayName => tr('سوبر ماركت / بيع بالتجزئة');
 
   @override
   IconData get icon => PhosphorIconsBold.barcode;
@@ -100,7 +101,7 @@ class SupermarketStrategy extends IndustryModeStrategy {
   bool get showInvoiceLookup => true;
 
   @override
-  String get primaryActionLabel => 'إتمام البيع';
+  String get primaryActionLabel => tr('إتمام البيع');
 
   @override
   IconData get primaryActionIcon => PhosphorIconsBold.shoppingCartSimple;
@@ -115,7 +116,7 @@ class RestaurantStrategy extends IndustryModeStrategy {
   IndustryMode get mode => IndustryMode.restaurant;
 
   @override
-  String get displayName => 'مطعم / صالات طعام';
+  String get displayName => tr('مطعم / صالات طعام');
 
   @override
   IconData get icon => PhosphorIconsBold.cookingPot;
@@ -133,7 +134,7 @@ class RestaurantStrategy extends IndustryModeStrategy {
   bool get requireTableSelection => true;
 
   @override
-  String get primaryActionLabel => 'إرسال للمطبخ';
+  String get primaryActionLabel => tr('إرسال للمطبخ');
 
   @override
   IconData get primaryActionIcon => PhosphorIconsBold.cookingPot;
@@ -151,7 +152,7 @@ class CafeStrategy extends IndustryModeStrategy {
   IndustryMode get mode => IndustryMode.cafe;
 
   @override
-  String get displayName => 'كافيه / طلبات سريعة';
+  String get displayName => tr('كافيه / طلبات سريعة');
 
   @override
   IconData get icon => PhosphorIconsBold.coffee;
@@ -166,7 +167,7 @@ class CafeStrategy extends IndustryModeStrategy {
   bool get showHeldOrders => true;
 
   @override
-  String get primaryActionLabel => 'إتمام الطلب';
+  String get primaryActionLabel => tr('إتمام الطلب');
 
   @override
   IconData get primaryActionIcon => PhosphorIconsBold.coffee;

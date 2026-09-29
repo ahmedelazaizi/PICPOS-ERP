@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -198,7 +199,7 @@ class _TablesScreenState extends ConsumerState<TablesScreen>
         children: [
           Icon(PhosphorIconsBold.cursor, size: 44, color: Colors.white.withValues(alpha: 0.1)),
           const SizedBox(height: 20),
-          Text('اختر طاولة', style: GoogleFonts.cairo(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white.withValues(alpha: 0.2))),
+          Text(tr('اختر طاولة'), style: GoogleFonts.cairo(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white.withValues(alpha: 0.2))),
         ],
       ),
     );
@@ -212,14 +213,14 @@ class _TablesScreenState extends ConsumerState<TablesScreen>
           Icon(PhosphorIconsBold.mapPin, size: 48, color: Colors.white.withValues(alpha: 0.15)),
           const SizedBox(height: 16),
           Text(
-            'لا توجد أقسام',
+            tr('لا توجد أقسام'),
             style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white.withValues(alpha: 0.3)),
           ),
           const SizedBox(height: 8),
           ElevatedButton.icon(
             onPressed: () => _showSectionsManager(context, repo),
             icon: const Icon(PhosphorIconsBold.plus),
-            label: Text('إضافة قسم', style: GoogleFonts.cairo()),
+            label: Text(tr('إضافة قسم'), style: GoogleFonts.cairo()),
           ),
         ],
       ),
@@ -232,7 +233,7 @@ class _TablesScreenState extends ConsumerState<TablesScreen>
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: Text('إدارة الأقسام', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+          title: Text(tr('إدارة الأقسام'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           content: SizedBox(
             width: 400,
             height: 400,
@@ -241,7 +242,7 @@ class _TablesScreenState extends ConsumerState<TablesScreen>
               builder: (context, snap) {
                 final sections = snap.data ?? [];
                 if (sections.isEmpty) {
-                  return const Center(child: Text('لا توجد أقسام'));
+                  return  Center(child: Text(tr('لا توجد أقسام')));
                 }
                 return ListView.separated(
                   itemCount: sections.length,
@@ -256,7 +257,7 @@ class _TablesScreenState extends ConsumerState<TablesScreen>
                           PermissionGuard(
                             permission: PermissionCodes.tablesManage,
                             allowManagerOverride: true,
-                            actionName: 'تعديل قسم طاولات',
+                            actionName: tr('تعديل قسم طاولات'),
                             onGranted: () =>
                                 _showEditSectionDialog(context, repo, section),
                             child: IconButton(
@@ -267,7 +268,7 @@ class _TablesScreenState extends ConsumerState<TablesScreen>
                           PermissionGuard(
                             permission: PermissionCodes.tablesManage,
                             allowManagerOverride: true,
-                            actionName: 'حذف قسم طاولات',
+                            actionName: tr('حذف قسم طاولات'),
                             onGranted: () =>
                                 _confirmDeleteSection(context, repo, section),
                             child: IconButton(
@@ -287,16 +288,16 @@ class _TablesScreenState extends ConsumerState<TablesScreen>
             PermissionGuard(
               permission: PermissionCodes.tablesManage,
               allowManagerOverride: true,
-              actionName: 'إضافة قسم طاولات',
+              actionName: tr('إضافة قسم طاولات'),
               onGranted: () => _showAddSectionDialog(ctx, repo),
               child: TextButton(
                 onPressed: () => _showAddSectionDialog(ctx, repo),
-                child: const Text('إضافة قسم'),
+                child:  Text(tr('إضافة قسم')),
               ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),

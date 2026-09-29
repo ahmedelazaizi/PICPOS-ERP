@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -233,9 +234,9 @@ class _ProductCardState extends ConsumerState<ProductCard>
                                   ),
                                 ],
                               ),
-                              child: const Text(
-                                'غير متوفر',
-                                style: TextStyle(
+                              child:  Text(
+                                tr('غير متوفر'),
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w900,
                                   fontSize: 10,
@@ -458,7 +459,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                             ),
                           ),
                           TextSpan(
-                            text: ' د.أ',
+                            text: tr(' د.أ'),
                             style: TextStyle(
                               fontSize: 9 * scaleFactor,
                               fontWeight: FontWeight.bold,

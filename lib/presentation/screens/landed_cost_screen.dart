@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,14 +42,14 @@ class LandedCostScreen extends ConsumerWidget {
                     children: [
                       Icon(PhosphorIconsBold.money, color: theme.colorScheme.primary),
                       const SizedBox(width: 8),
-                      Text('التكاليف المحملة',
+                      Text(tr('التكاليف المحملة'),
                           style: theme.textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.bold)),
                       const Spacer(),
                       FilledButton.icon(
                         onPressed: () => _showCreateSheetDialog(context, ref, repo, notifier),
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text('جديد'),
+                        label:  Text(tr('جديد')),
                         style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
                       ),
@@ -68,7 +69,7 @@ class LandedCostScreen extends ConsumerWidget {
                                       color: theme.colorScheme.onSurfaceVariant
                                           .withValues(alpha: 0.3)),
                                   const SizedBox(height: 12),
-                                  Text('لا توجد أوراق تكاليف محملة',
+                                  Text(tr('لا توجد أوراق تكاليف محملة'),
                                       style: theme.textTheme.bodyMedium),
                                 ],
                               ),
@@ -94,7 +95,7 @@ class LandedCostScreen extends ConsumerWidget {
                             color: theme.colorScheme.onSurfaceVariant
                                 .withValues(alpha: 0.3)),
                         const SizedBox(height: 12),
-                        Text('اختر ورقة تكاليف من القائمة',
+                        Text(tr('اختر ورقة تكاليف من القائمة'),
                             style: theme.textTheme.bodyLarge),
                       ],
                     ),
@@ -114,12 +115,12 @@ class LandedCostScreen extends ConsumerWidget {
             ? AppColors.error
             : Colors.amber;
     final statusLabel = sheet.status == 'applied'
-        ? 'مطبق'
+        ? tr('مطبق')
         : sheet.status == 'cancelled'
-            ? 'ملغى'
+            ? tr('ملغى')
             : sheet.status == 'voided'
-                ? 'ملغى (إلغاء الفاتورة)'
-                : 'مسودة';
+                ? tr('ملغى (إلغاء الفاتورة)')
+                : tr('مسودة');
 
     return ListTile(
       selected: isSelected,
@@ -127,7 +128,7 @@ class LandedCostScreen extends ConsumerWidget {
       onTap: () => notifier.selectSheet(sheet),
       title: Text(sheet.sheetNumber,
           style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text('التكلفة: ${_fmt.format(sheet.totalAdditionalCost)}',
+      subtitle: Text(tr('التكلفة: {p0}', {'p0': _fmt.format(sheet.totalAdditionalCost)}),
           style: theme.textTheme.bodySmall),
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -172,7 +173,7 @@ class LandedCostScreen extends ConsumerWidget {
                 OutlinedButton.icon(
                   onPressed: () => _addCostItem(context, repo, sheet.id, state, notifier),
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('إضافة تكلفة'),
+                  label:  Text(tr('إضافة تكلفة')),
                 ),
                 const SizedBox(width: 8),
                 FilledButton.icon(
@@ -180,7 +181,7 @@ class LandedCostScreen extends ConsumerWidget {
                       ? null
                       : () => _calculateAndApply(context, ref, repo, sheet.id, state, notifier),
                   icon: const Icon(Icons.calculate, size: 18),
-                  label: const Text('حساب وتطبيق'),
+                  label:  Text(tr('حساب وتطبيق')),
                 ),
               ],
             ],
@@ -188,13 +189,13 @@ class LandedCostScreen extends ConsumerWidget {
         ),
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Text('بنود التكاليف',
+          child: Text(tr('بنود التكاليف'),
               style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
         ),
         if (state.costItems.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text('لا توجد بنود — أضف تكاليف الشحن والجمارك',
+            child: Text(tr('لا توجد بنود — أضف تكاليف الشحن والجمارك'),
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           )
@@ -237,21 +238,21 @@ class LandedCostScreen extends ConsumerWidget {
         const Divider(),
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Text('توزيع التكاليف على الأصناف',
+          child: Text(tr('توزيع التكاليف على الأصناف'),
               style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
         ),
         Expanded(
           child: state.allocations.isEmpty
-              ? Center(child: Text('لم يتم حساب التوزيع بعد', style: theme.textTheme.bodyMedium))
+              ? Center(child: Text(tr('لم يتم حساب التوزيع بعد'), style: theme.textTheme.bodyMedium))
               : SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text('الصنف')),
-                      DataColumn(label: Text('الكمية'), numeric: true),
-                      DataColumn(label: Text('التكلفة الأصلية'), numeric: true),
-                      DataColumn(label: Text('المبلغ الموزّع'), numeric: true),
-                      DataColumn(label: Text('التكلفة الجديدة'), numeric: true),
+                    columns:  [
+                      DataColumn(label: Text(tr('الصنف'))),
+                      DataColumn(label: Text(tr('الكمية')), numeric: true),
+                      DataColumn(label: Text(tr('التكلفة الأصلية')), numeric: true),
+                      DataColumn(label: Text(tr('المبلغ الموزّع')), numeric: true),
+                      DataColumn(label: Text(tr('التكلفة الجديدة')), numeric: true),
                     ],
                     rows: state.allocations.map((a) {
                       return DataRow(cells: [
@@ -285,10 +286,10 @@ class LandedCostScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Row(children: [
-            Icon(Icons.receipt_long, color: Colors.teal),
-            SizedBox(width: 8),
-            Text('ورقة تكاليف جديدة'),
+          title:  Row(children: [
+            const Icon(Icons.receipt_long, color: Colors.teal),
+            const SizedBox(width: 8),
+            Text(tr('ورقة تكاليف جديدة')),
           ]),
           content: SizedBox(
             width: 400,
@@ -296,8 +297,8 @@ class LandedCostScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<int>(
-                  decoration: const InputDecoration(
-                      labelText: 'فاتورة الشراء', border: OutlineInputBorder()),
+                  decoration:  InputDecoration(
+                      labelText: tr('فاتورة الشراء'), border: const OutlineInputBorder()),
                   items: invoices.map((inv) {
                     return DropdownMenuItem(
                       value: inv.id,
@@ -309,18 +310,18 @@ class LandedCostScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 TextField(
                   controller: numberCtrl,
-                  decoration: const InputDecoration(
-                      labelText: 'رقم الورقة', border: OutlineInputBorder(), hintText: 'LC-001'),
+                  decoration:  InputDecoration(
+                      labelText: tr('رقم الورقة'), border: const OutlineInputBorder(), hintText: 'LC-001'),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: method,
-                  decoration: const InputDecoration(
-                      labelText: 'طريقة التوزيع', border: OutlineInputBorder()),
-                  items: const [
-                    DropdownMenuItem(value: 'by_value', child: Text('حسب القيمة')),
-                    DropdownMenuItem(value: 'by_quantity', child: Text('حسب الكمية')),
-                    DropdownMenuItem(value: 'equal', child: Text('بالتساوي')),
+                  decoration:  InputDecoration(
+                      labelText: tr('طريقة التوزيع'), border: const OutlineInputBorder()),
+                  items:  [
+                    DropdownMenuItem(value: 'by_value', child: Text(tr('حسب القيمة'))),
+                    DropdownMenuItem(value: 'by_quantity', child: Text(tr('حسب الكمية'))),
+                    DropdownMenuItem(value: 'equal', child: Text(tr('بالتساوي'))),
                   ],
                   onChanged: (v) {
                     if (v != null) method = v;
@@ -330,11 +331,11 @@ class LandedCostScreen extends ConsumerWidget {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
             FilledButton(
               onPressed: () async {
                 if (purchaseInvoiceId == null || numberCtrl.text.isEmpty) {
-                  AppToast.show(ctx, 'يرجى ملء جميع الحقول', type: ToastType.error);
+                  AppToast.show(ctx, tr('يرجى ملء جميع الحقول'), type: ToastType.error);
                   return;
                 }
                 await repo.createLandedCostSheet(
@@ -345,7 +346,7 @@ class LandedCostScreen extends ConsumerWidget {
                 if (ctx.mounted) Navigator.pop(ctx);
                 notifier.refresh();
               },
-              child: const Text('إنشاء'),
+              child:  Text(tr('إنشاء')),
             ),
           ],
         ),
@@ -361,10 +362,10 @@ class LandedCostScreen extends ConsumerWidget {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(children: [
-          Icon(Icons.add_circle, color: Colors.teal),
-          SizedBox(width: 8),
-          Text('إضافة بند تكلفة'),
+        title:  Row(children: [
+          const Icon(Icons.add_circle, color: Colors.teal),
+          const SizedBox(width: 8),
+          Text(tr('إضافة بند تكلفة')),
         ]),
         content: SizedBox(
           width: 400,
@@ -373,15 +374,15 @@ class LandedCostScreen extends ConsumerWidget {
             children: [
               DropdownButtonFormField<String>(
                 initialValue: costType,
-                decoration: const InputDecoration(
-                    labelText: 'نوع التكلفة', border: OutlineInputBorder()),
-                items: const [
-                  DropdownMenuItem(value: 'shipping', child: Text('شحن')),
-                  DropdownMenuItem(value: 'customs', child: Text('جمارك')),
-                  DropdownMenuItem(value: 'insurance', child: Text('تأمين')),
-                  DropdownMenuItem(value: 'freight', child: Text('نقل')),
-                  DropdownMenuItem(value: 'handling', child: Text('مناولة')),
-                  DropdownMenuItem(value: 'other', child: Text('أخرى')),
+                decoration:  InputDecoration(
+                    labelText: tr('نوع التكلفة'), border: const OutlineInputBorder()),
+                items:  [
+                  DropdownMenuItem(value: 'shipping', child: Text(tr('شحن'))),
+                  DropdownMenuItem(value: 'customs', child: Text(tr('جمارك'))),
+                  DropdownMenuItem(value: 'insurance', child: Text(tr('تأمين'))),
+                  DropdownMenuItem(value: 'freight', child: Text(tr('نقل'))),
+                  DropdownMenuItem(value: 'handling', child: Text(tr('مناولة'))),
+                  DropdownMenuItem(value: 'other', child: Text(tr('أخرى'))),
                 ],
                 onChanged: (v) {
                   if (v != null) costType = v;
@@ -390,24 +391,24 @@ class LandedCostScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               TextField(
                 controller: descCtrl,
-                decoration: const InputDecoration(labelText: 'الوصف', border: OutlineInputBorder()),
+                decoration:  InputDecoration(labelText: tr('الوصف'), border: const OutlineInputBorder()),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: amountCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'المبلغ', border: OutlineInputBorder()),
+                decoration:  InputDecoration(labelText: tr('المبلغ'), border: const OutlineInputBorder()),
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
           FilledButton(
             onPressed: () async {
               final amount = double.tryParse(amountCtrl.text);
               if (descCtrl.text.isEmpty || amount == null) {
-                AppToast.show(ctx, 'يرجى ملء جميع الحقول', type: ToastType.error);
+                AppToast.show(ctx, tr('يرجى ملء جميع الحقول'), type: ToastType.error);
                 return;
               }
               await repo.addLandedCostItem(
@@ -415,7 +416,7 @@ class LandedCostScreen extends ConsumerWidget {
               if (ctx.mounted) Navigator.pop(ctx);
               notifier.selectSheet(state.selectedSheet!);
             },
-            child: const Text('إضافة'),
+            child:  Text(tr('إضافة')),
           ),
         ],
       ),
@@ -429,21 +430,21 @@ class LandedCostScreen extends ConsumerWidget {
 
     final allocs = await repo.calculateAllocations(sheetId);
     if (allocs.isEmpty) {
-      if (context.mounted) AppToast.show(context, 'لا توجد بنود للتوزيع', type: ToastType.error);
+      if (context.mounted) AppToast.show(context, tr('لا توجد بنود للتوزيع'), type: ToastType.error);
       return;
     }
     if (!context.mounted) return;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تأكيد تطبيق التكاليف'),
-        content: Text('سيتم توزيع التكاليف على ${allocs.length} صنف وتحديث تكلفة المخزون.\n\nهل تريد المتابعة؟'),
+        title:  Text(tr('تأكيد تطبيق التكاليف')),
+        content: Text(tr('سيتم توزيع التكاليف على {p0} صنف وتحديث تكلفة المخزون.\n\nهل تريد المتابعة؟', {'p0': allocs.length})),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child:  Text(tr('إلغاء'))),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('تطبيق'),
+            child:  Text(tr('تطبيق')),
           ),
         ],
       ),
@@ -461,7 +462,7 @@ class LandedCostScreen extends ConsumerWidget {
       // was the bug.
       await repo.applyLandedCost(sheetId);
       if (context.mounted) {
-        AppToast.show(context, 'تم تطبيق التكاليف وتسجيل القيد المحاسبي');
+        AppToast.show(context, tr('تم تطبيق التكاليف وتسجيل القيد المحاسبي'));
       }
       notifier.refresh();
     } finally {
@@ -470,10 +471,10 @@ class LandedCostScreen extends ConsumerWidget {
   }
 
   String _methodLabel(String m) =>
-      {'by_value': 'حسب القيمة', 'by_quantity': 'حسب الكمية', 'equal': 'بالتساوي'}[m] ?? m;
+      {'by_value': tr('حسب القيمة'), 'by_quantity': tr('حسب الكمية'), 'equal': tr('بالتساوي')}[m] ?? m;
 
   String _costLabel(String t) =>
-      {'shipping': 'شحن', 'customs': 'جمارك', 'insurance': 'تأمين', 'freight': 'نقل', 'handling': 'مناولة'}[t] ?? 'أخرى';
+      {'shipping': tr('شحن'), 'customs': tr('جمارك'), 'insurance': tr('تأمين'), 'freight': tr('نقل'), 'handling': tr('مناولة')}[t] ?? tr('أخرى');
 
   IconData _costIcon(String t) => {
     'shipping': PhosphorIconsBold.truck,

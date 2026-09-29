@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -95,11 +96,11 @@ class _BudgetDetailsDialogState extends ConsumerState<BudgetDetailsDialog> {
       
       if (mounted) {
         Navigator.pop(context, true);
-        AppToast.show(context, 'تم حفظ تعديلات الموازنة');
+        AppToast.show(context, tr('تم حفظ تعديلات الموازنة'));
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'حدث خطأ أثناء الحفظ: $e', type: ToastType.error);
+        AppToast.show(context, tr('حدث خطأ أثناء الحفظ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -121,9 +122,9 @@ class _BudgetDetailsDialogState extends ConsumerState<BudgetDetailsDialog> {
           children: [
             const Icon(PhosphorIconsBold.calendar, color: AppColors.primary, size: 20),
             const SizedBox(width: 8),
-            Text('تفاصيل فترات الموازنة', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            Text(tr('تفاصيل فترات الموازنة'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             const Spacer(),
-            Text(widget.budget.name ?? 'بدون اسم', style: GoogleFonts.cairo(fontSize: 14, color: AppColors.textMuted)),
+            Text(widget.budget.name ?? tr('بدون اسم'), style: GoogleFonts.cairo(fontSize: 14, color: AppColors.textMuted)),
           ],
         ),
         content: SizedBox(
@@ -143,7 +144,7 @@ class _BudgetDetailsDialogState extends ConsumerState<BudgetDetailsDialog> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('المجموع المخطط (السنوي):', style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
+                        Text(tr('المجموع المخطط (السنوي):'), style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
                         Text('${_totalPlanned.toStringAsFixed(2)} ${AppConstants.currencySymbol}',
                           style: GoogleFonts.jetBrainsMono(
                             fontSize: 16, 
@@ -165,9 +166,9 @@ class _BudgetDetailsDialogState extends ConsumerState<BudgetDetailsDialog> {
                     ),
                     child: Row(
                       children: [
-                        Expanded(flex: 1, child: Text('الشهر', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 12))),
-                        Expanded(flex: 2, child: Text('المبلغ المخطط', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 12))),
-                        Expanded(flex: 2, child: Text('الفعلي (للمقارنة)', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 12))),
+                        Expanded(flex: 1, child: Text(tr('الشهر'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 12))),
+                        Expanded(flex: 2, child: Text(tr('المبلغ المخطط'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 12))),
+                        Expanded(flex: 2, child: Text(tr('الفعلي (للمقارنة)'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 12))),
                       ],
                     ),
                   ),
@@ -190,7 +191,7 @@ class _BudgetDetailsDialogState extends ConsumerState<BudgetDetailsDialog> {
                             children: [
                               Expanded(
                                 flex: 1, 
-                                child: Text('شهر ${line.month}', style: GoogleFonts.cairo(fontWeight: FontWeight.w600, fontSize: 13))
+                                child: Text(tr('شهر {p0}', {'p0': line.month}), style: GoogleFonts.cairo(fontWeight: FontWeight.w600, fontSize: 13))
                               ),
                               Expanded(
                                 flex: 2, 
@@ -229,11 +230,11 @@ class _BudgetDetailsDialogState extends ConsumerState<BudgetDetailsDialog> {
               ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child:  Text(tr('إلغاء'))),
           ElevatedButton.icon(
             onPressed: _isLoading ? null : _saveChanges,
             icon: const Icon(PhosphorIconsBold.check, size: 16),
-            label: const Text('حفظ التعديلات'),
+            label:  Text(tr('حفظ التعديلات')),
           ),
         ],
       ),

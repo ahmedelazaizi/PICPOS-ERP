@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../data/providers/providers.dart';
@@ -48,16 +49,16 @@ class _BranchAccessDialogState extends AppFormDialogState<bool, BranchAccessDial
   }
 
   @override
-  String get dialogTitle => 'إدارة فروع المستخدم ${widget.user.displayName}';
+  String get dialogTitle => tr('إدارة فروع المستخدم {p0}', {'p0': widget.user.displayName});
 
   @override
   IconData get dialogIcon => PhosphorIconsBold.buildings;
 
   @override
-  String? get dialogSubtitle => 'تحديدُ نطاق العمل — الفروعُ التي يراها المستخدم';
+  String? get dialogSubtitle => tr('تحديدُ نطاق العمل — الفروعُ التي يراها المستخدم');
 
   @override
-  String? get dialogSaveLabel => 'حفظ النطاق';
+  String? get dialogSaveLabel => tr('حفظ النطاق');
 
   /// لوحةُ `PANELS.access` — مجموعةُ شرائحَ ثمّ تنبيه، كما في التصميم.
   ///
@@ -72,8 +73,8 @@ class _BranchAccessDialogState extends AppFormDialogState<bool, BranchAccessDial
     if (allBranches.isEmpty) return const [];
     return [
       PicPosPanelGroup(
-        label: 'الفروع',
-        hint: 'الفروعُ التي يراها المستخدم',
+        label: tr('الفروع'),
+        hint: tr('الفروعُ التي يراها المستخدم'),
         child: PicPosPanelChips(
           children: [
             for (final b in allBranches)
@@ -88,12 +89,12 @@ class _BranchAccessDialogState extends AppFormDialogState<bool, BranchAccessDial
           ],
         ),
       ),
-      const PicPosPanelGroup(
-        label: 'تنبيه',
+       PicPosPanelGroup(
+        label: tr('تنبيه'),
         child: PicPosDialogBanner(
           icon: PhosphorIconsBold.info,
           color: AppColors.warning,
-          text: 'المسؤولون (Admins) لديهم وصولٌ كاملٌ لكلّ الفروع تلقائيّاً.',
+          text: tr('المسؤولون (Admins) لديهم وصولٌ كاملٌ لكلّ الفروع تلقائيّاً.'),
         ),
       ),
     ];
@@ -115,14 +116,14 @@ class _BranchAccessDialogState extends AppFormDialogState<bool, BranchAccessDial
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
           ),
-          child: const Row(
+          child:  Row(
             children: [
-              Icon(PhosphorIconsBold.info, size: 16, color: Colors.amber),
-              SizedBox(width: 8),
+              const Icon(PhosphorIconsBold.info, size: 16, color: Colors.amber),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'المسؤولين (Admins) لديهم وصول كامل لجميع الفروع تلقائياً.',
-                  style: TextStyle(fontSize: 12, color: Colors.amber),
+                  tr('المسؤولين (Admins) لديهم وصول كامل لجميع الفروع تلقائياً.'),
+                  style: const TextStyle(fontSize: 12, color: Colors.amber),
                 ),
               ),
             ],

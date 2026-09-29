@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../picpos_shell/picpos_surface.dart';
@@ -231,13 +232,13 @@ class _TableHeader extends StatelessWidget {
       color: AppColors.primaryDark,
       child: Row(
         children: [
-          _HeaderCell('م', _kFlexIndex, scale: scale),
-          _HeaderCell('المادة', _kFlexName,
+          _HeaderCell(tr('م'), _kFlexIndex, scale: scale),
+          _HeaderCell(tr('المادة'), _kFlexName,
               align: TextAlign.start, scale: scale),
-          _HeaderCell('الكمية', _kFlexQty, scale: scale),
-          _HeaderCell('السعر', _kFlexPrice, scale: scale),
-          _HeaderCell('الخصم %', _kFlexDiscount, scale: scale),
-          _HeaderCell('المجموع', _kFlexTotal, scale: scale),
+          _HeaderCell(tr('الكمية'), _kFlexQty, scale: scale),
+          _HeaderCell(tr('السعر'), _kFlexPrice, scale: scale),
+          _HeaderCell(tr('الخصم %'), _kFlexDiscount, scale: scale),
+          _HeaderCell(tr('المجموع'), _kFlexTotal, scale: scale),
           if (showOptions) _HeaderCell('', _kFlexOptions, scale: scale),
           _HeaderCell('', _kFlexRemove, scale: scale),
         ],
@@ -292,7 +293,7 @@ class _EmptyState extends StatelessWidget {
               size: 44, color: AppColors.textMuted),
           const SizedBox(height: 10),
           Text(
-            'امسح باركود أو اكتب كود الصنف للبدء',
+            tr('امسح باركود أو اكتب كود الصنف للبدء'),
             style: PicPosText.l(context, 14),
           ),
         ],
@@ -421,7 +422,7 @@ class _ItemRow extends ConsumerWidget {
                 // نطاقات الكيبورد **مطابقة** لشروط الـ callbacks تحتها. لو
                 // اختلفوا كان الكاشير هيأكّد رقم والكيبورد يقبله والسلة تتجاهله
                 // بصمت — أسوأ من الرفض الصريح.
-                label: 'الكمية',
+                label: tr('الكمية'),
                 min: item.isSoldByWeight ? 0.001 : 0.01,
                 onEditComplete: onEditComplete,
                 canEdit: canQty,
@@ -445,7 +446,7 @@ class _ItemRow extends ConsumerWidget {
                 value: item.effectivePrice,
                 scale: scale,
                 decimals: 2,
-                label: 'السعر',
+                label: tr('السعر'),
                 min: 0,
                 onEditComplete: onEditComplete,
                 canEdit: canPrice,
@@ -476,7 +477,7 @@ class _ItemRow extends ConsumerWidget {
                 value: item.discountPercent,
                 scale: scale,
                 decimals: 2,
-                label: 'الخصم %',
+                label: tr('الخصم %'),
                 min: 0,
                 max: 100,
                 suffix: '%',
@@ -558,7 +559,7 @@ class _ItemRow extends ConsumerWidget {
                         ? AppColors.success
                         : AppColors.textMuted,
                   ),
-                  tooltip: 'الإضافات والخيارات وملاحظة الصنف',
+                  tooltip: tr('الإضافات والخيارات وملاحظة الصنف'),
                 ),
               ),
             Expanded(
@@ -568,7 +569,7 @@ class _ItemRow extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 iconSize: 18 * scale,
                 icon: const Icon(PhosphorIconsBold.x, color: AppColors.error),
-                tooltip: 'إلغاء الصنف',
+                tooltip: tr('إلغاء الصنف'),
               ),
             ),
           ],

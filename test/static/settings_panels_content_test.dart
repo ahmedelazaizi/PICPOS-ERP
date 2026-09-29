@@ -37,6 +37,15 @@ String _read(String path) {
   return f.readAsStringSync();
 }
 
+bool _hasUiProperty(String source, String property, String value) {
+  final pattern = RegExp(
+    "${RegExp.escape(property)}\\s*:\\s*(?:tr\\(\\s*)?'"
+    "${RegExp.escape(value)}"
+    r"'(?:\s*\))?",
+  );
+  return pattern.hasMatch(source);
+}
+
 void main() {
   group('لوحةُ المستخدم — `PANELS.user`', () {
     final src =
@@ -45,21 +54,21 @@ void main() {
     test('«الحساب نشط» مرسومٌ ومربوطٌ بـ`toggleUserActive`', () {
       // `Users.isActive` عمودٌ قائمٌ و`toggleUserActive` واجهةٌ قائمة —
       // فالمفتاحُ مسنودٌ بالكامل، وغيابُه كان نقصاً لا قياساً.
-      expect(src.contains("title: 'الحساب نشط'"), isTrue,
+      expect(_hasUiProperty(src, 'title', 'الحساب نشط'), isTrue,
           reason: 'سقط مفتاحُ «الحساب نشط» من لوحة المستخدم.');
       expect(src.contains('toggleUserActive'), isTrue,
           reason: 'المفتاحُ مرسومٌ ولا يصل إلى الحفظ — مفتاحٌ لا يفعل شيئاً.');
     });
 
     test('«تأكيد كلمة المرور» مرسومٌ ويمنع الحفظَ عند الاختلاف', () {
-      expect(src.contains("labelText: 'تأكيد كلمة المرور *'"), isTrue,
+      expect(_hasUiProperty(src, 'labelText', 'تأكيد كلمة المرور *'), isTrue,
           reason: 'سقط حقلُ تأكيد كلمة المرور.');
       expect(src.contains('confirmController.text != password'), isTrue,
           reason: 'الحقلُ مرسومٌ بلا تحقّقٍ في `onSave` — زينةٌ لا حماية.');
     });
 
     test('«اسم الدخول» بنصِّ التصميم لا «اسم المستخدم»', () {
-      expect(src.contains("labelText: 'اسم الدخول *'"), isTrue);
+      expect(_hasUiProperty(src, 'labelText', 'اسم الدخول *'), isTrue);
     });
   });
 
@@ -68,7 +77,7 @@ void main() {
         _read('lib/presentation/screens/settings/widgets/add_role_dialog.dart');
 
     test('«الوصف» مرسومٌ ويصل إلى `insertRole`', () {
-      expect(src.contains("labelText: 'الوصف'"), isTrue);
+      expect(_hasUiProperty(src, 'labelText', 'الوصف'), isTrue);
       expect(RegExp(r'insertRole\(\s*\n?\s*name:.*\n?\s*description:')
               .hasMatch(src),
           isTrue,
@@ -77,7 +86,7 @@ void main() {
     });
 
     test('«نسخ الصلاحيات من» مرسومٌ وينسخ فعلاً', () {
-      expect(src.contains("label: 'نسخ الصلاحيات من'"), isTrue);
+      expect(_hasUiProperty(src, 'label', 'نسخ الصلاحيات من'), isTrue);
       expect(src.contains('getPermissionsForRole'), isTrue);
       expect(src.contains('setRolePermissions'), isTrue);
     });
@@ -95,7 +104,7 @@ void main() {
     });
 
     test('«تنبيه» التصميم مرسوم', () {
-      expect(src.contains("label: 'تنبيه'"), isTrue);
+      expect(_hasUiProperty(src, 'label', 'تنبيه'), isTrue);
       expect(src.contains('يسري فوراً على كلّ مستخدميه'), isTrue);
     });
   });
@@ -139,7 +148,7 @@ void main() {
         'lib/presentation/screens/settings/widgets/reset_password_dialog.dart');
 
     test('«تنبيه» الفصلِ بين كلمة المرور والـPIN مرسوم', () {
-      expect(src.contains("label: 'تنبيه'"), isTrue);
+      expect(_hasUiProperty(src, 'label', 'تنبيه'), isTrue);
       expect(src.contains('غيرُ الـPIN المستخدَم على'), isTrue);
     });
   });

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -17,11 +18,11 @@ class RegionManagementScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        title: const Text('إدارة المناطق'),
+        title:  Text(tr('إدارة المناطق')),
         actions: [
           IconButton(
             icon: const Icon(PhosphorIconsBold.plus),
-            tooltip: 'إضافة منطقة',
+            tooltip: tr('إضافة منطقة'),
             onPressed: () => _showRegionDialog(context, ref, null),
           ),
         ],
@@ -41,14 +42,14 @@ class RegionManagementScreen extends ConsumerWidget {
                       color: AppColors.textMuted,
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'لا توجد مناطق مضافة بعد',
-                      style: TextStyle(color: AppColors.textSecondary),
+                     Text(
+                      tr('لا توجد مناطق مضافة بعد'),
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       icon: const Icon(PhosphorIconsBold.plus),
-                      label: const Text('إضافة منطقة'),
+                      label:  Text(tr('إضافة منطقة')),
                       onPressed: () => _showRegionDialog(context, ref, null),
                     ),
                   ],
@@ -62,7 +63,7 @@ class RegionManagementScreen extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('خطأ: $e')),
+          error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
         ),
       ),
     );
@@ -126,7 +127,7 @@ class _RegionCard extends ConsumerWidget {
                 ),
               ),
             Text(
-              '$branchCount فرع',
+              tr('{branchCount} فرع', {'branchCount': branchCount}),
               style: const TextStyle(
                 fontSize: 11,
                 color: AppColors.textMuted,
@@ -140,7 +141,7 @@ class _RegionCard extends ConsumerWidget {
             IconButton(
               icon: const Icon(PhosphorIconsBold.pencil, size: 18),
               color: AppColors.primary,
-              tooltip: 'تعديل',
+              tooltip: tr('تعديل'),
               onPressed: () => showDialog(
                 context: context,
                 builder: (_) => RegionEditDialog(region: region),
@@ -149,7 +150,7 @@ class _RegionCard extends ConsumerWidget {
             IconButton(
               icon: const Icon(PhosphorIconsBold.trash, size: 18),
               color: AppColors.error,
-              tooltip: 'تعطيل',
+              tooltip: tr('تعطيل'),
               onPressed: () => _confirmDeactivate(context, ref),
             ),
           ],
@@ -158,11 +159,11 @@ class _RegionCard extends ConsumerWidget {
           branchesAsync.when(
             data: (branches) {
               if (branches.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.all(16),
+                return  Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Text(
-                    'لا توجد فروع مرتبطة بهذه المنطقة',
-                    style: TextStyle(color: AppColors.textMuted),
+                    tr('لا توجد فروع مرتبطة بهذه المنطقة'),
+                    style: const TextStyle(color: AppColors.textMuted),
                   ),
                 );
               }
@@ -213,14 +214,14 @@ class _RegionCard extends ConsumerWidget {
         textDirection: TextDirection.rtl,
         child: StatefulBuilder(
           builder: (ctx, setLocalState) => AlertDialog(
-            title: const Text('تعطيل المنطقة'),
+            title:  Text(tr('تعطيل المنطقة')),
             content: Text(
-              'هل تريد تعطيل منطقة "${region.name}"؟ لا يمكن تعطيلها إذا كان لديها فروع أو مخازن نشطة.',
+              tr('هل تريد تعطيل منطقة "{p0}"؟ لا يمكن تعطيلها إذا كان لديها فروع أو مخازن نشطة.', {'p0': region.name}),
             ),
             actions: [
               TextButton(
                 onPressed: saving ? null : () => Navigator.pop(ctx, false),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -242,7 +243,7 @@ class _RegionCard extends ConsumerWidget {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('تعطيل'),
+                    :  Text(tr('تعطيل')),
               ),
             ],
           ),
@@ -255,7 +256,7 @@ class _RegionCard extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('تم تعطيل المنطقة "${region.name}"'),
+            content: Text(tr('تم تعطيل المنطقة "{p0}"', {'p0': region.name})),
             backgroundColor: AppColors.success,
           ),
         );

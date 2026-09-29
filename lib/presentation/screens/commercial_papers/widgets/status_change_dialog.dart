@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -32,7 +33,7 @@ class _StatusChangeDialogState extends State<StatusChangeDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(
-        'تأكيد — ${widget.statusLabel}',
+        tr('تأكيد — {p0}', {'p0': widget.statusLabel}),
         style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
       ),
       content: SizedBox(
@@ -41,7 +42,7 @@ class _StatusChangeDialogState extends State<StatusChangeDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'هل تريد تغيير حالة الورقة إلى "${widget.statusLabel}"؟',
+              tr('هل تريد تغيير حالة الورقة إلى "{p0}"؟', {'p0': widget.statusLabel}),
               style: GoogleFonts.cairo(),
             ),
             const SizedBox(height: 12),
@@ -72,8 +73,8 @@ class _StatusChangeDialogState extends State<StatusChangeDialog> {
                       controller: controller,
                       focusNode: focusNode,
                       decoration: InputDecoration(
-                        labelText: 'الحساب المقابل *',
-                        hintText: 'ابحث بالاسم أو الرمز...',
+                        labelText: tr('الحساب المقابل *'),
+                        hintText: tr('ابحث بالاسم أو الرمز...'),
                         prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         isDense: true,
@@ -102,7 +103,7 @@ class _StatusChangeDialogState extends State<StatusChangeDialog> {
             TextField(
               controller: _notesCtrl,
               decoration: InputDecoration(
-                labelText: 'ملاحظات (اختياري)',
+                labelText: tr('ملاحظات (اختياري)'),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 isDense: true,
               ),
@@ -113,7 +114,7 @@ class _StatusChangeDialogState extends State<StatusChangeDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         ElevatedButton(
           onPressed: () {
@@ -123,7 +124,7 @@ class _StatusChangeDialogState extends State<StatusChangeDialog> {
               'account': _selectedAccount,
             });
           },
-          child: Text('تأكيد ${widget.statusLabel}'),
+          child: Text(tr('تأكيد {p0}', {'p0': widget.statusLabel})),
         ),
       ],
     );

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -48,7 +49,7 @@ Widget buildKitchenManageActionButton({
   return PermissionGuard(
     permission: PermissionCodes.kitchenManage,
     allowManagerOverride: true,
-    actionName: 'تغيير حالة طلب المطبخ',
+    actionName: tr('تغيير حالة طلب المطبخ'),
     onGranted: onPressed,
     child: child,
   );
@@ -70,7 +71,7 @@ Widget buildKitchenManageItemReadyTile({
   return PermissionGuard(
     permission: PermissionCodes.kitchenManage,
     allowManagerOverride: true,
-    actionName: 'تعليم صنف كجاهز',
+    actionName: tr('تعليم صنف كجاهز'),
     onGranted: onTap,
     child: InkWell(
       onTap: onTap,
@@ -188,7 +189,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
           const Icon(PhosphorIconsBold.chefHat, color: AppColors.warning),
           const SizedBox(width: 12),
           Text(
-            'شاشة المطبخ',
+            tr('شاشة المطبخ'),
             style: AppTypography.h3.copyWith(color: Colors.white),
           ),
           const Spacer(),
@@ -201,7 +202,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
                   : PhosphorIconsBold.speakerSlash,
               color: _soundEnabled ? AppColors.warning : Colors.white38,
             ),
-            tooltip: _soundEnabled ? 'كتم الصوت' : 'تفعيل الصوت',
+            tooltip: _soundEnabled ? tr('كتم الصوت') : tr('تفعيل الصوت'),
           ),
           const SizedBox(width: 8),
         // Stats button
@@ -211,7 +212,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
             MaterialPageRoute(builder: (_) => const KdsStatsScreen()),
           ),
           icon: const Icon(PhosphorIconsBold.chartBar, color: AppColors.primaryLight),
-          tooltip: 'إحصائيات المطبخ',
+          tooltip: tr('إحصائيات المطبخ'),
         ),
         const SizedBox(width: 8),
         _buildStationFilter(),
@@ -231,13 +232,13 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
       color: AppColors.secondaryDark.withValues(alpha: 0.5),
       child: Row(
         children: [
-          _buildStatChip('معلق', pending, AppColors.error),
+          _buildStatChip(tr('معلق'), pending, AppColors.error),
           const SizedBox(width: 12),
-          _buildStatChip('تحضير', preparing, AppColors.warning),
+          _buildStatChip(tr('تحضير'), preparing, AppColors.warning),
           const SizedBox(width: 12),
-          _buildStatChip('جاهز', ready, AppColors.success),
+          _buildStatChip(tr('جاهز'), ready, AppColors.success),
           const SizedBox(width: 12),
-          _buildStatChip('في الانتظار', pending + preparing, AppColors.info),
+          _buildStatChip(tr('في الانتظار'), pending + preparing, AppColors.info),
           const Spacer(),
           // الساعةُ وحدَها تدقّ — لا الشاشةُ من ورائها.
           _Ticker(
@@ -300,7 +301,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
             style: const TextStyle(color: Colors.white),
             underline: const SizedBox(),
             items: [
-              const DropdownMenuItem(value: 'all', child: Text('جميع المحطات')),
+               DropdownMenuItem(value: 'all', child: Text(tr('جميع المحطات'))),
               ...stations.map(
                 (s) => DropdownMenuItem(value: s.code, child: Text(s.name)),
               ),
@@ -326,12 +327,12 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'لا توجد طلبات معلقة',
+            tr('لا توجد طلبات معلقة'),
             style: AppTypography.h2.copyWith(color: Colors.white54),
           ),
           const SizedBox(height: 8),
           Text(
-            'في انتظار طلبات جديدة...',
+            tr('في انتظار طلبات جديدة...'),
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.3),
               fontSize: 16,
@@ -433,7 +434,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '$elapsedMinutes دقيقة',
+                        tr('{elapsedMinutes} دقيقة', {'elapsedMinutes': elapsedMinutes}),
                         style: TextStyle(
                           color: elapsedMinutes > 10
                               ? AppColors.error
@@ -463,7 +464,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
                                   const Icon(PhosphorIconsBold.timer, size: 10, color: AppColors.info),
                                   const SizedBox(width: 3),
                                   Text(
-                                    '~${snap.data} د',
+                                    tr('~{p0} د', {'p0': snap.data}),
                                     style: const TextStyle(color: AppColors.info, fontSize: 10, fontWeight: FontWeight.bold),
                                   ),
                                 ],
@@ -543,7 +544,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
                     child: buildKitchenManageActionButton(
                       onPressed: () => _startPreparing(order.id, kitchenRepo),
                       icon: PhosphorIconsBold.cookingPot,
-                      label: 'تحضير',
+                      label: tr('تحضير'),
                       color: AppColors.warning,
                     ),
                   ),
@@ -552,7 +553,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
                     child: buildKitchenManageActionButton(
                       onPressed: () => _markReady(order.id, kitchenRepo),
                       icon: PhosphorIconsBold.checkCircle,
-                      label: 'جاهز',
+                      label: tr('جاهز'),
                       color: AppColors.success,
                     ),
                   ),
@@ -562,7 +563,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
                     child: buildKitchenManageActionButton(
                       onPressed: () => _recallOrder(order.id, kitchenRepo),
                       icon: PhosphorIconsBold.arrowCounterClockwise,
-                      label: 'استرجاع',
+                      label: tr('استرجاع'),
                       color: AppColors.warning,
                       outlined: true,
                     ),
@@ -642,14 +643,14 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
   Future<void> _markReady(int orderId, KitchenRepository kitchenRepo) async {
     await kitchenRepo.updateWorkOrderStatus(orderId, 'ready');
     if (mounted) {
-      AppToast.show(context, 'تم تجهيز الطلب!', type: ToastType.success);
+      AppToast.show(context, tr('تم تجهيز الطلب!'), type: ToastType.success);
     }
   }
 
   Future<void> _recallOrder(int orderId, KitchenRepository kitchenRepo) async {
     await kitchenRepo.updateWorkOrderStatus(orderId, 'preparing');
     if (mounted) {
-      AppToast.show(context, 'تم استرجاع الطلب للتحضير', type: ToastType.info);
+      AppToast.show(context, tr('تم استرجاع الطلب للتحضير'), type: ToastType.info);
     }
   }
 }

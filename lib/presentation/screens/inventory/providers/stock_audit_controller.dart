@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../../core/logging/app_logger.dart';
@@ -85,17 +86,17 @@ class StockAuditNotifier extends Notifier<StockAuditState> {
         final activityLogRepo = ref.read(activityLogRepositoryProvider);
         await activityLogRepo.logActivity(
           userId: user?.id,
-          userName: user?.displayName ?? 'مستخدم',
+          userName: user?.displayName ?? tr('مستخدم'),
           action: 'start_audit',
           entityType: 'stock',
-          description: 'بدء جرد جديد',
+          description: tr('بدء جرد جديد'),
         );
       } catch (_) {}
 
       state = state.copyWith(isLoading: false);
     } catch (e, st) {
       logger.error('Failed to start new audit', e, st, 'STOCK_AUDIT');
-      state = state.copyWith(isLoading: false, error: 'حدث خطأ: $e');
+      state = state.copyWith(isLoading: false, error: tr('حدث خطأ: {e}', {'e': e}));
     }
   }
 
@@ -113,7 +114,7 @@ class StockAuditNotifier extends Notifier<StockAuditState> {
 
       if (product == null) {
         state = state.copyWith(isLoading: false);
-        return 'الصنف غير موجود';
+        return tr('الصنف غير موجود');
       }
 
       final existingItems = await inventoryRepo.getAuditItems(auditId);
@@ -142,8 +143,8 @@ class StockAuditNotifier extends Notifier<StockAuditState> {
       return null; // success
     } catch (e, st) {
       logger.error('Failed to scan barcode', e, st, 'STOCK_AUDIT');
-      state = state.copyWith(isLoading: false, error: 'حدث خطأ: $e');
-      return 'حدث خطأ: $e';
+      state = state.copyWith(isLoading: false, error: tr('حدث خطأ: {e}', {'e': e}));
+      return tr('حدث خطأ: {e}', {'e': e});
     }
   }
 
@@ -165,7 +166,7 @@ class StockAuditNotifier extends Notifier<StockAuditState> {
 
       if (product == null) {
         state = state.copyWith(isLoading: false);
-        return 'الصنف غير موجود';
+        return tr('الصنف غير موجود');
       }
 
       final added = await inventoryRepo.addAuditItemOnce(
@@ -179,11 +180,11 @@ class StockAuditNotifier extends Notifier<StockAuditState> {
       // re-fetch on its own after the insert, so the new row never appears in
       // the list (re-adding then reports "already added"). Invalidate to refetch.
       ref.invalidate(stockAuditItemsProvider(auditId));
-      return added ? null : 'الصنف مضاف بالفعل في هذا الجرد';
+      return added ? null : tr('الصنف مضاف بالفعل في هذا الجرد');
     } catch (e, st) {
       logger.error('Failed to add audit item', e, st, 'STOCK_AUDIT');
-      state = state.copyWith(isLoading: false, error: 'حدث خطأ: $e');
-      return 'حدث خطأ: $e';
+      state = state.copyWith(isLoading: false, error: tr('حدث خطأ: {e}', {'e': e}));
+      return tr('حدث خطأ: {e}', {'e': e});
     }
   }
 
@@ -215,11 +216,11 @@ class StockAuditNotifier extends Notifier<StockAuditState> {
         final activityLogRepo = ref.read(activityLogRepositoryProvider);
         await activityLogRepo.logActivity(
           userId: user?.id,
-          userName: user?.displayName ?? 'مستخدم',
+          userName: user?.displayName ?? tr('مستخدم'),
           action: 'finalize_audit',
           entityType: 'stock',
           entityId: auditId,
-          description: 'اعتماد جرد رقم $auditId وتحديث المخزون',
+          description: tr('اعتماد جرد رقم {auditId} وتحديث المخزون', {'auditId': auditId}),
         );
       } catch (_) {}
 
@@ -227,7 +228,7 @@ class StockAuditNotifier extends Notifier<StockAuditState> {
       return true;
     } catch (e, st) {
       logger.error('Failed to finalize audit', e, st, 'STOCK_AUDIT');
-      state = state.copyWith(isLoading: false, error: 'حدث خطأ: $e');
+      state = state.copyWith(isLoading: false, error: tr('حدث خطأ: {e}', {'e': e}));
       return false;
     }
   }

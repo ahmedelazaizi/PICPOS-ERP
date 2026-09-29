@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // تايلات الإعدادات المحروسة بصلاحيات — دفعة ١٠.
 //
 // ── ليه ملف مشترك ─────────────────────────────────────────────────────────
@@ -42,14 +43,14 @@ Widget buildWorkHolidaysTileGuarded({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.hrManage,
     allowManagerOverride: true,
-    actionName: 'عطلات العمل',
+    actionName: tr('عطلات العمل'),
     onGranted: onOpen,
     child: ListTile(
       leading: const Icon(PhosphorIconsBold.calendarCheck,
           color: AppColors.primary),
-      title: const Text('عطلات العمل'),
-      subtitle: const Text(
-          'العطل الأسبوعية والأعياد — أساسُ حساب أيام العمل وأجر الساعة والإضافي'),
+      title:  Text(tr('عطلات العمل')),
+      subtitle:  Text(
+          tr('العطل الأسبوعية والأعياد — أساسُ حساب أيام العمل وأجر الساعة والإضافي')),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: onOpen,
     ),
@@ -65,11 +66,11 @@ Widget buildCompanyInfoTileGuarded({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.settingsCompany,
     allowManagerOverride: true,
-    actionName: 'معلومات الشركة',
+    actionName: tr('معلومات الشركة'),
     onGranted: onOpen,
     child: ListTile(
       leading: const Icon(PhosphorIconsBold.buildings),
-      title: const Text('معلومات الشركة'),
+      title:  Text(tr('معلومات الشركة')),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: onOpen,
     ),
@@ -96,7 +97,7 @@ Widget buildCurrencyTileGuarded({
         PhosphorIconsBold.lockSimple,
         color: AppColors.textMuted,
       ),
-      title: const Text('عملة النظام'),
+      title:  Text(tr('عملة النظام')),
       subtitle: Text(
         '$subtitle — مقفولة بعد تسجيل حركات مالية.\n'
         'الدقة العشرية للعملة جزءٌ من كل مبلغ محفوظ، فتبديلها الآن يعيد '
@@ -111,14 +112,14 @@ Widget buildCurrencyTileGuarded({
   return PermissionGuard(
     permission: PermissionCodes.settingsCurrency,
     allowManagerOverride: true,
-    actionName: 'تغيير عملة النظام',
+    actionName: tr('تغيير عملة النظام'),
     onGranted: onOpen,
     child: ListTile(
       leading: const Icon(
         PhosphorIconsBold.currencyCircleDollar,
         color: AppColors.success,
       ),
-      title: const Text('عملة النظام'),
+      title:  Text(tr('عملة النظام')),
       subtitle: Text(subtitle),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: onOpen,
@@ -131,15 +132,15 @@ Widget buildPartyBalanceRepairTileGuarded({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.accountingJournal,
     allowManagerOverride: true,
-    actionName: 'إصلاح أرصدة الأطراف',
+    actionName: tr('إصلاح أرصدة الأطراف'),
     onGranted: onOpen,
     child: ListTile(
       leading: const Icon(
         PhosphorIconsBold.scales,
         color: AppColors.warning,
       ),
-      title: const Text('تدقيق أرصدة الأطراف'),
-      subtitle: const Text('مقارنة أرصدة العملاء والموردين بالأستاذ وإعادة احتسابها'),
+      title:  Text(tr('تدقيق أرصدة الأطراف')),
+      subtitle:  Text(tr('مقارنة أرصدة العملاء والموردين بالأستاذ وإعادة احتسابها')),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: onOpen,
     ),
@@ -154,15 +155,15 @@ Widget buildDatabaseSettingsTileGuarded({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.systemDatabase,
     allowManagerOverride: true,
-    actionName: 'إعدادات قاعدة البيانات',
+    actionName: tr('إعدادات قاعدة البيانات'),
     onGranted: onOpen,
     child: ListTile(
       leading: const Icon(
         PhosphorIconsBold.database,
         color: AppColors.warning,
       ),
-      title: const Text('قاعدة البيانات'),
-      subtitle: const Text('اختيار نوع قاعدة البيانات (SQLite/PostgreSQL)'),
+      title:  Text(tr('قاعدة البيانات')),
+      subtitle:  Text(tr('اختيار نوع قاعدة البيانات (SQLite/PostgreSQL)')),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: onOpen,
     ),
@@ -177,15 +178,15 @@ Widget buildPosSettingsTileGuarded({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.settingsPosEdit,
     allowManagerOverride: true,
-    actionName: 'إعدادات البيع السريع',
+    actionName: tr('إعدادات البيع السريع'),
     onGranted: onOpen,
     child: ListTile(
       leading: const Icon(
         PhosphorIconsBold.shoppingCart,
         color: AppColors.primary,
       ),
-      title: const Text('إعدادات البيع السريع الرئيسية'),
-      subtitle: const Text('الأزرار، التصنيفات، شبكة المنتجات، السلة، الإيصال'),
+      title:  Text(tr('إعدادات البيع السريع الرئيسية')),
+      subtitle:  Text(tr('الأزرار، التصنيفات، شبكة المنتجات، السلة، الإيصال')),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: onOpen,
     ),
@@ -202,16 +203,16 @@ Widget buildQuickSalePolicyTileGuarded({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.settingsPosEdit,
     allowManagerOverride: true,
-    actionName: 'سياسة البيع السريع',
+    actionName: tr('سياسة البيع السريع'),
     onGranted: onOpen,
     child: ListTile(
       leading: const Icon(
         PhosphorIconsBold.slidersHorizontal,
         color: AppColors.primary,
       ),
-      title: const Text('سياسة البيع السريع'),
-      subtitle: const Text(
-          'المسح، السلة، الدفع، الطباعة، الوردية — ما يحدث لا ما يُعرَض'),
+      title:  Text(tr('سياسة البيع السريع')),
+      subtitle:  Text(
+          tr('المسح، السلة، الدفع، الطباعة، الوردية — ما يحدث لا ما يُعرَض')),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: onOpen,
     ),
@@ -227,7 +228,7 @@ Widget buildLicenseActivateButtonGuarded({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.systemLicense,
     allowManagerOverride: true,
-    actionName: 'تفعيل الترخيص',
+    actionName: tr('تفعيل الترخيص'),
     onGranted: onOpen,
     child: ElevatedButton(
       onPressed: onOpen,
@@ -236,7 +237,7 @@ Widget buildLicenseActivateButtonGuarded({required VoidCallback onOpen}) {
         foregroundColor: Colors.white,
         minimumSize: const Size(100, 36),
       ),
-      child: const Text('تفعيل الآن'),
+      child:  Text(tr('تفعيل الآن')),
     ),
   );
 }
@@ -254,11 +255,11 @@ Widget buildDefaultTaxRateTileGuarded({required Widget field}) {
   return PermissionGuard(
     permission: PermissionCodes.settingsTax,
     allowManagerOverride: true,
-    actionName: 'تغيير نسبة الضريبة الافتراضية',
+    actionName: tr('تغيير نسبة الضريبة الافتراضية'),
     child: ListTile(
-      title: const Text('نسبة الضريبة الافتراضية'),
+      title:  Text(tr('نسبة الضريبة الافتراضية')),
       subtitle:
-          const Text('النسبة المئوية للضريبة التي يتم تطبيقها تلقائياً'),
+           Text(tr('النسبة المئوية للضريبة التي يتم تطبيقها تلقائياً')),
       contentPadding: EdgeInsets.zero,
       trailing: SizedBox(width: 100, child: field),
     ),

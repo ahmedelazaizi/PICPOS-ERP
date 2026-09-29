@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,13 +23,13 @@ Widget buildPosCustomerAddIconButton({required VoidCallback onPressed}) {
   return PermissionGuard(
     permission: PermissionCodes.posCustomerAdd,
     allowManagerOverride: true,
-    actionName: 'إضافة عميل سريع',
+    actionName: tr('إضافة عميل سريع'),
     onGranted: onPressed,
     child: IconButton(
       icon: const Icon(PhosphorIconsBold.userPlus, size: 20),
       onPressed: onPressed,
       color: AppColors.primary,
-      tooltip: 'إضافة عميل سريع',
+      tooltip: tr('إضافة عميل سريع'),
     ),
   );
 }
@@ -139,20 +140,20 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'لا يوجد نتائج',
-                  style: TextStyle(color: AppColors.textMuted),
+                 Text(
+                  tr('لا يوجد نتائج'),
+                  style: const TextStyle(color: AppColors.textMuted),
                 ),
                 const SizedBox(height: 8),
                 PermissionGuard(
                   permission: PermissionCodes.posCustomerAdd,
                   allowManagerOverride: true,
-                  actionName: 'إضافة عميل سريع',
+                  actionName: tr('إضافة عميل سريع'),
                   onGranted: addCustomer,
                   child: TextButton.icon(
                     onPressed: addCustomer,
                     icon: const Icon(PhosphorIconsBold.plus),
-                    label: const Text('إضافة عميل جديد'),
+                    label:  Text(tr('إضافة عميل جديد')),
                   ),
                 ),
               ],
@@ -228,7 +229,7 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
                 ],
               ),
               subtitle: Text(
-                c.phone ?? 'بدون هاتف',
+                c.phone ?? tr('بدون هاتف'),
                 style: const TextStyle(fontSize: 12),
               ),
               trailing: Column(
@@ -236,7 +237,7 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '${c.balance.toStringAsFixed(AppConstants.decimalPlaces)} د.أ',
+                    tr('{p0} د.أ', {'p0': c.balance.toStringAsFixed(AppConstants.decimalPlaces)}),
                     style: TextStyle(
                       color: hasDebt ? AppColors.error : AppColors.success,
                       fontWeight: FontWeight.bold,
@@ -244,9 +245,9 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
                     ),
                   ),
                   if (hasDebt)
-                    const Text(
-                      'رصيد مستحق',
-                      style: TextStyle(fontSize: 10, color: AppColors.error),
+                     Text(
+                      tr('رصيد مستحق'),
+                      style: const TextStyle(fontSize: 10, color: AppColors.error),
                     ),
                 ],
               ),
@@ -279,7 +280,7 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
           child: CircularProgressIndicator(),
         ),
       ),
-      error: (e, _) => Center(child: Text('خطأ: $e')),
+      error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
     );
   }
 
@@ -337,11 +338,11 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
                 },
                 child: TextField(
                   controller: _searchController,
-                  decoration: const InputDecoration(
-                    hintText: 'بحث عن عميل أو هاتف...',
+                  decoration:  InputDecoration(
+                    hintText: tr('بحث عن عميل أو هاتف...'),
                     border: InputBorder.none,
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                   onChanged: (v) {
                     if (isSelected && v != cartState.selectedCustomerName) {
@@ -385,33 +386,33 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('إضافة عميل سريع'),
+          title:  Text(tr('إضافة عميل سريع')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'اسم العميل',
-                  prefixIcon: Icon(PhosphorIconsBold.user),
+                decoration:  InputDecoration(
+                  labelText: tr('اسم العميل'),
+                  prefixIcon: const Icon(PhosphorIconsBold.user),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'رقم الهاتف',
-                  prefixIcon: Icon(PhosphorIconsBold.phone),
+                decoration:  InputDecoration(
+                  labelText: tr('رقم الهاتف'),
+                  prefixIcon: const Icon(PhosphorIconsBold.phone),
                 ),
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: addressController,
-                decoration: const InputDecoration(
-                  labelText: 'العنوان',
-                  prefixIcon: Icon(PhosphorIconsBold.mapPin),
+                decoration:  InputDecoration(
+                  labelText: tr('العنوان'),
+                  prefixIcon: const Icon(PhosphorIconsBold.mapPin),
                 ),
                 maxLines: 2,
               ),
@@ -420,7 +421,7 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -428,7 +429,7 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
                 if (name.isEmpty) {
                   AppToast.show(
                     ctx,
-                    'يرجى إدخال اسم العميل',
+                    tr('يرجى إدخال اسم العميل'),
                     type: ToastType.error,
                   );
                   return;
@@ -473,13 +474,13 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
                   if (ctx.mounted) {
                     AppToast.show(
                       ctx,
-                      'خطأ في إضافة العميل: $e',
+                      tr('خطأ في إضافة العميل: {e}', {'e': e}),
                       type: ToastType.error,
                     );
                   }
                 }
               },
-              child: const Text('إضافة واختيار'),
+              child:  Text(tr('إضافة واختيار')),
             ),
           ],
         ),

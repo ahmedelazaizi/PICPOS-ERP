@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -44,7 +45,7 @@ class UnitSelectionDialog extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'اختر وحدة البيع',
+              tr('اختر وحدة البيع'),
               style: GoogleFonts.cairo(
                 fontWeight: FontWeight.w700,
                 fontSize: 16,
@@ -74,7 +75,7 @@ class UnitSelectionDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('إلغاء', style: GoogleFonts.cairo()),
+          child: Text(tr('إلغاء'), style: GoogleFonts.cairo()),
         ),
       ],
     );
@@ -126,7 +127,7 @@ class _UnitCard extends StatelessWidget {
                     ),
                     if (!isBase && unit.quantityInBase > 1)
                       Text(
-                        '${unit.quantityInBase.toStringAsFixed(0)} قطعة',
+                        tr('{p0} قطعة', {'p0': unit.quantityInBase.toStringAsFixed(0)}),
                         style: GoogleFonts.cairo(
                           fontSize: 11,
                           color: AppColors.textMuted,

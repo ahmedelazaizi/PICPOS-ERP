@@ -112,6 +112,7 @@ dev_dependencies:
   # implementation is pure Dart (win32) rather than a method channel, so
   # the usual `setMockMethodCallHandler` trick doesn't reach it.
   path_provider_platform_interface: ^2.1.2
+  analyzer: ^10.0.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -127,6 +128,8 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - assets/i18n/en.json
+    - assets/i18n/catalog_ar.json
     # لوجو UralCash — في الجذر لأسباب تاريخية؛ الكود بيوصله عبر
     # Brand.logoAsset مش بسلسلة مكتوبة.
     - logo.PNG

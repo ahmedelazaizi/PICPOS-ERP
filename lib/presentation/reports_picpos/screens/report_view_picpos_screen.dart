@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // عارضُ التقرير الواحد — الشكلُ الذي يعمل به التصميم.
 //
 // ═══ لماذا عارضٌ واحدٌ لا سبعُ شاشات ═══
@@ -232,7 +233,7 @@ class _TabBody extends StatelessWidget {
         if (snap.hasError) {
           return _Message(
             icon: PhosphorIconsBold.warningCircle,
-            text: 'تعذّر حسابُ التقرير',
+            text: tr('تعذّر حسابُ التقرير'),
             sub: '${snap.error}',
             tint: Theme.of(context).colorScheme.error,
           );
@@ -242,8 +243,8 @@ class _TabBody extends StatelessWidget {
         if (content.isEmpty) {
           return _Message(
             icon: PhosphorIconsBold.chartBar,
-            text: 'لا بيانات في هذه الفترة',
-            sub: 'غيّرِ المدى من الشريط أعلاه',
+            text: tr('لا بيانات في هذه الفترة'),
+            sub: tr('غيّرِ المدى من الشريط أعلاه'),
             tint: context.picposMuted,
           );
         }

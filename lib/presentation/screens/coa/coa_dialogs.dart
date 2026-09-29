@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../../core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,7 +46,7 @@ void showAddAccountDialog(
               ),
               const SizedBox(width: 8),
               Text(
-                isSubAccount ? 'إضافة حساب فرعي' : 'إضافة حساب رئيسي',
+                isSubAccount ? tr('إضافة حساب فرعي') : tr('إضافة حساب رئيسي'),
                 style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
               ),
             ],
@@ -72,7 +73,7 @@ void showAddAccountDialog(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'حساب فرعي تحت:',
+                                tr('حساب فرعي تحت:'),
                                 style: GoogleFonts.cairo(fontSize: 11, color: AppColors.info),
                               ),
                               Text(
@@ -94,26 +95,26 @@ void showAddAccountDialog(
                 TextField(
                   controller: codeCtrl,
                   decoration: InputDecoration(
-                    labelText: 'رمز الحساب',
-                    hintText: isSubAccount ? 'مثال: ${parentAccount?.code ?? ""}01' : 'مثال: 1104',
+                    labelText: tr('رمز الحساب'),
+                    hintText: isSubAccount ? tr('مثال: {p0}01', {'p0': parentAccount?.code ?? ""}) : tr('مثال: 1104'),
                     border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'اسم الحساب',
-                    hintText: 'مثال: حساب التأمينات',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('اسم الحساب'),
+                    hintText: tr('مثال: حساب التأمينات'),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: selectedType,
-                  decoration: const InputDecoration(
-                    labelText: 'نوع الحساب',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('نوع الحساب'),
+                    border: const OutlineInputBorder(),
                   ),
                   items: kAccountTypeConfig.entries.map((e) {
                     return DropdownMenuItem(
@@ -131,12 +132,12 @@ void showAddAccountDialog(
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton.icon(
               onPressed: saving ? null : () async {
                 if (codeCtrl.text.isEmpty || nameCtrl.text.isEmpty) {
-                  AppToast.show(context, 'يرجى ملء جميع الحقول', type: ToastType.error);
+                  AppToast.show(context, tr('يرجى ملء جميع الحقول'), type: ToastType.error);
                   return;
                 }
                 final trimmedName = nameCtrl.text.trim();
@@ -186,18 +187,18 @@ void showAddAccountDialog(
                   if (context.mounted) {
                     AppToast.show(
                       context,
-                      isSubAccount ? 'تم إضافة الحساب الفرعي بنجاح' : 'تم إضافة الحساب الرئيسي بنجاح',
+                      isSubAccount ? tr('تم إضافة الحساب الفرعي بنجاح') : tr('تم إضافة الحساب الرئيسي بنجاح'),
                     );
                   }
                 } catch (e) {
                   if (ctx.mounted) setDialogState(() => saving = false);
                   if (context.mounted) {
-                    AppToast.show(context, 'خطأ: ${e.toString()}', type: ToastType.error);
+                    AppToast.show(context, tr('خطأ: {p0}', {'p0': e.toString()}), type: ToastType.error);
                   }
                 }
               },
               icon: const Icon(PhosphorIconsBold.plus, size: 16),
-              label: Text(isSubAccount ? 'إضافة فرعي' : 'إضافة'),
+              label: Text(isSubAccount ? tr('إضافة فرعي') : tr('إضافة')),
             ),
           ],
         );
@@ -228,7 +229,7 @@ void showEditAccountDialog(
             children: [
               const Icon(PhosphorIconsBold.pencilSimple, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
-              Text('تعديل حساب', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+              Text(tr('تعديل حساب'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             ],
           ),
           content: SizedBox(
@@ -238,24 +239,24 @@ void showEditAccountDialog(
               children: [
                 TextField(
                   controller: codeCtrl,
-                  decoration: const InputDecoration(labelText: 'رمز الحساب', border: OutlineInputBorder()),
+                  decoration:  InputDecoration(labelText: tr('رمز الحساب'), border: const OutlineInputBorder()),
                   enabled: !account.isSystem,
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'اسم الحساب', border: OutlineInputBorder()),
+                  decoration:  InputDecoration(labelText: tr('اسم الحساب'), border: const OutlineInputBorder()),
                 ),
                 const SizedBox(height: 12),
                 SwitchListTile(
-                  title: const Text('نشط'),
+                  title:  Text(tr('نشط')),
                   value: isActive,
                   onChanged: (v) => setDialogState(() => isActive = v),
                   contentPadding: EdgeInsets.zero,
                 ),
                 SwitchListTile(
-                  title: const Text('إخفاء من سندات القيد'),
-                  subtitle: Text('لن يظهر الحساب عند إنشاء قيود يدوية',
+                  title:  Text(tr('إخفاء من سندات القيد')),
+                  subtitle: Text(tr('لن يظهر الحساب عند إنشاء قيود يدوية'),
                       style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
                   value: isHiddenFromEntries,
                   onChanged: (v) => setDialogState(() => isHiddenFromEntries = v),
@@ -268,7 +269,7 @@ void showEditAccountDialog(
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: saving ? null : () async {
@@ -285,16 +286,16 @@ void showEditAccountDialog(
                   // Notify connected clients
                   NetworkService.instance.broadcastChange('accounts');
                   if (context.mounted) {
-                    AppToast.show(context, 'تم تحديث الحساب');
+                    AppToast.show(context, tr('تم تحديث الحساب'));
                   }
                 } catch (e) {
                   if (ctx.mounted) setDialogState(() => saving = false);
                   if (context.mounted) {
-                    AppToast.show(context, 'خطأ: ${e.toString()}', type: ToastType.error);
+                    AppToast.show(context, tr('خطأ: {p0}', {'p0': e.toString()}), type: ToastType.error);
                   }
                 }
               },
-              child: const Text('حفظ'),
+              child:  Text(tr('حفظ')),
             ),
           ],
         );
@@ -314,12 +315,12 @@ void confirmDeleteAccount(
     builder: (ctx) => Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Text('تأكيد الحذف'),
-        content: Text('هل أنت متأكد من حذف حساب "${account.name}"؟\n\nسيتم حذف جميع الحسابات الفرعية التابعة.'),
+        title:  Text(tr('تأكيد الحذف')),
+        content: Text(tr('هل أنت متأكد من حذف حساب "{p0}"؟\n\nسيتم حذف جميع الحسابات الفرعية التابعة.', {'p0': account.name})),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -329,17 +330,17 @@ void confirmDeleteAccount(
                 // Notify connected clients
                 NetworkService.instance.broadcastChange('accounts');
                 if (context.mounted) {
-                  AppToast.show(context, 'تم حذف الحساب', type: ToastType.warning);
+                  AppToast.show(context, tr('تم حذف الحساب'), type: ToastType.warning);
                 }
               } catch (e) {
                 if (ctx.mounted) Navigator.pop(ctx);
                 if (context.mounted) {
-                  AppToast.show(context, 'خطأ: ${e.toString()}', type: ToastType.error);
+                  AppToast.show(context, tr('خطأ: {p0}', {'p0': e.toString()}), type: ToastType.error);
                 }
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('حذف'),
+            child:  Text(tr('حذف')),
           ),
         ],
       ),
@@ -376,7 +377,7 @@ void showAccountLedger(
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'دفتر أستاذ: ${account.code} - ${account.name}',
+                        tr('دفتر أستاذ: {p0} - {p1}', {'p0': account.code, 'p1': account.name}),
                         style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700),
                       ),
                     ),
@@ -439,7 +440,7 @@ void showAccountLedger(
                             children: [
                               const Icon(PhosphorIconsBold.bookOpen, size: 48, color: AppColors.textMuted),
                               const SizedBox(height: 8),
-                              Text('لا توجد حركات في هذه الفترة',
+                              Text(tr('لا توجد حركات في هذه الفترة'),
                                   style: GoogleFonts.cairo(color: AppColors.textMuted)),
                             ],
                           ),
@@ -459,11 +460,11 @@ void showAccountLedger(
                             TableRow(
                               decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.06)),
                               children: [
-                                _ledgerCell('التاريخ', isHeader: true),
-                                _ledgerCell('البيان', isHeader: true),
-                                _ledgerCell('مدين', isHeader: true),
-                                _ledgerCell('دائن', isHeader: true),
-                                _ledgerCell('الرصيد', isHeader: true),
+                                _ledgerCell(tr('التاريخ'), isHeader: true),
+                                _ledgerCell(tr('البيان'), isHeader: true),
+                                _ledgerCell(tr('مدين'), isHeader: true),
+                                _ledgerCell(tr('دائن'), isHeader: true),
+                                _ledgerCell(tr('الرصيد'), isHeader: true),
                               ],
                             ),
                             ...ledger.map((row) {
@@ -476,7 +477,7 @@ void showAccountLedger(
                                 children: [
                                   _ledgerCell(isOpening ? '' : '${date.day}/${date.month}'),
                                   _ledgerCell(
-                                    isOpening ? 'رصيد أول المدة' : '${row['description'] ?? ''}',
+                                    isOpening ? tr('رصيد أول المدة') : '${row['description'] ?? ''}',
                                   ),
                                   _ledgerCell(
                                     isOpening ? '' : formatAccountAmount(row['debit'] as double),

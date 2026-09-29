@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -34,11 +35,11 @@ class _ProductDeleteDialogState extends ConsumerState<ProductDeleteDialog> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.warning, color: AppColors.error),
-            SizedBox(width: 8),
-            Text('⚠️ تحذير: حذف صنف'),
+            const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+            const SizedBox(width: 8),
+            Text(tr('⚠️ تحذير: حذف صنف')),
           ],
         ),
         content: SizedBox(
@@ -54,41 +55,41 @@ class _ProductDeleteDialogState extends ConsumerState<ProductDeleteDialog> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.error),
                 ),
-                child: const Column(
+                child:  Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(PhosphorIconsBold.warning, color: AppColors.error),
-                        SizedBox(width: 8),
+                        const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+                        const SizedBox(width: 8),
                         Text(
-                          'هذا الإجراء لا يمكن التراجع عنه!',
-                          style: TextStyle(
+                          tr('هذا الإجراء لا يمكن التراجع عنه!'),
+                          style: const TextStyle(
                             color: AppColors.error,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     Text(
-                      'حذف الصنف سيؤدي إلى:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      tr('حذف الصنف سيؤدي إلى:'),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    SizedBox(height: 8),
-                    Text('• اختفاء الصنف من شاشة الأصناف'),
-                    Text('• عدم ظهوره في البيع السريع'),
-                    Text('• الاحتفاظ ببيانات الفواتير السابقة'),
+                    const SizedBox(height: 8),
+                    Text(tr('• اختفاء الصنف من شاشة الأصناف')),
+                    Text(tr('• عدم ظهوره في البيع السريع')),
+                    Text(tr('• الاحتفاظ ببيانات الفواتير السابقة')),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
               Text(
-                'الصنف المراد حذفه: "${widget.product.name}"',
+                tr('الصنف المراد حذفه: "{p0}"', {'p0': widget.product.name}),
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              const Text('للتأكيد، اكتب اسم الصنف بالضبط:'),
+               Text(tr('للتأكيد، اكتب اسم الصنف بالضبط:')),
               const SizedBox(height: 8),
               TextField(
                 controller: confirmController,
@@ -112,7 +113,7 @@ class _ProductDeleteDialogState extends ConsumerState<ProductDeleteDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -130,10 +131,10 @@ class _ProductDeleteDialogState extends ConsumerState<ProductDeleteDialog> {
                         final user = ref.read(authProvider).user;
                         await repository.logActivity(
                           userId: user?.id,
-                          userName: user?.displayName ?? 'مجهول',
+                          userName: user?.displayName ?? tr('مجهول'),
                           action: 'delete_product',
                           entityId: widget.product.id,
-                          description: 'حذف صنف: ${widget.product.name}',
+                          description: tr('حذف صنف: {p0}', {'p0': widget.product.name}),
                         );
                       } catch (e) {
                         debugPrint('[ActivityLog] Error: $e');
@@ -144,7 +145,7 @@ class _ProductDeleteDialogState extends ConsumerState<ProductDeleteDialog> {
                       Navigator.pop(context);
                       AppToast.show(
                         context,
-                        deleted ? 'تم حذف الصنف' : 'فشل حذف الصنف',
+                        deleted ? tr('تم حذف الصنف') : tr('فشل حذف الصنف'),
                         type: deleted ? ToastType.warning : ToastType.error,
                       );
                     }
@@ -153,7 +154,7 @@ class _ProductDeleteDialogState extends ConsumerState<ProductDeleteDialog> {
             // كان «حذف نهائي» — والديالوجُ نفسُه يقول فوقه «الاحتفاظ ببيانات
             // الفواتير السابقة». تناقضٌ يوهم بمحوٍ لا يقع، فيتردّد المشغّلُ
             // في إجراءٍ آمنٍ قابلٍ للاسترجاع من القاعدة.
-            child: const Text('🗑️ حذف الصنف'),
+            child:  Text(tr('🗑️ حذف الصنف')),
           ),
         ],
       ),

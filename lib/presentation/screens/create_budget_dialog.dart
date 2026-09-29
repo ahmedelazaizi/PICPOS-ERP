@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -65,15 +66,15 @@ class _CreateBudgetDialogState extends ConsumerState<CreateBudgetDialog> {
     final annualAmount = double.tryParse(amountText) ?? 0.0;
     
     if (annualAmount <= 0) {
-      AppToast.show(context, 'يرجى إدخال مبلغ صحيح للموازنة', type: ToastType.info);
+      AppToast.show(context, tr('يرجى إدخال مبلغ صحيح للموازنة'), type: ToastType.info);
       return;
     }
     if (_selectedFiscalYear == null) {
-      AppToast.show(context, 'يرجى اختيار السنة المالية', type: ToastType.info);
+      AppToast.show(context, tr('يرجى اختيار السنة المالية'), type: ToastType.info);
       return;
     }
     if (_selectedAccount == null) {
-      AppToast.show(context, 'يرجى اختيار الحساب', type: ToastType.info);
+      AppToast.show(context, tr('يرجى اختيار الحساب'), type: ToastType.info);
       return;
     }
 
@@ -90,11 +91,11 @@ class _CreateBudgetDialogState extends ConsumerState<CreateBudgetDialog> {
       
       if (mounted) {
         Navigator.pop(context, true);
-        AppToast.show(context, 'تم إنشاء الموازنة بنجاح');
+        AppToast.show(context, tr('تم إنشاء الموازنة بنجاح'));
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ أثناء الإنشاء: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ أثناء الإنشاء: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -108,7 +109,7 @@ class _CreateBudgetDialogState extends ConsumerState<CreateBudgetDialog> {
           children: [
             const Icon(PhosphorIconsBold.chartBar, color: AppColors.primary, size: 20),
             const SizedBox(width: 8),
-            Text('موازنة سنوية جديدة', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            Text(tr('موازنة سنوية جديدة'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           ],
         ),
         content: SizedBox(
@@ -122,9 +123,9 @@ class _CreateBudgetDialogState extends ConsumerState<CreateBudgetDialog> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<FiscalYearData>(
-                        decoration: const InputDecoration(
-                          labelText: 'السنة المالية',
-                          border: OutlineInputBorder(),
+                        decoration:  InputDecoration(
+                          labelText: tr('السنة المالية'),
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                         initialValue: _selectedFiscalYear,
@@ -140,10 +141,10 @@ class _CreateBudgetDialogState extends ConsumerState<CreateBudgetDialog> {
                       flex: 2,
                       child: TextField(
                         controller: _nameCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'اسم الموازنة (اختياري)',
-                          hintText: 'مثال: موازنة تسويق 2026...',
-                          border: OutlineInputBorder(),
+                        decoration:  InputDecoration(
+                          labelText: tr('اسم الموازنة (اختياري)'),
+                          hintText: tr('مثال: موازنة تسويق 2026...'),
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                         style: GoogleFonts.cairo(fontSize: 13),
@@ -152,7 +153,7 @@ class _CreateBudgetDialogState extends ConsumerState<CreateBudgetDialog> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Text('الحساب المالي المرتبط', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 13)),
+                Text(tr('الحساب المالي المرتبط'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 13)),
                 const SizedBox(height: 8),
                 _AccountAutocomplete(
                   repo: ref.read(accountingRepositoryProvider),
@@ -183,7 +184,7 @@ class _CreateBudgetDialogState extends ConsumerState<CreateBudgetDialog> {
                         controller: _amountCtrl,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'المبلغ السنوي الإجمالي',
+                          labelText: tr('المبلغ السنوي الإجمالي'),
                           border: const OutlineInputBorder(),
                           isDense: true,
                           prefixText: '${AppConstants.currencySymbol} ',
@@ -195,16 +196,16 @@ class _CreateBudgetDialogState extends ConsumerState<CreateBudgetDialog> {
                     Expanded(
                       flex: 2,
                       child: DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: 'طريقة التوزيع على الأشهر',
-                          border: OutlineInputBorder(),
+                        decoration:  InputDecoration(
+                          labelText: tr('طريقة التوزيع على الأشهر'),
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                         initialValue: _distributionMethod,
                         items: [
-                          DropdownMenuItem(value: 'equal', child: Text('متساوي (يوزع تلقائياً)', style: GoogleFonts.cairo(fontSize: 12))),
-                          DropdownMenuItem(value: 'seasonal', child: Text('موسمي', style: GoogleFonts.cairo(fontSize: 12))),
-                          DropdownMenuItem(value: 'manual', child: Text('يدوي', style: GoogleFonts.cairo(fontSize: 12))),
+                          DropdownMenuItem(value: 'equal', child: Text(tr('متساوي (يوزع تلقائياً)'), style: GoogleFonts.cairo(fontSize: 12))),
+                          DropdownMenuItem(value: 'seasonal', child: Text(tr('موسمي'), style: GoogleFonts.cairo(fontSize: 12))),
+                          DropdownMenuItem(value: 'manual', child: Text(tr('يدوي'), style: GoogleFonts.cairo(fontSize: 12))),
                         ],
                         onChanged: (v) => setState(() => _distributionMethod = v ?? 'equal'),
                       ),
@@ -226,7 +227,7 @@ class _CreateBudgetDialogState extends ConsumerState<CreateBudgetDialog> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'سيتم تقسيم المبلغ السنوي المكتوب بالتساوي على 12 شهراً فور الحفظ. يمكنك لاحقاً النقر على الموازنة وتعديل كل شهر على حدة إذا رغبت.',
+                            tr('سيتم تقسيم المبلغ السنوي المكتوب بالتساوي على 12 شهراً فور الحفظ. يمكنك لاحقاً النقر على الموازنة وتعديل كل شهر على حدة إذا رغبت.'),
                             style: GoogleFonts.cairo(fontSize: 11, color: AppColors.primaryDark),
                           ),
                         ),
@@ -235,18 +236,18 @@ class _CreateBudgetDialogState extends ConsumerState<CreateBudgetDialog> {
                   )
                 ] else ...[
                   const SizedBox(height: 12),
-                  Text('سيتم إضافة 12 بنداً بقيمة صفرية لتعديلها يدوياً من واجهة التفاصيل.', style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                  Text(tr('سيتم إضافة 12 بنداً بقيمة صفرية لتعديلها يدوياً من واجهة التفاصيل.'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
                 ],
               ],
             ),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child:  Text(tr('إلغاء'))),
           ElevatedButton.icon(
             onPressed: _saveBudget,
             icon: const Icon(PhosphorIconsBold.check, size: 16),
-            label: const Text('إنشاء الموازنة'),
+            label:  Text(tr('إنشاء الموازنة')),
           ),
         ],
       ),
@@ -311,7 +312,7 @@ class _AccountAutocompleteState extends State<_AccountAutocomplete> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(6)),
-        child: Text('تحميل الحسابات...', style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+        child: Text(tr('تحميل الحسابات...'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
       );
     }
 
@@ -344,7 +345,7 @@ class _AccountAutocompleteState extends State<_AccountAutocomplete> {
               controller: controller,
               focusNode: focusNode,
               decoration: InputDecoration(
-                hintText: 'اكتب اسم أو رمز الحساب...',
+                hintText: tr('اكتب اسم أو رمز الحساب...'),
                 hintStyle: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
                 isDense: true,
                 prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 14, color: AppColors.primary),
@@ -451,7 +452,7 @@ class _CostCenterPickerState extends State<_CostCenterPicker> {
       initialValue: widget.selectedId,
       isExpanded: true,
       decoration: InputDecoration(
-        labelText: 'مركز التكلفة (اختياري)',
+        labelText: tr('مركز التكلفة (اختياري)'),
         labelStyle: GoogleFonts.cairo(fontSize: 12),
         isDense: true,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
@@ -459,7 +460,7 @@ class _CostCenterPickerState extends State<_CostCenterPicker> {
       ),
       style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textPrimary),
       items: [
-        DropdownMenuItem<int?>(value: null, child: Text('بدون (عام)', style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted))),
+        DropdownMenuItem<int?>(value: null, child: Text(tr('بدون (عام)'), style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted))),
         ..._centers!.map((c) => DropdownMenuItem<int?>(value: c.id, child: Text('${c.code} - ${c.name}', style: GoogleFonts.cairo(fontSize: 12)))),
       ],
       onChanged: widget.onChanged,

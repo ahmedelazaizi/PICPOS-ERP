@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -131,7 +132,7 @@ class _PicPosDonutState extends State<PicPosDonut>
               child: Center(
                 child: total <= 0
                     ? Text(
-                        'لا بيانات',
+                        tr('لا بيانات'),
                         style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                       )
                     : Column(
@@ -146,7 +147,7 @@ class _PicPosDonutState extends State<PicPosDonut>
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            selected?.label ?? widget.centerLabel ?? 'الإجمالي',
+                            selected?.label ?? widget.centerLabel ?? tr('الإجمالي'),
                             style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
                             textAlign: TextAlign.center,
                             maxLines: 1,

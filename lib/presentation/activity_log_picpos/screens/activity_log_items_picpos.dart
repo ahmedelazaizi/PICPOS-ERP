@@ -285,7 +285,7 @@ mixin _ActivityLogItemsPicposMixin on ConsumerState<ActivityLogPicposScreen> {
               const Text('•', style: TextStyle(color: AppColors.textMuted)),
               const SizedBox(width: 8),
               Text(
-                '${log.amount!.toStringAsFixed(AppConstants.decimalPlaces)} د.أ',
+                tr('{p0} د.أ', {'p0': log.amount!.toStringAsFixed(AppConstants.decimalPlaces)}),
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
@@ -305,27 +305,27 @@ mixin _ActivityLogItemsPicposMixin on ConsumerState<ActivityLogPicposScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('تفاصيل العملية #${log.id}'),
+        title: Text(tr('تفاصيل العملية #{p0}', {'p0': log.id})),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _detailRow('المستخدم', log.userName),
-              _detailRow('العملية', actionLabels[log.action] ?? log.action),
+              _detailRow(tr('المستخدم'), log.userName),
+              _detailRow(tr('العملية'), actionLabels[log.action] ?? log.action),
               _detailRow(
-                'النوع',
+                tr('النوع'),
                 entityLabels[log.entityType] ?? log.entityType,
               ),
-              _detailRow('الوصف', log.description),
+              _detailRow(tr('الوصف'), log.description),
               if (log.oldValue != null)
-                _detailRow('القيمة السابقة', log.oldValue!),
+                _detailRow(tr('القيمة السابقة'), log.oldValue!),
               if (log.newValue != null)
-                _detailRow('القيمة الجديدة', log.newValue!),
+                _detailRow(tr('القيمة الجديدة'), log.newValue!),
               if (log.amount != null)
-                _detailRow('المبلغ', '${log.amount!.toStringAsFixed(AppConstants.decimalPlaces)} د.أ'),
+                _detailRow(tr('المبلغ'), tr('{p0} د.أ', {'p0': log.amount!.toStringAsFixed(AppConstants.decimalPlaces)})),
               _detailRow(
-                'التاريخ',
+                tr('التاريخ'),
                 '${log.createdAt.day}/${log.createdAt.month}/${log.createdAt.year} ${log.createdAt.hour}:${log.createdAt.minute.toString().padLeft(2, '0')}',
               ),
               if (log.entityId != null)
@@ -339,7 +339,7 @@ mixin _ActivityLogItemsPicposMixin on ConsumerState<ActivityLogPicposScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -368,7 +368,7 @@ mixin _ActivityLogItemsPicposMixin on ConsumerState<ActivityLogPicposScreen> {
   Future<void> exportToExcel() async {
     try {
       final excel = xls.Excel.createExcel();
-      final sheet = excel['سجل العمليات'];
+      final sheet = excel[tr('سجل العمليات')];
       if (excel.sheets.containsKey('Sheet1')) {
         excel.delete('Sheet1');
       }
@@ -376,15 +376,15 @@ mixin _ActivityLogItemsPicposMixin on ConsumerState<ActivityLogPicposScreen> {
       // Headers
       final headers = [
         '#',
-        'التاريخ',
-        'الوقت',
-        'المستخدم',
-        'العملية',
-        'النوع',
-        'الوصف',
-        'المبلغ',
-        'القيمة السابقة',
-        'القيمة الجديدة',
+        tr('التاريخ'),
+        tr('الوقت'),
+        tr('المستخدم'),
+        tr('العملية'),
+        tr('النوع'),
+        tr('الوصف'),
+        tr('المبلغ'),
+        tr('القيمة السابقة'),
+        tr('القيمة الجديدة'),
       ];
       for (var i = 0; i < headers.length; i++) {
         sheet
@@ -463,13 +463,13 @@ mixin _ActivityLogItemsPicposMixin on ConsumerState<ActivityLogPicposScreen> {
       if (mounted) {
         AppToast.show(
           context,
-          'تم حفظ الملف على سطح المكتب: $fileName',
+          tr('تم حفظ الملف على سطح المكتب: {fileName}', {'fileName': fileName}),
           type: ToastType.success,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في التصدير: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في التصدير: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }

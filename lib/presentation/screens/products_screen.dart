@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import '../../core/diagnostics/perf_trace.dart';
@@ -60,7 +61,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
             .logNavigation(
               user.id,
               user.displayName,
-              'قائمة المنتجات (Products)',
+              tr('قائمة المنتجات (Products)'),
             );
       }
     });

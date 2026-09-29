@@ -109,7 +109,7 @@ void main() {
     PicPosDocumentHeader build() => PicPosDocumentHeader(
           title: 'فاتورة مشتريات',
           number: 'PINV-0201',
-          status: const PicPosDocStatus.draft(),
+          status: PicPosDocStatus.draft(),
           icon: Icons.receipt_long,
           note: 'نموذج بديل لنفس السند',
           trailing: [
@@ -162,7 +162,7 @@ void main() {
     // درسُ هذه الجلسة: تصميمُ سند القبض عرض شيكاً «برسم التحصيل» لحظةَ
     // إنشائه، وهي حالةٌ لاحقةٌ لا تقع إلّا بالإيداع.
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: Directionality(
           textDirection: TextDirection.rtl,
           child: Scaffold(

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ---------------------------------------------------------------------------
 // منطق منسوخ من settings_screen.dart (God-file بـ٦ `part`) — أي إصلاح منطقي
 // يتصلّح في المصدر أولاً ثم يُنقل بـ patch لهذا الملف ومصاحبيه (مصيدة النسخ
@@ -89,6 +90,7 @@ import '../../picpos_shell/picpos_dialog.dart';
 import '../../picpos_shell/picpos_option_picker.dart';
 import '../guarded_sections.dart';
 import 'dart:convert';
+import 'dart:ui' as ui;
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
@@ -98,10 +100,10 @@ import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/config/brand.dart';
+import '../../widgets/user_language_selector.dart';
 import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -234,11 +236,11 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: PicPosDialog(
           icon: PhosphorIconsBold.lockKey,
-          title: 'كلمة مرور الإعدادات',
-          subtitle: 'الشاشةُ محميّةٌ بكلمةِ مرور',
+          title: tr('كلمة مرور الإعدادات'),
+          subtitle: tr('الشاشةُ محميّةٌ بكلمةِ مرور'),
           width: 460,
           // ⚠️ الإلغاءُ يخرج من **الشاشة** لا من الحوار وحدَه: الحوارُ
           //    `barrierDismissible: false` وهو بوّابةُ الدخول، فإغلاقُه
@@ -249,7 +251,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
           },
           body: [
             PicPosDialogField(
-              label: 'أدخل كلمة المرور',
+              label: tr('أدخل كلمة المرور'),
               child: TextField(
                 controller: controller,
                 obscureText: true,
@@ -267,14 +269,14 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
             ),
           ],
           primaryAction: PicPosDialogAction(
-            label: 'دخول',
+            label: tr('دخول'),
             icon: PhosphorIconsBold.signIn,
             onPressed: () {
               if (controller.text == correctPassword) {
                 Navigator.pop(ctx);
                 setState(() => _isUnlocked = true);
               } else {
-                AppToast.show(ctx, 'كلمة المرور غير صحيحة',
+                AppToast.show(ctx, tr('كلمة المرور غير صحيحة'),
                     type: ToastType.error);
               }
             },
@@ -292,16 +294,16 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
     final result = await showDialog<String?>(
       context: context,
       builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: PicPosDialog(
           icon: PhosphorIconsBold.key,
-          title: 'تغيير كلمة مرور الإعدادات',
-          subtitle: 'اتركها فارغةً لإلغاء الحماية بالكامل',
+          title: tr('تغيير كلمة مرور الإعدادات'),
+          subtitle: tr('اتركها فارغةً لإلغاء الحماية بالكامل'),
           width: 460,
           onCancel: () => Navigator.pop(ctx),
           body: [
             PicPosDialogField(
-              label: 'كلمة المرور الجديدة',
+              label: tr('كلمة المرور الجديدة'),
               child: TextField(
                 controller: controller,
                 autofocus: true,
@@ -312,7 +314,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
             ),
           ],
           primaryAction: PicPosDialogAction(
-            label: 'حفظ',
+            label: tr('حفظ'),
             icon: PhosphorIconsBold.floppyDisk,
             onPressed: () => Navigator.pop(ctx, controller.text),
           ),
@@ -322,7 +324,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
     if (result != null) {
       await settingsRepo.saveSetting('settings_access_password', result);
       if (mounted) {
-        AppToast.show(context, result.isEmpty ? 'تم إلغاء حماية كلمة المرور' : 'تم تغيير كلمة المرور بنجاح', type: ToastType.success);
+        AppToast.show(context, result.isEmpty ? tr('تم إلغاء حماية كلمة المرور') : tr('تم تغيير كلمة المرور بنجاح'), type: ToastType.success);
       }
     }
   }
@@ -337,16 +339,16 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
     final result = await showDialog<String?>(
       context: context,
       builder: (ctx) => Directionality(
-        textDirection: ui.TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: PicPosDialog(
           icon: PhosphorIconsBold.key,
-          title: 'كلمة مرور $title',
-          subtitle: 'اتركها فارغةً لإلغاء الحماية عن هذا القسم',
+          title: tr('كلمة مرور {title}', {'title': title}),
+          subtitle: tr('اتركها فارغةً لإلغاء الحماية عن هذا القسم'),
           width: 460,
           onCancel: () => Navigator.pop(ctx),
           body: [
             PicPosDialogField(
-              label: 'كلمة المرور الجديدة لـ $title',
+              label: tr('كلمة المرور الجديدة لـ {title}', {'title': title}),
               child: TextField(
                 controller: controller,
                 autofocus: true,
@@ -357,7 +359,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
             ),
           ],
           primaryAction: PicPosDialogAction(
-            label: 'حفظ',
+            label: tr('حفظ'),
             icon: PhosphorIconsBold.floppyDisk,
             onPressed: () => Navigator.pop(ctx, controller.text),
           ),
@@ -370,7 +372,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       if (mounted) {
         AppToast.show(
           context,
-          result.isEmpty ? 'تم إلغاء الحماية عن $title' : 'تم حفظ كلمة مرور $title بنجاح',
+          result.isEmpty ? tr('تم إلغاء الحماية عن {title}', {'title': title}) : tr('تم حفظ كلمة مرور {title} بنجاح', {'title': title}),
           type: ToastType.success
         );
       }
@@ -390,7 +392,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
             children: [
               const Icon(Icons.lock, size: 64, color: Colors.grey),
               const SizedBox(height: 16),
-              const Text('الإعدادات محمية بكلمة مرور'),
+               Text(tr('الإعدادات محمية بكلمة مرور')),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () async {
@@ -398,7 +400,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                   final pw = await settingsRepo.getSetting('settings_access_password');
                   if (pw != null && pw.isNotEmpty && mounted) _showPasswordDialog(pw);
                 },
-                child: const Text('إدخال كلمة المرور'),
+                child:  Text(tr('إدخال كلمة المرور')),
               ),
             ],
           ),
@@ -422,17 +424,17 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       if (user != null) {
         ref
             .read(activityLoggerProvider)
-            .logNavigation(user.id, user.displayName, 'الإعدادات (Settings)');
+            .logNavigation(user.id, user.displayName, tr('الإعدادات (Settings)'));
       }
     });
 
     final sections = <_SettingsSection>[
       _SettingsSection(
         id: 'system',
-        title: 'النظام والمظهر',
+        title: tr('النظام والمظهر'),
         icon: PhosphorIconsBold.slidersHorizontal,
-        group: 'التشغيل',
-        desc: 'الشركة · العملة · المظهر',
+        group: tr('التشغيل'),
+        desc: tr('الشركة · العملة · المظهر'),
         keywords: 'شركة صناعة عملة مظهر ثيم داكن نهاري شاشة رئيسية قاعدة '
             'بيانات صيانة مزامنة مرآة شيكات فروع سيرفر شبكة لمس كيبورد',
         children: () => [
@@ -442,27 +444,27 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               SettingsBlockSpan(
                 span: 12,
                 child: SettingsBlock(
-                  title: 'مظهر البرنامج',
-                  subtitle: 'يُطبَّق على كل الشاشات وشاشة العميل',
+                  title: tr('مظهر البرنامج'),
+                  subtitle: tr('يُطبَّق على كل الشاشات وشاشة العميل'),
                   child: SettingsChoiceBlock<ThemeMode>(
                     selected: themeMode,
                     onSelect: (m) =>
                         ref.read(themeModeProvider.notifier).setMode(m),
-                    options: const [
+                    options:  [
                       SettingsChoiceOption(
                         value: ThemeMode.light,
-                        label: 'فاتح',
-                        sub: 'الأنسب للإضاءة القوية والطباعة من الشاشة',
+                        label: tr('فاتح'),
+                        sub: tr('الأنسب للإضاءة القوية والطباعة من الشاشة'),
                       ),
                       SettingsChoiceOption(
                         value: ThemeMode.dark,
-                        label: 'غامق',
-                        sub: 'مريح للكاشير في الورديات الليلية',
+                        label: tr('غامق'),
+                        sub: tr('مريح للكاشير في الورديات الليلية'),
                       ),
                       SettingsChoiceOption(
                         value: ThemeMode.system,
-                        label: 'تلقائي',
-                        sub: 'يتبع مظهر ويندوز',
+                        label: tr('تلقائي'),
+                        sub: tr('يتبع مظهر ويندوز'),
                       ),
                     ],
                   ),
@@ -471,8 +473,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               SettingsBlockSpan(
                 span: 7,
                 child: SettingsBlock(
-                  title: 'هوية الشركة والتشغيل',
-                  subtitle: 'تظهر في الفواتير والتقارير المطبوعة',
+                  title: tr('هوية الشركة والتشغيل'),
+                  subtitle: tr('تظهر في الفواتير والتقارير المطبوعة'),
                   tint: AppColors.info,
                   child: SettingsRowsBody(
                     children: [
@@ -484,8 +486,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                         child: SettingsValueRow(
                           first: true,
                           icon: PhosphorIconsBold.buildings,
-                          title: 'معلومات الشركة',
-                          sub: 'الاسم، السجل التجاري، الرقم الضريبي، الشعار',
+                          title: tr('معلومات الشركة'),
+                          sub: tr('الاسم، السجل التجاري، الرقم الضريبي، الشعار'),
                           onTap: () => showCompanyInfoDialog(context, picpos: true),
                         ),
                       ),
@@ -493,18 +495,19 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                       // بلوك، ومنتقياتُها ومعالجةُ القفل فيها كما هي.
                       const _IndustryModeToggle(),
                       const _CurrencySelector(),
+                       const UserLanguageSelector(),
                       const _DefaultHomeScreenSelector(),
                     ],
                   ),
                 ),
               ),
-              const SettingsBlockSpan(
+               SettingsBlockSpan(
                 span: 5,
                 child: SettingsBlock(
-                  title: 'سلوك التشغيل',
-                  subtitle: 'خيارات تسري على هذا الجهاز فقط',
+                  title: tr('سلوك التشغيل'),
+                  subtitle: tr('خيارات تسري على هذا الجهاز فقط'),
                   tint: AppColors.warning,
-                  child: SettingsRowsBody(
+                  child: const SettingsRowsBody(
                     children: [
                       // ⚠️ مفتاحٌ واحدٌ لا ثلاثة: التصميمُ يعرض معه
                       //    «المزامنة الإجبارية» و«بدء تلقائي مع ويندوز»،
@@ -516,24 +519,24 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                   ),
                 ),
               ),
-              const SettingsBlockSpan(
+               SettingsBlockSpan(
                 span: 12,
                 child: SettingsBlock(
-                  title: 'الشاشات المتقدمة',
-                  subtitle: 'قاعدة البيانات، الربط، وأدوات الصيانة',
+                  title: tr('الشاشات المتقدمة'),
+                  subtitle: tr('قاعدة البيانات، الربط، وأدوات الصيانة'),
                   tint: AppColors.textMuted,
-                  child: _AdvancedTiles(),
+                  child: const _AdvancedTiles(),
                 ),
               ),
               // ⚠️ لوحةُ الدفع اليدويِّ بلوكٌ لا مربّع: لها حالةُ تشغيلٍ
               //    وزرٌّ يخمُد أثناء العمل، ولا تُختصر في سطرِ حالة.
-              const SettingsBlockSpan(
+               SettingsBlockSpan(
                 span: 12,
                 child: SettingsBlock(
-                  title: 'مزامنة يدويّة',
-                  subtitle: 'دفعُ التغييرات إلى السيرفر عند الحاجة',
+                  title: tr('مزامنة يدويّة'),
+                  subtitle: tr('دفعُ التغييرات إلى السيرفر عند الحاجة'),
                   tint: AppColors.info,
-                  child: _ForceSyncPanel(),
+                  child: const _ForceSyncPanel(),
                 ),
               ),
             ],
@@ -542,41 +545,41 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       ),
       _SettingsSection(
         id: 'devices',
-        title: 'الأجهزة والطباعة',
+        title: tr('الأجهزة والطباعة'),
         icon: PhosphorIconsBold.printer,
-        group: 'التشغيل',
-        desc: 'طابعات · نقاط بيع · قوالب',
+        group: tr('التشغيل'),
+        desc: tr('طابعات · نقاط بيع · قوالب'),
         keywords: 'طابعة باركود ماسح ميزان حراري قوالب فواتير نقاط بيع '
             'بصمة تصميم',
         children: () => [
           // ═══ 2. الأجهزة والطباعة — شبكةُ بلوكاتِ التصميم ═══
           SettingsBlockGrid(
             blocks: [
-              const SettingsBlockSpan(
+               SettingsBlockSpan(
                 span: 12,
                 child: SettingsBlock(
-                  title: 'إدارة الأجهزة',
-                  subtitle: 'كل جهاز طرفي مربوط بالنظام',
-                  child: _DeviceTiles(),
+                  title: tr('إدارة الأجهزة'),
+                  subtitle: tr('كل جهاز طرفي مربوط بالنظام'),
+                  child: const _DeviceTiles(),
                 ),
               ),
-              const SettingsBlockSpan(
+               SettingsBlockSpan(
                 span: 12,
                 child: SettingsBlock(
-                  title: 'باركود الميزان',
-                  subtitle: 'بادئةُ الملصق وتوزيعُ خاناته',
+                  title: tr('باركود الميزان'),
+                  subtitle: tr('بادئةُ الملصق وتوزيعُ خاناته'),
                   tint: AppColors.textMuted,
-                  child: _ScaleBarcodeSettings(),
+                  child: const _ScaleBarcodeSettings(),
                 ),
               ),
               if (features.hrEnabled)
-                const SettingsBlockSpan(
+                 SettingsBlockSpan(
                   span: 12,
                   child: SettingsBlock(
-                    title: 'جهاز البصمة',
-                    subtitle: 'ربطُ الحضور والانصراف',
+                    title: tr('جهاز البصمة'),
+                    subtitle: tr('ربطُ الحضور والانصراف'),
                     tint: AppColors.info,
-                    child: FingerprintSettingsWidget(),
+                    child: const FingerprintSettingsWidget(),
                   ),
                 ),
             ],
@@ -585,10 +588,10 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       ),
       _SettingsSection(
         id: 'pos',
-        title: 'البيع السريع',
+        title: tr('البيع السريع'),
         icon: PhosphorIconsBold.shoppingCart,
-        group: 'التشغيل',
-        desc: 'الكاشير · الدفع · الخصم',
+        group: tr('التشغيل'),
+        desc: tr('الكاشير · الدفع · الخصم'),
         keywords: 'تراكم أصناف ميزان وزن سلة أزرار تصنيفات شبكة منتجات '
             'إيصال طباعة تلقائية بيع بالسالب خصم ضريبة درج مصروفات وردية '
             'مخزن افتراضي بادئة ترقيم طرق الدفع نقدي بطاقة تحويل آجل متعدد',
@@ -602,8 +605,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               SettingsBlockSpan(
                 span: 12,
                 child: SettingsBlock(
-                  title: 'إعدادات البيع السريع',
-                  subtitle: 'سلوكُ شاشة الكاشير وحدودُ الخصم',
+                  title: tr('إعدادات البيع السريع'),
+                  subtitle: tr('سلوكُ شاشة الكاشير وحدودُ الخصم'),
                   child: buildPosSettingsTileGuarded(
                     onOpen: () => showPosSettingsDialog(context, picpos: true),
                   ),
@@ -619,8 +622,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               SettingsBlockSpan(
                 span: 12,
                 child: SettingsBlock(
-                  title: 'سياسة البيع السريع',
-                  subtitle: 'ما يحدث بين المسح والإغلاق — بخمس خطوات',
+                  title: tr('سياسة البيع السريع'),
+                  subtitle: tr('ما يحدث بين المسح والإغلاق — بخمس خطوات'),
                   tint: AppColors.info,
                   child: buildQuickSalePolicyTileGuarded(
                     onOpen: () => Navigator.push(
@@ -632,22 +635,22 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                   ),
                 ),
               ),
-              const SettingsBlockSpan(
+               SettingsBlockSpan(
                 span: 7,
                 child: SettingsBlock(
-                  title: 'طرق الدفع الظاهرة',
-                  subtitle: 'ما يراه الكاشير في لوحة الدفع',
+                  title: tr('طرق الدفع الظاهرة'),
+                  subtitle: tr('ما يراه الكاشير في لوحة الدفع'),
                   tint: AppColors.success,
-                  child: _PaymentMethodsSettingsCard(),
+                  child: const _PaymentMethodsSettingsCard(),
                 ),
               ),
-              const SettingsBlockSpan(
+               SettingsBlockSpan(
                 span: 5,
                 child: SettingsBlock(
-                  title: 'إغلاق الوردية',
-                  subtitle: 'الإغلاقُ السريع بلا جرد',
+                  title: tr('إغلاق الوردية'),
+                  subtitle: tr('الإغلاقُ السريع بلا جرد'),
                   tint: AppColors.warning,
-                  child: _QuickCloseSettingTile(),
+                  child: const _QuickCloseSettingTile(),
                 ),
               ),
             ],
@@ -656,11 +659,11 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       ),
       _SettingsSection(
         id: 'users',
-        title: 'المستخدمون والأمان',
+        title: tr('المستخدمون والأمان'),
         icon: PhosphorIconsBold.shieldCheck,
-        group: 'الأمان',
-        desc: 'الحسابات · الأدوار · الصلاحيات',
-        keywords: 'مستخدمين صلاحيات أدوار كلمة مرور جلسة مهلة حماية أقسام',
+        group: tr('الأمان'),
+        desc: tr('الحسابات · الأدوار · الصلاحيات'),
+        keywords: tr('مستخدمين صلاحيات أدوار كلمة مرور جلسة مهلة حماية أقسام'),
         children: () => [
           // ═══ 4. المستخدمون والأمان — شبكةُ بلوكاتِ التصميم ═══
           //
@@ -670,62 +673,62 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
           SettingsBlockGrid(
             blocks: [
               if (!NetworkService.instance.isClient) ...[
-                const SettingsBlockSpan(
+                 SettingsBlockSpan(
                   span: 12,
                   child: SettingsBlock(
-                    title: 'المستخدمون والأدوار',
-                    subtitle: 'الحساباتُ وصلاحياتُ كل دور',
-                    child: _UserTiles(),
+                    title: tr('المستخدمون والأدوار'),
+                    subtitle: tr('الحساباتُ وصلاحياتُ كل دور'),
+                    child: const _UserTiles(),
                   ),
                 ),
                 SettingsBlockSpan(
                   span: 12,
                   child: SettingsBlock(
-                    title: 'فحص الصلاحيات على السيرفر',
-                    subtitle: 'تفعيلُ التحقّق من الصلاحية عند السيرفر',
+                    title: tr('فحص الصلاحيات على السيرفر'),
+                    subtitle: tr('تفعيلُ التحقّق من الصلاحية عند السيرفر'),
                     tint: AppColors.warning,
                     // ⚠️ الحارسُ باقٍ بحرفه: `rolesManage` — من يغيّر صلاحياتِ
                     //    الأدوار هو وحدَه من يفتح فرضَها على السيرفر.
                     child: PermissionGuard(
                       permission: PermissionCodes.rolesManage,
                       allowManagerOverride: true,
-                      actionName: 'فحص الصلاحيات على السيرفر',
+                      actionName: tr('فحص الصلاحيات على السيرفر'),
                       child: _ServerPermsToggleTile(),
                     ),
                   ),
                 ),
               ] else
-                const SettingsBlockSpan(
+                 SettingsBlockSpan(
                   span: 12,
                   child: SettingsBlock(
-                    title: 'إدارة المستخدمين والصلاحيات',
-                    subtitle: 'تتم إدارتها من السيرفر — وضع العميل للعرض فقط',
+                    title: tr('إدارة المستخدمين والصلاحيات'),
+                    subtitle: tr('تتم إدارتها من السيرفر — وضع العميل للعرض فقط'),
                     tint: AppColors.info,
-                    child: SizedBox.shrink(),
+                    child: const SizedBox.shrink(),
                   ),
                 ),
-              const SettingsBlockSpan(
+               SettingsBlockSpan(
                 span: 7,
                 child: SettingsBlock(
-                  title: 'انتهاء الجلسة',
-                  subtitle: 'إغلاقٌ تلقائيٌّ بعد خمولٍ',
+                  title: tr('انتهاء الجلسة'),
+                  subtitle: tr('إغلاقٌ تلقائيٌّ بعد خمولٍ'),
                   tint: AppColors.info,
-                  child: _SessionTimeoutSetting(),
+                  child: const _SessionTimeoutSetting(),
                 ),
               ),
               SettingsBlockSpan(
                 span: 5,
                 child: SettingsBlock(
-                  title: 'كلمة مرور الإعدادات',
-                  subtitle: 'حمايةُ هذه الشاشة',
+                  title: tr('كلمة مرور الإعدادات'),
+                  subtitle: tr('حمايةُ هذه الشاشة'),
                   tint: AppColors.error,
                   child: SettingsRowsBody(
                     children: [
                       SettingsValueRow(
                         first: true,
                         icon: PhosphorIconsBold.lockKey,
-                        title: 'تغيير كلمة المرور',
-                        sub: 'اتركها فارغةً لإلغاء الحماية',
+                        title: tr('تغيير كلمة المرور'),
+                        sub: tr('اتركها فارغةً لإلغاء الحماية'),
                         tint: AppColors.error,
                         onTap: _showChangePasswordDialog,
                       ),
@@ -751,10 +754,10 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       //    `features.hrEnabled`.
       _SettingsSection(
         id: 'guards',
-        title: 'حماية الأقسام',
+        title: tr('حماية الأقسام'),
         icon: PhosphorIconsBold.lockKey,
-        group: 'الأمان',
-        desc: 'أقفال الشاشات',
+        group: tr('الأمان'),
+        desc: tr('أقفال الشاشات'),
         keywords: 'قفل كلمة مرور حماية اقسام مخازن مشتريات تقارير حسابات '
             'موظفين بديلة',
         children: () => [
@@ -763,8 +766,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               SettingsBlockSpan(
                 span: 12,
                 child: SettingsBlock(
-                  title: 'الأقسام المحميّة',
-                  subtitle: 'تُطلَب كلمةٌ عند الدخول لكلِّ قسمٍ مفعَّل',
+                  title: tr('الأقسام المحميّة'),
+                  subtitle: tr('تُطلَب كلمةٌ عند الدخول لكلِّ قسمٍ مفعَّل'),
                   tint: AppColors.error,
                   child: _GuardedSectionRows(features: features),
                 ),
@@ -775,10 +778,10 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       ),
       _SettingsSection(
         id: 'finance',
-        title: 'المالية والمحاسبة',
+        title: tr('المالية والمحاسبة'),
         icon: PhosphorIconsBold.bank,
-        group: 'المال والبيانات',
-        desc: 'ربط الحسابات · التكلفة · الفوترة',
+        group: tr('المال والبيانات'),
+        desc: tr('ربط الحسابات · التكلفة · الفوترة'),
         keywords: 'حسابات ربط تلقائي تكلفة تسعير نقص مخزون فوترة إلكترونية '
             'ضريبة قيمة مضافة',
         children: () => [
@@ -786,21 +789,21 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
           PermissionGuard(
             permission: PermissionCodes.settingsBackup,
             allowManagerOverride: true,
-            actionName: 'إعدادات المحاسبة',
+            actionName: tr('إعدادات المحاسبة'),
             child: SettingsBlockGrid(
               blocks: [
                 SettingsBlockSpan(
                   span: 12,
                   child: SettingsBlock(
-                    title: 'ربط الحسابات',
-                    subtitle: 'تحديد الحسابات الدفترية للعمليات',
+                    title: tr('ربط الحسابات'),
+                    subtitle: tr('تحديد الحسابات الدفترية للعمليات'),
                     child: SettingsRowsBody(
                       children: [
                         SettingsValueRow(
                           first: true,
                           icon: PhosphorIconsBold.bookOpen,
-                          title: 'ربط الحسابات التلقائي',
-                          sub: 'حسابُ كلِّ عمليةٍ في الدفتر',
+                          title: tr('ربط الحسابات التلقائي'),
+                          sub: tr('حسابُ كلِّ عمليةٍ في الدفتر'),
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -813,18 +816,18 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                     ),
                   ),
                 ),
-                const SettingsBlockSpan(
+                 SettingsBlockSpan(
                   span: 12,
                   child: SettingsBlock(
-                    title: 'التكلفة والمخزون',
-                    subtitle: 'طريقةُ التسعير وسياسةُ نقص الخامات',
+                    title: tr('التكلفة والمخزون'),
+                    subtitle: tr('طريقةُ التسعير وسياسةُ نقص الخامات'),
                     tint: AppColors.info,
                     // ⚠️ الثلاثةُ ودجتاتٌ لها حالتُها ومزوّداتُها، فتُوضَع
                     //    كما هي جسماً للبلوك ولا تُفكَّك إلى صفوفِ قيمة.
                     //    وتبديلُ «البيع بالسالب» ليس هنا: نُقل إلى إعدادات
                     //    البيع السريع بطلبِ المشغّلين، والمفتاحُ نفسُه
                     //    (`enable_negative_sales`) لم يتبدّل.
-                    child: Column(
+                    child: const Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _CostingMethodToggle(),
@@ -836,13 +839,13 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                 ),
                 // الفوترةُ الإلكترونيّةُ مخفيّةٌ في بروفايل السوبرماركت.
                 if (profile != BusinessProfile.supermarket)
-                  const SettingsBlockSpan(
+                   SettingsBlockSpan(
                     span: 12,
                     child: SettingsBlock(
-                      title: 'الفوترة الإلكترونية',
-                      subtitle: 'حقولُ مصلحة الضرائب في المستندات',
+                      title: tr('الفوترة الإلكترونية'),
+                      subtitle: tr('حقولُ مصلحة الضرائب في المستندات'),
                       tint: AppColors.warning,
-                      child: _EInvoiceVisibilityToggles(),
+                      child: const _EInvoiceVisibilityToggles(),
                     ),
                   ),
               ],
@@ -852,12 +855,12 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       ),
       _SettingsSection(
         id: 'hr',
-        title: 'شؤون الموظفين',
+        title: tr('شؤون الموظفين'),
         icon: PhosphorIconsBold.calendarCheck,
         // ⚠️ قسمٌ **لا يذكره التصميم** — فلا يقرّره. باقٍ كما هو، ومسيَّجٌ
         //    أصلاً بـ`features.hrEnabled` (‏قرارُ المالك: lite تؤجّل الأجور).
-        group: 'المال والبيانات',
-        desc: 'الورديات · الإجازات · الرواتب',
+        group: tr('المال والبيانات'),
+        desc: tr('الورديات · الإجازات · الرواتب'),
         keywords: 'عطلات عطل إجازات أسبوعية أعياد أيام العمل رواتب '
             'أجر الساعة إضافي وقت',
         children: () => [
@@ -872,8 +875,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                 SettingsBlockSpan(
                   span: 12,
                   child: SettingsBlock(
-                    title: 'العطلات وأيام العمل',
-                    subtitle: 'الأيامُ التي لا يقع عليها غياب',
+                    title: tr('العطلات وأيام العمل'),
+                    subtitle: tr('الأيامُ التي لا يقع عليها غياب'),
                     tint: AppColors.secondary,
                     // الحارسُ ودجتٌ يحمل فحصَه، فيُوضَع جسماً للبلوك.
                     child: buildWorkHolidaysTileGuarded(
@@ -891,29 +894,29 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       ),
       _SettingsSection(
         id: 'data',
-        title: 'إدارة البيانات',
+        title: tr('إدارة البيانات'),
         icon: PhosphorIconsBold.database,
-        group: 'المال والبيانات',
-        desc: 'النسخ الاحتياطي · الاستعادة',
-        keywords: 'نسخ احتياطي استعادة باك اب backup restore تصدير',
+        group: tr('المال والبيانات'),
+        desc: tr('النسخ الاحتياطي · الاستعادة'),
+        keywords: tr('نسخ احتياطي استعادة باك اب backup restore تصدير'),
         children: () => [
           // ═══ 6. إدارة البيانات ═══
           // ⚠️ الحارسُ يلفُّ الشبكةَ كلَّها لا بلوكاً فيها: النسخُ
           //    والاستعادةُ عمليّةٌ واحدة، وإظهارُ نصفِها بلا صلاحيةٍ يوهم
           //    بأن الشاشةَ ناقصةٌ لا محميّة.
-          const PermissionGuard(
+           PermissionGuard(
             permission: PermissionCodes.settingsBackup,
             allowManagerOverride: true,
-            actionName: 'إدارة البيانات',
+            actionName: tr('إدارة البيانات'),
             child: SettingsBlockGrid(
               blocks: [
                 SettingsBlockSpan(
                   span: 12,
                   child: SettingsBlock(
-                    title: 'النسخ الاحتياطي والاستعادة',
-                    subtitle: 'حفظُ نسخةٍ من القاعدة واستعادتُها',
+                    title: tr('النسخ الاحتياطي والاستعادة'),
+                    subtitle: tr('حفظُ نسخةٍ من القاعدة واستعادتُها'),
                     tint: AppColors.success,
-                    child: BackupRestoreWidget(),
+                    child: const BackupRestoreWidget(),
                   ),
                 ),
               ],
@@ -923,10 +926,10 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       ),
       _SettingsSection(
         id: 'integrations',
-        title: 'التكاملات والخدمات',
+        title: tr('التكاملات والخدمات'),
         icon: PhosphorIconsBold.plugsConnected,
-        group: 'الامتدادات',
-        desc: 'شاشة العميل · المطبخ · التوصيل · رمز الطاولة · واتساب',
+        group: tr('الامتدادات'),
+        desc: tr('شاشة العميل · المطبخ · التوصيل · رمز الطاولة · واتساب'),
         keywords: 'توصيل مناديب شاشة عميل CFD مطبخ KDS إضافات معدلات '
             'رمز طاولة QR حساب ضيف دومين واتساب whatsapp رمز دولة رسائل عملاء',
         children: () => [
@@ -939,13 +942,13 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               // الضيف لم يكن لها **كاتبٌ في `lib/` كلِّها**، فالنصفُ الذي
               // طُلب صراحةً كان مطفأً إلى الأبد.
               if (features.tablesEnabled)
-                const SettingsBlockSpan(
+                 SettingsBlockSpan(
                   span: 12,
                   child: SettingsBlock(
-                    title: 'رمز حساب الطاولة',
-                    subtitle: 'الضيفُ يرى حسابَه ويطلب من هاتفه',
+                    title: tr('رمز حساب الطاولة'),
+                    subtitle: tr('الضيفُ يرى حسابَه ويطلب من هاتفه'),
                     tint: AppColors.info,
-                    child: Column(
+                    child: const Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         TableBillSettingsCard(),
@@ -958,21 +961,21 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                     ),
                   ),
                 ),
-              const SettingsBlockSpan(
+               SettingsBlockSpan(
                 span: 12,
                 child: SettingsBlock(
-                  title: 'رسائل العملاء — واتساب',
-                  subtitle: 'الفاتورةُ وكشفُ الحساب والمطالبة',
+                  title: tr('رسائل العملاء — واتساب'),
+                  subtitle: tr('الفاتورةُ وكشفُ الحساب والمطالبة'),
                   tint: AppColors.success,
-                  child: WhatsAppSettingsCard(),
+                  child: const WhatsAppSettingsCard(),
                 ),
               ),
               if (features.deliveryEnabled)
                 SettingsBlockSpan(
                   span: 12,
                   child: SettingsBlock(
-                    title: 'التوصيل',
-                    subtitle: 'شركاتُ التوصيل والمناديب',
+                    title: tr('التوصيل'),
+                    subtitle: tr('شركاتُ التوصيل والمناديب'),
                     tint: AppColors.success,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -983,14 +986,14 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                         PermissionGuard(
                           permission: PermissionCodes.deliveryManage,
                           allowManagerOverride: true,
-                          actionName: 'إدارة التوصيل',
+                          actionName: tr('إدارة التوصيل'),
                           child: SettingsRowsBody(
                             children: [
                               SettingsValueRow(
                                 first: true,
                                 icon: PhosphorIconsBold.moped,
-                                title: 'إدارة التوصيل',
-                                sub: 'شركات التوصيل والمناديب',
+                                title: tr('إدارة التوصيل'),
+                                sub: tr('شركات التوصيل والمناديب'),
                                 tint: AppColors.success,
                                 onTap: () => Navigator.push(
                                   context,
@@ -1007,42 +1010,42 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                     ),
                   ),
                 ),
-              const SettingsBlockSpan(
+               SettingsBlockSpan(
                 span: 12,
                 child: SettingsBlock(
-                  title: 'شاشة العميل',
-                  subtitle: 'العرضُ الخارجيُّ ووصلتُه',
+                  title: tr('شاشة العميل'),
+                  subtitle: tr('العرضُ الخارجيُّ ووصلتُه'),
                   tint: AppColors.info,
-                  child: _CFDSettingsCard(),
+                  child: const _CFDSettingsCard(),
                 ),
               ),
               if (features.kitchenEnabled) ...[
-                const SettingsBlockSpan(
+                 SettingsBlockSpan(
                   span: 12,
                   child: SettingsBlock(
-                    title: 'شاشة المطبخ',
-                    subtitle: 'توزيعُ أوامر الشغل على الأقسام',
+                    title: tr('شاشة المطبخ'),
+                    subtitle: tr('توزيعُ أوامر الشغل على الأقسام'),
                     tint: AppColors.warning,
                     child: PermissionGuard(
                       permission: PermissionCodes.kdsSettings,
                       allowManagerOverride: true,
-                      actionName: 'إعدادات شاشة المطبخ',
-                      child: KdsSettingsWidget(),
+                      actionName: tr('إعدادات شاشة المطبخ'),
+                      child: const KdsSettingsWidget(),
                     ),
                   ),
                 ),
                 SettingsBlockSpan(
                   span: 12,
                   child: SettingsBlock(
-                    title: 'الإضافات والمعدلات',
-                    subtitle: 'مجموعات الإضافات والخيارات للأصناف',
+                    title: tr('الإضافات والمعدلات'),
+                    subtitle: tr('مجموعات الإضافات والخيارات للأصناف'),
                     tint: AppColors.warning,
                     // ⚠️ `onGranted` باقٍ: هو المسارُ الذي يفتح الشاشةَ بعد
                     //    موافقةِ المسؤول، وحذفُه يجعل الموافقةَ بلا أثر.
                     child: PermissionGuard(
                       permission: PermissionCodes.modifiersManage,
                       allowManagerOverride: true,
-                      actionName: 'إدارة الإضافات والمعدلات',
+                      actionName: tr('إدارة الإضافات والمعدلات'),
                       onGranted: () => Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -1054,8 +1057,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                           SettingsValueRow(
                             first: true,
                             icon: PhosphorIconsBold.forkKnife,
-                            title: 'إدارة الإضافات والمعدلات',
-                            sub: 'مجموعات الإضافات والخيارات للأصناف',
+                            title: tr('إدارة الإضافات والمعدلات'),
+                            sub: tr('مجموعات الإضافات والخيارات للأصناف'),
                             tint: AppColors.warning,
                             onTap: () => Navigator.push(
                               context,
@@ -1076,11 +1079,11 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       ),
       _SettingsSection(
         id: 'about',
-        title: 'عن البرنامج',
+        title: tr('عن البرنامج'),
         icon: PhosphorIconsBold.info,
-        group: 'الامتدادات',
-        desc: 'الإصدار · الترخيص · التشخيص',
-        keywords: 'إصدار نسخة ترخيص تفعيل لوج تشخيصي مطور دعم',
+        group: tr('الامتدادات'),
+        desc: tr('الإصدار · الترخيص · التشخيص'),
+        keywords: tr('إصدار نسخة ترخيص تفعيل لوج تشخيصي مطور دعم'),
         children: () => [
           // ═══ 8. عن البرنامج والترخيص ═══
           _buildAboutCard(),
@@ -1142,8 +1145,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
     );
 
     return PicPosScreenScaffold(
-      title: 'الإعدادات',
-      subtitle: 'تهيئة النظام والأجهزة والصلاحيات',
+      title: tr('الإعدادات'),
+      subtitle: tr('تهيئة النظام والأجهزة والصلاحيات'),
       icon: PhosphorIconsBold.gear,
       // ⚠️ البحثُ انتقل من ترويسة الصفحة إلى **رأس العمود** كما في التصميم.
       //    وترويسةُ `PicPosPageHeader` صفٌّ بلا تقييد، فإخلاؤها يبعد عنها
@@ -1182,7 +1185,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               controller: _searchController,
               onChanged: (v) => setState(() => _searchQuery = v),
               decoration: InputDecoration(
-                hintText: 'بحث في الإعدادات…',
+                hintText: tr('بحث في الإعدادات…'),
                 prefixIcon:
                     const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
                 isDense: true,
@@ -1241,14 +1244,14 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
     if (matches.isEmpty) {
       return PicPosEmptyState(
         icon: PhosphorIconsBold.magnifyingGlass,
-        title: 'لا يوجد إعداد بهذا الاسم',
-        hint: 'جرّب كلمة أقصر — «طابعة» بدل «إعدادات الطابعة الحرارية».',
+        title: tr('لا يوجد إعداد بهذا الاسم'),
+        hint: tr('جرّب كلمة أقصر — «طابعة» بدل «إعدادات الطابعة الحرارية».'),
         action: TextButton(
           onPressed: () {
             _searchController.clear();
             setState(() => _searchQuery = '');
           },
-          child: const Text('مسح البحث'),
+          child:  Text(tr('مسح البحث')),
         ),
       );
     }
@@ -1257,7 +1260,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 24),
       children: [
         Text(
-          '${matches.length} قسم مطابق',
+          tr('{p0} قسم مطابق', {'p0': matches.length}),
           style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
         ),
         const SizedBox(height: 10),
@@ -1288,11 +1291,11 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
   String _getThemeModeLabel(ThemeMode mode) {
     switch (mode) {
       case ThemeMode.system:
-        return 'تلقائي (حسب إعدادات النظام)';
+        return tr('تلقائي (حسب إعدادات النظام)');
       case ThemeMode.light:
-        return 'الوضع النهاري';
+        return tr('الوضع النهاري');
       case ThemeMode.dark:
-        return 'الوضع الليلي';
+        return tr('الوضع الليلي');
     }
   }
 
@@ -1304,35 +1307,35 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
     WidgetRef ref,
     ThemeMode current,
   ) async {
-    const labels = {
-      ThemeMode.system: 'تلقائي',
-      ThemeMode.light: 'فاتح',
-      ThemeMode.dark: 'غامق',
+    final labels = {
+      ThemeMode.system: tr('تلقائي'),
+      ThemeMode.light: tr('فاتح'),
+      ThemeMode.dark: tr('غامق'),
     };
 
     final picked = await showPicPosOptionPicker<ThemeMode>(
       context: context,
       icon: PhosphorIconsBold.palette,
-      title: 'مظهر البرنامج',
-      subtitle: 'يُطبَّق على كل الشاشات وشاشة العميل',
+      title: tr('مظهر البرنامج'),
+      subtitle: tr('يُطبَّق على كل الشاشات وشاشة العميل'),
       selected: current,
-      options: const [
+      options:  [
         PicPosOption(
           value: ThemeMode.light,
-          label: 'فاتح',
-          sub: 'الأنسب للإضاءة القويّة والطباعة من الشاشة',
+          label: tr('فاتح'),
+          sub: tr('الأنسب للإضاءة القويّة والطباعة من الشاشة'),
           icon: PhosphorIconsBold.sun,
         ),
         PicPosOption(
           value: ThemeMode.dark,
-          label: 'غامق',
-          sub: 'مريحٌ للكاشير في الورديات الليليّة',
+          label: tr('غامق'),
+          sub: tr('مريحٌ للكاشير في الورديات الليليّة'),
           icon: PhosphorIconsBold.moon,
         ),
         PicPosOption(
           value: ThemeMode.system,
-          label: 'تلقائي',
-          sub: 'يتبع مظهرَ ويندوز',
+          label: tr('تلقائي'),
+          sub: tr('يتبع مظهرَ ويندوز'),
           icon: PhosphorIconsBold.monitor,
         ),
       ],
@@ -1348,7 +1351,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       logger.logSettingsChange(
         auth.user?.id ?? 0,
         auth.user?.displayName ?? '',
-        'مظهر التطبيق',
+        tr('مظهر التطبيق'),
         newValue: labels[picked] ?? '',
       );
     } catch (e) {
@@ -1393,9 +1396,9 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                 color: AppColors.primary,
               ),
             ),
-            const Text(
-              'نظام الكاشير المتكامل',
-              style: TextStyle(color: AppColors.textMuted),
+             Text(
+              tr('نظام الكاشير المتكامل'),
+              style: const TextStyle(color: AppColors.textMuted),
             ),
             const SizedBox(height: 8),
             // ⚠️ **كان نصّاً ثابتاً `'الإصدار 1.0.0'`** — بلاغُ المالك
@@ -1423,9 +1426,9 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
             // support contacts is worse than printing none.
             if (Brand.hasVendorInfo) ...[
               const Divider(height: 24),
-              const Text(
-                'تطوير: ${Brand.vendorName}',
-                style: TextStyle(fontWeight: FontWeight.bold),
+               Text(
+                tr('تطوير: {p0}', {'p0': Brand.vendorName}),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               // Contact Links
@@ -1518,13 +1521,13 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
             color: isActivated ? AppColors.success : AppColors.warning,
           ),
           title: Text(
-            isActivated ? 'النسخة مفعلة بالكامل' : 'نسخة تجريبية محدودة',
+            isActivated ? tr('النسخة مفعلة بالكامل') : tr('نسخة تجريبية محدودة'),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           subtitle: Text(
             isActivated
-                ? 'لديك صلاحية الوصول لكافة مميزات النظام بدون قيود.'
-                : 'هذه النسخة محدودة بـ 50 صنف/عميل. قم بالتفعيل لإزالة القيود.',
+                ? tr('لديك صلاحية الوصول لكافة مميزات النظام بدون قيود.')
+                : tr('هذه النسخة محدودة بـ 50 صنف/عميل. قم بالتفعيل لإزالة القيود.'),
             style: const TextStyle(fontSize: 12),
           ),
           trailing: isActivated
@@ -1535,9 +1538,9 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         ),
       ),
       loading: () =>
-          const Card(child: ListTile(title: Text('جاري التحقق من الترخيص...'))),
+           Card(child: ListTile(title: Text(tr('جاري التحقق من الترخيص...')))),
       error: (_, _) =>
-          const Card(child: ListTile(title: Text('خطأ في التحقق من الترخيص'))),
+           Card(child: ListTile(title: Text(tr('خطأ في التحقق من الترخيص')))),
     );
   }
 
@@ -1558,9 +1561,9 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
           PhosphorIconsBold.shieldStar,
           color: AppColors.primary,
         ),
-        title: const Text(
-          'أدوات المطوّر',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title:  Text(
+          tr('أدوات المطوّر'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: const Text(
           'تغيير ملف النشاط، نمط التشغيل، الميزات وكلمة مرور المطوّر '
@@ -1595,13 +1598,13 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
           PhosphorIconsBold.clipboard,
           color: AppColors.info,
         ),
-        title: const Text(
-          'نسخ اللوج التشخيصى',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title:  Text(
+          tr('نسخ اللوج التشخيصى'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: const Text(
-          'انسخ آخر 200 سطر من سجل التشخيص لإرساله للمدير عند حدوث مشكلة.',
-          style: TextStyle(fontSize: 12),
+        subtitle:  Text(
+          tr('انسخ آخر 200 سطر من سجل التشخيص لإرساله للمدير عند حدوث مشكلة.'),
+          style: const TextStyle(fontSize: 12),
         ),
         trailing: const Icon(PhosphorIconsBold.copy),
         onTap: () async {
@@ -1636,7 +1639,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               if (context.mounted) {
                 AppToast.show(
                   context,
-                  'لا توجد ملفات لوج بعد',
+                  tr('لا توجد ملفات لوج بعد'),
                   type: ToastType.warning,
                 );
               }
@@ -1646,7 +1649,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
             if (context.mounted) {
               AppToast.show(
                 context,
-                'تم نسخ اللوج إلى الحافظة — الصقه فى الواتساب أو الإيميل',
+                tr('تم نسخ اللوج إلى الحافظة — الصقه فى الواتساب أو الإيميل'),
                 type: ToastType.success,
               );
             }
@@ -1654,7 +1657,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
             if (context.mounted) {
               AppToast.show(
                 context,
-                'تعذّر قراءة اللوج: $e',
+                tr('تعذّر قراءة اللوج: {e}', {'e': e}),
                 type: ToastType.error,
               );
             }
@@ -1723,8 +1726,8 @@ class _EInvoiceVisibilityTogglesState extends ConsumerState<_EInvoiceVisibilityT
       children: [
         SwitchListTile(
           secondary: const Text('🇪🇬', style: TextStyle(fontSize: 22)),
-          title: const Text('إظهار الفوترة المصرية (ETA)'),
-          subtitle: const Text('منظومة ETA — مصلحة الضرائب المصرية'),
+          title:  Text(tr('إظهار الفوترة المصرية (ETA)')),
+          subtitle:  Text(tr('منظومة ETA — مصلحة الضرائب المصرية')),
           value: _showEta,
           onChanged: (v) async {
             setState(() => _showEta = v);
@@ -1733,8 +1736,8 @@ class _EInvoiceVisibilityTogglesState extends ConsumerState<_EInvoiceVisibilityT
         ),
         SwitchListTile(
           secondary: const Text('🇯🇴', style: TextStyle(fontSize: 22)),
-          title: const Text('إظهار الفوترة الأردنية (JOFOTARA)'),
-          subtitle: const Text('منظومة JOFOTARA — دائرة ضريبة الدخل'),
+          title:  Text(tr('إظهار الفوترة الأردنية (JOFOTARA)')),
+          subtitle:  Text(tr('منظومة JOFOTARA — دائرة ضريبة الدخل')),
           value: _showJofotara,
           onChanged: (v) async {
             setState(() => _showJofotara = v);
@@ -1772,10 +1775,10 @@ class _ServerPermsToggleTileState
         PhosphorIconsBold.shieldCheck,
         color: AppColors.success,
       ),
-      title: const Text('فحص الصلاحيات على السيرفر'),
-      subtitle: const Text(
-        'مُفعّل دائماً — اضغط لفحص الأدوار التي ينقصها منح',
-        style: TextStyle(fontSize: 12),
+      title:  Text(tr('فحص الصلاحيات على السيرفر')),
+      subtitle:  Text(
+        tr('مُفعّل دائماً — اضغط لفحص الأدوار التي ينقصها منح'),
+        style: const TextStyle(fontSize: 12),
       ),
       trailing: const Icon(PhosphorIconsBold.caretLeft, size: 18),
       onTap: _openDialog,
@@ -1824,11 +1827,11 @@ class _SettingsSection {
 
 /// ترتيبُ مجموعات العمود كما في التصميم.
   // ignore: unused_element
-const _kSettingsGroupOrder = <String>[
-  'التشغيل',
-  'الأمان',
-  'المال والبيانات',
-  'الامتدادات',
+List<String> get _kSettingsGroupOrder => <String>[
+  tr('التشغيل'),
+  tr('الأمان'),
+  tr('المال والبيانات'),
+  tr('الامتدادات'),
 ];
 
 /// ترويسةُ القسم — أيقونةٌ ٥٦px وعنوانٌ كبيرٌ وسطرُ وصف، كما في التصميم.
@@ -1889,8 +1892,8 @@ class _TouchModeSwitchRow extends ConsumerWidget {
     return SettingsSwitchRow(
       first: true,
       icon: PhosphorIconsBold.handTap,
-      title: 'نمط الإدخال اللمسي',
-      sub: 'لوحة مفاتيح على الشاشة في حقول الأرقام',
+      title: tr('نمط الإدخال اللمسي'),
+      sub: tr('لوحة مفاتيح على الشاشة في حقول الأرقام'),
       value: on,
       onChanged: (v) => ref.read(touchModeProvider.notifier).set(v),
     );
@@ -1937,8 +1940,8 @@ class _GuardedSectionRows extends ConsumerWidget {
             //    مفتوحاً وهو مقفولٌ يُقلق، والعكسُ يُطمئن كذباً.
             value: state.when(
               data: (m) => (m[sections[i].settingKey] ?? false)
-                  ? 'مفعَّل'
-                  : 'مفتوح',
+                  ? tr('مفعَّل')
+                  : tr('مفتوح'),
               loading: () => null,
               error: (_, _) => null,
             ),
@@ -1987,16 +1990,16 @@ Future<void> _showSectionPasswordDialogFor(
   final result = await showDialog<String?>(
     context: context,
     builder: (ctx) => Directionality(
-      textDirection: ui.TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: PicPosDialog(
         icon: PhosphorIconsBold.lockKey,
-        title: 'كلمة مرور $title',
-        subtitle: 'اتركها فارغةً لفتح القسم بلا كلمة',
+        title: tr('كلمة مرور {title}', {'title': title}),
+        subtitle: tr('اتركها فارغةً لفتح القسم بلا كلمة'),
         width: 460,
         onCancel: () => Navigator.pop(ctx),
         body: [
           PicPosDialogField(
-            label: 'كلمة المرور',
+            label: tr('كلمة المرور'),
             child: TextField(
               controller: controller,
               autofocus: true,
@@ -2005,7 +2008,7 @@ Future<void> _showSectionPasswordDialogFor(
           ),
         ],
         primaryAction: PicPosDialogAction(
-          label: 'حفظ',
+          label: tr('حفظ'),
           icon: PhosphorIconsBold.floppyDisk,
           onPressed: () => Navigator.pop(ctx, controller.text),
         ),
@@ -2020,7 +2023,7 @@ Future<void> _showSectionPasswordDialogFor(
   if (context.mounted) {
     AppToast.show(
       context,
-      result.isEmpty ? 'فُتح القسم — بلا كلمة' : 'حُفظت كلمة $title',
+      result.isEmpty ? tr('فُتح القسم — بلا كلمة') : tr('حُفظت كلمة {title}', {'title': title}),
       type: ToastType.success,
     );
   }
@@ -2054,13 +2057,13 @@ class _UserTiles extends ConsumerWidget {
       tiles: [
         SettingsTile(
           icon: PhosphorIconsBold.usersThree,
-          title: 'إدارة المستخدمين',
-          sub: 'إضافة مستخدمين وتغيير كلمات المرور',
-          meta: 'الحساباتُ والدخول',
+          title: tr('إدارة المستخدمين'),
+          sub: tr('إضافة مستخدمين وتغيير كلمات المرور'),
+          meta: tr('الحساباتُ والدخول'),
           tint: AppColors.primary,
           onTap: () => guarded(
             PermissionCodes.usersManage,
-            'إدارة المستخدمين',
+            tr('إدارة المستخدمين'),
             () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => const UsersManagementPicposScreen(),
@@ -2070,13 +2073,13 @@ class _UserTiles extends ConsumerWidget {
         ),
         SettingsTile(
           icon: PhosphorIconsBold.table,
-          title: 'مصفوفة الأدوار والصلاحيات',
-          sub: 'قارن الأدوار جنباً إلى جنب وبدّل الصلاحية في مكانها',
-          meta: 'مصفوفةٌ لا دورٌ واحد',
+          title: tr('مصفوفة الأدوار والصلاحيات'),
+          sub: tr('قارن الأدوار جنباً إلى جنب وبدّل الصلاحية في مكانها'),
+          meta: tr('مصفوفةٌ لا دورٌ واحد'),
           tint: AppColors.warning,
           onTap: () => guarded(
             PermissionCodes.rolesManage,
-            'إدارة صلاحيات الأدوار',
+            tr('إدارة صلاحيات الأدوار'),
             () => showPermissionsMatrixPicpos(context),
           ),
         ),
@@ -2119,27 +2122,27 @@ class _DeviceTiles extends ConsumerWidget {
       tiles: [
         SettingsTile(
           icon: PhosphorIconsBold.printer,
-          title: 'إعدادات الأجهزة',
-          sub: 'الماسح والطابعة الحرارية والميزان',
+          title: tr('إعدادات الأجهزة'),
+          sub: tr('الماسح والطابعة الحرارية والميزان'),
           // ⚠️ وصفٌ لا عدّاد: التصميمُ يعرض «٤ طابعات معرّفة» وهو رقمُ
           //    عرضٍ في ملفّ التصميم لا شيءٌ تحمله القاعدةُ اليوم.
-          meta: 'ماسح · طابعة · ميزان',
+          meta: tr('ماسح · طابعة · ميزان'),
           tint: AppColors.info,
           onTap: () => guarded(
             PermissionCodes.settingsPrinter,
-            'إعدادات الأجهزة',
+            tr('إعدادات الأجهزة'),
             () => showHardwareSettingsDialog(context, picpos: true),
           ),
         ),
         SettingsTile(
           icon: PhosphorIconsBold.printer,
-          title: 'إدارة الطابعات',
-          sub: 'طابعات أوامر الشغل للأقسام',
-          meta: 'توزيعُ الطباعة على الأقسام',
+          title: tr('إدارة الطابعات'),
+          sub: tr('طابعات أوامر الشغل للأقسام'),
+          meta: tr('توزيعُ الطباعة على الأقسام'),
           tint: AppColors.secondary,
           onTap: () => guarded(
             PermissionCodes.settingsPrinter,
-            'إدارة الطابعات',
+            tr('إدارة الطابعات'),
             () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const PrintersPicposScreen()),
@@ -2148,13 +2151,13 @@ class _DeviceTiles extends ConsumerWidget {
         ),
         SettingsTile(
           icon: PhosphorIconsBold.cashRegister,
-          title: 'نقاط البيع',
-          sub: 'إدارة الماكينات وسياسة نقص الخامات',
-          meta: 'سياسةٌ لكل نقطة',
+          title: tr('نقاط البيع'),
+          sub: tr('إدارة الماكينات وسياسة نقص الخامات'),
+          meta: tr('سياسةٌ لكل نقطة'),
           tint: AppColors.primary,
           onTap: () => guarded(
             PermissionCodes.settingsPrinter,
-            'نقاط البيع',
+            tr('نقاط البيع'),
             () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -2164,9 +2167,9 @@ class _DeviceTiles extends ConsumerWidget {
         ),
         SettingsTile(
           icon: PhosphorIconsBold.books,
-          title: 'مكتبة النماذج',
-          sub: 'استعراضُ قوالب الطباعة وربطُها بالمستندات',
-          meta: 'المطبوعات',
+          title: tr('مكتبة النماذج'),
+          sub: tr('استعراضُ قوالب الطباعة وربطُها بالمستندات'),
+          meta: tr('المطبوعات'),
           tint: AppColors.info,
           onTap: () => Navigator.push(
             context,
@@ -2179,13 +2182,13 @@ class _DeviceTiles extends ConsumerWidget {
         // فوراً «هل وصل؟» — والقائمةُ الجانبيّةُ بعيدةٌ عن لحظة السؤال.
         SettingsTile(
           icon: PhosphorIconsBold.gitFork,
-          title: 'حسم القوالب',
-          sub: 'أيُّ مستندٍ يخرج بأيِّ قالبٍ — وسلسلةُ السقوط',
-          meta: 'تشخيصُ الطباعة',
+          title: tr('حسم القوالب'),
+          sub: tr('أيُّ مستندٍ يخرج بأيِّ قالبٍ — وسلسلةُ السقوط'),
+          meta: tr('تشخيصُ الطباعة'),
           tint: AppColors.info,
           onTap: () => guarded(
             PermissionCodes.settingsPrinter,
-            'حسم القوالب',
+            tr('حسم القوالب'),
             () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -2203,9 +2206,9 @@ class _DeviceTiles extends ConsumerWidget {
         //    على قالبٍ بعينه (`templateId`)، فلا معنى لفتحه بلا اختيار.
         SettingsTile(
           icon: PhosphorIconsBold.barcode,
-          title: 'مصمّم ملصقات الباركود',
-          sub: 'السطحُ القديم — ملصقاتُ الباركود وقوالبُها',
-          meta: 'الملصقات',
+          title: tr('مصمّم ملصقات الباركود'),
+          sub: tr('السطحُ القديم — ملصقاتُ الباركود وقوالبُها'),
+          meta: tr('الملصقات'),
           tint: AppColors.info,
           onTap: () => Navigator.push(
             context,
@@ -2231,23 +2234,23 @@ class _AdvancedTiles extends ConsumerWidget {
       tiles: [
         SettingsTile(
           icon: PhosphorIconsBold.database,
-          title: 'قاعدة البيانات',
-          sub: 'نوع القاعدة ومسارها',
-          meta: 'إعدادات الاتصال',
+          title: tr('قاعدة البيانات'),
+          sub: tr('نوع القاعدة ومسارها'),
+          meta: tr('إعدادات الاتصال'),
           tint: AppColors.success,
           dot: AppColors.success,
           onTap: () => showDatabaseSettingsDialog(context),
         ),
         SettingsTile(
           icon: PhosphorIconsBold.wifiHigh,
-          title: 'الربط بين الفروع والسيرفر',
-          sub: 'وضع الشبكة والمزامنة',
+          title: tr('الربط بين الفروع والسيرفر'),
+          sub: tr('وضع الشبكة والمزامنة'),
           // ⚠️ الحالةُ من `NetworkService` الحيّ لا نصٌّ ثابت.
           meta: switch (mode) {
-            NetworkMode.server => 'سيرفر رئيسي',
-            NetworkMode.client => 'عميل مرتبط',
-            NetworkMode.mirror => 'مرآة',
-            _ => 'مستقل',
+            NetworkMode.server => tr('سيرفر رئيسي'),
+            NetworkMode.client => tr('عميل مرتبط'),
+            NetworkMode.mirror => tr('مرآة'),
+            _ => tr('مستقل'),
           },
           tint: AppColors.primary,
           dot: isServer ? AppColors.success : AppColors.primary,
@@ -2268,17 +2271,17 @@ class _AdvancedTiles extends ConsumerWidget {
         ),
         SettingsTile(
           icon: PhosphorIconsBold.shield,
-          title: 'أدوات صيانة المسؤول',
-          sub: 'حصر الفروع وتشخيص القيود',
-          meta: 'أدوات تشخيصية',
+          title: tr('أدوات صيانة المسؤول'),
+          sub: tr('حصر الفروع وتشخيص القيود'),
+          meta: tr('أدوات تشخيصية'),
           tint: AppColors.warning,
           onTap: () => showBranchScopeAdminDialog(context),
          ),
          SettingsTile(
            icon: PhosphorIconsBold.currencyCircleDollar,
-           title: 'أسعار الصرف وإعادة التقييم',
-           sub: 'إدارة العملات وقيد فروق الصرف الدوري',
-           meta: 'معاينة ثم تنفيذ محمي',
+           title: tr('أسعار الصرف وإعادة التقييم'),
+           sub: tr('إدارة العملات وقيد فروق الصرف الدوري'),
+           meta: tr('معاينة ثم تنفيذ محمي'),
            tint: AppColors.info,
            permission: PermissionCodes.accountingJournal,
            onTap: () => Navigator.push(
@@ -2288,9 +2291,9 @@ class _AdvancedTiles extends ConsumerWidget {
          ),
          SettingsTile(
            icon: PhosphorIconsBold.scales,
-           title: 'تدقيق أرصدة الأطراف',
-           sub: 'مقارنة أرصدة العملاء والموردين بالأستاذ',
-           meta: 'إعادة احتساب محمية بالصلاحية',
+           title: tr('تدقيق أرصدة الأطراف'),
+           sub: tr('مقارنة أرصدة العملاء والموردين بالأستاذ'),
+           meta: tr('إعادة احتساب محمية بالصلاحية'),
            tint: AppColors.warning,
            permission: PermissionCodes.accountingJournal,
            onTap: () {
@@ -2309,18 +2312,18 @@ class _AdvancedTiles extends ConsumerWidget {
         if (mode == NetworkMode.mirror)
           SettingsTile(
             icon: PhosphorIconsBold.arrowsCounterClockwise,
-            title: 'تدقيق مزامنة المرآة',
-            sub: 'مقارنة البيانات الأساسية بالسيرفر',
-            meta: 'قراءةٌ ثمّ إعادةُ مزامنة',
+            title: tr('تدقيق مزامنة المرآة'),
+            sub: tr('مقارنة البيانات الأساسية بالسيرفر'),
+            meta: tr('قراءةٌ ثمّ إعادةُ مزامنة'),
             tint: AppColors.primary,
             onTap: () => showMirrorParityAuditDialog(context),
           ),
         if (isServer)
           SettingsTile(
             icon: PhosphorIconsBold.magnifyingGlass,
-            title: 'تدقيق ازدواج شيكات القبض',
-            sub: 'أرصدةٌ تأثّرت بازدواج سندات القبض',
-            meta: 'قراءةٌ فقط — الإصلاحُ مؤجَّل',
+            title: tr('تدقيق ازدواج شيكات القبض'),
+            sub: tr('أرصدةٌ تأثّرت بازدواج سندات القبض'),
+            meta: tr('قراءةٌ فقط — الإصلاحُ مؤجَّل'),
             tint: AppColors.warning,
             onTap: () => showChequeReceiptDriftAdminDialog(context),
           ),

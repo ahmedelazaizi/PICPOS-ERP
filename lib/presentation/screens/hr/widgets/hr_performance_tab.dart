@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -35,7 +36,7 @@ class PerformanceTab extends ConsumerWidget {
                     const Icon(PhosphorIconsBold.chartLine,
                         color: AppColors.primary),
                     const SizedBox(width: 8),
-                    Text('تقييم أداء الموظفين',
+                    Text(tr('تقييم أداء الموظفين'),
                         style: GoogleFonts.cairo(
                             fontSize: 18, fontWeight: FontWeight.w700)),
                     const Spacer(),
@@ -43,7 +44,7 @@ class PerformanceTab extends ConsumerWidget {
                       onPressed: () =>
                           _showAddReviewDialog(context, ref, employees),
                       icon: const Icon(PhosphorIconsBold.plus, size: 16),
-                      label: const Text('تقييم جديد'),
+                      label:  Text(tr('تقييم جديد')),
                       style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white),
@@ -68,7 +69,7 @@ class PerformanceTab extends ConsumerWidget {
                             Icon(PhosphorIconsBold.chartLine,
                                 size: 48, color: Colors.grey[300]),
                             const SizedBox(height: 8),
-                            Text('لا توجد تقييمات بعد',
+                            Text(tr('لا توجد تقييمات بعد'),
                                 style: GoogleFonts.cairo(
                                     color: AppColors.textMuted)),
                           ],
@@ -104,7 +105,7 @@ class PerformanceTab extends ConsumerWidget {
         builder: (ctx, setState) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: Text('تقييم أداء جديد',
+            title: Text(tr('تقييم أداء جديد'),
                 style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             content: SizedBox(
               width: 450,
@@ -114,8 +115,8 @@ class PerformanceTab extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     DropdownButtonFormField<Employee>(
-                      decoration: const InputDecoration(
-                          labelText: 'الموظف', border: OutlineInputBorder()),
+                      decoration:  InputDecoration(
+                          labelText: tr('الموظف'), border: const OutlineInputBorder()),
                       items: employees
                           .map((e) => DropdownMenuItem(
                               value: e, child: Text(e.name)))
@@ -124,37 +125,37 @@ class PerformanceTab extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                          labelText: 'نوع الفترة', border: OutlineInputBorder()),
+                      decoration:  InputDecoration(
+                          labelText: tr('نوع الفترة'), border: const OutlineInputBorder()),
                       initialValue: periodType,
-                      items: const [
-                        DropdownMenuItem(value: 'monthly', child: Text('شهري')),
+                      items:  [
+                        DropdownMenuItem(value: 'monthly', child: Text(tr('شهري'))),
                         DropdownMenuItem(
-                            value: 'quarterly', child: Text('ربع سنوي')),
-                        DropdownMenuItem(value: 'annual', child: Text('سنوي')),
+                            value: 'quarterly', child: Text(tr('ربع سنوي'))),
+                        DropdownMenuItem(value: 'annual', child: Text(tr('سنوي'))),
                       ],
                       onChanged: (v) => setState(() => periodType = v!),
                     ),
                     const SizedBox(height: 16),
                     _ScoreSlider(
-                      label: 'الالتزام',
+                      label: tr('الالتزام'),
                       value: commitment,
                       onChanged: (v) =>
                           setState(() => commitment = v.round()),
                     ),
                     _ScoreSlider(
-                      label: 'الإنتاجية',
+                      label: tr('الإنتاجية'),
                       value: productivity,
                       onChanged: (v) =>
                           setState(() => productivity = v.round()),
                     ),
                     _ScoreSlider(
-                      label: 'الجودة',
+                      label: tr('الجودة'),
                       value: quality,
                       onChanged: (v) => setState(() => quality = v.round()),
                     ),
                     _ScoreSlider(
-                      label: 'العمل الجماعي',
+                      label: tr('العمل الجماعي'),
                       value: teamwork,
                       onChanged: (v) => setState(() => teamwork = v.round()),
                     ),
@@ -162,8 +163,8 @@ class PerformanceTab extends ConsumerWidget {
                     TextField(
                       controller: notesCtrl,
                       maxLines: 3,
-                      decoration: const InputDecoration(
-                          labelText: 'ملاحظات', border: OutlineInputBorder()),
+                      decoration:  InputDecoration(
+                          labelText: tr('ملاحظات'), border: const OutlineInputBorder()),
                     ),
                   ],
                 ),
@@ -172,7 +173,7 @@ class PerformanceTab extends ConsumerWidget {
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('إلغاء')),
+                  child:  Text(tr('إلغاء'))),
               ElevatedButton(
                 onPressed: selectedEmployee == null
                     ? null
@@ -201,7 +202,7 @@ class PerformanceTab extends ConsumerWidget {
                 style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white),
-                child: const Text('حفظ التقييم'),
+                child:  Text(tr('حفظ التقييم')),
               ),
             ],
           ),
@@ -279,9 +280,9 @@ class _ReviewCard extends StatelessWidget {
             : const Color(0xFFDC2626);
 
     final periodLabels = {
-      'monthly': 'شهري',
-      'quarterly': 'ربع سنوي',
-      'annual': 'سنوي',
+      'monthly': tr('شهري'),
+      'quarterly': tr('ربع سنوي'),
+      'annual': tr('سنوي'),
     };
 
     return Card(
@@ -323,10 +324,10 @@ class _ReviewCard extends StatelessWidget {
               ),
             ),
             // Individual scores
-            _miniScore('التزام', review.commitmentScore),
-            _miniScore('إنتاج', review.productivityScore),
-            _miniScore('جودة', review.qualityScore),
-            _miniScore('فريق', review.teamworkScore),
+            _miniScore(tr('التزام'), review.commitmentScore),
+            _miniScore(tr('إنتاج'), review.productivityScore),
+            _miniScore(tr('جودة'), review.qualityScore),
+            _miniScore(tr('فريق'), review.teamworkScore),
           ],
         ),
       ),

@@ -24,6 +24,7 @@
 // وقد بقيت نصّاً: أربعةُ أرقامٍ أضعفُ من كلمةٍ حرّة، والتحويلُ إليها تخفيفُ
 // حمايةٍ بلا مقابل.
 library;
+import 'package:ural_erp/core/i18n/tr.dart';
 
 import 'package:flutter/widgets.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -48,35 +49,35 @@ class PicPosGuardedSection {
 }
 
 /// الأقسامُ التي **لها بوّابةٌ فعليّةٌ** في الشجرة اليوم.
-const kPicPosGuardedSections = <PicPosGuardedSection>[
+List<PicPosGuardedSection> get kPicPosGuardedSections => <PicPosGuardedSection>[
   PicPosGuardedSection(
     settingKey: 'inventory_access_password',
-    title: 'المخازن والمخزون',
-    sub: 'الأرصدة وحركات المخزون',
+    title: tr('المخازن والمخزون'),
+    sub: tr('الأرصدة وحركات المخزون'),
     icon: PhosphorIconsBold.archive,
   ),
   PicPosGuardedSection(
     settingKey: 'accounting_access_password',
-    title: 'الحسابات والمالية',
-    sub: 'الخزينة والقيود والتقارير المالية',
+    title: tr('الحسابات والمالية'),
+    sub: tr('الخزينة والقيود والتقارير المالية'),
     icon: PhosphorIconsBold.bank,
   ),
   PicPosGuardedSection(
     settingKey: 'purchases_access_password',
-    title: 'المشتريات',
-    sub: 'فواتير الموردين والتكاليف',
+    title: tr('المشتريات'),
+    sub: tr('فواتير الموردين والتكاليف'),
     icon: PhosphorIconsBold.shoppingBagOpen,
   ),
   PicPosGuardedSection(
     settingKey: 'reports_access_password',
-    title: 'التقارير',
-    sub: 'الأرباح وحركة المبيعات',
+    title: tr('التقارير'),
+    sub: tr('الأرباح وحركة المبيعات'),
     icon: PhosphorIconsBold.chartPieSlice,
   ),
   PicPosGuardedSection(
     settingKey: 'hr_access_password',
-    title: 'شؤون الموظفين',
-    sub: 'الرواتب والحضور',
+    title: tr('شؤون الموظفين'),
+    sub: tr('الرواتب والحضور'),
     icon: PhosphorIconsBold.users,
   ),
 ];

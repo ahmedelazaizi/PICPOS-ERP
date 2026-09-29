@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // زرار «تصدير Excel» في شاشات التقارير — محروس بـ`reports_export` (دفعة ١٢).
 //
 // ── ليه ملف مشترك ─────────────────────────────────────────────────────────
@@ -34,7 +35,7 @@ Widget buildReportExportAction({
   return PermissionGuard(
     permission: PermissionCodes.reportsExport,
     allowManagerOverride: true,
-    actionName: 'تصدير التقرير إلى Excel',
+    actionName: tr('تصدير التقرير إلى Excel'),
     onGranted: onExport,
     child: IconButton(
       icon: Icon(icon),
@@ -57,6 +58,6 @@ Widget buildReportPrintAsExportAction({required VoidCallback? onExport}) {
   return buildReportExportAction(
     onExport: onExport,
     icon: PhosphorIconsBold.printer,
-    tooltip: 'طباعة',
+    tooltip: tr('طباعة'),
   );
 }

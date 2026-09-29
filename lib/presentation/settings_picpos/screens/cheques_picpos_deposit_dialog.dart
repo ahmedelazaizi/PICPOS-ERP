@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // حوارُ «إيداع شيكات بالبنك» بهويّة PicPos — فورك `DLGS.deposit` في
 // `PicPos Cheques.dc.html`.
 //
@@ -148,10 +149,10 @@ class _DepositBatchDialogState extends State<_DepositBatchDialog> {
   /// ما يمنع الحفظَ — يُقال في التذييل بدل ارتدادٍ صامت.
   String? get _blocker {
     if (widget.bankSafes.isEmpty) {
-      return 'لا خزائنَ بنكيّة — أضف بنكاً من إعدادات الخزينة أوّلاً';
+      return tr('لا خزائنَ بنكيّة — أضف بنكاً من إعدادات الخزينة أوّلاً');
     }
-    if (_bankSafeId == null) return 'اختر البنك';
-    if (_picked.isEmpty) return 'اختر شيكاً واحداً على الأقلّ';
+    if (_bankSafeId == null) return tr('اختر البنك');
+    if (_picked.isEmpty) return tr('اختر شيكاً واحداً على الأقلّ');
     return null;
   }
 
@@ -175,14 +176,14 @@ class _DepositBatchDialogState extends State<_DepositBatchDialog> {
 
     return PicPosDialog(
       icon: PhosphorIconsBold.vault,
-      title: 'إيداع شيكات بالبنك',
-      subtitle: 'الإيداع ينقل الورقة من الخزنة إلى «تحت التحصيل» بالبنك',
+      title: tr('إيداع شيكات بالبنك'),
+      subtitle: tr('الإيداع ينقل الورقة من الخزنة إلى «تحت التحصيل» بالبنك'),
       width: 880,
       onCancel: () => Navigator.pop(context),
       footerHint: blocker,
       primaryAction: PicPosDialogAction(
         // ‏`save:'إيداع ٣ شيكات'` في التصميم — والعددُ محسوبٌ لا مكتوب.
-        label: n == 0 ? 'إيداع' : 'إيداع $n ${n == 1 ? 'شيك' : 'شيكات'}',
+        label: n == 0 ? tr('إيداع') : tr('إيداع {n} {p0}', {'n': n, 'p0': n == 1 ? 'شيك' : 'شيكات'}),
         icon: PhosphorIconsBold.check,
         onPressed: blocker != null
             ? null
@@ -196,17 +197,17 @@ class _DepositBatchDialogState extends State<_DepositBatchDialog> {
                 ),
       ),
       body: [
-        _sectionLabel('البنك والحساب'),
+        _sectionLabel(tr('البنك والحساب')),
         PicPosDialogRow(
           children: [
             DropdownButtonFormField<int>(
               initialValue: _bankSafeId,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'البنك *',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('البنك *'),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.bank, size: 16),
+                prefixIcon: const Icon(PhosphorIconsBold.bank, size: 16),
               ),
               items: [
                 for (final s in widget.bankSafes)
@@ -217,11 +218,11 @@ class _DepositBatchDialogState extends State<_DepositBatchDialog> {
             // ⚠️ الحسابُ **مشتَقٌّ** من الخزنة لا مكتوبٌ بيد: خزنةٌ بنكيّةٌ
             //    تحمل رقمَ حسابها، وكتابتُه ثانيةً تسمح باختلافهما.
             InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'الحساب',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('الحساب'),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.hash, size: 16),
+                prefixIcon: const Icon(PhosphorIconsBold.hash, size: 16),
               ),
               child: Text(
                 _bank?.accountNumber ?? '—',
@@ -234,11 +235,11 @@ class _DepositBatchDialogState extends State<_DepositBatchDialog> {
           children: [
             // ⚠️ يُعرَض ولا يُدخَل — راجع تعليقَ الرأس.
             InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'تاريخ الإيداع',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('تاريخ الإيداع'),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.calendarBlank, size: 16),
+                prefixIcon: const Icon(PhosphorIconsBold.calendarBlank, size: 16),
               ),
               child: Text(
                 _fmt.format(DateTime.now()),
@@ -247,16 +248,16 @@ class _DepositBatchDialogState extends State<_DepositBatchDialog> {
             ),
             TextField(
               controller: _voucherCtrl,
-              decoration: const InputDecoration(
-                labelText: 'رقم قسيمة الإيداع',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('رقم قسيمة الإيداع'),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.receipt, size: 16),
+                prefixIcon: const Icon(PhosphorIconsBold.receipt, size: 16),
               ),
             ),
           ],
         ),
-        _sectionLabel('الشيكات المختارة'),
+        _sectionLabel(tr('الشيكات المختارة')),
         if (widget.candidates.isEmpty)
           const PicPosDialogBanner(
             icon: PhosphorIconsBold.info,
@@ -286,26 +287,26 @@ class _DepositBatchDialogState extends State<_DepositBatchDialog> {
                     '${c.paperNumber} — ${c.amount.toStringAsFixed(0)}',
                     style: const TextStyle(fontSize: 12),
                   ),
-                  tooltip: '${c.partyName} · يستحقّ ${_fmt.format(c.dueDate)}',
+                  tooltip: tr('{p0} · يستحقّ {p1}', {'p0': c.partyName, 'p1': _fmt.format(c.dueDate)}),
                 ),
             ],
           ),
-        _sectionLabel('ملخص الإيداع'),
+        _sectionLabel(tr('ملخص الإيداع')),
         PicPosDialogSummary(
           rows: [
-            (label: 'عدد الشيكات', value: '$n', color: null),
+            (label: tr('عدد الشيكات'), value: '$n', color: null),
             (
-              label: 'إجمالي القيمة',
+              label: tr('إجمالي القيمة'),
               value: _total.toStringAsFixed(2),
               color: AppColors.success,
             ),
             (
-              label: 'إلى',
+              label: tr('إلى'),
               value: _bank?.name ?? '—',
               color: AppColors.primary,
             ),
             (
-              label: 'أقرب استحقاق',
+              label: tr('أقرب استحقاق'),
               value: due == null ? '—' : _fmt.format(due),
               color: AppColors.warning,
             ),

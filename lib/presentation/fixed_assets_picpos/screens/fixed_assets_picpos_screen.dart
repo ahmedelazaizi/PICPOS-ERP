@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ «الأصول الثابتة والإهلاك» بهويّة PicPos — على تصميم
 // `PicPos Fixed Assets.dc.html` بتبويباته الخمسة.
 //
@@ -70,7 +71,7 @@ const _idle = Color(0xFF6B7280);
 String _ar(Object n) =>
     '$n'.replaceAllMapped(RegExp(r'\d'), (m) => '٠١٢٣٤٥٦٧٨٩'[int.parse(m[0]!)]);
 
-String _pct(double v) => '${_ar(v.toStringAsFixed(0))}٪';
+String _pct(double v) => tr('{p0}٪', {'p0': _ar(v.toStringAsFixed(0))});
 
 /// أسماءُ الشهور — ثابتةٌ لا `DateFormat('MMMM', 'ar')`.
 ///
@@ -79,9 +80,9 @@ String _pct(double v) => '${_ar(v.toStringAsFixed(0))}٪';
 /// معلَّقةً على تجهيزةٍ خارجَها: تعمل في التطبيق وتنهار في أوّل اختبار — وقد
 /// انهارت هنا فعلاً في التبويبات الخمسة كلِّها. والقائمةُ الثابتةُ تُغني
 /// عنها وتطابق `MONTHS_AR` في التصميم.
-const _monthsAr = [
-  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+List<String> get _monthsAr => [
+  tr('يناير'), tr('فبراير'), tr('مارس'), tr('أبريل'), tr('مايو'), tr('يونيو'),
+  tr('يوليو'), tr('أغسطس'), tr('سبتمبر'), tr('أكتوبر'), tr('نوفمبر'), tr('ديسمبر'),
 ];
 
 String _monthLabel(DateTime d) => '${_monthsAr[d.month - 1]} ${_ar(d.year)}';
@@ -192,7 +193,7 @@ double _monthlyDepreciation(FixedAssetData a) => monthlyDepreciation(
     );
 
 String _methodLabel(String method) =>
-    method == 'declining_balance' ? 'قسط متناقص' : 'قسط ثابت';
+    method == 'declining_balance' ? tr('قسط متناقص') : tr('قسط ثابت');
 
 class FixedAssetsPicposScreen extends ConsumerStatefulWidget {
   const FixedAssetsPicposScreen({super.key});
@@ -246,10 +247,10 @@ class _FixedAssetsPicposScreenState
   /// ⚠️ **ثلاثةٌ لا خمسة**: «الفئات» و«التوزيع والمواقع» خرجتا إلى مدخلَين
   /// جانبيَّين مستقلَّين بقرار المالك 2026-09-18. وطولُ هذه القائمة يُفهرَس
   /// بـ`_tabs.index` — فتركُ سطرَيهما كان يُظهر شرحَ الفئات تحت الاستبعاد.
-  static const _tabNotes = [
-    'القيمة الدفترية = التكلفة ناقص مجمع الإهلاك',
-    'القسط الشهري يُرحَّل بقيد واحد لكل فئة · الأصول المستبعدة لا تُهلك',
-    'الربح أو الخسارة = ثمن البيع ناقص القيمة الدفترية',
+  static List<String> get _tabNotes => [
+    tr('القيمة الدفترية = التكلفة ناقص مجمع الإهلاك'),
+    tr('القسط الشهري يُرحَّل بقيد واحد لكل فئة · الأصول المستبعدة لا تُهلك'),
+    tr('الربح أو الخسارة = ثمن البيع ناقص القيمة الدفترية'),
   ];
 
   @override
@@ -302,7 +303,7 @@ class _FixedAssetsPicposScreenState
     }
     if (open != null) {
       return PicPosScreenScaffold(
-        title: 'بطاقة أصل ثابت',
+        title: tr('بطاقة أصل ثابت'),
         subtitle: '${open.code} · ${open.name}',
         icon: PhosphorIconsBold.identificationCard,
         bodyPadding: EdgeInsets.zero,
@@ -316,15 +317,15 @@ class _FixedAssetsPicposScreenState
     if (disposalForm != null) return disposalForm;
 
     return PicPosScreenScaffold(
-      title: 'الأصول الثابتة والإهلاك',
-      subtitle: 'بطاقات الأصول والإهلاك الدوري والفئات والاستبعاد',
+      title: tr('الأصول الثابتة والإهلاك'),
+      subtitle: tr('بطاقات الأصول والإهلاك الدوري والفئات والاستبعاد'),
       icon: PhosphorIconsBold.buildings,
       headerSearch: TextField(
         controller: _searchCtrl,
         onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'ابحث بكود الأصل أو اسمه...',
+          hintText: tr('ابحث بكود الأصل أو اسمه...'),
           prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
           suffixIcon: _query.isEmpty
               ? null
@@ -349,7 +350,7 @@ class _FixedAssetsPicposScreenState
           child: OutlinedButton.icon(
             onPressed: () => _confirmRunDepreciation(onBooks, deprs),
             icon: const Icon(PhosphorIconsBold.arrowDownRight, size: 15),
-            label: const Text('ترحيل إهلاك الشهر'),
+            label:  Text(tr('ترحيل إهلاك الشهر')),
           ),
         ),
         // ⚠️ **`HEADS.main.action` كان غائباً كلّيّاً**: الرأسُ في التصميم
@@ -365,7 +366,7 @@ class _FixedAssetsPicposScreenState
           child: FilledButton.icon(
             onPressed: _createAsset,
             icon: const Icon(PhosphorIconsBold.plus, size: 15),
-            label: const Text('أصل جديد'),
+            label:  Text(tr('أصل جديد')),
           ),
         ),
       ],
@@ -377,17 +378,17 @@ class _FixedAssetsPicposScreenState
             controller: _tabs,
             tabs: [
               (
-                label: 'الأصول',
+                label: tr('الأصول'),
                 icon: PhosphorIconsBold.package,
                 badge: '${all.length}'
               ),
               (
-                label: 'الإهلاك الدوري',
+                label: tr('الإهلاك الدوري'),
                 icon: PhosphorIconsBold.arrowDownRight,
                 badge: '${_activeCategoryIds(onBooks).length}'
               ),
               (
-                label: 'الاستبعاد والبيع',
+                label: tr('الاستبعاد والبيع'),
                 icon: PhosphorIconsBold.trash,
                 badge: '${disposed.length}'
               ),
@@ -444,7 +445,7 @@ class _FixedAssetsPicposScreenState
   List<String> _locationKeys(List<FixedAssetData> onBooks) {
     final seen = <String>{};
     for (final a in onBooks) {
-      seen.add((a.location ?? '').trim().isEmpty ? 'بلا موقع' : a.location!);
+      seen.add((a.location ?? '').trim().isEmpty ? tr('بلا موقع') : a.location!);
     }
     return seen.toList()..sort();
   }
@@ -536,7 +537,7 @@ class _FixedAssetsPicposScreenState
             );
         if (!mounted) return;
         ref.invalidate(_assetMovementsProvider(a.id));
-        AppToast.show(context, 'حُفظت تعديلاتُ البطاقة');
+        AppToast.show(context, tr('حُفظت تعديلاتُ البطاقة'));
       },
     );
   }
@@ -619,45 +620,45 @@ class _FixedAssetsPicposScreenState
         const SizedBox(height: 12),
         // **شريطٌ نحيفٌ** بدل خمسِ بطاقات — التصميمُ يعطي الجدولَ الصفحةَ.
         PicPosTotalsBar(items: [
-          PicPosTotal(label: 'الأصول', value: _ar(visible.length)),
-          PicPosTotal(label: 'التكلفة', value: _money0.format(cost)),
-          PicPosTotal(label: 'مجمع الإهلاك', value: _money0.format(accum)),
+          PicPosTotal(label: tr('الأصول'), value: _ar(visible.length)),
+          PicPosTotal(label: tr('التكلفة'), value: _money0.format(cost)),
+          PicPosTotal(label: tr('مجمع الإهلاك'), value: _money0.format(accum)),
           PicPosTotal(
-              label: 'صافي القيمة',
+              label: tr('صافي القيمة'),
               value: _money0.format(cost - accum),
               emphasis: true),
           PicPosTotal(
-            label: 'قارب عمرها',
+            label: tr('قارب عمرها'),
             value: _ar(nearEnd),
             tone: nearEnd > 0 ? _warn : null,
           ),
         ]),
         const SizedBox(height: 12),
         PicPosDataTable(
-          title: 'بطاقات الأصول',
+          title: tr('بطاقات الأصول'),
           subtitle: historical
               ? 'الأرقامُ كما في ${_dateFmt.format(_asOf)} — من لقطات '
                   'الإهلاك المرحَّلة لا من أرصدة اليوم'
-              : 'القيمة الدفترية = التكلفة ناقص مجمع الإهلاك',
+              : tr('القيمة الدفترية = التكلفة ناقص مجمع الإهلاك'),
           minWidth: 1020,
-          columns: const [
-            PicPosTableColumn('#', flex: 0.4),
-            PicPosTableColumn('رقم الأصل', flex: 1),
-            PicPosTableColumn('الأصل', flex: 1.7),
-            PicPosTableColumn('الموقع', flex: 1.1),
-            PicPosTableColumn('التكلفة',
+          columns:  [
+            const PicPosTableColumn('#', flex: 0.4),
+            PicPosTableColumn(tr('رقم الأصل'), flex: 1),
+            PicPosTableColumn(tr('الأصل'), flex: 1.7),
+            PicPosTableColumn(tr('الموقع'), flex: 1.1),
+            PicPosTableColumn(tr('التكلفة'),
                 flex: 1.1, align: PicPosCellAlign.end),
-            PicPosTableColumn('مجمع الإهلاك',
+            PicPosTableColumn(tr('مجمع الإهلاك'),
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('صافي القيمة',
+            PicPosTableColumn(tr('صافي القيمة'),
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('الحالة', flex: 1.1),
-            PicPosTableColumn('إجراءات', flex: 0.9),
-            PicPosTableColumn('استبعاد', flex: 1.0),
+            PicPosTableColumn(tr('الحالة'), flex: 1.1),
+            PicPosTableColumn(tr('إجراءات'), flex: 0.9),
+            PicPosTableColumn(tr('استبعاد'), flex: 1.0),
           ],
           emptyLabel: _query.isEmpty
-              ? 'لا أصولَ تطابق المرشِّحات'
-              : 'لا أصلَ يطابق «$_query»',
+              ? tr('لا أصولَ تطابق المرشِّحات')
+              : tr('لا أصلَ يطابق «{_query}»', {'_query': _query}),
           rows: [
             for (var i = 0; i < shown.length; i++)
               () {
@@ -675,13 +676,13 @@ class _FixedAssetsPicposScreenState
                   PicPosTextCell(_money0.format(f.book), bold: true),
                   PicPosPillCell(
                     _isActive(a)
-                        ? (_isNearEnd(a) ? 'قارب الانتهاء' : 'قيد الاستخدام')
-                        : (a.status == 'sold' ? 'بيع' : 'مستبعد'),
+                        ? (_isNearEnd(a) ? tr('قارب الانتهاء') : tr('قيد الاستخدام'))
+                        : (a.status == 'sold' ? tr('بيع') : tr('مستبعد')),
                     _isActive(a) ? (_isNearEnd(a) ? _warn : _ok) : _idle,
                   ),
                   // 👁 — البطاقة.
                   PicPosButtonCell(
-                    'البطاقة',
+                    tr('البطاقة'),
                     icon: PhosphorIconsBold.eye,
                     tint: AppColors.primary,
                     onPressed: () => setState(() => _openAssetId = a.id),
@@ -693,7 +694,7 @@ class _FixedAssetsPicposScreenState
                   //    والمجمَّعَ مرّةً أخرى، والقيدُ متّزنٌ فلا فحصَ اتّزانٍ
                   //    يمسكه.
                   PicPosButtonCell(
-                    _isActive(a) ? 'طلب استبعاد' : '—',
+                    _isActive(a) ? tr('طلب استبعاد') : '—',
                     icon: PhosphorIconsBold.trash,
                     tint: _isActive(a) ? _err : _idle,
                     onPressed: _isActive(a)
@@ -710,7 +711,7 @@ class _FixedAssetsPicposScreenState
               ? null
               : [
                   '',
-                  '${_ar(visible.length)} أصول',
+                  tr('{p0} أصول', {'p0': _ar(visible.length)}),
                   '',
                   '',
                   _money0.format(cost),
@@ -728,7 +729,7 @@ class _FixedAssetsPicposScreenState
   }
 
   String _locationOf(FixedAssetData a) =>
-      (a.location ?? '').trim().isEmpty ? 'بلا موقع' : a.location!.trim();
+      (a.location ?? '').trim().isEmpty ? tr('بلا موقع') : a.location!.trim();
 
   Widget _assetFilters(
     BuildContext context,
@@ -751,9 +752,9 @@ class _FixedAssetsPicposScreenState
           _asOfButton(context),
           _dropFilter<int?>(
             context,
-            label: 'الفئة',
+            label: tr('الفئة'),
             value: _filterCategoryId,
-            allLabel: 'كل الفئات',
+            allLabel: tr('كل الفئات'),
             items: [for (final c in cats) (value: c.id, label: c.name)],
             onChanged: (v) => setState(() {
               _filterCategoryId = v;
@@ -762,9 +763,9 @@ class _FixedAssetsPicposScreenState
           ),
           _dropFilter<String?>(
             context,
-            label: 'الموقع',
+            label: tr('الموقع'),
             value: _filterLocation,
-            allLabel: 'كل المواقع',
+            allLabel: tr('كل المواقع'),
             items: [for (final l in locations) (value: l, label: l)],
             onChanged: (v) => setState(() {
               _filterLocation = v;
@@ -773,12 +774,12 @@ class _FixedAssetsPicposScreenState
           ),
           _dropFilter<String?>(
             context,
-            label: 'الحالة',
+            label: tr('الحالة'),
             value: _filterStatus == 'all' ? null : _filterStatus,
-            allLabel: 'كل الحالات',
-            items: const [
-              (value: 'active', label: 'قيد الاستخدام'),
-              (value: 'disposed', label: 'مستبعد أو مُباع'),
+            allLabel: tr('كل الحالات'),
+            items:  [
+              (value: 'active', label: tr('قيد الاستخدام')),
+              (value: 'disposed', label: tr('مستبعد أو مُباع')),
             ],
             onChanged: (v) => setState(() {
               _filterStatus = v ?? 'all';
@@ -788,7 +789,7 @@ class _FixedAssetsPicposScreenState
           OutlinedButton.icon(
             onPressed: _resetFilters,
             icon: const Icon(PhosphorIconsBold.arrowCounterClockwise, size: 15),
-            label: const Text('إعادة تعيين'),
+            label:  Text(tr('إعادة تعيين')),
           ),
         ],
       ),
@@ -811,7 +812,7 @@ class _FixedAssetsPicposScreenState
     final isToday = _sameDay(_asOf, _today());
     return _filterShell(
       context,
-      label: 'كما في',
+      label: tr('كما في'),
       on: !isToday,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -923,7 +924,7 @@ class _FixedAssetsPicposScreenState
   ) {
     return Row(
       children: [
-        Text('عرض', style: TextStyle(fontSize: 12, color: context.picposMuted)),
+        Text(tr('عرض'), style: TextStyle(fontSize: 12, color: context.picposMuted)),
         const SizedBox(width: 8),
         DropdownButton<int>(
           value: _perPage,
@@ -938,26 +939,26 @@ class _FixedAssetsPicposScreenState
           }),
         ),
         const SizedBox(width: 8),
-        Text('لكل صفحة',
+        Text(tr('لكل صفحة'),
             style: TextStyle(fontSize: 12, color: context.picposMuted)),
         const Spacer(),
         Text(
           total == 0
-              ? 'لا نتائج'
+              ? tr('لا نتائج')
               : 'عرض ${_ar(from + 1)} إلى ${_ar(from + count)} '
                   'من ${_ar(total)} نتيجة',
           style: TextStyle(fontSize: 12, color: context.picposMuted),
         ),
         const SizedBox(width: 12),
         IconButton(
-          tooltip: 'السابق',
+          tooltip: tr('السابق'),
           onPressed: page > 0 ? () => setState(() => _page = page - 1) : null,
           icon: const Icon(Icons.chevron_right, size: 18),
         ),
         Text('${_ar(page + 1)} / ${_ar(pages)}',
             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
         IconButton(
-          tooltip: 'التالي',
+          tooltip: tr('التالي'),
           onPressed:
               page < pages - 1 ? () => setState(() => _page = page + 1) : null,
           icon: const Icon(Icons.chevron_left, size: 18),
@@ -1020,65 +1021,65 @@ class _FixedAssetsPicposScreenState
       children: [
         _kpis([
           PicPosStatTile(
-            label: 'قسط الشهر',
+            label: tr('قسط الشهر'),
             value: _money.format(monthTotal),
             icon: PhosphorIconsBold.arrowDownRight,
             accent: _warn,
             caption: periodLabel,
           ),
           PicPosStatTile(
-            label: 'مُرحَّل',
-            value: '${_ar(rows.length - pendingCats)} فئات',
+            label: tr('مُرحَّل'),
+            value: tr('{p0} فئات', {'p0': _ar(rows.length - pendingCats)}),
             icon: PhosphorIconsBold.checkCircle,
             accent: _ok,
-            caption: '${_money0.format(postedTotal)} ج.م',
+            caption: tr('{p0} ج.م', {'p0': _money0.format(postedTotal)}),
           ),
           PicPosStatTile(
-            label: 'بانتظار الترحيل',
-            value: '${_ar(pendingCats)} فئات',
+            label: tr('بانتظار الترحيل'),
+            value: tr('{p0} فئات', {'p0': _ar(pendingCats)}),
             icon: PhosphorIconsBold.clock,
             accent: pendingCats == 0 ? _ok : _err,
-            caption: '${_money0.format(monthTotal - postedTotal)} ج.م',
+            caption: tr('{p0} ج.م', {'p0': _money0.format(monthTotal - postedTotal)}),
           ),
           PicPosStatTile(
-            label: 'أصول تُهلك',
+            label: tr('أصول تُهلك'),
             value: _ar(onBooks.where((a) => _monthlyDepreciation(a) > 0).length),
             icon: PhosphorIconsBold.package,
             accent: AppColors.primary,
-            caption: 'المستبعدة لا تُهلك',
+            caption: tr('المستبعدة لا تُهلك'),
           ),
         ]),
         const SizedBox(height: 12),
         PicPosDataTable(
-          title: 'أقساط الإهلاك — $periodLabel',
+          title: tr('أقساط الإهلاك — {periodLabel}', {'periodLabel': periodLabel}),
           subtitle:
-              'قيد واحد لكل فئة يخصم المصروف ويزيد مجمع الإهلاك · الأصول المستبعدة لا تُهلك',
+              tr('قيد واحد لكل فئة يخصم المصروف ويزيد مجمع الإهلاك · الأصول المستبعدة لا تُهلك'),
           minWidth: 940,
           chips: [
             PicPosTableChip(
-                label: 'الكل',
+                label: tr('الكل'),
                 count: _ar(rows.length),
                 onTap: () => setState(() => _deprChip = 0)),
             PicPosTableChip(
-                label: 'مُرحَّل',
+                label: tr('مُرحَّل'),
                 count: _ar(rows.length - pendingCats),
                 onTap: () => setState(() => _deprChip = 1)),
             PicPosTableChip(
-                label: 'بانتظار',
+                label: tr('بانتظار'),
                 count: _ar(pendingCats),
                 onTap: () => setState(() => _deprChip = 2)),
           ],
           selectedChip: _deprChip,
-          columns: const [
-            PicPosTableColumn('الفئة', flex: 1.7),
-            PicPosTableColumn('الطريقة', flex: 1.4),
-            PicPosTableColumn('الأصول', align: PicPosCellAlign.end),
-            PicPosTableColumn('قسط الشهر',
+          columns:  [
+            PicPosTableColumn(tr('الفئة'), flex: 1.7),
+            PicPosTableColumn(tr('الطريقة'), flex: 1.4),
+            PicPosTableColumn(tr('الأصول'), align: PicPosCellAlign.end),
+            PicPosTableColumn(tr('قسط الشهر'),
                 flex: 1.3, align: PicPosCellAlign.end),
-            PicPosTableColumn('حساب الإهلاك', flex: 1.6),
-            PicPosTableColumn('الحالة', flex: 1.3),
+            PicPosTableColumn(tr('حساب الإهلاك'), flex: 1.6),
+            PicPosTableColumn(tr('الحالة'), flex: 1.3),
           ],
-          emptyLabel: 'لا فئةَ لها أصولٌ تُهلك هذا الشهر',
+          emptyLabel: tr('لا فئةَ لها أصولٌ تُهلك هذا الشهر'),
           rows: [
             for (final e in visible)
               () {
@@ -1091,21 +1092,21 @@ class _FixedAssetsPicposScreenState
                 final method =
                     cat?.defaultDepreciationMethod ?? 'straight_line';
                 return PicPosTableRow(cells: [
-                  PicPosTextCell(cat?.name ?? 'فئة #${e.key}',
+                  PicPosTextCell(cat?.name ?? tr('فئة #{p0}', {'p0': e.key}),
                       icon: PhosphorIconsBold.folders,
                       tint: posted ? _ok : _err),
                   PicPosTextCell(
                     _methodLabel(method),
                     sub: method == 'declining_balance' && cat != null
-                        ? 'مضاعف · ${_pct(2 / cat.defaultUsefulLife * 100)} سنوياً'
+                        ? tr('مضاعف · {p0} سنوياً', {'p0': _pct(2 / cat.defaultUsefulLife * 100)})
                         : null,
                   ),
                   PicPosTextCell(_ar(assets.length)),
                   PicPosTextCell(_money.format(amount), bold: true),
                   PicPosTextCell(
-                      accountById[cat?.depreciationAccountId] ?? '— غير مربوط',
+                      accountById[cat?.depreciationAccountId] ?? tr('— غير مربوط'),
                       tint: cat?.depreciationAccountId == null ? _err : null),
-                  PicPosPillCell(posted ? 'مُرحَّل' : 'بانتظار الترحيل',
+                  PicPosPillCell(posted ? tr('مُرحَّل') : tr('بانتظار الترحيل'),
                       posted ? _ok : _warn),
                 ]);
               }(),
@@ -1113,7 +1114,7 @@ class _FixedAssetsPicposScreenState
           totals: visible.isEmpty
               ? null
               : [
-                  '${_ar(visible.length)} فئات',
+                  tr('{p0} فئات', {'p0': _ar(visible.length)}),
                   '',
                   _ar(visible.fold<int>(0, (s, e) => s + e.value.length)),
                   _money.format(visible.fold<double>(
@@ -1164,7 +1165,7 @@ class _FixedAssetsPicposScreenState
         ref.watch(_disposalCostCentersProvider).value ?? const <CostCenter>[];
 
     return PicPosScreenScaffold(
-      title: 'طلب استبعاد أصل',
+      title: tr('طلب استبعاد أصل'),
       subtitle: '${asset.code} · ${asset.name}',
       icon: PhosphorIconsBold.trash,
       bodyPadding: EdgeInsets.zero,
@@ -1259,7 +1260,7 @@ class _FixedAssetsPicposScreenState
       ref.invalidate(_disposalRequestsProvider);
       if (!mounted) return;
       AppToast.show(
-          context, v.approve ? 'تم اعتماد الاستبعاد' : 'حُفظت المسودة');
+          context, v.approve ? tr('تم اعتماد الاستبعاد') : tr('حُفظت المسودة'));
       _closeDisposal();
     } catch (e) {
       // 🔴 **ورسالةُ المحرّك كما هي**: هو وحدَه يعرف أيُّ حسابٍ غاب وأيُّ
@@ -1276,9 +1277,9 @@ class _FixedAssetsPicposScreenState
         const <AssetDisposalListRow>[];
 
     if (disposed.isEmpty && requests.isEmpty) {
-      return const PicPosEmptyState(
+      return  PicPosEmptyState(
         icon: PhosphorIconsBold.trash,
-        title: 'لا طلباتِ استبعادٍ ولا أصولَ مستبعدة',
+        title: tr('لا طلباتِ استبعادٍ ولا أصولَ مستبعدة'),
         hint: 'ابدأ من «طلب استبعاد» في جدول الأصول — والمسوّدةُ بلا أثرٍ '
             'محاسبيّ حتى تُعتمَد.',
       );
@@ -1305,74 +1306,74 @@ class _FixedAssetsPicposScreenState
           const SizedBox(height: 12),
         ],
         if (disposed.isEmpty)
-          const PicPosEmptyState(
+           PicPosEmptyState(
             icon: PhosphorIconsBold.trash,
-            title: 'لا أصولَ خرجت من الدفاتر بعد',
-            hint: 'الطلباتُ أعلاه مسوّداتٌ — والاعتمادُ وحدَه يُخرج الأصل.',
+            title: tr('لا أصولَ خرجت من الدفاتر بعد'),
+            hint: tr('الطلباتُ أعلاه مسوّداتٌ — والاعتمادُ وحدَه يُخرج الأصل.'),
           )
         else ...[
         _kpis([
           PicPosStatTile(
-            label: 'أصول مستبعدة',
+            label: tr('أصول مستبعدة'),
             value: _ar(disposed.length),
             icon: PhosphorIconsBold.trash,
             accent: _idle,
           ),
           PicPosStatTile(
-            label: 'ثمن البيع',
+            label: tr('ثمن البيع'),
             value: _money0.format(totalProceeds),
             icon: PhosphorIconsBold.currencyCircleDollar,
             accent: _ok,
           ),
           PicPosStatTile(
-            label: 'القيمة الدفترية عند البيع',
+            label: tr('القيمة الدفترية عند البيع'),
             value: _money0.format(totalBook),
             icon: PhosphorIconsBold.scales,
             accent: AppColors.primary,
           ),
           PicPosStatTile(
-            label: 'صافي الربح من البيع',
+            label: tr('صافي الربح من البيع'),
             value: _money0.format(totalProceeds - totalBook),
             icon: PhosphorIconsBold.trendUp,
             accent: totalProceeds - totalBook >= 0 ? _ok : _err,
-            caption: 'إيراد غير تشغيلي',
+            caption: tr('إيراد غير تشغيلي'),
           ),
         ]),
         const SizedBox(height: 12),
         PicPosDataTable(
-          title: 'الاستبعاد والبيع',
+          title: tr('الاستبعاد والبيع'),
           subtitle:
-              'الربح أو الخسارة = ثمن البيع ناقص القيمة الدفترية عند الاستبعاد',
+              tr('الربح أو الخسارة = ثمن البيع ناقص القيمة الدفترية عند الاستبعاد'),
           minWidth: 1060,
           chips: [
             PicPosTableChip(
-                label: 'الكل',
+                label: tr('الكل'),
                 count: _ar(disposed.length),
                 onTap: () => setState(() => _disposalChip = 0)),
             PicPosTableChip(
-                label: 'بيع',
+                label: tr('بيع'),
                 count: _ar(disposed.where((a) => a.status == 'sold').length),
                 onTap: () => setState(() => _disposalChip = 1)),
             PicPosTableChip(
-                label: 'إعدام',
+                label: tr('إعدام'),
                 count: _ar(disposed.where((a) => a.status != 'sold').length),
                 onTap: () => setState(() => _disposalChip = 2)),
           ],
           selectedChip: _disposalChip,
-          columns: const [
-            PicPosTableColumn('الأصل', flex: 1.7),
-            PicPosTableColumn('التاريخ', flex: 1.2),
-            PicPosTableColumn('التكلفة',
+          columns:  [
+            PicPosTableColumn(tr('الأصل'), flex: 1.7),
+            PicPosTableColumn(tr('التاريخ'), flex: 1.2),
+            PicPosTableColumn(tr('التكلفة'),
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('مجمع الإهلاك',
+            PicPosTableColumn(tr('مجمع الإهلاك'),
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('الدفترية',
+            PicPosTableColumn(tr('الدفترية'),
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('ثمن البيع',
+            PicPosTableColumn(tr('ثمن البيع'),
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('الربح / الخسارة',
+            PicPosTableColumn(tr('الربح / الخسارة'),
                 flex: 1.4, align: PicPosCellAlign.end),
-            PicPosTableColumn('النوع', flex: 1.2),
+            PicPosTableColumn(tr('النوع'), flex: 1.2),
           ],
           rows: [
             for (final a in visible)
@@ -1388,19 +1389,19 @@ class _FixedAssetsPicposScreenState
                 PicPosTextCell(_money0.format(_bookValue(a))),
                 PicPosTextCell(_money0.format(proceeds(a))),
                 gain(a).abs() < 0.005
-                    ? const PicPosTextCell('لا ربح ولا خسارة')
+                    ?  PicPosTextCell(tr('لا ربح ولا خسارة'))
                     : PicPosTrendCell(
                         '${_money0.format(gain(a).abs())} '
                         '${gain(a) > 0 ? 'ربح' : 'خسارة'}',
                         up: gain(a) > 0),
-                PicPosPillCell(a.status == 'sold' ? 'بيع' : 'إعدام',
+                PicPosPillCell(a.status == 'sold' ? tr('بيع') : tr('إعدام'),
                     a.status == 'sold' ? _ok : _err),
               ]),
           ],
           totals: visible.isEmpty
               ? null
               : [
-                  '${_ar(visible.length)} أصول',
+                  tr('{p0} أصول', {'p0': _ar(visible.length)}),
                   '',
                   _money0.format(
                       visible.fold<double>(0, (s, a) => s + a.purchasePrice)),
@@ -1425,19 +1426,19 @@ class _FixedAssetsPicposScreenState
   ///    فتحَها، والأصلُ يبقى ممنوعاً من طلبٍ ثانٍ بسببها.
   Widget _disposalRequestsTable(List<AssetDisposalListRow> rows) {
     return PicPosDataTable(
-      title: 'طلبات الاستبعاد',
+      title: tr('طلبات الاستبعاد'),
       subtitle: 'المسوّدةُ بلا أثرٍ محاسبيّ — والاعتمادُ يُخرج الأصلَ ويقيّد '
           'الفرق',
       minWidth: 1020,
-      emptyLabel: 'لا طلبات',
-      columns: const [
-        PicPosTableColumn('رقم الطلب', flex: 1.1),
-        PicPosTableColumn('الأصل', flex: 1.7),
-        PicPosTableColumn('التاريخ', flex: 1.1),
-        PicPosTableColumn('الطريقة', flex: 1.0),
-        PicPosTableColumn('القيمة', flex: 1.1, align: PicPosCellAlign.end),
-        PicPosTableColumn('التحصيل', flex: 1.1),
-        PicPosTableColumn('الحالة', flex: 1.0),
+      emptyLabel: tr('لا طلبات'),
+      columns:  [
+        PicPosTableColumn(tr('رقم الطلب'), flex: 1.1),
+        PicPosTableColumn(tr('الأصل'), flex: 1.7),
+        PicPosTableColumn(tr('التاريخ'), flex: 1.1),
+        PicPosTableColumn(tr('الطريقة'), flex: 1.0),
+        PicPosTableColumn(tr('القيمة'), flex: 1.1, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('التحصيل'), flex: 1.1),
+        PicPosTableColumn(tr('الحالة'), flex: 1.0),
       ],
       rows: [
         for (final r in rows)
@@ -1467,9 +1468,9 @@ class _FixedAssetsPicposScreenState
               ),
               PicPosPillCell(
                 switch (r.request.status) {
-                  'approved' => 'معتمد',
-                  'cancelled' => 'ملغى',
-                  _ => 'مسودة',
+                  'approved' => tr('معتمد'),
+                  'cancelled' => tr('ملغى'),
+                  _ => tr('مسودة'),
                 },
                 switch (r.request.status) {
                   'approved' => _ok,
@@ -1510,7 +1511,7 @@ class _FixedAssetsPicposScreenState
     if (pending.isEmpty) {
       // ⚠️ الـDAO يتخطّى الأصلَ الذي له صفٌّ في الفترة، فالنداءُ يعيد صفراً
       //    بلا أثر. وقولُ ذلك قبلَه أصدقُ من رسالة نجاحٍ لا شيءَ خلفها.
-      _toast('لا أصولَ تنتظر إهلاكَ $periodLabel — كلُّها مُرحَّلة');
+      _toast(tr('لا أصولَ تنتظر إهلاكَ {periodLabel} — كلُّها مُرحَّلة', {'periodLabel': periodLabel}));
       return;
     }
 
@@ -1518,7 +1519,7 @@ class _FixedAssetsPicposScreenState
       context: context,
       builder: (ctx) => AlertDialog(
         icon: const Icon(PhosphorIconsBold.arrowDownRight, color: _warn),
-        title: Text('ترحيل إهلاك $periodLabel'),
+        title: Text(tr('ترحيل إهلاك {periodLabel}', {'periodLabel': periodLabel})),
         content: Text(
           'سيُقيَّد قسطُ ${_ar(pending.length)} أصلٍ بإجمالي '
           '${_money.format(amount)} — يخصم مصروفَ الإهلاك ويزيد مجمعَه. '
@@ -1527,10 +1528,10 @@ class _FixedAssetsPicposScreenState
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء')),
+              child:  Text(tr('إلغاء'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('ترحيل')),
+              child:  Text(tr('ترحيل'))),
         ],
       ),
     );
@@ -1542,11 +1543,11 @@ class _FixedAssetsPicposScreenState
           .runMonthlyDepreciation(period);
       if (!mounted) return;
       _toast(count > 0
-          ? 'رُحِّل إهلاكُ ${_ar(count)} أصلٍ لشهر $periodLabel'
-          : 'لا أصولَ تحتاج إهلاكاً لهذا الشهر');
+          ? tr('رُحِّل إهلاكُ {p0} أصلٍ لشهر {periodLabel}', {'p0': _ar(count), 'periodLabel': periodLabel})
+          : tr('لا أصولَ تحتاج إهلاكاً لهذا الشهر'));
     } catch (e) {
       if (!mounted) return;
-      _toast('تعذّر ترحيلُ الإهلاك: $e');
+      _toast(tr('تعذّر ترحيلُ الإهلاك: {e}', {'e': e}));
     }
   }
 
@@ -1600,10 +1601,10 @@ class _FixedAssetsPicposScreenState
           );
       if (!mounted) return;
       ref.invalidate(_assetsProvider);
-      _toast('أُنشئ الأصلُ ${form.name}');
+      _toast(tr('أُنشئ الأصلُ {p0}', {'p0': form.name}));
     } catch (e) {
       if (!mounted) return;
-      _toast('تعذّر الإنشاء: $e');
+      _toast(tr('تعذّر الإنشاء: {e}', {'e': e}));
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // منتقي خيارٍ واحدٍ بهويّة PicPos — بديلُ `SimpleDialog`.
 //
 // ═══ العطبُ المُبلَّغ عنه ═══
@@ -203,7 +204,7 @@ class _PicPosOptionPickerState<T> extends State<_PicPosOptionPicker<T>> {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    o.badge ?? 'الحالي',
+                    o.badge ?? tr('الحالي'),
                     style: text.labelSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: AppColors.success,

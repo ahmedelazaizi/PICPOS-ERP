@@ -32,7 +32,7 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
   Future<void> _uploadDirectToScale() async {
     final scaleProducts = await _controller.getScaleProducts();
     if (scaleProducts.isEmpty) {
-      if (mounted) AppToast.show(context, 'لا توجد أصناف بأرقام PLU للترحيل', type: ToastType.warning);
+      if (mounted) AppToast.show(context, tr('لا توجد أصناف بأرقام PLU للترحيل'), type: ToastType.warning);
       return;
     }
 
@@ -40,7 +40,7 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
     if (!mounted) return;
 
     if (scales.isEmpty) {
-      if (mounted) AppToast.show(context, 'لا توجد موازين مسجّلة — أضف موازين من شاشة "ميزان التسعير"', type: ToastType.warning);
+      if (mounted) AppToast.show(context, tr('لا توجد موازين مسجّلة — أضف موازين من شاشة "ميزان التسعير"'), type: ToastType.warning);
       return;
     }
 
@@ -81,18 +81,18 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
         // Write as UTF-16 LE — matches PLU Manager's native TSV format (2.xls)
         await File(filePath).writeAsBytes(ScaleTransport().encodeUtf16LE(csvContent));
         if (mounted) {
-          AppToast.show(context, 'تم تصدير ${pluItems.length} صنف إلى سطح المكتب: $fileName', type: ToastType.success);
+          AppToast.show(context, tr('تم تصدير {p0} صنف إلى سطح المكتب: {fileName}', {'p0': pluItems.length, 'fileName': fileName}), type: ToastType.success);
           Process.run('explorer.exe', ['/select,', filePath]);
         }
       } catch (e) {
-        if (mounted) AppToast.show(context, 'فشل التصدير: $e', type: ToastType.error);
+        if (mounted) AppToast.show(context, tr('فشل التصدير: {e}', {'e': e}), type: ToastType.error);
       }
       return;
     }
 
     setState(() {
       _isUploading = true;
-      _uploadStatus = 'جاري الترحيل إلى ${selectedScale.name}...';
+      _uploadStatus = tr('جاري الترحيل إلى {p0}...', {'p0': selectedScale.name});
       _uploadProgress = 0;
       _uploadTotal = pluItems.length;
     });
@@ -105,18 +105,18 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
           _uploadProgress = result.success;
         });
         if (result.isFullSuccess) {
-          AppToast.show(context, 'تم ترحيل ${result.success} صنف بنجاح إلى "${selectedScale.name}"', type: ToastType.success);
+          AppToast.show(context, tr('تم ترحيل {p0} صنف بنجاح إلى "{p1}"', {'p0': result.success, 'p1': selectedScale.name}), type: ToastType.success);
         } else if (result.success > 0) {
-          AppToast.show(context, '"${selectedScale.name}": ${result.success} نجاح، ${result.failed} فشل', type: ToastType.warning);
+          AppToast.show(context, tr('"{p0}": {p1} نجاح، {p2} فشل', {'p0': selectedScale.name, 'p1': result.success, 'p2': result.failed}), type: ToastType.warning);
         } else {
   // ignore: dead_code
-          _showUploadErrorDialog(result, selectedScale.name ?? 'الميزان');
+          _showUploadErrorDialog(result, selectedScale.name ?? tr('الميزان'));
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isUploading = false);
-        AppToast.show(context, 'خطأ في الاتصال بـ "${selectedScale.name}": $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الاتصال بـ "{p0}": {e}', {'p0': selectedScale.name, 'e': e}), type: ToastType.error);
       }
     }
   }
@@ -133,8 +133,8 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
             title: Row(children: [
               const Icon(PhosphorIconsBold.scales, color: Colors.teal, size: 24),
               const SizedBox(width: 8),
-              const Expanded(child: Text('اختر الميزان للترحيل')),
-              Text('$itemCount صنف', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+               Expanded(child: Text(tr('اختر الميزان للترحيل'))),
+              Text(tr('{itemCount} صنف', {'itemCount': itemCount}), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
             ]),
             content: SizedBox(
               width: 500,
@@ -197,7 +197,7 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
                                       ),
                                       if (!scale.isActive) ...[
                                         const SizedBox(width: 8),
-                                        const Text('(غير نشط)', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                         Text(tr('(غير نشط)'), style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
                                       ],
                                     ]),
                                     Text(conn, style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontFamily: AppTypography.mono)),
@@ -214,11 +214,11 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
               FilledButton.icon(
                 onPressed: selected != null ? () => Navigator.pop(ctx, selected) : null,
                 icon: const Icon(PhosphorIconsBold.upload, size: 16),
-                label: Text('ترحيل ${selected != null ? "إلى \"${selected!.name}\"" : ""}'),
+                label: Text(tr('ترحيل {p0}', {'p0': selected != null ? "إلى \"${selected!.name}\"" : ""})),
                 style: FilledButton.styleFrom(backgroundColor: Colors.teal),
               ),
             ],
@@ -237,13 +237,13 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
           title: Row(children: [
             const Icon(PhosphorIconsBold.warningCircle, color: AppColors.error, size: 24),
             const SizedBox(width: 8),
-            Expanded(child: Text('فشل الترحيل إلى "$scaleName"')),
+            Expanded(child: Text(tr('فشل الترحيل إلى "{scaleName}"', {'scaleName': scaleName}))),
           ]),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('إجمالي: ${result.total} | نجاح: ${result.success} | فشل: ${result.failed}'),
+              Text(tr('إجمالي: {p0} | نجاح: {p1} | فشل: {p2}', {'p0': result.total, 'p1': result.success, 'p2': result.failed})),
               if (result.errors.isNotEmpty) ...[
                 const Divider(),
                 SizedBox(
@@ -254,10 +254,10 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
                 ),
               ],
               const Divider(),
-              const Text('تأكد من: الميزان مشغّل — IP/COM صحيح — الماركة مطابقة', style: TextStyle(fontSize: 12)),
+               Text(tr('تأكد من: الميزان مشغّل — IP/COM صحيح — الماركة مطابقة'), style: const TextStyle(fontSize: 12)),
             ],
           ),
-          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق'))],
+          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إغلاق')))],
         ),
       ),
     );

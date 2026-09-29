@@ -13,12 +13,12 @@ Widget buildLoyaltyManageAddButton({required VoidCallback onPressed}) {
   return PermissionGuard(
     permission: PermissionCodes.loyaltyManage,
     allowManagerOverride: true,
-    actionName: 'إضافة برنامج ولاء',
+    actionName: tr('إضافة برنامج ولاء'),
     onGranted: onPressed,
     child: ElevatedButton.icon(
       onPressed: onPressed,
       icon: const Icon(PhosphorIconsBold.plus, size: 18),
-      label: const Text('إضافة برنامج'),
+      label:  Text(tr('إضافة برنامج')),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
       ),
@@ -42,9 +42,9 @@ class _ProgramsTab extends StatelessWidget {
             children: [
               const Icon(PhosphorIconsBold.trophy, color: AppColors.primary),
               const SizedBox(width: 8),
-              const Text(
-                'برامج الولاء',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+               Text(
+                tr('برامج الولاء'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               buildLoyaltyManageAddButton(
@@ -78,7 +78,7 @@ class _ProgramsTab extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'لا توجد برامج ولاء',
+                        tr('لا توجد برامج ولاء'),
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey.shade600,
@@ -86,7 +86,7 @@ class _ProgramsTab extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'أنشئ برنامج ولاء لمكافأة عملائك بالنقاط',
+                        tr('أنشئ برنامج ولاء لمكافأة عملائك بالنقاط'),
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey.shade500,
@@ -118,13 +118,13 @@ class _ProgramsTab extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text(
-                        '${p.pointsPerUnit} نقطة/وحدة • استبدال: ${p.redemptionRate} • أقل: ${p.minRedeemPoints}',
+                        tr('{p0} نقطة/وحدة • استبدال: {p1} • أقل: {p2}', {'p0': p.pointsPerUnit, 'p1': p.redemptionRate, 'p2': p.minRedeemPoints}),
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Chip(
-                            label: Text(p.isActive ? 'نشط' : 'معطل'),
+                            label: Text(p.isActive ? tr('نشط') : tr('معطل')),
                             backgroundColor: p.isActive
                                 ? Colors.green.shade50
                                 : Colors.grey.shade200,
@@ -132,12 +132,12 @@ class _ProgramsTab extends StatelessWidget {
                           PermissionGuard(
                             permission: PermissionCodes.loyaltyManage,
                             allowManagerOverride: true,
-                            actionName: 'تعديل برنامج ولاء',
+                            actionName: tr('تعديل برنامج ولاء'),
                             onGranted: () =>
                                 _showProgramDialog(context, repo, existing: p),
                             child: IconButton(
                               icon: const Icon(PhosphorIconsBold.pencilSimple),
-                              tooltip: 'تعديل',
+                              tooltip: tr('تعديل'),
                               onPressed: () => _showProgramDialog(
                                   context, repo,
                                   existing: p),
@@ -146,14 +146,14 @@ class _ProgramsTab extends StatelessWidget {
                           PermissionGuard(
                             permission: PermissionCodes.loyaltyManage,
                             allowManagerOverride: true,
-                            actionName: 'حذف برنامج ولاء',
+                            actionName: tr('حذف برنامج ولاء'),
                             onGranted: () =>
                                 _confirmDeleteProgram(context, repo, p),
                             child: IconButton(
                               icon: const Icon(PhosphorIconsBold.trash,
                                 color: AppColors.error,
                               ),
-                              tooltip: 'حذف',
+                              tooltip: tr('حذف'),
                               onPressed: () =>
                                   _confirmDeleteProgram(context, repo, p),
                             ),
@@ -181,7 +181,7 @@ class _ProgramsTab extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('حذف البرنامج'),
+          title:  Text(tr('حذف البرنامج')),
           content: Text(
             'هل أنت متأكد من حذف برنامج "${program.name}"؟\n'
             'سيتم حذف جميع النقاط والحركات المرتبطة.',
@@ -189,7 +189,7 @@ class _ProgramsTab extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: saving ? null : () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: saving
@@ -200,7 +200,7 @@ class _ProgramsTab extends StatelessWidget {
                         await repo.deleteLoyaltyProgram(program.id);
                         if (ctx.mounted) Navigator.pop(ctx);
                         if (context.mounted) {
-                          AppToast.show(context, 'تم حذف البرنامج');
+                          AppToast.show(context, tr('تم حذف البرنامج'));
                         }
                       } finally {
                         if (ctx.mounted) setDialogState(() => saving = false);
@@ -216,7 +216,7 @@ class _ProgramsTab extends StatelessWidget {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('حذف'),
+                  :  Text(tr('حذف')),
             ),
           ],
         ),
@@ -247,7 +247,7 @@ class _ProgramsTab extends StatelessWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
           title: Text(
-            existing != null ? 'تعديل البرنامج' : 'إضافة برنامج ولاء',
+            existing != null ? tr('تعديل البرنامج') : tr('إضافة برنامج ولاء'),
           ),
           content: SizedBox(
             width: 400,
@@ -256,43 +256,43 @@ class _ProgramsTab extends StatelessWidget {
               children: [
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'اسم البرنامج',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('اسم البرنامج'),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: ppuCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'نقاط لكل وحدة عملة',
-                    helperText: 'مثال: 1 = نقطة واحدة لكل 1 عملة',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('نقاط لكل وحدة عملة'),
+                    helperText: tr('مثال: 1 = نقطة واحدة لكل 1 عملة'),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: rrCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'قيمة استبدال النقطة',
-                    helperText: 'مثال: 0.1 = كل نقطة تساوي 0.1 عملة',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('قيمة استبدال النقطة'),
+                    helperText: tr('مثال: 0.1 = كل نقطة تساوي 0.1 عملة'),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: minCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'أقل عدد نقاط للاستبدال',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('أقل عدد نقاط للاستبدال'),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 SwitchListTile(
-                  title: const Text('نشط'),
-                  subtitle: const Text('البرنامج يكسب نقاط عند البيع'),
+                  title:  Text(tr('نشط')),
+                  subtitle:  Text(tr('البرنامج يكسب نقاط عند البيع')),
                   value: isActive,
                   onChanged: (v) => setState(() => isActive = v),
                 ),
@@ -302,7 +302,7 @@ class _ProgramsTab extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: saving ? null : () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: saving
@@ -328,8 +328,8 @@ class _ProgramsTab extends StatelessWidget {
                           AppToast.show(
                             context,
                             existing != null
-                                ? 'تم تحديث البرنامج'
-                                : 'تم إضافة البرنامج',
+                                ? tr('تم تحديث البرنامج')
+                                : tr('تم إضافة البرنامج'),
                           );
                         }
                       } finally {
@@ -348,7 +348,7 @@ class _ProgramsTab extends StatelessWidget {
                         color: Colors.white,
                       ),
                     )
-                  : Text(existing != null ? 'تحديث' : 'إضافة'),
+                  : Text(existing != null ? tr('تحديث') : tr('إضافة')),
             ),
           ],
         ),

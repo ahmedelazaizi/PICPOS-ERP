@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ «سند صرف» — تصميمُ المالك `(11)`.
 //
 // ═══ ⚠️ مسارُ المال **منقولٌ** من الحوار لا مُعادُ كتابته ═══
@@ -150,9 +151,9 @@ class _PaymentVoucherPicposScreenState
       final numbers = await _drawNumbers(v);
       final allCheckNumbers = numbers.join(', ');
       var description =
-          v.notes.isEmpty ? 'دفع لمورد' : v.notes;
+          v.notes.isEmpty ? tr('دفع لمورد') : v.notes;
       if (v.method == 'check') {
-        description += ' | شيك رقم: $allCheckNumbers';
+        description += tr(' | شيك رقم: {allCheckNumbers}', {'allCheckNumbers': allCheckNumbers});
       }
 
       // Spec 135 BUG-C — فرعُ المشغِّل لا فرعُ الخزنة.
@@ -206,7 +207,7 @@ userId: ref.read(authProvider).user?.id,
       final user = ref.read(authProvider).user;
       await ref.read(activityLogRepositoryProvider).logActivity(
             userId: user?.id,
-            userName: user?.displayName ?? 'مجهول',
+            userName: user?.displayName ?? tr('مجهول'),
             action: 'payment',
             entityType: 'payment',
             description: 'سند صرف ${v.method} بمبلغ '
@@ -215,7 +216,7 @@ userId: ref.read(authProvider).user?.id,
           );
 
       if (!mounted) return;
-      _toast('تم حفظ سند الصرف', ToastType.success);
+      _toast(tr('تم حفظ سند الصرف'), ToastType.success);
       _finish();
     } catch (e) {
       // 🔴 **وما سُحب من الدفتر يُقال.** الفشلُ بعد السحب يترك أرقاماً
@@ -226,7 +227,7 @@ userId: ref.read(authProvider).user?.id,
           ? ''
           : ' — وقد سُحبت من الدفتر الأرقامُ ${_drawn.join('، ')} ولم '
               'تُكتَب على شيك. صحّح «التالي» من شاشة دفتر الشيكات إن لزم.';
-      _toast('خطأ في الحفظ: $e$burnt', ToastType.error);
+      _toast(tr('خطأ في الحفظ: {e}{burnt}', {'e': e, 'burnt': burnt}), ToastType.error);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -279,7 +280,7 @@ userId: ref.read(authProvider).user?.id,
       final dueDate =
           c.dueDate ?? DateTime.now().add(const Duration(days: 30));
       final bank = c.bank.isEmpty ? null : c.bank;
-      const notes = 'ترحيل تلقائي من سند صرف';
+      final notes = tr('ترحيل تلقائي من سند صرف');
 
       await ClientWriteInterceptor.createCommercialPaper(
         paperNumber: number,
@@ -336,7 +337,7 @@ userId: ref.read(authProvider).user?.id,
           paymentType: 'payment',
           partyId: v.partyId,
           userId: ref.read(authProvider).user?.id,
-          notes: 'توزيع سند الصرف',
+          notes: tr('توزيع سند الصرف'),
           allocations: [
             for (final a in v.allocations)
               (

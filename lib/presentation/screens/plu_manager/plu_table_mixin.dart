@@ -22,9 +22,9 @@ mixin _PluTableMixin on ConsumerState<PluManagerScreen> {
               color: AppColors.textMuted.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'لا توجد نتائج',
-              style: TextStyle(fontSize: 16, color: AppColors.textMuted),
+             Text(
+              tr('لا توجد نتائج'),
+              style: const TextStyle(fontSize: 16, color: AppColors.textMuted),
             ),
           ],
         ),
@@ -45,15 +45,15 @@ mixin _PluTableMixin on ConsumerState<PluManagerScreen> {
               color: AppColors.primary.withValues(alpha: 0.05),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             ),
-            child: const Row(
+            child:  Row(
               children: [
-                SizedBox(width: 50, child: Text('#', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                Expanded(flex: 3, child: Text('اسم المنتج', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                SizedBox(width: 100, child: Text('الكود', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                SizedBox(width: 80, child: Text('السعر', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                SizedBox(width: 60, child: Center(child: Text('وزن', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)))),
-                SizedBox(width: 130, child: Text('رقم PLU', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                SizedBox(width: 80, child: Center(child: Text('إجراءات', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)))),
+                const SizedBox(width: 50, child: Text('#', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                Expanded(flex: 3, child: Text(tr('اسم المنتج'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                SizedBox(width: 100, child: Text(tr('الكود'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                SizedBox(width: 80, child: Text(tr('السعر'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                SizedBox(width: 60, child: Center(child: Text(tr('وزن'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)))),
+                SizedBox(width: 130, child: Text(tr('رقم PLU'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                SizedBox(width: 80, child: Center(child: Text(tr('إجراءات'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)))),
               ],
             ),
           ),
@@ -72,7 +72,7 @@ mixin _PluTableMixin on ConsumerState<PluManagerScreen> {
             ),
             child: Row(
               children: [
-                Text('إجمالي: ${products.length} صنف', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                Text(tr('إجمالي: {p0} صنف', {'p0': products.length}), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
                 const SizedBox(width: 16),
                 Text('مُعيّن PLU: ${products.where((p) => p.scalePluNumber != null).length}', style: const TextStyle(fontSize: 12, color: AppColors.success)),
               ],
@@ -131,7 +131,7 @@ mixin _PluTableMixin on ConsumerState<PluManagerScreen> {
             child: TextField(
               controller: controller,
               decoration: InputDecoration(
-                hintText: 'أدخل PLU',
+                hintText: tr('أدخل PLU'),
                 isDense: true,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -153,7 +153,7 @@ mixin _PluTableMixin on ConsumerState<PluManagerScreen> {
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   onPressed: () => _savePlu(product, controller.text),
-                  tooltip: 'حفظ PLU',
+                  tooltip: tr('حفظ PLU'),
                   color: AppColors.primary,
                 ),
                 IconButton(
@@ -161,7 +161,7 @@ mixin _PluTableMixin on ConsumerState<PluManagerScreen> {
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   onPressed: () => _clearPlu(product),
-                  tooltip: 'حذف PLU',
+                  tooltip: tr('حذف PLU'),
                   color: AppColors.error,
                 ),
               ],

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,11 +47,11 @@ class _QuickAddProductDialogState
     final price = double.tryParse(_priceController.text) ?? 0;
 
     if (name.isEmpty) {
-      AppToast.show(context, 'يرجى إدخال اسم الصنف', type: ToastType.warning);
+      AppToast.show(context, tr('يرجى إدخال اسم الصنف'), type: ToastType.warning);
       return;
     }
     if (price <= 0) {
-      AppToast.show(context, 'يرجى إدخال سعر صحيح', type: ToastType.warning);
+      AppToast.show(context, tr('يرجى إدخال سعر صحيح'), type: ToastType.warning);
       return;
     }
 
@@ -98,7 +99,7 @@ class _QuickAddProductDialogState
       if (mounted) {
         AppToast.show(
           context,
-          '✅ تم إضافة "$name" بنجاح',
+          tr('✅ تم إضافة "{name}" بنجاح', {'name': name}),
           type: ToastType.success,
         );
         Navigator.pop(context, id);
@@ -106,7 +107,7 @@ class _QuickAddProductDialogState
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -118,11 +119,11 @@ class _QuickAddProductDialogState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.plusCircle, color: AppColors.success),
-            SizedBox(width: 8),
-            Expanded(child: Text('إضافة صنف جديد سريعة')),
+            const Icon(PhosphorIconsBold.plusCircle, color: AppColors.success),
+            const SizedBox(width: 8),
+            Expanded(child: Text(tr('إضافة صنف جديد سريعة'))),
           ],
         ),
         content: SizedBox(
@@ -135,7 +136,7 @@ class _QuickAddProductDialogState
                 readOnly: true,
                 controller: TextEditingController(text: widget.barcode),
                 decoration: InputDecoration(
-                  labelText: 'الباركود',
+                  labelText: tr('الباركود'),
                   prefixIcon: const Icon(PhosphorIconsBold.barcode),
                   border: const OutlineInputBorder(),
                   fillColor: Colors.grey.shade100,
@@ -148,10 +149,10 @@ class _QuickAddProductDialogState
               TextField(
                 controller: _nameController,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'اسم الصنف *',
-                  prefixIcon: Icon(PhosphorIconsBold.tag),
-                  border: OutlineInputBorder(),
+                decoration:  InputDecoration(
+                  labelText: tr('اسم الصنف *'),
+                  prefixIcon: const Icon(PhosphorIconsBold.tag),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -164,10 +165,10 @@ class _QuickAddProductDialogState
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                 ],
-                decoration: const InputDecoration(
-                  labelText: 'سعر البيع *',
-                  prefixIcon: Icon(PhosphorIconsBold.currencyDollar),
-                  border: OutlineInputBorder(),
+                decoration:  InputDecoration(
+                  labelText: tr('سعر البيع *'),
+                  prefixIcon: const Icon(PhosphorIconsBold.currencyDollar),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -177,15 +178,15 @@ class _QuickAddProductDialogState
                 data: (categories) => DropdownButtonFormField<int?>(
                   initialValue: _selectedCategoryId,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'التصنيف (اختياري)',
-                    prefixIcon: Icon(PhosphorIconsBold.folders),
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('التصنيف (اختياري)'),
+                    prefixIcon: const Icon(PhosphorIconsBold.folders),
+                    border: const OutlineInputBorder(),
                   ),
                   items: [
-                    const DropdownMenuItem(
+                     DropdownMenuItem(
                       value: null,
-                      child: Text('بدون تصنيف'),
+                      child: Text(tr('بدون تصنيف')),
                     ),
                     ...categories.map(
                       (c) => DropdownMenuItem(
@@ -198,7 +199,7 @@ class _QuickAddProductDialogState
                       setState(() => _selectedCategoryId = val),
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const Text('خطأ في تحميل التصنيفات'),
+                error: (_, _) =>  Text(tr('خطأ في تحميل التصنيفات')),
               ),
             ],
           ),
@@ -206,7 +207,7 @@ class _QuickAddProductDialogState
         actions: [
           TextButton(
             onPressed: _isSaving ? null : () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton.icon(
             onPressed: _isSaving ? null : _save,
@@ -217,7 +218,7 @@ class _QuickAddProductDialogState
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(PhosphorIconsBold.floppyDisk),
-            label: const Text('حفظ وإضافة للسلة'),
+            label:  Text(tr('حفظ وإضافة للسلة')),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
               foregroundColor: Colors.white,

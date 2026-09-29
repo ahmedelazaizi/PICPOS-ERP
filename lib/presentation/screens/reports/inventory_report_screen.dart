@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -85,9 +86,9 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
@@ -95,7 +96,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
       _loadData();
       try {
         final user = ref.read(authProvider).user;
-        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? 'مجهول', 'تقرير المخزون');
+        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('تقرير المخزون'));
       } catch (_) {}
     });
     _searchController.addListener(_filterProducts);
@@ -251,7 +252,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
       return Directionality(
         textDirection: ui.TextDirection.rtl,
         child: Scaffold(
-          body: Center(child: Text('تعذر تحديد صلاحيات الفرع: ${scopeAsync.error}')),
+          body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
         ),
       );
     }
@@ -260,20 +261,20 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
 
     return reportScaffold(
       context: context,
-      title: 'تقرير قيمة المخزون الحالية',
-      subtitle: 'أرصدةُ المخازن وقيمتُها بالتكلفة',
+      title: tr('تقرير قيمة المخزون الحالية'),
+      subtitle: tr('أرصدةُ المخازن وقيمتُها بالتكلفة'),
       icon: PhosphorIconsBold.package,
       actions: [
             IconButton(
               onPressed: _loadData,
               icon: const Icon(PhosphorIconsBold.arrowsClockwise),
-              tooltip: 'تحديث البيانات',
+              tooltip: tr('تحديث البيانات'),
             ),
             buildReportExportAction(onExport: _exportToExcel),
             IconButton(
               onPressed: _printReport,
               icon: const Icon(PhosphorIconsBold.printer),
-              tooltip: 'طباعة/PDF',
+              tooltip: tr('طباعة/PDF'),
             ),
           ],
         body: _isLoading
@@ -291,7 +292,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
                         children: [
                           Expanded(
                             child: ReportKpiCard(
-                              title: 'قيمة المخزون (سعر التكلفة)',
+                              title: tr('قيمة المخزون (سعر التكلفة)'),
                               value:
                                   '${_currencyFormat.format(_analytics!.totalCostValue)} ${AppConstants.currencySymbolEn}',
                               icon: PhosphorIconsBold.calculator,
@@ -301,24 +302,24 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: ReportKpiCard(
-                              title: 'قيمة المخزون (سعر البيع)',
+                              title: tr('قيمة المخزون (سعر البيع)'),
                               value:
                                   '${_currencyFormat.format(_analytics!.totalSaleValue)} ${AppConstants.currencySymbolEn}',
                               icon: PhosphorIconsBold.money,
                               color: AppColors.success,
                               subtitle:
-                                  'الربح المتوقع: ${_currencyFormat.format(_analytics!.potentialProfit)}',
+                                  tr('الربح المتوقع: {p0}', {'p0': _currencyFormat.format(_analytics!.potentialProfit)}),
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: ReportKpiCard(
-                              title: 'تنبيهات نقص الكمية',
+                              title: tr('تنبيهات نقص الكمية'),
                               value: _analytics!.lowStockCount.toString(),
                               icon: PhosphorIconsBold.warningCircle,
                               color: AppColors.error,
                               subtitle:
-                                  'إجمالي الأصناف: ${NumberUtils.formatQuantity(_analytics!.itemsCount)}',
+                                  tr('إجمالي الأصناف: {p0}', {'p0': NumberUtils.formatQuantity(_analytics!.itemsCount)}),
                             ),
                           ),
                         ],
@@ -340,7 +341,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'جرد الأصناف والقيم',
+                          tr('جرد الأصناف والقيم'),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -382,8 +383,8 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
                             value: _categories
                                 .where((c) => c.id == _selectedCategoryId)
                                 .firstOrNull,
-                            hint: 'كل التصنيفات',
-                            searchHint: 'ابحث عن تصنيف...',
+                            hint: tr('كل التصنيفات'),
+                            searchHint: tr('ابحث عن تصنيف...'),
                             labelBuilder: (c) => c.name,
                             onChanged: (c) {
                               setState(() => _selectedCategoryId = c?.id);
@@ -397,7 +398,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
                           child: TextField(
                             controller: _searchController,
                             decoration: InputDecoration(
-                              hintText: 'ابحث عن صنف أو كود...',
+                              hintText: tr('ابحث عن صنف أو كود...'),
                               prefixIcon: const Icon(
                                 PhosphorIconsBold.magnifyingGlass,
                               ),
@@ -421,16 +422,16 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
                       child: SizedBox(
                         width: double.infinity,
                         child: DataTable(
-                          columns: const [
-                            DataColumn(label: Text('كود الصنف')),
-                            DataColumn(label: Text('اسم الصنف')),
-                            DataColumn(label: Text('التصنيف')),
-                            DataColumn(label: Text('الوحدة')),
-                            DataColumn(label: Text('الكمية الحالية')),
-                            DataColumn(label: Text('سعر التكلفة')),
-                            DataColumn(label: Text('إجمالي التكلفة')),
-                            DataColumn(label: Text('سعر البيع')),
-                            DataColumn(label: Text('إجمالي البيع')),
+                          columns:  [
+                            DataColumn(label: Text(tr('كود الصنف'))),
+                            DataColumn(label: Text(tr('اسم الصنف'))),
+                            DataColumn(label: Text(tr('التصنيف'))),
+                            DataColumn(label: Text(tr('الوحدة'))),
+                            DataColumn(label: Text(tr('الكمية الحالية'))),
+                            DataColumn(label: Text(tr('سعر التكلفة'))),
+                            DataColumn(label: Text(tr('إجمالي التكلفة'))),
+                            DataColumn(label: Text(tr('سعر البيع'))),
+                            DataColumn(label: Text(tr('إجمالي البيع'))),
                           ],
                           rows: _filteredProducts.map((p) {
                             // Spec 151 Track-3: use the scoped stock map when a
@@ -445,7 +446,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
                             final category = _categories
                                 .where((c) => c.id == p.categoryId)
                                 .firstOrNull;
-                            final categoryName = category?.name ?? 'غير مصنف';
+                            final categoryName = category?.name ?? tr('غير مصنف');
 
                             return DataRow(
                               cells: [
@@ -459,7 +460,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
                                 ),
                                 DataCell(
                                   Text(
-                                    _unitMap[p.id] ?? 'قطعة',
+                                    _unitMap[p.id] ?? tr('قطعة'),
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: AppColors.textSecondary,
@@ -549,11 +550,11 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: ReportKpiCard(
-              title: 'مخزون راكد (كمية = 0)',
+              title: tr('مخزون راكد (كمية = 0)'),
               value: deadStock.toString(),
               icon: PhosphorIconsBold.archive,
               color: const Color(0xFF6B7280),
-              subtitle: 'أصناف بدون حركة',
+              subtitle: tr('أصناف بدون حركة'),
             ),
           ),
         ],
@@ -592,7 +593,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
                           fontSize: 14)),
                 ),
                 const SizedBox(width: 8),
-                Text('$count صنف',
+                Text(tr('{count} صنف', {'count': count}),
                     style: GoogleFonts.cairo(
                         fontWeight: FontWeight.w700, fontSize: 13)),
               ],
@@ -600,7 +601,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
             const SizedBox(height: 6),
             Text('${_currencyFormat.format(value)} ${AppConstants.currencySymbolEn}',
                 style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
-            Text('${pct.toStringAsFixed(1)}% من إجمالي القيمة',
+            Text(tr('{p0}% من إجمالي القيمة', {'p0': pct.toStringAsFixed(1)}),
                 style: GoogleFonts.cairo(fontSize: 10, color: color)),
           ],
         ),
@@ -633,7 +634,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
                   color: Color(0xFFF59E0B), size: 22),
               const SizedBox(width: 10),
               Text(
-                '${expiryTracked.length} صنف يتم تتبع صلاحيته — راجع دفعات المنتج لمواعيد الانتهاء',
+                tr('{p0} صنف يتم تتبع صلاحيته — راجع دفعات المنتج لمواعيد الانتهاء', {'p0': expiryTracked.length}),
                 style: GoogleFonts.cairo(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -653,16 +654,16 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-      title: 'تقرير المخزون',
+      title: tr('تقرير المخزون'),
       headers: [
-        'كود الصنف',
-        'اسم الصنف',
-        'الوحدة',
-        'الكمية',
-        'سعر التكلفة',
-        'إجمالي التكلفة',
-        'سعر البيع',
-        'إجمالي البيع',
+        tr('كود الصنف'),
+        tr('اسم الصنف'),
+        tr('الوحدة'),
+        tr('الكمية'),
+        tr('سعر التكلفة'),
+        tr('إجمالي التكلفة'),
+        tr('سعر البيع'),
+        tr('إجمالي البيع'),
       ],
       rows: _filteredProducts
           .map<List<dynamic>>(
@@ -675,7 +676,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
               return [
                 p?.code ?? '-',
                 p?.name ?? '-',
-                _unitMap[p?.id ?? 0] ?? 'قطعة',
+                _unitMap[p?.id ?? 0] ?? tr('قطعة'),
                 stock,
                 p?.costPrice ?? 0.0,
                 (p?.costPrice ?? 0.0) * stock,
@@ -690,7 +691,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
     if (path != null && mounted) {
       AppToast.show(
         context,
-        'تم تصدير التقرير بنجاح: $path',
+        tr('تم تصدير التقرير بنجاح: {path}', {'path': path}),
         type: ToastType.success,
       );
     }
@@ -698,7 +699,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
 
   Future<void> _printReport() async {
     if (_filteredProducts.isEmpty) {
-      AppToast.show(context, 'لا توجد بيانات للطباعة', type: ToastType.error);
+      AppToast.show(context, tr('لا توجد بيانات للطباعة'), type: ToastType.error);
       return;
     }
 
@@ -719,11 +720,11 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
 
       await InvoiceGenerator.printInventoryReport(
         products: products,
-        companyName: receiptSettings['companyName'] as String? ?? 'الشركة',
+        companyName: receiptSettings['companyName'] as String? ?? tr('الشركة'),
       );
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }

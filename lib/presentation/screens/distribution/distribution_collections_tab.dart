@@ -28,9 +28,9 @@ class _CollectionsTabState extends State<_CollectionsTab> {
             children: [
               const Icon(PhosphorIconsBold.money, color: AppColors.primary),
               const SizedBox(width: 8),
-              const Text(
-                'التحصيلات',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+               Text(
+                tr('التحصيلات'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               TextButton.icon(
@@ -61,12 +61,12 @@ class _CollectionsTabState extends State<_CollectionsTab> {
               PermissionGuard(
                 permission: PermissionCodes.distributionManage,
                 allowManagerOverride: true,
-                actionName: 'إضافة تحصيل',
+                actionName: tr('إضافة تحصيل'),
                 onGranted: () => _showAddCollectionDialog(context, ctrl),
                 child: ElevatedButton.icon(
                   onPressed: () => _showAddCollectionDialog(context, ctrl),
                   icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                  label: const Text('إضافة تحصيل'),
+                  label:  Text(tr('إضافة تحصيل')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                   ),
@@ -86,7 +86,7 @@ class _CollectionsTabState extends State<_CollectionsTab> {
               if (cols.isEmpty) {
                 return Center(
                   child: Text(
-                    'لا توجد تحصيلات',
+                    tr('لا توجد تحصيلات'),
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
                 );
@@ -110,7 +110,7 @@ class _CollectionsTabState extends State<_CollectionsTab> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'إجمالي التحصيلات: ${total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbol}',
+                          tr('إجمالي التحصيلات: {p0} {p1}', {'p0': total.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbol}),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -142,7 +142,7 @@ class _CollectionsTabState extends State<_CollectionsTab> {
                             title: FutureBuilder<Party?>(
                               future: ctrl.getPartyById(c.customerId),
                               builder: (ctx, snap) => Text(
-                                snap.data?.name ?? 'عميل #${c.customerId}',
+                                snap.data?.name ?? tr('عميل #{p0}', {'p0': c.customerId}),
                               ),
                             ),
                             subtitle: Text(
@@ -186,7 +186,7 @@ class _CollectionsTabState extends State<_CollectionsTab> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('إضافة تحصيل'),
+          title:  Text(tr('إضافة تحصيل')),
           content: SizedBox(
             width: 400,
             child: SingleChildScrollView(
@@ -199,9 +199,9 @@ class _CollectionsTabState extends State<_CollectionsTab> {
                       final employees = snap.data ?? [];
                       return DropdownButtonFormField<int>(
                         initialValue: selectedRepId,
-                        decoration: const InputDecoration(
-                          labelText: 'المندوب',
-                          border: OutlineInputBorder(),
+                        decoration:  InputDecoration(
+                          labelText: tr('المندوب'),
+                          border: const OutlineInputBorder(),
                         ),
                         items: employees
                             .map((e) => DropdownMenuItem(
@@ -221,9 +221,9 @@ class _CollectionsTabState extends State<_CollectionsTab> {
                       final customers = snap.data ?? [];
                       return DropdownButtonFormField<int>(
                         initialValue: selectedCustomerId,
-                        decoration: const InputDecoration(
-                          labelText: 'العميل',
-                          border: OutlineInputBorder(),
+                        decoration:  InputDecoration(
+                          labelText: tr('العميل'),
+                          border: const OutlineInputBorder(),
                         ),
                         items: customers
                             .map((c) => DropdownMenuItem(
@@ -241,23 +241,23 @@ class _CollectionsTabState extends State<_CollectionsTab> {
                     controller: amountCtrl,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: 'المبلغ (${AppConstants.currencySymbol})',
+                      labelText: tr('المبلغ ({p0})', {'p0': AppConstants.currencySymbol}),
                       border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: paymentMethod,
-                    decoration: const InputDecoration(
-                      labelText: 'طريقة الدفع',
-                      border: OutlineInputBorder(),
+                    decoration:  InputDecoration(
+                      labelText: tr('طريقة الدفع'),
+                      border: const OutlineInputBorder(),
                     ),
-                    items: const [
-                      DropdownMenuItem(value: 'cash', child: Text('نقدي')),
-                      DropdownMenuItem(value: 'check', child: Text('شيك')),
+                    items:  [
+                      DropdownMenuItem(value: 'cash', child: Text(tr('نقدي'))),
+                      DropdownMenuItem(value: 'check', child: Text(tr('شيك'))),
                       DropdownMenuItem(
                         value: 'transfer',
-                        child: Text('تحويل بنكي'),
+                        child: Text(tr('تحويل بنكي')),
                       ),
                     ],
                     onChanged: (v) =>
@@ -266,17 +266,17 @@ class _CollectionsTabState extends State<_CollectionsTab> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: refCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'رقم المرجع (اختياري)',
-                      border: OutlineInputBorder(),
+                    decoration:  InputDecoration(
+                      labelText: tr('رقم المرجع (اختياري)'),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: notesCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'ملاحظات (اختياري)',
-                      border: OutlineInputBorder(),
+                    decoration:  InputDecoration(
+                      labelText: tr('ملاحظات (اختياري)'),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ],
@@ -286,7 +286,7 @@ class _CollectionsTabState extends State<_CollectionsTab> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: saving
@@ -316,7 +316,7 @@ class _CollectionsTabState extends State<_CollectionsTab> {
                         );
                         if (ctx.mounted) Navigator.pop(ctx);
                         if (context.mounted) {
-                          AppToast.show(context, 'تم تسجيل التحصيل');
+                          AppToast.show(context, tr('تم تسجيل التحصيل'));
                         }
                       } finally {
                         if (ctx.mounted) setDialogState(() => saving = false);
@@ -324,7 +324,7 @@ class _CollectionsTabState extends State<_CollectionsTab> {
                     },
               style:
                   ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-              child: const Text('إضافة'),
+              child:  Text(tr('إضافة')),
             ),
           ],
         ),
@@ -333,9 +333,9 @@ class _CollectionsTabState extends State<_CollectionsTab> {
   }
 
   String _paymentName(String m) => switch (m) {
-    'cash' => 'نقدي',
-    'check' => 'شيك',
-    'transfer' => 'تحويل',
+    'cash' => tr('نقدي'),
+    'check' => tr('شيك'),
+    'transfer' => tr('تحويل'),
     _ => m,
   };
 }

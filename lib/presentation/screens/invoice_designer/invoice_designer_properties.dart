@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -115,10 +116,10 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
         width: 300,
         padding: const EdgeInsets.all(16),
         color: Colors.grey.shade50,
-        child: const Center(
+        child:  Center(
           child: Text(
-            'اختر عنصراً للتعديل',
-            style: TextStyle(color: Colors.grey),
+            tr('اختر عنصراً للتعديل'),
+            style: const TextStyle(color: Colors.grey),
           ),
         ),
       );
@@ -147,7 +148,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  isTable ? 'خصائص الجدول' : 'خصائص العنصر',
+                  isTable ? tr('خصائص الجدول') : tr('خصائص العنصر'),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -161,7 +162,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                       color: AppColors.error,
                     ),
                     onPressed: widget.onDelete,
-                    tooltip: 'حذف العنصر',
+                    tooltip: tr('حذف العنصر'),
                   ),
               ],
             ),
@@ -174,7 +175,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                     widget.selectedElement!.elementType != 'variable' &&
                     widget.selectedElement!.elementType != 'line' &&
                     widget.selectedElement!.elementType != 'rectangle')
-                  _buildTextField('المحتوى', _contentController, (val) {
+                  _buildTextField(tr('المحتوى'), _contentController, (val) {
                     widget.onUpdate(
                       widget.selectedElement!.copyWith(content: Value(val)),
                     );
@@ -183,7 +184,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                 if (!isTable &&
                     widget.selectedElement!.elementType == 'variable')
                   _buildGroupedVariableDropdown(
-                    'المتغير',
+                    tr('المتغير'),
                     widget.selectedElement!.content ?? 'invoice_number',
                     (val) {
                       if (val != null) {
@@ -195,9 +196,9 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                   ),
 
                 const Divider(),
-                const Text(
-                  'الأبعاد والموضع',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                 Text(
+                  tr('الأبعاد والموضع'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -235,7 +236,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                 Row(
                   children: [
                     Expanded(
-                      child: _buildNumberField('العرض', _widthController, (
+                      child: _buildNumberField(tr('العرض'), _widthController, (
                         val,
                       ) {
                         if (isTable) {
@@ -254,7 +255,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                         widget.selectedElement!.elementType != 'line')
                       Expanded(
                         child: _buildNumberField(
-                          'الارتفاع',
+                          tr('الارتفاع'),
                           _heightController,
                           (val) {
                             widget.onUpdate(
@@ -267,13 +268,13 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                 ),
 
                 const Divider(),
-                const Text(
-                  'تنسيق الخط',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                 Text(
+                  tr('تنسيق الخط'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
 
-                _buildNumberField('حجم الخط', _fontSizeController, (val) {
+                _buildNumberField(tr('حجم الخط'), _fontSizeController, (val) {
                   if (isTable) {
                     widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(fontSize: val),
@@ -312,13 +313,13 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                   ),
                   // ═══ Section assignment ═══
                   const Divider(),
-                  const Text(
-                    'القسم',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                   Text(
+                    tr('القسم'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
                   _buildDropdownField(
-                    'قسم العنصر',
+                    tr('قسم العنصر'),
                     widget.selectedElement!.section,
                     ['header', 'body', 'details', 'footer'],
                     (val) {
@@ -330,18 +331,18 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                     },
                   ),
                   // ═══ Formula field ═══
-                  const Text(
-                    'الصيغة الرياضية',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                   Text(
+                    tr('الصيغة الرياضية'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'مثال: [subtotal] - [discount]',
-                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                   Text(
+                    tr('مثال: [subtotal] - [discount]'),
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                   const SizedBox(height: 4),
                   _buildTextField(
-                    'الصيغة',
+                    tr('الصيغة'),
                     TextEditingController(text: widget.selectedElement!.formula),
                     (val) {
                       widget.onUpdate(
@@ -356,114 +357,114 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                 // Table Specific Settings - Column Visibility
                 if (isTable) ...[
                   const Divider(),
-                  const Text(
-                    'أعمدة الجدول',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                   Text(
+                    tr('أعمدة الجدول'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'اختر الأعمدة التي تظهر في الفاتورة:',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                   Text(
+                    tr('اختر الأعمدة التي تظهر في الفاتورة:'),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   const SizedBox(height: 8),
                   _buildTableColumnToggle(
-                    'م (ترقيم)',
+                    tr('م (ترقيم)'),
                     widget.tableSettings!.showIndex,
                     (val) => widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(showIndex: val),
                     ),
                   ),
                   _buildTableColumnToggle(
-                    'كود المنتج',
+                    tr('كود المنتج'),
                     widget.tableSettings!.showProductCode,
                     (val) => widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(showProductCode: val),
                     ),
                   ),
                   _buildTableColumnToggle(
-                    'اسم المنتج',
+                    tr('اسم المنتج'),
                     widget.tableSettings!.showProductName,
                     (val) => widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(showProductName: val),
                     ),
                   ),
                   _buildTableColumnToggle(
-                    'الكمية',
+                    tr('الكمية'),
                     widget.tableSettings!.showQuantity,
                     (val) => widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(showQuantity: val),
                     ),
                   ),
                   _buildTableColumnToggle(
-                    'سعر الوحدة',
+                    tr('سعر الوحدة'),
                     widget.tableSettings!.showUnitPrice,
                     (val) => widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(showUnitPrice: val),
                     ),
                   ),
                   _buildTableColumnToggle(
-                    'الخصم',
+                    tr('الخصم'),
                     widget.tableSettings!.showDiscount,
                     (val) => widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(showDiscount: val),
                     ),
                   ),
                   _buildTableColumnToggle(
-                    'الضريبة',
+                    tr('الضريبة'),
                     widget.tableSettings!.showTax,
                     (val) => widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(showTax: val),
                     ),
                   ),
                   _buildTableColumnToggle(
-                    'الإجمالي',
+                    tr('الإجمالي'),
                     widget.tableSettings!.showTotal,
                     (val) => widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(showTotal: val),
                     ),
                   ),
                   _buildTableColumnToggle(
-                    'الوحدة',
+                    tr('الوحدة'),
                     widget.tableSettings!.showUnit,
                     (val) => widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(showUnit: val),
                     ),
                   ),
                   _buildTableColumnToggle(
-                    'الباركود',
+                    tr('الباركود'),
                     widget.tableSettings!.showBarcode,
                     (val) => widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(showBarcode: val),
                     ),
                   ),
                   _buildTableColumnToggle(
-                    'ملاحظات الصنف',
+                    tr('ملاحظات الصنف'),
                     widget.tableSettings!.showNotes,
                     (val) => widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(showNotes: val),
                     ),
                   ),
                   const Divider(),
-                  const Text(
-                    'عرض الأعمدة',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                   Text(
+                    tr('عرض الأعمدة'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'تحكم في عرض كل عمود (نسبة):',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                   Text(
+                    tr('تحكم في عرض كل عمود (نسبة):'),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   const SizedBox(height: 8),
                   ..._buildColumnWidthSliders(),
 
                   const Divider(),
-                  const Text(
-                    'تنسيق الجدول',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                   Text(
+                    tr('تنسيق الجدول'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   _TableNumberField(
-                    label: 'ارتفاع الصف',
+                    label: tr('ارتفاع الصف'),
                     value: widget.tableSettings!.rowHeight,
                     onChanged: (val) => widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(rowHeight: val),
@@ -471,7 +472,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                   ),
                   const SizedBox(height: 8),
                   _TableNumberField(
-                    label: 'حجم خط العنوان',
+                    label: tr('حجم خط العنوان'),
                     value: widget.tableSettings!.headerFontSize,
                     onChanged: (val) => widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(headerFontSize: val),
@@ -479,13 +480,13 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                   ),
                   const SizedBox(height: 4),
                   _buildTableColumnToggle(
-                    'عنوان الجدول بولد (عريض)',
+                    tr('عنوان الجدول بولد (عريض)'),
                     _getJsonBool('_headerBold', true),
                     (val) => _setJsonBool('_headerBold', val),
                   ),
                   const SizedBox(height: 8),
                   _TableNumberField(
-                    label: 'حجم خط البيانات',
+                    label: tr('حجم خط البيانات'),
                     value: widget.tableSettings!.fontSize,
                     onChanged: (val) => widget.onUpdateTable!(
                       widget.tableSettings!.copyWith(fontSize: val),
@@ -493,7 +494,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                   ),
                   const SizedBox(height: 4),
                   _buildTableColumnToggle(
-                    'بيانات الجدول بولد (عريض)',
+                    tr('بيانات الجدول بولد (عريض)'),
                     _getJsonBool('_bodyBold', false),
                     (val) => _setJsonBool('_bodyBold', val),
                   ),
@@ -502,31 +503,31 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                   Row(
                     children: [
                       const SizedBox(width: 4),
-                      const Expanded(
+                       Expanded(
                         child: Text(
-                          'تنسيق الأرقام',
-                          style: TextStyle(fontSize: 13),
+                          tr('تنسيق الأرقام'),
+                          style: const TextStyle(fontSize: 13),
                         ),
                       ),
                       DropdownButton<int>(
                         value: _getDecimalPlaces(),
                         isDense: true,
-                        items: const [
+                        items:  [
                           DropdownMenuItem(
                             value: 0,
-                            child: Text('عدد صحيح (100)'),
+                            child: Text(tr('عدد صحيح (100)')),
                           ),
                           DropdownMenuItem(
                             value: 1,
-                            child: Text('خانة (100.0)'),
+                            child: Text(tr('خانة (100.0)')),
                           ),
                           DropdownMenuItem(
                             value: 2,
-                            child: Text('خانتين (100.00)'),
+                            child: Text(tr('خانتين (100.00)')),
                           ),
                           DropdownMenuItem(
                             value: 3,
-                            child: Text('3 خانات (100.000)'),
+                            child: Text(tr('3 خانات (100.000)')),
                           ),
                         ],
                         onChanged: (val) {
@@ -709,18 +710,18 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
   // Column classification constants
   static const _numericColumns = {'quantity', 'price', 'discount', 'tax', 'total'};
   static const _textColumns = {'product', 'code', 'notes', 'barcode', 'unit'};
-  static const _columnLabels = {
-    'product': 'اسم الصنف',
-    'code': 'كود الصنف',
-    'index': 'الترتيب',
-    'quantity': 'الكمية',
-    'price': 'السعر',
-    'discount': 'الخصم',
-    'tax': 'الضريبة',
-    'total': 'الإجمالي',
-    'unit': 'الوحدة',
-    'barcode': 'الباركود',
-    'notes': 'الملاحظات',
+  static Map<String, String> get _columnLabels => {
+    'product': tr('اسم الصنف'),
+    'code': tr('كود الصنف'),
+    'index': tr('الترتيب'),
+    'quantity': tr('الكمية'),
+    'price': tr('السعر'),
+    'discount': tr('الخصم'),
+    'tax': tr('الضريبة'),
+    'total': tr('الإجمالي'),
+    'unit': tr('الوحدة'),
+    'barcode': tr('الباركود'),
+    'notes': tr('الملاحظات'),
   };
 
   /// Parse columnWidths from JSON, returning defaults if null.
@@ -941,7 +942,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
     return ExpansionTile(
       title: Text(columnLabel, style: const TextStyle(fontSize: 13)),
       subtitle: Text(
-        'العرض: ${currentWidth.toStringAsFixed(1)}',
+        tr('العرض: {p0}', {'p0': currentWidth.toStringAsFixed(1)}),
         style: const TextStyle(fontSize: 11, color: Colors.grey),
       ),
       tilePadding: const EdgeInsets.symmetric(horizontal: 4),
@@ -951,9 +952,9 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
         // Width slider (existing)
         Row(
           children: [
-            const SizedBox(
+             SizedBox(
               width: 50,
-              child: Text('العرض:', style: TextStyle(fontSize: 12)),
+              child: Text(tr('العرض:'), style: const TextStyle(fontSize: 12)),
             ),
             Expanded(
               child: Slider(
@@ -981,9 +982,9 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             children: [
-              const SizedBox(
+               SizedBox(
                 width: 70,
-                child: Text('حجم الخط:', style: TextStyle(fontSize: 12)),
+                child: Text(tr('حجم الخط:'), style: const TextStyle(fontSize: 12)),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -993,7 +994,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                   isExpanded: true,
                   items: [8, 9, 10, 11, 12, 13, 14, 16].map((size) {
                     final label = size == globalFontSize
-                        ? '$size (افتراضي)'
+                        ? tr('{size} (افتراضي)', {'size': size})
                         : '$size';
                     return DropdownMenuItem<int>(
                       value: size,
@@ -1016,9 +1017,9 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
               children: [
-                const SizedBox(
+                 SizedBox(
                   width: 110,
-                  child: Text('المنازل العشرية:', style: TextStyle(fontSize: 12)),
+                  child: Text(tr('المنازل العشرية:'), style: const TextStyle(fontSize: 12)),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -1046,7 +1047,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
         // Text wrap checkbox (only for text columns)
         if (isText)
           CheckboxListTile(
-            title: const Text('التفاف النص', style: TextStyle(fontSize: 12)),
+            title:  Text(tr('التفاف النص'), style: const TextStyle(fontSize: 12)),
             value: wrap,
             dense: true,
             contentPadding: EdgeInsets.zero,
@@ -1066,64 +1067,64 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
     String value,
     Function(String?) onChanged,
   ) {
-    const variableGroups = <String, List<MapEntry<String, String>>>{
+    final variableGroups = <String, List<MapEntry<String, String>>>{
       '🏢 بيانات الشركة': [
-        MapEntry('company_name', 'اسم الشركة'),
-        MapEntry('company_address', 'عنوان الشركة'),
-        MapEntry('company_phone', 'هاتف الشركة'),
-        MapEntry('company_tax_number', 'الرقم الضريبي'),
+        MapEntry('company_name', tr('اسم الشركة')),
+        MapEntry('company_address', tr('عنوان الشركة')),
+        MapEntry('company_phone', tr('هاتف الشركة')),
+        MapEntry('company_tax_number', tr('الرقم الضريبي')),
       ],
       '📄 بيانات الفاتورة': [
-        MapEntry('invoice_number', 'رقم الفاتورة'),
-        MapEntry('order_number', 'رقم الطلب'),
-        MapEntry('date', 'التاريخ'),
-        MapEntry('time', 'الوقت'),
-        MapEntry('invoice_type_label', 'نوع الفاتورة'),
+        MapEntry('invoice_number', tr('رقم الفاتورة')),
+        MapEntry('order_number', tr('رقم الطلب')),
+        MapEntry('date', tr('التاريخ')),
+        MapEntry('time', tr('الوقت')),
+        MapEntry('invoice_type_label', tr('نوع الفاتورة')),
       ],
       '👤 العميل / المورد': [
-        MapEntry('customer_name', 'اسم العميل'),
-        MapEntry('customer_phone', 'هاتف العميل'),
-        MapEntry('customer_address', 'عنوان العميل'),
-        MapEntry('adhoc_customer_name', 'اسم العميل النصي'),
-        MapEntry('adhoc_customer_phone', 'هاتف العميل النصي'),
-        MapEntry('supplier_name', 'اسم المورد'),
+        MapEntry('customer_name', tr('اسم العميل')),
+        MapEntry('customer_phone', tr('هاتف العميل')),
+        MapEntry('customer_address', tr('عنوان العميل')),
+        MapEntry('adhoc_customer_name', tr('اسم العميل النصي')),
+        MapEntry('adhoc_customer_phone', tr('هاتف العميل النصي')),
+        MapEntry('supplier_name', tr('اسم المورد')),
       ],
       '💰 المبالغ': [
-        MapEntry('subtotal', 'المجموع الفرعي'),
-        MapEntry('discount', 'الخصم'),
-        MapEntry('tax', 'الضريبة'),
-        MapEntry('total_amount', 'الإجمالي'),
-        MapEntry('net_amount', 'الصافي'),
-        MapEntry('paid', 'المدفوع'),
-        MapEntry('remaining', 'المتبقي'),
-        MapEntry('cash_amount', 'المدفوع نقداً'),
-        MapEntry('bank_amount', 'مدفوع بنكي'),
-        MapEntry('click_amount', 'مدفوع كليك'),
+        MapEntry('subtotal', tr('المجموع الفرعي')),
+        MapEntry('discount', tr('الخصم')),
+        MapEntry('tax', tr('الضريبة')),
+        MapEntry('total_amount', tr('الإجمالي')),
+        MapEntry('net_amount', tr('الصافي')),
+        MapEntry('paid', tr('المدفوع')),
+        MapEntry('remaining', tr('المتبقي')),
+        MapEntry('cash_amount', tr('المدفوع نقداً')),
+        MapEntry('bank_amount', tr('مدفوع بنكي')),
+        MapEntry('click_amount', tr('مدفوع كليك')),
       ],
       '🚚 التوصيل': [
-        MapEntry('delivery_fee', 'رسوم التوصيل'),
-        MapEntry('delivery_type', 'نوع التوصيل'),
-        MapEntry('delivery_address', 'عنوان التوصيل'),
+        MapEntry('delivery_fee', tr('رسوم التوصيل')),
+        MapEntry('delivery_type', tr('نوع التوصيل')),
+        MapEntry('delivery_address', tr('عنوان التوصيل')),
       ],
       '🏪 البيع': [
-        MapEntry('sale_type', 'نوع البيع'),
-        MapEntry('payment_method', 'طريقة الدفع'),
-        MapEntry('cashier_name', 'اسم الكاشير'),
-        MapEntry('warehouse_name', 'المخزن'),
-        MapEntry('branch_name', 'الفرع'),
+        MapEntry('sale_type', tr('نوع البيع')),
+        MapEntry('payment_method', tr('طريقة الدفع')),
+        MapEntry('cashier_name', tr('اسم الكاشير')),
+        MapEntry('warehouse_name', tr('المخزن')),
+        MapEntry('branch_name', tr('الفرع')),
       ],
       '🍽️ المطعم': [
-        MapEntry('table_number', 'رقم الطاولة'),
-        MapEntry('waiter_name', 'اسم الويتر'),
-        MapEntry('kitchen_notes', 'ملاحظات المطبخ'),
+        MapEntry('table_number', tr('رقم الطاولة')),
+        MapEntry('waiter_name', tr('اسم الويتر')),
+        MapEntry('kitchen_notes', tr('ملاحظات المطبخ')),
       ],
       '⏱️ الوردية': [
-        MapEntry('shift_number', 'رقم الوردية'),
-        MapEntry('shift_date', 'تاريخ الوردية'),
+        MapEntry('shift_number', tr('رقم الوردية')),
+        MapEntry('shift_date', tr('تاريخ الوردية')),
       ],
       '📝 أخرى': [
-        MapEntry('notes', 'الملاحظات'),
-        MapEntry('footer_text', 'نص التذييل'),
+        MapEntry('notes', tr('الملاحظات')),
+        MapEntry('footer_text', tr('نص التذييل')),
       ],
     };
 

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 // ═══════════════════════════════════════════════════════════════════════════
 // تقريرُ الطاولات — الإيرادُ ودورانُ الطاولة ونصيبُ الضيف
@@ -111,10 +112,10 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
               content:
-                  Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+                  Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
@@ -125,8 +126,8 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
         final user = ref.read(authProvider).user;
         ref.read(activityLoggerProvider).logReportView(
               user?.id ?? 0,
-              user?.displayName ?? 'مجهول',
-              'تقرير الطاولات',
+              user?.displayName ?? tr('مجهول'),
+              tr('تقرير الطاولات'),
             );
       } catch (_) {}
     });
@@ -212,7 +213,7 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
         textDirection: ui.TextDirection.rtl,
         child: Scaffold(
           body: Center(
-              child: Text('تعذر تحديد صلاحيات الفرع: ${scopeAsync.error}')),
+              child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
         ),
       );
     }
@@ -221,8 +222,8 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
 
     return reportScaffold(
       context: context,
-      title: 'تقرير الطاولات',
-      subtitle: 'الإيرادُ ودورانُ الطاولة لكلّ قسم',
+      title: tr('تقرير الطاولات'),
+      subtitle: tr('الإيرادُ ودورانُ الطاولة لكلّ قسم'),
       icon: PhosphorIconsBold.armchair,
       actions: [
             buildReportExportAction(
@@ -298,7 +299,7 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
                           _kpiRow(),
                           const SizedBox(height: 24),
                           Text(
-                            'أداء الطاولات',
+                            tr('أداء الطاولات'),
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -324,15 +325,15 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
         child: DropdownButtonFormField<int?>(
           initialValue: _selectedSectionId,
           isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'القسم',
+          decoration:  InputDecoration(
+            labelText: tr('القسم'),
             isDense: true,
-            prefixIcon: Icon(PhosphorIconsBold.squaresFour, size: 16),
+            prefixIcon: const Icon(PhosphorIconsBold.squaresFour, size: 16),
             contentPadding:
-                EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           items: [
-            const DropdownMenuItem<int?>(value: null, child: Text('الكل')),
+             DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
             ..._sections.map((s) => DropdownMenuItem<int?>(
                   value: s.id,
                   child: Text(s.name, overflow: TextOverflow.ellipsis),
@@ -360,14 +361,14 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
         initialValue:
             visible.any((t) => t.id == _selectedTableId) ? _selectedTableId : null,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'الطاولة',
+        decoration:  InputDecoration(
+          labelText: tr('الطاولة'),
           isDense: true,
-          prefixIcon: Icon(PhosphorIconsBold.table, size: 16),
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          prefixIcon: const Icon(PhosphorIconsBold.table, size: 16),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         ),
         items: [
-          const DropdownMenuItem<int?>(value: null, child: Text('الكل')),
+           DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
           ...visible.map((t) => DropdownMenuItem<int?>(
                 value: t.id,
                 child: Text(t.name, overflow: TextOverflow.ellipsis),
@@ -386,15 +387,15 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
         child: DropdownButtonFormField<int?>(
           initialValue: _selectedUserId,
           isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'الكاشير / النادل',
+          decoration:  InputDecoration(
+            labelText: tr('الكاشير / النادل'),
             isDense: true,
-            prefixIcon: Icon(PhosphorIconsBold.user, size: 16),
+            prefixIcon: const Icon(PhosphorIconsBold.user, size: 16),
             contentPadding:
-                EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           items: [
-            const DropdownMenuItem<int?>(value: null, child: Text('الكل')),
+             DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
             ..._allUsers.map((u) => DropdownMenuItem<int?>(
                   value: u.user.id,
                   child: Text(u.user.displayName,
@@ -462,47 +463,47 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
             // ⚠️ الوعاءُ في الاسم لا في حاشيةٍ: هذا `total` بعد الخصم وقبل
             // الضريبة. من يقارنه بتقرير المبيعات (وهو بالضريبة) يرى فرقاً،
             // وعنوانٌ عارٍ «الإيراد» يجعل الفرقَ بلا تفسير.
-            title: 'الإيراد (قبل الضريبة)',
+            title: tr('الإيراد (قبل الضريبة)'),
             value: '${_currencyFormat.format(_totalRevenue)} $currency',
             icon: PhosphorIconsBold.chartLineUp,
             color: AppColors.primary,
             subtitle:
-                'صافٍ من خصمٍ قدرُه ${_currencyFormat.format(_totalDiscount)}',
+                tr('صافٍ من خصمٍ قدرُه {p0}', {'p0': _currencyFormat.format(_totalDiscount)}),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: ReportKpiCard(
-            title: 'عدد الطلبات',
+            title: tr('عدد الطلبات'),
             value: '$_totalOrders',
             icon: PhosphorIconsBold.receipt,
             color: AppColors.info,
-            subtitle: 'المدموجُ محسوبٌ على هدفه لا مرّتين',
+            subtitle: tr('المدموجُ محسوبٌ على هدفه لا مرّتين'),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: ReportKpiCard(
-            title: 'عدد الضيوف',
+            title: tr('عدد الضيوف'),
             value: '$_totalGuests',
             icon: PhosphorIconsBold.users,
             color: AppColors.success,
             subtitle: _totalGuests > 0
                 ? 'نصيب الضيف: '
                     '${_currencyFormat.format(_totalRevenue / _totalGuests)}'
-                : 'لا ضيوف في هذا المدى',
+                : tr('لا ضيوف في هذا المدى'),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: ReportKpiCard(
-            title: 'متوسط مدة الجلوس',
+            title: tr('متوسط مدة الجلوس'),
             value: _avgTurnMinutes == null
                 ? '—'
-                : '${_avgTurnMinutes!.toStringAsFixed(0)} د',
+                : tr('{p0} د', {'p0': _avgTurnMinutes!.toStringAsFixed(0)}),
             icon: PhosphorIconsBold.clock,
             color: const Color(0xFF7C3AED),
-            subtitle: 'للطلبات المغلقة وحدَها',
+            subtitle: tr('للطلبات المغلقة وحدَها'),
           ),
         ),
       ],
@@ -513,14 +514,14 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 48),
         alignment: Alignment.center,
-        child: const Column(
+        child:  Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(PhosphorIconsBold.table, size: 44, color: AppColors.textMuted),
-            SizedBox(height: 12),
+            const Icon(PhosphorIconsBold.table, size: 44, color: AppColors.textMuted),
+            const SizedBox(height: 12),
             Text(
-              'لا توجد طلباتُ طاولاتٍ في هذا المدى بهذه الفلاتر',
-              style: TextStyle(color: AppColors.textMuted),
+              tr('لا توجد طلباتُ طاولاتٍ في هذا المدى بهذه الفلاتر'),
+              style: const TextStyle(color: AppColors.textMuted),
             ),
           ],
         ),
@@ -545,14 +546,14 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
             // الجدول تماماً في الوضع الفاتح، ويُقرأ في الداكن وحدَه.
             // بلاغٌ ميدانيّ 2026-08-21.
             columnSpacing: 24,
-            columns: const [
-              DataColumn(label: Text('الطاولة')),
-              DataColumn(label: Text('عدد الطلبات'), numeric: true),
-              DataColumn(label: Text('الضيوف'), numeric: true),
-              DataColumn(label: Text('الإيراد (قبل الضريبة)'), numeric: true),
-              DataColumn(label: Text('الخصم'), numeric: true),
-              DataColumn(label: Text('نصيب الضيف'), numeric: true),
-              DataColumn(label: Text('متوسط الجلوس (د)'), numeric: true),
+            columns:  [
+              DataColumn(label: Text(tr('الطاولة'))),
+              DataColumn(label: Text(tr('عدد الطلبات')), numeric: true),
+              DataColumn(label: Text(tr('الضيوف')), numeric: true),
+              DataColumn(label: Text(tr('الإيراد (قبل الضريبة)')), numeric: true),
+              DataColumn(label: Text(tr('الخصم')), numeric: true),
+              DataColumn(label: Text(tr('نصيب الضيف')), numeric: true),
+              DataColumn(label: Text(tr('متوسط الجلوس (د)')), numeric: true),
             ],
             rows: _rows
                 .map(
@@ -596,7 +597,7 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
 
   Future<void> _exportToExcel() async {
     if (_rows.isEmpty) {
-      AppToast.show(context, 'لا توجد بيانات للتصدير', type: ToastType.error);
+      AppToast.show(context, tr('لا توجد بيانات للتصدير'), type: ToastType.error);
       return;
     }
     final service = ref.read(excelServiceProvider);
@@ -606,15 +607,15 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-      title: 'تقرير الطاولات',
+      title: tr('تقرير الطاولات'),
       headers: [
-        'الطاولة',
-        'عدد الطلبات',
-        'الضيوف',
-        'الإيراد (قبل الضريبة)',
-        'الخصم',
-        'نصيب الضيف',
-        'متوسط الجلوس (دقيقة)',
+        tr('الطاولة'),
+        tr('عدد الطلبات'),
+        tr('الضيوف'),
+        tr('الإيراد (قبل الضريبة)'),
+        tr('الخصم'),
+        tr('نصيب الضيف'),
+        tr('متوسط الجلوس (دقيقة)'),
       ],
       // نفسُ `_rows` التي يعرضها الجدولُ حرفياً — الملفُّ يقول ما تقوله
       // الشاشة، وإلّا جمع المحاسبُ عموداً لا يطابق ما رآه.
@@ -635,14 +636,14 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
           .toList(),
     );
     if (path != null && mounted) {
-      AppToast.show(context, 'تم تصدير التقرير بنجاح: $path',
+      AppToast.show(context, tr('تم تصدير التقرير بنجاح: {path}', {'path': path}),
           type: ToastType.success);
       try {
         final user = ref.read(authProvider).user;
         ref.read(activityLoggerProvider).logReportExport(
               user?.id ?? 0,
-              user?.displayName ?? 'مجهول',
-              'تقرير الطاولات',
+              user?.displayName ?? tr('مجهول'),
+              tr('تقرير الطاولات'),
               'Excel',
             );
       } catch (_) {}

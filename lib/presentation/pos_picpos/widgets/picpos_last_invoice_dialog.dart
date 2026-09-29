@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../../../core/constants/payment_methods.dart';
@@ -51,8 +52,8 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
         ),
       ),
       error: (e, _) => AlertDialog(
-        title: Text('الفاتورة السابقة', style: PicPosText.v(context, 16)),
-        content: Text('تعذّر التحميل: $e', style: PicPosText.v(context, 13)),
+        title: Text(tr('الفاتورة السابقة'), style: PicPosText.v(context, 16)),
+        content: Text(tr('تعذّر التحميل: {e}', {'e': e}), style: PicPosText.v(context, 13)),
         actions: [_closeButton(context)],
       ),
       data: (invoice) {
@@ -68,7 +69,7 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
               const Icon(PhosphorIconsBold.receipt, color: AppColors.info),
               const SizedBox(width: 8),
               Expanded(
-                child: Text('فاتورة #${invoice.invoiceNumber}',
+                child: Text(tr('فاتورة #{p0}', {'p0': invoice.invoiceNumber}),
                     style: PicPosText.v(context, 16)),
               ),
             ],
@@ -106,7 +107,7 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
                         const Icon(PhosphorIconsBold.hash,
                             size: 14, color: AppColors.textMuted),
                         const SizedBox(width: 4),
-                        Text('طلب ${invoice.orderNumber}',
+                        Text(tr('طلب {p0}', {'p0': invoice.orderNumber}),
                             style: PicPosText.v(context, 12)),
                       ],
                     ],
@@ -128,7 +129,7 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
               child: ElevatedButton.icon(
                 onPressed: () => _reprint(context, ref, invoice.id),
                 icon: const Icon(PhosphorIconsBold.printer, size: 18),
-                label: const Text('إعادة الطباعة'),
+                label:  Text(tr('إعادة الطباعة')),
               ),
             ),
           ],
@@ -142,11 +143,11 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
           children: [
             const Icon(PhosphorIconsBold.receiptX, color: AppColors.textMuted),
             const SizedBox(width: 8),
-            Text('الفاتورة السابقة', style: PicPosText.v(context, 16)),
+            Text(tr('الفاتورة السابقة'), style: PicPosText.v(context, 16)),
           ],
         ),
         content: Text(
-          'لا توجد فاتورة سابقة في هذه الوردية',
+          tr('لا توجد فاتورة سابقة في هذه الوردية'),
           style: PicPosText.l(context, 14),
         ),
         actions: [_closeButton(context)],
@@ -154,7 +155,7 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
 
   Widget _closeButton(BuildContext context) => TextButton(
         onPressed: () => Navigator.pop(context),
-        child: Text('إغلاق', style: PicPosText.l(context, 14)),
+        child: Text(tr('إغلاق'), style: PicPosText.l(context, 14)),
       );
 
   Future<void> _reprint(
@@ -171,7 +172,7 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
         showPosToast(
           context,
           ref,
-          printed ? 'تمت إعادة الطباعة' : 'تعذّرت الطباعة — تأكد من الطابعة',
+          printed ? tr('تمت إعادة الطباعة') : tr('تعذّرت الطباعة — تأكد من الطابعة'),
           type: printed
               ? PosNotificationType.success
               : PosNotificationType.warning,
@@ -179,7 +180,7 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        showPosToast(context, ref, 'تعذّرت الطباعة: $e',
+        showPosToast(context, ref, tr('تعذّرت الطباعة: {e}', {'e': e}),
             type: PosNotificationType.error);
       }
     }

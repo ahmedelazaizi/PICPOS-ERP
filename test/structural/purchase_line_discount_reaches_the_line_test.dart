@@ -78,13 +78,13 @@ void main() {
     // التركيبُ نفسُه في كلّ موضعٍ على حدة.
     final code = _code(_linesPath);
 
-    expect(code.contains("cell('الخصم'"), isTrue,
+    expect(code.contains("cell(tr('الخصم')"), isTrue,
         reason: 'عنوانُ العمود اختفى');
     expect(code.contains("ValueKey('discount_"), isTrue,
         reason: 'حقلُ الخصم اختفى من الصفّ');
 
     expect(
-      RegExp(r"supportsLineDiscount\)\s*cell\('الخصم'").hasMatch(code),
+      RegExp(r"supportsLineDiscount\)\s*cell\(tr\('الخصم'\)").hasMatch(code),
       isTrue,
       reason: 'عنوانُ «الخصم» يُرسَم بلا بوّابة — يظهر في المبيعات فوق '
           'عمودٍ لا وجودَ له',

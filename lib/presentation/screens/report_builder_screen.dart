@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -66,7 +67,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
                       // Spec 057: back button — only when pushed onto navigator.
                       if (Navigator.canPop(context)) ...[
                         IconButton(
-                          tooltip: 'رجوع',
+                          tooltip: tr('رجوع'),
                           icon: const Icon(PhosphorIconsBold.caretRight,
                               size: 20),
                           onPressed: () => Navigator.pop(context),
@@ -83,7 +84,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
                       // زرٍّ بجانبه يفيض أفقياً بخطٍّ أعرضَ قليلاً أو بعد
                       // ظهور زرّ الرجوع.
                       Expanded(
-                        child: Text('التقارير المخصصة',
+                        child: Text(tr('التقارير المخصصة'),
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.bold)),
@@ -92,7 +93,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
                       FilledButton.icon(
                         onPressed: () => _showCreateReportDialog(repo),
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text('جديد'),
+                        label:  Text(tr('جديد')),
                         style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
                       ),
@@ -109,9 +110,9 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
                                     size: 48,
                                     color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
                                 const SizedBox(height: 12),
-                                Text('لا توجد تقارير مخصصة', style: theme.textTheme.bodyMedium),
+                                Text(tr('لا توجد تقارير مخصصة'), style: theme.textTheme.bodyMedium),
                                 const SizedBox(height: 8),
-                                Text('أنشئ تقريرك الأول',
+                                Text(tr('أنشئ تقريرك الأول'),
                                     style: theme.textTheme.bodySmall
                                         ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                               ]),
@@ -134,7 +135,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
                           size: 48,
                           color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
                       const SizedBox(height: 12),
-                      Text('اختر تقريرًا أو أنشئ واحدًا جديدًا', style: theme.textTheme.bodyLarge),
+                      Text(tr('اختر تقريرًا أو أنشئ واحدًا جديدًا'), style: theme.textTheme.bodyLarge),
                     ]),
                   )
                 : _buildResultsPanel(theme, repo),
@@ -167,12 +168,12 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
           }
         },
         itemBuilder: (ctx) => [
-          const PopupMenuItem(
+           PopupMenuItem(
             value: 'delete',
             child: Row(children: [
-              Icon(Icons.delete, size: 18, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('حذف', style: TextStyle(color: AppColors.error)),
+              const Icon(Icons.delete, size: 18, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('حذف'), style: const TextStyle(color: AppColors.error)),
             ]),
           ),
         ],
@@ -196,7 +197,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
               Text(report.name,
                   style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 2),
-              Text('الكيان: ${_entityLabel(report.sourceEntity)} | ${_results.length} سجل',
+              Text(tr('الكيان: {p0} | {p1} سجل', {'p0': _entityLabel(report.sourceEntity), 'p1': _results.length}),
                   style: theme.textTheme.bodySmall),
             ]),
             const Spacer(),
@@ -207,7 +208,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
                       width: 16, height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.play_arrow, size: 18),
-              label: Text(_running ? 'تشغيل...' : 'تشغيل التقرير'),
+              label: Text(_running ? tr('تشغيل...') : tr('تشغيل التقرير')),
             ),
           ]),
         ),
@@ -239,7 +240,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
                         size: 48,
                         color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
                     const SizedBox(height: 12),
-                    Text('اضغط "تشغيل التقرير" لعرض النتائج', style: theme.textTheme.bodyLarge),
+                    Text(tr('اضغط "تشغيل التقرير" لعرض النتائج'), style: theme.textTheme.bodyLarge),
                   ]),
                 )
               : _buildResultsTable(theme),
@@ -302,12 +303,12 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
       if (results.isEmpty && !scope.hasFullAccess) {
         AppToast.show(
             context,
-            'مفيش نتائج — بعض مصادر البيانات مش مدعومة للمستخدمين المحصورين بفرع',
+            tr('مفيش نتائج — بعض مصادر البيانات مش مدعومة للمستخدمين المحصورين بفرع'),
             type: ToastType.info);
       }
     } catch (e) {
       setState(() => _running = false);
-      if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -323,10 +324,10 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
         builder: (ctx, setDialogState) {
           final fields = repo.getAvailableFields(sourceEntity);
           return AlertDialog(
-            title: const Row(children: [
-              Icon(PhosphorIconsBold.plus, color: Colors.indigo),
-              SizedBox(width: 8),
-              Text('تقرير مخصص جديد'),
+            title:  Row(children: [
+              const Icon(PhosphorIconsBold.plus, color: Colors.indigo),
+              const SizedBox(width: 8),
+              Text(tr('تقرير مخصص جديد')),
             ]),
             content: SizedBox(
               width: 500,
@@ -334,20 +335,20 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(
-                      labelText: 'اسم التقرير', border: OutlineInputBorder()),
+                  decoration:  InputDecoration(
+                      labelText: tr('اسم التقرير'), border: const OutlineInputBorder()),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: sourceEntity,
-                  decoration: const InputDecoration(
-                      labelText: 'الكيان', border: OutlineInputBorder()),
-                  items: const [
-                    DropdownMenuItem(value: 'products', child: Text('الأصناف')),
-                    DropdownMenuItem(value: 'parties', child: Text('العملاء/الموردين')),
-                    DropdownMenuItem(value: 'sales_invoices', child: Text('فواتير المبيعات')),
-                    DropdownMenuItem(value: 'purchase_invoices', child: Text('فواتير المشتريات')),
-                    DropdownMenuItem(value: 'journal_entries', child: Text('قيود اليومية')),
+                  decoration:  InputDecoration(
+                      labelText: tr('الكيان'), border: const OutlineInputBorder()),
+                  items:  [
+                    DropdownMenuItem(value: 'products', child: Text(tr('الأصناف'))),
+                    DropdownMenuItem(value: 'parties', child: Text(tr('العملاء/الموردين'))),
+                    DropdownMenuItem(value: 'sales_invoices', child: Text(tr('فواتير المبيعات'))),
+                    DropdownMenuItem(value: 'purchase_invoices', child: Text(tr('فواتير المشتريات'))),
+                    DropdownMenuItem(value: 'journal_entries', child: Text(tr('قيود اليومية'))),
                   ],
                   onChanged: (v) {
                     if (v != null) {
@@ -369,10 +370,10 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
                     length: 2,
                     child: Column(children: [
                       TabBar(tabs: [
-                        const Tab(text: 'الأعمدة'),
+                         Tab(text: tr('الأعمدة')),
                         Tab(text: conditions.isEmpty
-                            ? 'الفلاتر'
-                            : 'الفلاتر (${conditions.length})'),
+                            ? tr('الفلاتر')
+                            : tr('الفلاتر ({p0})', {'p0': conditions.length})),
                       ]),
                       Expanded(
                         child: TabBarView(children: [
@@ -388,11 +389,11 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
               ]),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
               FilledButton(
                 onPressed: () async {
                   if (nameCtrl.text.isEmpty || selectedColumns.isEmpty) {
-                    AppToast.show(ctx, 'يرجى ملء الاسم واختيار أعمدة', type: ToastType.error);
+                    AppToast.show(ctx, tr('يرجى ملء الاسم واختيار أعمدة'), type: ToastType.error);
                     return;
                   }
                   // شرطٌ بلا قيمة يُرفَض هنا لا بعد الحفظ: المحرِّك يرفض
@@ -401,7 +402,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
                   final incomplete = conditions.indexWhere((c) => !c.isComplete);
                   if (incomplete >= 0) {
                     AppToast.show(ctx,
-                        'الشرط رقم ${incomplete + 1} ناقص — اختر حقلاً وقيمة',
+                        tr('الشرط رقم {p0} ناقص — اختر حقلاً وقيمة', {'p0': incomplete + 1}),
                         type: ToastType.error);
                     return;
                   }
@@ -415,7 +416,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
                   if (ctx.mounted) Navigator.pop(ctx);
                   _loadReports();
                 },
-                child: const Text('إنشاء'),
+                child:  Text(tr('إنشاء')),
               ),
             ],
           );
@@ -458,12 +459,12 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
     return Column(children: [
       Expanded(
         child: conditions.isEmpty
-            ? const Center(
+            ?  Center(
                 child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Text('بلا شروط — التقرير يشمل كل الصفوف',
+                  padding: const EdgeInsets.all(24),
+                  child: Text(tr('بلا شروط — التقرير يشمل كل الصفوف'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey)),
+                      style: const TextStyle(color: Colors.grey)),
                 ),
               )
             : ListView.builder(
@@ -476,7 +477,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
         alignment: AlignmentDirectional.centerStart,
         child: TextButton.icon(
           icon: const Icon(PhosphorIconsBold.plus, size: 16),
-          label: const Text('إضافة شرط'),
+          label:  Text(tr('إضافة شرط')),
           onPressed: fields.isEmpty
               ? null
               : () => setDialogState(() => conditions.add(
@@ -505,10 +506,10 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
             child: DropdownButtonFormField<String>(
               initialValue: c.field,
               isExpanded: true,
-              decoration: const InputDecoration(
-                  labelText: 'الحقل',
+              decoration:  InputDecoration(
+                  labelText: tr('الحقل'),
                   isDense: true,
-                  border: OutlineInputBorder()),
+                  border: const OutlineInputBorder()),
               items: fields
                   .map((f) => DropdownMenuItem(
                       value: f['key'],
@@ -530,10 +531,10 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
             child: DropdownButtonFormField<String>(
               initialValue: ops.any((o) => o['op'] == c.op) ? c.op : null,
               isExpanded: true,
-              decoration: const InputDecoration(
-                  labelText: 'العامل',
+              decoration:  InputDecoration(
+                  labelText: tr('العامل'),
                   isDense: true,
-                  border: OutlineInputBorder()),
+                  border: const OutlineInputBorder()),
               items: ops
                   .map((o) => DropdownMenuItem(
                       value: o['op'],
@@ -544,7 +545,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
             ),
           ),
           IconButton(
-            tooltip: 'حذف الشرط',
+            tooltip: tr('حذف الشرط'),
             icon: const Icon(PhosphorIconsBold.trash, size: 18, color: AppColors.error),
             onPressed: () => setDialogState(() => conditions.removeAt(index)),
           ),
@@ -566,7 +567,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
         return SwitchListTile(
           dense: true,
           contentPadding: EdgeInsets.zero,
-          title: Text(c.value == 'true' ? 'نعم' : 'لا'),
+          title: Text(c.value == 'true' ? tr('نعم') : tr('لا')),
           value: c.value == 'true',
           onChanged: (v) => setDialogState(
               () => conditions[index] = c.copyWith(value: '$v')),
@@ -576,7 +577,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
         return OutlinedButton.icon(
           icon: const Icon(PhosphorIconsBold.calendarBlank, size: 16),
           label: Text(picked == null
-              ? 'اختر التاريخ'
+              ? tr('اختر التاريخ')
               : DateFormat('yyyy-MM-dd').format(picked)),
           onPressed: () async {
             final d = await showDatePicker(
@@ -608,11 +609,11 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
   }
 
   String _entityLabel(String t) => {
-    'products': 'الأصناف',
-    'parties': 'العملاء/الموردين',
-    'sales_invoices': 'فواتير المبيعات',
-    'purchase_invoices': 'فواتير المشتريات',
-    'journal_entries': 'قيود اليومية',
+    'products': tr('الأصناف'),
+    'parties': tr('العملاء/الموردين'),
+    'sales_invoices': tr('فواتير المبيعات'),
+    'purchase_invoices': tr('فواتير المشتريات'),
+    'journal_entries': tr('قيود اليومية'),
   }[t] ?? t;
 
   IconData _entityIcon(String t) => {

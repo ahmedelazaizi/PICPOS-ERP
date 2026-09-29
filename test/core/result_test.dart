@@ -88,7 +88,7 @@ void main() {
     });
 
     test('InsufficientStockException should format message', () {
-      const exception = InsufficientStockException(
+      final exception = InsufficientStockException(
         productId: 1,
         available: 5,
         requested: 10,

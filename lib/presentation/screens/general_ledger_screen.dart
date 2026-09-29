@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:data_table_2/data_table_2.dart';
@@ -66,12 +67,12 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
                     children: [
                       const Icon(PhosphorIconsBold.book, color: Colors.white, size: 28),
                       const SizedBox(width: 12),
-                      Text('دفتر الأستاذ', style: GoogleFonts.cairo(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
+                      Text(tr('دفتر الأستاذ'), style: GoogleFonts.cairo(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
                       const Spacer(),
                       if (_ledgerData.isNotEmpty) ...[
                         IconButton(
                           icon: const Icon(PhosphorIconsBold.printer, color: Colors.white, size: 20),
-                          tooltip: 'طباعة PDF',
+                          tooltip: tr('طباعة PDF'),
                           onPressed: () => ReportPdfGenerator.printGeneralLedger(
                             accountName: _selectedAccountName ?? '',
                             data: _ledgerData,
@@ -81,11 +82,11 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
                         ),
                         IconButton(
                           icon: const Icon(PhosphorIconsBold.fileXls, color: Colors.white, size: 20),
-                          tooltip: 'تصدير Excel',
+                          tooltip: tr('تصدير Excel'),
                           onPressed: () => ExcelExportHelper.export(
                             context: context,
-                            title: 'دفتر الأستاذ - $_selectedAccountName',
-                            headers: ['التاريخ', 'رقم القيد', 'البيان', 'مدين', 'دائن', 'الرصيد'],
+                            title: tr('دفتر الأستاذ - {_selectedAccountName}', {'_selectedAccountName': _selectedAccountName}),
+                            headers: [tr('التاريخ'), tr('رقم القيد'), tr('البيان'), tr('مدين'), tr('دائن'), tr('الرصيد')],
                             rows: _ledgerData.map((r) => [
                               r['entry_date'],
                               r['entry_number'],
@@ -108,7 +109,7 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            '${_ledgerData.length} حركة',
+                            tr('{p0} حركة', {'p0': _ledgerData.length}),
                             style: const TextStyle(color: Colors.white70, fontSize: 13),
                           ),
                         ),
@@ -125,7 +126,7 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
                       // Account Picker
                       _buildFilterChip(
                         icon: PhosphorIconsBold.treeStructure,
-                        label: _selectedAccountName ?? 'اختر الحساب',
+                        label: _selectedAccountName ?? tr('اختر الحساب'),
                         isActive: _selectedAccountId != null,
                         onTap: () => _showAccountPicker(accountingRepo),
                       ),
@@ -143,8 +144,8 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
                           if (!snap.hasData || snap.data!.isEmpty) return const SizedBox.shrink();
                           final centers = snap.data!;
                           final name = _selectedCostCenterId != null
-                              ? centers.where((c) => c.id == _selectedCostCenterId).map((c) => c.name).firstOrNull ?? 'مركز التكلفة'
-                              : 'كل المراكز';
+                              ? centers.where((c) => c.id == _selectedCostCenterId).map((c) => c.name).firstOrNull ?? tr('مركز التكلفة')
+                              : tr('كل المراكز');
                           return _buildFilterChip(
                             icon: PhosphorIconsBold.target,
                             label: name,
@@ -161,8 +162,8 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
                             data: (branches) {
                               if (branches.isEmpty) return const SizedBox.shrink();
                               final name = _selectedBranchId != null
-                                  ? branches.where((b) => b.id == _selectedBranchId).map((b) => b.name).firstOrNull ?? 'الفرع'
-                                  : 'كل الفروع';
+                                  ? branches.where((b) => b.id == _selectedBranchId).map((b) => b.name).firstOrNull ?? tr('الفرع')
+                                  : tr('كل الفروع');
                               return _buildFilterChip(
                                 icon: PhosphorIconsBold.buildings,
                                 label: name,
@@ -185,7 +186,7 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
                         ),
                         onPressed: _selectedAccountId != null ? () => _loadLedger(accountingRepo) : null,
                         icon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
-                        label: const Text('عرض'),
+                        label:  Text(tr('عرض')),
                       ),
                     ],
                   ),
@@ -208,7 +209,7 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
                               Icon(PhosphorIconsBold.book, size: 64, color: Colors.grey.shade300),
                               const SizedBox(height: 12),
                               Text(
-                                _selectedAccountId == null ? 'اختر حساباً لعرض الحركات' : 'لا توجد حركات للفترة المحددة',
+                                _selectedAccountId == null ? tr('اختر حساباً لعرض الحركات') : tr('لا توجد حركات للفترة المحددة'),
                                 style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
                               ),
                             ],
@@ -264,13 +265,13 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
       margin: const EdgeInsets.all(16),
       child: Row(
         children: [
-          _summaryCard('رصيد أول المدة', openingBalance, PhosphorIconsBold.arrowFatLineRight, Colors.blue, isDark),
+          _summaryCard(tr('رصيد أول المدة'), openingBalance, PhosphorIconsBold.arrowFatLineRight, Colors.blue, isDark),
           const SizedBox(width: 12),
-          _summaryCard('إجمالي المدين', totalDebit, PhosphorIconsBold.arrowUp, Colors.green, isDark),
+          _summaryCard(tr('إجمالي المدين'), totalDebit, PhosphorIconsBold.arrowUp, Colors.green, isDark),
           const SizedBox(width: 12),
-          _summaryCard('إجمالي الدائن', totalCredit, PhosphorIconsBold.arrowDown, AppColors.error, isDark),
+          _summaryCard(tr('إجمالي الدائن'), totalCredit, PhosphorIconsBold.arrowDown, AppColors.error, isDark),
           const SizedBox(width: 12),
-          _summaryCard('الرصيد الختامي', closingBalance, PhosphorIconsBold.equals, Colors.deepPurple, isDark),
+          _summaryCard(tr('الرصيد الختامي'), closingBalance, PhosphorIconsBold.equals, Colors.deepPurple, isDark),
         ],
       ),
     );
@@ -338,16 +339,16 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
         dataRowHeight: 40,
         columnSpacing: 20,
         horizontalMargin: 12,
-        columns: const [
+        columns:  [
           // Cluster 025 / Issue 5 — narrow columns get fixedWidth so the
           // البيان (description) absorbs the remainder. Long entry
           // descriptions also get wrapped in Tooltip below.
-          DataColumn2(label: Text('التاريخ', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), fixedWidth: 100),
-          DataColumn2(label: Text('رقم القيد', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), fixedWidth: 100),
-          DataColumn2(label: Text('البيان', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), size: ColumnSize.L),
-          DataColumn2(label: Text('مدين', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), numeric: true, fixedWidth: 100),
-          DataColumn2(label: Text('دائن', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), numeric: true, fixedWidth: 100),
-          DataColumn2(label: Text('الرصيد', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), numeric: true, fixedWidth: 100),
+          DataColumn2(label: Text(tr('التاريخ'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), fixedWidth: 100),
+          DataColumn2(label: Text(tr('رقم القيد'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), fixedWidth: 100),
+          DataColumn2(label: Text(tr('البيان'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), size: ColumnSize.L),
+          DataColumn2(label: Text(tr('مدين'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), numeric: true, fixedWidth: 100),
+          DataColumn2(label: Text(tr('دائن'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), numeric: true, fixedWidth: 100),
+          DataColumn2(label: Text(tr('الرصيد'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), numeric: true, fixedWidth: 100),
         ],
         rows: filtered.map((row) {
             final isOpening = row['is_opening'] == true;
@@ -416,7 +417,7 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -467,7 +468,7 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
           builder: (ctx, setDialogState) => Directionality(
             textDirection: TextDirection.rtl,
             child: AlertDialog(
-              title: Text('اختر الحساب', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+              title: Text(tr('اختر الحساب'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
               content: SizedBox(
                 width: 420,
                 height: 400,
@@ -475,7 +476,7 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
                   children: [
                     TextField(
                       decoration: InputDecoration(
-                        hintText: 'بحث بالاسم أو الرمز...',
+                        hintText: tr('بحث بالاسم أو الرمز...'),
                         prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         isDense: true,
@@ -548,11 +549,11 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: SimpleDialog(
-          title: Text('مركز التكلفة', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+          title: Text(tr('مركز التكلفة'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           children: [
             SimpleDialogOption(
               onPressed: () { setState(() => _selectedCostCenterId = null); Navigator.pop(ctx); },
-              child: const Text('الكل (بدون فلتر)'),
+              child:  Text(tr('الكل (بدون فلتر)')),
             ),
             ...centers.map((c) => SimpleDialogOption(
               onPressed: () { setState(() => _selectedCostCenterId = c.id); Navigator.pop(ctx); },
@@ -570,11 +571,11 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: SimpleDialog(
-          title: Text('الفرع', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+          title: Text(tr('الفرع'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           children: [
             SimpleDialogOption(
               onPressed: () { setState(() => _selectedBranchId = null); Navigator.pop(ctx); },
-              child: const Text('الكل (بدون فلتر)'),
+              child:  Text(tr('الكل (بدون فلتر)')),
             ),
             ...branches.map((b) => SimpleDialogOption(
               onPressed: () { setState(() => _selectedBranchId = b.id); Navigator.pop(ctx); },
@@ -588,13 +589,13 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
 
   String _getAccountTypeLabel(String type) {
     switch (type) {
-      case 'asset': return 'أصول';
-      case 'contra_asset': return 'أصول مقابلة';
-      case 'liability': return 'خصوم';
-      case 'equity': return 'حقوق ملكية';
-      case 'revenue': return 'إيرادات';
-      case 'contra_revenue': return 'إيرادات مقابلة';
-      case 'expense': return 'مصروفات';
+      case 'asset': return tr('أصول');
+      case 'contra_asset': return tr('أصول مقابلة');
+      case 'liability': return tr('خصوم');
+      case 'equity': return tr('حقوق ملكية');
+      case 'revenue': return tr('إيرادات');
+      case 'contra_revenue': return tr('إيرادات مقابلة');
+      case 'expense': return tr('مصروفات');
       default: return type;
     }
   }

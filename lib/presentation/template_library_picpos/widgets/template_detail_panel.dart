@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // لوحةُ تفاصيل القالب — التعريفُ والمستنداتُ المربوطةُ والإجراءات.
 //
 // وكلُّ إجراءٍ هنا يتبع `BUTTON-CONTRACT.md` بحرفه، وأخصُّ ثلاثةً منها ليست
@@ -36,11 +37,11 @@ class TemplateDetailPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final c = card;
     if (c == null) {
-      return const PicPosContentCard(
+      return  PicPosContentCard(
         child: PicPosEmptyState(
           icon: PhosphorIconsBold.cursorClick,
-          title: 'اختر قالباً',
-          hint: 'تفاصيلُه ورابطاتُه وإجراءاتُه تظهر هنا',
+          title: tr('اختر قالباً'),
+          hint: tr('تفاصيلُه ورابطاتُه وإجراءاتُه تظهر هنا'),
         ),
       );
     }
@@ -54,28 +55,28 @@ class TemplateDetailPanel extends ConsumerWidget {
             icon: PhosphorIconsBold.fileText,
           ),
           const SizedBox(height: 4),
-          _Spec(label: 'الورق', value: '${c.paperLabel} · ${c.paperWidthMm.toStringAsFixed(0)}مم'),
-          _Spec(label: 'النوع', value: '${c.type} · ${c.category}'),
-          _Spec(label: 'العناصر', value: '${c.elementCount}'),
-          _Spec(label: 'الأعمدة', value: '${c.columnCount}'),
+          _Spec(label: tr('الورق'), value: tr('{p0} · {p1}مم', {'p0': c.paperLabel, 'p1': c.paperWidthMm.toStringAsFixed(0)})),
+          _Spec(label: tr('النوع'), value: '${c.type} · ${c.category}'),
+          _Spec(label: tr('العناصر'), value: '${c.elementCount}'),
+          _Spec(label: tr('الأعمدة'), value: '${c.columnCount}'),
           _Spec(
-            label: 'نسخةُ التخطيط',
-            value: c.layoutVersion >= 2 ? '٢ — نطاقاتٌ بإحداثيّات' : '١ — تدفّق',
+            label: tr('نسخةُ التخطيط'),
+            value: c.layoutVersion >= 2 ? tr('٢ — نطاقاتٌ بإحداثيّات') : tr('١ — تدفّق'),
           ),
-          _Spec(label: 'الحالة', value: templateStatusLabel(c),
+          _Spec(label: tr('الحالة'), value: templateStatusLabel(c),
               tone: templateStatusTone(c)),
 
           const SizedBox(height: 14),
           PicPosSectionHeader(
-            title: 'المستندات المربوطة',
-            subtitle: c.isBound ? '${c.bindings.length} رابطة' : 'لا رابطة',
+            title: tr('المستندات المربوطة'),
+            subtitle: c.isBound ? tr('{p0} رابطة', {'p0': c.bindings.length}) : tr('لا رابطة'),
             icon: PhosphorIconsBold.gitFork,
           ),
           if (!c.isBound)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
-                'هذا القالبُ لا يخرج على ورقٍ حتى يُربط بمستند.',
+                tr('هذا القالبُ لا يخرج على ورقٍ حتى يُربط بمستند.'),
                 style: TextStyle(fontSize: 12, color: context.picposMuted),
               ),
             )
@@ -87,8 +88,8 @@ class TemplateDetailPanel extends ConsumerWidget {
               ),
 
           const SizedBox(height: 14),
-          const PicPosSectionHeader(
-            title: 'إجراءات',
+           PicPosSectionHeader(
+            title: tr('إجراءات'),
             icon: PhosphorIconsBold.lightning,
           ),
           const SizedBox(height: 6),
@@ -107,7 +108,7 @@ class TemplateDetailPanel extends ConsumerWidget {
                   ),
                 ),
                 icon: const Icon(PhosphorIconsBold.pencilSimple, size: 15),
-                label: const Text('تحرير'),
+                label:  Text(tr('تحرير')),
               ),
               // «طباعة تجريبية» في عقد الأزرار §٢ — تفتح المعاينةَ على هذا
               // القالب بعينه، فتُفحص حالاتُه الحدّيّةُ قبل التفعيل.
@@ -119,17 +120,17 @@ class TemplateDetailPanel extends ConsumerWidget {
                   ),
                 ),
                 icon: const Icon(PhosphorIconsBold.testTube, size: 15),
-                label: const Text('معاينة تجريبية'),
+                label:  Text(tr('معاينة تجريبية')),
               ),
               OutlinedButton.icon(
                 onPressed: () => _duplicate(context, ref, c),
                 icon: const Icon(PhosphorIconsBold.copy, size: 15),
-                label: const Text('نسخة'),
+                label:  Text(tr('نسخة')),
               ),
               OutlinedButton.icon(
                 onPressed: () => _delete(context, ref, c),
                 icon: const Icon(PhosphorIconsBold.trash, size: 15),
-                label: const Text('حذف'),
+                label:  Text(tr('حذف')),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.error,
                 ),
@@ -151,11 +152,11 @@ class TemplateDetailPanel extends ConsumerWidget {
       ref.read(templateLibraryRefreshProvider.notifier).bump();
       ref.read(selectedTemplateIdProvider.notifier).set(id);
       if (context.mounted) {
-        _toast(context, 'أُنشئت نسخةٌ من «${c.name}» — بلا رابطات',
+        _toast(context, tr('أُنشئت نسخةٌ من «{p0}» — بلا رابطات', {'p0': c.name}),
             AppColors.success);
       }
     } catch (e) {
-      if (context.mounted) _toast(context, 'تعذّر النسخ: $e', AppColors.error);
+      if (context.mounted) _toast(context, tr('تعذّر النسخ: {e}', {'e': e}), AppColors.error);
     }
   }
 
@@ -167,7 +168,7 @@ class TemplateDetailPanel extends ConsumerWidget {
       ref.read(templateLibraryRefreshProvider.notifier).bump();
       ref.read(selectedTemplateIdProvider.notifier).set(null);
       if (context.mounted) {
-        _toast(context, 'حُذف «${c.name}»', AppColors.success);
+        _toast(context, tr('حُذف «{p0}»', {'p0': c.name}), AppColors.success);
       }
     } catch (e) {
       // الرفضُ يقول بكم رابطة — لا «مرفوض» مجرَّداً.
@@ -191,8 +192,8 @@ class TemplateDetailPanel extends ConsumerWidget {
       _toast(
         context,
         n > 0
-            ? 'فُكَّت رابطةُ «${b.documentLabel}» — يعود إلى القالب الافتراضيّ'
-            : 'لا رابطةَ لِـ«${b.documentLabel}» لتُفكّ',
+            ? tr('فُكَّت رابطةُ «{p0}» — يعود إلى القالب الافتراضيّ', {'p0': b.documentLabel})
+            : tr('لا رابطةَ لِـ«{p0}» لتُفكّ', {'p0': b.documentLabel}),
         n > 0 ? AppColors.warning : AppColors.textMuted,
       );
     }
@@ -281,7 +282,7 @@ class _BindingRow extends StatelessWidget {
               ),
             ),
             IconButton(
-              tooltip: 'فكُّ الرابطة',
+              tooltip: tr('فكُّ الرابطة'),
               onPressed: onRelease,
               icon: const Icon(PhosphorIconsBold.linkBreak, size: 15),
               color: AppColors.warning,

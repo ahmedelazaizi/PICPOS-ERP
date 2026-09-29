@@ -81,7 +81,7 @@ mixin _PosMainDialogsMixin on ConsumerState<PosScreenV2> {
         opening = 0;
       } else {
         if (!mounted) return;
-        final userName = authState.user?.displayName ?? 'كاشير';
+        final userName = authState.user?.displayName ?? tr('كاشير');
         final picked = await showDialog<double>(
           context: context,
           barrierDismissible: false,
@@ -178,7 +178,7 @@ mixin _PosMainDialogsMixin on ConsumerState<PosScreenV2> {
         final shortMsg = msg.length > 200 ? '${msg.substring(0, 200)}…' : msg;
         AppToast.show(
           context,
-          'تعذّر فتح الوردية تلقائياً: $shortMsg',
+          tr('تعذّر فتح الوردية تلقائياً: {shortMsg}', {'shortMsg': shortMsg}),
           type: ToastType.warning,
         );
       }

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // «قالب جديد» — النماذجُ الجاهزةُ كلُّها، لا ثمانيةٌ منها.
 //
 // هذه اللوحةُ هي المسارُ الذي كان مفقوداً: أحدَ عشرَ ملفَّ قالبٍ مشحونٍ مع
@@ -55,7 +56,7 @@ class _NewTemplateSheetState extends ConsumerState<_NewTemplateSheet> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'قالب جديد',
+                      tr('قالب جديد'),
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
@@ -150,7 +151,7 @@ class _NewTemplateSheetState extends ConsumerState<_NewTemplateSheet> {
       if (mounted) {
         setState(() {
           _busyFile = null;
-          _error = 'تعذّر إنشاءُ القالب من «$file»: $e';
+          _error = tr('تعذّر إنشاءُ القالب من «{file}»: {e}', {'file': file, 'e': e});
         });
       }
     }

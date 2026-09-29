@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -18,7 +19,7 @@ class LanPairingDialog extends StatelessWidget {
     final offer = NetworkService.instance.issueLanPairingCode();
     if (offer == null) {
       if (context.mounted) {
-        AppToast.show(context, 'شغّل السيرفر أولاً', type: ToastType.error);
+        AppToast.show(context, tr('شغّل السيرفر أولاً'), type: ToastType.error);
       }
       return;
     }
@@ -35,14 +36,14 @@ class LanPairingDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final remaining = offer.expiresAt.difference(DateTime.now()).inMinutes;
     return AlertDialog(
-      title: const Text('إقران جهاز'),
+      title:  Text(tr('إقران جهاز')),
       content: SizedBox(
         width: 430,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('أدخل هذا الرمز في إعدادات الشبكة على الجهاز الجديد.'),
+             Text(tr('أدخل هذا الرمز في إعدادات الشبكة على الجهاز الجديد.')),
             const SizedBox(height: 16),
             SelectableText(
               offer.code,
@@ -51,7 +52,7 @@ class LanPairingDialog extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'صالح لمدة ${remaining < 1 ? 1 : remaining} دقائق ولمرة واحدة',
+              tr('صالح لمدة {p0} دقائق ولمرة واحدة', {'p0': remaining < 1 ? 1 : remaining}),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -59,18 +60,18 @@ class LanPairingDialog extends StatelessWidget {
               onPressed: () async {
                 await Clipboard.setData(ClipboardData(text: offer.qrPayload));
                 if (context.mounted) {
-                  AppToast.show(context, 'تم نسخ بيانات الإقران');
+                  AppToast.show(context, tr('تم نسخ بيانات الإقران'));
                 }
               },
               icon: const Icon(Icons.copy),
-              label: const Text('نسخ بيانات QR'),
+              label:  Text(tr('نسخ بيانات QR')),
             ),
             if (service != null) ...[
               const SizedBox(height: 12),
               TextField(
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'مدة المفتاح القديم بالأيام (1–3650)',
+                decoration:  InputDecoration(
+                  labelText: tr('مدة المفتاح القديم بالأيام (1–3650)'),
                   isDense: true,
                 ),
                 onSubmitted: (value) async {
@@ -78,7 +79,7 @@ class LanPairingDialog extends StatelessWidget {
                   if (days != null) {
                     await service!.setLegacyTransitionDays(days);
                     if (context.mounted) {
-                      AppToast.show(context, 'تم حفظ مدة الانتقال');
+                      AppToast.show(context, tr('تم حفظ مدة الانتقال'));
                     }
                   }
                 },
@@ -88,19 +89,19 @@ class LanPairingDialog extends StatelessWidget {
                 onPressed: () async {
                   await service!.endLegacyTransition();
                   if (context.mounted) {
-                    AppToast.show(context, 'تم إيقاف المفتاح القديم');
+                    AppToast.show(context, tr('تم إيقاف المفتاح القديم'));
                   }
                 },
-                child: const Text('إنهاء فترة المفتاح القديم الآن'),
+                child:  Text(tr('إنهاء فترة المفتاح القديم الآن')),
               ),
               const SizedBox(height: 18),
-              const Text('الأجهزة المقترنة / غير المقترنة',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+               Text(tr('الأجهزة المقترنة / غير المقترنة'),
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
               FutureBuilder<List<LanPairingDevice>>(
                 future: service!.listDevices(),
                 builder: (context, snapshot) {
                   final devices = snapshot.data ?? const <LanPairingDevice>[];
-                  if (devices.isEmpty) return const Text('لا توجد أجهزة غير مقترنة');
+                  if (devices.isEmpty) return  Text(tr('لا توجد أجهزة غير مقترنة'));
                   return Column(
                     children: devices
                         .map((device) => ListTile(
@@ -113,7 +114,7 @@ class LanPairingDialog extends StatelessWidget {
                               trailing: device.isPaired && !device.revoked
                                   ? IconButton(
                                       icon: const Icon(Icons.block),
-                                      tooltip: 'إلغاء الإقران',
+                                      tooltip: tr('إلغاء الإقران'),
                                       onPressed: () async {
                                         await service!.revoke(device.deviceId);
                                         if (context.mounted) {
@@ -133,7 +134,7 @@ class LanPairingDialog extends StatelessWidget {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('إغلاق')),
+        TextButton(onPressed: () => Navigator.pop(context), child:  Text(tr('إغلاق'))),
       ],
     );
   }

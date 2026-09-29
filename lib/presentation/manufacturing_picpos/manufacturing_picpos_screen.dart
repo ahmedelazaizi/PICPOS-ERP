@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -40,30 +41,30 @@ class _ManufacturingPicposScreenState extends ConsumerState<ManufacturingPicposS
     final products = ref.watch(allProductsProvider).value ?? const <ProductEntity>[];
     final warehouses = ref.watch(warehouseListProvider).value ?? const <Warehouse>[];
     return PicPosScreenScaffold(
-      title: 'التصنيع',
-      subtitle: 'قوائم المكوّنات والإنتاج والتشفية والتكلفة والتقارير',
+      title: tr('التصنيع'),
+      subtitle: tr('قوائم المكوّنات والإنتاج والتشفية والتكلفة والتقارير'),
       icon: PhosphorIconsBold.factory,
       headerActions: [
         PermissionGuard(
           permission: PermissionCodes.manufacturingManage,
           allowManagerOverride: true,
-          actionName: 'إنشاء قائمة مكونات',
+          actionName: tr('إنشاء قائمة مكونات'),
           onGranted: () => _openBomEditor(products),
           child: FilledButton.icon(
             onPressed: () => _openBomEditor(products),
             icon: const Icon(PhosphorIconsBold.plus),
-            label: const Text('قائمة مكوّنات جديدة'),
+            label:  Text(tr('قائمة مكوّنات جديدة')),
           ),
         ),
       ],
       subHeader: PicPosReportTabs(
         controller: _tabs,
         tabs: [
-          (label: 'قوائم المكوّنات', icon: PhosphorIconsBold.listDashes, badge: '${boms.length}'),
-          (label: 'أوامر الإنتاج', icon: PhosphorIconsBold.factory, badge: '${orders.length}'),
-          (label: 'التشفية', icon: PhosphorIconsBold.scissors, badge: null),
-          (label: 'التكاليف الإضافية', icon: PhosphorIconsBold.coins, badge: null),
-          (label: 'التقارير', icon: PhosphorIconsBold.chartLine, badge: null),
+          (label: tr('قوائم المكوّنات'), icon: PhosphorIconsBold.listDashes, badge: '${boms.length}'),
+          (label: tr('أوامر الإنتاج'), icon: PhosphorIconsBold.factory, badge: '${orders.length}'),
+          (label: tr('التشفية'), icon: PhosphorIconsBold.scissors, badge: null),
+          (label: tr('التكاليف الإضافية'), icon: PhosphorIconsBold.coins, badge: null),
+          (label: tr('التقارير'), icon: PhosphorIconsBold.chartLine, badge: null),
         ],
       ),
       bodyPadding: const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 24),

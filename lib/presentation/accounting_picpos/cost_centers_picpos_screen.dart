@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
@@ -80,15 +81,15 @@ class _CostCentersPicPosScreenState
           }
 
           return PicPosScreenScaffold(
-            title: 'مراكز التكلفة',
-            subtitle: 'توزيع المصروفات والإيرادات على المراكز',
+            title: tr('مراكز التكلفة'),
+            subtitle: tr('توزيع المصروفات والإيرادات على المراكز'),
             icon: PhosphorIconsBold.crosshair,
             headerSearch: TextField(
               controller: _searchCtrl,
               onChanged: (v) => setState(() => _query = v),
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'بحث باسم أو رمز المركز...',
+                hintText: tr('بحث باسم أو رمز المركز...'),
                 prefixIcon:
                     const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
                 suffixIcon: _query.isNotEmpty
@@ -109,12 +110,12 @@ class _CostCentersPicPosScreenState
               FilledButton.icon(
                 onPressed: () => _openEditor(),
                 icon: const Icon(PhosphorIconsBold.plus, size: 16),
-                label: const Text('مركز تكلفة'),
+                label:  Text(tr('مركز تكلفة')),
               ),
             ],
             toolbar: PicPosToolbar(
               children: [
-                Text('$active من $total نشط',
+                Text(tr('{active} من {total} نشط', {'active': active, 'total': total}),
                     style: Theme.of(context)
                         .textTheme
                         .labelMedium
@@ -122,7 +123,7 @@ class _CostCentersPicPosScreenState
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('عرض غير النشطة',
+                    Text(tr('عرض غير النشطة'),
                         style: Theme.of(context).textTheme.labelMedium),
                     Switch(
                       value: _showInactive,
@@ -164,19 +165,19 @@ class _CostCentersPicPosScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PicPosSectionHeader(
-            title: 'الهيكل الشجري',
+            title: tr('الهيكل الشجري'),
             icon: PhosphorIconsBold.treeStructure,
-            subtitle: '${visible.length} معروض من $total',
+            subtitle: tr('{p0} معروض من {total}', {'p0': visible.length, 'total': total}),
           ),
           Expanded(
             child: visible.isEmpty
                 ? PicPosEmptyState(
                     icon: PhosphorIconsBold.crosshair,
                     title: total == 0
-                        ? 'لا مراكزَ تكلفة'
-                        : 'لا مركزَ يطابق البحث',
+                        ? tr('لا مراكزَ تكلفة')
+                        : tr('لا مركزَ يطابق البحث'),
                     hint: total == 0
-                        ? 'أضف مركزاً لتوزيع المصروفات والإيرادات عليه.'
+                        ? tr('أضف مركزاً لتوزيع المصروفات والإيرادات عليه.')
                         : null,
                   )
                 : ListView(
@@ -217,21 +218,21 @@ class _CostCentersPicPosScreenState
 
   Widget _buildDetail(IAccountingRepository repo, List<CostCenter> visible) {
     if (_selectedId == null) {
-      return const PicPosContentCard(
+      return  PicPosContentCard(
         child: PicPosEmptyState(
           icon: PhosphorIconsBold.cursorClick,
-          title: 'اختر مركز تكلفة لعرض التفاصيل',
+          title: tr('اختر مركز تكلفة لعرض التفاصيل'),
         ),
       );
     }
 
     final center = visible.where((c) => c.id == _selectedId).firstOrNull;
     if (center == null) {
-      return const PicPosContentCard(
+      return  PicPosContentCard(
         child: PicPosEmptyState(
           icon: PhosphorIconsBold.cursorClick,
-          title: 'المركزُ المحدَّدُ خارجَ الترشيح الحاليّ',
-          hint: 'ارفع البحثَ أو فعّل «عرض غير النشطة».',
+          title: tr('المركزُ المحدَّدُ خارجَ الترشيح الحاليّ'),
+          hint: tr('ارفع البحثَ أو فعّل «عرض غير النشطة».'),
         ),
       );
     }
@@ -245,21 +246,21 @@ class _CostCentersPicPosScreenState
           PicPosSectionHeader(
             title: '${center.code} — ${center.name}',
             icon: PhosphorIconsBold.crosshair,
-            subtitle: center.parentId == null ? 'مركز رئيسي' : 'مركز فرعي',
+            subtitle: center.parentId == null ? tr('مركز رئيسي') : tr('مركز فرعي'),
             actions: [
               IconButton(
-                tooltip: 'تعديل',
+                tooltip: tr('تعديل'),
                 icon: const Icon(PhosphorIconsBold.pencilSimple, size: 16),
                 onPressed: () => _openEditor(existing: center),
               ),
               IconButton(
-                tooltip: 'إضافة مركز فرعي',
+                tooltip: tr('إضافة مركز فرعي'),
                 icon: const Icon(PhosphorIconsBold.plus, size: 16),
                 onPressed: () => _openEditor(parentId: center.id),
               ),
               if (center.isActive)
                 IconButton(
-                  tooltip: 'تعطيل',
+                  tooltip: tr('تعطيل'),
                   icon: const Icon(PhosphorIconsBold.prohibit, size: 16),
                   color: AppColors.error,
                   onPressed: () => _confirmDeactivate(repo, center),
@@ -286,23 +287,23 @@ class _CostCentersPicPosScreenState
       children: [
         Expanded(
           child: _InfoCard(
-            label: 'الحالة',
-            value: center.isActive ? 'نشط' : 'معطل',
+            label: tr('الحالة'),
+            value: center.isActive ? tr('نشط') : tr('معطل'),
             tint: center.isActive ? AppColors.success : AppColors.textMuted,
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: _InfoCard(
-            label: 'النوع',
-            value: center.parentId == null ? 'فرع رئيسي' : 'مركز فرعي',
+            label: tr('النوع'),
+            value: center.parentId == null ? tr('فرع رئيسي') : tr('مركز فرعي'),
             tint: AppColors.info,
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: _InfoCard(
-            label: 'مراكز فرعية',
+            label: tr('مراكز فرعية'),
             value: '$childCount',
             tint: AppColors.warning,
           ),
@@ -318,7 +319,7 @@ class _CostCentersPicPosScreenState
               //    الحركةَ مرّتين. والتسميةُ «الرصيد» لأنّه رصيدٌ ختاميٌّ
               //    يساوي آخرَ صفٍّ في دفتر المركز، لا دورةَ حركةٍ إجماليّة.
               return _InfoCard(
-                label: 'الرصيد',
+                label: tr('الرصيد'),
                 value: snap.hasData
                     ? '${(debit - credit).toStringAsFixed(0)} '
                         '${AppConstants.currencySymbol}'
@@ -350,15 +351,15 @@ class _CostCentersPicPosScreenState
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             PicPosSectionHeader(
-              title: 'حركات المركز',
+              title: tr('حركات المركز'),
               icon: PhosphorIconsBold.notebook,
-              subtitle: '$moves حركة · من أول العام',
+              subtitle: tr('{moves} حركة · من أول العام', {'moves': moves}),
             ),
             Expanded(
               child: rows.isEmpty
-                  ? const PicPosEmptyState(
+                  ?  PicPosEmptyState(
                       icon: PhosphorIconsBold.notebook,
-                      title: 'لا حركاتِ على هذا المركز',
+                      title: tr('لا حركاتِ على هذا المركز'),
                     )
                   : ListView.builder(
                       padding: EdgeInsets.zero,
@@ -390,11 +391,11 @@ class _CostCentersPicPosScreenState
     final confirmed = await showPicPosConfirm(
       context,
       icon: PhosphorIconsBold.prohibit,
-      title: 'تعطيل مركز التكلفة',
+      title: tr('تعطيل مركز التكلفة'),
       subtitle: '${center.code} — ${center.name}',
       message: 'سيختفي المركزُ من قوائم الاختيار ولا تُحذف حركاتُه السابقة. '
           'يمكن إظهارُه مجدَّداً بمفتاح «عرض غير النشطة».',
-      confirmLabel: 'تعطيل',
+      confirmLabel: tr('تعطيل'),
       danger: true,
     );
     if (!confirmed) return;
@@ -486,7 +487,7 @@ class _TreeTile extends StatelessWidget {
                   color: AppColors.textMuted.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(5),
                 ),
-                child: Text('معطل',
+                child: Text(tr('معطل'),
                     style: text.labelSmall
                         ?.copyWith(color: AppColors.textMuted)),
               ),
@@ -534,7 +535,7 @@ class _LinkedEntities extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'لا توجد فروع أو مخازن مرتبطة بهذا المركز',
+                    tr('لا توجد فروع أو مخازن مرتبطة بهذا المركز'),
                     style: Theme.of(context)
                         .textTheme
                         .labelMedium

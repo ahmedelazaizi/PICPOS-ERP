@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -48,7 +49,7 @@ class _CreatePaperDialogState extends State<CreatePaperDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(
-        widget.direction == 'received' ? 'شيك وارد جديد' : 'شيك صادر جديد',
+        widget.direction == 'received' ? tr('شيك وارد جديد') : tr('شيك صادر جديد'),
         style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
       ),
       content: SizedBox(
@@ -60,14 +61,14 @@ class _CreatePaperDialogState extends State<CreatePaperDialog> {
               DropdownButtonFormField<String>(
                 initialValue: _paperType,
                 decoration: InputDecoration(
-                  labelText: 'النوع',
+                  labelText: tr('النوع'),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   isDense: true,
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'cheque', child: Text('شيك')),
-                  DropdownMenuItem(value: 'promissory_note', child: Text('كمبيالة')),
-                  DropdownMenuItem(value: 'bill_of_exchange', child: Text('سند لأمر')),
+                items:  [
+                  DropdownMenuItem(value: 'cheque', child: Text(tr('شيك'))),
+                  DropdownMenuItem(value: 'promissory_note', child: Text(tr('كمبيالة'))),
+                  DropdownMenuItem(value: 'bill_of_exchange', child: Text(tr('سند لأمر'))),
                 ],
                 onChanged: (v) => setState(() => _paperType = v ?? 'cheque'),
               ),
@@ -75,7 +76,7 @@ class _CreatePaperDialogState extends State<CreatePaperDialog> {
               TextField(
                 controller: _numberCtrl,
                 decoration: InputDecoration(
-                  labelText: 'رقم الشيك *',
+                  labelText: tr('رقم الشيك *'),
                   prefixIcon: const Icon(PhosphorIconsBold.hash, size: 18),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   isDense: true,
@@ -86,7 +87,7 @@ class _CreatePaperDialogState extends State<CreatePaperDialog> {
                 controller: _amountCtrl,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'المبلغ *',
+                  labelText: tr('المبلغ *'),
                   prefixIcon: const Icon(PhosphorIconsBold.currencyCircleDollar, size: 18),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   isDense: true,
@@ -98,8 +99,8 @@ class _CreatePaperDialogState extends State<CreatePaperDialog> {
                 builder: (ctx, snap) {
                   final parties = snap.data ?? [];
                   final partyLabel = widget.direction == 'received'
-                      ? 'المسحوب عليه (العميل) *'
-                      : 'المستفيد (المورد) *';
+                      ? tr('المسحوب عليه (العميل) *')
+                      : tr('المستفيد (المورد) *');
                   return Autocomplete<db.Party>(
                     optionsBuilder: (textValue) {
                       if (textValue.text.isEmpty) return parties;
@@ -114,7 +115,7 @@ class _CreatePaperDialogState extends State<CreatePaperDialog> {
                         focusNode: focusNode,
                         decoration: InputDecoration(
                           labelText: partyLabel,
-                          hintText: 'ابحث بالاسم أو الهاتف...',
+                          hintText: tr('ابحث بالاسم أو الهاتف...'),
                           prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           isDense: true,
@@ -131,7 +132,7 @@ class _CreatePaperDialogState extends State<CreatePaperDialog> {
                 TextField(
                   onChanged: (v) => _selectedBankName = v,
                   decoration: InputDecoration(
-                    labelText: 'اسم البنك المسحوب عليه',
+                    labelText: tr('اسم البنك المسحوب عليه'),
                     prefixIcon: const Icon(PhosphorIconsBold.bank, size: 18),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     isDense: true,
@@ -144,7 +145,7 @@ class _CreatePaperDialogState extends State<CreatePaperDialog> {
                     final banks = snap.data ?? [];
                     return DropdownButtonFormField<int>(
                       decoration: InputDecoration(
-                        labelText: 'البنك المسحوب منه *',
+                        labelText: tr('البنك المسحوب منه *'),
                         prefixIcon: const Icon(PhosphorIconsBold.bank, size: 18),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         isDense: true,
@@ -164,7 +165,7 @@ class _CreatePaperDialogState extends State<CreatePaperDialog> {
               TextField(
                 controller: _accountNumberCtrl,
                 decoration: InputDecoration(
-                  labelText: 'رقم الحساب البنكي',
+                  labelText: tr('رقم الحساب البنكي'),
                   prefixIcon: const Icon(PhosphorIconsBold.creditCard, size: 18),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   isDense: true,
@@ -186,7 +187,7 @@ class _CreatePaperDialogState extends State<CreatePaperDialog> {
                       },
                       child: InputDecorator(
                         decoration: InputDecoration(
-                          labelText: 'تاريخ التحرير',
+                          labelText: tr('تاريخ التحرير'),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           isDense: true,
                         ),
@@ -208,7 +209,7 @@ class _CreatePaperDialogState extends State<CreatePaperDialog> {
                       },
                       child: InputDecorator(
                         decoration: InputDecoration(
-                          labelText: 'تاريخ الاستحقاق',
+                          labelText: tr('تاريخ الاستحقاق'),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           isDense: true,
                         ),
@@ -223,7 +224,7 @@ class _CreatePaperDialogState extends State<CreatePaperDialog> {
                 controller: _notesCtrl,
                 maxLines: 2,
                 decoration: InputDecoration(
-                  labelText: 'ملاحظات إضافية',
+                  labelText: tr('ملاحظات إضافية'),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   isDense: true,
                 ),
@@ -235,7 +236,7 @@ class _CreatePaperDialogState extends State<CreatePaperDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         ElevatedButton(
           onPressed: () {
@@ -257,7 +258,7 @@ class _CreatePaperDialogState extends State<CreatePaperDialog> {
               'notes': _notesCtrl.text,
             });
           },
-          child: const Text('إضافة الورقة'),
+          child:  Text(tr('إضافة الورقة')),
         ),
       ],
     );

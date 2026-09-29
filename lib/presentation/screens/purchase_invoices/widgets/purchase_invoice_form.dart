@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/utils/number_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -264,7 +265,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
           'taxAmount': taxAmount,
           'taxEnabled': taxRate > 0,
           'lineTotal': subtotal,
-          'selectedUnitName': 'قطعة',
+          'selectedUnitName': tr('قطعة'),
         });
       });
     }
@@ -324,9 +325,9 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
                           return TextField(
                             controller: controller,
                             focusNode: focusNode,
-                            decoration: const InputDecoration(
-                              labelText: 'المورد *',
-                              prefixIcon: Icon(PhosphorIconsBold.truck),
+                            decoration:  InputDecoration(
+                              labelText: tr('المورد *'),
+                              prefixIcon: const Icon(PhosphorIconsBold.truck),
                             ),
                           );
                         },
@@ -339,10 +340,10 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
                 Expanded(
                   child: TextFormField(
                     controller: _invoiceNumberController,
-                    decoration: const InputDecoration(
-                      labelText: 'رقم الفاتورة',
-                      hintText: 'يُنشأ تلقائياً',
-                      prefixIcon: Icon(PhosphorIconsBold.hash),
+                    decoration:  InputDecoration(
+                      labelText: tr('رقم الفاتورة'),
+                      hintText: tr('يُنشأ تلقائياً'),
+                      prefixIcon: const Icon(PhosphorIconsBold.hash),
                     ),
                   ),
                 ),
@@ -350,10 +351,10 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
                 Expanded(
                   child: TextFormField(
                     controller: _supplierInvoiceController,
-                    decoration: const InputDecoration(
-                      labelText: 'رقم الوثيقة (فاتورة المورد)',
-                      hintText: 'رقم فاتورة المورد الوارد...',
-                      prefixIcon: Icon(PhosphorIconsBold.fileText),
+                    decoration:  InputDecoration(
+                      labelText: tr('رقم الوثيقة (فاتورة المورد)'),
+                      hintText: tr('رقم فاتورة المورد الوارد...'),
+                      prefixIcon: const Icon(PhosphorIconsBold.fileText),
                     ),
                   ),
                 ),
@@ -370,9 +371,9 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
                       if (date != null) setState(() => _selectedDate = date);
                     },
                     child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'تاريخ الفاتورة',
-                        prefixIcon: Icon(PhosphorIconsBold.calendar),
+                      decoration:  InputDecoration(
+                        labelText: tr('تاريخ الفاتورة'),
+                        prefixIcon: const Icon(PhosphorIconsBold.calendar),
                       ),
                       child: Text('${_selectedDate.year}-${_selectedDate.month}-${_selectedDate.day}'),
                     ),
@@ -386,9 +387,9 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
                 Expanded(
                   child: DropdownButtonFormField<int>(
                     initialValue: _selectedWarehouseId,
-                    decoration: const InputDecoration(
-                      labelText: 'المخزن',
-                      prefixIcon: Icon(PhosphorIconsBold.warehouse),
+                    decoration:  InputDecoration(
+                      labelText: tr('المخزن'),
+                      prefixIcon: const Icon(PhosphorIconsBold.warehouse),
                     ),
                     items: _warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(w.name))).toList(),
                     onChanged: (val) => setState(() {
@@ -402,9 +403,9 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
                 Expanded(
                   child: DropdownButtonFormField<int>(
                     initialValue: _selectedCostCenterId,
-                    decoration: const InputDecoration(
-                      labelText: 'مركز التكلفة',
-                      prefixIcon: Icon(PhosphorIconsBold.chartPieSlice),
+                    decoration:  InputDecoration(
+                      labelText: tr('مركز التكلفة'),
+                      prefixIcon: const Icon(PhosphorIconsBold.chartPieSlice),
                     ),
                     items: _costCenters.map((cc) => DropdownMenuItem(value: cc.id, child: Text(cc.name))).toList(),
                     onChanged: (val) => setState(() => _selectedCostCenterId = val),
@@ -423,7 +424,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
       children: [
         Row(
           children: [
-            const Text('الأصناف', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+             Text(tr('الأصناف'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const Spacer(),
             ElevatedButton.icon(
               onPressed: () async {
@@ -438,7 +439,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
                 }
               },
               icon: const Icon(PhosphorIconsBold.plus, size: 16),
-              label: const Text('صنف جديد'),
+              label:  Text(tr('صنف جديد')),
             ),
             const SizedBox(width: 8),
             // Product Search / Selector
@@ -464,10 +465,10 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
                       return TextField(
                         controller: controller,
                         focusNode: focusNode,
-                        decoration: const InputDecoration(
-                          hintText: 'ابحث عن صنف...',
+                        decoration:  InputDecoration(
+                          hintText: tr('ابحث عن صنف...'),
                           isDense: true,
-                          prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
+                          prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                         ),
                       );
                     },
@@ -508,14 +509,14 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('الخلاصة المادية', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+             Text(tr('الخلاصة المادية'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const Divider(),
-            _buildSummaryRow('الإجمالي قبل الضريبة', _subtotal),
-            _buildSummaryRow('إجمالي الضريبة', _taxTotal),
+            _buildSummaryRow(tr('الإجمالي قبل الضريبة'), _subtotal),
+            _buildSummaryRow(tr('إجمالي الضريبة'), _taxTotal),
             const SizedBox(height: 8),
             TextFormField(
               controller: _discountController,
-              decoration: const InputDecoration(labelText: 'الخصم', isDense: true),
+              decoration:  InputDecoration(labelText: tr('الخصم'), isDense: true),
               keyboardType: TextInputType.number,
               onChanged: (_) => setState(() {}),
             ),
@@ -523,7 +524,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('الصافي النهائى', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                 Text(tr('الصافي النهائى'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary)),
                 Text(
                   '${_netAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary),
@@ -533,14 +534,14 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _paymentMethod,
-              decoration: const InputDecoration(
-                labelText: 'طريقة الدفع',
+              decoration:  InputDecoration(
+                labelText: tr('طريقة الدفع'),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.wallet),
+                prefixIcon: const Icon(PhosphorIconsBold.wallet),
               ),
-              items: const [
-                DropdownMenuItem(value: 'cash', child: Text('نقدي (Cash)')),
-                DropdownMenuItem(value: 'credit', child: Text('آجل (Credit)')),
+              items:  [
+                DropdownMenuItem(value: 'cash', child: Text(tr('نقدي (Cash)'))),
+                DropdownMenuItem(value: 'credit', child: Text(tr('آجل (Credit)'))),
               ],
               onChanged: (val) {
                 if (val != null) {
@@ -567,12 +568,12 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
                 if (cashSafes.isEmpty) return const SizedBox.shrink();
                 return DropdownButtonFormField<int>(
                   value: _selectedSafeId,
-                  decoration: const InputDecoration(
-                    labelText: 'الصندوق',
+                  decoration:  InputDecoration(
+                    labelText: tr('الصندوق'),
                     isDense: true,
-                    prefixIcon: Icon(PhosphorIconsBold.money),
+                    prefixIcon: const Icon(PhosphorIconsBold.money),
                   ),
-                  hint: const Text('افتراضي'),
+                  hint:  Text(tr('افتراضي')),
                   items: cashSafes.map((s) => DropdownMenuItem(
                     value: s.id,
                     child: Text(s.name),
@@ -584,13 +585,13 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _paidAmountController,
-              decoration: const InputDecoration(labelText: 'المبلغ المدفوع', isDense: true),
+              decoration:  InputDecoration(labelText: tr('المبلغ المدفوع'), isDense: true),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _notesController,
-              decoration: const InputDecoration(labelText: 'ملاحظات', alignLabelWithHint: true),
+              decoration:  InputDecoration(labelText: tr('ملاحظات'), alignLabelWithHint: true),
               maxLines: 3,
             ),
           ],
@@ -618,13 +619,13 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
       children: [
         OutlinedButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         const SizedBox(width: 8),
         ElevatedButton(
           onPressed: _isLoading ? null : () => _handleSave(isDraft: true),
           style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[700]),
-          child: const Text('حفظ كمسودة'),
+          child:  Text(tr('حفظ كمسودة')),
         ),
         const SizedBox(width: 8),
         // Mirror the sales-invoice flow: dedicated save-and-print button
@@ -635,7 +636,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
                 ? null
                 : () => _handleSave(isDraft: false, printAfterSave: true),
             icon: const Icon(PhosphorIconsBold.printer, size: 16),
-            label: const Text('حفظ وطباعة'),
+            label:  Text(tr('حفظ وطباعة')),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
           ),
         if (!widget.isReturn) const SizedBox(width: 8),
@@ -643,7 +644,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
           onPressed: _isLoading ? null : () => _handleSave(isDraft: false),
           child: _isLoading
             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-            : Text(widget.isReturn ? 'تأكيد المرتجع' : 'حفظ الفاتورة'),
+            : Text(widget.isReturn ? tr('تأكيد المرتجع') : tr('حفظ الفاتورة')),
         ),
       ],
     );
@@ -655,7 +656,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
     // حين لا مخزنَ أصلاً — وحينها الرفضُ الصريحُ أوضحُ من فرعٍ خاطئٍ صامت
     // (كان `warehouseId ?? 1` في مُعالِج الحفظ يخترع المخزنَ رقم ١).
     if (_selectedWarehouseId == null) {
-      AppToast.show(context, 'يجب اختيار المخزن قبل حفظ الفاتورة',
+      AppToast.show(context, tr('يجب اختيار المخزن قبل حفظ الفاتورة'),
           type: ToastType.error);
       return;
     }
@@ -663,7 +664,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
     // Invoice number is optional — the backend generates a short sequential
     // one (PINV-N) when the field is left blank.
     if (_selectedSupplierId == null || _items.isEmpty) {
-      AppToast.show(context, 'يرجى إكمال البيانات الأساسية وإضافة صنف واحد على الأقل', type: ToastType.error);
+      AppToast.show(context, tr('يرجى إكمال البيانات الأساسية وإضافة صنف واحد على الأقل'), type: ToastType.error);
       return;
     }
 
@@ -700,7 +701,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
       );
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ أثناء الحفظ: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ أثناء الحفظ: {e}', {'e': e}), type: ToastType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

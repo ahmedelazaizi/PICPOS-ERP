@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // حوارُ تحويل الحجز إلى فاتورة.
 //
 // ═══ ⚠️ لا يُنشئ فاتورةً — يُسلِّم الحجزَ لنقطة البيع ═══
@@ -55,26 +56,26 @@ class _BookingInvoiceDialogState extends ConsumerState<BookingInvoiceDialog> {
 
     return PicPosDialog(
       icon: PhosphorIconsBold.receipt,
-      title: 'تحويل الحجز إلى فاتورة',
+      title: tr('تحويل الحجز إلى فاتورة'),
       subtitle: '${row.customerName} · ${bookingTimeLabel(row.startsAt)}',
       width: 620,
       primaryAction: PicPosDialogAction(
-        label: 'متابعة في نقطة البيع',
+        label: tr('متابعة في نقطة البيع'),
         icon: PhosphorIconsBold.arrowLeft,
         busy: _busy,
         onPressed: _busy ? null : _handOff,
       ),
       body: [
-        _line('الخدمة', row.serviceName),
-        _line('الموظف / المورد', row.resourceName ?? 'بلا إسناد'),
-        _line('سعر الخدمة', _money(row.servicePrice)),
+        _line(tr('الخدمة'), row.serviceName),
+        _line(tr('الموظف / المورد'), row.resourceName ?? tr('بلا إسناد')),
+        _line(tr('سعر الخدمة'), _money(row.servicePrice)),
         _line(
-          'العربون المدفوع',
+          tr('العربون المدفوع'),
           row.depositAmount > 0 ? '− ${_money(row.depositAmount)}' : '—',
           color: row.depositAmount > 0 ? AppColors.success : null,
         ),
         const Divider(height: 20),
-        _line('المتبقّي على العميل', _money(due < 0 ? 0 : due), bold: true),
+        _line(tr('المتبقّي على العميل'), _money(due < 0 ? 0 : due), bold: true),
         const SizedBox(height: 12),
         _note(
           PhosphorIconsBold.info,

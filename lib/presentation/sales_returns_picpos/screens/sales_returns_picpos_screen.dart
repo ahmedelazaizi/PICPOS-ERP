@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:ural_erp/core/utils/app_error_handler.dart';
@@ -123,14 +124,14 @@ class _SalesReturnsPicposScreenState
     });
 
     return PicPosScreenScaffold(
-      title: 'مرتجع المبيعات',
-      subtitle: 'تسجيل ومتابعة مرتجعات البيع',
+      title: tr('مرتجع المبيعات'),
+      subtitle: tr('تسجيل ومتابعة مرتجعات البيع'),
       icon: PhosphorIconsBold.arrowUUpLeft,
       headerActions: [
         OutlinedButton.icon(
           onPressed: () => showReturnsHistoryDialog(),
           icon: const Icon(PhosphorIconsBold.clockCounterClockwise, size: 16),
-          label: const Text('سجل المرتجعات'),
+          label:  Text(tr('سجل المرتجعات')),
         ),
       ],
       body: _buildBody(state, notifier),
@@ -148,7 +149,7 @@ class _SalesReturnsPicposScreenState
         date: inv.invoiceDate,
         total: inv.total,
         status: PicPosReturnStatus.fromCode(inv.status),
-        partyName: state.customerNames[inv.customerId] ?? 'عميل نقدي',
+        partyName: state.customerNames[inv.customerId] ?? tr('عميل نقدي'),
       );
 
   Widget _buildBody(SalesReturnState state, SalesReturnNotifier notifier) {
@@ -165,9 +166,9 @@ class _SalesReturnsPicposScreenState
       children: [
         PicPosReturnsSummaryCards(kpis: kpis, isSales: true),
         const SizedBox(height: 12),
-        const SyncPendingBanner(
+         SyncPendingBanner(
           tableName: 'sales_returns',
-          label: 'مرتجع مبيعات',
+          label: tr('مرتجع مبيعات'),
         ),
         Expanded(
           child: LayoutBuilder(
@@ -185,7 +186,7 @@ class _SalesReturnsPicposScreenState
                       rows: rows,
                       selectedId: state.selectedInvoice?.id,
                       isLoading: state.isLoading,
-                      emptyMessage: 'لا توجد فواتير في هذه الفترة',
+                      emptyMessage: tr('لا توجد فواتير في هذه الفترة'),
                       onSelect: (r) {
                         final inv = byId[r.id];
                         if (inv != null) notifier.selectInvoice(inv);
@@ -213,14 +214,14 @@ class _SalesReturnsPicposScreenState
           children: [
             Expanded(
               child: _dateField(
-                label: 'من ${state.fromDate.day}/${state.fromDate.month}',
+                label: tr('من {p0}/{p1}', {'p0': state.fromDate.day, 'p1': state.fromDate.month}),
                 onTap: _selectFromDate,
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _dateField(
-                label: 'إلى ${state.toDate.day}/${state.toDate.month}',
+                label: tr('إلى {p0}/{p1}', {'p0': state.toDate.day, 'p1': state.toDate.month}),
                 onTap: _selectToDate,
               ),
             ),
@@ -235,7 +236,7 @@ class _SalesReturnsPicposScreenState
             decoration: InputDecoration(
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(vertical: 8),
-              hintText: 'البحث برقم الفاتورة...',
+              hintText: tr('البحث برقم الفاتورة...'),
               hintStyle: TextStyle(
                 fontSize: 12,
                 color: picposReturnsMuted(context),
@@ -314,9 +315,9 @@ class _SalesReturnsPicposScreenState
               color: AppColors.textMuted.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'اختر فاتورة من القائمة لعرض تفاصيلها',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 16),
+             Text(
+              tr('اختر فاتورة من القائمة لعرض تفاصيلها'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 16),
             ),
           ],
         ),

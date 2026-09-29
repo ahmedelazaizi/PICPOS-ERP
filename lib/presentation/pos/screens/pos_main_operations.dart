@@ -41,7 +41,7 @@ Future<bool> ensurePosWeightDialogPermission(
     showPosToast(
       context,
       ref,
-      'ليس لديك صلاحية استخدام الميزان',
+      tr('ليس لديك صلاحية استخدام الميزان'),
       type: PosNotificationType.error,
     );
   }
@@ -75,7 +75,7 @@ Future<bool> ensurePosWorkOrderPermission(
     showPosToast(
       context,
       ref,
-      'ليس لديك صلاحية طباعة أوامر الشغل',
+      tr('ليس لديك صلاحية طباعة أوامر الشغل'),
       type: PosNotificationType.error,
     );
   }
@@ -110,7 +110,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '⛔ المنتج "${product.name}" غير متوفر في المخزون (الكمية: ${product.currentStock.toStringAsFixed(0)})',
+                  tr('⛔ المنتج "{p0}" غير متوفر في المخزون (الكمية: {p1})', {'p0': product.name, 'p1': product.currentStock.toStringAsFixed(0)}),
                   style: const TextStyle(fontFamily: 'Cairo'),
                 ),
               ),
@@ -186,7 +186,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '⚠️ تنبيه: "${product.name}" كميته منخفضة (المتبقي: ${product.currentStock.toStringAsFixed(0)}, الحد الأدنى: ${product.minStock.toStringAsFixed(0)})',
+                  tr('⚠️ تنبيه: "{p0}" كميته منخفضة (المتبقي: {p1}, الحد الأدنى: {p2})', {'p0': product.name, 'p1': product.currentStock.toStringAsFixed(0), 'p2': product.minStock.toStringAsFixed(0)}),
                   style: const TextStyle(fontFamily: 'Cairo'),
                 ),
               ),
@@ -307,10 +307,10 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
             color: Colors.orange,
             size: 48,
           ),
-          title: const Text(
-            'تنبيه: نفس الوزن',
+          title:  Text(
+            tr('تنبيه: نفس الوزن'),
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               fontFamily: 'Cairo',
@@ -330,9 +330,9 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
               ),
               icon: const Icon(Icons.check_circle_outline),
-              label: const Text(
-                'متابعة',
-                style: TextStyle(fontSize: 14, fontFamily: 'Cairo'),
+              label:  Text(
+                tr('متابعة'),
+                style: const TextStyle(fontSize: 14, fontFamily: 'Cairo'),
               ),
               onPressed: () => Navigator.of(ctx).pop(),
             ),
@@ -398,23 +398,23 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         builder: (ctx) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: const Row(
+            title:  Row(
               children: [
-                Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
-                SizedBox(width: 8),
-                Text('صنف غير معرف'),
+                const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+                const SizedBox(width: 8),
+                Text(tr('صنف غير معرف')),
               ],
             ),
-            content: Text('الباركود "$barcode" غير مسجل في النظام.\nهل تريد إضافته كصنف جديد؟'),
+            content: Text(tr('الباركود "{barcode}" غير مسجل في النظام.\nهل تريد إضافته كصنف جديد؟', {'barcode': barcode})),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('لا'),
+                child:  Text(tr('لا')),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, true),
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
-                child: const Text('نعم — إضافة سريعة'),
+                child:  Text(tr('نعم — إضافة سريعة')),
               ),
             ],
           ),
@@ -433,10 +433,10 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         if (!canAddProducts) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('⛔ إضافة الأصناف تتطلب صلاحية المدير'),
+               SnackBar(
+                content: Text(tr('⛔ إضافة الأصناف تتطلب صلاحية المدير')),
                 backgroundColor: AppColors.error,
-                duration: Duration(seconds: 3),
+                duration: const Duration(seconds: 3),
               ),
             );
           }
@@ -465,7 +465,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         try {
           AppToast.show(
             context,
-            'خطأ في معالجة الباركود — حاول مرة أخرى',
+            tr('خطأ في معالجة الباركود — حاول مرة أخرى'),
             type: ToastType.error,
           );
         } catch (_) {}
@@ -485,7 +485,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
     try {
       // ISS-06: Route through fiscalPeriodValidationProvider instead of direct DB access
       await ref.read(fiscalPeriodValidationProvider(
-        (date: DateTime.now(), operation: 'بيع'),
+        (date: DateTime.now(), operation: tr('بيع')),
       ).future);
     } catch (e) {
       if (!mounted) return;
@@ -494,10 +494,10 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         builder: (ctx) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: const Row(children: [
-              Icon(Icons.lock_clock, color: AppColors.error, size: 28),
-              SizedBox(width: 8),
-              Text('السنة المالية مغلقة'),
+            title:  Row(children: [
+              const Icon(Icons.lock_clock, color: AppColors.error, size: 28),
+              const SizedBox(width: 8),
+              Text(tr('السنة المالية مغلقة')),
             ]),
             content: Text(
               e.toString().replaceFirst('Exception: ', ''),
@@ -506,7 +506,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
             actions: [
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('موافق'),
+                child:  Text(tr('موافق')),
               ),
             ],
           ),
@@ -536,7 +536,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
       context: context,
       ref: ref,
       subtitleBuilder: (amount) =>
-          'البيعة تُدخل ${amount.toStringAsFixed(2)} نقداً إلى الدرج.',
+          tr('البيعة تُدخل {p0} نقداً إلى الدرج.', {'p0': amount.toStringAsFixed(2)}),
       attempt: () async => success = await ref
           .read(checkoutControllerProvider.notifier)
           .processPayment(
@@ -556,8 +556,8 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         context,
         ref,
         outcome == ShiftPromptOutcome.cancelledByUser
-            ? 'أُلغيت البيعة — لم تُفتَح وردية'
-            : 'تعذّر فتح الوردية، فلم تُحفَظ الفاتورة',
+            ? tr('أُلغيت البيعة — لم تُفتَح وردية')
+            : tr('تعذّر فتح الوردية، فلم تُحفَظ الفاتورة'),
         type: PosNotificationType.error,
       );
       return;
@@ -574,14 +574,14 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         showPosToast(
           context,
           ref,
-          'تمت تسوية فروقات تقريب ${adj.abs().toStringAsFixed(3)}',
+          tr('تمت تسوية فروقات تقريب {p0}', {'p0': adj.abs().toStringAsFixed(3)}),
           type: PosNotificationType.info,
         );
       }
       // Play success beep
       SystemSound.play(SystemSoundType.click);
     } else {
-      final err = ref.read(checkoutControllerProvider).error ?? 'فشل حفظ الفاتورة';
+      final err = ref.read(checkoutControllerProvider).error ?? tr('فشل حفظ الفاتورة');
       showPosToast(context, ref, err, type: PosNotificationType.error);
     }
     (this as _PosScreenV2State)._barcodeFocus.requestFocus();
@@ -612,11 +612,11 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
-              SizedBox(width: 8),
-              Text('تحذير — أصناف بدون قيمة'),
+              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+              const SizedBox(width: 8),
+              Text(tr('تحذير — أصناف بدون قيمة')),
             ],
           ),
           content: Column(
@@ -624,7 +624,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (zeroPriceItems.isNotEmpty) ...[
-                const Text('⚠️ أصناف بسعر صفر:', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error)),
+                 Text(tr('⚠️ أصناف بسعر صفر:'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.error)),
                 const SizedBox(height: 4),
                 ...zeroPriceItems.map((n) => Padding(
                   padding: const EdgeInsetsDirectional.only(start: 12, bottom: 2),
@@ -633,7 +633,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
                 const SizedBox(height: 8),
               ],
               if (zeroQtyItems.isNotEmpty) ...[
-                const Text('⚠️ أصناف بكمية صفر:', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error)),
+                 Text(tr('⚠️ أصناف بكمية صفر:'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.error)),
                 const SizedBox(height: 4),
                 ...zeroQtyItems.map((n) => Padding(
                   padding: const EdgeInsetsDirectional.only(start: 12, bottom: 2),
@@ -642,21 +642,21 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
                 const SizedBox(height: 8),
               ],
               const Divider(),
-              const Text(
-                'هل تريد المتابعة رغم ذلك؟',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+               Text(
+                tr('هل تريد المتابعة رغم ذلك؟'),
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('لا، تعديل الفاتورة'),
+              child:  Text(tr('لا، تعديل الفاتورة')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
-              child: const Text('نعم، متابعة'),
+              child:  Text(tr('نعم، متابعة')),
             ),
           ],
         ),
@@ -762,7 +762,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
     if (!hasPermission) {
       final approved = await requestManagerApproval(
         context,
-        actionName: 'حفظ فاتورة البيع السريع',
+        actionName: tr('حفظ فاتورة البيع السريع'),
         permission: PermissionCodes.posSave,
       );
       if (!approved) return;
@@ -809,7 +809,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
       context: context,
       ref: ref,
       subtitleBuilder: (amount) =>
-          'البيعة تُدخل ${amount.toStringAsFixed(2)} نقداً إلى الدرج.',
+          tr('البيعة تُدخل {p0} نقداً إلى الدرج.', {'p0': amount.toStringAsFixed(2)}),
       attempt: () async => success = await ref
           .read(checkoutControllerProvider.notifier)
           .processPayment(
@@ -829,8 +829,8 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         context,
         ref,
         outcome == ShiftPromptOutcome.cancelledByUser
-            ? 'أُلغيت البيعة — لم تُفتَح وردية'
-            : 'تعذّر فتح الوردية، فلم تُحفَظ الفاتورة',
+            ? tr('أُلغيت البيعة — لم تُفتَح وردية')
+            : tr('تعذّر فتح الوردية، فلم تُحفَظ الفاتورة'),
         type: PosNotificationType.error,
       );
       return;
@@ -850,7 +850,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
             debugPrint('[SaveAndPrint] Receipt print failed: $e');
             // Notify user about printer but don't block
             if (mounted) {
-              showPosToast(context, ref, '⚠️ الحفظ تم، لكن فشلت الطباعة (تأكد من الورق)', type: PosNotificationType.warning);
+              showPosToast(context, ref, tr('⚠️ الحفظ تم، لكن فشلت الطباعة (تأكد من الورق)'), type: PosNotificationType.warning);
             }
           }
           try {
@@ -862,19 +862,19 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         
         await drawerFuture; // Ensure drawer is at least attempted
         if (!mounted) return;
-        showPosToast(context, ref, 'تم حفظ وطباعة الفاتورة', type: PosNotificationType.success);
+        showPosToast(context, ref, tr('تم حفظ وطباعة الفاتورة'), type: PosNotificationType.success);
       } else {
         // Trigger cash drawer for "Save Only" as requested by user
         await _openCashDrawerQuietly();
         if (!mounted) return;
-        showPosToast(context, ref, 'تم حفظ الفاتورة بنجاح', type: PosNotificationType.success);
+        showPosToast(context, ref, tr('تم حفظ الفاتورة بنجاح'), type: PosNotificationType.success);
       }
       
       // Clear barcode input ready for new scan items immediately
       (this as _PosScreenV2State)._barcodeController.clear();
       (this as _PosScreenV2State)._barcodeFocus.requestFocus();
     } else {
-      final err = ref.read(checkoutControllerProvider).error ?? 'فشل حفظ الفاتورة';
+      final err = ref.read(checkoutControllerProvider).error ?? tr('فشل حفظ الفاتورة');
       if (!mounted) return;
       showPosToast(context, ref, err, type: PosNotificationType.error);
     }
@@ -889,14 +889,14 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         showPosToast(
           context,
           ref,
-          'تم حفظ عرض السعر بنجاح',
+          tr('تم حفظ عرض السعر بنجاح'),
           type: PosNotificationType.success,
         );
         (this as _PosScreenV2State)._barcodeController.clear();
         (this as _PosScreenV2State)._barcodeFocus.requestFocus();
       } else {
         final err =
-            ref.read(checkoutControllerProvider).error ?? 'فشل حفظ عرض السعر';
+            ref.read(checkoutControllerProvider).error ?? tr('فشل حفظ عرض السعر');
         showPosToast(context, ref, err, type: PosNotificationType.error);
       }
     }
@@ -919,7 +919,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
       showPosToast(
         context,
         ref,
-        'تم تعليق الفاتورة #$holdNum${customerName.isNotEmpty ? ' - $customerName' : ''}',
+        tr('تم تعليق الفاتورة #{holdNum}{p0}', {'holdNum': holdNum, 'p0': customerName.isNotEmpty ? ' - $customerName' : ''}),
         type: PosNotificationType.success,
       );
     }
@@ -935,7 +935,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         showPosToast(
           context,
           ref,
-          'تم إعادة الطباعة رقم $invoiceId بنجاح',
+          tr('تم إعادة الطباعة رقم {invoiceId} بنجاح', {'invoiceId': invoiceId}),
           type: PosNotificationType.success,
         );
       }
@@ -944,7 +944,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         showPosToast(
           context,
           ref,
-          'خطأ طباعة الفاتورة: $e',
+          tr('خطأ طباعة الفاتورة: {e}', {'e': e}),
           type: PosNotificationType.error,
         );
       }
@@ -962,7 +962,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         showPosToast(
           context,
           ref,
-          'تم إرسال الطلب للمطبخ',
+          tr('تم إرسال الطلب للمطبخ'),
           type: PosNotificationType.success,
         );
       }
@@ -971,7 +971,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         showPosToast(
           context,
           ref,
-          'خطأ طباعة أوامر المطبخ: $e',
+          tr('خطأ طباعة أوامر المطبخ: {e}', {'e': e}),
           type: PosNotificationType.error,
         );
       }

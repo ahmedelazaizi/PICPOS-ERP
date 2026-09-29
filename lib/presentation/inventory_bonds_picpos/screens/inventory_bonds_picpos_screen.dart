@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 // منطق منسوخ من inventory_bonds_screen.dart (monolith) — أي إصلاح منطقي
 // يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ §٥.٨).
@@ -95,7 +96,7 @@ class _InventoryBondsPicposScreenState
       // Check if already exists
       if (_items.any((item) => item.product.id == product.id)) {
         if (!mounted) return;
-        AppToast.show(context, 'هذا الصنف موجود بالفعل في السند');
+        AppToast.show(context, tr('هذا الصنف موجود بالفعل في السند'));
         return;
       }
 
@@ -120,11 +121,11 @@ class _InventoryBondsPicposScreenState
   Future<void> _saveBond() async {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
-      AppToast.show(context, 'يجب إضافة أصناف للسند');
+      AppToast.show(context, tr('يجب إضافة أصناف للسند'));
       return;
     }
     if (_selectedWarehouseId == null) {
-      AppToast.show(context, 'يرجى اختيار المستودع');
+      AppToast.show(context, tr('يرجى اختيار المستودع'));
       return;
     }
 
@@ -148,7 +149,7 @@ class _InventoryBondsPicposScreenState
       // does not re-tap the save button.
       AppToast.show(
         context,
-        'تم إضافة قيد السند المخزني وإضافة الأرصدة بنجاح',
+        tr('تم إضافة قيد السند المخزني وإضافة الأرصدة بنجاح'),
         type: ToastType.success,
       );
 
@@ -166,7 +167,7 @@ class _InventoryBondsPicposScreenState
     } else if (mounted) {
       AppToast.show(
         context,
-        'فشل حفظ السند — راجع البيانات وحاول مرة أخرى',
+        tr('فشل حفظ السند — راجع البيانات وحاول مرة أخرى'),
         type: ToastType.error,
       );
     }
@@ -177,13 +178,13 @@ class _InventoryBondsPicposScreenState
     final warehouses = ref.watch(allWarehousesProvider);
 
     return PicPosScreenScaffold(
-      title: 'سندات المخزون',
-      subtitle: 'إدخال وإخراج المخزون بالسندات',
+      title: tr('سندات المخزون'),
+      subtitle: tr('إدخال وإخراج المخزون بالسندات'),
       icon: PhosphorIconsBold.stackPlus,
       headerActions: [
         IconButton(
           icon: const Icon(PhosphorIconsBold.floppyDisk),
-          tooltip: 'حفظ السند',
+          tooltip: tr('حفظ السند'),
           onPressed: _isSaving ? null : _saveBond,
         ),
       ],
@@ -192,7 +193,7 @@ class _InventoryBondsPicposScreenState
           ElevatedButton.icon(
             onPressed: _addItem,
             icon: const Icon(PhosphorIconsBold.plus),
-            label: const Text('إضافة صنف'),
+            label:  Text(tr('إضافة صنف')),
           ),
         ],
       ),
@@ -211,22 +212,22 @@ class _InventoryBondsPicposScreenState
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: _bondType,
-                          decoration: const InputDecoration(
-                            labelText: 'نوع السند',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
+                          decoration:  InputDecoration(
+                            labelText: tr('نوع السند'),
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 8,
                             ),
                           ),
-                          items: const [
+                          items:  [
                             DropdownMenuItem(
                               value: 'opening',
-                              child: Text('رصيد افتتاحي (Opening Balance)'),
+                              child: Text(tr('رصيد افتتاحي (Opening Balance)')),
                             ),
                             DropdownMenuItem(
                               value: 'in',
-                              child: Text('سند إضافة (Add Stock)'),
+                              child: Text(tr('سند إضافة (Add Stock)')),
                             ),
                           ],
                           onChanged: (val) => setState(() => _bondType = val!),
@@ -237,10 +238,10 @@ class _InventoryBondsPicposScreenState
                         child: warehouses.when(
                           data: (list) => DropdownButtonFormField<int>(
                             initialValue: _selectedWarehouseId,
-                            decoration: const InputDecoration(
-                              labelText: 'المستودع',
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(
+                            decoration:  InputDecoration(
+                              labelText: tr('المستودع'),
+                              border: const OutlineInputBorder(),
+                              contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 8,
                               ),
@@ -255,21 +256,21 @@ class _InventoryBondsPicposScreenState
                                 .toList(),
                             onChanged: (val) =>
                                 setState(() => _selectedWarehouseId = val),
-                            validator: (val) => val == null ? 'مطلوب' : null,
+                            validator: (val) => val == null ? tr('مطلوب') : null,
                           ),
                           loading: () => const LinearProgressIndicator(),
                           error: (_, _) =>
-                              const Text('خطأ في تحميل المستودعات'),
+                               Text(tr('خطأ في تحميل المستودعات')),
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: TextFormField(
                           controller: _bondNumberController,
-                          decoration: const InputDecoration(
-                            labelText: 'رقم السند',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
+                          decoration:  InputDecoration(
+                            labelText: tr('رقم السند'),
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 8,
                             ),
@@ -282,10 +283,10 @@ class _InventoryBondsPicposScreenState
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _notesController,
-                    decoration: const InputDecoration(
-                      labelText: 'ملاحظات',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
+                    decoration:  InputDecoration(
+                      labelText: tr('ملاحظات'),
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 8,
                       ),
@@ -301,12 +302,12 @@ class _InventoryBondsPicposScreenState
               child: PicPosContentCard(
                 padding: const EdgeInsets.all(8),
                 child: _items.isEmpty
-                    ? const Center(
+                    ?  Center(
                         child: Padding(
-                          padding: EdgeInsets.all(32.0),
+                          padding: const EdgeInsets.all(32.0),
                           child: Text(
-                            'لم يتم إضافة أصناف بعد. اضغط على زر الإضافة (+)',
-                            style: TextStyle(color: Colors.grey),
+                            tr('لم يتم إضافة أصناف بعد. اضغط على زر الإضافة (+)'),
+                            style: const TextStyle(color: Colors.grey),
                           ),
                         ),
                       )
@@ -320,15 +321,15 @@ class _InventoryBondsPicposScreenState
                           scrollDirection: Axis.horizontal,
                           child: DataTable(
                             columnSpacing: 20,
-                            columns: const [
-                              DataColumn(label: Text('الصنف')),
-                              DataColumn(label: Text('التصنيف')),
-                              DataColumn(label: Text('المورد')),
-                              DataColumn(label: Text('الرصيد الحالي')),
-                              DataColumn(label: Text('الكمية المضافة')),
-                              DataColumn(label: Text('سعر التكلفة')),
-                              DataColumn(label: Text('سعر البيع')),
-                              DataColumn(label: Text('حذف')),
+                            columns:  [
+                              DataColumn(label: Text(tr('الصنف'))),
+                              DataColumn(label: Text(tr('التصنيف'))),
+                              DataColumn(label: Text(tr('المورد'))),
+                              DataColumn(label: Text(tr('الرصيد الحالي'))),
+                              DataColumn(label: Text(tr('الكمية المضافة'))),
+                              DataColumn(label: Text(tr('سعر التكلفة'))),
+                              DataColumn(label: Text(tr('سعر البيع'))),
+                              DataColumn(label: Text(tr('حذف'))),
                             ],
                             rows: _items.asMap().entries.map((entry) {
                               final index = entry.key;
@@ -427,17 +428,17 @@ class _ProductSearchDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Simple search dialog
     return AlertDialog(
-      title: const Text('بحث عن صنف'),
+      title:  Text(tr('بحث عن صنف')),
       content: SizedBox(
         width: 500,
         height: 600,
         child: Column(
           children: [
             TextField(
-              decoration: const InputDecoration(
-                labelText: 'بحث...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('بحث...'),
+                prefixIcon: const Icon(Icons.search),
+                border: const OutlineInputBorder(),
               ),
               onChanged: (val) {
                 // Implement live search provider update here if needed
@@ -484,7 +485,7 @@ class _ProductSearchDialog extends ConsumerWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
       ],
     );

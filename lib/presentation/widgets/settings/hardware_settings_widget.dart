@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
@@ -229,7 +230,7 @@ class _HardwareSettingsWidgetState extends ConsumerState<HardwareSettingsWidget>
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity, height: 48,
-            child: ElevatedButton(onPressed: _saveSettings, child: const Text('حفظ الإعدادات')),
+            child: ElevatedButton(onPressed: _saveSettings, child:  Text(tr('حفظ الإعدادات'))),
           ),
         ],
       ),
@@ -240,11 +241,11 @@ class _HardwareSettingsWidgetState extends ConsumerState<HardwareSettingsWidget>
 
   Widget _buildScannerSection() {
     return buildSectionCard(
-      title: 'ماسح الباركود', icon: PhosphorIconsBold.barcode, iconColor: AppColors.primary,
+      title: tr('ماسح الباركود'), icon: PhosphorIconsBold.barcode, iconColor: AppColors.primary,
       children: [
-        SwitchListTile(title: const Text('صوت عند المسح'), subtitle: const Text('تشغيل صوت عند مسح باركود بنجاح'), value: _scannerSound, onChanged: (v) => setState(() => _scannerSound = v), contentPadding: EdgeInsets.zero),
+        SwitchListTile(title:  Text(tr('صوت عند المسح')), subtitle:  Text(tr('تشغيل صوت عند مسح باركود بنجاح')), value: _scannerSound, onChanged: (v) => setState(() => _scannerSound = v), contentPadding: EdgeInsets.zero),
         const Divider(),
-        const Text('ملاحظة: ماسح الباركود USB يعمل تلقائياً', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+         Text(tr('ملاحظة: ماسح الباركود USB يعمل تلقائياً'), style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
       ],
     );
   }
@@ -253,23 +254,23 @@ class _HardwareSettingsWidgetState extends ConsumerState<HardwareSettingsWidget>
 
   Widget _buildPrinterSection() {
     return buildSectionCard(
-      title: 'الطابعة الحرارية', icon: PhosphorIconsBold.printer, iconColor: AppColors.warning,
+      title: tr('الطابعة الحرارية'), icon: PhosphorIconsBold.printer, iconColor: AppColors.warning,
       children: [
-        SwitchListTile(title: const Text('طباعة تلقائية'), subtitle: const Text('طباعة الفاتورة تلقائياً بعد كل عملية بيع'), value: _autoPrint, onChanged: (v) => setState(() => _autoPrint = v), contentPadding: EdgeInsets.zero),
+        SwitchListTile(title:  Text(tr('طباعة تلقائية')), subtitle:  Text(tr('طباعة الفاتورة تلقائياً بعد كل عملية بيع')), value: _autoPrint, onChanged: (v) => setState(() => _autoPrint = v), contentPadding: EdgeInsets.zero),
         const Divider(),
         TextField(
-          decoration: const InputDecoration(labelText: 'نص ذيل الفاتورة', hintText: 'شكراً لزيارتكم'),
+          decoration:  InputDecoration(labelText: tr('نص ذيل الفاتورة'), hintText: tr('شكراً لزيارتكم')),
           controller: TextEditingController(text: _receiptFooter)..selection = TextSelection.fromPosition(TextPosition(offset: _receiptFooter.length)),
           onChanged: (v) => _receiptFooter = v, maxLines: 2,
         ),
         const Divider(),
         DropdownButtonFormField<String>(
           initialValue: _receiptCodeType,
-          decoration: const InputDecoration(labelText: 'نوع الكود على الإيصال', prefixIcon: Icon(PhosphorIconsBold.qrCode)),
-          items: const [
-            DropdownMenuItem(value: 'barcode', child: Text('باركود')),
-            DropdownMenuItem(value: 'qr_code', child: Text('QR كود')),
-            DropdownMenuItem(value: 'none', child: Text('بدون')),
+          decoration:  InputDecoration(labelText: tr('نوع الكود على الإيصال'), prefixIcon: const Icon(PhosphorIconsBold.qrCode)),
+          items:  [
+            DropdownMenuItem(value: 'barcode', child: Text(tr('باركود'))),
+            DropdownMenuItem(value: 'qr_code', child: Text(tr('QR كود'))),
+            DropdownMenuItem(value: 'none', child: Text(tr('بدون'))),
           ],
           onChanged: (v) => setState(() => _receiptCodeType = v ?? 'barcode'),
         ),
@@ -281,18 +282,18 @@ class _HardwareSettingsWidgetState extends ConsumerState<HardwareSettingsWidget>
 
   Widget _buildCashDrawerSection() {
     return buildSectionCard(
-      title: 'درج النقد', icon: PhosphorIconsBold.wallet, iconColor: AppColors.warning,
+      title: tr('درج النقد'), icon: PhosphorIconsBold.wallet, iconColor: AppColors.warning,
       children: [
-        const Text('درج النقد يتصل بالطابعة الحرارية عبر كابل RJ12. حدد الطابعة لإرسال أمر الفتح.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+         Text(tr('درج النقد يتصل بالطابعة الحرارية عبر كابل RJ12. حدد الطابعة لإرسال أمر الفتح.'), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
         const SizedBox(height: 12),
         TextField(
-          decoration: const InputDecoration(labelText: 'اسم الطابعة (للدرج)', hintText: 'مثال: POS58 أو XP-58', prefixIcon: Icon(PhosphorIconsBold.printer)),
+          decoration:  InputDecoration(labelText: tr('اسم الطابعة (للدرج)'), hintText: tr('مثال: POS58 أو XP-58'), prefixIcon: const Icon(PhosphorIconsBold.printer)),
           controller: TextEditingController(text: _cashDrawerPrinter ?? '')..selection = TextSelection.collapsed(offset: _cashDrawerPrinter?.length ?? 0),
           onChanged: (v) => _cashDrawerPrinter = v.isEmpty ? null : v,
         ),
         const SizedBox(height: 12),
         SizedBox(width: double.infinity, child: ElevatedButton.icon(
-          onPressed: _testCashDrawer, icon: const Icon(PhosphorIconsBold.wallet, size: 16), label: const Text('اختبار فتح الدرج'),
+          onPressed: _testCashDrawer, icon: const Icon(PhosphorIconsBold.wallet, size: 16), label:  Text(tr('اختبار فتح الدرج')),
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
         )),
       ],
@@ -303,7 +304,7 @@ class _HardwareSettingsWidgetState extends ConsumerState<HardwareSettingsWidget>
     if (mounted) {
       final cashDrawer = CashDrawerService();
       final success = await cashDrawer.openDrawer(printerName: _cashDrawerPrinter);
-      if (mounted) AppToast.show(context, success ? 'تم فتح الدرج بنجاح' : 'فشل فتح الدرج - تأكد من اسم الطابعة', type: ToastType.error);
+      if (mounted) AppToast.show(context, success ? tr('تم فتح الدرج بنجاح') : tr('فشل فتح الدرج - تأكد من اسم الطابعة'), type: ToastType.error);
     }
   }
 
@@ -401,7 +402,7 @@ class _HardwareSettingsWidgetState extends ConsumerState<HardwareSettingsWidget>
     ref.invalidate(posCartRatioLockedProvider);
     ref.invalidate(posCartRatioValueProvider);
 
-    if (mounted) AppToast.show(context, 'تم حفظ الإعدادات بنجاح', type: ToastType.success);
+    if (mounted) AppToast.show(context, tr('تم حفظ الإعدادات بنجاح'), type: ToastType.success);
   }
 }
 
@@ -425,11 +426,11 @@ Future<void> showHardwareSettingsDialog(BuildContext context,
         builder: (_, ready, _) => PicPosDialog(
           icon: PhosphorIconsBold.printer,
           accent: AppColors.info,
-          title: 'إعدادات الأجهزة',
-          subtitle: 'الماسح والطابعة الحرارية ودرج النقد والميزان',
+          title: tr('إعدادات الأجهزة'),
+          subtitle: tr('الماسح والطابعة الحرارية ودرج النقد والميزان'),
           width: 660,
           primaryAction: PicPosDialogAction(
-            label: 'حفظ الإعدادات',
+            label: tr('حفظ الإعدادات'),
             icon: PhosphorIconsBold.check,
             onPressed: ready ? handle.invoke : null,
           ),
@@ -449,13 +450,13 @@ Future<void> showHardwareSettingsDialog(BuildContext context,
   return showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Row(children: [
-        Icon(PhosphorIconsBold.printer, color: AppColors.info),
-        SizedBox(width: 8),
-        Text('إعدادات الأجهزة'),
+      title:  Row(children: [
+        const Icon(PhosphorIconsBold.printer, color: AppColors.info),
+        const SizedBox(width: 8),
+        Text(tr('إعدادات الأجهزة')),
       ]),
       content: const SizedBox(width: 500, height: 600, child: HardwareSettingsWidget()),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء'))],
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child:  Text(tr('إلغاء')))],
     ),
   );
 }

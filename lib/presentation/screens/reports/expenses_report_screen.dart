@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -96,8 +97,8 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
           final scope = await ref.read(branchScopeProvider.future);
           if (!mounted) return;
           final message = scope.hasFullAccess
-              ? 'لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'
-              : 'لم يتم تعيين فرع لهذا المستخدم — يتم عرض الفروع المصرّح بها فقط';
+              ? tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')
+              : tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض الفروع المصرّح بها فقط');
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -189,7 +190,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحميل البيانات: $e')),
+          SnackBar(content: Text(tr('خطأ في تحميل البيانات: {e}', {'e': e}))),
         );
       }
     }
@@ -235,13 +236,13 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
 
   Future<void> _exportExcel() async {
     final headers = [
-      'التاريخ',
-      'الفئة',
-      'المبلغ',
-      'طريقة الدفع',
-      'الفرع',
-      'المستخدم',
-      'ملاحظات',
+      tr('التاريخ'),
+      tr('الفئة'),
+      tr('المبلغ'),
+      tr('طريقة الدفع'),
+      tr('الفرع'),
+      tr('المستخدم'),
+      tr('ملاحظات'),
     ];
     final rows = _detailRows.map((r) {
       final raw = r['expense_date'];
@@ -264,7 +265,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
     }).toList();
 
     rows.add(['', '', '', '', '', '', '']);
-    rows.add(['ملخص حسب الفئة', '', '', '', '', '', '']);
+    rows.add([tr('ملخص حسب الفئة'), '', '', '', '', '', '']);
     for (final s in _activeSummary) {
       rows.add([
         '',
@@ -273,14 +274,14 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
         '',
         '',
         '',
-        'عدد: ${s['entry_count'] ?? 0}',
+        tr('عدد: {p0}', {'p0': s['entry_count'] ?? 0}),
       ]);
     }
-    rows.add(['', 'الإجمالي الكلي', _grandTotal, '', '', '', '']);
+    rows.add(['', tr('الإجمالي الكلي'), _grandTotal, '', '', '', '']);
 
     await ExcelExportHelper.export(
       context: context,
-      title: 'تقرير المصروفات التشغيلية',
+      title: tr('تقرير المصروفات التشغيلية'),
       headers: headers,
       rows: rows,
       fromDate: _dateRange.start,
@@ -302,7 +303,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
         build: (context) => [
           pw.Center(
             child: pw.Text(
-              'تقرير المصروفات التشغيلية',
+              tr('تقرير المصروفات التشغيلية'),
               style: pw.TextStyle(
                   font: font, fontSize: 18, fontWeight: pw.FontWeight.bold),
             ),
@@ -310,7 +311,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
           pw.SizedBox(height: 6),
           pw.Center(
             child: pw.Text(
-              'الفترة: ${_dateFormat.format(_dateRange.start)} → ${_dateFormat.format(_dateRange.end)}',
+              tr('الفترة: {p0} → {p1}', {'p0': _dateFormat.format(_dateRange.start), 'p1': _dateFormat.format(_dateRange.end)}),
               style: pw.TextStyle(font: font, fontSize: 11),
             ),
           ),
@@ -325,7 +326,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
-                  'إجمالي المصروفات',
+                  tr('إجمالي المصروفات'),
                   style: pw.TextStyle(
                       font: font, fontSize: 13, fontWeight: pw.FontWeight.bold),
                 ),
@@ -339,7 +340,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
           ),
           pw.SizedBox(height: 12),
           pw.Text(
-            'الملخص حسب الفئة',
+            tr('الملخص حسب الفئة'),
             style: pw.TextStyle(
                 font: font, fontSize: 13, fontWeight: pw.FontWeight.bold),
           ),
@@ -351,7 +352,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
             headerDecoration:
                 const pw.BoxDecoration(color: PdfColors.grey200),
             cellAlignment: pw.AlignmentDirectional.centerStart,
-            headers: ['الفئة', 'الإجمالي', 'العدد'],
+            headers: [tr('الفئة'), tr('الإجمالي'), tr('العدد')],
             data: _activeSummary
                 .map((r) => [
                       r['name']?.toString() ?? '—',
@@ -362,7 +363,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
           ),
           pw.SizedBox(height: 16),
           pw.Text(
-            'تفاصيل المصروفات (${_detailRows.length} سجل)',
+            tr('تفاصيل المصروفات ({p0} سجل)', {'p0': _detailRows.length}),
             style: pw.TextStyle(
                 font: font, fontSize: 13, fontWeight: pw.FontWeight.bold),
           ),
@@ -375,11 +376,11 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
                 const pw.BoxDecoration(color: PdfColors.grey200),
             cellAlignment: pw.AlignmentDirectional.centerStart,
             headers: [
-              'التاريخ',
-              'الفئة',
-              'المبلغ',
-              'الفرع',
-              'المستخدم',
+              tr('التاريخ'),
+              tr('الفئة'),
+              tr('المبلغ'),
+              tr('الفرع'),
+              tr('المستخدم'),
             ],
             data: _detailRows.map((r) {
               final raw = r['expense_date'];
@@ -403,7 +404,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
       ),
     );
 
-    await PdfComputeHelper.layoutPdf(pdf, name: 'تقرير_المصروفات_${_dateFormat.format(DateTime.now())}');
+    await PdfComputeHelper.layoutPdf(pdf, name: tr('تقرير_المصروفات_{p0}', {'p0': _dateFormat.format(DateTime.now())}));
   }
 
   // ── Computed helpers ────────────────────────────────────────────────────
@@ -438,17 +439,17 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: const Text('تقرير المصروفات التشغيلية'),
+          title:  Text(tr('تقرير المصروفات التشغيلية')),
           actions: [
             IconButton(
               icon: const Icon(PhosphorIconsBold.printer),
-              tooltip: 'طباعة',
+              tooltip: tr('طباعة'),
               onPressed: _isLoading || _detailRows.isEmpty ? null : _printPdf,
             ),
             buildReportExportAction(onExport: _isLoading || _detailRows.isEmpty ? null : _exportExcel),
             IconButton(
               icon: const Icon(PhosphorIconsBold.arrowClockwise),
-              tooltip: 'تحديث',
+              tooltip: tr('تحديث'),
               onPressed: _isLoading ? null : _loadData,
             ),
             const SizedBox(width: 4),
@@ -500,7 +501,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
               initialValue: _selectedRegionId,
               isDense: true,
               decoration: InputDecoration(
-                labelText: 'المنطقة',
+                labelText: tr('المنطقة'),
                 prefixIcon: const Icon(PhosphorIconsBold.mapPin, size: 16),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8)),
@@ -508,8 +509,8 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
                     horizontal: 8, vertical: 8),
               ),
               items: [
-                const DropdownMenuItem<int?>(
-                    value: null, child: Text('كل المناطق')),
+                 DropdownMenuItem<int?>(
+                    value: null, child: Text(tr('كل المناطق'))),
                 ...regions.map<DropdownMenuItem<int?>>(
                   (r) => DropdownMenuItem<int?>(
                       value: r.id as int?, child: Text(r.name as String)),
@@ -564,7 +565,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
               initialValue: _selectedBranchId,
               isDense: true,
               decoration: InputDecoration(
-                labelText: 'الفرع',
+                labelText: tr('الفرع'),
                 prefixIcon:
                     const Icon(PhosphorIconsBold.buildings, size: 16),
                 border: OutlineInputBorder(
@@ -573,8 +574,8 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
                     horizontal: 8, vertical: 8),
               ),
               items: [
-                const DropdownMenuItem<int?>(
-                    value: null, child: Text('كل الفروع')),
+                 DropdownMenuItem<int?>(
+                    value: null, child: Text(tr('كل الفروع'))),
                 ...branches.map<DropdownMenuItem<int?>>(
                   (b) => DropdownMenuItem<int?>(
                       value: b.id as int?, child: Text(b.name as String)),
@@ -597,7 +598,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
               initialValue: _selectedUserId,
               isDense: true,
               decoration: InputDecoration(
-                labelText: 'المستخدم',
+                labelText: tr('المستخدم'),
                 prefixIcon: const Icon(PhosphorIconsBold.user, size: 16),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8)),
@@ -605,8 +606,8 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
                     horizontal: 8, vertical: 8),
               ),
               items: [
-                const DropdownMenuItem<int?>(
-                    value: null, child: Text('كل المستخدمين')),
+                 DropdownMenuItem<int?>(
+                    value: null, child: Text(tr('كل المستخدمين'))),
                 ...users.map<DropdownMenuItem<int?>>(
                   (u) => DropdownMenuItem<int?>(
                     value: u.user.id as int?,
@@ -635,26 +636,26 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
     final cards = [
       AppKpiCard(
         icon: PhosphorIconsBold.coins,
-        label: 'إجمالي المصروفات',
+        label: tr('إجمالي المصروفات'),
         value:
             '${_currencyFormat.format(_grandTotal)} ${AppConstants.currencySymbolEn}',
         color: AppColors.error,
       ),
       AppKpiCard(
         icon: PhosphorIconsBold.tag,
-        label: 'عدد الفئات النشطة',
+        label: tr('عدد الفئات النشطة'),
         value: '${_activeSummary.length}',
         color: AppColors.warning,
       ),
       AppKpiCard(
         icon: PhosphorIconsBold.listChecks,
-        label: 'عدد القيود',
+        label: tr('عدد القيود'),
         value: '$_totalEntries',
         color: AppColors.info,
       ),
       AppKpiCard(
         icon: PhosphorIconsBold.calculator,
-        label: 'متوسط القيد',
+        label: tr('متوسط القيد'),
         value:
             '${_currencyFormat.format(_averagePerEntry)} ${AppConstants.currencySymbolEn}',
         color: AppColors.primary,
@@ -717,14 +718,14 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+           Row(
             children: [
-              Icon(PhosphorIconsBold.chartPieSlice,
+              const Icon(PhosphorIconsBold.chartPieSlice,
                   color: AppColors.primary, size: 18),
-              SizedBox(width: 8),
-              Text('التوزيع حسب الفئة',
+              const SizedBox(width: 8),
+              Text(tr('التوزيع حسب الفئة'),
                   style:
-                      TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                      const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
             ],
           ),
           const Divider(height: 18),
@@ -830,7 +831,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
                     color: AppColors.primary, size: 18),
                 const SizedBox(width: 8),
                 Text(
-                  'تفاصيل القيود (${_detailRows.length} سجل)',
+                  tr('تفاصيل القيود ({p0} سجل)', {'p0': _detailRows.length}),
                   style: const TextStyle(
                       fontWeight: FontWeight.w800, fontSize: 14),
                 ),
@@ -840,14 +841,14 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
           Expanded(
             child: AppDataTable(
               margin: EdgeInsets.zero,
-              columns: const [
-                DataColumn(label: Text('التاريخ')),
-                DataColumn(label: Text('الفئة')),
-                DataColumn(label: Text('المبلغ'), numeric: true),
-                DataColumn(label: Text('طريقة الدفع')),
-                DataColumn(label: Text('الفرع')),
-                DataColumn(label: Text('المستخدم')),
-                DataColumn(label: Text('ملاحظات')),
+              columns:  [
+                DataColumn(label: Text(tr('التاريخ'))),
+                DataColumn(label: Text(tr('الفئة'))),
+                DataColumn(label: Text(tr('المبلغ')), numeric: true),
+                DataColumn(label: Text(tr('طريقة الدفع'))),
+                DataColumn(label: Text(tr('الفرع'))),
+                DataColumn(label: Text(tr('المستخدم'))),
+                DataColumn(label: Text(tr('ملاحظات'))),
               ],
               rows: _detailRows.map<DataRow>((row) {
                 final rawDate = row['expense_date'];
@@ -913,7 +914,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
                   )),
                 ]);
               }).toList(),
-              emptyState: const Text('لا توجد قيود مصروفات في هذه الفترة'),
+              emptyState:  Text(tr('لا توجد قيود مصروفات في هذه الفترة')),
             ),
           ),
         ],
@@ -930,7 +931,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
               size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
-            'لا توجد مصروفات في هذه الفترة',
+            tr('لا توجد مصروفات في هذه الفترة'),
             style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey.shade500,

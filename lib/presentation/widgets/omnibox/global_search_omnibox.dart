@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import '../../../core/navigation/screen_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -115,14 +116,14 @@ class _SearchOverlayState extends ConsumerState<_SearchOverlay> {
     // Quick static search for screens (can be expanded via GlobalSearchService later)
     final allScreens = [
       {'title': 'Dashboard', 'screenIndex': 0, 'icon': PhosphorIconsBold.house},
-      {'title': 'البيع السريع (الكاشير)', 'screenIndex': 1, 'icon': PhosphorIconsBold.shoppingCart},
-      {'title': 'إدارة المبيعات والفواتير', 'screenIndex': 16, 'icon': PhosphorIconsBold.fileText},
-      {'title': 'المشتريات', 'screenIndex': 8, 'icon': PhosphorIconsBold.receipt},
-      {'title': 'المخازن والمستودعات', 'screenIndex': 7, 'icon': PhosphorIconsBold.warehouse},
-      {'title': 'الخزينة والمالية', 'screenIndex': 9, 'icon': PhosphorIconsBold.wallet},
-      {'title': 'دليل العملاء والموردين', 'screenIndex': 6, 'icon': PhosphorIconsBold.usersThree},
-      {'title': 'الأصناف والمنتجات', 'screenIndex': 4, 'icon': PhosphorIconsBold.package},
-      {'title': 'الإعدادات', 'screenIndex': 11, 'icon': PhosphorIconsBold.gear},
+      {'title': tr('البيع السريع (الكاشير)'), 'screenIndex': 1, 'icon': PhosphorIconsBold.shoppingCart},
+      {'title': tr('إدارة المبيعات والفواتير'), 'screenIndex': 16, 'icon': PhosphorIconsBold.fileText},
+      {'title': tr('المشتريات'), 'screenIndex': 8, 'icon': PhosphorIconsBold.receipt},
+      {'title': tr('المخازن والمستودعات'), 'screenIndex': 7, 'icon': PhosphorIconsBold.warehouse},
+      {'title': tr('الخزينة والمالية'), 'screenIndex': 9, 'icon': PhosphorIconsBold.wallet},
+      {'title': tr('دليل العملاء والموردين'), 'screenIndex': 6, 'icon': PhosphorIconsBold.usersThree},
+      {'title': tr('الأصناف والمنتجات'), 'screenIndex': 4, 'icon': PhosphorIconsBold.package},
+      {'title': tr('الإعدادات'), 'screenIndex': 11, 'icon': PhosphorIconsBold.gear},
       // 🔴 **كان `31` — وهو «ربط الحسابات».** فمن يبحث عن اليومية في
       // البحث الشامل كان يُفتَح له ربطُ الحسابات. والفهرسُ يُقرأ من
       // `ScreenId` لا يُكتَب رقماً، فالفئةُ كلُّها تسقط.
@@ -131,8 +132,8 @@ class _SearchOverlayState extends ConsumerState<_SearchOverlay> {
         'screenIndex': ScreenId.journalEntries.navigationIndex,
         'icon': PhosphorIconsBold.notebook,
       },
-      {'title': 'التقارير', 'screenIndex': 10, 'icon': PhosphorIconsBold.chartBar},
-      {'title': 'إدارة الفروع', 'screenIndex': 12, 'icon': PhosphorIconsBold.buildings},
+      {'title': tr('التقارير'), 'screenIndex': 10, 'icon': PhosphorIconsBold.chartBar},
+      {'title': tr('إدارة الفروع'), 'screenIndex': 12, 'icon': PhosphorIconsBold.buildings},
     ];
 
     final matchingScreens = allScreens.where((s) => (s['title'] as String).toLowerCase().contains(lowerQuery)).toList();
@@ -141,7 +142,7 @@ class _SearchOverlayState extends ConsumerState<_SearchOverlay> {
       _results = [
         ...matchingScreens.map((s) => {
           ...s,
-          'type': 'شاشةระบบ',
+          'type': tr('شاشةระบบ'),
         }),
       ];
     });
@@ -177,7 +178,7 @@ class _SearchOverlayState extends ConsumerState<_SearchOverlay> {
                   autofocus: true,
                   textDirection: TextDirection.rtl,
                   decoration: InputDecoration(
-                    hintText: 'ابحث عن شاشة، فاتورة، عميل، صنف... (Esc للإغلاق)',
+                    hintText: tr('ابحث عن شاشة، فاتورة، عميل، صنف... (Esc للإغلاق)'),
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -211,9 +212,9 @@ class _SearchOverlayState extends ConsumerState<_SearchOverlay> {
                   ),
                 ),
               if (_results.isEmpty && _controller.text.isNotEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(32.0),
-                  child: Text('لا توجد نتائج مطابقة', style: TextStyle(color: Colors.grey)),
+                 Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Text(tr('لا توجد نتائج مطابقة'), style: const TextStyle(color: Colors.grey)),
                 )
             ],
           ),

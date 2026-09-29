@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'dart:ui' as ui;
@@ -38,13 +39,13 @@ import '../../../domain/models/tax_rate_bounds.dart';
 @visibleForTesting
 String? validateDefaultTaxRatePercent(String? raw) {
   final text = raw?.trim() ?? '';
-  if (text.isEmpty) return 'أدخل نسبةَ الضريبة';
+  if (text.isEmpty) return tr('أدخل نسبةَ الضريبة');
 
   final percent = double.tryParse(text);
-  if (percent == null) return 'أدخل رقماً';
+  if (percent == null) return tr('أدخل رقماً');
 
   if (!TaxRateBounds.isValidPercent(percent)) {
-    return 'النسبةُ إمّا صفرٌ (بلا ضريبة) أو ١٪ فأكثر — ولا تتجاوز ١٠٠٪';
+    return tr('النسبةُ إمّا صفرٌ (بلا ضريبة) أو ١٪ فأكثر — ولا تتجاوز ١٠٠٪');
   }
   return null;
 }
@@ -428,14 +429,14 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
   Future<void> _offerNegativeSaleOnAllProducts() async {
     final ok = await AppConfirmDialog.show(
       context,
-      title: 'تفعيل البيع بالسالب على كل الأصناف',
+      title: tr('تفعيل البيع بالسالب على كل الأصناف'),
       message: 'الإعداد العام اتشغّل. تحب أفعّل «السماح بالبيع بالسالب» على '
           'كل الأصناف النشطة كمان؟\n\n'
           'من غير كده، بعض الشاشات هتفضل تعرض الصنف الناقص كـ«غير متوفر» '
           'رغم إن البيع مسموح.\n\n'
           'التفعيل الجماعي بيشغّل بس ولا بيقفل — أي صنف قافل البيع بالسالب '
           'يدوياً هيتشغّل، ومفيش حاجة هتتقفل.',
-      confirmLabel: 'فعّل على كل الأصناف',
+      confirmLabel: tr('فعّل على كل الأصناف'),
     );
     if (!ok || !mounted) return;
 
@@ -450,8 +451,8 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
     AppToast.show(
       context,
       changed == 0
-          ? 'كل الأصناف كانت مفعّلة أصلاً — مفيش تغيير'
-          : 'اتفعّل البيع بالسالب على $changed صنف',
+          ? tr('كل الأصناف كانت مفعّلة أصلاً — مفيش تغيير')
+          : tr('اتفعّل البيع بالسالب على {changed} صنف', {'changed': changed}),
       type: ToastType.success,
     );
   }
@@ -470,7 +471,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
       if (mounted) {
         AppToast.show(
           context,
-          'نسبةُ الضريبة الافتراضية غير صالحة — صفرٌ (بلا ضريبة) أو ١٪ فأكثر',
+          tr('نسبةُ الضريبة الافتراضية غير صالحة — صفرٌ (بلا ضريبة) أو ١٪ فأكثر'),
           type: ToastType.error,
         );
       }
@@ -677,8 +678,8 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         AppToast.show(
           context,
           isRateLimit
-              ? 'تم الحفظ محلياً — السيرفر مشغول، ستُزامَن لاحقاً'
-              : 'تم الحفظ محلياً — السيرفر غير متاح، ستُزامَن لاحقاً',
+              ? tr('تم الحفظ محلياً — السيرفر مشغول، ستُزامَن لاحقاً')
+              : tr('تم الحفظ محلياً — السيرفر غير متاح، ستُزامَن لاحقاً'),
           type: ToastType.warning,
         );
       }
@@ -735,7 +736,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
       ref.invalidate(activeWarehouseIdProvider);
       ref.invalidate(posCashSafeIdProvider);
       ref.invalidate(posBankSafeIdProvider);
-      AppToast.show(context, 'تم حفظ إعدادات البيع السريع', type: ToastType.success);
+      AppToast.show(context, tr('تم حفظ إعدادات البيع السريع'), type: ToastType.success);
     }
   }
 
@@ -774,7 +775,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity, height: 48,
-            child: ElevatedButton(onPressed: _saveSettings, child: const Text('حفظ الإعدادات')),
+            child: ElevatedButton(onPressed: _saveSettings, child:  Text(tr('حفظ الإعدادات'))),
           ),
         ],
       ),
@@ -813,7 +814,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
                 Padding(
                   padding: const EdgeInsetsDirectional.fromSTEB(8, 6, 8, 8),
                   child: Text(
-                    'أقسام الحوار',
+                    tr('أقسام الحوار'),
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w800,
@@ -1111,40 +1112,40 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
 
   Widget _buildMainPOSSection() {
     return _buildSectionCard(
-      title: 'إعدادات البيع السريع الرئيسية', icon: PhosphorIconsBold.shoppingCart, iconColor: AppColors.primary,
+      title: tr('إعدادات البيع السريع الرئيسية'), icon: PhosphorIconsBold.shoppingCart, iconColor: AppColors.primary,
       children: [
         // ─── إعدادات الوردية والعرض ───
-        _groupHeader('إعدادات الوردية والعرض', _mainTint),
+        _groupHeader(tr('إعدادات الوردية والعرض'), _mainTint),
         _toggleRow(
           icon: PhosphorIconsBold.clockCountdown,
           tint: _mainTint,
-          title: 'إظهار ديالوج فتح الوردية',
+          title: tr('إظهار ديالوج فتح الوردية'),
           settingKey: 'pos_shift_dialog_enabled',
-          sub: 'عند الإغلاق يتم فتح الوردية تلقائياً بدون سؤال',
+          sub: tr('عند الإغلاق يتم فتح الوردية تلقائياً بدون سؤال'),
           value: _posShiftDialogEnabled,
           onChanged: (v) => setState(() => _posShiftDialogEnabled = v),
         ),
         _toggleRow(
           icon: PhosphorIconsBold.layout,
           tint: kQuickSaleSections[0].tint,
-          title: 'إظهار شريط التنقل العلوي',
+          title: tr('إظهار شريط التنقل العلوي'),
           settingKey: 'app_show_top_bar',
-          sub: 'إظهار أو إخفاء شريط التنبيهات والتنقل أعلى الشاشة',
+          sub: tr('إظهار أو إخفاء شريط التنبيهات والتنقل أعلى الشاشة'),
           value: _showTopBar,
           onChanged: (v) => setState(() => _showTopBar = v),
         ),
         _selectRow<String>(
           icon: PhosphorIconsBold.bellRinging,
           tint: AppColors.warning,
-          title: 'وضع تنبيهات المخزون',
+          title: tr('وضع تنبيهات المخزون'),
           settingKey: 'pos_stock_alert_mode',
           sub: _posStockAlertMode == 'min_stock'
-              ? 'تنبيه عند الوصول للحد الأدنى'
-              : 'تنبيه فقط عند نفاد المخزون',
+              ? tr('تنبيه عند الوصول للحد الأدنى')
+              : tr('تنبيه فقط عند نفاد المخزون'),
           value: _posStockAlertMode,
-          items: const [
-            DropdownMenuItem(value: 'zero', child: Text('نفاد المخزون فقط')),
-            DropdownMenuItem(value: 'min_stock', child: Text('الحد الأدنى')),
+          items:  [
+            DropdownMenuItem(value: 'zero', child: Text(tr('نفاد المخزون فقط'))),
+            DropdownMenuItem(value: 'min_stock', child: Text(tr('الحد الأدنى'))),
           ],
           onChanged: (v) => setState(() => _posStockAlertMode = v ?? 'zero'),
         ),
@@ -1162,11 +1163,11 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
                 tint: _enableNegativeSales
                     ? AppColors.warning
                     : AppColors.success,
-                title: 'السماح بالبيع بالسالب عند نقص المخزون',
+                title: tr('السماح بالبيع بالسالب عند نقص المخزون'),
                 settingKey: 'enable_negative_sales',
                 sub: _enableNegativeSales
-                    ? 'يمكن للكاشير بيع أصناف خارج المخزون — قد ينتج مخزون سالب.'
-                    : 'يمنع البيع عند نفاد المخزون ويظهر تنبيه باللغة العربية.',
+                    ? tr('يمكن للكاشير بيع أصناف خارج المخزون — قد ينتج مخزون سالب.')
+                    : tr('يمنع البيع عند نفاد المخزون ويظهر تنبيه باللغة العربية.'),
                 value: _enableNegativeSales,
                 onChanged: (v) async {
                   setState(() => _enableNegativeSales = v);
@@ -1174,11 +1175,11 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
                 },
               )
             : SwitchListTile(
-          title: const Text('السماح بالبيع بالسالب عند نقص المخزون'),
+          title:  Text(tr('السماح بالبيع بالسالب عند نقص المخزون')),
           subtitle: Text(
             _enableNegativeSales
-                ? 'يمكن للكاشير بيع أصناف خارج المخزون — قد ينتج مخزون سالب.'
-                : 'يمنع البيع عند نفاد المخزون ويظهر تنبيه باللغة العربية.',
+                ? tr('يمكن للكاشير بيع أصناف خارج المخزون — قد ينتج مخزون سالب.')
+                : tr('يمنع البيع عند نفاد المخزون ويظهر تنبيه باللغة العربية.'),
           ),
           value: _enableNegativeSales,
           onChanged: (v) async {
@@ -1202,8 +1203,8 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
           ),
         ),
         SwitchListTile(
-          title: const Text('أسعار البيع تشمل الضريبة'),
-          subtitle: const Text('يفصل POS السعر الإجمالي إلى صافي وضريبة عند الحساب'),
+          title:  Text(tr('أسعار البيع تشمل الضريبة')),
+          subtitle:  Text(tr('يفصل POS السعر الإجمالي إلى صافي وضريبة عند الحساب')),
           value: _pricesIncludeTax,
           onChanged: (value) => setState(() => _pricesIncludeTax = value),
           contentPadding: EdgeInsets.zero,
@@ -1230,16 +1231,16 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
                 // warehouse without juggling per-device overrides.
                 if (_currentBranchId != null)
                   ListTile(
-                    title: const Text('المخزن الافتراضي لـ POS هذا الفرع'),
-                    subtitle: const Text('يُطبَّق على كل أجهزة هذا الفرع — يسبق الإعداد العام'),
+                    title:  Text(tr('المخزن الافتراضي لـ POS هذا الفرع')),
+                    subtitle:  Text(tr('يُطبَّق على كل أجهزة هذا الفرع — يسبق الإعداد العام')),
                     contentPadding: EdgeInsets.zero,
                     trailing: DropdownButton<int?>(
                       value: branchWarehouses.any((w) => w.id == _perBranchWarehouseId)
                           ? _perBranchWarehouseId : null,
                       underline: const SizedBox.shrink(),
-                      hint: const Text('استخدم الإعداد العام'),
+                      hint:  Text(tr('استخدم الإعداد العام')),
                       items: [
-                        const DropdownMenuItem<int?>(value: null, child: Text('استخدم الإعداد العام')),
+                         DropdownMenuItem<int?>(value: null, child: Text(tr('استخدم الإعداد العام'))),
   // ignore: dead_code
                         ...branchWarehouses.map((w) => DropdownMenuItem<int?>(value: w.id, child: Text(w.name ?? ''))),
                       ],
@@ -1247,15 +1248,15 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
                     ),
                   ),
                 ListTile(
-                  title: const Text('المخزن الافتراضي للبيع السريع (عام)'),
-                  subtitle: const Text('يُستخدم إذا لم يكن هناك إعداد مخصّص للفرع'),
+                  title:  Text(tr('المخزن الافتراضي للبيع السريع (عام)')),
+                  subtitle:  Text(tr('يُستخدم إذا لم يكن هناك إعداد مخصّص للفرع')),
                   contentPadding: EdgeInsets.zero,
                   trailing: DropdownButton<int?>(
                     value: warehouses.any((w) => w.id == _posDefaultWarehouseId) ? _posDefaultWarehouseId : null,
                     underline: const SizedBox.shrink(),
-                    hint: const Text('تلقائي (الافتراضي)'),
+                    hint:  Text(tr('تلقائي (الافتراضي)')),
                     items: [
-                      const DropdownMenuItem<int?>(value: null, child: Text('تلقائي (الافتراضي)')),
+                       DropdownMenuItem<int?>(value: null, child: Text(tr('تلقائي (الافتراضي)'))),
   // ignore: dead_code
                       ...warehouses.map((w) => DropdownMenuItem<int?>(value: w.id, child: Text(w.name ?? ''))),
                     ],
@@ -1269,41 +1270,41 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         if (!widget.picposChrome) const Divider(thickness: 2),
 
         // ─── أزرار الإجراءات السريعة والسلة ───
-        _groupHeader('أزرار البيع السريع والسلة', _mainTint),
+        _groupHeader(tr('أزرار البيع السريع والسلة'), _mainTint),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: [
-            FilterChip(label: const Text('زر الضريبة'), selected: _showTaxButtonInPOS, onSelected: (v) => setState(() => _showTaxButtonInPOS = v)),
-            FilterChip(label: const Text('زر الخصم'), selected: _showDiscountButtonInPOS, onSelected: (v) => setState(() => _showDiscountButtonInPOS = v)),
-            FilterChip(label: const Text('زر الدرج'), selected: _showDrawerButtonInPOS, onSelected: (v) => setState(() => _showDrawerButtonInPOS = v)),
-            FilterChip(label: const Text('زر المصاريف'), selected: _showExpenseButtonInPOS, onSelected: (v) => setState(() => _showExpenseButtonInPOS = v)),
-            FilterChip(label: const Text('زر أمر الشغل'), selected: _showWorkOrderButton, onSelected: (v) => setState(() => _showWorkOrderButton = v)),
-            FilterChip(label: const Text('زر التوصيل'), selected: _showDeliveryButton, onSelected: (v) => setState(() => _showDeliveryButton = v)),
-            FilterChip(label: const Text('زر العروض'), selected: _showOffersButton, onSelected: (v) => setState(() => _showOffersButton = v)),
-            FilterChip(label: const Text('لوحة المفاتيح'), selected: _showKeyboardButton, onSelected: (v) => setState(() => _showKeyboardButton = v)),
-            FilterChip(label: const Text('زر المرتجعات'), selected: _showReturnButtonInPOS, onSelected: (v) => setState(() => _showReturnButtonInPOS = v)),
-            FilterChip(label: const Text('أزرار التعليق'), selected: _showHoldButtonInPOS, onSelected: (v) => setState(() => _showHoldButtonInPOS = v)),
-            FilterChip(label: const Text('زر الاستبدال'), selected: _showExchangeButtonInPOS, onSelected: (v) => setState(() => _showExchangeButtonInPOS = v)),
+            FilterChip(label:  Text(tr('زر الضريبة')), selected: _showTaxButtonInPOS, onSelected: (v) => setState(() => _showTaxButtonInPOS = v)),
+            FilterChip(label:  Text(tr('زر الخصم')), selected: _showDiscountButtonInPOS, onSelected: (v) => setState(() => _showDiscountButtonInPOS = v)),
+            FilterChip(label:  Text(tr('زر الدرج')), selected: _showDrawerButtonInPOS, onSelected: (v) => setState(() => _showDrawerButtonInPOS = v)),
+            FilterChip(label:  Text(tr('زر المصاريف')), selected: _showExpenseButtonInPOS, onSelected: (v) => setState(() => _showExpenseButtonInPOS = v)),
+            FilterChip(label:  Text(tr('زر أمر الشغل')), selected: _showWorkOrderButton, onSelected: (v) => setState(() => _showWorkOrderButton = v)),
+            FilterChip(label:  Text(tr('زر التوصيل')), selected: _showDeliveryButton, onSelected: (v) => setState(() => _showDeliveryButton = v)),
+            FilterChip(label:  Text(tr('زر العروض')), selected: _showOffersButton, onSelected: (v) => setState(() => _showOffersButton = v)),
+            FilterChip(label:  Text(tr('لوحة المفاتيح')), selected: _showKeyboardButton, onSelected: (v) => setState(() => _showKeyboardButton = v)),
+            FilterChip(label:  Text(tr('زر المرتجعات')), selected: _showReturnButtonInPOS, onSelected: (v) => setState(() => _showReturnButtonInPOS = v)),
+            FilterChip(label:  Text(tr('أزرار التعليق')), selected: _showHoldButtonInPOS, onSelected: (v) => setState(() => _showHoldButtonInPOS = v)),
+            FilterChip(label:  Text(tr('زر الاستبدال')), selected: _showExchangeButtonInPOS, onSelected: (v) => setState(() => _showExchangeButtonInPOS = v)),
           ],
         ),
         if (!widget.picposChrome) const Divider(thickness: 2),
 
         // ─── إعدادات ترقيم المستندات ───
-        _groupHeader('إعدادات ترقيم المستندات', _mainTint),
-        const Text('تحديد بادئة الترقيم لكل نوع مستند. اترك الحقل فارغاً للترقيم الافتراضي.', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+        _groupHeader(tr('إعدادات ترقيم المستندات'), _mainTint),
+         Text(tr('تحديد بادئة الترقيم لكل نوع مستند. اترك الحقل فارغاً للترقيم الافتراضي.'), style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
         const SizedBox(height: 8),
         // Sales group
         Row(children: [
           Expanded(child: TextFormField(
             initialValue: _prefixSalesPos,
-            decoration: const InputDecoration(labelText: 'فاتورة مبيعات (POS)', hintText: 'R-', prefixIcon: Icon(PhosphorIconsBold.receipt, size: 18), isDense: true),
+            decoration:  InputDecoration(labelText: tr('فاتورة مبيعات (POS)'), hintText: 'R-', prefixIcon: const Icon(PhosphorIconsBold.receipt, size: 18), isDense: true),
             onChanged: (v) => _prefixSalesPos = v,
           )),
           const SizedBox(width: 12),
           Expanded(child: TextFormField(
             initialValue: _prefixSalesManual,
-            decoration: const InputDecoration(labelText: 'فاتورة مبيعات (يدوية)', hintText: 'INV', prefixIcon: Icon(PhosphorIconsBold.fileText, size: 18), isDense: true),
+            decoration:  InputDecoration(labelText: tr('فاتورة مبيعات (يدوية)'), hintText: 'INV', prefixIcon: const Icon(PhosphorIconsBold.fileText, size: 18), isDense: true),
             onChanged: (v) => _prefixSalesManual = v,
           )),
         ]),
@@ -1311,13 +1312,13 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         Row(children: [
           Expanded(child: TextFormField(
             initialValue: _prefixSalesReturn,
-            decoration: const InputDecoration(labelText: 'مردودات مبيعات', hintText: 'RET-', prefixIcon: Icon(PhosphorIconsBold.arrowUUpLeft, size: 18), isDense: true),
+            decoration:  InputDecoration(labelText: tr('مردودات مبيعات'), hintText: 'RET-', prefixIcon: const Icon(PhosphorIconsBold.arrowUUpLeft, size: 18), isDense: true),
             onChanged: (v) => _prefixSalesReturn = v,
           )),
           const SizedBox(width: 12),
           Expanded(child: TextFormField(
             initialValue: _prefixQuotation,
-            decoration: const InputDecoration(labelText: 'عرض سعر', hintText: 'QUO', prefixIcon: Icon(PhosphorIconsBold.clipboardText, size: 18), isDense: true),
+            decoration:  InputDecoration(labelText: tr('عرض سعر'), hintText: 'QUO', prefixIcon: const Icon(PhosphorIconsBold.clipboardText, size: 18), isDense: true),
             onChanged: (v) => _prefixQuotation = v,
           )),
         ]),
@@ -1326,13 +1327,13 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         Row(children: [
           Expanded(child: TextFormField(
             initialValue: _prefixPurchase,
-            decoration: const InputDecoration(labelText: 'فاتورة مشتريات', hintText: 'PUR', prefixIcon: Icon(PhosphorIconsBold.shoppingBag, size: 18), isDense: true),
+            decoration:  InputDecoration(labelText: tr('فاتورة مشتريات'), hintText: 'PUR', prefixIcon: const Icon(PhosphorIconsBold.shoppingBag, size: 18), isDense: true),
             onChanged: (v) => _prefixPurchase = v,
           )),
           const SizedBox(width: 12),
           Expanded(child: TextFormField(
             initialValue: _prefixPurchaseReturn,
-            decoration: const InputDecoration(labelText: 'مردودات مشتريات', hintText: 'PRET', prefixIcon: Icon(PhosphorIconsBold.arrowUUpRight, size: 18), isDense: true),
+            decoration:  InputDecoration(labelText: tr('مردودات مشتريات'), hintText: 'PRET', prefixIcon: const Icon(PhosphorIconsBold.arrowUUpRight, size: 18), isDense: true),
             onChanged: (v) => _prefixPurchaseReturn = v,
           )),
         ]),
@@ -1341,38 +1342,38 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         Row(children: [
           Expanded(child: TextFormField(
             initialValue: _prefixReceiptVoucher,
-            decoration: const InputDecoration(labelText: 'سند قبض', hintText: 'RV', prefixIcon: Icon(PhosphorIconsBold.arrowDown, size: 18), isDense: true),
+            decoration:  InputDecoration(labelText: tr('سند قبض'), hintText: 'RV', prefixIcon: const Icon(PhosphorIconsBold.arrowDown, size: 18), isDense: true),
             onChanged: (v) => _prefixReceiptVoucher = v,
           )),
           const SizedBox(width: 12),
           Expanded(child: TextFormField(
             initialValue: _prefixPaymentVoucher,
-            decoration: const InputDecoration(labelText: 'سند صرف', hintText: 'PV', prefixIcon: Icon(PhosphorIconsBold.arrowUp, size: 18), isDense: true),
+            decoration:  InputDecoration(labelText: tr('سند صرف'), hintText: 'PV', prefixIcon: const Icon(PhosphorIconsBold.arrowUp, size: 18), isDense: true),
             onChanged: (v) => _prefixPaymentVoucher = v,
           )),
         ]),
         if (!widget.picposChrome) const Divider(thickness: 2),
 
         // ─── واجهة العرض والتفاعل ───
-        _groupHeader('واجهة العرض والتفاعل', _mainTint),
+        _groupHeader(tr('واجهة العرض والتفاعل'), _mainTint),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: [
-            FilterChip(label: const Text('حقل الباركود'), selected: _showBarcodeInPOS, onSelected: (v) => setState(() => _showBarcodeInPOS = v)),
-            FilterChip(label: const Text('تسعير الأصناف (شاشة منبثقة)'), selected: _showPricingInquiryInPOS, onSelected: (v) => setState(() => _showPricingInquiryInPOS = v)),
-            FilterChip(label: const Text('البحث عن المنتج'), selected: _showSearchInPOS, onSelected: (v) => setState(() => _showSearchInPOS = v)),
-            FilterChip(label: const Text('الحفظ فقط'), selected: _showSaveOnlyInPOS, onSelected: (v) => setState(() => _showSaveOnlyInPOS = v)),
-            FilterChip(label: const Text('المجموع الفرعي'), selected: _showSubtotalInPOS, onSelected: (v) => setState(() => _showSubtotalInPOS = v)),
-            FilterChip(label: const Text('إضافة عميل'), selected: _showAddCustomerInPOS, onSelected: (v) => setState(() => _showAddCustomerInPOS = v)),
-            FilterChip(label: const Text('نوع الطلب'), selected: _showOrderTypeInPOS, onSelected: (v) => setState(() => _showOrderTypeInPOS = v)),
-            FilterChip(label: const Text('اسم العميل بالسلة'), selected: _showAdhocCustomerInPOS, onSelected: (v) => setState(() => _showAdhocCustomerInPOS = v)),
+            FilterChip(label:  Text(tr('حقل الباركود')), selected: _showBarcodeInPOS, onSelected: (v) => setState(() => _showBarcodeInPOS = v)),
+            FilterChip(label:  Text(tr('تسعير الأصناف (شاشة منبثقة)')), selected: _showPricingInquiryInPOS, onSelected: (v) => setState(() => _showPricingInquiryInPOS = v)),
+            FilterChip(label:  Text(tr('البحث عن المنتج')), selected: _showSearchInPOS, onSelected: (v) => setState(() => _showSearchInPOS = v)),
+            FilterChip(label:  Text(tr('الحفظ فقط')), selected: _showSaveOnlyInPOS, onSelected: (v) => setState(() => _showSaveOnlyInPOS = v)),
+            FilterChip(label:  Text(tr('المجموع الفرعي')), selected: _showSubtotalInPOS, onSelected: (v) => setState(() => _showSubtotalInPOS = v)),
+            FilterChip(label:  Text(tr('إضافة عميل')), selected: _showAddCustomerInPOS, onSelected: (v) => setState(() => _showAddCustomerInPOS = v)),
+            FilterChip(label:  Text(tr('نوع الطلب')), selected: _showOrderTypeInPOS, onSelected: (v) => setState(() => _showOrderTypeInPOS = v)),
+            FilterChip(label:  Text(tr('اسم العميل بالسلة')), selected: _showAdhocCustomerInPOS, onSelected: (v) => setState(() => _showAdhocCustomerInPOS = v)),
             // العنوان بيقول «أصناف الميزان» صراحةً لأن ده اللي الإعداد بيعمله
             // فعلاً: أصناف العدد والحبة بتتراكم دايماً مهما كان (شوف
             // `resolveStackingFlags`). العنوان القديم «منع تراكم الأصناف» كان
             // بيوعد بحاجة تانية خالص.
             FilterChip(
-              label: const Text('منع تراكم أصناف الميزان (سطر لكل وزن)'),
+              label:  Text(tr('منع تراكم أصناف الميزان (سطر لكل وزن)')),
               tooltip: 'كل وزنة ميزان تنزل في سطر مستقل بدل ما تتجمع. '
                   'أصناف العدد والحبة بتتراكم دايماً في سطر واحد.',
               selected: _preventItemStacking,
@@ -1383,20 +1384,20 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         if (!widget.picposChrome) const Divider(thickness: 2),
 
         // ─── أيقونة الصنف وباقي الإعدادات ───
-        _groupHeader('عرض المنتجات', _mainTint),
+        _groupHeader(tr('عرض المنتجات'), _mainTint),
         _toggleRow(
           icon: PhosphorIconsBold.image,
           tint: AppColors.success,
-          title: 'إظهار صور الأصناف',
+          title: tr('إظهار صور الأصناف'),
           settingKey: 'pos_show_product_images',
-          sub: 'إظهار أو إخفاء صور المنتجات في شبكة البيع السريع',
+          sub: tr('إظهار أو إخفاء صور المنتجات في شبكة البيع السريع'),
           value: _showProductImagesInPOS,
           onChanged: (v) => setState(() => _showProductImagesInPOS = v),
         ),
         _toggleRow(
           icon: PhosphorIconsBold.sortAscending,
           tint: AppColors.success,
-          title: 'إظهار ترتيب الأصناف',
+          title: tr('إظهار ترتيب الأصناف'),
           settingKey: 'pos_show_product_sort',
           value: _showProductSortInPOS,
           onChanged: (v) => setState(() => _showProductSortInPOS = v),
@@ -1404,9 +1405,9 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         _toggleRow(
           icon: PhosphorIconsBold.columns,
           tint: AppColors.success,
-          title: 'إظهار زر طي القائمة',
+          title: tr('إظهار زر طي القائمة'),
           settingKey: 'pos_show_layout_toggle',
-          sub: 'إظهار أو إخفاء زر التحكم في أماكن عرض المنتجات',
+          sub: tr('إظهار أو إخفاء زر التحكم في أماكن عرض المنتجات'),
           value: _showProductLayoutToggleInPOS,
           onChanged: (v) => setState(() => _showProductLayoutToggleInPOS = v),
         ),
@@ -1414,7 +1415,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         _sliderRow(
           icon: PhosphorIconsBold.textAa,
           tint: _mainTint,
-          title: 'حجم خط الاسم',
+          title: tr('حجم خط الاسم'),
           settingKey: 'pos_product_name_font_size',
           value: _productNameFontSize, min: 10, max: 24, divisions: 14,
           onChanged: (v) => setState(() => _productNameFontSize = v),
@@ -1422,7 +1423,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         _sliderRow(
           icon: PhosphorIconsBold.textT,
           tint: _mainTint,
-          title: 'حجم خط السعر',
+          title: tr('حجم خط السعر'),
           settingKey: 'pos_product_price_font_size',
           value: _productPriceFontSize, min: 10, max: 24, divisions: 14,
           isLast: true,
@@ -1431,13 +1432,13 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         if (!widget.picposChrome) const Divider(thickness: 2),
 
         // ─── إعدادات السلة ───
-        _groupHeader('إعدادات السلة', _mainTint),
+        _groupHeader(tr('إعدادات السلة'), _mainTint),
         _toggleRow(
           icon: PhosphorIconsBold.lockKey,
           tint: AppColors.error,
-          title: 'قفل نسبة عرض السلة',
+          title: tr('قفل نسبة عرض السلة'),
           settingKey: 'pos_cart_ratio_locked',
-          sub: 'منع الكاشير من تغيير حجم السلة',
+          sub: tr('منع الكاشير من تغيير حجم السلة'),
           value: _posCartRatioLocked,
           isLast: !_posCartRatioLocked,
           onChanged: (v) => setState(() => _posCartRatioLocked = v),
@@ -1447,9 +1448,9 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
           _sliderRow(
             icon: PhosphorIconsBold.columns,
             tint: _mainTint,
-            title: 'نسبة عرض السلة',
+            title: tr('نسبة عرض السلة'),
             settingKey: 'pos_cart_ratio_value',
-            sub: '٦٠٪ = عمود الأصناف ستون بالمئة والسلة أربعون',
+            sub: tr('٦٠٪ = عمود الأصناف ستون بالمئة والسلة أربعون'),
             value: _posCartRatioValue, min: 0.3, max: 0.7, divisions: 8,
             format: (v) => '${(v * 100).round()}%',
             isLast: true,
@@ -1459,13 +1460,13 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         if (!widget.picposChrome) const Divider(thickness: 2),
 
         // ─── إعدادات الأمان ───
-        _groupHeader('إعدادات الأمان والحماية', _mainTint),
+        _groupHeader(tr('إعدادات الأمان والحماية'), _mainTint),
         _toggleRow(
           icon: PhosphorIconsBold.timer,
           tint: AppColors.warning,
-          title: 'مهلة انتهاء الجلسة',
+          title: tr('مهلة انتهاء الجلسة'),
           settingKey: 'pos_session_timeout_enabled',
-          sub: 'تسجيل خروج تلقائي عند ترك النظام بدون نشاط (نفس إعداد الإعدادات العامة)',
+          sub: tr('تسجيل خروج تلقائي عند ترك النظام بدون نشاط (نفس إعداد الإعدادات العامة)'),
           value: _posSessionTimeoutEnabled,
           isLast: !_posSessionTimeoutEnabled,
           onChanged: (v) => setState(() => _posSessionTimeoutEnabled = v),
@@ -1475,12 +1476,12 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
           _sliderRow(
             icon: PhosphorIconsBold.hourglass,
             tint: AppColors.warning,
-            title: 'مدة المهلة',
-            legacyTitle: 'مدة الانتظار (دقائق)',
+            title: tr('مدة المهلة'),
+            legacyTitle: tr('مدة الانتظار (دقائق)'),
             settingKey: 'pos_session_timeout_minutes',
-            sub: 'المفتاح الوحيد المعتمد — صفر يعني تعطيل',
+            sub: tr('المفتاح الوحيد المعتمد — صفر يعني تعطيل'),
             value: _posSessionTimeoutMinutes, min: 1, max: 60, divisions: 59,
-            labelFormat: (v) => '${v.round()} دقيقة',
+            labelFormat: (v) => tr('{p0} دقيقة', {'p0': v.round()}),
             isLast: true,
             onChanged: (v) => setState(() => _posSessionTimeoutMinutes = v),
           ),
@@ -1491,18 +1492,18 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
 
   Widget _buildCategoryDisplaySection() {
     return _buildSectionCard(
-      title: 'إعدادات منطقة التصنيفات', icon: PhosphorIconsBold.squaresFour, iconColor: AppColors.success,
+      title: tr('إعدادات منطقة التصنيفات'), icon: PhosphorIconsBold.squaresFour, iconColor: AppColors.success,
       children: [
         // في تخطيط التصميم يحمل `QuickSaleSectionHeader` هذا الشرحَ، فتكرارُه
         // هنا سطرٌ ثانٍ بنفس المعنى.
         if (!widget.picposChrome) ...[
-          const Text('تحكم في مظهر أيقونات التصنيفات أسفل منطقة المنتجات', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+           Text(tr('تحكم في مظهر أيقونات التصنيفات أسفل منطقة المنتجات'), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
           const SizedBox(height: 12),
         ],
         _sliderRow(
           icon: PhosphorIconsBold.circle,
           tint: _catTint,
-          title: 'حجم الأيقونة',
+          title: tr('حجم الأيقونة'),
           settingKey: 'pos_category_icon_size',
           value: _catIconSize, min: 30, max: 80, divisions: 10,
           onChanged: (v) => setState(() => _catIconSize = v),
@@ -1510,8 +1511,8 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         _sliderRow(
           icon: PhosphorIconsBold.textAa,
           tint: _catTint,
-          title: 'حجم الخط',
-          legacyTitle: 'حجم خط الاسم',
+          title: tr('حجم الخط'),
+          legacyTitle: tr('حجم خط الاسم'),
           settingKey: 'pos_category_font_size',
           value: _catFontSize, min: 8, max: 18, divisions: 10,
           onChanged: (v) => setState(() => _catFontSize = v),
@@ -1519,7 +1520,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         _sliderRow(
           icon: PhosphorIconsBold.arrowsHorizontal,
           tint: _catTint,
-          title: 'التباعد الأفقي',
+          title: tr('التباعد الأفقي'),
           settingKey: 'pos_category_spacing',
           value: _catSpacing, min: 4, max: 24, divisions: 10,
           onChanged: (v) => setState(() => _catSpacing = v),
@@ -1527,8 +1528,8 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         _sliderRow(
           icon: PhosphorIconsBold.arrowsVertical,
           tint: _catTint,
-          title: 'تباعد الأسطر',
-          legacyTitle: 'التباعد الرأسي',
+          title: tr('تباعد الأسطر'),
+          legacyTitle: tr('التباعد الرأسي'),
           settingKey: 'pos_category_run_spacing',
           value: _catRunSpacing, min: 4, max: 16, divisions: 6,
           onChanged: (v) => setState(() => _catRunSpacing = v),
@@ -1536,8 +1537,8 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         _sliderRow(
           icon: PhosphorIconsBold.textAlignCenter,
           tint: _catTint,
-          title: 'عرض التسمية',
-          legacyTitle: 'عرض نص التصنيف',
+          title: tr('عرض التسمية'),
+          legacyTitle: tr('عرض نص التصنيف'),
           settingKey: 'pos_category_label_width',
           value: _catLabelWidth, min: 40, max: 80, divisions: 8,
           onChanged: (v) => setState(() => _catLabelWidth = v),
@@ -1545,10 +1546,10 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         _sliderRow(
           icon: PhosphorIconsBold.arrowsOutLineVertical,
           tint: _catTint,
-          title: 'أقصى ارتفاع للمنطقة',
-          legacyTitle: 'ارتفاع المنطقة',
+          title: tr('أقصى ارتفاع للمنطقة'),
+          legacyTitle: tr('ارتفاع المنطقة'),
           settingKey: 'pos_category_max_height',
-          sub: 'ما يزيد يُخفى — الأقسام لا تأكل الشبكة',
+          sub: tr('ما يزيد يُخفى — الأقسام لا تأكل الشبكة'),
           value: _catMaxHeight, min: 80, max: 300, divisions: 11,
           onChanged: (v) => setState(() => _catMaxHeight = v),
         ),
@@ -1556,13 +1557,13 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         _selectRow<String>(
           icon: PhosphorIconsBold.shapes,
           tint: _catTint,
-          title: 'شكل الأيقونة',
+          title: tr('شكل الأيقونة'),
           settingKey: 'pos_category_shape',
           value: _catShape,
           isLast: true,
-          items: const [
-            DropdownMenuItem(value: 'circle', child: Text('دائري')),
-            DropdownMenuItem(value: 'rounded', child: Text('مستطيل مدور')),
+          items:  [
+            DropdownMenuItem(value: 'circle', child: Text(tr('دائري'))),
+            DropdownMenuItem(value: 'rounded', child: Text(tr('مستطيل مدور'))),
           ],
           onChanged: (v) => setState(() => _catShape = v ?? 'circle'),
         ),
@@ -1572,25 +1573,25 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
 
   Widget _buildProductGridSection() {
     return _buildSectionCard(
-      title: 'إعدادات شبكة المنتجات', icon: PhosphorIconsBold.gridFour, iconColor: AppColors.info,
+      title: tr('إعدادات شبكة المنتجات'), icon: PhosphorIconsBold.gridFour, iconColor: AppColors.info,
       children: [
         if (!widget.picposChrome) ...[
-          const Text('تحكم في عدد وتباعد أيقونات المنتجات في الشبكة', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+           Text(tr('تحكم في عدد وتباعد أيقونات المنتجات في الشبكة'), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
           const SizedBox(height: 12),
         ],
         _sliderRow(
           icon: PhosphorIconsBold.columns,
           tint: _gridTint,
-          title: 'عدد الأعمدة',
+          title: tr('عدد الأعمدة'),
           settingKey: 'pos_grid_columns',
-          sub: 'اثنا عشر عموداً على شاشة عشرة بوصات يجعل الاسم سطراً واحداً مقصوصاً',
+          sub: tr('اثنا عشر عموداً على شاشة عشرة بوصات يجعل الاسم سطراً واحداً مقصوصاً'),
           value: _gridColumns.toDouble(), min: 2, max: 12, divisions: 10,
           onChanged: (v) => setState(() => _gridColumns = v.round()),
         ),
         _sliderRow(
           icon: PhosphorIconsBold.dotsNine,
           tint: _gridTint,
-          title: 'التباعد بين الأيقونات',
+          title: tr('التباعد بين الأيقونات'),
           settingKey: 'pos_grid_spacing',
           value: _gridSpacing, min: 2, max: 20, divisions: 9,
           onChanged: (v) => setState(() => _gridSpacing = v),
@@ -1598,9 +1599,9 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         _sliderRow(
           icon: PhosphorIconsBold.frameCorners,
           tint: _gridTint,
-          title: 'نسبة العرض/الارتفاع',
+          title: tr('نسبة العرض/الارتفاع'),
           settingKey: 'pos_grid_aspect_ratio',
-          sub: 'أقل من ١ يعني بطاقة أطول من عرضها',
+          sub: tr('أقل من ١ يعني بطاقة أطول من عرضها'),
           value: _gridAspectRatio, min: 0.5, max: 1.5, divisions: 10,
           format: (v) => v.toStringAsFixed(2),
           isLast: true,
@@ -1613,7 +1614,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
 
   Widget _buildReceiptSection() {
     return _buildSectionCard(
-      title: 'إعدادات الإيصال',
+      title: tr('إعدادات الإيصال'),
       icon: PhosphorIconsBold.receipt,
       iconColor: AppColors.info,
       children: [
@@ -1626,51 +1627,51 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
           _toggleRow(
             icon: PhosphorIconsBold.printer,
             tint: _receiptTint,
-            title: 'طباعة تلقائية عند البيع',
+            title: tr('طباعة تلقائية عند البيع'),
             settingKey: 'auto_print_receipt',
-            sub: 'طباعة الإيصال تلقائياً بعد إتمام عملية البيع',
+            sub: tr('طباعة الإيصال تلقائياً بعد إتمام عملية البيع'),
             value: _autoPrint,
             onChanged: (v) => setState(() => _autoPrint = v),
           ),
           _selectRow<String>(
             icon: PhosphorIconsBold.qrCode,
             tint: _receiptTint,
-            title: 'نوع الكود في الإيصال',
+            title: tr('نوع الكود في الإيصال'),
             settingKey: 'receipt_code_type',
             value: _receiptCodeType,
-            items: const [
-              DropdownMenuItem(value: 'barcode', child: Text('باركود')),
-              DropdownMenuItem(value: 'qr', child: Text('QR Code')),
-              DropdownMenuItem(value: 'none', child: Text('بدون')),
+            items:  [
+              DropdownMenuItem(value: 'barcode', child: Text(tr('باركود'))),
+              const DropdownMenuItem(value: 'qr', child: Text('QR Code')),
+              DropdownMenuItem(value: 'none', child: Text(tr('بدون'))),
             ],
             onChanged: (v) => setState(() => _receiptCodeType = v ?? 'barcode'),
           ),
           _selectRow<String>(
             icon: PhosphorIconsBold.translate,
             tint: _receiptTint,
-            title: 'لغة طباعة الفاتورة',
+            title: tr('لغة طباعة الفاتورة'),
             settingKey: 'invoice_language',
-            sub: 'يبدّل عناوين الأعمدة والمسمّيات على الإيصال',
+            sub: tr('يبدّل عناوين الأعمدة والمسمّيات على الإيصال'),
             value: _invoiceLanguage,
-            items: const [
-              DropdownMenuItem(value: 'ar', child: Text('العربية')),
-              DropdownMenuItem(value: 'en', child: Text('English')),
+            items:  [
+              DropdownMenuItem(value: 'ar', child: Text(tr('العربية'))),
+              const DropdownMenuItem(value: 'en', child: Text('English')),
             ],
             onChanged: (v) => setState(() => _invoiceLanguage = v ?? 'ar'),
           ),
           QuickSaleSettingRow(
             icon: PhosphorIconsBold.textAlignCenter,
             tint: _receiptTint,
-            title: 'تذييل الإيصال',
+            title: tr('تذييل الإيصال'),
             settingKey: 'receipt_footer',
-            sub: 'سطران كحد أقصى على الحراري ٨٠مم',
+            sub: tr('سطران كحد أقصى على الحراري ٨٠مم'),
             isLast: true,
             control: SizedBox(
               width: 260,
               child: TextFormField(
                 initialValue: _receiptFooter,
-                decoration: const InputDecoration(
-                  hintText: 'نص يظهر أسفل الإيصال...',
+                decoration:  InputDecoration(
+                  hintText: tr('نص يظهر أسفل الإيصال...'),
                   isDense: true,
                 ),
                 maxLines: 2,
@@ -1680,8 +1681,8 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
           ),
         ] else ...[
         SwitchListTile(
-          title: const Text('طباعة تلقائية عند البيع'),
-          subtitle: const Text('طباعة الإيصال تلقائياً بعد إتمام عملية البيع'),
+          title:  Text(tr('طباعة تلقائية عند البيع')),
+          subtitle:  Text(tr('طباعة الإيصال تلقائياً بعد إتمام عملية البيع')),
           value: _autoPrint,
           onChanged: (v) => setState(() => _autoPrint = v),
           contentPadding: EdgeInsets.zero,
@@ -1689,36 +1690,36 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           initialValue: _receiptCodeType,
-          decoration: const InputDecoration(
-            labelText: 'نوع الكود في الإيصال',
+          decoration:  InputDecoration(
+            labelText: tr('نوع الكود في الإيصال'),
             isDense: true,
           ),
-          items: const [
-            DropdownMenuItem(value: 'barcode', child: Text('باركود')),
-            DropdownMenuItem(value: 'qr', child: Text('QR Code')),
-            DropdownMenuItem(value: 'none', child: Text('بدون')),
+          items:  [
+            DropdownMenuItem(value: 'barcode', child: Text(tr('باركود'))),
+            const DropdownMenuItem(value: 'qr', child: Text('QR Code')),
+            DropdownMenuItem(value: 'none', child: Text(tr('بدون'))),
           ],
           onChanged: (v) => setState(() => _receiptCodeType = v ?? 'barcode'),
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           initialValue: _invoiceLanguage,
-          decoration: const InputDecoration(
-            labelText: 'لغة طباعة الفاتورة',
+          decoration:  InputDecoration(
+            labelText: tr('لغة طباعة الفاتورة'),
             isDense: true,
           ),
-          items: const [
-            DropdownMenuItem(value: 'ar', child: Text('العربية')),
-            DropdownMenuItem(value: 'en', child: Text('English')),
+          items:  [
+            DropdownMenuItem(value: 'ar', child: Text(tr('العربية'))),
+            const DropdownMenuItem(value: 'en', child: Text('English')),
           ],
           onChanged: (v) => setState(() => _invoiceLanguage = v ?? 'ar'),
         ),
         const SizedBox(height: 8),
         TextFormField(
           initialValue: _receiptFooter,
-          decoration: const InputDecoration(
-            labelText: 'تذييل الإيصال',
-            hintText: 'نص يظهر أسفل الإيصال...',
+          decoration:  InputDecoration(
+            labelText: tr('تذييل الإيصال'),
+            hintText: tr('نص يظهر أسفل الإيصال...'),
             isDense: true,
           ),
           maxLines: 2,
@@ -1731,59 +1732,59 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
 
   Widget _buildTablePOSSection() {
     return _buildSectionCard(
-      title: 'إعدادات نقطة بيع الطاولات', icon: PhosphorIconsBold.table, iconColor: AppColors.warning,
+      title: tr('إعدادات نقطة بيع الطاولات'), icon: PhosphorIconsBold.table, iconColor: AppColors.warning,
       children: [
         if (!widget.picposChrome) ...[
-          const Text('إعدادات تنظيم وتنسيق نقطة بيع الطاولات والصالة', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+           Text(tr('إعدادات تنظيم وتنسيق نقطة بيع الطاولات والصالة'), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
           const SizedBox(height: 12),
         ],
         // ─── واجهة العرض ───
-        _groupHeader('واجهة العرض', _tposTint),
+        _groupHeader(tr('واجهة العرض'), _tposTint),
         _toggleRow(
           icon: PhosphorIconsBold.barcode,
           tint: _tposTint,
-          title: 'إظهار حقل الباركود',
+          title: tr('إظهار حقل الباركود'),
           settingKey: 'tpos_show_barcode',
-          sub: 'إظهار أو إخفاء حقل مسح الباركود',
+          sub: tr('إظهار أو إخفاء حقل مسح الباركود'),
           value: _tposShowBarcode,
           onChanged: (v) => setState(() => _tposShowBarcode = v),
         ),
         _toggleRow(
           icon: PhosphorIconsBold.image,
           tint: _tposTint,
-          title: 'إظهار صور الأصناف',
+          title: tr('إظهار صور الأصناف'),
           settingKey: 'tpos_show_product_images',
-          sub: 'إظهار أو إخفاء صور المنتجات في شبكة الطاولات',
+          sub: tr('إظهار أو إخفاء صور المنتجات في شبكة الطاولات'),
           value: _tposShowProductImages,
           onChanged: (v) => setState(() => _tposShowProductImages = v),
         ),
         _toggleRow(
           icon: PhosphorIconsBold.sortAscending,
           tint: _tposTint,
-          title: 'إظهار ترتيب الأصناف',
+          title: tr('إظهار ترتيب الأصناف'),
           settingKey: 'tpos_show_product_sort',
           value: _tposShowProductSort,
           onChanged: (v) => setState(() => _tposShowProductSort = v),
         ),
         if (!widget.picposChrome) const Divider(thickness: 2),
         // ─── أزرار الإجراءات ───
-        _groupHeader('أزرار الإجراءات', _tposTint),
+        _groupHeader(tr('أزرار الإجراءات'), _tposTint),
         _toggleRow(
           icon: PhosphorIconsBold.money,
           tint: _tposTint,
-          title: 'إظهار زر تحصيل الحساب',
+          title: tr('إظهار زر تحصيل الحساب'),
           settingKey: 'tpos_show_checkout',
-          sub: 'إظهار أو إخفاء زر تحصيل الحساب في سلة الطاولة',
+          sub: tr('إظهار أو إخفاء زر تحصيل الحساب في سلة الطاولة'),
           value: _tposShowCheckout,
           onChanged: (v) => setState(() => _tposShowCheckout = v),
         ),
         if (!widget.picposChrome) const Divider(thickness: 2),
         // ─── خطوط الأصناف ───
-        _groupHeader('حجم خطوط الأصناف', _tposTint),
+        _groupHeader(tr('حجم خطوط الأصناف'), _tposTint),
         _sliderRow(
           icon: PhosphorIconsBold.textAa,
           tint: _tposTint,
-          title: 'حجم خط الاسم',
+          title: tr('حجم خط الاسم'),
           settingKey: 'tpos_name_font_size',
           value: _tposNameFontSize, min: 10, max: 24, divisions: 14,
           onChanged: (v) => setState(() => _tposNameFontSize = v),
@@ -1791,7 +1792,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         _sliderRow(
           icon: PhosphorIconsBold.textT,
           tint: _tposTint,
-          title: 'حجم خط السعر',
+          title: tr('حجم خط السعر'),
           settingKey: 'tpos_price_font_size',
           value: _tposPriceFontSize, min: 10, max: 24, divisions: 14,
           isLast: true,
@@ -1864,11 +1865,11 @@ Future<void> showPosSettingsDialog(BuildContext context,
         valueListenable: handle.isReady,
         builder: (_, ready, _) => PicPosDialog(
           icon: PhosphorIconsBold.lightning,
-          title: 'إعدادات البيع السريع',
-          subtitle: 'ما يظهر للكاشير وما يُطبَع على الإيصال',
+          title: tr('إعدادات البيع السريع'),
+          subtitle: tr('ما يظهر للكاشير وما يُطبَع على الإيصال'),
           width: 760,
           primaryAction: PicPosDialogAction(
-            label: 'حفظ إعدادات البيع',
+            label: tr('حفظ إعدادات البيع'),
             icon: PhosphorIconsBold.check,
             onPressed: ready ? handle.invoke : null,
           ),
@@ -1886,13 +1887,13 @@ Future<void> showPosSettingsDialog(BuildContext context,
   return showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Row(children: [
-        Icon(PhosphorIconsBold.shoppingCart, color: AppColors.primary),
-        SizedBox(width: 8),
-        Text('إعدادات البيع السريع'),
+      title:  Row(children: [
+        const Icon(PhosphorIconsBold.shoppingCart, color: AppColors.primary),
+        const SizedBox(width: 8),
+        Text(tr('إعدادات البيع السريع')),
       ]),
       content: const SizedBox(width: 550, height: 650, child: PosSettingsWidget()),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('إغلاق'))],
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child:  Text(tr('إغلاق')))],
     ),
   );
 }

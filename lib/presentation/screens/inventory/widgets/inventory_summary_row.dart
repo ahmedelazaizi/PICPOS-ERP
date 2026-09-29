@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -24,21 +25,21 @@ class InventorySummaryRow extends ConsumerWidget {
         return Row(
           children: [
             InventorySummaryCard(
-              title: 'إجمالي الأصناف',
+              title: tr('إجمالي الأصناف'),
               value: totalActive.toString(),
               icon: PhosphorIconsBold.listBullets,
               color: AppColors.primary,
             ),
             const SizedBox(width: 16),
             InventorySummaryCard(
-              title: 'تنبيهات انخفاض المخزون',
+              title: tr('تنبيهات انخفاض المخزون'),
               value: lowStock.toString(),
               icon: PhosphorIconsBold.warningCircle,
               color: AppColors.warning,
             ),
             const SizedBox(width: 16),
             InventorySummaryCard(
-              title: 'إجمالي قيمة المخزون',
+              title: tr('إجمالي قيمة المخزون'),
               value:
                   '${totalValue.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
               icon: PhosphorIconsBold.coins,

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ **سجلّ السندات** — خ‑٩ (قبضاً وصرفاً).
 //
 // ═══ ما تغيّر، ولماذا ═══
@@ -110,7 +111,7 @@ class _VoucherRecordsPicPosScreenState
       permission: PermissionCodes.treasuryView,
       child: PicPosScreenScaffold(
         title: widget.direction.labelAr,
-        subtitle: 'سجلُّ ما حُفظ — واضغط «جديد» لتحرير سندٍ',
+        subtitle: tr('سجلُّ ما حُفظ — واضغط «جديد» لتحرير سندٍ'),
         icon: _isReceipt
             ? PhosphorIconsBold.arrowCircleDown
             : PhosphorIconsBold.arrowCircleUp,
@@ -119,14 +120,14 @@ class _VoucherRecordsPicPosScreenState
             key: const Key('voucher_records_new'),
             onPressed: _openForm,
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label: const Text('جديد'),
+            label:  Text(tr('جديد')),
           ),
         ],
         toolbar: _filters(context),
         body: async.hasError
             ? PicPosEmptyState(
                 icon: PhosphorIconsBold.warning,
-                title: 'تعذّرت قراءةُ السجلّ',
+                title: tr('تعذّرت قراءةُ السجلّ'),
                 hint: '${async.error}',
               )
             : ListView(
@@ -147,14 +148,14 @@ class _VoucherRecordsPicPosScreenState
           PicPosFilterPill(
             key: const Key('voucher_records_from'),
             icon: PhosphorIconsBold.calendarBlank,
-            label: 'من ${_dateFmt.format(_from)}',
+            label: tr('من {p0}', {'p0': _dateFmt.format(_from)}),
             tabular: true,
             onTap: () => _pickDate(isFrom: true),
           ),
           PicPosFilterPill(
             key: const Key('voucher_records_to'),
             icon: PhosphorIconsBold.calendarCheck,
-            label: 'إلى ${_dateFmt.format(_to)}',
+            label: tr('إلى {p0}', {'p0': _dateFmt.format(_to)}),
             tabular: true,
             onTap: () => _pickDate(isFrom: false),
           ),
@@ -164,10 +165,10 @@ class _VoucherRecordsPicPosScreenState
               key: const Key('voucher_records_search'),
               controller: _searchController,
               onChanged: (v) => setState(() => _search = v.trim()),
-              decoration: const InputDecoration(
+              decoration:  InputDecoration(
                 isDense: true,
-                hintText: 'رقمُ السند · البيان · الطرف',
-                prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
+                hintText: tr('رقمُ السند · البيان · الطرف'),
+                prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
               ),
             ),
           ),
@@ -206,35 +207,35 @@ class _VoucherRecordsPicPosScreenState
     final cashTotal = cash.fold<double>(0, (s, r) => s + r.amount);
 
     return PicPosDataTable(
-      title: 'السنداتُ المحفوظة',
+      title: tr('السنداتُ المحفوظة'),
       subtitle: loading
-          ? 'جارٍ القراءة…'
-          : 'المعروضُ ${rows.length} — والمجموعُ للنقديّ وحدَه',
+          ? tr('جارٍ القراءة…')
+          : tr('المعروضُ {p0} — والمجموعُ للنقديّ وحدَه', {'p0': rows.length}),
       chips: [
         PicPosTableChip(
-            label: 'الكلّ',
+            label: tr('الكلّ'),
             count: '${rows.length}',
             onTap: () => setState(() => _kindChip = 0)),
         PicPosTableChip(
-            label: 'نقديّ',
+            label: tr('نقديّ'),
             count: '${cash.length}',
             onTap: () => setState(() => _kindChip = 1)),
         PicPosTableChip(
-            label: 'شيك',
+            label: tr('شيك'),
             count: '${rows.length - cash.length}',
             onTap: () => setState(() => _kindChip = 2)),
       ],
       selectedChip: _kindChip,
-      columns: const [
-        PicPosTableColumn('رقم السند', flex: 1.1),
-        PicPosTableColumn('التاريخ', flex: 1.0),
-        PicPosTableColumn('الطرف', flex: 1.5),
-        PicPosTableColumn('الخزنة', flex: 1.1),
-        PicPosTableColumn('النوع', flex: 0.8),
-        PicPosTableColumn('المبلغ', flex: 1.1, align: PicPosCellAlign.end),
+      columns:  [
+        PicPosTableColumn(tr('رقم السند'), flex: 1.1),
+        PicPosTableColumn(tr('التاريخ'), flex: 1.0),
+        PicPosTableColumn(tr('الطرف'), flex: 1.5),
+        PicPosTableColumn(tr('الخزنة'), flex: 1.1),
+        PicPosTableColumn(tr('النوع'), flex: 0.8),
+        PicPosTableColumn(tr('المبلغ'), flex: 1.1, align: PicPosCellAlign.end),
       ],
-      totals: ['', '', '', '', 'نقداً', _money.format(cashTotal)],
-      emptyLabel: 'لا سنداتٍ في هذا المدى',
+      totals: ['', '', '', '', tr('نقداً'), _money.format(cashTotal)],
+      emptyLabel: tr('لا سنداتٍ في هذا المدى'),
       rows: [
         for (final r in rows)
           PicPosTableRow(
@@ -246,9 +247,9 @@ class _VoucherRecordsPicPosScreenState
                   sub: voucherCategoryLabelAr(r.category)),
               PicPosTextCell(r.safeName ?? '—'),
               if (r.isCheque)
-                const PicPosPillCell('شيك', AppColors.info)
+                 PicPosPillCell(tr('شيك'), AppColors.info)
               else
-                const PicPosPillCell('نقديّ', AppColors.success),
+                 PicPosPillCell(tr('نقديّ'), AppColors.success),
               PicPosTextCell(_money.format(r.amount)),
             ],
           ),
@@ -270,23 +271,23 @@ class _VoucherRecordsPicPosScreenState
             ? PhosphorIconsBold.checkSquareOffset
             : PhosphorIconsBold.receipt,
         width: 620,
-        cancelLabel: 'إغلاق',
+        cancelLabel: tr('إغلاق'),
         body: [
           Column(
             key: const Key('voucher_document_view'),
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _field('التاريخ', _dateFmt.format(r.date)),
-              _field('الطرف', r.partyName ?? '—'),
-              _field('الخزنة', r.safeName ?? '—'),
-              _field('التصنيف', voucherCategoryLabelAr(r.category)),
-              _field('المبلغ', _money.format(r.amount)),
-              if (r.discount > 0) _field('الخصم', _money.format(r.discount)),
-              _field('النوع',
-                  r.isCheque ? 'شيك — مستندٌ بلا حركةِ نقد' : 'نقديّ'),
+              _field(tr('التاريخ'), _dateFmt.format(r.date)),
+              _field(tr('الطرف'), r.partyName ?? '—'),
+              _field(tr('الخزنة'), r.safeName ?? '—'),
+              _field(tr('التصنيف'), voucherCategoryLabelAr(r.category)),
+              _field(tr('المبلغ'), _money.format(r.amount)),
+              if (r.discount > 0) _field(tr('الخصم'), _money.format(r.discount)),
+              _field(tr('النوع'),
+                  r.isCheque ? tr('شيك — مستندٌ بلا حركةِ نقد') : tr('نقديّ')),
               if ((r.description ?? '').isNotEmpty)
-                _field('البيان', r.description!),
+                _field(tr('البيان'), r.description!),
               const SizedBox(height: 12),
               // §٨ (v176) — **المرفقاتُ هنا لا في الاستمارة**: اللوحُ يشترط
               // رقمَ المستند وهُويّتَه، وهو أوّلُ موضعٍ في هذا المسار يعرض

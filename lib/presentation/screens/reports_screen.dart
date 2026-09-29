@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ---------------------------------------------------------------------------
 // Reports launcher — feature 055.
 //
@@ -182,21 +183,21 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return [
       _ReportCategory(
         id: 'sales',
-        title: 'تقارير المبيعات',
+        title: tr('تقارير المبيعات'),
         icon: PhosphorIconsBold.chartLineUp,
         color: AppColors.success,
         mainReports: [
           _ReportEntry(
             id: 'sales_main',
-            title: 'تقرير المبيعات',
-            subtitle: 'تقرير المبيعات الرئيسي بكافة الفلاتر',
+            title: tr('تقرير المبيعات'),
+            subtitle: tr('تقرير المبيعات الرئيسي بكافة الفلاتر'),
             permission: PermissionCodes.reportsSales,
             action: () => nav(() => const SalesReportScreen()),
           ),
           _ReportEntry(
             id: 'sales_summary',
-            title: 'ملخص المبيعات',
-            subtitle: 'نظرة سريعة بأرقام اليوم',
+            title: tr('ملخص المبيعات'),
+            subtitle: tr('نظرة سريعة بأرقام اليوم'),
             permission: PermissionCodes.reportsSales,
             action: () => nav(() => const SalesReportScreen()),
           ),
@@ -205,230 +206,230 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           // في هويّةٍ ويغيب عن الأخرى.
           _ReportEntry(
             id: 'tables_report',
-            title: 'تقرير الطاولات',
-            subtitle: 'الإيراد ودوران الطاولة ونصيب الضيف لكل قسم وطاولة',
+            title: tr('تقرير الطاولات'),
+            subtitle: tr('الإيراد ودوران الطاولة ونصيب الضيف لكل قسم وطاولة'),
             permission: PermissionCodes.reportsSales,
             action: () => nav(() => const TablesReportScreen()),
           ),
         ],
         shortcuts: [
-          const _ReportShortcut('s_today', 'مبيعات اليوم', 'sales_main'),
-          const _ReportShortcut('s_range', 'من تاريخ إلى تاريخ', 'sales_main'),
-          const _ReportShortcut('s_cashier', 'حسب الكاشير', 'sales_main'),
-          const _ReportShortcut('s_branch', 'حسب الفرع', 'sales_main'),
-          _ReportShortcut('s_product', 'حسب الصنف', 'sales_main',
+           _ReportShortcut('s_today', tr('مبيعات اليوم'), 'sales_main'),
+           _ReportShortcut('s_range', tr('من تاريخ إلى تاريخ'), 'sales_main'),
+           _ReportShortcut('s_cashier', tr('حسب الكاشير'), 'sales_main'),
+           _ReportShortcut('s_branch', tr('حسب الفرع'), 'sales_main'),
+          _ReportShortcut('s_product', tr('حسب الصنف'), 'sales_main',
               action: () => nav(() => const TopProductsReportScreen())),
-          _ReportShortcut('s_group', 'حسب المجموعة', 'sales_main',
+          _ReportShortcut('s_group', tr('حسب المجموعة'), 'sales_main',
               action: () => nav(() => const SalesByClassificationReport())),
-          const _ReportShortcut('s_payment', 'حسب طريقة الدفع', 'sales_main'),
-          const _ReportShortcut(
-              's_credit', 'مبيعات آجل / نقدي / فيزا', 'sales_main'),
+           _ReportShortcut('s_payment', tr('حسب طريقة الدفع'), 'sales_main'),
+           _ReportShortcut(
+              's_credit', tr('مبيعات آجل / نقدي / فيزا'), 'sales_main'),
         ],
       ),
       _ReportCategory(
         id: 'profit',
-        title: 'تقارير الأرباح',
+        title: tr('تقارير الأرباح'),
         icon: PhosphorIconsBold.money,
         color: AppColors.successDark,
         mainReports: [
           _ReportEntry(
             id: 'category_profit',
-            title: 'أرباح التصنيفات',
-            subtitle: 'تحليل تكلفة المبيعات وصافي الربح لكل تصنيف',
+            title: tr('أرباح التصنيفات'),
+            subtitle: tr('تحليل تكلفة المبيعات وصافي الربح لكل تصنيف'),
             permission: 'reports_category_profit',
             action: () => nav(() => const CategoryProfitReportScreen()),
           ),
           _ReportEntry(
             id: 'consumption',
-            title: 'تقرير استهلاك الخامات',
-            subtitle: 'استهلاك الخامات وربحية المنتجات (auto-deplete)',
+            title: tr('تقرير استهلاك الخامات'),
+            subtitle: tr('استهلاك الخامات وربحية المنتجات (auto-deplete)'),
             permission: 'reports_category_profit',
             action: () => nav(() => const ConsumptionReportScreen()),
           ),
           _ReportEntry(
             id: 'top_profitable',
-            title: 'الأصناف الأكثر ربحية',
-            subtitle: 'ترتيب المنتجات حسب الربح',
+            title: tr('الأصناف الأكثر ربحية'),
+            subtitle: tr('ترتيب المنتجات حسب الربح'),
             action: () => nav(() => const TopProductsReportScreen()),
           ),
           _ReportEntry(
             id: 'profit_margin',
-            title: 'هامش الربح',
-            subtitle: 'تحليل هامش الربح حسب الفئة',
+            title: tr('هامش الربح'),
+            subtitle: tr('تحليل هامش الربح حسب الفئة'),
             action: () => nav(() => const AnalyticsDashboardScreen()),
           ),
         ],
         shortcuts: [
-          const _ReportShortcut('p_invoice', 'ربح كل فاتورة', 'category_profit'),
-          _ReportShortcut('p_product', 'ربح كل صنف', 'category_profit',
+           _ReportShortcut('p_invoice', tr('ربح كل فاتورة'), 'category_profit'),
+          _ReportShortcut('p_product', tr('ربح كل صنف'), 'category_profit',
               action: () => nav(() => const TopProductsReportScreen())),
-          _ReportShortcut('p_group', 'حسب المجموعة', 'category_profit',
+          _ReportShortcut('p_group', tr('حسب المجموعة'), 'category_profit',
               action: () => nav(() => const CategoryProfitReportScreen())),
-          const _ReportShortcut('p_cashier', 'حسب الكاشير', 'category_profit'),
-          const _ReportShortcut('p_branch', 'حسب الفرع', 'category_profit'),
+           _ReportShortcut('p_cashier', tr('حسب الكاشير'), 'category_profit'),
+           _ReportShortcut('p_branch', tr('حسب الفرع'), 'category_profit'),
         ],
       ),
       _ReportCategory(
         id: 'returns',
-        title: 'تقارير المرتجعات',
+        title: tr('تقارير المرتجعات'),
         icon: PhosphorIconsBold.arrowUUpLeft,
         color: AppColors.error,
         mainReports: [
           _ReportEntry(
             id: 'sales_returns',
-            title: 'مرتجعات المبيعات',
-            subtitle: 'تحليل مرتجعات المبيعات والمبالغ المستردة',
+            title: tr('مرتجعات المبيعات'),
+            subtitle: tr('تحليل مرتجعات المبيعات والمبالغ المستردة'),
             action: () => nav(() => const SalesReturnsReportScreen()),
           ),
           _ReportEntry(
             id: 'purchase_returns',
-            title: 'مرتجعات المشتريات',
-            subtitle: 'تحليل مرتجعات المشتريات من الموردين',
+            title: tr('مرتجعات المشتريات'),
+            subtitle: tr('تحليل مرتجعات المشتريات من الموردين'),
             action: () => nav(() => const PurchaseReturnsReportScreen()),
           ),
         ],
-        shortcuts: const [
-          _ReportShortcut('r_today', 'مرتجعات اليوم', 'sales_returns'),
-          _ReportShortcut('r_cashier', 'حسب الكاشير', 'sales_returns'),
-          _ReportShortcut('r_product', 'حسب الصنف', 'sales_returns'),
-          _ReportShortcut('r_customer', 'حسب العميل', 'sales_returns'),
+        shortcuts:  [
+          _ReportShortcut('r_today', tr('مرتجعات اليوم'), 'sales_returns'),
+          _ReportShortcut('r_cashier', tr('حسب الكاشير'), 'sales_returns'),
+          _ReportShortcut('r_product', tr('حسب الصنف'), 'sales_returns'),
+          _ReportShortcut('r_customer', tr('حسب العميل'), 'sales_returns'),
         ],
       ),
       _ReportCategory(
         id: 'inventory',
-        title: 'تقارير المخزون',
+        title: tr('تقارير المخزون'),
         icon: PhosphorIconsBold.warehouse,
         color: AppColors.info,
         mainReports: [
           _ReportEntry(
             id: 'inv_current',
-            title: 'تقرير المخزون الحالي',
-            subtitle: 'أرصدة وقيم المخزون بالتكلفة والبيع',
+            title: tr('تقرير المخزون الحالي'),
+            subtitle: tr('أرصدة وقيم المخزون بالتكلفة والبيع'),
             action: () => nav(() => const InventoryReportScreen()),
           ),
           _ReportEntry(
             id: 'inv_gl_reconciliation',
-            title: 'تسوية المخزون مع الأستاذ العام',
-            subtitle: 'مقارنة قيمة المخزون بحساب 1136 ومصادر الفروق',
+            title: tr('تسوية المخزون مع الأستاذ العام'),
+            subtitle: tr('مقارنة قيمة المخزون بحساب 1136 ومصادر الفروق'),
             action: _showInventoryGlReconciliation,
           ),
           _ReportEntry(
             id: 'inv_movement',
-            title: 'حركة الأصناف',
-            subtitle: 'كرت صنف تفصيلي مع كل العمليات',
+            title: tr('حركة الأصناف'),
+            subtitle: tr('كرت صنف تفصيلي مع كل العمليات'),
             action: () => nav(() => const StockMovementsScreen()),
           ),
           _ReportEntry(
             id: 'inv_stocktake',
-            title: 'تقرير الجرد',
-            subtitle: 'تقرير الجرد الدوري والفروق',
+            title: tr('تقرير الجرد'),
+            subtitle: tr('تقرير الجرد الدوري والفروق'),
             action: () => nav(() => const StockAuditScreen()),
           ),
           _ReportEntry(
             id: 'inv_top_selling',
-            title: 'الأصناف الأكثر مبيعاً',
-            subtitle: 'تحليل الأصناف الأعلى طلباً والأكثر ربحية',
+            title: tr('الأصناف الأكثر مبيعاً'),
+            subtitle: tr('تحليل الأصناف الأعلى طلباً والأكثر ربحية'),
             action: () => nav(() => const TopProductsReportScreen()),
           ),
           _ReportEntry(
             id: 'low_stock',
-            title: 'أصناف منخفضة المخزون',
-            subtitle: 'قائمة الأصناف التي وصلت لحد الطلب',
+            title: tr('أصناف منخفضة المخزون'),
+            subtitle: tr('قائمة الأصناف التي وصلت لحد الطلب'),
             action: _showLowStockReport,
           ),
           _ReportEntry(
             id: 'expired_products',
-            title: 'منتجات منتهية الصلاحية',
-            subtitle: 'قائمة الأصناف التي انتهت صلاحيتها وتحتاج إعدام',
+            title: tr('منتجات منتهية الصلاحية'),
+            subtitle: tr('قائمة الأصناف التي انتهت صلاحيتها وتحتاج إعدام'),
             action: _showExpiredProductsReport,
           ),
           _ReportEntry(
             id: 'expiring_products',
-            title: 'منتجات قاربت على الانتهاء',
-            subtitle: 'تنتهي صلاحيتها خلال الـ 30 يوماً القادمة',
+            title: tr('منتجات قاربت على الانتهاء'),
+            subtitle: tr('تنتهي صلاحيتها خلال الـ 30 يوماً القادمة'),
             action: _showExpiringProductsReport,
           ),
         ],
-        shortcuts: const [
-          _ReportShortcut('i_low', 'قليلة المخزون', 'low_stock'),
-          _ReportShortcut('i_dead', 'الأصناف الراكدة', 'inv_movement'),
+        shortcuts:  [
+          _ReportShortcut('i_low', tr('قليلة المخزون'), 'low_stock'),
+          _ReportShortcut('i_dead', tr('الأصناف الراكدة'), 'inv_movement'),
         ],
       ),
       _ReportCategory(
         id: 'purchases',
-        title: 'تقارير المشتريات',
+        title: tr('تقارير المشتريات'),
         icon: PhosphorIconsBold.shoppingCart,
         color: const Color(0xFFD97706),
         mainReports: [
           _ReportEntry(
             id: 'purch_main',
-            title: 'تقرير المشتريات',
-            subtitle: 'تقرير المشتريات بفلاتر كاملة',
+            title: tr('تقرير المشتريات'),
+            subtitle: tr('تقرير المشتريات بفلاتر كاملة'),
             action: () => nav(() => const PurchasesReportScreen()),
           ),
           _ReportEntry(
             id: 'purch_orders',
-            title: 'أوامر الشراء',
-            subtitle: 'متابعة أوامر الشراء المفتوحة',
+            title: tr('أوامر الشراء'),
+            subtitle: tr('متابعة أوامر الشراء المفتوحة'),
             action: () => nav(() => const ReportBuilderScreen()),
           ),
         ],
-        shortcuts: const [
-          _ReportShortcut('pu_today', 'مشتريات اليوم', 'purch_main'),
-          _ReportShortcut('pu_supplier', 'حسب المورد', 'purch_main'),
-          _ReportShortcut('pu_product', 'حسب الصنف', 'purch_main'),
-          _ReportShortcut('pu_branch', 'حسب الفرع', 'purch_main'),
+        shortcuts:  [
+          _ReportShortcut('pu_today', tr('مشتريات اليوم'), 'purch_main'),
+          _ReportShortcut('pu_supplier', tr('حسب المورد'), 'purch_main'),
+          _ReportShortcut('pu_product', tr('حسب الصنف'), 'purch_main'),
+          _ReportShortcut('pu_branch', tr('حسب الفرع'), 'purch_main'),
         ],
       ),
       _ReportCategory(
         id: 'customers',
-        title: 'تقارير العملاء',
+        title: tr('تقارير العملاء'),
         icon: PhosphorIconsBold.users,
         color: const Color(0xFF8B5CF6),
         mainReports: [
           _ReportEntry(
             id: 'cust_statement',
-            title: 'كشف حساب العميل',
-            subtitle: 'كشف حساب تفصيلي بالحركات',
+            title: tr('كشف حساب العميل'),
+            subtitle: tr('كشف حساب تفصيلي بالحركات'),
             action: () =>
                 nav(() => const PartyStatementScreen(isCustomer: true)),
           ),
           _ReportEntry(
             id: 'cust_aging',
-            title: 'تقادم ذمم العملاء',
-            subtitle: 'الذمم المتأخرة بشرائح الأيام',
+            title: tr('تقادم ذمم العملاء'),
+            subtitle: tr('الذمم المتأخرة بشرائح الأيام'),
             action: () => nav(() => const ArAgingReportScreen()),
           ),
           _ReportEntry(
             id: 'cust_behavior',
-            title: 'تحليل سلوك العملاء',
-            subtitle: 'تكرار الشراء ومتوسط الفاتورة',
+            title: tr('تحليل سلوك العملاء'),
+            subtitle: tr('تكرار الشراء ومتوسط الفاتورة'),
             action: () => nav(() => const AnalyticsDashboardScreen()),
           ),
           _ReportEntry(
             id: 'cust_reconciliation',
-            title: 'تسوية الذمم مع الأستاذ العام',
-            subtitle: 'مقارنة أرصدة العملاء مع حساب الذمم',
+            title: tr('تسوية الذمم مع الأستاذ العام'),
+            subtitle: tr('مقارنة أرصدة العملاء مع حساب الذمم'),
             action: _showArReconciliation,
           ),
         ],
-        shortcuts: const [
-          _ReportShortcut('c_sales', 'مبيعات العميل', 'cust_statement'),
-          _ReportShortcut('c_collect', 'تحصيلات العملاء', 'cust_statement'),
-          _ReportShortcut('c_debt', 'العملاء المديونين', 'cust_aging'),
-          _ReportShortcut('c_top', 'حسب حجم المبيعات', 'cust_behavior'),
+        shortcuts:  [
+          _ReportShortcut('c_sales', tr('مبيعات العميل'), 'cust_statement'),
+          _ReportShortcut('c_collect', tr('تحصيلات العملاء'), 'cust_statement'),
+          _ReportShortcut('c_debt', tr('العملاء المديونين'), 'cust_aging'),
+          _ReportShortcut('c_top', tr('حسب حجم المبيعات'), 'cust_behavior'),
         ],
       ),
       _ReportCategory(
         id: 'suppliers',
-        title: 'تقارير الموردين',
+        title: tr('تقارير الموردين'),
         icon: PhosphorIconsBold.truck,
         color: const Color(0xFFEA580C),
         mainReports: [
           _ReportEntry(
             id: 'sup_statement',
-            title: 'كشف حساب المورد',
-            subtitle: 'كشف تفصيلي بالحركات',
+            title: tr('كشف حساب المورد'),
+            subtitle: tr('كشف تفصيلي بالحركات'),
             // دفعة ١٢ — الفئة كلها كانت بتترسم لأي حد معاه reports_view
             // (حقل permission اختياري، ولما يبقى null التايل بيظهر بلا فحص).
             permission: PermissionCodes.reportsSuppliers,
@@ -437,205 +438,205 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           ),
           _ReportEntry(
             id: 'sup_behavior',
-            title: 'تحليل سلوك الموردين',
-            subtitle: 'الموردون النشطون وحجم التعامل',
+            title: tr('تحليل سلوك الموردين'),
+            subtitle: tr('الموردون النشطون وحجم التعامل'),
             permission: PermissionCodes.reportsSuppliers,
             action: () => nav(() => const AnalyticsDashboardScreen()),
           ),
         ],
-        shortcuts: const [
-          _ReportShortcut('su_purch', 'مشتريات المورد', 'sup_statement'),
-          _ReportShortcut('su_debt', 'مديونية الموردين', 'sup_statement'),
-          _ReportShortcut('su_pay', 'دفعات الموردين', 'sup_statement'),
-          _ReportShortcut('su_top', 'حسب حجم الشراء', 'sup_behavior'),
+        shortcuts:  [
+          _ReportShortcut('su_purch', tr('مشتريات المورد'), 'sup_statement'),
+          _ReportShortcut('su_debt', tr('مديونية الموردين'), 'sup_statement'),
+          _ReportShortcut('su_pay', tr('دفعات الموردين'), 'sup_statement'),
+          _ReportShortcut('su_top', tr('حسب حجم الشراء'), 'sup_behavior'),
         ],
       ),
       _ReportCategory(
         id: 'cashbox',
-        title: 'الصناديق والكاش',
+        title: tr('الصناديق والكاش'),
         icon: PhosphorIconsBold.wallet,
         color: AppColors.primary,
         mainReports: [
           _ReportEntry(
             id: 'cb_treasury',
-            title: 'حركة الخزينة',
-            subtitle: 'سجل المقبوضات والمدفوعات والمصروفات',
+            title: tr('حركة الخزينة'),
+            subtitle: tr('سجل المقبوضات والمدفوعات والمصروفات'),
             permission: PermissionCodes.reportsTreasury,
             action: () => nav(() => const TreasuryReportScreen()),
           ),
           _ReportEntry(
             id: 'cb_shifts',
-            title: 'تقرير الورديات',
-            subtitle: 'فتح وتسكير الورديات وعجز النقدية',
+            title: tr('تقرير الورديات'),
+            subtitle: tr('فتح وتسكير الورديات وعجز النقدية'),
             permission: PermissionCodes.reportsSales,
             action: () => nav(() => const ShiftsReportScreen()),
           ),
           _ReportEntry(
             id: 'cb_delivery',
-            title: 'تقرير عمليات التوصيل',
-            subtitle: 'إحصائيات المناديب ورسوم شركات التوصيل',
+            title: tr('تقرير عمليات التوصيل'),
+            subtitle: tr('إحصائيات المناديب ورسوم شركات التوصيل'),
             action: () => nav(() => const DeliveryReportScreen()),
           ),
           _ReportEntry(
             id: 'cb_expenses',
-            title: 'تقرير المصروفات التشغيلية',
-            subtitle: 'إجمالي المصروفات حسب الفئة والفرع والفترة',
+            title: tr('تقرير المصروفات التشغيلية'),
+            subtitle: tr('إجمالي المصروفات حسب الفئة والفرع والفترة'),
             action: () => nav(() => const ExpensesReportScreen()),
           ),
         ],
-        shortcuts: const [
-          _ReportShortcut('cb_open', 'فتح وإغلاق الصندوق', 'cb_shifts'),
-          _ReportShortcut('cb_diff', 'العجز والزيادة', 'cb_shifts'),
-          _ReportShortcut('cb_in_out', 'المقبوضات والمدفوعات', 'cb_treasury'),
-          _ReportShortcut('cb_methods', 'نقدي / فيزا / آجل', 'cb_treasury'),
+        shortcuts:  [
+          _ReportShortcut('cb_open', tr('فتح وإغلاق الصندوق'), 'cb_shifts'),
+          _ReportShortcut('cb_diff', tr('العجز والزيادة'), 'cb_shifts'),
+          _ReportShortcut('cb_in_out', tr('المقبوضات والمدفوعات'), 'cb_treasury'),
+          _ReportShortcut('cb_methods', tr('نقدي / فيزا / آجل'), 'cb_treasury'),
         ],
       ),
       _ReportCategory(
         id: 'users',
-        title: 'تقارير المستخدمين',
+        title: tr('تقارير المستخدمين'),
         icon: PhosphorIconsBold.userCircle,
         color: const Color(0xFF7C3AED),
         mainReports: [
           _ReportEntry(
             id: 'u_activity',
-            title: 'نشاط المستخدمين',
-            subtitle: 'العمليات لكل مستخدم',
+            title: tr('نشاط المستخدمين'),
+            subtitle: tr('العمليات لكل مستخدم'),
             action: () => nav(() => const ActivityLogScreen()),
           ),
           _ReportEntry(
             id: 'u_login',
-            title: 'سجل دخول المستخدمين',
-            subtitle: 'متى دخل كل مستخدم وخرج',
+            title: tr('سجل دخول المستخدمين'),
+            subtitle: tr('متى دخل كل مستخدم وخرج'),
             action: () => nav(() => const ActivityLogScreen()),
           ),
           _ReportEntry(
             id: 'u_perms',
-            title: 'صلاحيات المستخدمين',
-            subtitle: 'مصفوفة صلاحيات لكل دور ومستخدم',
+            title: tr('صلاحيات المستخدمين'),
+            subtitle: tr('مصفوفة صلاحيات لكل دور ومستخدم'),
             action: () => nav(() => const UsersManagementScreen()),
           ),
         ],
       ),
       _ReportCategory(
         id: 'branches',
-        title: 'تقارير الفروع',
+        title: tr('تقارير الفروع'),
         icon: PhosphorIconsBold.buildings,
         color: const Color(0xFF0891B2),
         mainReports: [
           _ReportEntry(
             id: 'br_performance',
-            title: 'أداء الفروع',
-            subtitle: 'مقارنة مبيعات وأرباح الفروع',
+            title: tr('أداء الفروع'),
+            subtitle: tr('مقارنة مبيعات وأرباح الفروع'),
             action: () => nav(() => const BranchPerformanceScreen()),
           ),
           _ReportEntry(
             id: 'br_transfers',
-            title: 'التحويلات بين الفروع',
-            subtitle: 'سجل التحويلات وحركة المخزون',
+            title: tr('التحويلات بين الفروع'),
+            subtitle: tr('سجل التحويلات وحركة المخزون'),
             action: () => nav(() => const StockMovementsScreen()),
           ),
         ],
       ),
       _ReportCategory(
         id: 'taxes',
-        title: 'تقارير الضرائب',
+        title: tr('تقارير الضرائب'),
         icon: PhosphorIconsBold.percent,
         color: const Color(0xFF0369A1),
         mainReports: [
           _ReportEntry(
             id: 'tx_main',
-            title: 'تقرير ضريبة المبيعات',
-            subtitle: 'الضرائب المحصلة والمدفوعة وصافي الالتزام',
+            title: tr('تقرير ضريبة المبيعات'),
+            subtitle: tr('الضرائب المحصلة والمدفوعة وصافي الالتزام'),
             permission: PermissionCodes.reportsTaxes,
             action: () => nav(() => const TaxReportScreen()),
           ),
           _ReportEntry(
             id: 'tx_vat_recon',
-            title: 'تسوية ضريبة القيمة المضافة',
-            subtitle: 'مقارنة ضريبة الفواتير مع الأستاذ العام',
+            title: tr('تسوية ضريبة القيمة المضافة'),
+            subtitle: tr('مقارنة ضريبة الفواتير مع الأستاذ العام'),
             permission: PermissionCodes.reportsTaxes,
             action: () => nav(() => const VatReconciliationScreen()),
           ),
           if (eInvoicePlatform != null)
             _ReportEntry(
               id: 'tx_einvoice',
-              title: 'تقرير الفوترة الإلكترونية',
-              subtitle: 'متابعة حالات الإرسال والقبول من الضرائب',
+              title: tr('تقرير الفوترة الإلكترونية'),
+              subtitle: tr('متابعة حالات الإرسال والقبول من الضرائب'),
               action: () => nav(() => const EInvoiceDashboardScreen()),
             ),
         ],
-        shortcuts: const [
-          _ReportShortcut('tx_sales', 'ضرائب المبيعات', 'tx_main'),
-          _ReportShortcut('tx_purch', 'ضرائب المشتريات', 'tx_main'),
+        shortcuts:  [
+          _ReportShortcut('tx_sales', tr('ضرائب المبيعات'), 'tx_main'),
+          _ReportShortcut('tx_purch', tr('ضرائب المشتريات'), 'tx_main'),
         ],
       ),
       _ReportCategory(
         id: 'audit',
-        title: 'الحركة والسجلات',
+        title: tr('الحركة والسجلات'),
         icon: PhosphorIconsBold.listChecks,
         color: AppColors.errorDark,
         mainReports: [
           _ReportEntry(
             id: 'a_ops',
-            title: 'سجل العمليات',
-            subtitle: 'كل العمليات في النظام',
+            title: tr('سجل العمليات'),
+            subtitle: tr('كل العمليات في النظام'),
             action: () => nav(() => const ActivityLogScreen()),
           ),
           _ReportEntry(
             id: 'a_edits',
-            title: 'سجل التعديلات',
-            subtitle: 'الفواتير والمستندات المعدلة',
+            title: tr('سجل التعديلات'),
+            subtitle: tr('الفواتير والمستندات المعدلة'),
             action: () => nav(() => const ActivityLogScreen()),
           ),
           _ReportEntry(
             id: 'a_print',
-            title: 'سجل الطباعة',
-            subtitle: 'متى طُبع كل مستند ومن قبل من',
+            title: tr('سجل الطباعة'),
+            subtitle: tr('متى طُبع كل مستند ومن قبل من'),
             action: () => nav(() => const ActivityLogScreen()),
           ),
           _ReportEntry(
             id: 'a_void',
-            title: 'سجل الإلغاءات',
-            subtitle: 'الفواتير الملغاة وأسبابها',
+            title: tr('سجل الإلغاءات'),
+            subtitle: tr('الفواتير الملغاة وأسبابها'),
             action: () => nav(() => const ActivityLogScreen()),
           ),
         ],
       ),
       _ReportCategory(
         id: 'analytics',
-        title: 'التحليلات والإحصائيات',
+        title: tr('التحليلات والإحصائيات'),
         icon: PhosphorIconsBold.chartDonut,
         color: const Color(0xFFA21CAF),
         mainReports: [
           _ReportEntry(
             id: 'an_sales',
-            title: 'تحليل المبيعات',
-            subtitle: 'اتجاهات وأنماط المبيعات',
+            title: tr('تحليل المبيعات'),
+            subtitle: tr('اتجاهات وأنماط المبيعات'),
             action: () => nav(() => const AnalyticsDashboardScreen()),
           ),
           _ReportEntry(
             id: 'an_classifications',
-            title: 'المبيعات حسب التصنيف',
-            subtitle: 'تحليل المبيعات حسب المجموعات أو أنواع البيع',
+            title: tr('المبيعات حسب التصنيف'),
+            subtitle: tr('تحليل المبيعات حسب المجموعات أو أنواع البيع'),
             permission: PermissionCodes.reportsSales,
             action: () => nav(() => const SalesByClassificationReport()),
           ),
           _ReportEntry(
             id: 'an_financial',
-            title: 'القوائم المالية الختامية',
-            subtitle: 'الميزانية، قائمة الدخل، وميزان المراجعة (Real-time)',
+            title: tr('القوائم المالية الختامية'),
+            subtitle: tr('الميزانية، قائمة الدخل، وميزان المراجعة (Real-time)'),
             action: () => nav(() => const FinancialStatementsScreen()),
           ),
           _ReportEntry(
             id: 'an_customers',
-            title: 'تحليل العملاء',
-            subtitle: 'تقسيم العملاء (RFM)',
+            title: tr('تحليل العملاء'),
+            subtitle: tr('تقسيم العملاء (RFM)'),
             action: () => nav(() => const AnalyticsDashboardScreen()),
           ),
           _ReportEntry(
             id: 'an_inventory',
-            title: 'تحليل المخزون',
-            subtitle: 'دوران وكفاءة المخزون',
+            title: tr('تحليل المخزون'),
+            subtitle: tr('دوران وكفاءة المخزون'),
             action: () => nav(() => const AnalyticsDashboardScreen()),
           ),
         ],
@@ -677,7 +678,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     _searchResults(results, reportCols)
                   else ...[
                     if (_favorites.isNotEmpty) ...[
-                      _miniHeader(PhosphorIconsBold.star, 'المفضلة',
+                      _miniHeader(PhosphorIconsBold.star, tr('المفضلة'),
                           AppColors.warning),
                       const SizedBox(height: 8),
                       _chipsForIds(_favorites.toList()),
@@ -685,13 +686,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     ],
                     if (_recent.isNotEmpty) ...[
                       _miniHeader(PhosphorIconsBold.clockCounterClockwise,
-                          'آخر ما فتحت', AppColors.primary),
+                          tr('آخر ما فتحت'), AppColors.primary),
                       const SizedBox(height: 8),
                       _chipsForIds(_recent),
                       const SizedBox(height: 20),
                     ],
                     _miniHeader(PhosphorIconsBold.squaresFour,
-                        'فئات التقارير', AppColors.textSecondary),
+                        tr('فئات التقارير'), AppColors.textSecondary),
                     const SizedBox(height: 10),
                     _categoryGrid(catCols),
                   ],
@@ -736,7 +737,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               color: Colors.white, size: 20),
         ),
         const SizedBox(width: 12),
-        Text('التقارير والإحصائيات',
+        Text(tr('التقارير والإحصائيات'),
             style: TextStyle(
               fontSize: 21,
               fontWeight: FontWeight.bold,
@@ -750,7 +751,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            '${_allItems.length} تقرير',
+            tr('{p0} تقرير', {'p0': _allItems.length}),
             style: const TextStyle(
               fontSize: 10.5,
               fontWeight: FontWeight.w600,
@@ -770,7 +771,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         onChanged: (v) => setState(() => _query = v),
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
-          hintText: 'بحث في جميع التقارير...',
+          hintText: tr('بحث في جميع التقارير...'),
           prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
           suffixIcon: _query.isEmpty
               ? null
@@ -979,8 +980,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   const SizedBox(height: 1),
                   Text(
                     cat.shortcuts.isEmpty
-                        ? '${cat.mainReports.length} تقرير'
-                        : '${cat.mainReports.length} تقرير • ${cat.shortcuts.length} اختصار',
+                        ? tr('{p0} تقرير', {'p0': cat.mainReports.length})
+                        : tr('{p0} تقرير • {p1} اختصار', {'p0': cat.mainReports.length, 'p1': cat.shortcuts.length}),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -1022,7 +1023,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             children: [
               Icon(cat.icon, size: 16, color: cat.color),
               const SizedBox(width: 6),
-              Text('التقارير الأساسية',
+              Text(tr('التقارير الأساسية'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -1050,13 +1051,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           ),
           if (cat.shortcuts.isNotEmpty) ...[
             const SizedBox(height: 14),
-            const Row(
+             Row(
               children: [
-                Icon(PhosphorIconsBold.lightning,
+                const Icon(PhosphorIconsBold.lightning,
                     size: 13, color: AppColors.warningDark),
-                SizedBox(width: 5),
-                Text('اختصارات سريعة',
-                    style: TextStyle(
+                const SizedBox(width: 5),
+                Text(tr('اختصارات سريعة'),
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       color: AppColors.warningDark,
@@ -1217,7 +1218,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   size: 56,
                   color: AppColors.textMuted.withValues(alpha: 0.5)),
               const SizedBox(height: 12),
-              Text('لا توجد تقارير مطابقة لـ "$_query"',
+              Text(tr('لا توجد تقارير مطابقة لـ "{_query}"', {'_query': _query}),
                   style: const TextStyle(color: AppColors.textMuted)),
             ],
           ),
@@ -1228,7 +1229,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _miniHeader(PhosphorIconsBold.magnifyingGlass,
-            'نتائج البحث (${results.length})', AppColors.primary),
+            tr('نتائج البحث ({p0})', {'p0': results.length}), AppColors.primary),
         const SizedBox(height: 10),
         GridView.builder(
           shrinkWrap: true,
@@ -1290,8 +1291,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                             color: AppColors.warning.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(5),
                           ),
-                          child: const Text('اختصار',
-                              style: TextStyle(
+                          child:  Text(tr('اختصار'),
+                              style: const TextStyle(
                                 fontSize: 8.5,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.warningDark,
@@ -1314,7 +1315,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             ),
             if (!item.isShortcut)
               IconButton(
-                tooltip: isFav ? 'إزالة من المفضلة' : 'إضافة للمفضلة',
+                tooltip: isFav ? tr('إزالة من المفضلة') : tr('إضافة للمفضلة'),
                 padding: EdgeInsets.zero,
                 constraints:
                     const BoxConstraints.tightFor(width: 22, height: 22),
@@ -1343,18 +1344,18 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       builder: (context) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('أصناف منخفضة المخزون'),
+              const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('أصناف منخفضة المخزون')),
             ],
           ),
           content: SizedBox(
             width: 500,
             height: 400,
             child: lowStockProducts.isEmpty
-                ? const Center(child: Text('لا توجد أصناف منخفضة المخزون 🎉'))
+                ?  Center(child: Text(tr('لا توجد أصناف منخفضة المخزون 🎉')))
                 : ListView.builder(
                     itemCount: lowStockProducts.length,
                     itemBuilder: (context, index) {
@@ -1372,7 +1373,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           ),
                         ),
                         title: Text(p.name),
-                        subtitle: Text('الحد الأدنى: ${p.minStock.toInt()}'),
+                        subtitle: Text(tr('الحد الأدنى: {p0}', {'p0': p.minStock.toInt()})),
                         trailing: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
@@ -1383,7 +1384,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            p.currentStock <= 0 ? 'نفذ' : 'منخفض',
+                            p.currentStock <= 0 ? tr('نفذ') : tr('منخفض'),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -1397,7 +1398,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -1415,19 +1416,19 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       builder: (context) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.xCircle, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('منتجات منتهية الصلاحية'),
+              const Icon(PhosphorIconsBold.xCircle, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('منتجات منتهية الصلاحية')),
             ],
           ),
           content: SizedBox(
             width: 500,
             height: 400,
             child: expiredBatches.isEmpty
-                ? const Center(
-                    child: Text('🎉 لا توجد منتجات منتهية الصلاحية'))
+                ?  Center(
+                    child: Text(tr('🎉 لا توجد منتجات منتهية الصلاحية')))
                 : ListView.builder(
                     itemCount: expiredBatches.length,
                     itemBuilder: (context, index) {
@@ -1445,13 +1446,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           ),
                         ),
                         title: Text(
-                          product?.name ?? 'منتج #${batch.productId}',
+                          product?.name ?? tr('منتج #{p0}', {'p0': batch.productId}),
                         ),
                         subtitle: Text(
-                          'الباتش: ${batch.batchNumber} - انتهى في ${DateFormat('dd/MM/yyyy').format(batch.expiryDate)}',
+                          tr('الباتش: {p0} - انتهى في {p1}', {'p0': batch.batchNumber, 'p1': DateFormat('dd/MM/yyyy').format(batch.expiryDate)}),
                         ),
                         trailing: Text(
-                          '${batch.quantity.toStringAsFixed(0)} وحدة',
+                          tr('{p0} وحدة', {'p0': batch.quantity.toStringAsFixed(0)}),
                           style: const TextStyle(
                             color: AppColors.error,
                             fontWeight: FontWeight.bold,
@@ -1464,7 +1465,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -1482,19 +1483,19 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       builder: (context) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.clock, color: AppColors.warning),
-              SizedBox(width: 8),
-              Text('تنتهي خلال 30 يوم'),
+              const Icon(PhosphorIconsBold.clock, color: AppColors.warning),
+              const SizedBox(width: 8),
+              Text(tr('تنتهي خلال 30 يوم')),
             ],
           ),
           content: SizedBox(
             width: 500,
             height: 400,
             child: expiringBatches.isEmpty
-                ? const Center(
-                    child: Text('🎉 لا توجد منتجات قاربت على الانتهاء'),
+                ?  Center(
+                    child: Text(tr('🎉 لا توجد منتجات قاربت على الانتهاء')),
                   )
                 : ListView.builder(
                     itemCount: expiringBatches.length,
@@ -1522,13 +1523,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           ),
                         ),
                         title: Text(
-                          product?.name ?? 'منتج #${batch.productId}',
+                          product?.name ?? tr('منتج #{p0}', {'p0': batch.productId}),
                         ),
                         subtitle: Text(
-                          'الباتش: ${batch.batchNumber} - ينتهي في ${DateFormat('dd/MM/yyyy').format(batch.expiryDate)}',
+                          tr('الباتش: {p0} - ينتهي في {p1}', {'p0': batch.batchNumber, 'p1': DateFormat('dd/MM/yyyy').format(batch.expiryDate)}),
                         ),
                         trailing: Text(
-                          '${batch.quantity.toStringAsFixed(0)} وحدة',
+                          tr('{p0} وحدة', {'p0': batch.quantity.toStringAsFixed(0)}),
                           style: TextStyle(
                             color: daysLeft <= 7
                                 ? AppColors.error
@@ -1543,7 +1544,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -1559,13 +1560,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         showDialog(
           context: context,
           builder: (dialogCtx) => AlertDialog(
-            title: const Text('تسوية الذمم'),
-            content: const Text(
-                'لم يتم تعيين حساب الذمم (receivables) في الربط المحاسبي.'),
+            title:  Text(tr('تسوية الذمم')),
+            content:  Text(
+                tr('لم يتم تعيين حساب الذمم (receivables) في الربط المحاسبي.')),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogCtx),
-                child: const Text('حسناً'),
+                child:  Text(tr('حسناً')),
               ),
             ],
           ),
@@ -1575,36 +1576,36 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       showDialog(
         context: context,
         builder: (dialogCtx) => AlertDialog(
-          title: const Text('تسوية الذمم مع الأستاذ العام'),
+          title:  Text(tr('تسوية الذمم مع الأستاذ العام')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                  'حساب الذمم: ${result.receivablesAccountCode} — ${result.receivablesAccountName}'),
+                  tr('حساب الذمم: {p0} — {p1}', {'p0': result.receivablesAccountCode, 'p1': result.receivablesAccountName})),
               const Divider(),
-              _reconcRow('رصيد بطاقات العملاء', result.totalCardBalance),
-              _reconcRow('رصيد الأستاذ العام', result.totalGlBalance),
+              _reconcRow(tr('رصيد بطاقات العملاء'), result.totalCardBalance),
+              _reconcRow(tr('رصيد الأستاذ العام'), result.totalGlBalance),
               const Divider(),
-              _reconcRow('الفرق', result.difference,
+              _reconcRow(tr('الفرق'), result.difference,
                   highlight: !result.isBalanced),
               if (result.isBalanced)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
+                 Padding(
+                  padding: const EdgeInsets.only(top: 8),
                   child: Row(children: [
-                    Icon(Icons.check_circle, color: Colors.green, size: 16),
-                    SizedBox(width: 4),
-                    Text('مُتسوٍّ', style: TextStyle(color: Colors.green)),
+                    const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                    const SizedBox(width: 4),
+                    Text(tr('مُتسوٍّ'), style: const TextStyle(color: Colors.green)),
                   ]),
                 )
               else
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
+                 Padding(
+                  padding: const EdgeInsets.only(top: 8),
                   child: Row(children: [
-                    Icon(Icons.warning, color: Colors.orange, size: 16),
-                    SizedBox(width: 4),
-                    Text('يوجد فرق — راجع القيود',
-                        style: TextStyle(color: Colors.orange)),
+                    const Icon(Icons.warning, color: Colors.orange, size: 16),
+                    const SizedBox(width: 4),
+                    Text(tr('يوجد فرق — راجع القيود'),
+                        style: const TextStyle(color: Colors.orange)),
                   ]),
                 ),
             ],
@@ -1612,7 +1613,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -1620,7 +1621,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('خطأ: $e')));
+          .showSnackBar(SnackBar(content: Text(tr('خطأ: {e}', {'e': e}))));
     }
   }
 
@@ -1637,13 +1638,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         showDialog(
           context: context,
           builder: (dialogCtx) => AlertDialog(
-            title: const Text('تسوية المخزون'),
-            content: const Text(
-                'لم يتم تعيين حساب المخزون (inventory) في الربط المحاسبي.'),
+            title:  Text(tr('تسوية المخزون')),
+            content:  Text(
+                tr('لم يتم تعيين حساب المخزون (inventory) في الربط المحاسبي.')),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogCtx),
-                child: const Text('حسناً'),
+                child:  Text(tr('حسناً')),
               ),
             ],
           ),
@@ -1653,24 +1654,24 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       showDialog(
         context: context,
         builder: (dialogCtx) => AlertDialog(
-          title: const Text('تسوية المخزون مع الأستاذ العام'),
+          title:  Text(tr('تسوية المخزون مع الأستاذ العام')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                  'حساب المخزون: ${result.inventoryAccountCode} — ${result.inventoryAccountName}'),
+                  tr('حساب المخزون: {p0} — {p1}', {'p0': result.inventoryAccountCode, 'p1': result.inventoryAccountName})),
               const Divider(),
-              _reconcRow('قيمة المخزون (بالتكلفة)', result.reportValue),
-              _reconcRow('رصيد الأستاذ العام', result.glBalance),
+              _reconcRow(tr('قيمة المخزون (بالتكلفة)'), result.reportValue),
+              _reconcRow(tr('رصيد الأستاذ العام'), result.glBalance),
               const Divider(),
-              _reconcRow('الفرق', result.delta, highlight: !result.isBalanced),
+              _reconcRow(tr('الفرق'), result.delta, highlight: !result.isBalanced),
               const SizedBox(height: 8),
-              const Text('مصادر الفروق المحتملة:',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              _reconcRow('فرق أساس التكلفة (متوسط المخزن مقابل التكلفة)',
+               Text(tr('مصادر الفروق المحتملة:'),
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              _reconcRow(tr('فرق أساس التكلفة (متوسط المخزن مقابل التكلفة)'),
                   result.costBasisDivergence),
-              _reconcRow('فرق الرصيد الدفتري مقابل حركات المخازن',
+              _reconcRow(tr('فرق الرصيد الدفتري مقابل حركات المخازن'),
                   result.stockVsLedgerDivergence),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
@@ -1679,22 +1680,22 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     '(كمية ${result.zeroCostStockQty.toStringAsFixed(2)})'),
               ),
               if (result.isBalanced)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
+                 Padding(
+                  padding: const EdgeInsets.only(top: 8),
                   child: Row(children: [
-                    Icon(Icons.check_circle, color: Colors.green, size: 16),
-                    SizedBox(width: 4),
-                    Text('مُتسوٍّ', style: TextStyle(color: Colors.green)),
+                    const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                    const SizedBox(width: 4),
+                    Text(tr('مُتسوٍّ'), style: const TextStyle(color: Colors.green)),
                   ]),
                 )
               else
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
+                 Padding(
+                  padding: const EdgeInsets.only(top: 8),
                   child: Row(children: [
-                    Icon(Icons.warning, color: Colors.orange, size: 16),
-                    SizedBox(width: 4),
-                    Text('يوجد فرق — راجع مصادر الفروق أعلاه',
-                        style: TextStyle(color: Colors.orange)),
+                    const Icon(Icons.warning, color: Colors.orange, size: 16),
+                    const SizedBox(width: 4),
+                    Text(tr('يوجد فرق — راجع مصادر الفروق أعلاه'),
+                        style: const TextStyle(color: Colors.orange)),
                   ]),
                 ),
             ],
@@ -1702,7 +1703,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -1710,7 +1711,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('خطأ: $e')));
+          .showSnackBar(SnackBar(content: Text(tr('خطأ: {e}', {'e': e}))));
     }
   }
 

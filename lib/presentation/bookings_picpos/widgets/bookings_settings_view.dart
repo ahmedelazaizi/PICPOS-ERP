@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // إعداداتُ الحجوزات.
 //
 // ═══ ⚠️ إعدادٌ واحدٌ يعمل خيرٌ من ستّةٍ تُرسم ولا تفعل ═══
@@ -47,7 +48,7 @@ class BookingsSettingsView extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(14),
       children: [
-        _section('التذكيرات'),
+        _section(tr('التذكيرات')),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -60,16 +61,16 @@ class BookingsSettingsView extends ConsumerWidget {
               const Icon(PhosphorIconsBold.bellRinging,
                   size: 18, color: AppColors.primary),
               const SizedBox(width: 10),
-              const Expanded(
+               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('مهلة التذكير الافتراضية',
-                        style: TextStyle(
+                    Text(tr('مهلة التذكير الافتراضية'),
+                        style: const TextStyle(
                             fontSize: 13, fontWeight: FontWeight.w800)),
                     Text(
-                      'كم دقيقة قبل الموعد يُجدوَل التذكير للحجوزات الجديدة.',
-                      style: TextStyle(
+                      tr('كم دقيقة قبل الموعد يُجدوَل التذكير للحجوزات الجديدة.'),
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textMuted,
@@ -86,7 +87,7 @@ class BookingsSettingsView extends ConsumerWidget {
                     DropdownMenuItem(
                       value: m,
                       child: Text(
-                        m < 60 ? '$m دقيقة' : 'قبل ${m ~/ 60} ساعة',
+                        m < 60 ? tr('{m} دقيقة', {'m': m}) : tr('قبل {p0} ساعة', {'p0': m ~/ 60}),
                         style: const TextStyle(
                             fontSize: 12.5, fontWeight: FontWeight.w700),
                       ),
@@ -104,17 +105,17 @@ class BookingsSettingsView extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
-        _section('حالة التجهيز'),
+        _section(tr('حالة التجهيز')),
         _fact(
           context,
           icon: PhosphorIconsBold.scissors,
-          label: 'الخدمات النشِطة',
+          label: tr('الخدمات النشِطة'),
           value: '${services.length}',
         ),
         _fact(
           context,
           icon: PhosphorIconsBold.users,
-          label: 'الموارد (موظَّفون وأجهزة)',
+          label: tr('الموارد (موظَّفون وأجهزة)'),
           value: '${resources.length}',
         ),
         // ⚠️ حقيقةٌ قابلةٌ للتصرّف لا زينة: خدمةٌ بلا صنفٍ مربوطٍ **لا
@@ -123,7 +124,7 @@ class BookingsSettingsView extends ConsumerWidget {
         _fact(
           context,
           icon: PhosphorIconsBold.linkBreak,
-          label: 'خدمات غير مربوطة بصنف — لا يمكن تفويتر حجوزها',
+          label: tr('خدمات غير مربوطة بصنف — لا يمكن تفويتر حجوزها'),
           value: '${unlinked.length}',
           tone: unlinked.isEmpty ? AppColors.success : AppColors.warning,
           detail: unlinked.isEmpty

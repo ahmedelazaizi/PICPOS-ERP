@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
@@ -62,7 +63,7 @@ class _ShiftClosePicposScreenState extends ConsumerState<ShiftClosePicposScreen>
     if (userId == null) return;
 
     final userName =
-        authState.user?.displayName ?? authState.user?.username ?? 'كاشير';
+        authState.user?.displayName ?? authState.user?.username ?? tr('كاشير');
 
     // Same dialog `_enforceShiftForCashier` shows at login — reused as-is
     // (PicPos-skinned fork of it).
@@ -122,20 +123,20 @@ class _ShiftClosePicposScreenState extends ConsumerState<ShiftClosePicposScreen>
     final closingState = ref.watch(posClosingControllerProvider);
 
     return PicPosScreenScaffold(
-      title: 'إغلاق الوردية',
-      subtitle: 'فتح وإغلاق ورديات الكاشير',
+      title: tr('إغلاق الوردية'),
+      subtitle: tr('فتح وإغلاق ورديات الكاشير'),
       icon: PhosphorIconsBold.lockKey,
       body: PermissionGuard(
         permission: PermissionCodes.posShiftClose,
         allowManagerOverride: true,
-        actionName: 'إغلاق الوردية',
+        actionName: tr('إغلاق الوردية'),
         child: Column(
           children: [
             TabBar(
               controller: _tabController,
-              tabs: const [
-                Tab(text: 'الوردية الحالية'),
-                Tab(text: 'ورديات سابقة'),
+              tabs:  [
+                Tab(text: tr('الوردية الحالية')),
+                Tab(text: tr('ورديات سابقة')),
               ],
             ),
             const SizedBox(height: 12),
@@ -188,8 +189,8 @@ class _ShiftClosePicposScreenState extends ConsumerState<ShiftClosePicposScreen>
                     children: [
                       Text(
                         noOpenShift
-                            ? 'لا توجد وردية مفتوحة'
-                            : 'يوجد وردية مفتوحة حالياً',
+                            ? tr('لا توجد وردية مفتوحة')
+                            : tr('يوجد وردية مفتوحة حالياً'),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -197,7 +198,7 @@ class _ShiftClosePicposScreenState extends ConsumerState<ShiftClosePicposScreen>
                       ),
                       if (!noOpenShift && state.resolvedShiftId != null)
                         Text(
-                          'رقم الوردية: #${state.resolvedShiftId}',
+                          tr('رقم الوردية: #{p0}', {'p0': state.resolvedShiftId}),
                           style: const TextStyle(
                             color: AppColors.textMuted,
                             fontSize: 13,
@@ -223,7 +224,7 @@ class _ShiftClosePicposScreenState extends ConsumerState<ShiftClosePicposScreen>
                       ),
                     )
                   : const Icon(PhosphorIconsBold.cashRegister),
-              label: const Text('فتح وردية'),
+              label:  Text(tr('فتح وردية')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -234,7 +235,7 @@ class _ShiftClosePicposScreenState extends ConsumerState<ShiftClosePicposScreen>
             ElevatedButton.icon(
               onPressed: () => PicposCashierClosingDialog.show(context),
               icon: const Icon(PhosphorIconsBold.signOut),
-              label: const Text('إغلاق الوردية'),
+              label:  Text(tr('إغلاق الوردية')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.error,
                 foregroundColor: Colors.white,
@@ -245,7 +246,7 @@ class _ShiftClosePicposScreenState extends ConsumerState<ShiftClosePicposScreen>
           OutlinedButton.icon(
             onPressed: _viewAllShifts,
             icon: const Icon(PhosphorIconsBold.listBullets),
-            label: const Text('عرض كل الورديات'),
+            label:  Text(tr('عرض كل الورديات')),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // SYNC FAILURE CLASSIFICATION — Spec 125 Mirror Foundation
 // ═══════════════════════════════════════════════════════════════════════════
@@ -42,7 +43,7 @@ class SyncPersistentFailure implements Exception {
 
   /// Arabic user-facing message for the aggregated login toast.
   String toUserMessageAr() =>
-      'فقد الاتصال بالسيرفر أثناء مزامنة "$tag". تحقق من الشبكة وأعد المحاولة.';
+      tr('فقد الاتصال بالسيرفر أثناء مزامنة "{tag}". تحقق من الشبكة وأعد المحاولة.', {'tag': tag});
 
   @override
   String toString() =>

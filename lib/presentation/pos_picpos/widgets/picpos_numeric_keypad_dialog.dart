@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -116,12 +117,12 @@ class _PicPosNumericKeypadDialogState
   /// رسالة الخطأ الحالية، أو `null` لو القيمة صالحة.
   String? get _error {
     final v = _parsed;
-    if (v == null) return 'قيمة غير صحيحة';
+    if (v == null) return tr('قيمة غير صحيحة');
     if (widget.min != null && v < widget.min!) {
-      return 'أقل قيمة مسموحة ${_format(widget.min!)}';
+      return tr('أقل قيمة مسموحة {p0}', {'p0': _format(widget.min!)});
     }
     if (widget.max != null && v > widget.max!) {
-      return 'أكبر قيمة مسموحة ${_format(widget.max!)}';
+      return tr('أكبر قيمة مسموحة {p0}', {'p0': _format(widget.max!)});
     }
     return null;
   }
@@ -193,7 +194,7 @@ class _PicPosNumericKeypadDialogState
               textDirection: TextDirection.ltr,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.٠-٩٫،,]')),
+                FilteringTextInputFormatter.allow(RegExp('[0-9.٠-٩٫،,]')),
               ],
               style: PicPosText.v(context, 30),
               decoration: InputDecoration(
@@ -234,7 +235,7 @@ class _PicPosNumericKeypadDialogState
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('إلغاء', style: PicPosText.l(context, 14)),
+          child: Text(tr('إلغاء'), style: PicPosText.l(context, 14)),
         ),
         ElevatedButton.icon(
           onPressed: error == null ? _confirm : null,
@@ -243,7 +244,7 @@ class _PicPosNumericKeypadDialogState
             foregroundColor: Colors.white,
           ),
           icon: const Icon(PhosphorIconsBold.check, size: 18),
-          label: const Text('تأكيد'),
+          label:  Text(tr('تأكيد')),
         ),
       ],
     );

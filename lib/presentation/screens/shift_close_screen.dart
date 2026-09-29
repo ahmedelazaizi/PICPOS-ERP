@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
@@ -60,14 +61,14 @@ Widget buildOpenShiftsSection({
   required void Function(ShiftData) onClose,
 }) {
   if (shifts.isEmpty) {
-    return const Card(
+    return  Card(
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(PhosphorIconsBold.checkCircle, color: AppColors.success),
-            SizedBox(width: 12),
-            Expanded(child: Text('لا توجد ورديات مفتوحة على الفرع')),
+            const Icon(PhosphorIconsBold.checkCircle, color: AppColors.success),
+            const SizedBox(width: 12),
+            Expanded(child: Text(tr('لا توجد ورديات مفتوحة على الفرع'))),
           ],
         ),
       ),
@@ -88,7 +89,7 @@ Widget buildOpenShiftsSection({
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'وردية #${shift.id} — ${userNames[shift.userId] ?? 'مستخدم #${shift.userId}'}',
+                        tr('وردية #{p0} — {p1}', {'p0': shift.id, 'p1': userNames[shift.userId] ?? 'مستخدم #${shift.userId}'}),
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
@@ -101,11 +102,11 @@ Widget buildOpenShiftsSection({
                         ),
                       ),
                       if (!canCloseOthers && shift.userId != currentUserId)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 4),
+                         Padding(
+                          padding: const EdgeInsets.only(top: 4),
                           child: Text(
-                            'إغلاق وردية كاشير تاني متاح لمدير النظام فقط',
-                            style: TextStyle(
+                            tr('إغلاق وردية كاشير تاني متاح لمدير النظام فقط'),
+                            style: const TextStyle(
                               color: AppColors.warning,
                               fontSize: 11,
                             ),
@@ -118,7 +119,7 @@ Widget buildOpenShiftsSection({
                 PermissionGuard(
                   permission: PermissionCodes.posShiftClose,
                   allowManagerOverride: true,
-                  actionName: 'إغلاق وردية #${shift.id}',
+                  actionName: tr('إغلاق وردية #{p0}', {'p0': shift.id}),
                   // صريحة: الحارس بيمسك الضغطة، ولو ما عرفش يشغّل إيه بعد
                   // الموافقة بيفكّ القفل وبس (f8d3fa9).
                   onGranted: () => onClose(shift),
@@ -127,7 +128,7 @@ Widget buildOpenShiftsSection({
                         ? () => onClose(shift)
                         : null,
                     icon: const Icon(PhosphorIconsBold.lockKey, size: 16),
-                    label: const Text('إغلاق الوردية'),
+                    label:  Text(tr('إغلاق الوردية')),
                   ),
                 ),
               ],
@@ -159,7 +160,7 @@ class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
     if (userId == null) return;
 
     final userName =
-        authState.user?.displayName ?? authState.user?.username ?? 'كاشير';
+        authState.user?.displayName ?? authState.user?.username ?? tr('كاشير');
 
     // Same dialog `_enforceShiftForCashier` shows at login — reused as-is.
     final opening = await showDialog<double>(
@@ -253,11 +254,11 @@ class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        appBar: AppBar(title: const Text('إغلاق الوردية')),
+        appBar: AppBar(title:  Text(tr('إغلاق الوردية'))),
         body: PermissionGuard(
           permission: PermissionCodes.posShiftClose,
           allowManagerOverride: true,
-          actionName: 'إغلاق الوردية',
+          actionName: tr('إغلاق الوردية'),
           child: _buildBody(closingState),
         ),
       ),
@@ -294,12 +295,12 @@ class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          noOpenShift ? 'لا توجد وردية مفتوحة' : 'يوجد وردية مفتوحة حالياً',
+                          noOpenShift ? tr('لا توجد وردية مفتوحة') : tr('يوجد وردية مفتوحة حالياً'),
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         if (!noOpenShift && state.resolvedShiftId != null)
                           Text(
-                            'رقم الوردية: #${state.resolvedShiftId}',
+                            tr('رقم الوردية: #{p0}', {'p0': state.resolvedShiftId}),
                             style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                           ),
                       ],
@@ -320,7 +321,7 @@ class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
                   : const Icon(PhosphorIconsBold.cashRegister),
-              label: const Text('فتح وردية'),
+              label:  Text(tr('فتح وردية')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -331,7 +332,7 @@ class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
             ElevatedButton.icon(
               onPressed: () => PosCashierClosingDialog.show(context),
               icon: const Icon(PhosphorIconsBold.signOut),
-              label: const Text('إغلاق الوردية'),
+              label:  Text(tr('إغلاق الوردية')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.error,
                 foregroundColor: Colors.white,
@@ -342,7 +343,7 @@ class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
           OutlinedButton.icon(
             onPressed: _viewAllShifts,
             icon: const Icon(PhosphorIconsBold.listBullets),
-            label: const Text('عرض كل الورديات'),
+            label:  Text(tr('عرض كل الورديات')),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
@@ -353,13 +354,13 @@ class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
           // القسم ده بيعوّض بوابة الإغلاق الإجباري اللي اتلغت: الوردية بقت
           // تفضل مفتوحة عند الخروج والتبديل، فلازم يبقى فيه مكان واحد
           // بيوريها لمين مسؤول عن ترصيدها.
-          const Row(
+           Row(
             children: [
-              Icon(PhosphorIconsBold.users, color: AppColors.primary),
-              SizedBox(width: 8),
+              const Icon(PhosphorIconsBold.users, color: AppColors.primary),
+              const SizedBox(width: 8),
               Text(
-                'الورديات المفتوحة على الفرع',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                tr('الورديات المفتوحة على الفرع'),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -377,7 +378,7 @@ class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
                 return Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Text('تعذّر تحميل الورديات: ${snapshot.error}'),
+                    child: Text(tr('تعذّر تحميل الورديات: {p0}', {'p0': snapshot.error})),
                   ),
                 );
               }

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -134,11 +135,11 @@ class _TreasuryTransactionsListState
       );
 
       if (context.mounted) {
-        AppToast.show(context, 'جاري الطباعة...', type: ToastType.success);
+        AppToast.show(context, tr('جاري الطباعة...'), type: ToastType.success);
       }
     } catch (e) {
       if (context.mounted) {
-        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -164,7 +165,7 @@ class _TreasuryTransactionsListState
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'بحث برقم السند، الوصف، أو المبلغ',
+                  hintText: tr('بحث برقم السند، الوصف، أو المبلغ'),
                   prefixIcon: const Icon(
                     PhosphorIconsBold.magnifyingGlass,
                     size: 18,
@@ -193,10 +194,10 @@ class _TreasuryTransactionsListState
             ),
             const SizedBox(width: 12),
             SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'all', label: Text('الكل')),
-                ButtonSegment(value: 'receipt', label: Text('قبض')),
-                ButtonSegment(value: 'payment', label: Text('صرف')),
+              segments:  [
+                ButtonSegment(value: 'all', label: Text(tr('الكل'))),
+                ButtonSegment(value: 'receipt', label: Text(tr('قبض'))),
+                ButtonSegment(value: 'payment', label: Text(tr('صرف'))),
               ],
               selected: {_typeFilter},
               onSelectionChanged: (sel) =>
@@ -228,7 +229,7 @@ class _TreasuryTransactionsListState
                   return Center(
                     child: Text(
                       _searchQuery.isNotEmpty || _typeFilter != 'all'
-                          ? 'لا توجد سندات مطابقة'
+                          ? tr('لا توجد سندات مطابقة')
                           : AppLocalizations.of(context)!.noTransactions,
                       style: const TextStyle(color: AppColors.textMuted),
                     ),
@@ -295,7 +296,7 @@ class _TreasuryTransactionsListState
                               size: 20,
                             ),
                             color: AppColors.primary,
-                            tooltip: 'طباعة السند',
+                            tooltip: tr('طباعة السند'),
                             onPressed: () => _printVoucher(context, ref, t),
                           ),
                         ],
@@ -305,7 +306,7 @@ class _TreasuryTransactionsListState
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('خطأ: $e')),
+              error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
             ),
           ),
         ),

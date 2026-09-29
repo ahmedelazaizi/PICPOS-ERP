@@ -14,12 +14,12 @@ Widget buildSalesPrintButtonGuarded({required VoidCallback onPrint}) {
   return PermissionGuard(
     permission: PermissionCodes.salesPrint,
     allowManagerOverride: true,
-    actionName: 'طباعة فاتورة بيع',
+    actionName: tr('طباعة فاتورة بيع'),
     onGranted: onPrint,
     child: IconButton(
       icon: const Icon(PhosphorIconsBold.printer, size: 18),
       color: AppColors.primary,
-      tooltip: 'طباعة',
+      tooltip: tr('طباعة'),
       onPressed: onPrint,
     ),
   );
@@ -84,14 +84,14 @@ class SalesInvoicesTable extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                hasFilters ? 'لا نتائج تطابق الفلاتر الحالية' : 'لا توجد فواتير مبيعات',
+                hasFilters ? tr('لا نتائج تطابق الفلاتر الحالية') : tr('لا توجد فواتير مبيعات'),
                 style: const TextStyle(color: AppColors.textMuted),
               ),
               if (hasFilters) ...[
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   icon: const Icon(PhosphorIconsBold.arrowsCounterClockwise, size: 16),
-                  label: const Text('إعادة تعيين الفلاتر'),
+                  label:  Text(tr('إعادة تعيين الفلاتر')),
                   onPressed: () => ref
                       .read(salesInvoicesControllerProvider.notifier)
                       .clearAllFilters(),
@@ -109,20 +109,20 @@ class SalesInvoicesTable extends ConsumerWidget {
         onSelectAll: (_) {
           ref.read(salesInvoicesControllerProvider.notifier).toggleAllSelection();
         },
-        columns: const [
-          DataColumn(label: Text('رقم الفاتورة')),
-          DataColumn(label: Text('العميل')),
-          DataColumn(label: Text('التاريخ')),
-          DataColumn(label: Text('الإجمالي')),
-          DataColumn(label: Text('المدفوع')),
-          DataColumn(label: Text('المتبقي')),
-          DataColumn(label: Text('الحالة')),
-          DataColumn(label: Text('الفرع / المخزن')),
-          DataColumn(label: Text('مركز التكلفة')),
+        columns:  [
+          DataColumn(label: Text(tr('رقم الفاتورة'))),
+          DataColumn(label: Text(tr('العميل'))),
+          DataColumn(label: Text(tr('التاريخ'))),
+          DataColumn(label: Text(tr('الإجمالي'))),
+          DataColumn(label: Text(tr('المدفوع'))),
+          DataColumn(label: Text(tr('المتبقي'))),
+          DataColumn(label: Text(tr('الحالة'))),
+          DataColumn(label: Text(tr('الفرع / المخزن'))),
+          DataColumn(label: Text(tr('مركز التكلفة'))),
           // عرضٌ ثابت: أربعةُ `IconButton` عرضُ كلٍّ منها 48 = 192، والحصّةُ
           // المتساوية بين عشرة أعمدةٍ تقلّ عن ذلك فيفيض أوّلُ زرٍّ خارجَ
           // الخليّة ويموت (لا يُختبَر بالإصابة خارجَ حدود الأب).
-          DataColumn2(label: Text('الإجراءات'), fixedWidth: 210),
+          DataColumn2(label: Text(tr('الإجراءات')), fixedWidth: 210),
         ],
         rows: filteredInvoices.map<DataRow>((invoice) {
               // Returns reduce the invoice's effective receivable, so subtract
@@ -148,9 +148,9 @@ class SalesInvoicesTable extends ConsumerWidget {
                             'partyId=${invoice.partyId} on invoice '
                             '${invoice.invoiceNumber}',
                           );
-                          return 'عميل #${invoice.partyId}';
+                          return tr('عميل #{p0}', {'p0': invoice.partyId});
                         }())
-                  : 'عميل نقدي';
+                  : tr('عميل نقدي');
 
               return DataRow(
                 selected: selectedInvoices.contains(invoice.id),
@@ -255,12 +255,12 @@ class SalesInvoicesTable extends ConsumerWidget {
                       ),
                       child: Text(
                         isPaid
-                            ? 'مدفوع'
+                            ? tr('مدفوع')
                             : isPartial
-                            ? 'جزئي'
+                            ? tr('جزئي')
                             : isCancelled
-                            ? 'ملغي'
-                            : 'غير مدفوع',
+                            ? tr('ملغي')
+                            : tr('غير مدفوع'),
                         style: TextStyle(
                           color: isPaid
                               ? AppColors.success
@@ -285,7 +285,7 @@ class SalesInvoicesTable extends ConsumerWidget {
                       final brId = invoice.branchId ??
                           (whId != null ? warehouseBranchId[whId] : null);
                       final brName = brId != null
-                          ? (branchNames[brId] ?? 'فرع #$brId')
+                          ? (branchNames[brId] ?? tr('فرع #{brId}', {'brId': brId}))
                           : null;
                       return Text.rich(
                         TextSpan(
@@ -332,7 +332,7 @@ class SalesInvoicesTable extends ConsumerWidget {
                             size: 18,
                           ),
                           color: AppColors.info,
-                          tooltip: 'عرض التفاصيل',
+                          tooltip: tr('عرض التفاصيل'),
                           onPressed: () => onView(invoice),
                         ),
                         if (!invoice.isLocked)
@@ -342,7 +342,7 @@ class SalesInvoicesTable extends ConsumerWidget {
                               size: 18,
                               color: AppColors.warning,
                             ),
-                            tooltip: 'تعديل الدفع / وسيلة الدفع',
+                            tooltip: tr('تعديل الدفع / وسيلة الدفع'),
                             onPressed: () => onEdit(invoice),
                           ),
                         buildSalesPrintButtonGuarded(
@@ -355,7 +355,7 @@ class SalesInvoicesTable extends ConsumerWidget {
                               size: 18,
                             ),
                             color: AppColors.error,
-                            tooltip: 'حذف',
+                            tooltip: tr('حذف'),
                             onPressed: () => onDelete(invoice),
                           ),
                       ],
@@ -382,8 +382,8 @@ class _ReturnBadge extends StatelessWidget {
     final color = full ? AppColors.error : AppColors.warning;
     return Tooltip(
       message: full
-          ? 'تم إرجاع الفاتورة بالكامل — راجع شاشة مرتجع المبيعات للتفاصيل'
-          : 'تم إرجاع جزء من الفاتورة — راجع شاشة مرتجع المبيعات للتفاصيل',
+          ? tr('تم إرجاع الفاتورة بالكامل — راجع شاشة مرتجع المبيعات للتفاصيل')
+          : tr('تم إرجاع جزء من الفاتورة — راجع شاشة مرتجع المبيعات للتفاصيل'),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
@@ -401,7 +401,7 @@ class _ReturnBadge extends StatelessWidget {
             ),
             const SizedBox(width: 3),
             Text(
-              full ? 'مُرتجعة' : 'مُرتجعة جزئياً',
+              full ? tr('مُرتجعة') : tr('مُرتجعة جزئياً'),
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,

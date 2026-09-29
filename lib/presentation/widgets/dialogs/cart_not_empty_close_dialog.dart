@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
@@ -14,11 +15,11 @@ Future<void> showCartNotEmptyCloseBlockedDialog(BuildContext context) {
       textDirection: TextDirection.rtl,
       child: AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.shoppingCartSimple, color: AppColors.warning, size: 28),
-            SizedBox(width: 10),
-            Text('لا يمكن إغلاق البرنامج'),
+            const Icon(PhosphorIconsBold.shoppingCartSimple, color: AppColors.warning, size: 28),
+            const SizedBox(width: 10),
+            Text(tr('لا يمكن إغلاق البرنامج')),
           ],
         ),
         content: const Text(
@@ -34,7 +35,7 @@ Future<void> showCartNotEmptyCloseBlockedDialog(BuildContext context) {
               backgroundColor: AppColors.warning,
               foregroundColor: Colors.white,
             ),
-            child: const Text('حسناً'),
+            child:  Text(tr('حسناً')),
           ),
         ],
       ),

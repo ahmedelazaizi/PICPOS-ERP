@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // جدولُ حركات المخزون بهويّة PicPos — **فوركٌ بقرار المالك 2026-08-22**.
 //
 // المصدر: `screens/inventory/widgets/stock_movements_table.dart`، ويبقى بلا
@@ -95,8 +96,8 @@ class _StockMovementsTableState extends ConsumerState<StockMovementsTablePicpos>
                 const SizedBox(height: 16),
                 Text(
                   state.selectedMovementProductId != null
-                      ? 'لا توجد حركات لهذا الصنف'
-                      : 'لا توجد حركات مخزون',
+                      ? tr('لا توجد حركات لهذا الصنف')
+                      : tr('لا توجد حركات مخزون'),
                   style: const TextStyle(color: AppColors.textMuted),
                 ),
               ],
@@ -116,7 +117,7 @@ class _StockMovementsTableState extends ConsumerState<StockMovementsTablePicpos>
         padding: const EdgeInsets.all(16),
         child: ShimmerLoading.list(itemCount: 6),
       ),
-      error: (e, _) => Center(child: Text('خطأ: $e')),
+      error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
     );
   }
 
@@ -221,17 +222,17 @@ class _StockMovementsTableState extends ConsumerState<StockMovementsTablePicpos>
       color: AppColors.primary.withValues(alpha: 0.03),
       child: Row(
         children: [
-          _summaryChip('إجمالي الحركات', '${movements.length}',
+          _summaryChip(tr('إجمالي الحركات'), '${movements.length}',
               PhosphorIconsBold.arrowsLeftRight, AppColors.primary),
           const SizedBox(width: 16),
-          _summaryChip('وارد', '+${totalIn.toStringAsFixed(0)}',
+          _summaryChip(tr('وارد'), '+${totalIn.toStringAsFixed(0)}',
               PhosphorIconsBold.arrowDown, AppColors.success),
           const SizedBox(width: 16),
-          _summaryChip('صادر', '-${totalOut.toStringAsFixed(0)}',
+          _summaryChip(tr('صادر'), '-${totalOut.toStringAsFixed(0)}',
               PhosphorIconsBold.arrowUp, AppColors.error),
           const SizedBox(width: 16),
           _summaryChip(
-              'صافي التغيير',
+              tr('صافي التغيير'),
               '${netChange >= 0 ? '+' : ''}${netChange.toStringAsFixed(0)}',
               PhosphorIconsBold.trendUp,
               netChange >= 0 ? AppColors.success : AppColors.error),
@@ -280,14 +281,14 @@ class _StockMovementsHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _cell('التاريخ', _kDateColWidth, headerStyle),
-          _cell('الصنف', productWidth, headerStyle),
-          _cell('نوع الحركة', _kTypeColWidth, headerStyle),
-          _cell('الكمية', _kQtyColWidth, headerStyle, alignEnd: true),
-          _cell('التكلفة', _kCostColWidth, headerStyle, alignEnd: true),
-          _cell('الرصيد', _kBalanceColWidth, headerStyle, alignEnd: true),
-          _cell('الفاتورة', _kRefColWidth, headerStyle),
-          _cell('ملاحظات', notesWidth, headerStyle),
+          _cell(tr('التاريخ'), _kDateColWidth, headerStyle),
+          _cell(tr('الصنف'), productWidth, headerStyle),
+          _cell(tr('نوع الحركة'), _kTypeColWidth, headerStyle),
+          _cell(tr('الكمية'), _kQtyColWidth, headerStyle, alignEnd: true),
+          _cell(tr('التكلفة'), _kCostColWidth, headerStyle, alignEnd: true),
+          _cell(tr('الرصيد'), _kBalanceColWidth, headerStyle, alignEnd: true),
+          _cell(tr('الفاتورة'), _kRefColWidth, headerStyle),
+          _cell(tr('ملاحظات'), notesWidth, headerStyle),
         ],
       ),
     );
@@ -559,17 +560,17 @@ class _StockMovementRow extends StatelessWidget {
   String _getMovementTypeLabel(String type) {
     switch (type) {
       case 'purchase':
-        return 'شراء';
+        return tr('شراء');
       case 'sale':
-        return 'مبيعات';
+        return tr('مبيعات');
       case 'return':
-        return 'مرتجع';
+        return tr('مرتجع');
       case 'adjustment':
-        return 'تسوية';
+        return tr('تسوية');
       case 'opening_stock':
-        return 'رصيد افتتاحي';
+        return tr('رصيد افتتاحي');
       case 'transfer':
-        return 'تحويل';
+        return tr('تحويل');
       default:
         return type;
     }

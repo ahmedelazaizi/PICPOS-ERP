@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -46,18 +47,18 @@ class _DistributionScreenState extends ConsumerState<DistributionScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('التوزيع والمندوبين'),
+        title:  Text(tr('التوزيع والمندوبين')),
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: 'المسارات', icon: Icon(PhosphorIconsBold.mapPin)),
-            Tab(text: 'الزيارات', icon: Icon(PhosphorIconsBold.path)),
-            Tab(text: 'الأهداف', icon: Icon(PhosphorIconsBold.target)),
-            Tab(text: 'التحصيلات', icon: Icon(PhosphorIconsBold.money)),
+          tabs:  [
+            Tab(text: tr('المسارات'), icon: const Icon(PhosphorIconsBold.mapPin)),
+            Tab(text: tr('الزيارات'), icon: const Icon(PhosphorIconsBold.path)),
+            Tab(text: tr('الأهداف'), icon: const Icon(PhosphorIconsBold.target)),
+            Tab(text: tr('التحصيلات'), icon: const Icon(PhosphorIconsBold.money)),
           ],
         ),
       ),
@@ -68,7 +69,7 @@ class _DistributionScreenState extends ConsumerState<DistributionScreen>
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'بحث في التوزيع (مسارات، زيارات)...',
+                hintText: tr('بحث في التوزيع (مسارات، زيارات)...'),
                 prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); })

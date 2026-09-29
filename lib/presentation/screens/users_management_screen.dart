@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 // 063 (D1-005): dual-approval gate for user-role changes.
@@ -44,18 +45,18 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.usersThree),
-              SizedBox(width: 8),
-              Text('إدارة المستخدمين والصلاحيات'),
+              const Icon(PhosphorIconsBold.usersThree),
+              const SizedBox(width: 8),
+              Text(tr('إدارة المستخدمين والصلاحيات')),
             ],
           ),
           actions: [
             IconButton(
               icon: const Icon(PhosphorIconsBold.userPlus),
               onPressed: () => _showAddUserDialog(),
-              tooltip: 'إضافة مستخدم',
+              tooltip: tr('إضافة مستخدم'),
             ),
           ],
         ),
@@ -82,13 +83,13 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
               padding: const EdgeInsets.all(16),
               child: ShimmerLoading.list(itemCount: 4),
             ),
-            error: (e, _) => Center(child: Text('خطأ: $e')),
+            error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
           ),
           loading: () => Padding(
             padding: const EdgeInsets.all(16),
             child: ShimmerLoading.list(itemCount: 4),
           ),
-          error: (e, _) => Center(child: Text('خطأ: $e')),
+          error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
         ),
       ),
     );
@@ -101,10 +102,10 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
     Map<int, List<String>> userBranchNames,
   ) {
     if (users.isEmpty) {
-      return const EmptyStateWidget(
+      return  EmptyStateWidget(
         icon: PhosphorIconsBold.users,
-        message: 'لا توجد مستخدمين',
-        description: 'أضف أول مستخدم للنظام',
+        message: tr('لا توجد مستخدمين'),
+        description: tr('أضف أول مستخدم للنظام'),
       );
     }
 
@@ -187,9 +188,9 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                           color: AppColors.error.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Text(
-                          'معطل',
-                          style: TextStyle(
+                        child:  Text(
+                          tr('معطل'),
+                          style: const TextStyle(
                             fontSize: 11,
                             color: AppColors.error,
                             fontWeight: FontWeight.w500,
@@ -209,9 +210,9 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Role Assignment
-                    const Text(
-                      'تعيين الدور:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                     Text(
+                      tr('تعيين الدور:'),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     // Spec 061 (D1-003): role dropdown disabled for the
@@ -246,9 +247,9 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                     const SizedBox(height: 16),
 
                     // Default Screen
-                    const Text(
-                      'الشاشة الافتراضية:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                     Text(
+                      tr('الشاشة الافتراضية:'),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
@@ -260,22 +261,22 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                         ),
                       ),
                       initialValue: user.defaultScreen,
-                      items: const [
+                      items:  [
                         DropdownMenuItem(
                           value: 'pos',
-                          child: Text('البيع السريع'),
+                          child: Text(tr('البيع السريع')),
                         ),
                         DropdownMenuItem(
                           value: 'dashboard',
-                          child: Text('لوحة القيادة'),
+                          child: Text(tr('لوحة القيادة')),
                         ),
                         DropdownMenuItem(
                           value: 'products',
-                          child: Text('المنتجات'),
+                          child: Text(tr('المنتجات')),
                         ),
                         DropdownMenuItem(
                           value: 'inventory',
-                          child: Text('المخزون'),
+                          child: Text(tr('المخزون')),
                         ),
                       ],
                       onChanged: (screen) =>
@@ -284,9 +285,9 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                     const SizedBox(height: 16),
 
                     // Max Discount Percent
-                    const Text(
-                      'حد الخصم الأقصى (%):',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                     Text(
+                      tr('حد الخصم الأقصى (%):'),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -305,11 +306,11 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                                 horizontal: 12,
                                 vertical: 8,
                               ),
-                              hintText: 'بلا حد',
+                              hintText: tr('بلا حد'),
                               suffixText: '%',
                               helperText: user.maxDiscountPercent != null
-                                  ? 'الحد الحالي: ${user.maxDiscountPercent!.toStringAsFixed(0)}%'
-                                  : 'لا يوجد حد - اتركه فارغاً لعدم التحديد',
+                                  ? tr('الحد الحالي: {p0}%', {'p0': user.maxDiscountPercent!.toStringAsFixed(0)})
+                                  : tr('لا يوجد حد - اتركه فارغاً لعدم التحديد'),
                             ),
                             onFieldSubmitted: (val) =>
                                 _updateMaxDiscount(user.id, val),
@@ -322,7 +323,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                               color: AppColors.error,
                               size: 18,
                             ),
-                            tooltip: 'إزالة الحد',
+                            tooltip: tr('إزالة الحد'),
                             onPressed: () => _updateMaxDiscount(user.id, ''),
                           ),
                       ],
@@ -340,7 +341,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                         ElevatedButton.icon(
                           onPressed: () => _showEditUserDialog(user),
                           icon: const Icon(PhosphorIconsBold.pencilSimple),
-                          label: const Text('تعديل البيانات'),
+                          label:  Text(tr('تعديل البيانات')),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
@@ -354,7 +355,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                                 ? PhosphorIconsBold.prohibit
                                 : PhosphorIconsBold.check,
                           ),
-                          label: Text(user.isActive ? 'تعطيل' : 'تفعيل'),
+                          label: Text(user.isActive ? tr('تعطيل') : tr('تفعيل')),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: user.isActive
                                 ? Colors.orange
@@ -367,11 +368,11 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                           onPressed: () async {
                             final confirmed = await AppConfirmDialog.show(
                               context,
-                              title: user.isLocked ? 'فك قفل المستخدم' : 'قفل المستخدم',
+                              title: user.isLocked ? tr('فك قفل المستخدم') : tr('قفل المستخدم'),
                               message: user.isLocked
-                                  ? 'هل أنت متأكد من فك قفل المستخدم ${user.displayName}؟'
-                                  : 'هل أنت متأكد من قفل المستخدم ${user.displayName}؟ لن يتمكن من تسجيل الدخول.',
-                              confirmLabel: user.isLocked ? 'فك القفل' : 'قفل',
+                                  ? tr('هل أنت متأكد من فك قفل المستخدم {p0}؟', {'p0': user.displayName})
+                                  : tr('هل أنت متأكد من قفل المستخدم {p0}؟ لن يتمكن من تسجيل الدخول.', {'p0': user.displayName}),
+                              confirmLabel: user.isLocked ? tr('فك القفل') : tr('قفل'),
                               icon: user.isLocked ? PhosphorIconsBold.lockOpen : PhosphorIconsBold.lock,
                               color: user.isLocked ? AppColors.info : Colors.orange,
                             );
@@ -382,7 +383,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                                 ? PhosphorIconsBold.lockOpen
                                 : PhosphorIconsBold.lock,
                           ),
-                          label: Text(user.isLocked ? 'فك القفل' : 'قفل'),
+                          label: Text(user.isLocked ? tr('فك القفل') : tr('قفل')),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: user.isLocked
                                 ? AppColors.info
@@ -394,7 +395,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                         ElevatedButton.icon(
                           onPressed: () => _showResetPasswordDialog(user),
                           icon: const Icon(PhosphorIconsBold.key),
-                          label: const Text('إعادة كلمة المرور'),
+                          label:  Text(tr('إعادة كلمة المرور')),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.secondary,
                             foregroundColor: Colors.white,
@@ -405,7 +406,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                           onPressed: () => _showSetPinDialog(user),
                           icon: const Icon(PhosphorIconsBold.password),
                           label: Text(
-                            user.pin != null ? 'تغيير PIN' : 'تعيين PIN',
+                            user.pin != null ? tr('تغيير PIN') : tr('تعيين PIN'),
                           ),
                         ),
                         // Delete User (soft delete)
@@ -413,7 +414,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                           ElevatedButton.icon(
                             onPressed: () => _deleteUser(user),
                             icon: const Icon(PhosphorIconsBold.trash),
-                            label: const Text('حذف'),
+                            label:  Text(tr('حذف')),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.error,
                               foregroundColor: Colors.white,
@@ -425,9 +426,9 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
 
                     // N3: Branch & Warehouse Access
                     if (user.id != 1) ...[
-                      const Text(
-                        'صلاحيات الفروع والمخازن:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                       Text(
+                        tr('صلاحيات الفروع والمخازن:'),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       Row(
@@ -436,7 +437,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                             child: OutlinedButton.icon(
                               onPressed: () => _showBranchAccessDialog(user),
                               icon: const Icon(PhosphorIconsBold.buildings, size: 16),
-                              label: const Text('إدارة الفروع'),
+                              label:  Text(tr('إدارة الفروع')),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -444,7 +445,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                             child: OutlinedButton.icon(
                               onPressed: () => _showWarehouseAccessDialog(user),
                               icon: const Icon(PhosphorIconsBold.warehouse, size: 16),
-                              label: const Text('إدارة المخازن'),
+                              label:  Text(tr('إدارة المخازن')),
                             ),
                           ),
                         ],
@@ -457,12 +458,12 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
                         ),
-                        child: const Row(
+                        child:  Row(
                           children: [
-                            Icon(PhosphorIconsBold.shieldStar, color: AppColors.primary, size: 16),
-                            SizedBox(width: 8),
-                            Text('مدير النظام — وصول كامل لجميع الفروع والمخازن',
-                              style: TextStyle(fontSize: 12, color: AppColors.primary)),
+                            const Icon(PhosphorIconsBold.shieldStar, color: AppColors.primary, size: 16),
+                            const SizedBox(width: 8),
+                            Text(tr('مدير النظام — وصول كامل لجميع الفروع والمخازن'),
+                              style: const TextStyle(fontSize: 12, color: AppColors.primary)),
                           ],
                         ),
                       ),
@@ -497,7 +498,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
     if (result == true) {
       ref.invalidate(allUsersProvider);
       if (!mounted) return;
-      AppToast.show(context, 'تم حفظ التعديلات', type: ToastType.success);
+      AppToast.show(context, tr('تم حفظ التعديلات'), type: ToastType.success);
     }
   }
 
@@ -511,11 +512,11 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
       context,
       ref,
       operation: DualApprovalOperation.userRoleChange,
-      details: 'تغيير دور المستخدم #$userId',
+      details: tr('تغيير دور المستخدم #{userId}', {'userId': userId}),
     );
     if (!approved) {
       if (mounted) {
-        AppToast.show(context, 'الموافقة الثنائية مرفوضة — لم يتم تغيير الدور', type: ToastType.warning);
+        AppToast.show(context, tr('الموافقة الثنائية مرفوضة — لم يتم تغيير الدور'), type: ToastType.warning);
       }
       return;
     }
@@ -535,7 +536,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
         auth.user?.id ?? 0,
         auth.user?.displayName ?? '',
         'User#$userId',
-        'تغيير الدور',
+        tr('تغيير الدور'),
       );
     } catch (e) {
       debugPrint('[ActivityLog] Error: $e');
@@ -546,7 +547,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
     ref.invalidate(userAllowedScreensProvider);
 
     if (!mounted) return;
-    AppToast.show(context, 'تم تحديث الدور', type: ToastType.success);
+    AppToast.show(context, tr('تم تحديث الدور'), type: ToastType.success);
   }
 
   Future<void> _updateDefaultScreen(int userId, String? screen) async {
@@ -579,7 +580,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
         auth.user?.id ?? 0,
         auth.user?.displayName ?? '',
         'User#$userId',
-        'تغيير الشاشة الافتراضية',
+        tr('تغيير الشاشة الافتراضية'),
         newValue: screen,
       );
     } catch (e) {
@@ -588,7 +589,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
     if (!mounted) return;
     AppToast.show(
       context,
-      'تم تحديث الشاشة الافتراضية',
+      tr('تم تحديث الشاشة الافتراضية'),
       type: ToastType.success,
     );
   }
@@ -597,14 +598,14 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
     final maxDiscount = value.isEmpty ? null : double.tryParse(value);
 
     if (value.isNotEmpty && maxDiscount == null) {
-      AppToast.show(context, 'يرجى إدخال رقم صحيح', type: ToastType.error);
+      AppToast.show(context, tr('يرجى إدخال رقم صحيح'), type: ToastType.error);
       return;
     }
 
     if (maxDiscount != null && (maxDiscount < 0 || maxDiscount > 100)) {
       AppToast.show(
         context,
-        'يجب أن تكون النسبة بين 0 و 100',
+        tr('يجب أن تكون النسبة بين 0 و 100'),
         type: ToastType.error,
       );
       return;
@@ -637,8 +638,8 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
         auth.user?.id ?? 0,
         auth.user?.displayName ?? '',
         'User#$userId',
-        'تغيير حد الخصم',
-        newValue: maxDiscount?.toStringAsFixed(0) ?? 'بدون حد',
+        tr('تغيير حد الخصم'),
+        newValue: maxDiscount?.toStringAsFixed(0) ?? tr('بدون حد'),
       );
     } catch (e) {
       debugPrint('[ActivityLog] Error: $e');
@@ -647,8 +648,8 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
     AppToast.show(
       context,
       maxDiscount != null
-          ? 'تم تحديد حد الخصم: ${maxDiscount.toStringAsFixed(0)}%'
-          : 'تم إزالة حد الخصم',
+          ? tr('تم تحديد حد الخصم: {p0}%', {'p0': maxDiscount.toStringAsFixed(0)})
+          : tr('تم إزالة حد الخصم'),
       type: ToastType.success,
     );
     // Refresh the list
@@ -687,7 +688,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
     if (!mounted) return;
     AppToast.show(
       context,
-      user.isActive ? 'تم تعطيل المستخدم' : 'تم تفعيل المستخدم',
+      user.isActive ? tr('تم تعطيل المستخدم') : tr('تم تفعيل المستخدم'),
       type: ToastType.success,
     );
   }
@@ -724,7 +725,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
     if (!mounted) return;
     AppToast.show(
       context,
-      user.isLocked ? 'تم فك قفل المستخدم' : 'تم قفل المستخدم',
+      user.isLocked ? tr('تم فك قفل المستخدم') : tr('تم قفل المستخدم'),
       type: ToastType.success,
     );
   }
@@ -740,10 +741,10 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
     }
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: 'حذف المستخدم',
+      title: tr('حذف المستخدم'),
       message: 'هل أنت متأكد من حذف المستخدم "${user.displayName}"؟\n'
           'سيتم تعطيل الحساب وقفله نهائياً.',
-      confirmLabel: 'حذف',
+      confirmLabel: tr('حذف'),
       icon: PhosphorIconsBold.trash,
       color: AppColors.error,
     );
@@ -773,7 +774,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
       debugPrint('[ActivityLog] Error: $e');
     }
     if (!mounted) return;
-    AppToast.show(context, 'تم حذف المستخدم', type: ToastType.success);
+    AppToast.show(context, tr('تم حذف المستخدم'), type: ToastType.success);
     ref.invalidate(allUsersProvider);
     ref.invalidate(allUserBranchNamesProvider);
   }
@@ -820,9 +821,9 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
     final String label;
     if (branches.isEmpty) {
       // Empty list = full access (admin/system role)
-      label = 'كل الفروع';
+      label = tr('كل الفروع');
     } else {
-      label = branches.join('، ');
+      label = branches.join(tr('، '));
     }
 
     return Container(

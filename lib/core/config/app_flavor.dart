@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'brand.dart';
 
 /// Distribution flavor used for packaging, branding, and default profile
@@ -41,11 +42,11 @@ extension AppFlavorX on AppFlavor {
 
   String get appNameAr => switch (this) {
         AppFlavor.unified => Brand.nameAr,
-        AppFlavor.restaurant => '${Brand.nameAr} - المطاعم',
-        AppFlavor.cafe => '${Brand.nameAr} - الكافيهات',
-        AppFlavor.supermarket => '${Brand.nameAr} - السوبرماركت',
-        AppFlavor.supermarketPro => '${Brand.nameAr} - السوبرماركت برو',
-        AppFlavor.supermarketPlus => '${Brand.nameAr} - السوبرماركت بلس',
-        AppFlavor.commercial => '${Brand.nameAr} - التجاري',
+        AppFlavor.restaurant => tr('{p0} - المطاعم', {'p0': Brand.nameAr}),
+        AppFlavor.cafe => tr('{p0} - الكافيهات', {'p0': Brand.nameAr}),
+        AppFlavor.supermarket => tr('{p0} - السوبرماركت', {'p0': Brand.nameAr}),
+        AppFlavor.supermarketPro => tr('{p0} - السوبرماركت برو', {'p0': Brand.nameAr}),
+        AppFlavor.supermarketPlus => tr('{p0} - السوبرماركت بلس', {'p0': Brand.nameAr}),
+        AppFlavor.commercial => tr('{p0} - التجاري', {'p0': Brand.nameAr}),
       };
 }

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -24,8 +25,8 @@ class TablesFilterBar extends ConsumerWidget {
     final uiNotifier = ref.read(tablesUIProvider.notifier);
 
     final filters = [
-      const MapEntry(
-          'all', TableStatusInfo('الكل', Color(0xFF94A3B8), PhosphorIconsBold.stack)),
+       MapEntry(
+          'all', TableStatusInfo(tr('الكل'), const Color(0xFF94A3B8), PhosphorIconsBold.stack)),
       for (final status in _filterStatuses)
         MapEntry(status, tableStatusInfo(status)),
     ];

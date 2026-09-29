@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══ ⚠️ والمرفقاتُ ليست هنا — بسببٍ بنيويٍّ لا تأجيل ═══
 //
 // بُنيت المرفقاتُ في v176 (§٨)، و`purchase_return` من الأنواع التسعة
@@ -132,14 +133,14 @@ class _PurchaseReturnsPicposScreenState
     //    `purchases_return_edit`). فسحبُه يُسقطها، وإبقاؤه باسمه القديم
     //    يُبقي الالتباس. فسُمّي بما يفعله.
     return PicPosScreenScaffold(
-      title: 'مرتجع مشتريات جديد',
-      subtitle: 'اختر فاتورةَ الشراء ثمّ حدّد ما يُردُّ منها',
+      title: tr('مرتجع مشتريات جديد'),
+      subtitle: tr('اختر فاتورةَ الشراء ثمّ حدّد ما يُردُّ منها'),
       icon: PhosphorIconsBold.arrowUUpLeft,
       headerActions: [
         OutlinedButton.icon(
           onPressed: showReturnsHistoryDialog,
           icon: const Icon(PhosphorIconsBold.printer, size: 16),
-          label: const Text('طباعة أو تعديل مرتجعٍ سابق'),
+          label:  Text(tr('طباعة أو تعديل مرتجعٍ سابق')),
         ),
       ],
       body: _buildBody(state, notifier),
@@ -178,9 +179,9 @@ class _PurchaseReturnsPicposScreenState
       children: [
         PicPosReturnsSummaryCards(kpis: kpis, isSales: false),
         const SizedBox(height: 12),
-        const SyncPendingBanner(
+         SyncPendingBanner(
           tableName: 'purchase_returns',
-          label: 'مرتجع مشتريات',
+          label: tr('مرتجع مشتريات'),
         ),
         Expanded(
           child: LayoutBuilder(
@@ -199,7 +200,7 @@ class _PurchaseReturnsPicposScreenState
                       rows: rows,
                       selectedId: state.selectedInvoice?.id,
                       isLoading: state.isLoading,
-                      emptyMessage: 'لا توجد فواتير مشتريات في هذه الفترة',
+                      emptyMessage: tr('لا توجد فواتير مشتريات في هذه الفترة'),
                       onSelect: (r) {
                         final inv = byId[r.id];
                         if (inv != null) notifier.selectInvoice(inv);
@@ -226,14 +227,14 @@ class _PurchaseReturnsPicposScreenState
           children: [
             Expanded(
               child: _dateField(
-                label: 'من ${state.fromDate.day}/${state.fromDate.month}',
+                label: tr('من {p0}/{p1}', {'p0': state.fromDate.day, 'p1': state.fromDate.month}),
                 onTap: _selectFromDate,
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _dateField(
-                label: 'إلى ${state.toDate.day}/${state.toDate.month}',
+                label: tr('إلى {p0}/{p1}', {'p0': state.toDate.day, 'p1': state.toDate.month}),
                 onTap: _selectToDate,
               ),
             ),
@@ -250,7 +251,7 @@ class _PurchaseReturnsPicposScreenState
             decoration: InputDecoration(
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(vertical: 8),
-              hintText: 'البحث برقم الفاتورة (رقمنا أو رقم المورد)...',
+              hintText: tr('البحث برقم الفاتورة (رقمنا أو رقم المورد)...'),
               hintStyle: TextStyle(
                 fontSize: 12,
                 color: picposReturnsMuted(context),
@@ -337,7 +338,7 @@ class _PurchaseReturnsPicposScreenState
           isDense: true,
           style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
           decoration: InputDecoration(
-            hintText: 'المورد',
+            hintText: tr('المورد'),
             prefixIcon: const Icon(PhosphorIconsBold.truck, size: 16),
             isDense: true,
             contentPadding:
@@ -345,9 +346,9 @@ class _PurchaseReturnsPicposScreenState
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
           items: [
-            const DropdownMenuItem<int?>(
+             DropdownMenuItem<int?>(
               value: null,
-              child: Text('كل الموردين', style: TextStyle(fontSize: 13)),
+              child: Text(tr('كل الموردين'), style: const TextStyle(fontSize: 13)),
             ),
             for (final s in suppliers)
               DropdownMenuItem<int?>(
@@ -376,7 +377,7 @@ class _PurchaseReturnsPicposScreenState
         isDense: true,
         style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
         decoration: InputDecoration(
-          hintText: 'الصنف',
+          hintText: tr('الصنف'),
           prefixIcon: const Icon(PhosphorIconsBold.package, size: 16),
           isDense: true,
           contentPadding:
@@ -384,9 +385,9 @@ class _PurchaseReturnsPicposScreenState
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         ),
         items: [
-          const DropdownMenuItem<int?>(
+           DropdownMenuItem<int?>(
             value: null,
-            child: Text('كل الأصناف', style: TextStyle(fontSize: 13)),
+            child: Text(tr('كل الأصناف'), style: const TextStyle(fontSize: 13)),
           ),
           for (final p in products)
             DropdownMenuItem<int?>(

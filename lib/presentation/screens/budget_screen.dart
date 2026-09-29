@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:flutter/material.dart';
@@ -79,15 +80,15 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('الموازنات والتنبؤ', style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
-              Text('Budget vs Actual — التخطيط المالي والرقابة', style: GoogleFonts.cairo(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
+              Text(tr('الموازنات والتنبؤ'), style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
+              Text(tr('Budget vs Actual — التخطيط المالي والرقابة'), style: GoogleFonts.cairo(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
             ],
           ),
           const Spacer(),
           ElevatedButton.icon(
             onPressed: () => _showCreateBudgetDialog(context),
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label: Text('موازنة جديدة', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            label: Text(tr('موازنة جديدة'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white, foregroundColor: const Color(0xFF4527A0),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -104,9 +105,9 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
       decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border))),
       child: Row(
         children: [
-          _tab('الموازنات', PhosphorIconsBold.listBullets, 0),
-          _tab('موازنة مقابل الفعلي', PhosphorIconsBold.chartLineUp, 1),
-          _tab('توقعات التدفق النقدي', PhosphorIconsBold.trendUp, 2),
+          _tab(tr('الموازنات'), PhosphorIconsBold.listBullets, 0),
+          _tab(tr('موازنة مقابل الفعلي'), PhosphorIconsBold.chartLineUp, 1),
+          _tab(tr('توقعات التدفق النقدي'), PhosphorIconsBold.trendUp, 2),
         ],
       ),
     );
@@ -148,9 +149,9 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           children: [
             const Icon(PhosphorIconsBold.calendarBlank, size: 64, color: AppColors.textMuted),
             const SizedBox(height: 16),
-            Text('لا توجد سنوات مالية مسجلة', style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
+            Text(tr('لا توجد سنوات مالية مسجلة'), style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
             const SizedBox(height: 8),
-            Text('يجب إنشاء سنة مالية أولاً من إعدادات الفترات المالية', style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
+            Text(tr('يجب إنشاء سنة مالية أولاً من إعدادات الفترات المالية'), style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
           ],
         ),
       );
@@ -169,7 +170,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           ),
           child: Row(
             children: [
-              Text('السنة:', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+              Text(tr('السنة:'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
               const SizedBox(width: 12),
               SizedBox(
                 width: 250,
@@ -202,9 +203,9 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                     children: [
                       const Icon(PhosphorIconsBold.chartBar, size: 64, color: AppColors.textMuted),
                       const SizedBox(height: 16),
-                      Text('لا توجد موازنات في هذه السنة', style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
+                      Text(tr('لا توجد موازنات في هذه السنة'), style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
                       const SizedBox(height: 8),
-                      Text('أنشئ موازنة للنقر عليها وتعديل تفاصيلها الشهرية', style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
+                      Text(tr('أنشئ موازنة للنقر عليها وتعديل تفاصيلها الشهرية'), style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
                     ],
                   ),
                 );
@@ -236,12 +237,12 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(budget.name ?? 'موازنة بدون اسم', style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700)),
+                                  Text(budget.name ?? tr('موازنة بدون اسم'), style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700)),
                                   FutureBuilder<Account?>(
                                     future: accountingRepo.getAccountById(budget.accountId),
                                     builder: (context, accSnap) {
                                       final acc = accSnap.data;
-                                      return Text(acc != null ? '${acc.code} - ${acc.name}' : 'حساب #${budget.accountId}', style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted));
+                                      return Text(acc != null ? '${acc.code} - ${acc.name}' : tr('حساب #{p0}', {'p0': budget.accountId}), style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted));
                                     }
                                   ),
                                 ],
@@ -250,7 +251,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Text('المبلغ السنوي', style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted)),
+                                Text(tr('المبلغ السنوي'), style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted)),
                                 Text(budget.annualAmount.toStringAsFixed(AppConstants.decimalPlaces), style: GoogleFonts.jetBrainsMono(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
                               ],
                             ),
@@ -283,7 +284,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
 
   Widget _buildBudgetVsActual() {
     if (_selectedFiscalYear == null) {
-      return Center(child: Text('الرجاء اختيار السنة المالية أولاً', style: GoogleFonts.cairo()));
+      return Center(child: Text(tr('الرجاء اختيار السنة المالية أولاً'), style: GoogleFonts.cairo()));
     }
 
     final repo = ref.watch(budgetRepositoryProvider);
@@ -310,7 +311,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
               children: [
                 const Icon(PhosphorIconsBold.chartLineUp, size: 48, color: AppColors.textMuted),
                 const SizedBox(height: 16),
-                Text('لا توجد موازنات متاحة لهذه السنة المالية', style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 16)),
+                Text(tr('لا توجد موازنات متاحة لهذه السنة المالية'), style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 16)),
               ],
             ),
           );
@@ -338,21 +339,21 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                       children: [
                         const Icon(PhosphorIconsBold.chartPieSlice, color: AppColors.primary, size: 24),
                         const SizedBox(width: 10),
-                        Text('ملخص أداء الموازنة العام', style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700)),
+                        Text(tr('ملخص أداء الموازنة العام'), style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700)),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    _comparisonRow('إجمالي المخطط', grandTotalPlanned, AppColors.primary),
-                    _comparisonRow('إجمالي الفعلي', grandTotalActual, AppColors.success),
+                    _comparisonRow(tr('إجمالي المخطط'), grandTotalPlanned, AppColors.primary),
+                    _comparisonRow(tr('إجمالي الفعلي'), grandTotalActual, AppColors.success),
                     const Divider(),
-                    _comparisonRow('الانحراف الإجمالي', grandTotalActual - grandTotalPlanned, 
+                    _comparisonRow(tr('الانحراف الإجمالي'), grandTotalActual - grandTotalPlanned,
                         (grandTotalActual - grandTotalPlanned) > 0 ? AppColors.error : AppColors.success),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            Text('تحليل الحسابات التفصيلي', style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+            Text(tr('تحليل الحسابات التفصيلي'), style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
             const SizedBox(height: 8),
             // Account Details
             ...reportData.map((row) {
@@ -375,7 +376,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(row['accountName']?.toString() ?? 'غير معروف', style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 14)),
+                                Text(row['accountName']?.toString() ?? tr('غير معروف'), style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 14)),
                                 Text(row['accountCode']?.toString() ?? '', style: GoogleFonts.jetBrainsMono(color: AppColors.textMuted, fontSize: 12)),
                               ],
                             ),
@@ -409,9 +410,9 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _statItem('مخطط', planned, AppColors.textMuted),
-                          _statItem('فعلي', actual, AppColors.textPrimary),
-                          _statItem('انحراف', variance, variance > 0 ? AppColors.error : AppColors.success),
+                          _statItem(tr('مخطط'), planned, AppColors.textMuted),
+                          _statItem(tr('فعلي'), actual, AppColors.textPrimary),
+                          _statItem(tr('انحراف'), variance, variance > 0 ? AppColors.error : AppColors.success),
                         ],
                       ),
                     ],
@@ -469,12 +470,12 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                       children: [
                         const Icon(PhosphorIconsBold.trendUp, color: AppColors.success, size: 24),
                         const SizedBox(width: 10),
-                        Text('توقعات التدفق النقدي — 6 أشهر', style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700)),
+                        Text(tr('توقعات التدفق النقدي — 6 أشهر'), style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700)),
                       ],
                     ),
                     const SizedBox(height: 16),
                     if (data.isEmpty)
-                      Text('لا تتوفر بيانات تاريخية كافية للتوقعات', style: GoogleFonts.cairo(color: AppColors.textMuted))
+                      Text(tr('لا تتوفر بيانات تاريخية كافية للتوقعات'), style: GoogleFonts.cairo(color: AppColors.textMuted))
                     else
                       ...data.map((m) => Container(
                         margin: const EdgeInsets.only(bottom: 8),
@@ -488,11 +489,11 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                           children: [
                             Text(m['month'] ?? '', style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
                             const Spacer(),
-                            _forecastChip('وارد', m['projectedInflows'] ?? 0, AppColors.success),
+                            _forecastChip(tr('وارد'), m['projectedInflows'] ?? 0, AppColors.success),
                             const SizedBox(width: 8),
-                            _forecastChip('صادر', m['projectedOutflows'] ?? 0, AppColors.error),
+                            _forecastChip(tr('صادر'), m['projectedOutflows'] ?? 0, AppColors.error),
                             const SizedBox(width: 8),
-                            _forecastChip('صافي', m['projectedNet'] ?? 0,
+                            _forecastChip(tr('صافي'), m['projectedNet'] ?? 0,
                                 (m['projectedNet'] ?? 0) >= 0 ? AppColors.success : AppColors.error),
                           ],
                         ),

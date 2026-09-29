@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,7 +19,7 @@ class NotificationBell extends ConsumerWidget {
       children: [
         IconButton(
           icon: const Icon(PhosphorIconsRegular.bell, color: AppColors.textPrimary),
-          tooltip: 'الإشعارات',
+          tooltip: tr('الإشعارات'),
           onPressed: () {
             // Open the notification panel
             showGeneralDialog(

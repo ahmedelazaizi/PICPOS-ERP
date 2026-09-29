@@ -56,11 +56,11 @@ class _ProductionOrderDialogState
 
   Future<void> _save() async {
     if (_selectedBomId == null) {
-      AppToast.show(context, 'يرجى اختيار قائمة المواد (BOM)', type: ToastType.info);
+      AppToast.show(context, tr('يرجى اختيار قائمة المواد (BOM)'), type: ToastType.info);
       return;
     }
     if (_selectedWarehouseId == null) {
-      AppToast.show(context, 'يرجى اختيار المستودع', type: ToastType.info);
+      AppToast.show(context, tr('يرجى اختيار المستودع'), type: ToastType.info);
       return;
     }
 
@@ -88,7 +88,7 @@ class _ProductionOrderDialogState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('خطأ: $e')));
+            .showSnackBar(SnackBar(content: Text(tr('خطأ: {e}', {'e': e}))));
       }
     }
   }
@@ -120,7 +120,7 @@ class _ProductionOrderDialogState
                     const Icon(PhosphorIconsBold.gearSix,
                         color: AppColors.primary),
                     const SizedBox(width: 10),
-                    Text(_isEditing ? 'تعديل أمر الإنتاج' : 'أمر إنتاج جديد',
+                    Text(_isEditing ? tr('تعديل أمر الإنتاج') : tr('أمر إنتاج جديد'),
                         style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.w800)),
                     const Spacer(),
@@ -135,9 +135,9 @@ class _ProductionOrderDialogState
                 // BOM Selection
                 DropdownButtonFormField<int>(
                   initialValue: _selectedBomId,
-                  decoration: const InputDecoration(
-                    labelText: 'قائمة المواد (BOM) *',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('قائمة المواد (BOM) *'),
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                   items: widget.boms.map((bom) {
@@ -147,7 +147,7 @@ class _ProductionOrderDialogState
                     return DropdownMenuItem(
                       value: bom.id,
                       child: Text(
-                          '${product?.name ?? 'غير معروف'} (${bom.bomCode})'),
+                          tr('{p0} ({p1})', {'p0': product?.name ?? 'غير معروف', 'p1': bom.bomCode})),
                     );
                   }).toList(),
                   onChanged: (v) => setState(() => _selectedBomId = v),
@@ -157,9 +157,9 @@ class _ProductionOrderDialogState
                 // Warehouse Selection
                 DropdownButtonFormField<int>(
                   initialValue: _selectedWarehouseId,
-                  decoration: const InputDecoration(
-                    labelText: 'مستودع سحب الخامات *',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('مستودع سحب الخامات *'),
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                   items: warehousesList.map((w) {
@@ -181,7 +181,7 @@ class _ProductionOrderDialogState
                         child: TextFormField(
                           controller: _orderNumberController,
                           decoration: InputDecoration(
-                            labelText: 'رقم الأمر',
+                            labelText: tr('رقم الأمر'),
                             hintText: _generateOrderNumber(),
                             border: const OutlineInputBorder(),
                             isDense: true,
@@ -192,9 +192,9 @@ class _ProductionOrderDialogState
                     Expanded(
                       child: TextFormField(
                         controller: _qtyController,
-                        decoration: const InputDecoration(
-                          labelText: 'الكمية',
-                          border: OutlineInputBorder(),
+                        decoration:  InputDecoration(
+                          labelText: tr('الكمية'),
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                         keyboardType: TextInputType.number,
@@ -207,9 +207,9 @@ class _ProductionOrderDialogState
                 // Notes
                 TextFormField(
                   controller: _notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'ملاحظات',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('ملاحظات'),
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                   maxLines: 2,
@@ -227,7 +227,7 @@ class _ProductionOrderDialogState
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: Text(_isEditing ? 'حفظ التعديلات' : 'إنشاء أمر الإنتاج',
+                    child: Text(_isEditing ? tr('حفظ التعديلات') : tr('إنشاء أمر الإنتاج'),
                         style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 15)),
                   ),
@@ -286,7 +286,7 @@ class _MfgAnalyticsTab extends ConsumerWidget {
 
     return ordersAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('خطأ: $e')),
+      error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
       data: (orders) {
         final boms = bomsAsync.value ?? [];
 
@@ -309,16 +309,16 @@ class _MfgAnalyticsTab extends ConsumerWidget {
               // KPI Row 1
               Row(
                 children: [
-                  _kpiCard('أوامر مكتملة', '${completed.length}',
+                  _kpiCard(tr('أوامر مكتملة'), '${completed.length}',
                       PhosphorIconsBold.checkCircle, const Color(0xFF059669)),
                   const SizedBox(width: 16),
-                  _kpiCard('قيد التنفيذ', '${inProgress.length}',
+                  _kpiCard(tr('قيد التنفيذ'), '${inProgress.length}',
                       PhosphorIconsBold.gearSix, const Color(0xFF2563EB)),
                   const SizedBox(width: 16),
-                  _kpiCard('مخطط', '${planned.length}',
+                  _kpiCard(tr('مخطط'), '${planned.length}',
                       PhosphorIconsBold.calendar, const Color(0xFFF59E0B)),
                   const SizedBox(width: 16),
-                  _kpiCard('إجمالي BOMs', '${boms.length}',
+                  _kpiCard(tr('إجمالي BOMs'), '${boms.length}',
                       PhosphorIconsBold.listDashes, AppColors.primary),
                 ],
               ),
@@ -328,19 +328,19 @@ class _MfgAnalyticsTab extends ConsumerWidget {
               Row(
                 children: [
                   _kpiCard(
-                      'كمية مخططة',
+                      tr('كمية مخططة'),
                       totalPlannedQty.toStringAsFixed(0),
                       PhosphorIconsBold.target,
                       const Color(0xFF6366F1)),
                   const SizedBox(width: 16),
                   _kpiCard(
-                      'كمية منتجة',
+                      tr('كمية منتجة'),
                       totalProducedQty.toStringAsFixed(0),
                       PhosphorIconsBold.package,
                       const Color(0xFF059669)),
                   const SizedBox(width: 16),
                   _kpiCard(
-                      'نسبة الإنجاز',
+                      tr('نسبة الإنجاز'),
                       totalPlannedQty > 0
                           ? '${(totalProducedQty / totalPlannedQty * 100).toStringAsFixed(1)}%'
                           : 'N/A',
@@ -354,7 +354,7 @@ class _MfgAnalyticsTab extends ConsumerWidget {
               const SizedBox(height: 24),
 
               // Order Status Breakdown
-              Text('ملخص حالة الأوامر',
+              Text(tr('ملخص حالة الأوامر'),
                   style: GoogleFonts.cairo(
                       fontSize: 16, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
@@ -370,15 +370,15 @@ class _MfgAnalyticsTab extends ConsumerWidget {
                     child: Column(
                       children: [
                         _statusBar(
-                            'مكتمل', completed.length, orders.length,
+                            tr('مكتمل'), completed.length, orders.length,
                             const Color(0xFF059669)),
                         const SizedBox(height: 8),
                         _statusBar(
-                            'قيد التنفيذ', inProgress.length, orders.length,
+                            tr('قيد التنفيذ'), inProgress.length, orders.length,
                             const Color(0xFF2563EB)),
                         const SizedBox(height: 8),
                         _statusBar(
-                            'مخطط', planned.length, orders.length,
+                            tr('مخطط'), planned.length, orders.length,
                             const Color(0xFFF59E0B)),
                       ],
                     ),
@@ -388,7 +388,7 @@ class _MfgAnalyticsTab extends ConsumerWidget {
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
-                    child: Text('لا توجد أوامر إنتاج بعد',
+                    child: Text(tr('لا توجد أوامر إنتاج بعد'),
                         style: GoogleFonts.cairo(color: AppColors.textMuted)),
                   ),
                 ),

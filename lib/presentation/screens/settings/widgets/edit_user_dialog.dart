@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/permissions/permission_codes.dart';
@@ -33,7 +34,7 @@ class _EditUserDialogState extends AppFormDialogState<bool, EditUserDialog> {
   late final cardCodeController = registerController(widget.user.cardCode ?? '');
 
   @override
-  String get dialogTitle => 'تعديل بيانات المستخدم';
+  String get dialogTitle => tr('تعديل بيانات المستخدم');
 
   @override
   IconData get dialogIcon => PhosphorIconsBold.userGear;
@@ -45,27 +46,27 @@ class _EditUserDialogState extends AppFormDialogState<bool, EditUserDialog> {
       children: [
         TextField(
           controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'الاسم الكامل *',
-            prefixIcon: Icon(PhosphorIconsLight.user),
+          decoration:  InputDecoration(
+            labelText: tr('الاسم الكامل *'),
+            prefixIcon: const Icon(PhosphorIconsLight.user),
           ),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: usernameController,
-          decoration: const InputDecoration(
-            labelText: 'اسم المستخدم *',
-            prefixIcon: Icon(PhosphorIconsLight.at),
-            helperText: 'تغييره يؤثر على تسجيل الدخول للمستخدم',
+          decoration:  InputDecoration(
+            labelText: tr('اسم المستخدم *'),
+            prefixIcon: const Icon(PhosphorIconsLight.at),
+            helperText: tr('تغييره يؤثر على تسجيل الدخول للمستخدم'),
           ),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: cardCodeController,
-          decoration: const InputDecoration(
-            labelText: 'كود كارت MSR (اختياري)',
-            hintText: 'مرر الكارت أو اكتب الكود يدوياً',
-            prefixIcon: Icon(PhosphorIconsLight.identificationCard),
+          decoration:  InputDecoration(
+            labelText: tr('كود كارت MSR (اختياري)'),
+            hintText: tr('مرر الكارت أو اكتب الكود يدوياً'),
+            prefixIcon: const Icon(PhosphorIconsLight.identificationCard),
           ),
         ),
         const SizedBox(height: 12),
@@ -157,7 +158,7 @@ class _EditUserDialogState extends AppFormDialogState<bool, EditUserDialog> {
         auth.user?.id ?? 0,
         auth.user?.displayName ?? '',
         widget.user.username,
-        'تعديل البيانات الشخصية',
+        tr('تعديل البيانات الشخصية'),
       );
     } catch (e) {
       debugPrint('[ActivityLog] Error: $e');

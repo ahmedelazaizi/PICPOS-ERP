@@ -213,7 +213,7 @@ class _SalesKpiTile extends StatelessWidget {
                 const SizedBox(width: 5),
                 Expanded(
                   child: Text(
-                    'مقابل الفترة السابقة',
+                    tr('مقابل الفترة السابقة'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -399,7 +399,7 @@ class _SalesHeroCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'إجمالي المبيعات (شامل الضريبة)',
+                tr('إجمالي المبيعات (شامل الضريبة)'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -462,17 +462,17 @@ class _SalesHeroCard extends StatelessWidget {
         children: [
           Expanded(
             flex: 100,
-            child: _term('الإجمالي', total, Colors.white, FontWeight.w700),
+            child: _term(tr('الإجمالي'), total, Colors.white, FontWeight.w700),
           ),
           _op('−'),
           Expanded(
             flex: 100,
-            child: _term('المرتجعات', returns, _amber, FontWeight.w700),
+            child: _term(tr('المرتجعات'), returns, _amber, FontWeight.w700),
           ),
           _op('='),
           Expanded(
             flex: 115,
-            child: _term('صافي المبيعات', net, Colors.white, FontWeight.w800),
+            child: _term(tr('صافي المبيعات'), net, Colors.white, FontWeight.w800),
           ),
           Container(
             width: 1,
@@ -480,7 +480,7 @@ class _SalesHeroCard extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 8),
             color: Colors.white.withValues(alpha: .16),
           ),
-          _term('المحصّل', pct, _sky, FontWeight.w800, center: true),
+          _term(tr('المحصّل'), pct, _sky, FontWeight.w800, center: true),
         ],
       ),
     );
@@ -590,10 +590,10 @@ class SalesSummaryRow extends ConsumerWidget {
                 '${totalPaid.toStringAsFixed(AppConstants.decimalPlaces)}\n'
                 'سندات القبض: '
                 '${receiptVouchersTotal.toStringAsFixed(AppConstants.decimalPlaces)}'
-            : 'مدفوعات الفواتير',
+            : tr('مدفوعات الفواتير'),
         child: buildMaskedAmountKpiCard(
           icon: PhosphorIconsBold.wallet,
-          label: 'المحصّل',
+          label: tr('المحصّل'),
           value: money(collected),
           deltaPct: salesDeltaPct(collected, prev?.collected),
           color: AppColors.success,
@@ -601,14 +601,14 @@ class SalesSummaryRow extends ConsumerWidget {
       ),
       buildMaskedAmountKpiCard(
         icon: PhosphorIconsBold.clock,
-        label: 'المتبقي',
+        label: tr('المتبقي'),
         value: money(totalRemaining),
         deltaPct: salesDeltaPct(totalRemaining, prev?.totalRemaining),
         color: AppColors.warning,
       ),
       buildMaskedAmountKpiCard(
         icon: PhosphorIconsBold.arrowUUpLeft,
-        label: 'إجمالي المرتجعات',
+        label: tr('إجمالي المرتجعات'),
         value: money(totalReturns),
         deltaPct: salesDeltaPct(totalReturns, prev?.totalReturns),
         color: AppColors.error,
@@ -617,7 +617,7 @@ class SalesSummaryRow extends ConsumerWidget {
       // وشارتُه كذلك — عددُ الفواتير ليس مبلغاً ولا يُشتقّ منه مبلغ.
       _SalesKpiTile(
         icon: PhosphorIconsBold.receipt,
-        label: 'عدد الفواتير',
+        label: tr('عدد الفواتير'),
         value: '$invoiceCount',
         dot: AppColors.info,
         deltaPct: salesDeltaPct(

@@ -17,9 +17,9 @@ extension _TouchModeStep on _SetupWizardScreenState {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'نمط الإدخال',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+         Text(
+          tr('نمط الإدخال'),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         const Text(
@@ -32,7 +32,7 @@ extension _TouchModeStep on _SetupWizardScreenState {
         _touchModeCard(
           selected: !_touchMode,
           icon: PhosphorIconsBold.keyboard,
-          title: 'جهاز عادي (لوحة مفاتيح)',
+          title: tr('جهاز عادي (لوحة مفاتيح)'),
           description: 'كمبيوتر مكتبي أو لاب توب مع لوحة مفاتيح فعلية. لن '
               'تظهر أي لوحة مفاتيح على الشاشة.',
           onTap: () => _onTouchModePicked(false),
@@ -41,7 +41,7 @@ extension _TouchModeStep on _SetupWizardScreenState {
         _touchModeCard(
           selected: _touchMode,
           icon: PhosphorIconsBold.handTap,
-          title: 'جهاز لمسي / POS',
+          title: tr('جهاز لمسي / POS'),
           description: 'جهاز نقاط بيع أو شاشة لمس أو كاشير all-in-one. '
               'تظهر لوحة مفاتيح عربية / إنجليزية / رقمية على الشاشة عند '
               'لمس أي حقل إدخال.',

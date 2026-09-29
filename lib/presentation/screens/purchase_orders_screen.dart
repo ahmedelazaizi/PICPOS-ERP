@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,13 +35,13 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
     super.dispose();
   }
 
-  static const Map<String, _StatusInfo> _statuses = {
-    'all': _StatusInfo('الكل', Colors.grey, PhosphorIconsBold.list),
-    'draft': _StatusInfo('مسودة', Color(0xFF6B7280), PhosphorIconsBold.pencilSimple),
-    'sent': _StatusInfo('مُرسل', Color(0xFF2563EB), PhosphorIconsBold.paperPlaneTilt),
-    'confirmed': _StatusInfo('مؤكد', Color(0xFF7C3AED), PhosphorIconsBold.checkCircle),
-    'received': _StatusInfo('مُستلم', Color(0xFF059669), PhosphorIconsBold.package),
-    'cancelled': _StatusInfo('ملغي', Color(0xFFDC2626), PhosphorIconsBold.xCircle),
+  static Map<String, _StatusInfo> get _statuses => {
+    'all': _StatusInfo(tr('الكل'), Colors.grey, PhosphorIconsBold.list),
+    'draft': _StatusInfo(tr('مسودة'), const Color(0xFF6B7280), PhosphorIconsBold.pencilSimple),
+    'sent': _StatusInfo(tr('مُرسل'), const Color(0xFF2563EB), PhosphorIconsBold.paperPlaneTilt),
+    'confirmed': _StatusInfo(tr('مؤكد'), const Color(0xFF7C3AED), PhosphorIconsBold.checkCircle),
+    'received': _StatusInfo(tr('مُستلم'), const Color(0xFF059669), PhosphorIconsBold.package),
+    'cancelled': _StatusInfo(tr('ملغي'), const Color(0xFFDC2626), PhosphorIconsBold.xCircle),
   };
 
   @override
@@ -62,7 +63,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'بحث عن أمر شراء...',
+                  hintText: tr('بحث عن أمر شراء...'),
                   prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); })
@@ -90,7 +91,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                       child: Padding(
                         padding: const EdgeInsets.all(24),
                         child: Text(
-                          'تعذّر تحميل أوامر الشراء: ${snapshot.error}',
+                          tr('تعذّر تحميل أوامر الشراء: {p0}', {'p0': snapshot.error}),
                           textAlign: TextAlign.center,
                           style: GoogleFonts.cairo(
                             color: AppColors.textSecondary,
@@ -154,7 +155,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
               onPressed: () => Navigator.maybePop(context),
               icon: const Icon(Icons.arrow_forward),
               color: Colors.white,
-              tooltip: 'رجوع',
+              tooltip: tr('رجوع'),
               style: IconButton.styleFrom(
                 backgroundColor: Colors.white.withValues(alpha: 0.15),
               ),
@@ -173,9 +174,9 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('أوامر الشراء',
+              Text(tr('أوامر الشراء'),
                   style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
-              Text('إدارة دورة أوامر الشراء الكاملة',
+              Text(tr('إدارة دورة أوامر الشراء الكاملة'),
                   style: GoogleFonts.cairo(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
             ],
           ),
@@ -183,7 +184,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
           ElevatedButton.icon(
             onPressed: () => _showCreatePODialog(context, poRepo, partiesRepo, branchRepo),
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label: Text('أمر شراء جديد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            label: Text(tr('أمر شراء جديد'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: AppColors.primary,
@@ -249,12 +250,12 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
         children: [
           const Icon(PhosphorIconsBold.clipboardText, size: 64, color: AppColors.textMuted),
           const SizedBox(height: 16),
-          Text('لا توجد أوامر شراء', style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
+          Text(tr('لا توجد أوامر شراء'), style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
           const SizedBox(height: 8),
           ElevatedButton.icon(
             onPressed: () => _showCreatePODialog(context, poRepo, partiesRepo, branchRepo),
             icon: const Icon(PhosphorIconsBold.plus, size: 16),
-            label: Text('إنشاء أمر شراء', style: GoogleFonts.cairo()),
+            label: Text(tr('إنشاء أمر شراء'), style: GoogleFonts.cairo()),
           ),
         ],
       ),
@@ -317,7 +318,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                     Text(order.total.toStringAsFixed(AppConstants.decimalPlaces),
                         style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primary)),
                     if (order.expectedDate != null)
-                      Text('متوقع: ${_dateFormat.format(order.expectedDate!)}',
+                      Text(tr('متوقع: {p0}', {'p0': _dateFormat.format(order.expectedDate!)}),
                           style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted)),
                   ],
                 ),
@@ -349,34 +350,34 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 if (order.status == 'draft') ...[
-                  _actionBtn('إرسال', PhosphorIconsBold.paperPlaneTilt, const Color(0xFF2563EB), () async {
+                  _actionBtn(tr('إرسال'), PhosphorIconsBold.paperPlaneTilt, const Color(0xFF2563EB), () async {
                     await poRepo.updatePurchaseOrderStatus(order.id, 'sent');
                   }),
                   const SizedBox(width: 6),
-                  _actionBtn('حذف', PhosphorIconsBold.trash, AppColors.error, () async {
+                  _actionBtn(tr('حذف'), PhosphorIconsBold.trash, AppColors.error, () async {
                     await poRepo.deletePurchaseOrder(order.id);
                   }),
                 ],
                 if (order.status == 'sent')
-                  _actionBtn('تأكيد', PhosphorIconsBold.checkCircle, const Color(0xFF7C3AED), () async {
+                  _actionBtn(tr('تأكيد'), PhosphorIconsBold.checkCircle, const Color(0xFF7C3AED), () async {
                     await poRepo.updatePurchaseOrderStatus(order.id, 'confirmed');
                   }),
                 if (order.status == 'confirmed')
-                  _actionBtn('استلام وتحويل لفاتورة', PhosphorIconsBold.receipt, AppColors.success, () async {
+                  _actionBtn(tr('استلام وتحويل لفاتورة'), PhosphorIconsBold.receipt, AppColors.success, () async {
                     try {
                       await poRepo.convertPOToInvoice(order.id);
                       if (context.mounted) {
-                        AppToast.show(context, 'تم تحويل ${order.orderNumber} إلى فاتورة مشتريات');
+                        AppToast.show(context, tr('تم تحويل {p0} إلى فاتورة مشتريات', {'p0': order.orderNumber}));
                       }
                     } catch (e) {
                       if (context.mounted) {
-                        AppToast.show(context, 'خطأ: ${e.toString()}', type: ToastType.error);
+                        AppToast.show(context, tr('خطأ: {p0}', {'p0': e.toString()}), type: ToastType.error);
                       }
                     }
                   }),
                 if (order.status != 'cancelled' && order.status != 'received') ...[
                   const SizedBox(width: 6),
-                  _actionBtn('إلغاء', PhosphorIconsBold.xCircle, AppColors.error, () async {
+                  _actionBtn(tr('إلغاء'), PhosphorIconsBold.xCircle, AppColors.error, () async {
                     await poRepo.updatePurchaseOrderStatus(order.id, 'cancelled');
                   }),
                 ],
@@ -386,10 +387,10 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                 // the order is editable again.
                 if (order.status == 'cancelled') ...[
                   const SizedBox(width: 6),
-                  _actionBtn('إعادة تفعيل', PhosphorIconsBold.arrowCounterClockwise, AppColors.info, () async {
+                  _actionBtn(tr('إعادة تفعيل'), PhosphorIconsBold.arrowCounterClockwise, AppColors.info, () async {
                     await poRepo.updatePurchaseOrderStatus(order.id, 'draft');
                     if (context.mounted) {
-                      AppToast.show(context, 'تم إعادة تفعيل الطلب كمسودة');
+                      AppToast.show(context, tr('تم إعادة تفعيل الطلب كمسودة'));
                     }
                   }),
                 ],
@@ -406,7 +407,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                       children: [
                         const Icon(PhosphorIconsBold.link, size: 12, color: AppColors.success),
                         const SizedBox(width: 4),
-                        Text('فاتورة #${order.convertedToInvoiceId}',
+                        Text(tr('فاتورة #{p0}', {'p0': order.convertedToInvoiceId}),
                             style: GoogleFonts.cairo(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w700)),
                       ],
                     ),
@@ -492,7 +493,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
               children: [
                 const Icon(PhosphorIconsBold.clipboardText, color: AppColors.primary, size: 20),
                 const SizedBox(width: 8),
-                Text('أمر شراء جديد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+                Text(tr('أمر شراء جديد'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
               ],
             ),
             content: SizedBox(
@@ -521,8 +522,8 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                               controller: controller,
                               focusNode: focusNode,
                               decoration: InputDecoration(
-                                labelText: 'المورد *',
-                                hintText: 'ابحث عن المورد...',
+                                labelText: tr('المورد *'),
+                                hintText: tr('ابحث عن المورد...'),
                                 prefixIcon: const Icon(PhosphorIconsBold.truck, size: 18),
                                 border: const OutlineInputBorder(),
                                 isDense: true,
@@ -555,7 +556,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                       builder: (context, snap) {
                         final warehouses = snap.data ?? [];
                         return DropdownButtonFormField<int>(
-                          decoration: const InputDecoration(labelText: 'المستودع *', isDense: true, border: OutlineInputBorder()),
+                          decoration:  InputDecoration(labelText: tr('المستودع *'), isDense: true, border: const OutlineInputBorder()),
                           initialValue: selectedWarehouseId,
                           items: warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(w.name, style: const TextStyle(fontSize: 13)))).toList(),
                           onChanged: (v) => setDialogState(() => selectedWarehouseId = v),
@@ -578,7 +579,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                               if (picked != null) setDialogState(() => orderDate = picked);
                             },
                             child: InputDecorator(
-                              decoration: const InputDecoration(labelText: 'تاريخ الأمر', isDense: true, border: OutlineInputBorder()),
+                              decoration:  InputDecoration(labelText: tr('تاريخ الأمر'), isDense: true, border: const OutlineInputBorder()),
                               child: Text(_dateFormat.format(orderDate), style: const TextStyle(fontSize: 13)),
                             ),
                           ),
@@ -596,8 +597,8 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                               if (picked != null) setDialogState(() => expectedDate = picked);
                             },
                             child: InputDecorator(
-                              decoration: const InputDecoration(labelText: 'تاريخ التسليم المتوقع', isDense: true, border: OutlineInputBorder()),
-                              child: Text(expectedDate != null ? _dateFormat.format(expectedDate!) : 'اختياري', style: const TextStyle(fontSize: 13)),
+                              decoration:  InputDecoration(labelText: tr('تاريخ التسليم المتوقع'), isDense: true, border: const OutlineInputBorder()),
+                              child: Text(expectedDate != null ? _dateFormat.format(expectedDate!) : tr('اختياري'), style: const TextStyle(fontSize: 13)),
                             ),
                           ),
                         ),
@@ -605,7 +606,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                     ),
                     const SizedBox(height: 12),
                     // Product search
-                    Text('الأصناف:', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 13)),
+                    Text(tr('الأصناف:'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 13)),
                     const SizedBox(height: 6),
                     Builder(builder: (context) {
                       TextEditingController? acCtrl;
@@ -626,10 +627,10 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                           return TextField(
                             controller: controller,
                             focusNode: focusNode,
-                            decoration: const InputDecoration(
-                              hintText: 'ابحث بالاسم أو الكود أو الباركود...',
-                              prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
-                              border: OutlineInputBorder(),
+                            decoration:  InputDecoration(
+                              hintText: tr('ابحث بالاسم أو الكود أو الباركود...'),
+                              prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
+                              border: const OutlineInputBorder(),
                               isDense: true,
                             ),
                             style: const TextStyle(fontSize: 13),
@@ -664,12 +665,12 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                         headingRowHeight: 32,
                         dataRowMinHeight: 30,
                         dataRowMaxHeight: 40,
-                        columns: const [
-                          DataColumn(label: Text('الصنف', style: TextStyle(fontSize: 11))),
-                          DataColumn(label: Text('الكمية', style: TextStyle(fontSize: 11))),
-                          DataColumn(label: Text('السعر', style: TextStyle(fontSize: 11))),
-                          DataColumn(label: Text('الإجمالي', style: TextStyle(fontSize: 11))),
-                          DataColumn(label: Text('', style: TextStyle(fontSize: 11))),
+                        columns:  [
+                          DataColumn(label: Text(tr('الصنف'), style: const TextStyle(fontSize: 11))),
+                          DataColumn(label: Text(tr('الكمية'), style: const TextStyle(fontSize: 11))),
+                          DataColumn(label: Text(tr('السعر'), style: const TextStyle(fontSize: 11))),
+                          DataColumn(label: Text(tr('الإجمالي'), style: const TextStyle(fontSize: 11))),
+                          const DataColumn(label: Text('', style: TextStyle(fontSize: 11))),
                         ],
                         rows: orderItems.asMap().entries.map((entry) {
                           final i = entry.key;
@@ -723,7 +724,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            Text('الإجمالي: ', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+                            Text(tr('الإجمالي: '), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
                             Text(orderTotal.toStringAsFixed(AppConstants.decimalPlaces),
                                 style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primary)),
                           ],
@@ -732,7 +733,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                     const SizedBox(height: 8),
                     TextField(
                       controller: notesCtrl,
-                      decoration: const InputDecoration(labelText: 'ملاحظات', isDense: true, border: OutlineInputBorder()),
+                      decoration:  InputDecoration(labelText: tr('ملاحظات'), isDense: true, border: const OutlineInputBorder()),
                       maxLines: 2,
                       style: const TextStyle(fontSize: 13),
                     ),
@@ -747,12 +748,12 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                           initialValue: selectedCostCenterId,
                           isExpanded: true,
                           decoration: InputDecoration(
-                            labelText: 'مركز التكلفة',
+                            labelText: tr('مركز التكلفة'),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             isDense: true,
                           ),
                           items: [
-                            const DropdownMenuItem<int?>(value: null, child: Text('بدون')),
+                             DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'))),
                             ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name))),
                           ],
                           onChanged: (v) => setDialogState(() => selectedCostCenterId = v),
@@ -764,15 +765,15 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
               ElevatedButton.icon(
                 onPressed: saving ? null : () async {
                   if (selectedSupplierId == null || selectedWarehouseId == null) {
-                    AppToast.show(context, 'يجب اختيار المورد والمستودع', type: ToastType.info);
+                    AppToast.show(context, tr('يجب اختيار المورد والمستودع'), type: ToastType.info);
                     return;
                   }
                   if (orderItems.isEmpty) {
-                    AppToast.show(context, 'يرجى إضافة صنف واحد على الأقل', type: ToastType.info);
+                    AppToast.show(context, tr('يرجى إضافة صنف واحد على الأقل'), type: ToastType.info);
                     return;
                   }
                   setDialogState(() => saving = true);
@@ -800,17 +801,17 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                     );
                     if (ctx.mounted) Navigator.pop(ctx);
                     if (context.mounted) {
-                      AppToast.show(context, 'تم إنشاء أمر الشراء بنجاح');
+                      AppToast.show(context, tr('تم إنشاء أمر الشراء بنجاح'));
                     }
                   } catch (e) {
                     setDialogState(() => saving = false);
                     if (context.mounted) {
-                      AppToast.show(context, 'خطأ: ${e.toString()}', type: ToastType.error);
+                      AppToast.show(context, tr('خطأ: {p0}', {'p0': e.toString()}), type: ToastType.error);
                     }
                   }
                 },
                 icon: const Icon(PhosphorIconsBold.floppyDisk, size: 16),
-                label: Text('إنشاء', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+                label: Text(tr('إنشاء'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
               ),
             ],
           );

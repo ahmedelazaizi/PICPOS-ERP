@@ -26,7 +26,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
     if (invoiceItems.isEmpty) {
       AppToast.show(
         context,
-        'يرجى إضافة صنف واحد على الأقل',
+        tr('يرجى إضافة صنف واحد على الأقل'),
         type: ToastType.error,
       );
       return;
@@ -95,8 +95,8 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
           entityType: 'quotation',
           entityId: quotationId,
           description: existingId != null
-              ? 'تعديل عرض سعر #$quotationNumber'
-              : 'إنشاء عرض سعر #$quotationNumber',
+              ? tr('تعديل عرض سعر #{quotationNumber}', {'quotationNumber': quotationNumber})
+              : tr('إنشاء عرض سعر #{quotationNumber}', {'quotationNumber': quotationNumber}),
           amount: total,
         );
       } catch (_) {}
@@ -108,7 +108,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
             .loadQuotations(); // Refresh list if needed
         AppToast.show(
           context,
-          'تم حفظ عرض السعر بنجاح #$quotationNumber',
+          tr('تم حفظ عرض السعر بنجاح #{quotationNumber}', {'quotationNumber': quotationNumber}),
           type: ToastType.success,
         );
       }
@@ -140,7 +140,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
     if (invoiceItems.isEmpty) {
       AppToast.show(
         context,
-        'يرجى إضافة صنف واحد على الأقل',
+        tr('يرجى إضافة صنف واحد على الأقل'),
         type: ToastType.error,
       );
       return;
@@ -153,7 +153,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
     if (warehouseId == null) {
       AppToast.show(
         context,
-        'لا يوجد مخزن صالح لهذا الفرع — أضِف مخزناً قبل إصدار الفاتورة',
+        tr('لا يوجد مخزن صالح لهذا الفرع — أضِف مخزناً قبل إصدار الفاتورة'),
         type: ToastType.error,
       );
       return;
@@ -274,7 +274,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
         if (context.mounted) {
           AppToast.show(
             context,
-            'خطأ: ${result.errorMessage}',
+            tr('خطأ: {p0}', {'p0': result.errorMessage}),
             type: ToastType.error,
           );
         }
@@ -316,7 +316,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
           if (context.mounted) {
             AppToast.show(
               context,
-              'انتهت مهلة طباعة الفاتورة — الفاتورة محفوظة، يمكنك إعادة الطباعة لاحقاً',
+              tr('انتهت مهلة طباعة الفاتورة — الفاتورة محفوظة، يمكنك إعادة الطباعة لاحقاً'),
               type: ToastType.warning,
             );
           }
@@ -327,7 +327,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
           if (context.mounted) {
             AppToast.show(
               context,
-              'فشلت طباعة الفاتورة: $e — الفاتورة محفوظة',
+              tr('فشلت طباعة الفاتورة: {e} — الفاتورة محفوظة', {'e': e}),
               type: ToastType.warning,
             );
           }
@@ -364,8 +364,8 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
           AppToast.show(
             context,
             isReturnMode
-                ? 'تم ${printedOk ? 'حفظ وطباعة' : (printAfterSave ? 'حفظ (بلا طباعة)' : 'إنشاء')} إشعار المرتجع بنجاح #$invoiceId'
-                : 'تم ${printedOk ? 'حفظ وطباعة' : (printAfterSave ? 'حفظ (بلا طباعة)' : 'إنشاء')} الفاتورة بنجاح #$invoiceId',
+                ? tr('تم {p0} إشعار المرتجع بنجاح #{invoiceId}', {'p0': printedOk ? 'حفظ وطباعة' : (printAfterSave ? 'حفظ (بلا طباعة)' : 'إنشاء'), 'invoiceId': invoiceId})
+                : tr('تم {p0} الفاتورة بنجاح #{invoiceId}', {'p0': printedOk ? 'حفظ وطباعة' : (printAfterSave ? 'حفظ (بلا طباعة)' : 'إنشاء'), 'invoiceId': invoiceId}),
             type: ToastType.success,
           );
         }
@@ -409,7 +409,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
     int? selectedCustomerId = invoice.partyId;
     String? selectedCustomerName = customers
         .where((c) => c.id == invoice.partyId)
-        .firstOrNull?.name ?? 'عميل نقدي';
+        .firstOrNull?.name ?? tr('عميل نقدي');
     // Use DB values for warehouse and cost center (more reliable than entity)
     final invoiceWhId = dbInvoice?.warehouseId ?? invoice.warehouseId;
     int? selectedWarehouseId = (invoiceWhId != null && warehousesList.any((w) => w.id == invoiceWhId))
@@ -479,7 +479,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                 children: [
                   const Icon(PhosphorIconsBold.pencilSimple, color: AppColors.warning),
                   const SizedBox(width: 8),
-                  Text('تعديل فاتورة #${invoice.invoiceNumber}'),
+                  Text(tr('تعديل فاتورة #{p0}', {'p0': invoice.invoiceNumber})),
                 ],
               ),
               content: SizedBox(
@@ -507,7 +507,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                                   controller: tc,
                                   focusNode: fn,
                                   decoration: InputDecoration(
-                                    labelText: 'العميل',
+                                    labelText: tr('العميل'),
                                     prefixIcon: const Icon(PhosphorIconsBold.user),
                                     border: const OutlineInputBorder(),
                                     suffixIcon: selectedCustomerName != null
@@ -538,10 +538,10 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                             Expanded(
                               child: DropdownButtonFormField<int>(
                                 initialValue: selectedWarehouseId,
-                                decoration: const InputDecoration(
-                                  labelText: 'المخزن',
-                                  prefixIcon: Icon(PhosphorIconsBold.warehouse, size: 20),
-                                  border: OutlineInputBorder(),
+                                decoration:  InputDecoration(
+                                  labelText: tr('المخزن'),
+                                  prefixIcon: const Icon(PhosphorIconsBold.warehouse, size: 20),
+                                  border: const OutlineInputBorder(),
                                 ),
                                 items: warehousesList.map((w) {
                                   return DropdownMenuItem<int>(value: w.id, child: Text(w.name));
@@ -557,13 +557,13 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                       if (costCentersList.isNotEmpty)
                         DropdownButtonFormField<int?>(
                           initialValue: selectedCostCenterId,
-                          decoration: const InputDecoration(
-                            labelText: 'مركز التكلفة',
-                            prefixIcon: Icon(PhosphorIconsBold.buildings, size: 20),
-                            border: OutlineInputBorder(),
+                          decoration:  InputDecoration(
+                            labelText: tr('مركز التكلفة'),
+                            prefixIcon: const Icon(PhosphorIconsBold.buildings, size: 20),
+                            border: const OutlineInputBorder(),
                           ),
                           items: [
-                            const DropdownMenuItem<int?>(value: null, child: Text('بدون')),
+                             DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'))),
                             ...costCentersList.map((cc) {
                               return DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name));
                             }),
@@ -579,7 +579,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('إضافة صنف:', style: TextStyle(fontWeight: FontWeight.bold)),
+                               Text(tr('إضافة صنف:'), style: const TextStyle(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 8),
                               Builder(builder: (context) {
                               TextEditingController? acCtrl;
@@ -598,10 +598,10 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                                   return TextField(
                                     controller: tc,
                                     focusNode: fn,
-                                    decoration: const InputDecoration(
-                                      hintText: 'ابحث بالاسم أو الكود...',
-                                      prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass),
-                                      border: OutlineInputBorder(),
+                                    decoration:  InputDecoration(
+                                      hintText: tr('ابحث بالاسم أو الكود...'),
+                                      prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass),
+                                      border: const OutlineInputBorder(),
                                       isDense: true,
                                     ),
                                   );
@@ -644,14 +644,14 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                               headingRowHeight: 36,
                               dataRowMinHeight: 32,
                               dataRowMaxHeight: 42,
-                              columns: const [
-                                DataColumn(label: Text('الصنف', style: TextStyle(fontSize: 12))),
-                                DataColumn(label: Text('الوحدة', style: TextStyle(fontSize: 12))),
-                                DataColumn(label: Text('الكمية', style: TextStyle(fontSize: 12))),
-                                DataColumn(label: Text('السعر', style: TextStyle(fontSize: 12))),
-                                DataColumn(label: Text('الضريبة', style: TextStyle(fontSize: 12))),
-                                DataColumn(label: Text('الإجمالي', style: TextStyle(fontSize: 12))),
-                                DataColumn(label: Text('', style: TextStyle(fontSize: 12))),
+                              columns:  [
+                                DataColumn(label: Text(tr('الصنف'), style: const TextStyle(fontSize: 12))),
+                                DataColumn(label: Text(tr('الوحدة'), style: const TextStyle(fontSize: 12))),
+                                DataColumn(label: Text(tr('الكمية'), style: const TextStyle(fontSize: 12))),
+                                DataColumn(label: Text(tr('السعر'), style: const TextStyle(fontSize: 12))),
+                                DataColumn(label: Text(tr('الضريبة'), style: const TextStyle(fontSize: 12))),
+                                DataColumn(label: Text(tr('الإجمالي'), style: const TextStyle(fontSize: 12))),
+                                const DataColumn(label: Text('', style: TextStyle(fontSize: 12))),
                               ],
                               rows: invoiceItems.asMap().entries.map((entry) {
                                 final i = entry.key;
@@ -701,7 +701,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Text(
-                                                (item['selectedUnitName'] as String?) ?? 'قطعة',
+                                                (item['selectedUnitName'] as String?) ?? tr('قطعة'),
                                                 style: const TextStyle(color: AppColors.info, fontWeight: FontWeight.bold, fontSize: 10),
                                               ),
                                               const Icon(PhosphorIconsBold.caretDown, size: 8, color: AppColors.info),
@@ -772,10 +772,10 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                         ),
                         child: Column(
                           children: [
-                            _detailRow('المجموع الفرعي', subtotal.toStringAsFixed(AppConstants.decimalPlaces)),
-                            _detailRow('الضريبة', tax.toStringAsFixed(AppConstants.decimalPlaces)),
+                            _detailRow(tr('المجموع الفرعي'), subtotal.toStringAsFixed(AppConstants.decimalPlaces)),
+                            _detailRow(tr('الضريبة'), tax.toStringAsFixed(AppConstants.decimalPlaces)),
                             const Divider(),
-                            _detailRow('الإجمالي', total.toStringAsFixed(AppConstants.decimalPlaces)),
+                            _detailRow(tr('الإجمالي'), total.toStringAsFixed(AppConstants.decimalPlaces)),
                           ],
                         ),
                       ),
@@ -788,10 +788,10 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                             child: TextFormField(
                               initialValue: paid.toString(),
                               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              decoration: const InputDecoration(
-                                labelText: 'المبلغ المدفوع',
-                                prefixIcon: Icon(PhosphorIconsBold.wallet),
-                                border: OutlineInputBorder(),
+                              decoration:  InputDecoration(
+                                labelText: tr('المبلغ المدفوع'),
+                                prefixIcon: const Icon(PhosphorIconsBold.wallet),
+                                border: const OutlineInputBorder(),
                               ),
                               onChanged: (val) => paid = double.tryParse(val) ?? 0,
                             ),
@@ -800,18 +800,18 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                           Expanded(
                             child: DropdownButtonFormField<String>(
                               initialValue: paymentMethod,
-                              decoration: const InputDecoration(
-                                labelText: 'وسيلة الدفع',
-                                prefixIcon: Icon(PhosphorIconsBold.creditCard),
-                                border: OutlineInputBorder(),
+                              decoration:  InputDecoration(
+                                labelText: tr('وسيلة الدفع'),
+                                prefixIcon: const Icon(PhosphorIconsBold.creditCard),
+                                border: const OutlineInputBorder(),
                               ),
-                              items: const [
-                                DropdownMenuItem(value: 'cash', child: Text('نقدي')),
-                                DropdownMenuItem(value: 'card', child: Text('بطاقة')),
-                                DropdownMenuItem(value: 'bank', child: Text('تحويل بنكي')),
-                                DropdownMenuItem(value: 'click', child: Text('كليك')),
-                                DropdownMenuItem(value: 'multiple', child: Text('متعدد')),
-                                DropdownMenuItem(value: 'credit', child: Text('آجل')),
+                              items:  [
+                                DropdownMenuItem(value: 'cash', child: Text(tr('نقدي'))),
+                                DropdownMenuItem(value: 'card', child: Text(tr('بطاقة'))),
+                                DropdownMenuItem(value: 'bank', child: Text(tr('تحويل بنكي'))),
+                                DropdownMenuItem(value: 'click', child: Text(tr('كليك'))),
+                                DropdownMenuItem(value: 'multiple', child: Text(tr('متعدد'))),
+                                DropdownMenuItem(value: 'credit', child: Text(tr('آجل'))),
                               ],
                               onChanged: (val) => setDialogState(() => paymentMethod = val ?? 'cash'),
                             ),
@@ -823,10 +823,10 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                       // Notes
                       TextFormField(
                         initialValue: notes,
-                        decoration: const InputDecoration(
-                          labelText: 'ملاحظات',
-                          prefixIcon: Icon(PhosphorIconsBold.notepad),
-                          border: OutlineInputBorder(),
+                        decoration:  InputDecoration(
+                          labelText: tr('ملاحظات'),
+                          prefixIcon: const Icon(PhosphorIconsBold.notepad),
+                          border: const OutlineInputBorder(),
                         ),
                         onChanged: (val) => notes = val,
                       ),
@@ -837,12 +837,12 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('إلغاء'),
+                  child:  Text(tr('إلغاء')),
                 ),
                 ElevatedButton.icon(
                   onPressed: () async {
                     if (invoiceItems.isEmpty) {
-                      AppToast.show(context, 'يرجى إضافة صنف واحد على الأقل', type: ToastType.error);
+                      AppToast.show(context, tr('يرجى إضافة صنف واحد على الأقل'), type: ToastType.error);
                       return;
                     }
                     try {
@@ -875,7 +875,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
 
                       if (context.mounted) {
                         Navigator.pop(context);
-                        AppToast.show(context, 'تم تعديل الفاتورة بنجاح', type: ToastType.success);
+                        AppToast.show(context, tr('تم تعديل الفاتورة بنجاح'), type: ToastType.success);
                       }
                     } catch (e, stack) {
                       if (!context.mounted) return;
@@ -883,7 +883,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                     }
                   },
                   icon: const Icon(PhosphorIconsBold.floppyDisk),
-                  label: const Text('حفظ التعديلات'),
+                  label:  Text(tr('حفظ التعديلات')),
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
                 ),
               ],
@@ -915,11 +915,11 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
       builder: (context) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.trash, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('تأكيد الحذف'),
+              const Icon(PhosphorIconsBold.trash, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('تأكيد الحذف')),
             ],
           ),
           content: SizedBox(
@@ -929,22 +929,22 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'هل أنت متأكد من حذف فاتورة رقم ${invoice.invoiceNumber}؟',
+                  tr('هل أنت متأكد من حذف فاتورة رقم {p0}؟', {'p0': invoice.invoiceNumber}),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'هذا الإجراء لا يمكن التراجع عنه',
-                  style: TextStyle(color: AppColors.error, fontSize: 12),
+                 Text(
+                  tr('هذا الإجراء لا يمكن التراجع عنه'),
+                  style: const TextStyle(color: AppColors.error, fontSize: 12),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'كلمة سر المدير',
-                    prefixIcon: Icon(PhosphorIconsBold.lock),
-                    border: OutlineInputBorder(),
-                    hintText: 'أدخل كلمة السر للتأكيد',
+                  decoration:  InputDecoration(
+                    labelText: tr('كلمة سر المدير'),
+                    prefixIcon: const Icon(PhosphorIconsBold.lock),
+                    border: const OutlineInputBorder(),
+                    hintText: tr('أدخل كلمة السر للتأكيد'),
                   ),
                 ),
               ],
@@ -953,7 +953,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton.icon(
               onPressed: () async {
@@ -976,7 +976,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                       Navigator.pop(context);
                       AppToast.show(
                         context,
-                        'تم حذف الفاتورة بنجاح',
+                        tr('تم حذف الفاتورة بنجاح'),
                         type: ToastType.success,
                       );
                     }
@@ -988,13 +988,13 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                   if (!context.mounted) return;
                   AppToast.show(
                     context,
-                    'كلمة السر غير صحيحة',
+                    tr('كلمة السر غير صحيحة'),
                     type: ToastType.error,
                   );
                 }
               },
               icon: const Icon(PhosphorIconsBold.trash),
-              label: const Text('حذف'),
+              label:  Text(tr('حذف')),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             ),
           ],

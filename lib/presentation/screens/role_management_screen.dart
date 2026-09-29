@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/utils/friendly_error.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
@@ -24,22 +25,22 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
   bool _isSaving = false;
 
   final Map<String, String> _categoryLabels = {
-    'pos': 'البيع السريع',
-    'dashboard': 'لوحة التحكم',
-    'inventory': 'المخزون',
-    'products': 'المنتجات',
-    'categories': 'التصنيفات',
-    'customers': 'العملاء',
-    'suppliers': 'الموردين',
-    'purchases': 'المشتريات',
-    'treasury': 'الخزينة',
-    'tables': 'الطاولات',
-    'kitchen': 'المطبخ',
-    'hr': 'الموظفين',
-    'reports': 'التقارير',
-    'settings': 'الإعدادات',
-    'users': 'المستخدمين',
-    'system': 'النظام',
+    'pos': tr('البيع السريع'),
+    'dashboard': tr('لوحة التحكم'),
+    'inventory': tr('المخزون'),
+    'products': tr('المنتجات'),
+    'categories': tr('التصنيفات'),
+    'customers': tr('العملاء'),
+    'suppliers': tr('الموردين'),
+    'purchases': tr('المشتريات'),
+    'treasury': tr('الخزينة'),
+    'tables': tr('الطاولات'),
+    'kitchen': tr('المطبخ'),
+    'hr': tr('الموظفين'),
+    'reports': tr('التقارير'),
+    'settings': tr('الإعدادات'),
+    'users': tr('المستخدمين'),
+    'system': tr('النظام'),
   };
 
   @override
@@ -53,12 +54,12 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: const Text('إدارة الأدوار والصلاحيات'),
+          title:  Text(tr('إدارة الأدوار والصلاحيات')),
           actions: [
             IconButton(
               icon: const Icon(PhosphorIconsBold.plus),
               onPressed: _showAddRoleDialog,
-              tooltip: 'إضافة دور جديد',
+              tooltip: tr('إضافة دور جديد'),
             ),
           ],
         ),
@@ -86,17 +87,17 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
                           ),
                         ),
                       ),
-                      child: const Row(
+                      child:  Row(
                         children: [
-                          Icon(
+                          const Icon(
                             PhosphorIconsBold.users,
                             size: 20,
                             color: AppColors.primary,
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Text(
-                            'الأدوار المتوفرة',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            tr('الأدوار المتوفرة'),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -159,19 +160,19 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
               // Permissions Grid Side
               Expanded(
                 child: _selectedRole == null
-                    ? const Center(
+                    ?  Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
+                            const Icon(
                               PhosphorIconsBold.shieldCheck,
                               size: 64,
                               color: AppColors.textMuted,
                             ),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             Text(
-                              'اختر دوراً لتعديل صلاحياته',
-                              style: TextStyle(
+                              tr('اختر دوراً لتعديل صلاحياته'),
+                              style: const TextStyle(
                                 color: AppColors.textMuted,
                                 fontSize: 18,
                               ),
@@ -243,7 +244,7 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                'صلاحيات الدور: ${_selectedRole!.name}',
+                tr('صلاحيات الدور: {p0}', {'p0': _selectedRole!.name}),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -261,9 +262,9 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
                     color: AppColors.warning.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'دور نظامي',
-                    style: TextStyle(
+                  child:  Text(
+                    tr('دور نظامي'),
+                    style: const TextStyle(
                       color: AppColors.warning,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -282,7 +283,7 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
                         ),
                       )
                     : const Icon(PhosphorIconsBold.check),
-                label: const Text('حفظ التغييرات'),
+                label:  Text(tr('حفظ التغييرات')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.success,
                   foregroundColor: Colors.white,
@@ -317,19 +318,19 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
                     // Header
                     TableRow(
                       decoration: BoxDecoration(color: Colors.grey[100]),
-                      children: const [
+                      children:  [
                         Padding(
-                          padding: EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16),
                           child: Text(
-                            'الميزة / النظام',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            tr('الميزة / النظام'),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                         Padding(
-                          padding: EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16),
                           child: Text(
-                            'الصلاحيات المتاحة',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            tr('الصلاحيات المتاحة'),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -434,9 +435,9 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
   void _deleteRole(Role role) async {
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: 'تأكيد الحذف',
-      message: 'هل أنت متأكد من حذف دور "${role.name}"؟',
-      confirmLabel: 'حذف',
+      title: tr('تأكيد الحذف'),
+      message: tr('هل أنت متأكد من حذف دور "{p0}"؟', {'p0': role.name}),
+      confirmLabel: tr('حذف'),
       color: AppColors.error,
       icon: PhosphorIconsBold.trash,
     );
@@ -467,13 +468,13 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
       if (mounted) {
         AppToast.show(
           context,
-          'تم حفظ الصلاحيات بنجاح',
+          tr('تم حفظ الصلاحيات بنجاح'),
           type: ToastType.success,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ أثناء الحفظ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ أثناء الحفظ: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

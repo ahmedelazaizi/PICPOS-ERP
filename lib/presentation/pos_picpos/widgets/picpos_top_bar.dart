@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -73,7 +74,7 @@ class PicPosTopBar extends ConsumerWidget {
               onPressed: onBack,
               icon: const Icon(PhosphorIconsBold.arrowRight,
                   color: Colors.white),
-              tooltip: 'رجوع',
+              tooltip: tr('رجوع'),
             ),
           // Logo comes from Brand so this bar never hard-codes a product.
           Image.asset(
@@ -89,13 +90,13 @@ class PicPosTopBar extends ConsumerWidget {
           // widgets قياسية مباشرة (زي `_closeShiftChip`) مش كلاس خاص —
           // نفس السبب الموضّح تحت عند `PermissionGuard`.
           _switchUserChip(
-            label: user?.displayName ?? 'مستخدم',
+            label: user?.displayName ?? tr('مستخدم'),
             onPressed: onSwitchUser,
           ),
           const SizedBox(width: 8),
-          const _InfoChip(
+           _InfoChip(
             icon: PhosphorIconsBold.storefront,
-            label: 'البيع السريع',
+            label: tr('البيع السريع'),
           ),
           const SizedBox(width: 8),
           _HeldOrdersButton(count: heldCount, onPressed: onHeldOrders),
@@ -131,7 +132,7 @@ class PicPosTopBar extends ConsumerWidget {
           PermissionGuard(
             permission: PermissionCodes.posShiftClose,
             allowManagerOverride: true,
-            actionName: 'إغلاق الوردية',
+            actionName: tr('إغلاق الوردية'),
             child: _closeShiftChip(onCloseShift),
           ),
         ],
@@ -265,7 +266,7 @@ class _HeldOrdersButton extends StatelessWidget {
                   size: 16, color: Colors.white),
               const SizedBox(width: 6),
               Text(
-                'فواتير معلقة ($count)',
+                tr('فواتير معلقة ({count})', {'count': count}),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 13,
@@ -301,8 +302,8 @@ class _BookingsButton extends ConsumerWidget {
 
     return Tooltip(
       message: pending == 0
-          ? 'الحجوزات'
-          : '$pending حجزاً بانتظار التأكيد اليوم',
+          ? tr('الحجوزات')
+          : tr('{pending} حجزاً بانتظار التأكيد اليوم', {'pending': pending}),
       child: InkWell(
         onTap: onPressed,
         borderRadius: BorderRadius.circular(8),
@@ -318,9 +319,9 @@ class _BookingsButton extends ConsumerWidget {
               const Icon(PhosphorIconsBold.calendarCheck,
                   size: 16, color: Colors.white),
               const SizedBox(width: 6),
-              const Text(
-                'الحجوزات',
-                style: TextStyle(
+               Text(
+                tr('الحجوزات'),
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
@@ -407,14 +408,14 @@ Widget _closeShiftChip(VoidCallback onPressed) {
         color: AppColors.error,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Row(
+      child:  Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(PhosphorIconsBold.signOut, size: 16, color: Colors.white),
-          SizedBox(width: 6),
+          const Icon(PhosphorIconsBold.signOut, size: 16, color: Colors.white),
+          const SizedBox(width: 6),
           Text(
-            'إغلاق الوردية',
-            style: TextStyle(
+            tr('إغلاق الوردية'),
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 13,
               fontWeight: FontWeight.bold,

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 
 /// A reusable dialog to prompt the user before navigating away from a screen
@@ -29,10 +30,10 @@ class UnsavedChangesDialog extends StatelessWidget {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: UnsavedChangesDialog(
-          title: title ?? 'تنبيه',
-          content: content ?? 'يوجد تغييرات غير محفوظة. هل أنت متأكد من مغادرة هذه الصفحة؟ سيتم فقدان التغييرات.',
-          discardButtonText: discardButtonText ?? 'نعم، مغادرة',
-          stayButtonText: stayButtonText ?? 'لا، البقاء',
+          title: title ?? tr('تنبيه'),
+          content: content ?? tr('يوجد تغييرات غير محفوظة. هل أنت متأكد من مغادرة هذه الصفحة؟ سيتم فقدان التغييرات.'),
+          discardButtonText: discardButtonText ?? tr('نعم، مغادرة'),
+          stayButtonText: stayButtonText ?? tr('لا، البقاء'),
         ),
       ),
     );

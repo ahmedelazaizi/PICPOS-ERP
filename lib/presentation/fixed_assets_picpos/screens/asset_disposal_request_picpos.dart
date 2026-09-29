@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // «طلب استبعاد أصل» — تصميمُ المالك `(6)`.
 //
 // ═══ ⚠️ لوحٌ كاملُ العرض لا شاشةٌ سادسة ═══
@@ -49,7 +50,7 @@ const _warn = Color(0xFFF59E0B);
 
 /// رقمُ الطلب قبل الحفظ — **لا يُخمَّن** (‏مواصفة ٠٦٦: المولّدُ داخلَ
 /// معاملةِ الحفظ).
-const String kDisposalNumberPlaceholder = 'يُولَّد عند الحفظ';
+String get kDisposalNumberPlaceholder => tr('يُولَّد عند الحفظ');
 
 /// الأصلُ كما يراه النموذج — **قيمةٌ خالصةٌ** لا صفُّ قاعدة.
 typedef DisposalAssetSummary = ({
@@ -245,18 +246,18 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
           onBack: widget.onBack,
           busy: widget.busy,
           hint: _isApproved
-              ? 'طلبٌ مُعتمَدٌ — الأصلُ خرج من الدفاتر ولا يُعدَّل'
+              ? tr('طلبٌ مُعتمَدٌ — الأصلُ خرج من الدفاتر ولا يُعدَّل')
               : 'المسوّدةُ بلا أثرٍ محاسبيّ · والاعتمادُ يُخرج الأصلَ ويقيّد '
                   'الفرق',
           draft: PicPosFormAction(
-            label: 'حفظ مسودة',
+            label: tr('حفظ مسودة'),
             icon: PhosphorIconsBold.floppyDisk,
             onPressed: (_isApproved || draftReason != null)
                 ? null
                 : () => _submit(approve: false),
           ),
           primary: PicPosFormAction(
-            label: 'مراجعة واعتماد',
+            label: tr('مراجعة واعتماد'),
             icon: PhosphorIconsBold.check,
             onPressed: (_isApproved || approveReason != null)
                 ? null
@@ -278,10 +279,10 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
           children: [
             Row(
               children: [
-                const Expanded(
+                 Expanded(
                   child: PicPosSectionHeader(
                     icon: PhosphorIconsBold.identificationCard,
-                    title: 'معلومات الأصل',
+                    title: tr('معلومات الأصل'),
                   ),
                 ),
                 _statusPill(),
@@ -290,13 +291,13 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(child: _readOnly('رقم الأصل', widget.asset.code)),
+                Expanded(child: _readOnly(tr('رقم الأصل'), widget.asset.code)),
                 const SizedBox(width: 10),
-                Expanded(child: _readOnly('اسم الأصل', widget.asset.name)),
+                Expanded(child: _readOnly(tr('اسم الأصل'), widget.asset.name)),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _readOnly(
-                      'رقم الطلب',
+                      tr('رقم الطلب'),
                       widget.value?.number ?? kDisposalNumberPlaceholder),
                 ),
               ],
@@ -308,9 +309,9 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
   Widget _statusPill() {
     final status = widget.value?.status ?? 'draft';
     final (label, tint) = switch (status) {
-      'approved' => ('معتمد', AppColors.success),
-      'cancelled' => ('ملغى', AppColors.textMuted),
-      _ => ('مسودة', _warn),
+      'approved' => (tr('معتمد'), AppColors.success),
+      'cancelled' => (tr('ملغى'), AppColors.textMuted),
+      _ => (tr('مسودة'), _warn),
     };
     return Container(
       key: const Key('disposal_status_pill'),
@@ -333,24 +334,24 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const PicPosSectionHeader(
+             PicPosSectionHeader(
               icon: PhosphorIconsBold.scales,
-              title: 'البيانات المالية للأصل (للقراءة فقط)',
+              title: tr('البيانات المالية للأصل (للقراءة فقط)'),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
-                    child: _readOnly('التكلفة الأصلية',
+                    child: _readOnly(tr('التكلفة الأصلية'),
                         _money.format(widget.asset.originalCost))),
                 const SizedBox(width: 10),
                 Expanded(
-                    child: _readOnly('مجموع الإهلاك المتراكم',
+                    child: _readOnly(tr('مجموع الإهلاك المتراكم'),
                         _money.format(widget.asset.accumulatedDepreciation))),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _readOnly(
-                    'القيمة الدفترية الحالية',
+                    tr('القيمة الدفترية الحالية'),
                     _money.format(_outcome.bookValue),
                     key: const Key('disposal_book_value'),
                   ),
@@ -370,9 +371,9 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const PicPosSectionHeader(
+             PicPosSectionHeader(
               icon: PhosphorIconsBold.trash,
-              title: 'بيانات الاستبعاد',
+              title: tr('بيانات الاستبعاد'),
             ),
             const SizedBox(height: 8),
             Row(
@@ -417,10 +418,10 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
                 if (picked != null) setState(() => _date = picked);
               },
         child: InputDecorator(
-          decoration: const InputDecoration(
-            labelText: 'تاريخ الاستبعاد',
+          decoration:  InputDecoration(
+            labelText: tr('تاريخ الاستبعاد'),
             isDense: true,
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
           ),
           child: Text(_dateFmt.format(_date)),
         ),
@@ -430,10 +431,10 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
         key: const Key('disposal_method'),
         initialValue: _method,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'طريقة الاستبعاد',
+        decoration:  InputDecoration(
+          labelText: tr('طريقة الاستبعاد'),
           isDense: true,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         items: [
           for (final m in kDisposalMethods)
@@ -459,10 +460,10 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
         ],
         onChanged: (_) => setState(() {}),
         decoration: InputDecoration(
-          labelText: 'قيمة البيع المتوقعة',
+          labelText: tr('قيمة البيع المتوقعة'),
           helperText: _carriesProceeds
               ? null
-              : '${disposalMethodLabel(_method)} بلا ثمن',
+              : tr('{p0} بلا ثمن', {'p0': disposalMethodLabel(_method)}),
           isDense: true,
           border: const OutlineInputBorder(),
         ),
@@ -473,17 +474,17 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
         initialValue: _buyerId,
         isExpanded: true,
         decoration: InputDecoration(
-          labelText: _carriesProceeds ? 'المشتري' : 'المستلِم',
+          labelText: _carriesProceeds ? tr('المشتري') : tr('المستلِم'),
           helperText: _collection == 'credit'
               // ⚠️ نصٌّ حرٌّ لا يكفي في الآجل: القيدُ يحتاج حساباً والذمّةُ
               //    تحتاج طرفاً يُطالَب.
-              ? 'الآجل يحتاج طرفاً مسجَّلاً'
+              ? tr('الآجل يحتاج طرفاً مسجَّلاً')
               : null,
           isDense: true,
           border: const OutlineInputBorder(),
         ),
         items: [
-          const DropdownMenuItem<int?>(value: null, child: Text('— بلا طرف')),
+           DropdownMenuItem<int?>(value: null, child: Text(tr('— بلا طرف'))),
           for (final p in widget.parties)
             DropdownMenuItem<int?>(value: p.id, child: Text(p.name)),
         ],
@@ -496,10 +497,10 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
         enabled: !_isApproved,
         maxLines: 2,
         onChanged: (_) => setState(() {}),
-        decoration: const InputDecoration(
-          labelText: 'سبب الاستبعاد',
+        decoration:  InputDecoration(
+          labelText: tr('سبب الاستبعاد'),
           isDense: true,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
       );
 
@@ -534,9 +535,9 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const PicPosSectionHeader(
+             PicPosSectionHeader(
               icon: PhosphorIconsBold.wallet,
-              title: 'طريقة التحصيل',
+              title: tr('طريقة التحصيل'),
             ),
             const SizedBox(height: 6),
             if (!_carriesProceeds)
@@ -607,11 +608,11 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
         key: const Key('disposal_safe'),
         initialValue: _safeId,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'الخزينة',
-          helperText: 'يُقيَّد على حسابها المرتبط وتزيد أرصدتُها بالمبلغ',
+        decoration:  InputDecoration(
+          labelText: tr('الخزينة'),
+          helperText: tr('يُقيَّد على حسابها المرتبط وتزيد أرصدتُها بالمبلغ'),
           isDense: true,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         items: [
           for (final s in widget.safes)
@@ -624,13 +625,13 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
         key: const Key('disposal_cost_center'),
         initialValue: _costCenterId,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'مركز التكلفة',
+        decoration:  InputDecoration(
+          labelText: tr('مركز التكلفة'),
           isDense: true,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         items: [
-          const DropdownMenuItem<int?>(value: null, child: Text('— عام')),
+           DropdownMenuItem<int?>(value: null, child: Text(tr('— عام'))),
           for (final c in widget.costCenters)
             DropdownMenuItem<int?>(value: c.id, child: Text(c.name)),
         ],
@@ -671,16 +672,16 @@ class _CreditNote extends StatelessWidget {
   const _CreditNote();
 
   @override
-  Widget build(BuildContext context) => const InputDecorator(
+  Widget build(BuildContext context) =>  InputDecorator(
         decoration: InputDecoration(
-          labelText: 'الخزينة',
+          labelText: tr('الخزينة'),
           isDense: true,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         child: Text(
-          'لا خزينة — الآجل يُحمَّل على ذمّة الطرف',
-          key: Key('disposal_credit_note'),
-          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+          tr('لا خزينة — الآجل يُحمَّل على ذمّة الطرف'),
+          key: const Key('disposal_credit_note'),
+          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
         ),
       );
 }

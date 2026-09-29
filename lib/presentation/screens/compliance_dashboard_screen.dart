@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -58,15 +59,15 @@ class _ComplianceDashboardScreenState extends ConsumerState<ComplianceDashboardS
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('لوحة الامتثال', style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
-              Text('SOX / IFRS / ISA 315 — تقييم جاهزية التدقيق', style: GoogleFonts.cairo(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
+              Text(tr('لوحة الامتثال'), style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
+              Text(tr('SOX / IFRS / ISA 315 — تقييم جاهزية التدقيق'), style: GoogleFonts.cairo(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
             ],
           ),
           const Spacer(),
           ElevatedButton.icon(
             onPressed: _isRunning ? null : _runAudit,
             icon: Icon(_isRunning ? PhosphorIconsBold.circleNotch : PhosphorIconsBold.play, size: 18),
-            label: Text(_isRunning ? 'جاري الفحص...' : 'تشغيل فحص الامتثال', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            label: Text(_isRunning ? tr('جاري الفحص...') : tr('تشغيل فحص الامتثال'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white, foregroundColor: const Color(0xFF1B5E20),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -96,7 +97,7 @@ class _ComplianceDashboardScreenState extends ConsumerState<ComplianceDashboardS
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('النتيجة الإجمالية', style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+              Text(tr('النتيجة الإجمالية'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
               Text('${avg.toStringAsFixed(0)}%',
                   style: GoogleFonts.cairo(fontSize: 24, fontWeight: FontWeight.w800, color: color)),
             ],
@@ -118,7 +119,7 @@ class _ComplianceDashboardScreenState extends ConsumerState<ComplianceDashboardS
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
             child: Text(
-              avg >= 80 ? 'جاهز للتدقيق' : (avg >= 50 ? 'يحتاج تحسين' : 'غير جاهز'),
+              avg >= 80 ? tr('جاهز للتدقيق') : (avg >= 50 ? tr('يحتاج تحسين') : tr('غير جاهز')),
               style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w700, color: color),
             ),
           ),
@@ -134,9 +135,9 @@ class _ComplianceDashboardScreenState extends ConsumerState<ComplianceDashboardS
         children: [
           const Icon(PhosphorIconsBold.shieldCheck, size: 64, color: AppColors.textMuted),
           const SizedBox(height: 16),
-          Text('فحص الامتثال', style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
+          Text(tr('فحص الامتثال'), style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
           const SizedBox(height: 8),
-          Text('اضغط "تشغيل فحص الامتثال" لتقييم جاهزية النظام للتدقيق',
+          Text(tr('اضغط "تشغيل فحص الامتثال" لتقييم جاهزية النظام للتدقيق'),
               style: GoogleFonts.cairo(fontSize: 13, color: AppColors.textMuted)),
           const SizedBox(height: 24),
           Wrap(
@@ -254,7 +255,7 @@ class _ComplianceDashboardScreenState extends ConsumerState<ComplianceDashboardS
       setState(() => _results = results);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       setState(() => _isRunning = false);

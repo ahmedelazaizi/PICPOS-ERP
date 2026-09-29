@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 //
 // ⚠️ **مقصودٌ لا مهمَل**: `excelServiceProvider` من نوع `Provider<dynamic>`
@@ -255,21 +256,21 @@ class _BankReconciliationPicposScreenState
 
     return banksAsync.when(
       data: (result) => PicPosScreenScaffold(
-        title: 'المطابقة البنكية',
+        title: tr('المطابقة البنكية'),
         icon: PhosphorIconsBold.bank,
         subHeader: _buildHeader(context, result.safes, result.excluded),
         toolbar: _buildActionsBar(),
         body: _buildBody(),
       ),
-      loading: () => const PicPosScreenScaffold(
-        title: 'المطابقة البنكية',
+      loading: () =>  PicPosScreenScaffold(
+        title: tr('المطابقة البنكية'),
         icon: PhosphorIconsBold.bank,
-        body: Center(child: CircularProgressIndicator()),
+        body: const Center(child: CircularProgressIndicator()),
       ),
       error: (e, _) => PicPosScreenScaffold(
-        title: 'المطابقة البنكية',
+        title: tr('المطابقة البنكية'),
         icon: PhosphorIconsBold.bank,
-        body: Center(child: Text('تعذّر تحميل الخزائن البنكية: $e')),
+        body: Center(child: Text(tr('تعذّر تحميل الخزائن البنكية: {e}', {'e': e}))),
       ),
     );
   }
@@ -309,7 +310,7 @@ class _BankReconciliationPicposScreenState
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(26, 8, 26, 0),
             child: Text(
-              'خزنةٌ بنكيّةٌ أو أكثرُ بلا حسابٍ مرتبطٍ — لا يمكن مطابقتُها',
+              tr('خزنةٌ بنكيّةٌ أو أكثرُ بلا حسابٍ مرتبطٍ — لا يمكن مطابقتُها'),
               style: TextStyle(fontSize: 12, color: context.picposMuted),
             ),
           ),
@@ -319,7 +320,7 @@ class _BankReconciliationPicposScreenState
 
   Widget _safePickerButton(BuildContext context, List<SafeData> safes) {
     final matches = safes.where((s) => s.id == _safeId);
-    final label = matches.isEmpty ? 'اختر خزنة بنكية' : matches.first.name;
+    final label = matches.isEmpty ? tr('اختر خزنة بنكية') : matches.first.name;
 
     return Material(
       color: Colors.transparent,
@@ -358,7 +359,7 @@ class _BankReconciliationPicposScreenState
   Future<void> _pickSafe(BuildContext context, List<SafeData> safes) async {
     final picked = await showPicPosOptionPicker<int?>(
       context: context,
-      title: 'اختيار الخزنة البنكية',
+      title: tr('اختيار الخزنة البنكية'),
       options: [
         for (final s in safes)
           PicPosOption<int?>(value: s.id, label: s.name, sub: s.bankName),
@@ -414,10 +415,10 @@ class _BankReconciliationPicposScreenState
         ),
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'رصيد كشف البنك',
+          hintText: tr('رصيد كشف البنك'),
           hintStyle: TextStyle(fontSize: 11.5, color: context.picposMuted),
           // خطأُ إدخالٍ يُقال — لا يُستبدَل بصفرٍ صامت.
-          errorText: invalid ? 'قيمةٌ غيرُ صالحة' : null,
+          errorText: invalid ? tr('قيمةٌ غيرُ صالحة') : null,
           errorStyle: const TextStyle(fontSize: 10.5),
           filled: true,
           fillColor: context.picposField,
@@ -482,7 +483,7 @@ class _BankReconciliationPicposScreenState
             ),
           ),
           icon: const Icon(PhosphorIconsBold.arrowUUpLeft, size: 16),
-          label: const Text('متابعة الجلسة المفتوحة'),
+          label:  Text(tr('متابعة الجلسة المفتوحة')),
         ),
       );
     }
@@ -514,7 +515,7 @@ class _BankReconciliationPicposScreenState
                 ),
               )
             : const Icon(PhosphorIconsBold.plusCircle, size: 16),
-        label: const Text('جلسة جديدة'),
+        label:  Text(tr('جلسة جديدة')),
       ),
     );
   }
@@ -553,7 +554,7 @@ class _BankReconciliationPicposScreenState
       // الاستثناءَ يفلت من ردّ نداء الزرّ — خطأُ منطقةٍ غيرُ مرئيٍّ في
       // الإنتاج، والمستخدمُ يرى زرّاً ينبض ثمّ لا شيء.
       if (!mounted) return;
-      AppToast.show(context, 'تعذّر إنشاءُ جلسة المطابقة: $e',
+      AppToast.show(context, tr('تعذّر إنشاءُ جلسة المطابقة: {e}', {'e': e}),
           type: ToastType.error);
     } finally {
       if (mounted) setState(() => _creatingSession = false);
@@ -607,17 +608,17 @@ class _BankReconciliationPicposScreenState
         OutlinedButton.icon(
           onPressed: enabled ? _downloadTemplate : null,
           icon: const Icon(PhosphorIconsBold.download, size: 15),
-          label: const Text('تنزيل القالب'),
+          label:  Text(tr('تنزيل القالب')),
         ),
         OutlinedButton.icon(
           onPressed: canWrite ? _importStatement : null,
           icon: const Icon(PhosphorIconsBold.uploadSimple, size: 15),
-          label: const Text('استيراد كشف'),
+          label:  Text(tr('استيراد كشف')),
         ),
         FilledButton.icon(
           onPressed: canWrite ? _autoMatch : null,
           icon: const Icon(PhosphorIconsBold.arrowsLeftRight, size: 15),
-          label: const Text('مطابقة آلية'),
+          label:  Text(tr('مطابقة آلية')),
         ),
       ],
     );
@@ -633,11 +634,11 @@ class _BankReconciliationPicposScreenState
       final path = await service.exportBankStatementTemplate();
       if (!mounted) return;
       if (path == null) {
-        AppToast.show(context, 'تعذّر إنشاءُ قالب الكشف',
+        AppToast.show(context, tr('تعذّر إنشاءُ قالب الكشف'),
             type: ToastType.error);
         return;
       }
-      AppToast.show(context, 'حُفظ القالبُ في: $path', type: ToastType.success);
+      AppToast.show(context, tr('حُفظ القالبُ في: {path}', {'path': path}), type: ToastType.success);
     } finally {
       if (mounted) setState(() => _actionBusy = false);
     }
@@ -668,8 +669,8 @@ class _BankReconciliationPicposScreenState
       // لا تُبتلَع في رسالةٍ عامّة.
       if (lines.isEmpty) {
         final reason = errors.isEmpty
-            ? 'لا صفَّ صالحاً في الملف'
-            : 'لا صفَّ صالحاً في الملف: ${errors.join('؛ ')}';
+            ? tr('لا صفَّ صالحاً في الملف')
+            : tr('لا صفَّ صالحاً في الملف: {p0}', {'p0': errors.join('؛ ')});
         AppToast.show(context, reason, type: ToastType.error);
         return;
       }
@@ -686,7 +687,7 @@ class _BankReconciliationPicposScreenState
       // نجاحاً كاملاً — `warning` لا `success` حين توجد أسبابُ رفض.
       final hasErrors = errors.isNotEmpty;
       final outOfPeriod = _allLinesOutsidePeriod(lines);
-      var message = 'استُورد ${_arabicDigits(n)} سطراً';
+      var message = tr('استُورد {p0} سطراً', {'p0': _arabicDigits(n)});
       if (hasErrors) {
         message += '، ورُفض ${_arabicDigits(errors.length)}: '
             '${errors.join('؛ ')}';
@@ -706,7 +707,7 @@ class _BankReconciliationPicposScreenState
       }
     } catch (e) {
       if (!mounted) return;
-      AppToast.show(context, 'تعذّر استيرادُ الكشف: $e', type: ToastType.error);
+      AppToast.show(context, tr('تعذّر استيرادُ الكشف: {e}', {'e': e}), type: ToastType.error);
     } finally {
       if (mounted) setState(() => _actionBusy = false);
     }
@@ -741,7 +742,7 @@ class _BankReconciliationPicposScreenState
       final repo = ref.read(accountingRepositoryProvider);
       final n = await repo.autoMatchStatementLines(accountId);
       if (!mounted) return;
-      AppToast.show(context, 'طوبق ${_arabicDigits(n)} سطراً',
+      AppToast.show(context, tr('طوبق {p0} سطراً', {'p0': _arabicDigits(n)}),
           type: ToastType.success);
 
       final sessionId = _sessionId;
@@ -750,7 +751,7 @@ class _BankReconciliationPicposScreenState
       }
     } catch (e) {
       if (!mounted) return;
-      AppToast.show(context, 'تعذّرت المطابقةُ الآليّة: $e',
+      AppToast.show(context, tr('تعذّرت المطابقةُ الآليّة: {e}', {'e': e}),
           type: ToastType.error);
     } finally {
       if (mounted) setState(() => _actionBusy = false);
@@ -762,9 +763,9 @@ class _BankReconciliationPicposScreenState
   Widget _buildBody() {
     final sessionId = _sessionId;
     if (sessionId == null) {
-      return const PicPosEmptyState(
+      return  PicPosEmptyState(
         icon: PhosphorIconsBold.bank,
-        title: 'اختر خزنةً وفترةً ثمّ أنشئ جلسة',
+        title: tr('اختر خزنةً وفترةً ثمّ أنشئ جلسة'),
       );
     }
     return _buildReport(sessionId);
@@ -830,25 +831,25 @@ class _BankReconciliationPicposScreenState
             PicPosHubKpiRow(items: [
               PicPosHubKpi(
                 icon: PhosphorIconsBold.bookOpen,
-                label: 'رصيد الدفتر',
+                label: tr('رصيد الدفتر'),
                 value: _money.format(bookBalance),
                 tint: AppColors.primary,
               ),
               PicPosHubKpi(
                 icon: PhosphorIconsBold.bank,
-                label: 'رصيد الكشف',
+                label: tr('رصيد الكشف'),
                 value: _money.format(statementBalance),
                 tint: AppColors.info,
               ),
               PicPosHubKpi(
                 icon: PhosphorIconsBold.scales,
-                label: 'الفرق',
+                label: tr('الفرق'),
                 value: _money.format(difference),
                 tint: difference == 0 ? AppColors.success : AppColors.error,
               ),
               PicPosHubKpi(
                 icon: PhosphorIconsBold.checkSquareOffset,
-                label: 'مطابَق / غير مطابَق',
+                label: tr('مطابَق / غير مطابَق'),
                 value: '$matched / $unmatched',
                 tint: unmatched == 0 ? AppColors.success : AppColors.warning,
               ),
@@ -893,7 +894,7 @@ class _BankReconciliationPicposScreenState
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
-        child: Text('تعذّر حسابُ تقرير المطابقة: $e'),
+        child: Text(tr('تعذّر حسابُ تقرير المطابقة: {e}', {'e': e})),
       ),
     );
   }
@@ -914,7 +915,7 @@ class _BankReconciliationPicposScreenState
               size: 14, color: AppColors.warning),
           const SizedBox(width: 7),
           Text(
-            'الجلسةُ مقفلة — لا استيرادَ ولا مطابقةَ ولا نزعَ بعد الإقفال',
+            tr('الجلسةُ مقفلة — لا استيرادَ ولا مطابقةَ ولا نزعَ بعد الإقفال'),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
@@ -944,7 +945,7 @@ class _BankReconciliationPicposScreenState
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
           ),
           icon: const Icon(PhosphorIconsBold.linkSimple, size: 15),
-          label: const Text('طابق'),
+          label:  Text(tr('طابق')),
         ),
         const Spacer(),
         ElevatedButton.icon(
@@ -959,7 +960,7 @@ class _BankReconciliationPicposScreenState
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
           ),
           icon: const Icon(PhosphorIconsBold.lockSimple, size: 15),
-          label: const Text('إقفال الجلسة'),
+          label:  Text(tr('إقفال الجلسة')),
         ),
       ],
     );
@@ -1013,7 +1014,7 @@ class _BankReconciliationPicposScreenState
       }
     } catch (e) {
       if (!mounted) return;
-      AppToast.show(context, 'تعذّر نزعُ المطابقة: $e', type: ToastType.error);
+      AppToast.show(context, tr('تعذّر نزعُ المطابقة: {e}', {'e': e}), type: ToastType.error);
     } finally {
       if (mounted) setState(() => _actionBusy = false);
     }
@@ -1037,8 +1038,8 @@ class _BankReconciliationPicposScreenState
     if (!mounted || accounts.isEmpty) return null;
     return showPicPosOptionPicker<int?>(
       context: context,
-      title: 'اختيار حساب تسوية الفرق',
-      subtitle: 'سيُرحّل الفرق الظاهر إلى الحساب المختار.',
+      title: tr('اختيار حساب تسوية الفرق'),
+      subtitle: tr('سيُرحّل الفرق الظاهر إلى الحساب المختار.'),
       options: [
         for (final account in accounts)
           PicPosOption<int?>(
@@ -1056,10 +1057,10 @@ class _BankReconciliationPicposScreenState
     final proceed = await showPicPosConfirm(
       context,
       icon: PhosphorIconsBold.lockSimple,
-      title: 'إقفال جلسة المطابقة',
+      title: tr('إقفال جلسة المطابقة'),
       message: 'الفرقُ الحاليّ: ${_money.format(difference)}. إقفالُ الجلسة '
           'يجب تصفير الفرق أو اختيار حساب تسوية صريح قبل الإقفال.',
-      confirmLabel: 'إقفال',
+      confirmLabel: tr('إقفال'),
     );
     if (!proceed || !mounted) return;
 
@@ -1077,7 +1078,7 @@ class _BankReconciliationPicposScreenState
         adjustmentAccountId: adjustmentAccountId,
       );
       if (!mounted) return;
-      AppToast.show(context, 'أُقفلت جلسةُ المطابقة', type: ToastType.success);
+      AppToast.show(context, tr('أُقفلت جلسةُ المطابقة'), type: ToastType.success);
       ref.invalidate(_reconciliationReportProvider(sessionId));
       // ولم تعد مفتوحةً — فزرُّ «متابعة الجلسة المفتوحة» يجب أن يعود
       // «جلسة جديدة»، وإلّا عرض متابعةً لجلسةٍ مقفلةٍ أزرارُها معطَّلة.
@@ -1091,7 +1092,7 @@ class _BankReconciliationPicposScreenState
       }
     } catch (e) {
       if (!mounted) return;
-      AppToast.show(context, 'تعذّر إقفالُ الجلسة: $e', type: ToastType.error);
+      AppToast.show(context, tr('تعذّر إقفالُ الجلسة: {e}', {'e': e}), type: ToastType.error);
     } finally {
       if (mounted) setState(() => _actionBusy = false);
     }
@@ -1104,20 +1105,20 @@ class _BankReconciliationPicposScreenState
   /// `BankStatementLine` (راجع تعليقَ العقد أعلى `_buildReport`).
   Widget _unmatchedBankTable(List<dynamic> lines) {
     return PicPosDataTable(
-      title: 'أسطرُ الكشف غيرُ المطابَقة',
-      subtitle: 'اختر سطراً هنا وقيداً من الدفتر ثمّ اضغط «طابق»',
+      title: tr('أسطرُ الكشف غيرُ المطابَقة'),
+      subtitle: tr('اختر سطراً هنا وقيداً من الدفتر ثمّ اضغط «طابق»'),
       // ⚠️ **ليس الافتراضَ ٧٦٠**: قائمتان متجاورتان عند ١٢٨٠ تنالان نحوَ
       // ٦٢٠ لكلٍّ — والافتراضُ كان سيفتح تمريراً أفقيّاً داخل كلّ جدول
       // بلا داعٍ. ٥٦٠ تحت ذلك الحدّ فلا تمريرَ عند ١٢٨٠.
       minWidth: 560,
-      columns: const [
-        PicPosTableColumn('التاريخ', flex: 1.0),
-        PicPosTableColumn('المرجع', flex: 1.0),
-        PicPosTableColumn('البيان', flex: 1.6),
-        PicPosTableColumn('مدين', flex: 1.0, align: PicPosCellAlign.end),
-        PicPosTableColumn('دائن', flex: 1.0, align: PicPosCellAlign.end),
+      columns:  [
+        PicPosTableColumn(tr('التاريخ'), flex: 1.0),
+        PicPosTableColumn(tr('المرجع'), flex: 1.0),
+        PicPosTableColumn(tr('البيان'), flex: 1.6),
+        PicPosTableColumn(tr('مدين'), flex: 1.0, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('دائن'), flex: 1.0, align: PicPosCellAlign.end),
       ],
-      emptyLabel: 'لا أسطرَ غيرَ مطابَقةٍ في الكشف',
+      emptyLabel: tr('لا أسطرَ غيرَ مطابَقةٍ في الكشف'),
       rows: [for (final dynamic l in lines) _unmatchedBankRow(l)],
     );
   }
@@ -1147,16 +1148,16 @@ class _BankReconciliationPicposScreenState
   /// بحقولٍ مسمّاة (راجع تعليقَ العقد أعلى `_buildReport`).
   Widget _outstandingBookTable(List<dynamic> rows) {
     return PicPosDataTable(
-      title: 'قيودٌ في الدفتر لم تظهر في الكشف',
-      subtitle: 'اختر قيداً هنا وسطراً من الكشف ثمّ اضغط «طابق»',
+      title: tr('قيودٌ في الدفتر لم تظهر في الكشف'),
+      subtitle: tr('اختر قيداً هنا وسطراً من الكشف ثمّ اضغط «طابق»'),
       minWidth: 480,
-      columns: const [
-        PicPosTableColumn('التاريخ', flex: 1.0),
-        PicPosTableColumn('البيان', flex: 2.0),
-        PicPosTableColumn('مدين', flex: 1.0, align: PicPosCellAlign.end),
-        PicPosTableColumn('دائن', flex: 1.0, align: PicPosCellAlign.end),
+      columns:  [
+        PicPosTableColumn(tr('التاريخ'), flex: 1.0),
+        PicPosTableColumn(tr('البيان'), flex: 2.0),
+        PicPosTableColumn(tr('مدين'), flex: 1.0, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('دائن'), flex: 1.0, align: PicPosCellAlign.end),
       ],
-      emptyLabel: 'لا قيودَ معلَّقةً في الدفتر',
+      emptyLabel: tr('لا قيودَ معلَّقةً في الدفتر'),
       rows: [for (final dynamic r in rows) _outstandingBookRow(r)],
     );
   }
@@ -1185,16 +1186,16 @@ class _BankReconciliationPicposScreenState
   /// الجلسة.
   Widget _matchedTable(List<dynamic> lines, bool locked) {
     return PicPosDataTable(
-      title: 'الأسطرُ المطابَقة',
-      columns: const [
-        PicPosTableColumn('التاريخ', flex: 1.0),
-        PicPosTableColumn('المرجع', flex: 1.0),
-        PicPosTableColumn('البيان', flex: 1.6),
-        PicPosTableColumn('مدين', flex: 1.0, align: PicPosCellAlign.end),
-        PicPosTableColumn('دائن', flex: 1.0, align: PicPosCellAlign.end),
-        PicPosTableColumn('إجراء', flex: 1.0),
+      title: tr('الأسطرُ المطابَقة'),
+      columns:  [
+        PicPosTableColumn(tr('التاريخ'), flex: 1.0),
+        PicPosTableColumn(tr('المرجع'), flex: 1.0),
+        PicPosTableColumn(tr('البيان'), flex: 1.6),
+        PicPosTableColumn(tr('مدين'), flex: 1.0, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('دائن'), flex: 1.0, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('إجراء'), flex: 1.0),
       ],
-      emptyLabel: 'لا أسطرَ مطابَقةً بعد',
+      emptyLabel: tr('لا أسطرَ مطابَقةً بعد'),
       rows: [for (final dynamic l in lines) _matchedRow(l, locked)],
     );
   }
@@ -1209,7 +1210,7 @@ class _BankReconciliationPicposScreenState
         PicPosTextCell(_money.format((l.debitAmount as num).toDouble())),
         PicPosTextCell(_money.format((l.creditAmount as num).toDouble())),
         PicPosButtonCell(
-          'نزع',
+          tr('نزع'),
           icon: PhosphorIconsBold.linkBreak,
           tint: AppColors.error,
           onPressed: _actionBusy || locked ? null : () => _unmatch(id),

@@ -1,4 +1,6 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:convert';
+import 'dart:ui' as ui;
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
@@ -8,10 +10,10 @@ import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/config/brand.dart';
+import '../widgets/user_language_selector.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -115,14 +117,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('🔒 كلمة مرور الإعدادات'),
+          title:  Text(tr('🔒 كلمة مرور الإعدادات')),
           content: TextField(
             controller: controller,
             obscureText: true,
             autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'أدخل كلمة المرور',
-              border: OutlineInputBorder(),
+            decoration:  InputDecoration(
+              labelText: tr('أدخل كلمة المرور'),
+              border: const OutlineInputBorder(),
             ),
             onSubmitted: (val) {
               if (val == correctPassword) {
@@ -134,7 +136,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () {
@@ -142,10 +144,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Navigator.pop(ctx);
                   setState(() => _isUnlocked = true);
                 } else {
-                  AppToast.show(ctx, 'كلمة المرور غير صحيحة', type: ToastType.error);
+                  AppToast.show(ctx, tr('كلمة المرور غير صحيحة'), type: ToastType.error);
                 }
               },
-              child: const Text('دخول'),
+              child:  Text(tr('دخول')),
             ),
           ],
         ),
@@ -163,30 +165,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('🔑 تغيير كلمة مرور الإعدادات'),
+          title:  Text(tr('🔑 تغيير كلمة مرور الإعدادات')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: controller,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'كلمة المرور الجديدة (اتركها فارغة لإلغاء الحماية)',
-                  border: OutlineInputBorder(),
+                decoration:  InputDecoration(
+                  labelText: tr('كلمة المرور الجديدة (اتركها فارغة لإلغاء الحماية)'),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'اتركها فارغة لإلغاء حماية كلمة المرور بالكامل',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+               Text(
+                tr('اتركها فارغة لإلغاء حماية كلمة المرور بالكامل'),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, controller.text),
-              child: const Text('حفظ'),
+              child:  Text(tr('حفظ')),
             ),
           ],
         ),
@@ -195,7 +197,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (result != null) {
       await settingsRepo.saveSetting('settings_access_password', result);
       if (mounted) {
-        AppToast.show(context, result.isEmpty ? 'تم إلغاء حماية كلمة المرور' : 'تم تغيير كلمة المرور بنجاح', type: ToastType.success);
+        AppToast.show(context, result.isEmpty ? tr('تم إلغاء حماية كلمة المرور') : tr('تم تغيير كلمة المرور بنجاح'), type: ToastType.success);
       }
     }
   }
@@ -209,9 +211,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final result = await showDialog<String?>(
       context: context,
       builder: (ctx) => Directionality(
-        textDirection: ui.TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: AlertDialog(
-          title: Text('🔑 كلمة مرور $title'),
+          title: Text(tr('🔑 كلمة مرور {title}', {'title': title})),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -219,18 +221,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 controller: controller,
                 autofocus: true,
                 decoration: InputDecoration(
-                  labelText: 'كلمة المرور الجديدة لـ $title',
+                  labelText: tr('كلمة المرور الجديدة لـ {title}', {'title': title}),
                   border: const OutlineInputBorder(),
-                  helperText: 'اتركها فارغة لإلغاء الحماية عن هذا القسم',
+                  helperText: tr('اتركها فارغة لإلغاء الحماية عن هذا القسم'),
                 ),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, controller.text),
-              child: const Text('حفظ'),
+              child:  Text(tr('حفظ')),
             ),
           ],
         ),
@@ -241,8 +243,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await settingsRepo.saveSetting(key, result);
       if (mounted) {
         AppToast.show(
-          context, 
-          result.isEmpty ? 'تم إلغاء الحماية عن $title' : 'تم حفظ كلمة مرور $title بنجاح', 
+          context,
+          result.isEmpty ? tr('تم إلغاء الحماية عن {title}', {'title': title}) : tr('تم حفظ كلمة مرور {title} بنجاح', {'title': title}),
           type: ToastType.success
         );
       }
@@ -262,7 +264,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               const Icon(Icons.lock, size: 64, color: Colors.grey),
               const SizedBox(height: 16),
-              const Text('الإعدادات محمية بكلمة مرور'),
+               Text(tr('الإعدادات محمية بكلمة مرور')),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () async {
@@ -270,7 +272,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   final pw = await settingsRepo.getSetting('settings_access_password');
                   if (pw != null && pw.isNotEmpty && mounted) _showPasswordDialog(pw);
                 },
-                child: const Text('إدخال كلمة المرور'),
+                child:  Text(tr('إدخال كلمة المرور')),
               ),
             ],
           ),
@@ -294,12 +296,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (user != null) {
         ref
             .read(activityLoggerProvider)
-            .logNavigation(user.id, user.displayName, 'الإعدادات (Settings)');
+            .logNavigation(user.id, user.displayName, tr('الإعدادات (Settings)'));
       }
     });
 
     return Directionality(
-      textDirection: ui.TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Scaffold(
         backgroundColor: AppColors.surface,
         body: Padding(
@@ -308,15 +310,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              const Row(
+               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     PhosphorIconsBold.gear,
                     size: 32,
                     color: AppColors.primary,
                   ),
-                  SizedBox(width: 12),
-                  Text('الإعدادات', style: AppTypography.h1),
+                  const SizedBox(width: 12),
+                  Text(tr('الإعدادات'), style: AppTypography.h1),
                 ],
               ),
               const SizedBox(height: 24),
@@ -325,13 +327,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   children: [
                     // ═══ 1. النظام والمظهر ═══
                     _buildSettingsCard(
-                      title: 'إعدادات النظام والمظهر',
+                      title: tr('إعدادات النظام والمظهر'),
                       children: [
                         buildCompanyInfoTileGuarded(
                           onOpen: () => showCompanyInfoDialog(context),
                         ),
                         const _IndustryModeToggle(),
                         const _CurrencySelector(),
+                         const UserLanguageSelector(),
                         ListTile(
                           leading: Icon(
                             themeMode == ThemeMode.dark
@@ -345,7 +348,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 ? Colors.orange
                                 : AppColors.primary,
                           ),
-                          title: const Text('مظهر التطبيق'),
+                          title:  Text(tr('مظهر التطبيق')),
                           subtitle: Text(_getThemeModeLabel(themeMode)),
                           trailing: const Icon(PhosphorIconsBold.caretLeft),
                           onTap: () =>
@@ -369,9 +372,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             PhosphorIconsBold.shield,
                             color: AppColors.primary,
                           ),
-                          title: const Text('أدوات صيانة المسؤول'),
-                          subtitle: const Text(
-                            'حصر بيانات الفروع، تشخيص القيود، إصلاح حسابات الأطراف، إعادة ترحيل القيود',
+                          title:  Text(tr('أدوات صيانة المسؤول')),
+                          subtitle:  Text(
+                            tr('حصر بيانات الفروع، تشخيص القيود، إصلاح حسابات الأطراف، إعادة ترحيل القيود'),
                           ),
                           trailing: const Icon(PhosphorIconsBold.caretLeft),
                           onTap: () => showBranchScopeAdminDialog(context),
@@ -396,7 +399,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               PhosphorIconsBold.arrowsCounterClockwise,
                               color: AppColors.primary,
                             ),
-                            title: const Text('تدقيق مزامنة المرآة'),
+                            title:  Text(tr('تدقيق مزامنة المرآة')),
                             subtitle: const Text(
                               'مقارنة البيانات الأساسية محلياً مع السيرفر + '
                               'إعادة المزامنة الكاملة عند الحاجة',
@@ -414,7 +417,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               PhosphorIconsBold.magnifyingGlass,
                               color: AppColors.warning,
                             ),
-                            title: const Text('تدقيق ازدواج شيكات القبض'),
+                            title:  Text(tr('تدقيق ازدواج شيكات القبض')),
                             subtitle: const Text(
                               'سرد العملاء الذين تأثرت أرصدتهم بازدواج تسجيل '
                               'سندات قبض الشيكات قبل الإصلاح',
@@ -426,28 +429,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ),
                         const Divider(height: 1),
                         // ── Network/Sync Settings (Client ↔ Server) ──
-                        const ExpansionTile(
-                          leading: Icon(
+                         ExpansionTile(
+                          leading: const Icon(
                             PhosphorIconsBold.wifiHigh,
                             color: AppColors.success,
                           ),
-                          title: Text('إعدادات الربط بين الفروع والسيرفر'),
+                          title: Text(tr('إعدادات الربط بين الفروع والسيرفر')),
                           subtitle: Text(
-                            'ربط العميل بالسيرفر ومزامنة البيانات',
+                            tr('ربط العميل بالسيرفر ومزامنة البيانات'),
                           ),
-                          children: [_NetworkModeSettings()],
+                          children: [const _NetworkModeSettings()],
                         ),
                         // Feature 031 — per-device on-screen touch keyboard.
-                        const ExpansionTile(
-                          leading: Icon(
+                         ExpansionTile(
+                          leading: const Icon(
                             PhosphorIconsBold.handTap,
                             color: AppColors.primary,
                           ),
-                          title: Text('نمط الإدخال (لوحة المفاتيح اللمسية)'),
+                          title: Text(tr('نمط الإدخال (لوحة المفاتيح اللمسية)')),
                           subtitle: Text(
-                            'تفعيل لوحة المفاتيح على الشاشة لأجهزة POS واللمس',
+                            tr('تفعيل لوحة المفاتيح على الشاشة لأجهزة POS واللمس'),
                           ),
-                          children: [_TouchInputSettings()],
+                          children: [const _TouchInputSettings()],
                         ),
                         const _ForceSyncPanel(),
                       ],
@@ -456,20 +459,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                     // ═══ 2. الأجهزة والطباعة ═══
                     _buildSettingsCard(
-                      title: 'الأجهزة والطباعة',
+                      title: tr('الأجهزة والطباعة'),
                       children: [
                         PermissionGuard(
                           permission: PermissionCodes.settingsPrinter,
                           allowManagerOverride: true,
-                          actionName: 'إعدادات الأجهزة',
+                          actionName: tr('إعدادات الأجهزة'),
                           child: ListTile(
                             leading: const Icon(
                               PhosphorIconsBold.printer,
                               color: AppColors.info,
                             ),
-                            title: const Text('إعدادات الأجهزة'),
-                            subtitle: const Text(
-                              'ماسح الباركود، الطابعة الحرارية، والميزان',
+                            title:  Text(tr('إعدادات الأجهزة')),
+                            subtitle:  Text(
+                              tr('ماسح الباركود، الطابعة الحرارية، والميزان'),
                             ),
                             trailing: const Icon(PhosphorIconsBold.caretLeft),
                             onTap: () => showHardwareSettingsDialog(context),
@@ -478,14 +481,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         PermissionGuard(
                           permission: PermissionCodes.settingsPrinter,
                           allowManagerOverride: true,
-                          actionName: 'إدارة الطابعات',
+                          actionName: tr('إدارة الطابعات'),
                           child: ListTile(
                             leading: const Icon(
                               PhosphorIconsBold.printer,
                               color: AppColors.secondary,
                             ),
-                            title: const Text('إدارة الطابعات'),
-                            subtitle: const Text('طابعات أوامر الشغل للأقسام'),
+                            title:  Text(tr('إدارة الطابعات')),
+                            subtitle:  Text(tr('طابعات أوامر الشغل للأقسام')),
                             trailing: const Icon(PhosphorIconsBold.caretLeft),
                             onTap: () => Navigator.push(
                               context,
@@ -500,15 +503,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         PermissionGuard(
                           permission: PermissionCodes.settingsPrinter,
                           allowManagerOverride: true,
-                          actionName: 'نقاط البيع',
+                          actionName: tr('نقاط البيع'),
                           child: ListTile(
                             leading: const Icon(
                               PhosphorIconsBold.cashRegister,
                               color: AppColors.primary,
                             ),
-                            title: const Text('نقاط البيع'),
-                            subtitle: const Text(
-                                'إدارة الماكينات + سياسة نقص الخامات لكل ماكينة'),
+                            title:  Text(tr('نقاط البيع')),
+                            subtitle:  Text(
+                                tr('إدارة الماكينات + سياسة نقص الخامات لكل ماكينة')),
                             trailing: const Icon(PhosphorIconsBold.caretLeft),
                             onTap: () => Navigator.push(
                               context,
@@ -523,9 +526,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             PhosphorIconsBold.paintBrush,
                             color: AppColors.info,
                           ),
-                          title: const Text('مكتبة النماذج'),
+                          title:  Text(tr('مكتبة النماذج')),
                           subtitle:
-                              const Text('استعراضُ قوالب الطباعة وربطُها بالمستندات'),
+                               Text(tr('استعراضُ قوالب الطباعة وربطُها بالمستندات')),
                           trailing: const Icon(PhosphorIconsBold.caretLeft),
                           onTap: () => Navigator.push(
                             context,
@@ -540,9 +543,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             PhosphorIconsBold.gitFork,
                             color: AppColors.info,
                           ),
-                          title: const Text('حسم القوالب'),
-                          subtitle: const Text(
-                              'أيُّ مستندٍ يخرج بأيِّ قالبٍ — وسلسلةُ السقوط'),
+                          title:  Text(tr('حسم القوالب')),
+                          subtitle:  Text(
+                              tr('أيُّ مستندٍ يخرج بأيِّ قالبٍ — وسلسلةُ السقوط')),
                           trailing: const Icon(PhosphorIconsBold.caretLeft),
                           onTap: () => Navigator.push(
                             context,
@@ -561,7 +564,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                     // ═══ 3. البيع السريع ═══
                     _buildSettingsCard(
-                      title: 'إعدادات البيع السريع',
+                      title: tr('إعدادات البيع السريع'),
                       children: [
                         buildPosSettingsTileGuarded(
                           onOpen: () => showPosSettingsDialog(context),
@@ -576,21 +579,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     // users (would cause ID collisions) or edit permissions
                     // (they are pulled from the server on every sync).
                     _buildSettingsCard(
-                      title: 'المستخدمين والأمان',
+                      title: tr('المستخدمين والأمان'),
                       children: [
                         if (!NetworkService.instance.isClient) ...[
                           PermissionGuard(
                             permission: PermissionCodes.usersManage,
                             allowManagerOverride: true,
-                            actionName: 'إدارة المستخدمين',
+                            actionName: tr('إدارة المستخدمين'),
                             child: ListTile(
                               leading: const Icon(
                                 PhosphorIconsBold.usersThree,
                                 color: AppColors.primary,
                               ),
-                              title: const Text('إدارة المستخدمين'),
-                              subtitle: const Text(
-                                'إضافة مستخدمين وتغيير كلمات المرور',
+                              title:  Text(tr('إدارة المستخدمين')),
+                              subtitle:  Text(
+                                tr('إضافة مستخدمين وتغيير كلمات المرور'),
                               ),
                               trailing: const Icon(PhosphorIconsBold.caretLeft),
                               onTap: () => Navigator.of(context).push(
@@ -601,15 +604,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           PermissionGuard(
                             permission: PermissionCodes.rolesManage,
                             allowManagerOverride: true,
-                            actionName: 'إدارة صلاحيات الأدوار',
+                            actionName: tr('إدارة صلاحيات الأدوار'),
                             child: ListTile(
                               leading: const Icon(
                                 PhosphorIconsBold.shieldPlus,
                                 color: AppColors.warning,
                               ),
-                              title: const Text('إدارة صلاحيات الأدوار'),
-                              subtitle: const Text(
-                                'تحديد صلاحيات كل دور بشكل تفصيلي',
+                              title:  Text(tr('إدارة صلاحيات الأدوار')),
+                              subtitle:  Text(
+                                tr('تحديد صلاحيات كل دور بشكل تفصيلي'),
                               ),
                               trailing: const Icon(PhosphorIconsBold.caretLeft),
                               onTap: () =>
@@ -623,21 +626,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           PermissionGuard(
                             permission: PermissionCodes.rolesManage,
                             allowManagerOverride: true,
-                            actionName: 'فحص الصلاحيات على السيرفر',
+                            actionName: tr('فحص الصلاحيات على السيرفر'),
                             child: _ServerPermsToggleTile(),
                           ),
                           const Divider(height: 1),
                         ] else
                           // Client mode — show an informational tile instead
-                          const ListTile(
-                            leading: Icon(
+                           ListTile(
+                            leading: const Icon(
                               PhosphorIconsBold.usersThree,
                               color: AppColors.info,
                             ),
-                            title: Text('إدارة المستخدمين والصلاحيات'),
+                            title: Text(tr('إدارة المستخدمين والصلاحيات')),
                             subtitle: Text(
-                              'تتم إدارتها من السيرفر — وضع العميل للقراءة فقط',
-                              style: TextStyle(fontSize: 12),
+                              tr('تتم إدارتها من السيرفر — وضع العميل للقراءة فقط'),
+                              style: const TextStyle(fontSize: 12),
                             ),
                             enabled: false,
                           ),
@@ -648,8 +651,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             PhosphorIconsBold.lockKey,
                             color: AppColors.error,
                           ),
-                          title: const Text('كلمة مرور الإعدادات'),
-                          subtitle: const Text('حماية الإعدادات بكلمة مرور'),
+                          title:  Text(tr('كلمة مرور الإعدادات')),
+                          subtitle:  Text(tr('حماية الإعدادات بكلمة مرور')),
                           trailing: const Icon(PhosphorIconsBold.caretLeft),
                           onTap: _showChangePasswordDialog,
                         ),
@@ -661,33 +664,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     // Hidden for basic supermarket — only relevant for editions with multiple sections
                     if (features.kitchenEnabled || features.hrEnabled) ...[
                       _buildSettingsCard(
-                        title: 'حماية الأقسام (كلمات مرور بديلة)',
+                        title: tr('حماية الأقسام (كلمات مرور بديلة)'),
                         children: [
                           ListTile(
                             leading: const Icon(PhosphorIconsBold.archive, color: AppColors.info),
-                            title: const Text('كلمة مرور المخازن والمخزون'),
-                            onTap: () => _showSectionPasswordDialog('inventory_access_password', 'المخازن والمخزون'),
+                            title:  Text(tr('كلمة مرور المخازن والمخزون')),
+                            onTap: () => _showSectionPasswordDialog('inventory_access_password', tr('المخازن والمخزون')),
                           ),
                           ListTile(
                             leading: const Icon(PhosphorIconsBold.bank, color: AppColors.success),
-                            title: const Text('كلمة مرور الحسابات والمالية'),
-                            onTap: () => _showSectionPasswordDialog('accounting_access_password', 'الحسابات والمالية'),
+                            title:  Text(tr('كلمة مرور الحسابات والمالية')),
+                            onTap: () => _showSectionPasswordDialog('accounting_access_password', tr('الحسابات والمالية')),
                           ),
                           ListTile(
                             leading: const Icon(PhosphorIconsBold.shoppingBagOpen, color: AppColors.primary),
-                            title: const Text('كلمة مرور المشلريات'),
-                            onTap: () => _showSectionPasswordDialog('purchases_access_password', 'المشتريات'),
+                            title:  Text(tr('كلمة مرور المشلريات')),
+                            onTap: () => _showSectionPasswordDialog('purchases_access_password', tr('المشتريات')),
                           ),
                           ListTile(
                             leading: const Icon(PhosphorIconsBold.chartPieSlice, color: AppColors.warning),
-                            title: const Text('كلمة مرور التقارير'),
-                            onTap: () => _showSectionPasswordDialog('reports_access_password', 'التقارير'),
+                            title:  Text(tr('كلمة مرور التقارير')),
+                            onTap: () => _showSectionPasswordDialog('reports_access_password', tr('التقارير')),
                           ),
                           if (features.hrEnabled)
                             ListTile(
                               leading: const Icon(PhosphorIconsBold.users, color: AppColors.secondary),
-                              title: const Text('كلمة مرور شؤون الموظفين'),
-                              onTap: () => _showSectionPasswordDialog('hr_access_password', 'شؤون الموظفين'),
+                              title:  Text(tr('كلمة مرور شؤون الموظفين')),
+                              onTap: () => _showSectionPasswordDialog('hr_access_password', tr('شؤون الموظفين')),
                             ),
                         ],
                       ),
@@ -698,14 +701,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     PermissionGuard(
                       permission: PermissionCodes.settingsBackup,
                       allowManagerOverride: true,
-                      actionName: 'إعدادات المحاسبة',
+                      actionName: tr('إعدادات المحاسبة'),
                       child: _buildSettingsCard(
-                        title: 'الإعدادات المالية والمحاسبية',
+                        title: tr('الإعدادات المالية والمحاسبية'),
                         children: [
                           ListTile(
                             leading: const Icon(PhosphorIconsBold.bookOpen, color: AppColors.primary),
-                            title: const Text('ربط الحسابات التلقائي'),
-                            subtitle: const Text('تحديد الحسابات الدفترية للعمليات المؤتمتة (متقدم)'),
+                            title:  Text(tr('ربط الحسابات التلقائي')),
+                            subtitle:  Text(tr('تحديد الحسابات الدفترية للعمليات المؤتمتة (متقدم)')),
                             trailing: const Icon(PhosphorIconsBold.caretLeft),
                             onTap: () => Navigator.push(
                               context,
@@ -744,7 +747,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     // موظفين — نفسُ نمطِ التبويب في `:523` و`:653`.
                     if (features.hrEnabled) ...[
                       _buildSettingsCard(
-                        title: 'شؤون الموظفين',
+                        title: tr('شؤون الموظفين'),
                         children: [
                           buildWorkHolidaysTileGuarded(
                             onOpen: () => Navigator.push(
@@ -762,9 +765,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     PermissionGuard(
                       permission: PermissionCodes.settingsBackup,
                       allowManagerOverride: true,
-                      actionName: 'إدارة البيانات',
+                      actionName: tr('إدارة البيانات'),
                       child: _buildSettingsCard(
-                        title: 'إدارة البيانات',
+                        title: tr('إدارة البيانات'),
                         children: [const BackupRestoreWidget()],
                       ),
                     ),
@@ -772,21 +775,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                     // ═══ 7. التكاملات والخدمات ═══
                     _buildSettingsCard(
-                      title: 'التكاملات والخدمات',
+                      title: tr('التكاملات والخدمات'),
                       children: [
                         if (features.deliveryEnabled) ...[
                           const _DeliveryToggle(),
                           PermissionGuard(
                             permission: PermissionCodes.deliveryManage,
                             allowManagerOverride: true,
-                            actionName: 'إدارة التوصيل',
+                            actionName: tr('إدارة التوصيل'),
                             child: ListTile(
                               leading: const Icon(
                                 PhosphorIconsBold.moped,
                                 color: AppColors.success,
                               ),
-                              title: const Text('إدارة التوصيل'),
-                              subtitle: const Text('شركات التوصيل والمناديب'),
+                              title:  Text(tr('إدارة التوصيل')),
+                              subtitle:  Text(tr('شركات التوصيل والمناديب')),
                               trailing: const Icon(PhosphorIconsBold.caretLeft),
                               onTap: () => Navigator.push(
                                 context,
@@ -802,17 +805,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         const _CFDSettingsCard(),
                         if (features.kitchenEnabled) ...[
                           const Divider(height: 1),
-                          const PermissionGuard(
+                           PermissionGuard(
                             permission: PermissionCodes.kdsSettings,
                             allowManagerOverride: true,
-                            actionName: 'إعدادات شاشة المطبخ',
-                            child: KdsSettingsWidget(),
+                            actionName: tr('إعدادات شاشة المطبخ'),
+                            child: const KdsSettingsWidget(),
                           ),
                           const Divider(height: 1),
                           PermissionGuard(
                             permission: PermissionCodes.modifiersManage,
                             allowManagerOverride: true,
-                            actionName: 'إدارة الإضافات والمعدلات',
+                            actionName: tr('إدارة الإضافات والمعدلات'),
                             onGranted: () => Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -824,9 +827,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 PhosphorIconsBold.forkKnife,
                                 color: AppColors.warning,
                               ),
-                              title: const Text('إدارة الإضافات والمعدلات'),
-                              subtitle: const Text(
-                                'مجموعات الإضافات والخيارات للأصناف (صوصات، أحجام..)',
+                              title:  Text(tr('إدارة الإضافات والمعدلات')),
+                              subtitle:  Text(
+                                tr('مجموعات الإضافات والخيارات للأصناف (صوصات، أحجام..)'),
                               ),
                               trailing: const Icon(PhosphorIconsBold.caretLeft),
                               onTap: () => Navigator.push(
@@ -904,11 +907,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _getThemeModeLabel(ThemeMode mode) {
     switch (mode) {
       case ThemeMode.system:
-        return 'تلقائي (حسب إعدادات النظام)';
+        return tr('تلقائي (حسب إعدادات النظام)');
       case ThemeMode.light:
-        return 'الوضع النهاري';
+        return tr('الوضع النهاري');
       case ThemeMode.dark:
-        return 'الوضع الليلي';
+        return tr('الوضع الليلي');
     }
   }
 
@@ -920,15 +923,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => Directionality(
-        textDirection: ui.TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: SimpleDialog(
-          title: const Text('اختر مظهر التطبيق'),
+          title:  Text(tr('اختر مظهر التطبيق')),
           children: [
             _buildThemeOption(
               ctx,
               ref,
               ThemeMode.system,
-              'تلقائي (النظام)',
+              tr('تلقائي (النظام)'),
               PhosphorIconsBold.monitor,
               current,
             ),
@@ -936,7 +939,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ctx,
               ref,
               ThemeMode.light,
-              'الوضع النهاري',
+              tr('الوضع النهاري'),
               PhosphorIconsBold.sun,
               current,
             ),
@@ -944,7 +947,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ctx,
               ref,
               ThemeMode.dark,
-              'الوضع الليلي',
+              tr('الوضع الليلي'),
               PhosphorIconsBold.moon,
               current,
             ),
@@ -983,7 +986,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           logger.logSettingsChange(
             auth.user?.id ?? 0,
             auth.user?.displayName ?? '',
-            'مظهر التطبيق',
+            tr('مظهر التطبيق'),
             newValue: label,
           );
         } catch (e) {
@@ -1052,23 +1055,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 color: AppColors.primary,
               ),
             ),
-            const Text(
-              'نظام الكاشير المتكامل',
-              style: TextStyle(color: AppColors.textMuted),
+             Text(
+              tr('نظام الكاشير المتكامل'),
+              style: const TextStyle(color: AppColors.textMuted),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'الإصدار 1.0.0',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+             Text(
+              tr('الإصدار 1.0.0'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
             // Vendor block — values from `Brand`. A brand that declares no
             // vendor info renders nothing here; printing another product's
             // support contacts is worse than printing none.
             if (Brand.hasVendorInfo) ...[
               const Divider(height: 24),
-              const Text(
-                'تطوير: ${Brand.vendorName}',
-                style: TextStyle(fontWeight: FontWeight.bold),
+               Text(
+                tr('تطوير: {p0}', {'p0': Brand.vendorName}),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               // Contact Links
@@ -1158,13 +1161,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             color: isActivated ? AppColors.success : AppColors.warning,
           ),
           title: Text(
-            isActivated ? 'النسخة مفعلة بالكامل' : 'نسخة تجريبية محدودة',
+            isActivated ? tr('النسخة مفعلة بالكامل') : tr('نسخة تجريبية محدودة'),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           subtitle: Text(
             isActivated
-                ? 'لديك صلاحية الوصول لكافة مميزات النظام بدون قيود.'
-                : 'هذه النسخة محدودة بـ 50 صنف/عميل. قم بالتفعيل لإزالة القيود.',
+                ? tr('لديك صلاحية الوصول لكافة مميزات النظام بدون قيود.')
+                : tr('هذه النسخة محدودة بـ 50 صنف/عميل. قم بالتفعيل لإزالة القيود.'),
             style: const TextStyle(fontSize: 12),
           ),
           trailing: isActivated
@@ -1175,9 +1178,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
       loading: () =>
-          const Card(child: ListTile(title: Text('جاري التحقق من الترخيص...'))),
+           Card(child: ListTile(title: Text(tr('جاري التحقق من الترخيص...')))),
       error: (_, _) =>
-          const Card(child: ListTile(title: Text('خطأ في التحقق من الترخيص'))),
+           Card(child: ListTile(title: Text(tr('خطأ في التحقق من الترخيص')))),
     );
   }
 
@@ -1193,9 +1196,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           PhosphorIconsBold.shieldStar,
           color: AppColors.primary,
         ),
-        title: const Text(
-          'أدوات المطوّر',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title:  Text(
+          tr('أدوات المطوّر'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: const Text(
           'تغيير ملف النشاط، نمط التشغيل، الميزات وكلمة مرور المطوّر '
@@ -1225,13 +1228,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           PhosphorIconsBold.clipboard,
           color: AppColors.info,
         ),
-        title: const Text(
-          'نسخ اللوج التشخيصى',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title:  Text(
+          tr('نسخ اللوج التشخيصى'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: const Text(
-          'انسخ آخر 200 سطر من سجل التشخيص لإرساله للمدير عند حدوث مشكلة.',
-          style: TextStyle(fontSize: 12),
+        subtitle:  Text(
+          tr('انسخ آخر 200 سطر من سجل التشخيص لإرساله للمدير عند حدوث مشكلة.'),
+          style: const TextStyle(fontSize: 12),
         ),
         trailing: const Icon(PhosphorIconsBold.copy),
         onTap: () async {
@@ -1266,7 +1269,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               if (context.mounted) {
                 AppToast.show(
                   context,
-                  'لا توجد ملفات لوج بعد',
+                  tr('لا توجد ملفات لوج بعد'),
                   type: ToastType.warning,
                 );
               }
@@ -1276,7 +1279,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             if (context.mounted) {
               AppToast.show(
                 context,
-                'تم نسخ اللوج إلى الحافظة — الصقه فى الواتساب أو الإيميل',
+                tr('تم نسخ اللوج إلى الحافظة — الصقه فى الواتساب أو الإيميل'),
                 type: ToastType.success,
               );
             }
@@ -1284,7 +1287,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             if (context.mounted) {
               AppToast.show(
                 context,
-                'تعذّر قراءة اللوج: $e',
+                tr('تعذّر قراءة اللوج: {e}', {'e': e}),
                 type: ToastType.error,
               );
             }
@@ -1353,8 +1356,8 @@ class _EInvoiceVisibilityTogglesState extends ConsumerState<_EInvoiceVisibilityT
       children: [
         SwitchListTile(
           secondary: const Text('🇪🇬', style: TextStyle(fontSize: 22)),
-          title: const Text('إظهار الفوترة المصرية (ETA)'),
-          subtitle: const Text('منظومة ETA — مصلحة الضرائب المصرية'),
+          title:  Text(tr('إظهار الفوترة المصرية (ETA)')),
+          subtitle:  Text(tr('منظومة ETA — مصلحة الضرائب المصرية')),
           value: _showEta,
           onChanged: (v) async {
             setState(() => _showEta = v);
@@ -1363,8 +1366,8 @@ class _EInvoiceVisibilityTogglesState extends ConsumerState<_EInvoiceVisibilityT
         ),
         SwitchListTile(
           secondary: const Text('🇯🇴', style: TextStyle(fontSize: 22)),
-          title: const Text('إظهار الفوترة الأردنية (JOFOTARA)'),
-          subtitle: const Text('منظومة JOFOTARA — دائرة ضريبة الدخل'),
+          title:  Text(tr('إظهار الفوترة الأردنية (JOFOTARA)')),
+          subtitle:  Text(tr('منظومة JOFOTARA — دائرة ضريبة الدخل')),
           value: _showJofotara,
           onChanged: (v) async {
             setState(() => _showJofotara = v);
@@ -1401,10 +1404,10 @@ class _ServerPermsToggleTileState
         PhosphorIconsBold.shieldCheck,
         color: AppColors.success,
       ),
-      title: const Text('فحص الصلاحيات على السيرفر'),
-      subtitle: const Text(
-        'مُفعّل دائماً — اضغط لفحص الأدوار التي ينقصها منح',
-        style: TextStyle(fontSize: 12),
+      title:  Text(tr('فحص الصلاحيات على السيرفر')),
+      subtitle:  Text(
+        tr('مُفعّل دائماً — اضغط لفحص الأدوار التي ينقصها منح'),
+        style: const TextStyle(fontSize: 12),
       ),
       trailing: const Icon(PhosphorIconsBold.caretLeft, size: 18),
       onTap: _openDialog,

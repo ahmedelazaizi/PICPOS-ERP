@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -59,14 +60,14 @@ class _KdsStatsScreenState extends ConsumerState<KdsStatsScreen> {
         backgroundColor: AppColors.primaryDark,
         appBar: AppBar(
           backgroundColor: AppColors.secondary,
-          title: const Text('📊 إحصائيات المطبخ',
-              style: TextStyle(color: Colors.white)),
+          title:  Text(tr('📊 إحصائيات المطبخ'),
+              style: const TextStyle(color: Colors.white)),
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
             IconButton(
               onPressed: _loadStats,
               icon: const Icon(PhosphorIconsBold.arrowClockwise),
-              tooltip: 'تحديث',
+              tooltip: tr('تحديث'),
             ),
           ],
         ),
@@ -108,24 +109,24 @@ class _KdsStatsScreenState extends ConsumerState<KdsStatsScreen> {
 
     return Row(
       children: [
-        _buildStatCard('إجمالي الطلبات', '$total', PhosphorIconsBold.listChecks,
+        _buildStatCard(tr('إجمالي الطلبات'), '$total', PhosphorIconsBold.listChecks,
             AppColors.primary),
         const SizedBox(width: 10),
         _buildStatCard(
-            'معلق', '$pending', PhosphorIconsBold.hourglass, AppColors.error),
+            tr('معلق'), '$pending', PhosphorIconsBold.hourglass, AppColors.error),
         const SizedBox(width: 10),
-        _buildStatCard('قيد التحضير', '$preparing', PhosphorIconsBold.fire,
+        _buildStatCard(tr('قيد التحضير'), '$preparing', PhosphorIconsBold.fire,
             AppColors.warning),
         const SizedBox(width: 10),
-        _buildStatCard('جاهز', '$ready', PhosphorIconsBold.checkCircle,
+        _buildStatCard(tr('جاهز'), '$ready', PhosphorIconsBold.checkCircle,
             AppColors.success),
         const SizedBox(width: 10),
-        _buildStatCard('تم التقديم', '$served', PhosphorIconsBold.forkKnife,
+        _buildStatCard(tr('تم التقديم'), '$served', PhosphorIconsBold.forkKnife,
             AppColors.info),
         const SizedBox(width: 10),
         _buildStatCard(
-            'متوسط التحضير',
-            '${_avgPrepTime.toStringAsFixed(1)} د',
+            tr('متوسط التحضير'),
+            tr('{p0} د', {'p0': _avgPrepTime.toStringAsFixed(1)}),
             PhosphorIconsBold.timer,
             Colors.purple),
       ],
@@ -163,13 +164,13 @@ class _KdsStatsScreenState extends ConsumerState<KdsStatsScreen> {
   Widget _buildStationBreakdown() {
     if (_stationStats.isEmpty) {
       return _buildCard(
-        'توزيع المحطات',
+        tr('توزيع المحطات'),
         PhosphorIconsBold.mapPinArea,
-        const Center(
+         Center(
             child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('لا توجد طلبات اليوم',
-                    style: TextStyle(color: Colors.white38)))),
+                padding: const EdgeInsets.all(24),
+                child: Text(tr('لا توجد طلبات اليوم'),
+                    style: const TextStyle(color: Colors.white38)))),
       );
     }
 
@@ -184,7 +185,7 @@ class _KdsStatsScreenState extends ConsumerState<KdsStatsScreen> {
     ];
 
     return _buildCard(
-      'توزيع المحطات',
+      tr('توزيع المحطات'),
       PhosphorIconsBold.mapPinArea,
       Column(
         children: _stationStats.entries.toList().asMap().entries.map((entry) {
@@ -237,13 +238,13 @@ class _KdsStatsScreenState extends ConsumerState<KdsStatsScreen> {
   Widget _buildPeakHoursCard() {
     if (_hourlyStats.isEmpty) {
       return _buildCard(
-        'ساعات الذروة',
+        tr('ساعات الذروة'),
         PhosphorIconsBold.chartBar,
-        const Center(
+         Center(
             child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('لا توجد بيانات',
-                    style: TextStyle(color: Colors.white38)))),
+                padding: const EdgeInsets.all(24),
+                child: Text(tr('لا توجد بيانات'),
+                    style: const TextStyle(color: Colors.white38)))),
       );
     }
 
@@ -254,7 +255,7 @@ class _KdsStatsScreenState extends ConsumerState<KdsStatsScreen> {
         List.generate(18, (i) => i + 6).where((h) => h <= 23).toList();
 
     return _buildCard(
-      'ساعات الذروة',
+      tr('ساعات الذروة'),
       PhosphorIconsBold.chartBar,
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -313,18 +314,18 @@ class _KdsStatsScreenState extends ConsumerState<KdsStatsScreen> {
   Widget _buildSlowestItemsCard() {
     if (_slowestItems.isEmpty) {
       return _buildCard(
-        'أبطأ الأصناف تحضيراً',
+        tr('أبطأ الأصناف تحضيراً'),
         PhosphorIconsBold.hourglass,
-        const Center(
+         Center(
             child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('لا توجد بيانات كافية',
-                    style: TextStyle(color: Colors.white38)))),
+                padding: const EdgeInsets.all(24),
+                child: Text(tr('لا توجد بيانات كافية'),
+                    style: const TextStyle(color: Colors.white38)))),
       );
     }
 
     return _buildCard(
-      'أبطأ الأصناف تحضيراً',
+      tr('أبطأ الأصناف تحضيراً'),
       PhosphorIconsBold.hourglass,
       Column(
         children: _slowestItems.asMap().entries.map((entry) {
@@ -347,7 +348,7 @@ class _KdsStatsScreenState extends ConsumerState<KdsStatsScreen> {
             ),
             title: Text(name,
                 style: const TextStyle(color: Colors.white, fontSize: 13)),
-            subtitle: Text('$count طلب',
+            subtitle: Text(tr('{count} طلب', {'count': count}),
                 style: const TextStyle(color: Colors.white38, fontSize: 11)),
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -355,7 +356,7 @@ class _KdsStatsScreenState extends ConsumerState<KdsStatsScreen> {
                 color: AppColors.error.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Text('${avgMin.toStringAsFixed(1)} د',
+              child: Text(tr('{p0} د', {'p0': avgMin.toStringAsFixed(1)}),
                   style: const TextStyle(
                       color: AppColors.error,
                       fontSize: 12,
@@ -400,13 +401,13 @@ class _KdsStatsScreenState extends ConsumerState<KdsStatsScreen> {
   String _stationLabel(String code) {
     switch (code.toLowerCase()) {
       case 'kitchen':
-        return 'المطبخ';
+        return tr('المطبخ');
       case 'bar':
-        return 'البار';
+        return tr('البار');
       case 'dessert':
-        return 'الحلويات';
+        return tr('الحلويات');
       case 'grill':
-        return 'الشواية';
+        return tr('الشواية');
       default:
         return code;
     }

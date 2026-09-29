@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // حوارُ «ورقة تجارية جديدة» بهويّة PicPos — فورك `DLGS.paper` في
 // `PicPos Cheques.dc.html`.
 //
@@ -39,19 +40,19 @@ import '../../../data/providers/providers.dart';
 import '../../picpos_shell/picpos_dialog.dart';
 
 /// نوعُ الورقة كما يكتبه العمودُ `type`.
-const _types = <(String, String, IconData, String)>[
-  ('cheque', 'شيك', PhosphorIconsBold.note, 'له بنك وحساب وتاريخ استحقاق'),
+List<(String, String, IconData, String)> get _types => <(String, String, IconData, String)>[
+  ('cheque', tr('شيك'), PhosphorIconsBold.note, tr('له بنك وحساب وتاريخ استحقاق')),
   (
     'promissory_note',
-    'كمبيالة',
+    tr('كمبيالة'),
     PhosphorIconsBold.scroll,
-    'بلا بنك — التزام موثّق'
+    tr('بلا بنك — التزام موثّق')
   ),
   (
     'bill_of_exchange',
-    'سند لأمر',
+    tr('سند لأمر'),
     PhosphorIconsBold.receipt,
-    'تعهّدٌ بالدفع لأمر المستفيد'
+    tr('تعهّدٌ بالدفع لأمر المستفيد')
   ),
 ];
 
@@ -120,19 +121,19 @@ class _CreatePaperPicposDialogState extends State<_CreatePaperPicposDialog> {
 
   /// ما ينقص الحفظَ — يُعرَض في التذييل بدل ارتدادٍ صامت.
   String? get _blocker {
-    if (_numberCtrl.text.trim().isEmpty) return 'رقمُ الورقة مطلوب';
+    if (_numberCtrl.text.trim().isEmpty) return tr('رقمُ الورقة مطلوب');
     final a = _amount;
-    if (a == null || a <= 0) return 'المبلغُ مطلوبٌ وأكبرُ من صفر';
-    if (_partyId == null) return 'اختر الطرف';
+    if (a == null || a <= 0) return tr('المبلغُ مطلوبٌ وأكبرُ من صفر');
+    if (_partyId == null) return tr('اختر الطرف');
     // ⚠️ الكمبيالةُ بلا بنكٍ عمداً (‏نصُّ التصميم: «بلا بنك — التزام
     //    موثّق»)، فلا يُطلَب لها ما لا تحمله.
     if (_type == 'cheque' && _direction == 'issued' && _bankSafeId == null) {
-      return 'اختر البنكَ المسحوبَ منه';
+      return tr('اختر البنكَ المسحوبَ منه');
     }
     // ⚠️ استحقاقٌ قبل الإصدار يجعل الورقةَ مستحقّةً قبل وجودها، ويقلب
     //    ترتيبَ «جدول الاستحقاق» بلا أن يظهر خطأ.
     if (_due.isBefore(DateTime(_issue.year, _issue.month, _issue.day))) {
-      return 'تاريخُ الاستحقاق قبل الإصدار';
+      return tr('تاريخُ الاستحقاق قبل الإصدار');
     }
     return null;
   }
@@ -173,17 +174,17 @@ class _CreatePaperPicposDialogState extends State<_CreatePaperPicposDialog> {
     final blocker = _blocker;
     final isCheque = _type == 'cheque';
     final partyLabel =
-        _direction == 'received' ? 'المسحوب عليه (العميل)' : 'المستفيد (المورد)';
+        _direction == 'received' ? tr('المسحوب عليه (العميل)') : tr('المستفيد (المورد)');
 
     return PicPosDialog(
       icon: PhosphorIconsBold.note,
-      title: 'ورقة تجارية جديدة',
-      subtitle: 'شيك أو كمبيالة — وارد من عميل أو صادر لمورد',
+      title: tr('ورقة تجارية جديدة'),
+      subtitle: tr('شيك أو كمبيالة — وارد من عميل أو صادر لمورد'),
       width: 880,
       onCancel: () => Navigator.pop(context),
       footerHint: blocker,
       primaryAction: PicPosDialogAction(
-        label: 'حفظ الورقة',
+        label: tr('حفظ الورقة'),
         icon: PhosphorIconsBold.check,
         onPressed: blocker != null
             ? null
@@ -205,18 +206,18 @@ class _CreatePaperPicposDialogState extends State<_CreatePaperPicposDialog> {
                 }),
       ),
       body: [
-        _sectionLabel('النوع والاتجاه'),
+        _sectionLabel(tr('النوع والاتجاه')),
         PicPosDialogRow(
           children: [
             PicPosDialogChoice(
               icon: PhosphorIconsBold.arrowCircleDown,
-              label: 'وارد من عميل',
+              label: tr('وارد من عميل'),
               selected: _direction == 'received',
               onTap: () => setState(() => _direction = 'received'),
             ),
             PicPosDialogChoice(
               icon: PhosphorIconsBold.arrowCircleUp,
-              label: 'صادر لمورد',
+              label: tr('صادر لمورد'),
               selected: _direction == 'issued',
               onTap: () => setState(() => _direction = 'issued'),
             ),
@@ -233,29 +234,29 @@ class _CreatePaperPicposDialogState extends State<_CreatePaperPicposDialog> {
               ),
           ],
         ),
-        _sectionLabel('بيانات الورقة'),
+        _sectionLabel(tr('بيانات الورقة')),
         PicPosDialogRow(
           children: [
             TextField(
               controller: _numberCtrl,
               onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                labelText: 'رقم الورقة *',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('رقم الورقة *'),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.hash, size: 16),
+                prefixIcon: const Icon(PhosphorIconsBold.hash, size: 16),
               ),
             ),
             TextField(
               controller: _amountCtrl,
               keyboardType: TextInputType.number,
               onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                labelText: 'المبلغ *',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('المبلغ *'),
+                border: const OutlineInputBorder(),
                 isDense: true,
                 prefixIcon:
-                    Icon(PhosphorIconsBold.currencyCircleDollar, size: 16),
+                    const Icon(PhosphorIconsBold.currencyCircleDollar, size: 16),
               ),
             ),
           ],
@@ -277,12 +278,12 @@ class _CreatePaperPicposDialogState extends State<_CreatePaperPicposDialog> {
         ),
         PicPosDialogRow(
           children: [
-            _dateField('تاريخ الإصدار', _issue, issue: true),
-            _dateField('تاريخ الاستحقاق', _due, issue: false),
+            _dateField(tr('تاريخ الإصدار'), _issue, issue: true),
+            _dateField(tr('تاريخ الاستحقاق'), _due, issue: false),
           ],
         ),
         if (isCheque) ...[
-          _sectionLabel('بيانات البنك'),
+          _sectionLabel(tr('بيانات البنك')),
           PicPosDialogRow(
             children: [
               // ⚠️ الوارد: اسمُ البنك نصٌّ حرّ — بنكُ العميل ليس خزنةً
@@ -292,22 +293,22 @@ class _CreatePaperPicposDialogState extends State<_CreatePaperPicposDialog> {
                 TextField(
                   controller: _bankCtrl,
                   onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    labelText: 'البنك المسحوب عليه',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('البنك المسحوب عليه'),
+                    border: const OutlineInputBorder(),
                     isDense: true,
-                    prefixIcon: Icon(PhosphorIconsBold.bank, size: 16),
+                    prefixIcon: const Icon(PhosphorIconsBold.bank, size: 16),
                   ),
                 )
               else
                 DropdownButtonFormField<int>(
                   initialValue: _bankSafeId,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'البنك المسحوب منه *',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('البنك المسحوب منه *'),
+                    border: const OutlineInputBorder(),
                     isDense: true,
-                    prefixIcon: Icon(PhosphorIconsBold.bank, size: 16),
+                    prefixIcon: const Icon(PhosphorIconsBold.bank, size: 16),
                   ),
                   items: [
                     for (final s in widget.bankSafes)
@@ -317,11 +318,11 @@ class _CreatePaperPicposDialogState extends State<_CreatePaperPicposDialog> {
                 ),
               TextField(
                 controller: _accountCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'رقم الحساب',
-                  border: OutlineInputBorder(),
+                decoration:  InputDecoration(
+                  labelText: tr('رقم الحساب'),
+                  border: const OutlineInputBorder(),
                   isDense: true,
-                  prefixIcon: Icon(PhosphorIconsBold.creditCard, size: 16),
+                  prefixIcon: const Icon(PhosphorIconsBold.creditCard, size: 16),
                 ),
               ),
             ],
@@ -330,9 +331,9 @@ class _CreatePaperPicposDialogState extends State<_CreatePaperPicposDialog> {
         TextField(
           controller: _notesCtrl,
           maxLines: 2,
-          decoration: const InputDecoration(
-            labelText: 'ملاحظات',
-            border: OutlineInputBorder(),
+          decoration:  InputDecoration(
+            labelText: tr('ملاحظات'),
+            border: const OutlineInputBorder(),
             isDense: true,
           ),
         ),

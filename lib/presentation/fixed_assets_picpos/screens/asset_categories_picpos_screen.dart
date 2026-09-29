@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ «فئات الأصول» — مدخلٌ جانبيٌّ مستقلٌّ بقرار المالك 2026-09-18.
 //
 // ═══ 🔴 ولماذا ليست نسخةً من التبويبة التي خرجت منها ═══
@@ -68,7 +69,7 @@ String _ar(Object n) =>
     '$n'.replaceAllMapped(RegExp(r'\d'), (m) => '٠١٢٣٤٥٦٧٨٩'[int.parse(m[0]!)]);
 
 String _methodLabel(String method) =>
-    method == 'declining_balance' ? 'قسط متناقص' : 'قسط ثابت';
+    method == 'declining_balance' ? tr('قسط متناقص') : tr('قسط ثابت');
 
 final _categoriesProvider = StreamProvider.autoDispose<List<AssetCategory>>(
     (ref) => ref.watch(fixedAssetsRepositoryProvider).watchAssetCategories());
@@ -147,7 +148,7 @@ class _AssetCategoriesPicposScreenState
     return PermissionGuard(
       permission: PermissionCodes.assetsView,
       child: PicPosScreenScaffold(
-        title: 'فئات الأصول',
+        title: tr('فئات الأصول'),
         subtitle: 'الفئة تحدد العمر الافتراضي وطريقة الإهلاك وحسابَي الأصل '
             'والإهلاك',
         icon: PhosphorIconsBold.folders,
@@ -157,32 +158,32 @@ class _AssetCategoriesPicposScreenState
             child: FilledButton.icon(
               onPressed: _startCreate,
               icon: const Icon(PhosphorIconsBold.plus, size: 15),
-              label: const Text('فئة جديدة'),
+              label:  Text(tr('فئة جديدة')),
             ),
           ),
         ],
         subHeader: PicPosKpiRow(
           kpis: [
             PicPosKpi(
-              label: 'الفئات',
+              label: tr('الفئات'),
               value: _ar(cats.length),
               icon: PhosphorIconsBold.folders,
               tint: AppColors.primary,
             ),
             PicPosKpi(
-              label: 'ناقصةُ الربط',
+              label: tr('ناقصةُ الربط'),
               value: _ar(unlinked),
               icon: PhosphorIconsBold.warningCircle,
               tint: unlinked == 0 ? AppColors.success : _err,
             ),
             PicPosKpi(
-              label: 'أصولٌ مصنَّفة',
+              label: tr('أصولٌ مصنَّفة'),
               value: _ar(assets.length),
               icon: PhosphorIconsBold.buildings,
               tint: AppColors.info,
             ),
             PicPosKpi(
-              label: 'فئاتٌ بلا أصول',
+              label: tr('فئاتٌ بلا أصول'),
               value: _ar(cats.where((c) => (countByCat[c.id] ?? 0) == 0).length),
               icon: PhosphorIconsBold.folderOpen,
               tint: AppColors.textMuted,
@@ -219,17 +220,17 @@ class _AssetCategoriesPicposScreenState
     Map<int, String> accountById,
   ) {
     return PicPosDataTable(
-      title: 'فئات الأصول',
-      subtitle: 'الفئة تحدد العمر الافتراضي والطريقة وحسابَي الأصل والإهلاك',
+      title: tr('فئات الأصول'),
+      subtitle: tr('الفئة تحدد العمر الافتراضي والطريقة وحسابَي الأصل والإهلاك'),
       minWidth: 980,
-      emptyLabel: 'لا فئاتِ أصولٍ بعد — ولا يُسجَّل أصلٌ بلا فئة',
-      columns: const [
-        PicPosTableColumn('الفئة', flex: 1.7),
-        PicPosTableColumn('العمر الافتراضي', flex: 1.2),
-        PicPosTableColumn('طريقة الإهلاك', flex: 1.4),
-        PicPosTableColumn('الأصول', align: PicPosCellAlign.end),
-        PicPosTableColumn('حساب الأصل', flex: 1.5),
-        PicPosTableColumn('حساب الإهلاك', flex: 1.5),
+      emptyLabel: tr('لا فئاتِ أصولٍ بعد — ولا يُسجَّل أصلٌ بلا فئة'),
+      columns:  [
+        PicPosTableColumn(tr('الفئة'), flex: 1.7),
+        PicPosTableColumn(tr('العمر الافتراضي'), flex: 1.2),
+        PicPosTableColumn(tr('طريقة الإهلاك'), flex: 1.4),
+        PicPosTableColumn(tr('الأصول'), align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('حساب الأصل'), flex: 1.5),
+        PicPosTableColumn(tr('حساب الإهلاك'), flex: 1.5),
       ],
       rows: [
         for (final c in cats)
@@ -240,12 +241,12 @@ class _AssetCategoriesPicposScreenState
               PicPosTextCell(
                 c.name,
                 icon: PhosphorIconsBold.folders,
-                sub: (countByCat[c.id] ?? 0) == 0 ? 'بلا أصول على الدفاتر' : null,
+                sub: (countByCat[c.id] ?? 0) == 0 ? tr('بلا أصول على الدفاتر') : null,
                 tint: (countByCat[c.id] ?? 0) == 0 ? _idle : AppColors.primary,
               ),
               // ⚠️ بالشهور — والتحويلُ في `depreciation_math` لا هنا.
               PicPosTextCell(
-                  '${_ar(usefulLifeMonths(c.defaultUsefulLife))} شهراً'),
+                  tr('{p0} شهراً', {'p0': _ar(usefulLifeMonths(c.defaultUsefulLife))})),
               PicPosPillCell(
                 _methodLabel(c.defaultDepreciationMethod),
                 c.defaultDepreciationMethod == 'declining_balance'
@@ -253,16 +254,16 @@ class _AssetCategoriesPicposScreenState
                     : AppColors.primary,
               ),
               PicPosTextCell(_ar(countByCat[c.id] ?? 0)),
-              PicPosTextCell(accountById[c.accountId] ?? '— غير مربوط',
+              PicPosTextCell(accountById[c.accountId] ?? tr('— غير مربوط'),
                   tint: c.accountId == null ? _err : null),
               PicPosTextCell(
-                  accountById[c.depreciationAccountId] ?? '— غير مربوط',
+                  accountById[c.depreciationAccountId] ?? tr('— غير مربوط'),
                   tint: c.depreciationAccountId == null ? _err : null),
             ],
           ),
       ],
       totals: [
-        '${_ar(cats.length)} فئات',
+        tr('{p0} فئات', {'p0': _ar(cats.length)}),
         '',
         '',
         _ar(countByCat.values.fold<int>(0, (s, n) => s + n)),
@@ -316,7 +317,7 @@ class _AssetCategoriesPicposScreenState
           depreciationAccountId: v.depreciationAccountId,
         );
         if (!mounted) return;
-        AppToast.show(context, 'تمت إضافة الفئة');
+        AppToast.show(context, tr('تمت إضافة الفئة'));
         _closePanel();
       } else {
         await repo.updateAssetCategoryById(
@@ -328,10 +329,10 @@ class _AssetCategoriesPicposScreenState
           depreciationAccountId: v.depreciationAccountId,
         );
         if (!mounted) return;
-        AppToast.show(context, 'تم تحديث الفئة');
+        AppToast.show(context, tr('تم تحديث الفئة'));
       }
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
     }
   }
 }
@@ -405,13 +406,13 @@ class _AssetCategoryPanelState extends State<AssetCategoryPanel> {
   ///
   /// ⚠️ **يُعرَض ولا يُبتلَع**: زرٌّ معطَّلٌ بلا سببٍ ظاهرٍ يُقرأ «معطوب».
   String? get blockReason {
-    if (_name.text.trim().isEmpty) return 'اكتب اسم الفئة.';
-    if (_monthsValue <= 0) return 'العمر الافتراضي بالشهور — ورقمٌ أكبر من صفر.';
+    if (_name.text.trim().isEmpty) return tr('اكتب اسم الفئة.');
+    if (_monthsValue <= 0) return tr('العمر الافتراضي بالشهور — ورقمٌ أكبر من صفر.');
     // 🔴 اشتراطُ الحسابَين هو Feature 050 نفسُها: فئةٌ بلا حسابٍ لا يُسجَّل
     //    تحتها أصلٌ، والرفضُ يقع في آخرِ نموذجٍ طويلٍ بعد أن مُلئ.
-    if (_accountId == null) return 'اختر حساب الأصل — وهو حسابٌ تفصيليٌّ.';
+    if (_accountId == null) return tr('اختر حساب الأصل — وهو حسابٌ تفصيليٌّ.');
     if (_deprAccountId == null) {
-      return 'اختر حساب مجمع الإهلاك — وهو حسابٌ تفصيليٌّ.';
+      return tr('اختر حساب مجمع الإهلاك — وهو حسابٌ تفصيليٌّ.');
     }
     return null;
   }
@@ -430,13 +431,13 @@ class _AssetCategoryPanelState extends State<AssetCategoryPanel> {
             children: [
               Expanded(
                 child: Text(
-                  isNew ? 'فئة جديدة' : 'تعديل الفئة',
+                  isNew ? tr('فئة جديدة') : tr('تعديل الفئة'),
                   style: const TextStyle(
                       fontSize: 15, fontWeight: FontWeight.w800),
                 ),
               ),
               IconButton(
-                tooltip: 'إغلاق',
+                tooltip: tr('إغلاق'),
                 onPressed: widget.onClose,
                 icon: const Icon(PhosphorIconsBold.x, size: 16),
               ),
@@ -446,10 +447,10 @@ class _AssetCategoryPanelState extends State<AssetCategoryPanel> {
           TextField(
             controller: _name,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: 'اسم الفئة',
+            decoration:  InputDecoration(
+              labelText: tr('اسم الفئة'),
               isDense: true,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
@@ -457,33 +458,33 @@ class _AssetCategoryPanelState extends State<AssetCategoryPanel> {
             controller: _months,
             keyboardType: TextInputType.number,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: 'العمر الافتراضي (شهراً)',
-              helperText: 'يرثه كلُّ أصلٍ يُنشأ تحت الفئة · ٦٠ شهراً = ٥ سنوات',
+            decoration:  InputDecoration(
+              labelText: tr('العمر الافتراضي (شهراً)'),
+              helperText: tr('يرثه كلُّ أصلٍ يُنشأ تحت الفئة · ٦٠ شهراً = ٥ سنوات'),
               isDense: true,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
             initialValue: _method,
-            decoration: const InputDecoration(
-              labelText: 'طريقة الإهلاك',
+            decoration:  InputDecoration(
+              labelText: tr('طريقة الإهلاك'),
               isDense: true,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
-            items: const [
-              DropdownMenuItem(value: 'straight_line', child: Text('قسط ثابت')),
+            items:  [
+              DropdownMenuItem(value: 'straight_line', child: Text(tr('قسط ثابت'))),
               DropdownMenuItem(
-                  value: 'declining_balance', child: Text('قسط متناقص')),
+                  value: 'declining_balance', child: Text(tr('قسط متناقص'))),
             ],
             onChanged: (v) => setState(() => _method = v ?? 'straight_line'),
           ),
           const SizedBox(height: 10),
           _AccountField(
             key: const Key('asset_category_account_field'),
-            label: 'حساب الأصل',
-            hint: 'ابحث برقم الحساب أو اسمه…',
+            label: tr('حساب الأصل'),
+            hint: tr('ابحث برقم الحساب أو اسمه…'),
             options: widget.accounts,
             selectedId: _accountId,
             onSelected: (id) => setState(() => _accountId = id),
@@ -491,8 +492,8 @@ class _AssetCategoryPanelState extends State<AssetCategoryPanel> {
           const SizedBox(height: 10),
           _AccountField(
             key: const Key('asset_category_depr_account_field'),
-            label: 'حساب مجمع الإهلاك',
-            hint: 'ابحث برقم الحساب أو اسمه…',
+            label: tr('حساب مجمع الإهلاك'),
+            hint: tr('ابحث برقم الحساب أو اسمه…'),
             options: widget.accounts,
             selectedId: _deprAccountId,
             onSelected: (id) => setState(() => _deprAccountId = id),
@@ -520,14 +521,14 @@ class _AssetCategoryPanelState extends State<AssetCategoryPanel> {
                   child: FilledButton.icon(
                     onPressed: (_saving || reason != null) ? null : _submit,
                     icon: const Icon(PhosphorIconsBold.floppyDisk, size: 15),
-                    label: Text(isNew ? 'حفظ الفئة' : 'حفظ التعديل'),
+                    label: Text(isNew ? tr('حفظ الفئة') : tr('حفظ التعديل')),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               OutlinedButton(
                 onPressed: widget.onClose,
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
             ],
           ),

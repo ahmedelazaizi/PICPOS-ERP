@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // «لا ورديّةَ مفتوحة» ⇒ اعرض فتحَها ثمّ أعد المحاولةَ مرّةً — لا رفضٌ جافّ
 // ═══════════════════════════════════════════════════════════════════════════
@@ -67,10 +68,10 @@ Future<ShiftPromptOutcome> runWithOpenShiftPrompt({
       context: context,
       barrierDismissible: false,
       builder: (_) => PosOpeningBalanceDialog(
-        userName: authState.user?.displayName ?? 'كاشير',
+        userName: authState.user?.displayName ?? tr('كاشير'),
         // المبلغُ يُعرَض ليعرف الكاشيرُ لماذا يُسأل الآن تحديداً.
         subtitle: subtitleBuilder?.call(e.cashAmount) ??
-            'العملية تحرّك ${e.cashAmount.toStringAsFixed(2)} نقداً في الدرج.',
+            tr('العملية تحرّك {p0} نقداً في الدرج.', {'p0': e.cashAmount.toStringAsFixed(2)}),
       ),
     );
 

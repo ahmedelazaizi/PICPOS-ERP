@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ural_erp/core/utils/number_utils.dart';
@@ -295,7 +296,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               ),
             ),
             const SizedBox(width: 12),
-            const Text('تعديل الصنف', style: TextStyle(fontSize: 18)),
+             Text(tr('تعديل الصنف'), style: const TextStyle(fontSize: 18)),
           ],
         ),
         content: SizedBox(
@@ -306,12 +307,12 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               if (locked) _buildLockedBanner(),
               TabBar(
                 controller: _tabController,
-                tabs: const [
-                  Tab(icon: Icon(PhosphorIconsBold.package, size: 15), text: 'أساسي'),
-                  Tab(icon: Icon(PhosphorIconsBold.currencyDollar, size: 15), text: 'الأسعار'),
-                  Tab(icon: Icon(PhosphorIconsBold.warehouse, size: 15), text: 'المخزون'),
-                  Tab(icon: Icon(PhosphorIconsBold.stack, size: 15), text: 'التعبئة'),
-                  Tab(icon: Icon(PhosphorIconsBold.image, size: 15), text: 'الوسائط'),
+                tabs:  [
+                  Tab(icon: const Icon(PhosphorIconsBold.package, size: 15), text: tr('أساسي')),
+                  Tab(icon: const Icon(PhosphorIconsBold.currencyDollar, size: 15), text: tr('الأسعار')),
+                  Tab(icon: const Icon(PhosphorIconsBold.warehouse, size: 15), text: tr('المخزون')),
+                  Tab(icon: const Icon(PhosphorIconsBold.stack, size: 15), text: tr('التعبئة')),
+                  Tab(icon: const Icon(PhosphorIconsBold.image, size: 15), text: tr('الوسائط')),
                 ],
               ),
               const Divider(height: 1),
@@ -336,7 +337,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(locked ? 'إغلاق' : 'إلغاء'),
+            child: Text(locked ? tr('إغلاق') : tr('إلغاء')),
           ),
           ElevatedButton(
             onPressed: (locked || _saving) ? null : _saveProduct,
@@ -346,7 +347,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                : const Text('حفظ'),
+                :  Text(tr('حفظ')),
           ),
         ],
       ),
@@ -369,7 +370,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'هذا الصنف تم إنشاؤه على السيرفر — التعديل متاح من شاشة السيرفر فقط.',
+              tr('هذا الصنف تم إنشاؤه على السيرفر — التعديل متاح من شاشة السيرفر فقط.'),
               style: TextStyle(
                 color: Colors.amber.shade900,
                 fontSize: 13,
@@ -390,7 +391,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader(
-            'البيانات الأساسية',
+            tr('البيانات الأساسية'),
             PhosphorIconsBold.package,
             AppColors.primary,
           ),
@@ -401,7 +402,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                 flex: 2,
                 child: _buildCompactTextField(
                   nameController,
-                  'اسم الصنف *',
+                  tr('اسم الصنف *'),
                   icon: PhosphorIconsBold.tag,
                 ),
               ),
@@ -409,7 +410,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               Expanded(
                 child: _buildCompactTextField(
                   codeController,
-                  'الكود',
+                  tr('الكود'),
                   icon: PhosphorIconsBold.hash,
                 ),
               ),
@@ -417,7 +418,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               Expanded(
                 child: _buildCompactTextField(
                   barcodeController,
-                  'الباركود',
+                  tr('الباركود'),
                   icon: PhosphorIconsBold.barcode,
                 ),
               ),
@@ -436,7 +437,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                   child: DropdownButtonFormField<String>(
                     initialValue: _productType,
                     decoration: InputDecoration(
-                      labelText: 'نوع الصنف',
+                      labelText: tr('نوع الصنف'),
                       prefixIcon:
                           const Icon(PhosphorIconsBold.factory, size: 18),
                       contentPadding: const EdgeInsets.symmetric(
@@ -445,22 +446,22 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                           borderRadius: BorderRadius.circular(8)),
                       isDense: true,
                     ),
-                    items: const [
+                    items:  [
                       DropdownMenuItem(
                           value: 'general',
-                          child: Text('عام', style: TextStyle(fontSize: 13))),
+                          child: Text(tr('عام'), style: const TextStyle(fontSize: 13))),
                       DropdownMenuItem(
                           value: 'raw_material',
                           child:
-                              Text('خامة', style: TextStyle(fontSize: 13))),
+                              Text(tr('خامة'), style: const TextStyle(fontSize: 13))),
                       DropdownMenuItem(
                           value: 'finished_goods',
-                          child: Text('منتج تام',
-                              style: TextStyle(fontSize: 13))),
+                          child: Text(tr('منتج تام'),
+                              style: const TextStyle(fontSize: 13))),
                       DropdownMenuItem(
                           value: 'service',
                           child:
-                              Text('خدمة', style: TextStyle(fontSize: 13))),
+                              Text(tr('خدمة'), style: const TextStyle(fontSize: 13))),
                     ],
                     onChanged: (v) =>
                         setState(() => _productType = v ?? 'general'),
@@ -483,7 +484,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader(
-            'الأسعار الأساسية',
+            tr('الأسعار الأساسية'),
             PhosphorIconsBold.currencyDollar,
             AppColors.primary,
           ),
@@ -493,7 +494,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               Expanded(
                 child: _buildCompactTextField(
                   salePriceController,
-                  'سعر البيع *',
+                  tr('سعر البيع *'),
                   isNumber: true,
                   icon: PhosphorIconsBold.currencyDollar,
                 ),
@@ -502,7 +503,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               Expanded(
                 child: _buildCompactTextField(
                   costPriceController,
-                  'سعر التكلفة',
+                  tr('سعر التكلفة'),
                   isNumber: true,
                 ),
               ),
@@ -518,7 +519,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               Expanded(
                 child: _buildCompactTextField(
                   minStockController,
-                  'الحد الأدنى',
+                  tr('الحد الأدنى'),
                   isNumber: true,
                   icon: PhosphorIconsBold.warning,
                 ),
@@ -526,9 +527,9 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
-            'أسعار المنصات',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+           Text(
+            tr('أسعار المنصات'),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           const SizedBox(height: 8),
           Row(
@@ -536,7 +537,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               Expanded(
                 child: _buildCompactTextField(
                   priceTalabatController,
-                  'سعر طلبات',
+                  tr('سعر طلبات'),
                   isNumber: true,
                 ),
               ),
@@ -544,7 +545,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               Expanded(
                 child: _buildCompactTextField(
                   priceCareemController,
-                  'سعر كريم',
+                  tr('سعر كريم'),
                   isNumber: true,
                 ),
               ),
@@ -552,7 +553,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               Expanded(
                 child: _buildCompactTextField(
                   priceAshyaeController,
-                  'سعر أشيائي',
+                  tr('سعر أشيائي'),
                   isNumber: true,
                 ),
               ),
@@ -560,7 +561,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               Expanded(
                 child: _buildCompactTextField(
                   wholesalePriceController,
-                  'سعر الجملة',
+                  tr('سعر الجملة'),
                   isNumber: true,
                 ),
               ),
@@ -584,7 +585,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildSectionHeader(
-                  'إدارة الصلاحية',
+                  tr('إدارة الصلاحية'),
                   PhosphorIconsBold.calendarBlank,
                   AppColors.info,
                 ),
@@ -594,7 +595,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
             ),
           ),
           _buildSectionHeader(
-            'البيع بالوزن',
+            tr('البيع بالوزن'),
             PhosphorIconsBold.scales,
             AppColors.warning,
           ),
@@ -695,10 +696,10 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               controller: controller,
               focusNode: focusNode,
               decoration: InputDecoration(
-                labelText: 'التصنيف *',
+                labelText: tr('التصنيف *'),
                 labelStyle: const TextStyle(fontSize: 12),
                 prefixIcon: const Icon(PhosphorIconsBold.squaresFour, size: 18),
-                hintText: 'ابحث عن التصنيف...',
+                hintText: tr('ابحث عن التصنيف...'),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
@@ -759,10 +760,10 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               controller: controller,
               focusNode: focusNode,
               decoration: InputDecoration(
-                labelText: 'المورد',
+                labelText: tr('المورد'),
                 labelStyle: const TextStyle(fontSize: 12),
                 prefixIcon: const Icon(PhosphorIconsBold.truck, size: 18),
-                hintText: 'ابحث عن المورد...',
+                hintText: tr('ابحث عن المورد...'),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
@@ -805,7 +806,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
           child: DropdownButtonFormField<int?>(
             initialValue: selectedWarehouseId,
             decoration: InputDecoration(
-              labelText: 'المخزن الافتراضي',
+              labelText: tr('المخزن الافتراضي'),
               labelStyle: const TextStyle(fontSize: 12),
               prefixIcon:
                   const Icon(PhosphorIconsBold.warehouse, size: 18),
@@ -819,9 +820,9 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               isDense: true,
             ),
             items: [
-              const DropdownMenuItem<int?>(
+               DropdownMenuItem<int?>(
                 value: null,
-                child: Text('بدون', style: TextStyle(fontSize: 13)),
+                child: Text(tr('بدون'), style: const TextStyle(fontSize: 13)),
               ),
               ...warehouses.map(
                 (w) => DropdownMenuItem<int?>(
@@ -851,7 +852,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
         children: [
           Row(
             children: [
-              const Text('تتبع الصلاحية', style: TextStyle(fontSize: 12)),
+               Text(tr('تتبع الصلاحية'), style: const TextStyle(fontSize: 12)),
               const Spacer(),
               SizedBox(
                 height: 24,
@@ -870,14 +871,14 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                 Expanded(
                   child: _buildMiniTextField(
                     shelfDaysController,
-                    'مدة الصلاحية (يوم)',
+                    tr('مدة الصلاحية (يوم)'),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildMiniTextField(
                     alertDaysController,
-                    'تنبيه قبل (يوم)',
+                    tr('تنبيه قبل (يوم)'),
                   ),
                 ),
               ],
@@ -899,22 +900,22 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
       child: Column(
         children: [
           SegmentedButton<String>(
-            segments: const [
+            segments:  [
               ButtonSegment(
                 value: 'count',
-                label: Text('عدد', style: TextStyle(fontSize: 11)),
+                label: Text(tr('عدد'), style: const TextStyle(fontSize: 11)),
               ),
               ButtonSegment(
                 value: 'weight',
-                label: Text('ميزان', style: TextStyle(fontSize: 11)),
+                label: Text(tr('ميزان'), style: const TextStyle(fontSize: 11)),
               ),
               ButtonSegment(
                 value: 'weightByPiece',
-                label: Text('ميزان بالحبة', style: TextStyle(fontSize: 11)),
+                label: Text(tr('ميزان بالحبة'), style: const TextStyle(fontSize: 11)),
               ),
               ButtonSegment(
                 value: 'display',
-                label: Text('عرض', style: TextStyle(fontSize: 11)),
+                label: Text(tr('عرض'), style: const TextStyle(fontSize: 11)),
               ),
             ],
             selected: {scaleType},
@@ -934,14 +935,14 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                 Expanded(
                   child: _buildMiniTextField(
                     pricePerUnitController,
-                    'سعر الكيلو',
+                    tr('سعر الكيلو'),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildMiniTextField(
                     scalePluNumberController,
-                    'رقم PLU',
+                    tr('رقم PLU'),
                   ),
                 ),
               ],
@@ -968,7 +969,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
             color: AppColors.error,
           ),
           const SizedBox(width: 4),
-          const Text('البيع بالسالب', style: TextStyle(fontSize: 12)),
+           Text(tr('البيع بالسالب'), style: const TextStyle(fontSize: 12)),
           const Spacer(),
           SizedBox(
             height: 24,
@@ -990,7 +991,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader(
-            'صورة المنتج',
+            tr('صورة المنتج'),
             PhosphorIconsBold.image,
             AppColors.success,
           ),
@@ -1046,9 +1047,9 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                             }
                           },
                           icon: const Icon(PhosphorIconsBold.upload, size: 12),
-                          label: const Text(
-                            'اختيار',
-                            style: TextStyle(fontSize: 11),
+                          label:  Text(
+                            tr('اختيار'),
+                            style: const TextStyle(fontSize: 11),
                           ),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -1085,7 +1086,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
     if (nameController.text.isEmpty || salePriceController.text.isEmpty) {
       AppToast.show(
         context,
-        'يرجى ملء الحقول المطلوبة (الاسم، السعر)',
+        tr('يرجى ملء الحقول المطلوبة (الاسم، السعر)'),
         type: ToastType.error,
       );
       return;
@@ -1111,7 +1112,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
         if (mounted) {
           AppToast.show(
             context,
-            'هذا الكود مستخدم بالفعل لصنف آخر',
+            tr('هذا الكود مستخدم بالفعل لصنف آخر'),
             type: ToastType.error,
           );
         }
@@ -1129,7 +1130,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
         if (mounted) {
           AppToast.show(
             context,
-            'هذا الباركود مستخدم بالفعل لصنف آخر',
+            tr('هذا الباركود مستخدم بالفعل لصنف آخر'),
             type: ToastType.error,
           );
         }
@@ -1146,23 +1147,23 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
         builder: (ctx) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: const Row(children: [
-              Icon(Icons.warning_amber, color: Colors.orange),
-              SizedBox(width: 8),
-              Text('تحذير: تكلفة المنتج صفر'),
+            title:  Row(children: [
+              const Icon(Icons.warning_amber, color: Colors.orange),
+              const SizedBox(width: 8),
+              Text(tr('تحذير: تكلفة المنتج صفر')),
             ]),
-            content: const Text(
-              'سعر التكلفة مُدخل كصفر. هذا سيُظهر الربح مُضخَّماً في تقارير تكلفة البضاعة المباعة (COGS).\n\nهل تريد المتابعة؟',
+            content:  Text(
+              tr('سعر التكلفة مُدخل كصفر. هذا سيُظهر الربح مُضخَّماً في تقارير تكلفة البضاعة المباعة (COGS).\n\nهل تريد المتابعة؟'),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('مراجعة السعر'),
+                child:  Text(tr('مراجعة السعر')),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, true),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                child: const Text('متابعة'),
+                child:  Text(tr('متابعة')),
               ),
             ],
           ),
@@ -1282,7 +1283,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
 
     if (mounted && success) {
       Navigator.pop(context);
-      AppToast.show(context, 'تم تحديث الصنف بنجاح', type: ToastType.success);
+      AppToast.show(context, tr('تم تحديث الصنف بنجاح'), type: ToastType.success);
     }
   }
 
@@ -1310,9 +1311,9 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'أسعار المخازن',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                   Text(
+                    tr('أسعار المخازن'),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                   const Spacer(),
                   if (_warehousePriceRows.isNotEmpty)
@@ -1367,9 +1368,9 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                         });
                       },
                       icon: const Icon(PhosphorIconsBold.plus, size: 14),
-                      label: const Text(
-                        'إضافة سعر مخزن',
-                        style: TextStyle(fontSize: 12),
+                      label:  Text(
+                        tr('إضافة سعر مخزن'),
+                        style: const TextStyle(fontSize: 12),
                       ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1418,7 +1419,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                         child: DropdownButtonFormField<int?>(
                           initialValue: row.warehouseId,
                           decoration: InputDecoration(
-                            labelText: 'المخزن',
+                            labelText: tr('المخزن'),
                             labelStyle: const TextStyle(fontSize: 11),
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 6),
@@ -1466,7 +1467,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                       keyboardType: TextInputType.number,
                       style: const TextStyle(fontSize: 12),
                       decoration: InputDecoration(
-                        labelText: 'سعر البيع',
+                        labelText: tr('سعر البيع'),
                         labelStyle: const TextStyle(fontSize: 11),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 10),
@@ -1486,7 +1487,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                       keyboardType: TextInputType.number,
                       style: const TextStyle(fontSize: 12),
                       decoration: InputDecoration(
-                        labelText: 'التكلفة',
+                        labelText: tr('التكلفة'),
                         labelStyle: const TextStyle(fontSize: 11),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 10),
@@ -1506,7 +1507,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                       keyboardType: TextInputType.number,
                       style: const TextStyle(fontSize: 12),
                       decoration: InputDecoration(
-                        labelText: 'سعر الجملة',
+                        labelText: tr('سعر الجملة'),
                         labelStyle: const TextStyle(fontSize: 11),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 10),
@@ -1535,7 +1536,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
             setState(() {
               _showPackagingUnits = !_showPackagingUnits;
               if (_showPackagingUnits && _unitRows.isEmpty) {
-                _unitRows.add(_EditProductUnitRow(unitName: 'قطعة', factor: '1'));
+                _unitRows.add(_EditProductUnitRow(unitName: tr('قطعة'), factor: '1'));
               }
             });
           },
@@ -1550,8 +1551,8 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               children: [
                 const Icon(PhosphorIconsBold.package, size: 18, color: AppColors.info),
                 const SizedBox(width: 8),
-                const Text('وحدات التعبئة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.info)),
-                const Text('  (قطعة → علبة → كرتونة)', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                 Text(tr('وحدات التعبئة'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.info)),
+                 Text(tr('  (قطعة → علبة → كرتونة)'), style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
                 const Spacer(),
                 if (_unitRows.isNotEmpty)
                   Container(
@@ -1577,16 +1578,16 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
             child: Column(
               children: [
                 // Headers
-                const Row(
+                 Row(
                   children: [
-                    SizedBox(width: 40, child: Text('افتراضي', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
-                    SizedBox(width: 8),
-                    Expanded(flex: 2, child: Text('اسم الوحدة', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
-                    SizedBox(width: 8),
-                    Expanded(flex: 2, child: Text('الباركود', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
-                    SizedBox(width: 8),
-                    Expanded(child: Text('عامل التحويل', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
-                    SizedBox(width: 30),
+                    SizedBox(width: 40, child: Text(tr('افتراضي'), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
+                    const SizedBox(width: 8),
+                    Expanded(flex: 2, child: Text(tr('اسم الوحدة'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
+                    const SizedBox(width: 8),
+                    Expanded(flex: 2, child: Text(tr('الباركود'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(tr('عامل التحويل'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
+                    const SizedBox(width: 30),
                   ],
                 ),
                 const Divider(height: 12),
@@ -1623,7 +1624,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
                                     isDense: true,
-                                    hintText: 'الوحدة ${index + 1}',
+                                    hintText: tr('الوحدة {p0}', {'p0': index + 1}),
                                     hintStyle: const TextStyle(fontSize: 12),
                                   ),
                                   items: units.map((u) => DropdownMenuItem(
@@ -1648,7 +1649,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
                                 isDense: true,
-                                hintText: 'باركود ${index + 1}',
+                                hintText: tr('باركود {p0}', {'p0': index + 1}),
                                 hintStyle: const TextStyle(fontSize: 12),
                               ),
                               style: const TextStyle(fontSize: 12),
@@ -1667,7 +1668,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
                                 isDense: true,
-                                hintText: 'مثال: 12',
+                                hintText: tr('مثال: 12'),
                                 hintStyle: const TextStyle(fontSize: 12),
                               ),
                               style: const TextStyle(fontSize: 12),
@@ -1690,7 +1691,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                                 border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(6)),
                                 isDense: true,
-                                hintText: 'سعر الوحدة',
+                                hintText: tr('سعر الوحدة'),
                                 hintStyle: const TextStyle(fontSize: 11),
                               ),
                               style: const TextStyle(fontSize: 12),
@@ -1722,7 +1723,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                     child: TextButton.icon(
                       onPressed: () => setState(() => _unitRows.add(_EditProductUnitRow())),
                       icon: const Icon(PhosphorIconsBold.plus, size: 14),
-                      label: const Text('إضافة وحدة', style: TextStyle(fontSize: 12)),
+                      label:  Text(tr('إضافة وحدة'), style: const TextStyle(fontSize: 12)),
                       style: TextButton.styleFrom(visualDensity: VisualDensity.compact, foregroundColor: AppColors.info),
                     ),
                   ),

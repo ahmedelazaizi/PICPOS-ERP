@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -64,8 +65,8 @@ class _ButcheryTabState extends ConsumerState<ButcheryTab> {
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       PicPosPageHeader(
-        title: 'التشفية',
-        subtitle: 'قوالب القطع وأوامر الوزن والفاقد',
+        title: tr('التشفية'),
+        subtitle: tr('قوالب القطع وأوامر الوزن والفاقد'),
         icon: PhosphorIconsBold.scissors,
         actions: [
           AppButton.secondary(
@@ -94,7 +95,7 @@ class _ButcheryTabState extends ConsumerState<ButcheryTab> {
               }
             },
             icon: const Icon(PhosphorIconsBold.listPlus),
-            child: const Text('قالب جديد'),
+            child:  Text(tr('قالب جديد')),
           ),
           AppButton.primary(
             onPressed: _templates.isEmpty || widget.warehouses.isEmpty
@@ -118,13 +119,13 @@ class _ButcheryTabState extends ConsumerState<ButcheryTab> {
                       );
                       await repository.postButcheryOrder(id);
                       await _reload();
-                      if (mounted) _showSuccess('تم إنشاء وترحيل أمر التشفية');
+                      if (mounted) _showSuccess(tr('تم إنشاء وترحيل أمر التشفية'));
                     } catch (error) {
                       _showError(error);
                     }
                   },
             icon: const Icon(PhosphorIconsBold.plus),
-            child: const Text('أمر تشفية جديد'),
+            child:  Text(tr('أمر تشفية جديد')),
           ),
         ],
       ),
@@ -140,21 +141,21 @@ class _ButcheryTabState extends ConsumerState<ButcheryTab> {
   }
 
   Widget _templatesTable() => PicPosDataTable(
-        title: 'قوالب التشفية',
-        subtitle: 'طريقة التقييم وحدود variance والقطع المتوقعة',
-        columns: const [
-          PicPosTableColumn('القالب', flex: 2),
-          PicPosTableColumn('الذبيحة', flex: 1.5),
-          PicPosTableColumn('التقييم'),
-          PicPosTableColumn('الحد %'),
-          PicPosTableColumn('القطع'),
+        title: tr('قوالب التشفية'),
+        subtitle: tr('طريقة التقييم وحدود variance والقطع المتوقعة'),
+        columns:  [
+          PicPosTableColumn(tr('القالب'), flex: 2),
+          PicPosTableColumn(tr('الذبيحة'), flex: 1.5),
+          PicPosTableColumn(tr('التقييم')),
+          PicPosTableColumn(tr('الحد %')),
+          PicPosTableColumn(tr('القطع')),
         ],
         rows: [
           for (final template in _templates)
             PicPosTableRow(cells: [
               PicPosTextCell('${template['name']}', bold: true),
               PicPosTextCell('${template['carcass_name'] ?? '—'}'),
-              PicPosPillCell(template['valuation_method'] == 'by_weight' ? 'بالوزن' : 'قيمة البيع', Colors.blue),
+              PicPosPillCell(template['valuation_method'] == 'by_weight' ? tr('بالوزن') : tr('قيمة البيع'), Colors.blue),
               PicPosTextCell(_number(template['variance_threshold_percent']).toStringAsFixed(1)),
               PicPosTextCell('${_templateLines[template['id']]?.length ?? 0}'),
             ]),
@@ -162,15 +163,15 @@ class _ButcheryTabState extends ConsumerState<ButcheryTab> {
       );
 
   Widget _ordersTable(ManufacturingRepository repository) => PicPosDataTable(
-        title: 'أوامر التشفية',
-        subtitle: 'الوزن الفعلي والتكلفة والفاقد',
-        headerAction: Text('${_orders.length} أمر'),
-        columns: const [
-          PicPosTableColumn('الأمر', flex: 1.3),
-          PicPosTableColumn('الذبيحة', flex: 1.4),
-          PicPosTableColumn('الحالة'),
-          PicPosTableColumn('الفاقد', align: PicPosCellAlign.end),
-          PicPosTableColumn('إجراء'),
+        title: tr('أوامر التشفية'),
+        subtitle: tr('الوزن الفعلي والتكلفة والفاقد'),
+        headerAction: Text(tr('{p0} أمر', {'p0': _orders.length})),
+        columns:  [
+          PicPosTableColumn(tr('الأمر'), flex: 1.3),
+          PicPosTableColumn(tr('الذبيحة'), flex: 1.4),
+          PicPosTableColumn(tr('الحالة')),
+          PicPosTableColumn(tr('الفاقد'), align: PicPosCellAlign.end),
+          PicPosTableColumn(tr('إجراء')),
         ],
         rows: [
           for (final order in _orders)
@@ -181,17 +182,17 @@ class _ButcheryTabState extends ConsumerState<ButcheryTab> {
               PicPosTextCell('${_number(order['loss_percent']).toStringAsFixed(2)}%'),
               order['status'] == 'posted'
                   ? PicPosButtonCell(
-                      'عكس',
+                      tr('عكس'),
                       icon: PhosphorIconsBold.arrowUUpLeft,
                       tint: AppColors.error,
                       onPressed: () async {
                         final confirmed = await showPicPosConfirm(
                           context,
                           icon: PhosphorIconsBold.arrowUUpLeft,
-                          title: 'عكس أمر التشفية',
-                          message: 'سيُعاد المخزون ويُعكس القيد المحاسبي.',
+                          title: tr('عكس أمر التشفية'),
+                          message: tr('سيُعاد المخزون ويُعكس القيد المحاسبي.'),
                           danger: true,
-                          confirmLabel: 'عكس الأمر',
+                          confirmLabel: tr('عكس الأمر'),
                         );
                         if (!confirmed) return;
                         try {
@@ -219,9 +220,9 @@ class _ButcheryTabState extends ConsumerState<ButcheryTab> {
 }
 
 String _orderStatus(String value) => switch (value) {
-      'draft' => 'مسودة',
-      'posted' => 'مُرحّل',
-      'reversed' => 'معكوس',
+      'draft' => tr('مسودة'),
+      'posted' => tr('مُرحّل'),
+      'reversed' => tr('معكوس'),
       _ => value,
     };
 

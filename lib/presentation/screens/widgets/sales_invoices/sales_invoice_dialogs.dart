@@ -26,7 +26,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
         SnackBar(
           backgroundColor: AppColors.error,
           duration: const Duration(seconds: 8),
-          content: Text('تعذّر فتح تفاصيل الفاتورة: $e'),
+          content: Text(tr('تعذّر فتح تفاصيل الفاتورة: {e}', {'e': e})),
         ),
       );
     }
@@ -38,7 +38,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
     final customer = invoice.partyId != null
         ? await controller.getCustomerById(invoice.partyId!)
         : null;
-    final customerName = customer?.name ?? 'عميل نقدي';
+    final customerName = customer?.name ?? tr('عميل نقدي');
 
     if (!mounted) return;
 
@@ -51,7 +51,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
             children: [
               const Icon(PhosphorIconsBold.receipt, color: AppColors.info),
               const SizedBox(width: 8),
-              Text('فاتورة بيع #${invoice.invoiceNumber}'),
+              Text(tr('فاتورة بيع #{p0}', {'p0': invoice.invoiceNumber})),
             ],
           ),
           content: SizedBox(
@@ -61,24 +61,24 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _detailRow('العميل', customerName),
+                  _detailRow(tr('العميل'), customerName),
                   _detailRow(
-                    'التاريخ',
+                    tr('التاريخ'),
                     (invoice.createdAt ?? invoice.invoiceDate).toString().substring(0, 10),
                   ),
                   _detailRow(
-                    'المجموع الفرعي',
+                    tr('المجموع الفرعي'),
                     invoice.subtotal.toStringAsFixed(AppConstants.decimalPlaces),
                   ),
-                  _detailRow('الخصم', invoice.discountAmount.toStringAsFixed(AppConstants.decimalPlaces)),
-                  _detailRow('الضريبة', invoice.taxAmount.toStringAsFixed(AppConstants.decimalPlaces)),
-                  _detailRow('الإجمالي', invoice.total.toStringAsFixed(AppConstants.decimalPlaces)),
-                  _detailRow('المدفوع', invoice.paid.toStringAsFixed(AppConstants.decimalPlaces)),
+                  _detailRow(tr('الخصم'), invoice.discountAmount.toStringAsFixed(AppConstants.decimalPlaces)),
+                  _detailRow(tr('الضريبة'), invoice.taxAmount.toStringAsFixed(AppConstants.decimalPlaces)),
+                  _detailRow(tr('الإجمالي'), invoice.total.toStringAsFixed(AppConstants.decimalPlaces)),
+                  _detailRow(tr('المدفوع'), invoice.paid.toStringAsFixed(AppConstants.decimalPlaces)),
                   _detailRow(
-                    'المتبقي',
+                    tr('المتبقي'),
                     (invoice.total - invoice.paid).toStringAsFixed(AppConstants.decimalPlaces),
                   ),
-                  _detailRow('الحالة', invoice.status.name),
+                  _detailRow(tr('الحالة'), invoice.status.name),
                   // Branch / Warehouse / Cost center context — resolves
                   // branch via warehouse FK so admin viewing a server-side
                   // invoice can immediately see its origin.
@@ -97,16 +97,16 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (brName != null) _detailRow('الفرع', brName),
-                        if (whName != null) _detailRow('المخزن', whName),
-                        if (ccName != null) _detailRow('مركز التكلفة', ccName),
+                        if (brName != null) _detailRow(tr('الفرع'), brName),
+                        if (whName != null) _detailRow(tr('المخزن'), whName),
+                        if (ccName != null) _detailRow(tr('مركز التكلفة'), ccName),
                       ],
                     );
                   }),
                   if (invoice.originClientId != null && invoice.originClientId!.isNotEmpty)
-                    _detailRow('الجهاز', invoice.originClientId!),
+                    _detailRow(tr('الجهاز'), invoice.originClientId!),
                   if (invoice.notes != null && invoice.notes!.isNotEmpty)
-                    _detailRow('ملاحظات', invoice.notes!),
+                    _detailRow(tr('ملاحظات'), invoice.notes!),
                   const Divider(height: 24),
                   
                   // Margin Analysis
@@ -130,32 +130,32 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
                     },
                   ),
 
-                  const Text(
-                    'الأصناف:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                   Text(
+                    tr('الأصناف:'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   if (items.isEmpty)
-                    const Text(
-                      'لا توجد أصناف',
-                      style: TextStyle(color: AppColors.textMuted),
+                     Text(
+                      tr('لا توجد أصناف'),
+                      style: const TextStyle(color: AppColors.textMuted),
                     )
                   else
                     DataTable(
                       columnSpacing: 20,
-                      columns: const [
-                        DataColumn(label: Text('الصنف')),
-                        DataColumn(label: Text('الوحدة')),
-                        DataColumn(label: Text('الكمية')),
-                        DataColumn(label: Text('السعر')),
-                        DataColumn(label: Text('الإجمالي')),
+                      columns:  [
+                        DataColumn(label: Text(tr('الصنف'))),
+                        DataColumn(label: Text(tr('الوحدة'))),
+                        DataColumn(label: Text(tr('الكمية'))),
+                        DataColumn(label: Text(tr('السعر'))),
+                        DataColumn(label: Text(tr('الإجمالي'))),
                       ],
                       rows: items
                           .map(
                             (item) => DataRow(
                               cells: [
                                 DataCell(Text(item.displayName)),
-                                DataCell(Text(item.item.unitName ?? 'قطعة')),
+                                DataCell(Text(item.item.unitName ?? tr('قطعة'))),
                                 DataCell(
                                   Text(item.item.quantity.toStringAsFixed(AppConstants.decimalPlaces)),
                                 ),
@@ -177,7 +177,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -211,7 +211,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
       await printingService.printReceipt(invoice.id!);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -325,7 +325,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
       if (mounted) {
         AppToast.show(
           context,
-          'انتهت مهلة تحميل البيانات — تأكد من الاتصال بالسيرفر',
+          tr('انتهت مهلة تحميل البيانات — تأكد من الاتصال بالسيرفر'),
           type: ToastType.error,
         );
       }
@@ -335,7 +335,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
       if (mounted) {
         AppToast.show(
           context,
-          'فشل تحميل بيانات الفاتورة: $e',
+          tr('فشل تحميل بيانات الفاتورة: {e}', {'e': e}),
           type: ToastType.error,
         );
       }

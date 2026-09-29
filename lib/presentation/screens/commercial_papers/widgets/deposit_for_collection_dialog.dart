@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -33,7 +34,7 @@ class _DepositForCollectionDialogState extends State<DepositForCollectionDialog>
     final theme = Theme.of(context);
     return AlertDialog(
       title: Text(
-        'إيداع برسم التحصيل',
+        tr('إيداع برسم التحصيل'),
         style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
       ),
       content: SizedBox(
@@ -42,7 +43,7 @@ class _DepositForCollectionDialogState extends State<DepositForCollectionDialog>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'شيك رقم ${widget.paperNumber} — ${widget.amount.toStringAsFixed(2)}',
+              tr('شيك رقم {p0} — {p1}', {'p0': widget.paperNumber, 'p1': widget.amount.toStringAsFixed(2)}),
               style: GoogleFonts.cairo(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -52,13 +53,13 @@ class _DepositForCollectionDialogState extends State<DepositForCollectionDialog>
                 final banks = snap.data ?? [];
                 if (banks.isEmpty && snap.connectionState == ConnectionState.done) {
                   return Text(
-                    'لا توجد خزن بنكية — أضف بنك من إعدادات الخزينة أولاً',
+                    tr('لا توجد خزن بنكية — أضف بنك من إعدادات الخزينة أولاً'),
                     style: GoogleFonts.cairo(color: AppColors.error),
                   );
                 }
                 return DropdownButtonFormField<int>(
                   decoration: InputDecoration(
-                    labelText: 'اختر البنك *',
+                    labelText: tr('اختر البنك *'),
                     prefixIcon: const Icon(PhosphorIconsBold.bank, size: 18),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     isDense: true,
@@ -101,8 +102,8 @@ class _DepositForCollectionDialogState extends State<DepositForCollectionDialog>
                       controller: controller,
                       focusNode: focusNode,
                       decoration: InputDecoration(
-                        labelText: 'الحساب المقابل',
-                        hintText: 'ابحث بالاسم أو الرمز...',
+                        labelText: tr('الحساب المقابل'),
+                        hintText: tr('ابحث بالاسم أو الرمز...'),
                         prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         isDense: true,
@@ -133,11 +134,11 @@ class _DepositForCollectionDialogState extends State<DepositForCollectionDialog>
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         ElevatedButton.icon(
           icon: const Icon(PhosphorIconsBold.bank, size: 16),
-          label: const Text('إيداع'),
+          label:  Text(tr('إيداع')),
           onPressed: _selectedBankId == null
               ? null
               : () {

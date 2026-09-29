@@ -172,10 +172,10 @@ class PurchasesFilterBar extends ConsumerWidget {
 
   /// نفسُ الأكواد الثلاثة التي يفهمها `_applyFilters` حرفاً بحرف — و`all`
   /// ليست شريحةً بل غيابُ انتقاء.
-  static const _statuses = [
-    ('paid', 'مدفوع', AppColors.success),
-    ('partial', 'جزئي', AppColors.warning),
-    ('unpaid', 'غير مدفوع', AppColors.error),
+  static List<(String, String, Color)> get _statuses => [
+    ('paid', tr('مدفوع'), AppColors.success),
+    ('partial', tr('جزئي'), AppColors.warning),
+    ('unpaid', tr('غير مدفوع'), AppColors.error),
   ];
 
   @override
@@ -249,7 +249,7 @@ class PurchasesFilterBar extends ConsumerWidget {
                   // ‏`_applyFilters` يطابق رقمَ الفاتورة **واسمَ المورد**
                   // معاً، فالتلميحُ يذكرهما — والأصلُ كان يذكر الرقمَ وحدَه
                   // فيبدو البحثُ بالاسم كأنه لا يعمل.
-                  hintText: 'بحث برقم الفاتورة أو اسم المورد...',
+                  hintText: tr('بحث برقم الفاتورة أو اسم المورد...'),
                   hintStyle: TextStyle(fontSize: 12.5, color: muted),
                   prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass,
                       size: 15, color: muted),
@@ -321,7 +321,7 @@ class PurchasesFilterBar extends ConsumerWidget {
                         dateRange != null
                             ? '${dateRange.start.day}/${dateRange.start.month}'
                                 ' — ${dateRange.end.day}/${dateRange.end.month}'
-                            : 'كل التواريخ',
+                            : tr('كل التواريخ'),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -354,20 +354,20 @@ class PurchasesFilterBar extends ConsumerWidget {
               // لا وجودَ له يُرجِع قائمةً فارغةً دائماً ويبدو معطّلاً.
               if (ordersInScope)
                 _PurFilterPill<PurchaseDocTypeFilter>(
-                  label: 'نوع المستند',
+                  label: tr('نوع المستند'),
                   value: docTypeFilter,
-                  items: const [
+                  items:  [
                     DropdownMenuItem(
                       value: PurchaseDocTypeFilter.all,
-                      child: Text('جميع الأنواع'),
+                      child: Text(tr('جميع الأنواع')),
                     ),
                     DropdownMenuItem(
                       value: PurchaseDocTypeFilter.invoice,
-                      child: Text('فاتورة شراء'),
+                      child: Text(tr('فاتورة شراء')),
                     ),
                     DropdownMenuItem(
                       value: PurchaseDocTypeFilter.order,
-                      child: Text('أمر شراء'),
+                      child: Text(tr('أمر شراء')),
                     ),
                   ],
                   onChanged: (v) => controller
@@ -380,10 +380,10 @@ class PurchasesFilterBar extends ConsumerWidget {
               data: (branches) {
                 if (branches.length <= 1) return const SizedBox.shrink();
                 return _PurFilterPill<int?>(
-                  label: 'الفرع',
+                  label: tr('الفرع'),
                   value: selectedBranchId,
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('الكل')),
+                     DropdownMenuItem(value: null, child: Text(tr('الكل'))),
                     ...branches.map((b) =>
                         DropdownMenuItem(value: b.id, child: Text(b.name))),
                   ],
@@ -399,10 +399,10 @@ class PurchasesFilterBar extends ConsumerWidget {
               data: (warehouses) {
                 if (warehouses.length <= 1) return const SizedBox.shrink();
                 return _PurFilterPill<int?>(
-                  label: 'المخزن',
+                  label: tr('المخزن'),
                   value: selectedWarehouseId,
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('الكل')),
+                     DropdownMenuItem(value: null, child: Text(tr('الكل'))),
                     ...warehouses.map((w) =>
                         DropdownMenuItem(value: w.id, child: Text(w.name))),
                   ],
@@ -418,10 +418,10 @@ class PurchasesFilterBar extends ConsumerWidget {
               data: (centers) {
                 if (centers.isEmpty) return const SizedBox.shrink();
                 return _PurFilterPill<int?>(
-                  label: 'مركز التكلفة',
+                  label: tr('مركز التكلفة'),
                   value: selectedCostCenterId,
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('الكل')),
+                     DropdownMenuItem(value: null, child: Text(tr('الكل'))),
                     ...centers.map((c) =>
                         DropdownMenuItem(value: c.id, child: Text(c.name))),
                   ],

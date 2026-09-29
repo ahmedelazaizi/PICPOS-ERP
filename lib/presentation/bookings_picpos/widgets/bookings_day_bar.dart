@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شريطُ اليوم — سهمان واسمُ اليوم و«اليوم» للعودة.
 //
 // ⚠️ **والسهمان مقلوبان عن الحدس في RTL**: «التالي» يقع يساراً و«السابق»
@@ -39,7 +40,7 @@ class BookingsDayBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _arrow(context, PhosphorIconsBold.caretRight, onNext, 'اليوم التالي'),
+          _arrow(context, PhosphorIconsBold.caretRight, onNext, tr('اليوم التالي')),
           const SizedBox(width: 12),
           const Icon(PhosphorIconsBold.calendarBlank,
               size: 15, color: AppColors.primary),
@@ -53,14 +54,14 @@ class BookingsDayBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          _arrow(context, PhosphorIconsBold.caretLeft, onPrev, 'اليوم السابق'),
+          _arrow(context, PhosphorIconsBold.caretLeft, onPrev, tr('اليوم السابق')),
           if (!isToday) ...[
             const SizedBox(width: 14),
             TextButton.icon(
               onPressed: onToday,
               icon: const Icon(PhosphorIconsBold.arrowCounterClockwise,
                   size: 14),
-              label: const Text('اليوم'),
+              label:  Text(tr('اليوم')),
             ),
           ],
         ],

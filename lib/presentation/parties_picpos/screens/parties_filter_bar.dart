@@ -131,7 +131,7 @@ class PartiesFilterBar extends StatelessWidget {
               decoration: InputDecoration(
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                hintText: 'البحث بالاسم أو رقم الهاتف...',
+                hintText: tr('البحث بالاسم أو رقم الهاتف...'),
                 hintStyle: TextStyle(fontSize: 12, color: muted),
                 prefixIcon: Icon(
                   PhosphorIconsBold.magnifyingGlass,
@@ -160,7 +160,7 @@ class PartiesFilterBar extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: onGroupsPressed,
             icon: const Icon(PhosphorIconsBold.usersFour, size: 14),
-            label: const Text('المجموعات', style: TextStyle(fontSize: 12)),
+            label:  Text(tr('المجموعات'), style: const TextStyle(fontSize: 12)),
             style: OutlinedButton.styleFrom(
               foregroundColor: theme.textTheme.bodyMedium?.color,
               side: BorderSide(color: theme.dividerColor),

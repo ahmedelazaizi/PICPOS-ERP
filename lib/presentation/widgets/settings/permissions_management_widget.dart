@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,7 +66,7 @@ class _PermissionsManagementWidgetState
       if (mounted) {
         AppToast.show(
           context,
-          'خطأ في تحميل الصلاحيات: $e',
+          tr('خطأ في تحميل الصلاحيات: {e}', {'e': e}),
           type: ToastType.error,
         );
       }
@@ -86,7 +87,7 @@ class _PermissionsManagementWidgetState
       if (mounted) {
         AppToast.show(
           context,
-          'خطأ في تحميل صلاحيات الدور: $e',
+          tr('خطأ في تحميل صلاحيات الدور: {e}', {'e': e}),
           type: ToastType.error,
         );
       }
@@ -140,8 +141,8 @@ class _PermissionsManagementWidgetState
         AppToast.show(
           context,
           grant
-              ? '✓ تم إضافة "${perm.name}" — الإجمالى: $total صلاحية'
-              : '⊝ تم إلغاء "${perm.name}" — الإجمالى: $total صلاحية',
+              ? tr('✓ تم إضافة "{p0}" — الإجمالى: {total} صلاحية', {'p0': perm.name, 'total': total})
+              : tr('⊝ تم إلغاء "{p0}" — الإجمالى: {total} صلاحية', {'p0': perm.name, 'total': total}),
           type: grant ? ToastType.success : ToastType.warning,
         );
       }
@@ -157,7 +158,7 @@ class _PermissionsManagementWidgetState
       if (mounted) {
         AppToast.show(
           context,
-          'فشل تحديث الصلاحية "${perm.name}": $e',
+          tr('فشل تحديث الصلاحية "{p0}": {e}', {'p0': perm.name, 'e': e}),
           type: ToastType.error,
         );
       }
@@ -202,7 +203,7 @@ class _PermissionsManagementWidgetState
       if (mounted) {
         AppToast.show(
           context,
-          'فشل تحديث صلاحيات الفئة',
+          tr('فشل تحديث صلاحيات الفئة'),
           type: ToastType.error,
         );
       }
@@ -222,13 +223,13 @@ class _PermissionsManagementWidgetState
       if (mounted) {
         AppToast.show(
           context,
-          'تم منح جميع الصلاحيات',
+          tr('تم منح جميع الصلاحيات'),
           type: ToastType.success,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
     if (mounted) setState(() => _isSaving = false);
@@ -243,19 +244,19 @@ class _PermissionsManagementWidgetState
       builder: (ctx) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('تأكيد إزالة جميع الصلاحيات'),
+          title:  Text(tr('تأكيد إزالة جميع الصلاحيات')),
           content: Text(
-            'هل أنت متأكد من إزالة جميع الصلاحيات من دور "${_selectedRole!.name}"؟',
+            tr('هل أنت متأكد من إزالة جميع الصلاحيات من دور "{p0}"؟', {'p0': _selectedRole!.name}),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('إزالة الكل'),
+              child:  Text(tr('إزالة الكل')),
             ),
           ],
         ),
@@ -273,13 +274,13 @@ class _PermissionsManagementWidgetState
       if (mounted) {
         AppToast.show(
           context,
-          'تم إزالة جميع الصلاحيات',
+          tr('تم إزالة جميع الصلاحيات'),
           type: ToastType.success,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
     if (mounted) setState(() => _isSaving = false);
@@ -443,7 +444,7 @@ class _PermissionsManagementWidgetState
           size: 24,
         ),
         const SizedBox(width: 8),
-        const Text('إدارة الصلاحيات', style: AppTypography.h3),
+         Text(tr('إدارة الصلاحيات'), style: AppTypography.h3),
         const Spacer(),
         if (_selectedRole != null) ...[
           // Search
@@ -454,7 +455,7 @@ class _PermissionsManagementWidgetState
               controller: _searchController,
               onChanged: (v) => setState(() => _searchQuery = v),
               decoration: InputDecoration(
-                hintText: 'بحث عن صلاحية...',
+                hintText: tr('بحث عن صلاحية...'),
                 hintStyle: AppTypography.bodySmall.copyWith(color: Colors.grey),
                 prefixIcon: const Icon(
                   PhosphorIconsBold.magnifyingGlass,
@@ -505,8 +506,8 @@ class _PermissionsManagementWidgetState
                           setState(() => _showNonToggleable = v),
                     ),
                     const SizedBox(width: 4),
-                    const Text(
-                      'إظهار الأكواد غير القابلة للتبديل',
+                     Text(
+                      tr('إظهار الأكواد غير القابلة للتبديل'),
                       style: AppTypography.bodySmall,
                     ),
                   ],
@@ -518,14 +519,14 @@ class _PermissionsManagementWidgetState
           // Grant all / Revoke all
           _ActionButton(
             icon: PhosphorIconsBold.checkSquare,
-            label: 'تحديد الكل',
+            label: tr('تحديد الكل'),
             color: AppColors.success,
             onPressed: _isSaving ? null : _grantAll,
           ),
           const SizedBox(width: 6),
           _ActionButton(
             icon: PhosphorIconsBold.square,
-            label: 'إلغاء الكل',
+            label: tr('إلغاء الكل'),
             color: AppColors.error,
             onPressed: _isSaving ? null : _revokeAll,
           ),
@@ -563,7 +564,7 @@ class _PermissionsManagementWidgetState
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'الأدوار',
+                  tr('الأدوار'),
                   style: AppTypography.bodyLarge.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
@@ -635,7 +636,7 @@ class _PermissionsManagementWidgetState
                               if (isSystem)
                                 Tooltip(
                                   message:
-                                      'مدير النظام لديه كل الصلاحيات تلقائياً',
+                                      tr('مدير النظام لديه كل الصلاحيات تلقائياً'),
                                   child: Icon(
                                     PhosphorIconsBold.crown,
                                     size: 14,
@@ -657,7 +658,7 @@ class _PermissionsManagementWidgetState
                 },
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('خطأ: $e')),
+              error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
             ),
           ),
         ],
@@ -693,7 +694,7 @@ class _PermissionsManagementWidgetState
             ),
             const SizedBox(height: 16),
             Text(
-              'اختر دوراً من القائمة لعرض وتعديل صلاحياته',
+              tr('اختر دوراً من القائمة لعرض وتعديل صلاحياته'),
               style: AppTypography.bodyLarge.copyWith(
                 color: Colors.grey.shade500,
               ),
@@ -720,7 +721,7 @@ class _PermissionsManagementWidgetState
             ),
             const SizedBox(height: 12),
             Text(
-              'لا توجد نتائج للبحث',
+              tr('لا توجد نتائج للبحث'),
               style: AppTypography.bodyLarge.copyWith(
                 color: Colors.grey.shade500,
               ),
@@ -752,7 +753,7 @@ class _PermissionsManagementWidgetState
               const Icon(PhosphorIconsBold.user, size: 18, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(
-                'صلاحيات: ${_selectedRole!.name}',
+                tr('صلاحيات: {p0}', {'p0': _selectedRole!.name}),
                 style: AppTypography.bodyLarge.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -902,7 +903,7 @@ class _PermissionsManagementWidgetState
                           ),
                         ),
                         Text(
-                          '$grantedInCategory من $totalInCategory صلاحية',
+                          tr('{grantedInCategory} من {totalInCategory} صلاحية', {'grantedInCategory': grantedInCategory, 'totalInCategory': totalInCategory}),
                           style: AppTypography.bodySmall.copyWith(
                             color: Colors.grey.shade500,
                           ),
@@ -1143,14 +1144,14 @@ void showPermissionsManagementDialog(BuildContext context,
   if (picpos) {
     showDialog(
       context: context,
-      builder: (_) => const PicPosDialog(
+      builder: (_) =>  PicPosDialog(
         icon: PhosphorIconsBold.shieldCheck,
-        title: 'إدارة الصلاحيات',
-        subtitle: 'اختر دوراً ثمّ عدّل صلاحياته — يسري فوراً على كل مستخدميه',
+        title: tr('إدارة الصلاحيات'),
+        subtitle: tr('اختر دوراً ثمّ عدّل صلاحياته — يسري فوراً على كل مستخدميه'),
         width: 980,
         scrollable: false,
         body: [
-          SizedBox(height: 600, child: PermissionsManagementWidget()),
+          const SizedBox(height: 600, child: PermissionsManagementWidget()),
         ],
       ),
     );
@@ -1159,11 +1160,11 @@ void showPermissionsManagementDialog(BuildContext context,
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Row(
+      title:  Row(
         children: [
-          Icon(PhosphorIconsBold.shieldCheck, color: AppColors.primary),
-          SizedBox(width: 8),
-          Text('إدارة الصلاحيات'),
+          const Icon(PhosphorIconsBold.shieldCheck, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Text(tr('إدارة الصلاحيات')),
         ],
       ),
       content: const SizedBox(
@@ -1174,7 +1175,7 @@ void showPermissionsManagementDialog(BuildContext context,
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إغلاق'),
+          child:  Text(tr('إغلاق')),
         ),
       ],
     ),

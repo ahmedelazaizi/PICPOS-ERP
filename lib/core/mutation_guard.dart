@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // MUTATION GUARD (data classes) — Feature 004 (Multi-Branch Governance, US3)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -38,7 +39,7 @@ class MutationDeniedException implements Exception {
   MutationDeniedException(this.reason);
   final String reason;
   @override
-  String toString() => 'العملية مرفوضة: $reason';
+  String toString() => tr('العملية مرفوضة: {reason}', {'reason': reason});
 }
 
 /// Static mirror of `AuthState.isCrossBranchElevated`. Updated by
@@ -68,13 +69,13 @@ class ElevationSnapshot {
 /// وبعد الخروج.
 class ActorSnapshot {
   static int? userId;
-  static String userName = 'النظام';
+  static String userName = tr('النظام');
 
   /// يُنادى من `AuthNotifier` وحدَه.
   static void set(int? id, String? name) {
     userId = id;
     final n = name?.trim();
-    userName = (n == null || n.isEmpty) ? 'النظام' : n;
+    userName = (n == null || n.isEmpty) ? tr('النظام') : n;
   }
 }
 

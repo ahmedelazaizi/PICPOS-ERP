@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
@@ -60,7 +61,7 @@ class _TransferDialogState extends State<TransferDialog> {
         children: [
           const Icon(PhosphorIconsBold.arrowsLeftRight, color: AppColors.info),
           const SizedBox(width: 8),
-          Text('نقل من ${widget.sourceTable.name}'),
+          Text(tr('نقل من {p0}', {'p0': widget.sourceTable.name})),
         ],
       ),
       content: SizedBox(
@@ -73,11 +74,11 @@ class _TransferDialogState extends State<TransferDialog> {
                 children: [
                   // Transfer mode toggle
                   SwitchListTile(
-                    title: const Text('نقل كل الأصناف'),
+                    title:  Text(tr('نقل كل الأصناف')),
                     subtitle: Text(
                       _transferAll
-                          ? 'سيتم نقل جميع الأصناف'
-                          : 'اختر الأصناف للنقل',
+                          ? tr('سيتم نقل جميع الأصناف')
+                          : tr('اختر الأصناف للنقل'),
                     ),
                     value: _transferAll,
                     onChanged: (val) => setState(() {
@@ -92,9 +93,9 @@ class _TransferDialogState extends State<TransferDialog> {
 
                   // Partial order item selection
                   if (!_transferAll) ...[
-                    const Text(
-                      'اختر الأصناف للنقل:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                     Text(
+                      tr('اختر الأصناف للنقل:'),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Expanded(
@@ -114,7 +115,7 @@ class _TransferDialogState extends State<TransferDialog> {
                                   return CheckboxListTile(
                                     dense: true,
                                     title: Text(
-                                      product?.name ?? 'صنف #${item.productId}',
+                                      product?.name ?? tr('صنف #{p0}', {'p0': item.productId}),
                                     ),
                                     subtitle: Text(
                                       '${item.quantity.toStringAsFixed(0)} × ${item.unitPrice.toStringAsFixed(2)}',
@@ -139,9 +140,9 @@ class _TransferDialogState extends State<TransferDialog> {
                   ],
 
                   // Target table selection
-                  const Text(
-                    'اختر الطاولة الهدف:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                   Text(
+                    tr('اختر الطاولة الهدف:'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Expanded(
@@ -160,7 +161,7 @@ class _TransferDialogState extends State<TransferDialog> {
                                 : AppColors.success,
                           ),
                           title: Text(table.name),
-                          subtitle: Text('السعة: ${table.capacity} أشخاص'),
+                          subtitle: Text(tr('السعة: {p0} أشخاص', {'p0': table.capacity})),
                           selected: isSelected,
                           selectedTileColor: AppColors.primary.withValues(
                             alpha: 0.1,
@@ -176,7 +177,7 @@ class _TransferDialogState extends State<TransferDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         ElevatedButton.icon(
           onPressed: _selectedTarget == null || _selectedItemIds.isEmpty
@@ -188,7 +189,7 @@ class _TransferDialogState extends State<TransferDialog> {
                 }),
           icon: const Icon(PhosphorIconsBold.arrowRight),
           label: Text(
-            _transferAll ? 'نقل الكل' : 'نقل ${_selectedItemIds.length} صنف',
+            _transferAll ? tr('نقل الكل') : tr('نقل {p0} صنف', {'p0': _selectedItemIds.length}),
           ),
         ),
       ],

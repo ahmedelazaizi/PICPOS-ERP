@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/utils/number_utils.dart';
@@ -58,11 +59,11 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
       textDirection: TextDirection.rtl,
       child: StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.userPlus, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('إضافة طرف جديد'),
+              const Icon(PhosphorIconsBold.userPlus, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(tr('إضافة طرف جديد')),
             ],
           ),
           content: SizedBox(
@@ -72,32 +73,32 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'نوع الطرف *',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                   Text(
+                    tr('نوع الطرف *'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   SegmentedButton<String>(
-                    segments: const [
+                    segments:  [
                       ButtonSegment(
                         value: 'customer',
-                        label: Text('عميل'),
-                        icon: Icon(PhosphorIconsBold.user, size: 16),
+                        label: Text(tr('عميل')),
+                        icon: const Icon(PhosphorIconsBold.user, size: 16),
                       ),
                       ButtonSegment(
                         value: 'supplier',
-                        label: Text('مورد'),
-                        icon: Icon(PhosphorIconsBold.truck, size: 16),
+                        label: Text(tr('مورد')),
+                        icon: const Icon(PhosphorIconsBold.truck, size: 16),
                       ),
                       ButtonSegment(
                         value: 'delivery',
-                        label: Text('توصيل'),
-                        icon: Icon(PhosphorIconsBold.moped, size: 16),
+                        label: Text(tr('توصيل')),
+                        icon: const Icon(PhosphorIconsBold.moped, size: 16),
                       ),
                       ButtonSegment(
                         value: 'both',
-                        label: Text('عميل مورد'),
-                        icon: Icon(PhosphorIconsBold.usersThree, size: 16),
+                        label: Text(tr('عميل مورد')),
+                        icon: const Icon(PhosphorIconsBold.usersThree, size: 16),
                       ),
                     ],
                     selected: {selectedType},
@@ -117,9 +118,9 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                         flex: 3,
                         child: TextField(
                           controller: nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'الاسم *',
-                            prefixIcon: Icon(PhosphorIconsBold.identificationCard),
+                          decoration:  InputDecoration(
+                            labelText: tr('الاسم *'),
+                            prefixIcon: const Icon(PhosphorIconsBold.identificationCard),
                           ),
                         ),
                       ),
@@ -128,10 +129,10 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                         flex: 2,
                         child: TextField(
                           controller: codeController,
-                          decoration: const InputDecoration(
-                            labelText: 'الكود',
-                            prefixIcon: Icon(PhosphorIconsBold.hash),
-                            helperText: 'يُولَّد تلقائياً — قابل للتعديل',
+                          decoration:  InputDecoration(
+                            labelText: tr('الكود'),
+                            prefixIcon: const Icon(PhosphorIconsBold.hash),
+                            helperText: tr('يُولَّد تلقائياً — قابل للتعديل'),
                             helperMaxLines: 2,
                           ),
                         ),
@@ -141,9 +142,9 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                   const SizedBox(height: 12),
                   TextField(
                     controller: phoneController,
-                    decoration: const InputDecoration(
-                      labelText: 'رقم الهاتف',
-                      prefixIcon: Icon(PhosphorIconsBold.phone),
+                    decoration:  InputDecoration(
+                      labelText: tr('رقم الهاتف'),
+                      prefixIcon: const Icon(PhosphorIconsBold.phone),
                     ),
                     keyboardType: TextInputType.phone,
                   ),
@@ -154,7 +155,7 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                         child: TextField(
                           controller: openingBalanceController,
                           decoration: InputDecoration(
-                            labelText: 'الرصيد الافتتاحي',
+                            labelText: tr('الرصيد الافتتاحي'),
                             prefixIcon: const Icon(PhosphorIconsBold.wallet),
                             suffixText: AppConstants.currencySymbolEn,
                           ),
@@ -166,7 +167,7 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                         child: TextField(
                           controller: creditLimitController,
                           decoration: InputDecoration(
-                            labelText: 'الحد الائتماني',
+                            labelText: tr('الحد الائتماني'),
                             prefixIcon: const Icon(PhosphorIconsBold.creditCard),
                             suffixText: AppConstants.currencySymbolEn,
                           ),
@@ -179,9 +180,9 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                   if (selectedType == 'customer' || selectedType == 'both')
                     DropdownButtonFormField<String>(
                       initialValue: selectedPriceLevel,
-                      decoration: const InputDecoration(
-                        labelText: 'تصنيف السعر',
-                        prefixIcon: Icon(PhosphorIconsBold.tag),
+                      decoration:  InputDecoration(
+                        labelText: tr('تصنيف السعر'),
+                        prefixIcon: const Icon(PhosphorIconsBold.tag),
                       ),
                       items: kPriceLevels.entries
                           .map(
@@ -215,16 +216,16 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                         }).toList();
                         return DropdownButtonFormField<int?>(
                           initialValue: selectedGroupId,
-                          decoration: const InputDecoration(
-                            labelText: 'المجموعة',
+                          decoration:  InputDecoration(
+                            labelText: tr('المجموعة'),
                             prefixIcon:
-                                Icon(PhosphorIconsBold.usersThree),
-                            helperText: 'اختيارى — يمكن تركها فارغة',
+                                const Icon(PhosphorIconsBold.usersThree),
+                            helperText: tr('اختيارى — يمكن تركها فارغة'),
                           ),
                           items: [
-                            const DropdownMenuItem<int?>(
+                             DropdownMenuItem<int?>(
                               value: null,
-                              child: Text('— بدون مجموعة —'),
+                              child: Text(tr('— بدون مجموعة —')),
                             ),
                             ...filtered.map(
                               (g) => DropdownMenuItem<int?>(
@@ -253,11 +254,11 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('تحديد الفروع',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                             Text(tr('تحديد الفروع'),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                             const SizedBox(height: 2),
-                            const Text('اتركها فارغة لإتاحة الطرف لكل الفروع',
-                                style: TextStyle(fontSize: 11, color: Colors.grey)),
+                             Text(tr('اتركها فارغة لإتاحة الطرف لكل الفروع'),
+                                style: const TextStyle(fontSize: 11, color: Colors.grey)),
                             const SizedBox(height: 6),
                             Wrap(
                               spacing: 6, runSpacing: 4,
@@ -291,12 +292,12 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                         final ccList = snap.data ?? const <CostCenter>[];
                         return DropdownButtonFormField<int?>(
                           value: selectedCostCenterId,
-                          decoration: const InputDecoration(
-                            labelText: 'مركز التكلفة (اختياري)',
-                            prefixIcon: Icon(PhosphorIconsBold.treeStructure),
+                          decoration:  InputDecoration(
+                            labelText: tr('مركز التكلفة (اختياري)'),
+                            prefixIcon: const Icon(PhosphorIconsBold.treeStructure),
                           ),
                           items: [
-                            const DropdownMenuItem<int?>(value: null, child: Text('— بدون —')),
+                             DropdownMenuItem<int?>(value: null, child: Text(tr('— بدون —'))),
                             ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name))),
                           ],
                           onChanged: (v) => setDialogState(() => selectedCostCenterId = v),
@@ -311,7 +312,7 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton.icon(
               onPressed: saving ? null : () async {
@@ -319,7 +320,7 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                 if (nameController.text.isEmpty) {
                   AppToast.show(
                     context,
-                    'يرجى إدخال الاسم',
+                    tr('يرجى إدخال الاسم'),
                     type: ToastType.error,
                   );
                   if (context.mounted) setDialogState(() => saving = false);
@@ -407,7 +408,7 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                     setDialogState(() => saving = false);
                     AppToast.show(
                       context,
-                      'فشل حفظ الطرف: $e',
+                      tr('فشل حفظ الطرف: {e}', {'e': e}),
                       type: ToastType.error,
                     );
                   }
@@ -422,11 +423,11 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                   final activityLogRepo = ref.read(activityLogRepositoryProvider);
                   await activityLogRepo.logActivity(
                     userId: auth.user?.id,
-                    userName: auth.user?.displayName ?? 'مستخدم',
+                    userName: auth.user?.displayName ?? tr('مستخدم'),
                     action: actionKey,
                     entityType: 'party',
                     description:
-                        'إضافة ${getTypeArabicName(selectedType)}: ${nameController.text}',
+                        tr('إضافة {p0}: {p1}', {'p0': getTypeArabicName(selectedType), 'p1': nameController.text}),
                   );
                 } catch (_) {}
 
@@ -434,13 +435,13 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                   Navigator.pop(context);
                   AppToast.show(
                     context,
-                    'تم إضافة ${getTypeArabicName(selectedType)} بنجاح',
+                    tr('تم إضافة {p0} بنجاح', {'p0': getTypeArabicName(selectedType)}),
                     type: ToastType.success,
                   );
                 }
               },
               icon: const Icon(PhosphorIconsBold.floppyDisk),
-              label: const Text('حفظ'),
+              label:  Text(tr('حفظ')),
             ),
           ],
         ),
@@ -491,7 +492,7 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
             children: [
               const Icon(PhosphorIconsBold.pencil, color: AppColors.primary),
               const SizedBox(width: 8),
-              Text('تعديل بيانات ${party.name}'),
+              Text(tr('تعديل بيانات {p0}', {'p0': party.name})),
             ],
           ),
           content: SizedBox(
@@ -501,27 +502,27 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'نوع الطرف *',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                   Text(
+                    tr('نوع الطرف *'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   SegmentedButton<String>(
-                    segments: const [
+                    segments:  [
                       ButtonSegment(
                         value: 'customer',
-                        label: Text('عميل'),
-                        icon: Icon(PhosphorIconsBold.user, size: 16),
+                        label: Text(tr('عميل')),
+                        icon: const Icon(PhosphorIconsBold.user, size: 16),
                       ),
                       ButtonSegment(
                         value: 'supplier',
-                        label: Text('مورد'),
-                        icon: Icon(PhosphorIconsBold.truck, size: 16),
+                        label: Text(tr('مورد')),
+                        icon: const Icon(PhosphorIconsBold.truck, size: 16),
                       ),
                       ButtonSegment(
                         value: 'both',
-                        label: Text('عميل مورد'),
-                        icon: Icon(PhosphorIconsBold.usersThree, size: 16),
+                        label: Text(tr('عميل مورد')),
+                        icon: const Icon(PhosphorIconsBold.usersThree, size: 16),
                       ),
                     ],
                     selected: {selectedType},
@@ -536,9 +537,9 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                         flex: 3,
                         child: TextField(
                           controller: nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'الاسم *',
-                            prefixIcon: Icon(PhosphorIconsBold.identificationCard),
+                          decoration:  InputDecoration(
+                            labelText: tr('الاسم *'),
+                            prefixIcon: const Icon(PhosphorIconsBold.identificationCard),
                           ),
                         ),
                       ),
@@ -554,9 +555,9 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                           controller: TextEditingController(
                             text: party.code ?? '—',
                           ),
-                          decoration: const InputDecoration(
-                            labelText: 'الكود',
-                            prefixIcon: Icon(PhosphorIconsBold.hash),
+                          decoration:  InputDecoration(
+                            labelText: tr('الكود'),
+                            prefixIcon: const Icon(PhosphorIconsBold.hash),
                           ),
                         ),
                       ),
@@ -565,9 +566,9 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                   const SizedBox(height: 12),
                   TextField(
                     controller: phoneController,
-                    decoration: const InputDecoration(
-                      labelText: 'رقم الهاتف',
-                      prefixIcon: Icon(PhosphorIconsBold.phone),
+                    decoration:  InputDecoration(
+                      labelText: tr('رقم الهاتف'),
+                      prefixIcon: const Icon(PhosphorIconsBold.phone),
                     ),
                     keyboardType: TextInputType.phone,
                   ),
@@ -575,7 +576,7 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                   TextField(
                     controller: creditLimitController,
                     decoration: InputDecoration(
-                      labelText: 'الحد الائتماني',
+                      labelText: tr('الحد الائتماني'),
                       prefixIcon: const Icon(PhosphorIconsBold.creditCard),
                       suffixText: AppConstants.currencySymbolEn,
                     ),
@@ -585,9 +586,9 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                   if (selectedType == 'customer' || selectedType == 'both')
                     DropdownButtonFormField<String>(
                       initialValue: selectedPriceLevel,
-                      decoration: const InputDecoration(
-                        labelText: 'تصنيف السعر',
-                        prefixIcon: Icon(PhosphorIconsBold.tag),
+                      decoration:  InputDecoration(
+                        labelText: tr('تصنيف السعر'),
+                        prefixIcon: const Icon(PhosphorIconsBold.tag),
                       ),
                       items: kPriceLevels.entries
                           .map(
@@ -626,7 +627,7 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                             (g) => g.id == selectedGroupId,
                             orElse: () => PartyGroup(
                               id: selectedGroupId!,
-                              name: 'مجموعة #$selectedGroupId',
+                              name: tr('مجموعة #{selectedGroupId}', {'selectedGroupId': selectedGroupId}),
                               type: 'both',
                               defaultDiscount: 0,
                               isActive: false,
@@ -638,15 +639,15 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                         }
                         return DropdownButtonFormField<int?>(
                           initialValue: selectedGroupId,
-                          decoration: const InputDecoration(
-                            labelText: 'المجموعة',
+                          decoration:  InputDecoration(
+                            labelText: tr('المجموعة'),
                             prefixIcon:
-                                Icon(PhosphorIconsBold.usersThree),
+                                const Icon(PhosphorIconsBold.usersThree),
                           ),
                           items: [
-                            const DropdownMenuItem<int?>(
+                             DropdownMenuItem<int?>(
                               value: null,
-                              child: Text('— بدون مجموعة —'),
+                              child: Text(tr('— بدون مجموعة —')),
                             ),
                             ...filtered.map(
                               (g) => DropdownMenuItem<int?>(
@@ -674,11 +675,11 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('تحديد الفروع',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                             Text(tr('تحديد الفروع'),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                             const SizedBox(height: 2),
-                            const Text('اتركها فارغة لإتاحة الطرف لكل الفروع',
-                                style: TextStyle(fontSize: 11, color: Colors.grey)),
+                             Text(tr('اتركها فارغة لإتاحة الطرف لكل الفروع'),
+                                style: const TextStyle(fontSize: 11, color: Colors.grey)),
                             const SizedBox(height: 6),
                             Wrap(
                               spacing: 6, runSpacing: 4,
@@ -715,12 +716,12 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                         final ccList = snap.data ?? const <CostCenter>[];
                         return DropdownButtonFormField<int?>(
                           value: selectedCostCenterId,
-                          decoration: const InputDecoration(
-                            labelText: 'مركز التكلفة (اختياري)',
-                            prefixIcon: Icon(PhosphorIconsBold.treeStructure),
+                          decoration:  InputDecoration(
+                            labelText: tr('مركز التكلفة (اختياري)'),
+                            prefixIcon: const Icon(PhosphorIconsBold.treeStructure),
                           ),
                           items: [
-                            const DropdownMenuItem<int?>(value: null, child: Text('— بدون —')),
+                             DropdownMenuItem<int?>(value: null, child: Text(tr('— بدون —'))),
                             ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name))),
                           ],
                           onChanged: (v) => setDialogState(() => selectedCostCenterId = v),
@@ -735,7 +736,7 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton.icon(
               onPressed: saving ? null : () async {
@@ -743,7 +744,7 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                 if (nameController.text.isEmpty) {
                   AppToast.show(
                     context,
-                    'يرجى إدخال الاسم',
+                    tr('يرجى إدخال الاسم'),
                     type: ToastType.error,
                   );
                   if (context.mounted) setDialogState(() => saving = false);
@@ -805,7 +806,7 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                     setDialogState(() => saving = false);
                     AppToast.show(
                       context,
-                      'فشل تحديث البيانات: $e',
+                      tr('فشل تحديث البيانات: {e}', {'e': e}),
                       type: ToastType.error,
                     );
                   }
@@ -820,11 +821,11 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                   final activityLogRepo = ref.read(activityLogRepositoryProvider);
                   await activityLogRepo.logActivity(
                     userId: auth.user?.id,
-                    userName: auth.user?.displayName ?? 'مستخدم',
+                    userName: auth.user?.displayName ?? tr('مستخدم'),
                     action: actionKey,
                     entityType: 'party',
                     entityId: party.id,
-                    description: 'تعديل بيانات: ${party.name}',
+                    description: tr('تعديل بيانات: {p0}', {'p0': party.name}),
                   );
                 } catch (_) {}
 
@@ -832,13 +833,13 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                   Navigator.pop(context);
                   AppToast.show(
                     context,
-                    'تم تحديث البيانات بنجاح',
+                    tr('تم تحديث البيانات بنجاح'),
                     type: ToastType.success,
                   );
                 }
               },
               icon: const Icon(PhosphorIconsBold.floppyDisk),
-              label: const Text('حفظ'),
+              label:  Text(tr('حفظ')),
             ),
           ],
         ),
@@ -857,18 +858,18 @@ void showDeletePartyDialog(BuildContext context, WidgetRef ref, Party party) {
       textDirection: TextDirection.rtl,
       child: StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.warning, color: AppColors.error),
-            SizedBox(width: 8),
-            Text('تأكيد الحذف'),
+            const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+            const SizedBox(width: 8),
+            Text(tr('تأكيد الحذف')),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('هل أنت متأكد من حذف "${party.name}"؟'),
+            Text(tr('هل أنت متأكد من حذف "{p0}"؟', {'p0': party.name})),
             if (party.balance != 0)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
@@ -888,7 +889,7 @@ void showDeletePartyDialog(BuildContext context, WidgetRef ref, Party party) {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'لديه رصيد: ${party.balance.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                          tr('لديه رصيد: {p0} {p1}', {'p0': party.balance.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
                           style: const TextStyle(color: AppColors.warning),
                         ),
                       ),
@@ -901,7 +902,7 @@ void showDeletePartyDialog(BuildContext context, WidgetRef ref, Party party) {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -921,7 +922,7 @@ void showDeletePartyDialog(BuildContext context, WidgetRef ref, Party party) {
                   setDialogState(() => saving = false);
                   AppToast.show(
                     context,
-                    'فشل حذف الطرف: $e',
+                    tr('فشل حذف الطرف: {e}', {'e': e}),
                     type: ToastType.error,
                   );
                 }
@@ -936,11 +937,11 @@ void showDeletePartyDialog(BuildContext context, WidgetRef ref, Party party) {
                 final activityLogRepo = ref.read(activityLogRepositoryProvider);
                 await activityLogRepo.logActivity(
                   userId: auth.user?.id,
-                  userName: auth.user?.displayName ?? 'مستخدم',
+                  userName: auth.user?.displayName ?? tr('مستخدم'),
                   action: actionKey,
                   entityType: 'party',
                   entityId: party.id,
-                  description: 'حذف: ${party.name}',
+                  description: tr('حذف: {p0}', {'p0': party.name}),
                 );
               } catch (_) {}
 
@@ -948,12 +949,12 @@ void showDeletePartyDialog(BuildContext context, WidgetRef ref, Party party) {
                 Navigator.pop(context);
                 AppToast.show(
                   context,
-                  'تم إلغاء تفعيل الطرف',
+                  tr('تم إلغاء تفعيل الطرف'),
                   type: ToastType.warning,
                 );
               }
             },
-            child: const Text('حذف'),
+            child:  Text(tr('حذف')),
           ),
         ],
         ),
@@ -982,7 +983,7 @@ void showExcelOptionsDialog(
               color: AppColors.primary,
             ),
             const SizedBox(width: 8),
-            Text(isExport ? 'تصدير قالب Excel' : 'استيراد من Excel'),
+            Text(isExport ? tr('تصدير قالب Excel') : tr('استيراد من Excel')),
           ],
         ),
         content: Column(
@@ -993,7 +994,7 @@ void showExcelOptionsDialog(
                 PhosphorIconsBold.user,
                 color: AppColors.primary,
               ),
-              title: const Text('العملاء'),
+              title:  Text(tr('العملاء')),
               onTap: () {
                 Navigator.pop(context);
                 if (isExport) {
@@ -1009,7 +1010,7 @@ void showExcelOptionsDialog(
                 PhosphorIconsBold.truck,
                 color: AppColors.warning,
               ),
-              title: const Text('الموردين'),
+              title:  Text(tr('الموردين')),
               onTap: () {
                 Navigator.pop(context);
                 if (isExport) {
@@ -1024,7 +1025,7 @@ void showExcelOptionsDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
         ],
       ),
@@ -1038,7 +1039,7 @@ Future<void> _exportTemplate(BuildContext context, WidgetRef ref, {bool isSuppli
   if (path != null && context.mounted) {
     AppToast.show(
       context,
-      'تم تصدير النموذج بنجاح: $path',
+      tr('تم تصدير النموذج بنجاح: {path}', {'path': path}),
       type: ToastType.success,
     );
     try {
@@ -1046,10 +1047,10 @@ Future<void> _exportTemplate(BuildContext context, WidgetRef ref, {bool isSuppli
       final activityLogRepo = ref.read(activityLogRepositoryProvider);
       await activityLogRepo.logActivity(
         userId: auth.user?.id,
-        userName: auth.user?.displayName ?? 'مستخدم',
+        userName: auth.user?.displayName ?? tr('مستخدم'),
         action: 'export_template',
         entityType: 'party',
-        description: 'تصدير قالب ${isSupplier ? "موردين" : "عملاء"}',
+        description: tr('تصدير قالب {p0}', {'p0': isSupplier ? "موردين" : "عملاء"}),
       );
     } catch (_) {}
   }
@@ -1071,11 +1072,11 @@ Future<void> _importData(BuildContext context, WidgetRef ref, {bool isSupplier =
         final activityLogRepo = ref.read(activityLogRepositoryProvider);
         await activityLogRepo.logActivity(
           userId: auth.user?.id,
-          userName: auth.user?.displayName ?? 'مستخدم',
+          userName: auth.user?.displayName ?? tr('مستخدم'),
           action: 'import_data',
           entityType: 'party',
           description:
-              'استيراد بيانات ${isSupplier ? "موردين" : "عملاء"} من Excel',
+              tr('استيراد بيانات {p0} من Excel', {'p0': isSupplier ? "موردين" : "عملاء"}),
         );
       } catch (_) {}
     }

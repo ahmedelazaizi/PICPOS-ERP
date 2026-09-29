@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/utils/friendly_error.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
@@ -50,14 +51,14 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
       textDirection: ui.TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('جرد المخزون (The Auditor)'),
+          title:  Text(tr('جرد المخزون (The Auditor)')),
           actions: [
             auditAsync.when(
               data: (audit) => audit != null
                   ? TextButton.icon(
                       onPressed: () => _finalizeAudit(audit.id),
                       icon: const Icon(PhosphorIconsBold.checkCircle),
-                      label: const Text('اعتماد الجرد النهائي'),
+                      label:  Text(tr('اعتماد الجرد النهائي')),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.success,
                       ),
@@ -93,24 +94,24 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
             color: AppColors.textMuted,
           ),
           const SizedBox(height: 24),
-          const Text(
-            'لا توجد جلسة جرد مفتوحة حالياً',
-            style: TextStyle(
+           Text(
+            tr('لا توجد جلسة جرد مفتوحة حالياً'),
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'ابدأ جلسة جرد جديدة لمطابقة المتوفر الفعلي مع النظام',
-            style: TextStyle(color: AppColors.textSecondary),
+           Text(
+            tr('ابدأ جلسة جرد جديدة لمطابقة المتوفر الفعلي مع النظام'),
+            style: const TextStyle(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
             onPressed: _startNewAudit,
             icon: const Icon(PhosphorIconsBold.plus),
-            label: const Text('بدء جلسة جرد جديدة'),
+            label:  Text(tr('بدء جلسة جرد جديدة')),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
@@ -136,7 +137,7 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
                   controller: _barcodeController,
                   focusNode: _barcodeFocusNode,
                   decoration: InputDecoration(
-                    hintText: 'امسح الباركود أو أدخل كود الصنف...',
+                    hintText: tr('امسح الباركود أو أدخل كود الصنف...'),
                     prefixIcon: const Icon(PhosphorIconsBold.barcode),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -149,7 +150,7 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
               ElevatedButton.icon(
                 onPressed: () => _onAddItem(_barcodeController.text, audit.id),
                 icon: const Icon(PhosphorIconsBold.plus),
-                label: const Text('إضافة صنف'),
+                label:  Text(tr('إضافة صنف')),
               ),
             ],
           ),
@@ -160,8 +161,8 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
           child: itemsAsync.when(
             data: (items) {
               if (items.isEmpty) {
-                return const Center(
-                  child: Text('ابدأ بمسح الأصناف للبدء في الجرد'),
+                return  Center(
+                  child: Text(tr('ابدأ بمسح الأصناف للبدء في الجرد')),
                 );
               }
               return _buildItemsList(items);
@@ -193,20 +194,20 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
             final product = snapshot.data;
             return ListTile(
               title: Text(product?.name ?? 'Loading...'),
-              subtitle: Text('كود: ${product?.code ?? '...'}'),
+              subtitle: Text(tr('كود: {p0}', {'p0': product?.code ?? '...'})),
               trailing: SizedBox(
                 width: 300,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     _buildCountBox(
-                      'المتوقع',
+                      tr('المتوقع'),
                       item.expectedQuantity,
                       color: AppColors.info,
                     ),
                     const SizedBox(width: 16),
                     _buildCountBox(
-                      'الفعلي',
+                      tr('الفعلي'),
                       item.actualQuantity,
                       color: AppColors.primary,
                       isEditable: true,
@@ -311,9 +312,9 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text(
-          'الفارق',
-          style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+         Text(
+          tr('الفارق'),
+          style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
         ),
         const SizedBox(height: 4),
         Container(
@@ -400,7 +401,7 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
     if (ref.read(isClientModeProvider)) {
       AppToast.show(
         context,
-        'لا يمكن اعتماد الجرد من جهاز عميل أو مرآة — نفّذه على الخادم الرئيسي',
+        tr('لا يمكن اعتماد الجرد من جهاز عميل أو مرآة — نفّذه على الخادم الرئيسي'),
         type: ToastType.error,
       );
       return;
@@ -408,18 +409,18 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تأكيد اعتماد الجرد'),
-        content: const Text(
-          'سيتم تعديل الكميات في المخزن تلقائياً بناءً على نتائج هذا الجرد. هل أنت متأكد؟',
+        title:  Text(tr('تأكيد اعتماد الجرد')),
+        content:  Text(
+          tr('سيتم تعديل الكميات في المخزن تلقائياً بناءً على نتائج هذا الجرد. هل أنت متأكد؟'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('تأكيد واعتماد'),
+            child:  Text(tr('تأكيد واعتماد')),
           ),
         ],
       ),
@@ -441,7 +442,7 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
       if (success && mounted) {
         AppToast.show(
           context,
-          'تم اعتماد الجرد وتحديث المخزون بنجاح',
+          tr('تم اعتماد الجرد وتحديث المخزون بنجاح'),
           type: ToastType.success,
         );
         Navigator.pop(context);

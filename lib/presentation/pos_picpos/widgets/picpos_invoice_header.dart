@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,7 +42,7 @@ class PicPosInvoiceHeader extends ConsumerWidget {
         children: [
           _Field(
             icon: PhosphorIconsBold.calendarBlank,
-            label: 'التاريخ',
+            label: tr('التاريخ'),
             value: dateText,
           ),
           const _Divider(),
@@ -147,23 +148,23 @@ class _LastInvoiceField extends ConsumerWidget {
     final async = ref.watch(picposLastInvoiceProvider);
 
     return async.when(
-      loading: () => const _Field(
+      loading: () =>  _Field(
         icon: PhosphorIconsBold.hash,
-        label: 'آخر فاتورة',
+        label: tr('آخر فاتورة'),
         value: '...',
         muted: true,
       ),
-      error: (error, stack) => const _Field(
+      error: (error, stack) =>  _Field(
         icon: PhosphorIconsBold.hash,
-        label: 'آخر فاتورة',
-        value: 'غير متاح',
+        label: tr('آخر فاتورة'),
+        value: tr('غير متاح'),
         muted: true,
       ),
       data: (invoice) {
         if (invoice == null) {
-          return const _Field(
+          return  _Field(
             icon: PhosphorIconsBold.hash,
-            label: 'آخر فاتورة',
+            label: tr('آخر فاتورة'),
             value: '—',
             muted: true,
           );
@@ -175,7 +176,7 @@ class _LastInvoiceField extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
             child: _Field(
               icon: PhosphorIconsBold.hash,
-              label: 'آخر فاتورة',
+              label: tr('آخر فاتورة'),
               value: invoice.invoiceNumber,
               valueColor: AppColors.primary,
             ),
@@ -201,8 +202,8 @@ class _CustomerField extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: _Field(
           icon: PhosphorIconsBold.user,
-          label: 'العميل',
-          value: name ?? 'عميل نقدي',
+          label: tr('العميل'),
+          value: name ?? tr('عميل نقدي'),
           valueColor: name == null ? AppColors.textMuted : AppColors.primary,
         ),
       ),
@@ -221,33 +222,33 @@ class _BalanceField extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (customerId == null) {
-      return const _Field(
+      return  _Field(
         icon: PhosphorIconsBold.wallet,
-        label: 'رصيد العميل',
+        label: tr('رصيد العميل'),
         value: '—',
         muted: true,
       );
     }
     final customers = ref.watch(allCustomersProvider);
     return customers.when(
-      loading: () => const _Field(
+      loading: () =>  _Field(
         icon: PhosphorIconsBold.wallet,
-        label: 'رصيد العميل',
+        label: tr('رصيد العميل'),
         value: '...',
         muted: true,
       ),
-      error: (error, stack) => const _Field(
+      error: (error, stack) =>  _Field(
         icon: PhosphorIconsBold.wallet,
-        label: 'رصيد العميل',
-        value: 'غير متاح',
+        label: tr('رصيد العميل'),
+        value: tr('غير متاح'),
         muted: true,
       ),
       data: (list) {
         final match = list.where((p) => p.id == customerId).firstOrNull;
         if (match == null) {
-          return const _Field(
+          return  _Field(
             icon: PhosphorIconsBold.wallet,
-            label: 'رصيد العميل',
+            label: tr('رصيد العميل'),
             value: '—',
             muted: true,
           );
@@ -255,7 +256,7 @@ class _BalanceField extends ConsumerWidget {
         final value = match.balance;
         return _Field(
           icon: PhosphorIconsBold.wallet,
-          label: 'رصيد العميل',
+          label: tr('رصيد العميل'),
           value: NumberUtils.formatCurrency(value),
           // Debit (owed to us) red, credit green — same convention as the
           // parties screen so the sign never means two different things.
@@ -275,21 +276,21 @@ class _WarehouseField extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final warehouses = ref.watch(allWarehousesProvider);
     return warehouses.when(
-      loading: () => const _Field(
+      loading: () =>  _Field(
         icon: PhosphorIconsBold.warehouse,
-        label: 'المستودع',
+        label: tr('المستودع'),
         value: '...',
         muted: true,
       ),
-      error: (error, stack) => const _Field(
+      error: (error, stack) =>  _Field(
         icon: PhosphorIconsBold.warehouse,
-        label: 'المستودع',
-        value: 'غير متاح',
+        label: tr('المستودع'),
+        value: tr('غير متاح'),
         muted: true,
       ),
       data: (list) => _Field(
         icon: PhosphorIconsBold.warehouse,
-        label: 'المستودع',
+        label: tr('المستودع'),
         value: list.isEmpty ? '—' : list.first.name,
       ),
     );

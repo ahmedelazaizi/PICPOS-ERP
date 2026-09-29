@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ «سند قبض» — تصميمُ المالك `(12)` و`(13)`.
 //
 // ═══ ⚠️ مسارُ المال **منقولٌ** من الحوار لا مُعادُ كتابته ═══
@@ -230,7 +231,7 @@ userId: ref.read(authProvider).user?.id,
       final user = ref.read(authProvider).user;
       await ref.read(activityLogRepositoryProvider).logActivity(
             userId: user?.id,
-            userName: user?.displayName ?? 'مجهول',
+            userName: user?.displayName ?? tr('مجهول'),
             action: 'receipt',
             entityType: 'payment',
             description: 'سند قبض ${v.method} رقم $voucherNumber بمبلغ '
@@ -239,10 +240,10 @@ userId: ref.read(authProvider).user?.id,
           );
 
       if (!mounted) return;
-      _toast('تم حفظ سند القبض', ToastType.success);
+      _toast(tr('تم حفظ سند القبض'), ToastType.success);
       _finish();
     } catch (e) {
-      _toast('خطأ في الحفظ: $e', ToastType.error);
+      _toast(tr('خطأ في الحفظ: {e}', {'e': e}), ToastType.error);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -254,7 +255,7 @@ userId: ref.read(authProvider).user?.id,
     double commissionAmt,
     String allCheckNumbers,
   ) {
-    var d = v.notes.isEmpty ? 'تحصيل من عميل' : v.notes;
+    var d = v.notes.isEmpty ? tr('تحصيل من عميل') : v.notes;
     if (v.commissionPercent > 0) {
       d += ' | المبلغ الكلي: '
           '${grossAmount.toStringAsFixed(AppConstants.decimalPlaces)}'
@@ -265,7 +266,7 @@ userId: ref.read(authProvider).user?.id,
       d += ' | خصم: '
           '${v.discount.toStringAsFixed(AppConstants.decimalPlaces)}';
     }
-    if (v.method == 'check') d += ' | شيك رقم: $allCheckNumbers';
+    if (v.method == 'check') d += tr(' | شيك رقم: {allCheckNumbers}', {'allCheckNumbers': allCheckNumbers});
     return d;
   }
 
@@ -281,7 +282,7 @@ userId: ref.read(authProvider).user?.id,
       final dueDate =
           c.dueDate ?? DateTime.now().add(const Duration(days: 30));
       final bank = c.bank.isEmpty ? null : c.bank;
-      final notes = 'ترحيل تلقائي من سند قبض $voucherNumber';
+      final notes = tr('ترحيل تلقائي من سند قبض {voucherNumber}', {'voucherNumber': voucherNumber});
 
       // الكتابةُ المزدوجة (R4): الخادمُ ثمّ المحلّيّ بنفس المعرّف، وإلّا
       // بقي الشيكُ محلّيّاً ولم يره جهازٌ آخر.
@@ -322,7 +323,7 @@ userId: ref.read(authProvider).user?.id,
           paperId,
           'deposited',
           changedBy: ref.read(authProvider).user?.id,
-          notes: 'إيداعٌ فوريٌّ من سند القبض $voucherNumber',
+          notes: tr('إيداعٌ فوريٌّ من سند القبض {voucherNumber}', {'voucherNumber': voucherNumber}),
         );
       }
     }
@@ -354,7 +355,7 @@ userId: ref.read(authProvider).user?.id,
           paymentType: 'receipt',
           partyId: v.partyId,
           userId: ref.read(authProvider).user?.id,
-          notes: 'توزيع سند القبض $voucherNumber',
+          notes: tr('توزيع سند القبض {voucherNumber}', {'voucherNumber': voucherNumber}),
           allocations: [
             for (final a in v.allocations)
               (

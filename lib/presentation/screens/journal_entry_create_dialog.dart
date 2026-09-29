@@ -11,7 +11,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
   // ═══════════════════════════════════════════════════════════════════════════
 
   void showCreateEntryDialog(BuildContext context, {JournalEntryTemplateData? initialTemplate, List<Map<String, dynamic>>? templateLines}) {
-    final descCtrl = TextEditingController(text: initialTemplate?.name != null ? 'قيد بناءً على قالب: ${initialTemplate?.name}' : '');
+    final descCtrl = TextEditingController(text: initialTemplate?.name != null ? tr('قيد بناءً على قالب: {p0}', {'p0': initialTemplate?.name}) : '');
     DateTime entryDate = DateTime.now();
     String entryType = 'daily'; // daily, adjustment, salary
     int? globalCostCenterId; // Global cost center applied to new lines
@@ -67,7 +67,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
               children: [
                 const Icon(PhosphorIconsBold.notebook, color: AppColors.primary, size: 20),
                 const SizedBox(width: 8),
-                Text('إنشاء قيد يدوي', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+                Text(tr('إنشاء قيد يدوي'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
               ],
             ),
             content: SizedBox(
@@ -84,15 +84,15 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                           width: 130,
                           child: DropdownButtonFormField<String>(
                             initialValue: entryType,
-                            decoration: const InputDecoration(
-                              labelText: 'نوع القيد',
-                              border: OutlineInputBorder(),
+                            decoration:  InputDecoration(
+                              labelText: tr('نوع القيد'),
+                              border: const OutlineInputBorder(),
                               isDense: true,
                             ),
-                            items: const [
-                              DropdownMenuItem(value: 'daily', child: Text('يومية')),
-                              DropdownMenuItem(value: 'adjustment', child: Text('تسوية')),
-                              DropdownMenuItem(value: 'salary', child: Text('رواتب')),
+                            items:  [
+                              DropdownMenuItem(value: 'daily', child: Text(tr('يومية'))),
+                              DropdownMenuItem(value: 'adjustment', child: Text(tr('تسوية'))),
+                              DropdownMenuItem(value: 'salary', child: Text(tr('رواتب'))),
                             ],
                             onChanged: (v) => setDialogState(() => entryType = v ?? 'daily'),
                           ),
@@ -102,10 +102,10 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                           flex: 3,
                           child: TextField(
                             controller: descCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'وصف القيد',
-                              hintText: 'مثال: قيد تسوية...',
-                              border: OutlineInputBorder(),
+                            decoration:  InputDecoration(
+                              labelText: tr('وصف القيد'),
+                              hintText: tr('مثال: قيد تسوية...'),
+                              border: const OutlineInputBorder(),
                             ),
                           ),
                         ),
@@ -125,10 +125,10 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                               }
                             },
                             child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'التاريخ',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(PhosphorIconsBold.calendar, size: 16),
+                              decoration:  InputDecoration(
+                                labelText: tr('التاريخ'),
+                                border: const OutlineInputBorder(),
+                                prefixIcon: const Icon(PhosphorIconsBold.calendar, size: 16),
                               ),
                               child: Text(
                                 _dateFormat.format(entryDate),
@@ -144,13 +144,13 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                     // Lines header with global cost center
                     Row(
                       children: [
-                        Text('بنود القيد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 14)),
+                        Text(tr('بنود القيد'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 14)),
                         const SizedBox(width: 12),
                         Expanded(
                           child: CostCenterPicker(
                             repo: ref.read(accountingRepositoryProvider),
                             selectedId: globalCostCenterId,
-                            labelOverride: 'الفرع / مركز التكلفة',
+                            labelOverride: tr('الفرع / مركز التكلفة'),
                             onChanged: (id) {
                               setDialogState(() {
                                 globalCostCenterId = id;
@@ -169,7 +169,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                             lines.add(newLine);
                           }),
                           icon: const Icon(PhosphorIconsBold.plus, size: 14),
-                          label: const Text('إضافة بند'),
+                          label:  Text(tr('إضافة بند')),
                         ),
                       ],
                     ),
@@ -199,7 +199,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    'بند ${i + 1}',
+                                    tr('بند {p0}', {'p0': i + 1}),
                                     style: GoogleFonts.cairo(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.primary),
                                   ),
                                 ),
@@ -229,7 +229,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                                   child: TextField(
                                     controller: line.descCtrl,
                                     decoration: InputDecoration(
-                                      hintText: 'البيان',
+                                      hintText: tr('البيان'),
                                       isDense: true,
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -259,7 +259,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                                     keyboardType: TextInputType.number,
                                     onChanged: (_) => setDialogState(() {}),
                                     decoration: InputDecoration(
-                                      labelText: 'مدين',
+                                      labelText: tr('مدين'),
                                       labelStyle: GoogleFonts.cairo(fontSize: 11),
                                       hintText: '0.00',
                                       isDense: true,
@@ -276,7 +276,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                                     keyboardType: TextInputType.number,
                                     onChanged: (_) => setDialogState(() {}),
                                     decoration: InputDecoration(
-                                      labelText: 'دائن',
+                                      labelText: tr('دائن'),
                                       labelStyle: GoogleFonts.cairo(fontSize: 11),
                                       hintText: '0.00',
                                       isDense: true,
@@ -317,17 +317,17 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'مجموع المدين: ${totalDebit.toStringAsFixed(2)}',
+                            tr('مجموع المدين: {p0}', {'p0': totalDebit.toStringAsFixed(2)}),
                             style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(width: 16),
                           Text(
-                            'مجموع الدائن: ${totalCredit.toStringAsFixed(2)}',
+                            tr('مجموع الدائن: {p0}', {'p0': totalCredit.toStringAsFixed(2)}),
                             style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600),
                           ),
                           const Spacer(),
                           Text(
-                            isBalanced ? 'متوازن ✓' : 'غير متوازن!',
+                            isBalanced ? tr('متوازن ✓') : tr('غير متوازن!'),
                             style: GoogleFonts.cairo(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -357,22 +357,22 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                             children: [
                               const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
                               const SizedBox(width: 8),
-                              Text('تنبيه', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+                              Text(tr('تنبيه'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
                             ],
                           ),
                           content: Text(
-                            'يوجد بيانات غير محفوظة في القيد. هل أنت متأكد من الإلغاء؟',
+                            tr('يوجد بيانات غير محفوظة في القيد. هل أنت متأكد من الإلغاء؟'),
                             style: GoogleFonts.cairo(fontSize: 14, height: 1.5),
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(c, false),
-                              child: const Text('لا، البقاء'),
+                              child:  Text(tr('لا، البقاء')),
                             ),
                             ElevatedButton(
                               onPressed: () => Navigator.pop(c, true),
                               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
-                              child: const Text('نعم، إلغاء'),
+                              child:  Text(tr('نعم، إلغاء')),
                             ),
                           ],
                         ),
@@ -382,7 +382,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                   }
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton.icon(
                 onPressed: isBalanced && !saving
@@ -395,7 +395,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                 icon: saving
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(PhosphorIconsBold.floppyDisk, size: 16),
-                label: const Text('حفظ القيد'),
+                label:  Text(tr('حفظ القيد')),
               ),
             ],
           );
@@ -415,7 +415,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
             children: [
               const Icon(PhosphorIconsBold.copy, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
-              Text('اختيار قالب قيد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+              Text(tr('اختيار قالب قيد'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             ],
           ),
           content: SizedBox(
@@ -428,7 +428,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
                 final templates = snapshot.data!;
                 if (templates.isEmpty) {
                   return Center(
-                    child: Text('لا توجد قوالب نشطة مسجلة.', style: GoogleFonts.cairo(color: AppColors.textMuted)),
+                    child: Text(tr('لا توجد قوالب نشطة مسجلة.'), style: GoogleFonts.cairo(color: AppColors.textMuted)),
                   );
                 }
                 return ListView.separated(
@@ -455,7 +455,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
           ],
         ),
@@ -471,22 +471,22 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
     String referenceType,
   ) async {
     if (description.isEmpty) {
-      AppToast.show(context, 'يرجى إدخال وصف القيد', type: ToastType.info);
+      AppToast.show(context, tr('يرجى إدخال وصف القيد'), type: ToastType.info);
       return;
     }
 
     for (final line in lines) {
       if (line.account == null) {
-        AppToast.show(context, 'يرجى اختيار حساب لكل بند', type: ToastType.info);
+        AppToast.show(context, tr('يرجى اختيار حساب لكل بند'), type: ToastType.info);
         return;
       }
       if (line.debit <= 0 && line.credit <= 0) {
-        AppToast.show(context, 'كل بند يجب أن يحتوي على قيمة مدين أو دائن', type: ToastType.info);
+        AppToast.show(context, tr('كل بند يجب أن يحتوي على قيمة مدين أو دائن'), type: ToastType.info);
         return;
       }
       // BUG-U13: a line may carry a debit OR a credit, never both.
       if (line.debit > 0 && line.credit > 0) {
-        AppToast.show(context, 'لا يمكن إدخال مدين ودائن معاً في نفس البند',
+        AppToast.show(context, tr('لا يمكن إدخال مدين ودائن معاً في نفس البند'),
             type: ToastType.info);
         return;
       }
@@ -522,11 +522,11 @@ extension _JournalEntryCreateDialog on _JournalEntriesScreenState {
 
       if (ctx.mounted) Navigator.pop(ctx);
       if (mounted) {
-        AppToast.show(context, 'تم حفظ القيد بنجاح');
+        AppToast.show(context, tr('تم حفظ القيد بنجاح'));
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -52,45 +53,45 @@ class QuickSaleSection {
 ///
 /// والعناوينُ **هي عينُ** ما تبنيه `pos_settings_widget.dart` سلفاً حرفاً
 /// بحرف — ولهذا كان البندُ تنسيقاً لا بناء.
-const List<QuickSaleSection> kQuickSaleSections = [
+List<QuickSaleSection> get kQuickSaleSections => [
   QuickSaleSection(
     key: 'main',
     icon: PhosphorIconsBold.shoppingCart,
-    tint: Color(0xFF0250D3),
-    title: 'إعدادات البيع السريع الرئيسية',
-    hint: 'الوردية والعرض، أزرار الكاشير، ترقيم المستندات، واجهة التفاعل، والسلة',
+    tint: const Color(0xFF0250D3),
+    title: tr('إعدادات البيع السريع الرئيسية'),
+    hint: tr('الوردية والعرض، أزرار الكاشير، ترقيم المستندات، واجهة التفاعل، والسلة'),
     settingCount: 17,
   ),
   QuickSaleSection(
     key: 'cat',
     icon: PhosphorIconsBold.squaresFour,
-    tint: Color(0xFF22C55E),
-    title: 'إعدادات منطقة التصنيفات',
-    hint: 'مقاسات شريط الأقسام أعلى شبكة الأصناف — سبعة قيم تتحرك معاً',
+    tint: const Color(0xFF22C55E),
+    title: tr('إعدادات منطقة التصنيفات'),
+    hint: tr('مقاسات شريط الأقسام أعلى شبكة الأصناف — سبعة قيم تتحرك معاً'),
     settingCount: 7,
   ),
   QuickSaleSection(
     key: 'grid',
     icon: PhosphorIconsBold.gridFour,
-    tint: Color(0xFF4A80E8),
-    title: 'إعدادات شبكة المنتجات',
-    hint: 'تحكم في عدد وتباعد أيقونات المنتجات في الشبكة',
+    tint: const Color(0xFF4A80E8),
+    title: tr('إعدادات شبكة المنتجات'),
+    hint: tr('تحكم في عدد وتباعد أيقونات المنتجات في الشبكة'),
     settingCount: 3,
   ),
   QuickSaleSection(
     key: 'receipt',
     icon: PhosphorIconsBold.receipt,
-    tint: Color(0xFF8B5CF6),
-    title: 'إعدادات الإيصال',
-    hint: 'ما يُطبَع بعد إتمام البيع — ولغته وكوده وتذييله',
+    tint: const Color(0xFF8B5CF6),
+    title: tr('إعدادات الإيصال'),
+    hint: tr('ما يُطبَع بعد إتمام البيع — ولغته وكوده وتذييله'),
     settingCount: 4,
   ),
   QuickSaleSection(
     key: 'tpos',
     icon: PhosphorIconsBold.table,
-    tint: Color(0xFFF59E0B),
-    title: 'إعدادات نقطة بيع الطاولات',
-    hint: 'إعدادات تنظيم وتنسيق نقطة بيع الطاولات والصالة',
+    tint: const Color(0xFFF59E0B),
+    title: tr('إعدادات نقطة بيع الطاولات'),
+    hint: tr('إعدادات تنظيم وتنسيق نقطة بيع الطاولات والصالة'),
     settingCount: 6,
   ),
 ];
@@ -478,7 +479,7 @@ class QuickSaleNavTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${_ar(settingCount)} إعداد',
+                    tr('{p0} إعداد', {'p0': _ar(settingCount)}),
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w700,

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // =======================================================================
 // JOURNAL ENTRY HELPER WIDGETS — Phase 7 God File Splitting
 // Extracted from journal_entries_screen.dart (lines 1032-1340)
@@ -106,7 +107,7 @@ class _AccountAutocompleteFieldState extends State<AccountAutocompleteField> {
           border: Border.all(color: AppColors.border),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: Text('تحميل الحسابات...', style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+        child: Text(tr('تحميل الحسابات...'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
       );
     }
 
@@ -157,7 +158,7 @@ class _AccountAutocompleteFieldState extends State<AccountAutocompleteField> {
               controller: controller,
               focusNode: focusNode,
               decoration: InputDecoration(
-                hintText: 'اكتب اسم أو رمز الحساب...',
+                hintText: tr('اكتب اسم أو رمز الحساب...'),
                 hintStyle: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
                 isDense: true,
                 prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 14, color: AppColors.primary),
@@ -312,7 +313,7 @@ class _CostCenterPickerState extends State<CostCenterPicker> {
       initialValue: widget.selectedId,
       isExpanded: true,
       decoration: InputDecoration(
-        labelText: widget.labelOverride ?? 'مركز التكلفة',
+        labelText: widget.labelOverride ?? tr('مركز التكلفة'),
         labelStyle: GoogleFonts.cairo(fontSize: 11),
         isDense: true,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
@@ -320,7 +321,7 @@ class _CostCenterPickerState extends State<CostCenterPicker> {
       ),
       style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textPrimary),
       items: [
-        DropdownMenuItem<int?>(value: null, child: Text('بدون', style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted))),
+        DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted))),
         ..._centers!.map((c) => DropdownMenuItem<int?>(value: c.id, child: Text('${c.code} - ${c.name}', style: GoogleFonts.cairo(fontSize: 11)))),
       ],
       onChanged: widget.onChanged,

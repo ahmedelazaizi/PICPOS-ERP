@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -120,7 +121,7 @@ class TablePosHeader extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'تسجيل طلبات',
+                      tr('تسجيل طلبات'),
                       style: GoogleFonts.cairo(
                         fontSize: 10,
                         color: const Color(0xFF10B981),
@@ -153,7 +154,7 @@ class TablePosHeader extends ConsumerWidget {
                   const Icon(PhosphorIconsBold.shoppingCart,
                       size: 14, color: AppColors.primary),
                   const SizedBox(width: 6),
-                  Text('$itemCount أصناف',
+                  Text(tr('{itemCount} أصناف', {'itemCount': itemCount}),
                       style: GoogleFonts.cairo(
                           fontSize: 12,
                           color: AppColors.primary,

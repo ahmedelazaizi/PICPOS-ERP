@@ -137,11 +137,11 @@ class _PaymentDialogState extends State<_PaymentDialog> {
         _isValid && isPaidEnough && !_isSubmitting && _hasAnyAllowedMethod;
 
     return AlertDialog(
-      title: const Row(
+      title:  Row(
         children: [
-          Icon(PhosphorIconsBold.wallet, color: AppColors.primary),
-          SizedBox(width: 8),
-          Text('إتمام البيع'),
+          const Icon(PhosphorIconsBold.wallet, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Text(tr('إتمام البيع')),
         ],
       ),
       content: SingleChildScrollView(
@@ -161,9 +161,9 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'المطلوب',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                     Text(
+                      tr('المطلوب'),
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
                     ),
                     Text(
                       '${widget.totalAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
@@ -180,9 +180,9 @@ class _PaymentDialogState extends State<_PaymentDialog> {
 
               // Payment Method Selection — hide when opened directly for multi-payment
               if (widget.initialMethod != 'multiple') ...[
-                const Text(
-                  'طريقة الدفع:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                 Text(
+                  tr('طريقة الدفع:'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const SizedBox(height: 10),
                 // No permitted method at all: say so instead of showing an
@@ -196,15 +196,15 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.error),
                     ),
-                    child: const Row(
+                    child:  Row(
                       children: [
-                        Icon(PhosphorIconsBold.lockKey,
+                        const Icon(PhosphorIconsBold.lockKey,
                             color: AppColors.error, size: 18),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'لا تملك صلاحية أي طريقة دفع — راجع المدير',
-                            style: TextStyle(
+                            tr('لا تملك صلاحية أي طريقة دفع — راجع المدير'),
+                            style: const TextStyle(
                                 color: AppColors.error,
                                 fontWeight: FontWeight.bold),
                           ),
@@ -219,16 +219,16 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                     children: [
                       if (_selectedMethod != 'multiple') ...[
                         if (_isAllowed('cash'))
-                          _buildMethodChip('cash', 'نقدي', PhosphorIconsBold.money, AppColors.success),
+                          _buildMethodChip('cash', tr('نقدي'), PhosphorIconsBold.money, AppColors.success),
                         if (_isAllowed('card'))
-                          _buildMethodChip('card', 'بطاقة (بنك)', PhosphorIconsBold.creditCard, AppColors.info),
+                          _buildMethodChip('card', tr('بطاقة (بنك)'), PhosphorIconsBold.creditCard, AppColors.info),
                         if (_isAllowed('click'))
-                          _buildMethodChip('click', 'كليك', PhosphorIconsBold.cursorClick, const Color(0xFF7E57C2)),
+                          _buildMethodChip('click', tr('كليك'), PhosphorIconsBold.cursorClick, const Color(0xFF7E57C2)),
                         if (_isAllowed('credit'))
-                          _buildMethodChip('credit', 'آجل', PhosphorIconsBold.timer, AppColors.warning),
+                          _buildMethodChip('credit', tr('آجل'), PhosphorIconsBold.timer, AppColors.warning),
                       ],
                       if (_isAllowed('multiple'))
-                        _buildMethodChip('multiple', 'متعدد', PhosphorIconsBold.splitVertical, AppColors.primary),
+                        _buildMethodChip('multiple', tr('متعدد'), PhosphorIconsBold.splitVertical, AppColors.primary),
                     ],
                   ),
                 const SizedBox(height: 20),
@@ -240,13 +240,13 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                   controller: _cashController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'نقدي',
+                    labelText: tr('نقدي'),
                     prefixIcon: const Icon(PhosphorIconsBold.money, color: AppColors.success),
                     suffixText: AppConstants.currencySymbolEn,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     filled: true,
                     fillColor: AppColors.success.withValues(alpha: 0.05),
-                    helperText: 'يتم احتسابه تلقائياً عند تعديل الخانات الأخرى',
+                    helperText: tr('يتم احتسابه تلقائياً عند تعديل الخانات الأخرى'),
                     helperStyle: const TextStyle(fontSize: 10, color: AppColors.textMuted),
                   ),
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -257,7 +257,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                   controller: _cardController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'بطاقة (بنك)',
+                    labelText: tr('بطاقة (بنك)'),
                     prefixIcon: const Icon(PhosphorIconsBold.creditCard, color: AppColors.info),
                     suffixText: AppConstants.currencySymbolEn,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -273,7 +273,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                   controller: _clickController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'كليك',
+                    labelText: tr('كليك'),
                     prefixIcon: const Icon(PhosphorIconsBold.cursorClick, color: Color(0xFF7E57C2)),
                     suffixText: AppConstants.currencySymbolEn,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -291,7 +291,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('إجمالي المدفوع:'),
+                       Text(tr('إجمالي المدفوع:')),
                       Text(
                         '${paidTotal.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -311,7 +311,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('الباقي للعميل (فكة):', style: TextStyle(fontWeight: FontWeight.bold)),
+                         Text(tr('الباقي للعميل (فكة):'), style: const TextStyle(fontWeight: FontWeight.bold)),
                         Text(
                           '${changeDue.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.success),
@@ -332,7 +332,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('المتبقي للدفع:', style: TextStyle(color: AppColors.error)),
+                         Text(tr('المتبقي للدفع:'), style: const TextStyle(color: AppColors.error)),
                         Text(
                           '${remaining.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                           style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.bold, fontSize: 18),
@@ -349,13 +349,13 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                     final customersAsync = ref.watch(allCustomersProvider);
                     return customersAsync.when(
                       loading: () => const LinearProgressIndicator(),
-                      error: (e, _) => Text('خطأ: $e'),
+                      error: (e, _) => Text(tr('خطأ: {e}', {'e': e})),
                       data: (customers) => SearchableDropdown<Party>(
                         items: customers,
                         value: customers.where((c) => c.id == _selectedCustomerId).firstOrNull,
-                        hint: 'اختر العميل',
-                        label: 'العميل *',
-                        searchHint: 'بحث عن عميل...',
+                        hint: tr('اختر العميل'),
+                        label: tr('العميل *'),
+                        searchHint: tr('بحث عن عميل...'),
                         isRequired: true,
                         labelBuilder: (c) => c.name,
                         onChanged: (customer) {
@@ -377,7 +377,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
       actions: [
         TextButton(
           onPressed: _isSubmitting ? null : () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         ElevatedButton(
           onPressed: canConfirm
@@ -422,7 +422,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
               : Text(
-                  _selectedMethod == 'credit' ? 'تسجيل آجل' : 'إتمام الدفع',
+                  _selectedMethod == 'credit' ? tr('تسجيل آجل') : tr('إتمام الدفع'),
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
         ),
@@ -542,7 +542,7 @@ class _WeightInputDialogState extends State<_WeightInputDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'سعر الكيلو: ${widget.pricePerUnit.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+            tr('سعر الكيلو: {p0} {p1}', {'p0': widget.pricePerUnit.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
           ),
           const SizedBox(height: 16),
 
@@ -562,12 +562,12 @@ class _WeightInputDialogState extends State<_WeightInputDialog> {
                   ),
                   child: Column(
                     children: [
-                      const Text(
-                        'الوزن من الميزان',
-                        style: TextStyle(fontSize: 12),
+                       Text(
+                        tr('الوزن من الميزان'),
+                        style: const TextStyle(fontSize: 12),
                       ),
                       Text(
-                        '${_liveWeight.toStringAsFixed(3)} كجم',
+                        tr('{p0} كجم', {'p0': _liveWeight.toStringAsFixed(3)}),
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -588,17 +588,17 @@ class _WeightInputDialogState extends State<_WeightInputDialog> {
             ),
             const SizedBox(height: 16),
             const Divider(),
-            const Text('أو أدخل الوزن يدوياً:', style: TextStyle(fontSize: 12)),
+             Text(tr('أو أدخل الوزن يدوياً:'), style: const TextStyle(fontSize: 12)),
             const SizedBox(height: 8),
           ],
 
           // Manual Weight Input
           TextField(
             controller: widget.weightController,
-            decoration: const InputDecoration(
-              labelText: 'الوزن (كجم)',
-              suffixText: 'كجم',
-              prefixIcon: Icon(PhosphorIconsBold.scales),
+            decoration:  InputDecoration(
+              labelText: tr('الوزن (كجم)'),
+              suffixText: tr('كجم'),
+              prefixIcon: const Icon(PhosphorIconsBold.scales),
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             autofocus: !ScaleService.instance.isConnected,
@@ -608,7 +608,7 @@ class _WeightInputDialogState extends State<_WeightInputDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         ElevatedButton(
           onPressed: () {
@@ -623,7 +623,7 @@ class _WeightInputDialogState extends State<_WeightInputDialog> {
               Navigator.pop(context, weight);
             }
           },
-          child: const Text('إضافة'),
+          child:  Text(tr('إضافة')),
         ),
       ],
     );
@@ -677,11 +677,11 @@ class _DeliveryOptionsDialogState extends State<_DeliveryOptionsDialog> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.moped, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text('بيانات التوصيل'),
+            const Icon(PhosphorIconsBold.moped, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(tr('بيانات التوصيل')),
           ],
         ),
         content: SizedBox(
@@ -694,9 +694,9 @@ class _DeliveryOptionsDialogState extends State<_DeliveryOptionsDialog> {
                 value: widget.companies
                     .where((c) => c.id == _companyPartyId)
                     .firstOrNull,
-                hint: 'شركة التوصيل',
-                label: 'شركة التوصيل',
-                searchHint: 'ابحث عن شركة...',
+                hint: tr('شركة التوصيل'),
+                label: tr('شركة التوصيل'),
+                searchHint: tr('ابحث عن شركة...'),
                 labelBuilder: (c) => c.name,
                 onChanged: (c) => setState(() => _companyPartyId = c?.id),
               ),
@@ -706,9 +706,9 @@ class _DeliveryOptionsDialogState extends State<_DeliveryOptionsDialog> {
                 value: widget.couriers
                     .where((c) => c.id == _courierId)
                     .firstOrNull,
-                hint: 'المندوب / السائق',
-                label: 'المندوب / السائق',
-                searchHint: 'ابحث عن مندوب...',
+                hint: tr('المندوب / السائق'),
+                label: tr('المندوب / السائق'),
+                searchHint: tr('ابحث عن مندوب...'),
                 labelBuilder: (c) => c.name,
                 onChanged: (c) => setState(() => _courierId = c?.id),
               ),
@@ -716,7 +716,7 @@ class _DeliveryOptionsDialogState extends State<_DeliveryOptionsDialog> {
               TextField(
                 controller: _feeController,
                 decoration: InputDecoration(
-                  labelText: 'رسوم التوصيل',
+                  labelText: tr('رسوم التوصيل'),
                   suffixText: AppConstants.currencySymbolEn,
                   prefixIcon: const Icon(PhosphorIconsBold.money),
                 ),
@@ -726,19 +726,19 @@ class _DeliveryOptionsDialogState extends State<_DeliveryOptionsDialog> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: _status,
-                decoration: const InputDecoration(labelText: 'حالة الطلب'),
-                items: const [
+                decoration:  InputDecoration(labelText: tr('حالة الطلب')),
+                items:  [
                   DropdownMenuItem(
                     value: 'pending',
-                    child: Text('قيد التجهيز'),
+                    child: Text(tr('قيد التجهيز')),
                   ),
                   DropdownMenuItem(
                     value: 'out_for_delivery',
-                    child: Text('خرج للتوصيل'),
+                    child: Text(tr('خرج للتوصيل')),
                   ),
                   DropdownMenuItem(
                     value: 'delivered',
-                    child: Text('تم التوصيل'),
+                    child: Text(tr('تم التوصيل')),
                   ),
                 ],
                 onChanged: (v) => setState(() => _status = v ?? 'pending'),
@@ -749,7 +749,7 @@ class _DeliveryOptionsDialogState extends State<_DeliveryOptionsDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(
@@ -762,7 +762,7 @@ class _DeliveryOptionsDialogState extends State<_DeliveryOptionsDialog> {
                 status: _status,
               ),
             ),
-            child: const Text('تأكيد'),
+            child:  Text(tr('تأكيد')),
           ),
         ],
       ),

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -73,7 +74,7 @@ class _TableLogSheetState extends ConsumerState<TableLogSheet> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'سجل ${widget.tableName}',
+                      tr('سجل {p0}', {'p0': widget.tableName}),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -107,7 +108,7 @@ class _TableLogSheetState extends ConsumerState<TableLogSheet> {
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Text(
-                'تعذّر تحميلُ السجل: ${snapshot.error}',
+                tr('تعذّر تحميلُ السجل: {p0}', {'p0': snapshot.error}),
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: AppColors.error),
               ),
@@ -117,10 +118,10 @@ class _TableLogSheetState extends ConsumerState<TableLogSheet> {
 
         final logs = snapshot.data ?? const [];
         if (logs.isEmpty) {
-          return const Center(
+          return  Center(
             child: Text(
-              'لا يوجد سجلٌّ لهذه الطاولة بعد',
-              style: TextStyle(color: AppColors.textMuted),
+              tr('لا يوجد سجلٌّ لهذه الطاولة بعد'),
+              style: const TextStyle(color: AppColors.textMuted),
             ),
           );
         }

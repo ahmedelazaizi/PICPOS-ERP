@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../theme/app_colors.dart';
@@ -102,48 +103,48 @@ class AppEmptyState extends StatelessWidget {
   /// Empty products list
   factory AppEmptyState.products({VoidCallback? onAdd}) => AppEmptyState(
     icon: PhosphorIconsBold.package,
-    title: 'لا توجد منتجات',
-    description: 'أضف أول منتج للبدء في البيع',
-    actionLabel: onAdd != null ? 'إضافة منتج' : null,
+    title: tr('لا توجد منتجات'),
+    description: tr('أضف أول منتج للبدء في البيع'),
+    actionLabel: onAdd != null ? tr('إضافة منتج') : null,
     onAction: onAdd,
   );
 
   /// Empty customers/parties list
   factory AppEmptyState.customers({VoidCallback? onAdd}) => AppEmptyState(
     icon: PhosphorIconsBold.users,
-    title: 'لا يوجد عملاء',
-    description: 'أضف أول عميل للبدء',
-    actionLabel: onAdd != null ? 'إضافة عميل' : null,
+    title: tr('لا يوجد عملاء'),
+    description: tr('أضف أول عميل للبدء'),
+    actionLabel: onAdd != null ? tr('إضافة عميل') : null,
     onAction: onAdd,
   );
 
   /// Empty suppliers list
   factory AppEmptyState.suppliers({VoidCallback? onAdd}) => AppEmptyState(
     icon: PhosphorIconsBold.truck,
-    title: 'لا يوجد موردين',
-    description: 'أضف أول مورد لتتبع المشتريات',
-    actionLabel: onAdd != null ? 'إضافة مورد' : null,
+    title: tr('لا يوجد موردين'),
+    description: tr('أضف أول مورد لتتبع المشتريات'),
+    actionLabel: onAdd != null ? tr('إضافة مورد') : null,
     onAction: onAdd,
   );
 
   /// Empty invoices/orders
-  factory AppEmptyState.invoices() => const AppEmptyState(
+  factory AppEmptyState.invoices() =>  AppEmptyState(
     icon: PhosphorIconsBold.receipt,
-    title: 'لا توجد فواتير',
-    description: 'ستظهر الفواتير هنا بعد إتمام أول عملية بيع',
+    title: tr('لا توجد فواتير'),
+    description: tr('ستظهر الفواتير هنا بعد إتمام أول عملية بيع'),
   );
 
   /// No data for selected period
-  factory AppEmptyState.noData() => const AppEmptyState(
+  factory AppEmptyState.noData() =>  AppEmptyState(
     icon: PhosphorIconsBold.chartBar,
-    title: 'لا توجد بيانات لهذه الفترة',
-    description: 'جرب تغيير نطاق التاريخ',
+    title: tr('لا توجد بيانات لهذه الفترة'),
+    description: tr('جرب تغيير نطاق التاريخ'),
   );
 
   /// Empty held orders
-  factory AppEmptyState.heldOrders() => const AppEmptyState(
+  factory AppEmptyState.heldOrders() =>  AppEmptyState(
     icon: PhosphorIconsBold.clockCounterClockwise,
-    title: 'لا توجد طلبات معلقة',
+    title: tr('لا توجد طلبات معلقة'),
     iconSize: 48,
   );
 }

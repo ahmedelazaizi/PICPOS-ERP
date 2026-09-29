@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ «دفتر الشيكات» — تصميمُ المالك `(11)`: «حسابٌ بنكيّ · رقمُ الدفتر ·
 // بادئة · من ← إلى · التالي · المتبقّي».
 //
@@ -68,9 +69,9 @@ String _ar(Object n) =>
     '$n'.replaceAllMapped(RegExp(r'\d'), (m) => '٠١٢٣٤٥٦٧٨٩'[int.parse(m[0]!)]);
 
 String chequeBookStatusLabel(String status) => switch (status) {
-      'cancelled' => 'ملغى',
-      'exhausted' => 'انتهى',
-      _ => 'نشط',
+      'cancelled' => tr('ملغى'),
+      'exhausted' => tr('انتهى'),
+      _ => tr('نشط'),
     };
 
 Color chequeBookStatusTint(String status) => switch (status) {
@@ -156,7 +157,7 @@ class _ChequeBooksPicposScreenState
       //    عن الجميع.
       permission: PermissionCodes.treasuryView,
       child: PicPosScreenScaffold(
-        title: 'دفتر الشيكات',
+        title: tr('دفتر الشيكات'),
         subtitle: 'مدًى محجوزٌ على حسابٍ بنكيّ — ورقمٌ يُسحَب آليّاً لا '
             'يُكتَب بيد',
         icon: PhosphorIconsBold.checkSquareOffset,
@@ -172,32 +173,32 @@ class _ChequeBooksPicposScreenState
                         _creating = true;
                       }),
               icon: const Icon(PhosphorIconsBold.plus, size: 15),
-              label: const Text('دفتر جديد'),
+              label:  Text(tr('دفتر جديد')),
             ),
           ),
         ],
         subHeader: PicPosKpiRow(
           kpis: [
             PicPosKpi(
-              label: 'دفاترُ سارية',
+              label: tr('دفاترُ سارية'),
               value: _ar(live.where((b) => b.status == 'active').length),
               icon: PhosphorIconsBold.books,
               tint: AppColors.primary,
             ),
             PicPosKpi(
-              label: 'شيكاتٌ متبقّية',
+              label: tr('شيكاتٌ متبقّية'),
               value: _ar(remaining),
               icon: PhosphorIconsBold.checkSquareOffset,
               tint: AppColors.info,
             ),
             PicPosKpi(
-              label: 'دفاترُ توشك',
+              label: tr('دفاترُ توشك'),
               value: _ar(low),
               icon: PhosphorIconsBold.warningCircle,
               tint: low == 0 ? AppColors.success : _warn,
             ),
             PicPosKpi(
-              label: 'انتهت أو أُلغيت',
+              label: tr('انتهت أو أُلغيت'),
               value: _ar(books.where((b) => b.status != 'active').length),
               icon: PhosphorIconsBold.archive,
               tint: AppColors.textMuted,
@@ -251,17 +252,17 @@ class _ChequeBooksPicposScreenState
 
   Widget _table(List<ChequeBookData> books, Map<int, String> bankLabel) {
     return PicPosDataTable(
-      title: 'الدفاتر',
-      subtitle: 'المدى محجوزٌ على الحساب — ولا يتداخل دفتران عليه',
+      title: tr('الدفاتر'),
+      subtitle: tr('المدى محجوزٌ على الحساب — ولا يتداخل دفتران عليه'),
       minWidth: 980,
-      emptyLabel: 'لا دفاترَ بعد — ورقمُ الشيك الصادر يُكتَب بيدٍ بلا ضابط',
-      columns: const [
-        PicPosTableColumn('الحساب البنكي', flex: 1.7),
-        PicPosTableColumn('رقم الدفتر', flex: 1.1),
-        PicPosTableColumn('المدى', flex: 1.4),
-        PicPosTableColumn('التالي', flex: 1.1),
-        PicPosTableColumn('المتبقّي', align: PicPosCellAlign.end),
-        PicPosTableColumn('الحالة', flex: 1.0),
+      emptyLabel: tr('لا دفاترَ بعد — ورقمُ الشيك الصادر يُكتَب بيدٍ بلا ضابط'),
+      columns:  [
+        PicPosTableColumn(tr('الحساب البنكي'), flex: 1.7),
+        PicPosTableColumn(tr('رقم الدفتر'), flex: 1.1),
+        PicPosTableColumn(tr('المدى'), flex: 1.4),
+        PicPosTableColumn(tr('التالي'), flex: 1.1),
+        PicPosTableColumn(tr('المتبقّي'), align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('الحالة'), flex: 1.0),
       ],
       rows: [
         for (final b in books)
@@ -273,12 +274,12 @@ class _ChequeBooksPicposScreenState
             }),
             cells: [
               PicPosTextCell(
-                bankLabel[b.bankAccountId] ?? '— حسابٌ غيرُ مربوطٍ بخزنة',
+                bankLabel[b.bankAccountId] ?? tr('— حسابٌ غيرُ مربوطٍ بخزنة'),
                 icon: PhosphorIconsBold.bank,
                 tint: bankLabel.containsKey(b.bankAccountId) ? null : _err,
               ),
               PicPosTextCell(b.bookNumber,
-                  sub: (b.prefix ?? '').isEmpty ? null : 'بادئة ${b.prefix}'),
+                  sub: (b.prefix ?? '').isEmpty ? null : tr('بادئة {p0}', {'p0': b.prefix})),
               PicPosTextCell(
                 '${formatChequeNumber(prefix: b.prefix, number: b.fromNumber, toNumber: b.toNumber)}'
                 ' ← '
@@ -302,9 +303,9 @@ class _ChequeBooksPicposScreenState
 
   /// «التالي» على دفترٍ لا يُسحَب منه **وعدٌ كاذب** — فيُقال بدله سببُه.
   String _nextLabel(ChequeBookData b) {
-    if (b.status == 'cancelled') return '— ملغى';
+    if (b.status == 'cancelled') return tr('— ملغى');
     if (chequesRemaining(nextNumber: b.nextNumber, toNumber: b.toNumber) == 0) {
-      return '— انتهى';
+      return tr('— انتهى');
     }
     return formatChequeNumber(
         prefix: b.prefix, number: b.nextNumber, toNumber: b.toNumber);
@@ -362,7 +363,7 @@ class _ChequeBooksPicposScreenState
           notes: v.notes,
         );
         if (!mounted) return;
-        AppToast.show(context, 'تم فتح الدفتر');
+        AppToast.show(context, tr('تم فتح الدفتر'));
       } else {
         await repo.updateChequeBook(
           id: v.id!,
@@ -375,7 +376,7 @@ class _ChequeBooksPicposScreenState
           notes: v.notes,
         );
         if (!mounted) return;
-        AppToast.show(context, 'تم حفظ التعديل');
+        AppToast.show(context, tr('تم حفظ التعديل'));
       }
       _closePanel();
     } catch (e) {
@@ -392,7 +393,7 @@ class _ChequeBooksPicposScreenState
           .read(chequeBooksRepositoryProvider)
           .setChequeBookCancelled(id, cancelled);
       if (!mounted) return;
-      AppToast.show(context, cancelled ? 'أُلغي الدفتر' : 'أُعيد الدفتر');
+      AppToast.show(context, cancelled ? tr('أُلغي الدفتر') : tr('أُعيد الدفتر'));
     } catch (e) {
       if (!mounted) return;
       AppToast.show(context, '$e', type: ToastType.error);
@@ -492,10 +493,10 @@ class _ChequeBookPanelState extends State<ChequeBookPanel> {
   ///    المعاملة، لأنّ جهازَين قد يفتحان دفترَين متداخلَين في نفس اللحظة
   ///    وكلاهما قرأ القائمةَ قبل كتابة الآخر.
   String? get blockReason {
-    if (_bankAccountId == null) return 'اختر الحساب البنكي.';
-    if (_bookNumber.text.trim().isEmpty) return 'اكتب رقم الدفتر.';
+    if (_bankAccountId == null) return tr('اختر الحساب البنكي.');
+    if (_bookNumber.text.trim().isEmpty) return tr('اكتب رقم الدفتر.');
     if (_fromValue <= 0 || _toValue <= 0) {
-      return 'اكتب مدى الأرقام — من وإلى.';
+      return tr('اكتب مدى الأرقام — من وإلى.');
     }
     final range = validateChequeBookRange(
       fromNumber: _fromValue,
@@ -534,13 +535,13 @@ class _ChequeBookPanelState extends State<ChequeBookPanel> {
             children: [
               Expanded(
                 child: Text(
-                  isNew ? 'دفتر جديد' : 'تعديل الدفتر',
+                  isNew ? tr('دفتر جديد') : tr('تعديل الدفتر'),
                   style: const TextStyle(
                       fontSize: 15, fontWeight: FontWeight.w800),
                 ),
               ),
               IconButton(
-                tooltip: 'إغلاق',
+                tooltip: tr('إغلاق'),
                 onPressed: widget.onClose,
                 icon: const Icon(PhosphorIconsBold.x, size: 16),
               ),
@@ -554,11 +555,11 @@ class _ChequeBookPanelState extends State<ChequeBookPanel> {
             //    `mainAxisSize: min` بدونها، فاسمُ بنكٍ طويلٌ يفيض على
             //    اللوح — وهو عطبُ تخطيطٍ لا يظهر إلّا في عرضٍ بعينه.
             isExpanded: true,
-            decoration: const InputDecoration(
-              labelText: 'الحساب البنكي',
-              helperText: 'خزائنُ بنكيّةٌ نشطةٌ لها حسابٌ مرتبط وحدَها',
+            decoration:  InputDecoration(
+              labelText: tr('الحساب البنكي'),
+              helperText: tr('خزائنُ بنكيّةٌ نشطةٌ لها حسابٌ مرتبط وحدَها'),
               isDense: true,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
             items: [
               for (final b in widget.banks)
@@ -575,10 +576,10 @@ class _ChequeBookPanelState extends State<ChequeBookPanel> {
                   key: const Key('cheque_book_number'),
                   controller: _bookNumber,
                   onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    labelText: 'رقم الدفتر',
+                  decoration:  InputDecoration(
+                    labelText: tr('رقم الدفتر'),
                     isDense: true,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -588,11 +589,11 @@ class _ChequeBookPanelState extends State<ChequeBookPanel> {
                   key: const Key('cheque_book_prefix'),
                   controller: _prefix,
                   onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    labelText: 'بادئة',
+                  decoration:  InputDecoration(
+                    labelText: tr('بادئة'),
                     hintText: 'CHK-',
                     isDense: true,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -601,11 +602,11 @@ class _ChequeBookPanelState extends State<ChequeBookPanel> {
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _numberField('cheque_book_from', _from, 'من')),
+              Expanded(child: _numberField('cheque_book_from', _from, tr('من'))),
               const SizedBox(width: 8),
-              Expanded(child: _numberField('cheque_book_to', _to, 'إلى')),
+              Expanded(child: _numberField('cheque_book_to', _to, tr('إلى'))),
               const SizedBox(width: 8),
-              Expanded(child: _numberField('cheque_book_next', _next, 'التالي')),
+              Expanded(child: _numberField('cheque_book_next', _next, tr('التالي'))),
             ],
           ),
           const SizedBox(height: 6),
@@ -616,7 +617,7 @@ class _ChequeBookPanelState extends State<ChequeBookPanel> {
             isNew
                 ? 'اترك «التالي» فارغاً ليبدأ من أوّل الدفتر — أو اكتبه إن '
                     'كانت أوراقٌ منه قد صُرفت قبل تسجيله.'
-                : 'المتبقّي ${_ar(left)} شيكاً.',
+                : tr('المتبقّي {p0} شيكاً.', {'p0': _ar(left)}),
             style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
           ),
           const SizedBox(height: 10),
@@ -624,10 +625,10 @@ class _ChequeBookPanelState extends State<ChequeBookPanel> {
             key: const Key('cheque_book_notes'),
             controller: _notes,
             maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'ملاحظات',
+            decoration:  InputDecoration(
+              labelText: tr('ملاحظات'),
               isDense: true,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
           if (reason != null) ...[
@@ -646,14 +647,14 @@ class _ChequeBookPanelState extends State<ChequeBookPanel> {
                     key: const Key('cheque_book_save'),
                     onPressed: (_saving || reason != null) ? null : _submit,
                     icon: const Icon(PhosphorIconsBold.floppyDisk, size: 15),
-                    label: Text(isNew ? 'فتح الدفتر' : 'حفظ التعديل'),
+                    label: Text(isNew ? tr('فتح الدفتر') : tr('حفظ التعديل')),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               OutlinedButton(
                 onPressed: widget.onClose,
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
             ],
           ),
@@ -677,14 +678,14 @@ class _ChequeBookPanelState extends State<ChequeBookPanel> {
                   size: 15,
                 ),
                 label: Text(widget.value!.status == 'cancelled'
-                    ? 'إعادة الدفتر'
-                    : 'إلغاء الدفتر (ضاع أو سُحب من البنك)'),
+                    ? tr('إعادة الدفتر')
+                    : tr('إلغاء الدفتر (ضاع أو سُحب من البنك)')),
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'ولا حذفَ: الشيكات المصروفة منه تشير إليه، وحذفُه يُيتّمها.',
-              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+             Text(
+              tr('ولا حذفَ: الشيكات المصروفة منه تشير إليه، وحذفُه يُيتّمها.'),
+              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
             ),
           ],
         ],

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ الحجوزات بهويّة PicPos — تصميمُ 2026-08-22.
 //
 // ═══ المرحلةُ الأولى: اللوحة ═══
@@ -46,14 +47,14 @@ class BookingsPicPosScreen extends ConsumerWidget {
     final rows = rowsAsync.value ?? const <BookingBoardRow>[];
 
     return PicPosScreenScaffold(
-      title: 'الحجوزات',
+      title: tr('الحجوزات'),
       subtitle: bookingDayLabel(day),
       icon: PhosphorIconsBold.calendarCheck,
       headerActions: [
         FilledButton.icon(
           onPressed: () => showNewBookingPanel(context, onDay: day),
           icon: const Icon(PhosphorIconsBold.calendarPlus, size: 17),
-          label: const Text('حجز جديد'),
+          label:  Text(tr('حجز جديد')),
         ),
       ],
       subHeader: Padding(
@@ -92,7 +93,7 @@ class BookingsPicPosScreen extends ConsumerWidget {
                       // عطلٍ تُقرأ «لا حجوزات» — وهي كذبة.
                       error: (e, _) => PicPosEmptyState(
                         icon: PhosphorIconsBold.warningCircle,
-                        title: 'تعذّر تحميل الحجوزات',
+                        title: tr('تعذّر تحميل الحجوزات'),
                         hint: '$e',
                       ),
                       loading: () =>
@@ -145,8 +146,8 @@ class BookingsPicPosScreen extends ConsumerWidget {
         return rows.isEmpty
             ? PicPosEmptyState(
                 icon: PhosphorIconsBold.calendarX,
-                title: 'لا حجوزات في ${bookingDayLabel(day)}',
-                hint: 'اختر يوماً آخر أو أضف حجزاً جديداً.',
+                title: tr('لا حجوزات في {p0}', {'p0': bookingDayLabel(day)}),
+                hint: tr('اختر يوماً آخر أو أضف حجزاً جديداً.'),
               )
             : BookingsBoardTable(rows: rows, onAction: onAction);
       case BookingsDestination.waitlist:
@@ -201,7 +202,7 @@ class BookingsPicPosScreen extends ConsumerWidget {
       // ⚠️ يُقال ولا يُبتلَع: فعلٌ يفشل صامتاً يجعل المستخدمَ يضغط مراراً.
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذّر تنفيذ الإجراء: $e')),
+          SnackBar(content: Text(tr('تعذّر تنفيذ الإجراء: {e}', {'e': e}))),
         );
       }
     }
@@ -227,37 +228,37 @@ class BookingsPicPosScreen extends ConsumerWidget {
 
     return [
       PicPosKpi(
-        label: 'حجوزات اليوم',
+        label: tr('حجوزات اليوم'),
         value: '${rows.length}',
         icon: PhosphorIconsBold.calendarDots,
         tint: AppColors.primary,
       ),
       PicPosKpi(
-        label: 'تم الحضور',
+        label: tr('تم الحضور'),
         value: '$seated',
         icon: PhosphorIconsBold.userCheck,
         tint: AppColors.success,
       ),
       PicPosKpi(
-        label: 'بانتظار التأكيد',
+        label: tr('بانتظار التأكيد'),
         value: '$pending',
         icon: PhosphorIconsBold.hourglass,
         tint: AppColors.warning,
       ),
       PicPosKpi(
-        label: 'لم يحضر',
+        label: tr('لم يحضر'),
         value: '$noShow',
         icon: PhosphorIconsBold.userMinus,
         tint: AppColors.error,
       ),
       PicPosKpi(
-        label: 'العرابين المقبوضة',
+        label: tr('العرابين المقبوضة'),
         value: fmt(deposits),
         icon: PhosphorIconsBold.wallet,
         tint: AppColors.info,
       ),
       PicPosKpi(
-        label: 'إيراد متوقع',
+        label: tr('إيراد متوقع'),
         value: fmt(expected),
         icon: PhosphorIconsBold.trendUp,
         tint: AppColors.booking,
@@ -274,9 +275,9 @@ String bookingDayLabel(DateTime day, {DateTime? now}) {
   final today = _midnight(now ?? DateTime.now());
   final d = _midnight(day);
   final diff = d.difference(today).inDays;
-  if (diff == 0) return 'اليوم';
-  if (diff == -1) return 'أمس';
-  if (diff == 1) return 'غداً';
+  if (diff == 0) return tr('اليوم');
+  if (diff == -1) return tr('أمس');
+  if (diff == 1) return tr('غداً');
   return '${d.year}/${_two(d.month)}/${_two(d.day)}';
 }
 
@@ -286,7 +287,7 @@ String _two(int v) => v.toString().padLeft(2, '0');
 /// تنسيقُ الوقت ١٢ ساعةً بالعربيّة — «10:00 ص».
 String bookingTimeLabel(DateTime at) {
   final h24 = at.hour;
-  final period = h24 < 12 ? 'ص' : 'م';
+  final period = h24 < 12 ? tr('ص') : tr('م');
   final h12 = h24 % 12 == 0 ? 12 : h24 % 12;
   return '${_two(h12)}:${_two(at.minute)} $period';
 }

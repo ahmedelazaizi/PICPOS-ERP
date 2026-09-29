@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ «المشتريات الخارجيّة» — بندٌ أضافه المالك 2026-09-18.
 //
 // ═══ 🔴 ما الذي يجعل فاتورةً «خارجيّةً» أصلاً ═══
@@ -56,7 +57,7 @@ import '../../picpos_shell/picpos_attachments_panel.dart';
 
 /// رقمُ الفاتورة يُولَّد **داخلَ معاملة الحفظ** (مواصفة ٠٦٦)، فلا يُدَّعى
 /// رقمٌ بعينه قبل أن يُحجَز.
-const String kImportInvoiceNumberPlaceholder = 'يُولَّد تلقائياً';
+String get kImportInvoiceNumberPlaceholder => tr('يُولَّد تلقائياً');
 
 /// وكيلُ تخليصٍ مسجَّلٌ في دليل الأطراف.
 typedef ImportAgentOption = ({int id, String name});
@@ -267,9 +268,9 @@ class _ImportDocumentPanelState extends State<ImportDocumentPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const PicPosSectionHeader(
-            title: 'بيانات الاستيراد',
-            subtitle: 'العملة وسعر يومها، وأوراقُ الشحن والتخليص',
+           PicPosSectionHeader(
+            title: tr('بيانات الاستيراد'),
+            subtitle: tr('العملة وسعر يومها، وأوراقُ الشحن والتخليص'),
             icon: PhosphorIconsBold.globeHemisphereEast,
           ),
           const SizedBox(height: 10),
@@ -280,7 +281,7 @@ class _ImportDocumentPanelState extends State<ImportDocumentPanel> {
               if (widget.showCurrency)
               _box(
                 width: 220,
-                label: 'العملة',
+                label: tr('العملة'),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<int?>(
                     key: const Key('import_currency'),
@@ -304,11 +305,11 @@ class _ImportDocumentPanelState extends State<ImportDocumentPanel> {
                           }
                         : null,
                     items: [
-                      const DropdownMenuItem<int?>(
+                       DropdownMenuItem<int?>(
                         value: null,
                         // ⚠️ خيارٌ صريحٌ لا فراغ: «بلا اختيار» يُقرأ
                         //    «نسيتُ»، وهذا قرارٌ يُتّخذ.
-                        child: Text('محلّيّة — بلا تحويل'),
+                        child: Text(tr('محلّيّة — بلا تحويل')),
                       ),
                       for (final c in widget.currencies)
                         DropdownMenuItem<int?>(
@@ -322,7 +323,7 @@ class _ImportDocumentPanelState extends State<ImportDocumentPanel> {
               if (widget.showCurrency && picked != null)
                 _box(
                   width: 200,
-                  label: 'سعر الصرف (${picked.code} ١ = ؟)',
+                  label: tr('سعر الصرف ({p0} ١ = ؟)', {'p0': picked.code}),
                   child: TextField(
                     key: const Key('import_rate'),
                     controller: _rate,
@@ -340,14 +341,14 @@ class _ImportDocumentPanelState extends State<ImportDocumentPanel> {
                     onChanged: (_) => _emit(),
                   ),
                 ),
-              _field('import_customs', 'البيان الجمركي', _customs, 200),
-              _field('import_bl', 'بوليصة الشحن', _bl, 200),
-              _field('import_country', 'بلد المنشأ', _country, 170),
-              _field('import_port', 'الميناء', _port, 170),
-              _field('import_lc', 'الاعتماد المستندي', _lc, 200),
+              _field('import_customs', tr('البيان الجمركي'), _customs, 200),
+              _field('import_bl', tr('بوليصة الشحن'), _bl, 200),
+              _field('import_country', tr('بلد المنشأ'), _country, 170),
+              _field('import_port', tr('الميناء'), _port, 170),
+              _field('import_lc', tr('الاعتماد المستندي'), _lc, 200),
               _box(
                 width: 220,
-                label: 'وكيل التخليص',
+                label: tr('وكيل التخليص'),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<int?>(
                     key: const Key('import_agent'),
@@ -361,9 +362,9 @@ class _ImportDocumentPanelState extends State<ImportDocumentPanel> {
                           }
                         : null,
                     items: [
-                      const DropdownMenuItem<int?>(
+                       DropdownMenuItem<int?>(
                         value: null,
-                        child: Text('غير مسجَّل — أكتب الاسم'),
+                        child: Text(tr('غير مسجَّل — أكتب الاسم')),
                       ),
                       for (final a in widget.agents)
                         DropdownMenuItem<int?>(
@@ -375,8 +376,8 @@ class _ImportDocumentPanelState extends State<ImportDocumentPanel> {
                 ),
               ),
               if (_agentId == null)
-                _field('import_agent_name', 'اسم الوكيل', _agentName, 220),
-              _field('import_notes', 'ملاحظات', _notes, 260),
+                _field('import_agent_name', tr('اسم الوكيل'), _agentName, 220),
+              _field('import_notes', tr('ملاحظات'), _notes, 260),
             ],
           ),
           if (widget.showCurrency && picked != null) ...[
@@ -490,30 +491,30 @@ class _ImportPurchasesPicposScreenState
 
     final rows = ref.watch(importPurchaseRowsProvider);
     return PicPosScreenScaffold(
-      title: 'المشتريات الخارجيّة',
+      title: tr('المشتريات الخارجيّة'),
       subtitle:
-          'فواتيرُ استيرادٍ بأوراقها — البيانُ الجمركيُّ وبوليصةُ الشحن والاعتمادُ المستنديّ',
+          tr('فواتيرُ استيرادٍ بأوراقها — البيانُ الجمركيُّ وبوليصةُ الشحن والاعتمادُ المستنديّ'),
       icon: PhosphorIconsBold.globeHemisphereEast,
       headerActions: [
         OutlinedButton.icon(
           key: const Key('import_open_landed'),
           onPressed: () => setState(() => _showLanded = true),
           icon: const Icon(PhosphorIconsBold.stackPlus, size: 16),
-          label: const Text('التكاليف المحمّلة'),
+          label:  Text(tr('التكاليف المحمّلة')),
         ),
         const SizedBox(width: 8),
         FilledButton.icon(
           key: const Key('import_new_invoice'),
           onPressed: _openForm,
           icon: const Icon(PhosphorIconsBold.plus, size: 16),
-          label: const Text('فاتورة استيراد جديدة'),
+          label:  Text(tr('فاتورة استيراد جديدة')),
         ),
       ],
       body: rows.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => PicPosEmptyState(
           icon: PhosphorIconsBold.warningCircle,
-          title: 'تعذّرت القراءة',
+          title: tr('تعذّرت القراءة'),
           hint: '$e',
         ),
         data: _table,
@@ -538,7 +539,7 @@ class _ImportPurchasesPicposScreenState
                     key: const Key('import_landed_back'),
                     onPressed: () => setState(() => _showLanded = false),
                     icon: const Icon(PhosphorIconsBold.arrowUUpLeft, size: 16),
-                    label: const Text('رجوع إلى المشتريات الخارجيّة'),
+                    label:  Text(tr('رجوع إلى المشتريات الخارجيّة')),
                   ),
                 ],
               ),
@@ -550,29 +551,29 @@ class _ImportPurchasesPicposScreenState
 
   Widget _table(List<ImportPurchaseRow> rows) {
     if (rows.isEmpty) {
-      return const PicPosEmptyState(
+      return  PicPosEmptyState(
         icon: PhosphorIconsBold.globeHemisphereEast,
-        title: 'لا فواتيرَ استيرادٍ بعد',
+        title: tr('لا فواتيرَ استيرادٍ بعد'),
         hint:
-            'الفاتورةُ تصير خارجيّةً بوسمها — وهو يُكتَب مع الفاتورة في هذه الشاشة.',
+            tr('الفاتورةُ تصير خارجيّةً بوسمها — وهو يُكتَب مع الفاتورة في هذه الشاشة.'),
       );
     }
     return SingleChildScrollView(
       child: PicPosDataTable(
-        title: 'فواتير الاستيراد',
+        title: tr('فواتير الاستيراد'),
         // ⚠️ **والأوراقُ تصل بعد البضاعة.** البيانُ الجمركيُّ يُخلَّص بعد
         //    الوصول، والاعتمادُ يُسوَّى لاحقاً — فتحريرُها بابٌ لازمٌ لا
         //    زينة. والمبالغُ **لا تُحرَّر هنا**: تلك فاتورةٌ تُعاد.
-        subtitle: '${rows.length} فاتورة · اضغط الصفَّ لتحرير أوراقه',
-        columns: const [
-          PicPosTableColumn('الفاتورة', flex: 1.4),
-          PicPosTableColumn('المورّد', flex: 1.4),
-          PicPosTableColumn('المنشأ / الميناء', flex: 1.4),
-          PicPosTableColumn('البيان الجمركي', flex: 1.2),
-          PicPosTableColumn('الإجمالي', flex: 1, align: PicPosCellAlign.end),
-          PicPosTableColumn('التكاليف المحمّلة',
+        subtitle: tr('{p0} فاتورة · اضغط الصفَّ لتحرير أوراقه', {'p0': rows.length}),
+        columns:  [
+          PicPosTableColumn(tr('الفاتورة'), flex: 1.4),
+          PicPosTableColumn(tr('المورّد'), flex: 1.4),
+          PicPosTableColumn(tr('المنشأ / الميناء'), flex: 1.4),
+          PicPosTableColumn(tr('البيان الجمركي'), flex: 1.2),
+          PicPosTableColumn(tr('الإجمالي'), flex: 1, align: PicPosCellAlign.end),
+          PicPosTableColumn(tr('التكاليف المحمّلة'),
               flex: 1.2, align: PicPosCellAlign.end),
-          PicPosTableColumn('', flex: .9, align: PicPosCellAlign.end),
+          const PicPosTableColumn('', flex: .9, align: PicPosCellAlign.end),
         ],
         rows: [
           for (final r in rows)
@@ -595,7 +596,7 @@ class _ImportPurchasesPicposScreenState
                 r.details.customsDeclarationNo ?? '—',
                 sub: r.details.letterOfCredit == null
                     ? null
-                    : 'اعتماد ${r.details.letterOfCredit}',
+                    : tr('اعتماد {p0}', {'p0': r.details.letterOfCredit}),
               ),
               // 🔴 **الإجماليُّ محلّيٌّ دائماً** — وهو ما دخل الذمّةَ
               //    والأستاذ. ورمزُ العملة الأجنبيّة يُعرَض **وصفاً** لا
@@ -612,12 +613,12 @@ class _ImportPurchasesPicposScreenState
                 // المسوّدةُ **لا تُجمَع** مع المطبَّق: ورقةٌ لم تُقيَّد
                 // تكلفةً لم تدخل الدفتر، وجمعُها يقرأ رقماً لم يقع.
                 sub: r.landedDraft > 0
-                    ? 'مسوّدة ${r.landedDraft.toStringAsFixed(AppConstants.decimalPlaces)}'
+                    ? tr('مسوّدة {p0}', {'p0': r.landedDraft.toStringAsFixed(AppConstants.decimalPlaces)})
                     : null,
                 tint: r.landedApplied > 0 ? AppColors.success : null,
               ),
               PicPosButtonCell(
-                'تحميل',
+                tr('تحميل'),
                 icon: PhosphorIconsBold.stackPlus,
                 tint: AppColors.primary,
                 onPressed: () => setState(() => _showLanded = true),
@@ -638,7 +639,7 @@ class _ImportPurchasesPicposScreenState
       ref,
       context,
       PermissionCodes.purchasesEdit,
-      actionName: 'تعديل أوراق الاستيراد',
+      actionName: tr('تعديل أوراق الاستيراد'),
     )) {
       return;
     }
@@ -683,7 +684,7 @@ class _ImportPurchasesPicposScreenState
     final saved = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('أوراق ${r.invoice.invoiceNumber}'),
+        title: Text(tr('أوراق {p0}', {'p0': r.invoice.invoiceNumber})),
         content: SizedBox(
           width: 720,
           child: SingleChildScrollView(
@@ -715,12 +716,12 @@ class _ImportPurchasesPicposScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           FilledButton(
             key: const Key('import_papers_save'),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('حفظ الأوراق'),
+            child:  Text(tr('حفظ الأوراق')),
           ),
         ],
       ),
@@ -734,11 +735,11 @@ class _ImportPurchasesPicposScreenState
           );
       ref.invalidate(importPurchaseRowsProvider);
       if (mounted) {
-        AppToast.show(context, 'حُفظت الأوراق', type: ToastType.success);
+        AppToast.show(context, tr('حُفظت الأوراق'), type: ToastType.success);
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل الحفظ: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل الحفظ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -751,7 +752,7 @@ class _ImportPurchasesPicposScreenState
       ref,
       context,
       PermissionCodes.purchasesCreate,
-      actionName: 'فاتورة استيراد جديدة',
+      actionName: tr('فاتورة استيراد جديدة'),
     )) {
       return;
     }
@@ -832,7 +833,7 @@ class _ImportPurchasesPicposScreenState
       );
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'تعذّر فتح النموذج: $e', type: ToastType.error);
+        AppToast.show(context, tr('تعذّر فتح النموذج: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       for (final s in keepAlive) {
@@ -1042,12 +1043,12 @@ class _ImportInvoiceDialogState extends State<_ImportInvoiceDialog> {
                     supplierInvoiceNumber: supplierInvoiceNumber,
                   );
                   if (!context.mounted) return;
-                  AppToast.show(context, 'حُفظت فاتورةُ الاستيراد',
+                  AppToast.show(context, tr('حُفظت فاتورةُ الاستيراد'),
                       type: ToastType.success);
                   Navigator.of(context).pop();
                 } catch (e) {
                   if (!context.mounted) return;
-                  AppToast.show(context, 'فشل الحفظ: $e',
+                  AppToast.show(context, tr('فشل الحفظ: {e}', {'e': e}),
                       type: ToastType.error);
                 } finally {
                   if (context.mounted) setState(() => _busy = false);

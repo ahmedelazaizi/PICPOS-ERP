@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
@@ -201,7 +202,7 @@ Widget buildProductLockButton({
   return PermissionGuard(
     permission: PermissionCodes.productsLock,
     allowManagerOverride: true,
-    actionName: isLocked ? 'إلغاء استثناء الصنف' : 'استثناء الصنف من قفل التصنيف',
+    actionName: isLocked ? tr('إلغاء استثناء الصنف') : tr('استثناء الصنف من قفل التصنيف'),
     onGranted: onToggle,
     child: IconButton(
       icon: Icon(
@@ -209,7 +210,7 @@ Widget buildProductLockButton({
       ),
       iconSize: 18,
       color: isLocked ? AppColors.success : AppColors.textSecondary,
-      tooltip: isLocked ? 'إلغاء الاستثناء' : 'استثناء من قفل التصنيف',
+      tooltip: isLocked ? tr('إلغاء الاستثناء') : tr('استثناء من قفل التصنيف'),
       padding: const EdgeInsets.all(4),
       constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
       onPressed: onToggle,
@@ -328,7 +329,7 @@ class _ProductsTableState extends ConsumerState<ProductsTable> {
                     .read(productsControllerProvider.notifier)
                     .loadNextPage(isRefresh: true),
                 icon: const Icon(PhosphorIconsBold.arrowClockwise, size: 16),
-                label: const Text('إعادة المحاولة'),
+                label:  Text(tr('إعادة المحاولة')),
               ),
             ],
           ),
@@ -346,14 +347,14 @@ class _ProductsTableState extends ConsumerState<ProductsTable> {
               Icon(PhosphorIconsBold.package,
                   size: 48, color: AppColors.textMuted.withValues(alpha: 0.5)),
               const SizedBox(height: 12),
-              const Text(
-                'لا توجد أصناف بعد',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 16),
+               Text(
+                tr('لا توجد أصناف بعد'),
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 16),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'اضغط "إضافة صنف" لإنشاء أول صنف',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+               Text(
+                tr('اضغط "إضافة صنف" لإنشاء أول صنف'),
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
               ),
             ],
           ),
@@ -557,18 +558,18 @@ class _ProductsTableHeader extends StatelessWidget {
             width: _kCheckboxColWidth,
             child: Center(child: _HeaderCheckbox()),
           ),
-          _headerCell('الكود', _kCodeColWidth, headerStyle),
-          _headerCell('الباركود', barcodeWidth, headerStyle),
-          _headerCell('اسم الصنف', nameWidth, headerStyle),
-          _headerCell('التصنيف', categoryWidth, headerStyle),
-          _headerCell('نوع الصنف', _kTypeColWidth, headerStyle),
-          _headerCell('المخزن', warehouseWidth, headerStyle),
-          _headerCell('سعر البيع', _kSalePriceColWidth, headerStyle, alignEnd: true),
-          _headerCell('سعر التكلفة', _kCostPriceColWidth, headerStyle, alignEnd: true),
-          _headerCell('متوسط التكلفة', _kAvgCostColWidth, headerStyle, alignEnd: true),
-          _headerCell('الرصيد', _kStockColWidth, headerStyle, alignEnd: true),
-          _headerCell('الحالة', _kStatusColWidth, headerStyle),
-          _headerCell('إجراءات', _kActionsColWidth, headerStyle),
+          _headerCell(tr('الكود'), _kCodeColWidth, headerStyle),
+          _headerCell(tr('الباركود'), barcodeWidth, headerStyle),
+          _headerCell(tr('اسم الصنف'), nameWidth, headerStyle),
+          _headerCell(tr('التصنيف'), categoryWidth, headerStyle),
+          _headerCell(tr('نوع الصنف'), _kTypeColWidth, headerStyle),
+          _headerCell(tr('المخزن'), warehouseWidth, headerStyle),
+          _headerCell(tr('سعر البيع'), _kSalePriceColWidth, headerStyle, alignEnd: true),
+          _headerCell(tr('سعر التكلفة'), _kCostPriceColWidth, headerStyle, alignEnd: true),
+          _headerCell(tr('متوسط التكلفة'), _kAvgCostColWidth, headerStyle, alignEnd: true),
+          _headerCell(tr('الرصيد'), _kStockColWidth, headerStyle, alignEnd: true),
+          _headerCell(tr('الحالة'), _kStatusColWidth, headerStyle),
+          _headerCell(tr('إجراءات'), _kActionsColWidth, headerStyle),
         ],
       ),
     );
@@ -802,17 +803,17 @@ class _StatusBadge extends StatelessWidget {
     String statusText;
     String tooltipText;
     if (!p.isActive) {
-      statusText = 'غير نشط';
-      tooltipText = 'الصنف غير نشط';
+      statusText = tr('غير نشط');
+      tooltipText = tr('الصنف غير نشط');
     } else if (isCategoryLocked && !isExplicitlyUnlocked) {
-      statusText = 'تصنيف مقفل';
-      tooltipText = 'التصنيف مقفل - اضغط على زر الفتح لفتح هذا الصنف فقط';
+      statusText = tr('تصنيف مقفل');
+      tooltipText = tr('التصنيف مقفل - اضغط على زر الفتح لفتح هذا الصنف فقط');
     } else if (isCategoryLocked && isExplicitlyUnlocked) {
-      statusText = 'مستثنى ✓';
-      tooltipText = 'الصنف مفتوح رغم قفل التصنيف';
+      statusText = tr('مستثنى ✓');
+      tooltipText = tr('الصنف مفتوح رغم قفل التصنيف');
     } else {
-      statusText = 'نشط';
-      tooltipText = 'الصنف نشط';
+      statusText = tr('نشط');
+      tooltipText = tr('الصنف نشط');
     }
 
     return Tooltip(
@@ -863,10 +864,10 @@ class _ProductTypeBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = switch (type) {
-      'raw_material' => 'خامة',
-      'finished_goods' => 'منتج تام',
-      'service' => 'خدمة',
-      _ => 'عام',
+      'raw_material' => tr('خامة'),
+      'finished_goods' => tr('منتج تام'),
+      'service' => tr('خدمة'),
+      _ => tr('عام'),
     };
     final color = switch (type) {
       'raw_material' => AppColors.warning,
@@ -915,7 +916,7 @@ class _AvgCostCell extends StatelessWidget {
         ? ((value! - product.costPrice) / product.costPrice * 100)
         : 0.0;
     return Tooltip(
-      message: 'الفرق عن سعر التكلفة الحالي: ${diff.toStringAsFixed(1)}%',
+      message: tr('الفرق عن سعر التكلفة الحالي: {p0}%', {'p0': diff.toStringAsFixed(1)}),
       child: Text(
         '${value!.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
         style: TextStyle(
@@ -961,7 +962,7 @@ class _ProductActions extends ConsumerWidget {
         _iconButton(
           icon: PhosphorIconsBold.barcode,
           color: AppColors.warning,
-          tooltip: 'طباعة الباركود',
+          tooltip: tr('طباعة الباركود'),
           onPressed: () => BarcodePrintDialog.show(context, product),
         ),
       ],
@@ -994,8 +995,8 @@ class _ProductActions extends ConsumerWidget {
       AppToast.show(
         context,
         !product.isLocked
-            ? 'تم استثناء الصنف - سيظهر في البيع السريع حتى لو التصنيف مقفل'
-            : 'تم إلغاء الاستثناء - الصنف يتبع حالة التصنيف',
+            ? tr('تم استثناء الصنف - سيظهر في البيع السريع حتى لو التصنيف مقفل')
+            : tr('تم إلغاء الاستثناء - الصنف يتبع حالة التصنيف'),
         type: ToastType.warning,
       );
     }

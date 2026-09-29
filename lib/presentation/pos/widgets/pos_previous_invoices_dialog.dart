@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -74,15 +75,15 @@ class _PosPreviousInvoicesDialogState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.receipt, color: AppColors.info),
-            SizedBox(width: 8),
-            Text('الفواتير السابقة'),
-            Spacer(),
+            const Icon(PhosphorIconsBold.receipt, color: AppColors.info),
+            const SizedBox(width: 8),
+            Text(tr('الفواتير السابقة')),
+            const Spacer(),
             Text(
-              'اليوم',
-              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+              tr('اليوم'),
+              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),
           ],
         ),
@@ -97,7 +98,7 @@ class _PosPreviousInvoicesDialogState
                   Expanded(
                     child: TextField(
                       decoration: InputDecoration(
-                        hintText: 'بحث برقم الفاتورة',
+                        hintText: tr('بحث برقم الفاتورة'),
                         prefixIcon: const Icon(
                           PhosphorIconsBold.magnifyingGlass,
                           size: 18,
@@ -119,7 +120,7 @@ class _PosPreviousInvoicesDialogState
                   Expanded(
                     child: TextField(
                       decoration: InputDecoration(
-                        hintText: 'بحث برقم الطلب',
+                        hintText: tr('بحث برقم الطلب'),
                         prefixIcon: const Icon(
                           PhosphorIconsBold.hash,
                           size: 18,
@@ -200,7 +201,7 @@ class _PosPreviousInvoicesDialogState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
         ],
       ),
@@ -303,7 +304,7 @@ class _PosPreviousInvoicesDialogState
       title: Row(
         children: [
           Text(
-            'فاتورة #${invoice.invoiceNumber}',
+            tr('فاتورة #{p0}', {'p0': invoice.invoiceNumber}),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           if (invoice.orderNumber != null) ...[
@@ -315,7 +316,7 @@ class _PosPreviousInvoicesDialogState
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                'طلب ${invoice.orderNumber}',
+                tr('طلب {p0}', {'p0': invoice.orderNumber}),
                 style: const TextStyle(
                   fontSize: 10,
                   color: AppColors.info,
@@ -348,7 +349,7 @@ class _PosPreviousInvoicesDialogState
               color: AppColors.info,
             ),
             onPressed: () => _showInvoiceDetails(context, invoice),
-            tooltip: 'تفاصيل الأصناف',
+            tooltip: tr('تفاصيل الأصناف'),
           ),
           IconButton(
             icon: const Icon(
@@ -360,7 +361,7 @@ class _PosPreviousInvoicesDialogState
               Navigator.pop(context);
               widget.onEdit(invoice);
             },
-            tooltip: 'تعديل الفاتورة',
+            tooltip: tr('تعديل الفاتورة'),
           ),
           IconButton(
             icon: const Icon(
@@ -369,12 +370,12 @@ class _PosPreviousInvoicesDialogState
               color: AppColors.info,
             ),
             onPressed: () => widget.onPrintKitchen(invoice.id),
-            tooltip: 'طباعة المطبخ',
+            tooltip: tr('طباعة المطبخ'),
           ),
           IconButton(
             icon: const Icon(PhosphorIconsBold.printer, size: 20),
             onPressed: () => widget.onReprint(invoice.id),
-            tooltip: 'إعادة طباعة',
+            tooltip: tr('إعادة طباعة'),
           ),
         ],
       ),
@@ -416,20 +417,20 @@ class _PosPreviousInvoicesDialogState
               size: 16, color: AppColors.textMuted),
           const SizedBox(width: 6),
           Text(
-            'عدد الفواتير: ${invoices.length}',
+            tr('عدد الفواتير: {p0}', {'p0': invoices.length}),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           if (isFiltered) ...[
             const SizedBox(width: 8),
-            const Text(
-              '(حسب البحث)',
-              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+             Text(
+              tr('(حسب البحث)'),
+              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
             ),
           ],
           const Spacer(),
-          const Text(
-            'إجمالي المعروض:',
-            style: TextStyle(color: AppColors.textMuted),
+           Text(
+            tr('إجمالي المعروض:'),
+            style: const TextStyle(color: AppColors.textMuted),
           ),
           const SizedBox(width: 6),
           Text(
@@ -459,8 +460,8 @@ class _PosPreviousInvoicesDialogState
           const SizedBox(height: 16),
           Text(
             _invoiceSearchQuery.isEmpty && _orderSearchQuery.isEmpty
-                ? 'لا توجد فواتير اليوم'
-                : 'لا توجد نتائج بحث',
+                ? tr('لا توجد فواتير اليوم')
+                : tr('لا توجد نتائج بحث'),
             style: const TextStyle(color: AppColors.textMuted),
           ),
         ],
@@ -484,7 +485,7 @@ class _PosPreviousInvoicesDialogState
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: Text('أصناف فاتورة #${invoice.invoiceNumber}'),
+          title: Text(tr('أصناف فاتورة #{p0}', {'p0': invoice.invoiceNumber})),
           content: SizedBox(
             width: 400,
             child: PosInvoiceItemsView(
@@ -495,12 +496,12 @@ class _PosPreviousInvoicesDialogState
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
             ElevatedButton.icon(
               onPressed: () => widget.onReprint(invoice.id),
               icon: const Icon(PhosphorIconsBold.printer, size: 18),
-              label: const Text('إعادة الطباعة'),
+              label:  Text(tr('إعادة الطباعة')),
             ),
           ],
         ),

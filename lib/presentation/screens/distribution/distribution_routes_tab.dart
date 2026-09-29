@@ -8,12 +8,12 @@ Widget buildDistributionManageAddButton({required VoidCallback onPressed}) {
   return PermissionGuard(
     permission: PermissionCodes.distributionManage,
     allowManagerOverride: true,
-    actionName: 'إضافة مسار توزيع',
+    actionName: tr('إضافة مسار توزيع'),
     onGranted: onPressed,
     child: ElevatedButton.icon(
       onPressed: onPressed,
       icon: const Icon(PhosphorIconsBold.plus, size: 18),
-      label: const Text('إضافة مسار'),
+      label:  Text(tr('إضافة مسار')),
       style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
     ),
   );
@@ -39,9 +39,9 @@ class _RoutesTab extends StatelessWidget {
             children: [
               const Icon(PhosphorIconsBold.mapPin, color: AppColors.primary),
               const SizedBox(width: 8),
-              const Text(
-                'مسارات التوزيع',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+               Text(
+                tr('مسارات التوزيع'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               buildDistributionManageAddButton(
@@ -77,7 +77,7 @@ class _RoutesTab extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'لا توجد مسارات',
+                        tr('لا توجد مسارات'),
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey.shade600,
@@ -85,7 +85,7 @@ class _RoutesTab extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'أنشئ مسارات توزيع لتنظيم زيارات المندوبين',
+                        tr('أنشئ مسارات توزيع لتنظيم زيارات المندوبين'),
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey.shade500,
@@ -116,7 +116,7 @@ class _RoutesTab extends StatelessWidget {
                         r.name,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Text(r.area ?? r.description ?? 'بدون وصف'),
+                      subtitle: Text(r.area ?? r.description ?? tr('بدون وصف')),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -129,12 +129,12 @@ class _RoutesTab extends StatelessWidget {
                           PermissionGuard(
                             permission: PermissionCodes.distributionManage,
                             allowManagerOverride: true,
-                            actionName: 'تعديل مسار توزيع',
+                            actionName: tr('تعديل مسار توزيع'),
                             onGranted: () =>
                                 _showRouteDialog(context, ctrl, existing: r),
                             child: IconButton(
                               icon: const Icon(PhosphorIconsBold.pencilSimple),
-                              tooltip: 'تعديل',
+                              tooltip: tr('تعديل'),
                               onPressed: () =>
                                   _showRouteDialog(context, ctrl, existing: r),
                             ),
@@ -142,13 +142,13 @@ class _RoutesTab extends StatelessWidget {
                           PermissionGuard(
                             permission: PermissionCodes.distributionManage,
                             allowManagerOverride: true,
-                            actionName: 'حذف مسار توزيع',
+                            actionName: tr('حذف مسار توزيع'),
                             onGranted: () => _confirmDelete(context, ctrl, r),
                             child: IconButton(
                               icon: const Icon(PhosphorIconsBold.trash,
                                 color: AppColors.error,
                               ),
-                              tooltip: 'حذف',
+                              tooltip: tr('حذف'),
                               onPressed: () => _confirmDelete(context, ctrl, r),
                             ),
                           ),
@@ -175,12 +175,12 @@ class _RoutesTab extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('حذف المسار'),
-          content: Text('هل أنت متأكد من حذف مسار "${route.name}"؟'),
+          title:  Text(tr('حذف المسار')),
+          content: Text(tr('هل أنت متأكد من حذف مسار "{p0}"؟', {'p0': route.name})),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: saving
@@ -191,14 +191,14 @@ class _RoutesTab extends StatelessWidget {
                         await ctrl.deactivateSalesRoute(route.id);
                         if (ctx.mounted) Navigator.pop(ctx);
                         if (context.mounted) {
-                          AppToast.show(context, 'تم حذف المسار');
+                          AppToast.show(context, tr('تم حذف المسار'));
                         }
                       } finally {
                         if (ctx.mounted) setDialogState(() => saving = false);
                       }
                     },
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('حذف'),
+              child:  Text(tr('حذف')),
             ),
           ],
         ),
@@ -221,7 +221,7 @@ class _RoutesTab extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(existing != null ? 'تعديل مسار' : 'إضافة مسار توزيع'),
+          title: Text(existing != null ? tr('تعديل مسار') : tr('إضافة مسار توزيع')),
           content: SizedBox(
             width: 400,
             child: Column(
@@ -229,25 +229,25 @@ class _RoutesTab extends StatelessWidget {
               children: [
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'اسم المسار',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('اسم المسار'),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: areaCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'المنطقة',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('المنطقة'),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: descCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'وصف',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('وصف'),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -258,14 +258,14 @@ class _RoutesTab extends StatelessWidget {
                     final employees = snap.data ?? [];
                     return DropdownButtonFormField<int?>(
                       initialValue: selectedRepId,
-                      decoration: const InputDecoration(
-                        labelText: 'المندوب المسؤول',
-                        border: OutlineInputBorder(),
+                      decoration:  InputDecoration(
+                        labelText: tr('المندوب المسؤول'),
+                        border: const OutlineInputBorder(),
                       ),
                       items: [
-                        const DropdownMenuItem(
+                         DropdownMenuItem(
                           value: null,
-                          child: Text('بدون مندوب'),
+                          child: Text(tr('بدون مندوب')),
                         ),
                         ...employees.map(
                           (e) => DropdownMenuItem(
@@ -284,7 +284,7 @@ class _RoutesTab extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: saving
@@ -313,8 +313,8 @@ class _RoutesTab extends StatelessWidget {
                           AppToast.show(
                             context,
                             existing != null
-                                ? 'تم تحديث المسار'
-                                : 'تم إضافة المسار',
+                                ? tr('تم تحديث المسار')
+                                : tr('تم إضافة المسار'),
                           );
                         }
                       } finally {
@@ -322,7 +322,7 @@ class _RoutesTab extends StatelessWidget {
                       }
                     },
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-              child: Text(existing != null ? 'تحديث' : 'إضافة'),
+              child: Text(existing != null ? tr('تحديث') : tr('إضافة')),
             ),
           ],
         ),

@@ -55,11 +55,11 @@ class PurchasesTotalsBar extends ConsumerWidget {
       child: PicPosTotalsBar(
         items: [
           PicPosTotal(
-            label: 'إجمالي المشتريات',
+            label: tr('إجمالي المشتريات'),
             value: money(totalAmount),
           ),
           PicPosTotal(
-            label: 'إجمالي المرتجعات',
+            label: tr('إجمالي المرتجعات'),
             value: money(totalReturns),
             tone: AppColors.error,
           ),
@@ -67,21 +67,21 @@ class PurchasesTotalsBar extends ConsumerWidget {
           // البطاقة الرئيسيّة المحذوفة، ونقلُها كما هي شرطُ ألّا يتغيّر رقمٌ
           // مع تغيّر الشكل.
           PicPosTotal(
-            label: 'الصافي',
+            label: tr('الصافي'),
             value: money(totalAmount - totalReturns),
             emphasis: true,
           ),
           PicPosTotal(
-            label: 'المسدَّد',
+            label: tr('المسدَّد'),
             value: money(totalPaid),
             tone: AppColors.success,
           ),
           PicPosTotal(
-            label: 'المتبقي',
+            label: tr('المتبقي'),
             value: money(totalRemaining),
             tone: AppColors.warning,
           ),
-          PicPosTotal(label: 'عدد الفواتير', value: '$invoiceCount'),
+          PicPosTotal(label: tr('عدد الفواتير'), value: '$invoiceCount'),
         ],
       ),
     );

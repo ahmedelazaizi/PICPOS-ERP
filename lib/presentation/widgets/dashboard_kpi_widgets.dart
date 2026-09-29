@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // Dashboard Aging & KPI Widgets (U-13, U-14, U-15, U-16)
 // AR Aging, AP Aging, Cash Flow Forecast, Slow-Moving Items
@@ -45,12 +46,12 @@ class ARAgingWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _AgingCard(
-      title: 'أعمار الذمم المدينة',
+      title: tr('أعمار الذمم المدينة'),
       icon: PhosphorIconsBold.usersThree,
       iconColor: AppColors.warning,
       buckets: buckets,
       total: totalOutstanding,
-      totalLabel: 'إجمالي المديونية',
+      totalLabel: tr('إجمالي المديونية'),
       currencySymbol: currencySymbol,
     );
   }
@@ -75,12 +76,12 @@ class APAgingWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _AgingCard(
-      title: 'أعمار الذمم الدائنة',
+      title: tr('أعمار الذمم الدائنة'),
       icon: PhosphorIconsBold.storefront,
       iconColor: AppColors.info,
       buckets: buckets,
       total: totalPayable,
-      totalLabel: 'إجمالي المستحقات',
+      totalLabel: tr('إجمالي المستحقات'),
       currencySymbol: currencySymbol,
     );
   }
@@ -124,18 +125,18 @@ class CashFlowForecastWidget extends StatelessWidget {
               children: [
                 const Icon(PhosphorIconsBold.chartLine, color: AppColors.primary, size: 20),
                 const SizedBox(width: 8),
-                Text('توقعات التدفق النقدي', style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700)),
+                Text(tr('توقعات التدفق النقدي'), style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700)),
                 const Spacer(),
-                Text('30 يوم', style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                Text(tr('30 يوم'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
               ],
             ),
             const SizedBox(height: 16),
-            _flowRow('الرصيد الحالي', currentCash, AppColors.primary),
-            _flowRow('+ إيرادات متوقعة', projectedIncome30, AppColors.success),
-            _flowRow('- مصروفات متوقعة', projectedExpenses30, AppColors.error),
+            _flowRow(tr('الرصيد الحالي'), currentCash, AppColors.primary),
+            _flowRow(tr('+ إيرادات متوقعة'), projectedIncome30, AppColors.success),
+            _flowRow(tr('- مصروفات متوقعة'), projectedExpenses30, AppColors.error),
             const Divider(height: 16),
             _flowRow(
-              'الرصيد المتوقع',
+              tr('الرصيد المتوقع'),
               forecast,
               isPositive ? AppColors.success : AppColors.error,
               isBold: true,
@@ -214,12 +215,12 @@ class SlowMovingItemsWidget extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'أصناف بطيئة الحركة',
+                    tr('أصناف بطيئة الحركة'),
                     style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700),
                   ),
                 ),
                 Text(
-                  'أعلى ${items.length}',
+                  tr('أعلى {p0}', {'p0': items.length}),
                   style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
                 ),
               ],
@@ -228,7 +229,7 @@ class SlowMovingItemsWidget extends StatelessWidget {
             if (items.isEmpty)
               Center(
                 child: Text(
-                  'لا توجد أصناف بطيئة الحركة',
+                  tr('لا توجد أصناف بطيئة الحركة'),
                   style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted),
                 ),
               )

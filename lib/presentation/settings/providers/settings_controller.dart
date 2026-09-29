@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/logging/app_logger.dart';
@@ -134,7 +135,7 @@ class SettingsController extends Notifier<SettingsState> {
         companyPhone: phone,
         companyAddress: address,
         companyTaxId: taxId,
-        successMessage: 'تم حفظ بيانات الشركة بنجاح',
+        successMessage: tr('تم حفظ بيانات الشركة بنجاح'),
       );
 
       return true;
@@ -189,7 +190,7 @@ class SettingsController extends Notifier<SettingsState> {
       state = state.copyWith(
         isLoading: false,
         receiptSettings: settings,
-        successMessage: 'تم حفظ إعدادات الإيصال بنجاح',
+        successMessage: tr('تم حفظ إعدادات الإيصال بنجاح'),
       );
       return true;
     } catch (e, stack) {
@@ -225,7 +226,7 @@ class SettingsController extends Notifier<SettingsState> {
       final success = await _repository.restoreBackup(backupPath);
       
       if (!success) {
-        state = state.copyWith(isLoading: false, error: 'فشل استعادة النسخة الاحتياطية');
+        state = state.copyWith(isLoading: false, error: tr('فشل استعادة النسخة الاحتياطية'));
         return false;
       }
 
@@ -244,7 +245,7 @@ class SettingsController extends Notifier<SettingsState> {
       }
       state = state.copyWith(
         isLoading: false,
-        successMessage: 'تم استعادة النسخة الاحتياطية بنجاح',
+        successMessage: tr('تم استعادة النسخة الاحتياطية بنجاح'),
       );
       return true;
     } catch (e, stack) {
@@ -270,7 +271,7 @@ class SettingsController extends Notifier<SettingsState> {
       final success = await _repository.exportBackup(destinationFolder);
       state = state.copyWith(
         isLoading: false,
-        successMessage: success ? 'تم تصدير النسخة الاحتياطية بنجاح' : 'فشل تصدير النسخة الاحتياطية',
+        successMessage: success ? tr('تم تصدير النسخة الاحتياطية بنجاح') : tr('فشل تصدير النسخة الاحتياطية'),
       );
       return success;
     } catch (e) {
@@ -289,7 +290,7 @@ class SettingsController extends Notifier<SettingsState> {
       }
       state = state.copyWith(
         isLoading: false,
-        successMessage: success ? 'تم حذف النسخة الاحتياطية بنجاح' : 'فشل حذف النسخة الاحتياطية',
+        successMessage: success ? tr('تم حذف النسخة الاحتياطية بنجاح') : tr('فشل حذف النسخة الاحتياطية'),
       );
       return success;
     } catch (e) {
@@ -321,11 +322,11 @@ class SettingsController extends Notifier<SettingsState> {
   String getRoleLabel(String role) {
     switch (role) {
       case 'admin':
-        return 'مدير';
+        return tr('مدير');
       case 'manager':
-        return 'مشرف';
+        return tr('مشرف');
       case 'cashier':
-        return 'كاشير';
+        return tr('كاشير');
       default:
         return role;
     }

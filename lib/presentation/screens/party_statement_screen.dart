@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart' show Uint8List, debugPrint;
 import '../../core/utils/platform_init.dart';
@@ -166,14 +167,14 @@ class _PartyStatementScreenState extends ConsumerState<PartyStatementScreen>
           '❌ loadData failed partyId=$partyId: $e'));
       if (mounted) {
         setState(() => isLoading = false);
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final partyLabel = widget.isSupplier ? 'مورد' : 'عميل';
+    final partyLabel = widget.isSupplier ? tr('مورد') : tr('عميل');
     final selectedName = party?.name ?? widget.partyName;
 
     return Directionality(
@@ -181,19 +182,19 @@ class _PartyStatementScreenState extends ConsumerState<PartyStatementScreen>
       child: Scaffold(
         backgroundColor: AppColors.surface,
         appBar: AppBar(
-          title: Text('كشف حساب: ${selectedName.isEmpty ? partyLabel : selectedName}'),
+          title: Text(tr('كشف حساب: {p0}', {'p0': selectedName.isEmpty ? partyLabel : selectedName})),
           backgroundColor: widget.isSupplier ? AppColors.warning : AppColors.primary,
           foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
           actions: [
             IconButton(
               icon: const Icon(PhosphorIconsBold.microsoftExcelLogo),
               onPressed: entries.isEmpty ? null : exportToExcel,
-              tooltip: 'تصدير Excel',
+              tooltip: tr('تصدير Excel'),
             ),
             IconButton(
               icon: const Icon(PhosphorIconsBold.printer),
               onPressed: entries.isEmpty ? null : printStatement,
-              tooltip: 'طباعة PDF',
+              tooltip: tr('طباعة PDF'),
             ),
             const SizedBox(width: 8),
           ],
@@ -239,7 +240,7 @@ class _PartyStatementScreenState extends ConsumerState<PartyStatementScreen>
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'تعذّر تحميل بيانات هذا ال$partyLabel',
+                                tr('تعذّر تحميل بيانات هذا ال{partyLabel}', {'partyLabel': partyLabel}),
                                 style: const TextStyle(
                                   fontSize: 18,
                                   color: AppColors.textMuted,
@@ -272,7 +273,7 @@ class _PartyStatementScreenState extends ConsumerState<PartyStatementScreen>
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'اختر $partyLabel لعرض كشف حسابه',
+                                tr('اختر {partyLabel} لعرض كشف حسابه', {'partyLabel': partyLabel}),
                                 style: const TextStyle(
                                   fontSize: 18,
                                   color: AppColors.textMuted,
@@ -321,8 +322,8 @@ class _PartyStatementScreenState extends ConsumerState<PartyStatementScreen>
                   controller: controller,
                   focusNode: focusNode,
                   decoration: InputDecoration(
-                    labelText: 'اختر $partyLabel',
-                    hintText: 'ابحث بالاسم أو رقم الهاتف...',
+                    labelText: tr('اختر {partyLabel}', {'partyLabel': partyLabel}),
+                    hintText: tr('ابحث بالاسم أو رقم الهاتف...'),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),

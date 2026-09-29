@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -174,7 +175,7 @@ class _QuickDeliveryDialogState extends ConsumerState<QuickDeliveryDialog> {
     } else {
       setState(() => _isSearching = false);
       if (mounted) {
-        AppToast.show(context, 'لم يتم العثور على عميل - أدخل البيانات يدوياً');
+        AppToast.show(context, tr('لم يتم العثور على عميل - أدخل البيانات يدوياً'));
       }
     }
   }
@@ -193,11 +194,11 @@ class _QuickDeliveryDialogState extends ConsumerState<QuickDeliveryDialog> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.truck, color: AppColors.warning),
-            SizedBox(width: 8),
-            Text('توصيل سريع 🚚'),
+            const Icon(PhosphorIconsBold.truck, color: AppColors.warning),
+            const SizedBox(width: 8),
+            Text(tr('توصيل سريع 🚚')),
           ],
         ),
         content: SizedBox(
@@ -227,7 +228,7 @@ class _QuickDeliveryDialogState extends ConsumerState<QuickDeliveryDialog> {
       controller: _phoneController,
       keyboardType: TextInputType.phone,
       decoration: InputDecoration(
-        labelText: '📱 رقم الهاتف',
+        labelText: tr('📱 رقم الهاتف'),
         suffixIcon: _isSearching
             ? const SizedBox(
                 width: 20,
@@ -246,9 +247,9 @@ class _QuickDeliveryDialogState extends ConsumerState<QuickDeliveryDialog> {
   Widget _buildNameField() {
     return TextField(
       controller: _nameController,
-      decoration: const InputDecoration(
-        labelText: '👤 اسم العميل',
-        border: OutlineInputBorder(),
+      decoration:  InputDecoration(
+        labelText: tr('👤 اسم العميل'),
+        border: const OutlineInputBorder(),
       ),
     );
   }
@@ -257,9 +258,9 @@ class _QuickDeliveryDialogState extends ConsumerState<QuickDeliveryDialog> {
     return TextField(
       controller: _addressController,
       maxLines: 2,
-      decoration: const InputDecoration(
-        labelText: '📍 العنوان',
-        border: OutlineInputBorder(),
+      decoration:  InputDecoration(
+        labelText: tr('📍 العنوان'),
+        border: const OutlineInputBorder(),
       ),
     );
   }
@@ -269,7 +270,7 @@ class _QuickDeliveryDialogState extends ConsumerState<QuickDeliveryDialog> {
       controller: _feeController,
       keyboardType: TextInputType.number,
       decoration: InputDecoration(
-        labelText: '💰 رسوم التوصيل',
+        labelText: tr('💰 رسوم التوصيل'),
         suffixText: AppConstants.currencySymbolEn,
         border: const OutlineInputBorder(),
       ),
@@ -279,12 +280,12 @@ class _QuickDeliveryDialogState extends ConsumerState<QuickDeliveryDialog> {
   Widget _buildCourierDropdown() {
     return DropdownButtonFormField<int?>(
       initialValue: _selectedCourierId,
-      decoration: const InputDecoration(
-        labelText: '🚗 المندوب (اختياري)',
-        border: OutlineInputBorder(),
+      decoration:  InputDecoration(
+        labelText: tr('🚗 المندوب (اختياري)'),
+        border: const OutlineInputBorder(),
       ),
       items: [
-        const DropdownMenuItem(value: null, child: Text('بدون مندوب')),
+         DropdownMenuItem(value: null, child: Text(tr('بدون مندوب'))),
         ..._couriers.map(
           (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
         ),
@@ -300,19 +301,19 @@ class _QuickDeliveryDialogState extends ConsumerState<QuickDeliveryDialog> {
         TextButton.icon(
           onPressed: widget.onCancelDelivery,
           icon: const Icon(PhosphorIconsBold.x, color: AppColors.error),
-          label: const Text(
-            'إلغاء التوصيل',
-            style: TextStyle(color: AppColors.error),
+          label:  Text(
+            tr('إلغاء التوصيل'),
+            style: const TextStyle(color: AppColors.error),
           ),
         ),
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('إغلاق'),
+        child:  Text(tr('إغلاق')),
       ),
       ElevatedButton.icon(
         onPressed: _onConfirm,
         icon: const Icon(PhosphorIconsBold.check),
-        label: const Text('تأكيد ✓'),
+        label:  Text(tr('تأكيد ✓')),
         style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
       ),
     ];
@@ -323,7 +324,7 @@ class _QuickDeliveryDialogState extends ConsumerState<QuickDeliveryDialog> {
     if (_nameController.text.isEmpty || _addressController.text.isEmpty) {
       AppToast.show(
         context,
-        'يرجى إدخال اسم العميل والعنوان',
+        tr('يرجى إدخال اسم العميل والعنوان'),
         type: ToastType.error,
       );
       return;

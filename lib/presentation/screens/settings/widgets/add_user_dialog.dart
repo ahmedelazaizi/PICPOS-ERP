@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/config/brand.dart';
@@ -39,16 +40,16 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
   final List<int> selectedBranchIds = [];
 
   @override
-  String get dialogTitle => 'إضافة مستخدم جديد';
+  String get dialogTitle => tr('إضافة مستخدم جديد');
 
   @override
   IconData get dialogIcon => PhosphorIconsBold.userPlus;
 
   @override
-  String? get dialogSubtitle => 'أنشئ حساباً واربطه بدورٍ وفروعٍ ومخازنَ محدّدة';
+  String? get dialogSubtitle => tr('أنشئ حساباً واربطه بدورٍ وفروعٍ ومخازنَ محدّدة');
 
   @override
-  String? get dialogSaveLabel => 'حفظ المستخدم';
+  String? get dialogSaveLabel => tr('حفظ المستخدم');
 
   // ── حقولٌ يتشاركها الفرعان ────────────────────────────────────────────
   //
@@ -57,19 +58,19 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
 
   Widget _nameField() => TextField(
         controller: nameController,
-        decoration: const InputDecoration(
-          labelText: 'الاسم الكامل *',
-          prefixIcon: Icon(PhosphorIconsLight.user),
+        decoration:  InputDecoration(
+          labelText: tr('الاسم الكامل *'),
+          prefixIcon: const Icon(PhosphorIconsLight.user),
         ),
       );
 
   Widget _usernameField() => TextField(
         controller: usernameController,
-        decoration: const InputDecoration(
+        decoration:  InputDecoration(
           // نصُّ التصميم: «اسم الدخول». وهو أدقُّ ممّا كان («اسم المستخدم»)
           // لأنّ الحقلَ الآخرَ «الاسم الكامل» هو اسمُ المستخدم فعلاً.
-          labelText: 'اسم الدخول *',
-          prefixIcon: Icon(PhosphorIconsLight.at),
+          labelText: tr('اسم الدخول *'),
+          prefixIcon: const Icon(PhosphorIconsLight.at),
         ),
       );
 
@@ -83,11 +84,11 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
         obscureText: true,
         onChanged: (_) => setState(() {}),
         decoration: InputDecoration(
-          labelText: 'تأكيد كلمة المرور *',
+          labelText: tr('تأكيد كلمة المرور *'),
           prefixIcon: const Icon(PhosphorIconsLight.lock),
           errorText: confirmController.text.isNotEmpty &&
                   confirmController.text != passwordController.text
-              ? 'لا تطابق كلمةَ المرور'
+              ? tr('لا تطابق كلمةَ المرور')
               : null,
         ),
       );
@@ -96,9 +97,9 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
         controller: passwordController,
         obscureText: true,
         onChanged: (_) => setState(() {}),
-        decoration: const InputDecoration(
-          labelText: 'كلمة المرور *',
-          prefixIcon: Icon(PhosphorIconsLight.lock),
+        decoration:  InputDecoration(
+          labelText: tr('كلمة المرور *'),
+          prefixIcon: const Icon(PhosphorIconsLight.lock),
         ),
       );
 
@@ -108,10 +109,10 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
   // user_dao.authenticateByCardCode at the login screen.
   Widget _cardCodeField() => TextField(
         controller: cardCodeController,
-        decoration: const InputDecoration(
-          labelText: 'كود كارت MSR (اختياري)',
-          hintText: 'مرر الكارت أو اكتب الكود يدوياً',
-          prefixIcon: Icon(PhosphorIconsLight.identificationCard),
+        decoration:  InputDecoration(
+          labelText: tr('كود كارت MSR (اختياري)'),
+          hintText: tr('مرر الكارت أو اكتب الكود يدوياً'),
+          prefixIcon: const Icon(PhosphorIconsLight.identificationCard),
         ),
       );
 
@@ -141,7 +142,7 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
 
     return [
       PicPosPanelGroup(
-        label: 'بيانات الحساب',
+        label: tr('بيانات الحساب'),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -169,8 +170,8 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
         ),
       ),
       PicPosPanelGroup(
-        label: 'الدور',
-        hint: 'دورٌ واحدٌ لكلّ مستخدم',
+        label: tr('الدور'),
+        hint: tr('دورٌ واحدٌ لكلّ مستخدم'),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,14 +179,14 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
             PicPosPanelChips(
               children: [
                 PicPosPanelChip(
-                  label: 'بدون دور',
+                  label: tr('بدون دور'),
                   selected: selectedRoleId == null,
                   onTap: () => setState(() => selectedRoleId = null),
                 ),
                 for (final r in roles)
                   PicPosPanelChip(
                     label: r.name,
-                    tooltip: r.isSystemRole ? 'دورُ نظامٍ مبنيٌّ مسبقاً' : null,
+                    tooltip: r.isSystemRole ? tr('دورُ نظامٍ مبنيٌّ مسبقاً') : null,
                     selected: selectedRoleId == r.id,
                     onTap: () => setState(() => selectedRoleId = r.id),
                   ),
@@ -194,7 +195,7 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
             const SizedBox(height: 8),
             TextButton.icon(
               icon: const Icon(PhosphorIconsBold.plus, size: 15),
-              label: const Text('دور جديد بصلاحيات مخصّصة'),
+              label:  Text(tr('دور جديد بصلاحيات مخصّصة')),
               onPressed: () async {
                 final added = await showDialog<bool>(
                   context: context,
@@ -208,8 +209,8 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
       ),
       if (branches.isNotEmpty)
         PicPosPanelGroup(
-          label: 'الفروع المسموحة',
-          hint: 'اختر فرعاً أو أكثر',
+          label: tr('الفروع المسموحة'),
+          hint: tr('اختر فرعاً أو أكثر'),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -230,7 +231,7 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
                       }),
                     ),
                   PicPosPanelChip(
-                    label: 'كل الفروع (مدير / إدارة)',
+                    label: tr('كل الفروع (مدير / إدارة)'),
                     selected: _allBranches,
                     onTap: () => setState(() {
                       _allBranches = true;
@@ -252,21 +253,21 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
           ),
         ),
       PicPosPanelGroup(
-        label: 'خيارات الحساب',
+        label: tr('خيارات الحساب'),
         child: PicPosPanelBox(
           children: [
             SettingsSwitchRow(
               first: true,
               icon: PhosphorIconsBold.checkCircle,
-              title: 'الحساب نشط',
-              sub: 'يمكنه تسجيل الدخول فوراً',
+              title: tr('الحساب نشط'),
+              sub: tr('يمكنه تسجيل الدخول فوراً'),
               value: isActive,
               onChanged: (v) => setState(() => isActive = v),
             ),
             SettingsSwitchRow(
               icon: PhosphorIconsBold.arrowsClockwise,
-              title: 'تغيير كلمة المرور أول دخول',
-              sub: 'سيُطلب منه تغييرُها فورَ تسجيل الدخول',
+              title: tr('تغيير كلمة المرور أول دخول'),
+              sub: tr('سيُطلب منه تغييرُها فورَ تسجيل الدخول'),
               value: forcePasswordChange,
               onChanged: (v) => setState(() => forcePasswordChange = v),
             ),
@@ -303,15 +304,15 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
           children: [
             Expanded(
               child: DropdownButtonFormField<int?>(
-                decoration: const InputDecoration(
-                  labelText: 'الدور / الصلاحية',
-                  prefixIcon: Icon(PhosphorIconsLight.shieldCheck),
+                decoration:  InputDecoration(
+                  labelText: tr('الدور / الصلاحية'),
+                  prefixIcon: const Icon(PhosphorIconsLight.shieldCheck),
                 ),
                 value: selectedRoleId,
                 items: [
-                  const DropdownMenuItem<int?>(
+                   DropdownMenuItem<int?>(
                     value: null,
-                    child: Text('— بدون دور —', style: TextStyle(color: Colors.grey)),
+                    child: Text(tr('— بدون دور —'), style: const TextStyle(color: Colors.grey)),
                   ),
                   ...roles.map(
                     (role) => DropdownMenuItem(
@@ -338,7 +339,7 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
             const SizedBox(width: 6),
             // Add new role
             Tooltip(
-              message: 'إضافة دور جديد',
+              message: tr('إضافة دور جديد'),
               child: IconButton.outlined(
                 icon: const Icon(PhosphorIconsBold.plus, size: 18),
                 style: IconButton.styleFrom(
@@ -364,19 +365,19 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
         Padding(
           padding: const EdgeInsetsDirectional.only(start: 12),
           child: Text(
-            'لإنشاء دور جديد بصلاحيات مخصصة اضغط +',
+            tr('لإنشاء دور جديد بصلاحيات مخصصة اضغط +'),
             style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
           ),
         ),
         if (branches.isNotEmpty) ...[
           const SizedBox(height: 16),
-          const Text('الفرع', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+           Text(tr('الفرع'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 8),
           // ⚠️ «كل الفروع» لا يكتب إسناداً، والفراغُ يعني «الكلَّ» للأدوار
           // المميَّزة وحدَها. فيُقال ذلك **قبل** الحفظ لا بعده: الحارسُ في
           // `onSave` يمنع، وهذا السطرُ يشرح لماذا قبل أن يُمنَع أحد.
           RadioListTile<bool>(
-            title: const Text('كل الفروع (مدير / إدارة)'),
+            title:  Text(tr('كل الفروع (مدير / إدارة)')),
             subtitle: fullBranchAccessRoleNames.contains(
               roles.where((r) => r.id == selectedRoleId).firstOrNull?.name,
             )
@@ -393,7 +394,7 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
             dense: true,
           ),
           RadioListTile<bool>(
-            title: const Text('فرع محدد'),
+            title:  Text(tr('فرع محدد')),
             value: false,
             groupValue: _allBranches,
             onChanged: (v) => setState(() => _allBranches = false),
@@ -413,8 +414,8 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
           const SizedBox(height: 12),
         ],
         CheckboxListTile(
-          title: const Text('فرض تغيير كلمة المرور عند أول دخول'),
-          subtitle: const Text('سيُطلب من المستخدم تغيير كلمة المرور فور تسجيل الدخول'),
+          title:  Text(tr('فرض تغيير كلمة المرور عند أول دخول')),
+          subtitle:  Text(tr('سيُطلب من المستخدم تغيير كلمة المرور فور تسجيل الدخول')),
           value: forcePasswordChange,
           onChanged: (v) => setState(() => forcePasswordChange = v ?? true),
           contentPadding: EdgeInsets.zero,

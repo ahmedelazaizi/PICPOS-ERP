@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:drift/drift.dart' hide Column;
@@ -47,8 +48,8 @@ class _PartyEditDialogState extends AppFormDialogState<bool, PartyEditDialog> {
 
   @override
   String get dialogTitle => widget.existing == null
-      ? (widget.isSupplier ? 'إضافة مورد جديد' : 'إضافة عميل جديد')
-      : (widget.isSupplier ? 'تعديل بيانات المورد' : 'تعديل بيانات العميل');
+      ? (widget.isSupplier ? tr('إضافة مورد جديد') : tr('إضافة عميل جديد'))
+      : (widget.isSupplier ? tr('تعديل بيانات المورد') : tr('تعديل بيانات العميل'));
 
   @override
   IconData get dialogIcon =>
@@ -61,54 +62,54 @@ class _PartyEditDialogState extends AppFormDialogState<bool, PartyEditDialog> {
       children: [
         TextField(
           controller: codeController,
-          decoration: const InputDecoration(
-            labelText: 'الكود',
-            prefixIcon: Icon(PhosphorIconsLight.barcode, size: 20),
+          decoration:  InputDecoration(
+            labelText: tr('الكود'),
+            prefixIcon: const Icon(PhosphorIconsLight.barcode, size: 20),
           ),
         ),
         const SizedBox(height: 16),
         TextField(
           controller: nameController,
           decoration: InputDecoration(
-            labelText: widget.isSupplier ? 'اسم المورد *' : 'اسم العميل *',
+            labelText: widget.isSupplier ? tr('اسم المورد *') : tr('اسم العميل *'),
             prefixIcon: const Icon(PhosphorIconsLight.user, size: 20),
           ),
         ),
         const SizedBox(height: 16),
         TextField(
           controller: phoneController,
-          decoration: const InputDecoration(
-            labelText: 'رقم الهاتف',
-            prefixIcon: Icon(PhosphorIconsLight.phone, size: 20),
+          decoration:  InputDecoration(
+            labelText: tr('رقم الهاتف'),
+            prefixIcon: const Icon(PhosphorIconsLight.phone, size: 20),
           ),
           keyboardType: TextInputType.phone,
         ),
         const SizedBox(height: 16),
         TextField(
           controller: addressController,
-          decoration: const InputDecoration(
-            labelText: 'العنوان',
-            prefixIcon: Icon(PhosphorIconsLight.mapPin, size: 20),
+          decoration:  InputDecoration(
+            labelText: tr('العنوان'),
+            prefixIcon: const Icon(PhosphorIconsLight.mapPin, size: 20),
           ),
         ),
         const SizedBox(height: 16),
         TextField(
           controller: taxIdController,
-          decoration: const InputDecoration(
-            labelText: 'الرقم الضريبي',
-            prefixIcon: Icon(PhosphorIconsLight.hash, size: 20),
+          decoration:  InputDecoration(
+            labelText: tr('الرقم الضريبي'),
+            prefixIcon: const Icon(PhosphorIconsLight.hash, size: 20),
           ),
         ),
         if (_groups.isNotEmpty) ...[
           const SizedBox(height: 16),
           DropdownButtonFormField<int?>(
             value: _selectedGroupId,
-            decoration: const InputDecoration(
-              labelText: 'التصنيف',
-              prefixIcon: Icon(PhosphorIconsLight.folder, size: 20),
+            decoration:  InputDecoration(
+              labelText: tr('التصنيف'),
+              prefixIcon: const Icon(PhosphorIconsLight.folder, size: 20),
             ),
             items: [
-              const DropdownMenuItem<int?>(value: null, child: Text('بدون تصنيف')),
+               DropdownMenuItem<int?>(value: null, child: Text(tr('بدون تصنيف'))),
               ..._groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))),
             ],
             onChanged: (value) => setState(() => _selectedGroupId = value),

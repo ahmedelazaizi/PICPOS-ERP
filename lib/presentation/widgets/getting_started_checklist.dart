@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,43 +62,43 @@ class _GettingStartedChecklistState
         setState(() {
           _items = [
             _ChecklistItem(
-              title: 'أضف أول صنف',
-              subtitle: 'ابدأ بإضافة المنتجات والأصناف',
+              title: tr('أضف أول صنف'),
+              subtitle: tr('ابدأ بإضافة المنتجات والأصناف'),
               icon: PhosphorIconsBold.package,
               isDone: results[0],
               screenIndex: 4, // Products
             ),
             _ChecklistItem(
-              title: 'أضف عميل أو مورد',
-              subtitle: 'سجّل بيانات العملاء والموردين',
+              title: tr('أضف عميل أو مورد'),
+              subtitle: tr('سجّل بيانات العملاء والموردين'),
               icon: PhosphorIconsBold.usersThree,
               isDone: results[1],
               screenIndex: 6, // Parties
             ),
             _ChecklistItem(
-              title: 'أنشئ أول فاتورة',
-              subtitle: 'جرّب إنشاء فاتورة بيع',
+              title: tr('أنشئ أول فاتورة'),
+              subtitle: tr('جرّب إنشاء فاتورة بيع'),
               icon: PhosphorIconsBold.receipt,
               isDone: results[2],
               screenIndex: 1, // POS
             ),
             _ChecklistItem(
-              title: 'أعدّ الفروع والمخازن',
-              subtitle: 'نظّم هيكل فروعك ومخازنك',
+              title: tr('أعدّ الفروع والمخازن'),
+              subtitle: tr('نظّم هيكل فروعك ومخازنك'),
               icon: PhosphorIconsBold.buildings,
               isDone: results[3],
               screenIndex: 13, // Branches
             ),
             _ChecklistItem(
-              title: 'اضبط الطابعة',
-              subtitle: 'وصّل الطابعة لطباعة الفواتير',
+              title: tr('اضبط الطابعة'),
+              subtitle: tr('وصّل الطابعة لطباعة الفواتير'),
               icon: PhosphorIconsBold.printer,
               isDone: results[4],
               screenIndex: 12, // Settings
             ),
             _ChecklistItem(
-              title: 'أنشئ نسخة احتياطية',
-              subtitle: 'احمِ بياناتك بنسخة احتياطية',
+              title: tr('أنشئ نسخة احتياطية'),
+              subtitle: tr('احمِ بياناتك بنسخة احتياطية'),
               icon: PhosphorIconsBold.cloudArrowUp,
               isDone: results[5],
               screenIndex: 12, // Settings
@@ -176,11 +177,11 @@ class _GettingStartedChecklistState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('ابدأ مع النظام',
-                            style: TextStyle(
+                         Text(tr('ابدأ مع النظام'),
+                            style: const TextStyle(
                                 fontSize: 15, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 2),
-                        Text('$doneCount من $totalCount مهام مكتملة',
+                        Text(tr('{doneCount} من {totalCount} مهام مكتملة', {'doneCount': doneCount, 'totalCount': totalCount}),
                             style: const TextStyle(
                                 color: AppColors.textMuted, fontSize: 12)),
                       ],
@@ -211,7 +212,7 @@ class _GettingStartedChecklistState
                   IconButton(
                     onPressed: _dismiss,
                     icon: const Icon(PhosphorIconsBold.x, size: 16),
-                    tooltip: 'إخفاء',
+                    tooltip: tr('إخفاء'),
                     style: IconButton.styleFrom(
                       foregroundColor: AppColors.textMuted,
                       padding: EdgeInsets.zero,

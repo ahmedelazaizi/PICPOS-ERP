@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'dart:async';
 import 'package:flutter/gestures.dart';
@@ -281,7 +282,7 @@ class _InactivityWarningBanner extends StatelessWidget {
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  'سيتم تسجيل الخروج تلقائياً خلال $secondsRemaining ثانية بسبب عدم النشاط',
+                  tr('سيتم تسجيل الخروج تلقائياً خلال {secondsRemaining} ثانية بسبب عدم النشاط', {'secondsRemaining': secondsRemaining}),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -300,9 +301,9 @@ class _InactivityWarningBanner extends StatelessWidget {
                     vertical: 6,
                   ),
                 ),
-                child: const Text(
-                  'إبقاء الجلسة',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                child:  Text(
+                  tr('إبقاء الجلسة'),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
             ],

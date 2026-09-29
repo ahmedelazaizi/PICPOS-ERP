@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
@@ -571,7 +572,7 @@ class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
         final invoiceMatch = inv.invoiceNumber.toLowerCase().contains(query);
         final customerName = inv.partyId != null
             ? (state.customerNames[inv.partyId]?.toLowerCase() ?? '')
-            : 'عميل نقدي';
+            : tr('عميل نقدي');
         final customerMatch = customerName.contains(query);
         return invoiceMatch || customerMatch;
       }).toList();
@@ -1046,7 +1047,7 @@ class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
       action: 'update_sale_payment',
       entityType: 'sales_invoice',
       entityId: invoiceId,
-      description: 'تعديل دفعة فاتورة مبيعات $invoiceNumber',
+      description: tr('تعديل دفعة فاتورة مبيعات {invoiceNumber}', {'invoiceNumber': invoiceNumber}),
       amount: total,
     );
   }
@@ -1070,7 +1071,7 @@ class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
       action: 'delete_sale',
       entityType: 'sales_invoice',
       entityId: invoiceId,
-      description: 'حذف فاتورة مبيعات $invoiceNumber',
+      description: tr('حذف فاتورة مبيعات {invoiceNumber}', {'invoiceNumber': invoiceNumber}),
       amount: total,
     );
   }

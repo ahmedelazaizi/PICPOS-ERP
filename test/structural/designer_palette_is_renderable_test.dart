@@ -37,7 +37,7 @@ const _rendererFiles = <String>[
 /// `_PaletteItem('التسمية', 'elementType', 'content', icon)` — الثالثُ هو
 /// المحتوى، وهو ما يقارنه الرسّامُ بعد `resolveType`.
 final _palette =
-    RegExp(r"_PaletteItem\(\s*'[^']*'\s*,\s*'([^']*)'\s*,\s*'([^']*)'");
+    RegExp(r"_PaletteItem\(\s*(?:tr\()?\s*'[^']*'\s*\)?\s*,\s*'([^']*)'\s*,\s*'([^']*)'");
 
 /// أنواعٌ **بنيويةٌ** يرسمها الرسّام من `elementType` لا من المحتوى: شكلٌ
 /// على الورق لا حقلُ بيانات.

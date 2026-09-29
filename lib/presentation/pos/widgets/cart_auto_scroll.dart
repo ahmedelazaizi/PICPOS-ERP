@@ -84,11 +84,11 @@ class _AutoScrollCartListState extends State<_AutoScrollCartList> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.barcode, color: AppColors.warning),
-              SizedBox(width: 8),
-              Text('طباعة باركود'),
+              const Icon(PhosphorIconsBold.barcode, color: AppColors.warning),
+              const SizedBox(width: 8),
+              Text(tr('طباعة باركود')),
             ],
           ),
           content: Column(
@@ -114,7 +114,7 @@ class _AutoScrollCartListState extends State<_AutoScrollCartList> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'كود: ${item.productCode}',
+                      tr('كود: {p0}', {'p0': item.productCode}),
                       style: const TextStyle(
                         color: AppColors.textMuted,
                         fontSize: 12,
@@ -125,9 +125,9 @@ class _AutoScrollCartListState extends State<_AutoScrollCartList> {
               ),
               const SizedBox(height: 20),
               // Copies selector
-              const Text(
-                'عدد النسخ:',
-                style: TextStyle(fontWeight: FontWeight.w500),
+               Text(
+                tr('عدد النسخ:'),
+                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
               Row(
@@ -186,7 +186,7 @@ class _AutoScrollCartListState extends State<_AutoScrollCartList> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             FilledButton.icon(
               onPressed: () {
@@ -194,7 +194,7 @@ class _AutoScrollCartListState extends State<_AutoScrollCartList> {
                 _printBarcode(context, item, copies);
               },
               icon: const Icon(PhosphorIconsBold.printer),
-              label: Text('طباعة $copies نسخة'),
+              label: Text(tr('طباعة {copies} نسخة', {'copies': copies})),
             ),
           ],
         ),
@@ -209,7 +209,7 @@ class _AutoScrollCartListState extends State<_AutoScrollCartList> {
   ) async {
     // Show printing indicator
     // Notification (was SnackBar)
-    AppToast.show(context, 'إشعار', type: ToastType.success);
+    AppToast.show(context, tr('إشعار'), type: ToastType.success);
 
     try {
       // Use the product barcode (user-entered), fallback to productCode if no barcode
@@ -218,7 +218,7 @@ class _AutoScrollCartListState extends State<_AutoScrollCartList> {
       if (barcodeValue.isEmpty) {
         AppToast.show(
           context,
-          'هذا الصنف لا يحتوي على باركود',
+          tr('هذا الصنف لا يحتوي على باركود'),
           type: ToastType.warning,
         );
         return;
@@ -234,7 +234,7 @@ class _AutoScrollCartListState extends State<_AutoScrollCartList> {
       if (context.mounted) {
         AppToast.show(
           context,
-          'تم إرسال $copies باركود للطباعة ✓',
+          tr('تم إرسال {copies} باركود للطباعة ✓', {'copies': copies}),
           type: ToastType.success,
         );
       }
@@ -242,7 +242,7 @@ class _AutoScrollCartListState extends State<_AutoScrollCartList> {
       if (context.mounted) {
         AppToast.show(
           context,
-          'فشل في طباعة الباركود: $e',
+          tr('فشل في طباعة الباركود: {e}', {'e': e}),
           type: ToastType.error,
         );
       }

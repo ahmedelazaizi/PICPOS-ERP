@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -8,11 +9,11 @@ import '../../../services/license_service.dart';
 import '../../picpos_shell/picpos_surface.dart';
 
 /// ترتيبُ مجموعات عمود الإعدادات كما في التصميم.
-const kSettingsGroupOrder = <String>[
-  'التشغيل',
-  'الأمان',
-  'المال والبيانات',
-  'الامتدادات',
+List<String> get kSettingsGroupOrder => <String>[
+  tr('التشغيل'),
+  tr('الأمان'),
+  tr('المال والبيانات'),
+  tr('الامتدادات'),
 ];
 
 /// ما يحتاجه العمودُ من القسم — دون `children` ولا `keywords`.
@@ -259,7 +260,7 @@ class SettingsRailFooter extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'النسخة ${AppConstants.appVersion}',
+                  tr('النسخة {p0}', {'p0': AppConstants.appVersion}),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style:
@@ -267,8 +268,8 @@ class SettingsRailFooter extends ConsumerWidget {
                 ),
                 Text(
                   switch (activated.value) {
-                    true => 'مرخّصة',
-                    false => 'غير مفعّلة',
+                    true => tr('مرخّصة'),
+                    false => tr('غير مفعّلة'),
                     null => '…',
                   },
                   style: text.labelSmall?.copyWith(color: AppColors.textMuted),

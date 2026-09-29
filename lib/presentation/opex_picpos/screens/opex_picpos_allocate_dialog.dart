@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // حوارُ «تحميل مصروف على أمر تصنيع» بهويّة PicPos — فورك `DLGS.allocate`
 // في `PicPos Operating Expenses.dc.html`.
 //
@@ -63,10 +64,10 @@ class AllocationForm {
   final List<({int orderId, double amount})> lines;
 }
 
-const _costTypes = <(String, String, IconData)>[
-  ('overhead', 'تحميل غير مباشر', PhosphorIconsBold.lightning),
-  ('utility', 'مرافق', PhosphorIconsBold.fire),
-  ('depreciation', 'إهلاك', PhosphorIconsBold.arrowDownRight),
+List<(String, String, IconData)> get _costTypes => <(String, String, IconData)>[
+  ('overhead', tr('تحميل غير مباشر'), PhosphorIconsBold.lightning),
+  ('utility', tr('مرافق'), PhosphorIconsBold.fire),
+  ('depreciation', tr('إهلاك'), PhosphorIconsBold.arrowDownRight),
 ];
 
 /// يفتح الحوارَ ويُرجع النموذجَ، أو `null` عند الإلغاء.
@@ -120,17 +121,17 @@ class _AllocateDialogState extends State<_AllocateDialog> {
 
   String? get _blocker {
     if (widget.expenses.isEmpty) {
-      return 'لا مصروفاتِ قابلةً للتحميل — الفئةُ يجب أن تكون مرتبطةً بالإنتاج';
+      return tr('لا مصروفاتِ قابلةً للتحميل — الفئةُ يجب أن تكون مرتبطةً بالإنتاج');
     }
-    if (widget.orders.isEmpty) return 'لا أوامرَ تصنيعٍ مرشَّحة';
-    if (_expenseId == null) return 'اختر المصروف';
-    if (_picked.isEmpty) return 'اختر أمراً واحداً على الأقلّ';
+    if (widget.orders.isEmpty) return tr('لا أوامرَ تصنيعٍ مرشَّحة');
+    if (_expenseId == null) return tr('اختر المصروف');
+    if (_picked.isEmpty) return tr('اختر أمراً واحداً على الأقلّ');
     // 🔴 خطّةٌ كلُّ أسطرها أصفارٌ لا تكتب شيئاً — والزرُّ الذي «ينجح» بلا
     //    أثرٍ أسوأُ من زرٍّ معطَّلٍ يقول السبب.
     if (_plan.allocated.abs() < 0.005) {
       return _basis == AllocationBasis.byRate
-          ? 'المعدلُ أو الكمّيّاتُ صفرٌ — لا شيءَ يُحمَّل'
-          : 'الكمّيّاتُ المختارةُ صفرٌ — لا أساسَ للتوزيع';
+          ? tr('المعدلُ أو الكمّيّاتُ صفرٌ — لا شيءَ يُحمَّل')
+          : tr('الكمّيّاتُ المختارةُ صفرٌ — لا أساسَ للتوزيع');
     }
     return null;
   }
@@ -168,14 +169,14 @@ class _AllocateDialogState extends State<_AllocateDialog> {
 
     return PicPosDialog(
       icon: PhosphorIconsBold.factory,
-      title: 'تحميل مصروف على أمر تصنيع',
-      subtitle: 'يدخل المصروف في تكلفة الأمر ثم تكلفة الوحدة',
+      title: tr('تحميل مصروف على أمر تصنيع'),
+      subtitle: tr('يدخل المصروف في تكلفة الأمر ثم تكلفة الوحدة'),
       accent: const Color(0xFF8B5CF6),
       width: 880,
       onCancel: () => Navigator.pop(context),
       footerHint: blocker,
       primaryAction: PicPosDialogAction(
-        label: n == 0 ? 'تحميل' : 'تحميل على $n ${n == 1 ? 'أمر' : 'أوامر'}',
+        label: n == 0 ? tr('تحميل') : tr('تحميل على {n} {p0}', {'n': n, 'p0': n == 1 ? 'أمر' : 'أوامر'}),
         icon: PhosphorIconsBold.check,
         onPressed: blocker != null
             ? null
@@ -195,15 +196,15 @@ class _AllocateDialogState extends State<_AllocateDialog> {
                 ),
       ),
       body: [
-        _sectionLabel('المصروف'),
+        _sectionLabel(tr('المصروف')),
         DropdownButtonFormField<int>(
           initialValue: _expenseId,
           isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'المصروف *',
-            border: OutlineInputBorder(),
+          decoration:  InputDecoration(
+            labelText: tr('المصروف *'),
+            border: const OutlineInputBorder(),
             isDense: true,
-            prefixIcon: Icon(PhosphorIconsBold.receiptX, size: 16),
+            prefixIcon: const Icon(PhosphorIconsBold.receiptX, size: 16),
           ),
           items: [
             for (final x in widget.expenses)
@@ -217,18 +218,18 @@ class _AllocateDialogState extends State<_AllocateDialog> {
         PicPosDialogRow(
           children: [
             _readOnly(
-              'المبلغ الكلي',
+              tr('المبلغ الكلي'),
               e == null ? '—' : _money.format(e.amount),
               PhosphorIconsBold.currencyCircleDollar,
             ),
             _readOnly(
-              'المعدل',
+              tr('المعدل'),
               e == null || e.rate == 0 ? '—' : _money.format(e.rate),
               PhosphorIconsBold.percent,
             ),
           ],
         ),
-        _sectionLabel('الأوامر المستهدفة'),
+        _sectionLabel(tr('الأوامر المستهدفة')),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -247,32 +248,32 @@ class _AllocateDialogState extends State<_AllocateDialog> {
                       : picposDialogMuted(context),
                 ),
                 label: Text(
-                  '${o.orderNumber} — ${o.quantity.toStringAsFixed(0)} وحدة',
+                  tr('{p0} — {p1} وحدة', {'p0': o.orderNumber, 'p1': o.quantity.toStringAsFixed(0)}),
                   style: const TextStyle(fontSize: 12),
                 ),
               ),
           ],
         ),
-        _sectionLabel('أساس التوزيع'),
+        _sectionLabel(tr('أساس التوزيع')),
         PicPosDialogRow(
           children: [
             PicPosDialogChoice(
               icon: PhosphorIconsBold.package,
-              label: 'بالمعدل × الكمية',
+              label: tr('بالمعدل × الكمية'),
               selected: _basis == AllocationBasis.byRate,
               accent: const Color(0xFF8B5CF6),
               onTap: () => setState(() => _basis = AllocationBasis.byRate),
             ),
             PicPosDialogChoice(
               icon: PhosphorIconsBold.arrowsSplit,
-              label: 'توزيع كامل المبلغ',
+              label: tr('توزيع كامل المبلغ'),
               selected: _basis == AllocationBasis.fullAmount,
               accent: const Color(0xFF8B5CF6),
               onTap: () => setState(() => _basis = AllocationBasis.fullAmount),
             ),
           ],
         ),
-        _sectionLabel('نوع التكلفة'),
+        _sectionLabel(tr('نوع التكلفة')),
         PicPosDialogRow(
           children: [
             for (final (id, label, icon) in _costTypes)
@@ -285,7 +286,7 @@ class _AllocateDialogState extends State<_AllocateDialog> {
               ),
           ],
         ),
-        _sectionLabel('أثر التحميل'),
+        _sectionLabel(tr('أثر التحميل')),
         PicPosDialogSummary(
           rows: [
             for (final l in plan.lines)
@@ -294,18 +295,18 @@ class _AllocateDialogState extends State<_AllocateDialog> {
                         .where((o) => o.id == l.orderId)
                         .firstOrNull
                         ?.orderNumber ??
-                    'أمر #${l.orderId}',
+                    tr('أمر #{p0}', {'p0': l.orderId}),
                 value: _money.format(l.amount),
                 color: const Color(0xFF8B5CF6),
               ),
             (
-              label: 'المحمَّل',
+              label: tr('المحمَّل'),
               value: _money.format(plan.allocated),
               color: AppColors.success,
             ),
             (
               // ⚠️ **سالبٌ يعني تجاوزاً** — والتصميمُ يفترضه موجباً دائماً.
-              label: over ? 'تجاوزُ التحميل' : 'غير محمَّل',
+              label: over ? tr('تجاوزُ التحميل') : tr('غير محمَّل'),
               value: _money.format(plan.unallocated.abs()),
               color: plan.isExact ? AppColors.textMuted : AppColors.error,
             ),

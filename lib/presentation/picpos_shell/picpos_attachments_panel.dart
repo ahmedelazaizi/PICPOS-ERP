@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -102,11 +103,11 @@ class _PicPosAttachmentsPanelState
       if (res.error != null) {
         AppToast.show(context, res.error!, type: ToastType.error);
       } else {
-        AppToast.show(context, 'أُرفق «${picked.name}»');
+        AppToast.show(context, tr('أُرفق «{p0}»', {'p0': picked.name}));
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'تعذّر الإرفاق: $e', type: ToastType.error);
+        AppToast.show(context, tr('تعذّر الإرفاق: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -119,10 +120,10 @@ class _PicPosAttachmentsPanelState
     final ok = await showPicPosConfirm(
       context,
       icon: PhosphorIconsBold.trash,
-      title: 'حذفُ مرفق',
+      title: tr('حذفُ مرفق'),
       message: 'يُحذَف «${row.fileName}» ولا يعود ملفُّه. '
           'ويبقى في المستند أثرُ أنَّ ورقةً كانت معه.',
-      confirmLabel: 'حذف',
+      confirmLabel: tr('حذف'),
       danger: true,
     );
     if (!ok || !mounted) return;
@@ -153,7 +154,7 @@ class _PicPosAttachmentsPanelState
       // ⚠️ **ولا يُقال «المرفقُ تالف»**: الأرجحُ أنّ جلبَه من الخادم تعذّر،
       //    والورقةُ سليمةٌ هناك. ورسالةُ عطبٍ كاذبةٌ تدفع المستخدمَ إلى
       //    إعادةِ رفعِ ما هو مرفوعٌ أصلاً.
-      AppToast.show(context, 'تعذّر جلبُ المرفق من الخادم — جرّب ثانيةً',
+      AppToast.show(context, tr('تعذّر جلبُ المرفق من الخادم — جرّب ثانيةً'),
           type: ToastType.error);
       return;
     }
@@ -184,7 +185,7 @@ class _PicPosAttachmentsPanelState
               size: 16, color: AppColors.textSecondary),
           const SizedBox(width: Spacing.xs),
           Text(
-            'المرفقات ($count/$kAttachmentMaxPerDocument)',
+            tr('المرفقات ({count}/{kAttachmentMaxPerDocument})', {'count': count, 'kAttachmentMaxPerDocument': kAttachmentMaxPerDocument}),
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -196,7 +197,7 @@ class _PicPosAttachmentsPanelState
             key: const Key('attachments_add'),
             onPressed: onAdd,
             icon: const Icon(PhosphorIconsBold.plus, size: 14),
-            label: const Text('إضافة'),
+            label:  Text(tr('إضافة')),
           ),
         ],
       );
@@ -211,14 +212,14 @@ class _PicPosAttachmentsPanelState
   @override
   Widget build(BuildContext context) {
     final entity = attachmentEntityFor(widget.entityType);
-    final label = entity?.labelAr ?? 'المستند';
+    final label = entity?.labelAr ?? tr('المستند');
     final id = widget.entityId;
 
     if (entity == null) {
       return _shell([
         _header(0),
         const SizedBox(height: Spacing.xs),
-        _notice('نوعُ مستندٍ لا يقبل المرفقات: ${widget.entityType}',
+        _notice(tr('نوعُ مستندٍ لا يقبل المرفقات: {p0}', {'p0': widget.entityType}),
             key: const Key('attachments_unsupported')),
       ]);
     }
@@ -254,7 +255,7 @@ class _PicPosAttachmentsPanelState
       error: (e, _) => _shell([
         _header(0),
         const SizedBox(height: Spacing.xs),
-        _notice('تعذّرت قراءةُ هُويّة $label: $e',
+        _notice(tr('تعذّرت قراءةُ هُويّة {label}: {e}', {'label': label, 'e': e}),
             key: const Key('attachments_anchor_error')),
       ]),
       data: (gid) {
@@ -283,13 +284,13 @@ class _PicPosAttachmentsPanelState
           _header(rows.length, onAdd: canAdd ? () => _add(gid) : null),
           const SizedBox(height: Spacing.xs),
           if (rows.isEmpty)
-            const Padding(
-              key: Key('attachments_empty'),
-              padding: EdgeInsets.symmetric(vertical: Spacing.md),
+             Padding(
+              key: const Key('attachments_empty'),
+              padding: const EdgeInsets.symmetric(vertical: Spacing.md),
               child: PicPosEmptyState(
                 icon: PhosphorIconsBold.paperclip,
-                title: 'لا مرفقاتٍ بعد',
-                hint: 'صورٌ أو ملفّاتُ PDF حتّى ٥ م.ب للملفّ.',
+                title: tr('لا مرفقاتٍ بعد'),
+                hint: tr('صورٌ أو ملفّاتُ PDF حتّى ٥ م.ب للملفّ.'),
               ),
             )
           else
@@ -374,7 +375,7 @@ class _AttachmentTile extends StatelessWidget {
                     onPressed: busy ? null : onDelete,
                     icon: const Icon(PhosphorIconsBold.trash,
                         size: 16, color: AppColors.error),
-                    tooltip: 'حذف',
+                    tooltip: tr('حذف'),
                   ),
               ],
             ),

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // الأصل: lib/presentation/screens/treasury_screen.dart (719 سطر، مونوليث
 // بلا `part of`). كلاسان داخليان منسوخان منه حرفياً — `_CashFlowTab`
 // (تبويب ٥: تحليل التدفقات النقدية) و`_ReconciliationDialog`+
@@ -110,8 +111,8 @@ class _TreasuryPicposScreenState extends ConsumerState<TreasuryPicposScreen>
     final transactions = ref.watch(safeTransactionsProvider);
 
     return PicPosScreenScaffold(
-      title: 'الصناديق والخزينة',
-      subtitle: 'النقدية والبنوك وإغلاق اليوم',
+      title: tr('الصناديق والخزينة'),
+      subtitle: tr('النقدية والبنوك وإغلاق اليوم'),
       icon: PhosphorIconsBold.wallet,
       // ⚠️ **الأزرارُ الأربعةُ لم تعد هنا.** التصميمُ يضعها شبكةَ ٢×٢ يسارَ
       // البطاقة الداكنة (`grid-template-columns: 1fr 620px`) لا في شريط
@@ -194,12 +195,12 @@ class _TreasuryPicposScreenState extends ConsumerState<TreasuryPicposScreen>
                 label: AppLocalizations.of(context)!.bankAccounts,
                 icon: PhosphorIconsBold.bank
               ),
-              (label: 'تحويل كليك', icon: PhosphorIconsBold.cellSignalFull),
+              (label: tr('تحويل كليك'), icon: PhosphorIconsBold.cellSignalFull),
               (
                 label: AppLocalizations.of(context)!.dailyClosing,
                 icon: PhosphorIconsBold.lockKey
               ),
-              (label: 'تدفقات نقدية', icon: PhosphorIconsBold.chartLineUp),
+              (label: tr('تدفقات نقدية'), icon: PhosphorIconsBold.chartLineUp),
             ],
           ),
           const SizedBox(height: 12),
@@ -216,7 +217,7 @@ class _TreasuryPicposScreenState extends ConsumerState<TreasuryPicposScreen>
                   safes: safes,
                   transactions: transactions,
                   safeType: 'cash',
-                  emptyLabel: 'لا توجد صناديق نقدية',
+                  emptyLabel: tr('لا توجد صناديق نقدية'),
                   searchQuery: _searchQuery,
                 ),
                 TreasuryPanesPicpos(
@@ -230,7 +231,7 @@ class _TreasuryPicposScreenState extends ConsumerState<TreasuryPicposScreen>
                   safes: safes,
                   transactions: transactions,
                   safeType: 'click',
-                  emptyLabel: 'لا توجد صناديق كليك',
+                  emptyLabel: tr('لا توجد صناديق كليك'),
                   searchQuery: _searchQuery,
                 ),
 
@@ -281,11 +282,11 @@ class _CashFlowTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return transactions.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('خطأ: $e')),
+      error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
       data: (list) {
         if (list.isEmpty) {
           return Center(
-            child: Text('لا توجد حركات مالية',
+            child: Text(tr('لا توجد حركات مالية'),
                 style: GoogleFonts.cairo(color: AppColors.textMuted)),
           );
         }
@@ -294,14 +295,14 @@ class _CashFlowTab extends ConsumerWidget {
         final result = cashFlowUseCase.executeFromTransactions(list);
 
         final catLabels = <String, String>{
-          'customer_payment': 'عملاء',
-          'supplier_payment': 'موردين',
-          'sales': 'مبيعات',
-          'purchase': 'مشتريات',
-          'expense': 'مصروفات',
-          'salary': 'رواتب',
-          'advance': 'سلف',
-          'loan': 'قروض',
+          'customer_payment': tr('عملاء'),
+          'supplier_payment': tr('موردين'),
+          'sales': tr('مبيعات'),
+          'purchase': tr('مشتريات'),
+          'expense': tr('مصروفات'),
+          'salary': tr('رواتب'),
+          'advance': tr('سلف'),
+          'loan': tr('قروض'),
         };
 
         return SingleChildScrollView(
@@ -312,15 +313,15 @@ class _CashFlowTab extends ConsumerWidget {
               // KPI Row
               Row(
                 children: [
-                  _flowCard('إجمالي الواردات', result.totalInflows,
+                  _flowCard(tr('إجمالي الواردات'), result.totalInflows,
                       PhosphorIconsBold.arrowCircleDown,
                       const Color(0xFF059669)),
                   const SizedBox(width: 16),
-                  _flowCard('إجمالي الصادرات', result.totalOutflows,
+                  _flowCard(tr('إجمالي الصادرات'), result.totalOutflows,
                       PhosphorIconsBold.arrowCircleUp,
                       const Color(0xFFDC2626)),
                   const SizedBox(width: 16),
-                  _flowCard('صافي التدفق', result.netFlow,
+                  _flowCard(tr('صافي التدفق'), result.netFlow,
                       PhosphorIconsBold.arrowsLeftRight,
                       result.netFlow >= 0
                           ? const Color(0xFF059669)
@@ -331,7 +332,7 @@ class _CashFlowTab extends ConsumerWidget {
 
               // Inflow Categories
               if (result.inflowsByCategory.isNotEmpty) ...[
-                Text('تفصيل الواردات',
+                Text(tr('تفصيل الواردات'),
                     style: GoogleFonts.cairo(
                         fontSize: 14, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
@@ -346,7 +347,7 @@ class _CashFlowTab extends ConsumerWidget {
 
               // Outflow Categories
               if (result.outflowsByCategory.isNotEmpty) ...[
-                Text('تفصيل الصادرات',
+                Text(tr('تفصيل الصادرات'),
                     style: GoogleFonts.cairo(
                         fontSize: 14, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
@@ -474,15 +475,15 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
     return PicPosDialog(
       icon: PhosphorIconsBold.scales,
       accent: AppColors.info,
-      title: 'مراجعة الأرصدة',
-      subtitle: 'مطابقة الأرصدة الفعلية مع دفتر الأستاذ',
+      title: tr('مراجعة الأرصدة'),
+      subtitle: tr('مطابقة الأرصدة الفعلية مع دفتر الأستاذ'),
       width: 660,
       scrollable: false,
       onCancel: () => Navigator.pop(context),
-      cancelLabel: 'إغلاق',
+      cancelLabel: tr('إغلاق'),
       secondaryActions: [
         PicPosDialogAction(
-          label: 'إعادة الفحص',
+          label: tr('إعادة الفحص'),
           icon: PhosphorIconsBold.arrowsClockwise,
           onPressed: _loading ? null : () => _runReconciliation(),
         ),
@@ -490,7 +491,7 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
       // لا زرَّ إصلاحٍ حين لا فرقَ يُصلَح — إجراءٌ بلا أثرٍ أسوأُ من غيابه.
       primaryAction: hasDiscrepancies
           ? PicPosDialogAction(
-              label: 'إصلاح تلقائي',
+              label: tr('إصلاح تلقائي'),
               icon: PhosphorIconsBold.wrench,
               color: AppColors.warning,
               // الدوّارةُ تبقى كما كانت: الإصلاحُ يمسّ أرصدةً، فإخفاءُ
@@ -505,7 +506,7 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
           child: _loading
               ? const Center(child: CircularProgressIndicator())
               : _reports == null
-                  ? const Center(child: Text('لم يتم تشغيل المراجعة بعد'))
+                  ?  Center(child: Text(tr('لم يتم تشغيل المراجعة بعد')))
                   : _buildReportsView(),
         ),
       ],
@@ -545,8 +546,8 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
               Expanded(
                 child: Text(
                   totalDiscrepancies == 0
-                      ? 'جميع الأرصدة متطابقة ✅'
-                      : '$totalDiscrepancies فرق مكتشف${totalFixed > 0 ? ' — تم إصلاح $totalFixed' : ''}',
+                      ? tr('جميع الأرصدة متطابقة ✅')
+                      : tr('{totalDiscrepancies} فرق مكتشف{p0}', {'totalDiscrepancies': totalDiscrepancies, 'p0': totalFixed > 0 ? ' — تم إصلاح $totalFixed' : ''}),
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.w700,
                     color: totalDiscrepancies == 0 ? AppColors.success : AppColors.warning,
@@ -579,14 +580,14 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
         ),
         title: Text(report.entityType, style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
         subtitle: Text(
-          'تم فحص ${report.totalChecked} — ${report.discrepanciesFound} فرق${report.fixed > 0 ? ' — تم إصلاح ${report.fixed}' : ''}',
+          tr('تم فحص {p0} — {p1} فرق{p2}', {'p0': report.totalChecked, 'p1': report.discrepanciesFound, 'p2': report.fixed > 0 ? ' — تم إصلاح ${report.fixed}' : ''}),
           style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
         ),
         children: report.discrepancies.map((d) => ListTile(
           dense: true,
           title: Text(d.entityName, style: GoogleFonts.cairo(fontSize: 12)),
           subtitle: Text(
-            'مخزّن: ${d.cachedValue.toStringAsFixed(AppConstants.decimalPlaces)} | محسوب: ${d.calculatedValue.toStringAsFixed(AppConstants.decimalPlaces)} | فرق: ${d.difference.toStringAsFixed(AppConstants.decimalPlaces)}',
+            tr('مخزّن: {p0} | محسوب: {p1} | فرق: {p2}', {'p0': d.cachedValue.toStringAsFixed(AppConstants.decimalPlaces), 'p1': d.calculatedValue.toStringAsFixed(AppConstants.decimalPlaces), 'p2': d.difference.toStringAsFixed(AppConstants.decimalPlaces)}),
             style: GoogleFonts.cairo(fontSize: 10, color: AppColors.error),
           ),
         )).toList(),

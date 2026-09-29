@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -151,7 +152,7 @@ class _BranchPerformanceScreenState
                   // sidebar where canPop is false.
                   if (Navigator.canPop(context)) ...[
                     IconButton(
-                      tooltip: 'رجوع',
+                      tooltip: tr('رجوع'),
                       icon: const Icon(PhosphorIconsBold.caretRight, size: 20),
                       onPressed: () => Navigator.pop(context),
                     ),
@@ -167,15 +168,15 @@ class _BranchPerformanceScreenState
                         color: AppColors.primary, size: 22),
                   ),
                   const SizedBox(width: 12),
-                  const Column(
+                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('مقارنة أداء الفروع',
-                          style: TextStyle(
+                      Text(tr('مقارنة أداء الفروع'),
+                          style: const TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text('تحليل ومقارنة الأداء عبر جميع الفروع',
+                      Text(tr('تحليل ومقارنة الأداء عبر جميع الفروع'),
                           style:
-                              TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                              const TextStyle(color: AppColors.textMuted, fontSize: 13)),
                     ],
                   ),
                   const Spacer(),
@@ -188,7 +189,7 @@ class _BranchPerformanceScreenState
                     label: Text(
                       _period == 'custom'
                           ? '${dateFmt.format(_from)} → ${dateFmt.format(_to)}'
-                          : 'فترة مخصصة',
+                          : tr('فترة مخصصة'),
                       style: const TextStyle(fontSize: 12),
                     ),
                     style: OutlinedButton.styleFrom(
@@ -204,7 +205,7 @@ class _BranchPerformanceScreenState
                   IconButton(
                     onPressed: _loadData,
                     icon: const Icon(PhosphorIconsBold.arrowClockwise, size: 18),
-                    tooltip: 'تحديث',
+                    tooltip: tr('تحديث'),
                   ),
                 ],
               ),
@@ -216,28 +217,28 @@ class _BranchPerformanceScreenState
               child: Row(
                 children: [
                   _buildSummaryCard(
-                    'إجمالي المبيعات',
+                    tr('إجمالي المبيعات'),
                     '${fmt.format(totalSales)} ${AppConstants.currencySymbol}',
                     PhosphorIconsBold.shoppingCart,
                     AppColors.primary,
                   ),
                   const SizedBox(width: 16),
                   _buildSummaryCard(
-                    'عدد الفواتير',
+                    tr('عدد الفواتير'),
                     fmtInt.format(totalInvoices),
                     PhosphorIconsBold.fileText,
                     AppColors.info,
                   ),
                   const SizedBox(width: 16),
                   _buildSummaryCard(
-                    'متوسط الفاتورة',
+                    tr('متوسط الفاتورة'),
                     '${fmt.format(avgInvoice)} ${AppConstants.currencySymbol}',
                     PhosphorIconsBold.chartLine,
                     AppColors.warning,
                   ),
                   const SizedBox(width: 16),
                   _buildSummaryCard(
-                    'قيمة المخزون',
+                    tr('قيمة المخزون'),
                     '${fmt.format(totalInventory)} ${AppConstants.currencySymbol}',
                     PhosphorIconsBold.warehouse,
                     AppColors.success,
@@ -259,9 +260,9 @@ class _BranchPerformanceScreenState
                                   size: 48,
                                   color: Colors.grey.withValues(alpha: 0.3)),
                               const SizedBox(height: 12),
-                              const Text('لا توجد فروع',
+                               Text(tr('لا توجد فروع'),
                                   style:
-                                      TextStyle(color: AppColors.textMuted)),
+                                      const TextStyle(color: AppColors.textMuted)),
                             ],
                           ),
                         )
@@ -277,11 +278,11 @@ class _BranchPerformanceScreenState
   }
 
   List<Widget> _buildPeriodButtons() {
-    const periods = {
-      'today': 'اليوم',
-      'week': 'الأسبوع',
-      'month': 'الشهر',
-      'year': 'السنة',
+    final periods = {
+      'today': tr('اليوم'),
+      'week': tr('الأسبوع'),
+      'month': tr('الشهر'),
+      'year': tr('السنة'),
     };
     return periods.entries.map((e) {
       final isActive = _period == e.key;
@@ -385,11 +386,11 @@ class _BranchPerformanceScreenState
                 const Icon(PhosphorIconsBold.trophy,
                     color: AppColors.primary, size: 18),
                 const SizedBox(width: 8),
-                const Text('ترتيب الفروع حسب المبيعات',
+                 Text(tr('ترتيب الفروع حسب المبيعات'),
                     style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 const Spacer(),
-                Text('${_branchData.length} فرع',
+                Text(tr('{p0} فرع', {'p0': _branchData.length}),
                     style: const TextStyle(
                         color: AppColors.textMuted, fontSize: 13)),
               ],
@@ -400,15 +401,15 @@ class _BranchPerformanceScreenState
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             color: Theme.of(context).cardColor,
-            child: const Row(
+            child:  Row(
               children: [
-                SizedBox(width: 40, child: Text('#', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12))),
-                Expanded(flex: 3, child: Text('الفرع', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12))),
-                Expanded(flex: 2, child: Text('المبيعات', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
-                Expanded(flex: 1, child: Text('الفواتير', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
-                Expanded(flex: 2, child: Text('متوسط الفاتورة', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
-                Expanded(flex: 2, child: Text('قيمة المخزون', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
-                Expanded(flex: 1, child: Text('الحصة %', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
+                const SizedBox(width: 40, child: Text('#', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12))),
+                Expanded(flex: 3, child: Text(tr('الفرع'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12))),
+                Expanded(flex: 2, child: Text(tr('المبيعات'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
+                Expanded(flex: 1, child: Text(tr('الفواتير'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
+                Expanded(flex: 2, child: Text(tr('متوسط الفاتورة'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
+                Expanded(flex: 2, child: Text(tr('قيمة المخزون'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
+                Expanded(flex: 1, child: Text(tr('الحصة %'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
               ],
             ),
           ),
@@ -469,8 +470,8 @@ class _BranchPerformanceScreenState
                                       .withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: const Text('الأفضل',
-                                    style: TextStyle(
+                                child:  Text(tr('الأفضل'),
+                                    style: const TextStyle(
                                         color: AppColors.success,
                                         fontSize: 10,
                                         fontWeight: FontWeight.bold)),

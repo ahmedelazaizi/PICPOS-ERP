@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,10 +34,10 @@ class PurchaseInvoiceItemsTable extends ConsumerWidget {
           border: Border.all(color: AppColors.border),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Center(
+        child:  Center(
           child: Text(
-            'لم يتم إضافة أصناف بعد',
-            style: TextStyle(color: AppColors.textMuted),
+            tr('لم يتم إضافة أصناف بعد'),
+            style: const TextStyle(color: AppColors.textMuted),
           ),
         ),
       );
@@ -47,16 +48,16 @@ class PurchaseInvoiceItemsTable extends ConsumerWidget {
         scrollDirection: Axis.horizontal,
         child: DataTable(
           columnSpacing: 12,
-          columns: const [
-            DataColumn(label: Text('الصنف')),
-            DataColumn(label: Text('الوحدة')),
-            DataColumn(label: Text('التصنيف')),
-            DataColumn(label: Text('الكمية')),
-            DataColumn(label: Text('سعر الشراء')),
-            DataColumn(label: Text('الضريبة %')),
-            DataColumn(label: Text('قيمة الضريبة')),
-            DataColumn(label: Text('الإجمالي')),
-            DataColumn(label: Text('')),
+          columns:  [
+            DataColumn(label: Text(tr('الصنف'))),
+            DataColumn(label: Text(tr('الوحدة'))),
+            DataColumn(label: Text(tr('التصنيف'))),
+            DataColumn(label: Text(tr('الكمية'))),
+            DataColumn(label: Text(tr('سعر الشراء'))),
+            DataColumn(label: Text(tr('الضريبة %'))),
+            DataColumn(label: Text(tr('قيمة الضريبة'))),
+            DataColumn(label: Text(tr('الإجمالي'))),
+            const DataColumn(label: Text('')),
           ],
           rows: items.asMap().entries.map((entry) {
             final index = entry.key;
@@ -110,7 +111,7 @@ class PurchaseInvoiceItemsTable extends ConsumerWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            (item['selectedUnitName'] as String?) ?? 'قطعة',
+                            (item['selectedUnitName'] as String?) ?? tr('قطعة'),
                             style: const TextStyle(
                               color: AppColors.info, 
                               fontWeight: FontWeight.bold

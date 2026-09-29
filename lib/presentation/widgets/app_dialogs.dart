@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 import 'package:flutter/material.dart';
@@ -93,7 +94,7 @@ class AppDialogs {
         actions: [
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('حسناً'),
+            child:  Text(tr('حسناً')),
           ),
         ],
       ),
@@ -152,7 +153,7 @@ class AppDialogs {
         actions: [
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('حسناً'),
+            child:  Text(tr('حسناً')),
           ),
         ],
       ),
@@ -177,7 +178,7 @@ class AppDialogs {
         actions: [
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('حسناً'),
+            child:  Text(tr('حسناً')),
           ),
         ],
       ),
@@ -259,8 +260,8 @@ class AppDialogs {
       confirmLabel: confirmLabel,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       validator: (v) {
-        if (v == null || v.isEmpty) return 'مطلوب';
-        if (double.tryParse(v) == null) return 'رقم غير صالح';
+        if (v == null || v.isEmpty) return tr('مطلوب');
+        if (double.tryParse(v) == null) return tr('رقم غير صالح');
         return null;
       },
     );
@@ -430,7 +431,7 @@ class AppDialogs {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '⚖️ التأثير القانوني: $impact',
+                      tr('⚖️ التأثير القانوني: {impact}', {'impact': impact}),
                       style: const TextStyle(
                         color: AppColors.error,
                         fontWeight: FontWeight.bold,
@@ -523,7 +524,7 @@ class AppDialogs {
                     textAlign: TextAlign.center,
                     decoration: InputDecoration(
                       border: const OutlineInputBorder(),
-                      hintText: 'اكتب "$keyword" للمتابعة',
+                      hintText: tr('اكتب "{keyword}" للمتابعة', {'keyword': keyword}),
                       prefixIcon: const Icon(Icons.edit_note),
                     ),
                     onChanged: (_) => setState(() {}),
@@ -534,7 +535,7 @@ class AppDialogs {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text('تراجع'),
+                  child:  Text(tr('تراجع')),
                 ),
                 FilledButton(
                   onPressed: controller.text.trim() == keyword
@@ -543,7 +544,7 @@ class AppDialogs {
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.deepOrange,
                   ),
-                  child: const Text('تأكيد'),
+                  child:  Text(tr('تأكيد')),
                 ),
               ],
             );
@@ -617,7 +618,7 @@ class AppDialogs {
         actions: [
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('فهمت'),
+            child:  Text(tr('فهمت')),
           ),
         ],
       ),
@@ -629,41 +630,41 @@ class AppDialogs {
   // ═══════════════════════════════════════════════════════════════════════
 
   /// Pre-defined legal warning messages for common operations
-  static const legalMessages = {
+  static Map<String, Map<String, String>> get legalMessages => {
     'vat_rate_change': {
-      'title': 'تنبيه قانوني — تغيير نسبة الضريبة',
-      'message': 'تغيير نسبة ضريبة القيمة المضافة يؤثر على جميع الفواتير المستقبلية',
-      'impact': 'مخالفة ضريبية محتملة — قانون 67/2016',
+      'title': tr('تنبيه قانوني — تغيير نسبة الضريبة'),
+      'message': tr('تغيير نسبة ضريبة القيمة المضافة يؤثر على جميع الفواتير المستقبلية'),
+      'impact': tr('مخالفة ضريبية محتملة — قانون 67/2016'),
     },
     'period_reopen': {
-      'title': 'تنبيه رقابي — إعادة فتح فترة محاسبية',
-      'message': 'إعادة فتح فترة مغلقة يعني تعديل قوائم مالية معتمدة',
-      'impact': 'يتطلب توثيق السبب — مسؤولية قانونية ومهنية',
+      'title': tr('تنبيه رقابي — إعادة فتح فترة محاسبية'),
+      'message': tr('إعادة فتح فترة مغلقة يعني تعديل قوائم مالية معتمدة'),
+      'impact': tr('يتطلب توثيق السبب — مسؤولية قانونية ومهنية'),
     },
     'safe_manual_adjust': {
-      'title': 'تنبيه مالي — تعديل رصيد خزنة',
-      'message': 'تعديل رصيد الخزنة يدوياً بدون مستند داعم',
-      'impact': 'مسؤولية مالية — يُسجل في سجل التدقيق',
+      'title': tr('تنبيه مالي — تعديل رصيد خزنة'),
+      'message': tr('تعديل رصيد الخزنة يدوياً بدون مستند داعم'),
+      'impact': tr('مسؤولية مالية — يُسجل في سجل التدقيق'),
     },
     'large_manual_je': {
-      'title': 'تنبيه رقابي — قيد يدوي كبير',
-      'message': 'القيد اليدوي بمبلغ كبير يخضع لنظام الاعتماد',
-      'impact': 'يتطلب موافقة المحاسب المسؤول (Maker-Checker)',
+      'title': tr('تنبيه رقابي — قيد يدوي كبير'),
+      'message': tr('القيد اليدوي بمبلغ كبير يخضع لنظام الاعتماد'),
+      'impact': tr('يتطلب موافقة المحاسب المسؤول (Maker-Checker)'),
     },
     'locked_invoice_modify': {
-      'title': 'تنبيه — تعديل فاتورة مقفلة',
-      'message': 'الفاتورة مُقفلة بعد إقفال الوردية — تعديلها يؤثر على التقارير المالية',
-      'impact': 'تعديل سجلات مالية معتمدة — مخالفة لمعايير المراجعة',
+      'title': tr('تنبيه — تعديل فاتورة مقفلة'),
+      'message': tr('الفاتورة مُقفلة بعد إقفال الوردية — تعديلها يؤثر على التقارير المالية'),
+      'impact': tr('تعديل سجلات مالية معتمدة — مخالفة لمعايير المراجعة'),
     },
     'credit_note': {
-      'title': 'تنبيه ضريبي — إشعار ائتمان',
-      'message': 'إشعار الائتمان يُرسل تلقائياً لهيئة الضرائب',
-      'impact': 'ربط بالفاتورة الأصلية إلزامي — لا يتجاوز مبلغها',
+      'title': tr('تنبيه ضريبي — إشعار ائتمان'),
+      'message': tr('إشعار الائتمان يُرسل تلقائياً لهيئة الضرائب'),
+      'impact': tr('ربط بالفاتورة الأصلية إلزامي — لا يتجاوز مبلغها'),
     },
     'fiscal_year_close': {
-      'title': 'تنبيه — إقفال سنة مالية',
-      'message': 'إقفال السنة المالية عملية نهائية يجب التأكد من اكتمال جميع الفترات الشهرية',
-      'impact': 'لا يمكن التراجع إلا بإعادة فتح رسمية مع سبب موثق',
+      'title': tr('تنبيه — إقفال سنة مالية'),
+      'message': tr('إقفال السنة المالية عملية نهائية يجب التأكد من اكتمال جميع الفترات الشهرية'),
+      'impact': tr('لا يمكن التراجع إلا بإعادة فتح رسمية مع سبب موثق'),
     },
   };
 }

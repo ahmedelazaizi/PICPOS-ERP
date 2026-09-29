@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:ural_erp/core/utils/friendly_error.dart';
 import 'package:flutter/material.dart';
@@ -46,7 +47,7 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
 
   void _addItem() async {
     if (_fromWarehouseId == null) {
-      AppToast.show(context, 'يرجى اختيار مستودع المصدر أولاً');
+      AppToast.show(context, tr('يرجى اختيار مستودع المصدر أولاً'));
       return;
     }
 
@@ -58,7 +59,7 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
     if (product != null) {
       if (_items.any((item) => item.product.id == product.id)) {
         if (!mounted) return;
-        AppToast.show(context, 'هذا الصنف موجود بالفعل في القائمة');
+        AppToast.show(context, tr('هذا الصنف موجود بالفعل في القائمة'));
         return;
       }
 
@@ -86,15 +87,15 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
   Future<void> _saveTransfer() async {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
-      AppToast.show(context, 'يجب إضافة أصناف للتحويل');
+      AppToast.show(context, tr('يجب إضافة أصناف للتحويل'));
       return;
     }
     if (_fromWarehouseId == null || _toWarehouseId == null) {
-      AppToast.show(context, 'يرجى اختيار مستودع المصدر والوجهة');
+      AppToast.show(context, tr('يرجى اختيار مستودع المصدر والوجهة'));
       return;
     }
     if (_fromWarehouseId == _toWarehouseId) {
-      AppToast.show(context, 'لا يمكن التحويل لنفس المستودع');
+      AppToast.show(context, tr('لا يمكن التحويل لنفس المستودع'));
       return;
     }
 
@@ -115,7 +116,7 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
     if (success) {
       AppToast.show(
         context,
-        'تمت عملية التحويل بنجاح',
+        tr('تمت عملية التحويل بنجاح'),
         type: ToastType.success,
       );
 
@@ -128,7 +129,7 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
       // يرى الزر مرّ بدون أي feedback (silent failure). الآن نعرض
       // الـ controller error كـ toast مع fallback عام.
       final errorMsg = ref.read(stockTransferControllerProvider).error
-          ?? 'تعذّر حفظ التحويل المخزني — حاول مرة أخرى';
+          ?? tr('تعذّر حفظ التحويل المخزني — حاول مرة أخرى');
       AppToast.show(
         context,
         errorMsg,
@@ -144,11 +145,11 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('تحويل مخزني'),
+        title:  Text(tr('تحويل مخزني')),
         actions: [
           IconButton(
             icon: const Icon(PhosphorIconsBold.check),
-            tooltip: 'تنفيذ التحويل',
+            tooltip: tr('تنفيذ التحويل'),
             onPressed: _isSaving ? null : _saveTransfer,
           ),
         ],
@@ -169,10 +170,10 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                         child: warehouses.when(
                           data: (list) => DropdownButtonFormField<int>(
                             initialValue: _fromWarehouseId,
-                            decoration: const InputDecoration(
-                              labelText: 'تحويل من (المصدر)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(
+                            decoration:  InputDecoration(
+                              labelText: tr('تحويل من (المصدر)'),
+                              border: const OutlineInputBorder(),
+                              prefixIcon: const Icon(
                                 PhosphorIconsBold.arrowUpRight,
                                 color: AppColors.error,
                               ),
@@ -187,10 +188,10 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                                 .toList(),
                             onChanged: (val) =>
                                 setState(() => _fromWarehouseId = val),
-                            validator: (val) => val == null ? 'مطلوب' : null,
+                            validator: (val) => val == null ? tr('مطلوب') : null,
                           ),
                           loading: () => const LinearProgressIndicator(),
-                          error: (_, _) => const Text('خطأ'),
+                          error: (_, _) =>  Text(tr('خطأ')),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -203,10 +204,10 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                         child: warehouses.when(
                           data: (list) => DropdownButtonFormField<int>(
                             initialValue: _toWarehouseId,
-                            decoration: const InputDecoration(
-                              labelText: 'تحويل إلى (الوجهة)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(
+                            decoration:  InputDecoration(
+                              labelText: tr('تحويل إلى (الوجهة)'),
+                              border: const OutlineInputBorder(),
+                              prefixIcon: const Icon(
                                 PhosphorIconsBold.arrowDownLeft,
                                 color: Colors.green,
                               ),
@@ -221,10 +222,10 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                                 .toList(),
                             onChanged: (val) =>
                                 setState(() => _toWarehouseId = val),
-                            validator: (val) => val == null ? 'مطلوب' : null,
+                            validator: (val) => val == null ? tr('مطلوب') : null,
                           ),
                           loading: () => const LinearProgressIndicator(),
-                          error: (_, _) => const Text('خطأ'),
+                          error: (_, _) =>  Text(tr('خطأ')),
                         ),
                       ),
                     ],
@@ -232,10 +233,10 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _notesController,
-                    decoration: const InputDecoration(
-                      labelText: 'ملاحظات التحويل',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
+                    decoration:  InputDecoration(
+                      labelText: tr('ملاحظات التحويل'),
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 8,
                       ),
@@ -257,24 +258,24 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: _items.isEmpty
-                            ? const Center(
+                            ?  Center(
                                 child: Padding(
-                                  padding: EdgeInsets.all(32.0),
+                                  padding: const EdgeInsets.all(32.0),
                                   child: Text(
-                                    'أضف الأصناف المراد تحويلها',
-                                    style: TextStyle(color: Colors.grey),
+                                    tr('أضف الأصناف المراد تحويلها'),
+                                    style: const TextStyle(color: Colors.grey),
                                   ),
                                 ),
                               )
                             : SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: DataTable(
-                                  columns: const [
-                                    DataColumn(label: Text('الصنف')),
-                                    DataColumn(label: Text('الرصيد الكلي')),
-                                    DataColumn(label: Text('التكلفة'), numeric: true),
-                                    DataColumn(label: Text('الكمية المحولة')),
-                                    DataColumn(label: Text('حذف')),
+                                  columns:  [
+                                    DataColumn(label: Text(tr('الصنف'))),
+                                    DataColumn(label: Text(tr('الرصيد الكلي'))),
+                                    DataColumn(label: Text(tr('التكلفة')), numeric: true),
+                                    DataColumn(label: Text(tr('الكمية المحولة'))),
+                                    DataColumn(label: Text(tr('حذف'))),
                                   ],
                                   rows: _items.asMap().entries.map((entry) {
                                     final index = entry.key;
@@ -346,7 +347,7 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _addItem,
-        label: const Text('إضافة صنف للتحويل'),
+        label:  Text(tr('إضافة صنف للتحويل')),
         icon: const Icon(PhosphorIconsBold.plus),
       ),
     );
@@ -364,17 +365,17 @@ class _ProductSearchDialogState extends ConsumerState<_ProductSearchDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('اختيار صنف للتحويل'),
+      title:  Text(tr('اختيار صنف للتحويل')),
       content: SizedBox(
         width: 500,
         height: 600,
         child: Column(
           children: [
             TextField(
-              decoration: const InputDecoration(
-                labelText: 'بحث بالاسم أو الباركود...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('بحث بالاسم أو الباركود...'),
+                prefixIcon: const Icon(Icons.search),
+                border: const OutlineInputBorder(),
               ),
               onChanged: (val) {
                 setState(() {
@@ -393,8 +394,8 @@ class _ProductSearchDialogState extends ConsumerState<_ProductSearchDialog> {
                   return productsAsync.when(
                     data: (products) {
                       if (products.isEmpty) {
-                        return const Center(
-                          child: Text('لا توجد نتائج مطابقة'),
+                        return  Center(
+                          child: Text(tr('لا توجد نتائج مطابقة')),
                         );
                       }
                       return ListView.builder(
@@ -404,7 +405,7 @@ class _ProductSearchDialogState extends ConsumerState<_ProductSearchDialog> {
                           return ListTile(
                             title: Text(p.name),
                             subtitle: Text(
-                              'باركود: ${p.code} | المخزون الكلي: ${p.currentStock}',
+                              tr('باركود: {p0} | المخزون الكلي: {p1}', {'p0': p.code, 'p1': p.currentStock}),
                             ),
                             trailing: const Icon(Icons.add_circle_outline),
                             onTap: () => Navigator.pop(context, p),
@@ -427,7 +428,7 @@ class _ProductSearchDialogState extends ConsumerState<_ProductSearchDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
       ],
     );

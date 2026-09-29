@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:drift/drift.dart' show Value;
@@ -23,7 +24,7 @@ class _UnitEditDialogState extends AppFormDialogState<bool, UnitEditDialog> {
 
   @override
   String get dialogTitle =>
-      widget.existing == null ? 'إضافة وحدة قياس' : 'تعديل وحدة قياس';
+      widget.existing == null ? tr('إضافة وحدة قياس') : tr('تعديل وحدة قياس');
 
   @override
   IconData get dialogIcon =>
@@ -36,28 +37,28 @@ class _UnitEditDialogState extends AppFormDialogState<bool, UnitEditDialog> {
       children: [
         TextField(
           controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'اسم الوحدة',
-            hintText: 'مثال: كرتونة، عبوة، قطعة',
-            prefixIcon: Icon(PhosphorIconsLight.package, size: 20),
+          decoration:  InputDecoration(
+            labelText: tr('اسم الوحدة'),
+            hintText: tr('مثال: كرتونة، عبوة، قطعة'),
+            prefixIcon: const Icon(PhosphorIconsLight.package, size: 20),
           ),
         ),
         const SizedBox(height: 16),
         TextField(
           controller: symbolController,
-          decoration: const InputDecoration(
-            labelText: 'الرمز',
-            hintText: 'مثال: كرتون، عبوة، قطعة',
-            prefixIcon: Icon(PhosphorIconsLight.tag, size: 20),
+          decoration:  InputDecoration(
+            labelText: tr('الرمز'),
+            hintText: tr('مثال: كرتون، عبوة، قطعة'),
+            prefixIcon: const Icon(PhosphorIconsLight.tag, size: 20),
           ),
         ),
         const SizedBox(height: 16),
         TextField(
           controller: factorController,
-          decoration: const InputDecoration(
-            labelText: 'معامل التحويل الافتراضي',
+          decoration:  InputDecoration(
+            labelText: tr('معامل التحويل الافتراضي'),
             hintText: '1.0',
-            prefixIcon: Icon(PhosphorIconsLight.arrowsCounterClockwise, size: 20),
+            prefixIcon: const Icon(PhosphorIconsLight.arrowsCounterClockwise, size: 20),
           ),
           keyboardType: TextInputType.number,
         ),

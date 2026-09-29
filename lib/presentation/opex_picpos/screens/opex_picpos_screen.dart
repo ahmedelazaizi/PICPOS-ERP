@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ «المصاريف التشغيلية» بهويّة PicPos — على تصميم
 // `PicPos Operating Expenses.dc.html` بتبويباته الخمسة.
 //
@@ -76,50 +77,50 @@ String _ar(Object n) =>
 /// ⚠️ نصُّ التصميم هناك «القيد ينشأ عند الاعتماد» وهو **غيرُ صحيحٍ في
 /// المحرّك**: القيدُ يُرحَّل عند التسجيل. ونقلُ نصٍّ خاطئٍ حرفيّاً يجعل
 /// الشاشةَ تُعلّم المستخدمَ محاسبةً لا تقع.
-const _tabNotes = [
-  'المصروف يتبع فئة وفرعاً ومركز تكلفة',
-  'طريقة التحميل تحدد كيف يُوزَّع المصروف على الإنتاج',
-  'تكلفة الأمر = خامات + أجور + تحميل غير مباشر',
-  'القيد يُرحَّل عند تسجيل المصروف — والاعتماد والسداد أثرُ مراجعة',
-  'الموازنة شهرية لكل حساب مصروف',
+List<String> get _tabNotes => [
+  tr('المصروف يتبع فئة وفرعاً ومركز تكلفة'),
+  tr('طريقة التحميل تحدد كيف يُوزَّع المصروف على الإنتاج'),
+  tr('تكلفة الأمر = خامات + أجور + تحميل غير مباشر'),
+  tr('القيد يُرحَّل عند تسجيل المصروف — والاعتماد والسداد أثرُ مراجعة'),
+  tr('الموازنة شهرية لكل حساب مصروف'),
 ];
 
 /// حالاتُ المصروف — قيمُ العمود `status` كما يعرّفها الجدول.
-const _statusLabels = <String, (String, Color)>{
-  'draft': ('مسوّدة', _warn),
-  'approved': ('معتمد', AppColors.primary),
-  'paid': ('مسدَّد', _ok),
+Map<String, (String, Color)> get _statusLabels => <String, (String, Color)>{
+  'draft': (tr('مسوّدة'), _warn),
+  'approved': (tr('معتمد'), AppColors.primary),
+  'paid': (tr('مسدَّد'), _ok),
 };
 
-const _periodLabels = <String, (String, Color)>{
-  'monthly': ('شهري', AppColors.primary),
-  'weekly': ('أسبوعي', _blue),
-  'daily': ('يومي', _ok),
-  'one_time': ('لمرة واحدة', _purple),
+Map<String, (String, Color)> get _periodLabels => <String, (String, Color)>{
+  'monthly': (tr('شهري'), AppColors.primary),
+  'weekly': (tr('أسبوعي'), _blue),
+  'daily': (tr('يومي'), _ok),
+  'one_time': (tr('لمرة واحدة'), _purple),
 };
 
-const _catTypeLabels = <String, (String, Color)>{
-  'direct': ('مباشرة', _purple),
-  'indirect': ('غير مباشرة', _idle),
-  'fixed': ('ثابتة', AppColors.primary),
-  'variable': ('متغيرة', _warn),
+Map<String, (String, Color)> get _catTypeLabels => <String, (String, Color)>{
+  'direct': (tr('مباشرة'), _purple),
+  'indirect': (tr('غير مباشرة'), _idle),
+  'fixed': (tr('ثابتة'), AppColors.primary),
+  'variable': (tr('متغيرة'), _warn),
 };
 
-const _allocationLabels = <String, String>{
-  'per_unit': 'لكل وحدة منتجة',
-  'per_hour': 'لكل ساعة تشغيل',
-  'per_order': 'لكل أمر تصنيع',
-  'fixed_monthly': 'ثابت شهرياً',
+Map<String, String> get _allocationLabels => <String, String>{
+  'per_unit': tr('لكل وحدة منتجة'),
+  'per_hour': tr('لكل ساعة تشغيل'),
+  'per_order': tr('لكل أمر تصنيع'),
+  'fixed_monthly': tr('ثابت شهرياً'),
 };
 
 /// أنواعُ تكلفة أمر التصنيع — قيمُ `MfgOrderCosts.costType`.
-const _costTypeLabels = <String, String>{
-  'raw_material': 'خامات',
-  'labor': 'أجور',
-  'overhead': 'تحميل',
-  'depreciation': 'إهلاك',
-  'utility': 'مرافق',
-  'other': 'أخرى',
+Map<String, String> get _costTypeLabels => <String, String>{
+  'raw_material': tr('خامات'),
+  'labor': tr('أجور'),
+  'overhead': tr('تحميل'),
+  'depreciation': tr('إهلاك'),
+  'utility': tr('مرافق'),
+  'other': tr('أخرى'),
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -233,8 +234,8 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
     final drafts = expenses.where((e) => e['status'] == 'draft').length;
 
     return PicPosScreenScaffold(
-      title: 'المصاريف التشغيلية',
-      subtitle: 'المصروفات وفئاتها وقواعد التحميل والاعتماد والسداد',
+      title: tr('المصاريف التشغيلية'),
+      subtitle: tr('المصروفات وفئاتها وقواعد التحميل والاعتماد والسداد'),
       icon: PhosphorIconsBold.receiptX,
       // 🔴 **حارسُ الصلاحيّة ليس زينةً هنا.** تسجيلُ المصروف يرحّل قيدَ
       //    يوميّةٍ ويُنشئ سندَ صرفٍ ويخصم رصيدَ الخزنة — ثلاثةُ آثارٍ
@@ -249,7 +250,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
           child: OutlinedButton.icon(
             onPressed: () => _allocateExpense(expenses, orders, categories),
             icon: const Icon(PhosphorIconsBold.factory, size: 15),
-            label: const Text('تحميل على أمر تصنيع'),
+            label:  Text(tr('تحميل على أمر تصنيع')),
           ),
         ),
         PermissionGuard(
@@ -257,7 +258,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
           child: FilledButton.icon(
             onPressed: _createExpense,
             icon: const Icon(PhosphorIconsBold.plus, size: 15),
-            label: const Text('مصروف جديد'),
+            label:  Text(tr('مصروف جديد')),
           ),
         ),
       ],
@@ -266,7 +267,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
         onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'ابحث بالمرجع أو الفئة...',
+          hintText: tr('ابحث بالمرجع أو الفئة...'),
           prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
           suffixIcon: _query.isEmpty
               ? null
@@ -287,27 +288,27 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
             controller: _tabs,
             tabs: [
               (
-                label: 'المصروفات',
+                label: tr('المصروفات'),
                 icon: PhosphorIconsBold.receiptX,
                 badge: '${expenses.length}'
               ),
               (
-                label: 'الفئات وقواعد التحميل',
+                label: tr('الفئات وقواعد التحميل'),
                 icon: PhosphorIconsBold.folders,
                 badge: '${categories.length}'
               ),
               (
-                label: 'تحميل أوامر التصنيع',
+                label: tr('تحميل أوامر التصنيع'),
                 icon: PhosphorIconsBold.factory,
                 badge: '${orders.length}'
               ),
               (
-                label: 'الاعتماد والسداد',
+                label: tr('الاعتماد والسداد'),
                 icon: PhosphorIconsBold.sealCheck,
                 badge: '$drafts'
               ),
               (
-                label: 'مقابل الموازنة',
+                label: tr('مقابل الموازنة'),
                 icon: PhosphorIconsBold.chartLine,
                 badge: null
               ),
@@ -371,7 +372,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
     if (userId == null) {
       // ⚠️ **لا `?? 1`**: المصروفُ يُنسَب لمن سجّله في سجلّ التدقيق، ونسبتُه
       //    للمستخدم رقم ١ تُسند فعلاً ماليّاً إلى شخصٍ لم يفعله.
-      _snack('تعذّر تحديدُ المستخدم — سجّل الدخولَ ثمّ أعد المحاولة');
+      _snack(tr('تعذّر تحديدُ المستخدم — سجّل الدخولَ ثمّ أعد المحاولة'));
       return;
     }
 
@@ -392,10 +393,10 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
           );
       if (!mounted) return;
       ref.invalidate(_expensesProvider);
-      _snack('سُجّل المصروفُ ورُحّل قيدُه');
+      _snack(tr('سُجّل المصروفُ ورُحّل قيدُه'));
     } catch (e) {
       if (!mounted) return;
-      _snack('تعذّر التسجيل: $e');
+      _snack(tr('تعذّر التسجيل: {e}', {'e': e}));
     }
   }
 
@@ -473,7 +474,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
     // 🔴 الرقمُ لا «تمّ»: دفعةٌ نجح بعضُها تُبلَّغ بعددِها.
     _snack(
       failed.isEmpty
-          ? 'حُمِّل المصروفُ على ${form.lines.length} أمراً'
+          ? tr('حُمِّل المصروفُ على {p0} أمراً', {'p0': form.lines.length})
           : 'حُمِّل على ${form.lines.length - failed.length} من '
               '${form.lines.length} — تعذّر: ${failed.join('، ')}',
     );
@@ -492,7 +493,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
           .updateExpenseStatus(id, to);
       if (!mounted) return;
       ref.invalidate(_expensesProvider);
-      _snack(to == 'approved' ? 'اعتُمد المصروف' : 'سُجّل السداد');
+      _snack(to == 'approved' ? tr('اعتُمد المصروف') : tr('سُجّل السداد'));
     } catch (err) {
       if (!mounted) return;
       // الـDAO يرفض على عميلٍ بنصٍّ مفيد — يُقال ولا يُبتلَع.
@@ -504,10 +505,10 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
 
   Widget _listTab(List<Map<String, dynamic>> expenses) {
     final chipDefs = <(String, bool Function(Map<String, dynamic>))>[
-      ('الكل', (e) => true),
-      ('مسوّدة', (e) => e['status'] == 'draft'),
-      ('معتمد', (e) => e['status'] == 'approved'),
-      ('مسدَّد', (e) => e['status'] == 'paid'),
+      (tr('الكل'), (e) => true),
+      (tr('مسوّدة'), (e) => e['status'] == 'draft'),
+      (tr('معتمد'), (e) => e['status'] == 'approved'),
+      (tr('مسدَّد'), (e) => e['status'] == 'paid'),
     ];
     final pick = _chip[0] ?? 0;
     final shown = expenses
@@ -539,52 +540,52 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
           items: [
             PicPosHubKpi(
               icon: PhosphorIconsBold.receiptX,
-              label: 'مصروفات الشهر',
+              label: tr('مصروفات الشهر'),
               value: _money0.format(total),
               tint: _err,
-              vs: '${_ar(expenses.length)} بنداً',
+              vs: tr('{p0} بنداً', {'p0': _ar(expenses.length)}),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.lockSimple,
-              label: 'ثابتة',
+              label: tr('ثابتة'),
               value: _money0.format(fixed),
               tint: AppColors.primary,
               vs: total > 0
-                  ? '${_ar((fixed / total * 100).round())}٪ من المصروف'
+                  ? tr('{p0}٪ من المصروف', {'p0': _ar((fixed / total * 100).round())})
                   : '',
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.waves,
-              label: 'متغيرة',
+              label: tr('متغيرة'),
               value: _money0.format(variable),
               tint: _warn,
               vs: total > 0
-                  ? '${_ar((variable / total * 100).round())}٪'
+                  ? tr('{p0}٪', {'p0': _ar((variable / total * 100).round())})
                   : '',
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.clock,
-              label: 'بانتظار الاعتماد',
+              label: tr('بانتظار الاعتماد'),
               value: _ar(pending.length),
               tint: _warn,
               up: false,
-              vs: '${_money0.format(pendingSum)} ج.م',
+              vs: tr('{p0} ج.م', {'p0': _money0.format(pendingSum)}),
             ),
           ],
         ),
         const SizedBox(height: 16),
         PicPosDataTable(
-          title: 'سجل المصروفات',
-          subtitle: 'كل مصروف بفئته وفرعه وحالته وطريقة دفعه',
-          emptyLabel: 'لا مصروفاتِ مطابقة في هذا الشهر',
-          columns: const [
-            PicPosTableColumn('الفئة والبيان', flex: 1.8),
-            PicPosTableColumn('الفرع', flex: 1.3),
-            PicPosTableColumn('المبلغ', flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('التاريخ', flex: 1.2),
-            PicPosTableColumn('الدورية', flex: 1.2),
-            PicPosTableColumn('طريقة الدفع', flex: 1.1),
-            PicPosTableColumn('الحالة', flex: 1.2),
+          title: tr('سجل المصروفات'),
+          subtitle: tr('كل مصروف بفئته وفرعه وحالته وطريقة دفعه'),
+          emptyLabel: tr('لا مصروفاتِ مطابقة في هذا الشهر'),
+          columns:  [
+            PicPosTableColumn(tr('الفئة والبيان'), flex: 1.8),
+            PicPosTableColumn(tr('الفرع'), flex: 1.3),
+            PicPosTableColumn(tr('المبلغ'), flex: 1.2, align: PicPosCellAlign.end),
+            PicPosTableColumn(tr('التاريخ'), flex: 1.2),
+            PicPosTableColumn(tr('الدورية'), flex: 1.2),
+            PicPosTableColumn(tr('طريقة الدفع'), flex: 1.1),
+            PicPosTableColumn(tr('الحالة'), flex: 1.2),
           ],
           chips: [
             for (var i = 0; i < chipDefs.length; i++)
@@ -605,7 +606,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
                   tint: _catTypeLabels[e['category_type']]?.$2 ??
                       AppColors.primary,
                 ),
-                PicPosTextCell('${e['branch_name'] ?? 'كل الفروع'}'),
+                PicPosTextCell(tr('{p0}', {'p0': e['branch_name'] ?? 'كل الفروع'})),
                 PicPosTextCell(_money.format(_num(e['amount']))),
                 PicPosTextCell(_d(e['expense_date'] as DateTime?)),
                 PicPosPillCell(
@@ -613,7 +614,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
                   _periodLabels[e['period']]?.$2 ?? _idle,
                 ),
                 PicPosTextCell(
-                  e['payment_method'] == 'bank' ? 'بنك' : 'نقدي',
+                  e['payment_method'] == 'bank' ? tr('بنك') : tr('نقدي'),
                 ),
                 // ⚠️ صفُّ `safe_tx` يصل بـ`status == null` — راجع
                 //    `getExpensesForReport`. و«—» أصدقُ من «مسوّدة».
@@ -624,7 +625,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
               ]),
           ],
           totals: [
-            '${_ar(shown.length)} بنداً',
+            tr('{p0} بنداً', {'p0': _ar(shown.length)}),
             '',
             _money.format(
                 shown.fold<double>(0, (s, e) => s + _num(e['amount']))),
@@ -642,9 +643,9 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
 
   Widget _catsTab(List<OpExpenseCategoryData> categories) {
     final chipDefs = <(String, bool Function(OpExpenseCategoryData))>[
-      ('الكل', (c) => true),
-      ('إنتاجية', (c) => c.isProductionRelated),
-      ('غير إنتاجية', (c) => !c.isProductionRelated),
+      (tr('الكل'), (c) => true),
+      (tr('إنتاجية'), (c) => c.isProductionRelated),
+      (tr('غير إنتاجية'), (c) => !c.isProductionRelated),
     ];
     final pick = _chip[1] ?? 0;
     final shown = categories
@@ -662,21 +663,21 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
           items: [
             PicPosHubKpi(
               icon: PhosphorIconsBold.folders,
-              label: 'فئات نشطة',
+              label: tr('فئات نشطة'),
               value: _ar(active),
               tint: AppColors.primary,
-              vs: 'من ${_ar(categories.length)}',
+              vs: tr('من {p0}', {'p0': _ar(categories.length)}),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.factory,
-              label: 'مرتبطة بالإنتاج',
+              label: tr('مرتبطة بالإنتاج'),
               value: _ar(production),
               tint: _purple,
-              vs: 'تُحمَّل على الأوامر',
+              vs: tr('تُحمَّل على الأوامر'),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.lockSimple,
-              label: 'ثابتة شهرياً',
+              label: tr('ثابتة شهرياً'),
               value: _ar(categories
                   .where((c) => c.allocationMethod == 'fixed_monthly')
                   .length),
@@ -684,7 +685,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.waves,
-              label: 'متغيرة',
+              label: tr('متغيرة'),
               value:
                   _ar(categories.where((c) => c.type == 'variable').length),
               tint: _warn,
@@ -693,17 +694,17 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
         ),
         const SizedBox(height: 16),
         PicPosDataTable(
-          title: 'فئات المصروفات',
+          title: tr('فئات المصروفات'),
           subtitle:
-              'النوع وطريقة التحميل تحددان كيف يدخل المصروف في تكلفة الوحدة',
-          emptyLabel: 'لا فئاتِ مصروفاتٍ بعد',
-          columns: const [
-            PicPosTableColumn('الفئة', flex: 1.8),
-            PicPosTableColumn('النوع', flex: 1.2),
-            PicPosTableColumn('مرتبطة بالإنتاج', flex: 1.4),
-            PicPosTableColumn('طريقة التحميل', flex: 1.6),
-            PicPosTableColumn('المعدل', flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('حساب الأستاذ', flex: 1.3),
+              tr('النوع وطريقة التحميل تحددان كيف يدخل المصروف في تكلفة الوحدة'),
+          emptyLabel: tr('لا فئاتِ مصروفاتٍ بعد'),
+          columns:  [
+            PicPosTableColumn(tr('الفئة'), flex: 1.8),
+            PicPosTableColumn(tr('النوع'), flex: 1.2),
+            PicPosTableColumn(tr('مرتبطة بالإنتاج'), flex: 1.4),
+            PicPosTableColumn(tr('طريقة التحميل'), flex: 1.6),
+            PicPosTableColumn(tr('المعدل'), flex: 1.2, align: PicPosCellAlign.end),
+            PicPosTableColumn(tr('حساب الأستاذ'), flex: 1.3),
           ],
           chips: [
             for (var i = 0; i < chipDefs.length; i++)
@@ -721,13 +722,13 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
                   c.name,
                   icon: PhosphorIconsBold.folders,
                   tint: _catTypeLabels[c.type]?.$2 ?? _idle,
-                  sub: c.isActive ? null : 'غير نشطة',
+                  sub: c.isActive ? null : tr('غير نشطة'),
                 ),
                 PicPosPillCell(
                   _catTypeLabels[c.type]?.$1 ?? c.type,
                   _catTypeLabels[c.type]?.$2 ?? _idle,
                 ),
-                PicPosTextCell(c.isProductionRelated ? 'نعم' : 'لا'),
+                PicPosTextCell(c.isProductionRelated ? tr('نعم') : tr('لا')),
                 PicPosTextCell(
                   _allocationLabels[c.allocationMethod] ?? c.allocationMethod,
                 ),
@@ -770,8 +771,8 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
         .toList();
 
     final chipDefs = <(String, bool Function(ManufacturingOrderData))>[
-      ('الكل', (o) => true),
-      ('ناقص التحميل', (o) => loaded(o.id) == 0),
+      (tr('الكل'), (o) => true),
+      (tr('ناقص التحميل'), (o) => loaded(o.id) == 0),
     ];
     final pick = _chip[2] ?? 0;
     final shown = open.where(chipDefs[pick].$2).toList();
@@ -793,48 +794,48 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
           items: [
             PicPosHubKpi(
               icon: PhosphorIconsBold.factory,
-              label: 'أوامر تصنيع',
+              label: tr('أوامر تصنيع'),
               value: _ar(open.length),
               tint: _purple,
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.handCoins,
-              label: 'تكلفة محمَّلة',
+              label: tr('تكلفة محمَّلة'),
               value: _money0.format(totalLoaded),
               tint: _warn,
-              vs: 'تحميلٌ ومرافقُ وإهلاك',
+              vs: tr('تحميلٌ ومرافقُ وإهلاك'),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.percent,
-              label: 'نسبة التحميل غير المباشر',
+              label: tr('نسبة التحميل غير المباشر'),
               value: totalCost > 0
-                  ? '${_ar((totalLoaded / totalCost * 100).toStringAsFixed(1))}٪'
+                  ? tr('{p0}٪', {'p0': _ar((totalLoaded / totalCost * 100).toStringAsFixed(1))})
                   : '—',
               tint: AppColors.primary,
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.warning,
-              label: 'أوامر بلا تحميل',
+              label: tr('أوامر بلا تحميل'),
               value: _ar(unloaded),
               tint: _err,
               up: false,
-              vs: 'تكلفتها ناقصة',
+              vs: tr('تكلفتها ناقصة'),
             ),
           ],
         ),
         const SizedBox(height: 16),
         PicPosDataTable(
-          title: 'تفصيل تكلفة أوامر التصنيع',
-          subtitle: 'كل أمر يُحمَّل خامات وأجوراً وتحميلاً غير مباشر',
-          emptyLabel: 'لا أوامرَ تصنيعٍ مطابقة',
-          columns: const [
-            PicPosTableColumn('أمر التصنيع', flex: 1.6),
-            PicPosTableColumn('الكمية', flex: 1.1, align: PicPosCellAlign.end),
-            PicPosTableColumn('خامات', flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('أجور', flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('تحميل', flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('التكلفة', flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('تكلفة الوحدة',
+          title: tr('تفصيل تكلفة أوامر التصنيع'),
+          subtitle: tr('كل أمر يُحمَّل خامات وأجوراً وتحميلاً غير مباشر'),
+          emptyLabel: tr('لا أوامرَ تصنيعٍ مطابقة'),
+          columns:  [
+            PicPosTableColumn(tr('أمر التصنيع'), flex: 1.6),
+            PicPosTableColumn(tr('الكمية'), flex: 1.1, align: PicPosCellAlign.end),
+            PicPosTableColumn(tr('خامات'), flex: 1.2, align: PicPosCellAlign.end),
+            PicPosTableColumn(tr('أجور'), flex: 1.2, align: PicPosCellAlign.end),
+            PicPosTableColumn(tr('تحميل'), flex: 1.2, align: PicPosCellAlign.end),
+            PicPosTableColumn(tr('التكلفة'), flex: 1.2, align: PicPosCellAlign.end),
+            PicPosTableColumn(tr('تكلفة الوحدة'),
                 flex: 1.3, align: PicPosCellAlign.end),
           ],
           chips: [
@@ -851,7 +852,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
               PicPosTableRow(cells: [
                 PicPosTextCell(
                   o.orderNumber,
-                  sub: loaded(o.id) == 0 ? 'بلا تحميل' : o.status,
+                  sub: loaded(o.id) == 0 ? tr('بلا تحميل') : o.status,
                   icon: loaded(o.id) == 0
                       ? PhosphorIconsBold.warning
                       : PhosphorIconsBold.factory,
@@ -875,7 +876,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
               ]),
           ],
           totals: [
-            '${_ar(shown.length)} أمراً',
+            tr('{p0} أمراً', {'p0': _ar(shown.length)}),
             '',
             _money0.format(raw),
             _money0.format(labor),
@@ -886,12 +887,12 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
         ),
         const SizedBox(height: 16),
         PicPosBarList(
-          title: 'مكوّنات تكلفة الإنتاج',
-          subtitle: 'الأوامر المعروضة · ج.م',
-          emptyHint: 'لا تكاليفَ مسجّلةٌ على الأوامر بعد',
+          title: tr('مكوّنات تكلفة الإنتاج'),
+          subtitle: tr('الأوامر المعروضة · ج.م'),
+          emptyHint: tr('لا تكاليفَ مسجّلةٌ على الأوامر بعد'),
           items: [
             PicPosBarItem(
-              label: 'خامات مباشرة',
+              label: tr('خامات مباشرة'),
               sub: _costTypeLabels['raw_material']!,
               value: raw,
               display: _money0.format(raw),
@@ -899,7 +900,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
               tint: AppColors.primary,
             ),
             PicPosBarItem(
-              label: 'أجور مباشرة',
+              label: tr('أجور مباشرة'),
               sub: _costTypeLabels['labor']!,
               value: labor,
               display: _money0.format(labor),
@@ -907,15 +908,15 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
               tint: _ok,
             ),
             PicPosBarItem(
-              label: 'تحميل غير مباشر',
-              sub: 'تحميلٌ ومرافق',
+              label: tr('تحميل غير مباشر'),
+              sub: tr('تحميلٌ ومرافق'),
               value: totalLoaded - depr,
               display: _money0.format(totalLoaded - depr),
               icon: PhosphorIconsBold.lightning,
               tint: _warn,
             ),
             PicPosBarItem(
-              label: 'إهلاك آلات',
+              label: tr('إهلاك آلات'),
               sub: _costTypeLabels['depreciation']!,
               value: depr,
               display: _money0.format(depr),
@@ -973,7 +974,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
                 subtitle: '${e['branch_name'] ?? 'كل الفروع'} · '
                     '${_d(e['expense_date'] as DateTime?)}',
                 value: _money.format(_num(e['amount'])),
-                meta: '${e['user_name'] ?? 'غير معروف'}',
+                meta: tr('{p0}', {'p0': e['user_name'] ?? 'غير معروف'}),
                 metaIcon: PhosphorIconsBold.user,
                 metaTint: tint,
                 // ⚠️ **صفُّ `safe_tx` لا يُنقَل**: `getExpensesForReport`
@@ -997,29 +998,29 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
           items: [
             PicPosHubKpi(
               icon: PhosphorIconsBold.fileDashed,
-              label: 'مسوّدات',
+              label: tr('مسوّدات'),
               value: _ar(drafts.length),
               tint: _warn,
               up: false,
-              vs: '${_money0.format(sum(drafts))} ج.م',
+              vs: tr('{p0} ج.م', {'p0': _money0.format(sum(drafts))}),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.sealCheck,
-              label: 'معتمدة بانتظار السداد',
+              label: tr('معتمدة بانتظار السداد'),
               value: _ar(approved.length),
               tint: AppColors.primary,
-              vs: '${_money0.format(sum(approved))} ج.م',
+              vs: tr('{p0} ج.م', {'p0': _money0.format(sum(approved))}),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.checkCircle,
-              label: 'مسدَّدة',
+              label: tr('مسدَّدة'),
               value: _ar(paid.length),
               tint: _ok,
-              vs: '${_money0.format(sum(paid))} ج.م',
+              vs: tr('{p0} ج.م', {'p0': _money0.format(sum(paid))}),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.receiptX,
-              label: 'إجمالي الشهر',
+              label: tr('إجمالي الشهر'),
               value: _money0.format(sum(expenses)),
               tint: _err,
             ),
@@ -1027,23 +1028,23 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
         ),
         const SizedBox(height: 16),
         if (canApprove)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 10),
+           Padding(
+            padding: const EdgeInsets.only(bottom: 10),
             child: Text(
-              'اضغط بطاقةً لنقلها إلى الحالة التالية — الاعتماد ثمّ السداد.',
-              style: TextStyle(fontSize: 12, color: _idle),
+              tr('اضغط بطاقةً لنقلها إلى الحالة التالية — الاعتماد ثمّ السداد.'),
+              style: const TextStyle(fontSize: 12, color: _idle),
             ),
           ),
         PicPosStatusBoard(
-          emptyLabel: 'لا مصروفاتِ هذا الشهر',
+          emptyLabel: tr('لا مصروفاتِ هذا الشهر'),
           columns: [
-            column('مسوّدة', PhosphorIconsBold.fileDashed, _warn, drafts,
+            column(tr('مسوّدة'), PhosphorIconsBold.fileDashed, _warn, drafts,
                 moveTo: 'approved'),
-            column('معتمدة', PhosphorIconsBold.sealCheck, AppColors.primary,
+            column(tr('معتمدة'), PhosphorIconsBold.sealCheck, AppColors.primary,
                 approved,
                 moveTo: 'paid'),
             // المسدَّدةُ آخرُ الدورة — لا حالةَ بعدها.
-            column('مسدَّدة', PhosphorIconsBold.checkCircle, _ok, paid),
+            column(tr('مسدَّدة'), PhosphorIconsBold.checkCircle, _ok, paid),
           ],
         ),
       ],
@@ -1059,20 +1060,20 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
     if (budget.isEmpty) {
       // ⚠️ **فراغان مختلفان**: لا سنةَ ماليّةً، أو سنةٌ بلا موازنات. وكلاهما
       //    ليس «صفرَ تجاوزات» — وقولُ ذلك يمنع قراءةَ الجدول الفارغ اطمئناناً.
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 48),
+      return  Padding(
+        padding: const EdgeInsets.symmetric(vertical: 48),
         child: Column(
           children: [
-            Icon(PhosphorIconsBold.chartLine, size: 34, color: _idle),
-            SizedBox(height: 10),
+            const Icon(PhosphorIconsBold.chartLine, size: 34, color: _idle),
+            const SizedBox(height: 10),
             Text(
-              'لا موازناتٌ مسجَّلةٌ للسنة المالية الجارية',
-              style: TextStyle(fontWeight: FontWeight.w700),
+              tr('لا موازناتٌ مسجَّلةٌ للسنة المالية الجارية'),
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
-              'الجدولُ فارغٌ لغياب الموازنة لا لانعدام التجاوز.',
-              style: TextStyle(fontSize: 12, color: _idle),
+              tr('الجدولُ فارغٌ لغياب الموازنة لا لانعدام التجاوز.'),
+              style: const TextStyle(fontSize: 12, color: _idle),
             ),
           ],
         ),
@@ -1080,8 +1081,8 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
     }
 
     final chipDefs = <(String, bool Function(Map<String, dynamic>))>[
-      ('كل البنود', (b) => true),
-      ('تجاوز', (b) => _num(b['utilizationPct']) > 100),
+      (tr('كل البنود'), (b) => true),
+      (tr('تجاوز'), (b) => _num(b['utilizationPct']) > 100),
     ];
     final pick = _chip[4] ?? 0;
     final shown = budget
@@ -1090,16 +1091,16 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
         .toList();
 
     (String, Color) verdict(double pct) {
-      if (pct > 100) return ('تجاوز', _err);
-      if (pct >= 95) return ('قارب الحد', _warn);
-      if (pct < 40) return ('غير مستغلة', _err);
-      return ('سليم', _ok);
+      if (pct > 100) return (tr('تجاوز'), _err);
+      if (pct >= 95) return (tr('قارب الحد'), _warn);
+      if (pct < 40) return (tr('غير مستغلة'), _err);
+      return (tr('سليم'), _ok);
     }
 
     // مصروفُ الشهر بمركز التكلفة — شريطُ التصميم الثاني.
     final byCostCentre = <String, double>{};
     for (final e in expenses) {
-      final key = '${e['category_name'] ?? 'غير مصنَّف'}';
+      final key = tr('{p0}', {'p0': e['category_name'] ?? 'غير مصنَّف'});
       byCostCentre.update(key, (v) => v + _num(e['amount']),
           ifAbsent: () => _num(e['amount']));
     }
@@ -1111,18 +1112,18 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
       mainAxisSize: MainAxisSize.min,
       children: [
         PicPosDataTable(
-          title: 'المنفَّذ مقابل الموازنة',
-          subtitle: 'الموازنة لكل حساب مصروف في السنة المالية الجارية',
-          emptyLabel: 'لا بنودَ مطابقة',
-          columns: const [
-            PicPosTableColumn('البند', flex: 1.8),
-            PicPosTableColumn('الحساب', flex: 1.1),
-            PicPosTableColumn('الموازنة',
+          title: tr('المنفَّذ مقابل الموازنة'),
+          subtitle: tr('الموازنة لكل حساب مصروف في السنة المالية الجارية'),
+          emptyLabel: tr('لا بنودَ مطابقة'),
+          columns:  [
+            PicPosTableColumn(tr('البند'), flex: 1.8),
+            PicPosTableColumn(tr('الحساب'), flex: 1.1),
+            PicPosTableColumn(tr('الموازنة'),
                 flex: 1.3, align: PicPosCellAlign.end),
-            PicPosTableColumn('المنفَّذ', flex: 1.3, align: PicPosCellAlign.end),
-            PicPosTableColumn('الفرق', flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('الاستهلاك', flex: 1.5),
-            PicPosTableColumn('الحالة', flex: 1.3),
+            PicPosTableColumn(tr('المنفَّذ'), flex: 1.3, align: PicPosCellAlign.end),
+            PicPosTableColumn(tr('الفرق'), flex: 1.2, align: PicPosCellAlign.end),
+            PicPosTableColumn(tr('الاستهلاك'), flex: 1.5),
+            PicPosTableColumn(tr('الحالة'), flex: 1.3),
           ],
           chips: [
             for (var i = 0; i < chipDefs.length; i++)
@@ -1155,7 +1156,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
                   //    المحاسب.
                   PicPosTextCell(_money0.format(planned - actual)),
                   PicPosBarCell(
-                    '${_ar(pct.round())}٪',
+                    tr('{p0}٪', {'p0': _ar(pct.round())}),
                     // الشريطُ يُقصَّ عند المائة والنصُّ يقول الحقيقةَ كاملةً.
                     pct.clamp(0, 100) / 100,
                     tint,
@@ -1165,7 +1166,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
               }(),
           ],
           totals: [
-            '${_ar(shown.length)} بنداً',
+            tr('{p0} بنداً', {'p0': _ar(shown.length)}),
             '',
             _money0.format(
                 shown.fold<double>(0, (s, b) => s + _num(b['totalPlanned']))),
@@ -1181,9 +1182,9 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
         ),
         const SizedBox(height: 16),
         PicPosBarList(
-          title: 'المصروف حسب الفئة',
-          subtitle: 'الشهر الجاري · ج.م',
-          emptyHint: 'لا مصروفاتِ هذا الشهر',
+          title: tr('المصروف حسب الفئة'),
+          subtitle: tr('الشهر الجاري · ج.م'),
+          emptyHint: tr('لا مصروفاتِ هذا الشهر'),
           items: [
             for (final e in topCategories.take(6))
               PicPosBarItem(

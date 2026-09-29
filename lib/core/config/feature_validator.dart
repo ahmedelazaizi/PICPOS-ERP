@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // FEATURE VALIDATOR — applies the dependency graph to a raw policy
 // ═══════════════════════════════════════════════════════════════════════════
@@ -74,7 +75,7 @@ class FeatureValidator {
       final desired = overrides[key]!;
       if (FeatureDependencyGraph.locked.contains(key) && !desired) {
         rejects.add(
-          'رُفض تعطيل "${key.settingKey}": الميزة أساسية ولا يمكن إيقافها.',
+          tr('رُفض تعطيل "{p0}": الميزة أساسية ولا يمكن إيقافها.', {'p0': key.settingKey}),
         );
         continue;
       }
@@ -95,7 +96,7 @@ class FeatureValidator {
           if (!policy.flag(dep)) {
             policy = policy.setFlag(dep, true);
             rules.add(
-              'تم تفعيل "${dep.settingKey}" تلقائياً لأن "${key.settingKey}" يتطلبها.',
+              tr('تم تفعيل "{p0}" تلقائياً لأن "{p1}" يتطلبها.', {'p0': dep.settingKey, 'p1': key.settingKey}),
             );
           }
         }
@@ -116,7 +117,7 @@ class FeatureValidator {
           if (k == keep) continue;
           policy = policy.setFlag(k, false);
           rules.add(
-            'تم تعطيل "${k.settingKey}" لأنها تتعارض مع "${keep.settingKey}".',
+            tr('تم تعطيل "{p0}" لأنها تتعارض مع "{p1}".', {'p0': k.settingKey, 'p1': keep.settingKey}),
           );
         }
       }

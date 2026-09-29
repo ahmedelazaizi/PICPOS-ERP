@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -101,13 +102,13 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(PhosphorIconsBold.arrowRight, size: 24),
-                    tooltip: 'رجوع',
+                    tooltip: tr('رجوع'),
                   ),
                   const SizedBox(width: 8),
                   const Icon(PhosphorIconsBold.vault, size: 28, color: AppColors.primary),
                   const SizedBox(width: 12),
                   Text(
-                    'إدارة الصناديق والحسابات',
+                    tr('إدارة الصناديق والحسابات'),
                     style: GoogleFonts.cairo(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -119,13 +120,13 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                   safesAsync.when(
                     data: (safes) => Row(
                       children: [
-                        _statChip('إجمالي', safes.length, AppColors.primary),
+                        _statChip(tr('إجمالي'), safes.length, AppColors.primary),
                         const SizedBox(width: 8),
-                        _statChip('نقدي', safes.where((s) => s.safeType == 'cash').length, AppColors.success),
+                        _statChip(tr('نقدي'), safes.where((s) => s.safeType == 'cash').length, AppColors.success),
                         const SizedBox(width: 8),
-                        _statChip('بنك', safes.where((s) => s.safeType == 'bank').length, AppColors.info),
+                        _statChip(tr('بنك'), safes.where((s) => s.safeType == 'bank').length, AppColors.info),
                         const SizedBox(width: 8),
-                        _statChip('كليك', safes.where((s) => s.safeType == 'click').length, const Color(0xFF8B5CF6)),
+                        _statChip(tr('كليك'), safes.where((s) => s.safeType == 'click').length, const Color(0xFF8B5CF6)),
                       ],
                     ),
                     loading: () => const SizedBox.shrink(),
@@ -220,7 +221,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                 children: [
                   const Icon(PhosphorIconsBold.plusCircle, color: Colors.white, size: 22),
                   const SizedBox(width: 10),
-                  Text('إنشاء صندوق جديد',
+                  Text(tr('إنشاء صندوق جديد'),
                       style: GoogleFonts.cairo(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                   const Spacer(),
                   Icon(_showCreateForm ? PhosphorIconsBold.caretUp : PhosphorIconsBold.caretDown,
@@ -244,8 +245,8 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                         child: TextField(
                           controller: _nameController,
                           decoration: InputDecoration(
-                            labelText: 'اسم الصندوق',
-                            hintText: 'مثال: صندوق فودافون كاش',
+                            labelText: tr('اسم الصندوق'),
+                            hintText: tr('مثال: صندوق فودافون كاش'),
                             prefixIcon: const Icon(PhosphorIconsBold.textAa),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                           ),
@@ -257,14 +258,14 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                         child: DropdownButtonFormField<String>(
                           initialValue: _selectedType,
                           decoration: InputDecoration(
-                            labelText: 'النوع',
+                            labelText: tr('النوع'),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          items: const [
-                            DropdownMenuItem(value: 'cash', child: Text('نقدي')),
-                            DropdownMenuItem(value: 'bank', child: Text('بنك')),
-                            DropdownMenuItem(value: 'click', child: Text('تحويل كليك')),
-                            DropdownMenuItem(value: 'custom', child: Text('مخصص')),
+                          items:  [
+                            DropdownMenuItem(value: 'cash', child: Text(tr('نقدي'))),
+                            DropdownMenuItem(value: 'bank', child: Text(tr('بنك'))),
+                            DropdownMenuItem(value: 'click', child: Text(tr('تحويل كليك'))),
+                            DropdownMenuItem(value: 'custom', child: Text(tr('مخصص'))),
                           ],
                           onChanged: (v) => setState(() => _selectedType = v ?? 'custom'),
                         ),
@@ -281,8 +282,8 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                           child: TextField(
                             controller: _bankNameController,
                             decoration: InputDecoration(
-                              labelText: 'اسم البنك',
-                              hintText: 'مثال: البنك الأهلي',
+                              labelText: tr('اسم البنك'),
+                              hintText: tr('مثال: البنك الأهلي'),
                               prefixIcon: const Icon(PhosphorIconsBold.bank, size: 18),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                               isDense: true,
@@ -294,8 +295,8 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                           child: TextField(
                             controller: _accountNumberController,
                             decoration: InputDecoration(
-                              labelText: 'رقم الحساب البنكي',
-                              hintText: 'مثال: 1234567890',
+                              labelText: tr('رقم الحساب البنكي'),
+                              hintText: tr('مثال: 1234567890'),
                               prefixIcon: const Icon(PhosphorIconsBold.hash, size: 18),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                               isDense: true,
@@ -314,9 +315,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                       child: SearchableDropdown<CostCenter>(
                         items: _costCenters,
                         value: _costCenters.where((cc) => cc.id == _selectedCostCenterId).firstOrNull,
-                        label: 'مركز التكلفة',
-                        hint: 'بدون',
-                        searchHint: 'بحث في مراكز التكلفة...',
+                        label: tr('مركز التكلفة'),
+                        hint: tr('بدون'),
+                        searchHint: tr('بحث في مراكز التكلفة...'),
                         showClearButton: true,
                         labelBuilder: (cc) => cc.name,
                         onChanged: (cc) => setState(() => _selectedCostCenterId = cc?.id),
@@ -328,9 +329,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                       child: SearchableDropdown<Branche>(
                         items: _branches,
                         value: _branches.where((b) => b.id == _selectedBranchId).firstOrNull,
-                        label: 'الفرع',
-                        hint: 'بدون',
-                        searchHint: 'بحث في الفروع...',
+                        label: tr('الفرع'),
+                        hint: tr('بدون'),
+                        searchHint: tr('بحث في الفروع...'),
                         showClearButton: true,
                         labelBuilder: (b) => b.name,
                         onChanged: (b) => setState(() => _selectedBranchId = b?.id),
@@ -342,9 +343,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                       child: SearchableDropdown<Account>(
                         items: _accounts,
                         value: _accounts.where((a) => a.id == _selectedLinkedAccountId).firstOrNull,
-                        label: 'الحساب المرتبط',
-                        hint: 'بدون',
-                        searchHint: 'بحث بالاسم أو الرمز...',
+                        label: tr('الحساب المرتبط'),
+                        hint: tr('بدون'),
+                        searchHint: tr('بحث بالاسم أو الرمز...'),
                         showClearButton: true,
                         labelBuilder: (a) => '${a.code} - ${a.name}',
                         secondarySearchBuilder: (a) => a.code,
@@ -362,7 +363,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                       icon: _savingSafe
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Icon(PhosphorIconsBold.plus),
-                      label: const Text('إنشاء الصندوق'),
+                      label:  Text(tr('إنشاء الصندوق')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.success,
                         foregroundColor: Colors.white,
@@ -398,7 +399,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                 const Icon(PhosphorIconsBold.bank, color: AppColors.success, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text('ربط طرق التحصيل بالخزائن',
+                  child: Text(tr('ربط طرق التحصيل بالخزائن'),
                       style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 15)),
                 ),
                 TextButton.icon(
@@ -406,13 +407,13 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                   icon: _savingMapping
                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(PhosphorIconsBold.floppyDisk, size: 16),
-                  label: const Text('حفظ الربط'),
+                  label:  Text(tr('حفظ الربط')),
                   style: TextButton.styleFrom(foregroundColor: AppColors.success),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            Text('تحديد الخزينة التي يتم توجيه كل طريقة دفع إليها تلقائياً',
+            Text(tr('تحديد الخزينة التي يتم توجيه كل طريقة دفع إليها تلقائياً'),
                 style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
             const Divider(height: 16),
             safesAsync.when(
@@ -425,9 +426,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                     SearchableDropdown<SafeData>(
                       items: cashSafes,
                       value: cashSafes.where((s) => s.id == _posCashSafeId).firstOrNull,
-                      label: 'خزينة النقدية (Cash)',
-                      hint: 'اختر صندوق...',
-                      searchHint: 'بحث في الصناديق...',
+                      label: tr('خزينة النقدية (Cash)'),
+                      hint: tr('اختر صندوق...'),
+                      searchHint: tr('بحث في الصناديق...'),
                       labelBuilder: (s) => '${s.name} (${s.balance.toStringAsFixed(AppConstants.decimalPlaces)})',
                       onChanged: (s) => setState(() => _posCashSafeId = s?.id),
                     ),
@@ -435,9 +436,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                     SearchableDropdown<SafeData>(
                       items: bankSafes,
                       value: bankSafes.where((s) => s.id == _posBankSafeId).firstOrNull,
-                      label: 'خزينة الفيزا/البنك (Visa/Bank)',
-                      hint: 'استخدام الخيار الافتراضي',
-                      searchHint: 'بحث في الصناديق...',
+                      label: tr('خزينة الفيزا/البنك (Visa/Bank)'),
+                      hint: tr('استخدام الخيار الافتراضي'),
+                      searchHint: tr('بحث في الصناديق...'),
                       showClearButton: true,
                       labelBuilder: (s) => '${s.name} (${s.balance.toStringAsFixed(AppConstants.decimalPlaces)})',
                       onChanged: (s) => setState(() => _posBankSafeId = s?.id),
@@ -446,9 +447,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                     SearchableDropdown<SafeData>(
                       items: safes,
                       value: safes.where((s) => s.id == _posClickSafeId).firstOrNull,
-                      label: 'خزينة كليك (Click)',
-                      hint: 'استخدام الخيار الافتراضي',
-                      searchHint: 'بحث في الصناديق...',
+                      label: tr('خزينة كليك (Click)'),
+                      hint: tr('استخدام الخيار الافتراضي'),
+                      searchHint: tr('بحث في الصناديق...'),
                       showClearButton: true,
                       labelBuilder: (s) => '${s.name} (${s.balance.toStringAsFixed(AppConstants.decimalPlaces)})',
                       onChanged: (s) => setState(() => _posClickSafeId = s?.id),
@@ -457,7 +458,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                 );
               },
               loading: () => const LinearProgressIndicator(),
-              error: (_, _) => const Text('فشل تحميل الخزائن'),
+              error: (_, _) =>  Text(tr('فشل تحميل الخزائن')),
             ),
           ],
         ),
@@ -486,11 +487,11 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
               children: [
                 const Icon(PhosphorIconsBold.listBullets, size: 20, color: AppColors.primary),
                 const SizedBox(width: 8),
-                Text('الصناديق الحالية',
+                Text(tr('الصناديق الحالية'),
                     style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 15)),
                 const Spacer(),
                 safesAsync.when(
-                  data: (safes) => Text('${safes.length} صندوق',
+                  data: (safes) => Text(tr('{p0} صندوق', {'p0': safes.length}),
                       style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
                   loading: () => const SizedBox.shrink(),
                   error: (_, _) => const SizedBox.shrink(),
@@ -511,10 +512,10 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                       children: [
                         Icon(PhosphorIconsBold.vault, size: 48, color: AppColors.textMuted.withValues(alpha: 0.3)),
                         const SizedBox(height: 12),
-                        Text('لا توجد صناديق بعد',
+                        Text(tr('لا توجد صناديق بعد'),
                             style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 14)),
                         const SizedBox(height: 4),
-                        Text('قم بإنشاء صندوق جديد من النموذج على اليمين',
+                        Text(tr('قم بإنشاء صندوق جديد من النموذج على اليمين'),
                             style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 11)),
                       ],
                     ),
@@ -555,7 +556,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                                 color: AppColors.success.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Text('افتراضي',
+                              child: Text(tr('افتراضي'),
                                   style: GoogleFonts.cairo(
                                       color: AppColors.success, fontSize: 10, fontWeight: FontWeight.bold)),
                             ),
@@ -568,7 +569,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                                 color: AppColors.textMuted.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Text('معطّل',
+                              child: Text(tr('معطّل'),
                                   style: GoogleFonts.cairo(
                                       color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold)),
                             ),
@@ -583,21 +584,21 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                         icon: const Icon(PhosphorIconsBold.dotsThreeVertical, size: 20),
                         onSelected: (action) => _handleSafeAction(safe, action),
                         itemBuilder: (_) => [
-                          const PopupMenuItem(
+                           PopupMenuItem(
                             value: 'edit',
                             child: Row(children: [
-                              Icon(PhosphorIconsBold.pencilSimple, size: 16, color: AppColors.primary),
-                              SizedBox(width: 8),
-                              Text('تعديل'),
+                              const Icon(PhosphorIconsBold.pencilSimple, size: 16, color: AppColors.primary),
+                              const SizedBox(width: 8),
+                              Text(tr('تعديل')),
                             ]),
                           ),
                           if (!safe.isDefault)
-                            const PopupMenuItem(
+                             PopupMenuItem(
                               value: 'set_default',
                               child: Row(children: [
-                                Icon(PhosphorIconsBold.star, size: 16, color: AppColors.warning),
-                                SizedBox(width: 8),
-                                Text('تعيين كافتراضي'),
+                                const Icon(PhosphorIconsBold.star, size: 16, color: AppColors.warning),
+                                const SizedBox(width: 8),
+                                Text(tr('تعيين كافتراضي')),
                               ]),
                             ),
                           PopupMenuItem(
@@ -609,16 +610,16 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                                 color: safe.isActive ? AppColors.textMuted : AppColors.success,
                               ),
                               const SizedBox(width: 8),
-                              Text(safe.isActive ? 'إلغاء التفعيل' : 'تفعيل'),
+                              Text(safe.isActive ? tr('إلغاء التفعيل') : tr('تفعيل')),
                             ]),
                           ),
                           if (!safe.isDefault)
-                            const PopupMenuItem(
+                             PopupMenuItem(
                               value: 'delete',
                               child: Row(children: [
-                                Icon(PhosphorIconsBold.trash, size: 16, color: AppColors.error),
-                                SizedBox(width: 8),
-                                Text('حذف', style: TextStyle(color: AppColors.error)),
+                                const Icon(PhosphorIconsBold.trash, size: 16, color: AppColors.error),
+                                const SizedBox(width: 8),
+                                Text(tr('حذف'), style: const TextStyle(color: AppColors.error)),
                               ]),
                             ),
                         ],
@@ -628,7 +629,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('خطأ: $e')),
+              error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
             ),
           ),
         ],
@@ -660,9 +661,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
 
   String _labelForType(String type) {
     switch (type) {
-      case 'cash': return 'نقدي';
-      case 'click': return 'تحويل كليك';
-      case 'bank': return 'بنك';
+      case 'cash': return tr('نقدي');
+      case 'click': return tr('تحويل كليك');
+      case 'bank': return tr('بنك');
       default: return 'مخصص';
     }
   }
@@ -671,9 +672,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
     final parts = <String>[_labelForType(safe.safeType)];
     if (safe.safeType == 'bank') {
       if (safe.bankName != null && safe.bankName!.isNotEmpty) parts.add(safe.bankName!);
-      if (safe.accountNumber != null && safe.accountNumber!.isNotEmpty) parts.add('حساب: ${safe.accountNumber}');
+      if (safe.accountNumber != null && safe.accountNumber!.isNotEmpty) parts.add(tr('حساب: {p0}', {'p0': safe.accountNumber}));
     }
-    parts.add('الرصيد: ${safe.balance.toStringAsFixed(AppConstants.decimalPlaces)}');
+    parts.add(tr('الرصيد: {p0}', {'p0': safe.balance.toStringAsFixed(AppConstants.decimalPlaces)}));
     return parts.join(' • ');
   }
 
@@ -685,7 +686,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
     if (_savingSafe) return;
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      AppToast.show(context, 'أدخل اسم الصندوق');
+      AppToast.show(context, tr('أدخل اسم الصندوق'));
       return;
     }
     setState(() => _savingSafe = true);
@@ -710,10 +711,10 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
         _selectedBranchId = null;
         _selectedLinkedAccountId = null;
       });
-      if (mounted) AppToast.show(context, 'تم إنشاء الصندوق "$name" بنجاح', type: ToastType.success);
+      if (mounted) AppToast.show(context, tr('تم إنشاء الصندوق "{name}" بنجاح', {'name': name}), type: ToastType.success);
       ref.invalidate(allSafesProvider);
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ: $e');
+      if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}));
     } finally {
       if (mounted) setState(() => _savingSafe = false);
     }
@@ -747,10 +748,10 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
         textDirection: TextDirection.rtl,
         child: StatefulBuilder(
           builder: (ctx2, setDialogState) => AlertDialog(
-            title: const Row(children: [
-              Icon(PhosphorIconsBold.pencilSimple, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('تعديل الصندوق'),
+            title:  Row(children: [
+              const Icon(PhosphorIconsBold.pencilSimple, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(tr('تعديل الصندوق')),
             ]),
             content: SizedBox(
               width: 450,
@@ -761,7 +762,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                     TextField(
                       controller: nameCtrl,
                       decoration: InputDecoration(
-                        labelText: 'اسم الصندوق',
+                        labelText: tr('اسم الصندوق'),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
@@ -770,7 +771,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                       TextField(
                         controller: bankCtrl,
                         decoration: InputDecoration(
-                          labelText: 'اسم البنك',
+                          labelText: tr('اسم البنك'),
                           prefixIcon: const Icon(PhosphorIconsBold.bank, size: 18),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         ),
@@ -779,7 +780,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                       TextField(
                         controller: acctCtrl,
                         decoration: InputDecoration(
-                          labelText: 'رقم الحساب البنكي',
+                          labelText: tr('رقم الحساب البنكي'),
                           prefixIcon: const Icon(PhosphorIconsBold.hash, size: 18),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         ),
@@ -790,9 +791,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                       SearchableDropdown<CostCenter>(
                         items: _costCenters,
                         value: _costCenters.where((cc) => cc.id == editCostCenterId).firstOrNull,
-                        label: 'مركز التكلفة',
-                        hint: 'بدون',
-                        searchHint: 'بحث في مراكز التكلفة...',
+                        label: tr('مركز التكلفة'),
+                        hint: tr('بدون'),
+                        searchHint: tr('بحث في مراكز التكلفة...'),
                         showClearButton: true,
                         labelBuilder: (cc) => cc.name,
                         onChanged: (cc) => setDialogState(() => editCostCenterId = cc?.id),
@@ -803,9 +804,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                       SearchableDropdown<Branche>(
                         items: _branches,
                         value: _branches.where((b) => b.id == editBranchId).firstOrNull,
-                        label: 'الفرع',
-                        hint: 'بدون',
-                        searchHint: 'بحث في الفروع...',
+                        label: tr('الفرع'),
+                        hint: tr('بدون'),
+                        searchHint: tr('بحث في الفروع...'),
                         showClearButton: true,
                         labelBuilder: (b) => b.name,
                         onChanged: (b) => setDialogState(() => editBranchId = b?.id),
@@ -816,9 +817,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                       SearchableDropdown<Account>(
                         items: _accounts,
                         value: _accounts.where((a) => a.id == editLinkedAccountId).firstOrNull,
-                        label: 'الحساب المرتبط',
-                        hint: 'بدون',
-                        searchHint: 'بحث في الحسابات...',
+                        label: tr('الحساب المرتبط'),
+                        hint: tr('بدون'),
+                        searchHint: tr('بحث في الحسابات...'),
                         showClearButton: true,
                         labelBuilder: (a) => a.name,
                         onChanged: (a) => setDialogState(() => editLinkedAccountId = a?.id),
@@ -829,7 +830,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
               ElevatedButton(
                 onPressed: savingEdit
                     ? null
@@ -850,9 +851,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                           );
                           ref.invalidate(allSafesProvider);
                           if (ctx.mounted) Navigator.pop(ctx);
-                          if (mounted) AppToast.show(context, 'تم تحديث الصندوق بنجاح');
+                          if (mounted) AppToast.show(context, tr('تم تحديث الصندوق بنجاح'));
                         } catch (e) {
-                          if (mounted) AppToast.show(context, 'خطأ: $e');
+                          if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}));
                           if (ctx.mounted) setDialogState(() => savingEdit = false);
                         }
                       },
@@ -862,7 +863,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                 ),
                 child: savingEdit
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('حفظ'),
+                    :  Text(tr('حفظ')),
               ),
             ],
           ),
@@ -876,9 +877,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
       final repo = ref.read(treasuryRepositoryProvider);
       await repo.setDefaultSafe(safeId);
       ref.invalidate(allSafesProvider);
-      if (mounted) AppToast.show(context, 'تم تعيين الصندوق الافتراضي');
+      if (mounted) AppToast.show(context, tr('تم تعيين الصندوق الافتراضي'));
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ: $e');
+      if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}));
     }
   }
 
@@ -888,7 +889,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
       await repo.toggleSafeActive(safeId, isActive);
       ref.invalidate(allSafesProvider);
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ: $e');
+      if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}));
     }
   }
 
@@ -898,18 +899,18 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(children: [
-            Icon(PhosphorIconsBold.warning, color: AppColors.error),
-            SizedBox(width: 8),
-            Text('تأكيد الحذف'),
+          title:  Row(children: [
+            const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+            const SizedBox(width: 8),
+            Text(tr('تأكيد الحذف')),
           ]),
-          content: Text('هل تريد حذف الصندوق "${safe.name}" نهائياً؟\nلن يتم حذف الصندوق إذا كان مرتبطاً بعمليات.'),
+          content: Text(tr('هل تريد حذف الصندوق "{p0}" نهائياً؟\nلن يتم حذف الصندوق إذا كان مرتبطاً بعمليات.', {'p0': safe.name})),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child:  Text(tr('إلغاء'))),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
-              child: const Text('حذف'),
+              child:  Text(tr('حذف')),
             ),
           ],
         ),
@@ -920,9 +921,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
         final repo = ref.read(treasuryRepositoryProvider);
         await repo.deleteSafeById(safe.id);
         ref.invalidate(allSafesProvider);
-        if (mounted) AppToast.show(context, 'تم حذف الصندوق');
+        if (mounted) AppToast.show(context, tr('تم حذف الصندوق'));
       } catch (e) {
-        if (mounted) AppToast.show(context, 'لا يمكن حذف الصندوق — مرتبط بعمليات');
+        if (mounted) AppToast.show(context, tr('لا يمكن حذف الصندوق — مرتبط بعمليات'));
       }
     }
   }
@@ -938,9 +939,9 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
       ref.invalidate(posCashSafeIdProvider);
       ref.invalidate(posBankSafeIdProvider);
       ref.invalidate(posClickSafeIdProvider);
-      if (mounted) AppToast.show(context, 'تم حفظ ربط طرق التحصيل بنجاح', type: ToastType.success);
+      if (mounted) AppToast.show(context, tr('تم حفظ ربط طرق التحصيل بنجاح'), type: ToastType.success);
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في الحفظ: $e');
+      if (mounted) AppToast.show(context, tr('خطأ في الحفظ: {e}', {'e': e}));
     } finally {
       if (mounted) setState(() => _savingMapping = false);
     }

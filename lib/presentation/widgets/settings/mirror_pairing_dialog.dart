@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // MIRROR PAIRING DIALOG — Spec 097
 // ═══════════════════════════════════════════════════════════════════════════
@@ -106,11 +107,11 @@ class _MirrorPairingDialogState extends State<MirrorPairingDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Row(
+      title:  Row(
         children: [
-          Icon(PhosphorIconsBold.copy, size: 20),
-          SizedBox(width: 8),
-          Text('ربط الجهاز كمرآة'),
+          const Icon(PhosphorIconsBold.copy, size: 20),
+          const SizedBox(width: 8),
+          Text(tr('ربط الجهاز كمرآة')),
         ],
       ),
       content: SizedBox(
@@ -128,10 +129,10 @@ class _MirrorPairingDialogState extends State<MirrorPairingDialog> {
             TextField(
               controller: _hostCtl,
               enabled: !_busy,
-              decoration: const InputDecoration(
-                labelText: 'عنوان HQ-Server',
-                hintText: '192.168.1.100 أو https://abc.ngrok-free.app',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('عنوان HQ-Server'),
+                hintText: tr('192.168.1.100 أو https://abc.ngrok-free.app'),
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
             ),
@@ -140,10 +141,10 @@ class _MirrorPairingDialogState extends State<MirrorPairingDialog> {
               controller: _portCtl,
               enabled: !_busy,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'المنفذ',
+              decoration:  InputDecoration(
+                labelText: tr('المنفذ'),
                 hintText: '8080',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
             ),
@@ -151,9 +152,9 @@ class _MirrorPairingDialogState extends State<MirrorPairingDialog> {
             TextField(
               controller: _usernameCtl,
               enabled: !_busy,
-              decoration: const InputDecoration(
-                labelText: 'اسم المدير على HQ-Server',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('اسم المدير على HQ-Server'),
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
             ),
@@ -162,9 +163,9 @@ class _MirrorPairingDialogState extends State<MirrorPairingDialog> {
               controller: _passwordCtl,
               enabled: !_busy,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'كلمة مرور المدير',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('كلمة مرور المدير'),
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
             ),
@@ -205,17 +206,17 @@ class _MirrorPairingDialogState extends State<MirrorPairingDialog> {
             ],
             if (_busy) ...[
               const SizedBox(height: 12),
-              const Row(
+               Row(
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
-                    'جارٍ الاتصال بـ HQ-Server والتحقق من المدير…',
-                    style: TextStyle(fontSize: 12),
+                    tr('جارٍ الاتصال بـ HQ-Server والتحقق من المدير…'),
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ],
               ),
@@ -226,12 +227,12 @@ class _MirrorPairingDialogState extends State<MirrorPairingDialog> {
       actions: [
         TextButton(
           onPressed: _busy ? null : () => Navigator.of(context).pop(false),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         ElevatedButton.icon(
           onPressed: _busy ? null : _pair,
           icon: const Icon(PhosphorIconsBold.linkSimple, size: 16),
-          label: const Text('ربط'),
+          label:  Text(tr('ربط')),
         ),
       ],
     );

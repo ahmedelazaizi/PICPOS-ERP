@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // F-07: Multi-Currency Invoice Selector Widget
 // Adds currency selection + conversion to sales/purchase invoice dialogs
@@ -74,7 +75,7 @@ class InvoiceCurrencySelector extends StatelessWidget {
               items: [
                 DropdownMenuItem<InvoiceCurrency?>(
                   value: null,
-                  child: Text('$baseCurrencyCode (أساسية)', style: GoogleFonts.cairo(fontSize: 12)),
+                  child: Text(tr('{baseCurrencyCode} (أساسية)', {'baseCurrencyCode': baseCurrencyCode}), style: GoogleFonts.cairo(fontSize: 12)),
                 ),
                 ...currencies.where((c) => c.code != baseCurrencyCode).map(
                   (c) => DropdownMenuItem<InvoiceCurrency?>(
@@ -93,7 +94,7 @@ class InvoiceCurrencySelector extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  'سعر الصرف: ${_rateFmt.format(selected!.exchangeRate)}',
+                  tr('سعر الصرف: {p0}', {'p0': _rateFmt.format(selected!.exchangeRate)}),
                   style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted),
                 ),
                 Text(

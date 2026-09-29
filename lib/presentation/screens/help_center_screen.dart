@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -16,72 +17,72 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   String _searchQuery = '';
   int? _expandedIndex;
 
-  static const List<_HelpSection> _sections = [
+  static List<_HelpSection> get _sections => [
     _HelpSection(
-      title: 'البدء السريع',
+      title: tr('البدء السريع'),
       icon: PhosphorIconsBold.rocketLaunch,
       items: [
         _HelpItem(
-          question: 'كيف أضيف صنف جديد؟',
-          answer: 'اذهب إلى "الأصناف" ← اضغط زر "إضافة" ← املأ البيانات (الاسم، الكود، السعر، التكلفة) ← اضغط "حفظ".\n\nيمكنك أيضاً إضافة باركود وصورة للصنف.',
+          question: tr('كيف أضيف صنف جديد؟'),
+          answer: tr('اذهب إلى "الأصناف" ← اضغط زر "إضافة" ← املأ البيانات (الاسم، الكود، السعر، التكلفة) ← اضغط "حفظ".\n\nيمكنك أيضاً إضافة باركود وصورة للصنف.'),
         ),
         _HelpItem(
-          question: 'كيف أنشئ فاتورة بيع؟',
-          answer: 'اذهب إلى "البيع السريع" ← اختر الأصناف من القائمة أو امسح الباركود ← حدد الكمية ← اضغط "إتمام البيع" ← اختر طريقة الدفع.',
+          question: tr('كيف أنشئ فاتورة بيع؟'),
+          answer: tr('اذهب إلى "البيع السريع" ← اختر الأصناف من القائمة أو امسح الباركود ← حدد الكمية ← اضغط "إتمام البيع" ← اختر طريقة الدفع.'),
         ),
         _HelpItem(
-          question: 'كيف أضيف عميل أو مورد؟',
-          answer: 'اذهب إلى "العملاء والموردين" ← اضغط "إضافة" ← اختر النوع (عميل/مورد) ← أدخل الاسم والهاتف ← اضغط "حفظ".',
+          question: tr('كيف أضيف عميل أو مورد؟'),
+          answer: tr('اذهب إلى "العملاء والموردين" ← اضغط "إضافة" ← اختر النوع (عميل/مورد) ← أدخل الاسم والهاتف ← اضغط "حفظ".'),
         ),
       ],
     ),
     _HelpSection(
-      title: 'إدارة المخزون',
+      title: tr('إدارة المخزون'),
       icon: PhosphorIconsBold.warehouse,
       items: [
         _HelpItem(
-          question: 'كيف أتابع المخزون؟',
-          answer: 'اذهب إلى "المخزون" لرؤية إجمالي المخزون لكل صنف.\n\nالنظام يحدّث المخزون تلقائياً عند كل عملية بيع أو شراء.\n\nاضبط "الحد الأدنى" لكل صنف لتلقي تنبيهات عند قرب نفاده.',
+          question: tr('كيف أتابع المخزون؟'),
+          answer: tr('اذهب إلى "المخزون" لرؤية إجمالي المخزون لكل صنف.\n\nالنظام يحدّث المخزون تلقائياً عند كل عملية بيع أو شراء.\n\nاضبط "الحد الأدنى" لكل صنف لتلقي تنبيهات عند قرب نفاده.'),
         ),
         _HelpItem(
-          question: 'كيف أعمل جرد؟',
-          answer: 'اذهب إلى "المخزون" ← "جرد المخزون" ← اختر المخزن ← أدخل الكميات الفعلية ← النظام يحسب الفروقات تلقائياً ← اعتمد الجرد.',
+          question: tr('كيف أعمل جرد؟'),
+          answer: tr('اذهب إلى "المخزون" ← "جرد المخزون" ← اختر المخزن ← أدخل الكميات الفعلية ← النظام يحسب الفروقات تلقائياً ← اعتمد الجرد.'),
         ),
       ],
     ),
     _HelpSection(
-      title: 'التقارير والمالية',
+      title: tr('التقارير والمالية'),
       icon: PhosphorIconsBold.chartBar,
       items: [
         _HelpItem(
-          question: 'أين أجد تقرير الأرباح والخسائر؟',
-          answer: 'اذهب إلى "التقارير" ← "القوائم المالية" ← تبويب "قائمة الدخل".\n\nيمكنك تحديد الفترة الزمنية ومركز التكلفة وتصدير التقرير إلى Excel أو PDF.',
+          question: tr('أين أجد تقرير الأرباح والخسائر؟'),
+          answer: tr('اذهب إلى "التقارير" ← "القوائم المالية" ← تبويب "قائمة الدخل".\n\nيمكنك تحديد الفترة الزمنية ومركز التكلفة وتصدير التقرير إلى Excel أو PDF.'),
         ),
         _HelpItem(
-          question: 'كيف أصدّر تقرير Excel؟',
-          answer: 'في أي شاشة تقارير، اضغط على أيقونة Excel في شريط الأدوات.\n\nسيتم حفظ الملف تلقائياً ويمكنك فتحه مباشرة.',
+          question: tr('كيف أصدّر تقرير Excel؟'),
+          answer: tr('في أي شاشة تقارير، اضغط على أيقونة Excel في شريط الأدوات.\n\nسيتم حفظ الملف تلقائياً ويمكنك فتحه مباشرة.'),
         ),
         _HelpItem(
-          question: 'كيف أشوف مبيعات اليوم؟',
-          answer: 'لوحة التحكم تعرض ملخص مبيعات اليوم تلقائياً.\n\nللتفاصيل: اذهب إلى "التقارير" ← "تقرير المبيعات" واختر الفترة "اليوم".',
+          question: tr('كيف أشوف مبيعات اليوم؟'),
+          answer: tr('لوحة التحكم تعرض ملخص مبيعات اليوم تلقائياً.\n\nللتفاصيل: اذهب إلى "التقارير" ← "تقرير المبيعات" واختر الفترة "اليوم".'),
         ),
       ],
     ),
     _HelpSection(
-      title: 'الإعدادات والنظام',
+      title: tr('الإعدادات والنظام'),
       icon: PhosphorIconsBold.gear,
       items: [
         _HelpItem(
-          question: 'كيف أوصّل الطابعة؟',
-          answer: 'اذهب إلى "الإعدادات" ← "إعدادات الأجهزة" ← "الطابعة" ← اختر نوع الاتصال (USB أو شبكة) ← اختر الطابعة ← اضغط "حفظ".',
+          question: tr('كيف أوصّل الطابعة؟'),
+          answer: tr('اذهب إلى "الإعدادات" ← "إعدادات الأجهزة" ← "الطابعة" ← اختر نوع الاتصال (USB أو شبكة) ← اختر الطابعة ← اضغط "حفظ".'),
         ),
         _HelpItem(
-          question: 'كيف أعمل نسخة احتياطية؟',
-          answer: 'اذهب إلى "الإعدادات" ← "النسخ الاحتياطي" ← اضغط "إنشاء نسخة" ← اختر مكان الحفظ.\n\n⚠️ ننصح بعمل نسخة احتياطية يومياً وحفظها على USB أو سحابة.',
+          question: tr('كيف أعمل نسخة احتياطية؟'),
+          answer: tr('اذهب إلى "الإعدادات" ← "النسخ الاحتياطي" ← اضغط "إنشاء نسخة" ← اختر مكان الحفظ.\n\n⚠️ ننصح بعمل نسخة احتياطية يومياً وحفظها على USB أو سحابة.'),
         ),
         _HelpItem(
-          question: 'كيف أضيف موظف جديد؟',
-          answer: 'اذهب إلى "الإعدادات" ← "إدارة المستخدمين" ← "إضافة مستخدم" ← أدخل البيانات واختر الصلاحيات ← اضغط "حفظ".',
+          question: tr('كيف أضيف موظف جديد؟'),
+          answer: tr('اذهب إلى "الإعدادات" ← "إدارة المستخدمين" ← "إضافة مستخدم" ← أدخل البيانات واختر الصلاحيات ← اضغط "حفظ".'),
         ),
       ],
     ),
@@ -117,7 +118,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: const Text('مركز المساعدة'),
+          title:  Text(tr('مركز المساعدة')),
         ),
         body: Column(
           children: [
@@ -137,18 +138,18 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
               ),
               child: TextField(
                 onChanged: (v) => setState(() => _searchQuery = v),
-                decoration: const InputDecoration(
-                  hintText: 'ابحث عن سؤال...',
-                  prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
+                decoration:  InputDecoration(
+                  hintText: tr('ابحث عن سؤال...'),
+                  prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
               ),
             ),
             // Help sections
             Expanded(
               child: sections.isEmpty
-                  ? const Center(child: Text('لا توجد نتائج'))
+                  ?  Center(child: Text(tr('لا توجد نتائج')))
                   : ListView.builder(
                       padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 16),
                       itemCount: sections.length,

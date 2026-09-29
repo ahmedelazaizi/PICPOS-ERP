@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 /// Base exception class for UralCash application
 abstract class AppException implements Exception {
   final String message;
@@ -55,7 +56,7 @@ class ValidationException extends AppException {
     return ValidationException(
       'Field "$field" is required',
       code: 'VALIDATION_REQUIRED',
-      fieldErrors: {field: 'مطلوب'},
+      fieldErrors: {field: tr('مطلوب')},
     );
   }
 

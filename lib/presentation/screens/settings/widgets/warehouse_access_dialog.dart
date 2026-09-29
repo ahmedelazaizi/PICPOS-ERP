@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -44,17 +45,17 @@ class _WarehouseAccessDialogState extends AppFormDialogState<bool, WarehouseAcce
   }
 
   @override
-  String get dialogTitle => 'إدارة مخازن المستخدم ${widget.user.displayName}';
+  String get dialogTitle => tr('إدارة مخازن المستخدم {p0}', {'p0': widget.user.displayName});
 
   @override
   IconData get dialogIcon => PhosphorIconsBold.warehouse;
 
   @override
   String? get dialogSubtitle =>
-      'تحديدُ نطاق العمل — المخازنُ التي يراها المستخدم';
+      tr('تحديدُ نطاق العمل — المخازنُ التي يراها المستخدم');
 
   @override
-  String? get dialogSaveLabel => 'حفظ النطاق';
+  String? get dialogSaveLabel => tr('حفظ النطاق');
 
   /// لوحةُ `PANELS.access` — مجموعةُ المخازن، كما في فرعِها للفروع.
   ///
@@ -67,15 +68,15 @@ class _WarehouseAccessDialogState extends AppFormDialogState<bool, WarehouseAcce
     if (all.isEmpty) return const [];
     return [
       PicPosPanelGroup(
-        label: 'المخازن',
-        hint: 'المخازنُ التي يراها المستخدم',
+        label: tr('المخازن'),
+        hint: tr('المخازنُ التي يراها المستخدم'),
         child: PicPosPanelChips(
           children: [
             for (final wh in all)
               PicPosPanelChip(
                 label: wh.name,
                 tooltip: [
-                  if (wh.isDefault) 'المخزن الافتراضيّ',
+                  if (wh.isDefault) tr('المخزن الافتراضيّ'),
                   if ((wh.location ?? '').isNotEmpty) wh.location!,
                 ].join(' · '),
                 selected: selected.contains(wh.id),
@@ -86,12 +87,12 @@ class _WarehouseAccessDialogState extends AppFormDialogState<bool, WarehouseAcce
           ],
         ),
       ),
-      const PicPosPanelGroup(
-        label: 'تنبيه',
+       PicPosPanelGroup(
+        label: tr('تنبيه'),
         child: PicPosDialogBanner(
           icon: PhosphorIconsBold.info,
           color: AppColors.warning,
-          text: 'عدمُ تحديد أيّ مخزنٍ = وصولٌ لكلّ المخازن تلقائيّاً.',
+          text: tr('عدمُ تحديد أيّ مخزنٍ = وصولٌ لكلّ المخازن تلقائيّاً.'),
         ),
       ),
     ];
@@ -115,14 +116,14 @@ class _WarehouseAccessDialogState extends AppFormDialogState<bool, WarehouseAcce
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
           ),
-          child: const Row(
+          child:  Row(
             children: [
-              Icon(PhosphorIconsBold.info, size: 16, color: Colors.amber),
-              SizedBox(width: 8),
+              const Icon(PhosphorIconsBold.info, size: 16, color: Colors.amber),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'عدم تحديد أي مخزن = وصول لجميع المخازن تلقائياً.',
-                  style: TextStyle(fontSize: 12, color: Colors.amber),
+                  tr('عدم تحديد أي مخزن = وصول لجميع المخازن تلقائياً.'),
+                  style: const TextStyle(fontSize: 12, color: Colors.amber),
                 ),
               ),
             ],

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,9 +40,9 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text(
-            'محضر جرد الخزينة (إقفال اليوم)',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          title:  Text(
+            tr('محضر جرد الخزينة (إقفال اليوم)'),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           backgroundColor: AppColors.primary,
           elevation: 0,
@@ -63,14 +64,14 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
                     children: [
                       Icon(PhosphorIconsBold.checkCircle, color: AppColors.success.withValues(alpha: 0.8), size: 64),
                       const SizedBox(height: 16),
-                      const Text(
-                        'جميع الخزائن تمت تسويتها',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                       Text(
+                        tr('جميع الخزائن تمت تسويتها'),
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'لا توجد خزائن حالية تتطلب إقفال مباشر. الأرصدة مصفرة (تم إقفالها مسبقاً عبر ورديات الكاشير).',
-                        style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                       Text(
+                        tr('لا توجد خزائن حالية تتطلب إقفال مباشر. الأرصدة مصفرة (تم إقفالها مسبقاً عبر ورديات الكاشير).'),
+                        style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -102,7 +103,7 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, stack) => Center(child: Text('خطأ: $err')),
+          error: (err, stack) => Center(child: Text(tr('خطأ: {err}', {'err': err}))),
         ),
       ),
     );
@@ -116,14 +117,14 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
       ),
-      child: const Row(
+      child:  Row(
         children: [
-          Icon(PhosphorIconsBold.info, color: AppColors.info),
-          SizedBox(width: 12),
+          const Icon(PhosphorIconsBold.info, color: AppColors.info),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'يرجى إدخال المبلغ الفعلي الموجود في كل خزينة لمطابقته مع رصيد النظام.',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              tr('يرجى إدخال المبلغ الفعلي الموجود في كل خزينة لمطابقته مع رصيد النظام.'),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -183,7 +184,7 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
                     ),
                   ),
                   Text(
-                    safe.safeType == 'bank' ? 'حساب بنكي' : 'خزينة نقدية',
+                    safe.safeType == 'bank' ? tr('حساب بنكي') : tr('خزينة نقدية'),
                     style: const TextStyle(
                       color: AppColors.textMuted,
                       fontSize: 12,
@@ -196,9 +197,9 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
               flex: 2,
               child: Column(
                 children: [
-                  const Text(
-                    'رصيد النظام',
-                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                   Text(
+                    tr('رصيد النظام'),
+                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                   Text(
                     '${systemBalance.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
@@ -216,10 +217,10 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
                 controller: _controllers[safe.id],
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
-                decoration: const InputDecoration(
-                  labelText: 'المبلغ الفعلي',
+                decoration:  InputDecoration(
+                  labelText: tr('المبلغ الفعلي'),
                   hintText: '0.00',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   isDense: true,
                 ),
                 onChanged: (value) {
@@ -234,9 +235,9 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
               flex: 1,
               child: Column(
                 children: [
-                  const Text(
-                    'الفارق',
-                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                   Text(
+                    tr('الفارق'),
+                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                   Text(
                     '${variance > 0 ? '+' : ''}${variance.toStringAsFixed(AppConstants.decimalPlaces)}',
@@ -286,9 +287,9 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'إجمالي الفوارق',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                 Text(
+                  tr('إجمالي الفوارق'),
+                  style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
                 ),
                 Text(
                   '${totalVariance.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
@@ -324,9 +325,9 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
                       strokeWidth: 2,
                     ),
                   )
-                : const Text(
-                    'اعتماد الإقفال وترحيل الفوارق',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                :  Text(
+                    tr('اعتماد الإقفال وترحيل الفوارق'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
           ),
           const SizedBox(width: 16),
@@ -334,7 +335,7 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
           OutlinedButton.icon(
             onPressed: _isProcessing ? null : () => _printReport(safes),
             icon: const Icon(PhosphorIconsBold.printer),
-            label: const Text('طباعة التقرير'),
+            label:  Text(tr('طباعة التقرير')),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               shape: RoundedRectangleBorder(
@@ -381,7 +382,7 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
       totalActual: totalActual,
       totalVariance: totalVariance,
       companyName: companyName,
-      employeeName: 'مدير النظام',
+      employeeName: tr('مدير النظام'),
     );
   }
 
@@ -389,19 +390,19 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تأكيد إقفال المحاسبة'),
-        content: const Text(
-          'هل أنت متأكد من اعتماد الأرصدة المدخلة وإقفال اليوم المالي؟ سيتم تصفير أرصدة الخزائن المرحلة.',
+        title:  Text(tr('تأكيد إقفال المحاسبة')),
+        content:  Text(
+          tr('هل أنت متأكد من اعتماد الأرصدة المدخلة وإقفال اليوم المالي؟ سيتم تصفير أرصدة الخزائن المرحلة.'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            child: const Text('تأكيد'),
+            child:  Text(tr('تأكيد')),
           ),
         ],
       ),
@@ -424,14 +425,14 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
               // ── Client mode: route to server ──
               final intercepted = await ClientWriteInterceptor.createExpense(
                 amount: variance.abs(),
-                category: 'عجز خزينة',
-                description: 'عجز عند إقفال اليوم لـ ${safe.name}',
+                category: tr('عجز خزينة'),
+                description: tr('عجز عند إقفال اليوم لـ {p0}', {'p0': safe.name}),
               );
               if (intercepted == null) {
                 await treasuryRepo.createPaymentVoucher(
                   amount: variance.abs(),
-                  category: 'عجز خزينة',
-                  description: 'عجز عند إقفال اليوم لـ ${safe.name}',
+                  category: tr('عجز خزينة'),
+                  description: tr('عجز عند إقفال اليوم لـ {p0}', {'p0': safe.name}),
                   safeId: safe.id,
                 );
               }
@@ -440,14 +441,14 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
               // ── Client mode: route to server ──
               final intercepted = await ClientWriteInterceptor.createReceipt(
                 amount: variance,
-                category: 'زيادة خزينة',
-                description: 'زيادة عند إقفال اليوم لـ ${safe.name}',
+                category: tr('زيادة خزينة'),
+                description: tr('زيادة عند إقفال اليوم لـ {p0}', {'p0': safe.name}),
               );
               if (intercepted == null) {
                 await treasuryRepo.createReceiptVoucher(
                   amount: variance,
-                  category: 'زيادة خزينة',
-                  description: 'زيادة عند إقفال اليوم لـ ${safe.name}',
+                  category: tr('زيادة خزينة'),
+                  description: tr('زيادة عند إقفال اليوم لـ {p0}', {'p0': safe.name}),
                   safeId: safe.id,
                 );
               }
@@ -461,7 +462,7 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
         if (mounted) {
           AppToast.show(
             context,
-            'تم إقفال اليوم المالي واعتماد الجرد بنجاح',
+            tr('تم إقفال اليوم المالي واعتماد الجرد بنجاح'),
             type: ToastType.success,
           );
           Navigator.pop(context);
@@ -470,7 +471,7 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
         if (mounted) {
           AppToast.show(
             context,
-            'خطأ أثناء الإقفال: $e',
+            tr('خطأ أثناء الإقفال: {e}', {'e': e}),
             type: ToastType.error,
           );
         }

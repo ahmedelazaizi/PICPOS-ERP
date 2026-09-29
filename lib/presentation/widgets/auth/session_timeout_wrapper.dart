@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -87,7 +88,7 @@ class _SessionTimeoutWrapperState extends ConsumerState<SessionTimeoutWrapper> {
   Future<void> _unlock() async {
     final input = _passwordController.text.trim();
     if (input.isEmpty) {
-      setState(() => _errorMessage = 'يرجى إدخال كلمة المرور');
+      setState(() => _errorMessage = tr('يرجى إدخال كلمة المرور'));
       return;
     }
 
@@ -113,21 +114,21 @@ class _SessionTimeoutWrapperState extends ConsumerState<SessionTimeoutWrapper> {
         final isSameUser = user.user.id == currentUserInfo?.id;
         final roleName = user.role?.name.toLowerCase() ?? '';
         final isSystemRole = user.role?.isSystemRole ?? false;
-        final isAdminOrManager = isSystemRole || 
-                                roleName.contains('admin') || 
-                                roleName.contains('مدير') || 
+        final isAdminOrManager = isSystemRole ||
+                                roleName.contains('admin') ||
+                                roleName.contains('مدير') ||
                                 roleName.contains('manager');
 
         if (isSameUser || isAdminOrManager) {
           _completeUnlock();
         } else {
-          setState(() => _errorMessage = 'كلمة المرور غير صحيحة أو لا تملك الصلاحية');
+          setState(() => _errorMessage = tr('كلمة المرور غير صحيحة أو لا تملك الصلاحية'));
         }
       } else {
-        setState(() => _errorMessage = 'كلمة المرور غير صحيحة');
+        setState(() => _errorMessage = tr('كلمة المرور غير صحيحة'));
       }
     } catch (e) {
-      setState(() => _errorMessage = 'حدث خطأ: $e');
+      setState(() => _errorMessage = tr('حدث خطأ: {e}', {'e': e}));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -149,21 +150,21 @@ class _SessionTimeoutWrapperState extends ConsumerState<SessionTimeoutWrapper> {
         final isSameUser = user.user.id == currentUserInfo?.id;
         final roleName = user.role?.name.toLowerCase() ?? '';
         final isSystemRole = user.role?.isSystemRole ?? false;
-        final isAdminOrManager = isSystemRole || 
-                                roleName.contains('admin') || 
-                                roleName.contains('مدير') || 
+        final isAdminOrManager = isSystemRole ||
+                                roleName.contains('admin') ||
+                                roleName.contains('مدير') ||
                                 roleName.contains('manager');
 
         if (isSameUser || isAdminOrManager) {
           _completeUnlock();
         } else {
-          setState(() => _errorMessage = 'البطاقة لا تملك صلاحية فك القفل');
+          setState(() => _errorMessage = tr('البطاقة لا تملك صلاحية فك القفل'));
         }
       } else {
-        setState(() => _errorMessage = 'بطاقة غير معرّفة في النظام');
+        setState(() => _errorMessage = tr('بطاقة غير معرّفة في النظام'));
       }
     } catch (e) {
-      setState(() => _errorMessage = 'حدث خطأ: $e');
+      setState(() => _errorMessage = tr('حدث خطأ: {e}', {'e': e}));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -218,7 +219,7 @@ class _SessionTimeoutWrapperState extends ConsumerState<SessionTimeoutWrapper> {
   }
 
   Widget _buildLockOverlay() {
-    final currentUser = ref.read(authProvider).user?.displayName ?? 'مستخدم';
+    final currentUser = ref.read(authProvider).user?.displayName ?? tr('مستخدم');
     
     return Positioned.fill(
       child: Directionality(
@@ -283,9 +284,9 @@ class _SessionTimeoutWrapperState extends ConsumerState<SessionTimeoutWrapper> {
                       ),
                       const SizedBox(height: 24),
                       
-                      const Text(
-                        'جلسة مقفلة',
-                        style: TextStyle(
+                       Text(
+                        tr('جلسة مقفلة'),
+                        style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
@@ -293,7 +294,7 @@ class _SessionTimeoutWrapperState extends ConsumerState<SessionTimeoutWrapper> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'الجلسة مقفلة تلقائياً لعدم النشاط.\nيرجى إدخال كلمة مرور $currentUser\nأو رمز مدير النظام لفك القفل.',
+                        tr('الجلسة مقفلة تلقائياً لعدم النشاط.\nيرجى إدخال كلمة مرور {currentUser}\nأو رمز مدير النظام لفك القفل.', {'currentUser': currentUser}),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 14,
@@ -343,7 +344,7 @@ class _SessionTimeoutWrapperState extends ConsumerState<SessionTimeoutWrapper> {
                         obscureText: _obscurePassword,
                         autofocus: true,
                         decoration: InputDecoration(
-                          labelText: 'كلمة المرور',
+                          labelText: tr('كلمة المرور'),
                           prefixIcon: const Icon(PhosphorIconsBold.lock),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -386,14 +387,14 @@ class _SessionTimeoutWrapperState extends ConsumerState<SessionTimeoutWrapper> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Row(
+                              :  Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(PhosphorIconsBold.lockOpen),
-                                    SizedBox(width: 8),
+                                    const Icon(PhosphorIconsBold.lockOpen),
+                                    const SizedBox(width: 8),
                                     Text(
-                                      'فك القفل',
-                                      style: TextStyle(
+                                      tr('فك القفل'),
+                                      style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -413,9 +414,9 @@ class _SessionTimeoutWrapperState extends ConsumerState<SessionTimeoutWrapper> {
                           size: 18,
                           color: AppColors.error,
                         ),
-                        label: const Text(
-                          'تسجيل الخروج تماماً',
-                          style: TextStyle(color: AppColors.error),
+                        label:  Text(
+                          tr('تسجيل الخروج تماماً'),
+                          style: const TextStyle(color: AppColors.error),
                         ),
                       ),
                     ],

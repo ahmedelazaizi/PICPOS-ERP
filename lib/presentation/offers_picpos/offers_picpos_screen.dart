@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ العروض بهويّة PicPos — فوركٌ لا تعديلٌ للمشترك.
 //
 // بلاغُ المالك 2026-08-23: «شاشة العروض مش بهوية picpos عاوزه تتظبط الوانها».
@@ -47,12 +48,12 @@ Widget buildOffersPicPosCreateButton({required VoidCallback onPressed}) {
   return PermissionGuard(
     permission: PermissionCodes.offersCreate,
     allowManagerOverride: true,
-    actionName: 'إضافة عرض',
+    actionName: tr('إضافة عرض'),
     onGranted: onPressed,
     child: ElevatedButton.icon(
       onPressed: onPressed,
       icon: const Icon(PhosphorIconsBold.plus, size: 16),
-      label: const Text('إضافة عرض'),
+      label:  Text(tr('إضافة عرض')),
       style: ElevatedButton.styleFrom(
         minimumSize: const Size(0, 36),
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -101,11 +102,11 @@ class _OffersPicPosScreenState extends ConsumerState<OffersPicPosScreen>
   String offerTypeLabel(String type) {
     switch (type) {
       case 'buy_x_get_y':
-        return 'اشترِ X واحصل Y';
+        return tr('اشترِ X واحصل Y');
       case 'percentage':
-        return 'خصم نسبة';
+        return tr('خصم نسبة');
       case 'fixed_discount':
-        return 'خصم مبلغ';
+        return tr('خصم مبلغ');
       case 'bundle':
       default:
         return 'باقة';
@@ -179,14 +180,14 @@ class _OffersPicPosScreenState extends ConsumerState<OffersPicPosScreen>
           final paused = all.where((o) => !o.isActive).length;
 
           return PicPosScreenScaffold(
-            title: 'العروض',
-            subtitle: 'إدارة عروض الباقات والأسعار الخاصة',
+            title: tr('العروض'),
+            subtitle: tr('إدارة عروض الباقات والأسعار الخاصة'),
             icon: PhosphorIconsBold.tag,
             headerSearch: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'بحث في العروض...',
+                hintText: tr('بحث في العروض...'),
                 prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass,
                     size: 16),
                 suffixIcon: _searchController.text.isNotEmpty
@@ -210,25 +211,25 @@ class _OffersPicPosScreenState extends ConsumerState<OffersPicPosScreen>
             subHeader: PicPosKpiRow(
               kpis: [
                 PicPosKpi(
-                  label: 'إجمالي العروض',
+                  label: tr('إجمالي العروض'),
                   value: '${all.length}',
                   icon: PhosphorIconsBold.tag,
                   tint: AppColors.primary,
                 ),
                 PicPosKpi(
-                  label: 'فعّالة الآن',
+                  label: tr('فعّالة الآن'),
                   value: '$active',
                   icon: PhosphorIconsBold.checkCircle,
                   tint: AppColors.success,
                 ),
                 PicPosKpi(
-                  label: 'منتهية',
+                  label: tr('منتهية'),
                   value: '$expired',
                   icon: PhosphorIconsBold.clockCountdown,
                   tint: AppColors.warning,
                 ),
                 PicPosKpi(
-                  label: 'موقوفة',
+                  label: tr('موقوفة'),
                   value: '$paused',
                   icon: PhosphorIconsBold.pauseCircle,
                   tint: AppColors.textMuted,
@@ -238,7 +239,7 @@ class _OffersPicPosScreenState extends ConsumerState<OffersPicPosScreen>
             toolbar: PicPosToolbar(
               children: [
                 FilterChip(
-                  label: const Text('العروض الفعالة فقط'),
+                  label:  Text(tr('العروض الفعالة فقط')),
                   selected: _showActiveOnly,
                   onSelected: (v) => setState(() => _showActiveOnly = v),
                   avatar: Icon(
@@ -255,7 +256,7 @@ class _OffersPicPosScreenState extends ConsumerState<OffersPicPosScreen>
                 //    «Incorrect use of ParentDataWidget». أمسكه اختبارُ
                 //    التركيب، ولم يكن ليظهر في اختبار قطعة.
                 Text(
-                  'المعروض: ${offers.length} من ${all.length}',
+                  tr('المعروض: {p0} من {p1}', {'p0': offers.length, 'p1': all.length}),
                   style: const TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
@@ -273,11 +274,11 @@ class _OffersPicPosScreenState extends ConsumerState<OffersPicPosScreen>
                     ? PicPosEmptyState(
                         icon: PhosphorIconsBold.tag,
                         title: all.isEmpty
-                            ? 'لا توجد عروض'
-                            : 'لا عرضَ يطابق الترشيح',
+                            ? tr('لا توجد عروض')
+                            : tr('لا عرضَ يطابق الترشيح'),
                         hint: all.isEmpty
-                            ? 'أنشئ باقةً أو خصماً موقّتاً يظهر في نقطة البيع.'
-                            : 'جرّب مسحَ البحث أو إظهارَ غير الفعّالة.',
+                            ? tr('أنشئ باقةً أو خصماً موقّتاً يظهر في نقطة البيع.')
+                            : tr('جرّب مسحَ البحث أو إظهارَ غير الفعّالة.'),
                         action: all.isEmpty
                             ? buildOffersPicPosCreateButton(
                                 onPressed: () =>

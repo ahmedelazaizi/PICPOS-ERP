@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -93,7 +94,7 @@ class _JournalEntriesPicPosScreenState
   /// يُزيل لاحقةَ بصمةِ التدقيق من الوصف للعرض — والبصمةُ تبقى في القاعدة
   /// للتحقّق من السلامة (ICR-03).
   static String cleanDescription(String? desc) {
-    if (desc == null || desc.isEmpty) return 'بدون وصف';
+    if (desc == null || desc.isEmpty) return tr('بدون وصف');
     return desc.replaceAll(RegExp(r'\s*\[HASH:[a-f0-9]{64}\]'), '').trim();
   }
 
@@ -109,7 +110,7 @@ class _JournalEntriesPicPosScreenState
     final userId = ref.read(authProvider).user?.id;
     if (userId == null) {
       if (mounted) {
-        AppToast.show(context, 'يجب تسجيل الدخول لتنفيذ هذا الإجراء',
+        AppToast.show(context, tr('يجب تسجيل الدخول لتنفيذ هذا الإجراء'),
             type: ToastType.error);
       }
       return false;
@@ -121,7 +122,7 @@ class _JournalEntriesPicPosScreenState
     if (!allowed) {
       if (mounted) {
         AppToast.show(
-            context, 'ليست لديك صلاحية إنشاء أو عكس القيود المحاسبية اليدوية',
+            context, tr('ليست لديك صلاحية إنشاء أو عكس القيود المحاسبية اليدوية'),
             type: ToastType.error);
       }
       return false;
@@ -146,14 +147,14 @@ class _JournalEntriesPicPosScreenState
             // مواضعَ تكتبه: أربعةُ أبوابٍ تؤدّي إلى الشاشة، وأربعةٌ يقرؤها
             // من وصل (العنوان · تبويبُ `je` · ورقةُ الطباعة · ملفُّ Excel).
             title: journalEntriesScreenLabel,
-            subtitle: 'عرض القيود المحاسبية مع إمكانية البحث والتصفية',
+            subtitle: tr('عرض القيود المحاسبية مع إمكانية البحث والتصفية'),
             icon: PhosphorIconsBold.notebook,
             headerSearch: TextField(
               controller: _searchController,
               onChanged: (v) => setState(() => _searchQuery = v),
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'بحث برقم القيد أو البيان...',
+                hintText: tr('بحث برقم القيد أو البيان...'),
                 prefixIcon:
                     const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
                 suffixIcon: _searchQuery.isNotEmpty
@@ -169,12 +170,12 @@ class _JournalEntriesPicPosScreenState
             ),
             headerActions: [
               IconButton(
-                tooltip: 'طباعة/PDF',
+                tooltip: tr('طباعة/PDF'),
                 icon: const Icon(PhosphorIconsBold.filePdf, size: 18),
                 onPressed: () => _printAllEntries(repo),
               ),
               IconButton(
-                tooltip: 'تصدير Excel',
+                tooltip: tr('تصدير Excel'),
                 icon: const Icon(PhosphorIconsBold.fileXls, size: 18),
                 onPressed: () => _exportAllEntriesToExcel(repo),
               ),
@@ -186,18 +187,18 @@ class _JournalEntriesPicPosScreenState
                   ),
                 ),
                 icon: const Icon(PhosphorIconsBold.stack, size: 15),
-                label: const Text('قوالب القيود'),
+                label:  Text(tr('قوالب القيود')),
               ),
               OutlinedButton.icon(
                 onPressed: () => showTemplateSelectionDialog(context, repo),
                 icon: const Icon(PhosphorIconsBold.copy, size: 15),
-                label: const Text('من قالب'),
+                label:  Text(tr('من قالب')),
               ),
               const SizedBox(width: 8),
               FilledButton.icon(
                 onPressed: () => showCreateEntryDialog(context),
                 icon: const Icon(PhosphorIconsBold.notePencil, size: 16),
-                label: const Text('قيد يدوي'),
+                label:  Text(tr('قيد يدوي')),
               ),
             ],
             toolbar: _buildToolbar(),
@@ -273,10 +274,10 @@ class _JournalEntriesPicPosScreenState
         ),
         SegmentedButton<String>(
           showSelectedIcon: false,
-          segments: const [
-            ButtonSegment(value: 'all', label: Text('الكل')),
-            ButtonSegment(value: 'auto', label: Text('آلي')),
-            ButtonSegment(value: 'manual', label: Text('يدوي')),
+          segments:  [
+            ButtonSegment(value: 'all', label: Text(tr('الكل'))),
+            ButtonSegment(value: 'auto', label: Text(tr('آلي'))),
+            ButtonSegment(value: 'manual', label: Text(tr('يدوي'))),
           ],
           selected: {_filterType},
           onSelectionChanged: (s) => setState(() => _filterType = s.first),
@@ -285,10 +286,10 @@ class _JournalEntriesPicPosScreenState
         // أخلت مكانَها لبطاقات الإجماليّات الأربع.
         SegmentedButton<String>(
           showSelectedIcon: false,
-          segments: const [
-            ButtonSegment(value: 'all', label: Text('كل الحالات')),
-            ButtonSegment(value: 'posted', label: Text('مرحّل')),
-            ButtonSegment(value: 'pending', label: Text('بانتظار الاعتماد')),
+          segments:  [
+            ButtonSegment(value: 'all', label: Text(tr('كل الحالات'))),
+            ButtonSegment(value: 'posted', label: Text(tr('مرحّل'))),
+            ButtonSegment(value: 'pending', label: Text(tr('بانتظار الاعتماد'))),
           ],
           selected: {_filterStatus},
           onSelectionChanged: (s) => setState(() => _filterStatus = s.first),
@@ -302,13 +303,13 @@ class _JournalEntriesPicPosScreenState
               data: (list) {
                 if (list.isEmpty) return const SizedBox.shrink();
                 final label = switch (_filterBranchId) {
-                  null => 'كل الفروع',
-                  _noBranchSentinel => 'بدون فرع',
+                  null => tr('كل الفروع'),
+                  _noBranchSentinel => tr('بدون فرع'),
                   final id => list
                           .where((b) => b.id == id)
                           .map((b) => b.name)
                           .firstOrNull ??
-                      'الفرع',
+                      tr('الفرع'),
                 };
                 return _Chip(
                   icon: PhosphorIconsBold.buildings,
@@ -332,17 +333,17 @@ class _JournalEntriesPicPosScreenState
     Map<int, ({double debit, double credit})> totals,
   ) {
     if (all.isEmpty) {
-      return const PicPosEmptyState(
+      return  PicPosEmptyState(
         icon: PhosphorIconsBold.notebook,
-        title: 'لا قيودَ في هذه الفترة',
-        hint: 'وسّع المدى الزمنيَّ أو أنشئ قيداً يدويّاً.',
+        title: tr('لا قيودَ في هذه الفترة'),
+        hint: tr('وسّع المدى الزمنيَّ أو أنشئ قيداً يدويّاً.'),
       );
     }
     if (shown.isEmpty) {
       return PicPosEmptyState(
         icon: PhosphorIconsBold.funnel,
-        title: 'لا قيدَ يطابق الترشيح',
-        hint: 'من ${all.length} قيداً في الفترة.',
+        title: tr('لا قيدَ يطابق الترشيح'),
+        hint: tr('من {p0} قيداً في الفترة.', {'p0': all.length}),
         action: TextButton.icon(
           onPressed: () {
             _searchController.clear();
@@ -354,7 +355,7 @@ class _JournalEntriesPicPosScreenState
             });
           },
           icon: const Icon(PhosphorIconsBold.x, size: 14),
-          label: const Text('امسح المرشِّحات'),
+          label:  Text(tr('امسح المرشِّحات')),
         ),
       );
     }
@@ -428,20 +429,20 @@ class _JournalEntriesPicPosScreenState
       context: context,
       builder: (ctx) => PicPosDialog(
         icon: PhosphorIconsBold.buildings,
-        title: 'الفرع',
+        title: tr('الفرع'),
         width: 460,
         onCancel: () => Navigator.pop(ctx),
         body: [
           ListTile(
             dense: true,
-            title: const Text('كل الفروع'),
+            title:  Text(tr('كل الفروع')),
             onTap: () => Navigator.pop(ctx, (null,)),
           ),
           ListTile(
             dense: true,
-            title: const Text('بدون فرع'),
-            subtitle: const Text('قيود قديمة بلا فرع مسجَّل',
-                style: TextStyle(fontSize: 11)),
+            title:  Text(tr('بدون فرع')),
+            subtitle:  Text(tr('قيود قديمة بلا فرع مسجَّل'),
+                style: const TextStyle(fontSize: 11)),
             onTap: () => Navigator.pop(ctx, (_noBranchSentinel,)),
           ),
           const Divider(height: 1),
@@ -481,19 +482,19 @@ class _JournalEntriesPicPosScreenState
     return [
       PicPosDialogSummary(
         rows: [
-          (label: 'رقم القيد', value: entry.entryNumber, color: null),
+          (label: tr('رقم القيد'), value: entry.entryNumber, color: null),
           (
-            label: 'البيان',
+            label: tr('البيان'),
             value: cleanDescription(entry.description),
             color: null,
           ),
           (
-            label: 'التاريخ',
+            label: tr('التاريخ'),
             value: _dateFormat.format(entry.entryDate),
             color: null,
           ),
           (
-            label: 'القيمة',
+            label: tr('القيمة'),
             value: total < 0
                 ? '—'
                 : '${total.toStringAsFixed(AppConstants.decimalPlaces)} '
@@ -515,12 +516,12 @@ class _JournalEntriesPicPosScreenState
     final confirmed = await showPicPosConfirm(
       context,
       icon: PhosphorIconsBold.checkCircle,
-      title: 'اعتماد القيد',
+      title: tr('اعتماد القيد'),
       subtitle: '${entry.entryNumber} · ${_dateFormat.format(entry.entryDate)}',
       accent: AppColors.success,
       message: 'بعد الاعتماد يصبح القيدُ مؤثّراً على أرصدة الحسابات ولا يمكن '
           'تعديله — يمكن عكسُه بقيدٍ مضادٍّ فقط.',
-      confirmLabel: 'تأكيد الاعتماد',
+      confirmLabel: tr('تأكيد الاعتماد'),
       details: details,
     );
     if (!confirmed || !mounted) return;
@@ -530,12 +531,12 @@ class _JournalEntriesPicPosScreenState
       final approverId = ref.read(authProvider).user?.id ?? 0;
       await repo.approveJournalEntry(entry.id, approverId);
       if (mounted) {
-        AppToast.show(context, 'تم اعتماد القيد بنجاح',
+        AppToast.show(context, tr('تم اعتماد القيد بنجاح'),
             type: ToastType.success);
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في اعتماد القيد: $e',
+        AppToast.show(context, tr('خطأ في اعتماد القيد: {e}', {'e': e}),
             type: ToastType.error);
       }
     }
@@ -582,7 +583,7 @@ class _JournalEntriesPicPosScreenState
       );
       if (entries.isEmpty) {
         if (mounted) {
-          AppToast.show(context, 'لا توجد قيود للطباعة في هذه الفترة',
+          AppToast.show(context, tr('لا توجد قيود للطباعة في هذه الفترة'),
               type: ToastType.warning);
         }
         return;
@@ -613,7 +614,7 @@ class _JournalEntriesPicPosScreenState
       );
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -625,7 +626,7 @@ class _JournalEntriesPicPosScreenState
       );
       if (entries.isEmpty) {
         if (mounted) {
-          AppToast.show(context, 'لا توجد قيود للتصدير في هذه الفترة',
+          AppToast.show(context, tr('لا توجد قيود للتصدير في هذه الفترة'),
               type: ToastType.warning);
         }
         return;
@@ -638,7 +639,7 @@ class _JournalEntriesPicPosScreenState
           entry.entryNumber,
           _dateFormat.format(entry.entryDate),
           cleanDescription(entry.description),
-          entry.isAutoPosted ? 'آلي' : 'يدوي',
+          entry.isAutoPosted ? tr('آلي') : tr('يدوي'),
           '',
           '',
         ]);
@@ -658,13 +659,13 @@ class _JournalEntriesPicPosScreenState
       await ExcelExportHelper.export(
         context: context,
         title: journalEntriesScreenLabel,
-        headers: const [
-          'رقم القيد',
-          'التاريخ',
-          'رمز الحساب',
-          'اسم الحساب / البيان',
-          'مدين',
-          'دائن',
+        headers:  [
+          tr('رقم القيد'),
+          tr('التاريخ'),
+          tr('رمز الحساب'),
+          tr('اسم الحساب / البيان'),
+          tr('مدين'),
+          tr('دائن'),
         ],
         rows: rows,
         fromDate: _dateFrom,
@@ -672,7 +673,7 @@ class _JournalEntriesPicPosScreenState
       );
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في التصدير: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في التصدير: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -687,18 +688,18 @@ class _JournalEntriesPicPosScreenState
     final confirmed = await showPicPosConfirm(
       context,
       icon: PhosphorIconsBold.arrowUUpLeft,
-      title: 'عكس القيد',
+      title: tr('عكس القيد'),
       subtitle: '${entry.entryNumber} · ${_dateFormat.format(entry.entryDate)}',
       accent: AppColors.warning,
       message: [
-        'هل أنت متأكد من عكس هذا القيد؟',
-        'سيُنشأ قيدٌ عكسيٌّ بمبالغَ معكوسة (المدين يصبح دائناً والعكس).',
+        tr('هل أنت متأكد من عكس هذا القيد؟'),
+        tr('سيُنشأ قيدٌ عكسيٌّ بمبالغَ معكوسة (المدين يصبح دائناً والعكس).'),
         // ⚠️ تحذيرُ MJE-2 — يُحذَّر ولا يُمنَع.
         if (entry.isAutoPosted)
           'هذا قيدٌ آليّ — الأفضل عكسُه من المستند المصدر '
               '(الفاتورة/السند)، وإلّا افترق الأستاذُ عن حالة المستند.',
       ].join('\n\n'),
-      confirmLabel: 'تأكيد العكس',
+      confirmLabel: tr('تأكيد العكس'),
       details: details,
     );
     if (!confirmed || !mounted) return;
@@ -712,18 +713,18 @@ class _JournalEntriesPicPosScreenState
       // بـ(referenceType, referenceId) — راجع توثيقَ الدالّة.
       final newEntryId = await service.reverseJournalEntryById(
         entryId: entry.id,
-        descriptionPrefix: 'عكس قيد: ${entry.entryNumber}',
+        descriptionPrefix: tr('عكس قيد: {p0}', {'p0': entry.entryNumber}),
       );
       if (!mounted) return;
       if (newEntryId > 0) {
-        AppToast.show(context, 'تم عكس القيد بنجاح', type: ToastType.success);
+        AppToast.show(context, tr('تم عكس القيد بنجاح'), type: ToastType.success);
       } else {
-        AppToast.show(context, 'القيد معكوس بالفعل أو تعذّر العكس',
+        AppToast.show(context, tr('القيد معكوس بالفعل أو تعذّر العكس'),
             type: ToastType.warning);
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في عكس القيد: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في عكس القيد: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -813,7 +814,7 @@ class _TotalsBar extends StatelessWidget {
       children: [
         Expanded(
           child: _TotalCard(
-            label: 'عدد القيود',
+            label: tr('عدد القيود'),
             value: '${entries.length}',
             tint: AppColors.primary,
             icon: PhosphorIconsBold.notebook,
@@ -822,7 +823,7 @@ class _TotalsBar extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: _TotalCard(
-            label: 'إجمالي المدين',
+            label: tr('إجمالي المدين'),
             value: journalMoney.format(page.debit),
             tint: AppColors.info,
             icon: PhosphorIconsBold.arrowDownLeft,
@@ -831,7 +832,7 @@ class _TotalsBar extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: _TotalCard(
-            label: 'إجمالي الدائن',
+            label: tr('إجمالي الدائن'),
             value: journalMoney.format(page.credit),
             tint: AppColors.info,
             icon: PhosphorIconsBold.arrowUpRight,
@@ -840,7 +841,7 @@ class _TotalsBar extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: _TotalCard(
-            label: 'الفرق',
+            label: tr('الفرق'),
             value: journalMoney.format(page.difference),
             tint: (page.isBalanced && !anyBroken)
                 ? AppColors.success
@@ -849,7 +850,7 @@ class _TotalsBar extends StatelessWidget {
             // 🔴 المجموعُ متّزنٌ وفي الصفحة قيدٌ مكسور — الحالةُ التي يُخفيها
             //    الرقمُ وحدَه، فتُقال نصّاً لا لوناً فقط.
             hint: (page.isBalanced && anyBroken)
-                ? 'بينها قيدٌ غيرُ متوازن'
+                ? tr('بينها قيدٌ غيرُ متوازن')
                 : null,
           ),
         ),
@@ -1009,14 +1010,14 @@ class _EntryCard extends StatelessWidget {
                     ),
                   ),
                   _Badge(
-                    label: auto ? 'آلي' : 'يدوي',
+                    label: auto ? tr('آلي') : tr('يدوي'),
                     tint: tint,
                   ),
                   const SizedBox(width: 6),
                   // «الحالة» — و«مرحّل» تُقال صراحةً لا بغياب شارة: الفرقُ
                   // بين «دخل الأستاذَ» و«ينتظر» هو ما يحكم زرَّ العكس تحته.
                   _Badge(
-                    label: entry.isPosted ? 'مرحّل' : 'بانتظار الاعتماد',
+                    label: entry.isPosted ? tr('مرحّل') : tr('بانتظار الاعتماد'),
                     tint: entry.isPosted ? AppColors.success : AppColors.error,
                   ),
                   const SizedBox(width: 6),
@@ -1035,7 +1036,7 @@ class _EntryCard extends StatelessWidget {
                   // سيُخفي الفعلَ كلَّه من الشاشة المفروكة.
                   if (entry.needsApproval)
                     IconButton(
-                      tooltip: 'اعتماد القيد',
+                      tooltip: tr('اعتماد القيد'),
                       iconSize: 15,
                       visualDensity: VisualDensity.compact,
                       color: AppColors.success,
@@ -1048,8 +1049,8 @@ class _EntryCard extends StatelessWidget {
                   // الشاشة الأصليّة ومن أيّ سكربت).
                   IconButton(
                     tooltip: entry.isPosted
-                        ? 'عكس القيد'
-                        : 'مسودة لم تُرحَّل — تُعتمَد أو تُعدَّل، ولا تُعكَس',
+                        ? tr('عكس القيد')
+                        : tr('مسودة لم تُرحَّل — تُعتمَد أو تُعدَّل، ولا تُعكَس'),
                     iconSize: 15,
                     visualDensity: VisualDensity.compact,
                     icon: const Icon(PhosphorIconsBold.arrowUUpLeft),
@@ -1174,7 +1175,7 @@ class _EntryFooter extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           field(
-            'المنشئ',
+            tr('المنشئ'),
             FutureBuilder<String?>(
               future: repo.getJournalEntryCreator(entry.id),
               builder: (context, snap) {
@@ -1185,7 +1186,7 @@ class _EntryFooter extends StatelessWidget {
                 if (name != null) return plain(name);
                 // آليٌّ ⇒ يُسمّى آليّاً؛ ويدويٌّ بلا منشئٍ ⇒ «—» لا اسمٌ.
                 return Text(
-                  entry.isAutoPosted ? 'ترحيل آلي' : '—',
+                  entry.isAutoPosted ? tr('ترحيل آلي') : '—',
                   style: text.labelMedium
                       ?.copyWith(fontWeight: FontWeight.w700, color: muted),
                 );
@@ -1193,7 +1194,7 @@ class _EntryFooter extends StatelessWidget {
             ),
           ),
           field(
-            'المرجع',
+            tr('المرجع'),
             plain((entry.reference?.trim().isNotEmpty ?? false)
                 ? entry.reference!.trim()
                 : '—'),
@@ -1316,15 +1317,15 @@ class _LinesTable extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Row(
               children: [
-                SizedBox(width: 90, child: cell('رمز الحساب', head: true)),
-                Expanded(child: cell('اسم الحساب', head: true)),
-                Expanded(child: cell('البيان', head: true)),
+                SizedBox(width: 90, child: cell(tr('رمز الحساب'), head: true)),
+                Expanded(child: cell(tr('اسم الحساب'), head: true)),
+                Expanded(child: cell(tr('البيان'), head: true)),
                 SizedBox(
                     width: 110,
-                    child: cell('مدين', head: true, align: TextAlign.end)),
+                    child: cell(tr('مدين'), head: true, align: TextAlign.end)),
                 SizedBox(
                     width: 110,
-                    child: cell('دائن', head: true, align: TextAlign.end)),
+                    child: cell(tr('دائن'), head: true, align: TextAlign.end)),
               ],
             ),
           ),
@@ -1364,7 +1365,7 @@ class _LinesTable extends StatelessWidget {
             child: Row(
               children: [
                 _Badge(
-                  label: balanced ? 'متوازن' : 'غير متوازن',
+                  label: balanced ? tr('متوازن') : tr('غير متوازن'),
                   tint: balanced ? AppColors.success : AppColors.error,
                 ),
                 const SizedBox(width: 8),
@@ -1373,7 +1374,7 @@ class _LinesTable extends StatelessWidget {
                 // 🔴 **والشارةُ وحدَها لا تكفي**: «غير متوازن» لا تقول
                 // بكم ولا في أيّ اتّجاه، فلا يُعرَف أهو ضجيجُ تقريبٍ أم
                 // سطرٌ ناقص. والرقمُ **بإشارته**: موجبٌ مدينٌ زائد.
-                Text('الفرق', style: text.labelSmall
+                Text(tr('الفرق'), style: text.labelSmall
                     ?.copyWith(color: AppColors.textMuted)),
                 const SizedBox(width: 5),
                 Text(
@@ -1386,7 +1387,7 @@ class _LinesTable extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                Text('الإجمالي',
+                Text(tr('الإجمالي'),
                     style: text.labelMedium
                         ?.copyWith(fontWeight: FontWeight.w800)),
                 const SizedBox(width: 12),
@@ -1411,7 +1412,7 @@ class _LinesTable extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 IconButton(
-                  tooltip: 'طباعة القيد',
+                  tooltip: tr('طباعة القيد'),
                   iconSize: 15,
                   visualDensity: VisualDensity.compact,
                   icon: const Icon(PhosphorIconsBold.printer),

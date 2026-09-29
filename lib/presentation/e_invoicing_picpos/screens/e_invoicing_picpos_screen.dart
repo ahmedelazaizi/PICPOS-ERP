@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 // شاشةُ «الفوترة الإلكترونية» بهويّة PicPos — على تصميم
 // `PicPos E-Invoicing.dc.html`.
@@ -79,21 +80,21 @@ String _ar(Object n) =>
     '$n'.replaceAllMapped(RegExp(r'\d'), (m) => '٠١٢٣٤٥٦٧٨٩'[int.parse(m[0]!)]);
 
 /// الحالاتُ الستّ — نفسُ الرموز التي يكتبها عمودُ `status`.
-const Map<String, ({String label, IconData icon, Color tint})> _kStatuses = {
-  'pending': (label: 'معلَّقة', icon: PhosphorIconsBold.clock, tint: _warn),
+Map<String, ({String label, IconData icon, Color tint})> get _kStatuses => {
+  'pending': (label: tr('معلَّقة'), icon: PhosphorIconsBold.clock, tint: _warn),
   'submitted': (
-    label: 'مُرسَلة',
+    label: tr('مُرسَلة'),
     icon: PhosphorIconsBold.paperPlaneTilt,
     tint: _blue
   ),
-  'valid': (label: 'مقبولة', icon: PhosphorIconsBold.sealCheck, tint: _ok),
+  'valid': (label: tr('مقبولة'), icon: PhosphorIconsBold.sealCheck, tint: _ok),
   'invalid': (
-    label: 'غير صحيحة',
+    label: tr('غير صحيحة'),
     icon: PhosphorIconsBold.warningOctagon,
     tint: _err
   ),
-  'rejected': (label: 'مرفوضة', icon: PhosphorIconsBold.xCircle, tint: _err),
-  'cancelled': (label: 'ملغاة', icon: PhosphorIconsBold.prohibit, tint: _idle),
+  'rejected': (label: tr('مرفوضة'), icon: PhosphorIconsBold.xCircle, tint: _err),
+  'cancelled': (label: tr('ملغاة'), icon: PhosphorIconsBold.prohibit, tint: _idle),
 };
 
 /// ترتيبُ المراحل في شريط العدّادات — نفسُ ترتيب التصميم.
@@ -107,35 +108,35 @@ const _kStageOrder = [
 ];
 
 /// أنواعُ المستندات الخمسة.
-const Map<String, ({String label, IconData icon, Color tint})> _kDocTypes = {
-  'invoice': (label: 'فاتورة', icon: PhosphorIconsBold.receipt, tint: AppColors.primary),
+Map<String, ({String label, IconData icon, Color tint})> get _kDocTypes => {
+  'invoice': (label: tr('فاتورة'), icon: PhosphorIconsBold.receipt, tint: AppColors.primary),
   'credit_note': (
-    label: 'إشعار دائن',
+    label: tr('إشعار دائن'),
     icon: PhosphorIconsBold.arrowUUpLeft,
     tint: _ok
   ),
   'debit_note': (
-    label: 'إشعار مدين',
+    label: tr('إشعار مدين'),
     icon: PhosphorIconsBold.arrowUUpRight,
     tint: _warn
   ),
   'export_invoice': (
-    label: 'فاتورة تصدير',
+    label: tr('فاتورة تصدير'),
     icon: PhosphorIconsBold.airplaneTilt,
     tint: _purple
   ),
-  'receipt': (label: 'إيصال', icon: PhosphorIconsBold.note, tint: _idle),
+  'receipt': (label: tr('إيصال'), icon: PhosphorIconsBold.note, tint: _idle),
 };
 
 /// المنصّتان اللتان يعرفهما التصميمُ والعمودُ `platform` معاً.
-const Map<String, ({String name, IconData icon, Color tint})> _kPlatforms = {
+Map<String, ({String name, IconData icon, Color tint})> get _kPlatforms => {
   'eta': (
-    name: 'منظومة الضرائب المصرية — ETA',
+    name: tr('منظومة الضرائب المصرية — ETA'),
     icon: PhosphorIconsBold.shieldCheck,
     tint: AppColors.primary
   ),
   'jofotara': (
-    name: 'JOFOTARA — الأردن',
+    name: tr('JOFOTARA — الأردن'),
     icon: PhosphorIconsBold.globeHemisphereEast,
     tint: _purple
   ),
@@ -326,9 +327,9 @@ class _EInvoicingPicposScreenState
         .toList();
 
     return PicPosScreenScaffold(
-      title: 'الفوترة الإلكترونية',
+      title: tr('الفوترة الإلكترونية'),
       subtitle:
-          'إرسال الفواتير لمنظومة الضرائب ومتابعة حالتها — كل تغيير حالة يُسجَّل ولا يُحذف',
+          tr('إرسال الفواتير لمنظومة الضرائب ومتابعة حالتها — كل تغيير حالة يُسجَّل ولا يُحذف'),
       icon: PhosphorIconsBold.broadcast,
       headerActions: [
         // «تحديث الحالات» — الفعلُ الثاني في رأس التصميم، وكان غائباً.
@@ -347,7 +348,7 @@ class _EInvoicingPicposScreenState
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(PhosphorIconsBold.arrowsClockwise, size: 15),
-          label: Text('تحديث الحالات (${_ar(awaiting.length)})'),
+          label: Text(tr('تحديث الحالات ({p0})', {'p0': _ar(awaiting.length)})),
         ),
         const SizedBox(width: 8),
         // 🔴 **حارسُ `einvoiceSubmit` واجب.** الإرسالُ فعلٌ خارجيٌّ قانونيّ:
@@ -363,7 +364,7 @@ class _EInvoicingPicposScreenState
           child: FilledButton.icon(
             onPressed: pending == 0 ? null : () => _submitPending(pending),
             icon: const Icon(PhosphorIconsBold.paperPlaneTilt, size: 15),
-            label: Text('إرسال المعلَّقة (${_ar(pending)})'),
+            label: Text(tr('إرسال المعلَّقة ({p0})', {'p0': _ar(pending)})),
           ),
         ),
       ],
@@ -390,9 +391,9 @@ class _EInvoicingPicposScreenState
                         SizedBox(
                           width: 600,
                           child: selected == null
-                              ? const PicPosEmptyState(
+                              ?  PicPosEmptyState(
                                   icon: PhosphorIconsBold.broadcast,
-                                  title: 'اختر مستنداً من الطابور',
+                                  title: tr('اختر مستنداً من الطابور'),
                                 )
                               : _detailPane(selected),
                         ),
@@ -453,13 +454,13 @@ class _EInvoicingPicposScreenState
     final config = ref.watch(_configProvider(id));
 
     return config.when(
-      loading: () => _platformShell(meta, null, sentToday, 'يُقرأ الإعداد…'),
+      loading: () => _platformShell(meta, null, sentToday, tr('يُقرأ الإعداد…')),
       // العارضُ يبتلع رمْيَ SQL في بطاقة — فالإخفاقُ يُقال صراحةً.
       error: (_, _) =>
-          _platformShell(meta, null, sentToday, 'تعذّرت قراءةُ إعداد المنصّة'),
+          _platformShell(meta, null, sentToday, tr('تعذّرت قراءةُ إعداد المنصّة')),
       data: (cfg) {
         if (cfg == null) {
-          return _platformShell(meta, null, sentToday, 'لم تُعَدَّ بعد');
+          return _platformShell(meta, null, sentToday, tr('لم تُعَدَّ بعد'));
         }
         return _platformShell(
           meta,
@@ -516,10 +517,10 @@ class _EInvoicingPicposScreenState
                           overflow: TextOverflow.ellipsis),
                     ),
                     const SizedBox(width: 7),
-                    _pill(isProduction ? 'إنتاج' : 'تجريبي',
+                    _pill(isProduction ? tr('إنتاج') : tr('تجريبي'),
                         isProduction ? _err : _warn),
                     const SizedBox(width: 5),
-                    _pill(isEnabled ? 'مُفعَّل' : 'موقوف',
+                    _pill(isEnabled ? tr('مُفعَّل') : tr('موقوف'),
                         isEnabled ? _ok : _idle),
                   ],
                 ),
@@ -544,7 +545,7 @@ class _EInvoicingPicposScreenState
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                       color: meta.tint)),
-              Text('مُرسَلة اليوم',
+              Text(tr('مُرسَلة اليوم'),
                   style: TextStyle(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w700,
@@ -561,7 +562,7 @@ class _EInvoicingPicposScreenState
           PermissionGuard(
             permission: PermissionCodes.settingsTax,
             child: IconButton(
-              tooltip: 'إعداد المنصّة',
+              tooltip: tr('إعداد المنصّة'),
               iconSize: 17,
               visualDensity: VisualDensity.compact,
               icon: const Icon(PhosphorIconsBold.gearSix),
@@ -589,7 +590,7 @@ class _EInvoicingPicposScreenState
     await initializeEInvoiceService(ref, platform);
     if (!mounted) return;
     ref.invalidate(_configProvider(platform));
-    _toast('حُفظ إعدادُ المنصّة');
+    _toast(tr('حُفظ إعدادُ المنصّة'));
   }
 
   // ═════════════════════════════════════════════════════════════════════════
@@ -692,15 +693,15 @@ class _EInvoicingPicposScreenState
               Icon(PhosphorIconsBold.queue,
                   size: 16, color: context.picposBrandInk),
               const SizedBox(width: 9),
-              const Text('طابور الإرسال',
-                  style: TextStyle(
+               Text(tr('طابور الإرسال'),
+                  style: const TextStyle(
                       fontSize: 13.5, fontWeight: FontWeight.w800)),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
                   _stage == null
-                      ? '${_ar(all.length)} مستنداً'
-                      : 'مُصفّى على «${_kStatuses[_stage]!.label}» — ${_ar(visible.length)} مستنداً',
+                      ? tr('{p0} مستنداً', {'p0': _ar(all.length)})
+                      : tr('مُصفّى على «{p0}» — {p1} مستنداً', {'p0': _kStatuses[_stage]!.label, 'p1': _ar(visible.length)}),
                   style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -717,8 +718,8 @@ class _EInvoicingPicposScreenState
               ? PicPosEmptyState(
                   icon: PhosphorIconsBold.queue,
                   title: all.isEmpty
-                      ? 'لا مستنداتٍ في الطابور'
-                      : 'لا مستندَ يطابق الترشيح',
+                      ? tr('لا مستنداتٍ في الطابور')
+                      : tr('لا مستندَ يطابق الترشيح'),
                   hint: all.isEmpty
                       ? 'المستندُ يُنشأ من فاتورة البيع بعد ترحيلها، ثمّ '
                           'يُرسَل للمنظومة ويُتابَع حتّى يُقبَل.'
@@ -846,7 +847,7 @@ class _EInvoicingPicposScreenState
                           fontWeight: FontWeight.w800,
                           fontFamily: AppTypography.mono),
                       overflow: TextOverflow.ellipsis),
-                  Text(r.invoiceNumber ?? 'فاتورة #${r.saleId}',
+                  Text(r.invoiceNumber ?? tr('فاتورة #{p0}', {'p0': r.saleId}),
                       style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
@@ -884,7 +885,7 @@ class _EInvoicingPicposScreenState
                   if (r.retryCount > 0)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
-                      child: Text('أُعيدت ${_ar(r.retryCount)} مرات',
+                      child: Text(tr('أُعيدت {p0} مرات', {'p0': _ar(r.retryCount)}),
                           style: const TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w700,
@@ -912,7 +913,7 @@ class _EInvoicingPicposScreenState
                   ),
                   Text(
                     r.submittedAt == null
-                        ? 'لم تُرسَل'
+                        ? tr('لم تُرسَل')
                         : _stamp.format(r.submittedAt!),
                     style: TextStyle(
                         fontSize: 9.5,
@@ -1047,7 +1048,7 @@ class _EInvoicingPicposScreenState
             child: OutlinedButton.icon(
               onPressed: null,
               icon: const Icon(PhosphorIconsBold.cloudArrowUp, size: 14),
-              label: const Text('الإرسال يتم من الخادم'),
+              label:  Text(tr('الإرسال يتم من الخادم')),
             ),
           ),
           const SizedBox(width: 8),
@@ -1055,7 +1056,7 @@ class _EInvoicingPicposScreenState
             child: OutlinedButton.icon(
               onPressed: () => _refreshStatus(r),
               icon: const Icon(PhosphorIconsBold.arrowsClockwise, size: 14),
-              label: const Text('فحص الحالة'),
+              label:  Text(tr('فحص الحالة')),
             ),
           ),
         ] else ...[
@@ -1067,12 +1068,12 @@ class _EInvoicingPicposScreenState
             fallback: OutlinedButton.icon(
               onPressed: null,
               icon: const Icon(PhosphorIconsBold.lockSimple, size: 14),
-              label: const Text('الإرسال يحتاج صلاحية'),
+              label:  Text(tr('الإرسال يحتاج صلاحية')),
             ),
             child: FilledButton.icon(
               onPressed: canSend ? () => _submitOne(r) : null,
               icon: const Icon(PhosphorIconsBold.paperPlaneTilt, size: 14),
-              label: Text(r.status == 'pending' ? 'إرسال الآن' : 'إعادة إرسال'),
+              label: Text(r.status == 'pending' ? tr('إرسال الآن') : tr('إعادة إرسال')),
             ),
           ),
         ),
@@ -1081,7 +1082,7 @@ class _EInvoicingPicposScreenState
           child: OutlinedButton.icon(
             onPressed: () => _refreshStatus(r),
             icon: const Icon(PhosphorIconsBold.arrowsClockwise, size: 14),
-            label: const Text('فحص الحالة'),
+            label:  Text(tr('فحص الحالة')),
           ),
         ),
         // ⚠️ **إلغاءُ المستند** — كان الرأسُ يقول إنّ الغلافَ «لا يكشف
@@ -1101,7 +1102,7 @@ class _EInvoicingPicposScreenState
               child: OutlinedButton.icon(
                 onPressed: () => _cancelDocument(r),
                 icon: const Icon(PhosphorIconsBold.prohibit, size: 14),
-                label: const Text('إلغاء المستند'),
+                label:  Text(tr('إلغاء المستند')),
               ),
             ),
           ),
@@ -1121,7 +1122,7 @@ class _EInvoicingPicposScreenState
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('إلغاء المستند لدى المنظومة'),
+        title:  Text(tr('إلغاء المستند لدى المنظومة')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1131,9 +1132,9 @@ class _EInvoicingPicposScreenState
             TextField(
               controller: reasonCtl,
               autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'سبب الإلغاء',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('سبب الإلغاء'),
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
             ),
@@ -1142,10 +1143,10 @@ class _EInvoicingPicposScreenState
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('تراجع')),
+              child:  Text(tr('تراجع'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('إلغاء المستند')),
+              child:  Text(tr('إلغاء المستند'))),
         ],
       ),
     );
@@ -1155,7 +1156,7 @@ class _EInvoicingPicposScreenState
     if (ok != true || !mounted) return;
 
     if (reason.isEmpty) {
-      _toast('الإلغاء يحتاج سبباً — لم يُرسَل شيء');
+      _toast(tr('الإلغاء يحتاج سبباً — لم يُرسَل شيء'));
       return;
     }
 
@@ -1165,29 +1166,29 @@ class _EInvoicingPicposScreenState
       final done = await wrapper.cancelDocument(r.documentUuid!, reason);
       if (!done) {
         if (!mounted) return;
-        _toast('لم تقبل المنظومةُ الإلغاء');
+        _toast(tr('لم تقبل المنظومةُ الإلغاء'));
         return;
       }
       await repo.updateSubmissionStatus(r.id, 'cancelled');
       if (!mounted) return;
-      _toast('أُلغي ${r.reference}');
+      _toast(tr('أُلغي {p0}', {'p0': r.reference}));
     } catch (e) {
       // الإخفاقُ يُقال — ولا يُوسَم المستندُ ملغىً وهو قائمٌ لدى البوّابة.
       if (!mounted) return;
-      _toast('تعذّر الإلغاء: $e');
+      _toast(tr('تعذّر الإلغاء: {e}', {'e': e}));
     }
   }
 
   Widget _idsPanel(_Row r) {
     final ids = <({String label, String value})>[
-      (label: 'معرّف المستند', value: r.documentUuid ?? 'لم يصدر معرّف بعد'),
-      (label: 'المعرّف الطويل', value: r.longId ?? '—'),
-      (label: 'معرّف الإرسال', value: r.submissionId ?? '—'),
-      (label: 'هاش المستند', value: r.hashKey ?? 'يُحسب عند الإرسال'),
+      (label: tr('معرّف المستند'), value: r.documentUuid ?? tr('لم يصدر معرّف بعد')),
+      (label: tr('المعرّف الطويل'), value: r.longId ?? '—'),
+      (label: tr('معرّف الإرسال'), value: r.submissionId ?? '—'),
+      (label: tr('هاش المستند'), value: r.hashKey ?? tr('يُحسب عند الإرسال')),
       (
-        label: 'كود QR',
+        label: tr('كود QR'),
         value: (r.qrCode ?? '').trim().isEmpty
-            ? 'لا يصدر إلا بعد القبول'
+            ? tr('لا يصدر إلا بعد القبول')
             : r.qrCode!
       ),
     ];
@@ -1197,8 +1198,8 @@ class _EInvoicingPicposScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const PicPosSectionHeader(
-            title: 'معرّفات المستند',
+           PicPosSectionHeader(
+            title: tr('معرّفات المستند'),
             icon: PhosphorIconsBold.hash,
           ),
           for (final d in ids)
@@ -1226,11 +1227,11 @@ class _EInvoicingPicposScreenState
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     icon: const Icon(PhosphorIconsBold.copy, size: 14),
-                    tooltip: 'نسخ',
+                    tooltip: tr('نسخ'),
                     onPressed: () async {
                       await Clipboard.setData(ClipboardData(text: d.value));
                       if (!mounted) return;
-                      _toast('نُسخ «${d.label}»');
+                      _toast(tr('نُسخ «{p0}»', {'p0': d.label}));
                     },
                   ),
                 ],
@@ -1258,15 +1259,15 @@ class _EInvoicingPicposScreenState
               const Icon(PhosphorIconsBold.warningOctagon,
                   size: 16, color: _err),
               const SizedBox(width: 8),
-              const Expanded(
-                child: Text('رفضُ المنظومة',
-                    style: TextStyle(
+               Expanded(
+                child: Text(tr('رفضُ المنظومة'),
+                    style: const TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,
                         color: _err)),
               ),
               if (r.retryCount > 0)
-                Text('أُعيدت ${_ar(r.retryCount)} مرات',
+                Text(tr('أُعيدت {p0} مرات', {'p0': _ar(r.retryCount)}),
                     style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
@@ -1294,15 +1295,15 @@ class _EInvoicingPicposScreenState
         children: [
           Row(
             children: [
-              const Expanded(
-                child: Text('الحِمل المُرسَل والرد',
-                    style: TextStyle(
+               Expanded(
+                child: Text(tr('الحِمل المُرسَل والرد'),
+                    style: const TextStyle(
                         fontSize: 12.5, fontWeight: FontWeight.w800)),
               ),
-              _rawTab('الحِمل المُرسَل', !_showResponse,
+              _rawTab(tr('الحِمل المُرسَل'), !_showResponse,
                   () => setState(() => _showResponse = false)),
               const SizedBox(width: 6),
-              _rawTab('رد المنظومة', _showResponse,
+              _rawTab(tr('رد المنظومة'), _showResponse,
                   () => setState(() => _showResponse = true)),
             ],
           ),
@@ -1322,8 +1323,8 @@ class _EInvoicingPicposScreenState
                 child: SelectableText(
                   (body ?? '').trim().isEmpty
                       ? (_showResponse
-                          ? '// لا ردَّ بعد — لم يُرسَل المستند'
-                          : '// لا حِملَ محفوظاً لهذا المستند')
+                          ? tr('// لا ردَّ بعد — لم يُرسَل المستند')
+                          : tr('// لا حِملَ محفوظاً لهذا المستند'))
                       : body!,
                   textDirection: TextDirection.ltr,
                   style: const TextStyle(
@@ -1378,9 +1379,9 @@ class _EInvoicingPicposScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const PicPosSectionHeader(
-            title: 'سجل الحالات',
-            subtitle: 'سجل إضافة فقط — لا تعديل ولا حذف لأي سطر',
+           PicPosSectionHeader(
+            title: tr('سجل الحالات'),
+            subtitle: tr('سجل إضافة فقط — لا تعديل ولا حذف لأي سطر'),
             icon: PhosphorIconsBold.lockSimple,
           ),
           audit.when(
@@ -1390,7 +1391,7 @@ class _EInvoicingPicposScreenState
             ),
             error: (_, _) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              child: Text('تعذّرت قراءةُ سجلّ الحالات',
+              child: Text(tr('تعذّرت قراءةُ سجلّ الحالات'),
                   style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -1399,7 +1400,7 @@ class _EInvoicingPicposScreenState
             data: (rows) => rows.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    child: Text('لا تغييراتِ حالةٍ مسجَّلةً بعد',
+                    child: Text(tr('لا تغييراتِ حالةٍ مسجَّلةً بعد'),
                         style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -1499,16 +1500,16 @@ class _EInvoicingPicposScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const PicPosSectionHeader(
-            title: 'الضرائب المطبَّقة على المستند',
-            subtitle: 'مقروءة من الحِمل المُرسَل — لا من جدول أنواع الضرائب',
+           PicPosSectionHeader(
+            title: tr('الضرائب المطبَّقة على المستند'),
+            subtitle: tr('مقروءة من الحِمل المُرسَل — لا من جدول أنواع الضرائب'),
             icon: PhosphorIconsBold.percent,
           ),
           if (taxes.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 14),
               child: Text(
-                'لا ضرائبَ في الحِمل — أو لم يُبنَ الحِملُ بعد',
+                tr('لا ضرائبَ في الحِمل — أو لم يُبنَ الحِملُ بعد'),
                 style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -1577,16 +1578,16 @@ class _EInvoicingPicposScreenState
       builder: (ctx) => AlertDialog(
         icon: const Icon(PhosphorIconsBold.paperPlaneTilt,
             color: AppColors.primary),
-        title: const Text('إرسال المستندات المعلَّقة'),
+        title:  Text(tr('إرسال المستندات المعلَّقة')),
         content: Text('سيُرسَل ${_ar(count)} مستنداً للمنظومة، ويُسجَّل لكلٍّ '
             'تغييرُ حالته في سجلٍّ لا يُحذف.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء')),
+              child:  Text(tr('إلغاء'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('إرسال')),
+              child:  Text(tr('إرسال'))),
         ],
       ),
     );
@@ -1612,7 +1613,7 @@ class _EInvoicingPicposScreenState
           success++;
         } else {
           await repo.markSubmissionFailed(
-              sub.id, result.errorMessage ?? 'إخفاقٌ بلا رسالة');
+              sub.id, result.errorMessage ?? tr('إخفاقٌ بلا رسالة'));
           failed++;
         }
       } catch (e) {
@@ -1622,7 +1623,7 @@ class _EInvoicingPicposScreenState
     }
 
     if (!mounted) return;
-    _toast('من ${_ar(pending.length)}: نجح ${_ar(success)} وأخفق ${_ar(failed)}');
+    _toast(tr('من {p0}: نجح {p1} وأخفق {p2}', {'p0': _ar(pending.length), 'p1': _ar(success), 'p2': _ar(failed)}));
   }
 
   Future<void> _submitOne(_Row r) async {
@@ -1640,17 +1641,17 @@ class _EInvoicingPicposScreenState
           qrCode: result.qrCode,
         );
         if (!mounted) return;
-        _toast('أُرسل ${r.reference} — تابعْ حالتَه في السجلّ');
+        _toast(tr('أُرسل {p0} — تابعْ حالتَه في السجلّ', {'p0': r.reference}));
       } else {
         await repo.markSubmissionFailed(
-            r.id, result.errorMessage ?? 'إخفاقٌ بلا رسالة');
+            r.id, result.errorMessage ?? tr('إخفاقٌ بلا رسالة'));
         if (!mounted) return;
-        _toast('رفضت المنظومةُ ${r.reference}');
+        _toast(tr('رفضت المنظومةُ {p0}', {'p0': r.reference}));
       }
     } catch (e) {
       await repo.markSubmissionFailed(r.id, '$e');
       if (!mounted) return;
-      _toast('تعذّر الإرسال: $e');
+      _toast(tr('تعذّر الإرسال: {e}', {'e': e}));
     }
   }
 
@@ -1683,7 +1684,7 @@ class _EInvoicingPicposScreenState
             'invalid',
             errorMessage: status.errors.isNotEmpty
                 ? status.errors.first.toString()
-                : 'مرفوضة',
+                : tr('مرفوضة'),
           );
           changed++;
         }
@@ -1698,15 +1699,15 @@ class _EInvoicingPicposScreenState
     final checked = awaiting.length - failed;
     _toast(
       failed == 0
-          ? 'فُحص ${_ar(checked)} — تغيّرت حالةُ ${_ar(changed)}'
-          : 'فُحص ${_ar(checked)} — تغيّرت ${_ar(changed)} · تعذّر ${_ar(failed)}',
+          ? tr('فُحص {p0} — تغيّرت حالةُ {p1}', {'p0': _ar(checked), 'p1': _ar(changed)})
+          : tr('فُحص {p0} — تغيّرت {p1} · تعذّر {p2}', {'p0': _ar(checked), 'p1': _ar(changed), 'p2': _ar(failed)}),
     );
   }
 
   Future<void> _refreshStatus(_Row r) async {
     if (r.documentUuid == null) {
       // لا معرّفَ ⇒ لا شيءَ يُفحَص. وقولُ ذلك أصدقُ من نداءٍ يعود صامتاً.
-      _toast('لا معرّفَ للمستند بعد — يصدر عند الإرسال');
+      _toast(tr('لا معرّفَ للمستند بعد — يصدر عند الإرسال'));
       return;
     }
     final repo = ref.read(eInvoiceRepositoryProvider);
@@ -1721,15 +1722,15 @@ class _EInvoicingPicposScreenState
           'invalid',
           errorMessage: status.errors.isNotEmpty
               ? status.errors.first.toString()
-              : 'مرفوضة',
+              : tr('مرفوضة'),
         );
       }
       if (!mounted) return;
       ref.invalidate(_auditProvider(r.id));
-      _toast('حُدِّثت حالةُ ${r.reference}');
+      _toast(tr('حُدِّثت حالةُ {p0}', {'p0': r.reference}));
     } catch (e) {
       if (!mounted) return;
-      _toast('تعذّر فحصُ الحالة: $e');
+      _toast(tr('تعذّر فحصُ الحالة: {e}', {'e': e}));
     }
   }
 
@@ -1797,7 +1798,7 @@ class _EInvoiceConfigDialogState extends ConsumerState<_EInvoiceConfigDialog> {
   }
 
   String? _required(String? v) =>
-      (v == null || v.trim().isEmpty) ? 'حقلٌ مطلوب' : null;
+      (v == null || v.trim().isEmpty) ? tr('حقلٌ مطلوب') : null;
 
   Future<void> _save() async {
     if (!(_form.currentState?.validate() ?? false)) return;
@@ -1822,7 +1823,7 @@ class _EInvoiceConfigDialogState extends ConsumerState<_EInvoiceConfigDialog> {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('تعذّر الحفظ: $e')));
+          .showSnackBar(SnackBar(content: Text(tr('تعذّر الحفظ: {e}', {'e': e}))));
     }
   }
 
@@ -1845,7 +1846,7 @@ class _EInvoiceConfigDialogState extends ConsumerState<_EInvoiceConfigDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('إعداد ${widget.platform == 'eta' ? 'مصلحة الضرائب' : 'جوفوترة'}'),
+      title: Text(tr('إعداد {p0}', {'p0': widget.platform == 'eta' ? 'مصلحة الضرائب' : 'جوفوترة'})),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
@@ -1854,20 +1855,20 @@ class _EInvoiceConfigDialogState extends ConsumerState<_EInvoiceConfigDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _field(_registration, 'الرقم الضريبي'),
-                _field(_clientId, 'معرّف العميل'),
-                _field(_secret, 'سر العميل', obscure: true),
-                _field(_activity, 'كود النشاط', required: false),
-                _field(_branch, 'كود الفرع', required: false),
+                _field(_registration, tr('الرقم الضريبي')),
+                _field(_clientId, tr('معرّف العميل')),
+                _field(_secret, tr('سر العميل'), obscure: true),
+                _field(_activity, tr('كود النشاط'), required: false),
+                _field(_branch, tr('كود الفرع'), required: false),
                 Row(
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _version,
-                        decoration: const InputDecoration(
-                            labelText: 'إصدار المستند',
+                        decoration:  InputDecoration(
+                            labelText: tr('إصدار المستند'),
                             isDense: true,
-                            border: OutlineInputBorder()),
+                            border: const OutlineInputBorder()),
                         items: const [
                           DropdownMenuItem(value: '0.9', child: Text('0.9')),
                           DropdownMenuItem(value: '1.0', child: Text('1.0')),
@@ -1879,10 +1880,10 @@ class _EInvoiceConfigDialogState extends ConsumerState<_EInvoiceConfigDialog> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _coding,
-                        decoration: const InputDecoration(
-                            labelText: 'نظام الترميز',
+                        decoration:  InputDecoration(
+                            labelText: tr('نظام الترميز'),
                             isDense: true,
-                            border: OutlineInputBorder()),
+                            border: const OutlineInputBorder()),
                         items: const [
                           DropdownMenuItem(value: 'EGS', child: Text('EGS')),
                           DropdownMenuItem(value: 'GPC', child: Text('GPC')),
@@ -1896,18 +1897,18 @@ class _EInvoiceConfigDialogState extends ConsumerState<_EInvoiceConfigDialog> {
                 SwitchListTile(
                   value: _production,
                   onChanged: (v) => setState(() => _production = v),
-                  title: const Text('بيئة الإنتاج'),
-                  subtitle: const Text('موقوفاً تُرسَل المستندات إلى البيئة التجريبية'),
+                  title:  Text(tr('بيئة الإنتاج')),
+                  subtitle:  Text(tr('موقوفاً تُرسَل المستندات إلى البيئة التجريبية')),
                   contentPadding: EdgeInsets.zero,
                 ),
                 SwitchListTile(
                   value: _enabled,
                   onChanged: (v) => setState(() => _enabled = v),
-                  title: const Text('تفعيل الفوترة الإلكترونية'),
+                  title:  Text(tr('تفعيل الفوترة الإلكترونية')),
                   // الرايةُ المُزامَنةُ تُشتقّ من هذا الحقل — وهي التي تحكم
                   // رمزَ الإيصال على كلّ جهاز.
-                  subtitle: const Text(
-                      'يحكم أيضاً رمز الإيصال المطبوع على كل جهاز'),
+                  subtitle:  Text(
+                      tr('يحكم أيضاً رمز الإيصال المطبوع على كل جهاز')),
                   contentPadding: EdgeInsets.zero,
                 ),
               ],
@@ -1918,11 +1919,11 @@ class _EInvoiceConfigDialogState extends ConsumerState<_EInvoiceConfigDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context, false),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         FilledButton(
           onPressed: _saving ? null : _save,
-          child: const Text('حفظ'),
+          child:  Text(tr('حفظ')),
         ),
       ],
     );

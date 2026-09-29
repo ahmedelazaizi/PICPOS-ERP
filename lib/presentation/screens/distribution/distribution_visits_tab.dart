@@ -35,7 +35,7 @@ class _VisitsTabState extends State<_VisitsTab> {
               const Icon(PhosphorIconsBold.path, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(
-                'زيارات ${_fmt.format(_selectedDate)}',
+                tr('زيارات {p0}', {'p0': _fmt.format(_selectedDate)}),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -53,7 +53,7 @@ class _VisitsTabState extends State<_VisitsTab> {
                   if (picked != null) setState(() => _selectedDate = picked);
                 },
                 icon: const Icon(PhosphorIconsBold.calendar, size: 18),
-                label: const Text('تغيير التاريخ'),
+                label:  Text(tr('تغيير التاريخ')),
               ),
               const SizedBox(width: 8),
               // نفس صلاحية إدارة التوزيع (المسارات) — التريّاج وقّف عند
@@ -62,12 +62,12 @@ class _VisitsTabState extends State<_VisitsTab> {
               PermissionGuard(
                 permission: PermissionCodes.distributionManage,
                 allowManagerOverride: true,
-                actionName: 'إضافة زيارة',
+                actionName: tr('إضافة زيارة'),
                 onGranted: () => _showAddVisitDialog(context, ctrl),
                 child: ElevatedButton.icon(
                   onPressed: () => _showAddVisitDialog(context, ctrl),
                   icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                  label: const Text('إضافة زيارة'),
+                  label:  Text(tr('إضافة زيارة')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                   ),
@@ -87,7 +87,7 @@ class _VisitsTabState extends State<_VisitsTab> {
               if (routes.isEmpty) {
                 return Center(
                   child: Text(
-                    'أضف مسارات أولاً',
+                    tr('أضف مسارات أولاً'),
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
                 );
@@ -110,13 +110,13 @@ class _VisitsTabState extends State<_VisitsTab> {
                           route.name,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        subtitle: Text('${visits.length} زيارة'),
+                        subtitle: Text(tr('{p0} زيارة', {'p0': visits.length})),
                         children: visits.isEmpty
                             ? [
-                                const Padding(
-                                  padding: EdgeInsets.all(16),
+                                 Padding(
+                                  padding: const EdgeInsets.all(16),
                                   child: Text(
-                                    'لا توجد زيارات لهذا المسار اليوم',
+                                    tr('لا توجد زيارات لهذا المسار اليوم'),
                                   ),
                                 ),
                               ]
@@ -131,7 +131,7 @@ class _VisitsTabState extends State<_VisitsTab> {
                                         future: ctrl.getPartyById(v.customerId),
                                         builder: (ctx, snap) => Text(
                                           snap.data?.name ??
-                                              'عميل #${v.customerId}',
+                                              tr('عميل #{p0}', {'p0': v.customerId}),
                                         ),
                                       ),
                                       subtitle: Text(
@@ -139,7 +139,7 @@ class _VisitsTabState extends State<_VisitsTab> {
                                         '${v.orderAmount > 0 ? " • ${v.orderAmount.toStringAsFixed(0)} ${AppConstants.currencySymbol}" : ""}',
                                       ),
                                       trailing: PopupMenuButton<String>(
-                                        tooltip: 'تغيير الحالة',
+                                        tooltip: tr('تغيير الحالة'),
                                         icon: const Icon(
                                           PhosphorIconsBold.dotsThreeVertical,
                                         ),
@@ -151,17 +151,17 @@ class _VisitsTabState extends State<_VisitsTab> {
                                           );
                                         },
                                         itemBuilder: (_) => [
-                                          const PopupMenuItem(
+                                           PopupMenuItem(
                                             value: 'completed',
-                                            child: Text('✅ مكتملة'),
+                                            child: Text(tr('✅ مكتملة')),
                                           ),
-                                          const PopupMenuItem(
+                                           PopupMenuItem(
                                             value: 'cancelled',
-                                            child: Text('❌ ملغية'),
+                                            child: Text(tr('❌ ملغية')),
                                           ),
-                                          const PopupMenuItem(
+                                           PopupMenuItem(
                                             value: 'skipped',
-                                            child: Text('⏭ تخطي'),
+                                            child: Text(tr('⏭ تخطي')),
                                           ),
                                         ],
                                       ),
@@ -191,7 +191,7 @@ class _VisitsTabState extends State<_VisitsTab> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('إضافة زيارة'),
+          title:  Text(tr('إضافة زيارة')),
           content: SizedBox(
             width: 400,
             child: Column(
@@ -204,9 +204,9 @@ class _VisitsTabState extends State<_VisitsTab> {
                     final routes = snap.data ?? [];
                     return DropdownButtonFormField<int>(
                       initialValue: selectedRouteId,
-                      decoration: const InputDecoration(
-                        labelText: 'المسار',
-                        border: OutlineInputBorder(),
+                      decoration:  InputDecoration(
+                        labelText: tr('المسار'),
+                        border: const OutlineInputBorder(),
                       ),
                       items: routes
                           .map((r) => DropdownMenuItem(
@@ -227,9 +227,9 @@ class _VisitsTabState extends State<_VisitsTab> {
                     final employees = snap.data ?? [];
                     return DropdownButtonFormField<int>(
                       initialValue: selectedRepId,
-                      decoration: const InputDecoration(
-                        labelText: 'المندوب',
-                        border: OutlineInputBorder(),
+                      decoration:  InputDecoration(
+                        labelText: tr('المندوب'),
+                        border: const OutlineInputBorder(),
                       ),
                       items: employees
                           .map((e) => DropdownMenuItem(
@@ -249,9 +249,9 @@ class _VisitsTabState extends State<_VisitsTab> {
                     final customers = snap.data ?? [];
                     return DropdownButtonFormField<int>(
                       initialValue: selectedCustomerId,
-                      decoration: const InputDecoration(
-                        labelText: 'العميل',
-                        border: OutlineInputBorder(),
+                      decoration:  InputDecoration(
+                        labelText: tr('العميل'),
+                        border: const OutlineInputBorder(),
                       ),
                       items: customers
                           .map((c) => DropdownMenuItem(
@@ -267,9 +267,9 @@ class _VisitsTabState extends State<_VisitsTab> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: notesCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'ملاحظات',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('ملاحظات'),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ],
@@ -278,7 +278,7 @@ class _VisitsTabState extends State<_VisitsTab> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: saving
@@ -307,7 +307,7 @@ class _VisitsTabState extends State<_VisitsTab> {
                         );
                         if (ctx.mounted) Navigator.pop(ctx);
                         if (context.mounted) {
-                          AppToast.show(context, 'تمت إضافة الزيارة');
+                          AppToast.show(context, tr('تمت إضافة الزيارة'));
                         }
                       } finally {
                         if (ctx.mounted) setDialogState(() => saving = false);
@@ -315,7 +315,7 @@ class _VisitsTabState extends State<_VisitsTab> {
                     },
               style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary),
-              child: const Text('إضافة'),
+              child:  Text(tr('إضافة')),
             ),
           ],
         ),
@@ -336,9 +336,9 @@ class _VisitsTabState extends State<_VisitsTab> {
     _ => Colors.blue,
   };
   String _statusLabel(String s) => switch (s) {
-    'completed' => 'مكتملة',
-    'cancelled' => 'ملغية',
-    'skipped' => 'تم تخطيها',
-    _ => 'مخططة',
+    'completed' => tr('مكتملة'),
+    'cancelled' => tr('ملغية'),
+    'skipped' => tr('تم تخطيها'),
+    _ => tr('مخططة'),
   };
 }

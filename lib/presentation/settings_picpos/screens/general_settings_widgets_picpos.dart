@@ -23,8 +23,8 @@ class _IndustryModeToggle extends ConsumerWidget {
     // بشرائحِ قيم. والمنتقي أدناه كما هو.
     return SettingsValueRow(
       icon: PhosphorIconsBold.storefront,
-      title: 'نوع النشاط',
-      sub: 'يحدد الشاشات والحسابات المتاحة',
+      title: tr('نوع النشاط'),
+      sub: tr('يحدد الشاشات والحسابات المتاحة'),
       value: _getShortModeLabel(mode),
       onTap: () => _showModeSelector(context, ref, mode),
     );
@@ -35,11 +35,11 @@ class _IndustryModeToggle extends ConsumerWidget {
   String _getShortModeLabel(IndustryMode mode) {
     switch (mode) {
       case IndustryMode.supermarket:
-        return 'تجزئة';
+        return tr('تجزئة');
       case IndustryMode.restaurant:
-        return 'مطعم';
+        return tr('مطعم');
       case IndustryMode.cafe:
-        return 'كافيه';
+        return tr('كافيه');
       default:
         return _getModeLabel(mode);
     }
@@ -48,13 +48,13 @@ class _IndustryModeToggle extends ConsumerWidget {
   String _getModeLabel(IndustryMode mode) {
     switch (mode) {
       case IndustryMode.supermarket:
-        return 'سوبر ماركت / بقالة (بيع سريع)';
+        return tr('سوبر ماركت / بقالة (بيع سريع)');
       case IndustryMode.restaurant:
-        return 'مطعم (طاولات وصالات)';
+        return tr('مطعم (طاولات وصالات)');
       case IndustryMode.cafe:
-        return 'كافيه (طلبات سريعة)';
+        return tr('كافيه (طلبات سريعة)');
       case IndustryMode.retail:
-        return 'بيع بالتجزئة';
+        return tr('بيع بالتجزئة');
     }
   }
 
@@ -73,26 +73,26 @@ class _IndustryModeToggle extends ConsumerWidget {
     final picked = await showPicPosOptionPicker<IndustryMode>(
       context: context,
       icon: PhosphorIconsBold.storefront,
-      title: 'نوع النشاط',
-      subtitle: 'يحدّد الشاشاتِ والحساباتِ المتاحة',
+      title: tr('نوع النشاط'),
+      subtitle: tr('يحدّد الشاشاتِ والحساباتِ المتاحة'),
       selected: current,
-      options: const [
+      options:  [
         PicPosOption(
           value: IndustryMode.supermarket,
-          label: 'سوبر ماركت / بيع بالتجزئة',
-          sub: 'بيعٌ سريعٌ وباركود وميزان PLU',
+          label: tr('سوبر ماركت / بيع بالتجزئة'),
+          sub: tr('بيعٌ سريعٌ وباركود وميزان PLU'),
           icon: PhosphorIconsBold.barcode,
         ),
         PicPosOption(
           value: IndustryMode.restaurant,
-          label: 'مطعم / صالات طعام',
-          sub: 'طاولاتٌ وحجوزاتٌ وتذاكرُ مطبخ',
+          label: tr('مطعم / صالات طعام'),
+          sub: tr('طاولاتٌ وحجوزاتٌ وتذاكرُ مطبخ'),
           icon: PhosphorIconsBold.cookingPot,
         ),
         PicPosOption(
           value: IndustryMode.cafe,
-          label: 'كافيه / طلبات سريعة',
-          sub: 'طلباتٌ سريعةٌ بلا طاولات',
+          label: tr('كافيه / طلبات سريعة'),
+          sub: tr('طلباتٌ سريعةٌ بلا طاولات'),
           icon: PhosphorIconsBold.coffee,
         ),
       ],
@@ -108,7 +108,7 @@ class _IndustryModeToggle extends ConsumerWidget {
       logger.logSettingsChange(
         auth.user?.id ?? 0,
         auth.user?.displayName ?? '',
-        'نوع النشاط التجاري',
+        tr('نوع النشاط التجاري'),
         newValue: _getModeLabel(picked),
       );
     } catch (e) {
@@ -135,7 +135,7 @@ class _CurrencySelector extends ConsumerWidget {
     if (locked) {
       return SettingsValueRow(
         icon: PhosphorIconsBold.lockSimple,
-        title: 'عملة النظام',
+        title: tr('عملة النظام'),
         sub: 'مقفولة بعد تسجيل حركات مالية — الدقة العشرية جزءٌ من كل '
             'مبلغ محفوظ',
         value: info.code,
@@ -146,12 +146,12 @@ class _CurrencySelector extends ConsumerWidget {
     return PermissionGuard(
       permission: PermissionCodes.settingsCurrency,
       allowManagerOverride: true,
-      actionName: 'تغيير عملة النظام',
+      actionName: tr('تغيير عملة النظام'),
       onGranted: () => _showCurrencySelector(context, ref, currentCode),
       child: SettingsValueRow(
         icon: PhosphorIconsBold.currencyCircleDollar,
-        title: 'عملة النظام',
-        sub: 'كل المبالغ والتقارير',
+        title: tr('عملة النظام'),
+        sub: tr('كل المبالغ والتقارير'),
         value: info.code,
         onTap: () => _showCurrencySelector(context, ref, currentCode),
       ),
@@ -169,8 +169,8 @@ class _CurrencySelector extends ConsumerWidget {
     final picked = await showPicPosOptionPicker<String>(
       context: context,
       icon: PhosphorIconsBold.currencyCircleDollar,
-      title: 'عملة النظام',
-      subtitle: 'كلُّ المبالغ والتقارير — راجعها قبل أوّل فاتورة',
+      title: tr('عملة النظام'),
+      subtitle: tr('كلُّ المبالغ والتقارير — راجعها قبل أوّل فاتورة'),
       selected: currentCode,
       options: [
         for (final c in CurrencyInfo.all)
@@ -192,7 +192,7 @@ class _CurrencySelector extends ConsumerWidget {
       logger.logSettingsChange(
         auth.user?.id ?? 0,
         auth.user?.displayName ?? '',
-        'عملة النظام',
+        tr('عملة النظام'),
         newValue: '${info.nameAr} (${info.code})',
       );
     } catch (e) {
@@ -238,11 +238,11 @@ class _DeliveryToggleState extends ConsumerState<_DeliveryToggle> {
         PhosphorIconsBold.moped,
         color: _enabled ? AppColors.success : Colors.grey,
       ),
-      title: const Text('تفعيل خدمة التوصيل'),
+      title:  Text(tr('تفعيل خدمة التوصيل')),
       subtitle: Text(
         _enabled
-            ? 'يمكنك إنشاء طلبات توصيل وإدارة المناديب'
-            : 'خدمة التوصيل غير مفعلة',
+            ? tr('يمكنك إنشاء طلبات توصيل وإدارة المناديب')
+            : tr('خدمة التوصيل غير مفعلة'),
       ),
       value: _enabled,
       onChanged: (v) async {
@@ -257,8 +257,8 @@ class _DeliveryToggleState extends ConsumerState<_DeliveryToggle> {
           await logger.logSettingsChange(
             auth.user?.id ?? 0,
             auth.user?.displayName ?? '',
-            'خدمة التوصيل',
-            newValue: v ? 'مفعل' : 'معطل',
+            tr('خدمة التوصيل'),
+            newValue: v ? tr('مفعل') : tr('معطل'),
           );
         } catch (e) {
           debugPrint('[ActivityLog] Error: $e');
@@ -320,9 +320,9 @@ class _CostingMethodToggleState extends ConsumerState<_CostingMethodToggle> {
         PhosphorIconsBold.calculator,
         color: AppColors.info,
       ),
-      title: const Text('طريقة حساب التكلفة'),
+      title:  Text(tr('طريقة حساب التكلفة')),
       subtitle: Text(
-        '${CostingMethodService.label(_method)} — وفق IAS 2',
+        tr('{p0} — وفق IAS 2', {'p0': CostingMethodService.label(_method)}),
       ),
     );
   }
@@ -367,7 +367,7 @@ class _StockShortagePolicyToggleState
         PhosphorIconsBold.warning,
         color: AppColors.warning,
       ),
-      title: const Text('سياسة النظام عند نقص الخامات'),
+      title:  Text(tr('سياسة النظام عند نقص الخامات')),
       subtitle: Text(_policy.arabicLabel),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: _showSelector,
@@ -378,8 +378,8 @@ class _StockShortagePolicyToggleState
     final picked = await showPicPosOptionPicker<StockShortagePolicy>(
       context: context,
       icon: PhosphorIconsBold.warning,
-      title: 'سياسة نقص الخامات',
-      subtitle: 'ماذا يحدث حين لا تكفي الكميّةُ عند البيع',
+      title: tr('سياسة نقص الخامات'),
+      subtitle: tr('ماذا يحدث حين لا تكفي الكميّةُ عند البيع'),
       selected: _policy,
       options: [
         for (final p in StockShortagePolicy.values)
@@ -404,17 +404,17 @@ class _StockShortagePolicyToggleState
     switch (policy) {
       case StockShortagePolicy.block:
         return (
-          'يمنع البيع تماماً عند عدم كفاية الخامات وتظهر رسالة خطأ',
+          tr('يمنع البيع تماماً عند عدم كفاية الخامات وتظهر رسالة خطأ'),
           PhosphorIconsBold.prohibit,
         );
       case StockShortagePolicy.allowNegative:
         return (
-          'يسمح بإتمام البيع وتسجيل المخزون كرقم سالب — مناسب للمحلات السريعة',
+          tr('يسمح بإتمام البيع وتسجيل المخزون كرقم سالب — مناسب للمحلات السريعة'),
           PhosphorIconsBold.minusCircle,
         );
       case StockShortagePolicy.clampToZero:
         return (
-          'يخصم ما هو متاح فقط ويوقف عند صفر — لا يدخل المخزون فى السالب',
+          tr('يخصم ما هو متاح فقط ويوقف عند صفر — لا يدخل المخزون فى السالب'),
           PhosphorIconsBold.gauge,
         );
     }
@@ -435,8 +435,8 @@ class _StockShortagePolicyPerBranchTile extends ConsumerWidget {
         PhosphorIconsBold.buildings,
         color: AppColors.info,
       ),
-      title: const Text('سياسة نقص الخامات لكل فرع'),
-      subtitle: const Text('تخصيص السياسة لفرع بعينه (تتجاوز الافتراضى)'),
+      title:  Text(tr('سياسة نقص الخامات لكل فرع')),
+      subtitle:  Text(tr('تخصيص السياسة لفرع بعينه (تتجاوز الافتراضى)')),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: () => _showMatrix(context, ref),
     );
@@ -497,8 +497,8 @@ class _ShortagePolicyPerBranchDialogState
     final branchesAsync = ref.watch(allBranchesProvider);
     return PicPosDialog(
       icon: PhosphorIconsBold.warningDiamond,
-      title: 'سياسة نقص الخامات لكل فرع',
-      subtitle: 'اترك «افتراضى» للفروع التى تستخدم السياسة العامّة',
+      title: tr('سياسة نقص الخامات لكل فرع'),
+      subtitle: tr('اترك «افتراضى» للفروع التى تستخدم السياسة العامّة'),
       width: 560,
       // ⚠️ حارسٌ داخليٌّ لا `null`: `onCancel: null` **يُخفي** زرَّ الإلغاء
       //    ولا يعطّله، فكان الزرُّ يختفي أثناء الحفظ بدل أن يخمُد.
@@ -513,15 +513,15 @@ class _ShortagePolicyPerBranchDialogState
             : branchesAsync.when(
                 data: (branches) {
                   if (branches.isEmpty) {
-                    return const Text('لا توجد فروع لعرضها');
+                    return  Text(tr('لا توجد فروع لعرضها'));
                   }
                   return SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
-                          'اترك "افتراضى" للفروع التى تستخدم السياسة العامة. الإعداد لكل فرع يتجاوز الافتراضى ويسبق التخصيص لكل ماكينة.',
-                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                         Text(
+                          tr('اترك "افتراضى" للفروع التى تستخدم السياسة العامة. الإعداد لكل فرع يتجاوز الافتراضى ويسبق التخصيص لكل ماكينة.'),
+                          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                         ),
                         const Divider(),
                         for (final b in branches)
@@ -530,11 +530,11 @@ class _ShortagePolicyPerBranchDialogState
                             title: Text(b.name),
                             trailing: DropdownButton<StockShortagePolicy?>(
                               value: _selections[b.id],
-                              hint: const Text('افتراضى'),
+                              hint:  Text(tr('افتراضى')),
                               items: [
-                                const DropdownMenuItem<StockShortagePolicy?>(
+                                 DropdownMenuItem<StockShortagePolicy?>(
                                   value: null,
-                                  child: Text('افتراضى'),
+                                  child: Text(tr('افتراضى')),
                                 ),
                                 for (final p in StockShortagePolicy.values)
                                   DropdownMenuItem<StockShortagePolicy?>(
@@ -556,12 +556,12 @@ class _ShortagePolicyPerBranchDialogState
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Text('خطأ فى تحميل الفروع: $e'),
+                error: (e, _) => Text(tr('خطأ فى تحميل الفروع: {e}', {'e': e})),
               ),
       ),
       ],
       primaryAction: PicPosDialogAction(
-        label: 'حفظ',
+        label: tr('حفظ'),
         icon: PhosphorIconsBold.floppyDisk,
         busy: _saving,
         onPressed: _saving
@@ -598,13 +598,13 @@ class _SessionTimeoutSettingState extends ConsumerState<_SessionTimeoutSetting> 
   int _timeoutMinutes = 30;
   bool _loading = true;
 
-  static const _options = [
-    (value: 0, label: 'معطل'),
-    (value: 5, label: '5 دقائق'),
-    (value: 10, label: '10 دقائق'),
-    (value: 15, label: '15 دقيقة'),
-    (value: 30, label: '30 دقيقة'),
-    (value: 60, label: 'ساعة'),
+  static List<({int value, String label})> get _options => [
+    (value: 0, label: tr('معطل')),
+    (value: 5, label: tr('5 دقائق')),
+    (value: 10, label: tr('10 دقائق')),
+    (value: 15, label: tr('15 دقيقة')),
+    (value: 30, label: tr('30 دقيقة')),
+    (value: 60, label: tr('ساعة')),
   ];
 
   @override
@@ -630,7 +630,7 @@ class _SessionTimeoutSettingState extends ConsumerState<_SessionTimeoutSetting> 
     if (_loading) return const SizedBox.shrink();
     final label = _options.firstWhere(
       (o) => o.value == _timeoutMinutes,
-      orElse: () => (value: _timeoutMinutes, label: '$_timeoutMinutes دقيقة'),
+      orElse: () => (value: _timeoutMinutes, label: tr('{_timeoutMinutes} دقيقة', {'_timeoutMinutes': _timeoutMinutes})),
     ).label;
 
     return ListTile(
@@ -638,11 +638,11 @@ class _SessionTimeoutSettingState extends ConsumerState<_SessionTimeoutSetting> 
         PhosphorIconsBold.timer,
         color: _timeoutMinutes > 0 ? AppColors.warning : Colors.grey,
       ),
-      title: const Text('مهلة انتهاء الجلسة'),
+      title:  Text(tr('مهلة انتهاء الجلسة')),
       subtitle: Text(
         _timeoutMinutes > 0
-            ? 'تسجيل خروج تلقائي بعد $label من عدم النشاط'
-            : 'تسجيل الخروج التلقائي معطل',
+            ? tr('تسجيل خروج تلقائي بعد {label} من عدم النشاط', {'label': label})
+            : tr('تسجيل الخروج التلقائي معطل'),
       ),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: () => _showSelector(context),
@@ -653,8 +653,8 @@ class _SessionTimeoutSettingState extends ConsumerState<_SessionTimeoutSetting> 
     final picked = await showPicPosOptionPicker<int>(
       context: context,
       icon: PhosphorIconsBold.timer,
-      title: 'مهلة انتهاء الجلسة',
-      subtitle: 'تسجيلُ خروجٍ تلقائيٍّ بعد سكونٍ بهذه المدّة',
+      title: tr('مهلة انتهاء الجلسة'),
+      subtitle: tr('تسجيلُ خروجٍ تلقائيٍّ بعد سكونٍ بهذه المدّة'),
       selected: _timeoutMinutes,
       options: [
         for (final opt in _options)
@@ -665,7 +665,7 @@ class _SessionTimeoutSettingState extends ConsumerState<_SessionTimeoutSetting> 
                 ? PhosphorIconsBold.prohibit
                 : PhosphorIconsBold.timer,
             sub: opt.value == 0
-                ? 'الجلسةُ لا تنتهي — لا تستعمله على جهازٍ مشترك'
+                ? tr('الجلسةُ لا تنتهي — لا تستعمله على جهازٍ مشترك')
                 : null,
           ),
       ],
@@ -691,7 +691,7 @@ class _SessionTimeoutSettingState extends ConsumerState<_SessionTimeoutSetting> 
       await logger.logSettingsChange(
         auth.user?.id ?? 0,
         auth.user?.displayName ?? '',
-        'مهلة انتهاء الجلسة',
+        tr('مهلة انتهاء الجلسة'),
         newValue: label,
       );
     } catch (e) {

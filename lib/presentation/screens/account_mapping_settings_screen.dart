@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,98 +30,98 @@ class _AccountMappingSettingsScreenState
   bool get _isClientMode => NetworkService.instance.isClient;
 
   /// Grouped purpose definitions — 6 groups, all 47 system purposes
-  static const _purposeGroups = <_PurposeGroup>[
+  static List<_PurposeGroup> get _purposeGroups => <_PurposeGroup>[
     // ── المجموعة 1: النقدية والذمم ──────────────────────────────────────────
     _PurposeGroup(
-      title: 'النقدية والذمم المدينة',
+      title: tr('النقدية والذمم المدينة'),
       icon: PhosphorIconsBold.bank,
-      color: Color(0xFF2563EB),
+      color: const Color(0xFF2563EB),
       items: [
-        _PurposeItem('cash',                'الصندوق الرئيسي',              '1111', 'حساب النقد الافتراضي للمبيعات والمصروفات النقدية'),
-        _PurposeItem('petty_cash',          'صندوق العهدة',                 '1112', 'صندوق النقد الصغير والعهد'),
-        _PurposeItem('bank',                'البنك الرئيسي',                '1113', 'حساب البنك للمدفوعات بالبطاقات والتحويلات'),
-        _PurposeItem('bank2',               'البنك الثاني',                 '1114', 'حساب البنك الاحتياطي الثاني'),
-        _PurposeItem('click',               'حساب Click / إلكتروني',        '1116', 'حساب المدفوعات الإلكترونية (Click/KNET)'),
-        _PurposeItem('receivables',         'ذمم العملاء المحليون',         '1121', 'حساب الذمم المدينة للعملاء المحليين'),
-        _PurposeItem('foreign_receivables', 'ذمم العملاء الخارجيون',        '1122', 'حساب الذمم المدينة للعملاء الخارجيين'),
-        _PurposeItem('notes_receivable',    'أوراق القبض',                  '1123', 'حساب الشيكات وأوراق القبض من العملاء'),
+        _PurposeItem('cash',                tr('الصندوق الرئيسي'),              '1111', tr('حساب النقد الافتراضي للمبيعات والمصروفات النقدية')),
+        _PurposeItem('petty_cash',          tr('صندوق العهدة'),                 '1112', tr('صندوق النقد الصغير والعهد')),
+        _PurposeItem('bank',                tr('البنك الرئيسي'),                '1113', tr('حساب البنك للمدفوعات بالبطاقات والتحويلات')),
+        _PurposeItem('bank2',               tr('البنك الثاني'),                 '1114', tr('حساب البنك الاحتياطي الثاني')),
+        _PurposeItem('click',               tr('حساب Click / إلكتروني'),        '1116', tr('حساب المدفوعات الإلكترونية (Click/KNET)')),
+        _PurposeItem('receivables',         tr('ذمم العملاء المحليون'),         '1121', tr('حساب الذمم المدينة للعملاء المحليين')),
+        _PurposeItem('foreign_receivables', tr('ذمم العملاء الخارجيون'),        '1122', tr('حساب الذمم المدينة للعملاء الخارجيين')),
+        _PurposeItem('notes_receivable',    tr('أوراق القبض'),                  '1123', tr('حساب الشيكات وأوراق القبض من العملاء')),
       ],
     ),
     // ── المجموعة 2: المخزون والأصول المتداولة ───────────────────────────────
     _PurposeGroup(
-      title: 'المخزون والأصول المتداولة',
+      title: tr('المخزون والأصول المتداولة'),
       icon: PhosphorIconsBold.package,
-      color: Color(0xFF7C3AED),
+      color: const Color(0xFF7C3AED),
       items: [
-        _PurposeItem('inventory',           'مخزون البضاعة للبيع',          '1136', 'الحساب الرئيسي لمخزون بضاعة التجارة'),
-        _PurposeItem('raw_materials',       'مخزون المواد الخام',           '1131', 'مخزون المواد الخام للإنتاج'),
-        _PurposeItem('wip',                 'مخزون تحت التشغيل',            '1133', 'منتجات تحت الإنتاج (WIP)'),
-        _PurposeItem('applied_overhead',    'تحميل صناعي مطبّق',            '5138', 'الطرف الدائن لتحميل التكاليف غير المباشرة على أوامر التصنيع'),
-        _PurposeItem('goods_in_transit',    'بضاعة تامة / عبور',            '1134', 'المنتجات النهائية والبضاعة في الطريق'),
-        _PurposeItem('input_vat',           'ضريبة القيمة المضافة مدفوعة', '1141', 'ضريبة القيمة المضافة على المشتريات'),
-        _PurposeItem('prepaid_expenses',    'مصروفات مقدمة',                '1143', 'المصروفات المدفوعة مسبقاً'),
-        _PurposeItem('employee_advances',   'سلف الموظفين',                 '1146', 'السلف المدفوعة للموظفين'),
-        _PurposeItem('fixed_assets',        'الأصول الثابتة',               '1211', 'حساب الأصول الثابتة والمعدات'),
+        _PurposeItem('inventory',           tr('مخزون البضاعة للبيع'),          '1136', tr('الحساب الرئيسي لمخزون بضاعة التجارة')),
+        _PurposeItem('raw_materials',       tr('مخزون المواد الخام'),           '1131', tr('مخزون المواد الخام للإنتاج')),
+        _PurposeItem('wip',                 tr('مخزون تحت التشغيل'),            '1133', tr('منتجات تحت الإنتاج (WIP)')),
+        _PurposeItem('applied_overhead',    tr('تحميل صناعي مطبّق'),            '5138', tr('الطرف الدائن لتحميل التكاليف غير المباشرة على أوامر التصنيع')),
+        _PurposeItem('goods_in_transit',    tr('بضاعة تامة / عبور'),            '1134', tr('المنتجات النهائية والبضاعة في الطريق')),
+        _PurposeItem('input_vat',           tr('ضريبة القيمة المضافة مدفوعة'), '1141', tr('ضريبة القيمة المضافة على المشتريات')),
+        _PurposeItem('prepaid_expenses',    tr('مصروفات مقدمة'),                '1143', tr('المصروفات المدفوعة مسبقاً')),
+        _PurposeItem('employee_advances',   tr('سلف الموظفين'),                 '1146', tr('السلف المدفوعة للموظفين')),
+        _PurposeItem('fixed_assets',        tr('الأصول الثابتة'),               '1211', tr('حساب الأصول الثابتة والمعدات')),
       ],
     ),
     // ── المجموعة 3: الخصوم والالتزامات ──────────────────────────────────────
     _PurposeGroup(
-      title: 'الخصوم والالتزامات',
+      title: tr('الخصوم والالتزامات'),
       icon: PhosphorIconsBold.handCoins,
-      color: Color(0xFFDC2626),
+      color: const Color(0xFFDC2626),
       items: [
-        _PurposeItem('payables',            'ذمم الموردون المحليون',         '2111', 'حساب الذمم الدائنة للموردين المحليين'),
-        _PurposeItem('foreign_payables',    'ذمم الموردون الخارجيون',        '2112', 'حساب الذمم الدائنة للموردين الخارجيين'),
-        _PurposeItem('notes_payable',       'أوراق الدفع',                  '2113', 'الشيكات وأوراق الدفع للموردين'),
-        _PurposeItem('output_vat',          'ضريبة القيمة المضافة محصلة',   '2121', 'ضريبة القيمة المضافة على المبيعات'),
-        _PurposeItem('income_tax',          'ضريبة الدخل',                  '2122', 'ضريبة الدخل المستحقة'),
-        _PurposeItem('accrued_salaries',    'رواتب مستحقة',                 '2131', 'الرواتب المستحقة غير المدفوعة'),
-        _PurposeItem('deferred_revenue',    'إيرادات مقدمة / مؤجلة',        '2133', 'الإيرادات المحصلة قبل التسليم (IFRS 15)'),
-        _PurposeItem('loans_payable',       'قروض بنكية',                   '2141', 'القروض البنكية وطويلة الأجل'),
+        _PurposeItem('payables',            tr('ذمم الموردون المحليون'),         '2111', tr('حساب الذمم الدائنة للموردين المحليين')),
+        _PurposeItem('foreign_payables',    tr('ذمم الموردون الخارجيون'),        '2112', tr('حساب الذمم الدائنة للموردين الخارجيين')),
+        _PurposeItem('notes_payable',       tr('أوراق الدفع'),                  '2113', tr('الشيكات وأوراق الدفع للموردين')),
+        _PurposeItem('output_vat',          tr('ضريبة القيمة المضافة محصلة'),   '2121', tr('ضريبة القيمة المضافة على المبيعات')),
+        _PurposeItem('income_tax',          tr('ضريبة الدخل'),                  '2122', tr('ضريبة الدخل المستحقة')),
+        _PurposeItem('accrued_salaries',    tr('رواتب مستحقة'),                 '2131', tr('الرواتب المستحقة غير المدفوعة')),
+        _PurposeItem('deferred_revenue',    tr('إيرادات مقدمة / مؤجلة'),        '2133', tr('الإيرادات المحصلة قبل التسليم (IFRS 15)')),
+        _PurposeItem('loans_payable',       tr('قروض بنكية'),                   '2141', tr('القروض البنكية وطويلة الأجل')),
       ],
     ),
     // ── المجموعة 4: الإيرادات ────────────────────────────────────────────────
     _PurposeGroup(
-      title: 'الإيرادات',
+      title: tr('الإيرادات'),
       icon: PhosphorIconsBold.trendUp,
-      color: Color(0xFF059669),
+      color: const Color(0xFF059669),
       items: [
-        _PurposeItem('sales',               'مبيعات محلية',                 '4121', 'حساب إيرادات المبيعات المحلية الرئيسي'),
-        _PurposeItem('export_sales',        'مبيعات تصدير',                 '4122', 'حساب إيرادات مبيعات التصدير'),
-        _PurposeItem('delivery_revenue',    'إيرادات التوصيل',              '414',  'حساب إيرادات خدمات التوصيل'),
-        _PurposeItem('service_revenue',     'إيرادات الخدمات',              '4131', 'حساب إيرادات الخدمات ما بعد البيع'),
-        _PurposeItem('sales_return',        'مردودات المبيعات',             '4211', 'حساب مردودات وإرجاع المبيعات'),
-        _PurposeItem('sales_discount',      'خصم المبيعات الممنوح',         '4212', 'خصومات الفاتورة الممنوحة للعملاء'),
-        _PurposeItem('purchase_discount',   'خصم المشتريات المكتسب',        '4316', 'الخصم المحصل من الموردين عند الدفع المبكر'),
-        _PurposeItem('discount_received',   'خصم مكتسب (تسوية)',            '4316', 'خصم التسوية المكتسب عند استيفاء الديون'),
-        _PurposeItem('other_income',        'إيرادات متنوعة',               '4315', 'الإيرادات غير التشغيلية والمتنوعة'),
-        _PurposeItem('inventory_surplus',   'فائض مخزون',                   '4317', 'إيراد فائض الجرد عند زيادة المخزون الفعلي'),
-        _PurposeItem('cash_surplus',        'فائض نقدي',                    '4318', 'إيراد فائض الصندوق عند إغلاق الوردية'),
+        _PurposeItem('sales',               tr('مبيعات محلية'),                 '4121', tr('حساب إيرادات المبيعات المحلية الرئيسي')),
+        _PurposeItem('export_sales',        tr('مبيعات تصدير'),                 '4122', tr('حساب إيرادات مبيعات التصدير')),
+        _PurposeItem('delivery_revenue',    tr('إيرادات التوصيل'),              '414',  tr('حساب إيرادات خدمات التوصيل')),
+        _PurposeItem('service_revenue',     tr('إيرادات الخدمات'),              '4131', tr('حساب إيرادات الخدمات ما بعد البيع')),
+        _PurposeItem('sales_return',        tr('مردودات المبيعات'),             '4211', tr('حساب مردودات وإرجاع المبيعات')),
+        _PurposeItem('sales_discount',      tr('خصم المبيعات الممنوح'),         '4212', tr('خصومات الفاتورة الممنوحة للعملاء')),
+        _PurposeItem('purchase_discount',   tr('خصم المشتريات المكتسب'),        '4316', tr('الخصم المحصل من الموردين عند الدفع المبكر')),
+        _PurposeItem('discount_received',   tr('خصم مكتسب (تسوية)'),            '4316', tr('خصم التسوية المكتسب عند استيفاء الديون')),
+        _PurposeItem('other_income',        tr('إيرادات متنوعة'),               '4315', tr('الإيرادات غير التشغيلية والمتنوعة')),
+        _PurposeItem('inventory_surplus',   tr('فائض مخزون'),                   '4317', tr('إيراد فائض الجرد عند زيادة المخزون الفعلي')),
+        _PurposeItem('cash_surplus',        tr('فائض نقدي'),                    '4318', tr('إيراد فائض الصندوق عند إغلاق الوردية')),
       ],
     ),
     // ── المجموعة 5: تكلفة البضاعة ───────────────────────────────────────────
     _PurposeGroup(
-      title: 'تكلفة البضاعة المباعة',
+      title: tr('تكلفة البضاعة المباعة'),
       icon: PhosphorIconsBold.shoppingCartSimple,
-      color: Color(0xFFB45309),
+      color: const Color(0xFFB45309),
       items: [
-        _PurposeItem('cogs',                'تكلفة البضاعة المباعة',        '5211', 'حساب تكلفة المبيعات (COGS) الرئيسي'),
-        _PurposeItem('purchases',           'مشتريات',                      '5211', 'حساب المشتريات الرئيسي'),
-        _PurposeItem('purchase_return',     'مردودات مشتريات',              '5214', 'حساب مردودات وإرجاع المشتريات'),
+        _PurposeItem('cogs',                tr('تكلفة البضاعة المباعة'),        '5211', tr('حساب تكلفة المبيعات (COGS) الرئيسي')),
+        _PurposeItem('purchases',           tr('مشتريات'),                      '5211', tr('حساب المشتريات الرئيسي')),
+        _PurposeItem('purchase_return',     tr('مردودات مشتريات'),              '5214', tr('حساب مردودات وإرجاع المشتريات')),
       ],
     ),
     // ── المجموعة 6: المصروفات التشغيلية ─────────────────────────────────────
     _PurposeGroup(
-      title: 'المصروفات التشغيلية',
+      title: tr('المصروفات التشغيلية'),
       icon: PhosphorIconsBold.trendDown,
-      color: Color(0xFFF59E0B),
+      color: const Color(0xFFF59E0B),
       items: [
-        _PurposeItem('salary_expense',      'رواتب — إدارة',                '621',  'حساب مصروفات الرواتب والأجور الإدارية'),
-        _PurposeItem('rent_expense',        'مصروف إيجار',                  '623',  'حساب مصروفات الإيجار'),
-        _PurposeItem('discount_allowed',    'خصم مسموح للعملاء',            '6215', 'خصم التسوية الممنوح عند استيفاء الديون'),
-        _PurposeItem('inventory_shrinkage', 'عجز مخزون',                    '6216', 'مصروف النقص والتلف في المخزون'),
-        _PurposeItem('cash_shortage',       'عجز نقدي',                     '6217', 'مصروف العجز النقدي عند إغلاق الوردية'),
-        _PurposeItem('misc_expense',        'مصروفات متنوعة',               '6214', 'حساب المصروفات العامة والمتنوعة'),
+        _PurposeItem('salary_expense',      tr('رواتب — إدارة'),                '621',  tr('حساب مصروفات الرواتب والأجور الإدارية')),
+        _PurposeItem('rent_expense',        tr('مصروف إيجار'),                  '623',  tr('حساب مصروفات الإيجار')),
+        _PurposeItem('discount_allowed',    tr('خصم مسموح للعملاء'),            '6215', tr('خصم التسوية الممنوح عند استيفاء الديون')),
+        _PurposeItem('inventory_shrinkage', tr('عجز مخزون'),                    '6216', tr('مصروف النقص والتلف في المخزون')),
+        _PurposeItem('cash_shortage',       tr('عجز نقدي'),                     '6217', tr('مصروف العجز النقدي عند إغلاق الوردية')),
+        _PurposeItem('misc_expense',        tr('مصروفات متنوعة'),               '6214', tr('حساب المصروفات العامة والمتنوعة')),
       ],
     ),
   ];
@@ -159,20 +160,20 @@ class _AccountMappingSettingsScreenState
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: Text('استعادة الربط الافتراضي', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+          title: Text(tr('استعادة الربط الافتراضي'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           content: Text(
-            'سيتم حذف جميع الربط المحاسبي الحالي واستعادة الربط الافتراضي من دليل الحسابات. هل تريد المتابعة؟',
+            tr('سيتم حذف جميع الربط المحاسبي الحالي واستعادة الربط الافتراضي من دليل الحسابات. هل تريد المتابعة؟'),
             style: GoogleFonts.cairo(),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text('إلغاء', style: GoogleFonts.cairo()),
+              child: Text(tr('إلغاء'), style: GoogleFonts.cairo()),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-              child: Text('استعادة', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, color: Colors.white)),
+              child: Text(tr('استعادة'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, color: Colors.white)),
             ),
           ],
         ),
@@ -183,9 +184,9 @@ class _AccountMappingSettingsScreenState
       final accountingRepo = ref.read(accountingRepositoryProvider);
       await accountingRepo.resetToDefaultMappings();
       await _loadData();
-      if (mounted) AppToast.show(context, 'تم استعادة الربط المحاسبي الافتراضي بنجاح');
+      if (mounted) AppToast.show(context, tr('تم استعادة الربط المحاسبي الافتراضي بنجاح'));
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -213,7 +214,7 @@ class _AccountMappingSettingsScreenState
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'وضع القراءة فقط — الربط المحاسبي يتم مركزيًا على السيرفر. لتعديل الربط، استخدم جهاز السيرفر.',
+                        tr('وضع القراءة فقط — الربط المحاسبي يتم مركزيًا على السيرفر. لتعديل الربط، استخدم جهاز السيرفر.'),
                         style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.orange[800]),
                       ),
                     ),
@@ -267,8 +268,8 @@ class _AccountMappingSettingsScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('ربط الحسابات', style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
-                Text('تخصيص الحسابات المستخدمة في القيود التلقائية', style: GoogleFonts.cairo(fontSize: 11, color: Colors.white70)),
+                Text(tr('ربط الحسابات'), style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+                Text(tr('تخصيص الحسابات المستخدمة في القيود التلقائية'), style: GoogleFonts.cairo(fontSize: 11, color: Colors.white70)),
               ],
             ),
           ),
@@ -282,7 +283,7 @@ class _AccountMappingSettingsScreenState
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                '🏢 ${_costCenters.length} مراكز تكلفة',
+                tr('🏢 {p0} مراكز تكلفة', {'p0': _costCenters.length}),
                 style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white),
               ),
             ),
@@ -290,7 +291,7 @@ class _AccountMappingSettingsScreenState
           OutlinedButton.icon(
             onPressed: _loadData,
             icon: const Icon(PhosphorIconsBold.arrowsClockwise, size: 16, color: Colors.white),
-            label: Text('تحديث', style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
+            label: Text(tr('تحديث'), style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.white,
               side: BorderSide(color: Colors.white.withValues(alpha: 0.4)),
@@ -303,7 +304,7 @@ class _AccountMappingSettingsScreenState
             OutlinedButton.icon(
               onPressed: _resetToDefaults,
               icon: const Icon(PhosphorIconsBold.arrowCounterClockwise, size: 16, color: Colors.white),
-              label: Text('استعادة الافتراضي', style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
+              label: Text(tr('استعادة الافتراضي'), style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
                 side: BorderSide(color: Colors.orange.withValues(alpha: 0.8)),
@@ -389,7 +390,7 @@ class _AccountMappingSettingsScreenState
                 TextButton.icon(
                   onPressed: () => _showAddMappingDialog(item, color),
                   icon: const Icon(PhosphorIconsBold.plus, size: 14),
-                  label: Text('إضافة ربط', style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w600)),
+                  label: Text(tr('إضافة ربط'), style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w600)),
                   style: TextButton.styleFrom(
                     foregroundColor: color,
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -424,7 +425,7 @@ class _AccountMappingSettingsScreenState
         children: [
           const Icon(PhosphorIconsBold.globe, size: 14, color: AppColors.textMuted),
           const SizedBox(width: 6),
-          Text('افتراضي', style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+          Text(tr('افتراضي'), style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
           const SizedBox(width: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -482,7 +483,7 @@ class _AccountMappingSettingsScreenState
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  isGlobal ? 'عالمي' : costCenter?.name ?? '؟',
+                  isGlobal ? tr('عالمي') : costCenter?.name ?? tr('؟'),
                   style: GoogleFonts.cairo(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -509,7 +510,7 @@ class _AccountMappingSettingsScreenState
           // Account name
           Expanded(
             child: Text(
-              account?.name ?? 'حساب غير موجود',
+              account?.name ?? tr('حساب غير موجود'),
               style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w500),
               overflow: TextOverflow.ellipsis,
             ),
@@ -519,7 +520,7 @@ class _AccountMappingSettingsScreenState
             IconButton(
               icon: Icon(PhosphorIconsBold.pencilSimple, size: 14, color: color),
               onPressed: () => _showEditMappingDialog(mapping, item, color),
-              tooltip: 'تعديل',
+              tooltip: tr('تعديل'),
               constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
               padding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
@@ -529,7 +530,7 @@ class _AccountMappingSettingsScreenState
             IconButton(
               icon: const Icon(PhosphorIconsBold.trash, size: 14, color: AppColors.error),
               onPressed: () => _deleteMappingEntry(mapping, item),
-              tooltip: 'حذف',
+              tooltip: tr('حذف'),
               constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
               padding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
@@ -562,7 +563,7 @@ class _AccountMappingSettingsScreenState
                 Icon(PhosphorIconsBold.link, color: color, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text('إضافة ربط: ${item.label}', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 15)),
+                  child: Text(tr('إضافة ربط: {p0}', {'p0': item.label}), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 15)),
                 ),
               ],
             ),
@@ -576,7 +577,7 @@ class _AccountMappingSettingsScreenState
                     children: [
                       const Icon(PhosphorIconsBold.buildings, size: 16, color: AppColors.textMuted),
                       const SizedBox(width: 8),
-                      Text('مركز التكلفة:', style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
+                      Text(tr('مركز التكلفة:'), style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: DropdownButtonFormField<int?>(
@@ -587,7 +588,7 @@ class _AccountMappingSettingsScreenState
                             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                           ),
                           items: [
-                            DropdownMenuItem<int?>(value: null, child: Text('🌐 عالمي (افتراضي)', style: GoogleFonts.cairo(fontSize: 12))),
+                            DropdownMenuItem<int?>(value: null, child: Text(tr('🌐 عالمي (افتراضي)'), style: GoogleFonts.cairo(fontSize: 12))),
                             ..._costCenters.map((cc) => DropdownMenuItem<int?>(
                                   value: cc.id,
                                   child: Text('🏢 ${cc.name}', style: GoogleFonts.cairo(fontSize: 12)),
@@ -604,7 +605,7 @@ class _AccountMappingSettingsScreenState
                     controller: searchCtrl,
                     onChanged: (_) => setDialogState(() {}),
                     decoration: InputDecoration(
-                      hintText: 'بحث بالرمز أو الاسم...',
+                      hintText: tr('بحث بالرمز أو الاسم...'),
                       prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       isDense: true,
@@ -645,11 +646,11 @@ class _AccountMappingSettingsScreenState
                               if (ctx.mounted) Navigator.pop(ctx);
                               await _loadData();
                               if (mounted) {
-                                AppToast.show(context, 'تم ربط "${item.label}" بحساب "${account.name}"');
+                                AppToast.show(context, tr('تم ربط "{p0}" بحساب "{p1}"', {'p0': item.label, 'p1': account.name}));
                               }
                             } catch (e) {
                               if (mounted) {
-                                AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+                                AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
                               }
                             }
                           },
@@ -663,7 +664,7 @@ class _AccountMappingSettingsScreenState
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
             ],
           );
@@ -695,7 +696,7 @@ class _AccountMappingSettingsScreenState
                 Icon(PhosphorIconsBold.pencilSimple, color: color, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text('تعديل ربط: ${item.label}', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 15)),
+                  child: Text(tr('تعديل ربط: {p0}', {'p0': item.label}), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 15)),
                 ),
               ],
             ),
@@ -709,7 +710,7 @@ class _AccountMappingSettingsScreenState
                     children: [
                       const Icon(PhosphorIconsBold.buildings, size: 16, color: AppColors.textMuted),
                       const SizedBox(width: 8),
-                      Text('مركز التكلفة:', style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
+                      Text(tr('مركز التكلفة:'), style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: DropdownButtonFormField<int?>(
@@ -720,7 +721,7 @@ class _AccountMappingSettingsScreenState
                             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                           ),
                           items: [
-                            DropdownMenuItem<int?>(value: null, child: Text('🌐 عالمي (افتراضي)', style: GoogleFonts.cairo(fontSize: 12))),
+                            DropdownMenuItem<int?>(value: null, child: Text(tr('🌐 عالمي (افتراضي)'), style: GoogleFonts.cairo(fontSize: 12))),
                             ..._costCenters.map((cc) => DropdownMenuItem<int?>(
                                   value: cc.id,
                                   child: Text('🏢 ${cc.name}', style: GoogleFonts.cairo(fontSize: 12)),
@@ -737,7 +738,7 @@ class _AccountMappingSettingsScreenState
                     controller: searchCtrl,
                     onChanged: (_) => setDialogState(() {}),
                     decoration: InputDecoration(
-                      hintText: 'بحث بالرمز أو الاسم...',
+                      hintText: tr('بحث بالرمز أو الاسم...'),
                       prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       isDense: true,
@@ -786,11 +787,11 @@ class _AccountMappingSettingsScreenState
                               if (ctx.mounted) Navigator.pop(ctx);
                               await _loadData();
                               if (mounted) {
-                                AppToast.show(context, 'تم تعديل ربط "${item.label}" إلى "${account.name}"');
+                                AppToast.show(context, tr('تم تعديل ربط "{p0}" إلى "{p1}"', {'p0': item.label, 'p1': account.name}));
                               }
                             } catch (e) {
                               if (mounted) {
-                                AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+                                AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
                               }
                             }
                           },
@@ -804,7 +805,7 @@ class _AccountMappingSettingsScreenState
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
             ],
           );
@@ -819,14 +820,14 @@ class _AccountMappingSettingsScreenState
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('حذف ربط حساب'),
-          content: Text('هل تريد حذف ربط "${item.label}"؟'),
+          title:  Text(tr('حذف ربط حساب')),
+          content: Text(tr('هل تريد حذف ربط "{p0}"؟', {'p0': item.label})),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child:  Text(tr('إلغاء'))),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('حذف'),
+              child:  Text(tr('حذف')),
             ),
           ],
         ),
@@ -839,11 +840,11 @@ class _AccountMappingSettingsScreenState
       await accountingRepo.deleteAccountMappingById(mapping.id);
       await _loadData();
       if (mounted) {
-        AppToast.show(context, 'تم حذف ربط "${item.label}"', type: ToastType.warning);
+        AppToast.show(context, tr('تم حذف ربط "{p0}"', {'p0': item.label}), type: ToastType.warning);
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }

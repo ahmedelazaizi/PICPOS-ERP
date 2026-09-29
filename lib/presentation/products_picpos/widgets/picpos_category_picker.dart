@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
@@ -47,7 +48,7 @@ class _PicPosCategoryDialogState extends State<_PicPosCategoryDialog> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Text('اختر التصنيف'),
+        title:  Text(tr('اختر التصنيف')),
         content: SizedBox(
           width: 420,
           height: 500,
@@ -56,9 +57,9 @@ class _PicPosCategoryDialogState extends State<_PicPosCategoryDialog> {
               TextField(
                 controller: _ctrl,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'ابحث عن تصنيف...',
-                  prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
+                decoration:  InputDecoration(
+                  hintText: tr('ابحث عن تصنيف...'),
+                  prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                 ),
                 onChanged: (v) => setState(() => _query = v),
               ),
@@ -70,7 +71,7 @@ class _PicPosCategoryDialogState extends State<_PicPosCategoryDialog> {
                     if (i == 0) {
                       return ListTile(
                         leading: const Icon(PhosphorIconsBold.listBullets),
-                        title: const Text('كل التصنيفات'),
+                        title:  Text(tr('كل التصنيفات')),
                         selected: widget.selectedId == null,
                         onTap: () => Navigator.pop(context, (true, null)),
                       );
@@ -93,7 +94,7 @@ class _PicPosCategoryDialogState extends State<_PicPosCategoryDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
         ],
       ),

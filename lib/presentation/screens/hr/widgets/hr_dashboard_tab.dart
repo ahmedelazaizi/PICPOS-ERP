@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -66,17 +67,17 @@ class HRDashboardTab extends ConsumerWidget {
       List<Employee> active, List<Employee> inactive, List<Employee> all) {
     return Row(
       children: [
-        _kpiCard('إجمالي الموظفين', '${all.length}', PhosphorIconsBold.users,
+        _kpiCard(tr('إجمالي الموظفين'), '${all.length}', PhosphorIconsBold.users,
             const Color(0xFF2563EB)),
         const SizedBox(width: 10),
-        _kpiCard('نشط', '${active.length}', PhosphorIconsBold.userCheck,
+        _kpiCard(tr('نشط'), '${active.length}', PhosphorIconsBold.userCheck,
             const Color(0xFF059669)),
         const SizedBox(width: 10),
-        _kpiCard('غير نشط', '${inactive.length}', PhosphorIconsBold.userMinus,
+        _kpiCard(tr('غير نشط'), '${inactive.length}', PhosphorIconsBold.userMinus,
             const Color(0xFFDC2626)),
         const SizedBox(width: 10),
         _kpiCard(
-            'إجمالي الرواتب',
+            tr('إجمالي الرواتب'),
             '${active.fold(0.0, (s, e) => s + e.salary).toStringAsFixed(0)} ${AppConstants.currencySymbolEn}',
             PhosphorIconsBold.wallet,
             const Color(0xFF7C3AED)),
@@ -137,13 +138,13 @@ class HRDashboardTab extends ConsumerWidget {
     }
 
     final roleNames = {
-      'staff': 'موظف',
-      'cashier': 'كاشير',
-      'waiter': 'نادل',
-      'manager': 'مدير',
-      'cleaner': 'عامل نظافة',
-      'chef': 'شيف',
-      'delivery': 'توصيل',
+      'staff': tr('موظف'),
+      'cashier': tr('كاشير'),
+      'waiter': tr('نادل'),
+      'manager': tr('مدير'),
+      'cleaner': tr('عامل نظافة'),
+      'chef': tr('شيف'),
+      'delivery': tr('توصيل'),
     };
 
     final roleColors = {
@@ -157,7 +158,7 @@ class HRDashboardTab extends ConsumerWidget {
     };
 
     return _sectionCard(
-      'توزيع الموظفين حسب الدور',
+      tr('توزيع الموظفين حسب الدور'),
       PhosphorIconsBold.chartPie,
       child: Wrap(
         spacing: 8,
@@ -201,7 +202,7 @@ class HRDashboardTab extends ConsumerWidget {
     final now = DateTime.now();
 
     return _sectionCard(
-      'ملخص الرواتب — ${_monthName(now.month)} ${now.year}',
+      tr('ملخص الرواتب — {p0} {p1}', {'p0': _monthName(now.month), 'p1': now.year}),
       PhosphorIconsBold.currencyCircleDollar,
       child: FutureBuilder<List<EmployeeSalaryCalculation>>(
         future: Future.wait(
@@ -228,12 +229,12 @@ class HRDashboardTab extends ConsumerWidget {
 
           return Column(
             children: [
-              _salaryRow('الرواتب الأساسية', totalBase, AppColors.textPrimary),
-              _salaryRow('إضافي', totalOvertime, const Color(0xFF059669)),
-              _salaryRow('سُلف', -totalAdv, const Color(0xFFDC2626)),
-              _salaryRow('خصومات', -totalDed, const Color(0xFFDC2626)),
+              _salaryRow(tr('الرواتب الأساسية'), totalBase, AppColors.textPrimary),
+              _salaryRow(tr('إضافي'), totalOvertime, const Color(0xFF059669)),
+              _salaryRow(tr('سُلف'), -totalAdv, const Color(0xFFDC2626)),
+              _salaryRow(tr('خصومات'), -totalDed, const Color(0xFFDC2626)),
               const Divider(height: 16),
-              _salaryRow('صافي المستحق', totalNet, AppColors.primary, isBold: true),
+              _salaryRow(tr('صافي المستحق'), totalNet, AppColors.primary, isBold: true),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -244,7 +245,7 @@ class HRDashboardTab extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'تم الصرف: $paid من ${calcs.length} موظف',
+                  tr('تم الصرف: {paid} من {p0} موظف', {'paid': paid, 'p0': calcs.length}),
                   style: GoogleFonts.cairo(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -290,7 +291,7 @@ class HRDashboardTab extends ConsumerWidget {
     final today = DateTime.now();
 
     return _sectionCard(
-      'حضور اليوم — ${today.day}/${today.month}/${today.year}',
+      tr('حضور اليوم — {p0}/{p1}/{p2}', {'p0': today.day, 'p1': today.month, 'p2': today.year}),
       PhosphorIconsBold.calendarCheck,
       child: StreamBuilder<List<EmployeeAttendanceWithDetails>>(
         stream: hrRepo.watchTodayAttendance(),
@@ -312,9 +313,9 @@ class HRDashboardTab extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _attendanceStat('حضروا', '$checkedIn', const Color(0xFF059669)),
-                  _attendanceStat('غائبون', '${total - checkedIn}', const Color(0xFFDC2626)),
-                  _attendanceStat('نسبة الحضور', '$pct%', const Color(0xFF2563EB)),
+                  _attendanceStat(tr('حضروا'), '$checkedIn', const Color(0xFF059669)),
+                  _attendanceStat(tr('غائبون'), '${total - checkedIn}', const Color(0xFFDC2626)),
+                  _attendanceStat(tr('نسبة الحضور'), '$pct%', const Color(0xFF2563EB)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -350,7 +351,7 @@ class HRDashboardTab extends ConsumerWidget {
 
   Widget _buildPendingLeaves(IHRRepository hrRepo) {
     return _sectionCard(
-      'إجازات معلقة',
+      tr('إجازات معلقة'),
       PhosphorIconsBold.clock,
       child: StreamBuilder<List<EmployeeLeave>>(
         stream: hrRepo.watchPendingLeaves(),
@@ -366,7 +367,7 @@ class HRDashboardTab extends ConsumerWidget {
             return Padding(
               padding: const EdgeInsets.all(16),
               child: Center(
-                child: Text('لا توجد إجازات معلقة ✅',
+                child: Text(tr('لا توجد إجازات معلقة ✅'),
                     style: GoogleFonts.cairo(
                         color: const Color(0xFF059669), fontWeight: FontWeight.w600)),
               ),
@@ -376,10 +377,10 @@ class HRDashboardTab extends ConsumerWidget {
           return Column(
             children: leaves.take(5).map((leave) {
               final typeLabels = {
-                'annual': 'سنوية',
-                'sick': 'مرضية',
-                'unpaid': 'بدون راتب',
-                'emergency': 'طارئة',
+                'annual': tr('سنوية'),
+                'sick': tr('مرضية'),
+                'unpaid': tr('بدون راتب'),
+                'emergency': tr('طارئة'),
               };
               final typeColors = {
                 'annual': const Color(0xFF2563EB),
@@ -427,7 +428,7 @@ class HRDashboardTab extends ConsumerWidget {
                               fontWeight: FontWeight.w700)),
                     ),
                     const SizedBox(width: 8),
-                    Text('${leave.days} يوم',
+                    Text(tr('{p0} يوم', {'p0': leave.days}),
                         style: GoogleFonts.cairo(
                             fontSize: 11, color: AppColors.textMuted)),
                   ],
@@ -449,15 +450,15 @@ class HRDashboardTab extends ConsumerWidget {
         employees.where((e) => e.salaryType == 'hourly').length;
 
     return _sectionCard(
-      'تصنيف الرواتب',
+      tr('تصنيف الرواتب'),
       PhosphorIconsBold.chartBar,
       child: Row(
         children: [
-          _salaryTypeChip('شهري', monthly, const Color(0xFF2563EB)),
+          _salaryTypeChip(tr('شهري'), monthly, const Color(0xFF2563EB)),
           const SizedBox(width: 10),
-          _salaryTypeChip('يومي', daily, const Color(0xFF059669)),
+          _salaryTypeChip(tr('يومي'), daily, const Color(0xFF059669)),
           const SizedBox(width: 10),
-          _salaryTypeChip('بالساعة', hourly, const Color(0xFF7C3AED)),
+          _salaryTypeChip(tr('بالساعة'), hourly, const Color(0xFF7C3AED)),
         ],
       ),
     );
@@ -523,9 +524,9 @@ class HRDashboardTab extends ConsumerWidget {
   }
 
   String _monthName(int month) {
-    const months = [
-      '', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+    final months = [
+      '', tr('يناير'), tr('فبراير'), tr('مارس'), tr('أبريل'), tr('مايو'), tr('يونيو'),
+      tr('يوليو'), tr('أغسطس'), tr('سبتمبر'), tr('أكتوبر'), tr('نوفمبر'), tr('ديسمبر'),
     ];
     return months[month];
   }

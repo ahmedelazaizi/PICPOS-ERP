@@ -23,7 +23,7 @@ Widget buildCartItemNoteField({
   return PermissionGuard(
     permission: PermissionCodes.posNoteAdd,
     allowManagerOverride: true,
-    actionName: 'إضافة ملاحظة على الصنف',
+    actionName: tr('إضافة ملاحظة على الصنف'),
     child: Padding(
       padding: EdgeInsets.symmetric(
         horizontal: 10 * scaleFactor,
@@ -46,7 +46,7 @@ Widget buildCartItemNoteField({
                 textInputAction: TextInputAction.done,
                 decoration: InputDecoration(
                   isDense: true,
-                  hintText: 'ملاحظة على الصنف...',
+                  hintText: tr('ملاحظة على الصنف...'),
                   hintStyle: TextStyle(
                     fontSize: 10 * scaleFactor,
                     color: AppColors.textMuted,
@@ -211,7 +211,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
                     ),
                     SizedBox(width: 4 * scaleFactor),
                     Text(
-                      'الإضافات',
+                      tr('الإضافات'),
                       style: TextStyle(
                         fontSize: 10 * scaleFactor,
                         fontWeight: activeModifierTab == 0
@@ -278,7 +278,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
                     ),
                     SizedBox(width: 4 * scaleFactor),
                     Text(
-                      'الخيارات',
+                      tr('الخيارات'),
                       style: TextStyle(
                         fontSize: 10 * scaleFactor,
                         fontWeight: activeModifierTab == 1
@@ -353,7 +353,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
         key: const ValueKey('additions-empty'),
         padding: EdgeInsets.symmetric(vertical: 8 * scaleFactor),
         child: Text(
-          'لا توجد إضافات لهذا الصنف',
+          tr('لا توجد إضافات لهذا الصنف'),
           style: TextStyle(fontSize: 10 * scaleFactor, color: AppColors.textMuted),
           textAlign: TextAlign.center,
         ),
@@ -508,7 +508,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
         key: const ValueKey('options-empty'),
         padding: EdgeInsets.symmetric(vertical: 8 * scaleFactor),
         child: Text(
-          'لا توجد خيارات لهذا الصنف',
+          tr('لا توجد خيارات لهذا الصنف'),
           style: TextStyle(fontSize: 10 * scaleFactor, color: AppColors.textMuted),
           textAlign: TextAlign.center,
         ),

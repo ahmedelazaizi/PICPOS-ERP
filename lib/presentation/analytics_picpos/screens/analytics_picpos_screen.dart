@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ «التحليلات» بهويّة PicPos — على تصميم
 // `PicPos Performance Analytics.dc.html`.
 //
@@ -60,9 +61,9 @@ const _purple = AppColors.booking;
 String _ar(Object n) =>
     '$n'.replaceAllMapped(RegExp(r'\d'), (m) => '٠١٢٣٤٥٦٧٨٩'[int.parse(m[0]!)]);
 
-const _monthsAr = [
-  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+List<String> get _monthsAr => [
+  tr('يناير'), tr('فبراير'), tr('مارس'), tr('أبريل'), tr('مايو'), tr('يونيو'),
+  tr('يوليو'), tr('أغسطس'), tr('سبتمبر'), tr('أكتوبر'), tr('نوفمبر'), tr('ديسمبر'),
 ];
 
 /// كيفَ يُقرأ الرقم — المالُ يُختصر بالآلاف، والنسبةُ بعلامتها، والعدُّ صحيح.
@@ -78,10 +79,10 @@ typedef _MetricDef = ({
   bool inverse,
 });
 
-const List<_MetricDef> _kMetrics = [
+List<_MetricDef> get _kMetrics => [
   (
     id: 'sales',
-    label: 'صافي المبيعات',
+    label: tr('صافي المبيعات'),
     icon: PhosphorIconsBold.currencyCircleDollar,
     tint: AppColors.primary,
     unit: _Unit.money,
@@ -89,7 +90,7 @@ const List<_MetricDef> _kMetrics = [
   ),
   (
     id: 'margin',
-    label: 'هامش الربح الإجمالي',
+    label: tr('هامش الربح الإجمالي'),
     icon: PhosphorIconsBold.percent,
     tint: _ok,
     unit: _Unit.percent,
@@ -97,7 +98,7 @@ const List<_MetricDef> _kMetrics = [
   ),
   (
     id: 'basket',
-    label: 'متوسط قيمة الفاتورة',
+    label: tr('متوسط قيمة الفاتورة'),
     icon: PhosphorIconsBold.shoppingCart,
     tint: _purple,
     unit: _Unit.money,
@@ -105,7 +106,7 @@ const List<_MetricDef> _kMetrics = [
   ),
   (
     id: 'invoices',
-    label: 'عدد الفواتير',
+    label: tr('عدد الفواتير'),
     icon: PhosphorIconsBold.receipt,
     tint: _warn,
     unit: _Unit.count,
@@ -113,7 +114,7 @@ const List<_MetricDef> _kMetrics = [
   ),
   (
     id: 'expenses',
-    label: 'المصروفات التشغيلية',
+    label: tr('المصروفات التشغيلية'),
     icon: PhosphorIconsBold.receiptX,
     tint: _err,
     unit: _Unit.money,
@@ -124,12 +125,12 @@ const List<_MetricDef> _kMetrics = [
 String _fmt(double v, _Unit unit) {
   switch (unit) {
     case _Unit.percent:
-      return '${_num1.format(v)}٪';
+      return tr('{p0}٪', {'p0': _num1.format(v)});
     case _Unit.count:
       return _money0.format(v);
     case _Unit.money:
       return v.abs() >= 100000
-          ? '${_money0.format(v / 1000)}ك'
+          ? tr('{p0}ك', {'p0': _money0.format(v / 1000)})
           : _money0.format(v);
   }
 }
@@ -246,9 +247,9 @@ class _AnalyticsPicposScreenState
     final series = ref.watch(_seriesProvider);
 
     return PicPosScreenScaffold(
-      title: 'التحليلات',
+      title: tr('التحليلات'),
       subtitle:
-          'اتجاه ومقارنة فترات وتنبؤ بالانحدار الخطي — كل رقم محتسب من السلسلة الزمنية لا مُدخَل',
+          tr('اتجاه ومقارنة فترات وتنبؤ بالانحدار الخطي — كل رقم محتسب من السلسلة الزمنية لا مُدخَل'),
       icon: PhosphorIconsBold.chartLineUp,
       headerActions: [
         _rangeToggle(),
@@ -256,7 +257,7 @@ class _AnalyticsPicposScreenState
         OutlinedButton.icon(
           onPressed: () => setState(() => _smooth = !_smooth),
           icon: const Icon(PhosphorIconsBold.waves, size: 15),
-          label: Text(_smooth ? 'تنعيم ٣ أشهر' : 'القيم الخام'),
+          label: Text(_smooth ? tr('تنعيم ٣ أشهر') : tr('القيم الخام')),
           style: _smooth
               ? OutlinedButton.styleFrom(
                   foregroundColor: context.picposBrandInk,
@@ -271,15 +272,15 @@ class _AnalyticsPicposScreenState
         // تبدو الشاشةُ عاملةً على سلسلةٍ فارغة.
         error: (e, _) => PicPosEmptyState(
           icon: PhosphorIconsBold.warningOctagon,
-          title: 'تعذّر حسابُ السلسلة الزمنيّة',
+          title: tr('تعذّر حسابُ السلسلة الزمنيّة'),
           hint: '$e',
         ),
         data: (rows) {
           final all = _parse(rows);
           if (all.length < 2) {
-            return const PicPosEmptyState(
+            return  PicPosEmptyState(
               icon: PhosphorIconsBold.chartLineUp,
-              title: 'لا تكفي البياناتُ لرسم اتجاه',
+              title: tr('لا تكفي البياناتُ لرسم اتجاه'),
               hint: 'الانحدارُ الخطّيُّ يحتاج شهرَين على الأقلّ فيهما حركة. '
                   'سجِّلْ مبيعاتٍ ثمّ عُدْ.',
             );
@@ -313,7 +314,7 @@ class _AnalyticsPicposScreenState
                   borderRadius: BorderRadius.circular(9),
                 ),
                 child: Text(
-                  n == 12 ? '١٢ شهراً' : '${_ar(n)} أشهر',
+                  n == 12 ? tr('١٢ شهراً') : tr('{p0} أشهر', {'p0': _ar(n)}),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
@@ -471,14 +472,14 @@ class _AnalyticsPicposScreenState
                     size: 12,
                     color: good ? _ok : _err),
                 const SizedBox(width: 6),
-                Text('${delta >= 0 ? '+' : ''}${_num1.format(delta)}٪',
+                Text(tr('{p0}{p1}٪', {'p0': delta >= 0 ? '+' : '', 'p1': _num1.format(delta)}),
                     style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w800,
                         color: good ? _ok : _err)),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text('عن ${_fmt(prev, m.unit)}',
+                  child: Text(tr('عن {p0}', {'p0': _fmt(prev, m.unit)}),
                       style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
@@ -525,7 +526,7 @@ class _AnalyticsPicposScreenState
         mainAxisSize: MainAxisSize.min,
         children: [
           PicPosSectionHeader(
-            title: '${focus.label} — الاتجاه والتنبؤ',
+            title: tr('{p0} — الاتجاه والتنبؤ', {'p0': focus.label}),
             subtitle: '${_ar(f.points.length)} نقطة'
                 '${_smooth ? ' · مُنعَّمة بمتوسط متحرك ٣ أشهر' : ' · قيم خام'}'
                 ' · تنبؤ ٣ أشهر قادمة بالانحدار الخطي',
@@ -559,18 +560,18 @@ class _AnalyticsPicposScreenState
 
   Widget _trendTable(List<_MonthPoint> all) {
     return PicPosDataTable(
-      title: 'تحليل الاتجاه لكل مؤشر',
+      title: tr('تحليل الاتجاه لكل مؤشر'),
       subtitle:
-          'الميل من الانحدار الخطي — والتنبؤ هو النقطة التالية على الخط',
+          tr('الميل من الانحدار الخطي — والتنبؤ هو النقطة التالية على الخط'),
       minWidth: 820,
-      columns: const [
-        PicPosTableColumn('المؤشر', flex: 1.7),
-        PicPosTableColumn('البداية', flex: 1.1, align: PicPosCellAlign.end),
-        PicPosTableColumn('النهاية', flex: 1.1, align: PicPosCellAlign.end),
-        PicPosTableColumn('الميل / شهر',
+      columns:  [
+        PicPosTableColumn(tr('المؤشر'), flex: 1.7),
+        PicPosTableColumn(tr('البداية'), flex: 1.1, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('النهاية'), flex: 1.1, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('الميل / شهر'),
             flex: 1.2, align: PicPosCellAlign.end),
-        PicPosTableColumn('التغير', flex: 1.1, align: PicPosCellAlign.end),
-        PicPosTableColumn('تنبؤ الشهر القادم',
+        PicPosTableColumn(tr('التغير'), flex: 1.1, align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('تنبؤ الشهر القادم'),
             flex: 1.4, align: PicPosCellAlign.end),
       ],
       rows: [
@@ -584,9 +585,9 @@ class _AnalyticsPicposScreenState
               cells: [
                 PicPosTextCell(m.label,
                     sub: switch (t.direction) {
-                      TrendDirection.up => 'صاعد',
-                      TrendDirection.down => 'هابط',
-                      TrendDirection.flat => 'مستقر',
+                      TrendDirection.up => tr('صاعد'),
+                      TrendDirection.down => tr('هابط'),
+                      TrendDirection.flat => tr('مستقر'),
                     },
                     icon: m.icon,
                     tint: m.tint),
@@ -621,15 +622,15 @@ class _AnalyticsPicposScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const PicPosSectionHeader(
-            title: 'مُعامل الموسمية',
-            subtitle: 'متوسط الشهر ÷ متوسط السلسلة — فوق ١.٠ يعني موسماً مرتفعاً',
+           PicPosSectionHeader(
+            title: tr('مُعامل الموسمية'),
+            subtitle: tr('متوسط الشهر ÷ متوسط السلسلة — فوق ١.٠ يعني موسماً مرتفعاً'),
             icon: PhosphorIconsBold.calendarHeart,
           ),
           if (months.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text('لا نقاطَ تكفي لحساب موسميّة',
+              child: Text(tr('لا نقاطَ تكفي لحساب موسميّة'),
                   style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -694,8 +695,8 @@ class _AnalyticsPicposScreenState
               children: [
                 Text(
                   healthy
-                      ? 'النمو يسبق المصروف — الاتجاه سليم'
-                      : 'المصروف ينمو أسرع من المبيعات',
+                      ? tr('النمو يسبق المصروف — الاتجاه سليم')
+                      : tr('المصروف ينمو أسرع من المبيعات'),
                   style: const TextStyle(
                       fontSize: 14.5, fontWeight: FontWeight.w800),
                 ),
@@ -748,16 +749,16 @@ class _ChartLegend extends StatelessWidget {
       spacing: 16,
       runSpacing: 6,
       children: [
-        item('القيمة الفعلية',
+        item(tr('القيمة الفعلية'),
             Container(width: 14, height: 14, color: tint)),
         item(
-            'خط الانحدار',
+            tr('خط الانحدار'),
             Container(
                 width: 14,
                 height: 2.5,
                 color: _err)),
         item(
-            'التنبؤ',
+            tr('التنبؤ'),
             Container(
               width: 14,
               height: 14,

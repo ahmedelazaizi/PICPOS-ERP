@@ -36,17 +36,17 @@ class _EtaConfigFormState extends State<_EtaConfigForm> {
         const SizedBox(height: 8),
         TextField(
           controller: _registrationNumber,
-          decoration: const InputDecoration(labelText: 'رقم التسجيل الضريبي'),
+          decoration:  InputDecoration(labelText: tr('رقم التسجيل الضريبي')),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _activityCode,
-          decoration: const InputDecoration(labelText: 'كود النشاط (اختياري)'),
+          decoration:  InputDecoration(labelText: tr('كود النشاط (اختياري)')),
         ),
         const SizedBox(height: 8),
         SwitchListTile(
-          title: const Text('بيئة الإنتاج'),
-          subtitle: const Text('تشغيل: إنتاج / إيقاف: اختبار'),
+          title:  Text(tr('بيئة الإنتاج')),
+          subtitle:  Text(tr('تشغيل: إنتاج / إيقاف: اختبار')),
           value: _isProduction,
           onChanged: (v) => setState(() => _isProduction = v),
         ),
@@ -55,7 +55,7 @@ class _EtaConfigFormState extends State<_EtaConfigForm> {
           width: double.infinity,
           child: ElevatedButton.icon(
             icon: const Icon(Icons.save),
-            label: const Text('حفظ إعدادات ETA'),
+            label:  Text(tr('حفظ إعدادات ETA')),
             onPressed: () => widget.onSave({
               'clientId': _clientId.text,
               'clientSecret': _clientSecret.text,
@@ -112,14 +112,14 @@ class _JofotaraConfigFormState extends State<_JofotaraConfigForm> {
         const SizedBox(height: 8),
         TextField(
           controller: _registrationNumber,
-          decoration: const InputDecoration(
-            labelText: 'رقم التسجيل الضريبي (TRN)',
+          decoration:  InputDecoration(
+            labelText: tr('رقم التسجيل الضريبي (TRN)'),
           ),
         ),
         const SizedBox(height: 8),
         SwitchListTile(
-          title: const Text('بيئة الإنتاج'),
-          subtitle: const Text('تشغيل: إنتاج / إيقاف: اختبار'),
+          title:  Text(tr('بيئة الإنتاج')),
+          subtitle:  Text(tr('تشغيل: إنتاج / إيقاف: اختبار')),
           value: _isProduction,
           onChanged: (v) => setState(() => _isProduction = v),
         ),
@@ -128,7 +128,7 @@ class _JofotaraConfigFormState extends State<_JofotaraConfigForm> {
           width: double.infinity,
           child: ElevatedButton.icon(
             icon: const Icon(Icons.save),
-            label: const Text('حفظ إعدادات JOFOTARA'),
+            label:  Text(tr('حفظ إعدادات JOFOTARA')),
             onPressed: () => widget.onSave({
               'clientId': _clientId.text,
               'clientSecret': _clientSecret.text,

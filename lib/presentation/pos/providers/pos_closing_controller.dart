@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/foundation.dart';
@@ -718,11 +719,11 @@ class PosClosingController extends Notifier<PosClosingState> {
         // القنواتُ غيرُ النقدية في الملاحظة: النقديُّ نفسُه هو المبلغُ
         // المُمرَّر فوق. وكليك كانت غائبةً فسجّل التدقيقُ ورديةً ناقصةً قناة.
         notes: [
-          'إغلاق وردية POS',
+          tr('إغلاق وردية POS'),
           if (state.actualBankAmount > 0)
-            'بنك: ${state.actualBankAmount.toStringAsFixed(AppConstants.decimalPlaces)}',
+            tr('بنك: {p0}', {'p0': state.actualBankAmount.toStringAsFixed(AppConstants.decimalPlaces)}),
           if (state.actualClickAmount > 0)
-            'كليك: ${state.actualClickAmount.toStringAsFixed(AppConstants.decimalPlaces)}',
+            tr('كليك: {p0}', {'p0': state.actualClickAmount.toStringAsFixed(AppConstants.decimalPlaces)}),
           // سببُ الفرق حين تطلبه سياسةُ البيع السريع (§٤ `diffmax`).
           //
           // ⚠️ **وسيطٌ اختياريٌّ افتراضُه `null`**: هذا المتحكّمُ مشترَكٌ
@@ -732,7 +733,7 @@ class PosClosingController extends Notifier<PosClosingState> {
           // والسببُ يُخزَّن مع الوردية لا في سجلٍّ منفصل: من يراجع فرقاً
           // بعد أسبوعٍ يفتح الوردية، وسببٌ في مكانٍ آخرَ لا يُقرأ.
           if (varianceReason != null && varianceReason.trim().isNotEmpty)
-            'سبب الفرق: ${varianceReason.trim()}',
+            tr('سبب الفرق: {p0}', {'p0': varianceReason.trim()}),
         ].join(' - '),
         closingMethod: closingMethod,
         closingSnapshot: snapshot.encode(),
@@ -776,7 +777,7 @@ class PosClosingController extends Notifier<PosClosingState> {
       final logger = ref.read(activityLoggerProvider);
       await logger.logShiftClose(
         authState.user?.id ?? 0,
-        authState.user?.displayName ?? 'الكاشير',
+        authState.user?.displayName ?? tr('الكاشير'),
         expectedAmount: state.systemTotal,
         actualAmount: state.actualTotal,
       );
@@ -810,7 +811,7 @@ class PosClosingController extends Notifier<PosClosingState> {
   ) async {
     final now = DateTime.now();
     final dateTimeStr = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
-    final currentUserName = authState.user?.displayName ?? authState.user?.username ?? 'الكاشير';
+    final currentUserName = authState.user?.displayName ?? authState.user?.username ?? tr('الكاشير');
     final currentUserId = authState.user?.id ?? 1;
 
     final treasuryRepo = ref.read(treasuryRepositoryProvider);
@@ -826,7 +827,7 @@ class PosClosingController extends Notifier<PosClosingState> {
         amount: systemCash,
         balanceAfter: systemCash,
         referenceType: 'daily_closing',
-        description: 'الموظف: $currentUserName | إغلاق نقدي | النظام: ${systemCash.toStringAsFixed(AppConstants.decimalPlaces)} | الفعلي: ${actualCash.toStringAsFixed(AppConstants.decimalPlaces)}',
+        description: tr('الموظف: {currentUserName} | إغلاق نقدي | النظام: {p0} | الفعلي: {p1}', {'currentUserName': currentUserName, 'p0': systemCash.toStringAsFixed(AppConstants.decimalPlaces), 'p1': actualCash.toStringAsFixed(AppConstants.decimalPlaces)}),
         userId: currentUserId,
       );
     }
@@ -840,7 +841,7 @@ class PosClosingController extends Notifier<PosClosingState> {
         amount: systemCard,
         balanceAfter: systemCard,
         referenceType: 'daily_closing',
-        description: 'الموظف: $currentUserName | إغلاق بنكي | النظام: ${systemCard.toStringAsFixed(AppConstants.decimalPlaces)} | الفعلي: ${actualCard.toStringAsFixed(AppConstants.decimalPlaces)}',
+        description: tr('الموظف: {currentUserName} | إغلاق بنكي | النظام: {p0} | الفعلي: {p1}', {'currentUserName': currentUserName, 'p0': systemCard.toStringAsFixed(AppConstants.decimalPlaces), 'p1': actualCard.toStringAsFixed(AppConstants.decimalPlaces)}),
         userId: currentUserId,
       );
     }

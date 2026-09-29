@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -58,9 +59,9 @@ class PosLowStockIndicator extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      label: const Text(
-                        'تنبيه مخزون',
-                        style: TextStyle(
+                      label:  Text(
+                        tr('تنبيه مخزون'),
+                        style: const TextStyle(
                           color: Colors.orange,
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -92,7 +93,7 @@ class PosLowStockIndicator extends ConsumerWidget {
             children: [
               const Icon(PhosphorIconsBold.warning, color: Colors.orange),
               const SizedBox(width: 8),
-              Text('أصناف وصلت الحد الأدنى (${items.length})'),
+              Text(tr('أصناف وصلت الحد الأدنى ({p0})', {'p0': items.length})),
             ],
           ),
           content: SizedBox(
@@ -112,20 +113,20 @@ class PosLowStockIndicator extends ConsumerWidget {
                     product.name,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  subtitle: Text('الكود: ${product.code}'),
+                  subtitle: Text(tr('الكود: {p0}', {'p0': product.code})),
                   trailing: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        'المتبقي: ${product.currentStock.toStringAsFixed(0)}',
+                        tr('المتبقي: {p0}', {'p0': product.currentStock.toStringAsFixed(0)}),
                         style: const TextStyle(
                           color: AppColors.error,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        'الحد الأدنى: ${product.minStock.toStringAsFixed(0)}',
+                        tr('الحد الأدنى: {p0}', {'p0': product.minStock.toStringAsFixed(0)}),
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
@@ -140,7 +141,7 @@ class PosLowStockIndicator extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -36,7 +37,7 @@ class _PartialCollectionDialogState extends State<PartialCollectionDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(
-        'تحصيل جزئي — شيك #${widget.paperNumber}',
+        tr('تحصيل جزئي — شيك #{p0}', {'p0': widget.paperNumber}),
         style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
       ),
       content: SizedBox(
@@ -45,7 +46,7 @@ class _PartialCollectionDialogState extends State<PartialCollectionDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'إجمالي الورقة: ${widget.totalAmount.toStringAsFixed(2)}',
+              tr('إجمالي الورقة: {p0}', {'p0': widget.totalAmount.toStringAsFixed(2)}),
               style: GoogleFonts.cairo(fontWeight: FontWeight.w600, color: AppColors.success),
             ),
             const SizedBox(height: 12),
@@ -53,7 +54,7 @@ class _PartialCollectionDialogState extends State<PartialCollectionDialog> {
               controller: _amountCtrl,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'المبلغ المحصّل *',
+                labelText: tr('المبلغ المحصّل *'),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 isDense: true,
               ),
@@ -86,8 +87,8 @@ class _PartialCollectionDialogState extends State<PartialCollectionDialog> {
                       controller: controller,
                       focusNode: focusNode,
                       decoration: InputDecoration(
-                        labelText: 'الحساب المقابل',
-                        hintText: 'ابحث بالاسم أو الرمز...',
+                        labelText: tr('الحساب المقابل'),
+                        hintText: tr('ابحث بالاسم أو الرمز...'),
                         prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         isDense: true,
@@ -116,7 +117,7 @@ class _PartialCollectionDialogState extends State<PartialCollectionDialog> {
             TextField(
               controller: _notesCtrl,
               decoration: InputDecoration(
-                labelText: 'ملاحظات',
+                labelText: tr('ملاحظات'),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 isDense: true,
               ),
@@ -127,7 +128,7 @@ class _PartialCollectionDialogState extends State<PartialCollectionDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         ElevatedButton(
           onPressed: () {
@@ -142,7 +143,7 @@ class _PartialCollectionDialogState extends State<PartialCollectionDialog> {
               'account': _selectedAccount,
             });
           },
-          child: const Text('تأكيد التحصيل'),
+          child:  Text(tr('تأكيد التحصيل')),
         ),
       ],
     );

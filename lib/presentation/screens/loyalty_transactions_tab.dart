@@ -31,18 +31,18 @@ class _TransactionsTabState extends State<_TransactionsTab> {
                 color: AppColors.primary,
               ),
               const SizedBox(width: 8),
-              const Text(
-                'سجل حركات النقاط',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+               Text(
+                tr('سجل حركات النقاط'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               // Filter chips
               SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'all', label: Text('الكل')),
-                  ButtonSegment(value: 'earn', label: Text('كسب')),
-                  ButtonSegment(value: 'redeem', label: Text('استبدال')),
-                  ButtonSegment(value: 'adjust', label: Text('تعديل')),
+                segments:  [
+                  ButtonSegment(value: 'all', label: Text(tr('الكل'))),
+                  ButtonSegment(value: 'earn', label: Text(tr('كسب'))),
+                  ButtonSegment(value: 'redeem', label: Text(tr('استبدال'))),
+                  ButtonSegment(value: 'adjust', label: Text(tr('تعديل'))),
                 ],
                 selected: {_filterType},
                 onSelectionChanged: (v) =>
@@ -69,8 +69,8 @@ class _TransactionsTabState extends State<_TransactionsTab> {
                 return Center(
                   child: Text(
                     _filterType == 'all'
-                        ? 'لا توجد حركات'
-                        : 'لا توجد حركات من نوع ${_typeName(_filterType)}',
+                        ? tr('لا توجد حركات')
+                        : tr('لا توجد حركات من نوع {p0}', {'p0': _typeName(_filterType)}),
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
                 );
@@ -159,10 +159,10 @@ class _TransactionsTabState extends State<_TransactionsTab> {
   };
 
   String _typeName(String t) => switch (t) {
-    'earn' => 'كسب نقاط',
-    'redeem' => 'استبدال',
-    'expire' => 'انتهاء صلاحية',
-    'adjust' => 'تعديل يدوي',
-    _ => 'تعديل',
+    'earn' => tr('كسب نقاط'),
+    'redeem' => tr('استبدال'),
+    'expire' => tr('انتهاء صلاحية'),
+    'adjust' => tr('تعديل يدوي'),
+    _ => tr('تعديل'),
   };
 }

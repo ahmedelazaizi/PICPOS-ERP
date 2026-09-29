@@ -45,7 +45,7 @@ mixin _StatementExportMixin on ConsumerState<PartyStatementPicposScreen> {
       final entries = await _fetchEntries();
       if (entries.isEmpty) {
         if (mounted) {
-          AppToast.show(context, 'لا حركات في هذه الفترة للطباعة',
+          AppToast.show(context, tr('لا حركات في هذه الفترة للطباعة'),
               type: ToastType.warning);
         }
         return;
@@ -95,7 +95,7 @@ mixin _StatementExportMixin on ConsumerState<PartyStatementPicposScreen> {
         '❌ تعذّرت الطباعة: $e',
       ));
       if (mounted) {
-        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -105,22 +105,22 @@ mixin _StatementExportMixin on ConsumerState<PartyStatementPicposScreen> {
       final entries = await _fetchEntries();
       if (entries.isEmpty) {
         if (mounted) {
-          AppToast.show(context, 'لا حركات في هذه الفترة للتصدير',
+          AppToast.show(context, tr('لا حركات في هذه الفترة للتصدير'),
               type: ToastType.warning);
         }
         return;
       }
 
       final excel = Excel.createExcel();
-      const sheetName = 'كشف حساب';
+      final sheetName = tr('كشف حساب');
       excel.rename('Sheet1', sheetName);
       final sheet = excel[sheetName];
 
-      sheet.appendRow([TextCellValue('كشف حساب: $_partyLabel')]);
-      sheet.appendRow([TextCellValue(isSupplier ? 'مورد' : 'عميل')]);
+      sheet.appendRow([TextCellValue(tr('كشف حساب: {_partyLabel}', {'_partyLabel': _partyLabel}))]);
+      sheet.appendRow([TextCellValue(isSupplier ? tr('مورد') : tr('عميل'))]);
       sheet.appendRow([
         TextCellValue(
-          'الفترة: ${df.format(range.start)} - ${df.format(range.end)}',
+          tr('الفترة: {p0} - {p1}', {'p0': df.format(range.start), 'p1': df.format(range.end)}),
         )
       ]);
       sheet.appendRow([
@@ -133,12 +133,12 @@ mixin _StatementExportMixin on ConsumerState<PartyStatementPicposScreen> {
       sheet.appendRow([TextCellValue('')]);
 
       sheet.appendRow([
-        TextCellValue('التاريخ'),
-        TextCellValue('البيان'),
-        TextCellValue('رقم المستند'),
-        TextCellValue('مدين'),
-        TextCellValue('دائن'),
-        TextCellValue('الرصيد'),
+        TextCellValue(tr('التاريخ')),
+        TextCellValue(tr('البيان')),
+        TextCellValue(tr('رقم المستند')),
+        TextCellValue(tr('مدين')),
+        TextCellValue(tr('دائن')),
+        TextCellValue(tr('الرصيد')),
       ]);
 
       var debit = 0.0;
@@ -159,7 +159,7 @@ mixin _StatementExportMixin on ConsumerState<PartyStatementPicposScreen> {
       sheet.appendRow([TextCellValue('')]);
       sheet.appendRow([
         TextCellValue(''),
-        TextCellValue('الإجمالي'),
+        TextCellValue(tr('الإجمالي')),
         TextCellValue(''),
         DoubleCellValue(debit),
         DoubleCellValue(credit),
@@ -172,7 +172,7 @@ mixin _StatementExportMixin on ConsumerState<PartyStatementPicposScreen> {
       if (bytes != null) {
         await fileUtils.saveFile(fileName, Uint8List.fromList(bytes));
         if (mounted) {
-          AppToast.show(context, 'تم تصدير الكشف إلى: $fileName',
+          AppToast.show(context, tr('تم تصدير الكشف إلى: {fileName}', {'fileName': fileName}),
               type: ToastType.success);
         }
       }
@@ -182,7 +182,7 @@ mixin _StatementExportMixin on ConsumerState<PartyStatementPicposScreen> {
         '❌ تعذّر التصدير: $e',
       ));
       if (mounted) {
-        AppToast.show(context, 'خطأ في التصدير: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في التصدير: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }

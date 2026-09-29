@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
@@ -23,10 +24,10 @@ class ActivityTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (logs.isEmpty) {
-      return const Center(
+      return  Center(
         child: Text(
-          'لا توجد عمليات مسجلة',
-          style: TextStyle(color: AppColors.textMuted),
+          tr('لا توجد عمليات مسجلة'),
+          style: const TextStyle(color: AppColors.textMuted),
         ),
       );
     }
@@ -79,9 +80,9 @@ class ActivityTimeline extends StatelessWidget {
 
     String dateLabel;
     if (logDate == today) {
-      dateLabel = 'اليوم';
+      dateLabel = tr('اليوم');
     } else if (logDate == today.subtract(const Duration(days: 1))) {
-      dateLabel = 'أمس';
+      dateLabel = tr('أمس');
     } else {
       dateLabel = dateKey;
     }

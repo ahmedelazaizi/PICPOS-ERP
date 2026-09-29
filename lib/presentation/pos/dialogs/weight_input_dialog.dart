@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
@@ -79,7 +80,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
         children: [
           // BUG-U01: restored Arabic. BUG-U28: Arabic currency symbol.
           Text(
-            'سعر الوحدة: ${pricePerUnit.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbol}',
+            tr('سعر الوحدة: {p0} {p1}', {'p0': pricePerUnit.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbol}),
           ),
           const SizedBox(height: 16),
 
@@ -88,9 +89,9 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
             _buildLiveWeightSection(),
             const SizedBox(height: 12),
             const Divider(),
-            const Text(
-              'أو أدخل الوزن يدوياً:',
-              style: TextStyle(color: AppColors.textMuted),
+             Text(
+              tr('أو أدخل الوزن يدوياً:'),
+              style: const TextStyle(color: AppColors.textMuted),
             ),
             const SizedBox(height: 8),
           ],
@@ -106,12 +107,12 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         ElevatedButton.icon(
           onPressed: weight > 0 ? () => widget.onWeightConfirmed(weight) : null,
           icon: const Icon(PhosphorIconsBold.shoppingCart, size: 18),
-          label: const Text('إضافة للسلة'),
+          label:  Text(tr('إضافة للسلة')),
         ),
       ],
     );
@@ -152,7 +153,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'القراءة المباشرة من الميزان',
+                    tr('القراءة المباشرة من الميزان'),
                     style: TextStyle(
                       fontSize: 12,
                       color: AppColors.success.withValues(alpha: 0.8),
@@ -162,7 +163,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
               ),
               const SizedBox(height: 8),
               Text(
-                '${liveWeight.toStringAsFixed(3)} كجم',
+                tr('{p0} كجم', {'p0': liveWeight.toStringAsFixed(3)}),
                 style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -182,7 +183,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
                         }
                       : null,
                   icon: const Icon(PhosphorIconsBold.check, size: 16),
-                  label: const Text('استخدام هذا الوزن'),
+                  label:  Text(tr('استخدام هذا الوزن')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
@@ -200,13 +201,13 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
     return TextField(
       controller: _weightController,
       decoration: InputDecoration(
-        labelText: 'الوزن (كجم)',
+        labelText: tr('الوزن (كجم)'),
         hintText: '0.000',
         prefixIcon: const Icon(PhosphorIconsBold.scales),
-        suffixText: 'كجم',
+        suffixText: tr('كجم'),
         // BUG-U26: explain why the "إضافة للسلة" button stays disabled.
         helperText:
-            weight <= 0 ? 'أدخل وزناً أكبر من صفر لتفعيل الإضافة' : null,
+            weight <= 0 ? tr('أدخل وزناً أكبر من صفر لتفعيل الإضافة') : null,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -225,9 +226,9 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'الإجمالي:',
-            style: TextStyle(fontWeight: FontWeight.bold),
+           Text(
+            tr('الإجمالي:'),
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           Text(
             '${total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbol}',

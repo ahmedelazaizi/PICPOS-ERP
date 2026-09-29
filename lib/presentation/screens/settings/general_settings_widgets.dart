@@ -17,7 +17,7 @@ class _IndustryModeToggle extends ConsumerWidget {
         PhosphorIconsBold.storefront,
         color: AppColors.primary,
       ),
-      title: const Text('نوع النشاط التجاري'),
+      title:  Text(tr('نوع النشاط التجاري')),
       subtitle: Text(_getModeLabel(mode)),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: () => _showModeSelector(context, ref, mode),
@@ -27,13 +27,13 @@ class _IndustryModeToggle extends ConsumerWidget {
   String _getModeLabel(IndustryMode mode) {
     switch (mode) {
       case IndustryMode.supermarket:
-        return 'سوبر ماركت / بقالة (بيع سريع)';
+        return tr('سوبر ماركت / بقالة (بيع سريع)');
       case IndustryMode.restaurant:
-        return 'مطعم (طاولات وصالات)';
+        return tr('مطعم (طاولات وصالات)');
       case IndustryMode.cafe:
-        return 'كافيه (طلبات سريعة)';
+        return tr('كافيه (طلبات سريعة)');
       case IndustryMode.retail:
-        return 'بيع بالتجزئة';
+        return tr('بيع بالتجزئة');
     }
   }
 
@@ -47,13 +47,13 @@ class _IndustryModeToggle extends ConsumerWidget {
       builder: (ctx) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: SimpleDialog(
-          title: const Text('اختر نوع النشاط'),
+          title:  Text(tr('اختر نوع النشاط')),
           children: [
             _buildOption(
               ctx,
               ref,
               IndustryMode.supermarket,
-              'سوبر ماركت / بيع بالتجزئة',
+              tr('سوبر ماركت / بيع بالتجزئة'),
               PhosphorIconsBold.barcode,
               current,
             ),
@@ -61,7 +61,7 @@ class _IndustryModeToggle extends ConsumerWidget {
               ctx,
               ref,
               IndustryMode.restaurant,
-              'مطعم / صالات طعام',
+              tr('مطعم / صالات طعام'),
               PhosphorIconsBold.cookingPot,
               current,
             ),
@@ -69,7 +69,7 @@ class _IndustryModeToggle extends ConsumerWidget {
               ctx,
               ref,
               IndustryMode.cafe,
-              'كافيه / طلبات سريعة',
+              tr('كافيه / طلبات سريعة'),
               PhosphorIconsBold.coffee,
               current,
             ),
@@ -108,7 +108,7 @@ class _IndustryModeToggle extends ConsumerWidget {
           logger.logSettingsChange(
             auth.user?.id ?? 0,
             auth.user?.displayName ?? '',
-            'نوع النشاط التجاري',
+            tr('نوع النشاط التجاري'),
             newValue: label,
           );
         } catch (e) {
@@ -146,7 +146,7 @@ class _CurrencySelector extends ConsumerWidget {
       builder: (ctx) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: SimpleDialog(
-          title: const Text('اختر عملة النظام'),
+          title:  Text(tr('اختر عملة النظام')),
           children: CurrencyInfo.all.map((c) {
             final isSelected = c.code == currentCode;
             return ListTile(
@@ -182,7 +182,7 @@ class _CurrencySelector extends ConsumerWidget {
                   logger.logSettingsChange(
                     auth.user?.id ?? 0,
                     auth.user?.displayName ?? '',
-                    'عملة النظام',
+                    tr('عملة النظام'),
                     newValue: '${c.nameAr} (${c.code})',
                   );
                 } catch (e) {
@@ -235,11 +235,11 @@ class _DeliveryToggleState extends ConsumerState<_DeliveryToggle> {
         PhosphorIconsBold.moped,
         color: _enabled ? AppColors.success : Colors.grey,
       ),
-      title: const Text('تفعيل خدمة التوصيل'),
+      title:  Text(tr('تفعيل خدمة التوصيل')),
       subtitle: Text(
         _enabled
-            ? 'يمكنك إنشاء طلبات توصيل وإدارة المناديب'
-            : 'خدمة التوصيل غير مفعلة',
+            ? tr('يمكنك إنشاء طلبات توصيل وإدارة المناديب')
+            : tr('خدمة التوصيل غير مفعلة'),
       ),
       value: _enabled,
       onChanged: (v) async {
@@ -254,8 +254,8 @@ class _DeliveryToggleState extends ConsumerState<_DeliveryToggle> {
           await logger.logSettingsChange(
             auth.user?.id ?? 0,
             auth.user?.displayName ?? '',
-            'خدمة التوصيل',
-            newValue: v ? 'مفعل' : 'معطل',
+            tr('خدمة التوصيل'),
+            newValue: v ? tr('مفعل') : tr('معطل'),
           );
         } catch (e) {
           debugPrint('[ActivityLog] Error: $e');
@@ -305,9 +305,9 @@ class _CostingMethodToggleState extends ConsumerState<_CostingMethodToggle> {
         PhosphorIconsBold.calculator,
         color: AppColors.info,
       ),
-      title: const Text('طريقة حساب التكلفة'),
+      title:  Text(tr('طريقة حساب التكلفة')),
       subtitle: Text(
-        '${CostingMethodService.label(_method)} — وفق IAS 2',
+        tr('{p0} — وفق IAS 2', {'p0': CostingMethodService.label(_method)}),
       ),
     );
   }
@@ -352,7 +352,7 @@ class _StockShortagePolicyToggleState
         PhosphorIconsBold.warning,
         color: AppColors.warning,
       ),
-      title: const Text('سياسة النظام عند نقص الخامات'),
+      title:  Text(tr('سياسة النظام عند نقص الخامات')),
       subtitle: Text(_policy.arabicLabel),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: _showSelector,
@@ -365,7 +365,7 @@ class _StockShortagePolicyToggleState
       builder: (ctx) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: SimpleDialog(
-          title: const Text('اختر السياسة الافتراضية'),
+          title:  Text(tr('اختر السياسة الافتراضية')),
           children: [
             for (final policy in StockShortagePolicy.values)
               _buildOption(ctx, policy),
@@ -405,17 +405,17 @@ class _StockShortagePolicyToggleState
     switch (policy) {
       case StockShortagePolicy.block:
         return (
-          'يمنع البيع تماماً عند عدم كفاية الخامات وتظهر رسالة خطأ',
+          tr('يمنع البيع تماماً عند عدم كفاية الخامات وتظهر رسالة خطأ'),
           PhosphorIconsBold.prohibit,
         );
       case StockShortagePolicy.allowNegative:
         return (
-          'يسمح بإتمام البيع وتسجيل المخزون كرقم سالب — مناسب للمحلات السريعة',
+          tr('يسمح بإتمام البيع وتسجيل المخزون كرقم سالب — مناسب للمحلات السريعة'),
           PhosphorIconsBold.minusCircle,
         );
       case StockShortagePolicy.clampToZero:
         return (
-          'يخصم ما هو متاح فقط ويوقف عند صفر — لا يدخل المخزون فى السالب',
+          tr('يخصم ما هو متاح فقط ويوقف عند صفر — لا يدخل المخزون فى السالب'),
           PhosphorIconsBold.gauge,
         );
     }
@@ -436,8 +436,8 @@ class _StockShortagePolicyPerBranchTile extends ConsumerWidget {
         PhosphorIconsBold.buildings,
         color: AppColors.info,
       ),
-      title: const Text('سياسة نقص الخامات لكل فرع'),
-      subtitle: const Text('تخصيص السياسة لفرع بعينه (تتجاوز الافتراضى)'),
+      title:  Text(tr('سياسة نقص الخامات لكل فرع')),
+      subtitle:  Text(tr('تخصيص السياسة لفرع بعينه (تتجاوز الافتراضى)')),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: () => _showMatrix(context, ref),
     );
@@ -497,7 +497,7 @@ class _ShortagePolicyPerBranchDialogState
   Widget build(BuildContext context) {
     final branchesAsync = ref.watch(allBranchesProvider);
     return AlertDialog(
-      title: const Text('سياسة نقص الخامات لكل فرع'),
+      title:  Text(tr('سياسة نقص الخامات لكل فرع')),
       content: SizedBox(
         width: 500,
         child: _loading
@@ -505,15 +505,15 @@ class _ShortagePolicyPerBranchDialogState
             : branchesAsync.when(
                 data: (branches) {
                   if (branches.isEmpty) {
-                    return const Text('لا توجد فروع لعرضها');
+                    return  Text(tr('لا توجد فروع لعرضها'));
                   }
                   return SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
-                          'اترك "افتراضى" للفروع التى تستخدم السياسة العامة. الإعداد لكل فرع يتجاوز الافتراضى ويسبق التخصيص لكل ماكينة.',
-                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                         Text(
+                          tr('اترك "افتراضى" للفروع التى تستخدم السياسة العامة. الإعداد لكل فرع يتجاوز الافتراضى ويسبق التخصيص لكل ماكينة.'),
+                          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                         ),
                         const Divider(),
                         for (final b in branches)
@@ -522,11 +522,11 @@ class _ShortagePolicyPerBranchDialogState
                             title: Text(b.name),
                             trailing: DropdownButton<StockShortagePolicy?>(
                               value: _selections[b.id],
-                              hint: const Text('افتراضى'),
+                              hint:  Text(tr('افتراضى')),
                               items: [
-                                const DropdownMenuItem<StockShortagePolicy?>(
+                                 DropdownMenuItem<StockShortagePolicy?>(
                                   value: null,
-                                  child: Text('افتراضى'),
+                                  child: Text(tr('افتراضى')),
                                 ),
                                 for (final p in StockShortagePolicy.values)
                                   DropdownMenuItem<StockShortagePolicy?>(
@@ -548,13 +548,13 @@ class _ShortagePolicyPerBranchDialogState
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Text('خطأ فى تحميل الفروع: $e'),
+                error: (e, _) => Text(tr('خطأ فى تحميل الفروع: {e}', {'e': e})),
               ),
       ),
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         ElevatedButton(
           onPressed: _saving
@@ -571,7 +571,7 @@ class _ShortagePolicyPerBranchDialogState
                     if (mounted) setState(() => _saving = false);
                   }
                 },
-          child: const Text('حفظ'),
+          child:  Text(tr('حفظ')),
         ),
       ],
     );
@@ -593,13 +593,13 @@ class _SessionTimeoutSettingState extends ConsumerState<_SessionTimeoutSetting> 
   int _timeoutMinutes = 30;
   bool _loading = true;
 
-  static const _options = [
-    (value: 0, label: 'معطل'),
-    (value: 5, label: '5 دقائق'),
-    (value: 10, label: '10 دقائق'),
-    (value: 15, label: '15 دقيقة'),
-    (value: 30, label: '30 دقيقة'),
-    (value: 60, label: 'ساعة'),
+  static List<({int value, String label})> get _options => [
+    (value: 0, label: tr('معطل')),
+    (value: 5, label: tr('5 دقائق')),
+    (value: 10, label: tr('10 دقائق')),
+    (value: 15, label: tr('15 دقيقة')),
+    (value: 30, label: tr('30 دقيقة')),
+    (value: 60, label: tr('ساعة')),
   ];
 
   @override
@@ -625,7 +625,7 @@ class _SessionTimeoutSettingState extends ConsumerState<_SessionTimeoutSetting> 
     if (_loading) return const SizedBox.shrink();
     final label = _options.firstWhere(
       (o) => o.value == _timeoutMinutes,
-      orElse: () => (value: _timeoutMinutes, label: '$_timeoutMinutes دقيقة'),
+      orElse: () => (value: _timeoutMinutes, label: tr('{_timeoutMinutes} دقيقة', {'_timeoutMinutes': _timeoutMinutes})),
     ).label;
 
     return ListTile(
@@ -633,11 +633,11 @@ class _SessionTimeoutSettingState extends ConsumerState<_SessionTimeoutSetting> 
         PhosphorIconsBold.timer,
         color: _timeoutMinutes > 0 ? AppColors.warning : Colors.grey,
       ),
-      title: const Text('مهلة انتهاء الجلسة'),
+      title:  Text(tr('مهلة انتهاء الجلسة')),
       subtitle: Text(
         _timeoutMinutes > 0
-            ? 'تسجيل خروج تلقائي بعد $label من عدم النشاط'
-            : 'تسجيل الخروج التلقائي معطل',
+            ? tr('تسجيل خروج تلقائي بعد {label} من عدم النشاط', {'label': label})
+            : tr('تسجيل الخروج التلقائي معطل'),
       ),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: () => _showSelector(context),
@@ -650,7 +650,7 @@ class _SessionTimeoutSettingState extends ConsumerState<_SessionTimeoutSetting> 
       builder: (ctx) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: SimpleDialog(
-          title: const Text('مهلة انتهاء الجلسة'),
+          title:  Text(tr('مهلة انتهاء الجلسة')),
           children: _options.map((opt) {
             final isSelected = opt.value == _timeoutMinutes;
             return ListTile(
@@ -686,7 +686,7 @@ class _SessionTimeoutSettingState extends ConsumerState<_SessionTimeoutSetting> 
                   await logger.logSettingsChange(
                     auth.user?.id ?? 0,
                     auth.user?.displayName ?? '',
-                    'مهلة انتهاء الجلسة',
+                    tr('مهلة انتهاء الجلسة'),
                     newValue: opt.label,
                   );
                 } catch (e) {

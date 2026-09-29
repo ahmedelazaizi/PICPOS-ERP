@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -138,7 +139,7 @@ class AppErrorWidget extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(PhosphorIconsBold.arrowClockwise, size: 18),
-                label: const Text('إعادة المحاولة'),
+                label:  Text(tr('إعادة المحاولة')),
               ),
             ],
           ],

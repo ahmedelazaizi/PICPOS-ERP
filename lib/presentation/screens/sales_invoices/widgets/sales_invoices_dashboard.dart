@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -61,7 +62,7 @@ class _SalesInvoicesDashboardState
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text('خطأ: ${snapshot.error}'));
+          return Center(child: Text(tr('خطأ: {p0}', {'p0': snapshot.error})));
         }
 
         final allInvoices = snapshot.data ?? [];
@@ -120,28 +121,28 @@ class _SalesInvoicesDashboardState
               child: Row(
                 children: [
                   _buildSummaryCard(
-                    'إجمالي المبيعات',
+                    tr('إجمالي المبيعات'),
                     _currencyFormat.format(totalSales),
                     PhosphorIconsBold.money,
                     AppColors.success,
                   ),
                   const SizedBox(width: 16),
                   _buildSummaryCard(
-                    'إجمالي التحصيل',
+                    tr('إجمالي التحصيل'),
                     _currencyFormat.format(totalPaid),
                     PhosphorIconsBold.handCoins,
                     AppColors.primary,
                   ),
                   const SizedBox(width: 16),
                   _buildSummaryCard(
-                    'إجمالي المرتجعات',
+                    tr('إجمالي المرتجعات'),
                     _currencyFormat.format(totalReturns),
                     PhosphorIconsBold.arrowUUpLeft,
                     AppColors.error,
                   ),
                   const SizedBox(width: 16),
                   _buildSummaryCard(
-                    'فواتير اليوم',
+                    tr('فواتير اليوم'),
                     todayInvoices.length.toString(),
                     PhosphorIconsBold.calendarCheck,
                     AppColors.info,
@@ -161,10 +162,10 @@ class _SalesInvoicesDashboardState
                       Expanded(
                         child: TextField(
                           controller: _searchController,
-                          decoration: const InputDecoration(
-                            hintText: 'بحث برقم الفاتورة أو الملاحظات...',
-                            prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass),
-                            border: OutlineInputBorder(),
+                          decoration:  InputDecoration(
+                            hintText: tr('بحث برقم الفاتورة أو الملاحظات...'),
+                            prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass),
+                            border: const OutlineInputBorder(),
                             isDense: true,
                           ),
                           onChanged: (_) => setState(() {}),
@@ -173,22 +174,22 @@ class _SalesInvoicesDashboardState
                       const SizedBox(width: 16),
                       DropdownButton<String>(
                         value: _statusFilter,
-                        items: const [
+                        items:  [
                           DropdownMenuItem(
                             value: 'all',
-                            child: Text('كل الفواتير'),
+                            child: Text(tr('كل الفواتير')),
                           ),
                           DropdownMenuItem(
                             value: 'paid',
-                            child: Text('مدفوعة بالكامل'),
+                            child: Text(tr('مدفوعة بالكامل')),
                           ),
                           DropdownMenuItem(
                             value: 'pending',
-                            child: Text('متبقي'),
+                            child: Text(tr('متبقي')),
                           ),
                           DropdownMenuItem(
                             value: 'returned',
-                            child: Text('مرتجع'),
+                            child: Text(tr('مرتجع')),
                           ),
                         ],
                         onChanged: (val) =>
@@ -198,12 +199,12 @@ class _SalesInvoicesDashboardState
                       // POS-6: Order type filter
                       DropdownButton<String>(
                         value: _saleTypeFilter,
-                        items: const [
-                          DropdownMenuItem(value: 'all', child: Text('كل الأنواع')),
-                          DropdownMenuItem(value: 'internal', child: Text('داخلي')),
-                          DropdownMenuItem(value: 'delivery', child: Text('توصيل')),
-                          DropdownMenuItem(value: 'talabat', child: Text('طلبات')),
-                          DropdownMenuItem(value: 'careem', child: Text('كريم')),
+                        items:  [
+                          DropdownMenuItem(value: 'all', child: Text(tr('كل الأنواع'))),
+                          DropdownMenuItem(value: 'internal', child: Text(tr('داخلي'))),
+                          DropdownMenuItem(value: 'delivery', child: Text(tr('توصيل'))),
+                          DropdownMenuItem(value: 'talabat', child: Text(tr('طلبات'))),
+                          DropdownMenuItem(value: 'careem', child: Text(tr('كريم'))),
                         ],
                         onChanged: (val) =>
                             setState(() => _saleTypeFilter = val!),
@@ -219,7 +220,7 @@ class _SalesInvoicesDashboardState
                           );
                         },
                         icon: const Icon(PhosphorIconsBold.plus),
-                        label: const Text('فاتورة جديدة'),
+                        label:  Text(tr('فاتورة جديدة')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                         ),
@@ -236,21 +237,21 @@ class _SalesInvoicesDashboardState
                 padding: const EdgeInsets.all(16.0),
                 child: Card(
                   child: filteredInvoices.isEmpty
-                      ? const Center(child: Text('لا توجد فواتير تطابق البحث'))
+                      ?  Center(child: Text(tr('لا توجد فواتير تطابق البحث')))
                       : SingleChildScrollView(
                           scrollDirection: Axis.vertical,
                           child: PaginatedDataTable(
-                            header: const Text('سجل الفواتير'),
-                            columns: const [
-                              DataColumn(label: Text('الرقم')),
-                              DataColumn(label: Text('التاريخ')),
-                              DataColumn(label: Text('الفرع')),
-                              DataColumn(label: Text('العميل')),
-                              DataColumn(label: Text('نوع الطلب')),
-                              DataColumn(label: Text('الإجمالي')),
-                              DataColumn(label: Text('المدفوع')),
-                              DataColumn(label: Text('الحالة')),
-                              DataColumn(label: Text('الإجراءات')),
+                            header:  Text(tr('سجل الفواتير')),
+                            columns:  [
+                              DataColumn(label: Text(tr('الرقم'))),
+                              DataColumn(label: Text(tr('التاريخ'))),
+                              DataColumn(label: Text(tr('الفرع'))),
+                              DataColumn(label: Text(tr('العميل'))),
+                              DataColumn(label: Text(tr('نوع الطلب'))),
+                              DataColumn(label: Text(tr('الإجمالي'))),
+                              DataColumn(label: Text(tr('المدفوع'))),
+                              DataColumn(label: Text(tr('الحالة'))),
+                              DataColumn(label: Text(tr('الإجراءات'))),
                             ],
                             source: _InvoicesDataSource(
                               invoices: filteredInvoices,
@@ -358,7 +359,7 @@ class _InvoicesDataSource extends DataTableSource {
         DataCell(BranchChip(branchId: inv.branchId, compact: true)),
         DataCell(
           Text(
-            inv.customerId != null ? 'عميل #${inv.customerId}' : 'عميل نقدي',
+            inv.customerId != null ? tr('عميل #{p0}', {'p0': inv.customerId}) : tr('عميل نقدي'),
           ),
         ),
         // POS-6: Order type cell
@@ -388,8 +389,8 @@ class _InvoicesDataSource extends DataTableSource {
             ),
             child: Text(
               isReturned
-                  ? 'مرتجع'
-                  : (inv.paid >= inv.total ? 'مدفوعة' : 'متبقي'),
+                  ? tr('مرتجع')
+                  : (inv.paid >= inv.total ? tr('مدفوعة') : tr('متبقي')),
               style: TextStyle(
                 color: isReturned
                     ? AppColors.error
@@ -435,11 +436,11 @@ class _InvoicesDataSource extends DataTableSource {
 
   static String _saleTypeLabel(String type) {
     switch (type) {
-      case 'delivery': return 'توصيل';
-      case 'talabat': return 'طلبات';
-      case 'careem': return 'كريم';
-      case 'ashyae': return 'أشياء';
-      case 'internal': return 'داخلي';
+      case 'delivery': return tr('توصيل');
+      case 'talabat': return tr('طلبات');
+      case 'careem': return tr('كريم');
+      case 'ashyae': return tr('أشياء');
+      case 'internal': return tr('داخلي');
       default: return 'داخلي';
     }
   }

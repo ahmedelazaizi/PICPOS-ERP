@@ -38,7 +38,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'فاتورة: ${invoice.invoiceNumber}',
+                          tr('فاتورة: {p0}', {'p0': invoice.invoiceNumber}),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
@@ -46,7 +46,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'التاريخ: ${invoice.invoiceDate.day}/${invoice.invoiceDate.month}/${invoice.invoiceDate.year}',
+                          tr('التاريخ: {p0}/{p1}/{p2}', {'p0': invoice.invoiceDate.day, 'p1': invoice.invoiceDate.month, 'p2': invoice.invoiceDate.year}),
                         ),
                       ],
                     ),
@@ -63,7 +63,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                         ),
                       ),
                       Text(
-                        '${items.length} أصناف',
+                        tr('{p0} أصناف', {'p0': items.length}),
                         style: const TextStyle(color: AppColors.textMuted),
                       ),
                     ],
@@ -80,9 +80,9 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
                 children: [
-                  const Text(
-                    'نوع المرتجع:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                   Text(
+                    tr('نوع المرتجع:'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -118,9 +118,9 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                               size: 16,
                             ),
                             const SizedBox(width: 6),
-                            const Text(
-                              'إرجاع الفاتورة كاملة',
-                              style: TextStyle(
+                             Text(
+                              tr('إرجاع الفاتورة كاملة'),
+                              style: const TextStyle(
                                 fontWeight: FontWeight.w500,
                                 fontSize: 12,
                               ),
@@ -164,9 +164,9 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                               size: 16,
                             ),
                             const SizedBox(width: 6),
-                            const Text(
-                              'إرجاع أصناف محددة',
-                              style: TextStyle(
+                             Text(
+                              tr('إرجاع أصناف محددة'),
+                              style: const TextStyle(
                                 fontWeight: FontWeight.w500,
                                 fontSize: 12,
                               ),
@@ -183,17 +183,17 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
           const SizedBox(height: 8),
 
           // Items list
-          const Row(
+           Row(
             children: [
-              Icon(
+              const Icon(
                 PhosphorIconsBold.package,
                 size: 18,
                 color: AppColors.primary,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
-                'الأصناف',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                tr('الأصناف'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ],
           ),
@@ -230,7 +230,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                                   Expanded(
                                     child: Text(
                                       product?.name ??
-                                          'صنف #${item.productId}',
+                                          tr('صنف #{p0}', {'p0': item.productId}),
                                       style: TextStyle(
                                         fontWeight: FontWeight.w500,
                                         color:
@@ -258,8 +258,8 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                                       ),
                                       child: Text(
                                         isFullyReturned
-                                            ? 'مرتجع بالكامل'
-                                            : 'تم إرجاع ${previouslyReturned.toStringAsFixed(0)}',
+                                            ? tr('مرتجع بالكامل')
+                                            : tr('تم إرجاع {p0}', {'p0': previouslyReturned.toStringAsFixed(0)}),
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
@@ -273,7 +273,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${item.quantity.toStringAsFixed(0)} × ${item.unitPrice.toStringAsFixed(AppConstants.decimalPlaces)} = ${item.total.toStringAsFixed(AppConstants.decimalPlaces)} د.أ',
+                                tr('{p0} × {p1} = {p2} د.أ', {'p0': item.quantity.toStringAsFixed(0), 'p1': item.unitPrice.toStringAsFixed(AppConstants.decimalPlaces), 'p2': item.total.toStringAsFixed(AppConstants.decimalPlaces)}),
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: AppColors.textMuted,
@@ -297,8 +297,8 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                                   const SizedBox(width: 4),
                                   Text(
                                     item.taxAmount > 0
-                                        ? 'ضريبة ${item.taxRate.toStringAsFixed(0)}% = ${item.taxAmount.toStringAsFixed(AppConstants.decimalPlaces)}'
-                                        : 'معفى من الضريبة',
+                                        ? tr('ضريبة {p0}% = {p1}', {'p0': item.taxRate.toStringAsFixed(0), 'p1': item.taxAmount.toStringAsFixed(AppConstants.decimalPlaces)})
+                                        : tr('معفى من الضريبة'),
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: item.taxAmount > 0
@@ -310,7 +310,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                               ),
                               if (previouslyReturned > 0 && !isFullyReturned)
                                 Text(
-                                  'متاح للإرجاع: ${availableToReturn.toStringAsFixed(0)}',
+                                  tr('متاح للإرجاع: {p0}', {'p0': availableToReturn.toStringAsFixed(0)}),
                                   style: const TextStyle(
                                     fontSize: 11,
                                     color: AppColors.info,
@@ -388,7 +388,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              'إرجاع: ${returnQty.toStringAsFixed(0)}',
+                              tr('إرجاع: {p0}', {'p0': returnQty.toStringAsFixed(0)}),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.warning,
@@ -400,7 +400,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                         SizedBox(
                           width: 100,
                           child: Text(
-                            '${notifier.calculateItemRefundTotal(item.id, returnQty).toStringAsFixed(AppConstants.decimalPlaces)} د.أ',
+                            tr('{p0} د.أ', {'p0': notifier.calculateItemRefundTotal(item.id, returnQty).toStringAsFixed(AppConstants.decimalPlaces)}),
                             textAlign: TextAlign.end,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -440,20 +440,20 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'تسجيل كإتلاف (هالك)',
-                          style: TextStyle(
+                          tr('تسجيل كإتلاف (هالك)'),
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
                         ),
                         Text(
-                          'لن تتم إضافة الأصناف المرتجعة إلى المخزون المتاح للاستخدام',
-                          style: TextStyle(
+                          tr('لن تتم إضافة الأصناف المرتجعة إلى المخزون المتاح للاستخدام'),
+                          style: const TextStyle(
                             fontSize: 11,
                             color: AppColors.textMuted,
                           ),
@@ -477,12 +477,12 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
             value: (this as _SalesReturnsScreenState)._selectedReasonCategory.isEmpty
                 ? null
                 : (this as _SalesReturnsScreenState)._selectedReasonCategory,
-            decoration: const InputDecoration(
-              labelText: 'سبب الإرجاع',
-              prefixIcon: Icon(PhosphorIconsBold.notepad, size: 18),
-              border: OutlineInputBorder(),
+            decoration:  InputDecoration(
+              labelText: tr('سبب الإرجاع'),
+              prefixIcon: const Icon(PhosphorIconsBold.notepad, size: 18),
+              border: const OutlineInputBorder(),
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
             style: const TextStyle(fontSize: 13, color: Colors.black87),
             items: AppConstants.returnReasonCategories
@@ -503,12 +503,12 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
             const SizedBox(height: 6),
             TextField(
               controller: returnReasonController,
-              decoration: const InputDecoration(
-                labelText: 'ملاحظات إضافية',
-                prefixIcon: Icon(PhosphorIconsBold.textT, size: 18),
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('ملاحظات إضافية'),
+                prefixIcon: const Icon(PhosphorIconsBold.textT, size: 18),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
               style: const TextStyle(fontSize: 13),
               maxLines: 1,
@@ -531,15 +531,15 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'إجمالي المرتجع:',
-                        style: TextStyle(
+                       Text(
+                        tr('إجمالي المرتجع:'),
+                        style: const TextStyle(
                           color: AppColors.textMuted,
                           fontSize: 11,
                         ),
                       ),
                       Text(
-                        '${notifier.calculateReturnTotal().toStringAsFixed(AppConstants.decimalPlaces)} د.أ',
+                        tr('{p0} د.أ', {'p0': notifier.calculateReturnTotal().toStringAsFixed(AppConstants.decimalPlaces)}),
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
@@ -608,9 +608,9 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                   size: 18,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'استبدال بمنتج آخر',
-                  style: TextStyle(
+                 Text(
+                  tr('استبدال بمنتج آخر'),
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
                   ),
@@ -642,7 +642,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                           builder: (ctx) => Directionality(
                             textDirection: TextDirection.rtl,
                             child: AlertDialog(
-                              title: const Text('اختر المنتج البديل'),
+                              title:  Text(tr('اختر المنتج البديل')),
                               content: SizedBox(
                                 width: 500,
                                 height: 400,
@@ -651,7 +651,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                                   itemBuilder: (ctx, idx) => ListTile(
                                     title: Text(products[idx].name),
                                     subtitle: Text(
-                                      '${products[idx].salePrice.toStringAsFixed(AppConstants.decimalPlaces)} د.أ',
+                                      tr('{p0} د.أ', {'p0': products[idx].salePrice.toStringAsFixed(AppConstants.decimalPlaces)}),
                                     ),
                                     onTap: () =>
                                         Navigator.pop(ctx, products[idx]),
@@ -694,7 +694,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                             const SizedBox(width: 8),
                             Text(
                               state.exchangeProduct?.name ??
-                                  'اختر المنتج البديل',
+                                  tr('اختر المنتج البديل'),
                               style: TextStyle(
                                 fontWeight:
                                     state.exchangeProduct != null
@@ -708,7 +708,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                             if (state.exchangeProduct != null) ...[
                               const Spacer(),
                               Text(
-                                '${state.exchangeProduct!.salePrice.toStringAsFixed(AppConstants.decimalPlaces)} د.أ',
+                                tr('{p0} د.أ', {'p0': state.exchangeProduct!.salePrice.toStringAsFixed(AppConstants.decimalPlaces)}),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -786,14 +786,14 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                     children: [
                       Text(
                         notifier.calculateExchangeDifference() >= 0
-                            ? 'يدفع العميل فرق:'
-                            : 'يسترد العميل:',
+                            ? tr('يدفع العميل فرق:')
+                            : tr('يسترد العميل:'),
                         style: const TextStyle(
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       Text(
-                        '${notifier.calculateExchangeDifference().abs().toStringAsFixed(AppConstants.decimalPlaces)} د.أ',
+                        tr('{p0} د.أ', {'p0': notifier.calculateExchangeDifference().abs().toStringAsFixed(AppConstants.decimalPlaces)}),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,

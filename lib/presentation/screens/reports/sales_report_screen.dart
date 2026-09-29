@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -116,9 +117,9 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
@@ -129,7 +130,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
       try {
         final user = ref.read(authProvider).user;
         final logger = ref.read(activityLoggerProvider);
-        logger.logReportView(user?.id ?? 0, user?.displayName ?? 'مجهول', 'تقرير المبيعات');
+        logger.logReportView(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('تقرير المبيعات'));
       } catch (_) {}
     });
   }
@@ -393,7 +394,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
       return Directionality(
         textDirection: ui.TextDirection.rtl,
         child: Scaffold(
-          body: Center(child: Text('تعذر تحديد صلاحيات الفرع: ${scopeAsync.error}')),
+          body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
         ),
       );
     }
@@ -402,15 +403,15 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
 
     return reportScaffold(
       context: context,
-      title: 'تقرير المبيعات التفصيلي',
-      subtitle: 'الفواتير والتحصيل والأصناف في المدى المحدَّد',
+      title: tr('تقرير المبيعات التفصيلي'),
+      subtitle: tr('الفواتير والتحصيل والأصناف في المدى المحدَّد'),
       icon: PhosphorIconsBold.chartLineUp,
       actions: [
             buildReportExportAction(onExport: _exportToExcel),
             IconButton(
               onPressed: _printReport,
               icon: const Icon(PhosphorIconsBold.printer),
-              tooltip: 'طباعة/PDF',
+              tooltip: tr('طباعة/PDF'),
             ),
             const SizedBox(width: 8),
           ],
@@ -434,19 +435,19 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                   child: DropdownButtonFormField<int?>(
                     initialValue: _selectedUserId,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'المستخدم',
+                    decoration:  InputDecoration(
+                      labelText: tr('المستخدم'),
                       isDense: true,
-                      prefixIcon: Icon(PhosphorIconsBold.user, size: 16),
-                      contentPadding: EdgeInsets.symmetric(
+                      prefixIcon: const Icon(PhosphorIconsBold.user, size: 16),
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 8,
                       ),
                     ),
                     items: [
-                      const DropdownMenuItem<int?>(
+                       DropdownMenuItem<int?>(
                         value: null,
-                        child: Text('الكل'),
+                        child: Text(tr('الكل')),
                       ),
                       ..._allUsers.map(
                         (u) => DropdownMenuItem<int?>(
@@ -470,21 +471,21 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                   child: DropdownButtonFormField<String?>(
                     initialValue: _selectedPaymentMethod,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'طريقة الدفع',
+                    decoration:  InputDecoration(
+                      labelText: tr('طريقة الدفع'),
                       isDense: true,
-                      prefixIcon: Icon(PhosphorIconsBold.creditCard, size: 16),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      prefixIcon: const Icon(PhosphorIconsBold.creditCard, size: 16),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
-                    items: const [
-                      DropdownMenuItem<String?>(value: null, child: Text('الكل')),
-                      DropdownMenuItem(value: 'cash', child: Text('نقدي')),
+                    items:  [
+                      DropdownMenuItem<String?>(value: null, child: Text(tr('الكل'))),
+                      DropdownMenuItem(value: 'cash', child: Text(tr('نقدي'))),
                       // Spec 079 / B3: grouped value matches the display
                       // label collapse (card / transfer / bank).
-                      DropdownMenuItem(value: 'bank_group', child: Text('بطاقة/تحويل')),
-                      DropdownMenuItem(value: 'click', child: Text('كليك')),
-                      DropdownMenuItem(value: 'credit', child: Text('آجل')),
-                      DropdownMenuItem(value: 'multiple', child: Text('متعدد')),
+                      DropdownMenuItem(value: 'bank_group', child: Text(tr('بطاقة/تحويل'))),
+                      DropdownMenuItem(value: 'click', child: Text(tr('كليك'))),
+                      DropdownMenuItem(value: 'credit', child: Text(tr('آجل'))),
+                      DropdownMenuItem(value: 'multiple', child: Text(tr('متعدد'))),
                     ],
                     onChanged: (v) {
                       setState(() => _selectedPaymentMethod = v);
@@ -498,18 +499,18 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                   child: DropdownButtonFormField<String?>(
                     initialValue: _selectedSaleType,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'نوع البيع',
+                    decoration:  InputDecoration(
+                      labelText: tr('نوع البيع'),
                       isDense: true,
-                      prefixIcon: Icon(PhosphorIconsBold.storefront, size: 16),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      prefixIcon: const Icon(PhosphorIconsBold.storefront, size: 16),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
-                    items: const [
-                      DropdownMenuItem<String?>(value: null, child: Text('الكل')),
-                      DropdownMenuItem(value: 'default', child: Text('البيع السريع')),
-                      DropdownMenuItem(value: 'talabat', child: Text('طلبات')),
-                      DropdownMenuItem(value: 'careem', child: Text('كريم')),
-                      DropdownMenuItem(value: 'ashyae', child: Text('أشيائي')),
+                    items:  [
+                      DropdownMenuItem<String?>(value: null, child: Text(tr('الكل'))),
+                      DropdownMenuItem(value: 'default', child: Text(tr('البيع السريع'))),
+                      DropdownMenuItem(value: 'talabat', child: Text(tr('طلبات'))),
+                      DropdownMenuItem(value: 'careem', child: Text(tr('كريم'))),
+                      DropdownMenuItem(value: 'ashyae', child: Text(tr('أشيائي'))),
                     ],
                     onChanged: (v) {
                       setState(() => _selectedSaleType = v);
@@ -576,14 +577,14 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                     child: DropdownButtonFormField<int?>(
                       initialValue: _selectedCostCenterId,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'مركز التكلفة',
+                      decoration:  InputDecoration(
+                        labelText: tr('مركز التكلفة'),
                         isDense: true,
-                        prefixIcon: Icon(PhosphorIconsBold.buildings, size: 16),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        prefixIcon: const Icon(PhosphorIconsBold.buildings, size: 16),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
                       items: [
-                        const DropdownMenuItem<int?>(value: null, child: Text('الكل')),
+                         DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
                         ..._costCenters.map((cc) => DropdownMenuItem<int?>(
                               value: cc.id,
                               child: Text(cc.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
@@ -617,7 +618,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                               children: [
                                 Expanded(
                                   child: ReportKpiCard(
-                                    title: 'إجمالي المبيعات',
+                                    title: tr('إجمالي المبيعات'),
                                     value:
                                         '${_currencyFormat.format(_analytics!.totalSales)} ${AppConstants.currencySymbolEn}',
                                     icon: PhosphorIconsBold.chartLineUp,
@@ -648,12 +649,12 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                                     // GL would silently diverge from the
                                     // filtered invoice list below it — kept
                                     // as the sales-level figure, relabeled.
-                                    title: 'ربح المبيعات (قبل المصروفات)',
+                                    title: tr('ربح المبيعات (قبل المصروفات)'),
                                     value:
                                         '${_currencyFormat.format(_analytics!.totalProfit)} ${AppConstants.currencySymbolEn}',
                                     icon: PhosphorIconsBold.trendUp,
                                     color: AppColors.success,
-                                    subtitle: 'بناءً على تكلفة المنتج — قبل المصروفات التشغيلية',
+                                    subtitle: tr('بناءً على تكلفة المنتج — قبل المصروفات التشغيلية'),
                                     changePercent: _calcChange(
                                       _analytics!.totalProfit,
                                       _previousAnalytics?.totalProfit,
@@ -663,12 +664,12 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: ReportKpiCard(
-                                    title: 'عدد الفواتير',
+                                    title: tr('عدد الفواتير'),
                                     value: _analytics!.invoiceCount.toString(),
                                     icon: PhosphorIconsBold.receipt,
                                     color: AppColors.info,
                                     subtitle:
-                                        'متوسط: ${_currencyFormat.format(_analytics!.averageInvoiceValue)}',
+                                        tr('متوسط: {p0}', {'p0': _currencyFormat.format(_analytics!.averageInvoiceValue)}),
                                     changePercent: _calcChange(
                                       _analytics!.invoiceCount.toDouble(),
                                       _previousAnalytics?.invoiceCount
@@ -679,25 +680,25 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: ReportKpiCard(
-                                    title: 'هامش ربح المبيعات',
+                                    title: tr('هامش ربح المبيعات'),
                                     value: _analytics!.totalSales > 0
                                         ? '${(_analytics!.totalProfit / _analytics!.totalSales * 100).toStringAsFixed(1)}%'
                                         : '0%',
                                     icon: PhosphorIconsBold.percent,
                                     color: const Color(0xFF7C3AED),
-                                    subtitle: 'ربح المبيعات / إجمالي المبيعات',
+                                    subtitle: tr('ربح المبيعات / إجمالي المبيعات'),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: ReportKpiCard(
-                                    title: 'متوسط ربح الفاتورة',
+                                    title: tr('متوسط ربح الفاتورة'),
                                     value: _analytics!.invoiceCount > 0
                                         ? '${_currencyFormat.format(_analytics!.totalProfit / _analytics!.invoiceCount)} ${AppConstants.currencySymbolEn}'
                                         : '0',
                                     icon: PhosphorIconsBold.piggyBank,
                                     color: const Color(0xFF059669),
-                                    subtitle: 'ربح لكل فاتورة',
+                                    subtitle: tr('ربح لكل فاتورة'),
                                   ),
                                 ),
                               ],
@@ -707,7 +708,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
 
                           // Invoices Table
                           Text(
-                            'سجل الفواتير',
+                            tr('سجل الفواتير'),
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -735,23 +736,23 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                               scrollDirection: Axis.horizontal,
                               child: DataTable(
                                 columnSpacing: 24,
-                                columns: const [
-                                  DataColumn(label: Text('رقم الفاتورة')),
-                                  DataColumn(label: Text('التاريخ')),
-                                  DataColumn(label: Text('المستخدم')),
-                                  DataColumn(label: Text('العميل')),
-                                  DataColumn(label: Text('المخزن')),
-                                  DataColumn(label: Text('الإجمالي'), numeric: true),
-                                  DataColumn(label: Text('المدفوع'), numeric: true),
+                                columns:  [
+                                  DataColumn(label: Text(tr('رقم الفاتورة'))),
+                                  DataColumn(label: Text(tr('التاريخ'))),
+                                  DataColumn(label: Text(tr('المستخدم'))),
+                                  DataColumn(label: Text(tr('العميل'))),
+                                  DataColumn(label: Text(tr('المخزن'))),
+                                  DataColumn(label: Text(tr('الإجمالي')), numeric: true),
+                                  DataColumn(label: Text(tr('المدفوع')), numeric: true),
                                   // بطاقةُ «إجمالي المبيعات» صافيةٌ من
                                   // المرتجعات، فلولا هذا العمود لصار جمعُ
                                   // «الإجمالي» أكبرَ منها بلا سببٍ ظاهر —
                                   // وهو بعينه العطبُ الذي أُغلق في اتجاهٍ آخر
                                   // بـ`revenueOnly`. الآن: Σالإجمالي −
                                   // Σالمرتجع = البطاقة.
-                                  DataColumn(label: Text('المرتجع'), numeric: true),
-                                  DataColumn(label: Text('المتبقي'), numeric: true),
-                                  DataColumn(label: Text('طريقة الدفع')),
+                                  DataColumn(label: Text(tr('المرتجع')), numeric: true),
+                                  DataColumn(label: Text(tr('المتبقي')), numeric: true),
+                                  DataColumn(label: Text(tr('طريقة الدفع'))),
                                 ],
                                 rows: _invoices.map((s) {
                                   // نفسُ حساب شاشة الفواتير حرفياً
@@ -783,13 +784,13 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                                       ),
                                       DataCell(
                                         Text(
-                                          _userNames[s.userId] ?? 'غير معروف',
+                                          _userNames[s.userId] ?? tr('غير معروف'),
                                         ),
                                       ),
                                       DataCell(Text(_customerLabel(s))),
                                       DataCell(
                                         Text(
-                                          _warehouseNames[s.warehouseId] ?? 'غير محدد',
+                                          _warehouseNames[s.warehouseId] ?? tr('غير محدد'),
                                         ),
                                       ),
                                       DataCell(
@@ -851,8 +852,8 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
     final adhoc = s.adhocCustomerName?.trim();
     if (adhoc != null && adhoc.isNotEmpty) return adhoc;
     final id = s.customerId;
-    if (id == null) return 'نقدي';
-    return _customerNames[id] ?? 'عميل #$id';
+    if (id == null) return tr('نقدي');
+    return _customerNames[id] ?? tr('عميل #{id}', {'id': id});
   }
 
   /// Arabic label for a payment method. Shared by the invoice table and the
@@ -897,7 +898,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
               const Icon(PhosphorIconsBold.receipt,
                   size: 20, color: AppColors.primary),
               const SizedBox(width: 8),
-              Expanded(child: Text('فاتورة ${invoice.invoiceNumber}')),
+              Expanded(child: Text(tr('فاتورة {p0}', {'p0': invoice.invoiceNumber}))),
               _StatusPill(status: invoice.status, isLocked: invoice.isLocked),
             ],
           ),
@@ -921,24 +922,24 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                       runSpacing: 10,
                       children: [
                         _MetaField(
-                          label: 'التاريخ',
+                          label: tr('التاريخ'),
                           value: _dateFormat.format(invoice.invoiceDate),
                         ),
                         _MetaField(
-                          label: 'العميل',
+                          label: tr('العميل'),
                           value: _customerLabel(invoice),
                         ),
                         _MetaField(
-                          label: 'الكاشير',
-                          value: _userNames[invoice.userId] ?? 'غير معروف',
+                          label: tr('الكاشير'),
+                          value: _userNames[invoice.userId] ?? tr('غير معروف'),
                         ),
                         _MetaField(
-                          label: 'المخزن',
+                          label: tr('المخزن'),
                           value: _warehouseNames[invoice.warehouseId] ??
-                              'غير محدد',
+                              tr('غير محدد'),
                         ),
                         _MetaField(
-                          label: 'طريقة الدفع',
+                          label: tr('طريقة الدفع'),
                           value: _paymentLabel(invoice.paymentMethod),
                         ),
                       ],
@@ -948,12 +949,12 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
 
                   // ── Lines ──────────────────────────────────────────────
                   if (items.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
+                     Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
                       child: Text(
-                        'لا توجد أصناف على هذه الفاتورة',
+                        tr('لا توجد أصناف على هذه الفاتورة'),
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.textMuted),
+                        style: const TextStyle(color: AppColors.textMuted),
                       ),
                     )
                   else
@@ -963,13 +964,13 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                         headingRowHeight: 38,
                         dataRowMinHeight: 34,
                         dataRowMaxHeight: 44,
-                        columns: const [
-                          DataColumn(label: Text('الصنف')),
-                          DataColumn(label: Text('الكمية'), numeric: true),
-                          DataColumn(label: Text('السعر'), numeric: true),
-                          DataColumn(label: Text('الخصم'), numeric: true),
-                          DataColumn(label: Text('الضريبة'), numeric: true),
-                          DataColumn(label: Text('الإجمالي'), numeric: true),
+                        columns:  [
+                          DataColumn(label: Text(tr('الصنف'))),
+                          DataColumn(label: Text(tr('الكمية')), numeric: true),
+                          DataColumn(label: Text(tr('السعر')), numeric: true),
+                          DataColumn(label: Text(tr('الخصم')), numeric: true),
+                          DataColumn(label: Text(tr('الضريبة')), numeric: true),
+                          DataColumn(label: Text(tr('الإجمالي')), numeric: true),
                         ],
                         rows: items.map((row) {
                           final line = row.item;
@@ -1023,44 +1024,44 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                       child: Column(
                         children: [
                           _TotalRow(
-                            label: 'الإجمالي الفرعي',
+                            label: tr('الإجمالي الفرعي'),
                             value:
                                 '${_currencyFormat.format(invoice.subtotal)} $currency',
                           ),
                           if (invoice.discount != 0)
                             _TotalRow(
-                              label: 'الخصم',
+                              label: tr('الخصم'),
                               value:
                                   '${_currencyFormat.format(invoice.discount)} $currency',
                               color: AppColors.warning,
                             ),
                           if (invoice.tax != 0)
                             _TotalRow(
-                              label: 'الضريبة',
+                              label: tr('الضريبة'),
                               value:
                                   '${_currencyFormat.format(invoice.tax)} $currency',
                             ),
                           if (invoice.deliveryFee != 0)
                             _TotalRow(
-                              label: 'رسوم التوصيل',
+                              label: tr('رسوم التوصيل'),
                               value:
                                   '${_currencyFormat.format(invoice.deliveryFee)} $currency',
                             ),
                           const Divider(height: 18),
                           _TotalRow(
-                            label: 'الإجمالي',
+                            label: tr('الإجمالي'),
                             value:
                                 '${_currencyFormat.format(invoice.total)} $currency',
                             emphasize: true,
                           ),
                           _TotalRow(
-                            label: 'المدفوع',
+                            label: tr('المدفوع'),
                             value:
                                 '${_currencyFormat.format(invoice.paid)} $currency',
                             color: AppColors.success,
                           ),
                           _TotalRow(
-                            label: 'المتبقي',
+                            label: tr('المتبقي'),
                             value:
                                 '${_currencyFormat.format(remaining)} $currency',
                             color: remaining > 0
@@ -1078,7 +1079,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                     Align(
                       alignment: AlignmentDirectional.centerStart,
                       child: Text(
-                        'ملاحظات: ${invoice.notes!.trim()}',
+                        tr('ملاحظات: {p0}', {'p0': invoice.notes!.trim()}),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -1094,11 +1095,11 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
             TextButton.icon(
               onPressed: () => _printInvoice(invoice, items),
               icon: const Icon(PhosphorIconsBold.printer, size: 16),
-              label: const Text('طباعة'),
+              label:  Text(tr('طباعة')),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -1140,7 +1141,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      AppToast.show(context, 'تعذّرت الطباعة: $e', type: ToastType.error);
+      AppToast.show(context, tr('تعذّرت الطباعة: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -1153,19 +1154,19 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-      title: 'تقرير المبيعات',
+      title: tr('تقرير المبيعات'),
       headers: [
-        'رقم الفاتورة',
-        'التاريخ',
-        'العميل',
-        'المخزن',
-        'الإجمالي',
-        'المدفوع',
+        tr('رقم الفاتورة'),
+        tr('التاريخ'),
+        tr('العميل'),
+        tr('المخزن'),
+        tr('الإجمالي'),
+        tr('المدفوع'),
         // نفسُ أعمدة الجدول على الشاشة — المحاسبُ يجمع «الإجمالي» في Excel
         // ويقارنه بالبطاقة، فبلا عمود المرتجع يفترقان.
-        'المرتجع',
-        'المتبقي',
-        'طريقة الدفع',
+        tr('المرتجع'),
+        tr('المتبقي'),
+        tr('طريقة الدفع'),
       ],
       rows: _invoices
           .map<List<dynamic>>(
@@ -1173,7 +1174,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
               s.invoiceNumber,
               _dateFormat.format(s.invoiceDate),
               _customerLabel(s),
-              _warehouseNames[s.warehouseId] ?? 'غير محدد',
+              _warehouseNames[s.warehouseId] ?? tr('غير محدد'),
               s.total,
               s.paid,
               _returnedAmounts[s.id] ?? 0.0,
@@ -1192,21 +1193,21 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
     if (path != null && mounted) {
       AppToast.show(
         context,
-        'تم تصدير التقرير بنجاح: $path',
+        tr('تم تصدير التقرير بنجاح: {path}', {'path': path}),
         type: ToastType.success,
       );
       // #Forensic Log: Report Export
       try {
         final user = ref.read(authProvider).user;
         final logger = ref.read(activityLoggerProvider);
-        logger.logReportExport(user?.id ?? 0, user?.displayName ?? 'مجهول', 'تقرير المبيعات', 'Excel');
+        logger.logReportExport(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('تقرير المبيعات'), 'Excel');
       } catch (_) {}
     }
   }
 
   Future<void> _printReport() async {
     if (_analytics == null || _invoices.isEmpty) {
-      AppToast.show(context, 'لا توجد بيانات للطباعة', type: ToastType.error);
+      AppToast.show(context, tr('لا توجد بيانات للطباعة'), type: ToastType.error);
       return;
     }
 
@@ -1217,7 +1218,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
       final receiptSettings =
           await ref.read(settingsRepositoryProvider).getReceiptSettings();
       final companyName =
-          receiptSettings['companyName'] as String? ?? 'الشركة';
+          receiptSettings['companyName'] as String? ?? tr('الشركة');
 
       await InvoiceGenerator.printSalesReport(
         invoices: _invoices,
@@ -1235,11 +1236,11 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
       try {
         final user = ref.read(authProvider).user;
         final logger = ref.read(activityLoggerProvider);
-        logger.logPrint(user?.id ?? 0, user?.displayName ?? 'مجهول', 'تقرير المبيعات');
+        logger.logPrint(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('تقرير المبيعات'));
       } catch (_) {}
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -1324,12 +1325,12 @@ class _StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (String label, Color color) = switch (status) {
-      'cancelled' || 'canceled' => ('ملغاة', AppColors.error),
-      'returned' => ('مرتجعة', AppColors.warning),
-      'draft' => ('مسودة', AppColors.textMuted),
+      'cancelled' || 'canceled' => (tr('ملغاة'), AppColors.error),
+      'returned' => (tr('مرتجعة'), AppColors.warning),
+      'draft' => (tr('مسودة'), AppColors.textMuted),
       _ => isLocked
-          ? ('مُرحّلة', AppColors.success)
-          : ('مكتملة', AppColors.success),
+          ? (tr('مُرحّلة'), AppColors.success)
+          : (tr('مكتملة'), AppColors.success),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

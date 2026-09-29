@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'dart:ui' as ui;
@@ -111,7 +112,7 @@ class _CommercialPapersScreenState
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           title: Text(
-            'الأوراق التجارية',
+            tr('الأوراق التجارية'),
             style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
           ),
           bottom: TabBar(
@@ -119,10 +120,10 @@ class _CommercialPapersScreenState
             indicatorColor: Colors.white,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
-            tabs: const [
-              Tab(icon: Icon(PhosphorIconsBold.arrowDown), text: 'واردة'),
-              Tab(icon: Icon(PhosphorIconsBold.arrowUp), text: 'صادرة'),
-              Tab(icon: Icon(PhosphorIconsBold.folder), text: 'الحافظة'),
+            tabs:  [
+              Tab(icon: const Icon(PhosphorIconsBold.arrowDown), text: tr('واردة')),
+              Tab(icon: const Icon(PhosphorIconsBold.arrowUp), text: tr('صادرة')),
+              Tab(icon: const Icon(PhosphorIconsBold.folder), text: tr('الحافظة')),
             ],
           ),
           actions: [
@@ -132,21 +133,21 @@ class _CommercialPapersScreenState
                 _invalidateStreams(); // Force new streams with new filter
                 setState(() => _statusFilter = v);
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'all', child: Text('الكل')),
-                PopupMenuItem(value: 'pending', child: Text('معلق')),
-                PopupMenuItem(value: 'in_portfolio', child: Text('في الحافظة')),
-                PopupMenuItem(value: 'deposited', child: Text('مودع')),
-                PopupMenuItem(value: 'deposited_for_collection', child: Text('برسم التحصيل')),
-                PopupMenuItem(value: 'cashed', child: Text('محصّل')),
-                PopupMenuItem(value: 'bounced', child: Text('مرتد')),
-                PopupMenuItem(value: 'endorsed', child: Text('مظهّر')),
-                PopupMenuItem(value: 'cancelled', child: Text('ملغي')),
+              itemBuilder: (_) =>  [
+                PopupMenuItem(value: 'all', child: Text(tr('الكل'))),
+                PopupMenuItem(value: 'pending', child: Text(tr('معلق'))),
+                PopupMenuItem(value: 'in_portfolio', child: Text(tr('في الحافظة'))),
+                PopupMenuItem(value: 'deposited', child: Text(tr('مودع'))),
+                PopupMenuItem(value: 'deposited_for_collection', child: Text(tr('برسم التحصيل'))),
+                PopupMenuItem(value: 'cashed', child: Text(tr('محصّل'))),
+                PopupMenuItem(value: 'bounced', child: Text(tr('مرتد'))),
+                PopupMenuItem(value: 'endorsed', child: Text(tr('مظهّر'))),
+                PopupMenuItem(value: 'cancelled', child: Text(tr('ملغي'))),
               ],
             ),
             IconButton(
               icon: const Icon(PhosphorIconsBold.chartPie),
-              tooltip: 'ملخص',
+              tooltip: tr('ملخص'),
               onPressed: () => showSummary(repo),
             ),
           ],
@@ -158,7 +159,7 @@ class _CommercialPapersScreenState
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'بحث عن شيك (رقم، بنك، مبلغ)...',
+                  hintText: tr('بحث عن شيك (رقم، بنك، مبلغ)...'),
                   prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); })
@@ -187,7 +188,7 @@ class _CommercialPapersScreenState
           backgroundColor: AppColors.primary,
           icon: const Icon(PhosphorIconsBold.plus, color: Colors.white),
           label: Text(
-            _tabCtrl.index == 0 ? 'شيك وارد' : _tabCtrl.index == 1 ? 'شيك صادر' : 'شيك وارد',
+            _tabCtrl.index == 0 ? tr('شيك وارد') : _tabCtrl.index == 1 ? tr('شيك صادر') : tr('شيك وارد'),
             style: GoogleFonts.cairo(
               color: Colors.white,
               fontWeight: FontWeight.w600,
@@ -228,8 +229,8 @@ class _CommercialPapersScreenState
                 const SizedBox(height: 16),
                 Text(
                   direction == 'received'
-                      ? 'لا توجد شيكات واردة'
-                      : 'لا توجد شيكات صادرة',
+                      ? tr('لا توجد شيكات واردة')
+                      : tr('لا توجد شيكات صادرة'),
                   style: GoogleFonts.cairo(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -299,7 +300,7 @@ class _CommercialPapersScreenState
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'لا توجد شيكات في الحافظة',
+                  tr('لا توجد شيكات في الحافظة'),
                   style: GoogleFonts.cairo(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -308,7 +309,7 @@ class _CommercialPapersScreenState
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'حرّك الشيكات الواردة إلى الحافظة من تاب "واردة"',
+                  tr('حرّك الشيكات الواردة إلى الحافظة من تاب "واردة"'),
                   style: GoogleFonts.cairo(fontSize: 12, color: Colors.grey),
                 ),
               ],
@@ -437,7 +438,7 @@ class _CommercialPapersScreenState
                       size: 13, color: Colors.grey.shade600),
                   const SizedBox(width: 4),
                   Text(
-                    'إصدار: ${_dateFormat.format(paper.issueDate)}',
+                    tr('إصدار: {p0}', {'p0': _dateFormat.format(paper.issueDate)}),
                     style: GoogleFonts.cairo(
                       fontSize: 11,
                       color: Colors.grey.shade600,
@@ -451,7 +452,7 @@ class _CommercialPapersScreenState
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'استحقاق: ${_dateFormat.format(dueDate)}',
+                    tr('استحقاق: {p0}', {'p0': _dateFormat.format(dueDate)}),
                     style: GoogleFonts.cairo(
                       fontSize: 11,
                       fontWeight: isOverdue ? FontWeight.w700 : FontWeight.w400,
@@ -470,7 +471,7 @@ class _CommercialPapersScreenState
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        'متأخر',
+                        tr('متأخر'),
                         style: GoogleFonts.cairo(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
@@ -491,7 +492,7 @@ class _CommercialPapersScreenState
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        'قريب الاستحقاق',
+                        tr('قريب الاستحقاق'),
                         style: GoogleFonts.cairo(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
@@ -538,19 +539,19 @@ class _CommercialPapersScreenState
     // label reads "تسديد"; "تحصيل" similarly becomes "تم التسديد".
     // For RECEIVED (وارد) papers the original wording stays.
     final isIssued = (paper.direction as String?) == 'issued';
-    final depositLabel = isIssued ? 'تسديد' : 'إيداع';
-    final reDepositLabel = isIssued ? 'إعادة تسديد' : 'إعادة إيداع';
-    final cashedLabel = isIssued ? 'تم التسديد' : 'تحصيل';
-    final partialCashedLabel = isIssued ? 'تسديد جزئي' : 'تحصيل جزئي';
+    final depositLabel = isIssued ? tr('تسديد') : tr('إيداع');
+    final reDepositLabel = isIssued ? tr('إعادة تسديد') : tr('إعادة إيداع');
+    final cashedLabel = isIssued ? tr('تم التسديد') : tr('تحصيل');
+    final partialCashedLabel = isIssued ? tr('تسديد جزئي') : tr('تحصيل جزئي');
     final buttons = <Widget>[];
 
     if (status == 'pending') {
       buttons.addAll([
-        _actionChip('حافظة', PhosphorIconsBold.folder, Colors.indigo, () =>
+        _actionChip(tr('حافظة'), PhosphorIconsBold.folder, Colors.indigo, () =>
             changeStatus(repo, paper.id, 'in_portfolio')),
         _actionChip(depositLabel, PhosphorIconsBold.bank, Colors.blue, () =>
             changeStatus(repo, paper.id, 'deposited')),
-        _actionChip('برسم التحصيل', PhosphorIconsBold.buildings, Colors.cyan, () =>
+        _actionChip(tr('برسم التحصيل'), PhosphorIconsBold.buildings, Colors.cyan, () =>
             showDepositForCollectionDialog(repo, paper, treasuryRepo)),
         _actionChip(cashedLabel, PhosphorIconsBold.checkCircle,
             AppColors.success, () =>
@@ -558,23 +559,23 @@ class _CommercialPapersScreenState
         _actionChip(partialCashedLabel, PhosphorIconsBold.percent,
             Colors.teal, () =>
                 showPartialCollectionDialog(repo, paper)),
-        _actionChip('تظهير', PhosphorIconsBold.arrowBendUpRight,
+        _actionChip(tr('تظهير'), PhosphorIconsBold.arrowBendUpRight,
             Colors.orange, () =>
                 showEndorseDialog(repo, paper, partiesRepo)),
-        _actionChip('تجديد', PhosphorIconsBold.calendarPlus,
+        _actionChip(tr('تجديد'), PhosphorIconsBold.calendarPlus,
             Colors.deepPurple, () =>
                 showRenewDialog(repo, paper)),
-        _actionChip('إلغاء', PhosphorIconsBold.x, AppColors.error, () =>
+        _actionChip(tr('إلغاء'), PhosphorIconsBold.x, AppColors.error, () =>
             changeStatus(repo, paper.id, 'cancelled')),
       ]);
     } else if (status == 'in_portfolio') {
       buttons.addAll([
-        _actionChip('برسم التحصيل', PhosphorIconsBold.buildings, Colors.cyan, () =>
+        _actionChip(tr('برسم التحصيل'), PhosphorIconsBold.buildings, Colors.cyan, () =>
             showDepositForCollectionDialog(repo, paper, treasuryRepo)),
-        _actionChip('إعادة إصدار', PhosphorIconsBold.arrowBendDoubleUpRight,
+        _actionChip(tr('إعادة إصدار'), PhosphorIconsBold.arrowBendDoubleUpRight,
             Colors.deepOrange, () =>
                 showReissueDialog(repo, paper, partiesRepo)),
-        _actionChip('$depositLabel مباشر', PhosphorIconsBold.bank, Colors.blue, () =>
+        _actionChip(tr('{depositLabel} مباشر', {'depositLabel': depositLabel}), PhosphorIconsBold.bank, Colors.blue, () =>
             changeStatus(repo, paper.id, 'deposited')),
         _actionChip(cashedLabel, PhosphorIconsBold.checkCircle,
             AppColors.success, () =>
@@ -588,7 +589,7 @@ class _CommercialPapersScreenState
         _actionChip(partialCashedLabel, PhosphorIconsBold.percent,
             Colors.teal, () =>
                 showPartialCollectionDialog(repo, paper)),
-        _actionChip('ارتداد', PhosphorIconsBold.arrowUUpLeft,
+        _actionChip(tr('ارتداد'), PhosphorIconsBold.arrowUUpLeft,
             AppColors.error, () =>
                 changeStatus(repo, paper.id, 'bounced')),
       ]);
@@ -596,9 +597,9 @@ class _CommercialPapersScreenState
       buttons.addAll([
         _actionChip(reDepositLabel, PhosphorIconsBold.bank, Colors.blue, () =>
             changeStatus(repo, paper.id, 'deposited')),
-        _actionChip('حافظة', PhosphorIconsBold.folder, Colors.indigo, () =>
+        _actionChip(tr('حافظة'), PhosphorIconsBold.folder, Colors.indigo, () =>
             changeStatus(repo, paper.id, 'in_portfolio')),
-        _actionChip('تجديد', PhosphorIconsBold.calendarPlus,
+        _actionChip(tr('تجديد'), PhosphorIconsBold.calendarPlus,
             Colors.deepPurple, () =>
                 showRenewDialog(repo, paper)),
       ]);
@@ -606,7 +607,7 @@ class _CommercialPapersScreenState
 
     // Always show print & history
     buttons.add(
-      _actionChip('طباعة', PhosphorIconsBold.printer, Colors.blueGrey, () {
+      _actionChip(tr('طباعة'), PhosphorIconsBold.printer, Colors.blueGrey, () {
         ReportPdfGenerator.printCheckVoucher(
           checkNumber: paper.paperNumber,
           amount: paper.amount,
@@ -621,7 +622,7 @@ class _CommercialPapersScreenState
       }),
     );
     buttons.add(
-      _actionChip('السجل', PhosphorIconsBold.clockCounterClockwise,
+      _actionChip(tr('السجل'), PhosphorIconsBold.clockCounterClockwise,
           Colors.grey.shade600, () => showHistory(repo, paper.id)),
     );
 

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -83,7 +84,7 @@ class _AccountMappingPicPosScreenState
   @override
   Widget build(BuildContext context) {
     final readOnly = ref.watch(isClientModeProvider);
-    const groups = accountMappingPurposeGroups;
+    final groups = accountMappingPurposeGroups;
 
     // ⚠️ العدّاداتُ من التعريفات كلِّها لا من المرشَّح.
     final allItems = [for (final g in groups) ...g.items];
@@ -103,15 +104,15 @@ class _AccountMappingPicPosScreenState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: PicPosScreenScaffold(
-        title: 'ربط الحسابات بالعمليات',
-        subtitle: 'كل عملية في النظام وأثرها المحاسبي',
+        title: tr('ربط الحسابات بالعمليات'),
+        subtitle: tr('كل عملية في النظام وأثرها المحاسبي'),
         icon: PhosphorIconsBold.plugsConnected,
         headerSearch: TextField(
           controller: _searchCtrl,
           onChanged: (v) => setState(() => _query = v),
           decoration: InputDecoration(
             isDense: true,
-            hintText: 'بحث في العمليات...',
+            hintText: tr('بحث في العمليات...'),
             prefixIcon:
                 const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
             suffixIcon: _query.isNotEmpty
@@ -133,13 +134,13 @@ class _AccountMappingPicPosScreenState
               onPressed: _resetToDefaults,
               icon: const Icon(PhosphorIconsBold.arrowCounterClockwise,
                   size: 15),
-              label: const Text('استعادة الافتراضي'),
+              label:  Text(tr('استعادة الافتراضي')),
             ),
         ],
         subHeader: _GroupStrip(
           groups: groups,
           selected: _groupIndex,
-          summary: '${allItems.length - unmapped} من ${allItems.length} مربوط',
+          summary: tr('{p0} من {p1} مربوط', {'p0': allItems.length - unmapped, 'p1': allItems.length}),
           countFor: (g) =>
               g.items.where((i) => _forPurpose(i.purpose).isNotEmpty).length,
           onSelect: (i) => setState(() => _groupIndex = i),
@@ -171,8 +172,8 @@ class _AccountMappingPicPosScreenState
                     child: items.isEmpty
                         ? PicPosEmptyState(
                             icon: PhosphorIconsBold.magnifyingGlass,
-                            title: 'لا عمليةَ تطابق البحث',
-                            hint: 'في مجموعة «${group.title}».',
+                            title: tr('لا عمليةَ تطابق البحث'),
+                            hint: tr('في مجموعة «{p0}».', {'p0': group.title}),
                           )
                         : ListView.separated(
                             padding: EdgeInsets.zero,
@@ -202,10 +203,10 @@ class _AccountMappingPicPosScreenState
     final confirmed = await showPicPosConfirm(
       context,
       icon: PhosphorIconsBold.arrowCounterClockwise,
-      title: 'استعادة الربط الافتراضي',
+      title: tr('استعادة الربط الافتراضي'),
       message: 'سيُحذف الربطُ المحاسبيُّ الحاليُّ كلُّه ويُستعاد الافتراضيُّ '
           'من دليل الحسابات. القيودُ المرحَّلةُ سابقاً لا تتأثّر.',
-      confirmLabel: 'استعادة',
+      confirmLabel: tr('استعادة'),
       danger: true,
     );
     if (!confirmed) return;
@@ -213,10 +214,10 @@ class _AccountMappingPicPosScreenState
       await ref.read(accountingRepositoryProvider).resetToDefaultMappings();
       await _load();
       if (mounted) {
-        AppToast.show(context, 'تم استعادة الربط المحاسبي الافتراضي بنجاح');
+        AppToast.show(context, tr('تم استعادة الربط المحاسبي الافتراضي بنجاح'));
       }
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -227,10 +228,10 @@ class _AccountMappingPicPosScreenState
     final confirmed = await showPicPosConfirm(
       context,
       icon: PhosphorIconsBold.trash,
-      title: 'حذف الربط',
+      title: tr('حذف الربط'),
       subtitle: item.label,
-      message: 'بعد الحذف لن تجد هذه العمليةُ حساباً تُرحَّل إليه تلقائيّاً.',
-      confirmLabel: 'حذف',
+      message: tr('بعد الحذف لن تجد هذه العمليةُ حساباً تُرحَّل إليه تلقائيّاً.'),
+      confirmLabel: tr('حذف'),
       danger: true,
     );
     if (!confirmed) return;
@@ -242,7 +243,7 @@ class _AccountMappingPicPosScreenState
           .deleteAccountMappingById(mapping.id);
       await _load();
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -270,9 +271,9 @@ class _AccountMappingPicPosScreenState
         costCenterId: result.$2,
       );
       await _load();
-      if (mounted) AppToast.show(context, 'تم حفظ الربط');
+      if (mounted) AppToast.show(context, tr('تم حفظ الربط'));
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
     }
   }
 }
@@ -469,7 +470,7 @@ class _PurposeRow extends StatelessWidget {
                         style: text.titleSmall
                             ?.copyWith(fontWeight: FontWeight.w800)),
                     Text(
-                      '${item.purpose} · الافتراضي ${item.defaultCode}',
+                      tr('{p0} · الافتراضي {p1}', {'p0': item.purpose, 'p1': item.defaultCode}),
                       style: text.labelSmall
                           ?.copyWith(color: AppColors.textMuted),
                     ),
@@ -486,7 +487,7 @@ class _PurposeRow extends StatelessWidget {
                           ? PhosphorIconsBold.pencilSimple
                           : PhosphorIconsBold.plus,
                       size: 14),
-                  label: Text(mapped ? 'تعديل' : 'ربط'),
+                  label: Text(mapped ? tr('تعديل') : tr('ربط')),
                 ),
               ],
             ],
@@ -533,7 +534,7 @@ class _StatusBadge extends StatelessWidget {
           Icon(mapped ? PhosphorIconsBold.check : PhosphorIconsBold.warning,
               size: 12, color: tint),
           const SizedBox(width: 5),
-          Text(mapped ? 'مربوط' : 'غير مربوط',
+          Text(mapped ? tr('مربوط') : tr('غير مربوط'),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: tint, fontWeight: FontWeight.w800)),
         ],
@@ -577,7 +578,7 @@ class _MappingChip extends StatelessWidget {
           Expanded(
             child: Text(
               account == null
-                  ? 'حساب #${mapping.accountId} (غير موجود)'
+                  ? tr('حساب #{p0} (غير موجود)', {'p0': mapping.accountId})
                   : '${account!.code} — ${account!.name}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -595,21 +596,21 @@ class _MappingChip extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              costCenter == null ? 'افتراضي' : 'مركز: ${costCenter!.name}',
+              costCenter == null ? tr('افتراضي') : tr('مركز: {p0}', {'p0': costCenter!.name}),
               style: text.labelSmall?.copyWith(color: AppColors.primary),
             ),
           ),
           if (!readOnly) ...[
             const SizedBox(width: 6),
             IconButton(
-              tooltip: 'تعديل',
+              tooltip: tr('تعديل'),
               iconSize: 14,
               visualDensity: VisualDensity.compact,
               icon: const Icon(PhosphorIconsBold.pencilSimple),
               onPressed: onEdit,
             ),
             IconButton(
-              tooltip: 'حذف',
+              tooltip: tr('حذف'),
               iconSize: 14,
               visualDensity: VisualDensity.compact,
               color: AppColors.error,
@@ -659,12 +660,12 @@ class _MappingEditorDialogState extends State<_MappingEditorDialog> {
 
     return PicPosDialog(
       icon: PhosphorIconsBold.plugsConnected,
-      title: 'ربط «${widget.item.label}»',
-      subtitle: 'الحساب الافتراضي في الدليل: ${widget.item.defaultCode}',
+      title: tr('ربط «{p0}»', {'p0': widget.item.label}),
+      subtitle: tr('الحساب الافتراضي في الدليل: {p0}', {'p0': widget.item.defaultCode}),
       width: 620,
       onCancel: () => Navigator.pop(context),
       primaryAction: PicPosDialogAction(
-        label: 'حفظ الربط',
+        label: tr('حفظ الربط'),
         icon: PhosphorIconsBold.check,
         onPressed: _accountId == null
             ? null
@@ -680,13 +681,13 @@ class _MappingEditorDialogState extends State<_MappingEditorDialog> {
         DropdownButtonFormField<int?>(
           initialValue: _costCenterId,
           isExpanded: true,
-          decoration: const InputDecoration(
+          decoration:  InputDecoration(
             isDense: true,
-            labelText: 'مركز التكلفة (اختياري)',
-            helperText: 'اتركه فارغاً ليكون الربطُ افتراضيّاً لكلّ المراكز',
+            labelText: tr('مركز التكلفة (اختياري)'),
+            helperText: tr('اتركه فارغاً ليكون الربطُ افتراضيّاً لكلّ المراكز'),
           ),
           items: [
-            const DropdownMenuItem(value: null, child: Text('افتراضي — كل المراكز')),
+             DropdownMenuItem(value: null, child: Text(tr('افتراضي — كل المراكز'))),
             for (final c in widget.costCenters)
               DropdownMenuItem(value: c.id, child: Text('${c.code} — ${c.name}')),
           ],
@@ -695,19 +696,19 @@ class _MappingEditorDialogState extends State<_MappingEditorDialog> {
         const SizedBox(height: 12),
         TextField(
           onChanged: (v) => setState(() => _filter = v),
-          decoration: const InputDecoration(
+          decoration:  InputDecoration(
             isDense: true,
-            hintText: 'بحث بالاسم أو الرمز...',
-            prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
+            hintText: tr('بحث بالاسم أو الرمز...'),
+            prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
           ),
         ),
         const SizedBox(height: 8),
         SizedBox(
           height: 320,
           child: matches.isEmpty
-              ? const PicPosEmptyState(
+              ?  PicPosEmptyState(
                   icon: PhosphorIconsBold.magnifyingGlass,
-                  title: 'لا حسابَ يطابق البحث',
+                  title: tr('لا حسابَ يطابق البحث'),
                 )
               : ListView.builder(
                   itemCount: matches.length,

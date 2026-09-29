@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -64,7 +65,7 @@ class CartPaymentSelector extends ConsumerWidget {
               child: PermissionGuard(
                 permission: PermissionCodes.posPaymentCash,
                 child: _buildPaymentOption(
-                  label: 'نقدي',
+                  label: tr('نقدي'),
                   icon: PhosphorIconsBold.money,
                   isSelected: state.paymentMethod == 'cash',
                   onTap: isDeliveryCompany
@@ -86,7 +87,7 @@ class CartPaymentSelector extends ConsumerWidget {
               child: PermissionGuard(
                 permission: PermissionCodes.posPaymentCard,
                 child: _buildPaymentOption(
-                  label: 'بطاقة',
+                  label: tr('بطاقة'),
                   icon: PhosphorIconsBold.creditCard,
                   isSelected: state.paymentMethod == 'card',
                   onTap: isDeliveryCompany
@@ -105,7 +106,7 @@ class CartPaymentSelector extends ConsumerWidget {
               child: PermissionGuard(
                 permission: PermissionCodes.posPaymentTransfer,
                 child: _buildPaymentOption(
-                  label: 'كليك',
+                  label: tr('كليك'),
                   icon: PhosphorIconsBold.cellSignalFull,
                   isSelected: state.paymentMethod == 'click',
                   onTap: isDeliveryCompany
@@ -124,7 +125,7 @@ class CartPaymentSelector extends ConsumerWidget {
               child: PermissionGuard(
                 permission: PermissionCodes.posPaymentCredit,
                 child: _buildPaymentOption(
-                  label: 'آجل',
+                  label: tr('آجل'),
                   icon: PhosphorIconsBold.timer,
                   isSelected: state.paymentMethod == 'credit',
                   onTap: () {
@@ -143,7 +144,7 @@ class CartPaymentSelector extends ConsumerWidget {
               child: PermissionGuard(
                 permission: PermissionCodes.posPaymentMultiple,
                 child: _buildPaymentOption(
-                  label: 'متعدد',
+                  label: tr('متعدد'),
                   icon: PhosphorIconsBold.circlesThreePlus,
                   isSelected: state.paymentMethod == 'multiple',
                   onTap: isDeliveryCompany
@@ -221,7 +222,7 @@ class CartPaymentSelector extends ConsumerWidget {
                   const SizedBox(width: 4),
                   Flexible(
                     child: Text(
-                      'الصندوق: $cashSafeName',
+                      tr('الصندوق: {cashSafeName}', {'cashSafeName': cashSafeName}),
                       style: TextStyle(
                         fontSize: 10 * scaleFactor,
                         color: AppColors.success,
@@ -328,7 +329,7 @@ class CartPaymentSelector extends ConsumerWidget {
     }
     // Show first bank name if only one exists
     if (bankSafes.length == 1) return bankSafes.first.name;
-    return 'اختر البنك';
+    return tr('اختر البنك');
   }
 
   Widget _buildPaymentOption({

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -139,18 +140,18 @@ class PicPosDocStatus {
   const PicPosDocStatus(this.label, this.tone);
 
   /// مسودةٌ — لم تُرحَّل بعد.
-  const PicPosDocStatus.draft()
-      : label = 'مسودة',
+  PicPosDocStatus.draft()
+      : label = tr('مسودة'),
         tone = AppColors.warning;
 
   /// مرحَّلٌ ومعتمَد.
-  const PicPosDocStatus.posted()
-      : label = 'معتمد',
+  PicPosDocStatus.posted()
+      : label = tr('معتمد'),
         tone = AppColors.success;
 
   /// ملغًى أو مرتجَع.
-  const PicPosDocStatus.cancelled()
-      : label = 'ملغى',
+  PicPosDocStatus.cancelled()
+      : label = tr('ملغى'),
         tone = AppColors.error;
 
   final String label;

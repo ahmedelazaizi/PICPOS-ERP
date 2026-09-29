@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ثلاثُ وجهاتٍ تقرأ ما هو مبنيٌّ فعلاً: الانتظارُ والمواردُ والخدمات.
 //
 // ⚠️ **ولا حقلَ يُخترَع**: التصميمُ يعرض لقائمة الانتظار «الوقتَ المرغوب»
@@ -31,10 +32,10 @@ class BookingsWaitlistView extends StatelessWidget {
         rows.where((r) => r.resourceId == null && r.occupiesTime).toList();
 
     if (waiting.isEmpty) {
-      return const PicPosEmptyState(
+      return  PicPosEmptyState(
         icon: PhosphorIconsBold.hourglassMedium,
-        title: 'لا أحدَ في قائمة الانتظار',
-        hint: 'كلُّ حجوزات اليوم مُسنَدةٌ إلى موظَّفٍ أو مورد.',
+        title: tr('لا أحدَ في قائمة الانتظار'),
+        hint: tr('كلُّ حجوزات اليوم مُسنَدةٌ إلى موظَّفٍ أو مورد.'),
       );
     }
 
@@ -107,17 +108,17 @@ class _WaitCard extends StatelessWidget {
           ),
           SizedBox(
             width: 170,
-            child: _labelled('الخدمة المطلوبة', row.serviceName, color),
+            child: _labelled(tr('الخدمة المطلوبة'), row.serviceName, color),
           ),
           SizedBox(
             width: 150,
-            child: _labelled('الموعد', bookingTimeLabel(row.startsAt), null),
+            child: _labelled(tr('الموعد'), bookingTimeLabel(row.startsAt), null),
           ),
           SizedBox(
             width: 200,
             // ⚠️ لا «الوقتُ المرغوب» ولا «منذ متى»: لا عمودَ لهما في
             // `Bookings`. فتُعرَض الملاحظةُ الموجودةُ ولا يُختلَق حقل.
-            child: _labelled('ملاحظة', row.notes?.trim().isNotEmpty == true
+            child: _labelled(tr('ملاحظة'), row.notes?.trim().isNotEmpty == true
                 ? row.notes!
                 : '—', null),
           ),
@@ -226,19 +227,19 @@ class BookingsResourcesView extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => PicPosEmptyState(
         icon: PhosphorIconsBold.warningCircle,
-        title: 'تعذّر تحميل الموارد',
+        title: tr('تعذّر تحميل الموارد'),
         hint: '$e',
       ),
       data: (list) {
         if (list.isEmpty) {
           return PicPosEmptyState(
             icon: PhosphorIconsBold.users,
-            title: 'لا موارد معرَّفة',
-            hint: 'أضف موظَّفاً أو جهازاً ليمكن إسنادُ الحجوزات إليه.',
+            title: tr('لا موارد معرَّفة'),
+            hint: tr('أضف موظَّفاً أو جهازاً ليمكن إسنادُ الحجوزات إليه.'),
             action: FilledButton.icon(
               onPressed: () => showResourceEditor(context),
               icon: const Icon(PhosphorIconsBold.plus, size: 16),
-              label: const Text('مورد جديد'),
+              label:  Text(tr('مورد جديد')),
             ),
           );
         }
@@ -256,7 +257,7 @@ class BookingsResourcesView extends ConsumerWidget {
             // يفكّر فيه المستخدمُ بالإضافة.
             if (i == list.length) {
               return _AddCard(
-                label: 'مورد جديد',
+                label: tr('مورد جديد'),
                 icon: PhosphorIconsBold.userPlus,
                 onTap: () => showResourceEditor(context),
               );
@@ -284,14 +285,14 @@ class BookingsResourcesView extends ConsumerWidget {
 
   /// «10:00 ص — 08:00 م» أو «بلا ورديّة محدّدة».
   static String _shiftLabel(int? start, int? end) {
-    if (start == null || end == null) return 'بلا ورديّة محدّدة';
+    if (start == null || end == null) return tr('بلا ورديّة محدّدة');
     return '${_hhmm(start)} — ${_hhmm(end)}';
   }
 
   static String _hhmm(int minutes) {
     final h24 = (minutes ~/ 60) % 24;
     final m = minutes % 60;
-    final period = h24 < 12 ? 'ص' : 'م';
+    final period = h24 < 12 ? tr('ص') : tr('م');
     final h12 = h24 % 12 == 0 ? 12 : h24 % 12;
     return '${h12.toString().padLeft(2, '0')}:'
         '${m.toString().padLeft(2, '0')} $period';
@@ -364,7 +365,7 @@ class _ResourceCard extends StatelessWidget {
                           fontSize: 13.5, fontWeight: FontWeight.w800),
                     ),
                     Text(
-                      role ?? (kind == 'device' ? 'مورد — جهاز' : 'موظَّف'),
+                      role ?? (kind == 'device' ? tr('مورد — جهاز') : tr('موظَّف')),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -379,7 +380,7 @@ class _ResourceCard extends StatelessWidget {
               IconButton(
                 onPressed: onEdit,
                 icon: const Icon(PhosphorIconsBold.pencilSimple, size: 15),
-                tooltip: 'تعديل',
+                tooltip: tr('تعديل'),
                 visualDensity: VisualDensity.compact,
               ),
             ],
@@ -402,12 +403,12 @@ class _ResourceCard extends StatelessWidget {
             children: [
               Flexible(
                 child:
-                    _mini('حجوزات اليوم', '${load.bookings}', AppColors.primary),
+                    _mini(tr('حجوزات اليوم'), '${load.bookings}', AppColors.primary),
               ),
               const SizedBox(width: 10),
               Flexible(
                 child: _mini(
-                  'إيراد متوقع',
+                  tr('إيراد متوقع'),
                   load.revenue.toStringAsFixed(AppConstants.decimalPlaces),
                   color,
                 ),
@@ -480,19 +481,19 @@ class BookingsServicesView extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => PicPosEmptyState(
         icon: PhosphorIconsBold.warningCircle,
-        title: 'تعذّر تحميل الخدمات',
+        title: tr('تعذّر تحميل الخدمات'),
         hint: '$e',
       ),
       data: (list) {
         if (list.isEmpty) {
           return PicPosEmptyState(
             icon: PhosphorIconsBold.scissors,
-            title: 'لا خدمات معرَّفة',
-            hint: 'أضف خدمةً بمدّتها وسعرها ليمكن الحجزُ عليها.',
+            title: tr('لا خدمات معرَّفة'),
+            hint: tr('أضف خدمةً بمدّتها وسعرها ليمكن الحجزُ عليها.'),
             action: FilledButton.icon(
               onPressed: () => showServiceEditor(context),
               icon: const Icon(PhosphorIconsBold.plus, size: 16),
-              label: const Text('خدمة جديدة'),
+              label:  Text(tr('خدمة جديدة')),
             ),
           );
         }
@@ -508,7 +509,7 @@ class BookingsServicesView extends ConsumerWidget {
           itemBuilder: (_, i) {
             if (i == list.length) {
               return _AddCard(
-                label: 'خدمة جديدة',
+                label: tr('خدمة جديدة'),
                 icon: PhosphorIconsBold.plus,
                 onTap: () => showServiceEditor(context),
               );
@@ -591,15 +592,15 @@ class _ServiceCard extends StatelessWidget {
                 ),
               ),
               if (!linked)
-                const Tooltip(
-                  message: 'غير مربوطة بصنف — لا يمكن تفويترُ حجوزها',
-                  child: Icon(PhosphorIconsBold.linkBreak,
+                 Tooltip(
+                  message: tr('غير مربوطة بصنف — لا يمكن تفويترُ حجوزها'),
+                  child: const Icon(PhosphorIconsBold.linkBreak,
                       size: 15, color: AppColors.warning),
                 ),
               IconButton(
                 onPressed: onEdit,
                 icon: const Icon(PhosphorIconsBold.pencilSimple, size: 15),
-                tooltip: 'تعديل / ربط بصنف',
+                tooltip: tr('تعديل / ربط بصنف'),
                 visualDensity: VisualDensity.compact,
               ),
             ],
@@ -607,16 +608,16 @@ class _ServiceCard extends StatelessWidget {
           const Spacer(),
           Row(
             children: [
-              Flexible(child: _stat('المدة', '$durationMinutes د')),
+              Flexible(child: _stat(tr('المدة'), tr('{durationMinutes} د', {'durationMinutes': durationMinutes}))),
               const SizedBox(width: 10),
-              Flexible(child: _stat('فاصل', '$bufferMinutes د')),
+              Flexible(child: _stat(tr('فاصل'), tr('{bufferMinutes} د', {'bufferMinutes': bufferMinutes}))),
               const SizedBox(width: 10),
               // السعرُ يأخذ الباقيَ: رمزُ العملةِ ودقّتُها يتبدّلان بالتنصيبة
               // (ق-١)، فعرضٌ ثابتٌ هنا يفيض عند عملةٍ أطولَ رمزاً.
               Expanded(
                 flex: 2,
                 child: _stat(
-                  'السعر',
+                  tr('السعر'),
                   '${price.toStringAsFixed(AppConstants.decimalPlaces)} '
                       '${AppConstants.currencySymbol}',
                   color: color,
@@ -626,7 +627,7 @@ class _ServiceCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'حجوزات اليوم: $todayCount',
+            tr('حجوزات اليوم: {todayCount}', {'todayCount': todayCount}),
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,

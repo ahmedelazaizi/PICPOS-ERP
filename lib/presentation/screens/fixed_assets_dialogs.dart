@@ -24,7 +24,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('فئة أصول جديدة',
+          title: Text(tr('فئة أصول جديدة'),
               style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           content: SizedBox(
             width: 420,
@@ -35,7 +35,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   TextField(
                     controller: nameCtrl,
                     decoration: InputDecoration(
-                      labelText: 'اسم الفئة *',
+                      labelText: tr('اسم الفئة *'),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       isDense: true,
@@ -45,8 +45,8 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   TextField(
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: 'العمر الافتراضي (سنوات) — اختياري',
-                      hintText: 'اتركه فارغاً إذا غير محدد',
+                      labelText: tr('العمر الافتراضي (سنوات) — اختياري'),
+                      hintText: tr('اتركه فارغاً إذا غير محدد'),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       isDense: true,
@@ -59,17 +59,17 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   DropdownButtonFormField<String>(
                     initialValue: method,
                     decoration: InputDecoration(
-                      labelText: 'طريقة الإهلاك',
+                      labelText: tr('طريقة الإهلاك'),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       isDense: true,
                     ),
-                    items: const [
+                    items:  [
                       DropdownMenuItem(
-                          value: 'straight_line', child: Text('القسط الثابت')),
+                          value: 'straight_line', child: Text(tr('القسط الثابت'))),
                       DropdownMenuItem(
                           value: 'declining_balance',
-                          child: Text('القسط المتناقص')),
+                          child: Text(tr('القسط المتناقص'))),
                     ],
                     onChanged: (v) =>
                         setDialogState(() => method = v ?? 'straight_line'),
@@ -95,8 +95,8 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                               controller: ctrl,
                               focusNode: fn,
                               decoration: InputDecoration(
-                                labelText: 'حساب الأصل (قيد الاقتناء)',
-                                hintText: 'ابحث: مركبات، آلات...',
+                                labelText: tr('حساب الأصل (قيد الاقتناء)'),
+                                hintText: tr('ابحث: مركبات، آلات...'),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                 isDense: true,
                               ),
@@ -114,11 +114,11 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                             // MissingCategoryAccountException at end of long
                             // asset-creation form. Save is gated on these
                             // selections being present (see button below).
-                            const Padding(
-                              padding: EdgeInsets.only(top: 4),
+                             Padding(
+                              padding: const EdgeInsets.only(top: 4),
                               child: Text(
-                                'اختر حساب الأصل من دليل الحسابات.',
-                                style: TextStyle(
+                                tr('اختر حساب الأصل من دليل الحسابات.'),
+                                style: const TextStyle(
                                     fontSize: 11, color: AppColors.error),
                               ),
                             ),
@@ -134,8 +134,8 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                               controller: ctrl,
                               focusNode: fn,
                               decoration: InputDecoration(
-                                labelText: 'حساب مجمع الإهلاك',
-                                hintText: 'ابحث: مجمع إهلاك...',
+                                labelText: tr('حساب مجمع الإهلاك'),
+                                hintText: tr('ابحث: مجمع إهلاك...'),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                 isDense: true,
                               ),
@@ -149,11 +149,11 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                                   style: const TextStyle(fontSize: 11, color: AppColors.success)),
                             )
                           else
-                            const Padding(
-                              padding: EdgeInsets.only(top: 4),
+                             Padding(
+                              padding: const EdgeInsets.only(top: 4),
                               child: Text(
-                                'اختر حساب مجمع الإهلاك من دليل الحسابات.',
-                                style: TextStyle(
+                                tr('اختر حساب مجمع الإهلاك من دليل الحسابات.'),
+                                style: const TextStyle(
                                     fontSize: 11, color: AppColors.error),
                               ),
                             ),
@@ -168,7 +168,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               // Feature 050: gate save on both account selections. The name
@@ -183,7 +183,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   ? null
                   : () async {
                 if (nameCtrl.text.trim().isEmpty) {
-                  AppToast.show(ctx, 'الرجاء إدخال اسم الفئة');
+                  AppToast.show(ctx, tr('الرجاء إدخال اسم الفئة'));
                   return;
                 }
                 setDialogState(() => saving = true);
@@ -197,16 +197,16 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   );
                   if (ctx.mounted) Navigator.pop(ctx);
                   if (mounted) {
-                    AppToast.show(context, 'تمت إضافة الفئة',
+                    AppToast.show(context, tr('تمت إضافة الفئة'),
                         type: ToastType.success);
                   }
                 } catch (e) {
                   if (ctx.mounted) setDialogState(() => saving = false);
                   if (!ctx.mounted) return;
-                  AppToast.show(ctx, 'خطأ: $e', type: ToastType.error);
+                  AppToast.show(ctx, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
                 }
               },
-              child: const Text('حفظ'),
+              child:  Text(tr('حفظ')),
             ),
           ],
         ),
@@ -246,7 +246,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('تعديل الفئة — ${cat.name}',
+          title: Text(tr('تعديل الفئة — {p0}', {'p0': cat.name}),
               style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           content: SizedBox(
             width: 420,
@@ -257,7 +257,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   TextField(
                     controller: nameCtrl,
                     decoration: InputDecoration(
-                      labelText: 'اسم الفئة',
+                      labelText: tr('اسم الفئة'),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       isDense: true,
                     ),
@@ -271,8 +271,8 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                     controller: usefulLifeCtrl,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: 'العمر الافتراضي (سنوات) — اختياري',
-                      hintText: 'اتركه فارغاً إذا غير محدد',
+                      labelText: tr('العمر الافتراضي (سنوات) — اختياري'),
+                      hintText: tr('اتركه فارغاً إذا غير محدد'),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       isDense: true,
                     ),
@@ -281,16 +281,16 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   DropdownButtonFormField<String>(
                     initialValue: method,
                     decoration: InputDecoration(
-                      labelText: 'طريقة الإهلاك',
+                      labelText: tr('طريقة الإهلاك'),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       isDense: true,
                     ),
-                    items: const [
+                    items:  [
                       DropdownMenuItem(
-                          value: 'straight_line', child: Text('القسط الثابت')),
+                          value: 'straight_line', child: Text(tr('القسط الثابت'))),
                       DropdownMenuItem(
                           value: 'declining_balance',
-                          child: Text('القسط المتناقص')),
+                          child: Text(tr('القسط المتناقص'))),
                     ],
                     onChanged: (v) =>
                         setDialogState(() => method = v ?? 'straight_line'),
@@ -328,7 +328,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                               controller: ctrl,
                               focusNode: fn,
                               decoration: InputDecoration(
-                                labelText: 'حساب الأصل',
+                                labelText: tr('حساب الأصل'),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                 isDense: true,
                               ),
@@ -359,7 +359,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                               controller: ctrl,
                               focusNode: fn,
                               decoration: InputDecoration(
-                                labelText: 'حساب مجمع الإهلاك',
+                                labelText: tr('حساب مجمع الإهلاك'),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                 isDense: true,
                               ),
@@ -383,7 +383,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('إلغاء')),
+                child:  Text(tr('إلغاء'))),
             ElevatedButton(
               onPressed: saving ? null : () async {
                 setDialogState(() => saving = true);
@@ -399,15 +399,15 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   );
                   if (ctx.mounted) Navigator.pop(ctx);
                   if (mounted) {
-                    AppToast.show(context, 'تم التعديل', type: ToastType.success);
+                    AppToast.show(context, tr('تم التعديل'), type: ToastType.success);
                   }
                 } catch (e) {
                   if (ctx.mounted) setDialogState(() => saving = false);
                   if (!ctx.mounted) return;
-                  AppToast.show(ctx, 'خطأ: $e', type: ToastType.error);
+                  AppToast.show(ctx, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
                 }
               },
-              child: const Text('حفظ'),
+              child:  Text(tr('حفظ')),
             ),
           ],
         ),
@@ -438,7 +438,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('أصل ثابت جديد',
+          title: Text(tr('أصل ثابت جديد'),
               style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           content: SizedBox(
             width: 450,
@@ -453,7 +453,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                         child: TextField(
                           controller: codeCtrl,
                           decoration: InputDecoration(
-                            labelText: 'الكود *',
+                            labelText: tr('الكود *'),
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8)),
                             isDense: true,
@@ -465,7 +465,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                         child: TextField(
                           controller: nameCtrl,
                           decoration: InputDecoration(
-                            labelText: 'اسم الأصل *',
+                            labelText: tr('اسم الأصل *'),
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8)),
                             isDense: true,
@@ -496,7 +496,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                         children: [
                           DropdownButtonFormField<int>(
                             decoration: InputDecoration(
-                              labelText: 'الفئة *',
+                              labelText: tr('الفئة *'),
                               border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8)),
                               isDense: true,
@@ -544,7 +544,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                                       // up the now-linked category.
                                       setDialogState(() {});
                                     },
-                                    child: const Text('ربط حساب الآن'),
+                                    child:  Text(tr('ربط حساب الآن')),
                                   ),
                                 ],
                               ),
@@ -561,7 +561,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                           controller: priceCtrl,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: 'سعر الشراء *',
+                            labelText: tr('سعر الشراء *'),
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8)),
                             isDense: true,
@@ -584,7 +584,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                           },
                           child: InputDecorator(
                             decoration: InputDecoration(
-                              labelText: 'تاريخ الشراء',
+                              labelText: tr('تاريخ الشراء'),
                               border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8)),
                               isDense: true,
@@ -603,7 +603,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                           controller: lifetimeCtrl,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: 'العمر (سنوات) *',
+                            labelText: tr('العمر (سنوات) *'),
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8)),
                             isDense: true,
@@ -616,7 +616,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                           controller: salvageCtrl,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: 'قيمة النفاية',
+                            labelText: tr('قيمة النفاية'),
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8)),
                             isDense: true,
@@ -629,18 +629,18 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   DropdownButtonFormField<String>(
                     initialValue: method,
                     decoration: InputDecoration(
-                      labelText: 'طريقة الإهلاك',
+                      labelText: tr('طريقة الإهلاك'),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       isDense: true,
                     ),
-                    items: const [
+                    items:  [
                       DropdownMenuItem(
                           value: 'straight_line',
-                          child: Text('القسط الثابت')),
+                          child: Text(tr('القسط الثابت'))),
                       DropdownMenuItem(
                           value: 'declining_balance',
-                          child: Text('القسط المتناقص')),
+                          child: Text(tr('القسط المتناقص'))),
                     ],
                     onChanged: (v) =>
                         setDialogState(() => method = v ?? 'straight_line'),
@@ -649,7 +649,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   TextField(
                     controller: locationCtrl,
                     decoration: InputDecoration(
-                      labelText: 'الموقع',
+                      labelText: tr('الموقع'),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       isDense: true,
@@ -660,7 +660,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                     controller: notesCtrl,
                     maxLines: 2,
                     decoration: InputDecoration(
-                      labelText: 'ملاحظات',
+                      labelText: tr('ملاحظات'),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       isDense: true,
@@ -675,13 +675,13 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                       return DropdownButtonFormField<int?>(
                         initialValue: selectedCostCenterId,
                         decoration: InputDecoration(
-                          labelText: 'مركز التكلفة',
+                          labelText: tr('مركز التكلفة'),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           isDense: true,
                           prefixIcon: const Icon(PhosphorIconsBold.target),
                         ),
                         items: [
-                          const DropdownMenuItem<int?>(value: null, child: Text('بدون')),
+                           DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'))),
                           ...centers.map((c) => DropdownMenuItem<int?>(value: c.id, child: Text(c.name))),
                         ],
                         onChanged: (v) => setDialogState(() => selectedCostCenterId = v),
@@ -713,8 +713,8 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                             controller: controller,
                             focusNode: focusNode,
                             decoration: InputDecoration(
-                              labelText: 'حساب الدفع عند الاقتناء (الطرف الدائن)',
-                              hintText: 'ابحث بالاسم أو الرمز...',
+                              labelText: tr('حساب الدفع عند الاقتناء (الطرف الدائن)'),
+                              hintText: tr('ابحث بالاسم أو الرمز...'),
                               prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                               isDense: true,
@@ -744,24 +744,24 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton.icon(
               icon: const Icon(PhosphorIconsBold.floppyDisk, size: 16),
-              label: const Text('حفظ'),
+              label:  Text(tr('حفظ')),
               onPressed: saving ? null : () async {
                 if (codeCtrl.text.isEmpty ||
                     nameCtrl.text.isEmpty ||
                     priceCtrl.text.isEmpty ||
                     selectedCategoryId == null) {
-                  AppToast.show(ctx, 'الرجاء تعبئة الحقول المطلوبة');
+                  AppToast.show(ctx, tr('الرجاء تعبئة الحقول المطلوبة'));
                   return;
                 }
 
                 final price = double.tryParse(priceCtrl.text);
                 final lifetime = double.tryParse(lifetimeCtrl.text);
                 if (price == null || price <= 0 || lifetime == null || lifetime <= 0) {
-                  AppToast.show(ctx, 'الرجاء إدخال قيم صحيحة');
+                  AppToast.show(ctx, tr('الرجاء إدخال قيم صحيحة'));
                   return;
                 }
 
@@ -788,13 +788,13 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   );
                   if (ctx.mounted) Navigator.pop(ctx);
                   if (mounted) {
-                    AppToast.show(context, 'تمت إضافة الأصل',
+                    AppToast.show(context, tr('تمت إضافة الأصل'),
                         type: ToastType.success);
                   }
                 } catch (e) {
                   if (ctx.mounted) setDialogState(() => saving = false);
                   if (!ctx.mounted) return;
-                  AppToast.show(ctx, 'خطأ: $e', type: ToastType.error);
+                  AppToast.show(ctx, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
                 }
               },
             ),
@@ -829,7 +829,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('تعديل أصل — ${asset.name}', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+          title: Text(tr('تعديل أصل — {p0}', {'p0': asset.name}), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           content: SizedBox(
             width: 420,
             child: SingleChildScrollView(
@@ -846,26 +846,26 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   // editing the 7 immutable asset fields?" — but they
                   // should be visible so the operator can verify the
                   // record they're touching.
-                  _ImmutableFieldRow(label: 'الكود', value: asset.code),
+                  _ImmutableFieldRow(label: tr('الكود'), value: asset.code),
                   _ImmutableFieldRow(
-                      label: 'الفئة', value: categoryName ?? '—'),
+                      label: tr('الفئة'), value: categoryName ?? '—'),
                   _ImmutableFieldRow(
-                      label: 'سعر الشراء',
+                      label: tr('سعر الشراء'),
                       value: asset.purchasePrice.toStringAsFixed(
                           AppConstants.decimalPlaces)),
                   _ImmutableFieldRow(
-                      label: 'تاريخ الشراء',
+                      label: tr('تاريخ الشراء'),
                       value: _dateFormat.format(asset.purchaseDate)),
                   _ImmutableFieldRow(
-                      label: 'العمر الافتراضي',
-                      value: '${asset.usefulLifeYears} سنة'),
+                      label: tr('العمر الافتراضي'),
+                      value: tr('{p0} سنة', {'p0': asset.usefulLifeYears})),
                   _ImmutableFieldRow(
-                      label: 'طريقة الإهلاك',
+                      label: tr('طريقة الإهلاك'),
                       value: getDepreciationMethodLabel(
                           asset.depreciationMethod)),
                   if (linkedAccount != null)
                     _ImmutableFieldRow(
-                        label: 'الحساب المربوط',
+                        label: tr('الحساب المربوط'),
                         value:
                             '${linkedAccount.code} - ${linkedAccount.name}'),
                   const Padding(
@@ -884,7 +884,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   TextField(
                     controller: nameCtrl,
                     decoration: InputDecoration(
-                      labelText: 'اسم الأصل',
+                      labelText: tr('اسم الأصل'),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       isDense: true,
                     ),
@@ -893,7 +893,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                 TextField(
                   controller: locationCtrl,
                   decoration: InputDecoration(
-                    labelText: 'الموقع',
+                    labelText: tr('الموقع'),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     isDense: true,
                   ),
@@ -903,7 +903,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   controller: salvageCtrl,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: 'قيمة الخردة',
+                    labelText: tr('قيمة الخردة'),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     isDense: true,
                   ),
@@ -913,7 +913,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   controller: notesCtrl,
                   maxLines: 2,
                   decoration: InputDecoration(
-                    labelText: 'ملاحظات',
+                    labelText: tr('ملاحظات'),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     isDense: true,
                   ),
@@ -929,13 +929,13 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                       return DropdownButtonFormField<int?>(
                         initialValue: safeVal,
                         decoration: InputDecoration(
-                          labelText: 'مركز التكلفة',
+                          labelText: tr('مركز التكلفة'),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           isDense: true,
                           prefixIcon: const Icon(PhosphorIconsBold.target),
                         ),
                         items: [
-                          const DropdownMenuItem<int?>(value: null, child: Text('بدون')),
+                           DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'))),
                           ...centers.map((c) => DropdownMenuItem<int?>(value: c.id, child: Text(c.name))),
                         ],
                         onChanged: (v) => setDialogState(() => selectedCostCenterId = v),
@@ -947,7 +947,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
             ElevatedButton(
               onPressed: saving ? null : () async {
                 setDialogState(() => saving = true);
@@ -962,13 +962,13 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                     clearCostCenter: selectedCostCenterId == null,
                   );
                   if (ctx.mounted) Navigator.pop(ctx);
-                  if (mounted) AppToast.show(context, 'تم تعديل الأصل', type: ToastType.success);
+                  if (mounted) AppToast.show(context, tr('تم تعديل الأصل'), type: ToastType.success);
                 } catch (e) {
                   if (ctx.mounted) setDialogState(() => saving = false);
-                  if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+                  if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
                 }
               },
-              child: const Text('حفظ'),
+              child:  Text(tr('حفظ')),
             ),
           ],
         ),
@@ -985,17 +985,17 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('إعادة تقييم — ${asset.name}', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+          title: Text(tr('إعادة تقييم — {p0}', {'p0': asset.name}), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'القيمة الدفترية الحالية: ${_currencyFormat.format(bookValue)}',
+                tr('القيمة الدفترية الحالية: {p0}', {'p0': _currencyFormat.format(bookValue)}),
                 style: GoogleFonts.cairo(fontWeight: FontWeight.w600, color: Colors.blue),
               ),
               const SizedBox(height: 4),
               Text(
-                'IAS 16.31 — نموذج إعادة التقييم',
+                tr('IAS 16.31 — نموذج إعادة التقييم'),
                 style: GoogleFonts.cairo(fontSize: 10, color: Colors.grey),
               ),
               const SizedBox(height: 12),
@@ -1003,7 +1003,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                 controller: fairValueCtrl,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'القيمة العادلة الجديدة *',
+                  labelText: tr('القيمة العادلة الجديدة *'),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   isDense: true,
                 ),
@@ -1011,25 +1011,25 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
             ElevatedButton(
               onPressed: saving ? null : () async {
                 final fairValue = double.tryParse(fairValueCtrl.text);
                 if (fairValue == null || fairValue <= 0) {
-                  AppToast.show(ctx, 'الرجاء إدخال قيمة صحيحة');
+                  AppToast.show(ctx, tr('الرجاء إدخال قيمة صحيحة'));
                   return;
                 }
                 setDialogState(() => saving = true);
                 try {
                   await repo.revalueAsset(asset.id, newFairValue: fairValue);
                   if (ctx.mounted) Navigator.pop(ctx);
-                  if (mounted) AppToast.show(context, 'تم إعادة تقييم الأصل', type: ToastType.success);
+                  if (mounted) AppToast.show(context, tr('تم إعادة تقييم الأصل'), type: ToastType.success);
                 } catch (e) {
                   if (ctx.mounted) setDialogState(() => saving = false);
-                  if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+                  if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
                 }
               },
-              child: const Text('تأكيد التقييم'),
+              child:  Text(tr('تأكيد التقييم')),
             ),
           ],
         ),
@@ -1046,18 +1046,18 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('استبعاد الأصل',
+          title: Text(tr('استبعاد الأصل'),
               style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'استبعاد "${asset.name}" (${asset.code})',
+                tr('استبعاد "{p0}" ({p1})', {'p0': asset.name, 'p1': asset.code}),
                 style: GoogleFonts.cairo(fontSize: 13),
               ),
               const SizedBox(height: 12),
               Text(
-                'القيمة الدفترية الحالية: ${_currencyFormat.format(asset.purchasePrice - asset.accumulatedDepreciation)}',
+                tr('القيمة الدفترية الحالية: {p0}', {'p0': _currencyFormat.format(asset.purchasePrice - asset.accumulatedDepreciation)}),
                 style: GoogleFonts.cairo(
                     fontSize: 12, color: Colors.grey.shade600),
               ),
@@ -1066,7 +1066,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                 controller: valueCtrl,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'قيمة البيع / التخريد',
+                  labelText: tr('قيمة البيع / التخريد'),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8)),
                   isDense: true,
@@ -1085,7 +1085,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                 },
                 child: InputDecorator(
                   decoration: InputDecoration(
-                    labelText: 'تاريخ الاستبعاد',
+                    labelText: tr('تاريخ الاستبعاد'),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8)),
                     isDense: true,
@@ -1098,7 +1098,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('إلغاء')),
+                child:  Text(tr('إلغاء'))),
             ElevatedButton(
               style:
                   ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -1114,16 +1114,16 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                   );
                   if (ctx.mounted) Navigator.pop(ctx);
                   if (mounted) {
-                    AppToast.show(context, 'تم استبعاد الأصل',
+                    AppToast.show(context, tr('تم استبعاد الأصل'),
                         type: ToastType.success);
                   }
                 } catch (e) {
                   if (ctx.mounted) setDialogState(() => saving = false);
                   if (!ctx.mounted) return;
-                  AppToast.show(ctx, 'خطأ: $e', type: ToastType.error);
+                  AppToast.show(ctx, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
                 }
               },
-              child: const Text('تأكيد الاستبعاد'),
+              child:  Text(tr('تأكيد الاستبعاد')),
             ),
           ],
         ),
@@ -1156,25 +1156,25 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _detailRowWidget('الحالة', getAssetStatusInfo(asset.status).label),
-              _detailRowWidget('تكلفة الشراء', _currencyFormat.format(asset.purchasePrice)),
-              _detailRowWidget('الإهلاك المتراكم',
+              _detailRowWidget(tr('الحالة'), getAssetStatusInfo(asset.status).label),
+              _detailRowWidget(tr('تكلفة الشراء'), _currencyFormat.format(asset.purchasePrice)),
+              _detailRowWidget(tr('الإهلاك المتراكم'),
                   _currencyFormat.format(asset.accumulatedDepreciation)),
-              _detailRowWidget('القيمة الدفترية', _currencyFormat.format(bookValue)),
-              _detailRowWidget('تاريخ الشراء', _dateFormat.format(asset.purchaseDate)),
-              _detailRowWidget('العمر الافتراضي', '${asset.usefulLifeYears} سنة'),
-              _detailRowWidget('قيمة النفاية', _currencyFormat.format(asset.salvageValue)),
-              _detailRowWidget('طريقة الإهلاك',
+              _detailRowWidget(tr('القيمة الدفترية'), _currencyFormat.format(bookValue)),
+              _detailRowWidget(tr('تاريخ الشراء'), _dateFormat.format(asset.purchaseDate)),
+              _detailRowWidget(tr('العمر الافتراضي'), tr('{p0} سنة', {'p0': asset.usefulLifeYears})),
+              _detailRowWidget(tr('قيمة النفاية'), _currencyFormat.format(asset.salvageValue)),
+              _detailRowWidget(tr('طريقة الإهلاك'),
                   getDepreciationMethodLabel(asset.depreciationMethod)),
               if (asset.location != null)
-                _detailRowWidget('الموقع', asset.location!),
+                _detailRowWidget(tr('الموقع'), asset.location!),
               if (asset.notes != null)
-                _detailRowWidget('ملاحظات', asset.notes!),
+                _detailRowWidget(tr('ملاحظات'), asset.notes!),
               if (asset.disposalDate != null)
-                _detailRowWidget('تاريخ الاستبعاد',
+                _detailRowWidget(tr('تاريخ الاستبعاد'),
                     _dateFormat.format(asset.disposalDate!)),
               if (asset.disposalValue != null)
-                _detailRowWidget('قيمة الاستبعاد',
+                _detailRowWidget(tr('قيمة الاستبعاد'),
                     _currencyFormat.format(asset.disposalValue!)),
             ],
           ),
@@ -1182,7 +1182,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -1218,14 +1218,14 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('سجل إهلاك: ${asset.name}',
+        title: Text(tr('سجل إهلاك: {p0}', {'p0': asset.name}),
             style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
         content: SizedBox(
           width: 400,
           height: 300,
           child: history.isEmpty
               ? Center(
-                  child: Text('لا يوجد سجل',
+                  child: Text(tr('لا يوجد سجل'),
                       style: GoogleFonts.cairo(color: Colors.grey)))
               : ListView.builder(
                   itemCount: history.length,
@@ -1250,7 +1250,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -1267,13 +1267,13 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('تنفيذ الإهلاك الشهري',
+          title: Text(tr('تنفيذ الإهلاك الشهري'),
               style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'اختر فترة الإهلاك ثم اضغط تنفيذ لاحتساب الإهلاك لجميع الأصول الثابتة النشطة.',
+                tr('اختر فترة الإهلاك ثم اضغط تنفيذ لاحتساب الإهلاك لجميع الأصول الثابتة النشطة.'),
                 style: GoogleFonts.cairo(fontSize: 13),
               ),
               const SizedBox(height: 16),
@@ -1289,7 +1289,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                 },
                 child: InputDecorator(
                   decoration: InputDecoration(
-                    labelText: 'فترة الإهلاك (الشهر/السنة)',
+                    labelText: tr('فترة الإهلاك (الشهر/السنة)'),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     prefixIcon: const Icon(PhosphorIconsBold.calendarBlank),
                     isDense: true,
@@ -1305,10 +1305,10 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('إلغاء')),
+                child:  Text(tr('إلغاء'))),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('تنفيذ'),
+              child:  Text(tr('تنفيذ')),
             ),
           ],
         ),
@@ -1323,14 +1323,14 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
           AppToast.show(
             context,
             count > 0
-                ? 'تم احتساب الإهلاك لـ $count أصل لشهر ${selectedDate.month}/${selectedDate.year}'
-                : 'لا توجد أصول تحتاج إهلاك لهذا الشهر',
+                ? tr('تم احتساب الإهلاك لـ {count} أصل لشهر {p0}/{p1}', {'count': count, 'p0': selectedDate.month, 'p1': selectedDate.year})
+                : tr('لا توجد أصول تحتاج إهلاك لهذا الشهر'),
             type: count > 0 ? ToastType.success : ToastType.info,
           );
         }
       } catch (e) {
         if (mounted) {
-          AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+          AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
         }
       }
     }
@@ -1351,25 +1351,25 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('ملخص الأصول الثابتة',
+          title: Text(tr('ملخص الأصول الثابتة'),
               style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           content: SizedBox(
             width: 350,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                summaryTile('عدد الأصول النشطة', '$assetCount',
+                summaryTile(tr('عدد الأصول النشطة'), '$assetCount',
                     PhosphorIconsBold.buildings, AppColors.primary),
                 const SizedBox(height: 8),
-                summaryTile('إجمالي التكلفة',
+                summaryTile(tr('إجمالي التكلفة'),
                     _currencyFormat.format(totalCost),
                     PhosphorIconsBold.currencyCircleDollar, Colors.blue),
                 const SizedBox(height: 8),
-                summaryTile('إجمالي الإهلاك المتراكم',
+                summaryTile(tr('إجمالي الإهلاك المتراكم'),
                     _currencyFormat.format(totalDepreciation),
                     PhosphorIconsBold.trendDown, Colors.orange),
                 const SizedBox(height: 8),
-                summaryTile('إجمالي القيمة الدفترية',
+                summaryTile(tr('إجمالي القيمة الدفترية'),
                     _currencyFormat.format(totalBookValue),
                     PhosphorIconsBold.chartBar, AppColors.success),
               ],
@@ -1378,7 +1378,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
           actions: [
             ElevatedButton.icon(
               icon: const Icon(PhosphorIconsBold.printer, size: 16),
-              label: const Text('طباعة السجل'),
+              label:  Text(tr('طباعة السجل')),
               onPressed: saving ? null : () async {
                 setDialogState(() => saving = true);
                 try {
@@ -1390,7 +1390,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                     totalBookValue: totalBookValue,
                   );
                 } catch (e) {
-                  if (ctx.mounted) AppToast.show(ctx, 'خطأ: $e', type: ToastType.error);
+                  if (ctx.mounted) AppToast.show(ctx, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
                 } finally {
                   if (ctx.mounted) setDialogState(() => saving = false);
                 }
@@ -1398,7 +1398,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),
@@ -1437,9 +1437,9 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
   String getDepreciationMethodLabel(String method) {
     switch (method) {
       case 'straight_line':
-        return 'القسط الثابت';
+        return tr('القسط الثابت');
       case 'declining_balance':
-        return 'القسط المتناقص';
+        return tr('القسط المتناقص');
       default:
         return method;
     }
@@ -1448,11 +1448,11 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
   _AssetStatusInfo getAssetStatusInfo(String status) {
     switch (status) {
       case 'active':
-        return _AssetStatusInfo('نشط', AppColors.success);
+        return _AssetStatusInfo(tr('نشط'), AppColors.success);
       case 'disposed':
-        return _AssetStatusInfo('مستبعد', AppColors.error);
+        return _AssetStatusInfo(tr('مستبعد'), AppColors.error);
       case 'sold':
-        return _AssetStatusInfo('مباع', Colors.orange);
+        return _AssetStatusInfo(tr('مباع'), Colors.orange);
       default:
         return _AssetStatusInfo(status, Colors.grey);
     }

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // Invoice Safety Guards (U-06, U-08, U-09)
 // Pre-checkout validation utilities for POS and Sales Invoices
@@ -67,8 +68,8 @@ class CreditLimitWarningBanner extends StatelessWidget {
               children: [
                 Text(
                   alreadyExceeded
-                      ? '⛔ الحد الائتماني متجاوز!'
-                      : '⚠️ هذه الفاتورة ستتجاوز الحد الائتماني',
+                      ? tr('⛔ الحد الائتماني متجاوز!')
+                      : tr('⚠️ هذه الفاتورة ستتجاوز الحد الائتماني'),
                   style: GoogleFonts.cairo(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -111,10 +112,10 @@ class InvoiceConfirmationDialog {
     double? bankAmount,
   }) {
     final paymentLabel = switch (paymentMethod) {
-      'cash' => 'نقدي',
-      'bank' => 'بنك / شبكة',
-      'credit' => 'آجل',
-      'multiple' => 'مقسم',
+      'cash' => tr('نقدي'),
+      'bank' => tr('بنك / شبكة'),
+      'credit' => tr('آجل'),
+      'multiple' => tr('مقسم'),
       _ => paymentMethod,
     };
 
@@ -127,7 +128,7 @@ class InvoiceConfirmationDialog {
             children: [
               const Icon(PhosphorIconsBold.receipt, color: AppColors.primary, size: 24),
               const SizedBox(width: 8),
-              Text('تأكيد الفاتورة', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+              Text(tr('تأكيد الفاتورة'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             ],
           ),
           content: Column(
@@ -144,21 +145,21 @@ class InvoiceConfirmationDialog {
                 child: Column(
                   children: [
                     if (customerName != null && customerName.isNotEmpty)
-                      _summaryRow('العميل', customerName),
-                    _summaryRow('عدد الأصناف', '$itemCount'),
-                    _summaryRow('المبلغ الفرعي', _currFmt.format(subtotal)),
+                      _summaryRow(tr('العميل'), customerName),
+                    _summaryRow(tr('عدد الأصناف'), '$itemCount'),
+                    _summaryRow(tr('المبلغ الفرعي'), _currFmt.format(subtotal)),
                     if (discount > 0)
-                      _summaryRow('الخصم', '- ${_currFmt.format(discount)}', valueColor: AppColors.error),
+                      _summaryRow(tr('الخصم'), '- ${_currFmt.format(discount)}', valueColor: AppColors.error),
                     if (tax > 0)
-                      _summaryRow('الضريبة', _currFmt.format(tax)),
+                      _summaryRow(tr('الضريبة'), _currFmt.format(tax)),
                     const Divider(height: 16),
-                    _summaryRow('الإجمالي', _currFmt.format(total),
+                    _summaryRow(tr('الإجمالي'), _currFmt.format(total),
                         isBold: true, valueColor: AppColors.primary),
                     const SizedBox(height: 4),
-                    _summaryRow('طريقة الدفع', paymentLabel),
+                    _summaryRow(tr('طريقة الدفع'), paymentLabel),
                     if (paymentMethod == 'multiple' && cashAmount != null && bankAmount != null) ...[
-                      _summaryRow('  نقدي', _currFmt.format(cashAmount)),
-                      _summaryRow('  بنك', _currFmt.format(bankAmount)),
+                      _summaryRow(tr('  نقدي'), _currFmt.format(cashAmount)),
+                      _summaryRow(tr('  بنك'), _currFmt.format(bankAmount)),
                     ],
                   ],
                 ),
@@ -168,12 +169,12 @@ class InvoiceConfirmationDialog {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton.icon(
               onPressed: () => Navigator.pop(ctx, true),
               icon: const Icon(PhosphorIconsBold.checkCircle, size: 18),
-              label: Text('تأكيد الحفظ', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+              label: Text(tr('تأكيد الحفظ'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.success,
                 foregroundColor: Colors.white,
@@ -230,7 +231,7 @@ class DuplicateInvoiceGuard {
             children: [
               const Icon(PhosphorIconsBold.warningCircle, color: Colors.orange, size: 24),
               const SizedBox(width: 8),
-              Text('رقم فاتورة مكرر', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+              Text(tr('رقم فاتورة مكرر'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             ],
           ),
           content: Column(
@@ -238,12 +239,12 @@ class DuplicateInvoiceGuard {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'رقم الفاتورة "$invoiceNumber" موجود مسبقاً في النظام.',
+                tr('رقم الفاتورة "{invoiceNumber}" موجود مسبقاً في النظام.', {'invoiceNumber': invoiceNumber}),
                 style: GoogleFonts.cairo(fontSize: 13),
               ),
               const SizedBox(height: 8),
               Text(
-                'هل تريد المتابعة رغم ذلك؟',
+                tr('هل تريد المتابعة رغم ذلك؟'),
                 style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted),
               ),
             ],
@@ -251,12 +252,12 @@ class DuplicateInvoiceGuard {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('لا، تعديل الرقم'),
+              child:  Text(tr('لا، تعديل الرقم')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
-              child: const Text('نعم، متابعة'),
+              child:  Text(tr('نعم، متابعة')),
             ),
           ],
         ),

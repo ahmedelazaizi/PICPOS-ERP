@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,14 +39,14 @@ class TableSessionPinCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+           Row(
             children: [
-              Icon(PhosphorIconsBold.password,
+              const Icon(PhosphorIconsBold.password,
                   size: 14, color: AppColors.primary),
-              SizedBox(width: 6),
+              const SizedBox(width: 6),
               Text(
-                'رقمُ الجلسة',
-                style: TextStyle(
+                tr('رقمُ الجلسة'),
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: AppColors.primary,
@@ -63,9 +64,9 @@ class TableSessionPinCard extends ConsumerWidget {
               color: AppColors.primary,
             ),
           ),
-          const Text(
-            'قُلْه للضيف ليطلب الحساب من هاتفه',
-            style: TextStyle(fontSize: 10.5, color: AppColors.textMuted),
+           Text(
+            tr('قُلْه للضيف ليطلب الحساب من هاتفه'),
+            style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted),
           ),
         ],
       ),

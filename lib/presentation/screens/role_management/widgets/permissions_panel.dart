@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/design_system/typography.dart';
@@ -65,13 +66,13 @@ class PermissionsPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'صلاحيات: ${selectedRole.name}',
+                      tr('صلاحيات: {p0}', {'p0': selectedRole.name}),
                       style: AppTypography.h3,
                     ),
                     if (isReadOnly)
-                      const Text(
-                        'ℹ️ المدير لديه كل الصلاحيات تلقائياً',
-                        style: TextStyle(color: AppColors.info, fontSize: 12),
+                       Text(
+                        tr('ℹ️ المدير لديه كل الصلاحيات تلقائياً'),
+                        style: const TextStyle(color: AppColors.info, fontSize: 12),
                       ),
                   ],
                 ),
@@ -80,12 +81,12 @@ class PermissionsPanel extends StatelessWidget {
               IconButton(
                 icon: const Icon(PhosphorIconsBold.arrowsOut, size: 20),
                 onPressed: () => onExpandedCategoriesChanged(permissionCategories.keys.toSet()),
-                tooltip: 'توسيع الكل',
+                tooltip: tr('توسيع الكل'),
               ),
               IconButton(
                 icon: const Icon(PhosphorIconsBold.arrowsIn, size: 20),
                 onPressed: () => onExpandedCategoriesChanged({}),
-                tooltip: 'طي الكل',
+                tooltip: tr('طي الكل'),
               ),
             ],
           ),
@@ -144,7 +145,7 @@ class PermissionsPanel extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(PhosphorIconsBold.floppyDisk),
-                label: Text(isSaving ? 'جاري الحفظ...' : 'حفظ الصلاحيات'),
+                label: Text(isSaving ? tr('جاري الحفظ...') : tr('حفظ الصلاحيات')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -94,13 +95,13 @@ class _PosPreviousExpensesDialogState
               color: AppColors.info,
             ),
             const SizedBox(width: 8),
-            const Text('المصروفات السابقة'),
+             Text(tr('المصروفات السابقة')),
             const Spacer(),
             // Refresh button
             IconButton(
               onPressed: _refreshExpenses,
               icon: const Icon(PhosphorIconsBold.arrowsClockwise, size: 18),
-              tooltip: 'تحديث',
+              tooltip: tr('تحديث'),
             ),
             if (!_canManageExpenses)
               Container(
@@ -109,9 +110,9 @@ class _PosPreviousExpensesDialogState
                   color: AppColors.info.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text(
-                  'مصروفاتي',
-                  style: TextStyle(fontSize: 10, color: AppColors.info),
+                child:  Text(
+                  tr('مصروفاتي'),
+                  style: const TextStyle(fontSize: 10, color: AppColors.info),
                 ),
               ),
           ],
@@ -129,19 +130,19 @@ class _PosPreviousExpensesDialogState
               final vouchers = snapshot.data ?? [];
 
               if (vouchers.isEmpty) {
-                return const Center(
+                return  Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      const Icon(
                         PhosphorIconsBold.money,
                         size: 48,
                         color: AppColors.textMuted,
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       Text(
-                        'لا توجد مصروفات اليوم',
-                        style: TextStyle(color: AppColors.textMuted),
+                        tr('لا توجد مصروفات اليوم'),
+                        style: const TextStyle(color: AppColors.textMuted),
                       ),
                     ],
                   ),
@@ -161,7 +162,7 @@ class _PosPreviousExpensesDialogState
                           style: const TextStyle(color: AppColors.error),
                         ),
                       ),
-                      title: Text('${voucher.amount.toStringAsFixed(AppConstants.decimalPlaces)} د.أ'),
+                      title: Text(tr('{p0} د.أ', {'p0': voucher.amount.toStringAsFixed(AppConstants.decimalPlaces)})),
                       subtitle: Text(
                         voucher.description ?? voucher.category,
                       ),
@@ -173,7 +174,7 @@ class _PosPreviousExpensesDialogState
                               PhosphorIconsBold.printer,
                               color: AppColors.info,
                             ),
-                            tooltip: 'طباعة',
+                            tooltip: tr('طباعة'),
                             onPressed: () => _printExpenseReceipt(voucher),
                           ),
                           if (_canManageExpenses)
@@ -183,7 +184,7 @@ class _PosPreviousExpensesDialogState
                                 color: AppColors.error,
                                 size: 20,
                               ),
-                              tooltip: 'حذف',
+                              tooltip: tr('حذف'),
                               onPressed: () => _deleteExpense(voucher),
                             ),
                         ],
@@ -202,7 +203,7 @@ class _PosPreviousExpensesDialogState
               PosExpenseDialog.show(context);
             },
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label: const Text('إضافة مصروف'),
+            label:  Text(tr('إضافة مصروف')),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
@@ -210,7 +211,7 @@ class _PosPreviousExpensesDialogState
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -241,7 +242,7 @@ class _PosPreviousExpensesDialogState
     showPosToast(
       context,
       ref,
-      'جاري طباعة سند مصروف بقيمة ${voucher.amount.toStringAsFixed(AppConstants.decimalPlaces)} د.أ',
+      tr('جاري طباعة سند مصروف بقيمة {p0} د.أ', {'p0': voucher.amount.toStringAsFixed(AppConstants.decimalPlaces)}),
       type: PosNotificationType.info,
     );
     try {
@@ -249,13 +250,13 @@ class _PosPreviousExpensesDialogState
       final settings = await settingsRepo.getReceiptSettings();
       await ThermalReceiptGenerator.printVoucher(
         voucherNumber: 'EXP-${voucher.id}',
-        voucherType: 'صرف',
+        voucherType: tr('صرف'),
         amount: (voucher.amount as num).toDouble(),
         date: voucher.createdAt,
         companyName: settings['companyName'] as String?,
         companyPhone: settings['companyPhone'] as String?,
         companyAddress: settings['companyAddress'] as String?,
-        description: voucher.description ?? voucher.category ?? 'مصروف',
+        description: voucher.description ?? voucher.category ?? tr('مصروف'),
         employeeName: voucher.userName,
         printersRepo: ref.read(printersRepositoryProvider),
       );
@@ -264,7 +265,7 @@ class _PosPreviousExpensesDialogState
         showPosToast(
           context,
           ref,
-          'خطأ في الطباعة: $e',
+          tr('خطأ في الطباعة: {e}', {'e': e}),
           type: PosNotificationType.error,
         );
       }
@@ -277,7 +278,7 @@ class _PosPreviousExpensesDialogState
       builder: (c) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('تأكيد حذف المصروف'),
+          title:  Text(tr('تأكيد حذف المصروف')),
           content: Text(
             'هل أنت متأكد من حذف سند مصروف ${voucher.amount.toStringAsFixed(AppConstants.decimalPlaces)} د.أ؟\n'
             'سيتم إرجاع المبلغ للخزنة.',
@@ -285,12 +286,12 @@ class _PosPreviousExpensesDialogState
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(c, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(c, true),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('حذف'),
+              child:  Text(tr('حذف')),
             ),
           ],
         ),
@@ -315,11 +316,11 @@ class _PosPreviousExpensesDialogState
         final activityLogRepo = ref.read(activityLogRepositoryProvider);
         await activityLogRepo.logActivity(
           userId: authState.user?.id,
-          userName: authState.user?.displayName ?? 'مستخدم',
+          userName: authState.user?.displayName ?? tr('مستخدم'),
           action: 'delete_expense',
           entityType: 'expense',
           entityId: voucher.id,
-          description: 'حذف سند مصروف ${voucher.amount.toStringAsFixed(AppConstants.decimalPlaces)}',
+          description: tr('حذف سند مصروف {p0}', {'p0': voucher.amount.toStringAsFixed(AppConstants.decimalPlaces)}),
         );
         setState(() {}); // Refresh list
         _refreshExpenses();
@@ -327,7 +328,7 @@ class _PosPreviousExpensesDialogState
           showPosToast(
             context,
             ref,
-            'تم حذف المصروف بنجاح',
+            tr('تم حذف المصروف بنجاح'),
             type: PosNotificationType.success,
           );
         }
@@ -336,7 +337,7 @@ class _PosPreviousExpensesDialogState
           showPosToast(
             context,
             ref,
-            'خطأ في الحذف: $e',
+            tr('خطأ في الحذف: {e}', {'e': e}),
             type: PosNotificationType.error,
           );
         }

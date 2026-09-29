@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
@@ -42,7 +43,7 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
     if (result == true && mounted) {
       AppToast.show(
         context,
-        'تم إضافة المورد بنجاح',
+        tr('تم إضافة المورد بنجاح'),
         type: ToastType.success,
       );
     }
@@ -60,7 +61,7 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
     if (result == true && mounted) {
       AppToast.show(
         context,
-        'تم تحديث بيانات المورد',
+        tr('تم تحديث بيانات المورد'),
         type: ToastType.success,
       );
     }
@@ -69,9 +70,9 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
   void _showDeleteSupplierDialog(Party supplier) async {
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: 'تأكيد الحذف',
-      message: 'هل أنت متأكد من حذف المورد "${supplier.name}"؟',
-      confirmLabel: 'حذف',
+      title: tr('تأكيد الحذف'),
+      message: tr('هل أنت متأكد من حذف المورد "{p0}"؟', {'p0': supplier.name}),
+      confirmLabel: tr('حذف'),
       isDangerous: true,
       customContent: supplier.balance != 0
           ? Container(
@@ -90,7 +91,7 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'لديه رصيد: ${supplier.balance.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                      tr('لديه رصيد: {p0} {p1}', {'p0': supplier.balance.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
                       style: const TextStyle(color: AppColors.warning),
                     ),
                   ),
@@ -125,7 +126,7 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
       if (mounted) {
         AppToast.show(
           context,
-          'تم إلغاء تفعيل المورد',
+          tr('تم إلغاء تفعيل المورد'),
           type: ToastType.warning,
         );
       }
@@ -138,7 +139,7 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
     if (path != null && mounted) {
       AppToast.show(
         context,
-        'تم تصدير النموذج بنجاح: $path',
+        tr('تم تصدير النموذج بنجاح: {path}', {'path': path}),
         type: ToastType.success,
       );
       // Log activity
@@ -198,7 +199,7 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
             children: [
               // Header with enhanced section header
               SectionHeader(
-                title: 'إدارة الموردين',
+                title: tr('إدارة الموردين'),
                 icon: PhosphorIconsBold.truck,
                 fontSize: 24,
                 action: Row(
@@ -207,7 +208,7 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
                     OutlinedButton.icon(
                       onPressed: _exportTemplate,
                       icon: const Icon(PhosphorIconsBold.fileArrowUp, size: 18),
-                      label: const Text('قالب الإدخال الذكي'),
+                      label:  Text(tr('قالب الإدخال الذكي')),
                     ),
                     const SizedBox(width: 8),
                     OutlinedButton.icon(
@@ -216,13 +217,13 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
                         PhosphorIconsBold.fileArrowDown,
                         size: 18,
                       ),
-                      label: const Text('استيراد بيانات'),
+                      label:  Text(tr('استيراد بيانات')),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
                       onPressed: _showAddSupplierDialog,
                       icon: const Icon(PhosphorIconsBold.plus),
-                      label: const Text('إضافة مورد'),
+                      label:  Text(tr('إضافة مورد')),
                     ),
                   ],
                 ),
@@ -233,7 +234,7 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
               TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'البحث عن مورد...',
+                  hintText: tr('البحث عن مورد...'),
                   prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -271,8 +272,8 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
                       if (filtered.isEmpty) {
                         return EmptyStateWidget(
                           icon: PhosphorIconsBold.truck,
-                          message: 'لا يوجد موردين',
-                          actionLabel: 'إضافة مورد',
+                          message: tr('لا يوجد موردين'),
+                          actionLabel: tr('إضافة مورد'),
                           onAction: _showAddSupplierDialog,
                         );
                       }
@@ -306,7 +307,7 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
                       padding: const EdgeInsets.all(16),
                       child: ShimmerLoading.list(itemCount: 6),
                     ),
-                    error: (e, _) => Center(child: Text('خطأ: $e')),
+                    error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
                   ),
                 ),
               ),
@@ -399,7 +400,7 @@ class _SupplierListTileState extends State<_SupplierListTile> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        s.phone ?? 'لا يوجد رقم',
+                        s.phone ?? tr('لا يوجد رقم'),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -452,21 +453,21 @@ class _SupplierListTileState extends State<_SupplierListTile> {
                 _ActionIconButton(
                   icon: PhosphorIconsBold.fileText,
                   color: AppColors.primary,
-                  tooltip: 'كشف حساب',
+                  tooltip: tr('كشف حساب'),
                   onTap: widget.onStatement,
                 ),
                 const SizedBox(width: 4),
                 _ActionIconButton(
                   icon: PhosphorIconsBold.pencilSimple,
                   color: AppColors.warning,
-                  tooltip: 'تعديل',
+                  tooltip: tr('تعديل'),
                   onTap: widget.onEdit,
                 ),
                 const SizedBox(width: 4),
                 _ActionIconButton(
                   icon: PhosphorIconsBold.trash,
                   color: AppColors.error,
-                  tooltip: 'حذف',
+                  tooltip: tr('حذف'),
                   onTap: widget.onDelete,
                 ),
               ],

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
@@ -81,9 +82,9 @@ class _FinancialStatementsScreenState
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
@@ -108,7 +109,7 @@ class _FinancialStatementsScreenState
       return Directionality(
         textDirection: TextDirection.rtl,
         child: Scaffold(
-          body: Center(child: Text('تعذر تحديد صلاحيات الفرع: ${scopeAsync.error}')),
+          body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
         ),
       );
     }
@@ -119,34 +120,34 @@ class _FinancialStatementsScreenState
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('القوائم المالية والتقارير الختامية'),
+          title:  Text(tr('القوائم المالية والتقارير الختامية')),
           bottom: TabBar(
             controller: _tabController,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
             indicatorColor: Colors.white,
             indicatorWeight: 3,
-            tabs: const [
-              Tab(text: 'ميزان المراجعة', icon: Icon(PhosphorIconsBold.scales)),
+            tabs:  [
+              Tab(text: tr('ميزان المراجعة'), icon: const Icon(PhosphorIconsBold.scales)),
               Tab(
-                text: 'قائمة الدخل (P&L)',
-                icon: Icon(PhosphorIconsBold.chartLineUp),
+                text: tr('قائمة الدخل (P&L)'),
+                icon: const Icon(PhosphorIconsBold.chartLineUp),
               ),
               Tab(
-                text: 'الميزانية العمومية',
-                icon: Icon(PhosphorIconsBold.bank),
+                text: tr('الميزانية العمومية'),
+                icon: const Icon(PhosphorIconsBold.bank),
               ),
               Tab(
-                text: 'التدفقات النقدية',
-                icon: Icon(PhosphorIconsBold.currencyCircleDollar),
+                text: tr('التدفقات النقدية'),
+                icon: const Icon(PhosphorIconsBold.currencyCircleDollar),
               ),
               Tab(
-                text: 'تقادم الذمم',
-                icon: Icon(PhosphorIconsBold.hourglass),
+                text: tr('تقادم الذمم'),
+                icon: const Icon(PhosphorIconsBold.hourglass),
               ),
               Tab(
-                text: 'مطابقة الترحيل',
-                icon: Icon(PhosphorIconsBold.checkSquareOffset),
+                text: tr('مطابقة الترحيل'),
+                icon: const Icon(PhosphorIconsBold.checkSquareOffset),
               ),
             ],
           ),
@@ -168,12 +169,12 @@ class _FinancialStatementsScreenState
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<int?>(
                           value: regions.any((r) => r.id == _selectedRegionId) ? _selectedRegionId : null,
-                          hint: const Text('المنطقة', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          hint:  Text(tr('المنطقة'), style: const TextStyle(color: Colors.white70, fontSize: 12)),
                           dropdownColor: AppColors.primary,
                           iconEnabledColor: Colors.white70,
                           style: const TextStyle(color: Colors.white, fontSize: 12),
                           items: [
-                            const DropdownMenuItem<int?>(value: null, child: Text('كل المناطق')),
+                             DropdownMenuItem<int?>(value: null, child: Text(tr('كل المناطق'))),
                             ...regions.map((r) => DropdownMenuItem<int?>(value: r.id, child: Text(r.name))),
                           ],
                           onChanged: (v) => setState(() { _selectedRegionId = v; _selectedBranchId = null; _refreshKey++; }),
@@ -216,12 +217,12 @@ class _FinancialStatementsScreenState
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<int?>(
                           value: visibleBranches.any((b) => b.id == _selectedBranchId) ? _selectedBranchId : null,
-                          hint: const Text('الفرع', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          hint:  Text(tr('الفرع'), style: const TextStyle(color: Colors.white70, fontSize: 12)),
                           dropdownColor: AppColors.primary,
                           iconEnabledColor: Colors.white70,
                           style: const TextStyle(color: Colors.white, fontSize: 12),
                           items: [
-                            const DropdownMenuItem<int?>(value: null, child: Text('كل الفروع')),
+                             DropdownMenuItem<int?>(value: null, child: Text(tr('كل الفروع'))),
                             ...visibleBranches.map((b) => DropdownMenuItem<int?>(value: b.id, child: Text(b.name))),
                           ],
                           onChanged: (v) => setState(() { _selectedBranchId = v; _refreshKey++; }),
@@ -250,12 +251,12 @@ class _FinancialStatementsScreenState
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<int?>(
                       value: _selectedCostCenterId,
-                      hint: const Text('مركز التكلفة', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      hint:  Text(tr('مركز التكلفة'), style: const TextStyle(color: Colors.white70, fontSize: 12)),
                       dropdownColor: AppColors.primary,
                       iconEnabledColor: Colors.white70,
                       style: const TextStyle(color: Colors.white, fontSize: 12),
                       items: [
-                        const DropdownMenuItem<int?>(value: null, child: Text('الكل')),
+                         DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
                         ...centers.map((c) => DropdownMenuItem<int?>(value: c.id, child: Text(c.name))),
                       ],
                       onChanged: (v) => setState(() { _selectedCostCenterId = v; _refreshKey++; }),
@@ -267,13 +268,13 @@ class _FinancialStatementsScreenState
             IconButton(
               icon: const Icon(PhosphorIconsBold.arrowClockwise),
               onPressed: () => setState(() => _refreshKey++),
-              tooltip: 'تحديث البيانات',
+              tooltip: tr('تحديث البيانات'),
             ),
             buildReportExportAction(onExport: _exportToExcel),
             IconButton(
               icon: const Icon(PhosphorIconsBold.printer),
               onPressed: _printReport,
-              tooltip: 'طباعة/PDF',
+              tooltip: tr('طباعة/PDF'),
             ),
             IconButton(
               icon: const Icon(PhosphorIconsBold.calendar),
@@ -282,7 +283,7 @@ class _FinancialStatementsScreenState
             // Remediation Button (PIR Remediation)
             IconButton(
               icon: const Icon(PhosphorIconsBold.magicWand, color: Colors.orangeAccent),
-              tooltip: 'إصلاح فروقات التقارير والمراكز',
+              tooltip: tr('إصلاح فروقات التقارير والمراكز'),
               onPressed: () => _showRemediationDialog(),
             ),
           ],
@@ -336,16 +337,16 @@ class _FinancialStatementsScreenState
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-            title: 'ميزان المراجعة من ${_fromDate.toString().split(' ')[0]} إلى ${_toDate.toString().split(' ')[0]}',
+            title: tr('ميزان المراجعة من {p0} إلى {p1}', {'p0': _fromDate.toString().split(' ')[0], 'p1': _toDate.toString().split(' ')[0]}),
             headers: [
-              'كود الحساب',
-              'اسم الحساب',
-              'رصيد أول مدين',
-              'رصيد أول دائن',
-              'حركة الفترة مدين',
-              'حركة الفترة دائن',
-              'رصيد نهائي مدين',
-              'رصيد نهائي دائن',
+              tr('كود الحساب'),
+              tr('اسم الحساب'),
+              tr('رصيد أول مدين'),
+              tr('رصيد أول دائن'),
+              tr('حركة الفترة مدين'),
+              tr('حركة الفترة دائن'),
+              tr('رصيد نهائي مدين'),
+              tr('رصيد نهائي دائن'),
             ],
             rows: data
                 .map<List<dynamic>>(
@@ -367,20 +368,20 @@ class _FinancialStatementsScreenState
           final data = await repo.getIncomeStatement(_fromDate, _toDate, costCenterId: _selectedCostCenterId, branchId: _selectedBranchId, regionId: _selectedRegionId, allowedBranchIds: _allowedBranchIds);
           final List<List<dynamic>> rows = [];
           for (final item in (data['revenueDetails'] as List)) {
-            rows.add(['إيراد', item['name'], item['amount']]);
+            rows.add([tr('إيراد'), item['name'], item['amount']]);
           }
           for (final item in (data['expenseDetails'] as List)) {
-            rows.add(['مصروف', item['name'], item['amount']]);
+            rows.add([tr('مصروف'), item['name'], item['amount']]);
           }
-          rows.add(['', 'صافي الربح', data['netProfit']]);
+          rows.add(['', tr('صافي الربح'), data['netProfit']]);
           await service.exportReport(
       periodFrom: _fromDate,
       periodTo: _toDate,
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-            title: 'قائمة الدخل',
-            headers: ['النوع', 'البيان', 'المبلغ'],
+            title: tr('قائمة الدخل'),
+            headers: [tr('النوع'), tr('البيان'), tr('المبلغ')],
             rows: rows,
           );
           break;
@@ -388,13 +389,13 @@ class _FinancialStatementsScreenState
           final data = await repo.getBalanceSheet(_toDate, costCenterId: _selectedCostCenterId, branchId: _selectedBranchId, regionId: _selectedRegionId, allowedBranchIds: _allowedBranchIds);
           final List<List<dynamic>> rows = [];
           for (final item in (data['assetDetails'] as List)) {
-            rows.add(['أصل', item['name'], item['balance']]);
+            rows.add([tr('أصل'), item['name'], item['balance']]);
           }
           for (final item in (data['liabilityDetails'] as List)) {
-            rows.add(['التزام', item['name'], item['balance']]);
+            rows.add([tr('التزام'), item['name'], item['balance']]);
           }
           for (final item in (data['equityDetails'] as List)) {
-            rows.add(['حقوق ملكية', item['name'], item['balance']]);
+            rows.add([tr('حقوق ملكية'), item['name'], item['balance']]);
           }
           await service.exportReport(
       periodFrom: _fromDate,
@@ -402,8 +403,8 @@ class _FinancialStatementsScreenState
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-            title: 'الميزانية العمومية',
-            headers: ['النوع', 'البيان', 'الرصيد'],
+            title: tr('الميزانية العمومية'),
+            headers: [tr('النوع'), tr('البيان'), tr('الرصيد')],
             rows: rows,
           );
           break;
@@ -413,20 +414,20 @@ class _FinancialStatementsScreenState
           final inv = data['investing'] as Map<String, dynamic>;
           final fin = data['financing'] as Map<String, dynamic>;
           final List<List<dynamic>> rows = [
-            ['تشغيلي', 'إيرادات المبيعات النقدية', op['salesCash']],
-            ['تشغيلي', 'مدفوعات المشتريات', op['purchasesCash']],
-            ['تشغيلي', 'الرواتب', op['salaries']],
-            ['تشغيلي', 'المصاريف التشغيلية', op['expenses']],
-            ['تشغيلي', 'صافي النشاط التشغيلي', op['net']],
-            ['استثماري', 'شراء أصول', inv['assetPurchases']],
-            ['استثماري', 'بيع أصول', inv['assetDisposals']],
-            ['استثماري', 'صافي النشاط الاستثماري', inv['net']],
-            ['تمويلي', 'شيكات محصلة', fin['checksCollected']],
-            ['تمويلي', 'شيكات مصدرة', fin['checksIssued']],
-            ['تمويلي', 'صافي النشاط التمويلي', fin['net']],
-            ['', 'الرصيد الافتتاحي', data['openingBalance']],
-            ['', 'صافي التغير', data['netChange']],
-            ['', 'الرصيد الختامي', data['closingBalance']],
+            [tr('تشغيلي'), tr('إيرادات المبيعات النقدية'), op['salesCash']],
+            [tr('تشغيلي'), tr('مدفوعات المشتريات'), op['purchasesCash']],
+            [tr('تشغيلي'), tr('الرواتب'), op['salaries']],
+            [tr('تشغيلي'), tr('المصاريف التشغيلية'), op['expenses']],
+            [tr('تشغيلي'), tr('صافي النشاط التشغيلي'), op['net']],
+            [tr('استثماري'), tr('شراء أصول'), inv['assetPurchases']],
+            [tr('استثماري'), tr('بيع أصول'), inv['assetDisposals']],
+            [tr('استثماري'), tr('صافي النشاط الاستثماري'), inv['net']],
+            [tr('تمويلي'), tr('شيكات محصلة'), fin['checksCollected']],
+            [tr('تمويلي'), tr('شيكات مصدرة'), fin['checksIssued']],
+            [tr('تمويلي'), tr('صافي النشاط التمويلي'), fin['net']],
+            ['', tr('الرصيد الافتتاحي'), data['openingBalance']],
+            ['', tr('صافي التغير'), data['netChange']],
+            ['', tr('الرصيد الختامي'), data['closingBalance']],
           ];
           await service.exportReport(
       periodFrom: _fromDate,
@@ -434,8 +435,8 @@ class _FinancialStatementsScreenState
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-            title: 'قائمة التدفقات النقدية',
-            headers: ['النشاط', 'البيان', 'المبلغ'],
+            title: tr('قائمة التدفقات النقدية'),
+            headers: [tr('النشاط'), tr('البيان'), tr('المبلغ')],
             rows: rows,
           );
           break;
@@ -445,10 +446,10 @@ class _FinancialStatementsScreenState
           final String title;
           if (_showReceivables) {
             agingData = await accountingRepo.getAgedReceivables(_toDate, costCenterId: _selectedCostCenterId, allowedBranchIds: _allowedBranchIds);
-            title = 'تقادم الذمم المدينة (العملاء)';
+            title = tr('تقادم الذمم المدينة (العملاء)');
           } else {
             agingData = await accountingRepo.getAgedPayables(_toDate, costCenterId: _selectedCostCenterId, allowedBranchIds: _allowedBranchIds);
-            title = 'تقادم الذمم الدائنة (الموردين)';
+            title = tr('تقادم الذمم الدائنة (الموردين)');
           }
           await service.exportReport(
       periodFrom: _fromDate,
@@ -457,7 +458,7 @@ class _FinancialStatementsScreenState
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
             title: title,
-            headers: ['الاسم', 'الإجمالي', '0-30 يوم', '31-60 يوم', '61-90 يوم', '+90 يوم'],
+            headers: [tr('الاسم'), tr('الإجمالي'), tr('0-30 يوم'), tr('31-60 يوم'), tr('61-90 يوم'), tr('+90 يوم')],
             rows: agingData.map<List<dynamic>>((r) => [
               r['name'], r['totalBalance'], r['current'],
               r['days31_60'], r['days61_90'], r['over90'],
@@ -469,13 +470,13 @@ class _FinancialStatementsScreenState
       if (mounted) {
         AppToast.show(
           context,
-          'تم تصدير التقرير بنجاح',
+          tr('تم تصدير التقرير بنجاح'),
           type: ToastType.success,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في التصدير: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في التصدير: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -488,7 +489,7 @@ class _FinancialStatementsScreenState
         case 0: // Trial Balance
           final data = await repo.getTrialBalance(_fromDate, _toDate, costCenterId: _selectedCostCenterId, branchId: _selectedBranchId, regionId: _selectedRegionId, allowedBranchIds: _allowedBranchIds);
           await InvoiceGenerator.printFinancialStatement(
-            title: 'ميزان المراجعة',
+            title: tr('ميزان المراجعة'),
             data: data,
             statementType: 'trial_balance',
             fromDate: _fromDate,
@@ -498,7 +499,7 @@ class _FinancialStatementsScreenState
         case 1: // Income Statement
           final data = await repo.getIncomeStatement(_fromDate, _toDate, costCenterId: _selectedCostCenterId, branchId: _selectedBranchId, regionId: _selectedRegionId, allowedBranchIds: _allowedBranchIds);
           await InvoiceGenerator.printFinancialStatement(
-            title: 'قائمة الدخل',
+            title: tr('قائمة الدخل'),
             data: [data],
             statementType: 'income_statement',
             fromDate: _fromDate,
@@ -508,7 +509,7 @@ class _FinancialStatementsScreenState
         case 2: // Balance Sheet
           final data = await repo.getBalanceSheet(_toDate, costCenterId: _selectedCostCenterId, branchId: _selectedBranchId, regionId: _selectedRegionId, allowedBranchIds: _allowedBranchIds);
           await InvoiceGenerator.printFinancialStatement(
-            title: 'الميزانية العمومية',
+            title: tr('الميزانية العمومية'),
             data: [data],
             statementType: 'balance_sheet',
             fromDate: _fromDate,
@@ -518,7 +519,7 @@ class _FinancialStatementsScreenState
         case 3: // Cash Flow
           final data = await ref.read(accountingRepositoryProvider).getCashFlowStatement(_fromDate, _toDate, costCenterId: _selectedCostCenterId, branchId: _selectedBranchId, regionId: _selectedRegionId, allowedBranchIds: _allowedBranchIds);
           await InvoiceGenerator.printFinancialStatement(
-            title: 'قائمة التدفقات النقدية',
+            title: tr('قائمة التدفقات النقدية'),
             data: [data],
             statementType: 'cash_flow',
             fromDate: _fromDate,
@@ -531,10 +532,10 @@ class _FinancialStatementsScreenState
           final String title;
           if (_showReceivables) {
             agingData = await accountingRepo.getAgedReceivables(_toDate, costCenterId: _selectedCostCenterId, allowedBranchIds: _allowedBranchIds);
-            title = 'تقادم الذمم المدينة';
+            title = tr('تقادم الذمم المدينة');
           } else {
             agingData = await accountingRepo.getAgedPayables(_toDate, costCenterId: _selectedCostCenterId, allowedBranchIds: _allowedBranchIds);
-            title = 'تقادم الذمم الدائنة';
+            title = tr('تقادم الذمم الدائنة');
           }
           await InvoiceGenerator.printFinancialStatement(
             title: title,
@@ -547,7 +548,7 @@ class _FinancialStatementsScreenState
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -569,7 +570,7 @@ class _FinancialStatementsScreenState
         return Column(
           children: [
             _buildReportHeader(
-              'ميزان المراجعة من ${_fromDate.toString().split(' ')[0]} إلى ${_toDate.toString().split(' ')[0]}',
+              tr('ميزان المراجعة من {p0} إلى {p1}', {'p0': _fromDate.toString().split(' ')[0], 'p1': _toDate.toString().split(' ')[0]}),
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -578,15 +579,15 @@ class _FinancialStatementsScreenState
                   child: DataTable(
                     columnSpacing: 16,
                     horizontalMargin: 12,
-                    columns: const [
-                      DataColumn(label: Text('كود', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('اسم الحساب', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('رصيد أول\nمدين', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)), numeric: true),
-                      DataColumn(label: Text('رصيد أول\nدائن', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)), numeric: true),
-                      DataColumn(label: Text('حركة الفترة\nمدين', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)), numeric: true),
-                      DataColumn(label: Text('حركة الفترة\nدائن', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)), numeric: true),
-                      DataColumn(label: Text('رصيد نهائي\nمدين', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)), numeric: true),
-                      DataColumn(label: Text('رصيد نهائي\nدائن', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)), numeric: true),
+                    columns:  [
+                      DataColumn(label: Text(tr('كود'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(label: Text(tr('اسم الحساب'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(label: Text(tr('رصيد أول\nمدين'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)), numeric: true),
+                      DataColumn(label: Text(tr('رصيد أول\nدائن'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)), numeric: true),
+                      DataColumn(label: Text(tr('حركة الفترة\nمدين'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)), numeric: true),
+                      DataColumn(label: Text(tr('حركة الفترة\nدائن'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)), numeric: true),
+                      DataColumn(label: Text(tr('رصيد نهائي\nمدين'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)), numeric: true),
+                      DataColumn(label: Text(tr('رصيد نهائي\nدائن'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)), numeric: true),
                     ],
                     rows: data.map((row) {
                       final isTotal = row['type'] == 'total';
@@ -648,29 +649,29 @@ class _FinancialStatementsScreenState
           child: ListView(
             children: [
               _buildReportHeader(
-                'قائمة الدخل للفترة من ${_fromDate.toString().split(' ')[0]} إلى ${_toDate.toString().split(' ')[0]}',
+                tr('قائمة الدخل للفترة من {p0} إلى {p1}', {'p0': _fromDate.toString().split(' ')[0], 'p1': _toDate.toString().split(' ')[0]}),
               ),
               // Revenue Section
-              _buildSectionTitle('الإيرادات والمبيعات'),
+              _buildSectionTitle(tr('الإيرادات والمبيعات')),
               ...(data['revenueDetails'] as List).map(
                 (d) => _buildReportLine(d['name'], d['amount']),
               ),
               const Divider(thickness: 2),
               _buildReportLine(
-                'إجمالي الإيرادات',
+                tr('إجمالي الإيرادات'),
                 data['totalRevenue'],
                 isBold: true,
               ),
               const SizedBox(height: 16),
               // COGS Section
               if ((data['totalCOGS'] as double) > 0) ...[
-                _buildSectionTitle('تكلفة البضاعة المباعة'),
+                _buildSectionTitle(tr('تكلفة البضاعة المباعة')),
                 ...(data['cogsDetails'] as List? ?? []).map(
                   (d) => _buildReportLine(d['name'], d['amount']),
                 ),
                 const Divider(),
                 _buildReportLine(
-                  'إجمالي تكلفة البضاعة المباعة',
+                  tr('إجمالي تكلفة البضاعة المباعة'),
                   data['totalCOGS'],
                   isBold: true,
                 ),
@@ -682,7 +683,7 @@ class _FinancialStatementsScreenState
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: _buildReportLine(
-                    'مجمل الربح',
+                    tr('مجمل الربح'),
                     data['grossProfit'],
                     isBold: true,
                   ),
@@ -690,13 +691,13 @@ class _FinancialStatementsScreenState
                 const SizedBox(height: 16),
               ],
               // Operating & Other Expenses
-              _buildSectionTitle('المصاريف والتكاليف'),
+              _buildSectionTitle(tr('المصاريف والتكاليف')),
               ...(data['expenseDetails'] as List).map(
                 (d) => _buildReportLine(d['name'], d['amount']),
               ),
               const Divider(thickness: 2),
               _buildReportLine(
-                'إجمالي المصاريف التشغيلية',
+                tr('إجمالي المصاريف التشغيلية'),
                 data['totalExpenses'] as double,
                 isBold: true,
               ),
@@ -709,7 +710,7 @@ class _FinancialStatementsScreenState
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: _buildReportLine(
-                  'الربح التشغيلي (قبل الإهلاك)',
+                  tr('الربح التشغيلي (قبل الإهلاك)'),
                   data['operatingProfit'] as double,
                   isBold: true,
                 ),
@@ -717,13 +718,13 @@ class _FinancialStatementsScreenState
               const SizedBox(height: 16),
               // Item 10: Depreciation Section
               if ((data['totalDepreciation'] as double) > 0) ...[
-                _buildSectionTitle('الإهلاك والاستهلاك (IAS 16)'),
+                _buildSectionTitle(tr('الإهلاك والاستهلاك (IAS 16)')),
                 ...(data['depreciationDetails'] as List).map(
                   (d) => _buildReportLine(d['name'], d['amount']),
                 ),
                 const Divider(),
                 _buildReportLine(
-                  'إجمالي مصاريف الإهلاك',
+                  tr('إجمالي مصاريف الإهلاك'),
                   data['totalDepreciation'] as double,
                   isBold: true,
                 ),
@@ -738,7 +739,7 @@ class _FinancialStatementsScreenState
               // surpluses into this bucket would have made it worse.
               if ((data['otherIncome'] as double? ?? 0) != 0 ||
                   (data['otherExpense'] as double? ?? 0) != 0) ...[
-                _buildSectionTitle('إيرادات ومصروفات أخرى (غير تشغيلية)'),
+                _buildSectionTitle(tr('إيرادات ومصروفات أخرى (غير تشغيلية)')),
                 ...((data['otherIncomeDetails'] as List?) ?? const []).map(
                   (d) => _buildReportLine(d['name'], d['amount']),
                 ),
@@ -747,7 +748,7 @@ class _FinancialStatementsScreenState
                 ),
                 const Divider(),
                 _buildReportLine(
-                  'صافي الإيرادات الأخرى',
+                  tr('صافي الإيرادات الأخرى'),
                   (data['otherIncome'] as double? ?? 0) -
                       (data['otherExpense'] as double? ?? 0),
                   isBold: true,
@@ -768,7 +769,7 @@ class _FinancialStatementsScreenState
                   ),
                 ),
                 child: _buildReportLine(
-                  netProfit >= 0 ? 'صافي الربح' : 'صافي الخسارة',
+                  netProfit >= 0 ? tr('صافي الربح') : tr('صافي الخسارة'),
                   netProfit.abs(),
                   isBold: true,
                   large: true,
@@ -800,58 +801,58 @@ class _FinancialStatementsScreenState
           child: ListView(
             children: [
               _buildReportHeader(
-                'الميزانية العمومية كما في ${_toDate.toString().split(' ')[0]}',
+                tr('الميزانية العمومية كما في {p0}', {'p0': _toDate.toString().split(' ')[0]}),
               ),
-              _buildSectionTitle('الأصول (Assets)'),
+              _buildSectionTitle(tr('الأصول (Assets)')),
               ...(data['assetDetails'] as List).map(
                 (d) => _buildReportLine(d['name'], d['balance']),
               ),
               const Divider(thickness: 2),
               _buildReportLine(
-                'إجمالي الأصول',
+                tr('إجمالي الأصول'),
                 data['totalAssets'],
                 isBold: true,
               ),
               const SizedBox(height: 24),
               // ─── Liabilities Section (IAS 1.54) ───
-              _buildSectionTitle('الالتزامات (Liabilities)'),
+              _buildSectionTitle(tr('الالتزامات (Liabilities)')),
               ...(data['liabilityDetails'] as List).map(
                 (d) => _buildReportLine(d['name'], d['balance']),
               ),
               const Divider(),
               _buildReportLine(
-                'إجمالي الالتزامات',
+                tr('إجمالي الالتزامات'),
                 data['totalLiabilities'],
                 isBold: true,
               ),
               const SizedBox(height: 16),
               // ─── Equity Section (IAS 1.54) ───
-              _buildSectionTitle('حقوق الملكية (Equity)'),
+              _buildSectionTitle(tr('حقوق الملكية (Equity)')),
               ...(data['equityDetails'] as List).map(
                 (d) => _buildReportLine(d['name'], d['balance']),
               ),
               const Divider(),
               _buildReportLine(
-                'إجمالي حقوق الملكية',
+                tr('إجمالي حقوق الملكية'),
                 data['totalEquity'],
                 isBold: true,
               ),
               const SizedBox(height: 16),
               const Divider(thickness: 2),
               _buildReportLine(
-                'إجمالي الالتزامات وحقوق الملكية',
+                tr('إجمالي الالتزامات وحقوق الملكية'),
                 data['totalLiabilities'] + data['totalEquity'],
                 isBold: true,
               ),
               const SizedBox(height: 24),
               if (!data['isBalanced'])
-                const Card(
+                 Card(
                   color: AppColors.error,
                   child: Padding(
-                    padding: EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(8.0),
                     child: Text(
-                      'تحذير: الميزانية غير متزنة! يرجى مراجعة القيود.',
-                      style: TextStyle(
+                      tr('تحذير: الميزانية غير متزنة! يرجى مراجعة القيود.'),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
@@ -887,7 +888,7 @@ class _FinancialStatementsScreenState
           child: ListView(
             children: [
               _buildReportHeader(
-                'قائمة التدفقات النقدية — IAS 7\nمن ${_fromDate.toString().split(' ')[0]} إلى ${_toDate.toString().split(' ')[0]}',
+                tr('قائمة التدفقات النقدية — IAS 7\nمن {p0} إلى {p1}', {'p0': _fromDate.toString().split(' ')[0], 'p1': _toDate.toString().split(' ')[0]}),
               ),
               const SizedBox(height: 8),
 
@@ -898,18 +899,18 @@ class _FinancialStatementsScreenState
                   color: AppColors.info.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: _buildReportLine('الرصيد النقدي الافتتاحي', data['openingBalance'] as double, isBold: true),
+                child: _buildReportLine(tr('الرصيد النقدي الافتتاحي'), data['openingBalance'] as double, isBold: true),
               ),
               const SizedBox(height: 16),
 
               // ─── Operating Activities (IAS 7.14) ───
-              _buildSectionTitle('أولاً: الأنشطة التشغيلية'),
-              _buildReportLine('إيرادات المبيعات النقدية', (op['salesCash'] as num).toDouble()),
-              _buildReportLine('متحصلات أخرى من العملاء', (op['receiptsFromCustomers'] as num).toDouble()),
-              _buildReportLine('مدفوعات المشتريات', -(op['purchasesCash'] as num).toDouble()),
-              _buildReportLine('مدفوعات للموردين', -(op['paymentsToSuppliers'] as num).toDouble()),
-              _buildReportLine('الرواتب والأجور', -(op['salaries'] as num).toDouble()),
-              _buildReportLine('المصاريف التشغيلية', -(op['expenses'] as num).toDouble()),
+              _buildSectionTitle(tr('أولاً: الأنشطة التشغيلية')),
+              _buildReportLine(tr('إيرادات المبيعات النقدية'), (op['salesCash'] as num).toDouble()),
+              _buildReportLine(tr('متحصلات أخرى من العملاء'), (op['receiptsFromCustomers'] as num).toDouble()),
+              _buildReportLine(tr('مدفوعات المشتريات'), -(op['purchasesCash'] as num).toDouble()),
+              _buildReportLine(tr('مدفوعات للموردين'), -(op['paymentsToSuppliers'] as num).toDouble()),
+              _buildReportLine(tr('الرواتب والأجور'), -(op['salaries'] as num).toDouble()),
+              _buildReportLine(tr('المصاريف التشغيلية'), -(op['expenses'] as num).toDouble()),
               const Divider(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -919,29 +920,29 @@ class _FinancialStatementsScreenState
                       : AppColors.error.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: _buildReportLine('صافي التدفق التشغيلي', (op['net'] as num).toDouble(), isBold: true),
+                child: _buildReportLine(tr('صافي التدفق التشغيلي'), (op['net'] as num).toDouble(), isBold: true),
               ),
               const SizedBox(height: 16),
 
               // ─── Investing Activities (IAS 7.16) ───
-              _buildSectionTitle('ثانياً: الأنشطة الاستثمارية'),
-              _buildReportLine('شراء أصول ثابتة', -(inv['assetPurchases'] as num).toDouble()),
-              _buildReportLine('حصيلة بيع أصول', (inv['assetDisposals'] as num).toDouble()),
+              _buildSectionTitle(tr('ثانياً: الأنشطة الاستثمارية')),
+              _buildReportLine(tr('شراء أصول ثابتة'), -(inv['assetPurchases'] as num).toDouble()),
+              _buildReportLine(tr('حصيلة بيع أصول'), (inv['assetDisposals'] as num).toDouble()),
               const Divider(),
-              _buildReportLine('صافي التدفق الاستثماري', (inv['net'] as num).toDouble(), isBold: true),
+              _buildReportLine(tr('صافي التدفق الاستثماري'), (inv['net'] as num).toDouble(), isBold: true),
               const SizedBox(height: 16),
 
               // ─── Financing Activities (IAS 7.17) ───
-              _buildSectionTitle('ثالثاً: الأنشطة التمويلية'),
-              _buildReportLine('شيكات محصلة', (fin['checksCollected'] as num).toDouble()),
-              _buildReportLine('شيكات مصدرة', -(fin['checksIssued'] as num).toDouble()),
+              _buildSectionTitle(tr('ثالثاً: الأنشطة التمويلية')),
+              _buildReportLine(tr('شيكات محصلة'), (fin['checksCollected'] as num).toDouble()),
+              _buildReportLine(tr('شيكات مصدرة'), -(fin['checksIssued'] as num).toDouble()),
               const Divider(),
-              _buildReportLine('صافي التدفق التمويلي', (fin['net'] as num).toDouble(), isBold: true),
+              _buildReportLine(tr('صافي التدفق التمويلي'), (fin['net'] as num).toDouble(), isBold: true),
               const SizedBox(height: 24),
 
               // ─── Net Change & Closing ───
               const Divider(thickness: 2),
-              _buildReportLine('صافي التغير في النقدية', (data['netChange'] as num).toDouble(), isBold: true),
+              _buildReportLine(tr('صافي التغير في النقدية'), (data['netChange'] as num).toDouble(), isBold: true),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(20),
@@ -951,7 +952,7 @@ class _FinancialStatementsScreenState
                   border: Border.all(color: AppColors.primary),
                 ),
                 child: _buildReportLine(
-                  'الرصيد النقدي الختامي',
+                  tr('الرصيد النقدي الختامي'),
                   (data['closingBalance'] as num).toDouble(),
                   isBold: true,
                   large: true,
@@ -995,11 +996,11 @@ class _FinancialStatementsScreenState
               children: [
                 Icon(PhosphorIconsBold.warning, size: 48, color: AppColors.error.withValues(alpha: 0.5)),
                 const SizedBox(height: 12),
-                Text('خطأ في تحميل البيانات', style: TextStyle(color: Colors.grey.shade600)),
+                Text(tr('خطأ في تحميل البيانات'), style: TextStyle(color: Colors.grey.shade600)),
                 const SizedBox(height: 8),
                 TextButton.icon(
                   icon: const Icon(PhosphorIconsBold.arrowClockwise),
-                  label: const Text('إعادة المحاولة'),
+                  label:  Text(tr('إعادة المحاولة')),
                   onPressed: () => setState(() => _refreshKey++),
                 ),
               ],
@@ -1023,13 +1024,13 @@ class _FinancialStatementsScreenState
               child: Row(
                 children: [
                   _buildReportHeader(
-                    _showReceivables ? 'تقادم الذمم المدينة (العملاء)' : 'تقادم الذمم الدائنة (الموردين)',
+                    _showReceivables ? tr('تقادم الذمم المدينة (العملاء)') : tr('تقادم الذمم الدائنة (الموردين)'),
                   ),
                   const Spacer(),
                   SegmentedButton<bool>(
-                    segments: const [
-                      ButtonSegment(value: true, label: Text('العملاء'), icon: Icon(PhosphorIconsBold.user, size: 16)),
-                      ButtonSegment(value: false, label: Text('الموردين'), icon: Icon(PhosphorIconsBold.truck, size: 16)),
+                    segments:  [
+                      ButtonSegment(value: true, label: Text(tr('العملاء')), icon: const Icon(PhosphorIconsBold.user, size: 16)),
+                      ButtonSegment(value: false, label: Text(tr('الموردين')), icon: const Icon(PhosphorIconsBold.truck, size: 16)),
                     ],
                     selected: {_showReceivables},
                     onSelectionChanged: (v) => setState(() { _showReceivables = v.first; _refreshKey++; }),
@@ -1046,7 +1047,7 @@ class _FinancialStatementsScreenState
                       Icon(PhosphorIconsBold.checkCircle, size: 64, color: AppColors.success.withValues(alpha: 0.5)),
                       const SizedBox(height: 12),
                       Text(
-                        _showReceivables ? 'لا توجد ذمم مدينة مستحقة' : 'لا توجد ذمم دائنة مستحقة',
+                        _showReceivables ? tr('لا توجد ذمم مدينة مستحقة') : tr('لا توجد ذمم دائنة مستحقة'),
                         style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
                       ),
                     ],
@@ -1060,13 +1061,13 @@ class _FinancialStatementsScreenState
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
                       columnSpacing: 20,
-                      columns: const [
-                        DataColumn(label: Text('الطرف', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('إجمالي الرصيد', style: TextStyle(fontWeight: FontWeight.bold)), numeric: true),
-                        DataColumn(label: Text('0-30 يوم', style: TextStyle(fontWeight: FontWeight.bold)), numeric: true),
-                        DataColumn(label: Text('31-60 يوم', style: TextStyle(fontWeight: FontWeight.bold)), numeric: true),
-                        DataColumn(label: Text('61-90 يوم', style: TextStyle(fontWeight: FontWeight.bold)), numeric: true),
-                        DataColumn(label: Text('+90 يوم', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error)), numeric: true),
+                      columns:  [
+                        DataColumn(label: Text(tr('الطرف'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text(tr('إجمالي الرصيد'), style: const TextStyle(fontWeight: FontWeight.bold)), numeric: true),
+                        DataColumn(label: Text(tr('0-30 يوم'), style: const TextStyle(fontWeight: FontWeight.bold)), numeric: true),
+                        DataColumn(label: Text(tr('31-60 يوم'), style: const TextStyle(fontWeight: FontWeight.bold)), numeric: true),
+                        DataColumn(label: Text(tr('61-90 يوم'), style: const TextStyle(fontWeight: FontWeight.bold)), numeric: true),
+                        DataColumn(label: Text(tr('+90 يوم'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.error)), numeric: true),
                       ],
                       rows: data.map((row) {
                         final over90 = (row['over90'] as num?)?.toDouble() ?? 0;
@@ -1172,13 +1173,13 @@ class _FinancialStatementsScreenState
               children: [
                 Icon(PhosphorIconsBold.warning, size: 48, color: AppColors.error.withValues(alpha: 0.5)),
                 const SizedBox(height: 12),
-                Text('خطأ في تحميل البيانات', style: TextStyle(color: Colors.grey.shade600)),
+                Text(tr('خطأ في تحميل البيانات'), style: TextStyle(color: Colors.grey.shade600)),
                 const SizedBox(height: 8),
                 Text('${snapshot.error}', style: const TextStyle(fontSize: 11, color: AppColors.error)),
                 const SizedBox(height: 8),
                 TextButton.icon(
                   icon: const Icon(PhosphorIconsBold.arrowClockwise),
-                  label: const Text('إعادة المحاولة'),
+                  label:  Text(tr('إعادة المحاولة')),
                   onPressed: () => setState(() => _refreshKey++),
                 ),
               ],
@@ -1193,7 +1194,7 @@ class _FinancialStatementsScreenState
         }
         final data = snapshot.data!;
         if (data.isEmpty && !SyncInterceptor.isClientMode) {
-          return const Center(child: Text('لا توجد فواتير في هذه الفترة'));
+          return  Center(child: Text(tr('لا توجد فواتير في هذه الفترة')));
         }
 
         // Summary stats
@@ -1215,11 +1216,11 @@ class _FinancialStatementsScreenState
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _reconcileStat('مطابق', matched, Colors.green),
-                  _reconcileStat('غير مرحل', missing, AppColors.error),
-                  _reconcileStat('مسودة', draft, Colors.orange),
-                  _reconcileStat('فرق قيمة', mismatch, Colors.purple),
-                  _reconcileStat('قيد يتيم', orphan, Colors.blueGrey),
+                  _reconcileStat(tr('مطابق'), matched, Colors.green),
+                  _reconcileStat(tr('غير مرحل'), missing, AppColors.error),
+                  _reconcileStat(tr('مسودة'), draft, Colors.orange),
+                  _reconcileStat(tr('فرق قيمة'), mismatch, Colors.purple),
+                  _reconcileStat(tr('قيد يتيم'), orphan, Colors.blueGrey),
                 ],
               ),
             ),
@@ -1232,15 +1233,15 @@ class _FinancialStatementsScreenState
                     columnSpacing: 20,
                     headingTextStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                     dataTextStyle: const TextStyle(fontSize: 11),
-                    columns: const [
-                      DataColumn(label: Text('النوع')),
-                      DataColumn(label: Text('رقم الفاتورة')),
-                      DataColumn(label: Text('التاريخ')),
-                      DataColumn(label: Text('المبلغ'), numeric: true),
-                      DataColumn(label: Text('رقم القيد')),
-                      DataColumn(label: Text('مدين قيد'), numeric: true),
-                      DataColumn(label: Text('دائن قيد'), numeric: true),
-                      DataColumn(label: Text('الحالة')),
+                    columns:  [
+                      DataColumn(label: Text(tr('النوع'))),
+                      DataColumn(label: Text(tr('رقم الفاتورة'))),
+                      DataColumn(label: Text(tr('التاريخ'))),
+                      DataColumn(label: Text(tr('المبلغ')), numeric: true),
+                      DataColumn(label: Text(tr('رقم القيد'))),
+                      DataColumn(label: Text(tr('مدين قيد')), numeric: true),
+                      DataColumn(label: Text(tr('دائن قيد')), numeric: true),
+                      DataColumn(label: Text(tr('الحالة'))),
                     ],
                     rows: data.map((row) {
                       final statusCode = row['statusCode'] as String;
@@ -1341,7 +1342,7 @@ class _FinancialStatementsScreenState
               title: Row(
                 children: [
                   Text(
-                    'قائمة انتظار المزامنة',
+                    tr('قائمة انتظار المزامنة'),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: failed.isNotEmpty ? AppColors.error : AppColors.warning,
@@ -1356,7 +1357,7 @@ class _FinancialStatementsScreenState
                         color: AppColors.warning.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text('${pending.length} بانتظار',
+                      child: Text(tr('{p0} بانتظار', {'p0': pending.length}),
                           style: const TextStyle(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.bold)),
                     ),
                   const SizedBox(width: 4),
@@ -1367,7 +1368,7 @@ class _FinancialStatementsScreenState
                         color: AppColors.error.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text('${failed.length} فشل نهائي',
+                      child: Text(tr('{p0} فشل نهائي', {'p0': failed.length}),
                           style: const TextStyle(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.bold)),
                     ),
                 ],
@@ -1386,7 +1387,7 @@ class _FinancialStatementsScreenState
                       onPressed: () =>
                           ref.read(syncWorkerProvider.notifier).processOutbox(),
                       icon: const Icon(PhosphorIconsBold.cloudArrowUp, size: 14),
-                      label: const Text('مزامنة الكل', style: TextStyle(fontSize: 12)),
+                      label:  Text(tr('مزامنة الكل'), style: const TextStyle(fontSize: 12)),
                       style: TextButton.styleFrom(foregroundColor: AppColors.primary),
                     ),
                   const Icon(Icons.expand_more),
@@ -1425,8 +1426,8 @@ class _FinancialStatementsScreenState
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
                             ),
-                            child: const Text('فشل نهائي',
-                                style: TextStyle(fontSize: 9, color: AppColors.error, fontWeight: FontWeight.bold)),
+                            child:  Text(tr('فشل نهائي'),
+                                style: const TextStyle(fontSize: 9, color: AppColors.error, fontWeight: FontWeight.bold)),
                           ),
                       ],
                     ),
@@ -1434,7 +1435,7 @@ class _FinancialStatementsScreenState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${_syncOperationTitle(item.operation)} | المحاولات: ${item.attempts}',
+                          tr('{p0} | المحاولات: {p1}', {'p0': _syncOperationTitle(item.operation), 'p1': item.attempts}),
                           style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
                         ),
                         if (item.lastError != null)
@@ -1454,7 +1455,7 @@ class _FinancialStatementsScreenState
                       children: [
                         IconButton(
                           icon: const Icon(PhosphorIconsBold.arrowsClockwise, size: 16, color: AppColors.info),
-                          tooltip: 'إعادة محاولة',
+                          tooltip: tr('إعادة محاولة'),
                           onPressed: () async {
                             await syncRepo.retryItem(item.id);
                             ref.read(syncWorkerProvider.notifier).processOutbox();
@@ -1462,7 +1463,7 @@ class _FinancialStatementsScreenState
                         ),
                         IconButton(
                           icon: const Icon(PhosphorIconsBold.trash, size: 16, color: AppColors.error),
-                          tooltip: 'حذف',
+                          tooltip: tr('حذف'),
                           onPressed: () => syncRepo.deleteItem(item.id),
                         ),
                       ],
@@ -1480,17 +1481,17 @@ class _FinancialStatementsScreenState
   String _syncTableTitle(String table) {
     switch (table) {
       case 'sales':
-      case 'sales_invoices': return 'فاتورة مبيعات';
-      case 'sales_returns': return 'مرتجع مبيعات';
+      case 'sales_invoices': return tr('فاتورة مبيعات');
+      case 'sales_returns': return tr('مرتجع مبيعات');
       case 'purchase_invoices':
-      case 'purchases': return 'فاتورة مشتريات';
-      case 'shifts': return 'وردية';
-      case 'expenses': return 'مصروف';
-      case 'receipts': return 'قبض';
-      case 'held_orders': return 'طلب محفوظ';
-      case 'parties': return 'عميل/مورد';
-      case 'products': return 'صنف';
-      case 'users': return 'مستخدم';
+      case 'purchases': return tr('فاتورة مشتريات');
+      case 'shifts': return tr('وردية');
+      case 'expenses': return tr('مصروف');
+      case 'receipts': return tr('قبض');
+      case 'held_orders': return tr('طلب محفوظ');
+      case 'parties': return tr('عميل/مورد');
+      case 'products': return tr('صنف');
+      case 'users': return tr('مستخدم');
       default: return table;
     }
   }
@@ -1512,11 +1513,11 @@ class _FinancialStatementsScreenState
 
   String _syncOperationTitle(String op) {
     switch (op) {
-      case 'insert': return 'إضافة';
-      case 'update': return 'تعديل';
-      case 'delete': return 'حذف';
-      case 'open': return 'فتح';
-      case 'close': return 'إغلاق';
+      case 'insert': return tr('إضافة');
+      case 'update': return tr('تعديل');
+      case 'delete': return tr('حذف');
+      case 'open': return tr('فتح');
+      case 'close': return tr('إغلاق');
       default: return op;
     }
   }
@@ -1546,37 +1547,37 @@ class _FinancialStatementsScreenState
 
     final String branchLine;
     if (preview == null) {
-      branchLine = 'تعذّر حساب معاينة إصلاح مراكز الفروع.';
+      branchLine = tr('تعذّر حساب معاينة إصلاح مراكز الفروع.');
     } else if (preview.hasWork) {
       branchLine =
           'قيود آلية مسجّلة على «عام» وتخص فروعاً لها مركز تكلفة خاص: '
           '${preview.affectedEntries} قيد / ${preview.affectedLines} سطر — '
           'ستُنقل إلى مركز تكلفة الفرع.';
     } else {
-      branchLine = 'لا توجد قيود بحاجة لإعادة التوزيع على مراكز الفروع.';
+      branchLine = tr('لا توجد قيود بحاجة لإعادة التوزيع على مراكز الفروع.');
     }
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('إصلاح فروقات التقارير والمراكز'),
+        title:  Text(tr('إصلاح فروقات التقارير والمراكز')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('١) تعبئة مراكز التكلفة للأسطر التاريخية من رؤوس القيود.'),
+             Text(tr('١) تعبئة مراكز التكلفة للأسطر التاريخية من رؤوس القيود.')),
             const SizedBox(height: 10),
-            Text('٢) $branchLine'),
+            Text(tr('٢) {branchLine}', {'branchLine': branchLine})),
             const SizedBox(height: 12),
-            const Text(
-              'العملية آمنة ولا تغيّر أي مبالغ مدينة/دائنة — تعيد فقط تصنيف مركز التكلفة.',
-              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+             Text(
+              tr('العملية آمنة ولا تغيّر أي مبالغ مدينة/دائنة — تعيد فقط تصنيف مركز التكلفة.'),
+              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('بدء الإصلاح')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child:  Text(tr('إلغاء'))),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child:  Text(tr('بدء الإصلاح'))),
         ],
       ),
     );
@@ -1589,14 +1590,14 @@ class _FinancialStatementsScreenState
         final res = await accounting.repairBranchCostCenters(dryRun: false);
         if (mounted) {
           final moved = res.applied && res.hasWork
-              ? ' — نُقل ${res.affectedEntries} قيد إلى مراكز الفروع'
+              ? tr(' — نُقل {p0} قيد إلى مراكز الفروع', {'p0': res.affectedEntries})
               : '';
-          AppToast.show(context, 'تمت عملية الإصلاح بنجاح$moved. يرجى تحديث التقارير.',
+          AppToast.show(context, tr('تمت عملية الإصلاح بنجاح{moved}. يرجى تحديث التقارير.', {'moved': moved}),
               type: ToastType.success);
           setState(() => _refreshKey++);
         }
       } catch (e) {
-        if (mounted) AppToast.show(context, 'خطأ أثناء الإصلاح: $e', type: ToastType.error);
+        if (mounted) AppToast.show(context, tr('خطأ أثناء الإصلاح: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }

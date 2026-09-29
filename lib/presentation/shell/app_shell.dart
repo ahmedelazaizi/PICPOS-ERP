@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
@@ -134,7 +135,7 @@ class _AppShellState extends ConsumerState<AppShell> {
               'البيانات المحلية أحدث، تم الاحتفاظ بها',
           color: AppColors.warning,
           icon: PhosphorIconsBold.warning,
-          actionLabel: 'التفاصيل',
+          actionLabel: tr('التفاصيل'),
           onAction: () => SyncManagementDialog.show(context),
           autoDismiss: const Duration(seconds: 6),
         );
@@ -157,10 +158,10 @@ class _AppShellState extends ConsumerState<AppShell> {
             : event.reason;
         _showSyncBanner(
           message:
-              'عملية ${event.table} (${event.operation}) فشلت نهائياً: $reasonShort',
+              tr('عملية {p0} ({p1}) فشلت نهائياً: {reasonShort}', {'p0': event.table, 'p1': event.operation, 'reasonShort': reasonShort}),
           color: AppColors.error,
           icon: PhosphorIconsBold.cloudSlash,
-          actionLabel: 'مراجعة',
+          actionLabel: tr('مراجعة'),
           onAction: () => SyncManagementDialog.show(context),
           autoDismiss: const Duration(seconds: 12),
         );
@@ -207,9 +208,9 @@ class _AppShellState extends ConsumerState<AppShell> {
         ),
         TextButton(
           onPressed: () => messenger.clearMaterialBanners(),
-          child: const Text(
-            'تجاهل',
-            style: TextStyle(color: Colors.white),
+          child:  Text(
+            tr('تجاهل'),
+            style: const TextStyle(color: Colors.white),
           ),
         ),
       ],
@@ -255,7 +256,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     await notifyOpenShift(
       context: context,
       ref: ref,
-      reason: 'قبل تسجيل الخروج',
+      reason: tr('قبل تسجيل الخروج'),
     );
 
     if (!mounted) return;
@@ -264,18 +265,18 @@ class _AppShellState extends ConsumerState<AppShell> {
       builder: (context) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.signOut, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('تسجيل الخروج'),
+              const Icon(PhosphorIconsBold.signOut, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('تسجيل الخروج')),
             ],
           ),
-          content: const Text('هل تريد تسجيل الخروج من النظام؟'),
+          content:  Text(tr('هل تريد تسجيل الخروج من النظام؟')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -305,7 +306,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                 ref.read(authProvider.notifier).logout();
                 // Navigation handled reactively by MaterialApp.home watching authProvider
               },
-              child: const Text('خروج'),
+              child:  Text(tr('خروج')),
             ),
           ],
         ),
@@ -330,20 +331,20 @@ class _AppShellState extends ConsumerState<AppShell> {
       builder: (context) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.power, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('إغلاق البرنامج'),
+              const Icon(PhosphorIconsBold.power, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('إغلاق البرنامج')),
             ],
           ),
-          content: const Text(
-            'هل تريد إغلاق البرنامج بالكامل؟ سيتم عمل نسخة احتياطية تلقائياً.',
+          content:  Text(
+            tr('هل تريد إغلاق البرنامج بالكامل؟ سيتم عمل نسخة احتياطية تلقائياً.'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -353,7 +354,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                 await _performAutoBackup(isManual: true);
                 platform.exitApp();
               },
-              child: const Text('إغلاق وبالنسخ الاحتياطي'),
+              child:  Text(tr('إغلاق وبالنسخ الاحتياطي')),
             ),
           ],
         ),
@@ -375,7 +376,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           if (isManual && mounted) {
             AppToast.show(
               context,
-              'تم النسخ الاحتياطي بنجاح: ${backupFile.path.split(p.separator).last}',
+              tr('تم النسخ الاحتياطي بنجاح: {p0}', {'p0': backupFile.path.split(p.separator).last}),
               type: ToastType.success,
             );
           }
@@ -384,7 +385,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           if (isManual && mounted) {
             AppToast.show(
               context,
-              'فشل النسخ الاحتياطي',
+              tr('فشل النسخ الاحتياطي'),
               type: ToastType.error,
             );
           }
@@ -397,7 +398,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       if (isManual && mounted) {
         AppToast.show(
           context,
-          'خطأ في النسخ الاحتياطي: $e',
+          tr('خطأ في النسخ الاحتياطي: {e}', {'e': e}),
           type: ToastType.error,
         );
       }
@@ -457,31 +458,31 @@ class _AppShellState extends ConsumerState<AppShell> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.lock, color: AppColors.warning),
-              SizedBox(width: 8),
-              Text('🔐 صلاحية المدير'),
+              const Icon(PhosphorIconsBold.lock, color: AppColors.warning),
+              const SizedBox(width: 8),
+              Text(tr('🔐 صلاحية المدير')),
             ],
           ),
           content: TextField(
             controller: controller,
             obscureText: true,
             autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'أدخل كلمة مرور المدير',
-              border: OutlineInputBorder(),
+            decoration:  InputDecoration(
+              labelText: tr('أدخل كلمة مرور المدير'),
+              border: const OutlineInputBorder(),
             ),
             onSubmitted: (value) => Navigator.pop(ctx, value),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, null),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, controller.text),
-              child: const Text('تأكيد'),
+              child:  Text(tr('تأكيد')),
             ),
           ],
         ),
@@ -560,7 +561,7 @@ class _AppShellState extends ConsumerState<AppShell> {
         if (mounted) {
           AppToast.show(
             context,
-            'تم منح الصلاحية مؤقتاً — العمليات تُسجّل باسم المستخدم الأصلي',
+            tr('تم منح الصلاحية مؤقتاً — العمليات تُسجّل باسم المستخدم الأصلي'),
             type: ToastType.success,
           );
         }
@@ -570,13 +571,13 @@ class _AppShellState extends ConsumerState<AppShell> {
       if (mounted) {
         AppToast.show(
           context,
-          'كلمة المرور غير صحيحة أو ليس لديك صلاحية',
+          tr('كلمة المرور غير صحيحة أو ليس لديك صلاحية'),
           type: ToastType.error,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'حدث خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('حدث خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -638,7 +639,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           textInputAction: TextInputAction.search,
           decoration: InputDecoration(
             isDense: true,
-            hintText: 'ابحث عن شاشة أو ما بداخلها…',
+            hintText: tr('ابحث عن شاشة أو ما بداخلها…'),
             hintStyle: const TextStyle(
               color: AppColors.textMuted,
               fontSize: 12,
@@ -659,7 +660,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                     padding: EdgeInsets.zero,
                     constraints:
                         const BoxConstraints(minWidth: 30, minHeight: 30),
-                    tooltip: 'مسح البحث',
+                    tooltip: tr('مسح البحث'),
                     onPressed: () {
                       _navSearchCtrl.clear();
                       setState(() => _navQuery = '');
@@ -720,7 +721,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                 color: AppColors.textMuted, size: 22),
             const SizedBox(height: 8),
             Text(
-              'لا شاشةَ بهذا الاسم',
+              tr('لا شاشةَ بهذا الاسم'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textMuted.withValues(alpha: 0.9),
@@ -939,7 +940,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                     FloatingActionButton.small(
                       heroTag: 'appShellPosShortcutFab',
                       backgroundColor: AppColors.primary.withValues(alpha: 0.9),
-                      tooltip: 'الذهاب إلى البيع السريع',
+                      tooltip: tr('الذهاب إلى البيع السريع'),
                       onPressed: _navigateToPosShortcut,
                       child: const Icon(
                         PhosphorIconsBold.cashRegister,
@@ -1026,9 +1027,9 @@ class _AppShellState extends ConsumerState<AppShell> {
                               valueListenable: SyncEventBus.instance.isPulling,
                               builder: (_, pulling, _) {
                                 if (!pulling) return const SizedBox.shrink();
-                                return const Tooltip(
-                                  message: 'جارٍ سحب التحديثات من السيرفر...',
-                                  child: SizedBox(
+                                return  Tooltip(
+                                  message: tr('جارٍ سحب التحديثات من السيرفر...'),
+                                  child: const SizedBox(
                                     width: 14,
                                     height: 14,
                                     child: CircularProgressIndicator(
@@ -1068,8 +1069,8 @@ class _AppShellState extends ConsumerState<AppShell> {
                                   valueListenable: OfflineSyncWorker.instance.deadLetterCount,
                                   builder: (context, deadLetterCount, _) {
                                     final tooltip = deadLetterCount > 0
-                                        ? 'يوجد $deadLetterCount عملية فشلت نهائياً — اضغط للمراجعة'
-                                        : 'يوجد $count عمليات بانتظار المزامنة — اضغط للمراجعة';
+                                        ? tr('يوجد {deadLetterCount} عملية فشلت نهائياً — اضغط للمراجعة', {'deadLetterCount': deadLetterCount})
+                                        : tr('يوجد {count} عمليات بانتظار المزامنة — اضغط للمراجعة', {'count': count});
                                     return Tooltip(
                                       message: tooltip,
                                       child: SyncStatusBadge(
@@ -1193,7 +1194,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  'وضع المدير — ${authState.originalUser?.displayName ?? ''}',
+                                  tr('وضع المدير — {p0}', {'p0': authState.originalUser?.displayName ?? ''}),
                                   style: const TextStyle(
                                     color: AppColors.warning,
                                     fontSize: 11,
@@ -1228,9 +1229,9 @@ class _AppShellState extends ConsumerState<AppShell> {
                                 PhosphorIconsBold.arrowUDownLeft,
                                 size: 14,
                               ),
-                              label: const Text(
-                                'العودة للكاشير',
-                                style: TextStyle(fontSize: 11),
+                              label:  Text(
+                                tr('العودة للكاشير'),
+                                style: const TextStyle(fontSize: 11),
                               ),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.warning,
@@ -1302,7 +1303,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                                   size: 20,
                                 ),
                                 onPressed: _showLogoutConfirmation,
-                                tooltip: 'تسجيل الخروج',
+                                tooltip: tr('تسجيل الخروج'),
                               ),
                             ],
                           ],
@@ -1346,7 +1347,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      isDark ? 'الوضع الفاتح' : 'الوضع الداكن',
+                                      isDark ? tr('الوضع الفاتح') : tr('الوضع الداكن'),
                                       style: const TextStyle(
                                         color: Colors.white70,
                                         fontSize: 12,
@@ -1405,18 +1406,18 @@ class _AppShellState extends ConsumerState<AppShell> {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                               ),
-                              child: const Row(
+                              child:  Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     PhosphorIconsBold.arrowUDownLeft,
                                     color: AppColors.textMuted,
                                     size: 14,
                                   ),
-                                  SizedBox(width: 4),
+                                  const SizedBox(width: 4),
                                   Text(
-                                    'إخفاء',
-                                    style: TextStyle(
+                                    tr('إخفاء'),
+                                    style: const TextStyle(
                                       color: AppColors.textMuted,
                                       fontSize: 11,
                                     ),
@@ -1433,17 +1434,17 @@ class _AppShellState extends ConsumerState<AppShell> {
                           child: Container(
                             height: 40,
                             padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: const Row(
+                            child:  Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   PhosphorIconsBold.power,
                                   color: AppColors.error,
                                   size: 14,
                                 ),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
-                                  'إغلاق',
-                                  style: TextStyle(
+                                  tr('إغلاق'),
+                                  style: const TextStyle(
                                     color: AppColors.error,
                                     fontSize: 11,
                                   ),

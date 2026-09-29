@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // Spec 061 — Bootstrap Admin Invariants
 // ═══════════════════════════════════════════════════════════════════════════
@@ -36,10 +37,8 @@ const String bootstrapAdminGuardMessage =
     '(يُسبّب قفل النظام بالكامل).';
 
 /// Message for role-change attempts on the bootstrap admin.
-const String bootstrapAdminRoleGuardMessage =
-    'لا يمكن تغيير دور المستخدم الإداري الأساسي.';
+String get bootstrapAdminRoleGuardMessage => tr('لا يمكن تغيير دور المستخدم الإداري الأساسي.');
 
 /// Message for setRolePermissions attempts that would strip the
 /// admin role of its core management permissions (rolesManage / usersManage).
-const String bootstrapAdminRolePermissionsGuardMessage =
-    'لا يمكن إزالة صلاحيات إدارة الأدوار والمستخدمين من دور المدير الأساسي.';
+String get bootstrapAdminRolePermissionsGuardMessage => tr('لا يمكن إزالة صلاحيات إدارة الأدوار والمستخدمين من دور المدير الأساسي.');

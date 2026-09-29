@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // صلاحياتُ تعديل السلة — نقطةٌ واحدةٌ يشترك فيها مسارا التعديل.
 //
 // ── لماذا ملفٌّ مستقلّ ─────────────────────────────────────────────────────
@@ -87,7 +88,7 @@ Future<bool> ensureCartQuantityPermission(
   BuildContext context,
 ) =>
     _ensure(ref, context, canEditCartQuantityCodes,
-        PermissionCodes.posQuantityEdit, 'تعديل الكمية');
+        PermissionCodes.posQuantityEdit, tr('تعديل الكمية'));
 
 /// هل تسمح السياسةُ بتعديل السعر أصلاً؟ — §٤ `priceedit`.
 ///
@@ -103,8 +104,7 @@ Future<bool> priceEditBlockedByPolicy(WidgetRef ref) async {
 }
 
 /// رسالةُ المنع — نصٌّ واحدٌ كي لا يختلف البابان.
-const String kPriceEditBlockedMessage =
-    'تعديلُ السعر ممنوعٌ بسياسة البيع السريع';
+String get kPriceEditBlockedMessage => tr('تعديلُ السعر ممنوعٌ بسياسة البيع السريع');
 
 /// يسمح بتعديل السعر، أو يطلب موافقةَ مسؤولٍ يملكها.
 Future<bool> ensureCartPricePermission(
@@ -113,7 +113,7 @@ Future<bool> ensureCartPricePermission(
   String? scope,
 }) =>
     _ensure(ref, context, canEditCartPriceCodes, PermissionCodes.posPriceEdit,
-        'تعديل سعر الصنف', scope: scope);
+        tr('تعديل سعر الصنف'), scope: scope);
 
 // ── دفعة ٢: ما يمسّ المال ──────────────────────────────────────────────────
 
@@ -140,7 +140,7 @@ Future<bool> ensureOpenCashDrawerPermission(
   BuildContext context,
 ) =>
     _ensure(ref, context, canOpenCashDrawerCodes,
-        PermissionCodes.posOpenDrawer, 'فتح درج النقدية');
+        PermissionCodes.posOpenDrawer, tr('فتح درج النقدية'));
 
 /// يسمح بتغيير حالة الضريبة، أو يطلب موافقةَ مسؤولٍ يملكها.
 Future<bool> ensureTaxTogglePermission(
@@ -148,7 +148,7 @@ Future<bool> ensureTaxTogglePermission(
   BuildContext context,
 ) =>
     _ensure(ref, context, canToggleTaxCodes, PermissionCodes.posTaxToggle,
-        'تغيير حالة الضريبة');
+        tr('تغيير حالة الضريبة'));
 
 // ── دفعة ٣ ────────────────────────────────────────────────────────────────
 
@@ -170,7 +170,7 @@ Future<bool> ensureSelectCustomerPermission(
   BuildContext context,
 ) =>
     _ensure(ref, context, canSelectCustomerCodes,
-        PermissionCodes.posCustomerSelect, 'اختيار عميل للفاتورة');
+        PermissionCodes.posCustomerSelect, tr('اختيار عميل للفاتورة'));
 
 /// يسمح بعرض الفواتير السابقة، أو يطلب موافقةَ مسؤولٍ يملكها.
 Future<bool> ensurePreviousInvoicesPermission(
@@ -178,7 +178,7 @@ Future<bool> ensurePreviousInvoicesPermission(
   BuildContext context,
 ) =>
     _ensure(ref, context, canViewPreviousInvoicesCodes,
-        PermissionCodes.posPreviousInvoices, 'عرض الفواتير السابقة');
+        PermissionCodes.posPreviousInvoices, tr('عرض الفواتير السابقة'));
 
 // ── دفعة ٤ (2026-08-13) — ثقوبٌ كشفها الحارسُ بعد أن صار محافظاً ──────────
 //
@@ -218,7 +218,7 @@ Future<bool> ensureCartDiscountPermission(
   String? scope,
 }) =>
     _ensure(ref, context, canApplyDiscountCodes, PermissionCodes.posDiscount,
-        'تطبيق خصم', scope: scope);
+        tr('تطبيق خصم'), scope: scope);
 
 // ── سقفُ الخصم — §٤ `disccap` و`discappr` ────────────────────────────────
 
@@ -265,7 +265,7 @@ Future<DiscountPolicyOutcome> ensureDiscountWithinPolicy(
   final approved = await requestManagerApproval(
     context,
     scope: scope,
-    actionName: 'خصم ${percent.toStringAsFixed(0)}٪ — فوق حدّ ${cap.toStringAsFixed(0)}٪',
+    actionName: tr('خصم {p0}٪ — فوق حدّ {p1}٪', {'p0': percent.toStringAsFixed(0), 'p1': cap.toStringAsFixed(0)}),
     permission: PermissionCodes.posDiscount,
   );
   return approved
@@ -278,7 +278,7 @@ Future<DiscountPolicyOutcome> ensureDiscountWithinPolicy(
 /// حوارُ الموافقة يتكلّم عن نفسه، فالرفضُ بعده لا يحتاج توستاً ثانياً.
 String? discountPolicyMessage(DiscountPolicyOutcome outcome) =>
     outcome == DiscountPolicyOutcome.aboveCapRejected
-        ? 'الخصمُ يتجاوز الحدَّ المسموح، ولا مسارَ موافقةٍ مفعَّل'
+        ? tr('الخصمُ يتجاوز الحدَّ المسموح، ولا مسارَ موافقةٍ مفعَّل')
         : null;
 
 /// يسمح بتعليق الفاتورة، أو يطلب موافقةَ مسؤولٍ يملكها.
@@ -287,7 +287,7 @@ Future<bool> ensureHoldOrderPermission(
   BuildContext context,
 ) =>
     _ensure(ref, context, canHoldOrderCodes, PermissionCodes.posHoldOrder,
-        'تعليق الفاتورة');
+        tr('تعليق الفاتورة'));
 
 /// يسمح بفتح لوح المصاريف، أو يطلب موافقةَ مسؤولٍ يملكها.
 Future<bool> ensureAddExpensePermission(
@@ -295,7 +295,7 @@ Future<bool> ensureAddExpensePermission(
   BuildContext context,
 ) =>
     _ensure(ref, context, canAddExpenseCodes, PermissionCodes.posExpense,
-        'المصاريف السريعة');
+        tr('المصاريف السريعة'));
 
 /// وسمُ الفاتورة طلبَ توصيل (`pos_delivery`).
 ///
@@ -310,7 +310,7 @@ Future<bool> ensureDeliveryPermission(
   BuildContext context,
 ) =>
     _ensure(ref, context, canSetDeliveryOrderCodes, PermissionCodes.posDelivery,
-        'طلب توصيل');
+        tr('طلب توصيل'));
 
 // ── دفعة ٥ (2026-08-16) — وضعُ المرتجع وصل، وحارسُ التكافؤ رصد ذلك ────────
 //
@@ -339,7 +339,7 @@ Future<bool> ensureQuickReturnPermission(
   BuildContext context,
 ) =>
     _ensure(ref, context, canQuickReturnCodes, PermissionCodes.posReturn,
-        'مرتجع سريع');
+        tr('مرتجع سريع'));
 
 /// زيادةُ كميةِ سطرٍ في محرِّر أسطر المرتجع (`pos_item_plus`).
 bool canIncrementReturnLineCodes(List<String> permissions) =>
@@ -356,7 +356,7 @@ Future<bool> ensureIncrementReturnLinePermission(
   BuildContext context,
 ) =>
     _ensure(ref, context, canIncrementReturnLineCodes,
-        PermissionCodes.posItemPlus, 'زيادة كمية سطر المرتجع');
+        PermissionCodes.posItemPlus, tr('زيادة كمية سطر المرتجع'));
 
 /// يسمح بنقص كميةِ سطر مرتجعٍ خطوةً، أو يطلب موافقةَ مسؤولٍ يملكها.
 Future<bool> ensureDecrementReturnLinePermission(
@@ -364,4 +364,4 @@ Future<bool> ensureDecrementReturnLinePermission(
   BuildContext context,
 ) =>
     _ensure(ref, context, canDecrementReturnLineCodes,
-        PermissionCodes.posItemMinus, 'نقص كمية سطر المرتجع');
+        PermissionCodes.posItemMinus, tr('نقص كمية سطر المرتجع'));

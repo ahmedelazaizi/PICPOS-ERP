@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -33,7 +34,7 @@ class ProductsBulkActionBar extends ConsumerWidget {
       child: Row(
         children: [
           Text(
-            'تم تحديد $count صنف',
+            tr('تم تحديد {count} صنف', {'count': count}),
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -41,21 +42,21 @@ class ProductsBulkActionBar extends ConsumerWidget {
           ),
           const Spacer(),
           _ActionButton(
-            label: 'تفعيل',
+            label: tr('تفعيل'),
             icon: PhosphorIconsBold.checkCircle,
             color: AppColors.success,
             onTap: () => _handleBulkUpdate(context, ref, true),
           ),
           const SizedBox(width: 12),
           _ActionButton(
-            label: 'تعطيل',
+            label: tr('تعطيل'),
             icon: PhosphorIconsBold.prohibit,
             color: AppColors.warning,
             onTap: () => _handleBulkUpdate(context, ref, false),
           ),
           const SizedBox(width: 12),
           _ActionButton(
-            label: 'حذف',
+            label: tr('حذف'),
             icon: PhosphorIconsBold.trash,
             color: AppColors.error,
             onTap: () => _handleBulkDelete(context, ref),
@@ -66,7 +67,7 @@ class ProductsBulkActionBar extends ConsumerWidget {
           IconButton(
             icon: const Icon(PhosphorIconsBold.x, color: Colors.white70),
             onPressed: () => ref.read(productsControllerProvider.notifier).clearSelection(),
-            tooltip: 'إلغاء التحديد',
+            tooltip: tr('إلغاء التحديد'),
           ),
         ],
       ),
@@ -79,7 +80,7 @@ class ProductsBulkActionBar extends ConsumerWidget {
     // Note: status updates are handled by updateProduct in controller which returns Future<bool>
     // but bulkUpdateStatus currently returns void. Let's fix that if needed.
     if (context.mounted) {
-      AppToast.show(context, 'تم تحديث ${ref.read(productsControllerProvider).selectedIds.length} صنف', type: ToastType.success);
+      AppToast.show(context, tr('تم تحديث {p0} صنف', {'p0': ref.read(productsControllerProvider).selectedIds.length}), type: ToastType.success);
     }
   }
 
@@ -89,14 +90,14 @@ class ProductsBulkActionBar extends ConsumerWidget {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('تأكيد الحذف الجماعي'),
-          content: Text('هل أنت متأكد من حذف ${ref.read(productsControllerProvider).selectedIds.length} صنف؟ لا يمكن التراجع عن هذا الإجراء.'),
+          title:  Text(tr('تأكيد الحذف الجماعي')),
+          content: Text(tr('هل أنت متأكد من حذف {p0} صنف؟ لا يمكن التراجع عن هذا الإجراء.', {'p0': ref.read(productsControllerProvider).selectedIds.length})),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child:  Text(tr('إلغاء'))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('حذف الكل'),
+              child:  Text(tr('حذف الكل')),
             ),
           ],
         ),
@@ -106,7 +107,7 @@ class ProductsBulkActionBar extends ConsumerWidget {
     if (confirm == true) {
       await ref.read(productsControllerProvider.notifier).bulkDeleteSelected();
       if (context.mounted) {
-        AppToast.show(context, 'تم الحذف بنجاح', type: ToastType.success);
+        AppToast.show(context, tr('تم الحذف بنجاح'), type: ToastType.success);
       }
     }
   }

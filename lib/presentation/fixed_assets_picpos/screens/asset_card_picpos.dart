@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // بطاقةُ أصلٍ ثابت — تصميمُ المالك `(9)` و`(8)`.
 //
 // ═══ لماذا بطاقةٌ داخلَ الشاشة لا شاشةٌ سادسة ═══
@@ -60,9 +61,9 @@ const _idle = Color(0xFF6B7280);
 
 /// أسماءُ الشهور ثابتةٌ — `DateFormat('MMMM','ar')` تحتاج
 /// `initializeDateFormatting` وترمي بدونها، فتنهار الشاشةُ في أوّل اختبار.
-const _monthsAr = [
-  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+List<String> get _monthsAr => [
+  tr('يناير'), tr('فبراير'), tr('مارس'), tr('أبريل'), tr('مايو'), tr('يونيو'),
+  tr('يوليو'), tr('أغسطس'), tr('سبتمبر'), tr('أكتوبر'), tr('نوفمبر'), tr('ديسمبر'),
 ];
 
 /// ما تحتاجه البطاقةُ من الأصل — **قيمٌ خالصةٌ لا صفُّ drift**.
@@ -200,10 +201,10 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
         _header(context),
         PicPosReportTabs(
           controller: _tabs,
-          tabs: const [
-            (label: 'بيانات الأصل', icon: PhosphorIconsBold.identificationCard, badge: null),
-            (label: 'الإهلاك', icon: PhosphorIconsBold.chartLineDown, badge: null),
-            (label: 'الحركات', icon: PhosphorIconsBold.arrowsLeftRight, badge: null),
+          tabs:  [
+            (label: tr('بيانات الأصل'), icon: PhosphorIconsBold.identificationCard, badge: null),
+            (label: tr('الإهلاك'), icon: PhosphorIconsBold.chartLineDown, badge: null),
+            (label: tr('الحركات'), icon: PhosphorIconsBold.arrowsLeftRight, badge: null),
           ],
         ),
         Expanded(
@@ -260,7 +261,7 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
                       fontWeight: FontWeight.w900,
                       color: context.picposText,
                     )),
-                Text('بطاقة أصل ثابت · ${a.name}',
+                Text(tr('بطاقة أصل ثابت · {p0}', {'p0': a.name}),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -271,8 +272,8 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
           _pill(
             context,
             _isActive
-                ? 'قيد الاستخدام'
-                : (a.status == 'sold' ? 'مُباع' : 'مستبعد'),
+                ? tr('قيد الاستخدام')
+                : (a.status == 'sold' ? tr('مُباع') : tr('مستبعد')),
             _isActive ? _ok : _idle,
           ),
         ],
@@ -416,10 +417,10 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
       mainAxisSize: MainAxisSize.min,
       children: [
         _pair(
-          _editable(context, 'اسم الأصل', _name),
+          _editable(context, tr('اسم الأصل'), _name),
           _readOnly(
             context,
-            'الفئة',
+            tr('الفئة'),
             a.categoryName,
             'الفئةُ تحدّد حسابَي الأصل والإهلاك، وقيودٌ مرحَّلةٌ ذهبت إليهما '
                 '— فتغييرُها هنا يترك الأستاذَ على حسابٍ والبطاقةَ على آخر',
@@ -429,13 +430,13 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
         _pair(
           _readOnly(
             context,
-            'تاريخ الاقتناء',
+            tr('تاريخ الاقتناء'),
             _dateFmt.format(a.purchaseDate),
-            'أساسُ جدول الإهلاك — وأشهرٌ مُرحَّلةٌ قائمةٌ عليه',
+            tr('أساسُ جدول الإهلاك — وأشهرٌ مُرحَّلةٌ قائمةٌ عليه'),
           ),
           _readOnly(
             context,
-            'التكلفة',
+            tr('التكلفة'),
             _money.format(a.purchasePrice),
             'دخلت الأستاذَ بقيد اقتناءٍ مرحَّل — وبابُ تغييرها المحاسبيُّ '
                 '«إعادة التقييم» لأنّها تقيّد الفرق',
@@ -443,21 +444,21 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
         ),
         const SizedBox(height: 14),
         _pair(
-          _editable(context, 'الموقع', _location, hint: 'الإدارة · المخزن…'),
+          _editable(context, tr('الموقع'), _location, hint: tr('الإدارة · المخزن…')),
           _custodianField(context),
         ),
         const SizedBox(height: 16),
         _summaryCard(
           context,
-          'إعدادات الإهلاك',
+          tr('إعدادات الإهلاك'),
           [
-            'طريقة الإهلاك: ${_methodLabel(a.depreciationMethod)}',
-            '${usefulLifeMonths(a.usefulLifeYears)} شهراً',
-            'قيمة تخريدية: ${_money.format(a.salvageValue)}',
+            tr('طريقة الإهلاك: {p0}', {'p0': _methodLabel(a.depreciationMethod)}),
+            tr('{p0} شهراً', {'p0': usefulLifeMonths(a.usefulLifeYears)}),
+            tr('قيمة تخريدية: {p0}', {'p0': _money.format(a.salvageValue)}),
           ].join('  ·  '),
         ),
         const SizedBox(height: 14),
-        _editable(context, 'ملاحظات', _notes, maxLines: 3),
+        _editable(context, tr('ملاحظات'), _notes, maxLines: 3),
         const SizedBox(height: 14),
         // v176 / §٨ — كانت هنا لافتةٌ تنفي وجودَ البنية. بُنيت، فحلّ
         // محلَّها اللوحُ نفسُه.
@@ -475,7 +476,7 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
   }
 
   String _methodLabel(String m) =>
-      m == kDecliningBalance ? 'القسط المتناقص' : 'القسط الثابت';
+      m == kDecliningBalance ? tr('القسط المتناقص') : tr('القسط الثابت');
 
   Widget _custodianField(BuildContext context) {
     // ⚠️ **قائمةُ مستخدمين لا نصٌّ حرّ** (قرارُ المالك): النصُّ يُكتَب بثلاث
@@ -486,7 +487,7 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _label(context, 'المسؤول'),
+        _label(context, tr('المسؤول')),
         DropdownButtonFormField<int?>(
           initialValue: valid,
           isExpanded: true,
@@ -495,9 +496,9 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
             border: OutlineInputBorder(),
           ),
           items: [
-            const DropdownMenuItem<int?>(
+             DropdownMenuItem<int?>(
               value: null,
-              child: Text('— بلا مسؤول —'),
+              child: Text(tr('— بلا مسؤول —')),
             ),
             for (final o in options)
               DropdownMenuItem<int?>(value: o.id, child: Text(o.name)),
@@ -561,48 +562,48 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
       mainAxisSize: MainAxisSize.min,
       children: [
         _pair(
-          _readOnly(context, 'التكلفة الأصلية',
-              _money.format(a.purchasePrice), 'كما دخلت الأستاذَ عند الاقتناء'),
+          _readOnly(context, tr('التكلفة الأصلية'),
+              _money.format(a.purchasePrice), tr('كما دخلت الأستاذَ عند الاقتناء')),
           // 🔴 **بالشهور كما يرسم التصميم** — والتحويلُ في موضعٍ واحدٍ مسمّى.
           _readOnly(
               context,
-              'العمر الإنتاجي',
-              '${usefulLifeMonths(a.usefulLifeYears)} شهراً',
+              tr('العمر الإنتاجي'),
+              tr('{p0} شهراً', {'p0': usefulLifeMonths(a.usefulLifeYears)}),
               'يُخزَّن بالسنوات ويُعرَض بالشهور — والتحويلُ موضعٌ واحدٌ '
                   'في `depreciation_math`'),
         ),
         const SizedBox(height: 14),
         _pair(
-          _readOnly(context, 'طريقة الإهلاك',
-              _methodLabel(a.depreciationMethod), 'تتبع الفئةَ عند الإنشاء'),
-          _readOnly(context, 'القيمة التخريدية',
-              _money.format(a.salvageValue), 'لا يُهلَك ما دونها'),
+          _readOnly(context, tr('طريقة الإهلاك'),
+              _methodLabel(a.depreciationMethod), tr('تتبع الفئةَ عند الإنشاء')),
+          _readOnly(context, tr('القيمة التخريدية'),
+              _money.format(a.salvageValue), tr('لا يُهلَك ما دونها')),
         ),
         const SizedBox(height: 14),
         _pair(
-          _readOnly(context, 'تاريخ الاقتناء',
-              _dateFmt.format(a.purchaseDate), 'أوّلُ شهرٍ في الجدول'),
+          _readOnly(context, tr('تاريخ الاقتناء'),
+              _dateFmt.format(a.purchaseDate), tr('أوّلُ شهرٍ في الجدول')),
           _previewUntilField(context),
         ),
         const SizedBox(height: 16),
         PicPosDataTable(
-          title: 'جدول الإهلاك',
+          title: tr('جدول الإهلاك'),
           subtitle: postedCount == rows.length
-              ? 'كلُّ الأشهر مُرحَّلة'
+              ? tr('كلُّ الأشهر مُرحَّلة')
               : postedCount == 0
-                  ? 'لا شهرَ مُرحَّلاً بعد — الجدولُ كلُّه توقّع'
-                  : '$postedCount من ${rows.length} أشهرٍ مُرحَّلة',
+                  ? tr('لا شهرَ مُرحَّلاً بعد — الجدولُ كلُّه توقّع')
+                  : tr('{postedCount} من {p0} أشهرٍ مُرحَّلة', {'postedCount': postedCount, 'p0': rows.length}),
           minWidth: 640,
-          columns: const [
-            PicPosTableColumn('#', flex: 0.5),
-            PicPosTableColumn('الشهر', flex: 1.4),
-            PicPosTableColumn('قيمة الإهلاك',
+          columns:  [
+            const PicPosTableColumn('#', flex: 0.5),
+            PicPosTableColumn(tr('الشهر'), flex: 1.4),
+            PicPosTableColumn(tr('قيمة الإهلاك'),
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('الإهلاك المتراكم',
+            PicPosTableColumn(tr('الإهلاك المتراكم'),
                 flex: 1.4, align: PicPosCellAlign.end),
-            PicPosTableColumn('الحالة', flex: 1.1),
+            PicPosTableColumn(tr('الحالة'), flex: 1.1),
           ],
-          emptyLabel: 'لا أشهرَ في هذا المدى',
+          emptyLabel: tr('لا أشهرَ في هذا المدى'),
           rows: [
             for (var i = 0; i < rows.length; i++)
               PicPosTableRow(cells: [
@@ -616,20 +617,20 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
                 //    مُرحَّلٌ ونصفُه توقّعٌ هو الحالةُ الطبيعيّةُ بعد أوّل
                 //    شهر، ووسمٌ واحدٌ فوق الكلّ يكذب على أحد النصفين.
                 rows[i].posted
-                    ? const PicPosPillCell('مُرحَّل', _ok)
-                    : const PicPosPillCell('متوقَّع', _warn),
+                    ?  PicPosPillCell(tr('مُرحَّل'), _ok)
+                    :  PicPosPillCell(tr('متوقَّع'), _warn),
               ]),
           ],
         ),
         const SizedBox(height: 12),
         PicPosTotalsBar(items: [
           PicPosTotal(
-            label: 'مجموع الإهلاك المتراكم',
+            label: tr('مجموع الإهلاك المتراكم'),
             value: _money.format(
                 rows.isEmpty ? 0 : rows.last.accumulated),
           ),
           PicPosTotal(
-            label: 'صافي القيمة الدفترية',
+            label: tr('صافي القيمة الدفترية'),
             value: _money.format(
                 rows.isEmpty ? a.purchasePrice : rows.last.bookValue),
             emphasis: true,
@@ -643,7 +644,7 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          _label(context, 'فترة المعاينة حتى'),
+          _label(context, tr('فترة المعاينة حتى')),
           InkWell(
             borderRadius: BorderRadius.circular(6),
             onTap: () async {
@@ -679,7 +680,7 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
               ),
             ),
           ),
-          _reason(context, 'يمدّ التوقّعَ ولا يُرحّل شيئاً'),
+          _reason(context, tr('يمدّ التوقّعَ ولا يُرحّل شيئاً')),
         ],
       );
 
@@ -688,23 +689,23 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
   Widget _movementsTab(BuildContext context) {
     final moves = widget.movements;
     if (moves.isEmpty) {
-      return const PicPosEmptyState(
+      return  PicPosEmptyState(
         icon: PhosphorIconsBold.arrowsLeftRight,
-        title: 'لا حركاتٍ على هذا الأصل',
+        title: tr('لا حركاتٍ على هذا الأصل'),
         hint: 'الاقتناءُ والإهلاكُ وإعادةُ التقييم والاستبعاد تظهر هنا فورَ '
             'ترحيل قيودها.',
       );
     }
     return PicPosDataTable(
-      title: 'حركات الأصل',
-      subtitle: 'مشتقّةٌ من القيود بالأنواع المعلَنة — لا بالرقم وحدَه',
+      title: tr('حركات الأصل'),
+      subtitle: tr('مشتقّةٌ من القيود بالأنواع المعلَنة — لا بالرقم وحدَه'),
       minWidth: 700,
-      columns: const [
-        PicPosTableColumn('التاريخ', flex: 1.1),
-        PicPosTableColumn('النوع', flex: 1.1),
-        PicPosTableColumn('رقم القيد', flex: 1.2),
-        PicPosTableColumn('البيان', flex: 2.2),
-        PicPosTableColumn('الحالة', flex: 1),
+      columns:  [
+        PicPosTableColumn(tr('التاريخ'), flex: 1.1),
+        PicPosTableColumn(tr('النوع'), flex: 1.1),
+        PicPosTableColumn(tr('رقم القيد'), flex: 1.2),
+        PicPosTableColumn(tr('البيان'), flex: 2.2),
+        PicPosTableColumn(tr('الحالة'), flex: 1),
       ],
       rows: [
         for (final m in moves)
@@ -715,8 +716,8 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
             PicPosTextCell(m.entryNumber),
             PicPosTextCell(m.description ?? '—'),
             m.isPosted
-                ? const PicPosPillCell('مُرحَّل', _ok)
-                : const PicPosPillCell('مسودة', _warn),
+                ?  PicPosPillCell(tr('مُرحَّل'), _ok)
+                :  PicPosPillCell(tr('مسودة'), _warn),
           ]),
       ],
     );
@@ -736,14 +737,14 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
           OutlinedButton.icon(
             onPressed: _saving ? null : widget.onBack,
             icon: const Icon(Icons.chevron_right, size: 18),
-            label: const Text('رجوع'),
+            label:  Text(tr('رجوع')),
           ),
           const Spacer(),
           if (!_isActive)
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 12),
               child: Text(
-                'أصلٌ خارجَ الخدمة — بطاقتُه للقراءة',
+                tr('أصلٌ خارجَ الخدمة — بطاقتُه للقراءة'),
                 style: TextStyle(fontSize: 11.5, color: context.picposMuted),
               ),
             ),
@@ -756,7 +757,7 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(PhosphorIconsBold.floppyDisk, size: 16),
-            label: const Text('حفظ التعديلات'),
+            label:  Text(tr('حفظ التعديلات')),
           ),
         ],
       ),

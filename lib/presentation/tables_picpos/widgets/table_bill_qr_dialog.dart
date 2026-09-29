@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -70,11 +71,11 @@ class TableBillQrDialog extends ConsumerWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.qrCode, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text('أكواد حساب الطاولات'),
+            const Icon(PhosphorIconsBold.qrCode, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(tr('أكواد حساب الطاولات')),
           ],
         ),
         content: SizedBox(
@@ -101,9 +102,9 @@ class TableBillQrDialog extends ConsumerWidget {
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   value: enabled.asData?.value ?? false,
-                  title: const Text(
-                    'تفعيل رمز حساب الطاولة',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  title:  Text(
+                    tr('تفعيل رمز حساب الطاولة'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   subtitle: const Text(
                     'يفتح مساراً على شبكة المحلّ يقرأ منه الضيفُ حسابَ طاولته '
@@ -133,9 +134,9 @@ class TableBillQrDialog extends ConsumerWidget {
               const SizedBox(height: 8),
               Flexible(
                 child: tables.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Text('لا طاولات في النطاق المعروض'),
+                    ?  Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Text(tr('لا طاولات في النطاق المعروض')),
                       )
                     : ListView.separated(
                         shrinkWrap: true,
@@ -153,7 +154,7 @@ class TableBillQrDialog extends ConsumerWidget {
                                   const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             subtitle: Text(
-                              url ?? 'لا رابط — الخادمُ غيرُ مهيّأ',
+                              url ?? tr('لا رابط — الخادمُ غيرُ مهيّأ'),
                               style: TextStyle(
                                 fontSize: 11,
                                 color: url == null
@@ -168,12 +169,12 @@ class TableBillQrDialog extends ConsumerWidget {
                                 : IconButton(
                                     icon: const Icon(PhosphorIconsBold.copy,
                                         size: 16),
-                                    tooltip: 'نسخ الرابط',
+                                    tooltip: tr('نسخ الرابط'),
                                     onPressed: () async {
                                       await Clipboard.setData(
                                           ClipboardData(text: url));
                                       if (context.mounted) {
-                                        AppToast.show(context, 'نُسخ الرابط');
+                                        AppToast.show(context, tr('نُسخ الرابط'));
                                       }
                                     },
                                   ),
@@ -187,14 +188,14 @@ class TableBillQrDialog extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
           ElevatedButton.icon(
             onPressed: tables.isEmpty
                 ? null
                 : () => _printSheets(context, publicBase),
             icon: const Icon(PhosphorIconsBold.printer),
-            label: const Text('طباعة الأكواد'),
+            label:  Text(tr('طباعة الأكواد')),
           ),
         ],
       ),
@@ -229,7 +230,7 @@ class TableBillQrDialog extends ConsumerWidget {
         if (urlFor(t, publicBaseUrl: publicBase) case final url?) (t, url),
     ];
     if (withUrls.isEmpty) {
-      AppToast.show(context, 'لا رابطَ يُطبَع — الخادمُ غيرُ مهيّأ');
+      AppToast.show(context, tr('لا رابطَ يُطبَع — الخادمُ غيرُ مهيّأ'));
       return;
     }
 
@@ -245,14 +246,14 @@ class TableBillQrDialog extends ConsumerWidget {
               mainAxisAlignment: pw.MainAxisAlignment.center,
               children: [
                 pw.Text(
-                  'طاولة ${table.name}',
+                  tr('طاولة {p0}', {'p0': table.name}),
                   style: pw.TextStyle(
                     fontSize: 30,
                     fontWeight: pw.FontWeight.bold,
                   ),
                 ),
                 pw.SizedBox(height: 10),
-                pw.Text('امسح الرمز لترى حسابك', style: const pw.TextStyle(fontSize: 15)),
+                pw.Text(tr('امسح الرمز لترى حسابك'), style: const pw.TextStyle(fontSize: 15)),
                 pw.SizedBox(height: 22),
                 pw.BarcodeWidget(
                   data: url,
@@ -266,8 +267,8 @@ class TableBillQrDialog extends ConsumerWidget {
                 // من رمزٍ يعمل، وعكسُها يَعِده بما لا يقع.
                 pw.Text(
                   publicBase == null
-                      ? 'الاتّصالُ بشبكة المحلّ شرطٌ لفتح الرابط'
-                      : 'يفتح من أيّ مكان — والرقمُ يُطلَب من النادل',
+                      ? tr('الاتّصالُ بشبكة المحلّ شرطٌ لفتح الرابط')
+                      : tr('يفتح من أيّ مكان — والرقمُ يُطلَب من النادل'),
                   style: const pw.TextStyle(fontSize: 11),
                 ),
               ],
@@ -314,12 +315,12 @@ class _PublicBaseUrlFieldState extends ConsumerState<_PublicBaseUrlField> {
   Future<void> _save() async {
     final raw = _ctrl.text.trim();
     if (raw.isNotEmpty && normalizeTableBillBaseUrl(raw) == null) {
-      setState(() => _error = 'عنوانٌ غيرُ صالح — مثال: https://shop.com');
+      setState(() => _error = tr('عنوانٌ غيرُ صالح — مثال: https://shop.com'));
       return;
     }
     setState(() => _error = null);
     await writeFeatureSetting(ref, kTableBillPublicBaseUrlKey, raw);
-    if (mounted) AppToast.show(context, raw.isEmpty ? 'أُلغي النشر' : 'حُفظ');
+    if (mounted) AppToast.show(context, raw.isEmpty ? tr('أُلغي النشر') : tr('حُفظ'));
   }
 
   @override
@@ -335,11 +336,11 @@ class _PublicBaseUrlFieldState extends ConsumerState<_PublicBaseUrlField> {
               style: const TextStyle(fontSize: 12.5),
               decoration: InputDecoration(
                 isDense: true,
-                labelText: 'دومين الخادم العامّ (اختياريّ)',
+                labelText: tr('دومين الخادم العامّ (اختياريّ)'),
                 labelStyle: const TextStyle(fontSize: 12),
                 hintText: 'https://shop.example.com',
                 hintStyle: const TextStyle(fontSize: 11.5),
-                helperText: 'اتركه فارغاً إن كان الخادمُ على شبكة المحلّ فقط',
+                helperText: tr('اتركه فارغاً إن كان الخادمُ على شبكة المحلّ فقط'),
                 helperStyle: const TextStyle(fontSize: 10.5),
                 errorText: _error,
                 border: const OutlineInputBorder(),
@@ -351,7 +352,7 @@ class _PublicBaseUrlFieldState extends ConsumerState<_PublicBaseUrlField> {
             padding: const EdgeInsets.only(top: 4),
             child: OutlinedButton(
               onPressed: _save,
-              child: const Text('حفظ'),
+              child:  Text(tr('حفظ')),
             ),
           ),
         ],

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:ural_erp/core/constants/app_constants.dart';
@@ -77,16 +78,16 @@ class _CategoryProfitReportScreenState
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
       }
       try {
         final user = ref.read(authProvider).user;
-        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? 'مجهول', 'أرباح التصنيفات');
+        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('أرباح التصنيفات'));
       } catch (_) {}
       _loadCostCenters();
       _loadData();
@@ -174,7 +175,7 @@ class _CategoryProfitReportScreenState
     }
     if (scopeAsync.hasError) {
       return Scaffold(
-        body: Center(child: Text('تعذر تحديد صلاحيات الفرع: ${scopeAsync.error}')),
+        body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
       );
     }
     final scope = scopeAsync.requireValue;
@@ -182,14 +183,14 @@ class _CategoryProfitReportScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('أرباح التصنيفات'),
+        title:  Text(tr('أرباح التصنيفات')),
         actions: [
           buildReportExportAction(onExport: _exportToExcel),
           buildReportPrintAsExportAction(onExport: _exportToExcel),
           IconButton(
             icon: const Icon(PhosphorIconsBold.calendar),
             onPressed: _selectDateRange,
-            tooltip: 'تغيير الفترة',
+            tooltip: tr('تغيير الفترة'),
           ),
         ],
       ),
@@ -270,16 +271,16 @@ class _CategoryProfitReportScreenState
                   child: DropdownButtonFormField<int?>(
                     value: _selectedCostCenterId,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'مركز التكلفة',
+                    decoration:  InputDecoration(
+                      labelText: tr('مركز التكلفة'),
                       isDense: true,
-                      prefixIcon: Icon(PhosphorIconsBold.target, size: 18),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(PhosphorIconsBold.target, size: 18),
+                      border: const OutlineInputBorder(),
                     ),
                     items: [
-                      const DropdownMenuItem<int?>(
+                       DropdownMenuItem<int?>(
                         value: null,
-                        child: Text('كل المراكز'),
+                        child: Text(tr('كل المراكز')),
                       ),
                       ..._costCenters.map((cc) => DropdownMenuItem<int?>(
                             value: cc.id,
@@ -295,7 +296,7 @@ class _CategoryProfitReportScreenState
               ElevatedButton.icon(
                 onPressed: _loadData,
                 icon: const Icon(PhosphorIconsBold.arrowsClockwise),
-                label: const Text('تحديث'),
+                label:  Text(tr('تحديث')),
               ),
             ],
           ),
@@ -309,8 +310,8 @@ class _CategoryProfitReportScreenState
                     child: ShimmerLoading.list(itemCount: 6),
                   )
                 : _data == null || _data!.isEmpty
-                    ? const Center(
-                        child: Text('لا توجد بيانات لهذه الفترة'),
+                    ?  Center(
+                        child: Text(tr('لا توجد بيانات لهذه الفترة')),
                       )
                     : _buildReportContent(_data!),
           ),
@@ -331,13 +332,13 @@ class _CategoryProfitReportScreenState
           child: Row(
             children: [
               _SummaryCard(
-                title: 'إجمالي المبيعات',
+                title: tr('إجمالي المبيعات'),
                 value: totalSales,
                 color: Colors.blue,
               ),
               const SizedBox(width: 16),
               _SummaryCard(
-                title: 'إجمالي التكلفة',
+                title: tr('إجمالي التكلفة'),
                 value: totalCost,
                 color: Colors.orange,
               ),
@@ -350,7 +351,7 @@ class _CategoryProfitReportScreenState
               // scoped, not by product category), so this is relabel-only.
               // True net profit lives on the dashboard/financial statements.
               _SummaryCard(
-                title: 'مجمل ربح المبيعات',
+                title: tr('مجمل ربح المبيعات'),
                 value: totalProfit,
                 color: Colors.green,
               ),
@@ -362,12 +363,12 @@ class _CategoryProfitReportScreenState
             margin: const EdgeInsets.symmetric(horizontal: 16),
             child: SingleChildScrollView(
               child: DataTable(
-                columns: const [
-                  DataColumn(label: Text('التصنيف')),
-                  DataColumn(label: Text('المبيعات'), numeric: true),
-                  DataColumn(label: Text('التكلفة'), numeric: true),
-                  DataColumn(label: Text('الربح'), numeric: true),
-                  DataColumn(label: Text('الهامش %'), numeric: true),
+                columns:  [
+                  DataColumn(label: Text(tr('التصنيف'))),
+                  DataColumn(label: Text(tr('المبيعات')), numeric: true),
+                  DataColumn(label: Text(tr('التكلفة')), numeric: true),
+                  DataColumn(label: Text(tr('الربح')), numeric: true),
+                  DataColumn(label: Text(tr('الهامش %')), numeric: true),
                 ],
                 rows: data.map((item) {
                   return DataRow(
@@ -400,7 +401,7 @@ class _CategoryProfitReportScreenState
 
   Future<void> _exportToExcel() async {
     if (_data == null || _data!.isEmpty) {
-      AppToast.show(context, 'لا توجد بيانات للتصدير', type: ToastType.error);
+      AppToast.show(context, tr('لا توجد بيانات للتصدير'), type: ToastType.error);
       return;
     }
     final service = ref.read(excelServiceProvider);
@@ -410,13 +411,13 @@ class _CategoryProfitReportScreenState
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-      title: 'تقرير أرباح التصنيفات',
+      title: tr('تقرير أرباح التصنيفات'),
       headers: [
-        'التصنيف',
-        'المبيعات',
-        'التكلفة',
-        'الربح',
-        'الهامش %',
+        tr('التصنيف'),
+        tr('المبيعات'),
+        tr('التكلفة'),
+        tr('الربح'),
+        tr('الهامش %'),
       ],
       rows: _data!.map<List<dynamic>>((item) => [
         item.categoryName,
@@ -427,10 +428,10 @@ class _CategoryProfitReportScreenState
       ]).toList(),
     );
     if (path != null && mounted) {
-      AppToast.show(context, 'تم تصدير التقرير بنجاح: \$path', type: ToastType.success);
+      AppToast.show(context, tr('تم تصدير التقرير بنجاح: \$path'), type: ToastType.success);
       try {
         final user = ref.read(authProvider).user;
-        ref.read(activityLoggerProvider).logReportExport(user?.id ?? 0, user?.displayName ?? 'مجهول', 'أرباح التصنيفات', 'Excel');
+        ref.read(activityLoggerProvider).logReportExport(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('أرباح التصنيفات'), 'Excel');
       } catch (_) {}
     }
   }

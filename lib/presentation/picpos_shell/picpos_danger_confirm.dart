@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // حوارُ تأكيدِ الخطر — على تصميم «منطقة الخطر» في شاشة الإعدادات.
 //
 // ═══ ما الذي يميّزه عن [showPicPosConfirm] ═══
@@ -366,7 +367,7 @@ class _TypedGate extends StatelessWidget {
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                'اكتب «$word» للتأكيد',
+                tr('اكتب «{word}» للتأكيد', {'word': word}),
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
@@ -382,7 +383,7 @@ class _TypedGate extends StatelessWidget {
           autofocus: true,
           onChanged: (_) => onChanged(),
           decoration: InputDecoration(
-            hintText: 'اكتب كلمة التأكيد هنا',
+            hintText: tr('اكتب كلمة التأكيد هنا'),
             isDense: true,
             filled: true,
             fillColor: context.picposField,

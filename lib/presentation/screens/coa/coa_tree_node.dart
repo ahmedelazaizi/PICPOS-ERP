@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -129,15 +130,15 @@ class CoaTreeNode extends StatelessWidget {
                       ),
                       if (account.isSystem) ...[
                         const SizedBox(width: 6),
-                        _badge('نظام', AppColors.info),
+                        _badge(tr('نظام'), AppColors.info),
                       ],
                       if (!account.isActive) ...[
                         const SizedBox(width: 6),
-                        _badge('معطل', AppColors.error),
+                        _badge(tr('معطل'), AppColors.error),
                       ],
                       if (account.isHiddenFromEntries) ...[
                         const SizedBox(width: 6),
-                        _badge('مخفي من القيود', AppColors.warning),
+                        _badge(tr('مخفي من القيود'), AppColors.warning),
                       ],
                       if (hasChildren) ...[
                         const SizedBox(width: 4),
@@ -188,38 +189,38 @@ class CoaTreeNode extends StatelessWidget {
                         children: [
                           Icon(PhosphorIconsBold.plus, size: 16, color: typeInfo.color),
                           const SizedBox(width: 8),
-                          const Text('إضافة حساب فرعي'),
+                           Text(tr('إضافة حساب فرعي')),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                     PopupMenuItem(
                       value: 'ledger',
                       child: Row(
                         children: [
-                          Icon(PhosphorIconsBold.book, size: 16, color: AppColors.primary),
-                          SizedBox(width: 8),
-                          Text('دفتر الأستاذ'),
+                          const Icon(PhosphorIconsBold.book, size: 16, color: AppColors.primary),
+                          const SizedBox(width: 8),
+                          Text(tr('دفتر الأستاذ')),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                     PopupMenuItem(
                       value: 'edit',
                       child: Row(
                         children: [
-                          Icon(PhosphorIconsBold.pencilSimple, size: 16, color: AppColors.warning),
-                          SizedBox(width: 8),
-                          Text('تعديل'),
+                          const Icon(PhosphorIconsBold.pencilSimple, size: 16, color: AppColors.warning),
+                          const SizedBox(width: 8),
+                          Text(tr('تعديل')),
                         ],
                       ),
                     ),
                     if (!account.isSystem)
-                      const PopupMenuItem(
+                       PopupMenuItem(
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(PhosphorIconsBold.trash, size: 16, color: AppColors.error),
-                            SizedBox(width: 8),
-                            Text('حذف', style: TextStyle(color: AppColors.error)),
+                            const Icon(PhosphorIconsBold.trash, size: 16, color: AppColors.error),
+                            const SizedBox(width: 8),
+                            Text(tr('حذف'), style: const TextStyle(color: AppColors.error)),
                           ],
                         ),
                       ),
@@ -236,8 +237,8 @@ class CoaTreeNode extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(account.isHiddenFromEntries
-                              ? 'إظهار في القيود'
-                              : 'إخفاء من القيود'),
+                              ? tr('إظهار في القيود')
+                              : tr('إخفاء من القيود')),
                         ],
                       ),
                     ),

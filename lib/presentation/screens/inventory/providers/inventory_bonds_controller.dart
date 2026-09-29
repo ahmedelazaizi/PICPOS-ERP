@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../domain/repositories/inventory_repository.dart';
 import '../../../../domain/repositories/i_products_repository.dart';
@@ -97,8 +98,8 @@ class InventoryBondsNotifier extends Notifier<InventoryBondsState> {
 
       return BondItemModel(
         product: product,
-        categoryName: category?.name ?? 'غير مصنف',
-        supplierName: supplier?.name ?? 'لا يوجد',
+        categoryName: category?.name ?? tr('غير مصنف'),
+        supplierName: supplier?.name ?? tr('لا يوجد'),
         costPrice: product.costPrice,
         salePrice: product.salePrice,
         quantity: 0,
@@ -139,14 +140,14 @@ class InventoryBondsNotifier extends Notifier<InventoryBondsState> {
         await inventoryService.createOpeningBalanceBond(
           items: bondItems,
           warehouseId: warehouseId,
-          notes: notes.isEmpty ? 'رصيد افتتاحي' : notes,
+          notes: notes.isEmpty ? tr('رصيد افتتاحي') : notes,
           userId: userId,
         );
       } else {
         await inventoryService.createAddingBond(
           items: bondItems,
           warehouseId: warehouseId,
-          notes: notes.isEmpty ? 'سند إضافة' : notes,
+          notes: notes.isEmpty ? tr('سند إضافة') : notes,
           userId: userId,
           date: date,
         );
@@ -158,7 +159,7 @@ class InventoryBondsNotifier extends Notifier<InventoryBondsState> {
       logger.error('Failed to save bond', e, st, 'INVENTORY_BONDS');
       state = state.copyWith(
         isLoading: false,
-        error: 'حدث خطأ أثناء حفظ السند: $e',
+        error: tr('حدث خطأ أثناء حفظ السند: {e}', {'e': e}),
       );
       return false;
     }

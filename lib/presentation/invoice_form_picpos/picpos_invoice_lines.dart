@@ -75,7 +75,7 @@ class _PicPosOrderLinkBar extends StatelessWidget {
           Icon(PhosphorIconsBold.link,
               size: 14, color: linked != null ? AppColors.info : muted),
           const SizedBox(width: 8),
-          Text('أمر الشراء المصدر',
+          Text(tr('أمر الشراء المصدر'),
               style: TextStyle(
                   fontSize: 11, fontWeight: FontWeight.w800, color: muted)),
           const SizedBox(width: 12),
@@ -83,8 +83,8 @@ class _PicPosOrderLinkBar extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: () => state._linkPurchaseOrder(context),
               icon: const Icon(PhosphorIconsBold.link, size: 14),
-              label: const Text('ربط أمر شراء',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+              label:  Text(tr('ربط أمر شراء'),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
               style: OutlinedButton.styleFrom(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -113,7 +113,7 @@ class _PicPosOrderLinkBar extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             IconButton(
-              tooltip: 'فكّ الربط — البنودُ تبقى',
+              tooltip: tr('فكّ الربط — البنودُ تبقى'),
               onPressed: state._unlinkPurchaseOrder,
               icon: const Icon(PhosphorIconsBold.x, size: 13),
               visualDensity: VisualDensity.compact,
@@ -124,7 +124,7 @@ class _PicPosOrderLinkBar extends StatelessWidget {
           if (linked != null)
             Flexible(
               child: Text(
-                'يُستهلَك الأمرُ بحفظ الفاتورة',
+                tr('يُستهلَك الأمرُ بحفظ الفاتورة'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end,
@@ -193,7 +193,7 @@ class _PicPosQuickAdd extends StatelessWidget {
                         isDense: true,
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
-                        hintText: 'امسح الباركود أو اكتب اسم الصنف…',
+                        hintText: tr('امسح الباركود أو اكتب اسم الصنف…'),
                         hintStyle: TextStyle(fontSize: 12.5, color: muted),
                       ),
                       onSubmitted: (_) => _submit(context),
@@ -227,7 +227,7 @@ class _PicPosQuickAdd extends StatelessWidget {
           _box(
             context,
             width: 112,
-            label: 'الكمية',
+            label: tr('الكمية'),
             child: TextField(
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
@@ -256,15 +256,15 @@ class _PicPosQuickAdd extends StatelessWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(11),
               onTap: () => _submit(context),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+              child:  Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(PhosphorIconsBold.plus, size: 15, color: Colors.white),
-                    SizedBox(width: 7),
-                    Text('إضافة',
-                        style: TextStyle(
+                    const Icon(PhosphorIconsBold.plus, size: 15, color: Colors.white),
+                    const SizedBox(width: 7),
+                    Text(tr('إضافة'),
+                        style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: Colors.white)),
@@ -279,7 +279,7 @@ class _PicPosQuickAdd extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: () => _openPicker(context),
             icon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 15),
-            label: const Text('بحث متقدم'),
+            label:  Text(tr('بحث متقدم')),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
@@ -350,7 +350,7 @@ class _PicPosQuickAdd extends StatelessWidget {
     final picked = await showDialog<int>(
       context: context,
       builder: (ctx) => _SearchPickerDialog(
-        title: 'اختر صنفاً',
+        title: tr('اختر صنفاً'),
         items: [
           for (final p in state.widget.products)
             (
@@ -442,13 +442,13 @@ class _PicPosLinesTable extends StatelessWidget {
       child: Row(
         children: [
           cell('#', _kIdxW),
-          cell('الصنف', _nameW(state.widget.kind)),
-          cell('الوحدة', _kUnitW),
-          cell('الكمية', _kQtyW),
+          cell(tr('الصنف'), _nameW(state.widget.kind)),
+          cell(tr('الوحدة'), _kUnitW),
+          cell(tr('الكمية'), _kQtyW),
           cell(state.widget.kind.priceLabel, _kPriceW),
-          if (state.widget.kind.supportsLineDiscount) cell('الخصم', _kDiscW),
-          cell('الضريبة', _kTaxW),
-          cell('الإجمالي', _kTotalW, align: TextAlign.end),
+          if (state.widget.kind.supportsLineDiscount) cell(tr('الخصم'), _kDiscW),
+          cell(tr('الضريبة'), _kTaxW),
+          cell(tr('الإجمالي'), _kTotalW, align: TextAlign.end),
           const SizedBox(width: _kDelW),
         ],
       ),
@@ -467,7 +467,7 @@ class _PicPosLinesTable extends StatelessWidget {
             const SizedBox(width: 10),
             Flexible(
               child: Text(
-                'استخدم سطر الإدخال أعلاه أو اضغط F2 لإضافة صنف جديد للفاتورة',
+                tr('استخدم سطر الإدخال أعلاه أو اضغط F2 لإضافة صنف جديد للفاتورة'),
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
@@ -514,7 +514,7 @@ class _PicPosLinesTable extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Flexible(
-                  child: Text('${t.lineCount} بند',
+                  child: Text(tr('{p0} بند', {'p0': t.lineCount}),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -522,7 +522,7 @@ class _PicPosLinesTable extends StatelessWidget {
                 ),
                 sep(),
                 Flexible(
-                  child: Text('إجمالي الكمية ${n(t.quantityTotal)}',
+                  child: Text(tr('إجمالي الكمية {p0}', {'p0': n(t.quantityTotal)}),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -546,7 +546,7 @@ class _PicPosLinesTable extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Text('المجموع الفرعي',
+          Text(tr('المجموع الفرعي'),
               maxLines: 1,
               style: TextStyle(
                   fontSize: 11.5, fontWeight: FontWeight.w600, color: muted)),
@@ -1066,7 +1066,7 @@ class _TaxPill extends StatelessWidget {
               Flexible(
                 child: Text(
                   // النسبةُ من الصنف أو من إعداد النظام — لا «١٤٪» مطبوعة.
-                  on ? '${rate.toStringAsFixed(0)}%' : 'بلا',
+                  on ? '${rate.toStringAsFixed(0)}%' : tr('بلا'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

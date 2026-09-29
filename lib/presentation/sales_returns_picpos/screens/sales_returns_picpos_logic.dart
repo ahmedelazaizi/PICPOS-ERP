@@ -20,11 +20,11 @@ Widget buildSalesReturnDeleteButtonGuarded({
   return PermissionGuard(
     permission: PermissionCodes.salesReturnDelete,
     allowManagerOverride: true,
-    actionName: 'إلغاء مرتجع مبيعات',
+    actionName: tr('إلغاء مرتجع مبيعات'),
     onGranted: onCancel,
     child: IconButton(
       icon: const Icon(PhosphorIconsBold.x, color: AppColors.error, size: 18),
-      tooltip: 'إلغاء المرتجع',
+      tooltip: tr('إلغاء المرتجع'),
       onPressed: onCancel,
     ),
   );
@@ -36,11 +36,11 @@ Widget buildSalesReturnPrintButtonGuarded({required VoidCallback onPrint}) {
   return PermissionGuard(
     permission: PermissionCodes.salesReturnPrint,
     allowManagerOverride: true,
-    actionName: 'طباعة مرتجع مبيعات',
+    actionName: tr('طباعة مرتجع مبيعات'),
     onGranted: onPrint,
     child: IconButton(
       icon: const Icon(PhosphorIconsBold.printer, color: AppColors.info),
-      tooltip: 'طباعة المرتجع',
+      tooltip: tr('طباعة المرتجع'),
       onPressed: onPrint,
     ),
   );
@@ -63,7 +63,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
     if (!hasReturns) {
       AppToast.show(
         context,
-        'يرجى تحديد كمية للإرجاع',
+        tr('يرجى تحديد كمية للإرجاع'),
         type: ToastType.warning,
       );
       return;
@@ -74,25 +74,25 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.warning),
-              SizedBox(width: 8),
-              Text('تأكيد المرتجع'),
+              const Icon(PhosphorIconsBold.warning, color: AppColors.warning),
+              const SizedBox(width: 8),
+              Text(tr('تأكيد المرتجع')),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('فاتورة: ${state.selectedInvoice!.invoiceNumber}'),
+              Text(tr('فاتورة: {p0}', {'p0': state.selectedInvoice!.invoiceNumber})),
               const SizedBox(height: 8),
               Text(
                 'عدد الأصناف للإرجاع: ${state.returnQuantities.values.where((q) => q > 0).length}',
               ),
               const SizedBox(height: 8),
               Text(
-                'إجمالي الإرجاع: ${notifier.calculateReturnTotal().toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
+                tr('إجمالي الإرجاع: {p0} {p1}', {'p0': notifier.calculateReturnTotal().toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolAr}),
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
@@ -100,14 +100,14 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.warning,
               ),
-              child: const Text('تأكيد الإرجاع'),
+              child:  Text(tr('تأكيد الإرجاع')),
             ),
           ],
         ),
@@ -127,7 +127,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
       if (threshold > 0 && returnTotal > threshold && mounted) {
         final approved = await requestManagerApproval(
           context,
-          actionName: 'اعتماد مرتجع بقيمة ${returnTotal.toStringAsFixed(AppConstants.decimalPlaces)}',
+          actionName: tr('اعتماد مرتجع بقيمة {p0}', {'p0': returnTotal.toStringAsFixed(AppConstants.decimalPlaces)}),
         );
         if (!approved) return;
       }
@@ -158,8 +158,8 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
           AppToast.show(
             context,
             outcome == ShiftPromptOutcome.cancelledByUser
-                ? 'أُلغي المرتجع — لم تُفتَح وردية'
-                : 'تعذّر فتح الوردية، فلم يُنفَّذ المرتجع',
+                ? tr('أُلغي المرتجع — لم تُفتَح وردية')
+                : tr('تعذّر فتح الوردية، فلم يُنفَّذ المرتجع'),
             type: ToastType.warning,
           );
         }
@@ -189,14 +189,14 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text('تم المرتجع بنجاح!'),
+                 Text(tr('تم المرتجع بنجاح!')),
               ],
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'مرتجع فاتورة: $invoiceNumber',
+                  tr('مرتجع فاتورة: {invoiceNumber}', {'invoiceNumber': invoiceNumber}),
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -204,20 +204,20 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'قيمة المرتجع: ${returnTotal.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
+                  tr('قيمة المرتجع: {p0} {p1}', {'p0': returnTotal.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolAr}),
                   style: const TextStyle(
                     fontSize: 16,
                     color: AppColors.warning,
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text('هل تريد طباعة إيصال المرتجع؟'),
+                 Text(tr('هل تريد طباعة إيصال المرتجع؟')),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('لا'),
+                child:  Text(tr('لا')),
               ),
               ElevatedButton.icon(
                 onPressed: () {
@@ -232,7 +232,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
                   );
                 },
                 icon: const Icon(PhosphorIconsBold.printer),
-                label: const Text('طباعة'),
+                label:  Text(tr('طباعة')),
               ),
             ],
           ),
@@ -301,8 +301,8 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
         AppToast.show(
           context,
           printed
-              ? 'تم طباعة إيصال مرتجع فاتورة $invoiceNumber'
-              : 'أُلغيت طباعة إيصال مرتجع فاتورة $invoiceNumber',
+              ? tr('تم طباعة إيصال مرتجع فاتورة {invoiceNumber}', {'invoiceNumber': invoiceNumber})
+              : tr('أُلغيت طباعة إيصال مرتجع فاتورة {invoiceNumber}', {'invoiceNumber': invoiceNumber}),
           type: printed ? ToastType.success : ToastType.warning,
         );
       }
@@ -338,14 +338,14 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
         builder: (ctx, setDialogState) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: const Row(
+            title:  Row(
               children: [
-                Icon(
+                const Icon(
                   PhosphorIconsBold.clockCounterClockwise,
                   color: AppColors.info,
                 ),
-                SizedBox(width: 8),
-                Text('سجل مرتجعات المبيعات'),
+                const SizedBox(width: 8),
+                Text(tr('سجل مرتجعات المبيعات')),
               ],
             ),
             content: SizedBox(
@@ -367,19 +367,19 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
                   final entries = snapshot.data ?? [];
 
                   if (entries.isEmpty) {
-                    return const Center(
+                    return  Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
+                          const Icon(
                             PhosphorIconsBold.arrowUDownLeft,
                             size: 48,
                             color: AppColors.textMuted,
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           Text(
-                            'لا توجد مرتجعات خلال آخر سنة',
-                            style: TextStyle(color: AppColors.textMuted),
+                            tr('لا توجد مرتجعات خلال آخر سنة'),
+                            style: const TextStyle(color: AppColors.textMuted),
                           ),
                         ],
                       ),
@@ -412,7 +412,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
                                   : AppColors.warning,
                             ),
                           ),
-                          title: Text('فاتورة #${entry.originalInvoiceNumber}'),
+                          title: Text(tr('فاتورة #{p0}', {'p0': entry.originalInvoiceNumber})),
                           // Show the ACTUAL returned amount next to the
                           // original's total — same shape as the purchase
                           // returns history, where showing the original total
@@ -427,7 +427,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
                                 : Future.value(null),
                             builder: (ctx, partySnap) {
                               final customerName =
-                                  partySnap.data ?? 'عميل نقدي';
+                                  partySnap.data ?? tr('عميل نقدي');
                               final d = entry.invoice.invoiceDate;
                               final ret = entry.returnAmount.toStringAsFixed(
                                   AppConstants.decimalPlaces);
@@ -459,7 +459,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  isFullReturn ? 'مرتجع كامل' : 'مرتجع جزئي',
+                                  isFullReturn ? tr('مرتجع كامل') : tr('مرتجع جزئي'),
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: isFullReturn
@@ -476,7 +476,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
                                   color: AppColors.primary,
                                   size: 18,
                                 ),
-                                tooltip: 'عرض أصناف المرتجع',
+                                tooltip: tr('عرض أصناف المرتجع'),
                                 onPressed: () async {
                                   // ISS-06: Acceptable — one-shot read in button callback
                                   final db = ref.read(databaseProvider);
@@ -499,7 +499,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
-                                              'أصناف المرتجع - ${entry.originalInvoiceNumber}',
+                                              tr('أصناف المرتجع - {p0}', {'p0': entry.originalInvoiceNumber}),
                                             ),
                                           ],
                                         ),
@@ -507,12 +507,12 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
                                           width: 460,
                                           height: 320,
                                           child: items.isEmpty
-                                            ? const Center(child: Text('لا توجد بيانات مرتجع'))
+                                            ?  Center(child: Text(tr('لا توجد بيانات مرتجع')))
                                             : ListView.builder(
                                             itemCount: items.length,
                                             itemBuilder: (_, i) {
                                               final item = items[i];
-                                              final name = (item['product_name'] as String?) ?? 'صنف #${item['product_id']}';
+                                              final name = (item['product_name'] as String?) ?? tr('صنف #{p0}', {'p0': item['product_id']});
                                               final qty = (item['returned_qty'] as num?)?.toDouble() ?? 0;
                                               final total = (item['total_amount'] as num?)?.toDouble() ?? 0;
                                               return ListTile(
@@ -528,7 +528,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
                                                   ),
                                                 ),
                                                 subtitle: Text(
-                                                  'الكمية المرتجعة: ${qty.toStringAsFixed(AppConstants.decimalPlaces)}',
+                                                  tr('الكمية المرتجعة: {p0}', {'p0': qty.toStringAsFixed(AppConstants.decimalPlaces)}),
                                                 ),
                                                 trailing: Text(
                                                   '${total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
@@ -544,7 +544,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
                                           TextButton(
                                             onPressed: () =>
                                                 Navigator.pop(itemCtx),
-                                            child: const Text('إغلاق'),
+                                            child:  Text(tr('إغلاق')),
                                           ),
                                         ],
                                       ),
@@ -578,7 +578,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('إغلاق'),
+                child:  Text(tr('إغلاق')),
               ),
             ],
           ),
@@ -601,21 +601,21 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
       builder: (confirmCtx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('تأكيد إلغاء المرتجع'),
+              const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('تأكيد إلغاء المرتجع')),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('فاتورة: ${entry.originalInvoiceNumber}'),
+              Text(tr('فاتورة: {p0}', {'p0': entry.originalInvoiceNumber})),
               const SizedBox(height: 8),
               Text(
-                'المبلغ: ${entry.returnAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
+                tr('المبلغ: {p0} {p1}', {'p0': entry.returnAmount.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolAr}),
               ),
               const SizedBox(height: 16),
               Container(
@@ -627,14 +627,14 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
                     color: Colors.orange.withValues(alpha: 0.3),
                   ),
                 ),
-                child: const Row(
+                child:  Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.orange, size: 18),
-                    SizedBox(width: 8),
+                    const Icon(Icons.info_outline, color: Colors.orange, size: 18),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'سيتم إرجاع المبلغ للكاش وخصم الأصناف مرة أخرى من المخزون',
-                        style: TextStyle(fontSize: 12, color: Colors.orange),
+                        tr('سيتم إرجاع المبلغ للكاش وخصم الأصناف مرة أخرى من المخزون'),
+                        style: const TextStyle(fontSize: 12, color: Colors.orange),
                       ),
                     ),
                   ],
@@ -645,14 +645,14 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(confirmCtx, false),
-              child: const Text('تراجع'),
+              child:  Text(tr('تراجع')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(confirmCtx, true),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text(
-                'إلغاء المرتجع',
-                style: TextStyle(color: Colors.white),
+              child:  Text(
+                tr('إلغاء المرتجع'),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
           ],
@@ -679,13 +679,13 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
       await repository.cancelSalesReturn(
         invoice: invoice,
         userId: auth.user?.id ?? 1,
-        userName: auth.user?.displayName ?? 'مجهول',
+        userName: auth.user?.displayName ?? tr('مجهول'),
       );
 
       if (mounted) {
         AppToast.show(
           context,
-          '✅ تم إلغاء مرتجع فاتورة ${invoice.invoiceNumber} بنجاح',
+          tr('✅ تم إلغاء مرتجع فاتورة {p0} بنجاح', {'p0': invoice.invoiceNumber}),
           type: ToastType.success,
         );
         setState(() {});

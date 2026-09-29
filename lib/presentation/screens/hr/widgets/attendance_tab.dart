@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -26,9 +27,9 @@ class AttendanceTab extends ConsumerWidget {
                 color: AppColors.primary,
               ),
               const SizedBox(width: 8),
-              const Text(
-                'حضور وانصراف اليوم',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+               Text(
+                tr('حضور وانصراف اليوم'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               _ManualAttendanceButton(ref: ref),
@@ -48,10 +49,10 @@ class AttendanceTab extends ConsumerWidget {
 
               final records = snapshot.data ?? [];
               if (records.isEmpty) {
-                return const Center(
+                return  Center(
                   child: Text(
-                    'لم يتم تسجيل حضور لأي موظف اليوم',
-                    style: TextStyle(color: AppColors.textMuted),
+                    tr('لم يتم تسجيل حضور لأي موظف اليوم'),
+                    style: const TextStyle(color: AppColors.textMuted),
                   ),
                 );
               }
@@ -138,10 +139,10 @@ class _AttendanceCard extends StatelessWidget {
                   backgroundColor: Colors.orange,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
-                child: const Text('تسجيل خروج', style: TextStyle(fontSize: 12)),
+                child:  Text(tr('تسجيل خروج'), style: const TextStyle(fontSize: 12)),
               )
-            : const Chip(
-                label: Text('مكتمل', style: TextStyle(fontSize: 11)),
+            :  Chip(
+                label: Text(tr('مكتمل'), style: const TextStyle(fontSize: 11)),
                 backgroundColor: Colors.grey,
               ),
       ),
@@ -158,7 +159,7 @@ class _ManualAttendanceButton extends StatelessWidget {
     return ElevatedButton.icon(
       onPressed: () => _showManualAttendance(context),
       icon: const Icon(PhosphorIconsBold.handPointing, size: 18),
-      label: const Text('تسجيل يدوي'),
+      label:  Text(tr('تسجيل يدوي')),
       style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
     );
   }
@@ -174,7 +175,7 @@ class _ManualAttendanceButton extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: const Text('تسجيل يدوي'),
+          title:  Text(tr('تسجيل يدوي')),
           content: SizedBox(
             width: 460,
             height: 380,
@@ -183,7 +184,7 @@ class _ManualAttendanceButton extends StatelessWidget {
                 // يومُ الغياب — لا يمسّ زرّ التحضير.
                 Row(
                   children: [
-                    const Text('يوم الغياب: '),
+                     Text(tr('يوم الغياب: ')),
                     Expanded(
                       child: Text(
                         DateFormat('yyyy/MM/dd').format(absenceDate),
@@ -192,7 +193,7 @@ class _ManualAttendanceButton extends StatelessWidget {
                     ),
                     TextButton.icon(
                       icon: const Icon(PhosphorIconsBold.calendar, size: 16),
-                      label: const Text('تغيير'),
+                      label:  Text(tr('تغيير')),
                       onPressed: () async {
                         final picked = await showDatePicker(
                           context: ctx,
@@ -222,15 +223,15 @@ class _ManualAttendanceButton extends StatelessWidget {
                             title: Text(e.name),
                             subtitle: Text(
                               e.salaryType == 'monthly'
-                                  ? 'شهري — الغياب المسجّل يُخصم'
-                                  : 'يومي — يُدفع بما عمل',
+                                  ? tr('شهري — الغياب المسجّل يُخصم')
+                                  : tr('يومي — يُدفع بما عمل'),
                               style: const TextStyle(fontSize: 11),
                             ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  tooltip: 'تسجيل حضور اليوم',
+                                  tooltip: tr('تسجيل حضور اليوم'),
                                   icon: const Icon(
                                     PhosphorIconsBold.plusCircle,
                                     color: Colors.green,
@@ -241,7 +242,7 @@ class _ManualAttendanceButton extends StatelessWidget {
                                   },
                                 ),
                                 IconButton(
-                                  tooltip: 'تعليم غياب غير مدفوع',
+                                  tooltip: tr('تعليم غياب غير مدفوع'),
                                   icon: const Icon(
                                     PhosphorIconsBold.minusCircle,
                                     color: AppColors.error,
@@ -277,7 +278,7 @@ class _ManualAttendanceButton extends StatelessWidget {
     showDialog(
       context: dialogCtx,
       builder: (confirmCtx) => AlertDialog(
-        title: const Text('تأكيد تعليم غياب'),
+        title:  Text(tr('تأكيد تعليم غياب')),
         content: Text(
           'تعليم ${employee.name} غائباً يوم '
           '${DateFormat('yyyy/MM/dd').format(date)}؟'
@@ -286,7 +287,7 @@ class _ManualAttendanceButton extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(confirmCtx),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           TextButton(
             onPressed: () async {
@@ -294,7 +295,7 @@ class _ManualAttendanceButton extends StatelessWidget {
               if (confirmCtx.mounted) Navigator.pop(confirmCtx);
               if (dialogCtx.mounted) Navigator.pop(dialogCtx);
             },
-            child: const Text('تأكيد', style: TextStyle(color: AppColors.error)),
+            child:  Text(tr('تأكيد'), style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),

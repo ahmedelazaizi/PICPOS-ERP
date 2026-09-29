@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,16 +40,16 @@ class _SyncManagementDialogState extends ConsumerState<SyncManagementDialog> {
             children: [
               const Icon(PhosphorIconsBold.cloudArrowUp, color: AppColors.primary),
               const SizedBox(width: 12),
-              const Text('إدارة المزامنة'),
+               Text(tr('إدارة المزامنة')),
               const Spacer(),
               // Delta pull progress indicator
               ValueListenableBuilder<bool>(
                 valueListenable: SyncEventBus.instance.isPulling,
                 builder: (_, pulling, _) {
                   if (!pulling) return const SizedBox.shrink();
-                  return const Tooltip(
-                    message: 'جارٍ سحب التحديثات من السيرفر...',
-                    child: SizedBox(
+                  return  Tooltip(
+                    message: tr('جارٍ سحب التحديثات من السيرفر...'),
+                    child: const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
@@ -85,12 +86,12 @@ class _SyncManagementDialogState extends ConsumerState<SyncManagementDialog> {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildStat(
-                        'بانتظار الإرسال',
+                        tr('بانتظار الإرسال'),
                         '${syncState.pendingCount}',
                         AppColors.warning,
                       ),
                       _buildStat(
-                        'آخر إرسال',
+                        tr('آخر إرسال'),
                         _formatTime(syncState.lastSyncTime),
                         AppColors.success,
                       ),
@@ -99,22 +100,22 @@ class _SyncManagementDialogState extends ConsumerState<SyncManagementDialog> {
                 ),
                 const SizedBox(height: 8),
                 // Tab bar
-                const TabBar(
+                 TabBar(
                   tabs: [
                     Tab(
-                      icon: Icon(PhosphorIconsBold.cloudArrowUp, size: 14),
-                      text: 'الصادر',
+                      icon: const Icon(PhosphorIconsBold.cloudArrowUp, size: 14),
+                      text: tr('الصادر'),
                     ),
                     Tab(
-                      icon: Icon(PhosphorIconsBold.warning, size: 14),
-                      text: 'التعارضات',
+                      icon: const Icon(PhosphorIconsBold.warning, size: 14),
+                      text: tr('التعارضات'),
                     ),
                     Tab(
-                      icon: Icon(PhosphorIconsBold.cloudArrowDown, size: 14),
-                      text: 'مزامنة واردة',
+                      icon: const Icon(PhosphorIconsBold.cloudArrowDown, size: 14),
+                      text: tr('مزامنة واردة'),
                     ),
                   ],
-                  labelStyle: TextStyle(fontSize: 12),
+                  labelStyle: const TextStyle(fontSize: 12),
                 ),
                 const SizedBox(height: 4),
                 // Tab views
@@ -133,7 +134,7 @@ class _SyncManagementDialogState extends ConsumerState<SyncManagementDialog> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
             OutlinedButton.icon(
               onPressed: _reconciling ? null : () async {
@@ -142,7 +143,7 @@ class _SyncManagementDialogState extends ConsumerState<SyncManagementDialog> {
                   builder: (ctx) => Directionality(
                     textDirection: TextDirection.rtl,
                     child: AlertDialog(
-                      title: const Text('تأكيد مطابقة المزامنة'),
+                      title:  Text(tr('تأكيد مطابقة المزامنة')),
                       content: const Text(
                         'هذا الإجراء يضع كل العناصر المعلّقة/الفاشلة/دائمة الفشل '
                         'كـ"تم مزامنتها" بدون إعادة إرسالها للسيرفر.\n\n'
@@ -152,14 +153,14 @@ class _SyncManagementDialogState extends ConsumerState<SyncManagementDialog> {
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('إلغاء'),
+                          child:  Text(tr('إلغاء')),
                         ),
                         ElevatedButton(
                           onPressed: () => Navigator.pop(ctx, true),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.warning,
                           ),
-                          child: const Text('نعم، تأكيد المطابقة'),
+                          child:  Text(tr('نعم، تأكيد المطابقة')),
                         ),
                       ],
                     ),
@@ -172,7 +173,7 @@ class _SyncManagementDialogState extends ConsumerState<SyncManagementDialog> {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('تمت المطابقة — $n سطر تم تعليمه كمزامَن'),
+                        content: Text(tr('تمت المطابقة — {n} سطر تم تعليمه كمزامَن', {'n': n})),
                       ),
                     );
                   }
@@ -181,7 +182,7 @@ class _SyncManagementDialogState extends ConsumerState<SyncManagementDialog> {
                 }
               },
               icon: const Icon(PhosphorIconsBold.checkCircle),
-              label: const Text('مطابقة الكل'),
+              label:  Text(tr('مطابقة الكل')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.warning,
                 side: const BorderSide(color: AppColors.warning),
@@ -193,7 +194,7 @@ class _SyncManagementDialogState extends ConsumerState<SyncManagementDialog> {
                   : () =>
                       ref.read(syncWorkerProvider.notifier).processOutbox(),
               icon: const Icon(PhosphorIconsBold.cloudArrowUp),
-              label: const Text('مزامنة الآن'),
+              label:  Text(tr('مزامنة الآن')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
               ),
@@ -221,7 +222,7 @@ class _SyncManagementDialogState extends ConsumerState<SyncManagementDialog> {
   }
 
   String _formatTime(DateTime? time) {
-    if (time == null) return 'أبداً';
+    if (time == null) return tr('أبداً');
     return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
   }
 }
@@ -235,16 +236,16 @@ class _OutboxTab extends ConsumerWidget {
 
   /// L4: classify error message into a user-friendly category chip.
   static String _categorizeError(String? error) {
-    if (error == null) return '❓ خطأ';
+    if (error == null) return tr('❓ خطأ');
     final s = error.toLowerCase();
-    if (s.contains('authorization') || s.contains('cross-branch')) return '🔒 صلاحية';
-    if (s.contains('not found') || s.contains('strict mapping')) return '🗺️ خريطة بيانات';
-    if (s.contains('غير متوفر') || s.contains('validation error')) return '⚠️ بيانات';
-    if (s.contains('connection') || s.contains('timeout') || s.contains('socket')) return '🌐 شبكة';
-    if (s.contains('401') || s.contains('unauthorized') || s.contains('expired token')) return '🔑 مصادقة';
-    if (s.contains('shift not found')) return '🕐 وردية';
-    if (s.contains('item missing')) return '📦 منتج';
-    return '❓ خطأ';
+    if (s.contains('authorization') || s.contains('cross-branch')) return tr('🔒 صلاحية');
+    if (s.contains('not found') || s.contains('strict mapping')) return tr('🗺️ خريطة بيانات');
+    if (s.contains('غير متوفر') || s.contains('validation error')) return tr('⚠️ بيانات');
+    if (s.contains('connection') || s.contains('timeout') || s.contains('socket')) return tr('🌐 شبكة');
+    if (s.contains('401') || s.contains('unauthorized') || s.contains('expired token')) return tr('🔑 مصادقة');
+    if (s.contains('shift not found')) return tr('🕐 وردية');
+    if (s.contains('item missing')) return tr('📦 منتج');
+    return tr('❓ خطأ');
   }
 
   @override
@@ -264,10 +265,10 @@ class _OutboxTab extends ConsumerWidget {
         final pendingItems = allItems.where((i) => i.status != 'dead_letter').toList();
 
         if (allItems.isEmpty) {
-          return const Center(
+          return  Center(
             child: Text(
-              'لا توجد عناصر بانتظار المزامنة',
-              style: TextStyle(color: Colors.grey),
+              tr('لا توجد عناصر بانتظار المزامنة'),
+              style: const TextStyle(color: Colors.grey),
             ),
           );
         }
@@ -291,7 +292,7 @@ class _OutboxTab extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '${deadLetterItems.length} عملية فشلت نهائياً — تحتاج مراجعة الأدمن',
+                          tr('{p0} عملية فشلت نهائياً — تحتاج مراجعة الأدمن', {'p0': deadLetterItems.length}),
                           style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.error),
                         ),
                       ),
@@ -301,13 +302,13 @@ class _OutboxTab extends ConsumerWidget {
                           foregroundColor: Colors.white,
                         ),
                         icon: const Icon(PhosphorIconsBold.arrowsClockwise, size: 16),
-                        label: const Text('إعادة محاولة الكل'),
+                        label:  Text(tr('إعادة محاولة الكل')),
                         onPressed: () async {
                           final count = await syncRepo.retryAllDeadLetterItems();
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('تمت إعادة جدولة $count عملية للمحاولة'),
+                                content: Text(tr('تمت إعادة جدولة {count} عملية للمحاولة', {'count': count})),
                                 backgroundColor: AppColors.success,
                               ),
                             );
@@ -384,9 +385,9 @@ class _OutboxTab extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
               ),
-              child: const Text(
-                'فشل نهائي',
-                style: TextStyle(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.bold),
+              child:  Text(
+                tr('فشل نهائي'),
+                style: const TextStyle(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.bold),
               ),
             ),
         ],
@@ -395,11 +396,11 @@ class _OutboxTab extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'العملية: ${_mapOperationTitle(item.operation)} | المحاولات: ${item.attempts}',
+            tr('العملية: {p0} | المحاولات: {p1}', {'p0': _mapOperationTitle(item.operation), 'p1': item.attempts}),
           ),
           if (item.lastError != null)
             Text(
-              'خطأ: ${item.lastError!.replaceAll('DEAD_LETTER: ', '')}',
+              tr('خطأ: {p0}', {'p0': item.lastError!.replaceAll('DEAD_LETTER: ', '')}),
               style: TextStyle(
                 color: isDeadLetter ? AppColors.error : AppColors.warning,
                 fontSize: 11,
@@ -414,14 +415,14 @@ class _OutboxTab extends ConsumerWidget {
         children: [
           IconButton(
             icon: const Icon(PhosphorIconsBold.arrowsClockwise, color: AppColors.info),
-            tooltip: 'إعادة محاولة',
+            tooltip: tr('إعادة محاولة'),
             onPressed: () async {
               await syncRepo.retryItem(item.id);
             },
           ),
           IconButton(
             icon: const Icon(PhosphorIconsBold.trash, color: AppColors.error),
-            tooltip: 'حذف',
+            tooltip: tr('حذف'),
             onPressed: () async {
               await syncRepo.deleteItem(item.id);
             },
@@ -435,26 +436,26 @@ class _OutboxTab extends ConsumerWidget {
     switch (table) {
       case 'sales':
       case 'sales_invoices':
-        return 'فاتورة مبيعات';
+        return tr('فاتورة مبيعات');
       case 'sales_returns':
-        return 'مرتجع مبيعات';
+        return tr('مرتجع مبيعات');
       case 'purchase_invoices':
       case 'purchases':
-        return 'فاتورة مشتريات';
+        return tr('فاتورة مشتريات');
       case 'shifts':
-        return 'وردية';
+        return tr('وردية');
       case 'expenses':
-        return 'مصروف';
+        return tr('مصروف');
       case 'receipts':
-        return 'قبض';
+        return tr('قبض');
       case 'held_orders':
-        return 'طلب محفوظ';
+        return tr('طلب محفوظ');
       case 'parties':
-        return 'عميل / مورد';
+        return tr('عميل / مورد');
       case 'products':
-        return 'صنف';
+        return tr('صنف');
       case 'units':
-        return 'وحدة';
+        return tr('وحدة');
       default:
         return table;
     }
@@ -483,15 +484,15 @@ class _OutboxTab extends ConsumerWidget {
   String _mapOperationTitle(String op) {
     switch (op) {
       case 'insert':
-        return 'إضافة';
+        return tr('إضافة');
       case 'update':
-        return 'تعديل';
+        return tr('تعديل');
       case 'delete':
-        return 'حذف';
+        return tr('حذف');
       case 'open':
-        return 'فتح';
+        return tr('فتح');
       case 'close':
-        return 'إغلاق';
+        return tr('إغلاق');
       default:
         return op;
     }
@@ -516,19 +517,19 @@ class _ConflictsTab extends StatelessWidget {
         }
         final conflicts = snapshot.data!;
         if (conflicts.isEmpty) {
-          return const Center(
+          return  Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                const Icon(
                   PhosphorIconsBold.checkCircle,
                   color: AppColors.success,
                   size: 40,
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Text(
-                  'لا توجد تعارضات مسجّلة',
-                  style: TextStyle(color: Colors.grey),
+                  tr('لا توجد تعارضات مسجّلة'),
+                  style: const TextStyle(color: Colors.grey),
                 ),
               ],
             ),
@@ -589,13 +590,13 @@ class _ConflictsTab extends StatelessWidget {
   String _mapResolution(String r) {
     switch (r) {
       case 'client_wins':
-        return 'البيانات المحلية أحدث — تم الاحتفاظ بها';
+        return tr('البيانات المحلية أحدث — تم الاحتفاظ بها');
       case 'server_wins':
-        return 'السيرفر أحدث — تم التحديث';
+        return tr('السيرفر أحدث — تم التحديث');
       case 'skipped':
-        return 'تعارض — تم التخطي';
+        return tr('تعارض — تم التخطي');
       case 'merged':
-        return 'تم الدمج';
+        return tr('تم الدمج');
       default:
         return r;
     }
@@ -657,7 +658,7 @@ class _DeltaPullTabState extends State<_DeltaPullTab> {
                 ),
                 title: Text(entry.key, style: const TextStyle(fontSize: 13)),
                 trailing: Text(
-                  wm != null ? _formatDate(wm) : 'لم تتم بعد',
+                  wm != null ? _formatDate(wm) : tr('لم تتم بعد'),
                   style: TextStyle(
                     fontSize: 12,
                     color: wm != null ? AppColors.success : Colors.grey,
@@ -690,7 +691,7 @@ class _DeltaPullTabState extends State<_DeltaPullTab> {
                               CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(PhosphorIconsBold.arrowsCounterClockwise),
-                  label: const Text('إعادة ضبط'),
+                  label:  Text(tr('إعادة ضبط')),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.warning,
                     side: const BorderSide(color: AppColors.warning),
@@ -709,7 +710,7 @@ class _DeltaPullTabState extends State<_DeltaPullTab> {
                           setState(() => _busy = false);
                         },
                   icon: const Icon(PhosphorIconsBold.cloudArrowDown),
-                  label: const Text('سحب الآن'),
+                  label:  Text(tr('سحب الآن')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.info,
                   ),

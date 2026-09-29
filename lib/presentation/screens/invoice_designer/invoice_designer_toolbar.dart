@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../../../../data/database/database.dart';
@@ -41,9 +42,9 @@ class InvoiceDesignerToolbar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Text(
-            'محرر القوالب',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+           Text(
+            tr('محرر القوالب'),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(width: 16),
 
@@ -54,7 +55,7 @@ class InvoiceDesignerToolbar extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Chip(
-                label: Text('جاري تعديل: ${currentTemplate!.name}'),
+                label: Text(tr('جاري تعديل: {p0}', {'p0': currentTemplate!.name})),
                 backgroundColor: Colors.blue.shade50,
                 side: BorderSide.none,
               ),
@@ -73,9 +74,9 @@ class InvoiceDesignerToolbar extends StatelessWidget {
                 value: currentLanguage,
                 isDense: true,
                 icon: const Icon(PhosphorIconsBold.translate, size: 16),
-                items: const [
-                  DropdownMenuItem(value: 'ar', child: Text('عربي')),
-                  DropdownMenuItem(value: 'en', child: Text('English')),
+                items:  [
+                  DropdownMenuItem(value: 'ar', child: Text(tr('عربي'))),
+                  const DropdownMenuItem(value: 'en', child: Text('English')),
                 ],
                 onChanged: (val) {
                   if (val != null) onLanguageChanged(val);
@@ -86,21 +87,21 @@ class InvoiceDesignerToolbar extends StatelessWidget {
 
           _buildActionButton(
             icon: PhosphorIconsBold.eye,
-            label: 'معاينة',
+            label: tr('معاينة'),
             onTap: onPreview,
             color: Colors.purple,
           ),
           const SizedBox(width: 8),
           _buildActionButton(
             icon: PhosphorIconsBold.arrowCounterClockwise,
-            label: 'إعادة ضبط',
+            label: tr('إعادة ضبط'),
             onTap: onReset,
             color: Colors.orange,
           ),
           const SizedBox(width: 8),
           _buildActionButton(
             icon: PhosphorIconsBold.floppyDisk,
-            label: 'حفظ القالب',
+            label: tr('حفظ القالب'),
             onTap: onSave,
             color: Colors.green,
             isPrimary: true,

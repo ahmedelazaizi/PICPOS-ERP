@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:ural_erp/core/utils/app_error_handler.dart';
@@ -109,7 +110,7 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: const Text('مردود المبيعات'),
+          title:  Text(tr('مردود المبيعات')),
           leading: IconButton(
             icon: const Icon(PhosphorIconsBold.arrowRight),
             // Issue 19 — calling `Navigator.pop(context)` here used to pop
@@ -138,9 +139,9 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                 color: Colors.white,
                 size: 18,
               ),
-              label: const Text(
-                'سجل المرتجعات',
-                style: TextStyle(color: Colors.white),
+              label:  Text(
+                tr('سجل المرتجعات'),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
           ],
@@ -157,9 +158,9 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SyncPendingBanner(
+                           SyncPendingBanner(
                             tableName: 'sales_returns',
-                            label: 'مرتجع مبيعات',
+                            label: tr('مرتجع مبيعات'),
                           ),
                           // Date filter row
                           Card(
@@ -168,17 +169,17 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Row(
+                                   Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         PhosphorIconsBold.funnel,
                                         size: 18,
                                         color: AppColors.primary,
                                       ),
-                                      SizedBox(width: 8),
+                                      const SizedBox(width: 8),
                                       Text(
-                                        'تصفية بالتاريخ',
-                                        style: TextStyle(
+                                        tr('تصفية بالتاريخ'),
+                                        style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -213,7 +214,7 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Text(
-                                                  'من: ${state.fromDate.day}/${state.fromDate.month}/${state.fromDate.year}',
+                                                  tr('من: {p0}/{p1}/{p2}', {'p0': state.fromDate.day, 'p1': state.fromDate.month, 'p2': state.fromDate.year}),
                                                 ),
                                               ],
                                             ),
@@ -247,7 +248,7 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Text(
-                                                  'إلى: ${state.toDate.day}/${state.toDate.month}/${state.toDate.year}',
+                                                  tr('إلى: {p0}/{p1}/{p2}', {'p0': state.toDate.day, 'p1': state.toDate.month, 'p2': state.toDate.year}),
                                                 ),
                                               ],
                                             ),
@@ -260,7 +261,7 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                                   TextField(
                                     controller: _invoiceSearchController,
                                     decoration: InputDecoration(
-                                      hintText: 'البحث برقم الفاتورة...',
+                                      hintText: tr('البحث برقم الفاتورة...'),
                                       prefixIcon: const Icon(
                                         PhosphorIconsBold.magnifyingGlass,
                                         size: 18,
@@ -293,16 +294,16 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                                 color: AppColors.primary,
                               ),
                               const SizedBox(width: 8),
-                              const Text(
-                                'الفواتير',
-                                style: TextStyle(
+                               Text(
+                                tr('الفواتير'),
+                                style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),
                               ),
                               const Spacer(),
                               Text(
-                                '${state.invoices.length} فاتورة',
+                                tr('{p0} فاتورة', {'p0': state.invoices.length}),
                                 style: const TextStyle(
                                   color: AppColors.textMuted,
                                 ),
@@ -339,9 +340,9 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                                   ),
                                 ),
                                 const SizedBox(height: 24),
-                                const Text(
-                                  'اختر فاتورة من القائمة لعرض تفاصيلها',
-                                  style: TextStyle(
+                                 Text(
+                                  tr('اختر فاتورة من القائمة لعرض تفاصيلها'),
+                                  style: const TextStyle(
                                     color: AppColors.textMuted,
                                     fontSize: 16,
                                   ),
@@ -393,9 +394,9 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                   color: AppColors.textMuted.withValues(alpha: 0.3),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'لا توجد فواتير في هذه الفترة',
-                  style: TextStyle(color: AppColors.textMuted),
+                 Text(
+                  tr('لا توجد فواتير في هذه الفترة'),
+                  style: const TextStyle(color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -442,7 +443,7 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                   ),
                 ),
                 subtitle: Text(
-                  '${state.customerNames[invoice.customerId] ?? 'عميل نقدي'} • ${invoice.invoiceDate.day}/${invoice.invoiceDate.month}',
+                  tr('{p0} • {p1}/{p2}', {'p0': state.customerNames[invoice.customerId] ?? 'عميل نقدي', 'p1': invoice.invoiceDate.day, 'p2': invoice.invoiceDate.month}),
                   style: const TextStyle(fontSize: 12),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -502,13 +503,13 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
   String _getStatusLabel(String status) {
     switch (status) {
       case 'completed':
-        return 'مكتملة';
+        return tr('مكتملة');
       case 'returned':
-        return 'مرتجعة';
+        return tr('مرتجعة');
       case 'partial_return':
-        return 'مرتجع جزئي';
+        return tr('مرتجع جزئي');
       case 'voided':
-        return 'ملغاة';
+        return tr('ملغاة');
       default:
         return 'معلقة';
     }

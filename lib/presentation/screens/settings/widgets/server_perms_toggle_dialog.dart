@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // Spec 078 — تقريرُ جاهزيّة صلاحيّات الخادم.
 //
 // ── لماذا لم يعد ديالوجَ تبديل ───────────────────────────────────────────
@@ -76,8 +77,8 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(count == 0
-                ? 'لم يكن هناك صلاحيات ناقصة لمنحها'
-                : 'تم منح $count صلاحية للأدوار المعروفة'),
+                ? tr('لم يكن هناك صلاحيات ناقصة لمنحها')
+                : tr('تم منح {count} صلاحية للأدوار المعروفة', {'count': count})),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -99,7 +100,7 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
   Widget _buildReportMode() {
     final report = _report;
     return AlertDialog(
-      title: const Text('جاهزية صلاحيات السيرفر'),
+      title:  Text(tr('جاهزية صلاحيات السيرفر')),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 520),
         child: SingleChildScrollView(
@@ -109,9 +110,9 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
             children: [
               _warningBanner(),
               const SizedBox(height: 16),
-              const Text(
-                'فحص جاهزية الأدوار',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+               Text(
+                tr('فحص جاهزية الأدوار'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
               const SizedBox(height: 8),
               if (_loading)
@@ -130,7 +131,7 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(false),
-          child: const Text('إغلاق'),
+          child:  Text(tr('إغلاق')),
         ),
         FilledButton(
           onPressed: _saving ? null : _runPreflight,
@@ -140,7 +141,7 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('إعادة الفحص'),
+              :  Text(tr('إعادة الفحص')),
         ),
       ],
     );
@@ -197,14 +198,14 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
         color: AppColors.success.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Row(
+      child:  Row(
         children: [
-          Icon(PhosphorIconsBold.checkCircle, color: AppColors.success),
-          SizedBox(width: 8),
+          const Icon(PhosphorIconsBold.checkCircle, color: AppColors.success),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'كل الأدوار المعروفة جاهزة للتشغيل',
-              style: TextStyle(color: AppColors.success),
+              tr('كل الأدوار المعروفة جاهزة للتشغيل'),
+              style: const TextStyle(color: AppColors.success),
             ),
           ),
         ],
@@ -251,7 +252,7 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
                 Padding(
                   padding: const EdgeInsetsDirectional.only(start: 12),
                   child: Text(
-                    e.value.join('، '),
+                    e.value.join(tr('، ')),
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ),
@@ -263,7 +264,7 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
         OutlinedButton.icon(
           onPressed: _saving ? null : _grantDefaults,
           icon: const Icon(PhosphorIconsBold.shieldPlus, size: 18),
-          label: const Text('امنح الصلاحيات الناقصة تلقائياً (الأدوار المعروفة)'),
+          label:  Text(tr('امنح الصلاحيات الناقصة تلقائياً (الأدوار المعروفة)')),
         ),
       ],
     );
@@ -279,13 +280,13 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+           Row(
             children: [
-              Icon(PhosphorIconsBold.info, color: AppColors.info, size: 18),
-              SizedBox(width: 6),
+              const Icon(PhosphorIconsBold.info, color: AppColors.info, size: 18),
+              const SizedBox(width: 6),
               Text(
-                'أدوار مخصّصة (يلزم منحها الصلاحيات يدوياً)',
-                style: TextStyle(
+                tr('أدوار مخصّصة (يلزم منحها الصلاحيات يدوياً)'),
+                style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   color: AppColors.info,
                 ),
@@ -296,7 +297,7 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
           Padding(
             padding: const EdgeInsetsDirectional.only(start: 24),
             child: Text(
-              customRoles.join('، '),
+              customRoles.join(tr('، ')),
               style: const TextStyle(fontSize: 12),
             ),
           ),

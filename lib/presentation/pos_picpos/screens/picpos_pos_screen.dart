@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -351,14 +352,14 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
           if (locked)
             Expanded(
               child: Text(
-                'عرض المنطقة مقفول من الإعدادات',
+                tr('عرض المنطقة مقفول من الإعدادات'),
                 style: PicPosText.l(context, 10),
               ),
             )
           else
             for (final r in const [0.30, 0.40, 0.50, 0.60])
               _MiniToggle(
-                label: '${(r * 100).round()}٪',
+                label: tr('{p0}٪', {'p0': (r * 100).round()}),
                 active: (_invoiceRatio - r).abs() < 0.02,
                 onTap: () => setState(() => _invoiceRatio = r),
               ),
@@ -528,16 +529,16 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
     return Positioned.fill(
       child: ColoredBox(
         color: Colors.black.withValues(alpha: 0.35),
-        child: const Center(
+        child:  Center(
           child: Card(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('جاري المعالجة...'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(tr('جاري المعالجة...')),
                 ],
               ),
             ),
@@ -570,7 +571,7 @@ class _OversellBadge extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: 5),
       child: Tooltip(
-        message: 'مسموح بيع أصناف غير متوفرة في هذه الفاتورة — اضغط للإلغاء',
+        message: tr('مسموح بيع أصناف غير متوفرة في هذه الفاتورة — اضغط للإلغاء'),
         child: InkWell(
           onTap: () =>
               ref.read(cartControllerProvider.notifier).setAllowOversell(false),
@@ -589,7 +590,7 @@ class _OversellBadge extends ConsumerWidget {
                 const Icon(PhosphorIconsBold.warningDiamond,
                     size: 12, color: AppColors.warning),
                 const SizedBox(width: 4),
-                Text('بيع بالسالب',
+                Text(tr('بيع بالسالب'),
                     style: PicPosText.v(context, 10, color: AppColors.warning)),
                 const SizedBox(width: 3),
                 const Icon(PhosphorIconsBold.x,
@@ -674,7 +675,7 @@ class _ClearCartButton extends ConsumerWidget {
                   PhosphorIconsBold.trash, size: 13, color: AppColors.error),
               const SizedBox(width: 4),
               Text(
-                'مسح الكل',
+                tr('مسح الكل'),
                 style: PicPosText.v(context, 10, color: AppColors.error),
               ),
             ],

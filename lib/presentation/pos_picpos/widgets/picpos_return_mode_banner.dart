@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -34,7 +35,7 @@ class PicPosReturnModeBanner extends StatelessWidget {
           const Icon(PhosphorIconsBold.arrowUUpLeft,
               size: 16, color: AppColors.error),
           const SizedBox(width: 8),
-          Text('وضع المرتجع',
+          Text(tr('وضع المرتجع'),
               style: PicPosText.v(context, 13, color: AppColors.error)),
           const SizedBox(width: 8),
           Expanded(

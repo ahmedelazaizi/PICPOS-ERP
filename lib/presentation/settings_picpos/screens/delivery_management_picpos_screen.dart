@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -49,8 +50,8 @@ class _DeliveryManagementPicposScreenState
   @override
   Widget build(BuildContext context) {
     return PicPosScreenScaffold(
-      title: 'التوصيل',
-      subtitle: 'الإعدادات ← التكاملات والخدمات',
+      title: tr('التوصيل'),
+      subtitle: tr('الإعدادات ← التكاملات والخدمات'),
       icon: PhosphorIconsBold.moped,
       headerActions: [
         ValueListenableBuilder<bool>(
@@ -61,7 +62,7 @@ class _DeliveryManagementPicposScreenState
                   child: ElevatedButton.icon(
                     onPressed: _addCourierHandle.invoke,
                     icon: const Icon(PhosphorIconsBold.plus, size: 15),
-                    label: const Text('سائق جديد'),
+                    label:  Text(tr('سائق جديد')),
                   ),
                 )
               : const SizedBox.shrink(),
@@ -74,12 +75,12 @@ class _DeliveryManagementPicposScreenState
           labelColor: AppColors.primary,
           indicatorColor: AppColors.primary,
           indicatorWeight: 3,
-          tabs: const [
+          tabs:  [
             Tab(
-              icon: Icon(PhosphorIconsBold.buildings),
-              text: 'شركات التوصيل',
+              icon: const Icon(PhosphorIconsBold.buildings),
+              text: tr('شركات التوصيل'),
             ),
-            Tab(icon: Icon(PhosphorIconsBold.moped), text: 'المناديب'),
+            Tab(icon: const Icon(PhosphorIconsBold.moped), text: tr('المناديب')),
           ],
         ),
       ),

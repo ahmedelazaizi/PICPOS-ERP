@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../data/providers/providers.dart';
@@ -28,7 +29,7 @@ class _QuickCostCenterDialogState extends AppFormDialogState<int?, QuickCostCent
   }
 
   @override
-  String get dialogTitle => 'إنشاء مركز تكلفة سريع';
+  String get dialogTitle => tr('إنشاء مركز تكلفة سريع');
 
   @override
   IconData get dialogIcon => PhosphorIconsBold.target;
@@ -40,18 +41,18 @@ class _QuickCostCenterDialogState extends AppFormDialogState<int?, QuickCostCent
       children: [
         TextField(
           controller: codeController,
-          decoration: const InputDecoration(
-            labelText: 'الرمز',
-            prefixIcon: Icon(PhosphorIconsBold.hash),
+          decoration:  InputDecoration(
+            labelText: tr('الرمز'),
+            prefixIcon: const Icon(PhosphorIconsBold.hash),
           ),
         ),
         const SizedBox(height: 16),
         TextField(
           controller: nameController,
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'اسم مركز التكلفة *',
-            prefixIcon: Icon(PhosphorIconsBold.textT),
+          decoration:  InputDecoration(
+            labelText: tr('اسم مركز التكلفة *'),
+            prefixIcon: const Icon(PhosphorIconsBold.textT),
           ),
         ),
       ],

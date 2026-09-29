@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'dart:ui' as ui;
@@ -31,13 +32,13 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
         children: [
           Row(
             children: [
-              const Text('قائمة المستخدمين', style: AppTypography.h3),
+               Text(tr('قائمة المستخدمين'), style: AppTypography.h3),
               const Spacer(),
               rolesAsync.when(
                 data: (roles) => ElevatedButton.icon(
                   onPressed: () => _showAddUserDialog(roles),
                   icon: const Icon(PhosphorIconsBold.plus, size: 16),
-                  label: const Text('إضافة'),
+                  label:  Text(tr('إضافة')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
                   ),
@@ -52,7 +53,7 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
             child: usersAsync.when(
               data: (list) {
                 if (list.isEmpty) {
-                  return const Center(child: Text('لا يوجد مستخدمين'));
+                  return  Center(child: Text(tr('لا يوجد مستخدمين')));
                 }
                 return ListView.builder(
                   itemCount: list.length,
@@ -83,19 +84,19 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                             Text(u.username, style: AppTypography.bodySmall),
                             const SizedBox(width: 8),
                             _buildBadge(
-                              role?.name ?? 'بدون دور',
+                              role?.name ?? tr('بدون دور'),
                               _getRoleColor(role?.name),
                             ),
                             if (u.maxDiscountPercent != null) ...[
                               const SizedBox(width: 4),
                               _buildBadge(
-                                'خصم ${u.maxDiscountPercent!.toStringAsFixed(0)}${u.discountLimitIsPercent ? '%' : ' ${AppConstants.currencySymbol}'}',
+                                tr('خصم {p0}{p1}', {'p0': u.maxDiscountPercent!.toStringAsFixed(0), 'p1': u.discountLimitIsPercent ? '%' : ' ${AppConstants.currencySymbol}'}),
                                 AppColors.warning,
                               ),
                             ],
                             if (!u.isActive) ...[
                               const SizedBox(width: 4),
-                              _buildBadge('غير نشط', AppColors.error),
+                              _buildBadge(tr('غير نشط'), AppColors.error),
                             ],
                           ],
                         ),
@@ -112,13 +113,13 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                                 (roles) =>
                                     _showEditUserDialog(userWithRole, roles),
                               ),
-                              tooltip: 'تعديل',
+                              tooltip: tr('تعديل'),
                             ),
                             IconButton(
                               icon: const Icon(PhosphorIconsBold.key, size: 18),
                               color: AppColors.warning,
                               onPressed: () => _showChangePasswordDialog(u),
-                              tooltip: 'كلمة المرور',
+                              tooltip: tr('كلمة المرور'),
                             ),
                             if (u.username != 'admin')
                               IconButton(
@@ -132,7 +133,7 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                                     ? AppColors.error
                                     : AppColors.success,
                                 onPressed: () => _toggleUserStatus(u),
-                                tooltip: u.isActive ? 'تعطيل' : 'تفعيل',
+                                tooltip: u.isActive ? tr('تعطيل') : tr('تفعيل'),
                               ),
                           ],
                         ),
@@ -142,7 +143,7 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('خطأ: $e')),
+              error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
             ),
           ),
         ],
@@ -189,11 +190,11 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
         builder: (context, setDialogState) => Directionality(
           textDirection: ui.TextDirection.rtl,
           child: AlertDialog(
-            title: const Row(
+            title:  Row(
               children: [
-                Icon(PhosphorIconsBold.userPlus, color: AppColors.success),
-                SizedBox(width: 8),
-                Text('إضافة مستخدم جديد'),
+                const Icon(PhosphorIconsBold.userPlus, color: AppColors.success),
+                const SizedBox(width: 8),
+                Text(tr('إضافة مستخدم جديد')),
               ],
             ),
             content: SizedBox(
@@ -204,38 +205,38 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                   children: [
                     TextField(
                       controller: usernameController,
-                      decoration: const InputDecoration(
-                        labelText: 'اسم المستخدم *',
+                      decoration:  InputDecoration(
+                        labelText: tr('اسم المستخدم *'),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: displayNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'الاسم الظاهر *',
+                      decoration:  InputDecoration(
+                        labelText: tr('الاسم الظاهر *'),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'كلمة المرور *',
+                      decoration:  InputDecoration(
+                        labelText: tr('كلمة المرور *'),
                       ),
                       obscureText: true,
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: confirmPasswordController,
-                      decoration: const InputDecoration(
-                        labelText: 'تأكيد كلمة المرور *',
+                      decoration:  InputDecoration(
+                        labelText: tr('تأكيد كلمة المرور *'),
                       ),
                       obscureText: true,
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<Role>(
                       initialValue: selectedRole,
-                      decoration: const InputDecoration(
-                        labelText: 'الدور / الصلاحية',
+                      decoration:  InputDecoration(
+                        labelText: tr('الدور / الصلاحية'),
                       ),
                       items: roles
                           .map(
@@ -252,8 +253,8 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                             controller: maxDiscountController,
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
-                              labelText: 'حد الخصم الأقصى',
-                              hintText: 'اتركه فارغ = بلا حد',
+                              labelText: tr('حد الخصم الأقصى'),
+                              hintText: tr('اتركه فارغ = بلا حد'),
                               suffixText: isPercent
                                   ? '%'
                                   : AppConstants.currencySymbol,
@@ -282,24 +283,24 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: cardCodeController,
-                      decoration: const InputDecoration(
-                        labelText: 'كود كارت MSR',
-                        hintText: 'مرر الكارت للقراءة التلقائية',
-                        prefixIcon: Icon(PhosphorIconsBold.creditCard),
+                      decoration:  InputDecoration(
+                        labelText: tr('كود كارت MSR'),
+                        hintText: tr('مرر الكارت للقراءة التلقائية'),
+                        prefixIcon: const Icon(PhosphorIconsBold.creditCard),
                       ),
                     ),
                     const SizedBox(height: 12),
                     // #10: Default screen selector
                     DropdownButtonFormField<String>(
                       initialValue: selectedScreen,
-                      decoration: const InputDecoration(
-                        labelText: 'الشاشة الافتراضية',
-                        prefixIcon: Icon(PhosphorIconsBold.monitor, size: 18),
+                      decoration:  InputDecoration(
+                        labelText: tr('الشاشة الافتراضية'),
+                        prefixIcon: const Icon(PhosphorIconsBold.monitor, size: 18),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'pos', child: Text('البيع السريع')),
-                        DropdownMenuItem(value: 'dashboard', child: Text('لوحة التحكم')),
-                        DropdownMenuItem(value: 'tables', child: Text('الطاولات')),
+                      items:  [
+                        DropdownMenuItem(value: 'pos', child: Text(tr('البيع السريع'))),
+                        DropdownMenuItem(value: 'dashboard', child: Text(tr('لوحة التحكم'))),
+                        DropdownMenuItem(value: 'tables', child: Text(tr('الطاولات'))),
                       ],
                       onChanged: (v) => setDialogState(() => selectedScreen = v ?? 'pos'),
                     ),
@@ -310,22 +311,22 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: saving ? null : () async {
                   if (usernameController.text.isEmpty ||
                       passwordController.text.isEmpty) {
-                    _showError('يرجى ملء الحقول المطلوبة');
+                    _showError(tr('يرجى ملء الحقول المطلوبة'));
                     return;
                   }
                   if (passwordController.text !=
                       confirmPasswordController.text) {
-                    _showError('كلمات المرور غير متطابقة');
+                    _showError(tr('كلمات المرور غير متطابقة'));
                     return;
                   }
                   if (selectedRole == null) {
-                    _showError('يرجى اختيار دور للمستخدم');
+                    _showError(tr('يرجى اختيار دور للمستخدم'));
                     return;
                   }
                   setDialogState(() => saving = true);
@@ -350,22 +351,22 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                     final auth = ref.read(authProvider);
                     await ref.read(auditRepositoryProvider).logActivity(
                       userId: auth.user?.id,
-                      userName: auth.user?.displayName ?? 'مجهول',
+                      userName: auth.user?.displayName ?? tr('مجهول'),
                       action: 'CREATE_USER',
                       entityType: 'user',
-                      description: 'إنشاء مستخدم جديد: ${usernameController.text} بدور ${selectedRole!.name}',
+                      description: tr('إنشاء مستخدم جديد: {p0} بدور {p1}', {'p0': usernameController.text, 'p1': selectedRole!.name}),
                     );
                     if (context.mounted) {
                       Navigator.pop(context);
                       AppToast.show(
                         context,
-                        'تم الإضافة بنجاح',
+                        tr('تم الإضافة بنجاح'),
                         type: ToastType.success,
                       );
                     }
                   } catch (e) {
                     setDialogState(() => saving = false);
-                    _showError('خطأ: $e');
+                    _showError(tr('خطأ: {e}', {'e': e}));
                   }
                 },
                 child: saving
@@ -374,7 +375,7 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('حفظ'),
+                    :  Text(tr('حفظ')),
               ),
             ],
           ),
@@ -404,21 +405,21 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
         builder: (context, setDialogState) => Directionality(
           textDirection: ui.TextDirection.rtl,
           child: AlertDialog(
-            title: Text('تعديل: ${user.username}'),
+            title: Text(tr('تعديل: {p0}', {'p0': user.username})),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: displayNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'الاسم الظاهر *',
+                  decoration:  InputDecoration(
+                    labelText: tr('الاسم الظاهر *'),
                   ),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<Role>(
                   initialValue: selectedRole,
-                  decoration: const InputDecoration(
-                    labelText: 'الدور / الصلاحية',
+                  decoration:  InputDecoration(
+                    labelText: tr('الدور / الصلاحية'),
                   ),
                   items: roles
                       .map(
@@ -435,8 +436,8 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                         controller: maxDiscountController,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'حد الخصم الأقصى',
-                          hintText: 'اتركه فارغ = بلا حد',
+                          labelText: tr('حد الخصم الأقصى'),
+                          hintText: tr('اتركه فارغ = بلا حد'),
                           suffixText: isPercent ? '%' : AppConstants.currencySymbol,
                         ),
                       ),
@@ -460,24 +461,24 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: cardCodeController,
-                  decoration: const InputDecoration(
-                    labelText: 'كود كارت MSR',
-                    hintText: 'مرر الكارت للقراءة التلقائية',
-                    prefixIcon: Icon(PhosphorIconsBold.creditCard),
+                  decoration:  InputDecoration(
+                    labelText: tr('كود كارت MSR'),
+                    hintText: tr('مرر الكارت للقراءة التلقائية'),
+                    prefixIcon: const Icon(PhosphorIconsBold.creditCard),
                   ),
                 ),
                 const SizedBox(height: 12),
                 // #10: Default screen selector
                 DropdownButtonFormField<String>(
                   initialValue: selectedScreen,
-                  decoration: const InputDecoration(
-                    labelText: 'الشاشة الافتراضية',
-                    prefixIcon: Icon(PhosphorIconsBold.monitor, size: 18),
+                  decoration:  InputDecoration(
+                    labelText: tr('الشاشة الافتراضية'),
+                    prefixIcon: const Icon(PhosphorIconsBold.monitor, size: 18),
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 'pos', child: Text('البيع السريع')),
-                    DropdownMenuItem(value: 'dashboard', child: Text('لوحة التحكم')),
-                    DropdownMenuItem(value: 'tables', child: Text('الطاولات')),
+                  items:  [
+                    DropdownMenuItem(value: 'pos', child: Text(tr('البيع السريع'))),
+                    DropdownMenuItem(value: 'dashboard', child: Text(tr('لوحة التحكم'))),
+                    DropdownMenuItem(value: 'tables', child: Text(tr('الطاولات'))),
                   ],
                   onChanged: (v) => setDialogState(() => selectedScreen = v ?? 'pos'),
                 ),
@@ -486,7 +487,7 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: saving ? null : () async {
@@ -539,18 +540,18 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                     final auth = ref.read(authProvider);
                     await ref.read(auditRepositoryProvider).logActivity(
                       userId: auth.user?.id,
-                      userName: auth.user?.displayName ?? 'مجهول',
+                      userName: auth.user?.displayName ?? tr('مجهول'),
                       action: 'UPDATE_USER',
                       entityType: 'user',
                       entityId: user.id,
-                      description: 'تعديل بيانات المستخدم: ${user.username}',
+                      description: tr('تعديل بيانات المستخدم: {p0}', {'p0': user.username}),
                       oldValue: 'displayName=${user.displayName}, roleId=${user.roleId}',
                       newValue: 'displayName=${displayNameController.text}, roleId=${selectedRole?.id}',
                     );
                     if (context.mounted) Navigator.pop(context);
                   } catch (e) {
                     setDialogState(() => saving = false);
-                    _showError('خطأ: $e');
+                    _showError(tr('خطأ: {e}', {'e': e}));
                   }
                 },
                 child: saving
@@ -559,7 +560,7 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('حفظ'),
+                    :  Text(tr('حفظ')),
               ),
             ],
           ),
@@ -577,21 +578,21 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
         builder: (context, setDialogState) => Directionality(
           textDirection: ui.TextDirection.rtl,
           child: AlertDialog(
-            title: Text('تغيير كلمة المرور: ${user.username}'),
+            title: Text(tr('تغيير كلمة المرور: {p0}', {'p0': user.username})),
             content: TextField(
               controller: pass,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'كلمة المرور الجديدة'),
+              decoration:  InputDecoration(labelText: tr('كلمة المرور الجديدة')),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: saving ? null : () async {
                   if (pass.text.isEmpty) {
-                    _showError('يرجى إدخال كلمة المرور');
+                    _showError(tr('يرجى إدخال كلمة المرور'));
                     return;
                   }
                   setDialogState(() => saving = true);
@@ -605,17 +606,17 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                     final auth = ref.read(authProvider);
                     await ref.read(auditRepositoryProvider).logActivity(
                       userId: auth.user?.id,
-                      userName: auth.user?.displayName ?? 'مجهول',
+                      userName: auth.user?.displayName ?? tr('مجهول'),
                       action: 'CHANGE_PASSWORD',
                       entityType: 'user',
                       entityId: user.id,
-                      description: 'تغيير كلمة مرور المستخدم: ${user.username}',
+                      description: tr('تغيير كلمة مرور المستخدم: {p0}', {'p0': user.username}),
                     );
                     if (context.mounted) {
                       Navigator.pop(context);
                       AppToast.show(
                         context,
-                        'تم تغيير كلمة المرور بنجاح',
+                        tr('تم تغيير كلمة المرور بنجاح'),
                         type: ToastType.success,
                       );
                     }
@@ -630,7 +631,7 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('تغيير'),
+                    :  Text(tr('تغيير')),
               ),
             ],
           ),
@@ -646,11 +647,11 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
     final auth = ref.read(authProvider);
     await ref.read(auditRepositoryProvider).logActivity(
       userId: auth.user?.id,
-      userName: auth.user?.displayName ?? 'مجهول',
+      userName: auth.user?.displayName ?? tr('مجهول'),
       action: user.isActive ? 'DEACTIVATE_USER' : 'ACTIVATE_USER',
       entityType: 'user',
       entityId: user.id,
-      description: '${user.isActive ? 'تعطيل' : 'تفعيل'} المستخدم: ${user.username}',
+      description: tr('{p0} المستخدم: {p1}', {'p0': user.isActive ? 'تعطيل' : 'تفعيل', 'p1': user.username}),
     );
   }
 
@@ -680,11 +681,11 @@ void showUsersManagementDialog(BuildContext context) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Row(
+      title:  Row(
         children: [
-          Icon(PhosphorIconsBold.users, color: AppColors.primary),
-          SizedBox(width: 8),
-          Text('إدارة المستخدمين'),
+          const Icon(PhosphorIconsBold.users, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Text(tr('إدارة المستخدمين')),
         ],
       ),
       content: const SizedBox(
@@ -695,7 +696,7 @@ void showUsersManagementDialog(BuildContext context) {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إغلاق'),
+          child:  Text(tr('إغلاق')),
         ),
       ],
     ),

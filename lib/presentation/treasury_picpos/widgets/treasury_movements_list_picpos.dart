@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // قائمةُ «آخر الحركات» بهويّة PicPos — **فوركٌ بقرار المالك 2026-08-22**.
 //
 // المصدر: `treasury/widgets/treasury_transactions_list.dart`، ويبقى بلا
@@ -63,8 +64,8 @@ String formatMovementTime(DateTime at, DateTime now) {
   final d0 = DateTime(now.year, now.month, now.day);
   final d1 = DateTime(at.year, at.month, at.day);
   final days = d0.difference(d1).inDays;
-  if (days == 0) return 'اليوم $hm';
-  if (days == 1) return 'أمس $hm';
+  if (days == 0) return tr('اليوم {hm}', {'hm': hm});
+  if (days == 1) return tr('أمس {hm}', {'hm': hm});
   return '${DateFormat('d/M').format(at)} $hm';
 }
 
@@ -153,11 +154,11 @@ class _TreasuryMovementsListPicposState
       );
 
       if (mounted) {
-        AppToast.show(context, 'جاري الطباعة...', type: ToastType.success);
+        AppToast.show(context, tr('جاري الطباعة...'), type: ToastType.success);
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -209,7 +210,7 @@ class _TreasuryMovementsListPicposState
             child: Center(
               child: Text(
                 widget.searchQuery.isNotEmpty
-                    ? 'لا توجد سندات مطابقة'
+                    ? tr('لا توجد سندات مطابقة')
                     : AppLocalizations.of(context)!.noTransactions,
                 style: const TextStyle(color: AppColors.textMuted),
               ),
@@ -270,14 +271,14 @@ class _MovementsFrame extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Text(
-                  'آخر الحركات',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                 Text(
+                  tr('آخر الحركات'),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                 ),
                 const Spacer(),
                 if (count != null)
                   Text(
-                    '$count حركة',
+                    tr('{count} حركة', {'count': count}),
                     style: const TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w800,
@@ -423,7 +424,7 @@ class TreasuryMovementRowPicpos extends StatelessWidget {
               icon: const Icon(PhosphorIconsBold.printer, size: 18),
               color: AppColors.textMuted,
               visualDensity: VisualDensity.compact,
-              tooltip: 'طباعة السند',
+              tooltip: tr('طباعة السند'),
               onPressed: onPrint,
             ),
         ],

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -50,7 +51,7 @@ class _PosOpeningBalanceDialogState extends State<PosOpeningBalanceDialog> {
               child: const Icon(PhosphorIconsBold.cashRegister, color: AppColors.primary),
             ),
             const SizedBox(width: 12),
-            const Text('افتتاح وردية جديدة'),
+             Text(tr('افتتاح وردية جديدة')),
           ],
         ),
         content: SizedBox(
@@ -71,7 +72,7 @@ class _PosOpeningBalanceDialogState extends State<PosOpeningBalanceDialog> {
                     const Icon(PhosphorIconsBold.user, size: 16, color: AppColors.info),
                     const SizedBox(width: 8),
                     Text(
-                      'الكاشير: ${widget.userName}',
+                      tr('الكاشير: {p0}', {'p0': widget.userName}),
                       style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -95,9 +96,9 @@ class _PosOpeningBalanceDialogState extends State<PosOpeningBalanceDialog> {
                 ),
               ],
               const SizedBox(height: 16),
-              const Text(
-                'أدخل الرصيد الافتتاحي للصندوق:',
-                style: TextStyle(fontWeight: FontWeight.bold),
+               Text(
+                tr('أدخل الرصيد الافتتاحي للصندوق:'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -118,9 +119,9 @@ class _PosOpeningBalanceDialogState extends State<PosOpeningBalanceDialog> {
                 onSubmitted: (_) => _confirm(),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'يمكنك إدخال 0 إذا لم يكن هناك رصيد افتتاحي',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+               Text(
+                tr('يمكنك إدخال 0 إذا لم يكن هناك رصيد افتتاحي'),
+                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
             ],
           ),
@@ -128,12 +129,12 @@ class _PosOpeningBalanceDialogState extends State<PosOpeningBalanceDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, null),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton.icon(
             onPressed: _confirm,
             icon: const Icon(PhosphorIconsBold.play),
-            label: const Text('بدء الوردية'),
+            label:  Text(tr('بدء الوردية')),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

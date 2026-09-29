@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,7 +35,7 @@ class PayrollTab extends ConsumerWidget {
               const Icon(PhosphorIconsBold.wallet, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(
-                'رواتب: ${DateFormat('MMMM yyyy', 'ar').format(state.selectedMonth)}',
+                tr('رواتب: {p0}', {'p0': DateFormat('MMMM yyyy', 'ar').format(state.selectedMonth)}),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -57,7 +58,7 @@ class PayrollTab extends ConsumerWidget {
           child: ref.watch(hrEmployeesProvider).when(
             data: (employees) {
               if (employees.isEmpty) {
-                return const Center(child: Text('لا يوجد موظفين حالياً'));
+                return  Center(child: Text(tr('لا يوجد موظفين حالياً')));
               }
 
               return ListView.separated(
@@ -79,7 +80,7 @@ class PayrollTab extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               child: ShimmerLoading.list(itemCount: 6),
             ),
-            error: (e, s) => Center(child: Text('خطأ: $e', style: const TextStyle(color: AppColors.error))),
+            error: (e, s) => Center(child: Text(tr('خطأ: {e}', {'e': e}), style: const TextStyle(color: AppColors.error))),
           ),
         ),
       ],
@@ -123,8 +124,8 @@ class _PayrollCard extends ConsumerWidget {
                   ],
                 ),
                 const Divider(),
-                _calcRow('الراتب الأساسي', calc.baseSalary),
-                _calcRow('قيمة اليومية', calc.dailyRate, color: Colors.blueGrey),
+                _calcRow(tr('الراتب الأساسي'), calc.baseSalary),
+                _calcRow(tr('قيمة اليومية'), calc.dailyRate, color: Colors.blueGrey),
                 // الصفُّ يتبع الموديل. للشهري: الراتبُ هو الأساس ويُخصم منه
                 // الغيابُ المسجَّل، فعرضُ «الأيام المدفوعة × الأجر اليومي» كان
                 // يشرح حساباً لا يجري.
@@ -134,7 +135,7 @@ class _PayrollCard extends ConsumerWidget {
                 if (calc.employee.salaryType == 'monthly')
                   ...[
                     if (calc.unpaidDays > 0)
-                      _calcRow('خصم غياب (${calc.unpaidDays} يوم)',
+                      _calcRow(tr('خصم غياب ({p0} يوم)', {'p0': calc.unpaidDays}),
                           -calc.dailyRate * calc.unpaidDays,
                           color: AppColors.error),
                   ]
@@ -146,33 +147,33 @@ class _PayrollCard extends ConsumerWidget {
                   // `calculateNetSalary`)، فلا حاجةَ لتعريض أجر الساعة حقلاً
                   // مستقلاً.
                   _calcRow(
-                      'الساعات (${calc.hoursWorked.toStringAsFixed(1)}) × أجر الساعة',
+                      tr('الساعات ({p0}) × أجر الساعة', {'p0': calc.hoursWorked.toStringAsFixed(1)}),
                       calc.grossPay - calc.overtimeAmount,
                       color: Colors.green)
                 else
-                  _calcRow('الأيام المدفوعة (${calc.daysAttended})',
+                  _calcRow(tr('الأيام المدفوعة ({p0})', {'p0': calc.daysAttended}),
                       calc.dailyRate * calc.daysAttended,
                       color: Colors.green),
-                _calcRow('الإضافي', calc.overtimeAmount, color: Colors.green),
+                _calcRow(tr('الإضافي'), calc.overtimeAmount, color: Colors.green),
                 // B3 — المسوَّى من هذه القسيمة لا المُصرَف كلَّه. سلفةُ ٥٠٠٠ على
                 // مستحقٍّ ٢٨٠٠ تُسوّي ٢٨٠٠ فقط، وعرضُ ٥٠٠٠ خصماً بجانب صافٍ
                 // بصفرٍ أرقامٌ لا تجتمع: ٢٨٠٠ − ٥٠٠٠ ≠ ٠.
-                _calcRow('السلف المسوّاة', -calc.advancesSettled, color: AppColors.error),
+                _calcRow(tr('السلف المسوّاة'), -calc.advancesSettled, color: AppColors.error),
                 if (calc.totalAdvances - calc.advancesSettled > 0.01)
-                  _calcRow('سلف مؤجّلة للشهر القادم',
+                  _calcRow(tr('سلف مؤجّلة للشهر القادم'),
                       calc.totalAdvances - calc.advancesSettled,
                       color: Colors.orange),
-                _calcRow('الخصومات', -calc.totalDeductions, color: AppColors.error),
+                _calcRow(tr('الخصومات'), -calc.totalDeductions, color: AppColors.error),
                 const Divider(),
-                _calcRow('الإجمالي المستحق', calc.grossPay, isBold: true, color: Colors.indigo),
-                _calcRow('الصافي للصرف', calc.netSalary, isBold: true, color: Colors.blue),
+                _calcRow(tr('الإجمالي المستحق'), calc.grossPay, isBold: true, color: Colors.indigo),
+                _calcRow(tr('الصافي للصرف'), calc.netSalary, isBold: true, color: Colors.blue),
               ],
             ),
           ),
         );
       },
       loading: () => const Card(child: ListTile(title: LinearProgressIndicator())),
-      error: (e, s) => Card(child: ListTile(title: Text('خطأ: $e', style: const TextStyle(color: AppColors.error)))),
+      error: (e, s) => Card(child: ListTile(title: Text(tr('خطأ: {e}', {'e': e}), style: const TextStyle(color: AppColors.error)))),
     );
   }
 
@@ -219,14 +220,14 @@ class _PayButton extends StatelessWidget {
     return PermissionGuard(
       permission: PermissionCodes.hrPayrollProcess,
       allowManagerOverride: true,
-      actionName: 'صرف الرواتب',
+      actionName: tr('صرف الرواتب'),
       child: ElevatedButton(
         onPressed: calc.netSalary <= 0 ? null : () => _confirmPayment(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.green,
           padding: const EdgeInsets.symmetric(horizontal: 12),
         ),
-        child: const Text('صرف الراتب', style: TextStyle(fontSize: 12)),
+        child:  Text(tr('صرف الراتب'), style: const TextStyle(fontSize: 12)),
       ),
     );
   }
@@ -235,23 +236,23 @@ class _PayButton extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تأكيد صرف راتب'),
+        title:  Text(tr('تأكيد صرف راتب')),
         content: Text(
-          'هل أنت متأكد من صرف مبلغ ${calc.netSalary.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn} للموظف ${calc.employee.name}؟',
+          tr('هل أنت متأكد من صرف مبلغ {p0} {p1} للموظف {p2}؟', {'p0': calc.netSalary.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn, 'p2': calc.employee.name}),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           TextButton(
             onPressed: () async {
               await notifier.paySalary(calc);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text(
-              'تأكيد الصرف',
-              style: TextStyle(color: Colors.green),
+            child:  Text(
+              tr('تأكيد الصرف'),
+              style: const TextStyle(color: Colors.green),
             ),
           ),
         ],
@@ -279,7 +280,7 @@ class _MonthSelector extends StatelessWidget {
         if (picked != null) notifier.selectMonth(picked);
       },
       icon: const Icon(PhosphorIconsBold.calendar, size: 18),
-      label: const Text('تغيير الشهر'),
+      label:  Text(tr('تغيير الشهر')),
     );
   }
 }
@@ -296,10 +297,10 @@ class _ExportPayrollButton extends ConsumerWidget {
     return PermissionGuard(
       permission: PermissionCodes.hrPayrollProcess,
       allowManagerOverride: true,
-      actionName: 'تصدير مسير الرواتب',
+      actionName: tr('تصدير مسير الرواتب'),
       child: IconButton(
         icon: const Icon(PhosphorIconsBold.fileXls, size: 20, color: Color(0xFF059669)),
-        tooltip: 'تصدير كشف الرواتب إلى Excel',
+        tooltip: tr('تصدير كشف الرواتب إلى Excel'),
         onPressed: () => _exportPayroll(context, ref),
       ),
     );
@@ -318,8 +319,8 @@ class _ExportPayrollButton extends ConsumerWidget {
     );
 
     final headers = [
-      'الموظف', 'الدور', 'الراتب الأساسي', 'الأيام المدفوعة',
-      'إضافي', 'سُلف', 'خصومات', 'صافي المستحق',
+      tr('الموظف'), tr('الدور'), tr('الراتب الأساسي'), tr('الأيام المدفوعة'),
+      tr('إضافي'), tr('سُلف'), tr('خصومات'), tr('صافي المستحق'),
     ];
 
     final rows = calcs.map((c) => [
@@ -349,7 +350,7 @@ class _ExportPayrollButton extends ConsumerWidget {
       0,
     );
     final path = await excelService.exportReport(
-      title: 'كشف رواتب $period',
+      title: tr('كشف رواتب {period}', {'period': period}),
       headers: headers,
       rows: rows,
       periodFrom: monthStart,
@@ -360,9 +361,9 @@ class _ExportPayrollButton extends ConsumerWidget {
 
     if (context.mounted) {
       if (path != null) {
-        AppToast.show(context, 'تم تصدير كشف الرواتب بنجاح');
+        AppToast.show(context, tr('تم تصدير كشف الرواتب بنجاح'));
       } else {
-        AppToast.show(context, 'فشل في تصدير كشف الرواتب', type: ToastType.error);
+        AppToast.show(context, tr('فشل في تصدير كشف الرواتب'), type: ToastType.error);
       }
     }
   }
@@ -380,7 +381,7 @@ void _showSalarySlip(BuildContext context, EmployeeSalaryCalculation calc) {
           children: [
             const Icon(PhosphorIconsBold.receipt, color: AppColors.primary),
             const SizedBox(width: 8),
-            Text('إيصال راتب — ${calc.employee.name}',
+            Text(tr('إيصال راتب — {p0}', {'p0': calc.employee.name}),
                 style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           ],
         ),
@@ -398,31 +399,31 @@ void _showSalarySlip(BuildContext context, EmployeeSalaryCalculation calc) {
                 ),
                 child: Column(
                   children: [
-                    _slipRow('الموظف', calc.employee.name),
-                    _slipRow('الدور', calc.employee.role),
-                    _slipRow('الفترة', '${calc.month}/${calc.year}'),
+                    _slipRow(tr('الموظف'), calc.employee.name),
+                    _slipRow(tr('الدور'), calc.employee.role),
+                    _slipRow(tr('الفترة'), '${calc.month}/${calc.year}'),
                     const Divider(),
-                    _slipRow('الراتب الأساسي',
+                    _slipRow(tr('الراتب الأساسي'),
                         '${calc.baseSalary.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'),
                     if (calc.employee.salaryType == 'monthly')
-                      _slipRow('أيام غياب غير مدفوعة',
-                          '${calc.unpaidDays} يوم')
+                      _slipRow(tr('أيام غياب غير مدفوعة'),
+                          tr('{p0} يوم', {'p0': calc.unpaidDays}))
                     else if (calc.employee.salaryType == 'hourly')
-                      _slipRow('الساعات المدفوعة',
-                          '${calc.hoursWorked.toStringAsFixed(1)} ساعة')
+                      _slipRow(tr('الساعات المدفوعة'),
+                          tr('{p0} ساعة', {'p0': calc.hoursWorked.toStringAsFixed(1)}))
                     else
-                      _slipRow('الأيام المدفوعة', '${calc.daysAttended} يوم'),
-                    _slipRow('بدل إضافي',
+                      _slipRow(tr('الأيام المدفوعة'), tr('{p0} يوم', {'p0': calc.daysAttended})),
+                    _slipRow(tr('بدل إضافي'),
                         '${calc.overtimeAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                         color: const Color(0xFF059669)),
-                    _slipRow('سُلف',
+                    _slipRow(tr('سُلف'),
                         '-${calc.totalAdvances.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                         color: const Color(0xFFDC2626)),
-                    _slipRow('خصومات',
+                    _slipRow(tr('خصومات'),
                         '-${calc.totalDeductions.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                         color: const Color(0xFFDC2626)),
                     const Divider(thickness: 2),
-                    _slipRow('صافي المستحق',
+                    _slipRow(tr('صافي المستحق'),
                         '${calc.netSalary.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                         isBold: true, color: AppColors.primary),
                   ],
@@ -434,7 +435,7 @@ void _showSalarySlip(BuildContext context, EmployeeSalaryCalculation calc) {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),

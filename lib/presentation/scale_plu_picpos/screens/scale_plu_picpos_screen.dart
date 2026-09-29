@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -137,8 +138,8 @@ class _ScalePluPicposScreenState extends ConsumerState<ScalePluPicposScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return PicPosScreenScaffold(
-      title: 'ميزان PLU',
-      subtitle: 'تصدير الأصناف وأكواد PLU للموازين',
+      title: tr('ميزان PLU'),
+      subtitle: tr('تصدير الأصناف وأكواد PLU للموازين'),
       icon: PhosphorIconsBold.scales,
       body: Column(
         children: [
@@ -183,25 +184,25 @@ class _ScalePluPicposScreenState extends ConsumerState<ScalePluPicposScreen>
     return PicPosKpiRow(
       kpis: [
         PicPosKpi(
-          label: 'أصناف الميزان',
+          label: tr('أصناف الميزان'),
           value: '${stats.scaleItems}',
           icon: PhosphorIconsBold.scales,
           tint: AppColors.primary,
         ),
         PicPosKpi(
-          label: 'محدَّد للترحيل',
+          label: tr('محدَّد للترحيل'),
           value: '${stats.selectedForExport}',
           icon: PhosphorIconsBold.checkSquare,
           tint: AppColors.success,
         ),
         PicPosKpi(
-          label: 'بلا رقم PLU',
+          label: tr('بلا رقم PLU'),
           value: '${stats.missingPlu}',
           icon: PhosphorIconsBold.listNumbers,
           tint: stats.missingPlu > 0 ? AppColors.warning : AppColors.success,
         ),
         PicPosKpi(
-          label: 'موازين معرَّفة',
+          label: tr('موازين معرَّفة'),
           value: '${stats.definedScales}',
           icon: PhosphorIconsBold.wifiHigh,
           tint: stats.definedScales > 0 ? AppColors.info : AppColors.error,

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -58,13 +59,13 @@ class _ManufacturingReportsTabState extends ConsumerState<ManufacturingReportsTa
         padding: const EdgeInsets.only(bottom: 24),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         PicPosPageHeader(
-          title: 'تقارير التصنيع',
-          subtitle: 'العائد الفعلي وتكلفة قوائم المكونات',
+          title: tr('تقارير التصنيع'),
+          subtitle: tr('العائد الفعلي وتكلفة قوائم المكونات'),
           icon: PhosphorIconsBold.chartLine,
           actions: [
-            TextButton.icon(onPressed: () => _pickDate(true), icon: const Icon(PhosphorIconsBold.calendar), label: Text('من ${_shortDate(_from)}')),
-            TextButton.icon(onPressed: () => _pickDate(false), icon: const Icon(PhosphorIconsBold.calendar), label: Text('إلى ${_shortDate(_to)}')),
-            AppButton.primary(onPressed: _reload, icon: const Icon(PhosphorIconsBold.arrowsClockwise), child: const Text('تحديث التقرير')),
+            TextButton.icon(onPressed: () => _pickDate(true), icon: const Icon(PhosphorIconsBold.calendar), label: Text(tr('من {p0}', {'p0': _shortDate(_from)}))),
+            TextButton.icon(onPressed: () => _pickDate(false), icon: const Icon(PhosphorIconsBold.calendar), label: Text(tr('إلى {p0}', {'p0': _shortDate(_to)}))),
+            AppButton.primary(onPressed: _reload, icon: const Icon(PhosphorIconsBold.arrowsClockwise), child:  Text(tr('تحديث التقرير'))),
           ],
         ),
         if (_loading)
@@ -80,15 +81,15 @@ class _ManufacturingReportsTabState extends ConsumerState<ManufacturingReportsTa
       );
 
   Widget _yieldTable() => PicPosDataTable(
-        title: 'تقرير عائد التشفية',
-        subtitle: 'الفترة ${_shortDate(_from)} — ${_shortDate(_to)}، وإجمالي الفاقد في الفترة',
-        columns: const [
-          PicPosTableColumn('القطعة', flex: 2),
-          PicPosTableColumn('متوقع %'),
-          PicPosTableColumn('فعلي %'),
-          PicPosTableColumn('variance %'),
-          PicPosTableColumn('الكمية'),
-          PicPosTableColumn('إجمالي الفاقد', align: PicPosCellAlign.end),
+        title: tr('تقرير عائد التشفية'),
+        subtitle: tr('الفترة {p0} — {p1}، وإجمالي الفاقد في الفترة', {'p0': _shortDate(_from), 'p1': _shortDate(_to)}),
+        columns:  [
+          PicPosTableColumn(tr('القطعة'), flex: 2),
+          PicPosTableColumn(tr('متوقع %')),
+          PicPosTableColumn(tr('فعلي %')),
+          const PicPosTableColumn('variance %'),
+          PicPosTableColumn(tr('الكمية')),
+          PicPosTableColumn(tr('إجمالي الفاقد'), align: PicPosCellAlign.end),
         ],
         rows: [
           for (final row in _yieldRows)
@@ -106,15 +107,15 @@ class _ManufacturingReportsTabState extends ConsumerState<ManufacturingReportsTa
   Widget _bomTable() {
     final names = {for (final product in widget.products) product.id: product.name};
     return PicPosDataTable(
-      title: 'ورقة تكلفة BOM',
-      subtitle: 'مواد، تحميل، إجمالي، سعر مقترح وعدد القطع',
-      columns: const [
-        PicPosTableColumn('المنتج التام', flex: 2),
-        PicPosTableColumn('المواد', align: PicPosCellAlign.end),
-        PicPosTableColumn('التحميل', align: PicPosCellAlign.end),
-        PicPosTableColumn('الإجمالي', align: PicPosCellAlign.end),
-        PicPosTableColumn('السعر المقترح', align: PicPosCellAlign.end),
-        PicPosTableColumn('القطع', align: PicPosCellAlign.end),
+      title: tr('ورقة تكلفة BOM'),
+      subtitle: tr('مواد، تحميل، إجمالي، سعر مقترح وعدد القطع'),
+      columns:  [
+        PicPosTableColumn(tr('المنتج التام'), flex: 2),
+        PicPosTableColumn(tr('المواد'), align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('التحميل'), align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('الإجمالي'), align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('السعر المقترح'), align: PicPosCellAlign.end),
+        PicPosTableColumn(tr('القطع'), align: PicPosCellAlign.end),
       ],
       rows: [
         for (final bom in widget.boms)

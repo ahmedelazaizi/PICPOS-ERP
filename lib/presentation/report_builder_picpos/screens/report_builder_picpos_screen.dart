@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ «التقارير المخصّصة» بهويّة PicPos — على تصميم
 // `PicPos Custom Reports.dc.html`.
 //
@@ -61,39 +62,39 @@ String _ar(Object n) =>
     '$n'.replaceAllMapped(RegExp(r'\d'), (m) => '٠١٢٣٤٥٦٧٨٩'[int.parse(m[0]!)]);
 
 /// الكياناتُ السبعةُ — نفسُ الرموز التي يقبلها `sourceEntity` في المحرّك.
-const Map<String, ({String label, IconData icon, Color tint})> _kEntities = {
+Map<String, ({String label, IconData icon, Color tint})> get _kEntities => {
   'products': (
-    label: 'الأصناف',
+    label: tr('الأصناف'),
     icon: PhosphorIconsBold.package,
     tint: AppColors.primary
   ),
   'sales_invoices': (
-    label: 'فواتير البيع',
+    label: tr('فواتير البيع'),
     icon: PhosphorIconsBold.receipt,
     tint: _ok
   ),
   'purchase_invoices': (
-    label: 'فواتير الشراء',
+    label: tr('فواتير الشراء'),
     icon: PhosphorIconsBold.truck,
     tint: _purple
   ),
   'parties': (
-    label: 'العملاء والموردون',
+    label: tr('العملاء والموردون'),
     icon: PhosphorIconsBold.usersThree,
     tint: _warn
   ),
   'inventory_balances': (
-    label: 'أرصدة المخازن',
+    label: tr('أرصدة المخازن'),
     icon: PhosphorIconsBold.warehouse,
     tint: AppColors.primary
   ),
   'journal_entries': (
-    label: 'القيود المحاسبية',
+    label: tr('القيود المحاسبية'),
     icon: PhosphorIconsBold.bookOpen,
     tint: _idle
   ),
   'employees': (
-    label: 'الموظفون',
+    label: tr('الموظفون'),
     icon: PhosphorIconsBold.identificationBadge,
     tint: _err
   ),
@@ -154,15 +155,15 @@ class _ReportBuilderPicposScreenState
     final reports = ref.watch(_reportsProvider);
 
     return PicPosScreenScaffold(
-      title: 'اعداد وتصميم التقارير',
+      title: tr('اعداد وتصميم التقارير'),
       subtitle:
-          'ابنِ تقريرك باختيار جهة البيانات وأعمدتها وشروطها — ثم شغّله واحفظه',
+          tr('ابنِ تقريرك باختيار جهة البيانات وأعمدتها وشروطها — ثم شغّله واحفظه'),
       icon: PhosphorIconsBold.chartBar,
       headerActions: [
         OutlinedButton.icon(
           onPressed: _columns.isEmpty ? null : _saveReport,
           icon: const Icon(PhosphorIconsBold.floppyDisk, size: 15),
-          label: const Text('حفظ التعريف'),
+          label:  Text(tr('حفظ التعريف')),
         ),
         const SizedBox(width: 8),
         FilledButton.icon(
@@ -170,7 +171,7 @@ class _ReportBuilderPicposScreenState
               ? null
               : () => _run(_selectedReportId!),
           icon: const Icon(PhosphorIconsBold.play, size: 15),
-          label: const Text('تشغيل'),
+          label:  Text(tr('تشغيل')),
         ),
       ],
       bodyPadding: EdgeInsets.zero,
@@ -242,8 +243,8 @@ class _ReportBuilderPicposScreenState
               Icon(PhosphorIconsBold.folders,
                   size: 16, color: context.picposBrandInk),
               const SizedBox(width: 9),
-              const Text('التقارير المحفوظة',
-                  style: TextStyle(
+               Text(tr('التقارير المحفوظة'),
+                  style: const TextStyle(
                       fontSize: 13.5, fontWeight: FontWeight.w800)),
             ],
           ),
@@ -253,14 +254,14 @@ class _ReportBuilderPicposScreenState
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => PicPosEmptyState(
               icon: PhosphorIconsBold.warningOctagon,
-              title: 'تعذّرت قراءةُ التقارير',
+              title: tr('تعذّرت قراءةُ التقارير'),
               hint: '$e',
             ),
             data: (list) => list.isEmpty
-                ? const PicPosEmptyState(
+                ?  PicPosEmptyState(
                     icon: PhosphorIconsBold.folders,
-                    title: 'لا تقاريرَ محفوظةً بعد',
-                    hint: 'ابنِ تقريراً من اللوحة المجاورة ثمّ احفظْ تعريفَه.',
+                    title: tr('لا تقاريرَ محفوظةً بعد'),
+                    hint: tr('ابنِ تقريراً من اللوحة المجاورة ثمّ احفظْ تعريفَه.'),
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.all(10),
@@ -341,7 +342,7 @@ class _ReportBuilderPicposScreenState
               ),
               IconButton(
                 visualDensity: VisualDensity.compact,
-                tooltip: 'حذف',
+                tooltip: tr('حذف'),
                 icon: const Icon(PhosphorIconsBold.trash, size: 14),
                 onPressed: () => _deleteReport(r),
               ),
@@ -381,9 +382,9 @@ class _ReportBuilderPicposScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const PicPosSectionHeader(
-            title: 'جهة البيانات',
-            subtitle: 'تغييرها يمسح الأعمدة والشروط — الحقول تختلف',
+           PicPosSectionHeader(
+            title: tr('جهة البيانات'),
+            subtitle: tr('تغييرها يمسح الأعمدة والشروط — الحقول تختلف'),
             icon: PhosphorIconsBold.database,
           ),
           Wrap(
@@ -425,10 +426,10 @@ class _ReportBuilderPicposScreenState
         mainAxisSize: MainAxisSize.min,
         children: [
           PicPosSectionHeader(
-            title: 'الأعمدة',
+            title: tr('الأعمدة'),
             subtitle: _columns.isEmpty
-                ? 'اختر عموداً واحداً على الأقل'
-                : '${_ar(_columns.length)} من ${_ar(_fields.length)}',
+                ? tr('اختر عموداً واحداً على الأقل')
+                : tr('{p0} من {p1}', {'p0': _ar(_columns.length), 'p1': _ar(_fields.length)}),
             icon: PhosphorIconsBold.columns,
           ),
           Wrap(
@@ -462,12 +463,12 @@ class _ReportBuilderPicposScreenState
         mainAxisSize: MainAxisSize.min,
         children: [
           PicPosSectionHeader(
-            title: 'الشروط',
-            subtitle: 'العوامل المتاحة تتبع نوع الحقل',
+            title: tr('الشروط'),
+            subtitle: tr('العوامل المتاحة تتبع نوع الحقل'),
             icon: PhosphorIconsBold.funnel,
             actions: [
               IconButton(
-                tooltip: 'شرط جديد',
+                tooltip: tr('شرط جديد'),
                 icon: const Icon(PhosphorIconsBold.plus, size: 15),
                 onPressed: _fields.isEmpty ? null : _addFilter,
               ),
@@ -476,7 +477,7 @@ class _ReportBuilderPicposScreenState
           if (_filters.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text('بلا شروط — التقرير يقرأ كلَّ الصفوف',
+              child: Text(tr('بلا شروط — التقرير يقرأ كلَّ الصفوف'),
                   style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w600,
@@ -516,9 +517,9 @@ class _ReportBuilderPicposScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const PicPosSectionHeader(
-            title: 'تجميع حسب',
-            subtitle: 'الحقول من سجلّ الكيان وحدَه',
+           PicPosSectionHeader(
+            title: tr('تجميع حسب'),
+            subtitle: tr('الحقول من سجلّ الكيان وحدَه'),
             icon: PhosphorIconsBold.stackSimple,
           ),
           Wrap(
@@ -559,19 +560,19 @@ class _ReportBuilderPicposScreenState
         mainAxisSize: MainAxisSize.min,
         children: [
           PicPosSectionHeader(
-            title: 'الدوال التجميعية',
+            title: tr('الدوال التجميعية'),
             // ⚠️ الوسمُ يتبع الحال: صارت تُطبَّق فعلاً، لكن **عند التجميع
             // وحدَه** — بلا «تجميع حسب» لا مجموعاتِ لتُجمَع، فيبقى التقريرُ
             // سرداً للصفوف. والعنوانُ يقول ذلك بدل أن يَعِد بما لا يقع.
             subtitle: _groupBy.isEmpty
-                ? 'تُطبَّق عند اختيار «تجميع حسب» — وبدونه سردُ صفوف'
-                : 'تُطبَّق على الناتج · والرقميُّ بلا دالّةٍ يُجمَع بـSUM',
+                ? tr('تُطبَّق عند اختيار «تجميع حسب» — وبدونه سردُ صفوف')
+                : tr('تُطبَّق على الناتج · والرقميُّ بلا دالّةٍ يُجمَع بـSUM'),
             icon: PhosphorIconsBold.sigma,
           ),
           if (numeric.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text('لا حقولَ رقميّةً في هذا الكيان',
+              child: Text(tr('لا حقولَ رقميّةً في هذا الكيان'),
                   style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w600,
@@ -622,8 +623,8 @@ class _ReportBuilderPicposScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const PicPosSectionHeader(
-            title: 'الترتيب',
+           PicPosSectionHeader(
+            title: tr('الترتيب'),
             icon: PhosphorIconsBold.sortAscending,
           ),
           Row(
@@ -632,12 +633,12 @@ class _ReportBuilderPicposScreenState
                 child: DropdownButton<String?>(
                   value: _sortField,
                   isExpanded: true,
-                  hint: const Text('بلا ترتيب',
-                      style: TextStyle(fontSize: 12)),
+                  hint:  Text(tr('بلا ترتيب'),
+                      style: const TextStyle(fontSize: 12)),
                   underline: const SizedBox.shrink(),
                   items: [
-                    const DropdownMenuItem<String?>(
-                        value: null, child: Text('بلا ترتيب')),
+                     DropdownMenuItem<String?>(
+                        value: null, child: Text(tr('بلا ترتيب'))),
                     for (final f in _fields)
                       DropdownMenuItem<String?>(
                           value: f['key'], child: Text(f['label'] ?? f['key']!)),
@@ -647,9 +648,9 @@ class _ReportBuilderPicposScreenState
               ),
               const SizedBox(width: 8),
               SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(value: false, label: Text('تصاعدي')),
-                  ButtonSegment(value: true, label: Text('تنازلي')),
+                segments:  [
+                  ButtonSegment(value: false, label: Text(tr('تصاعدي'))),
+                  ButtonSegment(value: true, label: Text(tr('تنازلي'))),
                 ],
                 selected: {_sortDesc},
                 onSelectionChanged: _sortField == null
@@ -682,15 +683,15 @@ class _ReportBuilderPicposScreenState
               Icon(PhosphorIconsBold.table,
                   size: 16, color: context.picposBrandInk),
               const SizedBox(width: 9),
-              const Text('المعاينة',
-                  style: TextStyle(
+               Text(tr('المعاينة'),
+                  style: const TextStyle(
                       fontSize: 13.5, fontWeight: FontWeight.w800)),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
                   _results.isEmpty
-                      ? 'شغّلْ تقريراً محفوظاً لترى نتيجته'
-                      : '${_ar(_results.length)} صفّاً',
+                      ? tr('شغّلْ تقريراً محفوظاً لترى نتيجته')
+                      : tr('{p0} صفّاً', {'p0': _ar(_results.length)}),
                   style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -726,9 +727,9 @@ class _ReportBuilderPicposScreenState
           child: _running
               ? const Center(child: CircularProgressIndicator())
               : _results.isEmpty
-                  ? const PicPosEmptyState(
+                  ?  PicPosEmptyState(
                       icon: PhosphorIconsBold.table,
-                      title: 'لا نتيجةَ بعد',
+                      title: tr('لا نتيجةَ بعد'),
                       hint: 'اختر تقريراً محفوظاً من القائمة ثمّ اضغط «تشغيل» '
                           '— أو ابنِ تعريفاً جديداً واحفظْه أوّلاً.',
                     )
@@ -743,8 +744,8 @@ class _ReportBuilderPicposScreenState
     return SingleChildScrollView(
       padding: const EdgeInsets.all(14),
       child: PicPosDataTable(
-        title: 'نتيجة التشغيل',
-        subtitle: 'مقروءةٌ من المحرّك — لا صفوفَ نموذجيّة',
+        title: tr('نتيجة التشغيل'),
+        subtitle: tr('مقروءةٌ من المحرّك — لا صفوفَ نموذجيّة'),
         minWidth: 120.0 * keys.length + 60,
         columns: [
           for (final k in keys) PicPosTableColumn(_labelOf(k), flex: 1.2),
@@ -800,7 +801,7 @@ class _ReportBuilderPicposScreenState
           // فيُعاد لأوّل عاملٍ مسموحٍ بدل أن يبقى مختاراً ثمّ يُرفض.
           if (!ops.any((o) => o['op'] == op)) op = ops.first['op']!;
           return AlertDialog(
-            title: const Text('شرط جديد'),
+            title:  Text(tr('شرط جديد')),
             content: SizedBox(
               width: 420,
               child: Column(
@@ -808,7 +809,7 @@ class _ReportBuilderPicposScreenState
                 children: [
                   DropdownButtonFormField<String>(
                     initialValue: field,
-                    decoration: const InputDecoration(labelText: 'الحقل'),
+                    decoration:  InputDecoration(labelText: tr('الحقل')),
                     items: [
                       for (final f in _fields)
                         DropdownMenuItem(
@@ -819,7 +820,7 @@ class _ReportBuilderPicposScreenState
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: op,
-                    decoration: const InputDecoration(labelText: 'العامل'),
+                    decoration:  InputDecoration(labelText: tr('العامل')),
                     items: [
                       for (final o in ops)
                         DropdownMenuItem(
@@ -830,7 +831,7 @@ class _ReportBuilderPicposScreenState
                   const SizedBox(height: 12),
                   TextField(
                     controller: valueCtrl,
-                    decoration: const InputDecoration(labelText: 'القيمة'),
+                    decoration:  InputDecoration(labelText: tr('القيمة')),
                   ),
                 ],
               ),
@@ -838,10 +839,10 @@ class _ReportBuilderPicposScreenState
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('إلغاء')),
+                  child:  Text(tr('إلغاء'))),
               FilledButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('إضافة')),
+                  child:  Text(tr('إضافة'))),
             ],
           );
         },
@@ -863,7 +864,7 @@ class _ReportBuilderPicposScreenState
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialog) => AlertDialog(
-          title: const Text('حفظ تعريف التقرير'),
+          title:  Text(tr('حفظ تعريف التقرير')),
           content: SizedBox(
             width: 440,
             child: Column(
@@ -871,18 +872,18 @@ class _ReportBuilderPicposScreenState
               children: [
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'اسم التقرير'),
+                  decoration:  InputDecoration(labelText: tr('اسم التقرير')),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: descCtrl,
-                  decoration: const InputDecoration(labelText: 'الوصف'),
+                  decoration:  InputDecoration(labelText: tr('الوصف')),
                 ),
                 const SizedBox(height: 8),
                 SwitchListTile(
                   value: shared,
                   onChanged: (v) => setDialog(() => shared = v),
-                  title: const Text('مشترك مع بقية المستخدمين'),
+                  title:  Text(tr('مشترك مع بقية المستخدمين')),
                   contentPadding: EdgeInsets.zero,
                 ),
               ],
@@ -891,10 +892,10 @@ class _ReportBuilderPicposScreenState
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('إلغاء')),
+                child:  Text(tr('إلغاء'))),
             FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('حفظ')),
+                child:  Text(tr('حفظ'))),
           ],
         ),
       ),
@@ -906,7 +907,7 @@ class _ReportBuilderPicposScreenState
     descCtrl.dispose();
     if (ok != true || !mounted) return;
     if (name.isEmpty) {
-      _toast('اسمُ التقرير مطلوب');
+      _toast(tr('اسمُ التقرير مطلوب'));
       return;
     }
 
@@ -932,10 +933,10 @@ class _ReportBuilderPicposScreenState
           );
       if (!mounted) return;
       ref.invalidate(_reportsProvider);
-      _toast('حُفظ تعريفُ «$name»');
+      _toast(tr('حُفظ تعريفُ «{name}»', {'name': name}));
     } catch (e) {
       if (!mounted) return;
-      _toast('تعذّر الحفظ: $e');
+      _toast(tr('تعذّر الحفظ: {e}', {'e': e}));
     }
   }
 
@@ -958,11 +959,11 @@ class _ReportBuilderPicposScreenState
         _results = rows;
         _running = false;
       });
-      if (rows.isEmpty) _toast('لا صفوفَ تطابق شروطَ التقرير');
+      if (rows.isEmpty) _toast(tr('لا صفوفَ تطابق شروطَ التقرير'));
     } catch (e) {
       if (!mounted) return;
       setState(() => _running = false);
-      _toast('تعذّر تشغيلُ التقرير: $e');
+      _toast(tr('تعذّر تشغيلُ التقرير: {e}', {'e': e}));
     }
   }
 
@@ -971,16 +972,16 @@ class _ReportBuilderPicposScreenState
       context: context,
       builder: (ctx) => AlertDialog(
         icon: const Icon(PhosphorIconsBold.trash, color: _err),
-        title: Text('حذف «${r.name}»'),
-        content: const Text('يُحذف التعريفُ وسجلُّ تشغيلاته. ولا رجوع.'),
+        title: Text(tr('حذف «{p0}»', {'p0': r.name})),
+        content:  Text(tr('يُحذف التعريفُ وسجلُّ تشغيلاته. ولا رجوع.')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء')),
+              child:  Text(tr('إلغاء'))),
           FilledButton(
               style: FilledButton.styleFrom(backgroundColor: _err),
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('حذف')),
+              child:  Text(tr('حذف'))),
         ],
       ),
     );
@@ -995,10 +996,10 @@ class _ReportBuilderPicposScreenState
         });
       }
       ref.invalidate(_reportsProvider);
-      _toast('حُذف «${r.name}»');
+      _toast(tr('حُذف «{p0}»', {'p0': r.name}));
     } catch (e) {
       if (!mounted) return;
-      _toast('تعذّر الحذف: $e');
+      _toast(tr('تعذّر الحذف: {e}', {'e': e}));
     }
   }
 

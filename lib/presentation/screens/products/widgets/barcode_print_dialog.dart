@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -35,11 +36,11 @@ class _BarcodePrintDialogState extends State<BarcodePrintDialog> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.barcode, color: AppColors.warning),
-            SizedBox(width: 8),
-            Text('طباعة باركود'),
+            const Icon(PhosphorIconsBold.barcode, color: AppColors.warning),
+            const SizedBox(width: 8),
+            Text(tr('طباعة باركود')),
           ],
         ),
         content: SizedBox(
@@ -49,13 +50,13 @@ class _BarcodePrintDialogState extends State<BarcodePrintDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'المنتج: ${widget.product.name}',
+                tr('المنتج: {p0}', {'p0': widget.product.name}),
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               if (widget.product.barcode != null &&
                   widget.product.barcode!.isNotEmpty)
                 Text(
-                  'الباركود: ${widget.product.barcode}',
+                  tr('الباركود: {p0}', {'p0': widget.product.barcode}),
                   style: const TextStyle(color: AppColors.textSecondary),
                 ),
               const SizedBox(height: 16),
@@ -63,7 +64,7 @@ class _BarcodePrintDialogState extends State<BarcodePrintDialog> {
                 controller: copiesController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'عدد النسخ',
+                  labelText: tr('عدد النسخ'),
                   prefixIcon: const Icon(PhosphorIconsBold.copy, size: 18),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -76,7 +77,7 @@ class _BarcodePrintDialogState extends State<BarcodePrintDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton.icon(
             onPressed: () async {
@@ -95,14 +96,14 @@ class _BarcodePrintDialogState extends State<BarcodePrintDialog> {
                 AppToast.show(
                   context,
                   printed
-                      ? 'تمت طباعة $copies نسخة من الباركود'
-                      : 'أُلغيت طباعة الباركود',
+                      ? tr('تمت طباعة {copies} نسخة من الباركود', {'copies': copies})
+                      : tr('أُلغيت طباعة الباركود'),
                   type: printed ? ToastType.success : ToastType.warning,
                 );
               }
             },
             icon: const Icon(PhosphorIconsBold.printer, size: 16),
-            label: const Text('طباعة'),
+            label:  Text(tr('طباعة')),
           ),
         ],
       ),

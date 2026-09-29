@@ -16,9 +16,9 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
           children: [
             Icon(PhosphorIconsBold.receipt, size: 80, color: AppColors.textMuted.withValues(alpha: 0.3)),
             const SizedBox(height: 24),
-            const Text(
-              'اختر فاتورة مشتريات لعرض تفاصيل الارتجاع',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 16),
+             Text(
+              tr('اختر فاتورة مشتريات لعرض تفاصيل الارتجاع'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 16),
             ),
           ],
         ),
@@ -35,7 +35,7 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
           const SizedBox(height: 16),
 
           // Items List
-          const Text('الأصناف في الفاتورة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+           Text(tr('الأصناف في الفاتورة:'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 8),
           Expanded(
             child: state.isLoading 
@@ -74,11 +74,11 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'فاتورة #${invoice.invoiceNumber}',
+                    tr('فاتورة #{p0}', {'p0': invoice.invoiceNumber}),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   Text(
-                    'التاريخ: ${invoice.invoiceDate.day}/${invoice.invoiceDate.month}/${invoice.invoiceDate.year} • الإجمالي: ${invoice.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
+                    tr('التاريخ: {p0}/{p1}/{p2} • الإجمالي: {p3} {p4}', {'p0': invoice.invoiceDate.day, 'p1': invoice.invoiceDate.month, 'p2': invoice.invoiceDate.year, 'p3': invoice.total.toStringAsFixed(AppConstants.decimalPlaces), 'p4': AppConstants.currencySymbolAr}),
                     style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                   ),
                 ],
@@ -92,7 +92,7 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
 
   Widget _buildItemsList(PurchaseReturnState state, PurchaseReturnNotifier notifier) {
     if (state.invoiceItems.isEmpty) {
-      return const Center(child: Text('لا توجد أصناف في هذه الفاتورة'));
+      return  Center(child: Text(tr('لا توجد أصناف في هذه الفاتورة')));
     }
 
     return ListView.builder(
@@ -115,7 +115,7 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
                     children: [
                       Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                       Text(
-                        'الكمية: ${maxQty.toStringAsFixed(0)} • السعر: ${item.item.unitCost.toStringAsFixed(AppConstants.decimalPlaces)}',
+                        tr('الكمية: {p0} • السعر: {p1}', {'p0': maxQty.toStringAsFixed(0), 'p1': item.item.unitCost.toStringAsFixed(AppConstants.decimalPlaces)}),
                         style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                       ),
                       // Per-line tax indicator from the original purchase
@@ -135,8 +135,8 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
                           const SizedBox(width: 4),
                           Text(
                             item.item.taxAmount > 0
-                                ? 'ضريبة ${item.item.taxRate.toStringAsFixed(0)}% = ${item.item.taxAmount.toStringAsFixed(AppConstants.decimalPlaces)}'
-                                : 'معفى من الضريبة',
+                                ? tr('ضريبة {p0}% = {p1}', {'p0': item.item.taxRate.toStringAsFixed(0), 'p1': item.item.taxAmount.toStringAsFixed(AppConstants.decimalPlaces)})
+                                : tr('معفى من الضريبة'),
                             style: TextStyle(
                               fontSize: 11,
                               color: item.item.taxAmount > 0
@@ -186,7 +186,7 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
                       const SizedBox(width: 8),
                       TextButton(
                         onPressed: () => notifier.updateReturnQuantity(item.item.id, maxQty),
-                        child: const Text('الكل', style: TextStyle(fontSize: 12)),
+                        child:  Text(tr('الكل'), style: const TextStyle(fontSize: 12)),
                       ),
                     ],
                   ),
@@ -227,12 +227,12 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
           // B4: Return reason categorization
           DropdownButtonFormField<String>(
             value: screenState._selectedReasonCategory.isEmpty ? null : screenState._selectedReasonCategory,
-            decoration: const InputDecoration(
-              labelText: 'سبب الإرجاع',
-              prefixIcon: Icon(PhosphorIconsBold.notepad, size: 18),
-              border: OutlineInputBorder(),
+            decoration:  InputDecoration(
+              labelText: tr('سبب الإرجاع'),
+              prefixIcon: const Icon(PhosphorIconsBold.notepad, size: 18),
+              border: const OutlineInputBorder(),
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
             style: const TextStyle(fontSize: 13, color: Colors.black87),
             items: AppConstants.returnReasonCategories
@@ -253,12 +253,12 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
             const SizedBox(height: 6),
             TextField(
               controller: screenState._returnReasonController,
-              decoration: const InputDecoration(
-                labelText: 'ملاحظات إضافية',
-                prefixIcon: Icon(PhosphorIconsBold.textT, size: 18),
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('ملاحظات إضافية'),
+                prefixIcon: const Icon(PhosphorIconsBold.textT, size: 18),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
               style: const TextStyle(fontSize: 13),
               maxLines: 1,
@@ -272,7 +272,7 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('إجمالي المرتجع', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                 Text(tr('إجمالي المرتجع'), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
                 Text(
                   '${total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.error),
@@ -285,7 +285,7 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
             icon: state.isProcessing 
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               : const Icon(PhosphorIconsBold.arrowUUpLeft),
-            label: const Text('تنفيذ المرتجع', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            label:  Text(tr('تنفيذ المرتجع'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,

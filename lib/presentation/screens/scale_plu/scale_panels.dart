@@ -35,7 +35,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
         ),
         const SizedBox(width: 10),
         Text(
-          'تصدير مواد الميزان PLU',
+          tr('تصدير مواد الميزان PLU'),
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -49,7 +49,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
           child: TextField(
             controller: searchController,
             decoration: InputDecoration(
-              hintText: 'بحث عن صنف...',
+              hintText: tr('بحث عن صنف...'),
               prefixIcon: const Icon(
                 PhosphorIconsBold.magnifyingGlass,
                 size: 18,
@@ -75,7 +75,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
             ),
           ),
           icon: const Icon(PhosphorIconsBold.barcode, size: 18),
-          label: const Text('مدير PLU'),
+          label:  Text(tr('مدير PLU')),
           style: OutlinedButton.styleFrom(
             foregroundColor: const Color(0xFF6C63FF),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -87,7 +87,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
         OutlinedButton.icon(
           onPressed: () => _showDataPreview(),
           icon: const Icon(PhosphorIconsBold.table, size: 18),
-          label: const Text('معاينة البيانات'),
+          label:  Text(tr('معاينة البيانات')),
           style: OutlinedButton.styleFrom(
             foregroundColor: Colors.deepPurple,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -108,7 +108,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                   ),
                 )
               : const Icon(PhosphorIconsBold.upload, size: 18),
-          label: const Text('ترحيل للميزان'),
+          label:  Text(tr('ترحيل للميزان')),
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.success,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -119,7 +119,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
         OutlinedButton.icon(
           onPressed: verifyConnection,
           icon: const Icon(PhosphorIconsBold.plugsConnected, size: 18),
-          label: const Text('تحقق'),
+          label:  Text(tr('تحقق')),
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
@@ -129,7 +129,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
         OutlinedButton.icon(
           onPressed: selectAllVisible,
           icon: const Icon(PhosphorIconsBold.checkSquare, size: 18),
-          label: const Text('تحديد الكل'),
+          label:  Text(tr('تحديد الكل')),
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
@@ -164,9 +164,9 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                   color: AppColors.primary,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'التصنيفات',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                 Text(
+                  tr('التصنيفات'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const Spacer(),
                 TextButton(
@@ -186,7 +186,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                     minimumSize: const Size(40, 28),
                   ),
                   child: Text(
-                    selectedCategoryIds.isEmpty ? 'الكل' : 'مسح',
+                    selectedCategoryIds.isEmpty ? tr('الكل') : tr('مسح'),
                     style: const TextStyle(fontSize: 12),
                   ),
                 ),
@@ -221,7 +221,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                 },
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('خطأ: $e')),
+              error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
             ),
           ),
         ],
@@ -254,16 +254,16 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                   color: AppColors.info,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'أصناف الميزان',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                 Text(
+                  tr('أصناف الميزان'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const Spacer(),
                 productsAsync.when(
                   data: (products) {
                     final filtered = filterProducts(products);
                     return Text(
-                      '${selectedProductIds.length} / ${filtered.length} صنف',
+                      tr('{p0} / {p1} صنف', {'p0': selectedProductIds.length, 'p1': filtered.length}),
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textMuted,
@@ -291,14 +291,14 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                           color: AppColors.textMuted.withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'لا توجد أصناف مطابقة',
-                          style: TextStyle(color: AppColors.textMuted),
+                         Text(
+                          tr('لا توجد أصناف مطابقة'),
+                          style: const TextStyle(color: AppColors.textMuted),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'حدد تصنيفات أو اختر أصناف ميزان',
-                          style: TextStyle(
+                         Text(
+                          tr('حدد تصنيفات أو اختر أصناف ميزان'),
+                          style: const TextStyle(
                             color: AppColors.textMuted,
                             fontSize: 12,
                           ),
@@ -311,13 +311,13 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                 return SingleChildScrollView(
                   child: DataTable(
                     columnSpacing: 16,
-                    columns: const [
-                      DataColumn(label: Text('ترحيل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      DataColumn(label: Text('PLU', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      DataColumn(label: Text('اسم المادة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      DataColumn(label: Text('سعر البيع', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      DataColumn(label: Text('النوع', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      DataColumn(label: Text('التصنيف', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                    columns:  [
+                      DataColumn(label: Text(tr('ترحيل'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                      const DataColumn(label: Text('PLU', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                      DataColumn(label: Text(tr('اسم المادة'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                      DataColumn(label: Text(tr('سعر البيع'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                      DataColumn(label: Text(tr('النوع'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                      DataColumn(label: Text(tr('التصنيف'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
                     ],
                     rows: filtered.map((p) {
                       final isSelected = selectedProductIds.contains(p.id);
@@ -380,7 +380,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('خطأ: $e')),
+              error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
             ),
           ),
         ],
@@ -390,10 +390,10 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
 
   Widget _buildScaleTypeBadge(String scaleType) {
     final (label, color) = switch (scaleType) {
-      'weight' => ('ميزان', AppColors.success),
-      'weightByPiece' => ('حبة', AppColors.info),
-      'display' => ('عرض', AppColors.warning),
-      _ => ('عدد', AppColors.textMuted),
+      'weight' => (tr('ميزان'), AppColors.success),
+      'weightByPiece' => (tr('حبة'), AppColors.info),
+      'display' => (tr('عرض'), AppColors.warning),
+      _ => (tr('عدد'), AppColors.textMuted),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -416,7 +416,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
     final selected = filtered.where((p) => selectedProductIds.contains(p.id)).toList();
 
     if (selected.isEmpty) {
-      AppToast.show(context, 'حدد أصناف أولاً لمعاينة البيانات', type: ToastType.warning);
+      AppToast.show(context, tr('حدد أصناف أولاً لمعاينة البيانات'), type: ToastType.warning);
       return;
     }
 
@@ -453,7 +453,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
         title: Row(children: [
           const Icon(PhosphorIconsBold.table, color: Colors.deepPurple),
           const SizedBox(width: 8),
-          Text('معاينة بيانات الترحيل (${pluItems.length} صنف)'),
+          Text(tr('معاينة بيانات الترحيل ({p0} صنف)', {'p0': pluItems.length})),
         ]),
         content: SizedBox(
           width: 800,
@@ -462,10 +462,10 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
             length: 2,
             child: Column(
               children: [
-                const TabBar(
+                 TabBar(
                   tabs: [
-                    Tab(text: 'جدول الأصناف'),
-                    Tab(text: 'صيغة CSV'),
+                    Tab(text: tr('جدول الأصناف')),
+                    Tab(text: tr('صيغة CSV')),
                   ],
                 ),
                 Expanded(
@@ -477,15 +477,15 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                         child: SingleChildScrollView(
                           child: DataTable(
                             columnSpacing: 16,
-                            columns: const [
-                              DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('PLU', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('اسم الصنف', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('السعر', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('النوع', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('القسم', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('الباركود', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('كود المنتج', style: TextStyle(fontWeight: FontWeight.bold))),
+                            columns:  [
+                              const DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold))),
+                              const DataColumn(label: Text('PLU', style: TextStyle(fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text(tr('اسم الصنف'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text(tr('السعر'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text(tr('النوع'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text(tr('القسم'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text(tr('الباركود'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text(tr('كود المنتج'), style: const TextStyle(fontWeight: FontWeight.bold))),
                             ],
                             rows: pluItems.asMap().entries.map((e) {
                               final i = e.key;
@@ -495,7 +495,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                                 DataCell(Text('${item.pluNumber}', style: const TextStyle(fontWeight: FontWeight.bold))),
                                 DataCell(Text(item.name)),
                                 DataCell(Text(item.unitPrice.toStringAsFixed(AppConstants.decimalPlaces))),
-                                DataCell(Text(item.isByWeight ? 'وزن' : 'عدد')),
+                                DataCell(Text(item.isByWeight ? tr('وزن') : tr('عدد'))),
                                 DataCell(Text('${item.department}')),
                                 DataCell(Text(item.barcode ?? '—', style: const TextStyle(fontFamily: AppTypography.mono))),
                                 DataCell(Text(item.productCode ?? '—')),
@@ -535,15 +535,15 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                              if (!mounted) return;
               if (ctx.mounted) {
                 Navigator.pop(ctx);
-                AppToast.show(context, 'تم حفظ CSV على سطح المكتب', type: ToastType.success);
+                AppToast.show(context, tr('تم حفظ CSV على سطح المكتب'), type: ToastType.success);
                 Process.run('notepad.exe', [filePath]);
               }
             },
-            child: const Text('حفظ CSV وفتحه'),
+            child:  Text(tr('حفظ CSV وفتحه')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -568,12 +568,12 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
               children: [
                 const Icon(PhosphorIconsBold.devices, size: 18, color: AppColors.warning),
                 const SizedBox(width: 8),
-                const Text('الموازين المتصلة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                 Text(tr('الموازين المتصلة'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 const Spacer(),
                 FilledButton.tonalIcon(
                   onPressed: addScale,
                   icon: const Icon(PhosphorIconsBold.plus, size: 16),
-                  label: const Text('إضافة ميزان', style: TextStyle(fontSize: 12)),
+                  label:  Text(tr('إضافة ميزان'), style: const TextStyle(fontSize: 12)),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     minimumSize: const Size(0, 32),
@@ -584,26 +584,26 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
           ),
           Expanded(
             child: scales.isEmpty
-                ? const Center(
+                ?  Center(
                     child: Text(
-                      'لا توجد موازين — اضغط "إضافة ميزان"',
-                      style: TextStyle(color: AppColors.textMuted),
+                      tr('لا توجد موازين — اضغط "إضافة ميزان"'),
+                      style: const TextStyle(color: AppColors.textMuted),
                     ),
                   )
                 : SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
                       columnSpacing: 20,
-                      columns: const [
-                        DataColumn(label: Text('', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        DataColumn(label: Text('الميزان', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        DataColumn(label: Text('مفعّل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        DataColumn(label: Text('IP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        DataColumn(label: Text('المنفذ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        DataColumn(label: Text('العلامة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        DataColumn(label: Text('الاتصال', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        DataColumn(label: Text('سعة PLU', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                        DataColumn(label: Text('إجراءات', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                      columns:  [
+                        const DataColumn(label: Text('', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                        DataColumn(label: Text(tr('الميزان'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                        DataColumn(label: Text(tr('مفعّل'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                        const DataColumn(label: Text('IP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                        DataColumn(label: Text(tr('المنفذ'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                        DataColumn(label: Text(tr('العلامة'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                        DataColumn(label: Text(tr('الاتصال'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                        DataColumn(label: Text(tr('سعة PLU'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                        DataColumn(label: Text(tr('إجراءات'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
                       ],
                       rows: scales.asMap().entries.map((entry) {
                         final i = entry.key;
@@ -651,12 +651,12 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                                 children: [
                                   IconButton(
                                     icon: const Icon(PhosphorIconsBold.pencilSimple, size: 16),
-                                    color: AppColors.warning, tooltip: 'تعديل',
+                                    color: AppColors.warning, tooltip: tr('تعديل'),
                                     onPressed: () => editScale(i),
                                   ),
                                   IconButton(
                                     icon: const Icon(PhosphorIconsBold.trash, size: 16),
-                                    color: AppColors.error, tooltip: 'حذف',
+                                    color: AppColors.error, tooltip: tr('حذف'),
                                     onPressed: () => deleteScale(i),
                                   ),
                                 ],

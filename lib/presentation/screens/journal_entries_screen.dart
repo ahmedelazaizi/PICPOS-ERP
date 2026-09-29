@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'dart:ui' as ui;
@@ -47,7 +48,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
   /// Strips the audit-trail hash suffix [HASH:...] from description for clean display.
   /// The hash remains in the DB for integrity verification (ICR-03).
   static String _cleanDescription(String? desc) {
-    if (desc == null || desc.isEmpty) return 'بدون وصف';
+    if (desc == null || desc.isEmpty) return tr('بدون وصف');
     return desc.replaceAll(RegExp(r'\s*\[HASH:[a-f0-9]{64}\]'), '').trim();
   }
 
@@ -70,7 +71,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
     final userId = ref.read(authProvider).user?.id;
     if (userId == null) {
       if (mounted) {
-        AppToast.show(context, 'يجب تسجيل الدخول لتنفيذ هذا الإجراء',
+        AppToast.show(context, tr('يجب تسجيل الدخول لتنفيذ هذا الإجراء'),
             type: ToastType.error);
       }
       return false;
@@ -82,7 +83,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
     if (!allowed) {
       if (mounted) {
         AppToast.show(
-            context, 'ليست لديك صلاحية إنشاء أو عكس القيود المحاسبية اليدوية',
+            context, tr('ليست لديك صلاحية إنشاء أو عكس القيود المحاسبية اليدوية'),
             type: ToastType.error);
       }
       return false;
@@ -165,7 +166,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                         children: [
                           const Icon(PhosphorIconsBold.bookOpen, size: 56, color: AppColors.textMuted),
                           const SizedBox(height: 12),
-                          Text('لا توجد قيود في هذه الفترة',
+                          Text(tr('لا توجد قيود في هذه الفترة'),
                               style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 15)),
                         ],
                       ),
@@ -221,11 +222,11 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'دفتر اليومية',
+                tr('دفتر اليومية'),
                 style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white),
               ),
               Text(
-                'جميع القيود المحاسبية (التلقائية واليدوية)',
+                tr('جميع القيود المحاسبية (التلقائية واليدوية)'),
                 style: GoogleFonts.cairo(fontSize: 11, color: Colors.white.withValues(alpha: 0.7)),
               ),
             ],
@@ -235,7 +236,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
           OutlinedButton.icon(
             onPressed: () => _printAllEntries(accountingRepo),
             icon: const Icon(PhosphorIconsBold.printer, size: 16),
-            label: Text('طباعة/PDF', style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
+            label: Text(tr('طباعة/PDF'), style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.white,
               side: const BorderSide(color: Colors.white),
@@ -248,7 +249,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
           OutlinedButton.icon(
             onPressed: () => _exportAllEntriesToExcel(accountingRepo),
             icon: const Icon(PhosphorIconsBold.fileXls, size: 16),
-            label: Text('تصدير Excel', style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
+            label: Text(tr('تصدير Excel'), style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.white,
               side: const BorderSide(color: Colors.white),
@@ -260,7 +261,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
           OutlinedButton.icon(
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JournalTemplatesScreen())),
             icon: const Icon(PhosphorIconsBold.notebook, size: 16),
-            label: Text('قوالب القيود', style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
+            label: Text(tr('قوالب القيود'), style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.white,
               side: const BorderSide(color: Colors.white),
@@ -272,7 +273,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
           ElevatedButton.icon(
             onPressed: () => showTemplateSelectionDialog(context, accountingRepo),
             icon: const Icon(PhosphorIconsBold.copy, size: 18),
-            label: Text('من قالب', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            label: Text(tr('من قالب'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white.withValues(alpha: 0.9),
               foregroundColor: AppColors.primary,
@@ -284,7 +285,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
           ElevatedButton.icon(
             onPressed: () => showCreateEntryDialog(context),
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label: Text('قيد يدوي', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            label: Text(tr('قيد يدوي'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: AppColors.primary,
@@ -306,7 +307,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
             controller: _searchController,
             onChanged: (v) => setState(() => _searchQuery = v.trim()),
             decoration: InputDecoration(
-              hintText: 'بحث برقم القيد أو الوصف أو التاريخ...',
+              hintText: tr('بحث برقم القيد أو الوصف أو التاريخ...'),
               hintStyle: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted),
               prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18, color: AppColors.primary),
               suffixIcon: _searchQuery.isNotEmpty
@@ -381,10 +382,10 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                 borderRadius: BorderRadius.circular(8),
                 constraints: const BoxConstraints(minHeight: 36, minWidth: 60),
                 textStyle: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w600),
-                children: const [
-                  Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Text('الكل')),
-                  Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Text('تلقائي')),
-                  Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Text('يدوي')),
+                children:  [
+                  Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(tr('الكل'))),
+                  Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(tr('تلقائي'))),
+                  Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(tr('يدوي'))),
                 ],
               ),
             ],
@@ -422,7 +423,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
             children: [
               const Icon(PhosphorIconsBold.buildings, size: 14, color: AppColors.primary),
               const SizedBox(width: 6),
-              Text('كل الفروع',
+              Text(tr('كل الفروع'),
                   style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
             ],
           ),
@@ -436,7 +437,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                 children: [
                   const Icon(PhosphorIconsBold.buildings, size: 13, color: AppColors.primary),
                   const SizedBox(width: 6),
-                  Text('كل الفروع', style: GoogleFonts.cairo(fontSize: 12)),
+                  Text(tr('كل الفروع'), style: GoogleFonts.cairo(fontSize: 12)),
                 ],
               ),
             ),
@@ -446,7 +447,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                 )),
             DropdownMenuItem<int?>(
               value: _noBranchSentinel,
-              child: Text('بدون فرع (قديم)',
+              child: Text(tr('بدون فرع (قديم)'),
                   style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
             ),
           ],
@@ -524,7 +525,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      entry.isAutoPosted ? 'تلقائي' : 'يدوي',
+                      entry.isAutoPosted ? tr('تلقائي') : tr('يدوي'),
                       style: GoogleFonts.cairo(
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
@@ -542,7 +543,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        'يدوي',
+                        tr('يدوي'),
                         style: GoogleFonts.cairo(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
@@ -611,11 +612,11 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                           TableRow(
                             decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.05)),
                             children: [
-                              _tableCell('رمز الحساب', isHeader: true),
-                              _tableCell('اسم الحساب', isHeader: true),
-                              _tableCell('البيان', isHeader: true),
-                              _tableCell('مدين', isHeader: true),
-                              _tableCell('دائن', isHeader: true),
+                              _tableCell(tr('رمز الحساب'), isHeader: true),
+                              _tableCell(tr('اسم الحساب'), isHeader: true),
+                              _tableCell(tr('البيان'), isHeader: true),
+                              _tableCell(tr('مدين'), isHeader: true),
+                              _tableCell(tr('دائن'), isHeader: true),
                             ],
                           ),
                           ...lines.map((line) => TableRow(
@@ -639,7 +640,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                             decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.05)),
                             children: [
                               _tableCell('', isHeader: true),
-                              _tableCell('الإجمالي', isHeader: true),
+                              _tableCell(tr('الإجمالي'), isHeader: true),
                               _tableCell(''),
                               _tableCell(totalDebit.toStringAsFixed(AppConstants.decimalPlaces), isHeader: true),
                               _tableCell(totalCredit.toStringAsFixed(AppConstants.decimalPlaces), isHeader: true),
@@ -657,13 +658,13 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                             TextButton.icon(
                               onPressed: () => _confirmReverseEntry(context, entry),
                               icon: const Icon(PhosphorIconsBold.arrowUUpLeft, size: 16, color: Colors.orange),
-                              label: Text('عكس القيد', style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.orange)),
+                              label: Text(tr('عكس القيد'), style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.orange)),
                             ),
                             const SizedBox(width: 8),
                             TextButton.icon(
                               onPressed: () => _printEntry(entry, lines),
                               icon: const Icon(PhosphorIconsBold.printer, size: 16),
-                              label: Text('طباعة القيد', style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w600)),
+                              label: Text(tr('طباعة القيد'), style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w600)),
                             ),
                           ],
                         ),
@@ -697,26 +698,26 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
   String? _getReferenceLabel(String? type) {
     switch (type) {
       case 'sale':
-        return 'مبيعات';
+        return tr('مبيعات');
       case 'purchase':
       case 'purchase_invoice':
-        return 'مشتريات';
+        return tr('مشتريات');
       case 'receipt':
-        return 'تحصيل';
+        return tr('تحصيل');
       case 'payment':
-        return 'سداد';
+        return tr('سداد');
       case 'return':
-        return 'مرتجع';
+        return tr('مرتجع');
       case 'fiscal_close':
-        return 'إقفال';
+        return tr('إقفال');
       case 'manufacturing':
-        return 'تصنيع';
+        return tr('تصنيع');
       case 'daily':
-        return 'يومية';
+        return tr('يومية');
       case 'adjustment':
-        return 'تسوية';
+        return tr('تسوية');
       case 'salary':
-        return 'رواتب';
+        return tr('رواتب');
       default:
         return null;
     }
@@ -754,7 +755,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
     try {
       final entries = await accountingRepo.getJournalEntries(from: _dateFrom, to: _dateTo);
       if (entries.isEmpty) {
-        if (mounted) AppToast.show(context, 'لا توجد قيود للطباعة في هذه الفترة', type: ToastType.warning);
+        if (mounted) AppToast.show(context, tr('لا توجد قيود للطباعة في هذه الفترة'), type: ToastType.warning);
         return;
       }
 
@@ -766,7 +767,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
         allRows.add({
           'entry_date': entry.entryDate,
           'entry_number': entry.entryNumber,
-          'description': '${_cleanDescription(entry.description)} ${entry.isAutoPosted ? '[تلقائي]' : '[يدوي]'}',
+          'description': tr('{p0} {p1}', {'p0': _cleanDescription(entry.description), 'p1': entry.isAutoPosted ? '[تلقائي]' : '[يدوي]'}),
           'debit': 0.0,
           'credit': 0.0,
           'balance': 0.0,
@@ -785,13 +786,13 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
       }
 
       await ReportPdfGenerator.printGeneralLedger(
-        accountName: 'دفتر اليومية (${entries.length} قيد)',
+        accountName: tr('دفتر اليومية ({p0} قيد)', {'p0': entries.length}),
         data: allRows,
         fromDate: _dateFrom,
         toDate: _dateTo,
       );
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -800,7 +801,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
     try {
       final entries = await accountingRepo.getJournalEntries(from: _dateFrom, to: _dateTo);
       if (entries.isEmpty) {
-        if (mounted) AppToast.show(context, 'لا توجد قيود للتصدير في هذه الفترة', type: ToastType.warning);
+        if (mounted) AppToast.show(context, tr('لا توجد قيود للتصدير في هذه الفترة'), type: ToastType.warning);
         return;
       }
 
@@ -812,7 +813,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
           entry.entryNumber,
           DateFormat('yyyy/MM/dd').format(entry.entryDate),
           _cleanDescription(entry.description),
-          entry.isAutoPosted ? 'تلقائي' : 'يدوي',
+          entry.isAutoPosted ? tr('تلقائي') : tr('يدوي'),
           '',
           '',
         ]);
@@ -836,21 +837,21 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
       branchId: _filterBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-        title: 'دفتر اليومية (${entries.length} قيد)',
-        headers: ['رقم القيد', 'التاريخ', 'البيان', 'النوع/الوصف', 'مدين', 'دائن'],
+        title: tr('دفتر اليومية ({p0} قيد)', {'p0': entries.length}),
+        headers: [tr('رقم القيد'), tr('التاريخ'), tr('البيان'), tr('النوع/الوصف'), tr('مدين'), tr('دائن')],
         rows: rows,
       );
       if (path != null && mounted) {
-        AppToast.show(context, 'تم تصدير دفتر اليومية بنجاح', type: ToastType.success);
+        AppToast.show(context, tr('تم تصدير دفتر اليومية بنجاح'), type: ToastType.success);
         try {
           final user = ref.read(authProvider).user;
           ref.read(activityLoggerProvider).logReportExport(
-            user?.id ?? 0, user?.displayName ?? 'مجهول', 'دفتر اليومية', 'Excel',
+            user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('دفتر اليومية'), 'Excel',
           );
         } catch (_) {}
       }
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في التصدير: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ في التصدير: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -881,14 +882,14 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
             children: [
               const Icon(PhosphorIconsBold.checkCircle, color: AppColors.success, size: 22),
               const SizedBox(width: 8),
-              Text('اعتماد القيد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+              Text(tr('اعتماد القيد'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('هل تريد اعتماد هذا القيد؟', style: GoogleFonts.cairo(fontSize: 14)),
+              Text(tr('هل تريد اعتماد هذا القيد؟'), style: GoogleFonts.cairo(fontSize: 14)),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -900,16 +901,16 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('رقم القيد: ${entry.entryNumber}', style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
+                    Text(tr('رقم القيد: {p0}', {'p0': entry.entryNumber}), style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
                     if (entry.description != null)
-                      Text('الوصف: ${_cleanDescription(entry.description)}', style: GoogleFonts.cairo(fontSize: 12)),
-                    Text('التاريخ: ${_dateFormat.format(entry.entryDate)}', style: GoogleFonts.cairo(fontSize: 12)),
+                      Text(tr('الوصف: {p0}', {'p0': _cleanDescription(entry.description)}), style: GoogleFonts.cairo(fontSize: 12)),
+                    Text(tr('التاريخ: {p0}', {'p0': _dateFormat.format(entry.entryDate)}), style: GoogleFonts.cairo(fontSize: 12)),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
               Text(
-                'سيظهر في القوائم المالية بعد الاعتماد.',
+                tr('سيظهر في القوائم المالية بعد الاعتماد.'),
                 style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
               ),
             ],
@@ -917,12 +918,12 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton.icon(
               onPressed: () => Navigator.pop(ctx, true),
               icon: const Icon(PhosphorIconsBold.checkCircle, size: 16),
-              label: const Text('تأكيد الاعتماد'),
+              label:  Text(tr('تأكيد الاعتماد')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.success,
                 foregroundColor: Colors.white,
@@ -939,10 +940,10 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
       final user = ref.read(authProvider).user;
       await repo.approveJournalEntry(entry.id, user?.id ?? 0);
       if (!context.mounted) return;
-      AppToast.show(context, 'تم اعتماد القيد بنجاح', type: ToastType.success);
+      AppToast.show(context, tr('تم اعتماد القيد بنجاح'), type: ToastType.success);
     } catch (e) {
       if (!context.mounted) return;
-      AppToast.show(context, 'خطأ في اعتماد القيد: $e', type: ToastType.error);
+      AppToast.show(context, tr('خطأ في اعتماد القيد: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -957,14 +958,14 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
             children: [
               const Icon(PhosphorIconsBold.arrowUUpLeft, color: Colors.orange, size: 22),
               const SizedBox(width: 8),
-              Text('عكس القيد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+              Text(tr('عكس القيد'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('هل أنت متأكد من عكس هذا القيد؟', style: GoogleFonts.cairo(fontSize: 14)),
+              Text(tr('هل أنت متأكد من عكس هذا القيد؟'), style: GoogleFonts.cairo(fontSize: 14)),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -976,16 +977,16 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('رقم القيد: ${entry.entryNumber}', style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
+                    Text(tr('رقم القيد: {p0}', {'p0': entry.entryNumber}), style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
                     if (entry.description != null)
-                      Text('الوصف: ${_cleanDescription(entry.description)}', style: GoogleFonts.cairo(fontSize: 12)),
-                    Text('التاريخ: ${_dateFormat.format(entry.entryDate)}', style: GoogleFonts.cairo(fontSize: 12)),
+                      Text(tr('الوصف: {p0}', {'p0': _cleanDescription(entry.description)}), style: GoogleFonts.cairo(fontSize: 12)),
+                    Text(tr('التاريخ: {p0}', {'p0': _dateFormat.format(entry.entryDate)}), style: GoogleFonts.cairo(fontSize: 12)),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
               Text(
-                'سيتم إنشاء قيد عكسي بمبالغ معكوسة (المدين يصبح دائن والعكس)',
+                tr('سيتم إنشاء قيد عكسي بمبالغ معكوسة (المدين يصبح دائن والعكس)'),
                 style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
               ),
               // MJE-2: an auto-posted JE is normally the byproduct of a
@@ -995,7 +996,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
               if (entry.isAutoPosted) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'هذا قيد آلي — الأفضل عكسه من المستند المصدر (الفاتورة/السند).',
+                  tr('هذا قيد آلي — الأفضل عكسه من المستند المصدر (الفاتورة/السند).'),
                   style: GoogleFonts.cairo(
                     fontSize: 11,
                     color: Colors.orange.shade800,
@@ -1008,12 +1009,12 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton.icon(
               onPressed: () => Navigator.pop(ctx, true),
               icon: const Icon(PhosphorIconsBold.arrowUUpLeft, size: 16),
-              label: const Text('تأكيد العكس'),
+              label:  Text(tr('تأكيد العكس')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
                 foregroundColor: Colors.white,
@@ -1038,21 +1039,21 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
       // doc for why the old reverseTransaction call was unsafe here.
       final newEntryId = await accountingService.reverseJournalEntryById(
         entryId: entry.id,
-        descriptionPrefix: 'عكس قيد: ${entry.entryNumber}',
+        descriptionPrefix: tr('عكس قيد: {p0}', {'p0': entry.entryNumber}),
       );
       if (!context.mounted) return;
       if (newEntryId > 0) {
-          AppToast.show(context, 'تم عكس القيد بنجاح', type: ToastType.success);
+          AppToast.show(context, tr('تم عكس القيد بنجاح'), type: ToastType.success);
         } else {
           AppToast.show(
             context,
-            'القيد معكوس بالفعل أو تعذّر العكس',
+            tr('القيد معكوس بالفعل أو تعذّر العكس'),
             type: ToastType.warning,
           );
         }
     } catch (e) {
       if (!context.mounted) return;
-      AppToast.show(context, 'خطأ في عكس القيد: $e', type: ToastType.error);
+      AppToast.show(context, tr('خطأ في عكس القيد: {e}', {'e': e}), type: ToastType.error);
     }
   }
 }

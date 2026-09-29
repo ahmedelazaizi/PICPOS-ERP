@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -80,16 +81,16 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
       }
       try {
         final user = ref.read(authProvider).user;
-        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? 'مجهول', 'تقرير الضريبة');
+        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('تقرير الضريبة'));
       } catch (_) {}
       _loadData();
     });
@@ -202,7 +203,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
       return Directionality(
         textDirection: TextDirection.rtl,
         child: Scaffold(
-          body: Center(child: Text('تعذر تحديد صلاحيات الفرع: ${scopeAsync.error}')),
+          body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
         ),
       );
     }
@@ -217,12 +218,12 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
           // does not always show the right glyph under custom RTL Directionality.
           leading: Navigator.canPop(context)
               ? IconButton(
-                  tooltip: 'رجوع',
+                  tooltip: tr('رجوع'),
                   icon: const Icon(PhosphorIconsBold.caretRight, size: 20),
                   onPressed: () => Navigator.pop(context),
                 )
               : null,
-          title: const Text('تقرير ضريبة المبيعات'),
+          title:  Text(tr('تقرير ضريبة المبيعات')),
           actions: [
             // Cost Center Filter
             FutureBuilder<List<CostCenter>>(
@@ -240,12 +241,12 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<int?>(
                       value: _selectedCostCenterId,
-                      hint: const Text('مركز التكلفة', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      hint:  Text(tr('مركز التكلفة'), style: const TextStyle(color: Colors.white70, fontSize: 12)),
                       dropdownColor: AppColors.primary,
                       iconEnabledColor: Colors.white70,
                       style: const TextStyle(color: Colors.white, fontSize: 12),
                       items: [
-                        const DropdownMenuItem<int?>(value: null, child: Text('الكل')),
+                         DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
                         ...centers.map((c) => DropdownMenuItem<int?>(value: c.id, child: Text(c.name))),
                       ],
                       onChanged: (v) => setState(() { _selectedCostCenterId = v; _loadData(); }),
@@ -257,13 +258,13 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
             IconButton(
               icon: const Icon(PhosphorIconsBold.printer),
               onPressed: _printTaxReport,
-              tooltip: 'طباعة/PDF',
+              tooltip: tr('طباعة/PDF'),
             ),
             buildReportExportAction(onExport: _exportToExcel),
             IconButton(
               icon: const Icon(PhosphorIconsBold.calendar),
               onPressed: _selectDateRange,
-              tooltip: 'تغيير الفترة',
+              tooltip: tr('تغيير الفترة'),
             ),
           ],
         ),
@@ -344,7 +345,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
                       child: ShimmerLoading.list(itemCount: 6),
                     )
                   : _data == null
-                      ? const Center(child: Text('لا توجد بيانات'))
+                      ?  Center(child: Text(tr('لا توجد بيانات')))
                       : _buildReport(_data!),
             ),
           ],
@@ -370,7 +371,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
             children: [
               Expanded(
                 child: _buildSummaryCard(
-                  'ضريبة المبيعات (مخرجات)',
+                  tr('ضريبة المبيعات (مخرجات)'),
                   data['salesTax'],
                   AppColors.success,
                   PhosphorIconsBold.trendUp,
@@ -379,7 +380,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildSummaryCard(
-                  'ضريبة المشتريات (مدخلات)',
+                  tr('ضريبة المشتريات (مدخلات)'),
                   data['purchaseTax'],
                   AppColors.error,
                   PhosphorIconsBold.trendDown,
@@ -390,24 +391,24 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
           const SizedBox(height: 24),
           _buildNetTaxCard(data['netTax'], currencyFormat),
           const SizedBox(height: 32),
-          const Text(
-            'التفاصيل الضريبية',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+           Text(
+            tr('التفاصيل الضريبية'),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           _buildDetailRow(
-            'إجمالي المبيعات (بدون الضريبة)',
+            tr('إجمالي المبيعات (بدون الضريبة)'),
             data['salesTotalExclTax'],
             currencyFormat,
           ),
           _buildDetailRow(
-            'إجمالي المشتريات (بدون الضريبة)',
+            tr('إجمالي المشتريات (بدون الضريبة)'),
             data['purchaseTotalExclTax'],
             currencyFormat,
           ),
           const Divider(height: 32),
           _buildDetailRow(
-            'صافي المبيعات قبل الضرائب',
+            tr('صافي المبيعات قبل الضرائب'),
             data['salesTotalExclTax'] - data['purchaseTotalExclTax'],
             currencyFormat,
             isBold: true,
@@ -415,8 +416,8 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
           const SizedBox(height: 32),
           // البند 8 — rate buckets (VAT-return shape) above the drill-down.
           if (_salesTaxRateBuckets.isNotEmpty) ...[
-            const Text('ملخص الضريبة حسب النسبة',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+             Text(tr('ملخص الضريبة حسب النسبة'),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Card(
               elevation: 0,
@@ -427,16 +428,16 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
                 width: double.infinity,
                 child: DataTable(
                   columnSpacing: 16,
-                  columns: const [
-                    DataColumn(label: Text('النسبة', style: TextStyle(fontSize: 12))),
-                    DataColumn(label: Text('الوعاء الخاضع', style: TextStyle(fontSize: 12)), numeric: true),
-                    DataColumn(label: Text('الضريبة', style: TextStyle(fontSize: 12)), numeric: true),
+                  columns:  [
+                    DataColumn(label: Text(tr('النسبة'), style: const TextStyle(fontSize: 12))),
+                    DataColumn(label: Text(tr('الوعاء الخاضع'), style: const TextStyle(fontSize: 12)), numeric: true),
+                    DataColumn(label: Text(tr('الضريبة'), style: const TextStyle(fontSize: 12)), numeric: true),
                   ],
                   rows: _salesTaxRateBuckets.map((b) {
                     final rate = (b['taxRate'] as num).toDouble();
                     return DataRow(cells: [
                       DataCell(Text(
-                          rate == 0 ? 'معفي / صفري' : '${_fmtRate(rate)}%',
+                          rate == 0 ? tr('معفي / صفري') : '${_fmtRate(rate)}%',
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
                       DataCell(Text(currencyFormat.format((b['taxableBase'] as num).toDouble()),
                           style: const TextStyle(fontSize: 12))),
@@ -453,7 +454,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
           // each LINE shows its own rate, taxable base and tax. Previously this
           // was a flat header table with one lump tax figure and no rate.
           if (_salesInvoices.isNotEmpty) ...[
-            const Text('تفاصيل ضريبة المبيعات (مخرجات)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+             Text(tr('تفاصيل ضريبة المبيعات (مخرجات)'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Card(
               elevation: 0,
@@ -496,21 +497,21 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
                                 textAlign: TextAlign.end),
                           ),
                           if (mismatch)
-                            const Padding(
-                              padding: EdgeInsetsDirectional.only(start: 4),
+                             Padding(
+                              padding: const EdgeInsetsDirectional.only(start: 4),
                               child: Tooltip(
-                                message: 'مجموع ضرائب الأصناف لا يساوي ضريبة الفاتورة',
-                                child: Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.warning),
+                                message: tr('مجموع ضرائب الأصناف لا يساوي ضريبة الفاتورة'),
+                                child: const Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.warning),
                               ),
                             ),
                         ],
                       ),
                       children: [
                         if (lines.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: Text('لا توجد أصناف مسجّلة لهذه الفاتورة',
-                                style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                           Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Text(tr('لا توجد أصناف مسجّلة لهذه الفاتورة'),
+                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                           )
                         else
                           SizedBox(
@@ -520,12 +521,12 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
                               headingRowHeight: 34,
                               dataRowMinHeight: 30,
                               dataRowMaxHeight: 38,
-                              columns: const [
-                                DataColumn(label: Text('الصنف', style: TextStyle(fontSize: 11))),
-                                DataColumn(label: Text('الكمية', style: TextStyle(fontSize: 11)), numeric: true),
-                                DataColumn(label: Text('الوعاء الضريبي', style: TextStyle(fontSize: 11)), numeric: true),
-                                DataColumn(label: Text('النسبة', style: TextStyle(fontSize: 11)), numeric: true),
-                                DataColumn(label: Text('قيمة الضريبة', style: TextStyle(fontSize: 11)), numeric: true),
+                              columns:  [
+                                DataColumn(label: Text(tr('الصنف'), style: const TextStyle(fontSize: 11))),
+                                DataColumn(label: Text(tr('الكمية'), style: const TextStyle(fontSize: 11)), numeric: true),
+                                DataColumn(label: Text(tr('الوعاء الضريبي'), style: const TextStyle(fontSize: 11)), numeric: true),
+                                DataColumn(label: Text(tr('النسبة'), style: const TextStyle(fontSize: 11)), numeric: true),
+                                DataColumn(label: Text(tr('قيمة الضريبة'), style: const TextStyle(fontSize: 11)), numeric: true),
                               ],
                               rows: lines.map((l) {
                                 final rate = (l['taxRate'] as num?)?.toDouble() ?? 0;
@@ -533,7 +534,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
                                   DataCell(Text('${l['productName'] ?? '—'}', style: const TextStyle(fontSize: 11))),
                                   DataCell(Text('${(l['quantity'] as num?)?.toDouble() ?? 0}', style: const TextStyle(fontSize: 11))),
                                   DataCell(Text(currencyFormat.format((l['taxableBase'] as num?)?.toDouble() ?? 0), style: const TextStyle(fontSize: 11))),
-                                  DataCell(Text(rate == 0 ? 'معفي' : '${_fmtRate(rate)}%',
+                                  DataCell(Text(rate == 0 ? tr('معفي') : '${_fmtRate(rate)}%',
                                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
                                   DataCell(Text(currencyFormat.format((l['taxAmount'] as num?)?.toDouble() ?? 0),
                                       style: const TextStyle(fontSize: 11, color: AppColors.success))),
@@ -551,7 +552,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
           const SizedBox(height: 24),
           // Invoice-Level Purchase Tax Detail
           if (_purchaseInvoices.isNotEmpty) ...[
-            const Text('تفاصيل ضريبة المشتريات (مدخلات)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+             Text(tr('تفاصيل ضريبة المشتريات (مدخلات)'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Card(
               elevation: 0,
@@ -560,12 +561,12 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
                 width: double.infinity,
                 child: DataTable(
                   columnSpacing: 16,
-                  columns: const [
-                    DataColumn(label: Text('رقم الفاتورة', style: TextStyle(fontSize: 12))),
-                    DataColumn(label: Text('المورد', style: TextStyle(fontSize: 12))),
-                    DataColumn(label: Text('التاريخ', style: TextStyle(fontSize: 12))),
-                    DataColumn(label: Text('الإجمالي', style: TextStyle(fontSize: 12)), numeric: true),
-                    DataColumn(label: Text('الضريبة', style: TextStyle(fontSize: 12)), numeric: true),
+                  columns:  [
+                    DataColumn(label: Text(tr('رقم الفاتورة'), style: const TextStyle(fontSize: 12))),
+                    DataColumn(label: Text(tr('المورد'), style: const TextStyle(fontSize: 12))),
+                    DataColumn(label: Text(tr('التاريخ'), style: const TextStyle(fontSize: 12))),
+                    DataColumn(label: Text(tr('الإجمالي'), style: const TextStyle(fontSize: 12)), numeric: true),
+                    DataColumn(label: Text(tr('الضريبة'), style: const TextStyle(fontSize: 12)), numeric: true),
                   ],
                   rows: _purchaseInvoices.where((p) => p.invoice.tax > 0).map((p) {
                     return DataRow(cells: [
@@ -598,7 +599,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
           const Icon(PhosphorIconsBold.info, color: AppColors.info),
           const SizedBox(width: 12),
           Text(
-            'الفترة من: ${intl.DateFormat('yyyy-MM-dd').format(_fromDate)} إلى: ${intl.DateFormat('yyyy-MM-dd').format(_toDate)}',
+            tr('الفترة من: {p0} إلى: {p1}', {'p0': intl.DateFormat('yyyy-MM-dd').format(_fromDate), 'p1': intl.DateFormat('yyyy-MM-dd').format(_toDate)}),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ],
@@ -669,9 +670,9 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
       ),
       child: Column(
         children: [
-          const Text(
-            'صافي الضريبة المستحقة للدفع',
-            style: TextStyle(color: Colors.white, fontSize: 16),
+           Text(
+            tr('صافي الضريبة المستحقة للدفع'),
+            style: const TextStyle(color: Colors.white, fontSize: 16),
           ),
           const SizedBox(height: 12),
           Text(
@@ -684,7 +685,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            isPayable ? '(مستحق الدفع)' : '(رصيد لصالح المنشأة)',
+            isPayable ? tr('(مستحق الدفع)') : tr('(رصيد لصالح المنشأة)'),
             style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
           ),
         ],
@@ -729,19 +730,19 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
   /// Print tax report as PDF
   Future<void> _printTaxReport() async {
     if (_data == null) {
-      AppToast.show(context, 'لا توجد بيانات للطباعة', type: ToastType.error);
+      AppToast.show(context, tr('لا توجد بيانات للطباعة'), type: ToastType.error);
       return;
     }
     try {
       await ReportPdfGenerator.printGeneralLedger(
-        accountName: 'تقرير ضريبة المبيعات',
+        accountName: tr('تقرير ضريبة المبيعات'),
         fromDate: _fromDate,
         toDate: _toDate,
         data: [
           {
             'entry_date': DateTime.now(),
             'entry_number': '',
-            'description': '═══ ملخص الضريبة ═══',
+            'description': tr('═══ ملخص الضريبة ═══'),
             'debit': 0.0,
             'credit': 0.0,
             'balance': 0.0,
@@ -750,7 +751,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
           {
             'entry_date': DateTime.now(),
             'entry_number': '',
-            'description': 'إجمالي المبيعات (بدون ضريبة)',
+            'description': tr('إجمالي المبيعات (بدون ضريبة)'),
             'debit': (_data!['salesTotalExclTax'] as double?) ?? 0.0,
             'credit': 0.0,
             'balance': 0.0,
@@ -758,7 +759,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
           {
             'entry_date': DateTime.now(),
             'entry_number': '',
-            'description': 'ضريبة المبيعات (مخرجات)',
+            'description': tr('ضريبة المبيعات (مخرجات)'),
             'debit': (_data!['salesTax'] as double?) ?? 0.0,
             'credit': 0.0,
             'balance': 0.0,
@@ -766,7 +767,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
           {
             'entry_date': DateTime.now(),
             'entry_number': '',
-            'description': 'إجمالي المشتريات (بدون ضريبة)',
+            'description': tr('إجمالي المشتريات (بدون ضريبة)'),
             'debit': 0.0,
             'credit': (_data!['purchaseTotalExclTax'] as double?) ?? 0.0,
             'balance': 0.0,
@@ -774,7 +775,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
           {
             'entry_date': DateTime.now(),
             'entry_number': '',
-            'description': 'ضريبة المشتريات (مدخلات)',
+            'description': tr('ضريبة المشتريات (مدخلات)'),
             'debit': 0.0,
             'credit': (_data!['purchaseTax'] as double?) ?? 0.0,
             'balance': 0.0,
@@ -782,7 +783,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
           {
             'entry_date': DateTime.now(),
             'entry_number': '',
-            'description': '═══ صافي الضريبة المستحقة ═══',
+            'description': tr('═══ صافي الضريبة المستحقة ═══'),
             'debit': 0.0,
             'credit': 0.0,
             'balance': (_data!['netTax'] as double?) ?? 0.0,
@@ -791,7 +792,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
         ],
       );
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -813,7 +814,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
 
   Future<void> _exportToExcel() async {
     if (_data == null) {
-      AppToast.show(context, 'لا توجد بيانات للتصدير', type: ToastType.error);
+      AppToast.show(context, tr('لا توجد بيانات للتصدير'), type: ToastType.error);
       return;
     }
     final service = ref.read(excelServiceProvider);
@@ -823,37 +824,37 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-      title: 'تقرير ضريبة المبيعات',
+      title: tr('تقرير ضريبة المبيعات'),
       headers: [
-        'البند',
-        'القيمة',
+        tr('البند'),
+        tr('القيمة'),
       ],
       rows: [
         // البند 8 — stamp the filter context. A file exported for one branch
         // used to be indistinguishable from a company-wide one: only the date
         // range appeared, and only on screen.
-        ['الفترة', '${intl.DateFormat('yyyy-MM-dd').format(_fromDate)} → '
+        [tr('الفترة'), '${intl.DateFormat('yyyy-MM-dd').format(_fromDate)} → '
             '${intl.DateFormat('yyyy-MM-dd').format(_toDate)}'],
-        ['الفرع', _selectedBranchId?.toString() ?? 'الكل'],
-        ['المخزن', _selectedWarehouseId?.toString() ?? 'الكل'],
-        ['مركز التكلفة', _selectedCostCenterId?.toString() ?? 'الكل'],
+        [tr('الفرع'), _selectedBranchId?.toString() ?? tr('الكل')],
+        [tr('المخزن'), _selectedWarehouseId?.toString() ?? tr('الكل')],
+        [tr('مركز التكلفة'), _selectedCostCenterId?.toString() ?? tr('الكل')],
         const ['', ''],
-        ['إجمالي المبيعات (بدون ضريبة)', _data!['salesTotalExclTax']],
-        ['ضريبة المبيعات (مخرجات)', _data!['salesTax']],
-        ['إجمالي المشتريات (بدون ضريبة)', _data!['purchaseTotalExclTax']],
-        ['ضريبة المشتريات (مدخلات)', _data!['purchaseTax']],
-        ['صافي الضريبة المستحقة', _data!['netTax']],
+        [tr('إجمالي المبيعات (بدون ضريبة)'), _data!['salesTotalExclTax']],
+        [tr('ضريبة المبيعات (مخرجات)'), _data!['salesTax']],
+        [tr('إجمالي المشتريات (بدون ضريبة)'), _data!['purchaseTotalExclTax']],
+        [tr('ضريبة المشتريات (مدخلات)'), _data!['purchaseTax']],
+        [tr('صافي الضريبة المستحقة'), _data!['netTax']],
         const ['', ''],
-        const ['═══ ملخص الضريبة حسب النسبة ═══', ''],
+         [tr('═══ ملخص الضريبة حسب النسبة ═══'), ''],
         for (final b in _salesTaxRateBuckets)
           [
             (b['taxRate'] as num).toDouble() == 0
-                ? 'معفي / صفري — وعاء'
-                : '${_fmtRate((b['taxRate'] as num).toDouble())}% — وعاء',
+                ? tr('معفي / صفري — وعاء')
+                : tr('{p0}% — وعاء', {'p0': _fmtRate((b['taxRate'] as num).toDouble())}),
             b['taxableBase'],
           ],
         const ['', ''],
-        const ['═══ تفصيل الضريبة لكل صنف ═══', ''],
+         [tr('═══ تفصيل الضريبة لكل صنف ═══'), ''],
         for (final entry in _salesTaxByInvoice.entries)
           for (final l in entry.value)
             [
@@ -867,10 +868,10 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
       // Was `'... \$path'` — the escaped `$` printed the literal text `$path`
       // instead of the file location, so the operator never learned where the
       // export landed.
-      AppToast.show(context, 'تم تصدير التقرير بنجاح: $path', type: ToastType.success);
+      AppToast.show(context, tr('تم تصدير التقرير بنجاح: {path}', {'path': path}), type: ToastType.success);
       try {
         final user = ref.read(authProvider).user;
-        ref.read(activityLoggerProvider).logReportExport(user?.id ?? 0, user?.displayName ?? 'مجهول', 'تقرير الضريبة', 'Excel');
+        ref.read(activityLoggerProvider).logReportExport(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('تقرير الضريبة'), 'Excel');
       } catch (_) {}
     }
   }

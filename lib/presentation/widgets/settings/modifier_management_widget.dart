@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,12 +23,12 @@ Widget buildModifiersManageAddGroupButton({required VoidCallback onPressed}) {
   return PermissionGuard(
     permission: PermissionCodes.modifiersManage,
     allowManagerOverride: true,
-    actionName: 'مجموعة إضافات جديدة',
+    actionName: tr('مجموعة إضافات جديدة'),
     onGranted: onPressed,
     child: FilledButton.icon(
       onPressed: onPressed,
       icon: const Icon(PhosphorIconsBold.plus, size: 16),
-      label: const Text('مجموعة جديدة'),
+      label:  Text(tr('مجموعة جديدة')),
     ),
   );
 }
@@ -106,7 +107,7 @@ class _ModifierManagementWidgetState extends ConsumerState<ModifierManagementWid
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إدارة الإضافات والخيارات'),
+        title:  Text(tr('إدارة الإضافات والخيارات')),
         actions: [
           buildModifiersManageAddGroupButton(onPressed: _showAddGroupDialog),
           const SizedBox(width: 12),
@@ -121,9 +122,9 @@ class _ModifierManagementWidgetState extends ConsumerState<ModifierManagementWid
                     children: [
                       Icon(PhosphorIconsBold.forkKnife, size: 64, color: theme.colorScheme.outline),
                       const SizedBox(height: 16),
-                      Text('لا توجد مجموعات إضافات', style: theme.textTheme.titleMedium),
+                      Text(tr('لا توجد مجموعات إضافات'), style: theme.textTheme.titleMedium),
                       const SizedBox(height: 8),
-                      Text('أضف مجموعة إضافات مثل "الصوصات" أو "الأحجام"',
+                      Text(tr('أضف مجموعة إضافات مثل "الصوصات" أو "الأحجام"'),
                           style: theme.textTheme.bodySmall),
                     ],
                   ),
@@ -151,23 +152,23 @@ class _ModifierManagementWidgetState extends ConsumerState<ModifierManagementWid
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('مجموعة إضافات جديدة'),
+          title:  Text(tr('مجموعة إضافات جديدة')),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'اسم المجموعة',
-                    hintText: 'مثال: الصوصات، الأحجام',
+                  decoration:  InputDecoration(
+                    labelText: tr('اسم المجموعة'),
+                    hintText: tr('مثال: الصوصات، الأحجام'),
                   ),
                 ),
                 const SizedBox(height: 12),
                 SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'addon', label: Text('إضافة (بسعر)'), icon: Icon(PhosphorIconsBold.plusCircle, size: 16)),
-                    ButtonSegment(value: 'option', label: Text('خيار (بدون سعر)'), icon: Icon(PhosphorIconsBold.listBullets, size: 16)),
+                  segments:  [
+                    ButtonSegment(value: 'addon', label: Text(tr('إضافة (بسعر)')), icon: const Icon(PhosphorIconsBold.plusCircle, size: 16)),
+                    ButtonSegment(value: 'option', label: Text(tr('خيار (بدون سعر)')), icon: const Icon(PhosphorIconsBold.listBullets, size: 16)),
                   ],
                   selected: {type},
                   onSelectionChanged: (v) => setDialogState(() => type = v.first),
@@ -177,7 +178,7 @@ class _ModifierManagementWidgetState extends ConsumerState<ModifierManagementWid
                   children: [
                     Expanded(
                       child: TextField(
-                        decoration: const InputDecoration(labelText: 'أقل اختيار'),
+                        decoration:  InputDecoration(labelText: tr('أقل اختيار')),
                         keyboardType: TextInputType.number,
                         controller: TextEditingController(text: '$minSelect'),
                         onChanged: (v) => minSelect = int.tryParse(v) ?? 0,
@@ -186,7 +187,7 @@ class _ModifierManagementWidgetState extends ConsumerState<ModifierManagementWid
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextField(
-                        decoration: const InputDecoration(labelText: 'أكثر اختيار'),
+                        decoration:  InputDecoration(labelText: tr('أكثر اختيار')),
                         keyboardType: TextInputType.number,
                         controller: TextEditingController(text: '$maxSelect'),
                         onChanged: (v) => maxSelect = int.tryParse(v) ?? 1,
@@ -196,8 +197,8 @@ class _ModifierManagementWidgetState extends ConsumerState<ModifierManagementWid
                 ),
                 const SizedBox(height: 8),
                 SwitchListTile(
-                  title: const Text('مطلوب'),
-                  subtitle: const Text('يجب اختيار عنصر واحد على الأقل'),
+                  title:  Text(tr('مطلوب')),
+                  subtitle:  Text(tr('يجب اختيار عنصر واحد على الأقل')),
                   value: isRequired,
                   onChanged: (v) => setDialogState(() => isRequired = v),
                   contentPadding: EdgeInsets.zero,
@@ -206,10 +207,10 @@ class _ModifierManagementWidgetState extends ConsumerState<ModifierManagementWid
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(context), child:  Text(tr('إلغاء'))),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('إضافة'),
+              child:  Text(tr('إضافة')),
             ),
           ],
         ),
@@ -228,7 +229,7 @@ class _ModifierManagementWidgetState extends ConsumerState<ModifierManagementWid
           maxSelect: maxSelect,
           isRequired: isRequired,
         ),
-        failureMessage: 'تعذّرت إضافة المجموعة',
+        failureMessage: tr('تعذّرت إضافة المجموعة'),
       );
       if (ok) await _loadGroups();
     }
@@ -264,14 +265,14 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('حذف المجموعة'),
-        content: Text('هل تريد حذف "${g.name}" وجميع عناصرها؟'),
+        title:  Text(tr('حذف المجموعة')),
+        content: Text(tr('هل تريد حذف "{p0}" وجميع عناصرها؟', {'p0': g.name})),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(c), child:  Text(tr('إلغاء'))),
           FilledButton(
             onPressed: () => Navigator.pop(c, true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('حذف'),
+            child:  Text(tr('حذف')),
           ),
         ],
       ),
@@ -281,7 +282,7 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
       final ok = await runModifierMutation(
         context,
         () => widget.repo.deleteGroup(g.id),
-        failureMessage: 'تعذّر حذف المجموعة',
+        failureMessage: tr('تعذّر حذف المجموعة'),
       );
       if (ok) widget.onRefresh();
     }
@@ -293,7 +294,7 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
     final ok = await runModifierMutation(
       context,
       () => widget.repo.deleteItem(item.id),
-      failureMessage: 'تعذّر حذف العنصر',
+      failureMessage: tr('تعذّر حذف العنصر'),
     );
     if (ok) _loadItems();
   }
@@ -302,7 +303,7 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final g = widget.group;
-    final typeLabel = g.type == 'addon' ? 'إضافة' : 'خيار';
+    final typeLabel = g.type == 'addon' ? tr('إضافة') : tr('خيار');
     final typeColor = g.type == 'addon'
         ? theme.colorScheme.primary
         : theme.colorScheme.tertiary;
@@ -334,10 +335,10 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
                 const SizedBox(width: 8),
                 if (g.isRequired) ...[
                   const Icon(PhosphorIconsBold.asteriskSimple, size: 12, color: AppColors.error),
-                  const Text(' مطلوب', style: TextStyle(fontSize: 10, color: AppColors.error)),
+                   Text(tr(' مطلوب'), style: const TextStyle(fontSize: 10, color: AppColors.error)),
                   const SizedBox(width: 8),
                 ],
-                Text('${g.minSelect}-${g.maxSelect} اختيار', style: theme.textTheme.bodySmall),
+                Text(tr('{p0}-{p1} اختيار', {'p0': g.minSelect, 'p1': g.maxSelect}), style: theme.textTheme.bodySmall),
               ],
             ),
             trailing: Row(
@@ -346,18 +347,18 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
                 PermissionGuard(
                   permission: PermissionCodes.modifiersManage,
                   allowManagerOverride: true,
-                  actionName: 'ربط أصناف بمجموعة إضافات',
+                  actionName: tr('ربط أصناف بمجموعة إضافات'),
                   onGranted: () => _showLinkProductsDialog(),
                   child: IconButton(
                     icon: const Icon(PhosphorIconsBold.link, size: 18),
-                    tooltip: 'ربط الأصناف',
+                    tooltip: tr('ربط الأصناف'),
                     onPressed: () => _showLinkProductsDialog(),
                   ),
                 ),
                 PermissionGuard(
                   permission: PermissionCodes.modifiersManage,
                   allowManagerOverride: true,
-                  actionName: 'حذف مجموعة إضافات',
+                  actionName: tr('حذف مجموعة إضافات'),
                   onGranted: () => _confirmAndDeleteGroup(context, g),
                   child: IconButton(
                     icon: const Icon(PhosphorIconsBold.trash, size: 18),
@@ -401,7 +402,7 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
                             PermissionGuard(
                               permission: PermissionCodes.modifiersManage,
                               allowManagerOverride: true,
-                              actionName: 'حذف عنصر إضافة',
+                              actionName: tr('حذف عنصر إضافة'),
                               onGranted: () => _deleteItem(item),
                               child: IconButton(
                                 icon: const Icon(PhosphorIconsBold.trash, size: 16),
@@ -414,12 +415,12 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
                   PermissionGuard(
                     permission: PermissionCodes.modifiersManage,
                     allowManagerOverride: true,
-                    actionName: 'إضافة عنصر إضافة',
+                    actionName: tr('إضافة عنصر إضافة'),
                     onGranted: () => _showAddItemDialog(),
                     child: TextButton.icon(
                       onPressed: () => _showAddItemDialog(),
                       icon: const Icon(PhosphorIconsBold.plus, size: 14),
-                      label: const Text('إضافة عنصر'),
+                      label:  Text(tr('إضافة عنصر')),
                     ),
                   ),
                 ],
@@ -465,9 +466,9 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
               child: Column(
                 children: [
                   TextField(
-                    decoration: const InputDecoration(
-                      hintText: '\u0628\u062d\u062b \u0639\u0646 \u0635\u0646\u0641...',
-                      prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
+                    decoration:  InputDecoration(
+                      hintText: tr('بحث عن صنف...'),
+                      prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                       isDense: true,
                     ),
                     onChanged: (v) => setDialogState(() => searchQuery = v),
@@ -480,11 +481,11 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
                       const Spacer(),
                       TextButton(
                         onPressed: () => setDialogState(() => selected.addAll(filtered.map((p) => p.id))),
-                        child: const Text('\u062a\u062d\u062f\u064a\u062f \u0627\u0644\u0643\u0644', style: TextStyle(fontSize: 12)),
+                        child:  Text(tr('تحديد الكل'), style: const TextStyle(fontSize: 12)),
                       ),
                       TextButton(
                         onPressed: () => setDialogState(() => selected.clear()),
-                        child: const Text('\u0625\u0644\u063a\u0627\u0621 \u0627\u0644\u0643\u0644', style: TextStyle(fontSize: 12)),
+                        child:  Text(tr('إلغاء الكل'), style: const TextStyle(fontSize: 12)),
                       ),
                     ],
                   ),
@@ -518,10 +519,10 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('\u0625\u0644\u063a\u0627\u0621')),
+              TextButton(onPressed: () => Navigator.pop(context), child:  Text(tr('إلغاء'))),
               FilledButton(
                 onPressed: () => Navigator.pop(context, selected),
-                child: const Text('\u062d\u0641\u0638'),
+                child:  Text(tr('حفظ')),
               ),
             ],
           );
@@ -554,7 +555,7 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
                 productId: productId, modifierGroupId: groupId);
           }
         },
-        failureMessage: 'تعذّر ربط المجموعة بالأصناف',
+        failureMessage: tr('تعذّر ربط المجموعة بالأصناف'),
       );
 
       if (ok && mounted) {
@@ -572,25 +573,25 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('عنصر جديد'),
+          title:  Text(tr('عنصر جديد')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'الاسم', hintText: 'مثال: كاتشب، جبن إضافي'),
+                decoration:  InputDecoration(labelText: tr('الاسم'), hintText: tr('مثال: كاتشب، جبن إضافي')),
               ),
               if (widget.group.type == 'addon') ...[
                 const SizedBox(height: 12),
                 TextField(
                   controller: priceCtrl,
-                  decoration: const InputDecoration(labelText: 'السعر الإضافي'),
+                  decoration:  InputDecoration(labelText: tr('السعر الإضافي')),
                   keyboardType: TextInputType.number,
                 ),
               ],
               const SizedBox(height: 8),
               SwitchListTile(
-                title: const Text('افتراضي'),
+                title:  Text(tr('افتراضي')),
                 value: isDefault,
                 onChanged: (v) => setDialogState(() => isDefault = v),
                 contentPadding: EdgeInsets.zero,
@@ -598,8 +599,8 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('إضافة')),
+            TextButton(onPressed: () => Navigator.pop(context), child:  Text(tr('إلغاء'))),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child:  Text(tr('إضافة'))),
           ],
         ),
       ),
@@ -615,7 +616,7 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
           extraPrice: double.tryParse(priceCtrl.text) ?? 0,
           isDefault: isDefault,
         ),
-        failureMessage: 'تعذّرت إضافة العنصر',
+        failureMessage: tr('تعذّرت إضافة العنصر'),
       );
       if (ok) _loadItems();
     }

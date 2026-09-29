@@ -29,7 +29,7 @@ Future<bool> ensurePosNoteAddPermission(
     showPosToast(
       context,
       ref,
-      'ليس لديك صلاحية إضافة ملاحظة للصنف',
+      tr('ليس لديك صلاحية إضافة ملاحظة للصنف'),
       type: PosNotificationType.error,
     );
   }
@@ -69,7 +69,7 @@ mixin _TablePosDialogsMixin on ConsumerState<TablePosScreen> {
               const Icon(PhosphorIconsBold.notepad,
                   color: Color(0xFFF59E0B), size: 20),
               const SizedBox(width: 8),
-              Text('ملاحظات المطبخ',
+              Text(tr('ملاحظات المطبخ'),
                   style: GoogleFonts.cairo(
                       color: Colors.white, fontWeight: FontWeight.w700)),
             ],
@@ -89,7 +89,7 @@ mixin _TablePosDialogsMixin on ConsumerState<TablePosScreen> {
                 maxLines: 3,
                 style: GoogleFonts.cairo(color: Colors.white, fontSize: 13),
                 decoration: InputDecoration(
-                  hintText: 'مثال: بدون بصل، سكر زيادة، نص سوى...',
+                  hintText: tr('مثال: بدون بصل، سكر زيادة، نص سوى...'),
                   hintStyle: GoogleFonts.cairo(
                       color: Colors.white.withValues(alpha: 0.2),
                       fontSize: 12),
@@ -117,12 +117,12 @@ mixin _TablePosDialogsMixin on ConsumerState<TablePosScreen> {
                 spacing: 6,
                 runSpacing: 4,
                 children: [
-                  _quickNote('بدون بصل', controller),
-                  _quickNote('سكر زيادة', controller),
-                  _quickNote('بدون ملح', controller),
-                  _quickNote('حار', controller),
-                  _quickNote('بدون ثلج', controller),
-                  _quickNote('نص سوى', controller),
+                  _quickNote(tr('بدون بصل'), controller),
+                  _quickNote(tr('سكر زيادة'), controller),
+                  _quickNote(tr('بدون ملح'), controller),
+                  _quickNote(tr('حار'), controller),
+                  _quickNote(tr('بدون ثلج'), controller),
+                  _quickNote(tr('نص سوى'), controller),
                 ],
               ),
             ],
@@ -130,7 +130,7 @@ mixin _TablePosDialogsMixin on ConsumerState<TablePosScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('إلغاء',
+              child: Text(tr('إلغاء'),
                   style: GoogleFonts.cairo(
                       color: Colors.white.withValues(alpha: 0.5))),
             ),
@@ -140,7 +140,7 @@ mixin _TablePosDialogsMixin on ConsumerState<TablePosScreen> {
                   controller.clear();
                   Navigator.pop(ctx, '');
                 },
-                child: Text('حذف الملاحظة',
+                child: Text(tr('حذف الملاحظة'),
                     style: GoogleFonts.cairo(color: const Color(0xFFEF4444))),
               ),
             ElevatedButton(
@@ -151,7 +151,7 @@ mixin _TablePosDialogsMixin on ConsumerState<TablePosScreen> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
               ),
-              child: Text('حفظ', style: GoogleFonts.cairo()),
+              child: Text(tr('حفظ'), style: GoogleFonts.cairo()),
             ),
           ],
         ),
@@ -173,7 +173,7 @@ mixin _TablePosDialogsMixin on ConsumerState<TablePosScreen> {
       child: InkWell(
         onTap: () {
           if (controller.text.isNotEmpty) {
-            controller.text = '${controller.text}، $text';
+            controller.text = tr('{p0}، {text}', {'p0': controller.text, 'text': text});
           } else {
             controller.text = text;
           }

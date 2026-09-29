@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/constants/app_constants.dart';
@@ -58,9 +59,9 @@ class _SearchableUnitSelectionDialogState extends State<SearchableUnitSelectionD
               children: [
                 const Icon(PhosphorIconsBold.listMagnifyingGlass, color: AppColors.primary),
                 const SizedBox(width: 12),
-                const Text(
-                  'اختر وحدة القياس',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                 Text(
+                  tr('اختر وحدة القياس'),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 IconButton(
@@ -74,7 +75,7 @@ class _SearchableUnitSelectionDialogState extends State<SearchableUnitSelectionD
               controller: _searchController,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: 'بحث عن وحدة...',
+                hintText: tr('بحث عن وحدة...'),
                 prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass),
                 filled: true,
                 fillColor: AppColors.primary.withValues(alpha: 0.05),
@@ -87,7 +88,7 @@ class _SearchableUnitSelectionDialogState extends State<SearchableUnitSelectionD
             const SizedBox(height: 12),
             Expanded(
               child: _filteredUnits.isEmpty
-                  ? const Center(child: Text('لا توجد وحدات مطابقة'))
+                  ?  Center(child: Text(tr('لا توجد وحدات مطابقة')))
                   : ListView.separated(
                       itemCount: _filteredUnits.length,
                       separatorBuilder: (_, _) => const Divider(height: 1),
@@ -108,7 +109,7 @@ class _SearchableUnitSelectionDialogState extends State<SearchableUnitSelectionD
                               color: isSelected ? AppColors.primary : null,
                             ),
                           ),
-                          subtitle: Text('معامل التحويل: ×${unit.quantityInBase.toStringAsFixed(0)}'),
+                          subtitle: Text(tr('معامل التحويل: ×{p0}', {'p0': unit.quantityInBase.toStringAsFixed(0)})),
                           trailing: Text(
                             '${unit.salePrice.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbol}',
                             style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.success),

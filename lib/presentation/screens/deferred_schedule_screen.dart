@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,15 +57,15 @@ class _DeferredScheduleScreenState extends ConsumerState<DeferredScheduleScreen>
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('الإيرادات والمصروفات المؤجلة', style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
-              Text('IAS 18 / IAS 38 — الاستحقاق والترحيل التلقائي', style: GoogleFonts.cairo(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
+              Text(tr('الإيرادات والمصروفات المؤجلة'), style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
+              Text(tr('IAS 18 / IAS 38 — الاستحقاق والترحيل التلقائي'), style: GoogleFonts.cairo(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
             ],
           ),
           const Spacer(),
           ElevatedButton.icon(
             onPressed: () => _showCreateDialog(context),
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label: Text('جدول جديد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            label: Text(tr('جدول جديد'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white, foregroundColor: const Color(0xFF37474F),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -79,19 +80,19 @@ class _DeferredScheduleScreenState extends ConsumerState<DeferredScheduleScreen>
               try {
                 final count = await repo.processDueRecognitions();
                 if (context.mounted) {
-                  AppToast.show(context, 'تم ترحيل $count فترة استحقاق');
+                  AppToast.show(context, tr('تم ترحيل {count} فترة استحقاق', {'count': count}));
                   setState(() {});
                 }
               } catch (e) {
                 if (context.mounted) {
-                  AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+                  AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
                 }
               } finally {
                 if (mounted) setState(() => _processingRecognitions = false);
               }
             },
             icon: const Icon(PhosphorIconsBold.play, size: 18, color: Colors.white),
-            label: Text('ترحيل الفترات المستحقة', style: GoogleFonts.cairo(fontWeight: FontWeight.w600, color: Colors.white)),
+            label: Text(tr('ترحيل الفترات المستحقة'), style: GoogleFonts.cairo(fontWeight: FontWeight.w600, color: Colors.white)),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.white54),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -119,9 +120,9 @@ class _DeferredScheduleScreenState extends ConsumerState<DeferredScheduleScreen>
               children: [
                 const Icon(PhosphorIconsBold.calendarCheck, size: 64, color: AppColors.textMuted),
                 const SizedBox(height: 16),
-                Text('لا توجد جداول استحقاق نشطة', style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
+                Text(tr('لا توجد جداول استحقاق نشطة'), style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
                 const SizedBox(height: 8),
-                Text('أضف إيراداً مؤجلاً أو مصروفاً مدفوعاً مقدماً لبدء الترحيل التلقائي',
+                Text(tr('أضف إيراداً مؤجلاً أو مصروفاً مدفوعاً مقدماً لبدء الترحيل التلقائي'),
                     style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
               ],
             ),
@@ -169,7 +170,7 @@ class _DeferredScheduleScreenState extends ConsumerState<DeferredScheduleScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(schedule.description, style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700)),
-                      Text(isRevenue ? 'إيراد مؤجل' : 'مصروف مدفوع مقدماً',
+                      Text(isRevenue ? tr('إيراد مؤجل') : tr('مصروف مدفوع مقدماً'),
                           style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
                     ],
                   ),
@@ -178,7 +179,7 @@ class _DeferredScheduleScreenState extends ConsumerState<DeferredScheduleScreen>
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text('${schedule.totalAmount}', style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w800)),
-                    Text('متبقي: ${schedule.remainingAmount}',
+                    Text(tr('متبقي: {p0}', {'p0': schedule.remainingAmount}),
                         style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
                   ],
                 ),
@@ -199,7 +200,7 @@ class _DeferredScheduleScreenState extends ConsumerState<DeferredScheduleScreen>
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text('${schedule.completedPeriods}/${schedule.totalPeriods} فترة',
+                Text(tr('{p0}/{p1} فترة', {'p0': schedule.completedPeriods, 'p1': schedule.totalPeriods}),
                     style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w600)),
               ],
             ),
@@ -219,7 +220,7 @@ class _DeferredScheduleScreenState extends ConsumerState<DeferredScheduleScreen>
             children: [
               const Icon(PhosphorIconsBold.calendarPlus, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
-              Text('جدول استحقاق جديد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+              Text(tr('جدول استحقاق جديد'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             ],
           ),
           content: SizedBox(
@@ -228,26 +229,26 @@ class _DeferredScheduleScreenState extends ConsumerState<DeferredScheduleScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'النوع'),
+                  decoration:  InputDecoration(labelText: tr('النوع')),
                   initialValue: 'deferred_revenue',
-                  items: const [
-                    DropdownMenuItem(value: 'deferred_revenue', child: Text('إيراد مؤجل')),
-                    DropdownMenuItem(value: 'prepaid_expense', child: Text('مصروف مدفوع مقدماً')),
+                  items:  [
+                    DropdownMenuItem(value: 'deferred_revenue', child: Text(tr('إيراد مؤجل'))),
+                    DropdownMenuItem(value: 'prepaid_expense', child: Text(tr('مصروف مدفوع مقدماً'))),
                   ],
                   onChanged: (_) {},
                 ),
                 const SizedBox(height: 12),
-                const TextField(decoration: InputDecoration(labelText: 'الوصف')),
+                 TextField(decoration: InputDecoration(labelText: tr('الوصف'))),
                 const SizedBox(height: 12),
-                const TextField(keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'المبلغ الإجمالي')),
+                 TextField(keyboardType: TextInputType.number, decoration: InputDecoration(labelText: tr('المبلغ الإجمالي'))),
                 const SizedBox(height: 12),
-                const TextField(keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'عدد فترات الاستحقاق')),
+                 TextField(keyboardType: TextInputType.number, decoration: InputDecoration(labelText: tr('عدد فترات الاستحقاق'))),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx), child: const Text('إنشاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إنشاء'))),
           ],
         ),
       ),

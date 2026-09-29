@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 import 'dart:convert';
 import 'package:drift/drift.dart' show Value, OrderingTerm;
@@ -26,11 +27,11 @@ class PosTerminalsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.cashRegister),
-            SizedBox(width: 8),
-            Text('نقاط البيع'),
+            const Icon(PhosphorIconsBold.cashRegister),
+            const SizedBox(width: 8),
+            Text(tr('نقاط البيع')),
           ],
         ),
       ),
@@ -126,7 +127,7 @@ class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
           return const Center(child: CircularProgressIndicator());
         }
         if (snap.hasError) {
-          return Center(child: Text('خطأ فى التحميل: ${snap.error}'));
+          return Center(child: Text(tr('خطأ فى التحميل: {p0}', {'p0': snap.error})));
         }
         final data = snap.data!;
         if (data.terminals.isEmpty) {
@@ -136,7 +137,7 @@ class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
         if (shown.isEmpty) {
           return Center(
             child: Text(
-              'لا توجد نقطة بيع تطابق «${widget.searchQuery.trim()}»',
+              tr('لا توجد نقطة بيع تطابق «{p0}»', {'p0': widget.searchQuery.trim()}),
               style: const TextStyle(
                   fontSize: 14, color: AppColors.textMuted),
             ),
@@ -160,14 +161,14 @@ class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
           Icon(PhosphorIconsLight.cashRegister, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'لا توجد نقاط بيع مسجَّلة',
+            tr('لا توجد نقاط بيع مسجَّلة'),
             style: TextStyle(fontSize: 18, color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
-              'تُسجَّل نقاط البيع تلقائياً أول مرة يفتح فيها كل جهاز جلسة بيع. لو لم تظهر بعد ساعة من التشغيل، تأكد من اتصال العميل بالسيرفر.',
+              tr('تُسجَّل نقاط البيع تلقائياً أول مرة يفتح فيها كل جهاز جلسة بيع. لو لم تظهر بعد ساعة من التشغيل، تأكد من اتصال العميل بالسيرفر.'),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: Colors.grey[500]),
             ),
@@ -206,7 +207,7 @@ class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
                             fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        'الفرع: $branchName',
+                        tr('الفرع: {branchName}', {'branchName': branchName}),
                         style: const TextStyle(
                             fontSize: 12, color: AppColors.textMuted),
                       ),
@@ -236,17 +237,17 @@ class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
                 ),
                 IconButton(
                   icon: const Icon(PhosphorIconsBold.copy, size: 16),
-                  tooltip: 'نسخ device_id',
+                  tooltip: tr('نسخ device_id'),
                   onPressed: () async {
                     await Clipboard.setData(ClipboardData(text: t.deviceId));
                     if (mounted) {
-                      AppToast.show(context, 'تم نسخ device_id');
+                      AppToast.show(context, tr('تم نسخ device_id'));
                     }
                   },
                 ),
                 IconButton(
                   icon: const Icon(PhosphorIconsBold.pencilSimple, size: 16),
-                  tooltip: 'تعديل الاسم',
+                  tooltip: tr('تعديل الاسم'),
                   onPressed: () => _renameDialog(t),
                 ),
               ],
@@ -257,20 +258,20 @@ class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
                 const Icon(PhosphorIconsBold.warning,
                     size: 14, color: AppColors.warning),
                 const SizedBox(width: 6),
-                const Expanded(
+                 Expanded(
                   child: Text(
-                    'سياسة نقص الخامات لهذه الماكينة:',
-                    style: TextStyle(fontSize: 12),
+                    tr('سياسة نقص الخامات لهذه الماكينة:'),
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ),
                 DropdownButton<StockShortagePolicy?>(
                   value: policy,
-                  hint: const Text('افتراضى'),
+                  hint:  Text(tr('افتراضى')),
                   isDense: true,
                   items: [
-                    const DropdownMenuItem<StockShortagePolicy?>(
+                     DropdownMenuItem<StockShortagePolicy?>(
                       value: null,
-                      child: Text('افتراضى'),
+                      child: Text(tr('افتراضى')),
                     ),
                     for (final p in StockShortagePolicy.values)
                       DropdownMenuItem<StockShortagePolicy?>(
@@ -295,7 +296,7 @@ class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
     if (mounted) {
       AppToast.show(
         context,
-        active ? 'تم تفعيل الماكينة' : 'تم إيقاف الماكينة',
+        active ? tr('تم تفعيل الماكينة') : tr('تم إيقاف الماكينة'),
         type: ToastType.info,
       );
     }
@@ -307,20 +308,20 @@ class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
     final newName = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تعديل اسم الماكينة'),
+        title:  Text(tr('تعديل اسم الماكينة')),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'الاسم'),
+          decoration:  InputDecoration(labelText: tr('الاسم')),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('حفظ'),
+            child:  Text(tr('حفظ')),
           ),
         ],
       ),

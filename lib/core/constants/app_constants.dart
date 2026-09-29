@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import '../config/brand.dart';
 
 /// Application-wide constants
@@ -39,10 +40,10 @@ class AppConstants {
   static int decimalPlaces = CurrencyInfo.jod.decimals;
 
   // Currency fields — mutable, set from settings on app startup
-  static String currencySymbol = 'د.أ';
-  static String currencySymbolAr = 'د.أ';
+  static String currencySymbol = tr('د.أ');
+  static String currencySymbolAr = tr('د.أ');
   static String currencySymbolEn = 'JOD';
-  static String currencyNameAr = 'دينار أردني';
+  static String currencyNameAr = tr('دينار أردني');
   static String currencyCode = 'JOD';
 
   /// Set the active currency from a currency code ('JOD' or 'EGP')
@@ -102,20 +103,20 @@ class AppConstants {
   /// ⚠️ **ولا «أخرى» فيها.** القرارُ استبدل النصَّ الحرَّ بقائمةٍ مغلقة،
   /// و«أخرى» تُعيده من الباب الخلفيّ — فيصير التصنيفُ غيرَ قابلٍ للتجميع
   /// وهو الغرضُ الوحيدُ من إغلاق القائمة.
-  static const List<String> purchaseReturnReasons = [
-    'عيب في المنتج',
-    'خطأ في الطلب',
-    'انتهاء صلاحية',
-    'فائض',
+  static List<String> get purchaseReturnReasons => [
+    tr('عيب في المنتج'),
+    tr('خطأ في الطلب'),
+    tr('انتهاء صلاحية'),
+    tr('فائض'),
   ];
 
-  static const List<String> returnReasonCategories = [
-    'تالف',
-    'خطأ في الطلب',
-    'تغيير رأي العميل',
-    'انتهاء الصلاحية',
-    'عيب مصنعي',
-    'أخرى',
+  static List<String> get returnReasonCategories => [
+    tr('تالف'),
+    tr('خطأ في الطلب'),
+    tr('تغيير رأي العميل'),
+    tr('انتهاء الصلاحية'),
+    tr('عيب مصنعي'),
+    tr('أخرى'),
   ];
 }
 
@@ -187,20 +188,20 @@ class CurrencyInfo {
     required this.decimals,
   });
 
-  static const CurrencyInfo jod = CurrencyInfo(
+  static CurrencyInfo get jod => CurrencyInfo(
     code: 'JOD',
-    symbolAr: 'د.أ',
-    nameAr: 'دينار أردني',
+    symbolAr: tr('د.أ'),
+    nameAr: tr('دينار أردني'),
     decimals: 3,
   );
-  static const CurrencyInfo egp = CurrencyInfo(
+  static CurrencyInfo get egp => CurrencyInfo(
     code: 'EGP',
-    symbolAr: 'ج.م',
-    nameAr: 'جنيه مصري',
+    symbolAr: tr('ج.م'),
+    nameAr: tr('جنيه مصري'),
     decimals: 2,
   );
 
-  static const List<CurrencyInfo> all = [jod, egp];
+  static final List<CurrencyInfo> all = [jod, egp];
 
   static CurrencyInfo fromCode(String code) {
     switch (code.toUpperCase()) {

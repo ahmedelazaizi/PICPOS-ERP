@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
@@ -122,15 +123,15 @@ class _EditCartItemDialogState extends State<EditCartItemDialog> {
           if (widget.availableUnits.length > 1) ...[
             DropdownButtonFormField<int>(
               initialValue: _selectedUnit?.id,
-              decoration: const InputDecoration(
-                labelText: 'الوحدة',
-                prefixIcon: Icon(PhosphorIconsBold.cube),
+              decoration:  InputDecoration(
+                labelText: tr('الوحدة'),
+                prefixIcon: const Icon(PhosphorIconsBold.cube),
               ),
               items: widget.availableUnits.map((u) {
                 return DropdownMenuItem<int>(
                   value: u.id,
                   child: Text(
-                    '${u.unitName} (${u.quantityInBase.toStringAsFixed(0)} قطعة) — ${u.salePrice.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                    tr('{p0} ({p1} قطعة) — {p2} {p3}', {'p0': u.unitName, 'p1': u.quantityInBase.toStringAsFixed(0), 'p2': u.salePrice.toStringAsFixed(AppConstants.decimalPlaces), 'p3': AppConstants.currencySymbolEn}),
                     style: const TextStyle(fontSize: 13),
                   ),
                 );
@@ -150,7 +151,7 @@ class _EditCartItemDialogState extends State<EditCartItemDialog> {
           TextField(
             controller: _priceController,
             decoration: InputDecoration(
-              labelText: 'السعر',
+              labelText: tr('السعر'),
               prefixIcon: const Icon(PhosphorIconsBold.money),
               suffixText: AppConstants.currencySymbolEn,
             ),
@@ -160,10 +161,10 @@ class _EditCartItemDialogState extends State<EditCartItemDialog> {
           // Note
           TextField(
             controller: _noteController,
-            decoration: const InputDecoration(
-              labelText: 'ملاحظة',
-              prefixIcon: Icon(PhosphorIconsBold.notepad),
-              hintText: 'مثال: بدون بصل...',
+            decoration:  InputDecoration(
+              labelText: tr('ملاحظة'),
+              prefixIcon: const Icon(PhosphorIconsBold.notepad),
+              hintText: tr('مثال: بدون بصل...'),
             ),
             maxLines: 2,
           ),
@@ -172,12 +173,12 @@ class _EditCartItemDialogState extends State<EditCartItemDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         TextButton(
           style: TextButton.styleFrom(foregroundColor: AppColors.error),
           onPressed: widget.onDelete,
-          child: const Text('حذف'),
+          child:  Text(tr('حذف')),
         ),
         FilledButton(
           onPressed: () {
@@ -187,7 +188,7 @@ class _EditCartItemDialogState extends State<EditCartItemDialog> {
                 : _noteController.text;
             widget.onSave(newPrice, note, _selectedUnit);
           },
-          child: const Text('حفظ'),
+          child:  Text(tr('حفظ')),
         ),
       ],
     );

@@ -11,7 +11,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
   // ═══════════════════════════════════════════════════════════════════════════
 
   void showCreateEntryDialog(BuildContext context, {JournalEntryTemplateData? initialTemplate, List<Map<String, dynamic>>? templateLines}) {
-    final descCtrl = TextEditingController(text: initialTemplate?.name != null ? 'قيد بناءً على قالب: ${initialTemplate?.name}' : '');
+    final descCtrl = TextEditingController(text: initialTemplate?.name != null ? tr('قيد بناءً على قالب: {p0}', {'p0': initialTemplate?.name}) : '');
     DateTime entryDate = DateTime.now();
     String entryType = 'daily'; // daily, adjustment, salary
     int? globalCostCenterId; // Global cost center applied to new lines
@@ -64,17 +64,17 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
 
           return PicPosDialog(
             icon: PhosphorIconsBold.notebook,
-            title: 'إنشاء قيد يدوي',
+            title: tr('إنشاء قيد يدوي'),
             subtitle: initialTemplate != null
-                ? 'من قالب: ${initialTemplate.name}'
-                : 'قيدٌ يدويٌّ متوازنٌ يُرحَّل إلى دفتر الأستاذ',
+                ? tr('من قالب: {p0}', {'p0': initialTemplate.name})
+                : tr('قيدٌ يدويٌّ متوازنٌ يُرحَّل إلى دفتر الأستاذ'),
             width: 760,
             headerChips: [
               PicPosDialogChip(
                 icon: isBalanced
                     ? PhosphorIconsBold.checkCircle
                     : PhosphorIconsBold.warning,
-                label: isBalanced ? 'متوازن' : 'غير متوازن',
+                label: isBalanced ? tr('متوازن') : tr('غير متوازن'),
                 tint: isBalanced ? AppColors.success : AppColors.error,
               ),
             ],
@@ -100,24 +100,24 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                         DropdownButtonFormField<String>(
                           initialValue: entryType,
                           isExpanded: true,
-                          decoration: const InputDecoration(
-                            labelText: 'نوع القيد',
-                            border: OutlineInputBorder(),
+                          decoration:  InputDecoration(
+                            labelText: tr('نوع القيد'),
+                            border: const OutlineInputBorder(),
                             isDense: true,
                           ),
-                          items: const [
-                            DropdownMenuItem(value: 'daily', child: Text('يومية')),
-                            DropdownMenuItem(value: 'adjustment', child: Text('تسوية')),
-                            DropdownMenuItem(value: 'salary', child: Text('رواتب')),
+                          items:  [
+                            DropdownMenuItem(value: 'daily', child: Text(tr('يومية'))),
+                            DropdownMenuItem(value: 'adjustment', child: Text(tr('تسوية'))),
+                            DropdownMenuItem(value: 'salary', child: Text(tr('رواتب'))),
                           ],
                           onChanged: (v) => setDialogState(() => entryType = v ?? 'daily'),
                         ),
                           TextField(
                             controller: descCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'وصف القيد',
-                              hintText: 'مثال: قيد تسوية...',
-                              border: OutlineInputBorder(),
+                            decoration:  InputDecoration(
+                              labelText: tr('وصف القيد'),
+                              hintText: tr('مثال: قيد تسوية...'),
+                              border: const OutlineInputBorder(),
                             ),
                           ),
                           InkWell(
@@ -133,10 +133,10 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                               }
                             },
                             child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'التاريخ',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(PhosphorIconsBold.calendar, size: 16),
+                              decoration:  InputDecoration(
+                                labelText: tr('التاريخ'),
+                                border: const OutlineInputBorder(),
+                                prefixIcon: const Icon(PhosphorIconsBold.calendar, size: 16),
                               ),
                               child: Text(
                                 _dateFormat.format(entryDate),
@@ -151,13 +151,13 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                     // Lines header with global cost center
                     Row(
                       children: [
-                        Text('بنود القيد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 14)),
+                        Text(tr('بنود القيد'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 14)),
                         const SizedBox(width: 12),
                         Expanded(
                           child: CostCenterPicker(
                             repo: ref.read(accountingRepositoryProvider),
                             selectedId: globalCostCenterId,
-                            labelOverride: 'الفرع / مركز التكلفة',
+                            labelOverride: tr('الفرع / مركز التكلفة'),
                             onChanged: (id) {
                               setDialogState(() {
                                 globalCostCenterId = id;
@@ -176,7 +176,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                             lines.add(newLine);
                           }),
                           icon: const Icon(PhosphorIconsBold.plus, size: 14),
-                          label: const Text('إضافة بند'),
+                          label:  Text(tr('إضافة بند')),
                         ),
                       ],
                     ),
@@ -206,7 +206,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    'بند ${i + 1}',
+                                    tr('بند {p0}', {'p0': i + 1}),
                                     style: GoogleFonts.cairo(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.primary),
                                   ),
                                 ),
@@ -236,7 +236,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                                   child: TextField(
                                     controller: line.descCtrl,
                                     decoration: InputDecoration(
-                                      hintText: 'البيان',
+                                      hintText: tr('البيان'),
                                       isDense: true,
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -266,7 +266,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                                     keyboardType: TextInputType.number,
                                     onChanged: (_) => setDialogState(() {}),
                                     decoration: InputDecoration(
-                                      labelText: 'مدين',
+                                      labelText: tr('مدين'),
                                       labelStyle: GoogleFonts.cairo(fontSize: 11),
                                       hintText: '0.00',
                                       isDense: true,
@@ -283,7 +283,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                                     keyboardType: TextInputType.number,
                                     onChanged: (_) => setDialogState(() {}),
                                     decoration: InputDecoration(
-                                      labelText: 'دائن',
+                                      labelText: tr('دائن'),
                                       labelStyle: GoogleFonts.cairo(fontSize: 11),
                                       hintText: '0.00',
                                       isDense: true,
@@ -324,17 +324,17 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'مجموع المدين: ${totalDebit.toStringAsFixed(2)}',
+                            tr('مجموع المدين: {p0}', {'p0': totalDebit.toStringAsFixed(2)}),
                             style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(width: 16),
                           Text(
-                            'مجموع الدائن: ${totalCredit.toStringAsFixed(2)}',
+                            tr('مجموع الدائن: {p0}', {'p0': totalCredit.toStringAsFixed(2)}),
                             style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600),
                           ),
                           const Spacer(),
                           Text(
-                            isBalanced ? 'متوازن ✓' : 'غير متوازن!',
+                            isBalanced ? tr('متوازن ✓') : tr('غير متوازن!'),
                             style: GoogleFonts.cairo(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -358,11 +358,11 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                     final leave = await showPicPosConfirm(
                       ctx,
                       icon: PhosphorIconsBold.warning,
-                      title: 'تنبيه',
+                      title: tr('تنبيه'),
                       message:
-                          'يوجد بيانات غير محفوظة في القيد. هل أنت متأكد من الإلغاء؟',
-                      confirmLabel: 'نعم، إلغاء',
-                      cancelLabel: 'لا، البقاء',
+                          tr('يوجد بيانات غير محفوظة في القيد. هل أنت متأكد من الإلغاء؟'),
+                      confirmLabel: tr('نعم، إلغاء'),
+                      cancelLabel: tr('لا، البقاء'),
                       danger: true,
                     );
                     if (!leave) return;
@@ -385,7 +385,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
             //    unsafe» من `Theme.of` في بطاقة البند. فلا إعادةَ بناءٍ
             //    إلّا عند الإخفاق حيث يبقى الحوار.
             primaryAction: PicPosDialogAction(
-              label: 'حفظ كمسودة',
+              label: tr('حفظ كمسودة'),
               icon: PhosphorIconsBold.floppyDisk,
               busy: saving,
               onPressed: isBalanced && !saving
@@ -395,28 +395,28 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                       final ok = await showPicPosConfirm(
                         ctx,
                         icon: PhosphorIconsBold.floppyDisk,
-                        title: 'حفظ كمسودة',
+                        title: tr('حفظ كمسودة'),
                         message:
                             'المسودة لا تؤثر على الأرصدة، ويمكن استكمالها '
                             'واعتمادها لاحقاً من قائمة القيود.',
-                        confirmLabel: 'حفظ المسودة',
+                        confirmLabel: tr('حفظ المسودة'),
                         details: [
                           PicPosDialogSummary(
                             rows: [
                               (
-                                label: 'البيان',
+                                label: tr('البيان'),
                                 value: descCtrl.text.isEmpty
                                     ? '—'
                                     : descCtrl.text,
                                 color: null,
                               ),
                               (
-                                label: 'عدد السطور',
-                                value: '${lines.length} سطر',
+                                label: tr('عدد السطور'),
+                                value: tr('{p0} سطر', {'p0': lines.length}),
                                 color: null,
                               ),
                               (
-                                label: 'إجمالي القيد',
+                                label: tr('إجمالي القيد'),
                                 value:
                                     '${total.toStringAsFixed(AppConstants.decimalPlaces)} '
                                     '${AppConstants.currencySymbol}',
@@ -452,8 +452,8 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
       barrierDismissible: false,
       builder: (ctx) => PicPosDialog(
         icon: PhosphorIconsBold.copy,
-        title: 'اختيار قالب قيد',
-        subtitle: 'ابدأ القيدَ من قالبٍ نشطٍ بدل إدخاله من الصفر',
+        title: tr('اختيار قالب قيد'),
+        subtitle: tr('ابدأ القيدَ من قالبٍ نشطٍ بدل إدخاله من الصفر'),
         width: 520,
         // ⚠️ الجسمُ قائمةٌ متمرّرةٌ بارتفاعٍ ثابت. فلو بقي `scrollable` على
         //    افتراضه لصارت تمريرتان متداخلتان في المحور نفسِه — والقائمةُ
@@ -470,7 +470,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                 final templates = snapshot.data!;
                 if (templates.isEmpty) {
                   return Center(
-                    child: Text('لا توجد قوالب نشطة مسجلة.', style: GoogleFonts.cairo(color: AppColors.textMuted)),
+                    child: Text(tr('لا توجد قوالب نشطة مسجلة.'), style: GoogleFonts.cairo(color: AppColors.textMuted)),
                   );
                 }
                 return ListView.separated(
@@ -525,22 +525,22 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
     bool asDraft = true,
   }) async {
     if (description.isEmpty) {
-      AppToast.show(context, 'يرجى إدخال وصف القيد', type: ToastType.info);
+      AppToast.show(context, tr('يرجى إدخال وصف القيد'), type: ToastType.info);
       return false;
     }
 
     for (final line in lines) {
       if (line.account == null) {
-        AppToast.show(context, 'يرجى اختيار حساب لكل بند', type: ToastType.info);
+        AppToast.show(context, tr('يرجى اختيار حساب لكل بند'), type: ToastType.info);
         return false;
       }
       if (line.debit <= 0 && line.credit <= 0) {
-        AppToast.show(context, 'كل بند يجب أن يحتوي على قيمة مدين أو دائن', type: ToastType.info);
+        AppToast.show(context, tr('كل بند يجب أن يحتوي على قيمة مدين أو دائن'), type: ToastType.info);
         return false;
       }
       // BUG-U13: a line may carry a debit OR a credit, never both.
       if (line.debit > 0 && line.credit > 0) {
-        AppToast.show(context, 'لا يمكن إدخال مدين ودائن معاً في نفس البند',
+        AppToast.show(context, tr('لا يمكن إدخال مدين ودائن معاً في نفس البند'),
             type: ToastType.info);
         return false;
       }
@@ -583,14 +583,14 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
         AppToast.show(
           context,
           asDraft
-              ? 'حُفظت المسودّة — لا تؤثّر على الأرصدة حتى تُعتمَد'
-              : 'تم حفظ القيد بنجاح',
+              ? tr('حُفظت المسودّة — لا تؤثّر على الأرصدة حتى تُعتمَد')
+              : tr('تم حفظ القيد بنجاح'),
         );
       }
       return true;
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
       return false;
     }

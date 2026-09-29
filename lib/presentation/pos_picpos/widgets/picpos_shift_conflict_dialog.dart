@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // «ورديتُك مفتوحةٌ على جهازٍ آخر» — حوارٌ حاجزٌ لا إشعارٌ عابر.
 //
 // ── طلبُ المالك (2026-08-14) ────────────────────────────────────────────────
@@ -36,8 +37,8 @@ Future<ShiftConflictChoice> showPicposShiftConflictDialog(
 }) async {
   final since = DateTime.now().difference(startedAt);
   final sinceText = since.inHours >= 1
-      ? 'منذ ${since.inHours} ساعة'
-      : 'منذ ${since.inMinutes} دقيقة';
+      ? tr('منذ {p0} ساعة', {'p0': since.inHours})
+      : tr('منذ {p0} دقيقة', {'p0': since.inMinutes});
 
   final choice = await showDialog<ShiftConflictChoice>(
     context: context,
@@ -47,7 +48,7 @@ Future<ShiftConflictChoice> showPicposShiftConflictDialog(
       child: AlertDialog(
         icon: const Icon(PhosphorIconsBold.warningCircle,
             color: AppColors.warning, size: 40),
-        title: const Text('وردية مفتوحة على جهاز آخر'),
+        title:  Text(tr('وردية مفتوحة على جهاز آخر')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,28 +58,28 @@ Future<ShiftConflictChoice> showPicposShiftConflictDialog(
               'بدأت $sinceText على طرف آخر.',
             ),
             const SizedBox(height: 12),
-            const Text(
-              'لا يمكن فتح وردية ثانية لنفس المستخدم — أغلق المفتوحة أولاً.',
-              style: TextStyle(fontWeight: FontWeight.bold),
+             Text(
+              tr('لا يمكن فتح وردية ثانية لنفس المستخدم — أغلق المفتوحة أولاً.'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, ShiftConflictChoice.cancel),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           // التجاوزُ ثانياً وبلا تمييزٍ بصريّ: هو المخرجُ لا الطريقُ الأوّل.
           TextButton(
             onPressed: () =>
                 Navigator.pop(ctx, ShiftConflictChoice.overrideOpen),
-            child: const Text('فتح بإذن مدير'),
+            child:  Text(tr('فتح بإذن مدير')),
           ),
           ElevatedButton.icon(
             onPressed: () =>
                 Navigator.pop(ctx, ShiftConflictChoice.closeExisting),
             icon: const Icon(PhosphorIconsBold.lockKey, size: 16),
-            label: const Text('إغلاق الوردية المفتوحة'),
+            label:  Text(tr('إغلاق الوردية المفتوحة')),
           ),
         ],
       ),

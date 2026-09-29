@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // محرّرُ النماذج — تصميمُ `PicPos Template Editor.dc.html`.
 //
 // ── ما يحلّه ──────────────────────────────────────────────────────────────
@@ -75,21 +76,21 @@ class _TemplateEditorPicposScreenState
     final editor = ref.read(templateEditorProvider.notifier);
 
     if (initial.isLoading && state == null) {
-      return const PicPosScreenScaffold(
-        title: 'محرّر النماذج',
+      return  PicPosScreenScaffold(
+        title: tr('محرّر النماذج'),
         icon: PhosphorIconsBold.layout,
-        body: Center(child: CircularProgressIndicator()),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (state == null) {
       return PicPosScreenScaffold(
-        title: 'محرّر النماذج',
+        title: tr('محرّر النماذج'),
         icon: PhosphorIconsBold.layout,
         body: PicPosEmptyState(
           icon: PhosphorIconsBold.warning,
-          title: 'تعذّر فتحُ القالب',
-          hint: initial.hasError ? '${initial.error}' : 'القالبُ غيرُ موجود',
+          title: tr('تعذّر فتحُ القالب'),
+          hint: initial.hasError ? '${initial.error}' : tr('القالبُ غيرُ موجود'),
         ),
       );
     }
@@ -101,7 +102,7 @@ class _TemplateEditorPicposScreenState
         if (!mounted) return;
         AppToast.show(
           context,
-          'هوجر القالبُ إلى النطاقات — صار قابلاً للتحريك، ومطبوعُه كما كان',
+          tr('هوجر القالبُ إلى النطاقات — صار قابلاً للتحريك، ومطبوعُه كما كان'),
           type: ToastType.info,
         );
       });
@@ -113,23 +114,23 @@ class _TemplateEditorPicposScreenState
       icon: PhosphorIconsBold.layout,
       headerActions: [
         if (state.isDirty)
-          const Padding(
-            padding: EdgeInsetsDirectional.only(end: 10),
+           Padding(
+            padding: const EdgeInsetsDirectional.only(end: 10),
             child: _Badge(
-              label: 'تعديلات غير محفوظة',
+              label: tr('تعديلات غير محفوظة'),
               tone: AppColors.warning,
             ),
           ),
         OutlinedButton.icon(
           onPressed: () => _save(editor, activate: false),
           icon: const Icon(PhosphorIconsBold.floppyDisk, size: 16),
-          label: const Text('حفظ'),
+          label:  Text(tr('حفظ')),
         ),
         const SizedBox(width: 8),
         FilledButton.icon(
           onPressed: () => _saveAndActivate(editor, state),
           icon: const Icon(PhosphorIconsBold.checkCircle, size: 16),
-          label: const Text('حفظ وتفعيل كافتراضي'),
+          label:  Text(tr('حفظ وتفعيل كافتراضي')),
         ),
       ],
       subHeader: _Toolbar(state: state, editor: editor),
@@ -278,16 +279,16 @@ class _TemplateEditorPicposScreenState
       if (!mounted || r == null) return;
 
       final lines = <String>[
-        'كُتب ${r.elementCount} عنصراً و${r.visibleColumnCount} عموداً',
-        if (r.activated) 'وأُنشئت الرابطة — الطباعةُ التالية تقرأ هذه النسخة',
+        tr('كُتب {p0} عنصراً و{p1} عموداً', {'p0': r.elementCount, 'p1': r.visibleColumnCount}),
+        if (r.activated) tr('وأُنشئت الرابطة — الطباعةُ التالية تقرأ هذه النسخة'),
         // ⚠️ الإلغاءُ **يُقال**: صامتاً يجعل المستخدمَ يظنّ قالبين مفعّلَين.
         if (r.cancelledDocumentTypes.isNotEmpty)
-          'وأُلغيت رابطةُ: ${r.cancelledDocumentTypes.join('، ')}',
+          tr('وأُلغيت رابطةُ: {p0}', {'p0': r.cancelledDocumentTypes.join('، ')}),
       ];
       AppToast.show(context, lines.join(' · '), type: ToastType.success);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'تعذّر الحفظ: $e', type: ToastType.error);
+        AppToast.show(context, tr('تعذّر الحفظ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -299,7 +300,7 @@ class _TemplateEditorPicposScreenState
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: SimpleDialog(
-          title: const Text('تفعيل كافتراضي لأيِّ مستند؟'),
+          title:  Text(tr('تفعيل كافتراضي لأيِّ مستند؟')),
           children: [
             for (final t in TemplateResolver.documentTypes)
               SimpleDialogOption(
@@ -308,8 +309,8 @@ class _TemplateEditorPicposScreenState
                   children: [
                     Expanded(child: Text(_documentLabel(t))),
                     if (!TemplateResolver.wiredDocumentTypes.contains(t))
-                      const Text('بانتظار التوصيل',
-                          style: TextStyle(
+                       Text(tr('بانتظار التوصيل'),
+                          style: const TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w700,
                               color: AppColors.warning)),
@@ -325,17 +326,17 @@ class _TemplateEditorPicposScreenState
   }
 }
 
-String _documentLabel(String type) => const {
-      'sales_invoice': 'فاتورة مبيعات',
-      'sales_return': 'مرتجع مبيعات',
-      'purchase_invoice': 'فاتورة مشتريات',
-      'purchase_return': 'مرتجع مشتريات',
-      'sales_receipt': 'إيصال بيع',
-      'quotation': 'عرض سعر',
-      'kitchen_order': 'طلب مطبخ',
-      'shift_closing': 'إقفال وردية',
-      'party_statement': 'كشف حساب',
-      'report': 'تقرير',
+String _documentLabel(String type) =>  {
+      'sales_invoice': tr('فاتورة مبيعات'),
+      'sales_return': tr('مرتجع مبيعات'),
+      'purchase_invoice': tr('فاتورة مشتريات'),
+      'purchase_return': tr('مرتجع مشتريات'),
+      'sales_receipt': tr('إيصال بيع'),
+      'quotation': tr('عرض سعر'),
+      'kitchen_order': tr('طلب مطبخ'),
+      'shift_closing': tr('إقفال وردية'),
+      'party_statement': tr('كشف حساب'),
+      'report': tr('تقرير'),
     }[type] ??
     type;
 
@@ -372,7 +373,7 @@ class _Toolbar extends StatelessWidget {
             on: false,
             onTap: () => editor.setZoom(state.zoom - 0.25),
           ),
-          Text('${(state.zoom * 100).round()}٪',
+          Text(tr('{p0}٪', {'p0': (state.zoom * 100).round()}),
               style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w800,
@@ -385,7 +386,7 @@ class _Toolbar extends StatelessWidget {
           const SizedBox(width: 6),
           _Chip(
             icon: PhosphorIconsBold.gridNine,
-            label: 'محاذاة للشبكة',
+            label: tr('محاذاة للشبكة'),
             on: state.snapToGrid,
             onTap: editor.toggleSnap,
           ),
@@ -393,7 +394,7 @@ class _Toolbar extends StatelessWidget {
             icon: state.previewMode
                 ? PhosphorIconsBold.pencilSimple
                 : PhosphorIconsBold.eye,
-            label: state.previewMode ? 'عودة للتحرير' : 'معاينة بالبيانات',
+            label: state.previewMode ? tr('عودة للتحرير') : tr('معاينة بالبيانات'),
             on: state.previewMode,
             onTap: editor.togglePreview,
           ),
@@ -510,10 +511,10 @@ class _PreviewPane extends ConsumerWidget {
     final pages = ref.watch(editorPreviewPagesProvider);
 
     if (pages.isEmpty) {
-      return const PicPosEmptyState(
+      return  PicPosEmptyState(
         icon: PhosphorIconsBold.warningOctagon,
-        title: 'لم تنتج الورقةُ صفحةً',
-        hint: 'القالبُ بلا عناصرَ ظاهرة، أو الحسابُ انهار',
+        title: tr('لم تنتج الورقةُ صفحةً'),
+        hint: tr('القالبُ بلا عناصرَ ظاهرة، أو الحسابُ انهار'),
       );
     }
 
@@ -534,7 +535,7 @@ class _PreviewPane extends ConsumerWidget {
                   widthMm: p.widthMm,
                   heightMm: p.heightMm,
                   ops: p.ops,
-                  caption: 'صفحة ${p.number} من ${p.count}',
+                  caption: tr('صفحة {p0} من {p1}', {'p0': p.number, 'p1': p.count}),
                 ),
                 const SizedBox(width: 20),
               ],

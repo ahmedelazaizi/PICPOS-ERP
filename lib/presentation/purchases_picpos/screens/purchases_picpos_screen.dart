@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../../core/widgets/app_shortcuts.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
@@ -138,12 +139,12 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
         icon: PhosphorIconsBold.warning,
         accent: AppColors.warning,
         title: isPosted
-            ? 'تعديل فاتورة مُرحّلة محاسبياً'
-            : 'تعديل فاتورة مدفوعة',
+            ? tr('تعديل فاتورة مُرحّلة محاسبياً')
+            : tr('تعديل فاتورة مدفوعة'),
         message: isPosted
-            ? 'هذه الفاتورة مُرحّلة إلى دفتر الأستاذ. التعديل سيعكس القيد المحاسبي وحركة المخزون والتكلفة المتوسطة ثم يعيد ترحيلها بالقيم الجديدة، وسيُسجَّل في سجل التدقيق.\n\nهل تريد المتابعة؟'
-            : 'هذه الفاتورة تم دفع مبلغ منها. التعديل سيؤدي إلى عكس القيود المحاسبية وحركة المخزون وإعادة تطبيقها.\n\nهل تريد المتابعة؟',
-        confirmLabel: 'تعديل الفاتورة',
+            ? tr('هذه الفاتورة مُرحّلة إلى دفتر الأستاذ. التعديل سيعكس القيد المحاسبي وحركة المخزون والتكلفة المتوسطة ثم يعيد ترحيلها بالقيم الجديدة، وسيُسجَّل في سجل التدقيق.\n\nهل تريد المتابعة؟')
+            : tr('هذه الفاتورة تم دفع مبلغ منها. التعديل سيؤدي إلى عكس القيود المحاسبية وحركة المخزون وإعادة تطبيقها.\n\nهل تريد المتابعة؟'),
+        confirmLabel: tr('تعديل الفاتورة'),
       );
       // `bool` غيرُ لاغٍ الآن، فـ`!confirmed` تكافئ `confirmed != true`
       // السابقةَ بلا اعتمادٍ على انتباه المستدعي إلى `null`.
@@ -169,12 +170,12 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
       searchController: _searchController,
       onNew: openPicPosInvoiceForm, // شاشةُ التصميم الجديدة
       child: PicPosScreenScaffold(
-        title: 'المشتريات',
+        title: tr('المشتريات'),
         icon: PhosphorIconsBold.receipt,
         headerActions: [
           IconButton(
             icon: const Icon(PhosphorIconsBold.arrowClockwise),
-            tooltip: 'تحديث',
+            tooltip: tr('تحديث'),
             onPressed: () => ref.invalidate(purchaseInvoicesControllerProvider),
           ),
           const SizedBox(width: 8),
@@ -187,26 +188,26 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
               );
             },
             icon: const Icon(PhosphorIconsBold.clipboardText, size: 16),
-            label: const Text('طلبات الشراء'),
+            label:  Text(tr('طلبات الشراء')),
           ),
           const SizedBox(width: 8),
           ElevatedButton.icon(
             onPressed: openPicPosInvoiceForm,
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label: const Text('فاتورة جديدة'),
+            label:  Text(tr('فاتورة جديدة')),
           ),
         ],
         // Day 11: unified loading / empty state via AppStateView.
         body: AppStateView(
           isLoading: state.isLoading,
           isEmpty: state.allInvoices.isEmpty && !state.isLoading,
-          emptyMessage: 'لا توجد فواتير مشتريات',
+          emptyMessage: tr('لا توجد فواتير مشتريات'),
           emptyIcon: PhosphorIconsBold.shoppingCart,
           child: Column(
             children: [
-              const SyncPendingBanner(
+               SyncPendingBanner(
                 tableName: 'purchase_invoices',
-                label: 'فاتورة مشتريات',
+                label: tr('فاتورة مشتريات'),
               ),
               // شريطُ الإجماليّات — نحيفٌ نهائيّاً بقرار المالك 2026-09-18.
               const PurchasesTotalsBar(),
@@ -243,7 +244,7 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
   Widget _buildExcelMenu(BuildContext context, WidgetRef ref) {
     return PopupMenuButton<String>(
       icon: const Icon(PhosphorIconsBold.fileXls),
-      tooltip: 'استيراد / تصدير Excel',
+      tooltip: tr('استيراد / تصدير Excel'),
       onSelected: (value) async {
         final excelService = ref.read(excelServiceProvider) as ExcelService?;
         if (excelService == null) return;
@@ -252,7 +253,7 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
           if (context.mounted) {
             AppToast.show(
               context,
-              path != null ? 'تم تصدير القالب بنجاح' : 'فشل تصدير القالب',
+              path != null ? tr('تم تصدير القالب بنجاح') : tr('فشل تصدير القالب'),
               type: path != null ? ToastType.success : ToastType.error,
             );
           }
@@ -271,19 +272,19 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
         }
       },
       itemBuilder: (context) => [
-        const PopupMenuItem(
+         PopupMenuItem(
           value: 'export_template',
           child: ListTile(
-            leading: Icon(PhosphorIconsBold.export),
-            title: Text('تصدير قالب فارغ'),
+            leading: const Icon(PhosphorIconsBold.export),
+            title: Text(tr('تصدير قالب فارغ')),
             dense: true,
           ),
         ),
-        const PopupMenuItem(
+         PopupMenuItem(
           value: 'import',
           child: ListTile(
-            leading: Icon(PhosphorIconsBold.upload),
-            title: Text('استيراد من Excel'),
+            leading: const Icon(PhosphorIconsBold.upload),
+            title: Text(tr('استيراد من Excel')),
             dense: true,
           ),
         ),
@@ -309,7 +310,7 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'تم تحديد ${state.selectedInvoices.length} فاتورة مسجلة',
+            tr('تم تحديد {p0} فاتورة مسجلة', {'p0': state.selectedInvoices.length}),
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
           ),
           Row(
@@ -319,13 +320,13 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
                   controller.clearSelection();
                 },
                 icon: const Icon(PhosphorIconsBold.x, color: Colors.white70),
-                label: const Text('إلغاء التحديد', style: TextStyle(color: Colors.white70)),
+                label:  Text(tr('إلغاء التحديد'), style: const TextStyle(color: Colors.white70)),
               ),
               const SizedBox(width: 16),
               ElevatedButton.icon(
                 onPressed: () => _batchPrint(state),
                 icon: const Icon(PhosphorIconsBold.printer, size: 18),
-                label: const Text('طباعة المحددة'),
+                label:  Text(tr('طباعة المحددة')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: AppColors.primary,
@@ -340,11 +341,11 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
                     context,
                     icon: PhosphorIconsBold.warning,
                     danger: true,
-                    title: 'تأكيد الحذف المجمع',
+                    title: tr('تأكيد الحذف المجمع'),
                     message: 'هل أنت متأكد من حذف '
                         '${state.selectedInvoices.length} '
                         'فاتورة مشتريات محددة؟',
-                    confirmLabel: 'حذف الجميع',
+                    confirmLabel: tr('حذف الجميع'),
                   );
 
                   if (confirm) {
@@ -355,11 +356,11 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
                      }
                      controller.clearSelection();
                       if (!mounted) return;
-                      AppToast.show(context, 'تم حذف الفواتير المحددة بنجاح', type: ToastType.success);
+                      AppToast.show(context, tr('تم حذف الفواتير المحددة بنجاح'), type: ToastType.success);
                   }
                 },
                 icon: const Icon(PhosphorIconsBold.trash, size: 18),
-                label: const Text('حذف المحددة'),
+                label:  Text(tr('حذف المحددة')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.error,
                   foregroundColor: Colors.white,
@@ -381,7 +382,7 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
         .toList();
 
     if (invoicesToPrint.isEmpty) {
-      AppToast.show(context, 'لم يتم العثور على الفواتير المحددة', type: ToastType.warning);
+      AppToast.show(context, tr('لم يتم العثور على الفواتير المحددة'), type: ToastType.warning);
       return;
     }
 
@@ -392,7 +393,7 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
 
     AppToast.show(
       context,
-      'جاري طباعة ${invoicesToPrint.length} فاتورة...',
+      tr('جاري طباعة {p0} فاتورة...', {'p0': invoicesToPrint.length}),
       type: ToastType.info,
     );
   }
@@ -413,8 +414,8 @@ class _PurchaseReturnBadge extends StatelessWidget {
     final color = full ? AppColors.error : AppColors.warning;
     return Tooltip(
       message: full
-          ? 'تم إرجاع الفاتورة بالكامل — راجع شاشة مرتجع المشتريات للتفاصيل'
-          : 'تم إرجاع جزء من الفاتورة — راجع شاشة مرتجع المشتريات للتفاصيل',
+          ? tr('تم إرجاع الفاتورة بالكامل — راجع شاشة مرتجع المشتريات للتفاصيل')
+          : tr('تم إرجاع جزء من الفاتورة — راجع شاشة مرتجع المشتريات للتفاصيل'),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
@@ -432,7 +433,7 @@ class _PurchaseReturnBadge extends StatelessWidget {
             ),
             const SizedBox(width: 3),
             Text(
-              full ? 'مُرتجعة' : 'مُرتجعة جزئياً',
+              full ? tr('مُرتجعة') : tr('مُرتجعة جزئياً'),
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,

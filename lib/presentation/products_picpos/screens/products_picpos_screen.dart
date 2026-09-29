@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 // (نفس product_search_header.dart — excelServiceProvider نوعه dynamic في هذا الريبو،
 //  فاستدعاء export/import عليه dynamic call مقصود ومكتوم في المصدر الأصلي أيضاً.)
@@ -79,7 +80,7 @@ class _ProductsPicposScreenState extends ConsumerState<ProductsPicposScreen> {
     // ولا يُسأل المسؤولُ مرّتين: `ensurePermission` تستهلك موافقةَ الحارس من
     // `ManagerApprovalCache`.
     if (!await ensurePermission(ref, context, PermissionCodes.productsAdd,
-        actionName: 'إضافة صنف')) {
+        actionName: tr('إضافة صنف'))) {
       return;
     }
     if (!mounted) return;
@@ -92,7 +93,7 @@ class _ProductsPicposScreenState extends ConsumerState<ProductsPicposScreen> {
   Future<void> _exportProducts() async {
     final path = await ref.read(excelServiceProvider).exportProductsTemplate();
     if (path != null && mounted) {
-      AppToast.show(context, 'تم تصدير النموذج: $path', type: ToastType.success);
+      AppToast.show(context, tr('تم تصدير النموذج: {path}', {'path': path}), type: ToastType.success);
     }
   }
 
@@ -142,25 +143,25 @@ class _ProductsPicposScreenState extends ConsumerState<ProductsPicposScreen> {
     return PicPosKpiRow(
       kpis: [
         PicPosKpi(
-          label: 'أصناف في الصفحة',
+          label: tr('أصناف في الصفحة'),
           value: '${kpis.loaded}',
           icon: PhosphorIconsBold.package,
           tint: AppColors.primary,
         ),
         PicPosKpi(
-          label: 'نشط في الصفحة',
+          label: tr('نشط في الصفحة'),
           value: '${kpis.active}',
           icon: PhosphorIconsBold.checkCircle,
           tint: AppColors.success,
         ),
         PicPosKpi(
-          label: 'تحت الحد الأدنى',
+          label: tr('تحت الحد الأدنى'),
           value: '${kpis.belowMinStock}',
           icon: PhosphorIconsBold.warning,
           tint: kpis.belowMinStock > 0 ? AppColors.error : AppColors.success,
         ),
         PicPosKpi(
-          label: 'بلا تكلفة مسجّلة',
+          label: tr('بلا تكلفة مسجّلة'),
           value: '${kpis.missingCost}',
           icon: PhosphorIconsBold.currencyCircleDollar,
           tint: kpis.missingCost > 0 ? AppColors.warning : AppColors.success,
@@ -174,7 +175,7 @@ class _ProductsPicposScreenState extends ConsumerState<ProductsPicposScreen> {
     final selectedCategoryId =
         ref.watch(productsControllerProvider.select((s) => s.selectedCategoryId));
     final cats = ref.watch(visibleCategoriesProvider).value ?? const [];
-    String categoryName = 'تصنيف';
+    String categoryName = tr('تصنيف');
     for (final c in cats) {
       if (c.id == selectedCategoryId) {
         categoryName = c.name;
@@ -182,24 +183,24 @@ class _ProductsPicposScreenState extends ConsumerState<ProductsPicposScreen> {
       }
     }
     final categoryLabel =
-        selectedCategoryId == null ? 'كل التصنيفات' : categoryName;
+        selectedCategoryId == null ? tr('كل التصنيفات') : categoryName;
 
     return AppShortcuts(
       searchFocusNode: _searchFocusNode,
       searchController: _searchController,
       onNew: _addProduct,
       child: PicPosScreenScaffold(
-        title: 'الأصناف',
-        subtitle: 'إدارة المنتجات والتسعير',
+        title: tr('الأصناف'),
+        subtitle: tr('إدارة المنتجات والتسعير'),
         icon: PhosphorIconsBold.package,
         headerSearch: TextField(
           controller: _searchController,
           focusNode: _searchFocusNode,
           onChanged: (v) =>
               ref.read(productsControllerProvider.notifier).setSearchQuery(v),
-          decoration: const InputDecoration(
-            hintText: 'البحث عن صنف...',
-            prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
+          decoration:  InputDecoration(
+            hintText: tr('البحث عن صنف...'),
+            prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
           ),
         ),
         toolbar: PicPosToolbar(children: [
@@ -211,37 +212,37 @@ class _ProductsPicposScreenState extends ConsumerState<ProductsPicposScreen> {
           PermissionGuard(
             permission: PermissionCodes.productsExport,
             allowManagerOverride: true,
-            actionName: 'تصدير الأصناف',
+            actionName: tr('تصدير الأصناف'),
             child: OutlinedButton.icon(
               onPressed: _exportProducts,
               icon: const Icon(PhosphorIconsBold.fileArrowUp, size: 18),
-              label: const Text('تصدير'),
+              label:  Text(tr('تصدير')),
             ),
           ),
           PermissionGuard(
             permission: PermissionCodes.productsImport,
             allowManagerOverride: true,
-            actionName: 'استيراد أصناف',
+            actionName: tr('استيراد أصناف'),
             child: OutlinedButton.icon(
               onPressed: _importProducts,
               icon: const Icon(PhosphorIconsBold.fileArrowDown, size: 18),
-              label: const Text('استيراد'),
+              label:  Text(tr('استيراد')),
             ),
           ),
           OutlinedButton.icon(
             onPressed: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const UnitsManagementScreen())),
             icon: const Icon(PhosphorIconsBold.ruler, size: 18),
-            label: const Text('وحدات القياس'),
+            label:  Text(tr('وحدات القياس')),
           ),
           PermissionGuard(
             permission: PermissionCodes.productsAdd,
             allowManagerOverride: true,
-            actionName: 'إضافة صنف جديد',
+            actionName: tr('إضافة صنف جديد'),
             child: ElevatedButton.icon(
               onPressed: _addProduct,
               icon: const Icon(PhosphorIconsBold.plus, size: 18),
-              label: const Text('إضافة صنف'),
+              label:  Text(tr('إضافة صنف')),
             ),
           ),
         ]),

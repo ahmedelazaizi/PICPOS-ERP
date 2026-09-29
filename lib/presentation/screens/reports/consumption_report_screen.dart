@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -64,9 +65,9 @@ class _ConsumptionReportScreenState
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
@@ -116,7 +117,7 @@ class _ConsumptionReportScreenState
       if (!mounted) return;
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطأ فى تحميل التقرير: $e')),
+        SnackBar(content: Text(tr('خطأ فى تحميل التقرير: {e}', {'e': e}))),
       );
     }
   }
@@ -149,7 +150,7 @@ class _ConsumptionReportScreenState
     }
     if (scopeAsync.hasError) {
       return Scaffold(
-        body: Center(child: Text('تعذر تحديد صلاحيات الفرع: ${scopeAsync.error}')),
+        body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
       );
     }
     final scope = scopeAsync.requireValue;
@@ -159,19 +160,19 @@ class _ConsumptionReportScreenState
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.chartLine),
-            SizedBox(width: 8),
-            Text('تقرير استهلاك الخامات'),
+            const Icon(PhosphorIconsBold.chartLine),
+            const SizedBox(width: 8),
+            Text(tr('تقرير استهلاك الخامات')),
           ],
         ),
         bottom: TabBar(
           controller: _tab,
           indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: 'استهلاك الخامات'),
-            Tab(text: 'ربحية المنتجات'),
+          tabs:  [
+            Tab(text: tr('استهلاك الخامات')),
+            Tab(text: tr('ربحية المنتجات')),
           ],
         ),
       ),
@@ -225,11 +226,11 @@ class _ConsumptionReportScreenState
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<int?>(
                       value: _branchId,
-                      hint: const Text('كل الفروع'),
+                      hint:  Text(tr('كل الفروع')),
                       isDense: true,
                       items: [
-                        const DropdownMenuItem(
-                            value: null, child: Text('كل الفروع')),
+                         DropdownMenuItem(
+                            value: null, child: Text(tr('كل الفروع'))),
                         for (final b in list)
                           DropdownMenuItem(value: b.id, child: Text(b.name)),
                       ],
@@ -261,11 +262,11 @@ class _ConsumptionReportScreenState
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<int?>(
                     value: _terminalId,
-                    hint: const Text('كل الماكينات'),
+                    hint:  Text(tr('كل الماكينات')),
                     isDense: true,
                     items: [
-                      const DropdownMenuItem(
-                          value: null, child: Text('كل الماكينات')),
+                       DropdownMenuItem(
+                          value: null, child: Text(tr('كل الماكينات'))),
                       for (final t in snap.data!)
                         DropdownMenuItem(value: t.id, child: Text(t.name)),
                     ],
@@ -280,7 +281,7 @@ class _ConsumptionReportScreenState
           ),
           IconButton(
             icon: const Icon(PhosphorIconsBold.arrowsClockwise),
-            tooltip: 'تحديث',
+            tooltip: tr('تحديث'),
             onPressed: _load,
           ),
         ],
@@ -297,7 +298,7 @@ class _ConsumptionReportScreenState
   Widget _buildConsumptionGrid() {
     final rows = _consumption ?? const [];
     if (rows.isEmpty) {
-      return _emptyState('لا توجد بيانات استهلاك فى المدى المحدد');
+      return _emptyState(tr('لا توجد بيانات استهلاك فى المدى المحدد'));
     }
     final totalCost = rows.fold<double>(0.0, (s, r) => s + r.totalCost);
     return Column(
@@ -307,11 +308,11 @@ class _ConsumptionReportScreenState
             scrollDirection: Axis.horizontal,
             child: SingleChildScrollView(
               child: DataTable(
-                columns: const [
-                  DataColumn(label: Text('الخامة')),
-                  DataColumn(label: Text('الكمية المستهلكة'), numeric: true),
-                  DataColumn(label: Text('التكلفة'), numeric: true),
-                  DataColumn(label: Text('عدد الفواتير'), numeric: true),
+                columns:  [
+                  DataColumn(label: Text(tr('الخامة'))),
+                  DataColumn(label: Text(tr('الكمية المستهلكة')), numeric: true),
+                  DataColumn(label: Text(tr('التكلفة')), numeric: true),
+                  DataColumn(label: Text(tr('عدد الفواتير')), numeric: true),
                 ],
                 rows: [
                   for (final r in rows)
@@ -332,7 +333,7 @@ class _ConsumptionReportScreenState
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('إجمالى التكلفة (${rows.length} خامة)',
+              Text(tr('إجمالى التكلفة ({p0} خامة)', {'p0': rows.length}),
                   style: const TextStyle(fontWeight: FontWeight.bold)),
               Text(_currency.format(totalCost),
                   style: const TextStyle(
@@ -348,7 +349,7 @@ class _ConsumptionReportScreenState
     final rows = _profitability ?? const [];
     if (rows.isEmpty) {
       return _emptyState(
-          'لا توجد منتجات auto-deplete مبيعة فى المدى المحدد');
+          tr('لا توجد منتجات auto-deplete مبيعة فى المدى المحدد'));
     }
     final totalRevenue = rows.fold<double>(0.0, (s, r) => s + r.revenue);
     final totalCost = rows.fold<double>(0.0, (s, r) => s + r.rawCost);
@@ -360,13 +361,13 @@ class _ConsumptionReportScreenState
             scrollDirection: Axis.horizontal,
             child: SingleChildScrollView(
               child: DataTable(
-                columns: const [
-                  DataColumn(label: Text('المنتج')),
-                  DataColumn(label: Text('الكمية المباعة'), numeric: true),
-                  DataColumn(label: Text('الإيراد'), numeric: true),
-                  DataColumn(label: Text('تكلفة الخامات'), numeric: true),
-                  DataColumn(label: Text('الربح'), numeric: true),
-                  DataColumn(label: Text('الفواتير'), numeric: true),
+                columns:  [
+                  DataColumn(label: Text(tr('المنتج'))),
+                  DataColumn(label: Text(tr('الكمية المباعة')), numeric: true),
+                  DataColumn(label: Text(tr('الإيراد')), numeric: true),
+                  DataColumn(label: Text(tr('تكلفة الخامات')), numeric: true),
+                  DataColumn(label: Text(tr('الربح')), numeric: true),
+                  DataColumn(label: Text(tr('الفواتير')), numeric: true),
                 ],
                 rows: [
                   for (final r in rows)
@@ -399,12 +400,12 @@ class _ConsumptionReportScreenState
             children: [
               Expanded(
                 child: Text(
-                  'إيراد ${_currency.format(totalRevenue)} − تكلفة ${_currency.format(totalCost)}',
+                  tr('إيراد {p0} − تكلفة {p1}', {'p0': _currency.format(totalRevenue), 'p1': _currency.format(totalCost)}),
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
               Text(
-                'الربح: ${_currency.format(totalMargin)}',
+                tr('الربح: {p0}', {'p0': _currency.format(totalMargin)}),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color:

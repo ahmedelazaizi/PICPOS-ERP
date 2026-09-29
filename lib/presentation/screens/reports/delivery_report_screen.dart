@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -79,9 +80,9 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
@@ -89,7 +90,7 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
       // #Forensic Log: Report View
       try {
         final user = ref.read(authProvider).user;
-        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? 'مجهول', 'تقرير التوصيل');
+        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('تقرير التوصيل'));
       } catch (_) {}
     });
   }
@@ -117,7 +118,7 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
       return Directionality(
         textDirection: ui.TextDirection.rtl,
         child: Scaffold(
-          body: Center(child: Text('تعذر تحديد صلاحيات الفرع: ${scopeAsync.error}')),
+          body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
         ),
       );
     }
@@ -147,20 +148,20 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: const Text('تقرير عمليات التحصيل'),
+          title:  Text(tr('تقرير عمليات التحصيل')),
           bottom: TabBar(
             controller: _tabController,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
             indicatorColor: Colors.white,
-            tabs: const [
+            tabs:  [
               Tab(
-                text: 'سجل العمليات',
-                icon: Icon(PhosphorIconsBold.clipboardText),
+                text: tr('سجل العمليات'),
+                icon: const Icon(PhosphorIconsBold.clipboardText),
               ),
               Tab(
-                text: 'حسابات الشركات',
-                icon: Icon(PhosphorIconsBold.handshake),
+                text: tr('حسابات الشركات'),
+                icon: const Icon(PhosphorIconsBold.handshake),
               ),
             ],
           ),
@@ -170,7 +171,7 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
             IconButton(
               icon: const Icon(PhosphorIconsBold.calendar),
               onPressed: _selectDateRange,
-              tooltip: 'تغيير الفترة',
+              tooltip: tr('تغيير الفترة'),
             ),
           ],
         ),
@@ -285,13 +286,13 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildSummaryItem(
-                'إجمالي العمليات',
+                tr('إجمالي العمليات'),
                 totalDeliveries.toString(),
                 PhosphorIconsBold.moped,
                 Colors.blue,
               ),
               _buildSummaryItem(
-                'إجمالي الرسوم',
+                tr('إجمالي الرسوم'),
                 '${totalFees.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                 PhosphorIconsBold.money,
                 Colors.green,
@@ -336,9 +337,9 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
         final data = snapshot.data ?? [];
         return AppStateView(
           isLoading: snapshot.connectionState == ConnectionState.waiting,
-          error: snapshot.hasError ? 'خطأ: ${snapshot.error}' : null,
+          error: snapshot.hasError ? tr('خطأ: {p0}', {'p0': snapshot.error}) : null,
           isEmpty: data.isEmpty,
-          emptyMessage: 'لا توجد سجلات خلال هذه الفترة',
+          emptyMessage: tr('لا توجد سجلات خلال هذه الفترة'),
           emptyIcon: PhosphorIconsBold.moped,
           child: ListView.separated(
             padding: const EdgeInsets.all(16),
@@ -361,7 +362,7 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'الفاتورة: ${invoice.invoiceNumber}',
+                        tr('الفاتورة: {p0}', {'p0': invoice.invoiceNumber}),
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
@@ -378,10 +379,10 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
                     children: [
                       const SizedBox(height: 4),
                       Text(
-                        'التاريخ: ${DateFormat('yyyy-MM-dd HH:mm').format(invoice.invoiceDate)}',
+                        tr('التاريخ: {p0}', {'p0': DateFormat('yyyy-MM-dd HH:mm').format(invoice.invoiceDate)}),
                       ),
-                      Text('المندوب: ${courier?.name ?? "غير محدد"}'),
-                      Text('الشركة: ${company?.name ?? "بدون شركة"}'),
+                      Text(tr('المندوب: {p0}', {'p0': courier?.name ?? "غير محدد"})),
+                      Text(tr('الشركة: {p0}', {'p0': company?.name ?? "بدون شركة"})),
                       const SizedBox(height: 4),
                       _buildStatusBadge(invoice.deliveryStatus ?? 'pending'),
                     ],
@@ -399,8 +400,8 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
     return companiesAsync.when(
       data: (companies) {
         if (companies.isEmpty) {
-          return const Center(
-            child: Text('لا توجد شركات توصيل مسجلة في النظام'),
+          return  Center(
+            child: Text(tr('لا توجد شركات توصيل مسجلة في النظام')),
           );
         }
         return ListView.builder(
@@ -431,7 +432,7 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
                   ),
                 ),
                 subtitle: Text(
-                  'الرصيد الحالي: ${balance.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                  tr('الرصيد الحالي: {p0} {p1}', {'p0': balance.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
                 ),
                 // reports_delivery_recon — مش عرض تقرير: الديالوج اللي
                 // بيفتحه بيعمل حركة فلوس حقيقية (سند صرف + قيد في الأستاذ
@@ -443,12 +444,12 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
                 trailing: PermissionGuard(
                   permission: PermissionCodes.reportsDeliveryRecon,
                   allowManagerOverride: true,
-                  actionName: 'تسوية حساب شركة توصيل',
+                  actionName: tr('تسوية حساب شركة توصيل'),
                   onGranted: () => _showReconciliationDialog(company),
                   child: ElevatedButton.icon(
                     onPressed: () => _showReconciliationDialog(company),
                     icon: const Icon(PhosphorIconsBold.checkCircle),
-                    label: const Text('تسوية'),
+                    label:  Text(tr('تسوية')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: balance > 0 ? Colors.green : Colors.grey,
                       foregroundColor: Colors.white,
@@ -464,7 +465,7 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
         padding: const EdgeInsets.all(16),
         child: ShimmerLoading.list(itemCount: 6),
       ),
-      error: (e, s) => Center(child: Text('خطأ: $e')),
+      error: (e, s) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
     );
   }
 
@@ -479,14 +480,14 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
       builder: (context) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: AlertDialog(
-          title: Text('تسوية حساب - ${company.name}'),
+          title: Text(tr('تسوية حساب - {p0}', {'p0': company.name})),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: amountController,
                 decoration: InputDecoration(
-                  labelText: 'المبلغ المطلوب',
+                  labelText: tr('المبلغ المطلوب'),
                   suffixText: AppConstants.currencySymbolEn,
                 ),
                 keyboardType: TextInputType.number,
@@ -494,14 +495,14 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
               const SizedBox(height: 16),
               TextField(
                 controller: notesController,
-                decoration: const InputDecoration(labelText: 'ملاحظات إضافية'),
+                decoration:  InputDecoration(labelText: tr('ملاحظات إضافية')),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -513,7 +514,7 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
                 // and posts the GL atomically (Dr: delivery_recon / Cr: Cash).
                 // When the interceptor fires, the server owns the full operation
                 // (balance + GL), so we must NOT call adjustPartyBalance here.
-                final desc = 'تسوية حساب شركة توصيل: ${company.name}\n${notesController.text}';
+                final desc = tr('تسوية حساب شركة توصيل: {p0}\n{p1}', {'p0': company.name, 'p1': notesController.text});
                 final intercepted = await ClientWriteInterceptor.createExpense(
                   amount: amount,
                   category: 'delivery_recon',
@@ -533,10 +534,10 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
                   Navigator.pop(context);
                 }
                 if (context.mounted) {
-                  AppToast.show(context, 'تمت التسوية المالية بنجاح');
+                  AppToast.show(context, tr('تمت التسوية المالية بنجاح'));
                 }
               },
-              child: const Text('تأكيد التسوية'),
+              child:  Text(tr('تأكيد التسوية')),
             ),
           ],
         ),
@@ -550,15 +551,15 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
     switch (status) {
       case 'pending':
         color = Colors.orange;
-        label = 'قيد التجهيز';
+        label = tr('قيد التجهيز');
         break;
       case 'out_for_delivery':
         color = Colors.blue;
-        label = 'قيد التوصيل';
+        label = tr('قيد التوصيل');
         break;
       case 'delivered':
         color = Colors.green;
-        label = 'تم التوصيل';
+        label = tr('تم التوصيل');
         break;
     }
     return Container(
@@ -614,7 +615,7 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
         allowedBranchIds: _allowedBranchIds,
       );
       if (data.isEmpty) {
-        if (mounted) AppToast.show(context, 'لا توجد بيانات للتصدير', type: ToastType.error);
+        if (mounted) AppToast.show(context, tr('لا توجد بيانات للتصدير'), type: ToastType.error);
         return;
       }
       final service = ref.read(excelServiceProvider);
@@ -624,14 +625,14 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-        title: 'تقرير عمليات التحصيل',
+        title: tr('تقرير عمليات التحصيل'),
         headers: [
-          'رقم الفاتورة',
-          'التاريخ',
-          'المندوب',
-          'الشركة',
-          'رسوم التوصيل',
-          'الحالة',
+          tr('رقم الفاتورة'),
+          tr('التاريخ'),
+          tr('المندوب'),
+          tr('الشركة'),
+          tr('رسوم التوصيل'),
+          tr('الحالة'),
         ],
         rows: data.map<List<dynamic>>((item) {
           final invoice = item['invoice'] as SalesInvoiceData;
@@ -640,22 +641,22 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
           return [
             invoice.invoiceNumber,
             DateFormat('yyyy-MM-dd HH:mm').format(invoice.invoiceDate),
-            courier?.name ?? 'غير محدد',
-            company?.name ?? 'بدون شركة',
+            courier?.name ?? tr('غير محدد'),
+            company?.name ?? tr('بدون شركة'),
             invoice.deliveryFee,
             invoice.deliveryStatus ?? 'pending',
           ];
         }).toList(),
       );
       if (path != null && mounted) {
-        AppToast.show(context, 'تم تصدير التقرير بنجاح: \$path', type: ToastType.success);
+        AppToast.show(context, tr('تم تصدير التقرير بنجاح: \$path'), type: ToastType.success);
         try {
           final user = ref.read(authProvider).user;
-          ref.read(activityLoggerProvider).logReportExport(user?.id ?? 0, user?.displayName ?? 'مجهول', 'تقرير التوصيل', 'Excel');
+          ref.read(activityLoggerProvider).logReportExport(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('تقرير التوصيل'), 'Excel');
         } catch (_) {}
       }
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في التصدير: \$e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ في التصدير: \$e'), type: ToastType.error);
     }
   }
 }

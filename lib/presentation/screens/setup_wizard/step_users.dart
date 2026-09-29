@@ -20,16 +20,16 @@ extension _SetupWizardUsersExt on _SetupWizardScreenState {
               child: const Icon(PhosphorIconsBold.users, color: AppColors.primary),
             ),
             const SizedBox(width: 12),
-            const Column(
+             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'إنشاء المستخدمين',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  tr('إنشاء المستخدمين'),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  'أضف مستخدمي النظام وحدد أدوارهم (يمكنك التخطي والإضافة لاحقاً)',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                  tr('أضف مستخدمي النظام وحدد أدوارهم (يمكنك التخطي والإضافة لاحقاً)'),
+                  style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                 ),
               ],
             ),
@@ -47,9 +47,9 @@ extension _SetupWizardUsersExt on _SetupWizardScreenState {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'مستخدم جديد',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+               Text(
+                tr('مستخدم جديد'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
               const SizedBox(height: 16),
               Row(
@@ -58,7 +58,7 @@ extension _SetupWizardUsersExt on _SetupWizardScreenState {
                     child: TextField(
                       controller: _userDisplayNameController,
                       decoration: InputDecoration(
-                        labelText: 'الاسم الكامل *',
+                        labelText: tr('الاسم الكامل *'),
                         prefixIcon: const Icon(PhosphorIconsBold.user),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       ),
@@ -69,7 +69,7 @@ extension _SetupWizardUsersExt on _SetupWizardScreenState {
                     child: TextField(
                       controller: _userUsernameController,
                       decoration: InputDecoration(
-                        labelText: 'اسم المستخدم *',
+                        labelText: tr('اسم المستخدم *'),
                         prefixIcon: const Icon(PhosphorIconsBold.at),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       ),
@@ -85,7 +85,7 @@ extension _SetupWizardUsersExt on _SetupWizardScreenState {
                       controller: _userPasswordController,
                       obscureText: true,
                       decoration: InputDecoration(
-                        labelText: 'كلمة المرور *',
+                        labelText: tr('كلمة المرور *'),
                         prefixIcon: const Icon(PhosphorIconsBold.lock),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       ),
@@ -97,7 +97,7 @@ extension _SetupWizardUsersExt on _SetupWizardScreenState {
                       data: (roles) => DropdownButtonFormField<int>(
                         value: _userSelectedRoleId,
                         decoration: InputDecoration(
-                          labelText: 'الدور *',
+                          labelText: tr('الدور *'),
                           prefixIcon: const Icon(PhosphorIconsBold.shieldCheck),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         ),
@@ -108,7 +108,7 @@ extension _SetupWizardUsersExt on _SetupWizardScreenState {
                         onChanged: (v) => setState(() => _userSelectedRoleId = v),
                       ),
                       loading: () => const LinearProgressIndicator(),
-                      error: (_, _) => const Text('خطأ في تحميل الأدوار'),
+                      error: (_, _) =>  Text(tr('خطأ في تحميل الأدوار')),
                     ),
                   ),
                 ],
@@ -119,7 +119,7 @@ extension _SetupWizardUsersExt on _SetupWizardScreenState {
                 child: ElevatedButton.icon(
                   onPressed: _addWizardUser,
                   icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                  label: const Text('إضافة المستخدم'),
+                  label:  Text(tr('إضافة المستخدم')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -133,9 +133,9 @@ extension _SetupWizardUsersExt on _SetupWizardScreenState {
 
         if (_wizardUsers.isNotEmpty) ...[
           const SizedBox(height: 20),
-          const Text(
-            'المستخدمون المضافون:',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+           Text(
+            tr('المستخدمون المضافون:'),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           const SizedBox(height: 8),
           ...List.generate(_wizardUsers.length, (i) {
@@ -167,14 +167,14 @@ extension _SetupWizardUsersExt on _SetupWizardScreenState {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
             ),
-            child: const Row(
+            child:  Row(
               children: [
-                Icon(PhosphorIconsBold.info, color: Colors.amber, size: 18),
-                SizedBox(width: 8),
+                const Icon(PhosphorIconsBold.info, color: Colors.amber, size: 18),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'المستخدمون الموجودون على السيرفر ستتم مزامنتهم تلقائياً',
-                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                    tr('المستخدمون الموجودون على السيرفر ستتم مزامنتهم تلقائياً'),
+                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                 ),
               ],

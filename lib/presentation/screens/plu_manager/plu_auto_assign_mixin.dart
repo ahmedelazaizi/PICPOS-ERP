@@ -21,11 +21,11 @@ mixin _PluAutoAssignMixin on ConsumerState<PluManagerScreen> {
         builder: (ctx, setDialogState) => Directionality(
           textDirection: ui.TextDirection.rtl,
           child: AlertDialog(
-            title: const Row(
+            title:  Row(
               children: [
-                Icon(PhosphorIconsBold.lightning, color: AppColors.warning),
-                SizedBox(width: 8),
-                Text('ترقيم PLU تلقائي'),
+                const Icon(PhosphorIconsBold.lightning, color: AppColors.warning),
+                const SizedBox(width: 8),
+                Text(tr('ترقيم PLU تلقائي')),
               ],
             ),
             content: SizedBox(
@@ -39,14 +39,14 @@ mixin _PluAutoAssignMixin on ConsumerState<PluManagerScreen> {
                       color: AppColors.info.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
+                    child:  Row(
                       children: [
-                        Icon(PhosphorIconsBold.info, color: AppColors.info, size: 18),
-                        SizedBox(width: 8),
+                        const Icon(PhosphorIconsBold.info, color: AppColors.info, size: 18),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'يقوم بتعيين أرقام PLU تلقائياً للمنتجات المختارة بشكل تسلسلي',
-                            style: TextStyle(fontSize: 12),
+                            tr('يقوم بتعيين أرقام PLU تلقائياً للمنتجات المختارة بشكل تسلسلي'),
+                            style: const TextStyle(fontSize: 12),
                           ),
                         ),
                       ],
@@ -54,9 +54,9 @@ mixin _PluAutoAssignMixin on ConsumerState<PluManagerScreen> {
                   ),
                   const SizedBox(height: 16),
                   TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'البداية من رقم',
-                      border: OutlineInputBorder(),
+                    decoration:  InputDecoration(
+                      labelText: tr('البداية من رقم'),
+                      border: const OutlineInputBorder(),
                       isDense: true,
                     ),
                     keyboardType: TextInputType.number,
@@ -65,13 +65,13 @@ mixin _PluAutoAssignMixin on ConsumerState<PluManagerScreen> {
                   ),
                   const SizedBox(height: 12),
                   CheckboxListTile(
-                    title: const Text('فقط الأصناف بدون PLU', style: TextStyle(fontSize: 13)),
+                    title:  Text(tr('فقط الأصناف بدون PLU'), style: const TextStyle(fontSize: 13)),
                     value: onlyUnassigned,
                     onChanged: (v) => setDialogState(() => onlyUnassigned = v ?? true),
                     dense: true,
                   ),
                   CheckboxListTile(
-                    title: const Text('فقط أصناف الوزن', style: TextStyle(fontSize: 13)),
+                    title:  Text(tr('فقط أصناف الوزن'), style: const TextStyle(fontSize: 13)),
                     value: onlyWeightItems,
                     onChanged: (v) => setDialogState(() => onlyWeightItems = v ?? false),
                     dense: true,
@@ -91,7 +91,7 @@ mixin _PluAutoAssignMixin on ConsumerState<PluManagerScreen> {
                             const Icon(PhosphorIconsBold.listNumbers, color: AppColors.warning, size: 20),
                             const SizedBox(width: 8),
                             Text(
-                              'سيتم ترقيم $count صنف (PLU $startFrom → ${startFrom + count - 1})',
+                              tr('سيتم ترقيم {count} صنف (PLU {startFrom} → {p0})', {'count': count, 'startFrom': startFrom, 'p0': startFrom + count - 1}),
                               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                             ),
                           ],
@@ -103,14 +103,14 @@ mixin _PluAutoAssignMixin on ConsumerState<PluManagerScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
               FilledButton.icon(
                 onPressed: () {
                   Navigator.pop(ctx);
                   _executeAutoAssign(startFrom, onlyUnassigned, onlyWeightItems);
                 },
                 icon: const Icon(PhosphorIconsBold.lightning, size: 16),
-                label: const Text('تنفيذ'),
+                label:  Text(tr('تنفيذ')),
                 style: FilledButton.styleFrom(backgroundColor: AppColors.warning),
               ),
             ],
@@ -155,7 +155,7 @@ mixin _PluAutoAssignMixin on ConsumerState<PluManagerScreen> {
     if (mounted) {
       AppToast.show(
         context,
-        'تم ترقيم $count صنف تلقائياً (PLU $startFrom → ${plu - 1})',
+        tr('تم ترقيم {count} صنف تلقائياً (PLU {startFrom} → {p0})', {'count': count, 'startFrom': startFrom, 'p0': plu - 1}),
         type: ToastType.success,
       );
     }

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // حوارُ «تجيير ورقة» بهويّة PicPos — فورك `DLGS.endorse` في
 // `PicPos Cheques.dc.html`.
 //
@@ -89,8 +90,8 @@ class _EndorseDialogState extends State<_EndorseDialog> {
   }
 
   String? get _blocker {
-    if (widget.parties.isEmpty) return 'لا أطرافَ مسجَّلون';
-    if (_toPartyId == null) return 'اختر المُجيَّر إليه';
+    if (widget.parties.isEmpty) return tr('لا أطرافَ مسجَّلون');
+    if (_toPartyId == null) return tr('اختر المُجيَّر إليه');
     return null;
   }
 
@@ -128,14 +129,14 @@ class _EndorseDialogState extends State<_EndorseDialog> {
 
     return PicPosDialog(
       icon: PhosphorIconsBold.arrowBendUpLeft,
-      title: 'تجيير ورقة',
-      subtitle: 'نقل الورقة لطرف ثالث سداداً لمديونية',
+      title: tr('تجيير ورقة'),
+      subtitle: tr('نقل الورقة لطرف ثالث سداداً لمديونية'),
       accent: const Color(0xFF8B5CF6),
       width: 860,
       onCancel: () => Navigator.pop(context),
       footerHint: blocker,
       primaryAction: PicPosDialogAction(
-        label: 'تأكيد التجيير',
+        label: tr('تأكيد التجيير'),
         icon: PhosphorIconsBold.check,
         onPressed: blocker != null
             ? null
@@ -148,16 +149,16 @@ class _EndorseDialogState extends State<_EndorseDialog> {
                 ),
       ),
       body: [
-        _sectionLabel('الورقة والطرف'),
+        _sectionLabel(tr('الورقة والطرف')),
         PicPosDialogRow(
           children: [
             _readOnly(
-              'الورقة',
+              tr('الورقة'),
               '${widget.paperTypeLabel} ${widget.paperNumber}',
               PhosphorIconsBold.scroll,
             ),
             _readOnly(
-              'الطرف الأصلي',
+              tr('الطرف الأصلي'),
               widget.fromPartyName,
               PhosphorIconsBold.user,
             ),
@@ -166,18 +167,18 @@ class _EndorseDialogState extends State<_EndorseDialog> {
         PicPosDialogRow(
           children: [
             _readOnly(
-              'المبلغ',
+              tr('المبلغ'),
               widget.amount.toStringAsFixed(2),
               PhosphorIconsBold.currencyCircleDollar,
             ),
             DropdownButtonFormField<int>(
               initialValue: _toPartyId,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'المُجيَّر إليه *',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('المُجيَّر إليه *'),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.userSwitch, size: 16),
+                prefixIcon: const Icon(PhosphorIconsBold.userSwitch, size: 16),
               ),
               items: [
                 for (final p in widget.parties)
@@ -190,33 +191,33 @@ class _EndorseDialogState extends State<_EndorseDialog> {
         TextField(
           controller: _notesCtrl,
           maxLines: 2,
-          decoration: const InputDecoration(
-            labelText: 'ملاحظات',
-            border: OutlineInputBorder(),
+          decoration:  InputDecoration(
+            labelText: tr('ملاحظات'),
+            border: const OutlineInputBorder(),
             isDense: true,
-            prefixIcon: Icon(PhosphorIconsBold.note, size: 16),
+            prefixIcon: const Icon(PhosphorIconsBold.note, size: 16),
           ),
         ),
-        _sectionLabel('الأثر'),
+        _sectionLabel(tr('الأثر')),
         PicPosDialogSummary(
           rows: [
             (
-              label: 'الورقة تنتقل إلى',
+              label: tr('الورقة تنتقل إلى'),
               value: to?.name ?? '—',
               color: const Color(0xFF8B5CF6),
             ),
             (
-              label: 'مديونية ${to?.name ?? 'المُجيَّر إليه'}',
+              label: tr('مديونية {p0}', {'p0': to?.name ?? 'المُجيَّر إليه'}),
               value: '-${widget.amount.toStringAsFixed(2)}',
               color: AppColors.success,
             ),
             (
-              label: 'ذمة ${widget.fromPartyName}',
-              value: 'لا تتغيّر',
+              label: tr('ذمة {p0}', {'p0': widget.fromPartyName}),
+              value: tr('لا تتغيّر'),
               color: AppColors.textMuted,
             ),
             (
-              label: 'استحقاق الورقة',
+              label: tr('استحقاق الورقة'),
               value: _d(widget.dueDate),
               color: AppColors.warning,
             ),

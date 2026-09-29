@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // «المناطق ومسارات التوزيع» — نسخةُ PicPos على وحدة `regions` من التصميم.
 //
 // ═══ ⚠️ تصحيحُ خريطةٍ خاطئةٍ في تسليمٍ سابق ═══
@@ -42,11 +43,11 @@ import '../../picpos_shell/picpos_surface.dart';
 import '../../screens/providers/distribution_controller.dart';
 
 /// ملاحظاتُ التبويبات — نصوصُ `TABS.regions[].note` حرفيّاً.
-const _tabNotes = [
-  'كل مسار له مندوب مسؤول ومنطقة جغرافية',
-  'الزيارة قد تنتج فاتورة بيع أو تُتخطّى بسبب',
-  'الهدف شهري بالقيمة وبعدد الزيارات معاً',
-  'المندوب يتبع شركة أو يكون داخلياً',
+List<String> get _tabNotes => [
+  tr('كل مسار له مندوب مسؤول ومنطقة جغرافية'),
+  tr('الزيارة قد تنتج فاتورة بيع أو تُتخطّى بسبب'),
+  tr('الهدف شهري بالقيمة وبعدد الزيارات معاً'),
+  tr('المندوب يتبع شركة أو يكون داخلياً'),
 ];
 
 final _routesProvider = StreamProvider.autoDispose<List<SalesRoute>>(
@@ -130,15 +131,15 @@ class _DistributionPicposScreenState
         ref.watch(allDeliveryCompaniesProvider).value ?? const [];
 
     return PicPosScreenScaffold(
-      title: 'المناطق ومسارات التوزيع',
-      subtitle: 'المسارات الجغرافية وزيارات المندوبين والأهداف والتحصيل',
+      title: tr('المناطق ومسارات التوزيع'),
+      subtitle: tr('المسارات الجغرافية وزيارات المندوبين والأهداف والتحصيل'),
       icon: PhosphorIconsBold.mapTrifold,
       headerSearch: TextField(
         controller: _searchCtrl,
         onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'ابحث عن مسار أو مندوب...',
+          hintText: tr('ابحث عن مسار أو مندوب...'),
           prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
           suffixIcon: _query.isEmpty
               ? null
@@ -159,22 +160,22 @@ class _DistributionPicposScreenState
             controller: _tabs,
             tabs: [
               (
-                label: 'المسارات',
+                label: tr('المسارات'),
                 icon: PhosphorIconsBold.path,
                 badge: '${routes.length}'
               ),
               (
-                label: 'الزيارات',
+                label: tr('الزيارات'),
                 icon: PhosphorIconsBold.mapPinLine,
                 badge: null
               ),
               (
-                label: 'الأهداف والتحصيل',
+                label: tr('الأهداف والتحصيل'),
                 icon: PhosphorIconsBold.target,
                 badge: '${targets.length}'
               ),
               (
-                label: 'شركات التوصيل',
+                label: tr('شركات التوصيل'),
                 icon: PhosphorIconsBold.moped,
                 badge: '${companies.length}'
               ),
@@ -202,8 +203,8 @@ class _DistributionPicposScreenState
       );
 
   String _repName(List<Employee> reps, int? id) {
-    if (id == null) return 'بلا مندوب ثابت';
-    return reps.where((e) => e.id == id).firstOrNull?.name ?? 'مندوب #$id';
+    if (id == null) return tr('بلا مندوب ثابت');
+    return reps.where((e) => e.id == id).firstOrNull?.name ?? tr('مندوب #{id}', {'id': id});
   }
 
   // ── المسارات ───────────────────────────────────────────────────────────
@@ -226,31 +227,31 @@ class _DistributionPicposScreenState
           items: [
             PicPosHubKpi(
               icon: PhosphorIconsBold.path,
-              label: 'المسارات النشطة',
+              label: tr('المسارات النشطة'),
               value: '$active',
               tint: AppColors.primary,
-              vs: 'من ${routes.length} مسجّل',
+              vs: tr('من {p0} مسجّل', {'p0': routes.length}),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.user,
-              label: 'مسارٌ له مندوب',
+              label: tr('مسارٌ له مندوب'),
               value: '$assigned',
               tint: AppColors.success,
-              vs: '${routes.length - assigned} بلا مندوبٍ ثابت',
+              vs: tr('{p0} بلا مندوبٍ ثابت', {'p0': routes.length - assigned}),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.usersThree,
-              label: 'المناديب في نطاقك',
+              label: tr('المناديب في نطاقك'),
               value: '${reps.length}',
               tint: const Color(0xFF8B5CF6),
-              vs: 'محصورون بفروعك',
+              vs: tr('محصورون بفروعك'),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        const PicPosBlockHeader(title: 'مسارات التوزيع'),
+         PicPosBlockHeader(title: tr('مسارات التوزيع')),
         if (shown.isEmpty)
-          _empty(context, 'لا مساراتٍ مطابقة')
+          _empty(context, tr('لا مساراتٍ مطابقة'))
         else
           PicPosEntityCardGrid(
             children: [
@@ -260,16 +261,16 @@ class _DistributionPicposScreenState
                   subtitle: r.area ?? r.description,
                   tint: r.isActive ? AppColors.success : AppColors.textMuted,
                   icon: PhosphorIconsBold.path,
-                  status: r.isActive ? 'نشط' : 'موقوف',
+                  status: r.isActive ? tr('نشط') : tr('موقوف'),
                   statusTint:
                       r.isActive ? AppColors.success : AppColors.textMuted,
                   stats: [
                     PicPosEntityStat(
-                      'المندوب',
+                      tr('المندوب'),
                       _repName(reps, r.salesRepId),
                       tint: r.salesRepId == null ? AppColors.warning : null,
                     ),
-                    PicPosEntityStat('المنطقة', r.area ?? '—'),
+                    PicPosEntityStat(tr('المنطقة'), r.area ?? '—'),
                   ],
                   chips: [
                     if ((r.description ?? '').isNotEmpty)
@@ -291,7 +292,7 @@ class _DistributionPicposScreenState
     List<Employee> reps,
   ) {
     if (routes.isEmpty) {
-      return _empty(context, 'لا مساراتٍ بعد — أنشئ مساراً لتظهر زياراته');
+      return _empty(context, tr('لا مساراتٍ بعد — أنشئ مساراً لتظهر زياراته'));
     }
     final routeId = _visitRouteId ?? routes.first.id;
     final visits = ref.watch(_visitsProvider(routeId)).value ?? const [];
@@ -302,12 +303,12 @@ class _DistributionPicposScreenState
     // ⚠️ **حالاتُ العمود من العمود نفسِه**: `RouteVisits.status` يوثّق أربعاً
     //    (planned · completed · cancelled · skipped)، فلا تُخترَع خامسةٌ ولا
     //    تُسقَط واحدةٌ فتختفي زياراتُها من اللوحة بلا أثر.
-    const statuses = [
-      ('planned', 'مخططة', PhosphorIconsBold.calendarBlank, AppColors.primary),
-      ('completed', 'منفَّذة', PhosphorIconsBold.checkCircle,
+    final statuses = [
+      ('planned', tr('مخططة'), PhosphorIconsBold.calendarBlank, AppColors.primary),
+      ('completed', tr('منفَّذة'), PhosphorIconsBold.checkCircle,
           AppColors.success),
-      ('skipped', 'متخطّاة', PhosphorIconsBold.skipForward, AppColors.warning),
-      ('cancelled', 'ملغاة', PhosphorIconsBold.xCircle, AppColors.error),
+      ('skipped', tr('متخطّاة'), PhosphorIconsBold.skipForward, AppColors.warning),
+      ('cancelled', tr('ملغاة'), PhosphorIconsBold.xCircle, AppColors.error),
     ];
 
     final done = of('completed');
@@ -321,33 +322,33 @@ class _DistributionPicposScreenState
           items: [
             PicPosHubKpi(
               icon: PhosphorIconsBold.mapPinLine,
-              label: 'زياراتُ الشهر',
+              label: tr('زياراتُ الشهر'),
               value: '${visits.length}',
               tint: AppColors.primary,
-              vs: 'على المسار المختار',
+              vs: tr('على المسار المختار'),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.checkCircle,
-              label: 'منفَّذة',
+              label: tr('منفَّذة'),
               value: '${done.length}',
               tint: AppColors.success,
               vs: visits.isEmpty
                   ? ''
-                  : '${(done.length * 100 / visits.length).round()}٪ إتمام',
+                  : tr('{p0}٪ إتمام', {'p0': (done.length * 100 / visits.length).round()}),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.skipForward,
-              label: 'متخطّاة',
+              label: tr('متخطّاة'),
               value: '${of('skipped').length}',
               tint: AppColors.warning,
-              vs: 'بسببٍ مسجَّل',
+              vs: tr('بسببٍ مسجَّل'),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.currencyCircleDollar,
-              label: 'قيمة الطلبات',
+              label: tr('قيمة الطلبات'),
               value: orders.toStringAsFixed(0),
               tint: AppColors.success,
-              vs: 'من الزيارات المنفَّذة',
+              vs: tr('من الزيارات المنفَّذة'),
             ),
           ],
         ),
@@ -355,7 +356,7 @@ class _DistributionPicposScreenState
         // ⚠️ شريحةُ المسار **ليست زينة**: `watchRouteVisits` تقرأ مساراً واحداً،
         //    فلا لوحةَ تجمع كلَّ المسارات كما في التصميم. والمشغّلُ يختار.
         PicPosBlockHeader(
-          title: 'لوحة زيارات الشهر',
+          title: tr('لوحة زيارات الشهر'),
           subtitle: 'المسارُ المعروض: ${routes.where((r) => r.id == routeId)
               .firstOrNull?.name ?? '—'}',
         ),
@@ -373,7 +374,7 @@ class _DistributionPicposScreenState
         ),
         const SizedBox(height: 14),
         PicPosStatusBoard(
-          emptyLabel: 'لا زيارات',
+          emptyLabel: tr('لا زيارات'),
           columns: [
             for (final s in statuses)
               PicPosBoardColumn(
@@ -384,14 +385,14 @@ class _DistributionPicposScreenState
                 cards: [
                   for (final v in of(s.$1).take(4))
                     PicPosBoardCard(
-                      title: 'عميل #${v.customerId}',
+                      title: tr('عميل #{p0}', {'p0': v.customerId}),
                       subtitle:
                           '${v.visitDate.year}-${v.visitDate.month.toString().padLeft(2, '0')}-${v.visitDate.day.toString().padLeft(2, '0')}',
                       value: v.orderAmount > 0
                           ? v.orderAmount.toStringAsFixed(0)
                           : '—',
                       meta: v.saleId != null
-                          ? 'أنتجت فاتورة'
+                          ? tr('أنتجت فاتورة')
                           : _repName(reps, v.salesRepId),
                       metaIcon: v.saleId != null
                           ? PhosphorIconsBold.receipt
@@ -428,35 +429,35 @@ class _DistributionPicposScreenState
           items: [
             PicPosHubKpi(
               icon: PhosphorIconsBold.target,
-              label: 'هدفُ الشهر',
+              label: tr('هدفُ الشهر'),
               value: totalTarget.toStringAsFixed(0),
               tint: AppColors.primary,
-              vs: '${targets.length} مندوباً',
+              vs: tr('{p0} مندوباً', {'p0': targets.length}),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.currencyCircleDollar,
-              label: 'المحقَّق',
+              label: tr('المحقَّق'),
               value: totalDone.toStringAsFixed(0),
               tint: AppColors.success,
               vs: totalTarget == 0
-                  ? 'لا هدفَ مضبوط'
-                  : '${(totalDone * 100 / totalTarget).round()}٪ من الهدف',
+                  ? tr('لا هدفَ مضبوط')
+                  : tr('{p0}٪ من الهدف', {'p0': (totalDone * 100 / totalTarget).round()}),
             ),
           ],
         ),
         const SizedBox(height: 16),
         PicPosDataTable(
-          title: 'أهداف المناديب',
-          subtitle: 'الهدف شهري بالقيمة وبعدد الزيارات معاً',
-          emptyLabel: 'لا أهدافَ لهذا الشهر',
-          columns: const [
-            PicPosTableColumn('المندوب', flex: 1.8),
-            PicPosTableColumn('هدف القيمة', flex: 1.2,
+          title: tr('أهداف المناديب'),
+          subtitle: tr('الهدف شهري بالقيمة وبعدد الزيارات معاً'),
+          emptyLabel: tr('لا أهدافَ لهذا الشهر'),
+          columns:  [
+            PicPosTableColumn(tr('المندوب'), flex: 1.8),
+            PicPosTableColumn(tr('هدف القيمة'), flex: 1.2,
                 align: PicPosCellAlign.end),
-            PicPosTableColumn('المحقَّق', flex: 1.2,
+            PicPosTableColumn(tr('المحقَّق'), flex: 1.2,
                 align: PicPosCellAlign.end),
-            PicPosTableColumn('نسبة الإنجاز', flex: 1.6),
-            PicPosTableColumn('الزيارات', flex: 1.2,
+            PicPosTableColumn(tr('نسبة الإنجاز'), flex: 1.6),
+            PicPosTableColumn(tr('الزيارات'), flex: 1.2,
                 align: PicPosCellAlign.end),
           ],
           rows: [
@@ -473,7 +474,7 @@ class _DistributionPicposScreenState
                   PicPosBarCell(
                     t.targetAmount == 0
                         ? '—'
-                        : '${(t.achievedAmount * 100 / t.targetAmount).round()}٪',
+                        : tr('{p0}٪', {'p0': (t.achievedAmount * 100 / t.targetAmount).round()}),
                     t.targetAmount == 0
                         ? 0
                         : t.achievedAmount / t.targetAmount,
@@ -503,7 +504,7 @@ class _DistributionPicposScreenState
           items: [
             PicPosHubKpi(
               icon: PhosphorIconsBold.moped,
-              label: 'شركاتُ التوصيل',
+              label: tr('شركاتُ التوصيل'),
               value: '${companies.length}',
               tint: AppColors.primary,
               vs: '${companies.where((c) => c.isActive).length} نشطة',
@@ -512,14 +513,14 @@ class _DistributionPicposScreenState
         ),
         const SizedBox(height: 16),
         PicPosDataTable(
-          title: 'شركات التوصيل',
-          subtitle: 'المندوب يتبع شركة أو يكون داخلياً',
-          emptyLabel: 'لا شركاتِ توصيلٍ مسجَّلة',
-          columns: const [
-            PicPosTableColumn('الشركة', flex: 1.8),
-            PicPosTableColumn('الهاتف', flex: 1.3),
-            PicPosTableColumn('العنوان', flex: 2.0),
-            PicPosTableColumn('الحالة', flex: 1.1),
+          title: tr('شركات التوصيل'),
+          subtitle: tr('المندوب يتبع شركة أو يكون داخلياً'),
+          emptyLabel: tr('لا شركاتِ توصيلٍ مسجَّلة'),
+          columns:  [
+            PicPosTableColumn(tr('الشركة'), flex: 1.8),
+            PicPosTableColumn(tr('الهاتف'), flex: 1.3),
+            PicPosTableColumn(tr('العنوان'), flex: 2.0),
+            PicPosTableColumn(tr('الحالة'), flex: 1.1),
           ],
           rows: [
             for (final c in shown)
@@ -533,7 +534,7 @@ class _DistributionPicposScreenState
                   PicPosTextCell(c.phone ?? '—'),
                   PicPosTextCell(c.address ?? '—'),
                   PicPosPillCell(
-                    c.isActive ? 'نشطة' : 'موقوفة',
+                    c.isActive ? tr('نشطة') : tr('موقوفة'),
                     c.isActive ? AppColors.success : AppColors.textMuted,
                   ),
                 ],

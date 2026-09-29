@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // لوحا الخزينة (الصناديق · آخر الحركات) بهويّة PicPos.
 //
 // ═══ ودجتٌ واحدةٌ لثلاثة تبويبات — لا ثلاثُ نسخ ═══
@@ -155,7 +156,7 @@ class _SafesPaneState extends State<_SafesPane> {
       _ when visible.isEmpty => Center(
           child: Text(
             widget.searchQuery.isNotEmpty
-                ? 'لا توجد صناديق مطابقة'
+                ? tr('لا توجد صناديق مطابقة')
                 : widget.emptyLabel,
             style: const TextStyle(color: AppColors.textMuted),
           ),
@@ -198,13 +199,13 @@ class _SafesPaneState extends State<_SafesPane> {
             ),
             child: Row(
               children: [
-                const Text(
-                  'الصناديق',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                 Text(
+                  tr('الصناديق'),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                 ),
                 const Spacer(),
                 Text(
-                  '${visible.length} صندوق',
+                  tr('{p0} صندوق', {'p0': visible.length}),
                   style: const TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w800,

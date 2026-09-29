@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import '../../core/widgets/app_shortcuts.dart';
@@ -41,7 +42,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       builder: (context) => const PartyEditDialog(isSupplier: false, isCustomer: true),
     );
     if (result == true && mounted) {
-      AppToast.show(context, 'تم إضافة العميل بنجاح', type: ToastType.success);
+      AppToast.show(context, tr('تم إضافة العميل بنجاح'), type: ToastType.success);
     }
   }
 
@@ -51,16 +52,16 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       builder: (context) => PartyEditDialog(existing: customer, isSupplier: customer.isSupplier, isCustomer: customer.isCustomer),
     );
     if (result == true && mounted) {
-      AppToast.show(context, 'تم تحديث بيانات العميل بنجاح', type: ToastType.success);
+      AppToast.show(context, tr('تم تحديث بيانات العميل بنجاح'), type: ToastType.success);
     }
   }
 
   void _showDeleteCustomerDialog(Party customer) async {
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: 'تأكيد الحذف',
-      message: 'هل أنت متأكد من حذف العميل "${customer.name}"؟',
-      confirmLabel: 'حذف',
+      title: tr('تأكيد الحذف'),
+      message: tr('هل أنت متأكد من حذف العميل "{p0}"؟', {'p0': customer.name}),
+      confirmLabel: tr('حذف'),
       isDangerous: true,
       customContent: customer.balance != 0
           ? Padding(
@@ -77,7 +78,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'لديه رصيد: ${customer.balance.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                        tr('لديه رصيد: {p0} {p1}', {'p0': customer.balance.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
                         style: const TextStyle(color: AppColors.warning),
                       ),
                     ),
@@ -100,15 +101,15 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       final activityLogRepo = ref.read(activityLogRepositoryProvider);
       await activityLogRepo.logActivity(
         userId: user?.id,
-        userName: user?.displayName ?? 'مجهول',
+        userName: user?.displayName ?? tr('مجهول'),
         action: 'delete_customer',
         entityType: 'party',
         entityId: customer.id,
-        description: 'حذف عميل: ${customer.name}',
+        description: tr('حذف عميل: {p0}', {'p0': customer.name}),
       );
 
       if (mounted) {
-        AppToast.show(context, 'تم إلغاء تفعيل العميل', type: ToastType.warning);
+        AppToast.show(context, tr('تم إلغاء تفعيل العميل'), type: ToastType.warning);
       }
     }
   }
@@ -117,11 +118,11 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
     final service = ref.read(excelServiceProvider);
     final path = await service.exportPartiesTemplate(false);
     if (path != null && mounted) {
-      AppToast.show(context, 'تم تصدير النموذج بنجاح: $path', type: ToastType.success);
+      AppToast.show(context, tr('تم تصدير النموذج بنجاح: {path}', {'path': path}), type: ToastType.success);
       try {
         final user = ref.read(authProvider).user;
         final logger = ref.read(activityLoggerProvider);
-        await logger.logExport(user?.id ?? 0, user?.displayName ?? 'مجهول', 'customer', 'Excel');
+        await logger.logExport(user?.id ?? 0, user?.displayName ?? tr('مجهول'), 'customer', 'Excel');
       } catch (_) {}
     }
   }
@@ -136,7 +137,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
         try {
           final user = ref.read(authProvider).user;
           final logger = ref.read(activityLoggerProvider);
-          await logger.logImport(user?.id ?? 0, user?.displayName ?? 'مجهول', 'customer', 0);
+          await logger.logImport(user?.id ?? 0, user?.displayName ?? tr('مجهول'), 'customer', 0);
         } catch (_) {}
       }
     }
@@ -160,7 +161,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SectionHeader(
-                  title: 'إدارة العملاء',
+                  title: tr('إدارة العملاء'),
                   icon: PhosphorIconsBold.users,
                   fontSize: 24,
                   action: Row(
@@ -169,19 +170,19 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                       OutlinedButton.icon(
                         onPressed: _exportTemplate,
                         icon: const Icon(PhosphorIconsBold.fileArrowUp, size: 18),
-                        label: const Text('قالب الإدخال الذكي'),
+                        label:  Text(tr('قالب الإدخال الذكي')),
                       ),
                       const SizedBox(width: 8),
                       OutlinedButton.icon(
                         onPressed: _importData,
                         icon: const Icon(PhosphorIconsBold.fileArrowDown, size: 18),
-                        label: const Text('استيراد بيانات'),
+                        label:  Text(tr('استيراد بيانات')),
                       ),
                       const SizedBox(width: 12),
                       ElevatedButton.icon(
                         onPressed: _showAddCustomerDialog,
                         icon: const Icon(PhosphorIconsBold.plus),
-                        label: const Text('إضافة عميل'),
+                        label:  Text(tr('إضافة عميل')),
                       ),
                     ],
                   ),
@@ -191,7 +192,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                   controller: _searchController,
                   focusNode: _searchFocusNode,
                   decoration: InputDecoration(
-                    hintText: 'البحث عن عميل...',
+                    hintText: tr('البحث عن عميل...'),
                     prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     filled: true,
@@ -217,8 +218,8 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                         if (filtered.isEmpty) {
                           return EmptyStateWidget(
                             icon: PhosphorIconsBold.users,
-                            message: 'لا يوجد عملاء',
-                            actionLabel: 'إضافة عميل',
+                            message: tr('لا يوجد عملاء'),
+                            actionLabel: tr('إضافة عميل'),
                             onAction: _showAddCustomerDialog,
                           );
                         }
@@ -233,7 +234,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                                 child: TextButton.icon(
                                   onPressed: () => setState(() => _displayedCount += _pageSize),
                                   icon: const Icon(PhosphorIconsBold.arrowDown),
-                                  label: Text('تحميل المزيد (${filtered.length - _displayedCount} متبقي)'),
+                                  label: Text(tr('تحميل المزيد ({p0} متبقي)', {'p0': filtered.length - _displayedCount})),
                                 ),
                               );
                             }
@@ -282,7 +283,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(c.phone ?? 'لا يوجد رقم'),
+                                  Text(c.phone ?? tr('لا يوجد رقم')),
                                   if (c.address != null && c.address!.isNotEmpty)
                                     Text(c.address!, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
                                 ],
@@ -302,7 +303,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                                         ),
                                       ),
                                       Text(
-                                        'حد الائتمان: ${c.creditLimit.toStringAsFixed(0)}',
+                                        tr('حد الائتمان: {p0}', {'p0': c.creditLimit.toStringAsFixed(0)}),
                                         style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
                                       ),
                                     ],
@@ -322,28 +323,28 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                                       }
                                     },
                                     itemBuilder: (_) => [
-                                      const PopupMenuItem(
+                                       PopupMenuItem(
                                         value: 'statement',
                                         child: Row(children: [
-                                          Icon(PhosphorIconsBold.fileText, size: 18),
-                                          SizedBox(width: 8),
-                                          Text('كشف حساب'),
+                                          const Icon(PhosphorIconsBold.fileText, size: 18),
+                                          const SizedBox(width: 8),
+                                          Text(tr('كشف حساب')),
                                         ]),
                                       ),
-                                      const PopupMenuItem(
+                                       PopupMenuItem(
                                         value: 'edit',
                                         child: Row(children: [
-                                          Icon(PhosphorIconsBold.pencilSimple, size: 18),
-                                          SizedBox(width: 8),
-                                          Text('تعديل'),
+                                          const Icon(PhosphorIconsBold.pencilSimple, size: 18),
+                                          const SizedBox(width: 8),
+                                          Text(tr('تعديل')),
                                         ]),
                                       ),
-                                      const PopupMenuItem(
+                                       PopupMenuItem(
                                         value: 'delete',
                                         child: Row(children: [
-                                          Icon(PhosphorIconsBold.trash, size: 18, color: AppColors.error),
-                                          SizedBox(width: 8),
-                                          Text('حذف', style: TextStyle(color: AppColors.error)),
+                                          const Icon(PhosphorIconsBold.trash, size: 18, color: AppColors.error),
+                                          const SizedBox(width: 8),
+                                          Text(tr('حذف'), style: const TextStyle(color: AppColors.error)),
                                         ]),
                                       ),
                                     ],
@@ -355,7 +356,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                         );
                       },
                       loading: () => const ShimmerLoading(),
-                      error: (e, s) => Center(child: Text('خطأ في تحميل البيانات: $e')),
+                      error: (e, s) => Center(child: Text(tr('خطأ في تحميل البيانات: {e}', {'e': e}))),
                     ),
                   ),
                 ),

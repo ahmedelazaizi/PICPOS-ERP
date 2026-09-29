@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -26,10 +27,10 @@ const _ink = Color(0xFFE2E8F2);
 const _muted = Color(0xFF7C8AA3);
 
 /// أسطرُ السلّة المعروضةُ في المحاكاة — بياناتُ التصميم نفسُها.
-const _lines = [
-  ('أرز مصري ٥ كجم', '٢', '٣١٥.٠٠'),
-  ('زيت عافية ١.٨ل', '١', '١٨٩.٥٠'),
-  ('جبنة رومي — وزن', '٠.٤٦', '١٠٤.١٠'),
+List<(String, String, String)> get _lines => [
+  (tr('أرز مصري ٥ كجم'), tr('٢'), tr('٣١٥.٠٠')),
+  (tr('زيت عافية ١.٨ل'), tr('١'), tr('١٨٩.٥٠')),
+  (tr('جبنة رومي — وزن'), tr('٠.٤٦'), tr('١٠٤.١٠')),
 ];
 
 String _ar(Object n) =>
@@ -62,11 +63,11 @@ class QuickSaleCashierPreview extends StatelessWidget {
   bool get _fastPath => _on('skipdlg') && _methods.length == 1;
 
   String get _tag => switch (stepId) {
-        'scan' => 'شاشة المسح',
-        'cart' => 'السلة والخصم',
-        'pay' => _fastPath ? 'مسار سريع بلا حوار' : 'حوار الدفع',
-        'print' => _on('autoprint') ? 'طباعة تلقائية' : 'طباعة بالطلب',
-        _ => _on('quickclose') ? 'إغلاق سريع متاح' : 'إغلاق بمصادقة',
+        'scan' => tr('شاشة المسح'),
+        'cart' => tr('السلة والخصم'),
+        'pay' => _fastPath ? tr('مسار سريع بلا حوار') : tr('حوار الدفع'),
+        'print' => _on('autoprint') ? tr('طباعة تلقائية') : tr('طباعة بالطلب'),
+        _ => _on('quickclose') ? tr('إغلاق سريع متاح') : tr('إغلاق بمصادقة'),
       };
 
   @override
@@ -106,9 +107,9 @@ class QuickSaleCashierPreview extends StatelessWidget {
         child: Row(children: [
           const Icon(PhosphorIconsBold.deviceMobile, size: 15, color: _muted),
           const SizedBox(width: 8),
-          const Expanded(
-            child: Text('ما يراه الكاشير',
-                style: TextStyle(
+           Expanded(
+            child: Text(tr('ما يراه الكاشير'),
+                style: const TextStyle(
                     fontSize: 12, fontWeight: FontWeight.w800, color: _ink)),
           ),
           Container(
@@ -147,8 +148,8 @@ class QuickSaleCashierPreview extends StatelessWidget {
           Expanded(
             child: Text(
               _on('askqty')
-                  ? 'امسح الباركود ثم أدخل الكمية…'
-                  : 'امسح الباركود أو ابحث بالاسم…',
+                  ? tr('امسح الباركود ثم أدخل الكمية…')
+                  : tr('امسح الباركود أو ابحث بالاسم…'),
               style: const TextStyle(fontSize: 11, color: _muted),
             ),
           ),
@@ -204,23 +205,23 @@ class QuickSaleCashierPreview extends StatelessWidget {
           const Divider(height: 12, color: _line),
           Row(children: [
             Expanded(
-              child: Text('الخصم ($cap٪)',
+              child: Text(tr('الخصم ({cap}٪)', {'cap': cap}),
                   style: const TextStyle(fontSize: 10.5, color: _muted)),
             ),
-            const Text('−١٩٥.٠٠',
-                style: TextStyle(
+             Text(tr('−١٩٥.٠٠'),
+                style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFFF59E0B))),
           ]),
           const SizedBox(height: 6),
-          const Row(children: [
+           Row(children: [
             Expanded(
-              child: Text('الإجمالي',
-                  style: TextStyle(fontSize: 11, color: _muted)),
+              child: Text(tr('الإجمالي'),
+                  style: const TextStyle(fontSize: 11, color: _muted)),
             ),
-            Text('١,٤١٣.٦٠',
-                style: TextStyle(
+            Text(tr('١,٤١٣.٦٠'),
+                style: const TextStyle(
                     fontSize: 19,
                     fontWeight: FontWeight.w800,
                     color: Colors.white)),
@@ -229,15 +230,15 @@ class QuickSaleCashierPreview extends StatelessWidget {
       ),
       const SizedBox(height: 10),
       Row(children: [
-        _action(PhosphorIconsBold.percent, 'خصم $cap٪', const Color(0xFFF59E0B)),
+        _action(PhosphorIconsBold.percent, tr('خصم {cap}٪', {'cap': cap}), const Color(0xFFF59E0B)),
         const SizedBox(width: 6),
         _action(
           PhosphorIconsBold.pause,
-          _on('hold') ? 'تعليق' : 'تعليق (مطفأ)',
+          _on('hold') ? tr('تعليق') : tr('تعليق (مطفأ)'),
           _on('hold') ? const Color(0xFF4A80E8) : const Color(0xFF3A465C),
         ),
         const SizedBox(width: 6),
-        _action(PhosphorIconsBold.money, 'دفع', const Color(0xFF22C55E)),
+        _action(PhosphorIconsBold.money, tr('دفع'), const Color(0xFF22C55E)),
       ]),
     ]);
   }
@@ -264,19 +265,19 @@ class QuickSaleCashierPreview extends StatelessWidget {
   // ── حوارُ الدفع ────────────────────────────────────────────────────────
   Widget _payMock() {
     final labels = {
-      'cash': 'نقدي',
-      'card': 'بطاقة',
-      'click': 'محفظة',
-      'credit': 'آجل',
-      'split': 'متعدّد',
+      'cash': tr('نقدي'),
+      'card': tr('بطاقة'),
+      'click': tr('محفظة'),
+      'credit': tr('آجل'),
+      'split': tr('متعدّد'),
     };
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      const Text('المطلوب',
-          style: TextStyle(fontSize: 11, color: _muted)),
+       Text(tr('المطلوب'),
+          style: const TextStyle(fontSize: 11, color: _muted)),
       const SizedBox(height: 2),
-      const Text('١,٤١٣.٦٠',
-          style: TextStyle(
+       Text(tr('١,٤١٣.٦٠'),
+          style: const TextStyle(
               fontSize: 30, fontWeight: FontWeight.w800, color: Colors.white)),
       const SizedBox(height: 12),
       if (_fastPath)
@@ -295,7 +296,7 @@ class QuickSaleCashierPreview extends StatelessWidget {
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                  'تحصيل ${labels[_methods.first] ?? 'نقدي'} · إتمام فوري',
+                  tr('تحصيل {p0} · إتمام فوري', {'p0': labels[_methods.first] ?? 'نقدي'}),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -327,7 +328,7 @@ class QuickSaleCashierPreview extends StatelessWidget {
         if (_on('quickamt')) ...[
           const SizedBox(height: 10),
           Row(children: [
-            for (final amount in const ['٥٠', '١٠٠', '٢٠٠', '٥٠٠'])
+            for (final amount in  [tr('٥٠'), tr('١٠٠'), tr('٢٠٠'), tr('٥٠٠')])
               Expanded(
                 child: Container(
                   margin: const EdgeInsetsDirectional.only(end: 5),
@@ -360,8 +361,8 @@ class QuickSaleCashierPreview extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(children: [
-          const Text('بيك بوس ماركت',
-              style: TextStyle(
+           Text(tr('بيك بوس ماركت'),
+              style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                   color: Colors.black)),
@@ -378,12 +379,12 @@ class QuickSaleCashierPreview extends StatelessWidget {
                   style: const TextStyle(fontSize: 9, color: Colors.black87)),
             ]),
           const Divider(height: 10),
-          const Row(children: [
+           Row(children: [
             Expanded(
-                child: Text('المطلوب',
-                    style: TextStyle(fontSize: 10, color: Colors.black))),
-            Text('١,٤١٣.٦٠',
-                style: TextStyle(
+                child: Text(tr('المطلوب'),
+                    style: const TextStyle(fontSize: 10, color: Colors.black))),
+            Text(tr('١,٤١٣.٦٠'),
+                style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: Colors.black)),
@@ -392,19 +393,19 @@ class QuickSaleCashierPreview extends StatelessWidget {
       ),
       const SizedBox(height: 10),
       Text(
-        auto ? '${_opt('copies')} · تلقائي — قالب ${_opt('tpl')}'
-            : 'بانتظار نقرة الكاشير',
+        auto ? tr('{p0} · تلقائي — قالب {p1}', {'p0': _opt('copies'), 'p1': _opt('tpl')})
+            : tr('بانتظار نقرة الكاشير'),
         style: const TextStyle(fontSize: 10.5, color: _muted),
       ),
       const SizedBox(height: 8),
       Row(children: [
-        _chip(PhosphorIconsBold.printer, 'إعادة طباعة', true),
+        _chip(PhosphorIconsBold.printer, tr('إعادة طباعة'), true),
         const SizedBox(width: 6),
         _chip(PhosphorIconsBold.wallet,
-            _on('drawer') ? 'فتح الدرج' : 'الدرج مقفول', _on('drawer')),
+            _on('drawer') ? tr('فتح الدرج') : tr('الدرج مقفول'), _on('drawer')),
         const SizedBox(width: 6),
         _chip(PhosphorIconsBold.paperPlaneTilt,
-            _on('digital') ? 'إرسال' : 'الإرسال مخفي', _on('digital')),
+            _on('digital') ? tr('إرسال') : tr('الإرسال مخفي'), _on('digital')),
       ]),
     ]);
   }
@@ -436,16 +437,16 @@ class QuickSaleCashierPreview extends StatelessWidget {
     final blind = _on('blind');
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      const Text('إغلاق الوردية',
-          style: TextStyle(
+       Text(tr('إغلاق الوردية'),
+          style: const TextStyle(
               fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white)),
       const SizedBox(height: 2),
-      const Text('أحمد فؤاد · ٦س ١٢د',
-          style: TextStyle(fontSize: 10.5, color: _muted)),
+       Text(tr('أحمد فؤاد · ٦س ١٢د'),
+          style: const TextStyle(fontSize: 10.5, color: _muted)),
       const SizedBox(height: 10),
       for (final stat in [
-        ('مبيعات الوردية', '٤٢,٩١٠'),
-        ('المتوقع في الدرج', blind ? '—' : '١٢,٤٠٠'),
+        (tr('مبيعات الوردية'), tr('٤٢,٩١٠')),
+        (tr('المتوقع في الدرج'), blind ? '—' : tr('١٢,٤٠٠')),
       ])
         Padding(
           padding: const EdgeInsets.only(bottom: 6),
@@ -462,8 +463,8 @@ class QuickSaleCashierPreview extends StatelessWidget {
           ]),
         ),
       if (blind)
-        const Text('إغلاق أعمى — المتوقع مخفيٌّ حتى يُدخِل الكاشير العدّة',
-            style: TextStyle(fontSize: 9.5, height: 1.5, color: _muted)),
+         Text(tr('إغلاق أعمى — المتوقع مخفيٌّ حتى يُدخِل الكاشير العدّة'),
+            style: const TextStyle(fontSize: 9.5, height: 1.5, color: _muted)),
       const SizedBox(height: 8),
       if (_on('quickclose'))
         Container(
@@ -473,9 +474,9 @@ class QuickSaleCashierPreview extends StatelessWidget {
             border: Border.all(color: const Color(0xFFEF4444)),
             borderRadius: BorderRadius.circular(9),
           ),
-          child: const Text('إغلاق سريع (بلا مصادقة)',
+          child:  Text(tr('إغلاق سريع (بلا مصادقة)'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFFFF9B9B))),

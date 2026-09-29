@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,8 +41,8 @@ class DashboardScreen extends ConsumerWidget {
     // Fix 2 label: don't claim "جميع الصناديق" once the filter has narrowed
     // the card down to one branch.
     final cashCardTitle = dashFilter.branchId == null
-        ? 'أرصدة جميع الصناديق'
-        : 'أرصدة صناديق الفرع';
+        ? tr('أرصدة جميع الصناديق')
+        : tr('أرصدة صناديق الفرع');
     // Phase C2: subscribe to runtime feature flags so the dashboard
     // KPIs / quick-action cards re-render the moment a developer
     // toggles a feature or changes the profile — no logout / restart.
@@ -56,7 +57,7 @@ class DashboardScreen extends ConsumerWidget {
             .logNavigation(
               user.id,
               user.displayName,
-              'لوحة التحكم (Dashboard)',
+              tr('لوحة التحكم (Dashboard)'),
             );
         // B3: Auto-check notification triggers
         ref.read(notificationTriggersServiceProvider).runAllChecks(userId: user.id);
@@ -74,7 +75,7 @@ class DashboardScreen extends ConsumerWidget {
             children: [
               // Enhanced Header
               SectionHeader(
-                title: 'لوحة التحكم',
+                title: tr('لوحة التحكم'),
                 icon: PhosphorIconsBold.squaresFour,
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -104,7 +105,7 @@ class DashboardScreen extends ConsumerWidget {
                           const SizedBox(width: 6),
                           Text(
                             DateFormat(
-                              'EEEE، d MMMM yyyy',
+                              tr('EEEE، d MMMM yyyy'),
                               'ar',
                             ).format(DateTime.now()),
                             style: const TextStyle(
@@ -184,9 +185,9 @@ class DashboardScreen extends ConsumerWidget {
                         child: PermissionGuard(
                           permission: PermissionCodes.dashboardSalesToday,
                           allowManagerOverride: true,
-                          actionName: 'عرض صافي الإيراد',
+                          actionName: tr('عرض صافي الإيراد'),
                           fallback: _HoverableStatCard(
-                            title: 'صافي الإيراد',
+                            title: tr('صافي الإيراد'),
                             value: '---',
                             suffix: AppConstants.currencySymbolEn,
                             icon: PhosphorIconsBold.chartLineUp,
@@ -197,7 +198,7 @@ class DashboardScreen extends ConsumerWidget {
                             // revenue (ex-VAT, after returns) — "المبيعات" alone
                             // reads as gross sales, so relabel + tooltip like
                             // analytics_dashboard_screen.dart's matching card.
-                            title: 'صافي الإيراد',
+                            title: tr('صافي الإيراد'),
                             value: kpi.when(
                               data: (k) =>
                                   NumberFormat('#,##0.00', 'ar').format(k.revenue),
@@ -216,13 +217,13 @@ class DashboardScreen extends ConsumerWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: _HoverableStatCard(
-                        title: 'عدد الفواتير',
+                        title: tr('عدد الفواتير'),
                         value: kpi.when(
                           data: (k) => k.invoiceCount.toString(),
                           loading: () => '...',
                           error: (e, s) => '0',
                         ),
-                        suffix: 'فاتورة',
+                        suffix: tr('فاتورة'),
                         icon: PhosphorIconsBold.receipt,
                         color: AppColors.primary,
                         trendLabel:
@@ -235,7 +236,7 @@ class DashboardScreen extends ConsumerWidget {
                       child: PermissionGuard(
                         permission: PermissionCodes.treasuryBalanceView,
                         allowManagerOverride: true,
-                        actionName: 'عرض أرصدة جميع الصناديق',
+                        actionName: tr('عرض أرصدة جميع الصناديق'),
                         fallback: _HoverableStatCard(
                           title: cashCardTitle,
                           value: '---',
@@ -263,16 +264,16 @@ class DashboardScreen extends ConsumerWidget {
                       child: PermissionGuard(
                         permission: PermissionCodes.dashboardProfit,
                         allowManagerOverride: true,
-                        actionName: 'عرض صافي الأرباح',
+                        actionName: tr('عرض صافي الأرباح'),
                         fallback: _HoverableStatCard(
-                          title: 'صافي الربح',
+                          title: tr('صافي الربح'),
                           value: '---',
                           suffix: AppConstants.currencySymbolEn,
                           icon: PhosphorIconsBold.money,
                           color: AppColors.secondary,
                         ),
                         child: _HoverableStatCard(
-                          title: 'صافي الربح',
+                          title: tr('صافي الربح'),
                           value: kpi.when(
                                 data: (k) =>
                                     NumberFormat('#,##0.00', 'ar').format(k.netProfit),
@@ -320,7 +321,7 @@ class DashboardScreen extends ConsumerWidget {
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    'تنبيه: ${products.length} صنف وصل للحد الأدنى من المخزون',
+                                    tr('تنبيه: {p0} صنف وصل للحد الأدنى من المخزون', {'p0': products.length}),
                                     style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                                   ),
                                 ),
@@ -328,7 +329,7 @@ class DashboardScreen extends ConsumerWidget {
                                   onPressed: () {
                                     if (onNavigate != null) onNavigate!(8);
                                   },
-                                  child: const Text('عرض المخزون', style: TextStyle(fontSize: 12)),
+                                  child:  Text(tr('عرض المخزون'), style: const TextStyle(fontSize: 12)),
                                 ),
                               ],
                             ),
@@ -347,7 +348,7 @@ class DashboardScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 10, top: 4),
                 child: Text(
-                  'إجراءات سريعة',
+                  tr('إجراءات سريعة'),
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -362,7 +363,7 @@ class DashboardScreen extends ConsumerWidget {
                 child: Row(
                   children: [
                     _QuickActionCard(
-                      title: features.invoiceModeEnabled ? 'فاتورة مبيعات' : 'نقطة بيع',
+                      title: features.invoiceModeEnabled ? tr('فاتورة مبيعات') : tr('نقطة بيع'),
                       icon: features.invoiceModeEnabled
                           ? PhosphorIconsBold.fileText
                           : PhosphorIconsBold.shoppingCart,
@@ -375,7 +376,7 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 10),
                     _QuickActionCard(
-                      title: 'إضافة صنف',
+                      title: tr('إضافة صنف'),
                       icon: PhosphorIconsBold.plusCircle,
                       color: const Color(0xFF6366F1),
                       onTap: () {
@@ -384,7 +385,7 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 10),
                     _QuickActionCard(
-                      title: 'فاتورة مشتريات',
+                      title: tr('فاتورة مشتريات'),
                       icon: PhosphorIconsBold.shoppingBag,
                       color: const Color(0xFFF59E0B),
                       onTap: () {
@@ -393,7 +394,7 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 10),
                     _QuickActionCard(
-                      title: 'التقارير',
+                      title: tr('التقارير'),
                       icon: PhosphorIconsBold.chartBar,
                       color: const Color(0xFF3B82F6),
                       onTap: () {
@@ -410,7 +411,7 @@ class DashboardScreen extends ConsumerWidget {
                 child: Row(
                   children: [
                     _QuickActionCard(
-                      title: 'مرتجع مبيعات',
+                      title: tr('مرتجع مبيعات'),
                       icon: PhosphorIconsBold.arrowUDownLeft,
                       color: const Color(0xFFEF4444),
                       onTap: () {
@@ -419,7 +420,7 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 10),
                     _QuickActionCard(
-                      title: 'مرتجع مشتريات',
+                      title: tr('مرتجع مشتريات'),
                       icon: PhosphorIconsBold.arrowUDownRight,
                       color: const Color(0xFFEC4899),
                       onTap: () {
@@ -428,7 +429,7 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 10),
                     _QuickActionCard(
-                      title: 'المخزون',
+                      title: tr('المخزون'),
                       icon: PhosphorIconsBold.warehouse,
                       color: const Color(0xFF8B5CF6),
                       onTap: () {
@@ -437,7 +438,7 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 10),
                     _QuickActionCard(
-                      title: 'التصنيع',
+                      title: tr('التصنيع'),
                       icon: PhosphorIconsBold.factory,
                       color: const Color(0xFF14B8A6),
                       onTap: () {
@@ -461,17 +462,17 @@ class DashboardScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               PhosphorIconsBold.clockCounterClockwise,
                               size: 20,
                               color: AppColors.primary,
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Text(
-                              'آخر المبيعات',
-                              style: TextStyle(
+                              tr('آخر المبيعات'),
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.textPrimary,
@@ -484,10 +485,10 @@ class DashboardScreen extends ConsumerWidget {
                           child: todaySales.when(
                             data: (sales) {
                               if (sales.isEmpty) {
-                                return const Center(
+                                return  Center(
                                   child: Text(
-                                    'لا توجد مبيعات اليوم',
-                                    style: TextStyle(
+                                    tr('لا توجد مبيعات اليوم'),
+                                    style: const TextStyle(
                                       color: AppColors.textMuted,
                                     ),
                                   ),
@@ -518,7 +519,7 @@ class DashboardScreen extends ConsumerWidget {
                                       ),
                                     ),
                                     title: Text(
-                                      'فاتورة #${sale.invoiceNumber}',
+                                      tr('فاتورة #{p0}', {'p0': sale.invoiceNumber}),
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -547,7 +548,7 @@ class DashboardScreen extends ConsumerWidget {
                             loading: () => const Center(
                               child: CircularProgressIndicator(),
                             ),
-                            error: (e, _) => Center(child: Text('خطأ: $e')),
+                            error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
                           ),
                         ),
                       ],
@@ -589,8 +590,8 @@ String _trendBadgeLabel(DateTime from, DateTime to) {
   final now = DateTime.now();
   final todayStart = DateTime(now.year, now.month, now.day);
   final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
-  if (!from.isBefore(todayStart) && !to.isAfter(todayEnd)) return 'اليوم';
-  return 'الفترة المحددة';
+  if (!from.isBefore(todayStart) && !to.isAfter(todayEnd)) return tr('اليوم');
+  return tr('الفترة المحددة');
 }
 
 /// Fix 1 (spec 150, BUG-6) — the HOME dashboard's own filter bar. Writes to
@@ -766,13 +767,13 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
             ),
           ),
           const SizedBox(width: 10),
-          _periodChip('today', 'اليوم'),
+          _periodChip('today', tr('اليوم')),
           const SizedBox(width: 6),
-          _periodChip('yesterday', 'أمس'),
+          _periodChip('yesterday', tr('أمس')),
           const SizedBox(width: 6),
-          _periodChip('month', 'الشهر'),
+          _periodChip('month', tr('الشهر')),
           const SizedBox(width: 6),
-          _periodChip('year', 'السنة'),
+          _periodChip('year', tr('السنة')),
           const Spacer(),
           SizedBox(
             width: 170,
@@ -789,12 +790,12 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
                   child: DropdownButton<int?>(
                     value: effectiveBranch,
                     isExpanded: true,
-                    hint: const Text('الفرع', style: TextStyle(fontSize: 12)),
+                    hint:  Text(tr('الفرع'), style: const TextStyle(fontSize: 12)),
                     style: const TextStyle(
                         fontSize: 12, color: AppColors.textPrimary),
                     items: [
-                      const DropdownMenuItem<int?>(
-                          value: null, child: Text('كل الفروع')),
+                       DropdownMenuItem<int?>(
+                          value: null, child: Text(tr('كل الفروع'))),
                       ...branches.map((b) => DropdownMenuItem<int?>(
                             value: b.id,
                             child: Text(b.name, overflow: TextOverflow.ellipsis),
@@ -1093,14 +1094,14 @@ class _DashboardScopeIndicator extends ConsumerWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: const Color(0xFFF57C00).withValues(alpha: 0.3)),
         ),
-        child: const Row(
+        child:  Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(PhosphorIconsBold.buildings, size: 12, color: Color(0xFFE65100)),
-            SizedBox(width: 4),
+            const Icon(PhosphorIconsBold.buildings, size: 12, color: Color(0xFFE65100)),
+            const SizedBox(width: 4),
             Text(
-              'كل الفروع',
-              style: TextStyle(
+              tr('كل الفروع'),
+              style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFFE65100),

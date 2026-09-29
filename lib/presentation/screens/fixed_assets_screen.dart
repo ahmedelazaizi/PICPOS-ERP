@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,7 +34,7 @@ Widget buildAssetsManageFab({
   return PermissionGuard(
     permission: PermissionCodes.assetsManage,
     allowManagerOverride: true,
-    actionName: 'إدارة الأصول الثابتة',
+    actionName: tr('إدارة الأصول الثابتة'),
     onGranted: onPressed,
     child: FloatingActionButton.extended(
       onPressed: onPressed,
@@ -56,12 +57,12 @@ Widget buildAssetsDepreciationButton({required VoidCallback onPressed}) {
   return PermissionGuard(
     permission: PermissionCodes.assetsDepreciation,
     allowManagerOverride: true,
-    actionName: 'تنفيذ الإهلاك الشهري',
+    actionName: tr('تنفيذ الإهلاك الشهري'),
     onGranted: onPressed,
     child: ElevatedButton.icon(
       onPressed: onPressed,
       icon: const Icon(PhosphorIconsBold.play, size: 18),
-      label: Text('تنفيذ الإهلاك الشهري',
+      label: Text(tr('تنفيذ الإهلاك الشهري'),
           style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
@@ -115,7 +116,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           title: Text(
-            'الأصول الثابتة',
+            tr('الأصول الثابتة'),
             style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
           ),
           bottom: TabBar(
@@ -123,16 +124,16 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
             indicatorColor: Colors.white,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
-            tabs: const [
-              Tab(icon: Icon(PhosphorIconsBold.buildings, size: 18), text: 'الأصول'),
-              Tab(icon: Icon(PhosphorIconsBold.folders, size: 18), text: 'الفئات'),
-              Tab(icon: Icon(PhosphorIconsBold.trendDown, size: 18), text: 'الإهلاك'),
+            tabs:  [
+              Tab(icon: const Icon(PhosphorIconsBold.buildings, size: 18), text: tr('الأصول')),
+              Tab(icon: const Icon(PhosphorIconsBold.folders, size: 18), text: tr('الفئات')),
+              Tab(icon: const Icon(PhosphorIconsBold.trendDown, size: 18), text: tr('الإهلاك')),
             ],
           ),
           actions: [
             IconButton(
               icon: const Icon(PhosphorIconsBold.chartPie),
-              tooltip: 'ملخص',
+              tooltip: tr('ملخص'),
               onPressed: () => showSummary(fixedAssetsRepo),
             ),
           ],
@@ -144,7 +145,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'بحث عن أصل (اسم، رمز)...',
+                  hintText: tr('بحث عن أصل (اسم، رمز)...'),
                   prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); })
@@ -186,7 +187,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
 
     return buildAssetsManageFab(
       onPressed: handlePress,
-      label: _tabCtrl.index == 1 ? 'فئة جديدة' : 'أصل جديد',
+      label: _tabCtrl.index == 1 ? tr('فئة جديدة') : tr('أصل جديد'),
     );
   }
 
@@ -217,7 +218,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                 Icon(PhosphorIconsBold.buildings,
                     size: 64, color: Colors.grey.withValues(alpha: 0.4)),
                 const SizedBox(height: 16),
-                Text('لا توجد أصول ثابتة',
+                Text(tr('لا توجد أصول ثابتة'),
                     style: GoogleFonts.cairo(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -306,19 +307,19 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
               Row(
                 children: [
                   _valueChip(
-                    'تكلفة الشراء',
+                    tr('تكلفة الشراء'),
                     _currencyFormat.format(asset.purchasePrice),
                     Colors.blue,
                   ),
                   const SizedBox(width: 8),
                   _valueChip(
-                    'القيمة الدفترية',
+                    tr('القيمة الدفترية'),
                     _currencyFormat.format(bookValue),
                     bookValue > 0 ? AppColors.success : Colors.grey,
                   ),
                   const SizedBox(width: 8),
                   _valueChip(
-                    'الإهلاك',
+                    tr('الإهلاك'),
                     '${depreciationPercent.toStringAsFixed(0)}%',
                     Colors.orange,
                   ),
@@ -347,7 +348,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                       size: 12, color: Colors.grey.shade600),
                   const SizedBox(width: 4),
                   Text(
-                    'شراء: ${_dateFormat.format(asset.purchaseDate)}',
+                    tr('شراء: {p0}', {'p0': _dateFormat.format(asset.purchaseDate)}),
                     style: GoogleFonts.cairo(
                         fontSize: 10, color: Colors.grey.shade600),
                   ),
@@ -356,7 +357,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                       size: 12, color: Colors.grey.shade600),
                   const SizedBox(width: 4),
                   Text(
-                    '${asset.usefulLifeYears} سنة',
+                    tr('{p0} سنة', {'p0': asset.usefulLifeYears}),
                     style: GoogleFonts.cairo(
                         fontSize: 10, color: Colors.grey.shade600),
                   ),
@@ -381,13 +382,13 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                     PermissionGuard(
                       permission: PermissionCodes.assetsManage,
                       allowManagerOverride: true,
-                      actionName: 'تعديل أصل ثابت',
+                      actionName: tr('تعديل أصل ثابت'),
                       onGranted: () =>
                           showEditAssetDialog(repo, accountingRepo, asset),
                       child: ActionChip(
                         avatar: const Icon(PhosphorIconsBold.pencilSimple,
                             size: 14, color: Colors.indigo),
-                        label: Text('تعديل',
+                        label: Text(tr('تعديل'),
                             style: GoogleFonts.cairo(
                                 fontSize: 10, color: Colors.indigo)),
                         backgroundColor: Colors.indigo.withValues(alpha: 0.08),
@@ -407,12 +408,12 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                     PermissionGuard(
                       permission: PermissionCodes.assetsManage,
                       allowManagerOverride: true,
-                      actionName: 'إعادة تقييم أصل ثابت',
+                      actionName: tr('إعادة تقييم أصل ثابت'),
                       onGranted: () => showRevalueDialog(repo, asset),
                       child: ActionChip(
                         avatar: const Icon(PhosphorIconsBold.trendUp,
                             size: 14, color: Colors.teal),
-                        label: Text('إعادة تقييم',
+                        label: Text(tr('إعادة تقييم'),
                             style: GoogleFonts.cairo(
                                 fontSize: 10, color: Colors.teal)),
                         backgroundColor: Colors.teal.withValues(alpha: 0.08),
@@ -427,7 +428,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                     ActionChip(
                       avatar: const Icon(PhosphorIconsBold.clockCounterClockwise,
                           size: 14, color: Colors.blue),
-                      label: Text('سجل الإهلاك',
+                      label: Text(tr('سجل الإهلاك'),
                           style: GoogleFonts.cairo(
                               fontSize: 10, color: Colors.blue)),
                       backgroundColor: Colors.blue.withValues(alpha: 0.08),
@@ -443,12 +444,12 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                     PermissionGuard(
                       permission: PermissionCodes.assetsManage,
                       allowManagerOverride: true,
-                      actionName: 'استبعاد أصل ثابت',
+                      actionName: tr('استبعاد أصل ثابت'),
                       onGranted: () => showDisposeDialog(repo, asset),
                       child: ActionChip(
                         avatar: const Icon(PhosphorIconsBold.trash,
                             size: 14, color: AppColors.error),
-                        label: Text('استبعاد',
+                        label: Text(tr('استبعاد'),
                             style: GoogleFonts.cairo(
                                 fontSize: 10, color: AppColors.error)),
                         backgroundColor: AppColors.error.withValues(alpha: 0.08),
@@ -514,7 +515,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                 Icon(PhosphorIconsBold.folders,
                     size: 64, color: Colors.grey.withValues(alpha: 0.4)),
                 const SizedBox(height: 16),
-                Text('لا توجد فئات',
+                Text(tr('لا توجد فئات'),
                     style: GoogleFonts.cairo(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -549,7 +550,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                 trailing: PermissionGuard(
                   permission: PermissionCodes.assetsManage,
                   allowManagerOverride: true,
-                  actionName: 'تعديل فئة أصول',
+                  actionName: tr('تعديل فئة أصول'),
                   onGranted: () =>
                       showEditCategoryDialog(repo, accountingRepo, cat),
                   child: IconButton(
@@ -598,7 +599,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                   final entries = snapshot.data ?? [];
                   if (entries.isEmpty) {
                     return Center(
-                      child: Text('لا يوجد سجل إهلاك',
+                      child: Text(tr('لا يوجد سجل إهلاك'),
                           style: GoogleFonts.cairo(color: Colors.grey)),
                     );
                   }
@@ -609,7 +610,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                     separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (context, i) {
                       final entry = entries[i];
-                      final assetName = assetNameMap[entry.assetId] ?? 'أصل #${entry.assetId}';
+                      final assetName = assetNameMap[entry.assetId] ?? tr('أصل #{p0}', {'p0': entry.assetId});
                       return ListTile(
                         dense: true,
                         leading: CircleAvatar(

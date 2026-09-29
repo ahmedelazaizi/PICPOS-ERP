@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // lib/presentation/settings_picpos/screens/guest_services_settings_picpos.dart
 //
 // إعداداتُ خدمات الضيف والعميل — بلاغُ المالك 2026-09-12:
@@ -41,8 +42,8 @@ class TableBillSettingsCard extends ConsumerWidget {
         SettingsSwitchRow(
           first: true,
           icon: PhosphorIconsBold.qrCode,
-          title: 'رمز حساب الطاولة',
-          sub: 'يقرأ الضيفُ حسابَ طاولته من هاتفه بلا تسجيل دخول',
+          title: tr('رمز حساب الطاولة'),
+          sub: tr('يقرأ الضيفُ حسابَ طاولته من هاتفه بلا تسجيل دخول'),
           value: isOn,
           onChanged: enabled.isLoading
               ? null
@@ -58,8 +59,8 @@ class TableBillSettingsCard extends ConsumerWidget {
         if (isOn)
           SettingsSwitchRow(
             icon: PhosphorIconsBold.forkKnife,
-            title: 'السماح للضيف بطلب أصناف',
-            sub: 'الطلبُ لا يدخل الحسابَ إلّا باعتماد النادل',
+            title: tr('السماح للضيف بطلب أصناف'),
+            sub: tr('الطلبُ لا يدخل الحسابَ إلّا باعتماد النادل'),
             value: guestOrder.asData?.value ?? false,
             onChanged: guestOrder.isLoading
                 ? null
@@ -111,13 +112,13 @@ class _PublicBaseUrlRowState extends ConsumerState<_PublicBaseUrlRow> {
   Future<void> _save() async {
     final raw = _ctrl.text.trim();
     if (raw.isNotEmpty && normalizeTableBillBaseUrl(raw) == null) {
-      setState(() => _error = 'عنوانٌ غيرُ صالح — مثال: https://shop.com');
+      setState(() => _error = tr('عنوانٌ غيرُ صالح — مثال: https://shop.com'));
       return;
     }
     setState(() => _error = null);
     await writeFeatureSetting(ref, kTableBillPublicBaseUrlKey, raw);
     if (mounted) {
-      AppToast.show(context, raw.isEmpty ? 'أُلغي النشر' : 'حُفظ العنوان');
+      AppToast.show(context, raw.isEmpty ? tr('أُلغي النشر') : tr('حُفظ العنوان'));
     }
   }
 
@@ -142,7 +143,7 @@ class _PublicBaseUrlRowState extends ConsumerState<_PublicBaseUrlRow> {
                     style: const TextStyle(fontSize: 12.5),
                     decoration: InputDecoration(
                       isDense: true,
-                      labelText: 'نشرُ الخادم على دومين (اختياريّ)',
+                      labelText: tr('نشرُ الخادم على دومين (اختياريّ)'),
                       hintText: 'https://shop.example.com',
                       errorText: _error,
                       helperMaxLines: 3,
@@ -153,7 +154,7 @@ class _PublicBaseUrlRowState extends ConsumerState<_PublicBaseUrlRow> {
               const SizedBox(width: 8),
               FilledButton.tonal(
                 onPressed: _save,
-                child: const Text('حفظ'),
+                child:  Text(tr('حفظ')),
               ),
             ],
           ),
@@ -163,7 +164,7 @@ class _PublicBaseUrlRowState extends ConsumerState<_PublicBaseUrlRow> {
           // يقرأ من أيّ مكانٍ في الدنيا. ولذلك يُشترَط رقمُ الجلسة تلقائيّاً.
           Text(
             widget.current == null
-                ? 'اتركه فارغاً ليعمل الرمزُ على شبكة المحلّ وحدَها.'
+                ? tr('اتركه فارغاً ليعمل الرمزُ على شبكة المحلّ وحدَها.')
                 : 'منشورٌ على دومين — ويُطلَب من الضيف رقمُ الطاولة (٤ خانات) '
                     'قبل طلب الحساب أو إضافة الأصناف، يقوله له النادل.',
             style: TextStyle(
@@ -202,12 +203,12 @@ class _WhatsAppSettingsCardState extends ConsumerState<WhatsAppSettingsCard> {
   Future<void> _save() async {
     final raw = _ctrl.text.replaceAll(RegExp(r'[^0-9]'), '');
     if (raw.isEmpty || raw.length > 4) {
-      setState(() => _error = 'رمزٌ غيرُ صالح — مثال: 20 أو 966');
+      setState(() => _error = tr('رمزٌ غيرُ صالح — مثال: 20 أو 966'));
       return;
     }
     setState(() => _error = null);
     await writeFeatureSetting(ref, kWhatsAppCountryCodeKey, raw);
-    if (mounted) AppToast.show(context, 'حُفظ رمزُ الدولة');
+    if (mounted) AppToast.show(context, tr('حُفظ رمزُ الدولة'));
   }
 
   @override
@@ -244,7 +245,7 @@ class _WhatsAppSettingsCardState extends ConsumerState<WhatsAppSettingsCard> {
                       style: const TextStyle(fontSize: 12.5),
                       decoration: InputDecoration(
                         isDense: true,
-                        labelText: 'رمز الدولة',
+                        labelText: tr('رمز الدولة'),
                         hintText: '20',
                         prefixText: '+',
                         errorText: _error,
@@ -254,7 +255,7 @@ class _WhatsAppSettingsCardState extends ConsumerState<WhatsAppSettingsCard> {
                   const SizedBox(width: 8),
                   FilledButton.tonal(
                     onPressed: _save,
-                    child: const Text('حفظ'),
+                    child:  Text(tr('حفظ')),
                   ),
                 ],
               ),

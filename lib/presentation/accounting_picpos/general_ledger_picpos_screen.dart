@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
@@ -75,19 +76,19 @@ class _GeneralLedgerPicPosScreenState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: PicPosScreenScaffold(
-        title: 'دفتر الأستاذ العام',
-        subtitle: 'حركة الحساب والرصيد التراكمي',
+        title: tr('دفتر الأستاذ العام'),
+        subtitle: tr('حركة الحساب والرصيد التراكمي'),
         icon: PhosphorIconsBold.book,
         headerActions: [
           if (_rows.isNotEmpty) ...[
-            Text('${movements.length} حركة',
+            Text(tr('{p0} حركة', {'p0': movements.length}),
                 style: Theme.of(context)
                     .textTheme
                     .labelMedium
                     ?.copyWith(color: AppColors.textMuted)),
             const SizedBox(width: 10),
             IconButton(
-              tooltip: 'طباعة PDF',
+              tooltip: tr('طباعة PDF'),
               icon: const Icon(PhosphorIconsBold.filePdf, size: 18),
               onPressed: () => ReportPdfGenerator.printGeneralLedger(
                 accountName: _accountName ?? '',
@@ -97,7 +98,7 @@ class _GeneralLedgerPicPosScreenState
               ),
             ),
             IconButton(
-              tooltip: 'تصدير Excel',
+              tooltip: tr('تصدير Excel'),
               icon: const Icon(PhosphorIconsBold.fileXls, size: 18),
               onPressed: _exportExcel,
             ),
@@ -114,7 +115,7 @@ class _GeneralLedgerPicPosScreenState
       children: [
         // منتقي الحساب — بارزٌ بحدٍّ بلون العلامة كما في التصميم.
         _AccountPickerButton(
-          label: _accountName ?? 'اختر الحساب',
+          label: _accountName ?? tr('اختر الحساب'),
           selected: _accountId != null,
           onTap: () => _pickAccount(repo),
         ),
@@ -141,8 +142,8 @@ class _GeneralLedgerPicPosScreenState
                             .where((b) => b.id == _branchId)
                             .map((b) => b.name)
                             .firstOrNull ??
-                        'الفرع'
-                    : 'كل الفروع';
+                        tr('الفرع')
+                    : tr('كل الفروع');
                 return _FilterChip(
                   icon: PhosphorIconsBold.buildings,
                   label: name,
@@ -157,7 +158,7 @@ class _GeneralLedgerPicPosScreenState
         FilledButton.icon(
           onPressed: _accountId != null ? () => _load(repo) : null,
           icon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
-          label: const Text('عرض'),
+          label:  Text(tr('عرض')),
         ),
       ],
     );
@@ -177,11 +178,11 @@ class _GeneralLedgerPicPosScreenState
       return PicPosEmptyState(
         icon: PhosphorIconsBold.book,
         title: _accountId == null
-            ? 'اختر حساباً لعرض حركاته'
-            : 'لا توجد حركات للفترة المحددة',
+            ? tr('اختر حساباً لعرض حركاته')
+            : tr('لا توجد حركات للفترة المحددة'),
         hint: _accountId == null
-            ? 'الرصيدُ التراكميُّ يُحسب على طبيعة الحساب.'
-            : 'جرّب توسيعَ المدى الزمنيّ أو رفعَ مرشِّح مركز التكلفة.',
+            ? tr('الرصيدُ التراكميُّ يُحسب على طبيعة الحساب.')
+            : tr('جرّب توسيعَ المدى الزمنيّ أو رفعَ مرشِّح مركز التكلفة.'),
       );
     }
 
@@ -219,12 +220,12 @@ class _GeneralLedgerPicPosScreenState
   }
 
   String _costCenterLabel() {
-    if (_costCenterId == null) return 'كل مراكز التكلفة';
+    if (_costCenterId == null) return tr('كل مراكز التكلفة');
     return _costCenters
             .where((c) => c.id == _costCenterId)
             .map((c) => c.name)
             .firstOrNull ??
-        'مركز التكلفة';
+        tr('مركز التكلفة');
   }
 
   /// اسمُ المركز من رقمه — القاعدةُ تُرجع `cost_center_id` لا الاسم،
@@ -264,21 +265,21 @@ class _GeneralLedgerPicPosScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+      AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
   void _exportExcel() {
     ExcelExportHelper.export(
       context: context,
-      title: 'دفتر الأستاذ - $_accountName',
-      headers: const [
-        'التاريخ',
-        'رقم القيد',
-        'البيان',
-        'مدين',
-        'دائن',
-        'الرصيد',
+      title: tr('دفتر الأستاذ - {_accountName}', {'_accountName': _accountName}),
+      headers:  [
+        tr('التاريخ'),
+        tr('رقم القيد'),
+        tr('البيان'),
+        tr('مدين'),
+        tr('دائن'),
+        tr('الرصيد'),
       ],
       rows: _rows
           .map((r) => [
@@ -340,28 +341,28 @@ class _GeneralLedgerPicPosScreenState
 
             return PicPosDialog(
               icon: PhosphorIconsBold.listMagnifyingGlass,
-              title: 'اختر الحساب',
-              subtitle: '${matches.length} من ${accounts.length} حساباً',
+              title: tr('اختر الحساب'),
+              subtitle: tr('{p0} من {p1} حساباً', {'p0': matches.length, 'p1': accounts.length}),
               width: 560,
               onCancel: () => Navigator.pop(ctx),
               body: [
                 TextField(
                   autofocus: true,
                   onChanged: (v) => setInner(() => filter = v),
-                  decoration: const InputDecoration(
+                  decoration:  InputDecoration(
                     isDense: true,
-                    hintText: 'بحث بالاسم أو الرمز...',
+                    hintText: tr('بحث بالاسم أو الرمز...'),
                     prefixIcon:
-                        Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
+                        const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
                   ),
                 ),
                 const SizedBox(height: 10),
                 SizedBox(
                   height: 380,
                   child: matches.isEmpty
-                      ? const PicPosEmptyState(
+                      ?  PicPosEmptyState(
                           icon: PhosphorIconsBold.magnifyingGlass,
-                          title: 'لا حسابَ يطابق البحث',
+                          title: tr('لا حسابَ يطابق البحث'),
                         )
                       : ListView.builder(
                           itemCount: matches.length,
@@ -428,8 +429,8 @@ class _GeneralLedgerPicPosScreenState
 
     final picked = await _pickFromList(
       icon: PhosphorIconsBold.crosshair,
-      title: 'مركز التكلفة',
-      allLabel: 'كل مراكز التكلفة',
+      title: tr('مركز التكلفة'),
+      allLabel: tr('كل مراكز التكلفة'),
       items: [
         for (final c in centers) (c.id, '${c.code} — ${c.name}'),
       ],
@@ -441,8 +442,8 @@ class _GeneralLedgerPicPosScreenState
   Future<void> _pickBranch(List<Branche> branches) async {
     final picked = await _pickFromList(
       icon: PhosphorIconsBold.buildings,
-      title: 'الفرع',
-      allLabel: 'كل الفروع',
+      title: tr('الفرع'),
+      allLabel: tr('كل الفروع'),
       items: [for (final b in branches) (b.id, b.name)],
     );
     if (picked == null || !mounted) return;
@@ -484,13 +485,13 @@ class _GeneralLedgerPicPosScreenState
   }
 
   String _accountTypeLabel(String type) => switch (type) {
-        'asset' => 'أصول',
-        'contra_asset' => 'أصول مقابلة',
-        'liability' => 'خصوم',
-        'equity' => 'حقوق ملكية',
-        'revenue' => 'إيرادات',
-        'contra_revenue' => 'إيرادات مقابلة',
-        'expense' => 'مصروفات',
+        'asset' => tr('أصول'),
+        'contra_asset' => tr('أصول مقابلة'),
+        'liability' => tr('خصوم'),
+        'equity' => tr('حقوق ملكية'),
+        'revenue' => tr('إيرادات'),
+        'contra_revenue' => tr('إيرادات مقابلة'),
+        'expense' => tr('مصروفات'),
         _ => type,
       };
 }
@@ -541,7 +542,7 @@ class _AccountPickerButton extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('الحساب المعروض',
+                  Text(tr('الحساب المعروض'),
                       style: text.labelSmall
                           ?.copyWith(color: AppColors.textMuted)),
                   Text(
@@ -633,19 +634,19 @@ class _LedgerHeaderRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          SizedBox(width: _wDate, child: Text('التاريخ', style: style)),
-          SizedBox(width: _wNo, child: Text('رقم القيد', style: style)),
-          Expanded(child: Text('البيان', style: style)),
-          SizedBox(width: _wCc, child: Text('مركز التكلفة', style: style)),
+          SizedBox(width: _wDate, child: Text(tr('التاريخ'), style: style)),
+          SizedBox(width: _wNo, child: Text(tr('رقم القيد'), style: style)),
+          Expanded(child: Text(tr('البيان'), style: style)),
+          SizedBox(width: _wCc, child: Text(tr('مركز التكلفة'), style: style)),
           SizedBox(
               width: _wAmount,
-              child: Text('مدين', style: style, textAlign: TextAlign.end)),
+              child: Text(tr('مدين'), style: style, textAlign: TextAlign.end)),
           SizedBox(
               width: _wAmount,
-              child: Text('دائن', style: style, textAlign: TextAlign.end)),
+              child: Text(tr('دائن'), style: style, textAlign: TextAlign.end)),
           SizedBox(
               width: _wBalance,
-              child: Text('الرصيد', style: style, textAlign: TextAlign.end)),
+              child: Text(tr('الرصيد'), style: style, textAlign: TextAlign.end)),
         ],
       ),
     );
@@ -785,7 +786,7 @@ class _LedgerTotalsRow extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text('إجمالي الحركة خلال الفترة · $count حركة',
+            child: Text(tr('إجمالي الحركة خلال الفترة · {count} حركة', {'count': count}),
                 style: text.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
           ),
           SizedBox(

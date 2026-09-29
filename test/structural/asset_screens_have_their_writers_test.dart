@@ -131,10 +131,15 @@ void main() {
         reason: 'عددُ التبويبات خالف ما يُبنى — و`TabBarView` ترمي');
     // ⚠️ `_tabNotes` تُفهرَس بـ`_tabs.index` — وطولُها يجب أن يساويه.
     expect(_count(code, "    '"), greaterThan(0));
-    final at = code.indexOf('static const _tabNotes = [');
-    expect(at, greaterThan(0));
-    final notes = code.substring(at, code.indexOf('];', at));
-    expect(_count(notes, "',"), 3,
+    final tabNotes = RegExp(
+      r'static (?:final _tabNotes =|List<String> get _tabNotes =>) \[',
+    ).firstMatch(code);
+    expect(tabNotes, isNotNull);
+    final notes = code.substring(
+      tabNotes!.start,
+      code.indexOf('];', tabNotes.start),
+    );
+    expect(_count(notes, "'),"), 3,
         reason: 'سطرٌ زائدٌ يُظهر شرحَ تبويبةٍ خرجت تحت تبويبةٍ باقية');
   });
 

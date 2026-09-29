@@ -15,7 +15,7 @@ class _ProductionOrdersTab extends ConsumerWidget {
 
     return ordersAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('خطأ: $e')),
+      error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
       data: (orders) {
         final boms = bomsAsync.value ?? [];
         final products = productsAsync.value ?? [];
@@ -33,7 +33,7 @@ class _ProductionOrdersTab extends ConsumerWidget {
                   PermissionGuard(
                     permission: PermissionCodes.manufacturingManage,
                     allowManagerOverride: true,
-                    actionName: 'إنشاء أمر إنتاج',
+                    actionName: tr('إنشاء أمر إنتاج'),
                     onGranted: boms.isEmpty
                         ? null
                         : () => _showOrderDialog(context, ref, boms, products),
@@ -43,7 +43,7 @@ class _ProductionOrdersTab extends ConsumerWidget {
                           : () =>
                               _showOrderDialog(context, ref, boms, products),
                       icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                      label: const Text('أمر إنتاج جديد'),
+                      label:  Text(tr('أمر إنتاج جديد')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -64,9 +64,9 @@ class _ProductionOrdersTab extends ConsumerWidget {
                   ? _buildEmptyState(
                       context,
                       icon: PhosphorIconsBold.gearSix,
-                      title: 'لا توجد أوامر إنتاج',
+                      title: tr('لا توجد أوامر إنتاج'),
                       subtitle:
-                          'أنشئ أول أمر إنتاج لبدء تحويل الخامات إلى منتجات تامة',
+                          tr('أنشئ أول أمر إنتاج لبدء تحويل الخامات إلى منتجات تامة'),
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -86,7 +86,7 @@ class _ProductionOrdersTab extends ConsumerWidget {
 
                         return _ProductionOrderCard(
                           order: order,
-                          productName: product?.name ?? 'غير معروف',
+                          productName: product?.name ?? tr('غير معروف'),
                           bomCode: bom?.bomCode ?? '-',
                         );
                       },
@@ -101,7 +101,7 @@ class _ProductionOrdersTab extends ConsumerWidget {
   List<Widget> _statusFilters(
       BuildContext context, WidgetRef ref, List<ManufacturingOrderData> orders) {
     final statuses = {
-      null: 'الكل (${orders.length})',
+      null: tr('الكل ({p0})', {'p0': orders.length}),
       'draft': 'مسودة (${orders.where((o) => o.status == 'draft').length})',
       'in_progress':
           'قيد التنفيذ (${orders.where((o) => o.status == 'in_progress').length})',
@@ -224,11 +224,11 @@ class _ProductionOrderCard extends ConsumerWidget {
                     Row(
                       children: [
                         Text(
-                            'الكمية المطلوبة: ${order.orderedQty.toStringAsFixed(0)}',
+                            tr('الكمية المطلوبة: {p0}', {'p0': order.orderedQty.toStringAsFixed(0)}),
                             style: const TextStyle(fontSize: 12)),
                         const SizedBox(width: 16),
                         Text(
-                            'المنتج: ${order.producedQty.toStringAsFixed(0)}',
+                            tr('المنتج: {p0}', {'p0': order.producedQty.toStringAsFixed(0)}),
                             style: TextStyle(
                                 fontSize: 12,
                                 color: order.producedQty > 0
@@ -236,7 +236,7 @@ class _ProductionOrderCard extends ConsumerWidget {
                                     : AppColors.textMuted)),
                         if (order.totalCost > 0) ...[
                           const SizedBox(width: 16),
-                          Text('التكلفة: ${order.totalCost.toStringAsFixed(AppConstants.decimalPlaces)}',
+                          Text(tr('التكلفة: {p0}', {'p0': order.totalCost.toStringAsFixed(AppConstants.decimalPlaces)}),
                               style: const TextStyle(
                                   fontSize: 12, color: Colors.orange)),
                         ],
@@ -288,11 +288,11 @@ class _ProductionOrderCard extends ConsumerWidget {
 
   String _costTypeLabel(String type) {
     switch (type) {
-      case 'raw_material': return 'خامات';
-      case 'labor': return 'عمالة';
-      case 'overhead': return 'تكاليف غير مباشرة';
-      case 'depreciation': return 'إهلاك';
-      case 'utility': return 'مرافق';
+      case 'raw_material': return tr('خامات');
+      case 'labor': return tr('عمالة');
+      case 'overhead': return tr('تكاليف غير مباشرة');
+      case 'depreciation': return tr('إهلاك');
+      case 'utility': return tr('مرافق');
       default: return 'أخرى';
     }
   }
@@ -317,13 +317,13 @@ class _ProductionOrderCard extends ConsumerWidget {
             PermissionGuard(
               permission: PermissionCodes.manufacturingManage,
               allowManagerOverride: true,
-              actionName: 'تعديل أمر إنتاج',
+              actionName: tr('تعديل أمر إنتاج'),
               onGranted: () => _editOrder(context, ref),
               child: _actionButton(
                 context,
                 ref,
                 icon: PhosphorIconsBold.pencilSimple,
-                label: 'تعديل',
+                label: tr('تعديل'),
                 color: AppColors.primary,
                 onTap: () => _editOrder(context, ref),
               ),
@@ -333,7 +333,7 @@ class _ProductionOrderCard extends ConsumerWidget {
               context,
               ref,
               icon: PhosphorIconsBold.plus,
-              label: 'تكلفة',
+              label: tr('تكلفة'),
               color: Colors.orange,
               onTap: () => _showAddCostDialog(context, ref),
             ),
@@ -342,7 +342,7 @@ class _ProductionOrderCard extends ConsumerWidget {
               context,
               ref,
               icon: PhosphorIconsBold.play,
-              label: 'بدء',
+              label: tr('بدء'),
               color: Colors.blue,
               onTap: () => _startProduction(context, ref),
             ),
@@ -351,7 +351,7 @@ class _ProductionOrderCard extends ConsumerWidget {
               context,
               ref,
               icon: PhosphorIconsBold.x,
-              label: 'إلغاء',
+              label: tr('إلغاء'),
               color: AppColors.error,
               onTap: () => _cancelOrder(context, ref),
             ),
@@ -365,7 +365,7 @@ class _ProductionOrderCard extends ConsumerWidget {
               context,
               ref,
               icon: PhosphorIconsBold.plus,
-              label: 'تكلفة',
+              label: tr('تكلفة'),
               color: Colors.orange,
               onTap: () => _showAddCostDialog(context, ref),
             ),
@@ -374,7 +374,7 @@ class _ProductionOrderCard extends ConsumerWidget {
               context,
               ref,
               icon: PhosphorIconsBold.check,
-              label: 'إتمام',
+              label: tr('إتمام'),
               color: Colors.green,
               onTap: () => _completeProduction(context, ref),
             ),
@@ -439,7 +439,7 @@ class _ProductionOrderCard extends ConsumerWidget {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('بدء التصنيع'),
+          title:  Text(tr('بدء التصنيع')),
           content: Text(
               'سيتم سحب المواد الخام من المخزن.\n'
               'المنتج: $productName\n'
@@ -448,11 +448,11 @@ class _ProductionOrderCard extends ConsumerWidget {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('إلغاء')),
+                child:  Text(tr('إلغاء'))),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-              child: const Text('بدء التصنيع'),
+              child:  Text(tr('بدء التصنيع')),
             ),
           ],
         ),
@@ -464,11 +464,11 @@ class _ProductionOrderCard extends ConsumerWidget {
         await mfgRepo.startProduction(order.id);
         ref.invalidate(manufacturingOrdersProvider);
         if (context.mounted) {
-          AppToast.show(context, '✅ تم بدء التصنيع — تم سحب المواد الخام');
+          AppToast.show(context, tr('✅ تم بدء التصنيع — تم سحب المواد الخام'));
         }
       } catch (e) {
         if (context.mounted) {
-          AppToast.show(context, '❌ خطأ: $e', type: ToastType.error);
+          AppToast.show(context, tr('❌ خطأ: {e}', {'e': e}), type: ToastType.error);
         }
       }
     }
@@ -483,17 +483,17 @@ class _ProductionOrderCard extends ConsumerWidget {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('إتمام الإنتاج'),
+          title:  Text(tr('إتمام الإنتاج')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('المنتج: $productName'),
+              Text(tr('المنتج: {productName}', {'productName': productName})),
               const SizedBox(height: 12),
               TextField(
                 controller: qtyController,
-                decoration: const InputDecoration(
-                  labelText: 'الكمية المنتجة فعلاً',
-                  border: OutlineInputBorder(),
+                decoration:  InputDecoration(
+                  labelText: tr('الكمية المنتجة فعلاً'),
+                  border: const OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
               ),
@@ -502,11 +502,11 @@ class _ProductionOrderCard extends ConsumerWidget {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('إلغاء')),
+                child:  Text(tr('إلغاء'))),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              child: const Text('إتمام'),
+              child:  Text(tr('إتمام')),
             ),
           ],
         ),
@@ -520,11 +520,11 @@ class _ProductionOrderCard extends ConsumerWidget {
             actualProducedQty: producedQty);
         ref.invalidate(manufacturingOrdersProvider);
         if (context.mounted) {
-          AppToast.show(context, '✅ تم إتمام الإنتاج — تم إضافة المنتج التام للمخزن');
+          AppToast.show(context, tr('✅ تم إتمام الإنتاج — تم إضافة المنتج التام للمخزن'));
         }
       } catch (e) {
         if (context.mounted) {
-          AppToast.show(context, '❌ خطأ: $e', type: ToastType.error);
+          AppToast.show(context, tr('❌ خطأ: {e}', {'e': e}), type: ToastType.error);
         }
       }
     }
@@ -537,16 +537,16 @@ class _ProductionOrderCard extends ConsumerWidget {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('إلغاء أمر الإنتاج'),
-          content: const Text('هل أنت متأكد من إلغاء أمر الإنتاج هذا؟'),
+          title:  Text(tr('إلغاء أمر الإنتاج')),
+          content:  Text(tr('هل أنت متأكد من إلغاء أمر الإنتاج هذا؟')),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('رجوع')),
+                child:  Text(tr('رجوع'))),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
               child:
-                  const Text('إلغاء الأمر', style: TextStyle(color: AppColors.error)),
+                   Text(tr('إلغاء الأمر'), style: const TextStyle(color: AppColors.error)),
             ),
           ],
         ),
@@ -559,7 +559,7 @@ class _ProductionOrderCard extends ConsumerWidget {
         ref.invalidate(manufacturingOrdersProvider);
       } catch (e) {
         if (context.mounted) {
-          AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+          AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
         }
       }
     }
@@ -571,11 +571,11 @@ class _ProductionOrderCard extends ConsumerWidget {
     String selectedType = 'labor';
 
     final costTypes = {
-      'labor': 'عمالة مباشرة',
-      'utility': 'كهرباء / ماء / وقود',
-      'overhead': 'تكاليف غير مباشرة',
-      'depreciation': 'إهلاك معدات',
-      'other': 'أخرى',
+      'labor': tr('عمالة مباشرة'),
+      'utility': tr('كهرباء / ماء / وقود'),
+      'overhead': tr('تكاليف غير مباشرة'),
+      'depreciation': tr('إهلاك معدات'),
+      'other': tr('أخرى'),
     };
 
     final confirm = await showDialog<bool>(
@@ -588,7 +588,7 @@ class _ProductionOrderCard extends ConsumerWidget {
               children: [
                 const Icon(PhosphorIconsBold.money, color: Colors.orange),
                 const SizedBox(width: 8),
-                Text('إضافة تكلفة — ${order.orderNumber}'),
+                Text(tr('إضافة تكلفة — {p0}', {'p0': order.orderNumber})),
               ],
             ),
             content: SizedBox(
@@ -598,9 +598,9 @@ class _ProductionOrderCard extends ConsumerWidget {
                 children: [
                   DropdownButtonFormField<String>(
                     initialValue: selectedType,
-                    decoration: const InputDecoration(
-                      labelText: 'نوع التكلفة',
-                      border: OutlineInputBorder(),
+                    decoration:  InputDecoration(
+                      labelText: tr('نوع التكلفة'),
+                      border: const OutlineInputBorder(),
                     ),
                     items: costTypes.entries
                         .map((e) => DropdownMenuItem(
@@ -614,7 +614,7 @@ class _ProductionOrderCard extends ConsumerWidget {
                   TextField(
                     controller: amountController,
                     decoration: InputDecoration(
-                      labelText: 'المبلغ',
+                      labelText: tr('المبلغ'),
                       border: const OutlineInputBorder(),
                       suffixText: AppConstants.currencySymbol,
                     ),
@@ -623,9 +623,9 @@ class _ProductionOrderCard extends ConsumerWidget {
                   const SizedBox(height: 12),
                   TextField(
                     controller: descController,
-                    decoration: const InputDecoration(
-                      labelText: 'الوصف (اختياري)',
-                      border: OutlineInputBorder(),
+                    decoration:  InputDecoration(
+                      labelText: tr('الوصف (اختياري)'),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ],
@@ -634,12 +634,12 @@ class _ProductionOrderCard extends ConsumerWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton.icon(
                 onPressed: () => Navigator.pop(ctx, true),
                 icon: const Icon(Icons.add),
-                label: const Text('إضافة'),
+                label:  Text(tr('إضافة')),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
               ),
             ],
@@ -672,12 +672,12 @@ class _ProductionOrderCard extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text(
-                    '✅ تمت إضافة ${costTypes[selectedType]} بقيمة ${amount.toStringAsFixed(AppConstants.decimalPlaces)}')),
+                    tr('✅ تمت إضافة {p0} بقيمة {p1}', {'p0': costTypes[selectedType], 'p1': amount.toStringAsFixed(AppConstants.decimalPlaces)}))),
           );
         }
       } catch (e) {
         if (context.mounted) {
-          AppToast.show(context, '❌ خطأ: $e', type: ToastType.error);
+          AppToast.show(context, tr('❌ خطأ: {e}', {'e': e}), type: ToastType.error);
         }
       }
     }
@@ -710,11 +710,11 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (status) {
-      'draft' => ('مسودة', Colors.grey),
-      'in_progress' => ('قيد التنفيذ', Colors.blue),
-      'completed' => ('مكتمل', Colors.green),
-      'cancelled' => ('ملغي', AppColors.error),
-      _ => ('غير معروف', Colors.grey),
+      'draft' => (tr('مسودة'), Colors.grey),
+      'in_progress' => (tr('قيد التنفيذ'), Colors.blue),
+      'completed' => (tr('مكتمل'), Colors.green),
+      'cancelled' => (tr('ملغي'), AppColors.error),
+      _ => (tr('غير معروف'), Colors.grey),
     };
 
     return Container(

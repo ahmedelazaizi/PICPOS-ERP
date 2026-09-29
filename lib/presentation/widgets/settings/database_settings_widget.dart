@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -84,9 +85,9 @@ class _DatabaseSettingsDialogState
     });
 
     if (error == null) {
-      AppToast.show(context, 'تم الاتصال بنجاح ✓', type: ToastType.success);
+      AppToast.show(context, tr('تم الاتصال بنجاح ✓'), type: ToastType.success);
     } else {
-      AppToast.show(context, 'فشل الاتصال: $error', type: ToastType.error);
+      AppToast.show(context, tr('فشل الاتصال: {error}', {'error': error}), type: ToastType.error);
     }
   }
 
@@ -151,7 +152,7 @@ class _DatabaseSettingsDialogState
         child: AlertDialog(
           icon: const Icon(PhosphorIconsBold.arrowsClockwise,
               size: 48, color: AppColors.primary),
-          title: const Text('يلزم إعادة تشغيل التطبيق'),
+          title:  Text(tr('يلزم إعادة تشغيل التطبيق')),
           content: const Text(
             'تم حفظ إعدادات قاعدة البيانات بنجاح.\n'
             'يلزم إغلاق التطبيق وإعادة فتحه لتفعيل التغييرات.',
@@ -159,7 +160,7 @@ class _DatabaseSettingsDialogState
           actions: [
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('حسناً'),
+              child:  Text(tr('حسناً')),
             ),
           ],
         ),
@@ -204,15 +205,15 @@ class _DatabaseSettingsDialogState
                           color: AppColors.primary, size: 28),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('إعدادات قاعدة البيانات',
-                              style: TextStyle(
+                          Text(tr('إعدادات قاعدة البيانات'),
+                              style: const TextStyle(
                                   fontSize: 18, fontWeight: FontWeight.bold)),
-                          Text('اختيار وضع الاتصال: محلي أو سيرفر',
-                              style: TextStyle(
+                          Text(tr('اختيار وضع الاتصال: محلي أو سيرفر'),
+                              style: const TextStyle(
                                   fontSize: 12, color: AppColors.textSecondary)),
                         ],
                       ),
@@ -228,15 +229,15 @@ class _DatabaseSettingsDialogState
                 // Mode selector
                 SegmentedButton<DatabaseMode>(
                   segments: [
-                    const ButtonSegment(
+                     ButtonSegment(
                       value: DatabaseMode.sqlite,
-                      label: Text('محلي (SQLite)'),
-                      icon: Icon(PhosphorIconsBold.desktop, size: 18),
+                      label: Text(tr('محلي (SQLite)')),
+                      icon: const Icon(PhosphorIconsBold.desktop, size: 18),
                     ),
-                    const ButtonSegment(
+                     ButtonSegment(
                       value: DatabaseMode.postgres,
-                      label: Text('سيرفر (PostgreSQL)'),
-                      icon: Icon(PhosphorIconsBold.cloudArrowUp, size: 18),
+                      label: Text(tr('سيرفر (PostgreSQL)')),
+                      icon: const Icon(PhosphorIconsBold.cloudArrowUp, size: 18),
                     ),
                   ],
                   selected: {_mode},
@@ -260,15 +261,15 @@ class _DatabaseSettingsDialogState
                               border: Border.all(
                                   color: AppColors.info.withAlpha(60)),
                             ),
-                            child: const Row(
+                            child:  Row(
                               children: [
-                                Icon(PhosphorIconsBold.info,
+                                const Icon(PhosphorIconsBold.info,
                                     color: AppColors.info, size: 20),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    'يجب أن يكون سيرفر PostgreSQL يعمل ومتاح على الشبكة قبل الاتصال',
-                                    style: TextStyle(fontSize: 12),
+                                    tr('يجب أن يكون سيرفر PostgreSQL يعمل ومتاح على الشبكة قبل الاتصال'),
+                                    style: const TextStyle(fontSize: 12),
                                   ),
                                 ),
                               ],
@@ -283,12 +284,12 @@ class _DatabaseSettingsDialogState
                                 flex: 3,
                                 child: TextField(
                                   controller: _hostCtrl,
-                                  decoration: const InputDecoration(
-                                    labelText: 'عنوان السيرفر (Host/IP)',
+                                  decoration:  InputDecoration(
+                                    labelText: tr('عنوان السيرفر (Host/IP)'),
                                     hintText: '192.168.1.100',
-                                    prefixIcon: Icon(
+                                    prefixIcon: const Icon(
                                         PhosphorIconsBold.globe, size: 18),
-                                    border: OutlineInputBorder(),
+                                    border: const OutlineInputBorder(),
                                     isDense: true,
                                   ),
                                 ),
@@ -297,10 +298,10 @@ class _DatabaseSettingsDialogState
                               Expanded(
                                 child: TextField(
                                   controller: _portCtrl,
-                                  decoration: const InputDecoration(
-                                    labelText: 'البورت',
+                                  decoration:  InputDecoration(
+                                    labelText: tr('البورت'),
                                     hintText: '5432',
-                                    border: OutlineInputBorder(),
+                                    border: const OutlineInputBorder(),
                                     isDense: true,
                                   ),
                                   keyboardType: TextInputType.number,
@@ -313,12 +314,12 @@ class _DatabaseSettingsDialogState
                           // Database name
                           TextField(
                             controller: _dbCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'اسم قاعدة البيانات',
+                            decoration:  InputDecoration(
+                              labelText: tr('اسم قاعدة البيانات'),
                               hintText: Brand.pgIdentifier,
                               prefixIcon:
-                                  Icon(PhosphorIconsBold.database, size: 18),
-                              border: OutlineInputBorder(),
+                                  const Icon(PhosphorIconsBold.database, size: 18),
+                              border: const OutlineInputBorder(),
                               isDense: true,
                             ),
                           ),
@@ -330,12 +331,12 @@ class _DatabaseSettingsDialogState
                               Expanded(
                                 child: TextField(
                                   controller: _userCtrl,
-                                  decoration: const InputDecoration(
-                                    labelText: 'اسم المستخدم',
+                                  decoration:  InputDecoration(
+                                    labelText: tr('اسم المستخدم'),
                                     hintText: Brand.pgIdentifier,
                                     prefixIcon:
-                                        Icon(PhosphorIconsBold.user, size: 18),
-                                    border: OutlineInputBorder(),
+                                        const Icon(PhosphorIconsBold.user, size: 18),
+                                    border: const OutlineInputBorder(),
                                     isDense: true,
                                   ),
                                 ),
@@ -345,11 +346,11 @@ class _DatabaseSettingsDialogState
                                 child: TextField(
                                   controller: _passCtrl,
                                   obscureText: true,
-                                  decoration: const InputDecoration(
-                                    labelText: 'كلمة المرور',
+                                  decoration:  InputDecoration(
+                                    labelText: tr('كلمة المرور'),
                                     prefixIcon:
-                                        Icon(PhosphorIconsBold.lock, size: 18),
-                                    border: OutlineInputBorder(),
+                                        const Icon(PhosphorIconsBold.lock, size: 18),
+                                    border: const OutlineInputBorder(),
                                     isDense: true,
                                   ),
                                 ),
@@ -361,10 +362,10 @@ class _DatabaseSettingsDialogState
                           // SSL toggle
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('تفعيل SSL (اتصال مشفر)'),
-                            subtitle: const Text(
-                              'مطلوب للاتصالات عبر الإنترنت',
-                              style: TextStyle(fontSize: 11),
+                            title:  Text(tr('تفعيل SSL (اتصال مشفر)')),
+                            subtitle:  Text(
+                              tr('مطلوب للاتصالات عبر الإنترنت'),
+                              style: const TextStyle(fontSize: 11),
                             ),
                             secondary: const Icon(PhosphorIconsBold.shieldCheck,
                                 color: AppColors.success),
@@ -387,8 +388,8 @@ class _DatabaseSettingsDialogState
                                   : const Icon(PhosphorIconsBold.plugsConnected,
                                       size: 18),
                               label: Text(_testing
-                                  ? 'جاري اختبار الاتصال...'
-                                  : 'اختبار الاتصال'),
+                                  ? tr('جاري اختبار الاتصال...')
+                                  : tr('اختبار الاتصال')),
                             ),
                           ),
 
@@ -424,7 +425,7 @@ class _DatabaseSettingsDialogState
                                   Expanded(
                                     child: Text(
                                       _testResult!.isEmpty
-                                          ? 'تم الاتصال بنجاح!'
+                                          ? tr('تم الاتصال بنجاح!')
                                           : _testResult!,
                                       style: TextStyle(
                                         fontSize: 12,
@@ -454,14 +455,14 @@ class _DatabaseSettingsDialogState
                               size: 64,
                               color: AppColors.textSecondary.withAlpha(100)),
                           const SizedBox(height: 16),
-                          const Text(
-                            'الوضع المحلي (الافتراضي)',
-                            style: TextStyle(
+                           Text(
+                            tr('الوضع المحلي (الافتراضي)'),
+                            style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'قاعدة البيانات مخزنة على هذا الجهاز فقط.\nمناسب للعمل بدون سيرفر.',
+                            tr('قاعدة البيانات مخزنة على هذا الجهاز فقط.\nمناسب للعمل بدون سيرفر.'),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                                 fontSize: 13,
@@ -480,7 +481,7 @@ class _DatabaseSettingsDialogState
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('إلغاء'),
+                        child:  Text(tr('إلغاء')),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -490,7 +491,7 @@ class _DatabaseSettingsDialogState
                         onPressed: _saveAndApply,
                         icon:
                             const Icon(PhosphorIconsBold.floppyDisk, size: 18),
-                        label: const Text('حفظ وتطبيق'),
+                        label:  Text(tr('حفظ وتطبيق')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,

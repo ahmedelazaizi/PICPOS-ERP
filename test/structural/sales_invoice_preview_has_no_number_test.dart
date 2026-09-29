@@ -89,10 +89,10 @@ void main() {
 
   test('🔴 و«الفرع» يُعرَض ولا يُختار', () {
     final form = _code(_form);
-    final at = form.indexOf("label: 'الفرع',");
+    final at = form.indexOf("label: tr('الفرع'),");
     expect(at, greaterThan(0), reason: 'حقلُ الفرع لا يُبنى أصلاً');
     // من التسمية حتى نهاية الحقل — والحقلُ التالي يبدأ بـ`label: 'المخزن'`.
-    final field = form.substring(at, form.indexOf("label: 'المخزن',", at));
+    final field = form.substring(at, form.indexOf("label: tr('المخزن'),", at));
     expect(field.contains('onTap'), isFalse,
         reason: '🔴 منتقي فرعٍ يَعِد بما لا يقع: يختار المستخدمُ فرعاً ويُختَم '
             'المستندُ على فرع المخزن');

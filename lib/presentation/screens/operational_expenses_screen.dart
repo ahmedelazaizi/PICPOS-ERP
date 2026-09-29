@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -50,8 +51,8 @@ class _OperationalExpensesScreenState
       // لا تجاوزَ للخلفيّة: الثيمُ يعرّف `scaffoldBackgroundColor` للوضعَين.
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('المصروفات التشغيلية',
-              style: TextStyle(fontWeight: FontWeight.bold)),
+          title:  Text(tr('المصروفات التشغيلية'),
+              style: const TextStyle(fontWeight: FontWeight.bold)),
           // الشقّان مقترنان: خلفيّةٌ بيضاءُ ونصٌّ داكنٌ صحيحان في الفاتح
           // وحدَه. ويتبعان الوضعَ معاً — تجاوزُ أحدِهما يكسر الاقتران.
           backgroundColor: context.picposCard,
@@ -62,13 +63,13 @@ class _OperationalExpensesScreenState
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.textMuted,
             indicatorColor: AppColors.primary,
-            tabs: const [
+            tabs:  [
               Tab(
-                  icon: Icon(PhosphorIconsBold.listDashes),
-                  text: 'فئات المصروفات'),
+                  icon: const Icon(PhosphorIconsBold.listDashes),
+                  text: tr('فئات المصروفات')),
               Tab(
-                  icon: Icon(PhosphorIconsBold.receipt),
-                  text: 'سجل المصروفات'),
+                  icon: const Icon(PhosphorIconsBold.receipt),
+                  text: tr('سجل المصروفات')),
             ],
           ),
         ),

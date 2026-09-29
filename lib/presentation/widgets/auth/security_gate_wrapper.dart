@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -65,32 +66,32 @@ class _SecurityScreenGateState extends ConsumerState<SecurityScreenGate> {
             children: [
               const Icon(PhosphorIconsBold.lockKey, color: AppColors.primary),
               const SizedBox(width: 8),
-              Text('🔒 حماية ${widget.title}'),
+              Text(tr('🔒 حماية {p0}', {'p0': widget.title})),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'هذا القسم محمي بكلمة مرور. يرجى إدخالها للمتابعة.',
-                style: TextStyle(fontSize: 14, color: AppColors.textMuted),
+               Text(
+                tr('هذا القسم محمي بكلمة مرور. يرجى إدخالها للمتابعة.'),
+                style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: controller,
                 obscureText: true,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'كلمة المرور',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(PhosphorIconsBold.key),
+                decoration:  InputDecoration(
+                  labelText: tr('كلمة المرور'),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(PhosphorIconsBold.key),
                 ),
                 onSubmitted: (val) {
                   if (val == _gatePassword) {
                     Navigator.pop(ctx);
                     setState(() => _isUnlocked = true);
                   } else {
-                    AppToast.show(ctx, 'كلمة المرور غير صحيحة', type: ToastType.error);
+                    AppToast.show(ctx, tr('كلمة المرور غير صحيحة'), type: ToastType.error);
                   }
                 },
               ),
@@ -99,7 +100,7 @@ class _SecurityScreenGateState extends ConsumerState<SecurityScreenGate> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () {
@@ -107,10 +108,10 @@ class _SecurityScreenGateState extends ConsumerState<SecurityScreenGate> {
                   Navigator.pop(ctx);
                   setState(() => _isUnlocked = true);
                 } else {
-                  AppToast.show(ctx, 'كلمة المرور غير صحيحة', type: ToastType.error);
+                  AppToast.show(ctx, tr('كلمة المرور غير صحيحة'), type: ToastType.error);
                 }
               },
-              child: const Text('دخول'),
+              child:  Text(tr('دخول')),
             ),
           ],
         ),
@@ -152,14 +153,14 @@ class _SecurityScreenGateState extends ConsumerState<SecurityScreenGate> {
               ),
               const SizedBox(height: 24),
               Text(
-                'قسم ${widget.title} محمي',
+                tr('قسم {p0} محمي', {'p0': widget.title}),
                 style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              const Text(
-                'يرجى إدخال كلمة المرور الخاصة بهذا القسم للوصول إليه.',
+               Text(
+                tr('يرجى إدخال كلمة المرور الخاصة بهذا القسم للوصول إليه.'),
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textMuted),
+                style: const TextStyle(color: AppColors.textMuted),
               ),
               const SizedBox(height: 32),
               SizedBox(
@@ -168,7 +169,7 @@ class _SecurityScreenGateState extends ConsumerState<SecurityScreenGate> {
                 child: ElevatedButton.icon(
                   onPressed: _showPasswordDialog,
                   icon: const Icon(PhosphorIconsBold.key),
-                  label: const Text('إدخال كلمة المرور'),
+                  label:  Text(tr('إدخال كلمة المرور')),
                 ),
               ),
             ],

@@ -32,13 +32,13 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
         textDirection: ui.TextDirection.rtl,
         child: PicPosDialog(
           icon: PhosphorIconsBold.lock,
-          title: 'تغيير كلمة سر المدير',
-          subtitle: 'تُستخدم هذه الكلمة لتأكيد حذف الفواتير',
+          title: tr('تغيير كلمة سر المدير'),
+          subtitle: tr('تُستخدم هذه الكلمة لتأكيد حذف الفواتير'),
           width: 460,
           onCancel: () => Navigator.pop(ctx),
           body: [
             PicPosDialogField(
-              label: 'كلمة السر الحالية',
+              label: tr('كلمة السر الحالية'),
               child: TextField(
                 controller: oldPasswordController,
                 obscureText: true,
@@ -50,7 +50,7 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
             ),
             const SizedBox(height: 12),
             PicPosDialogField(
-              label: 'كلمة السر الجديدة',
+              label: tr('كلمة السر الجديدة'),
               child: TextField(
                 controller: newPasswordController,
                 obscureText: true,
@@ -62,7 +62,7 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
             ),
             const SizedBox(height: 12),
             PicPosDialogField(
-              label: 'تأكيد كلمة السر الجديدة',
+              label: tr('تأكيد كلمة السر الجديدة'),
               child: TextField(
                 controller: confirmPasswordController,
                 obscureText: true,
@@ -74,7 +74,7 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
             ),
           ],
           primaryAction: PicPosDialogAction(
-            label: 'حفظ',
+            label: tr('حفظ'),
             icon: PhosphorIconsBold.floppyDisk,
             onPressed: () async {
                 final adminPwd = ref.read(adminPasswordServiceProvider);
@@ -83,7 +83,7 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
                   if (!ctx.mounted) return;
                   AppToast.show(
                     ctx,
-                    'كلمة السر الحالية غير صحيحة',
+                    tr('كلمة السر الحالية غير صحيحة'),
                     type: ToastType.error,
                   );
                   return;
@@ -92,7 +92,7 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
                   if (!ctx.mounted) return;
                   AppToast.show(
                     ctx,
-                    'يرجى إدخال كلمة سر جديدة',
+                    tr('يرجى إدخال كلمة سر جديدة'),
                     type: ToastType.error,
                   );
                   return;
@@ -102,7 +102,7 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
                   if (!ctx.mounted) return;
                   AppToast.show(
                     ctx,
-                    'كلمة السر غير متطابقة',
+                    tr('كلمة السر غير متطابقة'),
                     type: ToastType.error,
                   );
                   return;
@@ -117,7 +117,7 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
                   await logger.logSettingsChange(
                     auth.user?.id ?? 0,
                     auth.user?.displayName ?? '',
-                    'كلمة سر المدير',
+                    tr('كلمة سر المدير'),
                   );
                 } catch (e) {
                   debugPrint('[ActivityLog] Error: $e');
@@ -127,7 +127,7 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
                   Navigator.pop(ctx);
                   AppToast.show(
                     ctx,
-                    'تم تغيير كلمة السر بنجاح',
+                    tr('تم تغيير كلمة السر بنجاح'),
                     type: ToastType.success,
                   );
                 }
@@ -143,8 +143,8 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
   Widget build(BuildContext context) {
     return ListTile(
       leading: const Icon(PhosphorIconsBold.lock, color: AppColors.warning),
-      title: const Text('كلمة سر الحذف'),
-      subtitle: const Text('تغيير كلمة السر المطلوبة لحذف الفواتير'),
+      title:  Text(tr('كلمة سر الحذف')),
+      subtitle:  Text(tr('تغيير كلمة السر المطلوبة لحذف الفواتير')),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: _showChangePasswordDialog,
     );
@@ -192,44 +192,44 @@ class _DefaultHomeScreenSelectorState
     final flavorScreenIds = AppConfig.allowedScreenIds;
 
     // Define screen names mapping (must match main.dart allScreens)
-    const screenNames = {
+    final screenNames = {
       ScreenId.dashboard: 'Dashboard',
-      ScreenId.pos: 'البيع السريع (POS)',
-      ScreenId.offers: 'العروض (Offers)',
-      ScreenId.tables: 'الطاولات (Tables)',
-      ScreenId.products: 'الأصناف (Products)',
-      ScreenId.categories: 'التصنيفات (Categories)',
-      ScreenId.parties: 'العملاء والموردين',
-      ScreenId.inventory: 'المخزون (Inventory)',
-      ScreenId.purchases: 'فواتير المشتريات',
-      ScreenId.treasury: 'الخزينة (Treasury)',
-      ScreenId.reports: 'التقارير (Reports)',
-      ScreenId.settings: 'الإعدادات (Settings)',
-      ScreenId.branches: 'إدارة الفروع',
-      ScreenId.kitchen: 'شاشة المطبخ (KDS)',
-      ScreenId.analytics: 'تحليلات المبيعات',
-      ScreenId.hr: 'شؤون الموظفين (HR)',
-      ScreenId.salesInvoices: 'فواتير المبيعات',
-      ScreenId.activityLog: 'سجل العمليات (Audit)',
-      ScreenId.inventoryBonds: 'أرصدة المخزون',
-      ScreenId.stockTransfer: 'التحويل المخزني',
-      ScreenId.scalePlu: 'ميزان التسعير',
-      ScreenId.eInvoice: 'الفوترة الإلكترونية',
-      ScreenId.loyalty: 'نقاط الولاء',
-      ScreenId.distribution: 'التوزيع والمناديب',
+      ScreenId.pos: tr('البيع السريع (POS)'),
+      ScreenId.offers: tr('العروض (Offers)'),
+      ScreenId.tables: tr('الطاولات (Tables)'),
+      ScreenId.products: tr('الأصناف (Products)'),
+      ScreenId.categories: tr('التصنيفات (Categories)'),
+      ScreenId.parties: tr('العملاء والموردين'),
+      ScreenId.inventory: tr('المخزون (Inventory)'),
+      ScreenId.purchases: tr('فواتير المشتريات'),
+      ScreenId.treasury: tr('الخزينة (Treasury)'),
+      ScreenId.reports: tr('التقارير (Reports)'),
+      ScreenId.settings: tr('الإعدادات (Settings)'),
+      ScreenId.branches: tr('إدارة الفروع'),
+      ScreenId.kitchen: tr('شاشة المطبخ (KDS)'),
+      ScreenId.analytics: tr('تحليلات المبيعات'),
+      ScreenId.hr: tr('شؤون الموظفين (HR)'),
+      ScreenId.salesInvoices: tr('فواتير المبيعات'),
+      ScreenId.activityLog: tr('سجل العمليات (Audit)'),
+      ScreenId.inventoryBonds: tr('أرصدة المخزون'),
+      ScreenId.stockTransfer: tr('التحويل المخزني'),
+      ScreenId.scalePlu: tr('ميزان التسعير'),
+      ScreenId.eInvoice: tr('الفوترة الإلكترونية'),
+      ScreenId.loyalty: tr('نقاط الولاء'),
+      ScreenId.distribution: tr('التوزيع والمناديب'),
     };
 
     return ListTile(
       leading: const Icon(PhosphorIconsBold.houseLine, color: AppColors.info),
-      title: const Text('الشاشة الرئيسية الافتراضية'),
-      subtitle: const Text('اختر الشاشة التي تفتح تلقائياً عند تسجيل الدخول'),
+      title:  Text(tr('الشاشة الرئيسية الافتراضية')),
+      subtitle:  Text(tr('اختر الشاشة التي تفتح تلقائياً عند تسجيل الدخول')),
       trailing: DropdownButton<int>(
         value: _selectedHomeScreenIndex,
         underline: const SizedBox.shrink(),
         items: flavorScreenIds.map((screenId) {
           return DropdownMenuItem<int>(
             value: screenId.navigationIndex,
-            child: Text(screenNames[screenId] ?? 'شاشة مجهولة (${screenId.navigationIndex})'),
+            child: Text(screenNames[screenId] ?? tr('شاشة مجهولة ({p0})', {'p0': screenId.navigationIndex})),
           );
         }).toList(),
         onChanged: (newVal) async {
@@ -241,7 +241,7 @@ class _DefaultHomeScreenSelectorState
             if (context.mounted) {
               AppToast.show(
                 context,
-                'تم حفظ الشاشة الافتراضية بنجاح',
+                tr('تم حفظ الشاشة الافتراضية بنجاح'),
                 type: ToastType.success,
               );
             }
@@ -276,7 +276,7 @@ class _ForceSyncPanelState extends ConsumerState<_ForceSyncPanel> {
     final currentUser = authState.user;
     if (currentUser == null) {
       AppToast.show(context,
-          'صلاحية مرفوضة. هذه العملية مخصصة لمدير النظام والمدير المالي فقط.',
+          tr('صلاحية مرفوضة. هذه العملية مخصصة لمدير النظام والمدير المالي فقط.'),
           type: ToastType.error);
       return;
     }
@@ -302,7 +302,7 @@ class _ForceSyncPanelState extends ConsumerState<_ForceSyncPanel> {
     if (!canForceSync) {
       if (mounted) {
         AppToast.show(context,
-            'صلاحية مرفوضة. هذه العملية مخصصة لمدير النظام والمدير المالي فقط.',
+            tr('صلاحية مرفوضة. هذه العملية مخصصة لمدير النظام والمدير المالي فقط.'),
             type: ToastType.error);
       }
       return;
@@ -316,11 +316,11 @@ class _ForceSyncPanelState extends ConsumerState<_ForceSyncPanel> {
       await syncRepo.performFullSync(serverUrl);
 
       if (mounted) {
-        AppToast.show(context, 'تم جلب البيانات وإتمام المزامنة الإجبارية بنجاح.', type: ToastType.success);
+        AppToast.show(context, tr('تم جلب البيانات وإتمام المزامنة الإجبارية بنجاح.'), type: ToastType.success);
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل المزامنة الإجبارية: \$e', type: ToastType.error);
+        AppToast.show(context, tr('فشل المزامنة الإجبارية: \$e'), type: ToastType.error);
       }
     } finally {
       if (mounted) {
@@ -343,20 +343,20 @@ class _ForceSyncPanelState extends ConsumerState<_ForceSyncPanel> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+             Row(
               children: [
-                Icon(PhosphorIconsBold.arrowsClockwise, color: AppColors.primary),
-                SizedBox(width: 8),
+                const Icon(PhosphorIconsBold.arrowsClockwise, color: AppColors.primary),
+                const SizedBox(width: 8),
                 Text(
-                  'المزامنة الإجبارية (Smart Sync)',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  tr('المزامنة الإجبارية (Smart Sync)'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            const Text(
-              'أداة النجدة للمدير المالي ومدير النظام. تقوم هذه العملية بالاتصال المباشر بالسيرفر لجلب جميع التحديثات وإجبار المزامنة لحل أي تعارض في البيانات أو الأرصدة.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+             Text(
+              tr('أداة النجدة للمدير المالي ومدير النظام. تقوم هذه العملية بالاتصال المباشر بالسيرفر لجلب جميع التحديثات وإجبار المزامنة لحل أي تعارض في البيانات أو الأرصدة.'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -370,7 +370,7 @@ class _ForceSyncPanelState extends ConsumerState<_ForceSyncPanel> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : const Icon(PhosphorIconsBold.cloudArrowDown),
-                label: Text(_isSyncing ? 'جاري السحب والمزامنة بطريقة آمنة...' : 'بدء المزامنة الذكية الآن'),
+                label: Text(_isSyncing ? tr('جاري السحب والمزامنة بطريقة آمنة...') : tr('بدء المزامنة الذكية الآن')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,

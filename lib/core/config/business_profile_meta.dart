@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // BUSINESS PROFILE CATALOG — labels + previews for each profile
 // ═══════════════════════════════════════════════════════════════════════════
@@ -62,56 +63,56 @@ class BusinessProfileMeta {
 class BusinessProfileCatalog {
   const BusinessProfileCatalog._();
 
-  static final List<BusinessProfileMeta> _all = [
+  static List<BusinessProfileMeta> get _all => [
     // ترتيب القايمة = ترتيب الاختيار في الويزارد. `lite` الأول لأنه الأبسط
     // والافتراضي لـ PicPos.
     BusinessProfileMeta.build(
       profile: BusinessProfile.lite,
-      arabicName: 'لايت — نقطة بيع ومخازن',
+      arabicName: tr('لايت — نقطة بيع ومخازن'),
       arabicDescription:
           'نقطة بيع + مخازن + صناديق + تقارير (ومعها المشتريات) — بدون طاولات '
           'أو كيتشن أو فروع أو موظفين أو محاسبة موسّعة.',
     ),
     BusinessProfileMeta.build(
       profile: BusinessProfile.restaurant,
-      arabicName: 'مطعم',
+      arabicName: tr('مطعم'),
       arabicDescription:
-          'نقطة بيع بالطاولات والكيتشن والتوصيل والحجوزات — بدون باركود أو ميزان.',
+          tr('نقطة بيع بالطاولات والكيتشن والتوصيل والحجوزات — بدون باركود أو ميزان.'),
     ),
     BusinessProfileMeta.build(
       profile: BusinessProfile.cafe,
-      arabicName: 'كافيه',
+      arabicName: tr('كافيه'),
       arabicDescription:
-          'مثل المطعم مع التعديلات (Modifiers) — قهوة وحلويات وتوصيل.',
+          tr('مثل المطعم مع التعديلات (Modifiers) — قهوة وحلويات وتوصيل.'),
     ),
     BusinessProfileMeta.build(
       profile: BusinessProfile.supermarket,
-      arabicName: 'تجزئة / سوبر ماركت',
+      arabicName: tr('تجزئة / سوبر ماركت'),
       arabicDescription:
-          'نقطة بيع بالباركود والميزان والعروض — بدون طاولات أو كيتشن.',
+          tr('نقطة بيع بالباركود والميزان والعروض — بدون طاولات أو كيتشن.'),
     ),
     BusinessProfileMeta.build(
       profile: BusinessProfile.supermarketPro,
-      arabicName: 'سوبر ماركت Pro',
-      arabicDescription: 'إضافة إدارة الموظفين (HR) على ملف السوبر ماركت.',
+      arabicName: tr('سوبر ماركت Pro'),
+      arabicDescription: tr('إضافة إدارة الموظفين (HR) على ملف السوبر ماركت.'),
     ),
     BusinessProfileMeta.build(
       profile: BusinessProfile.supermarketPlus,
-      arabicName: 'سوبر ماركت Plus',
+      arabicName: tr('سوبر ماركت Plus'),
       arabicDescription:
-          'سوبر ماركت + خدمات مطعم/كافيه (طاولات، كيتشن، توصيل).',
+          tr('سوبر ماركت + خدمات مطعم/كافيه (طاولات، كيتشن، توصيل).'),
     ),
     BusinessProfileMeta.build(
       profile: BusinessProfile.commercial,
-      arabicName: 'تجارى / جملة وتوزيع',
+      arabicName: tr('تجارى / جملة وتوزيع'),
       arabicDescription:
-          'فواتير B2B + فروع + HR + تصنيع + أوراق تجارية — بدون نقطة بيع.',
+          tr('فواتير B2B + فروع + HR + تصنيع + أوراق تجارية — بدون نقطة بيع.'),
     ),
     BusinessProfileMeta.build(
       profile: BusinessProfile.unified,
-      arabicName: 'موحّد — كل الميزات',
+      arabicName: tr('موحّد — كل الميزات'),
       arabicDescription:
-          'ملف شامل يُشغّل كل الميزات، مناسب للعملاء المركبين أو البيئات التجريبية.',
+          tr('ملف شامل يُشغّل كل الميزات، مناسب للعملاء المركبين أو البيئات التجريبية.'),
     ),
   ];
 
@@ -124,7 +125,7 @@ class BusinessProfileCatalog {
     return BusinessProfileMeta.build(
       profile: p,
       arabicName: p.name,
-      arabicDescription: 'ملف غير مسجّل فى الدليل.',
+      arabicDescription: tr('ملف غير مسجّل فى الدليل.'),
     );
   }
 

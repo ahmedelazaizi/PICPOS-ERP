@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // تقريرُ تقادم الذمم — نسخةُ PicPos.
 //
 // ═══ لماذا نسخةٌ لا فرعٌ في الشاشة المشتركة ═══
@@ -122,14 +123,14 @@ class _ArAgingReportPicposScreenState
     final currentAsync = _tabController.index == 0 ? arAsync : apAsync;
 
     return PicPosScreenScaffold(
-      title: 'تقرير تقادم الذمم',
-      subtitle: 'الذممُ المتأخّرةُ بشرائح الأيام حتى تاريخٍ محدَّد',
+      title: tr('تقرير تقادم الذمم'),
+      subtitle: tr('الذممُ المتأخّرةُ بشرائح الأيام حتى تاريخٍ محدَّد'),
       icon: PhosphorIconsBold.hourglassHigh,
       headerActions: [
         IconButton(
           icon: const Icon(PhosphorIconsBold.arrowClockwise),
           color: AppColors.primary,
-          tooltip: 'تحديث',
+          tooltip: tr('تحديث'),
           onPressed: () {
             ref.invalidate(arAgingReportProvider(arParams));
             ref.invalidate(arAgingReportProvider(apParams));
@@ -142,14 +143,14 @@ class _ArAgingReportPicposScreenState
         children: [
           PicPosReportTabs(
             controller: _tabController,
-            tabs: const [
+            tabs:  [
               (
-                label: 'ذمم العملاء (AR)',
+                label: tr('ذمم العملاء (AR)'),
                 icon: PhosphorIconsBold.usersThree,
                 badge: null
               ),
               (
-                label: 'ذمم الموردين (AP)',
+                label: tr('ذمم الموردين (AP)'),
                 icon: PhosphorIconsBold.truck,
                 badge: null
               ),
@@ -160,7 +161,7 @@ class _ArAgingReportPicposScreenState
             children: [
               PicPosFilterPill(
                 icon: PhosphorIconsBold.calendarBlank,
-                label: 'بتاريخ ${_dateFmt.format(_asOfDate)}',
+                label: tr('بتاريخ {p0}', {'p0': _dateFmt.format(_asOfDate)}),
                 tabular: true,
                 onTap: _pickDate,
               ),
@@ -175,7 +176,7 @@ class _ArAgingReportPicposScreenState
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'خطأ في تحميل بيانات التقادم: $e',
+              tr('خطأ في تحميل بيانات التقادم: {e}', {'e': e}),
               style: const TextStyle(color: AppColors.error),
             ),
           ),
@@ -200,7 +201,7 @@ class _ArAgingReportPicposScreenState
   }
 
   Widget _buildEmpty() {
-    final label = _tabController.index == 0 ? 'العملاء' : 'الموردين';
+    final label = _tabController.index == 0 ? tr('العملاء') : tr('الموردين');
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -209,7 +210,7 @@ class _ArAgingReportPicposScreenState
               size: 56, color: AppColors.success),
           const SizedBox(height: 12),
           Text(
-            'لا توجد ذمم متأخرة لـ$label',
+            tr('لا توجد ذمم متأخرة لـ{label}', {'label': label}),
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -217,7 +218,7 @@ class _ArAgingReportPicposScreenState
             ),
           ),
           Text(
-            'بتاريخ ${_dateFmt.format(_asOfDate)}',
+            tr('بتاريخ {p0}', {'p0': _dateFmt.format(_asOfDate)}),
             style: TextStyle(color: context.picposMuted),
           ),
         ],
@@ -252,13 +253,13 @@ class _ArAgingReportPicposScreenState
           padding: const EdgeInsetsDirectional.fromSTEB(26, 14, 26, 10),
           child: Row(
             children: [
-              _chip('0-30 يوم', t0_30, _kBucketFresh),
+              _chip(tr('0-30 يوم'), t0_30, _kBucketFresh),
               const SizedBox(width: 10),
-              _chip('31-60 يوم', t31_60, _kBucketWarn),
+              _chip(tr('31-60 يوم'), t31_60, _kBucketWarn),
               const SizedBox(width: 10),
-              _chip('61-90 يوم', t61_90, _kBucketLate),
+              _chip(tr('61-90 يوم'), t61_90, _kBucketLate),
               const SizedBox(width: 10),
-              _chip('+90 يوم', t90p, _kBucketWorst),
+              _chip(tr('+90 يوم'), t90p, _kBucketWorst),
             ],
           ),
         ),
@@ -266,12 +267,12 @@ class _ArAgingReportPicposScreenState
           color: context.picposField,
           child: Row(
             children: [
-              _headerCell('اسم الطرف', flex: 3, style: headerStyle),
+              _headerCell(tr('اسم الطرف'), flex: 3, style: headerStyle),
               _headerCell('0-30', flex: 1, style: headerStyle),
               _headerCell('31-60', flex: 1, style: headerStyle),
               _headerCell('61-90', flex: 1, style: headerStyle),
               _headerCell('+90', flex: 1, style: headerStyle),
-              _headerCell('الإجمالي', flex: 1, style: headerStyle),
+              _headerCell(tr('الإجمالي'), flex: 1, style: headerStyle),
             ],
           ),
         ),
@@ -314,7 +315,7 @@ class _ArAgingReportPicposScreenState
           color: context.picposField,
           child: Row(
             children: [
-              _dataCell('الإجمالي (${rows.length} طرف)', flex: 3, bold: true),
+              _dataCell(tr('الإجمالي ({p0} طرف)', {'p0': rows.length}), flex: 3, bold: true),
               _dataCell(_fmt(t0_30), flex: 1, style: totalStyle),
               _dataCell(_fmt(t31_60), flex: 1, style: totalStyle),
               _dataCell(_fmt(t61_90), flex: 1, style: totalStyle),

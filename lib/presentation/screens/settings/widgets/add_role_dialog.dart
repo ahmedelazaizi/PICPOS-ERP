@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -23,17 +24,17 @@ class _AddRoleDialogState extends AppFormDialogState<bool, AddRoleDialog> {
   int? copyFromRoleId;
 
   @override
-  String get dialogTitle => 'إضافة دور جديد';
+  String get dialogTitle => tr('إضافة دور جديد');
 
   @override
   IconData get dialogIcon => PhosphorIconsBold.shieldPlus;
 
   @override
   String? get dialogSubtitle =>
-      'ابدأ من دورٍ قائمٍ ثمّ عدّل الصلاحيات من «مصفوفة الأدوار»';
+      tr('ابدأ من دورٍ قائمٍ ثمّ عدّل الصلاحيات من «مصفوفة الأدوار»');
 
   @override
-  String? get dialogSaveLabel => 'إنشاء الدور';
+  String? get dialogSaveLabel => tr('إنشاء الدور');
 
   /// لوحةُ `PANELS.role`.
   ///
@@ -54,7 +55,7 @@ class _AddRoleDialogState extends AppFormDialogState<bool, AddRoleDialog> {
     final roles = ref.watch(allRolesProvider).value ?? const <Role>[];
     return [
       PicPosPanelGroup(
-        label: 'تعريف الدور',
+        label: tr('تعريف الدور'),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -66,12 +67,12 @@ class _AddRoleDialogState extends AppFormDialogState<bool, AddRoleDialog> {
         ),
       ),
       PicPosPanelGroup(
-        label: 'نسخ الصلاحيات من',
-        hint: 'يبدأ الدورُ الجديدُ بنفس صلاحيات المختار',
+        label: tr('نسخ الصلاحيات من'),
+        hint: tr('يبدأ الدورُ الجديدُ بنفس صلاحيات المختار'),
         child: PicPosPanelChips(
           children: [
             PicPosPanelChip(
-              label: 'ابدأ فارغاً',
+              label: tr('ابدأ فارغاً'),
               selected: copyFromRoleId == null,
               onTap: () => setState(() => copyFromRoleId = null),
             ),
@@ -84,9 +85,9 @@ class _AddRoleDialogState extends AppFormDialogState<bool, AddRoleDialog> {
           ],
         ),
       ),
-      const PicPosPanelGroup(
-        label: 'تنبيه',
-        child: PicPosDialogBanner(
+       PicPosPanelGroup(
+        label: tr('تنبيه'),
+        child: const PicPosDialogBanner(
           icon: PhosphorIconsBold.warning,
           color: AppColors.warning,
           text: 'تعديلُ صلاحيات دورٍ يسري فوراً على كلّ مستخدميه، وأيُّ '
@@ -100,20 +101,20 @@ class _AddRoleDialogState extends AppFormDialogState<bool, AddRoleDialog> {
   Widget _nameField() => TextField(
         controller: nameController,
         autofocus: true,
-        decoration: const InputDecoration(
-          labelText: 'اسم الدور',
-          hintText: 'مثلاً: مدير صالة، محاسب ثان',
-          prefixIcon: Icon(PhosphorIconsLight.identificationCard, size: 20),
+        decoration:  InputDecoration(
+          labelText: tr('اسم الدور'),
+          hintText: tr('مثلاً: مدير صالة، محاسب ثان'),
+          prefixIcon: const Icon(PhosphorIconsLight.identificationCard, size: 20),
         ),
       );
 
   /// «الوصف» في التصميم — و`Roles.description` عمودٌ قائمٌ يقبله `insertRole`.
   Widget _descField() => TextField(
         controller: descController,
-        decoration: const InputDecoration(
-          labelText: 'الوصف',
-          hintText: 'وصفٌ مختصرٌ لمهامّ الدور',
-          prefixIcon: Icon(PhosphorIconsLight.textAlignRight, size: 20),
+        decoration:  InputDecoration(
+          labelText: tr('الوصف'),
+          hintText: tr('وصفٌ مختصرٌ لمهامّ الدور'),
+          prefixIcon: const Icon(PhosphorIconsLight.textAlignRight, size: 20),
         ),
       );
 

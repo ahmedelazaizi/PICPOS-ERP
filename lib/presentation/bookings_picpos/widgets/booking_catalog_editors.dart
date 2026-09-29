@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // محرِّرا الخدمة والمورد — وهما ما كان ينقص ليمكن **الربطُ** أصلاً.
 //
 // بلاغُ المالك 2026-08-23: «ازاى هربط الخدمة بمورد او جهاز». والقياسُ كشف أنّ
@@ -91,10 +92,10 @@ class _ServiceEditorState extends ConsumerState<_ServiceEditor> {
   double get _priceVal => NumberUtils.tryParseLocale(_price.text) ?? 0;
 
   String? get _blocked {
-    if (_name.text.trim().isEmpty) return 'اكتب اسم الخدمة';
-    if (_dur <= 0) return 'المدّة يجب أن تكون أكبر من صفر';
-    if (_buf < 0) return 'الفاصل لا يكون سالباً';
-    if (_priceVal < 0) return 'السعر لا يكون سالباً';
+    if (_name.text.trim().isEmpty) return tr('اكتب اسم الخدمة');
+    if (_dur <= 0) return tr('المدّة يجب أن تكون أكبر من صفر');
+    if (_buf < 0) return tr('الفاصل لا يكون سالباً');
+    if (_priceVal < 0) return tr('السعر لا يكون سالباً');
     return null;
   }
 
@@ -109,29 +110,29 @@ class _ServiceEditorState extends ConsumerState<_ServiceEditor> {
 
     return PicPosDialog(
       icon: PhosphorIconsBold.scissors,
-      title: widget.existing == null ? 'خدمة جديدة' : 'تعديل الخدمة',
-      subtitle: 'المدّة والسعر يُستعملان في كلّ حجزٍ على هذه الخدمة',
+      title: widget.existing == null ? tr('خدمة جديدة') : tr('تعديل الخدمة'),
+      subtitle: tr('المدّة والسعر يُستعملان في كلّ حجزٍ على هذه الخدمة'),
       width: 640,
       primaryAction: PicPosDialogAction(
-        label: 'حفظ',
+        label: tr('حفظ'),
         icon: PhosphorIconsBold.check,
         busy: _busy,
         onPressed: _blocked != null || _busy ? null : _save,
       ),
       body: [
-        _text('اسم الخدمة', _name, onChanged: _rebuild),
+        _text(tr('اسم الخدمة'), _name, onChanged: _rebuild),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
-                child: _text('المدة (دقيقة)', _duration, keyboard: TextInputType.number, onChanged: _rebuild)),
+                child: _text(tr('المدة (دقيقة)'), _duration, keyboard: TextInputType.number, onChanged: _rebuild)),
             const SizedBox(width: 10),
             Expanded(
-                child: _text('فاصل بعدها (دقيقة)', _buffer, keyboard: TextInputType.number, onChanged: _rebuild)),
+                child: _text(tr('فاصل بعدها (دقيقة)'), _buffer, keyboard: TextInputType.number, onChanged: _rebuild)),
             const SizedBox(width: 10),
             Expanded(
               child: _text(
-                'السعر (${AppConstants.currencySymbol})',
+                tr('السعر ({p0})', {'p0': AppConstants.currencySymbol}),
                 _price,
                 keyboard:
                     const TextInputType.numberWithOptions(decimal: true),
@@ -141,16 +142,16 @@ class _ServiceEditorState extends ConsumerState<_ServiceEditor> {
           ],
         ),
         const SizedBox(height: 12),
-        _labelled('اللون', _colorRow()),
+        _labelled(tr('اللون'), _colorRow()),
         const SizedBox(height: 12),
         _labelled(
-          'الصنف المرتبط (لتفويتر الحجوزات)',
+          tr('الصنف المرتبط (لتفويتر الحجوزات)'),
           DropdownButtonFormField<int?>(
             initialValue: _productId,
             isExpanded: true,
             decoration: _dec(),
             items: [
-              const DropdownMenuItem(value: null, child: Text('بلا ربط')),
+               DropdownMenuItem(value: null, child: Text(tr('بلا ربط'))),
               for (final p in serviceProducts)
                 DropdownMenuItem(value: p.id, child: Text('${p.name} · ${p.code}')),
             ],
@@ -276,7 +277,7 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
   void _rebuild() => setState(() {});
 
   String? get _blocked =>
-      _name.text.trim().isEmpty ? 'اكتب اسم الموظَّف أو الجهاز' : null;
+      _name.text.trim().isEmpty ? tr('اكتب اسم الموظَّف أو الجهاز') : null;
 
   /// مُنتقي الموظَّف — و«بلا ربط» خيارٌ صريحٌ لا غيابُ اختيار.
   ///
@@ -294,9 +295,9 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
       initialValue: value,
       isExpanded: true,
       decoration: _dec(),
-      hint: Text(employees.isEmpty ? 'لا موظَّفين مسجَّلين' : 'بلا ربط'),
+      hint: Text(employees.isEmpty ? tr('لا موظَّفين مسجَّلين') : tr('بلا ربط')),
       items: [
-        const DropdownMenuItem<int?>(value: null, child: Text('بلا ربط')),
+         DropdownMenuItem<int?>(value: null, child: Text(tr('بلا ربط'))),
         for (final e in employees)
           DropdownMenuItem<int?>(value: e.id, child: Text(e.name)),
       ],
@@ -313,11 +314,11 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
   Widget build(BuildContext context) {
     return PicPosDialog(
       icon: PhosphorIconsBold.users,
-      title: widget.existing == null ? 'مورد جديد' : 'تعديل المورد',
-      subtitle: 'موظَّفٌ أو جهازٌ تُسنَد إليه الحجوزات',
+      title: widget.existing == null ? tr('مورد جديد') : tr('تعديل المورد'),
+      subtitle: tr('موظَّفٌ أو جهازٌ تُسنَد إليه الحجوزات'),
       width: 640,
       primaryAction: PicPosDialogAction(
-        label: 'حفظ',
+        label: tr('حفظ'),
         icon: PhosphorIconsBold.check,
         busy: _busy,
         onPressed: _blocked != null || _busy ? null : _save,
@@ -325,9 +326,9 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
       body: [
         Row(
           children: [
-            Expanded(child: _text('الاسم', _name, onChanged: _rebuild)),
+            Expanded(child: _text(tr('الاسم'), _name, onChanged: _rebuild)),
             const SizedBox(width: 10),
-            Expanded(child: _text('الدور (اختياري)', _role, onChanged: _rebuild)),
+            Expanded(child: _text(tr('الدور (اختياري)'), _role, onChanged: _rebuild)),
           ],
         ),
         const SizedBox(height: 12),
@@ -335,11 +336,11 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
           children: [
             Expanded(
               child: _labelled(
-                'النوع',
+                tr('النوع'),
                 SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'staff', label: Text('موظَّف')),
-                    ButtonSegment(value: 'device', label: Text('جهاز')),
+                  segments:  [
+                    ButtonSegment(value: 'staff', label: Text(tr('موظَّف'))),
+                    ButtonSegment(value: 'device', label: Text(tr('جهاز'))),
                   ],
                   selected: {_kind},
                   onSelectionChanged: (s) => setState(() => _kind = s.first),
@@ -348,7 +349,7 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
             ),
             const SizedBox(width: 10),
             Expanded(
-                child: _text('الهاتف (اختياري)', _phone, keyboard: TextInputType.phone, onChanged: _rebuild)),
+                child: _text(tr('الهاتف (اختياري)'), _phone, keyboard: TextInputType.phone, onChanged: _rebuild)),
           ],
         ),
         // ⚠️ يظهر فقط حين تكون الموارد البشريّة مفعَّلةً وحين يكون النوعُ
@@ -357,7 +358,7 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
         //    والجهازُ لا ملفَّ له في الرواتب.
         if (AppConfig.showHR && _kind == 'staff') ...[
           const SizedBox(height: 12),
-          _labelled('الموظَّف في الموارد البشريّة (اختياري)', _employeePicker()),
+          _labelled(tr('الموظَّف في الموارد البشريّة (اختياري)'), _employeePicker()),
           const SizedBox(height: 8),
           _note(
             PhosphorIconsBold.info,
@@ -384,13 +385,13 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _labelled('بداية الوردية', _timeBox(true))),
+            Expanded(child: _labelled(tr('بداية الوردية'), _timeBox(true))),
             const SizedBox(width: 10),
-            Expanded(child: _labelled('نهاية الوردية', _timeBox(false))),
+            Expanded(child: _labelled(tr('نهاية الوردية'), _timeBox(false))),
           ],
         ),
         const SizedBox(height: 12),
-        _labelled('اللون', _colorRow()),
+        _labelled(tr('اللون'), _colorRow()),
         const SizedBox(height: 8),
         _note(
           PhosphorIconsBold.info,
@@ -436,7 +437,7 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
             const SizedBox(width: 8),
             Text(
               t == null
-                  ? 'بلا تحديد'
+                  ? tr('بلا تحديد')
                   : '${t.hour.toString().padLeft(2, '0')}:'
                       '${t.minute.toString().padLeft(2, '0')}',
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),

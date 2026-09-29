@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // كانفاسُ المحرّر — النطاقاتُ تتراصّ، والعناصرُ بإحداثيّاتٍ داخلَها.
 //
 // ── ولا منطقَ تخطيطٍ في هذا الملفّ ───────────────────────────────────────
@@ -31,13 +32,13 @@ const _bandTints = <BandId, Color>{
   BandId.footer: Color(0xFF6B7280),
 };
 
-const _bandLabels = <BandId, String>{
-  BandId.header: 'الرأس',
-  BandId.info: 'البيانات',
-  BandId.party: 'الطرف',
-  BandId.details: 'التفاصيل',
-  BandId.totals: 'المجاميع',
-  BandId.footer: 'التذييل',
+Map<BandId, String> get _bandLabels => <BandId, String>{
+  BandId.header: tr('الرأس'),
+  BandId.info: tr('البيانات'),
+  BandId.party: tr('الطرف'),
+  BandId.details: tr('التفاصيل'),
+  BandId.totals: tr('المجاميع'),
+  BandId.footer: tr('التذييل'),
 };
 
 Color bandTint(BandId id) => _bandTints[id] ?? const Color(0xFF6B7280);

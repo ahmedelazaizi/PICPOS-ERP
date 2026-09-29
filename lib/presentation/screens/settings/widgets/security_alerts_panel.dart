@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // SECURITY ALERTS PANEL — Feature 004 (US2 — Cross-branch password collision)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -57,7 +58,7 @@ class SecurityAlertsPanel extends ConsumerWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'تنبيهات أمنية: تطابق كلمات مرور بين الفروع',
+                        tr('تنبيهات أمنية: تطابق كلمات مرور بين الفروع'),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.orange.shade900,
@@ -109,7 +110,7 @@ class _AlertCard extends ConsumerWidget {
             const SizedBox(height: 4),
             if (pair.length == 2)
               Text(
-                'بين المستخدمين رقم ${pair.first} و ${pair.last}',
+                tr('بين المستخدمين رقم {p0} و {p1}', {'p0': pair.first, 'p1': pair.last}),
                 style: const TextStyle(color: Colors.black54, fontSize: 12),
               ),
             const SizedBox(height: 8),
@@ -122,14 +123,14 @@ class _AlertCard extends ConsumerWidget {
                     foregroundColor: Colors.white,
                   ),
                   icon: const Icon(PhosphorIconsBold.key, size: 16),
-                  label: const Text('إلزام بتغيير كلمة المرور'),
+                  label:  Text(tr('إلزام بتغيير كلمة المرور')),
                   onPressed: pair.isEmpty
                       ? null
                       : () => _forceResetFor(context, ref, pair.first),
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(PhosphorIconsBold.eyeSlash, size: 16),
-                  label: const Text('إخفاء'),
+                  label:  Text(tr('إخفاء')),
                   onPressed: () =>
                       ref.read(databaseProvider).markNotificationAsRead(
                             notification.id,

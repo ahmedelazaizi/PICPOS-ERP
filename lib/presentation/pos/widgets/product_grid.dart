@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
@@ -31,7 +32,7 @@ Widget buildPosGridToggleActionButton({required VoidCallback onToggle}) {
     permission: PermissionCodes.posGridToggle,
     fallback: const SizedBox.shrink(),
     child: Tooltip(
-      message: 'طي القائمة / ملء الشاشة',
+      message: tr('طي القائمة / ملء الشاشة'),
       child: InkWell(
         onTap: onToggle,
         borderRadius: BorderRadius.circular(10),
@@ -226,7 +227,7 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
           child: _isLoading && _currentLoadedProducts.isEmpty
               ? _buildShimmerGrid()
               : _loadError != null && _currentLoadedProducts.isEmpty
-                  ? Center(child: Text('خطأ: $_loadError'))
+                  ? Center(child: Text(tr('خطأ: {_loadError}', {'_loadError': _loadError})))
                   : () {
                       if (_isReorderMode && _reorderableProducts != null) {
                         return _buildReorderableGrid();
@@ -257,17 +258,17 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                   size: 18,
                 ),
                 const SizedBox(width: 8),
-                const Expanded(
+                 Expanded(
                   child: Text(
-                    'اسحب المنتجات لإعادة ترتيبها في أي مكان',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    tr('اسحب المنتجات لإعادة ترتيبها في أي مكان'),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
                 TextButton.icon(
                   icon: const Icon(PhosphorIconsBold.check, size: 16),
-                  label: const Text(
-                    'حفظ الترتيب',
-                    style: TextStyle(fontSize: 12),
+                  label:  Text(
+                    tr('حفظ الترتيب'),
+                    style: const TextStyle(fontSize: 12),
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.success,
@@ -277,7 +278,7 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                 ),
                 TextButton.icon(
                   icon: const Icon(PhosphorIconsBold.x, size: 16),
-                  label: const Text('إلغاء', style: TextStyle(fontSize: 12)),
+                  label:  Text(tr('إلغاء'), style: const TextStyle(fontSize: 12)),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.error,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -353,7 +354,7 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                       fontWeight: FontWeight.bold,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'بحث عن منتج...',
+                      hintText: tr('بحث عن منتج...'),
                       hintStyle: TextStyle(
                         color: AppColors.textMuted.withValues(alpha: 0.7),
                         fontSize: 13,
@@ -411,7 +412,7 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                   });
                 }
               },
-              tooltip: _isReorderMode ? 'حفظ الترتيب' : 'إعادة ترتيب المنتجات',
+              tooltip: _isReorderMode ? tr('حفظ الترتيب') : tr('إعادة ترتيب المنتجات'),
               color: _isReorderMode ? AppColors.success : AppColors.primary,
             ),
           ],
@@ -517,9 +518,9 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
 
   Widget _buildGrid(List<ProductEntity> products) {
     if (products.isEmpty) {
-      return const EmptyStateWidget(
+      return  EmptyStateWidget(
         icon: PhosphorIconsBold.package,
-        message: 'لا توجد منتجات',
+        message: tr('لا توجد منتجات'),
       );
     }
 
@@ -569,9 +570,9 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
   Widget _buildReorderableGrid() {
     final products = _reorderableProducts ?? [];
     if (products.isEmpty) {
-      return const EmptyStateWidget(
+      return  EmptyStateWidget(
         icon: PhosphorIconsBold.package,
-        message: 'لا توجد منتجات',
+        message: tr('لا توجد منتجات'),
       );
     }
 
@@ -713,10 +714,10 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
       final activityLogRepo = ref.read(activityLogRepositoryProvider);
       await activityLogRepo.logActivity(
         userId: user?.id,
-        userName: user?.displayName ?? 'مستخدم',
+        userName: user?.displayName ?? tr('مستخدم'),
         action: 'product_reorder',
         entityType: 'product',
-        description: 'إعادة ترتيب ${products.length} منتج',
+        description: tr('إعادة ترتيب {p0} منتج', {'p0': products.length}),
       );
     } catch (_) {}
 
@@ -727,7 +728,7 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
       });
       AppToast.show(
         context,
-        'تم حفظ ترتيب المنتجات بنجاح',
+        tr('تم حفظ ترتيب المنتجات بنجاح'),
         type: ToastType.success,
       );
     }

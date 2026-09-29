@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // U-01: Help Panel Overlay — F1 Keyboard Shortcut Help
 // Shows context-sensitive keyboard shortcuts and help for current screen
@@ -23,34 +24,34 @@ class HelpShortcut {
 }
 
 /// Global shortcuts available on all screens
-const _globalShortcuts = [
-  HelpShortcut(keys: 'F1', description: 'عرض لوحة المساعدة', category: 'عام'),
-  HelpShortcut(keys: 'Ctrl+S', description: 'حفظ', category: 'عام'),
-  HelpShortcut(keys: 'Ctrl+N', description: 'إنشاء جديد', category: 'عام'),
-  HelpShortcut(keys: 'Ctrl+F', description: 'بحث', category: 'عام'),
-  HelpShortcut(keys: 'Ctrl+P', description: 'طباعة', category: 'عام'),
-  HelpShortcut(keys: 'Ctrl+E', description: 'تصدير', category: 'عام'),
-  HelpShortcut(keys: 'Escape', description: 'إغلاق / إلغاء', category: 'عام'),
-  HelpShortcut(keys: 'Delete', description: 'حذف العنصر المحدد', category: 'عام'),
+List<HelpShortcut> get _globalShortcuts => [
+  HelpShortcut(keys: 'F1', description: tr('عرض لوحة المساعدة'), category: tr('عام')),
+  HelpShortcut(keys: 'Ctrl+S', description: tr('حفظ'), category: tr('عام')),
+  HelpShortcut(keys: 'Ctrl+N', description: tr('إنشاء جديد'), category: tr('عام')),
+  HelpShortcut(keys: 'Ctrl+F', description: tr('بحث'), category: tr('عام')),
+  HelpShortcut(keys: 'Ctrl+P', description: tr('طباعة'), category: tr('عام')),
+  HelpShortcut(keys: 'Ctrl+E', description: tr('تصدير'), category: tr('عام')),
+  HelpShortcut(keys: 'Escape', description: tr('إغلاق / إلغاء'), category: tr('عام')),
+  HelpShortcut(keys: 'Delete', description: tr('حذف العنصر المحدد'), category: tr('عام')),
 ];
 
 /// POS-specific shortcuts
-const posShortcuts = [
-  HelpShortcut(keys: 'F2', description: 'بحث الأصناف', category: 'البيع السريع'),
-  HelpShortcut(keys: 'F3', description: 'العملاء', category: 'البيع السريع'),
-  HelpShortcut(keys: 'F4', description: 'تعليق الطلب', category: 'البيع السريع'),
-  HelpShortcut(keys: 'F5', description: 'استرجاع طلب معلق', category: 'البيع السريع'),
-  HelpShortcut(keys: 'F8', description: 'خصم', category: 'البيع السريع'),
-  HelpShortcut(keys: 'F9', description: 'طريقة الدفع', category: 'البيع السريع'),
-  HelpShortcut(keys: 'F12', description: 'إتمام البيع', category: 'البيع السريع'),
-  HelpShortcut(keys: '+/-', description: 'زيادة/تقليل الكمية', category: 'البيع السريع'),
+List<HelpShortcut> get posShortcuts => [
+  HelpShortcut(keys: 'F2', description: tr('بحث الأصناف'), category: tr('البيع السريع')),
+  HelpShortcut(keys: 'F3', description: tr('العملاء'), category: tr('البيع السريع')),
+  HelpShortcut(keys: 'F4', description: tr('تعليق الطلب'), category: tr('البيع السريع')),
+  HelpShortcut(keys: 'F5', description: tr('استرجاع طلب معلق'), category: tr('البيع السريع')),
+  HelpShortcut(keys: 'F8', description: tr('خصم'), category: tr('البيع السريع')),
+  HelpShortcut(keys: 'F9', description: tr('طريقة الدفع'), category: tr('البيع السريع')),
+  HelpShortcut(keys: 'F12', description: tr('إتمام البيع'), category: tr('البيع السريع')),
+  HelpShortcut(keys: '+/-', description: tr('زيادة/تقليل الكمية'), category: tr('البيع السريع')),
 ];
 
 /// Accounting-specific shortcuts
-const accountingShortcuts = [
-  HelpShortcut(keys: 'Ctrl+J', description: 'قيد يدوي جديد', category: 'المحاسبة'),
-  HelpShortcut(keys: 'Ctrl+R', description: 'عكس القيد المحدد', category: 'المحاسبة'),
-  HelpShortcut(keys: 'Ctrl+T', description: 'من قالب', category: 'المحاسبة'),
+List<HelpShortcut> get accountingShortcuts => [
+  HelpShortcut(keys: 'Ctrl+J', description: tr('قيد يدوي جديد'), category: tr('المحاسبة')),
+  HelpShortcut(keys: 'Ctrl+R', description: tr('عكس القيد المحدد'), category: tr('المحاسبة')),
+  HelpShortcut(keys: 'Ctrl+T', description: tr('من قالب'), category: tr('المحاسبة')),
 ];
 
 /// Help panel overlay showing keyboard shortcuts
@@ -74,7 +75,7 @@ class HelpPanelOverlay extends StatelessWidget {
     // Group by category
     final grouped = <String, List<HelpShortcut>>{};
     for (final s in allShortcuts) {
-      (grouped[s.category ?? 'أخرى'] ??= []).add(s);
+      (grouped[s.category ?? tr('أخرى')] ??= []).add(s);
     }
 
     return Material(
@@ -115,7 +116,7 @@ class HelpPanelOverlay extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'اختصارات لوحة المفاتيح',
+                            tr('اختصارات لوحة المفاتيح'),
                             style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700),
                           ),
                           Text(
@@ -176,14 +177,14 @@ class HelpPanelOverlay extends StatelessWidget {
                     _keyBadge('F1'),
                     const SizedBox(width: 6),
                     Text(
-                      'أو',
+                      tr('أو'),
                       style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
                     ),
                     const SizedBox(width: 6),
                     _keyBadge('Esc'),
                     const SizedBox(width: 6),
                     Text(
-                      'للإغلاق',
+                      tr('للإغلاق'),
                       style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
                     ),
                   ],

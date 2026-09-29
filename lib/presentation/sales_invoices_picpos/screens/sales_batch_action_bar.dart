@@ -38,7 +38,7 @@ class _SalesBatchActionBarState extends ConsumerState<SalesBatchActionBar> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'تم تحديد ${selectedInvoices.length} فاتورة مسجلة',
+            tr('تم تحديد {p0} فاتورة مسجلة', {'p0': selectedInvoices.length}),
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
           ),
           Row(
@@ -48,17 +48,17 @@ class _SalesBatchActionBarState extends ConsumerState<SalesBatchActionBar> {
                   controller.clearSelection();
                 },
                 icon: const Icon(PhosphorIconsBold.x, color: Colors.white70),
-                label: const Text('إلغاء التحديد', style: TextStyle(color: Colors.white70)),
+                label:  Text(tr('إلغاء التحديد'), style: const TextStyle(color: Colors.white70)),
               ),
               const SizedBox(width: 16),
               ElevatedButton.icon(
                 onPressed: () {
                   if (context.mounted) {
-                    AppToast.show(context, 'جاري تطوير طباعة الفواتير المجمعة', type: ToastType.info);
+                    AppToast.show(context, tr('جاري تطوير طباعة الفواتير المجمعة'), type: ToastType.info);
                   }
                 },
                 icon: const Icon(PhosphorIconsBold.printer, size: 18),
-                label: const Text('طباعة المحددة'),
+                label:  Text(tr('طباعة المحددة')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: AppColors.primary,
@@ -72,23 +72,23 @@ class _SalesBatchActionBarState extends ConsumerState<SalesBatchActionBar> {
                     builder: (ctx) => Directionality(
                       textDirection: ui.TextDirection.rtl,
                       child: AlertDialog(
-                        title: const Row(
+                        title:  Row(
                           children: [
-                            Icon(PhosphorIconsBold.warning, color: AppColors.error),
-                            SizedBox(width: 8),
-                            Text('تأكيد الحذف المجمع'),
+                            const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+                            const SizedBox(width: 8),
+                            Text(tr('تأكيد الحذف المجمع')),
                           ],
                         ),
-                        content: Text('هل أنت متأكد من حذف ${selectedInvoices.length} فاتورة محددة؟'),
+                        content: Text(tr('هل أنت متأكد من حذف {p0} فاتورة محددة؟', {'p0': selectedInvoices.length})),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('إلغاء'),
+                            child:  Text(tr('إلغاء')),
                           ),
                           ElevatedButton(
                             onPressed: () => Navigator.pop(ctx, true),
                             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-                            child: const Text('حذف الجميع'),
+                            child:  Text(tr('حذف الجميع')),
                           ),
                         ],
                       ),
@@ -103,12 +103,12 @@ class _SalesBatchActionBarState extends ConsumerState<SalesBatchActionBar> {
                       context,
                       ref,
                       operation: DualApprovalOperation.voidInvoice,
-                      details: 'حذف ${selectedInvoices.length} فاتورة',
+                      details: tr('حذف {p0} فاتورة', {'p0': selectedInvoices.length}),
                     );
                     if (!mounted) return;
                     if (!approved) {
                       if (context.mounted) {
-                        AppToast.show(context, 'الموافقة الثنائية مرفوضة — لم يتم الحذف', type: ToastType.warning);
+                        AppToast.show(context, tr('الموافقة الثنائية مرفوضة — لم يتم الحذف'), type: ToastType.warning);
                       }
                       return;
                     }
@@ -120,7 +120,7 @@ class _SalesBatchActionBarState extends ConsumerState<SalesBatchActionBar> {
                       }
                       controller.clearSelection();
                       if (!context.mounted) return;
-                      AppToast.show(context, 'تم حذف الفواتير المحددة بنجاح', type: ToastType.success);
+                      AppToast.show(context, tr('تم حذف الفواتير المحددة بنجاح'), type: ToastType.success);
                     } finally {
                       if (mounted) setState(() => _saving = false);
                     }
@@ -133,7 +133,7 @@ class _SalesBatchActionBarState extends ConsumerState<SalesBatchActionBar> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : const Icon(PhosphorIconsBold.trash, size: 18),
-                label: const Text('حذف المحددة'),
+                label:  Text(tr('حذف المحددة')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.error,
                   foregroundColor: Colors.white,

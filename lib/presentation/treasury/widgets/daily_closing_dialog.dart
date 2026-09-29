@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -148,13 +149,13 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                       Row(
                         children: [
-                          Icon(PhosphorIconsBold.chartBar, size: 16, color: AppColors.primary),
-                          SizedBox(width: 6),
+                          const Icon(PhosphorIconsBold.chartBar, size: 16, color: AppColors.primary),
+                          const SizedBox(width: 6),
                           Text(
-                            'ملخص اليوم',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary),
+                            tr('ملخص اليوم'),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary),
                           ),
                         ],
                       ),
@@ -162,7 +163,7 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
 
                       // System Balance
                       _buildSummaryRow(
-                        'رصيد النظام',
+                        tr('رصيد النظام'),
                         numberFormat.format(widget.safe.balance),
                         AppColors.primary,
                         PhosphorIconsBold.wallet,
@@ -172,22 +173,22 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
 
                       if (_summaryLoaded) ...[
                         _buildSummaryRow(
-                          'التحصيلات (إيرادات)',
+                          tr('التحصيلات (إيرادات)'),
                           '+${numberFormat.format(_totalReceipts)}',
                           AppColors.success,
                           PhosphorIconsBold.arrowDown,
                         ),
                         const SizedBox(height: 4),
                         _buildSummaryRow(
-                          'المدفوعات (مصروفات)',
+                          tr('المدفوعات (مصروفات)'),
                           '-${numberFormat.format(_totalPayments + _totalExpenses)}',
                           AppColors.error,
                           PhosphorIconsBold.arrowUp,
                         ),
                         const SizedBox(height: 4),
                         _buildSummaryRow(
-                          'عدد العمليات',
-                          '$_transactionCount عملية',
+                          tr('عدد العمليات'),
+                          tr('{_transactionCount} عملية', {'_transactionCount': _transactionCount}),
                           AppColors.textMuted,
                           PhosphorIconsBold.listNumbers,
                         ),
@@ -205,17 +206,17 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
               // ═══════════════════════════════════════════
               // Actual Count Inputs
               // ═══════════════════════════════════════════
-              const Text(
-                'العد الفعلي:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+               Text(
+                tr('العد الفعلي:'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               const SizedBox(height: 10),
 
               // Cash Input
               _buildAmountInput(
                 controller: cashController,
-                label: 'الكاش (نقدي)',
-                hintLabel: 'المبلغ النقدي الفعلي',
+                label: tr('الكاش (نقدي)'),
+                hintLabel: tr('المبلغ النقدي الفعلي'),
                 icon: PhosphorIconsBold.money,
                 color: AppColors.success,
               ),
@@ -224,8 +225,8 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
               // Bank Input
               _buildAmountInput(
                 controller: bankController,
-                label: 'البنك (تحويل/شبكة)',
-                hintLabel: 'مبلغ البنك الفعلي',
+                label: tr('البنك (تحويل/شبكة)'),
+                hintLabel: tr('مبلغ البنك الفعلي'),
                 icon: PhosphorIconsBold.creditCard,
                 color: AppColors.info,
               ),
@@ -234,8 +235,8 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
               // Click Input
               _buildAmountInput(
                 controller: clickController,
-                label: 'كليك',
-                hintLabel: 'مبلغ الكليك الفعلي',
+                label: tr('كليك'),
+                hintLabel: tr('مبلغ الكليك الفعلي'),
                 icon: PhosphorIconsBold.cursorClick,
                 color: const Color(0xFF7E57C2),
               ),
@@ -254,9 +255,9 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'إجمالي العد الفعلي:',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                     Text(
+                      tr('إجمالي العد الفعلي:'),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     Text(
                       '${numberFormat.format(_actualTotal)} ${AppConstants.currencySymbol}',
@@ -297,7 +298,7 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          difference < 0 ? 'عجز: ' : 'زيادة: ',
+                          difference < 0 ? tr('عجز: ') : tr('زيادة: '),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: difference < 0
@@ -322,9 +323,9 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
               const SizedBox(height: 14),
               TextField(
                 controller: notesController,
-                decoration: const InputDecoration(
-                  labelText: 'ملاحظات الإقفال',
-                  hintText: 'اكتب أي ملاحظات بخصوص العجز/الزيادة أو الترحيل...',
+                decoration:  InputDecoration(
+                  labelText: tr('ملاحظات الإقفال'),
+                  hintText: tr('اكتب أي ملاحظات بخصوص العجز/الزيادة أو الترحيل...'),
                   isDense: true,
                 ),
                 maxLines: 2,
@@ -377,12 +378,12 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
                 final activityLogRepo = ref.read(activityLogRepositoryProvider);
                 await activityLogRepo.logActivity(
                   userId: user?.id,
-                  userName: user?.displayName ?? 'مستخدم',
+                  userName: user?.displayName ?? tr('مستخدم'),
                   action: 'daily_closing',
                   entityType: 'safe',
                   entityId: widget.safe.id,
                   description:
-                      'إقفال يومي — خزينة: ${widget.safe.name} | كاش: $cashAmount | بنك: $bankAmount | كليك: $clickAmount | فرق: $difference',
+                      tr('إقفال يومي — خزينة: {p0} | كاش: {cashAmount} | بنك: {bankAmount} | كليك: {clickAmount} | فرق: {difference}', {'p0': widget.safe.name, 'cashAmount': cashAmount, 'bankAmount': bankAmount, 'clickAmount': clickAmount, 'difference': difference}),
                   amount: total,
                 );
               } catch (e) {
@@ -469,7 +470,7 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
           ],
         ),
         Text(
-          '$value ${value.contains('عملية') ? '' : AppConstants.currencySymbol}',
+          tr('{value} {p0}', {'value': value, 'p0': value.contains('عملية') ? '' : AppConstants.currencySymbol}),
           style: TextStyle(
             fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
             fontSize: isBold ? 15 : 12,

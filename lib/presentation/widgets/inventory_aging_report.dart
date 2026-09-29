@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // I-03: Inventory Aging Report
 // Shows inventory items grouped by purchase age
@@ -34,12 +35,12 @@ class InventoryAgingItem {
   });
 
   String get ageBucket {
-    if (ageInDays <= 30) return '0-30 يوم';
-    if (ageInDays <= 60) return '31-60 يوم';
-    if (ageInDays <= 90) return '61-90 يوم';
-    if (ageInDays <= 180) return '91-180 يوم';
-    if (ageInDays <= 365) return '181-365 يوم';
-    return '+365 يوم';
+    if (ageInDays <= 30) return tr('0-30 يوم');
+    if (ageInDays <= 60) return tr('31-60 يوم');
+    if (ageInDays <= 90) return tr('61-90 يوم');
+    if (ageInDays <= 180) return tr('91-180 يوم');
+    if (ageInDays <= 365) return tr('181-365 يوم');
+    return tr('+365 يوم');
   }
 
   Color get ageColor {
@@ -86,13 +87,13 @@ class InventoryAgingReportWidget extends StatelessWidget {
     this.currencySymbol = '',
   });
 
-  static const _bucketOrder = [
-    '0-30 يوم',
-    '31-60 يوم',
-    '61-90 يوم',
-    '91-180 يوم',
-    '181-365 يوم',
-    '+365 يوم',
+  static List<String> get _bucketOrder => [
+    tr('0-30 يوم'),
+    tr('31-60 يوم'),
+    tr('61-90 يوم'),
+    tr('91-180 يوم'),
+    tr('181-365 يوم'),
+    tr('+365 يوم'),
   ];
 
   @override
@@ -112,10 +113,10 @@ class InventoryAgingReportWidget extends StatelessWidget {
               children: [
                 const Icon(PhosphorIconsBold.clockCounterClockwise, color: AppColors.warning, size: 20),
                 const SizedBox(width: 8),
-                Text('تقرير أعمار المخزون',
+                Text(tr('تقرير أعمار المخزون'),
                     style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700)),
                 const Spacer(),
-                Text('${summary.totalItems} صنف',
+                Text(tr('{p0} صنف', {'p0': summary.totalItems}),
                     style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
               ],
             ),
@@ -171,7 +172,7 @@ class InventoryAgingReportWidget extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('القيمة الإجمالية', style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
+                Text(tr('القيمة الإجمالية'), style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
                 Text(
                   '$currencySymbol ${_currFmt.format(summary.totalValue)}',
                   style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary),

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -21,9 +22,9 @@ enum OptionQuantityLevel {
 extension OptionQuantityLevelX on OptionQuantityLevel {
   String get label => switch (this) {
     OptionQuantityLevel.none   => '',
-    OptionQuantityLevel.light  => 'قليل',
-    OptionQuantityLevel.medium => 'بدون',
-    OptionQuantityLevel.heavy  => 'كثير',
+    OptionQuantityLevel.light  => tr('قليل'),
+    OptionQuantityLevel.medium => tr('بدون'),
+    OptionQuantityLevel.heavy  => tr('كثير'),
   };
 
   Color get color => switch (this) {
@@ -109,21 +110,21 @@ Widget buildItemNoteField({required TextEditingController controller}) {
   return PermissionGuard(
     permission: PermissionCodes.posNoteAdd,
     allowManagerOverride: true,
-    actionName: 'إضافة ملاحظة على الصنف',
+    actionName: tr('إضافة ملاحظة على الصنف'),
     child: TextField(
       controller: controller,
       style: const TextStyle(fontSize: 13),
       textInputAction: TextInputAction.done,
-      decoration: const InputDecoration(
+      decoration:  InputDecoration(
         isDense: true,
-        prefixIcon: Icon(
+        prefixIcon: const Icon(
           PhosphorIconsBold.notepad,
           size: 16,
           color: AppColors.warning,
         ),
-        labelText: 'ملاحظة على الصنف',
-        hintText: 'بدون بصل، سريع التحضير…',
-        border: OutlineInputBorder(),
+        labelText: tr('ملاحظة على الصنف'),
+        hintText: tr('بدون بصل، سريع التحضير…'),
+        border: const OutlineInputBorder(),
       ),
     ),
   );
@@ -380,7 +381,7 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'اختر الخيارات والإضافات المطلوبة',
+                            tr('اختر الخيارات والإضافات المطلوبة'),
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.8),
                               fontSize: 12,
@@ -408,9 +409,9 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                       if (options.isNotEmpty) ...[
                         _buildSectionHeader(
                           icon: PhosphorIconsBold.listChecks,
-                          label: 'الخيارات',
+                          label: tr('الخيارات'),
                           color: theme.colorScheme.tertiary,
-                          subtitle: 'اختيارات بدون سعر إضافي',
+                          subtitle: tr('اختيارات بدون سعر إضافي'),
                         ),
                         const SizedBox(height: 12),
                         ...options.map((mg) => _buildGroupCard(mg, theme, isOption: true)),
@@ -421,9 +422,9 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                       if (additions.isNotEmpty) ...[
                         _buildSectionHeader(
                           icon: PhosphorIconsBold.plusCircle,
-                          label: 'الإضافات',
+                          label: tr('الإضافات'),
                           color: AppColors.primary,
-                          subtitle: 'إضافات بسعر إضافي',
+                          subtitle: tr('إضافات بسعر إضافي'),
                         ),
                         const SizedBox(height: 12),
                         ...additions.map((mg) => _buildGroupCard(mg, theme, isOption: false)),
@@ -465,7 +466,7 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                                 size: 18, color: AppColors.primary),
                             const SizedBox(width: 6),
                             Text(
-                              'إضافات: +${_totalExtra.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                              tr('إضافات: +{p0} {p1}', {'p0': _totalExtra.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
                               style: const TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w900,
@@ -479,14 +480,14 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                     // Cancel
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('إلغاء'),
+                      child:  Text(tr('إلغاء')),
                     ),
                     const SizedBox(width: 8),
                     // Without additions
                     OutlinedButton.icon(
                       onPressed: () => Navigator.pop(context, _result(const [])),
                       icon: const Icon(PhosphorIconsBold.minus, size: 16),
-                      label: const Text('بدون إضافات'),
+                      label:  Text(tr('بدون إضافات')),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
@@ -498,7 +499,7 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                           ? () => Navigator.pop(context, _result(_buildResult()))
                           : null,
                       icon: const Icon(PhosphorIconsBold.check, size: 16),
-                      label: const Text('تأكيد الاختيارات'),
+                      label:  Text(tr('تأكيد الاختيارات')),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         backgroundColor: AppColors.success,
@@ -592,17 +593,17 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                     color: AppColors.error.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Text(
-                    'مطلوب *',
-                    style: TextStyle(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.bold),
+                  child:  Text(
+                    tr('مطلوب *'),
+                    style: const TextStyle(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
               const Spacer(),
               Text(
                 isSingle
-                    ? 'اختر واحد'
-                    : 'اختر ${g.minSelect}-${g.maxSelect > 0 ? g.maxSelect : '∞'}',
+                    ? tr('اختر واحد')
+                    : tr('اختر {p0}-{p1}', {'p0': g.minSelect, 'p1': g.maxSelect > 0 ? g.maxSelect : '∞'}),
                 style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
             ],

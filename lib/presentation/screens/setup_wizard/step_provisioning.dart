@@ -22,14 +22,14 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'إعدادات PostgreSQL',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+         Text(
+          tr('إعدادات PostgreSQL'),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'أدخل بيانات السيرفر. سيتم اختبار الاتصال قبل الانتقال للخطوة التالية.',
-          style: TextStyle(color: AppColors.textMuted),
+         Text(
+          tr('أدخل بيانات السيرفر. سيتم اختبار الاتصال قبل الانتقال للخطوة التالية.'),
+          style: const TextStyle(color: AppColors.textMuted),
         ),
         const SizedBox(height: 24),
         Row(
@@ -38,8 +38,8 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
               flex: 3,
               child: _buildTextField(
                 controller: _pgHostController,
-                label: 'المضيف (Host)',
-                hint: 'localhost أو 192.168.1.50',
+                label: tr('المضيف (Host)'),
+                hint: tr('localhost أو 192.168.1.50'),
                 icon: PhosphorIconsBold.globeSimple,
                 isRequired: true,
               ),
@@ -49,7 +49,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
               width: 110,
               child: _buildTextField(
                 controller: _pgPortController,
-                label: 'المنفذ',
+                label: tr('المنفذ'),
                 hint: '5432',
                 icon: PhosphorIconsBold.hash,
                 isNumber: true,
@@ -61,7 +61,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
         const SizedBox(height: 16),
         _buildTextField(
           controller: _pgDatabaseController,
-          label: 'اسم القاعدة',
+          label: tr('اسم القاعدة'),
           hint: Brand.pgIdentifier,
           icon: PhosphorIconsBold.database,
           isRequired: true,
@@ -72,7 +72,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
             Expanded(
               child: _buildTextField(
                 controller: _pgUserController,
-                label: 'اسم المستخدم',
+                label: tr('اسم المستخدم'),
                 hint: 'postgres',
                 icon: PhosphorIconsBold.user,
                 isRequired: true,
@@ -84,7 +84,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
                 controller: _pgPasswordController,
                 obscureText: true,
                 decoration: InputDecoration(
-                  labelText: 'كلمة المرور *',
+                  labelText: tr('كلمة المرور *'),
                   prefixIcon: const Icon(PhosphorIconsBold.lock, size: 18),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -109,7 +109,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
                     )
                   : const Icon(PhosphorIconsBold.plugsConnected, size: 18),
               label: Text(
-                  _pgTestInProgress ? 'جاري الاختبار...' : 'اختبار الاتصال'),
+                  _pgTestInProgress ? tr('جاري الاختبار...') : tr('اختبار الاتصال')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -142,15 +142,15 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
               border: Border.all(
                   color: AppColors.warning.withValues(alpha: 0.3)),
             ),
-            child: const Row(
+            child:  Row(
               children: [
-                Icon(PhosphorIconsBold.warning,
+                const Icon(PhosphorIconsBold.warning,
                     color: AppColors.warning, size: 18),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'اختبر الاتصال بنجاح قبل الانتقال لخطوة التهيئة.',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    tr('اختبر الاتصال بنجاح قبل الانتقال لخطوة التهيئة.'),
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                   ),
                 ),
               ],
@@ -174,10 +174,10 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
         _pgTestInProgress = false;
         if (err == null) {
           _pgConnectionOk = true;
-          _pgTestMessage = '✅ تم الاتصال بنجاح';
+          _pgTestMessage = tr('✅ تم الاتصال بنجاح');
         } else {
           _pgConnectionOk = false;
-          _pgTestMessage = '❌ فشل الاتصال: $err';
+          _pgTestMessage = tr('❌ فشل الاتصال: {err}', {'err': err});
         }
       });
     } catch (e) {
@@ -185,7 +185,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
       setState(() {
         _pgTestInProgress = false;
         _pgConnectionOk = false;
-        _pgTestMessage = '❌ خطأ: $e';
+        _pgTestMessage = tr('❌ خطأ: {e}', {'e': e});
       });
     }
   }
@@ -205,14 +205,14 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'تهيئة قاعدة البيانات',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+         Text(
+          tr('تهيئة قاعدة البيانات'),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'سيتم إنشاء كل الجداول وزرع البيانات الأساسية تلقائياً. لا تُغلق التطبيق حتى تكتمل العملية.',
-          style: TextStyle(color: AppColors.textMuted),
+         Text(
+          tr('سيتم إنشاء كل الجداول وزرع البيانات الأساسية تلقائياً. لا تُغلق التطبيق حتى تكتمل العملية.'),
+          style: const TextStyle(color: AppColors.textMuted),
         ),
         const SizedBox(height: 24),
         Card(
@@ -274,10 +274,10 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
                         ? PhosphorIconsBold.arrowsClockwise
                         : PhosphorIconsBold.play),
                 label: Text(_provisioningInProgress
-                    ? 'جاري التنفيذ...'
+                    ? tr('جاري التنفيذ...')
                     : _provisioningError != null
-                        ? 'إعادة المحاولة'
-                        : 'بدء التهيئة'),
+                        ? tr('إعادة المحاولة')
+                        : tr('بدء التهيئة')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -289,7 +289,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
               ElevatedButton.icon(
                 onPressed: _finishServerSetup,
                 icon: const Icon(PhosphorIconsBold.checkCircle),
-                label: const Text('إكمال وإعادة تشغيل التطبيق'),
+                label:  Text(tr('إكمال وإعادة تشغيل التطبيق')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.success,
                   foregroundColor: Colors.white,
@@ -403,15 +403,15 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
       // Step 4: accounts — already inserted in the atomic seed, just report.
       await _runProvisionStep(3, () async {
         if (result == null) throw Exception('الخطوة السابقة لم تُنفذ');
-        _provisionSteps[3].detail = '${result!.accounts} حساب جديد';
+        _provisionSteps[3].detail = tr('{p0} حساب جديد', {'p0': result!.accounts});
       });
 
       // Step 5: fiscal year
       await _runProvisionStep(4, () async {
         if (result == null) throw Exception('الخطوة السابقة لم تُنفذ');
         _provisionSteps[4].detail = result!.fiscalYear > 0
-            ? 'تم إنشاء السنة المالية'
-            : 'موجودة مسبقاً';
+            ? tr('تم إنشاء السنة المالية')
+            : tr('موجودة مسبقاً');
       });
 
       // Step 6: verify baseline
@@ -581,7 +581,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
         context: context,
         barrierDismissible: false,
         builder: (_) => AlertDialog(
-          title: const Text('اكتملت التهيئة'),
+          title:  Text(tr('اكتملت التهيئة')),
           content: const Text(
             'تم حفظ إعدادات السيرفر بنجاح.\n'
             'سيتم إغلاق التطبيق الآن — افتحه مجدداً ليتصل بـ PostgreSQL '
@@ -614,14 +614,14 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
                 // الزرّ بنفس نمط `onWindowClose`.
                 exit(0);
               },
-              child: const Text('إغلاق التطبيق'),
+              child:  Text(tr('إغلاق التطبيق')),
             ),
           ],
         ),
       );
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -639,9 +639,9 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'ملف النشاط التجارى',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+         Text(
+          tr('ملف النشاط التجارى'),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         const Text(
@@ -778,9 +778,9 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'كلمة مرور المطوّر',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+         Text(
+          tr('كلمة مرور المطوّر'),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         const Text(
@@ -795,8 +795,8 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
           obscureText: !_developerPasswordVisible,
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
-            labelText: 'كلمة مرور جديدة *',
-            hintText: '4 أحرف كحد أدنى',
+            labelText: tr('كلمة مرور جديدة *'),
+            hintText: tr('4 أحرف كحد أدنى'),
             prefixIcon: const Icon(PhosphorIconsBold.lock),
             suffixIcon: IconButton(
               icon: Icon(_developerPasswordVisible
@@ -816,7 +816,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
           obscureText: !_developerPasswordVisible,
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
-            labelText: 'تأكيد كلمة المرور *',
+            labelText: tr('تأكيد كلمة المرور *'),
             prefixIcon: const Icon(PhosphorIconsBold.lockKey),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -824,7 +824,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
             errorText: _developerPasswordConfirmController.text.isNotEmpty &&
                     _developerPasswordConfirmController.text !=
                         _developerPasswordController.text
-                ? 'كلمة المرور غير متطابقة'
+                ? tr('كلمة المرور غير متطابقة')
                 : null,
           ),
         ),

@@ -81,10 +81,9 @@ void main() {
     expect(_count(src, 'ActivityLogPicposScreen('), 5,
         reason: 'عددُ تقارير السجلّ الموصولةِ بترشيحٍ مسبقٍ تبدّل');
     // ولكلٍّ عنوانُه — خمسةُ مداخلَ بعنوانٍ واحدٍ = خمسُ شاشاتٍ متطابقة.
-    final titles = RegExp("presetTitle: '([^']+)'")
-        .allMatches(src)
-        .map((m) => m.group(1)!)
-        .toSet();
+    final titles = RegExp(
+      r"presetTitle:\s*(?:tr\(\s*)?'([^']+)'(?:\s*\))?",
+    ).allMatches(src).map((m) => m.group(1)!).toSet();
     expect(titles.length, 5, reason: 'عنوانان متطابقان في تقريرَي سجلّ');
   });
 

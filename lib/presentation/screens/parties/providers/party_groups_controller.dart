@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // PARTY GROUPS CONTROLLER — Phase 2
 // ═══════════════════════════════════════════════════════════════════════════
@@ -81,7 +82,7 @@ class PartyGroupsNotifier extends Notifier<PartyGroupsState> {
       logger.error('Failed to create party group', e, st, 'PARTY_GROUPS');
       state = state.copyWith(
         isLoading: false,
-        error: 'فشل إنشاء المجموعة: $e',
+        error: tr('فشل إنشاء المجموعة: {e}', {'e': e}),
       );
       return null;
     }
@@ -133,7 +134,7 @@ class PartyGroupsNotifier extends Notifier<PartyGroupsState> {
       logger.error('Failed to update party group', e, st, 'PARTY_GROUPS');
       state = state.copyWith(
         isLoading: false,
-        error: 'فشل تعديل المجموعة: $e',
+        error: tr('فشل تعديل المجموعة: {e}', {'e': e}),
       );
       return false;
     }
@@ -162,7 +163,7 @@ class PartyGroupsNotifier extends Notifier<PartyGroupsState> {
       return await _db.setPartyGroupActive(id, isActive);
     } catch (e, st) {
       logger.error('Failed to toggle group active', e, st, 'PARTY_GROUPS');
-      state = state.copyWith(error: 'فشل تعديل الحالة: $e');
+      state = state.copyWith(error: tr('فشل تعديل الحالة: {e}', {'e': e}));
       return false;
     }
   }
@@ -173,7 +174,7 @@ class PartyGroupsNotifier extends Notifier<PartyGroupsState> {
       await _db.assignPartyToGroup(partyId, groupId);
     } catch (e, st) {
       logger.error('Failed to assign party to group', e, st, 'PARTY_GROUPS');
-      state = state.copyWith(error: 'فشل إسناد الطرف للمجموعة: $e');
+      state = state.copyWith(error: tr('فشل إسناد الطرف للمجموعة: {e}', {'e': e}));
     }
   }
 
@@ -183,7 +184,7 @@ class PartyGroupsNotifier extends Notifier<PartyGroupsState> {
       await _db.assignPartiesToGroup(partyIds, groupId);
     } catch (e, st) {
       logger.error('Failed to bulk-assign parties', e, st, 'PARTY_GROUPS');
-      state = state.copyWith(error: 'فشل الإسناد الجماعى: $e');
+      state = state.copyWith(error: tr('فشل الإسناد الجماعى: {e}', {'e': e}));
     }
   }
 }

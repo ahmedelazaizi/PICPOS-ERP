@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -54,7 +55,7 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('الاعتمادات والموافقات', style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
+              Text(tr('الاعتمادات والموافقات'), style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
               Text('Multi-Level Approval — Maker → Checker → Approver', style: GoogleFonts.cairo(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
             ],
           ),
@@ -62,7 +63,7 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
           ElevatedButton.icon(
             onPressed: () => _showNewWorkflowDialog(context),
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label: Text('سير عمل جديد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            label: Text(tr('سير عمل جديد'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white, foregroundColor: const Color(0xFFE65100),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -79,8 +80,8 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
       decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border))),
       child: Row(
         children: [
-          _tab('اعتمادات معلقة', PhosphorIconsBold.hourglass, 0),
-          _tab('إعدادات سير العمل', PhosphorIconsBold.gearSix, 1),
+          _tab(tr('اعتمادات معلقة'), PhosphorIconsBold.hourglass, 0),
+          _tab(tr('إعدادات سير العمل'), PhosphorIconsBold.gearSix, 1),
         ],
       ),
     );
@@ -120,9 +121,9 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
             child: const Icon(PhosphorIconsBold.checkCircle, size: 48, color: AppColors.success),
           ),
           const SizedBox(height: 16),
-          Text('لا توجد اعتمادات معلقة', style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w700)),
+          Text(tr('لا توجد اعتمادات معلقة'), style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
-          Text('جميع العمليات تمت الموافقة عليها', style: GoogleFonts.cairo(fontSize: 13, color: AppColors.textMuted)),
+          Text(tr('جميع العمليات تمت الموافقة عليها'), style: GoogleFonts.cairo(fontSize: 13, color: AppColors.textMuted)),
         ],
       ),
     );
@@ -144,9 +145,9 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
               children: [
                 const Icon(PhosphorIconsBold.flowArrow, size: 64, color: AppColors.textMuted),
                 const SizedBox(height: 16),
-                Text('لا توجد إعدادات سير عمل', style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
+                Text(tr('لا توجد إعدادات سير عمل'), style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
                 const SizedBox(height: 8),
-                Text('أنشئ سير عمل لبدء تفعيل الاعتمادات المتعددة المستويات',
+                Text(tr('أنشئ سير عمل لبدء تفعيل الاعتمادات المتعددة المستويات'),
                     style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
               ],
             ),
@@ -187,10 +188,10 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                         decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-                        child: Text('${workflow.requiredLevels} مستويات', style: GoogleFonts.cairo(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.w600)),
+                        child: Text(tr('{p0} مستويات', {'p0': workflow.requiredLevels}), style: GoogleFonts.cairo(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.w600)),
                       ),
                       const SizedBox(width: 6),
-                      Text('الحد: ${workflow.amountThreshold}', style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted)),
+                      Text(tr('الحد: {p0}', {'p0': workflow.amountThreshold}), style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted)),
                     ],
                   ),
                 ],
@@ -237,7 +238,7 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
             children: [
               const Icon(PhosphorIconsBold.flowArrow, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
-              Text('سير عمل جديد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+              Text(tr('سير عمل جديد'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             ],
           ),
           content: SizedBox(
@@ -245,23 +246,23 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const TextField(decoration: InputDecoration(labelText: 'اسم سير العمل')),
+                 TextField(decoration: InputDecoration(labelText: tr('اسم سير العمل'))),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'نوع العملية'),
-                  items: const [
-                    DropdownMenuItem(value: 'journal_entry', child: Text('قيد يومية')),
-                    DropdownMenuItem(value: 'sales_invoice', child: Text('فاتورة مبيعات')),
-                    DropdownMenuItem(value: 'purchase_invoice', child: Text('فاتورة مشتريات')),
-                    DropdownMenuItem(value: 'safe_transfer', child: Text('تحويل خزنة')),
+                  decoration:  InputDecoration(labelText: tr('نوع العملية')),
+                  items:  [
+                    DropdownMenuItem(value: 'journal_entry', child: Text(tr('قيد يومية'))),
+                    DropdownMenuItem(value: 'sales_invoice', child: Text(tr('فاتورة مبيعات'))),
+                    DropdownMenuItem(value: 'purchase_invoice', child: Text(tr('فاتورة مشتريات'))),
+                    DropdownMenuItem(value: 'safe_transfer', child: Text(tr('تحويل خزنة'))),
                   ],
                   onChanged: (_) {},
                 ),
                 const SizedBox(height: 12),
-                const TextField(keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'الحد الأدنى لتفعيل الاعتماد')),
+                 TextField(keyboardType: TextInputType.number, decoration: InputDecoration(labelText: tr('الحد الأدنى لتفعيل الاعتماد'))),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(
-                  decoration: const InputDecoration(labelText: 'عدد المستويات'),
+                  decoration:  InputDecoration(labelText: tr('عدد المستويات')),
                   initialValue: 2,
                   items: const [
                     DropdownMenuItem(value: 2, child: Text('2 — Maker → Checker')),
@@ -273,8 +274,8 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx), child: const Text('إنشاء')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء'))),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إنشاء'))),
           ],
         ),
       ),

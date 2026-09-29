@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:drift/drift.dart' show Value;
@@ -34,7 +35,7 @@ class _WarehouseEditDialogState extends AppFormDialogState<bool, WarehouseEditDi
   }
 
   @override
-  String get dialogTitle => widget.existing == null ? 'إضافة مخزن جديد' : 'تعديل المخزن';
+  String get dialogTitle => widget.existing == null ? tr('إضافة مخزن جديد') : tr('تعديل المخزن');
 
   @override
   IconData get dialogIcon => PhosphorIconsBold.warehouse;
@@ -49,9 +50,9 @@ class _WarehouseEditDialogState extends AppFormDialogState<bool, WarehouseEditDi
       children: [
         TextField(
           controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'اسم المخزن *',
-            prefixIcon: Icon(PhosphorIconsBold.warehouse),
+          decoration:  InputDecoration(
+            labelText: tr('اسم المخزن *'),
+            prefixIcon: const Icon(PhosphorIconsBold.warehouse),
           ),
         ),
         const SizedBox(height: 16),
@@ -65,14 +66,14 @@ class _WarehouseEditDialogState extends AppFormDialogState<bool, WarehouseEditDi
                 : null;
             return DropdownButtonFormField<int?>(
               initialValue: validBranchId,
-              decoration: const InputDecoration(
-                labelText: 'الفرع',
-                prefixIcon: Icon(PhosphorIconsBold.buildings),
+              decoration:  InputDecoration(
+                labelText: tr('الفرع'),
+                prefixIcon: const Icon(PhosphorIconsBold.buildings),
               ),
               items: [
-                const DropdownMenuItem<int?>(
+                 DropdownMenuItem<int?>(
                   value: null,
-                  child: Text('بدون فرع'),
+                  child: Text(tr('بدون فرع')),
                 ),
                 ...branches.map(
                   (b) => DropdownMenuItem<int?>(
@@ -90,15 +91,15 @@ class _WarehouseEditDialogState extends AppFormDialogState<bool, WarehouseEditDi
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           initialValue: selectedType,
-          decoration: const InputDecoration(
-            labelText: 'نوع المخزن',
-            prefixIcon: Icon(PhosphorIconsBold.package),
+          decoration:  InputDecoration(
+            labelText: tr('نوع المخزن'),
+            prefixIcon: const Icon(PhosphorIconsBold.package),
           ),
-          items: const [
-            DropdownMenuItem(value: 'general', child: Text('عام')),
-            DropdownMenuItem(value: 'raw_materials', child: Text('خامات')),
-            DropdownMenuItem(value: 'finished_goods', child: Text('منتج تام')),
-            DropdownMenuItem(value: 'retail', child: Text('بيع')),
+          items:  [
+            DropdownMenuItem(value: 'general', child: Text(tr('عام'))),
+            DropdownMenuItem(value: 'raw_materials', child: Text(tr('خامات'))),
+            DropdownMenuItem(value: 'finished_goods', child: Text(tr('منتج تام'))),
+            DropdownMenuItem(value: 'retail', child: Text(tr('بيع'))),
           ],
           onChanged: (value) {
             setState(() => selectedType = value ?? 'general');
@@ -115,14 +116,14 @@ class _WarehouseEditDialogState extends AppFormDialogState<bool, WarehouseEditDi
                 : null;
             return DropdownButtonFormField<int?>(
               initialValue: validCcId,
-              decoration: const InputDecoration(
-                labelText: 'مركز التكلفة',
-                prefixIcon: Icon(PhosphorIconsBold.target),
+              decoration:  InputDecoration(
+                labelText: tr('مركز التكلفة'),
+                prefixIcon: const Icon(PhosphorIconsBold.target),
               ),
               items: [
-                const DropdownMenuItem<int?>(
+                 DropdownMenuItem<int?>(
                   value: null,
-                  child: Text('بدون مركز تكلفة'),
+                  child: Text(tr('بدون مركز تكلفة')),
                 ),
                 ...centers.map(
                   (c) => DropdownMenuItem<int?>(

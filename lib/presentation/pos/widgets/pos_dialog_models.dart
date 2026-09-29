@@ -74,18 +74,18 @@ class _HoldOrderDialogState extends State<_HoldOrderDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('تعليق الفاتورة'),
+      title:  Text(tr('تعليق الفاتورة')),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('أدخل اسم العميل للتعليق (اختياري)'),
+           Text(tr('أدخل اسم العميل للتعليق (اختياري)')),
           const SizedBox(height: 12),
           TextField(
             controller: _controller,
             autofocus: true,
-            decoration: const InputDecoration(
-              hintText: 'اسم العميل (اختياري)',
-              prefixIcon: Icon(PhosphorIconsBold.user),
+            decoration:  InputDecoration(
+              hintText: tr('اسم العميل (اختياري)'),
+              prefixIcon: const Icon(PhosphorIconsBold.user),
             ),
             onSubmitted: (v) => Navigator.pop(context, v.isEmpty ? '' : v),
           ),
@@ -94,12 +94,12 @@ class _HoldOrderDialogState extends State<_HoldOrderDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         FilledButton(
           onPressed: () =>
               Navigator.pop(context, _controller.text.isEmpty ? '' : _controller.text),
-          child: const Text('تعليق'),
+          child:  Text(tr('تعليق')),
         ),
       ],
     );

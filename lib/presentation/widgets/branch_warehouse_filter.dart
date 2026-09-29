@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -58,14 +59,14 @@ class BranchWarehouseFilterBar extends ConsumerWidget {
               return DropdownButtonFormField<int?>(
                 initialValue: regions.any((r) => r.id == selectedRegionId) ? selectedRegionId : null,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'المنطقة',
+                decoration:  InputDecoration(
+                  labelText: tr('المنطقة'),
                   isDense: true,
-                  prefixIcon: Icon(PhosphorIconsBold.mapPin, size: 16),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  prefixIcon: const Icon(PhosphorIconsBold.mapPin, size: 16),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 items: [
-                  const DropdownMenuItem<int?>(value: null, child: Text('كل المناطق')),
+                   DropdownMenuItem<int?>(value: null, child: Text(tr('كل المناطق'))),
                   ...regions.map((r) => DropdownMenuItem<int?>(
                         value: r.id,
                         child: Text(r.name, overflow: TextOverflow.ellipsis),
@@ -95,14 +96,14 @@ class BranchWarehouseFilterBar extends ConsumerWidget {
               return DropdownButtonFormField<int?>(
                 initialValue: effectiveBranch,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'الفرع',
+                decoration:  InputDecoration(
+                  labelText: tr('الفرع'),
                   isDense: true,
-                  prefixIcon: Icon(PhosphorIconsBold.buildings, size: 16),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  prefixIcon: const Icon(PhosphorIconsBold.buildings, size: 16),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 items: [
-                  const DropdownMenuItem<int?>(value: null, child: Text('كل الفروع')),
+                   DropdownMenuItem<int?>(value: null, child: Text(tr('كل الفروع'))),
                   ...branches.map((b) => DropdownMenuItem<int?>(
                         value: b.id,
                         child: Text(b.name, overflow: TextOverflow.ellipsis),
@@ -137,14 +138,14 @@ class BranchWarehouseFilterBar extends ConsumerWidget {
               return DropdownButtonFormField<int?>(
                 initialValue: effectiveValue,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'المخزن',
+                decoration:  InputDecoration(
+                  labelText: tr('المخزن'),
                   isDense: true,
-                  prefixIcon: Icon(PhosphorIconsBold.warehouse, size: 16),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  prefixIcon: const Icon(PhosphorIconsBold.warehouse, size: 16),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 items: [
-                  const DropdownMenuItem<int?>(value: null, child: Text('كل المخازن')),
+                   DropdownMenuItem<int?>(value: null, child: Text(tr('كل المخازن'))),
                   ...warehouses.map((w) => DropdownMenuItem<int?>(
                         value: w.id,
                         child: Text(w.name, overflow: TextOverflow.ellipsis),

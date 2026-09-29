@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // تعريفاتُ التقارير السبعةِ التي كانت على شاشاتٍ نائبة.
 //
 // ═══ القاعدةُ الحاكمةُ لهذا الملفّ ═══
@@ -28,7 +29,7 @@ import 'report_view_picpos_screen.dart';
 String _money(double v) =>
     '${v.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}';
 
-String _pct(double v) => '${v.toStringAsFixed(1)}٪';
+String _pct(double v) => tr('{p0}٪', {'p0': v.toStringAsFixed(1)});
 
 String _int(int v) => v.toString();
 
@@ -82,15 +83,15 @@ Color _marginTint(double margin) =>
 /// اليومَ لم يكن يبيع بخسارةٍ الشهرَ الماضي، وتقييمُه بتكلفة اليوم يتّهمه.
 PicPosReportDefinition profitMarginReport() => PicPosReportDefinition(
       id: 'profit_margin',
-      title: 'هامش الربح',
-      subtitle: 'تكلفةُ المبيعات وصافي الربح — تصنيفاً وصنفاً',
+      title: tr('هامش الربح'),
+      subtitle: tr('تكلفةُ المبيعات وصافي الربح — تصنيفاً وصنفاً'),
       icon: PhosphorIconsBold.percent,
       tabs: [
         PicPosReportTabDef(
           id: 'cats',
-          label: 'التصنيفات',
+          label: tr('التصنيفات'),
           icon: PhosphorIconsBold.chartPieSlice,
-          note: 'الربحُ = المبيعات − تكلفة البضاعة المباعة، لكلّ تصنيف.',
+          note: tr('الربحُ = المبيعات − تكلفة البضاعة المباعة، لكلّ تصنيف.'),
           load: (ref, range) async {
             final rows = await _categoryRows(ref, range);
             if (rows.isEmpty) return const PicPosReportTabContent();
@@ -102,39 +103,39 @@ PicPosReportDefinition profitMarginReport() => PicPosReportDefinition(
               kpis: [
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.receipt,
-                  label: 'إجمالي المبيعات',
+                  label: tr('إجمالي المبيعات'),
                   value: _money(sales),
                   tint: _tintBrand,
-                  vs: 'في المدى المختار',
+                  vs: tr('في المدى المختار'),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.package,
-                  label: 'تكلفة البضاعة المباعة',
+                  label: tr('تكلفة البضاعة المباعة'),
                   value: _money(cost),
                   tint: _tintWarn,
-                  vs: 'من دفتر التكلفة',
+                  vs: tr('من دفتر التكلفة'),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.trendUp,
-                  label: 'صافي الربح',
+                  label: tr('صافي الربح'),
                   value: _money(profit),
                   tint: profit >= 0 ? _tintOk : _tintErr,
-                  vs: 'المبيعات ناقص التكلفة',
+                  vs: tr('المبيعات ناقص التكلفة'),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.percent,
-                  label: 'الهامش الإجمالي',
+                  label: tr('الهامش الإجمالي'),
                   value: _pct(_ratio(profit, sales)),
                   tint: _marginTint(_ratio(profit, sales)),
-                  vs: 'الربح من المبيعات',
+                  vs: tr('الربح من المبيعات'),
                 ),
               ],
               chart: PicPosReportChart(
-                title: 'المبيعات والتكلفة لكلّ تصنيف',
-                subtitle: '${rows.length} تصنيفاً في المدى',
-                series: const [
-                  PicPosChartSeries(label: 'المبيعات', color: _tintBrand),
-                  PicPosChartSeries(label: 'التكلفة', color: _tintWarn),
+                title: tr('المبيعات والتكلفة لكلّ تصنيف'),
+                subtitle: tr('{p0} تصنيفاً في المدى', {'p0': rows.length}),
+                series:  [
+                  PicPosChartSeries(label: tr('المبيعات'), color: _tintBrand),
+                  PicPosChartSeries(label: tr('التكلفة'), color: _tintWarn),
                 ],
                 bars: [
                   for (final r in rows.take(8))
@@ -147,17 +148,17 @@ PicPosReportDefinition profitMarginReport() => PicPosReportDefinition(
                 ],
               ),
               table: PicPosDataTable(
-                title: 'الربحُ لكلّ تصنيف',
-                subtitle: 'مرتَّبةً بالمبيعات تنازليّاً',
-                columns: const [
-                  PicPosTableColumn('التصنيف', flex: 2.2),
-                  PicPosTableColumn('المبيعات',
+                title: tr('الربحُ لكلّ تصنيف'),
+                subtitle: tr('مرتَّبةً بالمبيعات تنازليّاً'),
+                columns:  [
+                  PicPosTableColumn(tr('التصنيف'), flex: 2.2),
+                  PicPosTableColumn(tr('المبيعات'),
                       flex: 1.3, align: PicPosCellAlign.end),
-                  PicPosTableColumn('التكلفة',
+                  PicPosTableColumn(tr('التكلفة'),
                       flex: 1.3, align: PicPosCellAlign.end),
-                  PicPosTableColumn('الربح',
+                  PicPosTableColumn(tr('الربح'),
                       flex: 1.3, align: PicPosCellAlign.end),
-                  PicPosTableColumn('الهامش', flex: 1.4),
+                  PicPosTableColumn(tr('الهامش'), flex: 1.4),
                 ],
                 rows: [
                   for (final r in rows)
@@ -175,7 +176,7 @@ PicPosReportDefinition profitMarginReport() => PicPosReportDefinition(
                     ]),
                 ],
                 totals: [
-                  '${rows.length} تصنيفاً',
+                  tr('{p0} تصنيفاً', {'p0': rows.length}),
                   _money(sales),
                   _money(cost),
                   _money(profit),
@@ -187,7 +188,7 @@ PicPosReportDefinition profitMarginReport() => PicPosReportDefinition(
         ),
         PicPosReportTabDef(
           id: 'margin',
-          label: 'هامش الربح',
+          label: tr('هامش الربح'),
           icon: PhosphorIconsBold.percent,
           note: 'الأصنافُ التي هامشُها سالبٌ أو أقلُّ من ٥٪ — تحتاج مراجعةَ سعر. '
               'والتكلفةُ لقطةُ **وقتِ البيع** لا تكلفةُ اليوم.',
@@ -211,38 +212,38 @@ PicPosReportDefinition profitMarginReport() => PicPosReportDefinition(
               kpis: [
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.percent,
-                  label: 'الهامش الإجمالي',
+                  label: tr('الهامش الإجمالي'),
                   value: _pct(_ratio(profit, sales)),
                   tint: _marginTint(_ratio(profit, sales)),
-                  vs: 'على ${all.length} صنفاً بيع',
+                  vs: tr('على {p0} صنفاً بيع', {'p0': all.length}),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.arrowUp,
-                  label: 'أعلى هامش',
+                  label: tr('أعلى هامش'),
                   value: _pct(best.margin),
                   tint: _tintOk,
                   vs: best.productName,
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.arrowDown,
-                  label: 'أدنى هامش',
+                  label: tr('أدنى هامش'),
                   value: _pct(worst.margin),
                   tint: _tintErr,
                   vs: worst.productName,
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.warning,
-                  label: 'أصنافٌ بهامشٍ سالب',
+                  label: tr('أصنافٌ بهامشٍ سالب'),
                   value: _int(negative),
                   tint: negative > 0 ? _tintErr : _tintOk,
-                  vs: 'تبيع بخسارة',
+                  vs: tr('تبيع بخسارة'),
                 ),
               ],
               chart: PicPosReportChart(
-                title: 'أضعفُ الأصناف هامشاً',
-                subtitle: 'النسبةُ المئويّةُ من المبيعات',
-                series: const [
-                  PicPosChartSeries(label: 'الهامش', color: _tintBrand),
+                title: tr('أضعفُ الأصناف هامشاً'),
+                subtitle: tr('النسبةُ المئويّةُ من المبيعات'),
+                series:  [
+                  PicPosChartSeries(label: tr('الهامش'), color: _tintBrand),
                 ],
                 bars: [
                   // الأضعفُ أوّلاً — الرسمُ يجيب «أين تضيع النقود»، فصدارةُ
@@ -258,19 +259,19 @@ PicPosReportDefinition profitMarginReport() => PicPosReportDefinition(
                 ],
               ),
               table: PicPosDataTable(
-                title: 'أصنافٌ تحتاج مراجعةَ سعر',
-                subtitle: 'هامشٌ أقلُّ من ٥٪ أو سالب',
-                emptyLabel: 'لا صنفَ هامشُه دون ٥٪ — كلُّها سليمة',
-                columns: const [
-                  PicPosTableColumn('الصنف', flex: 2.4),
-                  PicPosTableColumn('متوسّطُ التكلفة',
+                title: tr('أصنافٌ تحتاج مراجعةَ سعر'),
+                subtitle: tr('هامشٌ أقلُّ من ٥٪ أو سالب'),
+                emptyLabel: tr('لا صنفَ هامشُه دون ٥٪ — كلُّها سليمة'),
+                columns:  [
+                  PicPosTableColumn(tr('الصنف'), flex: 2.4),
+                  PicPosTableColumn(tr('متوسّطُ التكلفة'),
                       flex: 1.3, align: PicPosCellAlign.end),
-                  PicPosTableColumn('متوسّطُ البيع',
+                  PicPosTableColumn(tr('متوسّطُ البيع'),
                       flex: 1.3, align: PicPosCellAlign.end),
-                  PicPosTableColumn('الهامش', flex: 1.4),
-                  PicPosTableColumn('المتاح',
+                  PicPosTableColumn(tr('الهامش'), flex: 1.4),
+                  PicPosTableColumn(tr('المتاح'),
                       flex: 1.0, align: PicPosCellAlign.end),
-                  PicPosTableColumn('الحالة', flex: 1.2),
+                  PicPosTableColumn(tr('الحالة'), flex: 1.2),
                 ],
                 rows: [
                   for (final r in weak)
@@ -288,13 +289,13 @@ PicPosReportDefinition profitMarginReport() => PicPosReportDefinition(
                       ),
                       PicPosTextCell(r.currentStock.toStringAsFixed(0)),
                       PicPosPillCell(
-                        r.margin < 0 ? 'يبيع بخسارة' : 'هامشٌ ضعيف',
+                        r.margin < 0 ? tr('يبيع بخسارة') : tr('هامشٌ ضعيف'),
                         _marginTint(r.margin),
                       ),
                     ]),
                 ],
                 totals: [
-                  '${weak.length} صنفاً',
+                  tr('{p0} صنفاً', {'p0': weak.length}),
                   '',
                   '',
                   '',
@@ -328,13 +329,13 @@ Future<List<CategoryProfitRow>> _categoryRows(WidgetRef ref, DateTimeRange range
 /// التقريران بنيةً واحدةً على جدولَين — فتعريفٌ واحدٌ بمعاملٍ يفرّقهما.
 /// نسخُهما لكان نسختَين تنحرفان بأوّل تعديلِ عمود.
 PicPosReportDefinition partyBehaviorReport({required bool suppliers}) {
-  final who = suppliers ? 'المورّد' : 'العميل';
-  final whoPlural = suppliers ? 'الموردين' : 'العملاء';
-  final valueLabel = suppliers ? 'المشتريات' : 'المبيعات';
+  final who = suppliers ? tr('المورّد') : tr('العميل');
+  final whoPlural = suppliers ? tr('الموردين') : tr('العملاء');
+  final valueLabel = suppliers ? tr('المشتريات') : tr('المبيعات');
   return PicPosReportDefinition(
     id: suppliers ? 'sup_behavior' : 'cust_behavior',
-    title: 'تحليل سلوك $whoPlural',
-    subtitle: 'التكرارُ والقيمةُ وآخرُ تعاملٍ لكلّ $who',
+    title: tr('تحليل سلوك {whoPlural}', {'whoPlural': whoPlural}),
+    subtitle: tr('التكرارُ والقيمةُ وآخرُ تعاملٍ لكلّ {who}', {'who': who}),
     icon: suppliers ? PhosphorIconsBold.truck : PhosphorIconsBold.users,
     tabs: [
       PicPosReportTabDef(
@@ -342,7 +343,7 @@ PicPosReportDefinition partyBehaviorReport({required bool suppliers}) {
         label: whoPlural,
         icon: PhosphorIconsBold.users,
         note:
-            'الفواتيرُ المحذوفةُ والمرتجعاتُ مستبعَدة، والتعاملُ بلا $who مسجَّلٍ لا يُحتسَب.',
+            tr('الفواتيرُ المحذوفةُ والمرتجعاتُ مستبعَدة، والتعاملُ بلا {who} مسجَّلٍ لا يُحتسَب.', {'who': who}),
         load: (ref, range) async {
           final rows = await _partyRows(ref, range, suppliers: suppliers);
           if (rows.isEmpty) return const PicPosReportTabContent();
@@ -354,38 +355,38 @@ PicPosReportDefinition partyBehaviorReport({required bool suppliers}) {
             kpis: [
               PicPosHubKpi(
                 icon: PhosphorIconsBold.users,
-                label: '$whoPlural المتعاملون',
+                label: tr('{whoPlural} المتعاملون', {'whoPlural': whoPlural}),
                 value: _int(rows.length),
                 tint: _tintBrand,
-                vs: 'لهم فاتورةٌ في المدى',
+                vs: tr('لهم فاتورةٌ في المدى'),
               ),
               PicPosHubKpi(
                 icon: PhosphorIconsBold.receipt,
-                label: 'إجمالي $valueLabel',
+                label: tr('إجمالي {valueLabel}', {'valueLabel': valueLabel}),
                 value: _money(total),
                 tint: _tintOk,
-                vs: '$invoices فاتورة',
+                vs: tr('{invoices} فاتورة', {'invoices': invoices}),
               ),
               PicPosHubKpi(
                 icon: PhosphorIconsBold.calculator,
-                label: 'متوسّطُ الفاتورة',
+                label: tr('متوسّطُ الفاتورة'),
                 value: _money(invoices == 0 ? 0 : total / invoices),
                 tint: _tintBrand,
-                vs: 'على كلّ الفواتير',
+                vs: tr('على كلّ الفواتير'),
               ),
               PicPosHubKpi(
                 icon: PhosphorIconsBold.warning,
-                label: 'غيرُ المسدَّد',
+                label: tr('غيرُ المسدَّد'),
                 value: _money(unpaid),
                 tint: unpaid > 0 ? _tintWarn : _tintOk,
                 // ⚠️ المتبقّي **في هذا المدى** لا رصيدُ الطرف الكلّيّ —
                 // فالرصيدُ يحمل فواتيرَ أقدمَ ومقبوضاتٍ لاحقة.
-                vs: 'من فواتير المدى وحدَها',
+                vs: tr('من فواتير المدى وحدَها'),
               ),
             ],
             chart: PicPosReportChart(
-              title: 'أعلى $whoPlural قيمةً',
-              subtitle: 'أعلى ثمانيةٍ في المدى',
+              title: tr('أعلى {whoPlural} قيمةً', {'whoPlural': whoPlural}),
+              subtitle: tr('أعلى ثمانيةٍ في المدى'),
               series: [
                 PicPosChartSeries(label: valueLabel, color: _tintBrand),
               ],
@@ -399,19 +400,19 @@ PicPosReportDefinition partyBehaviorReport({required bool suppliers}) {
               ],
             ),
             table: PicPosDataTable(
-              title: 'سلوكُ $whoPlural',
-              subtitle: 'مرتَّبةً بالقيمة تنازليّاً',
+              title: tr('سلوكُ {whoPlural}', {'whoPlural': whoPlural}),
+              subtitle: tr('مرتَّبةً بالقيمة تنازليّاً'),
               columns: [
                 PicPosTableColumn(who, flex: 2.2),
-                const PicPosTableColumn('الفواتير',
+                 PicPosTableColumn(tr('الفواتير'),
                     flex: 1.0, align: PicPosCellAlign.end),
                 PicPosTableColumn(valueLabel,
                     flex: 1.4, align: PicPosCellAlign.end),
-                const PicPosTableColumn('متوسّطُ الفاتورة',
+                 PicPosTableColumn(tr('متوسّطُ الفاتورة'),
                     flex: 1.3, align: PicPosCellAlign.end),
-                const PicPosTableColumn('غيرُ المسدَّد',
+                 PicPosTableColumn(tr('غيرُ المسدَّد'),
                     flex: 1.3, align: PicPosCellAlign.end),
-                const PicPosTableColumn('آخرُ تعامل', flex: 1.2),
+                 PicPosTableColumn(tr('آخرُ تعامل'), flex: 1.2),
               ],
               rows: [
                 for (final r in rows)
@@ -491,22 +492,22 @@ int _score(double value, List<double> sortedAsc, {required bool inverted}) {
 
 _Segment _segmentOf(int r, int f, int m) {
   // القاعدةُ مذكورةٌ بنصّها في سطر ملاحظة التبويبة كي يقرأها المشغّل.
-  if (r >= 3 && f + m >= 5) return (label: 'الأوفياء', tint: _tintOk);
-  if (r >= 3) return (label: 'نشِطون', tint: AppColors.info);
-  if (r == 2 && f + m >= 4) return (label: 'معرَّضون للفقد', tint: _tintWarn);
-  if (r <= 1 && f + m >= 4) return (label: 'ثمينون نائمون', tint: _tintErr);
-  return (label: 'نائمون', tint: AppColors.textPrimary);
+  if (r >= 3 && f + m >= 5) return (label: tr('الأوفياء'), tint: _tintOk);
+  if (r >= 3) return (label: tr('نشِطون'), tint: AppColors.info);
+  if (r == 2 && f + m >= 4) return (label: tr('معرَّضون للفقد'), tint: _tintWarn);
+  if (r <= 1 && f + m >= 4) return (label: tr('ثمينون نائمون'), tint: _tintErr);
+  return (label: tr('نائمون'), tint: AppColors.textPrimary);
 }
 
 PicPosReportDefinition customerSegmentsReport() => PicPosReportDefinition(
       id: 'an_customers',
-      title: 'تقسيم العملاء (RFM)',
-      subtitle: 'الحداثةُ والتكرارُ والقيمةُ — ثلاثُ درجاتٍ لكلّ عميل',
+      title: tr('تقسيم العملاء (RFM)'),
+      subtitle: tr('الحداثةُ والتكرارُ والقيمةُ — ثلاثُ درجاتٍ لكلّ عميل'),
       icon: PhosphorIconsBold.chartDonut,
       tabs: [
         PicPosReportTabDef(
           id: 'seg',
-          label: 'التقسيم',
+          label: tr('التقسيم'),
           icon: PhosphorIconsBold.chartDonut,
           note:
               'الدرجاتُ ١..٣ من أثلاثِ توزيع المدى نفسِه — لا من حدودٍ ثابتة. '
@@ -550,9 +551,9 @@ PicPosReportDefinition customerSegmentsReport() => PicPosReportDefinition(
             final ordered = buckets.entries.toList()
               ..sort((a, b) => b.value.value.compareTo(a.value.value));
 
-            final loyal = buckets['الأوفياء']?.count ?? 0;
-            final atRisk = (buckets['معرَّضون للفقد']?.count ?? 0) +
-                (buckets['ثمينون نائمون']?.count ?? 0);
+            final loyal = buckets[tr('الأوفياء')]?.count ?? 0;
+            final atRisk = (buckets[tr('معرَّضون للفقد')]?.count ?? 0) +
+                (buckets[tr('ثمينون نائمون')]?.count ?? 0);
             final total = rows.fold<double>(0, (a, r) => a + r.totalValue);
 
             return PicPosReportTabContent(
@@ -560,38 +561,38 @@ PicPosReportDefinition customerSegmentsReport() => PicPosReportDefinition(
               kpis: [
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.users,
-                  label: 'عملاءُ المدى',
+                  label: tr('عملاءُ المدى'),
                   value: _int(rows.length),
                   tint: _tintBrand,
-                  vs: 'لهم فاتورةٌ واحدةٌ فأكثر',
+                  vs: tr('لهم فاتورةٌ واحدةٌ فأكثر'),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.star,
-                  label: 'الأوفياء',
+                  label: tr('الأوفياء'),
                   value: _int(loyal),
                   tint: _tintOk,
                   vs: _pct(_ratio(loyal.toDouble(), rows.length.toDouble())),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.warning,
-                  label: 'معرَّضون للفقد',
+                  label: tr('معرَّضون للفقد'),
                   value: _int(atRisk),
                   tint: atRisk > 0 ? _tintWarn : _tintOk,
-                  vs: 'حداثةٌ ضعيفةٌ وقيمةٌ عالية',
+                  vs: tr('حداثةٌ ضعيفةٌ وقيمةٌ عالية'),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.receipt,
-                  label: 'قيمةُ المدى',
+                  label: tr('قيمةُ المدى'),
                   value: _money(total),
                   tint: _tintBrand,
-                  vs: 'مجموعُ فواتير العملاء',
+                  vs: tr('مجموعُ فواتير العملاء'),
                 ),
               ],
               chart: PicPosReportChart(
-                title: 'العملاءُ حسب الشريحة',
-                subtitle: 'العددُ في كلّ شريحة',
-                series: const [
-                  PicPosChartSeries(label: 'عملاء', color: _tintBrand),
+                title: tr('العملاءُ حسب الشريحة'),
+                subtitle: tr('العددُ في كلّ شريحة'),
+                series:  [
+                  PicPosChartSeries(label: tr('عملاء'), color: _tintBrand),
                 ],
                 bars: [
                   for (final e in ordered)
@@ -603,18 +604,18 @@ PicPosReportDefinition customerSegmentsReport() => PicPosReportDefinition(
                 ],
               ),
               table: PicPosDataTable(
-                title: 'درجاتُ العملاء',
-                subtitle: 'مرتَّبةً بالقيمة تنازليّاً',
-                columns: const [
-                  PicPosTableColumn('العميل', flex: 2.2),
-                  PicPosTableColumn('آخرُ تعامل',
+                title: tr('درجاتُ العملاء'),
+                subtitle: tr('مرتَّبةً بالقيمة تنازليّاً'),
+                columns:  [
+                  PicPosTableColumn(tr('العميل'), flex: 2.2),
+                  PicPosTableColumn(tr('آخرُ تعامل'),
                       flex: 1.2, align: PicPosCellAlign.end),
-                  PicPosTableColumn('الفواتير',
+                  PicPosTableColumn(tr('الفواتير'),
                       flex: 1.0, align: PicPosCellAlign.end),
-                  PicPosTableColumn('القيمة',
+                  PicPosTableColumn(tr('القيمة'),
                       flex: 1.4, align: PicPosCellAlign.end),
-                  PicPosTableColumn('R·F·M', flex: 1.0),
-                  PicPosTableColumn('الشريحة', flex: 1.5),
+                  const PicPosTableColumn('R·F·M', flex: 1.0),
+                  PicPosTableColumn(tr('الشريحة'), flex: 1.5),
                 ],
                 rows: [
                   for (final s in scored)
@@ -622,7 +623,7 @@ PicPosReportDefinition customerSegmentsReport() => PicPosReportDefinition(
                       PicPosTextCell(s.row.partyName,
                           icon: PhosphorIconsBold.user),
                       PicPosTextCell(
-                          s.days >= 9999 ? '—' : 'منذ ${s.days} يوماً'),
+                          s.days >= 9999 ? '—' : tr('منذ {p0} يوماً', {'p0': s.days})),
                       PicPosTextCell(_int(s.row.invoiceCount)),
                       PicPosTextCell(_money(s.row.totalValue)),
                       PicPosTextCell('${s.r}·${s.f}·${s.m}'),
@@ -633,7 +634,7 @@ PicPosReportDefinition customerSegmentsReport() => PicPosReportDefinition(
                     ]),
                 ],
                 totals: [
-                  '${rows.length} عميلاً',
+                  tr('{p0} عميلاً', {'p0': rows.length}),
                   '',
                   _int(rows.fold<int>(0, (a, r) => a + r.invoiceCount)),
                   _money(total),
@@ -656,15 +657,15 @@ PicPosReportDefinition customerSegmentsReport() => PicPosReportDefinition(
 /// يُقتَطع صامتاً؛ والجدولُ تحتَه يحمل المدى كاملاً.
 PicPosReportDefinition salesTrendReport() => PicPosReportDefinition(
       id: 'an_sales',
-      title: 'تحليل المبيعات',
-      subtitle: 'اتّجاهاتُ المبيعات وأنماطُها على الزمن',
+      title: tr('تحليل المبيعات'),
+      subtitle: tr('اتّجاهاتُ المبيعات وأنماطُها على الزمن'),
       icon: PhosphorIconsBold.chartLine,
       tabs: [
         PicPosReportTabDef(
           id: 'trend',
-          label: 'الاتجاه',
+          label: tr('الاتجاه'),
           icon: PhosphorIconsBold.chartLine,
-          note: 'المبيعاتُ اليوميّةُ في المدى — المرتجعاتُ والمحذوفُ مستبعَدان.',
+          note: tr('المبيعاتُ اليوميّةُ في المدى — المرتجعاتُ والمحذوفُ مستبعَدان.'),
           load: (ref, range) async {
             final repo = ref.read(reportingRepositoryProvider);
             final scope = await _scope(ref);
@@ -688,40 +689,40 @@ PicPosReportDefinition salesTrendReport() => PicPosReportDefinition(
               kpis: [
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.receipt,
-                  label: 'صافي الإيراد',
+                  label: tr('صافي الإيراد'),
                   value: _money(analytics.totalNetRevenue),
                   tint: _tintBrand,
-                  vs: 'المبيعات ناقص الخصومات',
+                  vs: tr('المبيعات ناقص الخصومات'),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.fileText,
-                  label: 'عددُ الفواتير',
+                  label: tr('عددُ الفواتير'),
                   value: _int(analytics.invoiceCount),
                   tint: _tintOk,
-                  vs: 'في المدى المختار',
+                  vs: tr('في المدى المختار'),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.calculator,
-                  label: 'متوسّطُ الفاتورة',
+                  label: tr('متوسّطُ الفاتورة'),
                   value: _money(analytics.averageInvoiceValue),
                   tint: _tintBrand,
-                  vs: 'الإجمالي على العدد',
+                  vs: tr('الإجمالي على العدد'),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.trendUp,
-                  label: 'أعلى يوم',
+                  label: tr('أعلى يوم'),
                   value: best == null ? '—' : _money(best.total),
                   tint: _tintOk,
-                  vs: best == null ? 'لا مبيعات' : _dayLabel(best.date),
+                  vs: best == null ? tr('لا مبيعات') : _dayLabel(best.date),
                 ),
               ],
               chart: PicPosReportChart(
-                title: 'المبيعاتُ اليوميّة',
+                title: tr('المبيعاتُ اليوميّة'),
                 subtitle: shown.length == daily.length
-                    ? '${daily.length} يوماً في المدى'
-                    : 'آخرُ ${shown.length} يوماً من ${daily.length}',
-                series: const [
-                  PicPosChartSeries(label: 'المبيعات', color: _tintBrand),
+                    ? tr('{p0} يوماً في المدى', {'p0': daily.length})
+                    : tr('آخرُ {p0} يوماً من {p1}', {'p0': shown.length, 'p1': daily.length}),
+                series:  [
+                  PicPosChartSeries(label: tr('المبيعات'), color: _tintBrand),
                 ],
                 bars: [
                   for (final d in shown)
@@ -733,13 +734,13 @@ PicPosReportDefinition salesTrendReport() => PicPosReportDefinition(
                 ],
               ),
               table: PicPosDataTable(
-                title: 'المبيعاتُ يوماً بيوم',
-                subtitle: 'المدى كاملاً',
-                columns: const [
-                  PicPosTableColumn('اليوم', flex: 1.6),
-                  PicPosTableColumn('المبيعات',
+                title: tr('المبيعاتُ يوماً بيوم'),
+                subtitle: tr('المدى كاملاً'),
+                columns:  [
+                  PicPosTableColumn(tr('اليوم'), flex: 1.6),
+                  PicPosTableColumn(tr('المبيعات'),
                       flex: 1.6, align: PicPosCellAlign.end),
-                  PicPosTableColumn('من أعلى يوم', flex: 2.0),
+                  PicPosTableColumn(tr('من أعلى يوم'), flex: 2.0),
                 ],
                 rows: [
                   for (final d in daily)
@@ -759,7 +760,7 @@ PicPosReportDefinition salesTrendReport() => PicPosReportDefinition(
                     ]),
                 ],
                 totals: [
-                  '${daily.length} يوماً',
+                  tr('{p0} يوماً', {'p0': daily.length}),
                   _money(daily.fold<double>(0, (a, d) => a + d.total)),
                   '',
                 ],
@@ -788,13 +789,13 @@ PicPosReportDefinition salesTrendReport() => PicPosReportDefinition(
 /// من حدٍّ معلَن. فالحدُّ الباقي مكتوبٌ في سطر ملاحظة التبويبة.
 PicPosReportDefinition inventoryTurnoverReport() => PicPosReportDefinition(
       id: 'an_inventory',
-      title: 'دوران وكفاءة المخزون',
-      subtitle: 'قيمةُ المخزون مقابلَ تكلفة ما بيع',
+      title: tr('دوران وكفاءة المخزون'),
+      subtitle: tr('قيمةُ المخزون مقابلَ تكلفة ما بيع'),
       icon: PhosphorIconsBold.package,
       tabs: [
         PicPosReportTabDef(
           id: 'turnover',
-          label: 'الدوران',
+          label: tr('الدوران'),
           icon: PhosphorIconsBold.arrowsClockwise,
           note:
               'الدورانُ = تكلفةُ المبيعات ÷ متوسّطِ المخزون بين طرفَي المدى. '
@@ -822,38 +823,38 @@ PicPosReportDefinition inventoryTurnoverReport() => PicPosReportDefinition(
               kpis: [
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.package,
-                  label: 'قيمةُ المخزون بالتكلفة',
+                  label: tr('قيمةُ المخزون بالتكلفة'),
                   value: _money(inv.totalCostValue),
                   tint: _tintBrand,
-                  vs: '${inv.uniqueProducts} صنفاً',
+                  vs: tr('{p0} صنفاً', {'p0': inv.uniqueProducts}),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.arrowsClockwise,
-                  label: 'معدّلُ الدوران',
+                  label: tr('معدّلُ الدوران'),
                   value: turnover.toStringAsFixed(2),
                   tint: turnover >= 1 ? _tintOk : _tintWarn,
-                  vs: 'مرّةً على متوسّطِ ${_money(averageValue)}',
+                  vs: tr('مرّةً على متوسّطِ {p0}', {'p0': _money(averageValue)}),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.receipt,
-                  label: 'تكلفةُ المبيعات',
+                  label: tr('تكلفةُ المبيعات'),
                   value: _money(sales.totalCOGS),
                   tint: _tintWarn,
-                  vs: 'في المدى المختار',
+                  vs: tr('في المدى المختار'),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.warning,
-                  label: 'أصنافٌ تحت الحدّ',
+                  label: tr('أصنافٌ تحت الحدّ'),
                   value: _int(low.length),
                   tint: low.isEmpty ? _tintOk : _tintErr,
-                  vs: '${inv.outOfStockCount} منها منتهٍ',
+                  vs: tr('{p0} منها منتهٍ', {'p0': inv.outOfStockCount}),
                 ),
               ],
               chart: PicPosReportChart(
-                title: 'أكثرُ الأصناف حركةً',
-                subtitle: 'بقيمة المبيعات في المدى',
-                series: const [
-                  PicPosChartSeries(label: 'المبيعات', color: _tintBrand),
+                title: tr('أكثرُ الأصناف حركةً'),
+                subtitle: tr('بقيمة المبيعات في المدى'),
+                series:  [
+                  PicPosChartSeries(label: tr('المبيعات'), color: _tintBrand),
                 ],
                 bars: [
                   for (final p in top)
@@ -865,18 +866,18 @@ PicPosReportDefinition inventoryTurnoverReport() => PicPosReportDefinition(
                 ],
               ),
               table: PicPosDataTable(
-                title: 'أصنافٌ تحت حدّ الطلب',
-                subtitle: 'الرصيدُ الحاليُّ دون الحدّ الأدنى',
-                emptyLabel: 'لا صنفَ تحت الحدّ',
-                columns: const [
-                  PicPosTableColumn('الصنف', flex: 2.6),
-                  PicPosTableColumn('الرصيد',
+                title: tr('أصنافٌ تحت حدّ الطلب'),
+                subtitle: tr('الرصيدُ الحاليُّ دون الحدّ الأدنى'),
+                emptyLabel: tr('لا صنفَ تحت الحدّ'),
+                columns:  [
+                  PicPosTableColumn(tr('الصنف'), flex: 2.6),
+                  PicPosTableColumn(tr('الرصيد'),
                       flex: 1.1, align: PicPosCellAlign.end),
-                  PicPosTableColumn('الحدُّ الأدنى',
+                  PicPosTableColumn(tr('الحدُّ الأدنى'),
                       flex: 1.1, align: PicPosCellAlign.end),
-                  PicPosTableColumn('التكلفة',
+                  PicPosTableColumn(tr('التكلفة'),
                       flex: 1.2, align: PicPosCellAlign.end),
-                  PicPosTableColumn('الحالة', flex: 1.2),
+                  PicPosTableColumn(tr('الحالة'), flex: 1.2),
                 ],
                 rows: [
                   for (final p in low)
@@ -886,13 +887,13 @@ PicPosReportDefinition inventoryTurnoverReport() => PicPosReportDefinition(
                       PicPosTextCell(p.minStock.toStringAsFixed(0)),
                       PicPosTextCell(_money(p.costPrice)),
                       PicPosPillCell(
-                        p.currentStock <= 0 ? 'منتهٍ' : 'تحت الحدّ',
+                        p.currentStock <= 0 ? tr('منتهٍ') : tr('تحت الحدّ'),
                         p.currentStock <= 0 ? _tintErr : _tintWarn,
                       ),
                     ]),
                 ],
                 totals: [
-                  '${low.length} صنفاً',
+                  tr('{p0} صنفاً', {'p0': low.length}),
                   '',
                   '',
                   '',
@@ -915,15 +916,15 @@ PicPosReportDefinition inventoryTurnoverReport() => PicPosReportDefinition(
 /// استعلامٌ مجمَّعٌ في الـDAO لا صفحةٌ في الشاشة.
 PicPosReportDefinition userActivityReport() => PicPosReportDefinition(
       id: 'u_activity',
-      title: 'نشاط المستخدمين',
-      subtitle: 'عددُ العمليات لكلّ مستخدمٍ في المدى',
+      title: tr('نشاط المستخدمين'),
+      subtitle: tr('عددُ العمليات لكلّ مستخدمٍ في المدى'),
       icon: PhosphorIconsBold.userGear,
       tabs: [
         PicPosReportTabDef(
           id: 'list',
-          label: 'المستخدمون',
+          label: tr('المستخدمون'),
           icon: PhosphorIconsBold.users,
-          note: 'العددُ من سجلّ النشاط — والسجلُّ لا يُحذَف.',
+          note: tr('العددُ من سجلّ النشاط — والسجلُّ لا يُحذَف.'),
           load: (ref, range) async {
             // ⚠️ **لا `allUsersProvider.future` ولا `watchAllUsers().first`.**
             // الأوّلُ `StreamProvider.autoDispose` و`ref.read` لا يترك
@@ -957,38 +958,38 @@ PicPosReportDefinition userActivityReport() => PicPosReportDefinition(
               kpis: [
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.users,
-                  label: 'مستخدمون نشِطون',
+                  label: tr('مستخدمون نشِطون'),
                   value: _int(active),
                   tint: _tintBrand,
-                  vs: 'من ${counts.length} مسجَّلاً',
+                  vs: tr('من {p0} مسجَّلاً', {'p0': counts.length}),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.listChecks,
-                  label: 'إجمالي العمليات',
+                  label: tr('إجمالي العمليات'),
                   value: _int(total),
                   tint: _tintOk,
-                  vs: 'في المدى المختار',
+                  vs: tr('في المدى المختار'),
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.trendUp,
-                  label: 'الأكثرُ نشاطاً',
+                  label: tr('الأكثرُ نشاطاً'),
                   value: _int(busiest.ops),
                   tint: _tintBrand,
-                  vs: busiest.ops == 0 ? 'لا نشاط' : busiest.name,
+                  vs: busiest.ops == 0 ? tr('لا نشاط') : busiest.name,
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.userMinus,
-                  label: 'بلا نشاط',
+                  label: tr('بلا نشاط'),
                   value: _int(counts.length - active),
                   tint: counts.length - active > 0 ? _tintWarn : _tintOk,
-                  vs: 'لم يسجّلوا عمليّةً',
+                  vs: tr('لم يسجّلوا عمليّةً'),
                 ),
               ],
               chart: PicPosReportChart(
-                title: 'العملياتُ لكلّ مستخدم',
-                subtitle: 'أعلى ثمانيةٍ في المدى',
-                series: const [
-                  PicPosChartSeries(label: 'عمليات', color: _tintBrand),
+                title: tr('العملياتُ لكلّ مستخدم'),
+                subtitle: tr('أعلى ثمانيةٍ في المدى'),
+                series:  [
+                  PicPosChartSeries(label: tr('عمليات'), color: _tintBrand),
                 ],
                 bars: [
                   for (final c in counts.take(8))
@@ -1000,14 +1001,14 @@ PicPosReportDefinition userActivityReport() => PicPosReportDefinition(
                 ],
               ),
               table: PicPosDataTable(
-                title: 'نشاطُ المستخدمين',
-                subtitle: 'مرتَّبةً بعدد العمليات تنازليّاً',
-                columns: const [
-                  PicPosTableColumn('المستخدم', flex: 2.2),
-                  PicPosTableColumn('الدور', flex: 1.6),
-                  PicPosTableColumn('العمليات',
+                title: tr('نشاطُ المستخدمين'),
+                subtitle: tr('مرتَّبةً بعدد العمليات تنازليّاً'),
+                columns:  [
+                  PicPosTableColumn(tr('المستخدم'), flex: 2.2),
+                  PicPosTableColumn(tr('الدور'), flex: 1.6),
+                  PicPosTableColumn(tr('العمليات'),
                       flex: 1.2, align: PicPosCellAlign.end),
-                  PicPosTableColumn('من الإجمالي', flex: 2.0),
+                  PicPosTableColumn(tr('من الإجمالي'), flex: 2.0),
                 ],
                 rows: [
                   for (final c in counts)
@@ -1023,7 +1024,7 @@ PicPosReportDefinition userActivityReport() => PicPosReportDefinition(
                     ]),
                 ],
                 totals: [
-                  '${counts.length} مستخدماً',
+                  tr('{p0} مستخدماً', {'p0': counts.length}),
                   '',
                   _int(total),
                   '',

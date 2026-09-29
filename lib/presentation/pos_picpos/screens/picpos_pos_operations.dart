@@ -65,7 +65,7 @@ Future<bool> ensurePosWeightDialogPermission(
           const <String>[];
   if (canOpenPosWeightDialog(permissions)) return true;
   if (context.mounted) {
-    showPosToast(context, ref, 'ليس لديك صلاحية استخدام الميزان',
+    showPosToast(context, ref, tr('ليس لديك صلاحية استخدام الميزان'),
         type: PosNotificationType.error);
   }
   return false;
@@ -377,7 +377,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         opening = 0;
       } else {
         if (!mounted) return;
-        final userName = authState.user?.displayName ?? 'كاشير';
+        final userName = authState.user?.displayName ?? tr('كاشير');
         final picked = await showDialog<double>(
           context: context,
           barrierDismissible: false,
@@ -451,7 +451,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         final shortMsg = msg.length > 200 ? '${msg.substring(0, 200)}…' : msg;
         AppToast.show(
           context,
-          'تعذّر فتح الوردية تلقائياً: $shortMsg',
+          tr('تعذّر فتح الوردية تلقائياً: {shortMsg}', {'shortMsg': shortMsg}),
           type: ToastType.warning,
         );
       }
@@ -483,7 +483,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         builder: (ctx) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: const Text('السلة غير فارغة'),
+            title:  Text(tr('السلة غير فارغة')),
             content: const Text(
               'فيه أصناف في السلة لسه ما اتحفظتش. تحويل المستخدم هيمسحها. '
               'تحب تكمّل؟',
@@ -491,13 +491,13 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('رجوع'),
+                child:  Text(tr('رجوع')),
               ),
               ElevatedButton(
                 style:
                     ElevatedButton.styleFrom(backgroundColor: AppColors.error),
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('مسح وتحويل'),
+                child:  Text(tr('مسح وتحويل')),
               ),
             ],
           ),
@@ -513,7 +513,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       showPosToast(
         context,
         ref,
-        'تم التحويل إلى ${ref.read(authProvider).effectiveUser?.displayName ?? 'المستخدم الجديد'}',
+        tr('تم التحويل إلى {p0}', {'p0': ref.read(authProvider).effectiveUser?.displayName ?? 'المستخدم الجديد'}),
         type: PosNotificationType.success,
       );
 
@@ -559,7 +559,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       showPosToast(
         context,
         ref,
-        'أنت في وضع المرتجع — أنهِ الحفظَ أو الإلغاءَ قبل إضافة صنفٍ للبيع',
+        tr('أنت في وضع المرتجع — أنهِ الحفظَ أو الإلغاءَ قبل إضافة صنفٍ للبيع'),
         type: PosNotificationType.warning,
       );
       return;
@@ -759,7 +759,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       } else {
         // مش رفض مخزون — ده اتعامل معاه فوق قبل الإضافة. أي رفض تاني (سعر
         // صفر مرفوض من الـ use case مثلاً) بيوصل هنا.
-        showPosToast(context, ref, 'تعذّرت إضافة الصنف',
+        showPosToast(context, ref, tr('تعذّرت إضافة الصنف'),
             type: PosNotificationType.error);
       }
     }
@@ -812,11 +812,11 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(children: [
-            Icon(PhosphorIconsBold.warningDiamond,
+          title:  Row(children: [
+            const Icon(PhosphorIconsBold.warningDiamond,
                 color: AppColors.warning, size: 24),
-            SizedBox(width: 8),
-            Expanded(child: Text('الصنف غير متوفر')),
+            const SizedBox(width: 8),
+            Expanded(child: Text(tr('الصنف غير متوفر'))),
           ]),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -825,7 +825,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
               Text(product.name, style: PicPosText.v(context, 15)),
               const SizedBox(height: 6),
               Text(
-                'الرصيد الحالي: ${NumberUtils.formatQuantity(product.currentStock)}',
+                tr('الرصيد الحالي: {p0}', {'p0': NumberUtils.formatQuantity(product.currentStock)}),
                 style: PicPosText.v(context, 13, color: AppColors.error),
               ),
               const Divider(height: 18),
@@ -839,7 +839,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text('لا', style: PicPosText.l(context, 14)),
+              child: Text(tr('لا'), style: PicPosText.l(context, 14)),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
@@ -847,7 +847,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
                 backgroundColor: AppColors.warning,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('نعم، اسمح بالسالب'),
+              child:  Text(tr('نعم، اسمح بالسالب')),
             ),
           ],
         ),
@@ -871,10 +871,10 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         child: AlertDialog(
           icon: const Icon(PhosphorIconsBold.warning,
               color: AppColors.warning, size: 44),
-          title: const Text(
-            'تنبيه: نفس الوزن',
+          title:  Text(
+            tr('تنبيه: نفس الوزن'),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           content: Text(
             message,
@@ -889,7 +889,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
                 foregroundColor: Colors.white,
               ),
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('متابعة'),
+              child:  Text(tr('متابعة')),
             ),
           ],
         ),
@@ -912,7 +912,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       showPosToast(
         context,
         ref,
-        'أنت في وضع المرتجع — أنهِ الحفظَ أو الإلغاءَ قبل إضافة صنفٍ للبيع',
+        tr('أنت في وضع المرتجع — أنهِ الحفظَ أو الإلغاءَ قبل إضافة صنفٍ للبيع'),
         type: PosNotificationType.warning,
       );
       barcodeController.clear();
@@ -988,7 +988,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           showPosToast(
             context,
             ref,
-            'باركود غير مسجَّل — ابحث بالاسم في الشبكة',
+            tr('باركود غير مسجَّل — ابحث بالاسم في الشبكة'),
             type: PosNotificationType.info,
           );
         }
@@ -1018,12 +1018,12 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.warningCircle,
+              const Icon(PhosphorIconsBold.warningCircle,
                   color: AppColors.warning, size: 28),
-              SizedBox(width: 8),
-              Expanded(child: Text('صنف غير معرف')),
+              const SizedBox(width: 8),
+              Expanded(child: Text(tr('صنف غير معرف'))),
             ],
           ),
           content: Text(
@@ -1033,13 +1033,13 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('لا'),
+              child:  Text(tr('لا')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.success),
-              child: const Text('نعم — إضافة سريعة'),
+              child:  Text(tr('نعم — إضافة سريعة')),
             ),
           ],
         ),
@@ -1056,7 +1056,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
     if (!await ensurePermission(
         ref, context, PermissionCodes.productsAdd,
-        actionName: 'إضافة صنف جديد')) {
+        actionName: tr('إضافة صنف جديد'))) {
       if (mounted) {
         ref.read(picposSearchControllerProvider.notifier).clearSearchResults();
       }
@@ -1204,7 +1204,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (!await _ensureCartPermission(
       canRemoveCartItem,
       PermissionCodes.posRemoveItem,
-      'حذف صنف من السلة',
+      tr('حذف صنف من السلة'),
     )) {
       return;
     }
@@ -1223,7 +1223,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (policy.isOn(delAuthRow)) {
       final approved = await requestManagerApproval(
         context,
-        actionName: 'حذف سطر من الفاتورة',
+        actionName: tr('حذف سطر من الفاتورة'),
         permission: PermissionCodes.posRemoveItem,
       );
       if (!approved) return;
@@ -1243,7 +1243,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   void _deleteSelected() {
     final idx = selectedIndex;
     if (idx == null) {
-      showPosToast(context, ref, 'اختر صنفاً أولاً',
+      showPosToast(context, ref, tr('اختر صنفاً أولاً'),
           type: PosNotificationType.info);
       return;
     }
@@ -1254,7 +1254,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     final idx = selectedIndex;
     final items = ref.read(cartControllerProvider).items;
     if (idx == null || idx >= items.length) {
-      showPosToast(context, ref, 'اختر صنفاً أولاً',
+      showPosToast(context, ref, tr('اختر صنفاً أولاً'),
           type: PosNotificationType.info);
       return;
     }
@@ -1292,35 +1292,35 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
                 autofocus: true,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                    labelText: 'الكمية', border: OutlineInputBorder()),
+                decoration:  InputDecoration(
+                    labelText: tr('الكمية'), border: const OutlineInputBorder()),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: priceCtl,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                    labelText: 'السعر', border: OutlineInputBorder()),
+                decoration:  InputDecoration(
+                    labelText: tr('السعر'), border: const OutlineInputBorder()),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: discCtl,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                    labelText: 'الخصم %', border: OutlineInputBorder()),
+                decoration:  InputDecoration(
+                    labelText: tr('الخصم %'), border: const OutlineInputBorder()),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('حفظ'),
+              child:  Text(tr('حفظ')),
             ),
           ],
         ),
@@ -1350,7 +1350,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           showPosToast(
             context,
             ref,
-            'الكميةُ تتجاوز الحدَّ المسموح (${maxQty.toStringAsFixed(0)})',
+            tr('الكميةُ تتجاوز الحدَّ المسموح ({p0})', {'p0': maxQty.toStringAsFixed(0)}),
             type: PosNotificationType.error,
           );
           return;
@@ -1359,7 +1359,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         if (await _ensureCartPermission(
           canEditCartQuantity,
           PermissionCodes.posQuantityEdit,
-          'تعديل الكمية',
+          tr('تعديل الكمية'),
         )) {
           cart.updateQuantity(index, qty);
         }
@@ -1374,7 +1374,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         } else if (await _ensureCartPermission(
           canEditCartPrice,
           PermissionCodes.posPriceEdit,
-          'تعديل سعر الصنف',
+          tr('تعديل سعر الصنف'),
         )) {
           cart.updatePrice(index, price);
         }
@@ -1430,14 +1430,14 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('خصم الفاتورة'),
+          title:  Text(tr('خصم الفاتورة')),
           content: TextField(
             controller: controller,
             autofocus: true,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'نسبة الخصم %',
-              border: OutlineInputBorder(),
+            decoration:  InputDecoration(
+              labelText: tr('نسبة الخصم %'),
+              border: const OutlineInputBorder(),
             ),
             onSubmitted: (v) =>
                 Navigator.pop(ctx, double.tryParse(v.trim()) ?? current),
@@ -1445,12 +1445,12 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(
                   ctx, double.tryParse(controller.text.trim()) ?? current),
-              child: const Text('تطبيق'),
+              child:  Text(tr('تطبيق')),
             ),
           ],
         ),
@@ -1533,7 +1533,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
     final cartState = ref.read(cartControllerProvider);
     if (cartState.items.isEmpty) {
-      showPosToast(context, ref, 'الفاتورة فارغة',
+      showPosToast(context, ref, tr('الفاتورة فارغة'),
           type: PosNotificationType.info);
       return;
     }
@@ -1552,7 +1552,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       showPosToast(
         context,
         ref,
-        'اختر عميلاً قبل الدفع — الإعداد يُلزم بذلك',
+        tr('اختر عميلاً قبل الدفع — الإعداد يُلزم بذلك'),
         type: PosNotificationType.error,
       );
       return;
@@ -1562,7 +1562,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     // locked period. Fail before taking the customer's money, not after.
     try {
       await ref.read(fiscalPeriodValidationProvider(
-        (date: DateTime.now(), operation: 'بيع'),
+        (date: DateTime.now(), operation: tr('بيع')),
       ).future);
     } catch (e) {
       if (!mounted) return;
@@ -1571,16 +1571,16 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         builder: (ctx) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: const Row(children: [
-              Icon(Icons.lock_clock, color: AppColors.error, size: 26),
-              SizedBox(width: 8),
-              Text('السنة المالية مغلقة'),
+            title:  Row(children: [
+              const Icon(Icons.lock_clock, color: AppColors.error, size: 26),
+              const SizedBox(width: 8),
+              Text(tr('السنة المالية مغلقة')),
             ]),
             content: Text(e.toString().replaceFirst('Exception: ', '')),
             actions: [
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('موافق'),
+                child:  Text(tr('موافق')),
               ),
             ],
           ),
@@ -1595,7 +1595,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       if (!mounted) return;
       final approved = await requestManagerApproval(
         context,
-        actionName: 'حفظ فاتورة البيع السريع',
+        actionName: tr('حفظ فاتورة البيع السريع'),
         permission: PermissionCodes.posSave,
       );
       if (!approved) return;
@@ -1616,7 +1616,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       final okBig = await requestManagerApproval(
         context,
         actionName:
-            'فاتورة ${total.toStringAsFixed(2)} — فوق حدّ ${confirmAbove.toStringAsFixed(0)}',
+            tr('فاتورة {p0} — فوق حدّ {p1}', {'p0': total.toStringAsFixed(2), 'p1': confirmAbove.toStringAsFixed(0)}),
         // ⚠️ **لا `posDiscount` هنا.** استعمالُه كان يفتح عطبَين معاً:
         // كاشيرٌ يملك الخصمَ يصير مؤهَّلاً للمصادقة على فاتورةٍ كبيرة،
         // **والإذنُ الممنوحُ يدخل `ManagerApprovalCache` تحت `pos_discount`**
@@ -1625,7 +1625,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       );
       if (!okBig) {
         if (mounted) {
-          showPosToast(context, ref, 'أُلغيت البيعة — لم يُصادَق على المبلغ',
+          showPosToast(context, ref, tr('أُلغيت البيعة — لم يُصادَق على المبلغ'),
               type: PosNotificationType.warning);
         }
         _refocusScanner();
@@ -1781,7 +1781,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       context: context,
       ref: ref,
       subtitleBuilder: (amount) =>
-          'البيعة تُدخل ${amount.toStringAsFixed(2)} نقداً إلى الدرج.',
+          tr('البيعة تُدخل {p0} نقداً إلى الدرج.', {'p0': amount.toStringAsFixed(2)}),
       attempt: () async => success = await ref
           .read(checkoutControllerProvider.notifier)
           .processPayment(
@@ -1802,15 +1802,15 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         context,
         ref,
         outcome == ShiftPromptOutcome.cancelledByUser
-            ? 'أُلغيت البيعة — لم تُفتَح وردية'
-            : 'تعذّر فتح الوردية، فلم تُحفَظ الفاتورة',
+            ? tr('أُلغيت البيعة — لم تُفتَح وردية')
+            : tr('تعذّر فتح الوردية، فلم تُحفَظ الفاتورة'),
         type: PosNotificationType.error,
       );
       return;
     }
     if (!success) {
       final err =
-          ref.read(checkoutControllerProvider).error ?? 'فشل حفظ الفاتورة';
+          ref.read(checkoutControllerProvider).error ?? tr('فشل حفظ الفاتورة');
       showPosToast(context, ref, err, type: PosNotificationType.error);
       _refocusScanner();
       return;
@@ -1825,7 +1825,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       showPosToast(
         context,
         ref,
-        'تمت تسوية فروقات تقريب ${adj.abs().toStringAsFixed(3)}',
+        tr('تمت تسوية فروقات تقريب {p0}', {'p0': adj.abs().toStringAsFixed(3)}),
         type: PosNotificationType.info,
       );
     }
@@ -1881,12 +1881,12 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         showPosToast(
           context,
           ref,
-          printed ? 'تم حفظ وطباعة الفاتورة' : 'تم حفظ الفاتورة',
+          printed ? tr('تم حفظ وطباعة الفاتورة') : tr('تم حفظ الفاتورة'),
           type: PosNotificationType.success,
         );
       }
     } else {
-      showPosToast(context, ref, 'تم حفظ الفاتورة',
+      showPosToast(context, ref, tr('تم حفظ الفاتورة'),
           type: PosNotificationType.success);
     }
 
@@ -1970,7 +1970,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       debugPrint('[PicPos-Print] فشلت طباعة الفاتورة #$invoiceId: $why');
       if (mounted) {
         showPosToast(context, ref,
-            '⚠️ الحفظ تم، لكن فشلت الطباعة (تأكد من الورق)',
+            tr('⚠️ الحفظ تم، لكن فشلت الطباعة (تأكد من الورق)'),
             type: PosNotificationType.warning);
       }
     }
@@ -2027,7 +2027,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       startedAt: existing.startTime,
       userName: authState.user?.displayName ??
           authState.user?.username ??
-          'المستخدم الحالي',
+          tr('المستخدم الحالي'),
     );
     if (!mounted) return true;
 
@@ -2046,7 +2046,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       case ShiftConflictChoice.overrideOpen:
         final approved = await requestManagerApproval(
           context,
-          actionName: 'فتح وردية ثانية لنفس المستخدم',
+          actionName: tr('فتح وردية ثانية لنفس المستخدم'),
           permission: PermissionCodes.posShiftOpen,
         );
         if (!approved || !mounted) return true;
@@ -2151,7 +2151,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: SimpleDialog(
-          title: const Text('اختر الحساب البنكي'),
+          title:  Text(tr('اختر الحساب البنكي')),
           children: [
             for (final safe in safes)
               SimpleDialogOption(
@@ -2192,47 +2192,47 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(children: [
-            Icon(Icons.warning_amber_rounded,
+          title:  Row(children: [
+            const Icon(Icons.warning_amber_rounded,
                 color: AppColors.warning, size: 26),
-            SizedBox(width: 8),
-            Text('أصناف بدون قيمة'),
+            const SizedBox(width: 8),
+            Text(tr('أصناف بدون قيمة')),
           ]),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (zeroPrice.isNotEmpty) ...[
-                const Text('أصناف بسعر صفر:',
-                    style: TextStyle(
+                 Text(tr('أصناف بسعر صفر:'),
+                    style: const TextStyle(
                         fontWeight: FontWeight.bold, color: AppColors.error)),
                 ...zeroPrice.map((n) => Text('• $n',
                     style: const TextStyle(fontSize: 13))),
                 const SizedBox(height: 8),
               ],
               if (zeroQty.isNotEmpty) ...[
-                const Text('أصناف بكمية صفر:',
-                    style: TextStyle(
+                 Text(tr('أصناف بكمية صفر:'),
+                    style: const TextStyle(
                         fontWeight: FontWeight.bold, color: AppColors.error)),
                 ...zeroQty.map((n) => Text('• $n',
                     style: const TextStyle(fontSize: 13))),
               ],
               const Divider(),
-              const Text('هل تريد المتابعة؟',
-                  style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+               Text(tr('هل تريد المتابعة؟'),
+                  style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('لا، تعديل الفاتورة'),
+              child:  Text(tr('لا، تعديل الفاتورة')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.warning,
                   foregroundColor: Colors.white),
-              child: const Text('نعم، متابعة'),
+              child:  Text(tr('نعم، متابعة')),
             ),
           ],
         ),
@@ -2254,10 +2254,10 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (exchangeModeToCancel != null) {
       final ok = await AppConfirmDialog.show(
         context,
-        title: 'إلغاء الاستبدال',
+        title: tr('إلغاء الاستبدال'),
         message: 'سيُلغى وضعُ الاستبدال بلا حفظ، **وتُفرَّغ سلّةُ البديل**. '
             'متأكد؟',
-        confirmLabel: 'إلغاء الاستبدال',
+        confirmLabel: tr('إلغاء الاستبدال'),
         isDangerous: true,
       );
       if (!ok || !mounted) return;
@@ -2270,9 +2270,9 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (returnMode != null) {
       final ok = await AppConfirmDialog.show(
         context,
-        title: 'إلغاء المرتجع',
-        message: 'سيُلغى وضعُ المرتجع الحاليّ بلا حفظ. متأكد؟',
-        confirmLabel: 'إلغاء المرتجع',
+        title: tr('إلغاء المرتجع'),
+        message: tr('سيُلغى وضعُ المرتجع الحاليّ بلا حفظ. متأكد؟'),
+        confirmLabel: tr('إلغاء المرتجع'),
         isDangerous: true,
       );
       if (!ok || !mounted) return;
@@ -2288,16 +2288,16 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     }
     final ok = await AppConfirmDialog.show(
       context,
-      title: 'إلغاء الفاتورة',
-      message: 'سيتم مسح كل الأصناف. متأكد؟',
-      confirmLabel: 'إلغاء الفاتورة',
+      title: tr('إلغاء الفاتورة'),
+      message: tr('سيتم مسح كل الأصناف. متأكد؟'),
+      confirmLabel: tr('إلغاء الفاتورة'),
       isDangerous: true,
     );
     if (!ok || !mounted) return;
     if (!await _ensureCartPermission(
       canClearCart,
       PermissionCodes.posClearCart,
-      'تفريغ السلة',
+      tr('تفريغ السلة'),
     )) {
       return;
     }
@@ -2336,7 +2336,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       showPosToast(
         context,
         ref,
-        'أنت في وضع المرتجع — أنهِ الحفظَ أو الإلغاءَ قبل فتح الفواتير المعلّقة',
+        tr('أنت في وضع المرتجع — أنهِ الحفظَ أو الإلغاءَ قبل فتح الفواتير المعلّقة'),
         type: PosNotificationType.warning,
       );
       return;
@@ -2358,7 +2358,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   Future<void> _holdOrder() async {
     final items = ref.read(cartControllerProvider).items;
     if (items.isEmpty) {
-      showPosToast(context, ref, 'الفاتورة فارغة',
+      showPosToast(context, ref, tr('الفاتورة فارغة'),
           type: PosNotificationType.info);
       return;
     }
@@ -2382,7 +2382,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       showPosToast(
         context,
         ref,
-        'بلغتَ الحدَّ الأقصى للفواتير المعلّقة ($cap) — أنهِ فاتورةً معلّقةً أوّلاً',
+        tr('بلغتَ الحدَّ الأقصى للفواتير المعلّقة ({cap}) — أنهِ فاتورةً معلّقةً أوّلاً', {'cap': cap}),
         type: PosNotificationType.error,
       );
       return;
@@ -2392,7 +2392,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (!mounted) return;
     if (err == null) {
       setState(() => selectedIndex = null);
-      showPosToast(context, ref, 'تم تعليق الفاتورة',
+      showPosToast(context, ref, tr('تم تعليق الفاتورة'),
           type: PosNotificationType.success);
     } else {
       showPosToast(context, ref, err, type: PosNotificationType.error);
@@ -2444,7 +2444,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         // مأذونةٍ سلفاً.
         onReprint: (id) async {
           if (!await ensurePermission(ref, context, PermissionCodes.posPrint,
-              actionName: 'إعادة طباعة فاتورة')) {
+              actionName: tr('إعادة طباعة فاتورة'))) {
             return;
           }
           if (!mounted) return;
@@ -2479,7 +2479,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       showPosToast(
         context,
         ref,
-        'أنت في وضع المرتجع بالفعل — أنهِ الحفظَ أو الإلغاءَ أوّلاً',
+        tr('أنت في وضع المرتجع بالفعل — أنهِ الحفظَ أو الإلغاءَ أوّلاً'),
         type: PosNotificationType.info,
       );
       return;
@@ -2499,7 +2499,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       if (!mounted) return;
       final approved = await requestManagerApproval(
         context,
-        actionName: 'إنشاء مرتجع مبيعات',
+        actionName: tr('إنشاء مرتجع مبيعات'),
         permission: PermissionCodes.salesReturnCreate,
       );
       if (!approved) return;
@@ -2514,12 +2514,12 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (ref.read(cartControllerProvider).items.isNotEmpty) {
       final proceed = await AppConfirmDialog.show(
         context,
-        title: 'سلّةُ بيعٍ قيدَ التحضير',
+        title: tr('سلّةُ بيعٍ قيدَ التحضير'),
         message:
             'في السلّة أصنافُ بيعٍ لم تُحفَظ بعد. الدخولُ في وضع المرتجع '
             'يبقيها كما هي أثناء التحرير، لكنّ حفظَ المرتجع سيُفرغها. '
             'متابعة؟',
-        confirmLabel: 'متابعة المرتجع',
+        confirmLabel: tr('متابعة المرتجع'),
         isDangerous: true,
       );
       if (!proceed || !mounted) return;
@@ -2537,7 +2537,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     final items = await returnsRepo.getSalesInvoiceItems(invoice.id);
     if (!mounted) return;
     if (items.isEmpty) {
-      showPosToast(context, ref, 'لا توجد أصنافٌ في هذه الفاتورة',
+      showPosToast(context, ref, tr('لا توجد أصنافٌ في هذه الفاتورة'),
           type: PosNotificationType.info);
       return;
     }
@@ -2573,7 +2573,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         ReturnableLine(
           invoiceItemId: item.id,
           productId: item.productId,
-          productName: nameById[item.productId] ?? 'صنف #${item.productId}',
+          productName: nameById[item.productId] ?? tr('صنف #{p0}', {'p0': item.productId}),
           soldQty: item.quantity,
           alreadyReturnedQty: returnedByProduct[item.productId] ?? 0,
           unitPrice: item.unitPrice,
@@ -2610,7 +2610,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     // حمايةٌ دفاعيّة: المحرِّرُ يمنع التأكيدَ بلا كميةٍ واحدةٍ فأكثر، فهذا لا
     // يجب أن يُرى فعلياً.
     if (mode.requestedQty.values.every((q) => q <= 0)) {
-      showPosToast(context, ref, 'لا توجد كمياتٌ محدَّدةٌ للإرجاع',
+      showPosToast(context, ref, tr('لا توجد كمياتٌ محدَّدةٌ للإرجاع'),
           type: PosNotificationType.info);
       return;
     }
@@ -2645,7 +2645,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (ref.read(posExchangeModeProvider) != null ||
         ref.read(posReturnModeProvider) != null) {
       showPosToast(context, ref,
-          'أنت في وضعٍ قائمٍ بالفعل — أنهِ الحفظَ أو الإلغاءَ أوّلاً',
+          tr('أنت في وضعٍ قائمٍ بالفعل — أنهِ الحفظَ أو الإلغاءَ أوّلاً'),
           type: PosNotificationType.info);
       return;
     }
@@ -2657,7 +2657,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       if (!mounted) return;
       final approved = await requestManagerApproval(
         context,
-        actionName: 'استبدال المنتجات',
+        actionName: tr('استبدال المنتجات'),
         permission: PermissionCodes.posExchange,
       );
       if (!approved) return;
@@ -2672,7 +2672,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       if (!mounted) return;
       final approved = await requestManagerApproval(
         context,
-        actionName: 'إنشاء استبدال',
+        actionName: tr('إنشاء استبدال'),
         permission: PermissionCodes.salesReturnCreate,
       );
       if (!approved) return;
@@ -2691,7 +2691,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     final items = await returnsRepo.getSalesInvoiceItems(invoice.id);
     if (!mounted) return;
     if (items.isEmpty) {
-      showPosToast(context, ref, 'لا توجد أصنافٌ في هذه الفاتورة',
+      showPosToast(context, ref, tr('لا توجد أصنافٌ في هذه الفاتورة'),
           type: PosNotificationType.info);
       return;
     }
@@ -2719,7 +2719,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           ReturnableLine(
             invoiceItemId: item.id,
             productId: item.productId,
-            productName: nameById[item.productId] ?? 'صنف #${item.productId}',
+            productName: nameById[item.productId] ?? tr('صنف #{p0}', {'p0': item.productId}),
             soldQty: item.quantity,
             alreadyReturnedQty: returnedByProduct[item.productId] ?? 0,
             unitPrice: item.unitPrice,
@@ -2740,7 +2740,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (confirmed != true || !mounted) return;
 
     if (!mode.hasReturnSelection) {
-      showPosToast(context, ref, 'لا توجد كمياتٌ محدَّدةٌ للاستبدال',
+      showPosToast(context, ref, tr('لا توجد كمياتٌ محدَّدةٌ للاستبدال'),
           type: PosNotificationType.info);
       return;
     }
@@ -2768,15 +2768,15 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         textDirection: TextDirection.rtl,
         child: StatefulBuilder(
           builder: (ctx, setLocal) => AlertDialog(
-            title: const Text('هل من صنفٍ تالف؟'),
+            title:  Text(tr('هل من صنفٍ تالف؟')),
             content: SizedBox(
               width: 420,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'الموسومُ تالفاً لا يعود إلى المخزون القابل للبيع.',
-                    style: TextStyle(fontSize: 12),
+                   Text(
+                    tr('الموسومُ تالفاً لا يعود إلى المخزون القابل للبيع.'),
+                    style: const TextStyle(fontSize: 12),
                   ),
                   const SizedBox(height: 8),
                   Flexible(
@@ -2788,11 +2788,11 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
                             dense: true,
                             title: Text(
                               mode.linesByItemId[itemId]?.productName ??
-                                  'صنف #$itemId',
+                                  tr('صنف #{itemId}', {'itemId': itemId}),
                               style: const TextStyle(fontSize: 13),
                             ),
                             subtitle: Text(
-                              'الكمية ${mode.requestedQty[itemId]}',
+                              tr('الكمية {p0}', {'p0': mode.requestedQty[itemId]}),
                               style: const TextStyle(fontSize: 11),
                             ),
                             value: mode.isDamaged(itemId),
@@ -2808,11 +2808,11 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('متابعة'),
+                child:  Text(tr('متابعة')),
               ),
             ],
           ),
@@ -2845,7 +2845,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   Future<void> _processExchangeSave(PosExchangeMode mode) async {
     final invoice = _exchangeInvoice;
     if (invoice == null || invoice.id != mode.invoiceId) {
-      showPosToast(context, ref, 'تعذّر تحديد الفاتورة الأصليّة للاستبدال',
+      showPosToast(context, ref, tr('تعذّر تحديد الفاتورة الأصليّة للاستبدال'),
           type: PosNotificationType.error);
       _cancelExchange();
       return;
@@ -2853,21 +2853,21 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
     final returnQuantities = mode.effectiveReturnQuantities;
     if (returnQuantities.isEmpty) {
-      showPosToast(context, ref, 'لا توجد كمياتٌ محدَّدةٌ للاستبدال',
+      showPosToast(context, ref, tr('لا توجد كمياتٌ محدَّدةٌ للاستبدال'),
           type: PosNotificationType.info);
       return;
     }
 
     final cartState = ref.read(cartControllerProvider);
     if (cartState.items.isEmpty) {
-      showPosToast(context, ref, 'أضِف أصنافَ البديل إلى السلّة أوّلاً',
+      showPosToast(context, ref, tr('أضِف أصنافَ البديل إلى السلّة أوّلاً'),
           type: PosNotificationType.info);
       return;
     }
 
     final auth = ref.read(authProvider);
     final userId = auth.user?.id ?? 0;
-    final userName = auth.user?.displayName ?? 'مستخدم';
+    final userName = auth.user?.displayName ?? tr('مستخدم');
 
     // نفسُ مصادر مسار البيع (`CheckoutController`): المخزنُ الفعّال، والفرعُ
     // من الفرع الفعّال، ومركزُ التكلفة من المخزن ثم الفرع. تُقرأ هنا لأن
@@ -2899,7 +2899,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           );
     } catch (e) {
       if (mounted) {
-        showPosToast(context, ref, 'فشل الاستبدال: $e',
+        showPosToast(context, ref, tr('فشل الاستبدال: {e}', {'e': e}),
             type: PosNotificationType.error);
       }
       return;
@@ -2918,13 +2918,13 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     // يُقبض نقداً كاملاً — وعرضُ الفرق حينها يكذب على الكاشير.
     final settlementText = switch (result.direction) {
       ExchangeCashDirection.collect =>
-        'حُصِّل ${NumberUtils.formatCurrency(result.difference)}',
+        tr('حُصِّل {p0}', {'p0': NumberUtils.formatCurrency(result.difference)}),
       ExchangeCashDirection.refund =>
-        'رُدّ ${NumberUtils.formatCurrency(result.difference)}',
-      ExchangeCashDirection.none => 'بلا فرق',
+        tr('رُدّ {p0}', {'p0': NumberUtils.formatCurrency(result.difference)}),
+      ExchangeCashDirection.none => tr('بلا فرق'),
     };
     showPosToast(context, ref,
-        'تم استبدال فاتورة $invoiceNumber — $settlementText',
+        tr('تم استبدال فاتورة {invoiceNumber} — {settlementText}', {'invoiceNumber': invoiceNumber, 'settlementText': settlementText}),
         type: PosNotificationType.success);
     _refocusScanner();
   }
@@ -2939,7 +2939,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (invoice == null || invoice.id != mode.invoiceId) {
       // لا يجب أن يحدث: الوضعُ والفاتورةُ يُضبَطان معاً في `_showQuickReturn`
       // ويُفرَّغان معاً في `_cancelQuickReturn`/هنا. حماية دفاعيّة فقط.
-      showPosToast(context, ref, 'تعذّر تحديد الفاتورة الأصليّة للمرتجع',
+      showPosToast(context, ref, tr('تعذّر تحديد الفاتورة الأصليّة للمرتجع'),
           type: PosNotificationType.error);
       _cancelQuickReturn();
       return;
@@ -2954,14 +2954,14 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     };
 
     if (returnQuantities.isEmpty) {
-      showPosToast(context, ref, 'لا توجد كمياتٌ محدَّدةٌ للإرجاع',
+      showPosToast(context, ref, tr('لا توجد كمياتٌ محدَّدةٌ للإرجاع'),
           type: PosNotificationType.info);
       return;
     }
 
     final auth = ref.read(authProvider);
     final userId = auth.user?.id ?? 0;
-    final userName = auth.user?.displayName ?? 'مستخدم';
+    final userName = auth.user?.displayName ?? tr('مستخدم');
 
     bool success;
     try {
@@ -2979,7 +2979,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           );
     } catch (e) {
       if (mounted) {
-        showPosToast(context, ref, 'فشل حفظ المرتجع: $e',
+        showPosToast(context, ref, tr('فشل حفظ المرتجع: {e}', {'e': e}),
             type: PosNotificationType.error);
       }
       return;
@@ -2987,7 +2987,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
     if (!mounted) return;
     if (!success) {
-      showPosToast(context, ref, 'تعذّر حفظ المرتجع — راجع الكمياتِ المحدَّدة',
+      showPosToast(context, ref, tr('تعذّر حفظ المرتجع — راجع الكمياتِ المحدَّدة'),
           type: PosNotificationType.error);
       return;
     }
@@ -2997,7 +2997,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     ref.read(cartControllerProvider.notifier).clearCart();
     setState(() => selectedIndex = null);
     barcodeController.clear();
-    showPosToast(context, ref, 'تم حفظ مرتجع فاتورة $invoiceNumber',
+    showPosToast(context, ref, tr('تم حفظ مرتجع فاتورة {invoiceNumber}', {'invoiceNumber': invoiceNumber}),
         type: PosNotificationType.success);
     _refocusScanner();
   }
@@ -3022,7 +3022,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       if (!mounted) return;
       final approved = await requestManagerApproval(
         context,
-        actionName: 'تعديل طريقة دفع فاتورة مرحّلة',
+        actionName: tr('تعديل طريقة دفع فاتورة مرحّلة'),
         permission: PermissionCodes.posEditInvoice,
       );
       if (!approved) return;
@@ -3062,11 +3062,11 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       final user = ref.read(authProvider).user;
       await ref.read(activityLoggerProvider).logCashDrawerOpen(
             user?.id ?? 0,
-            user?.displayName ?? 'مستخدم',
+            user?.displayName ?? tr('مستخدم'),
           );
     } catch (e) {
       if (mounted) {
-        showPosToast(context, ref, 'تعذّر فتح الدرج: $e',
+        showPosToast(context, ref, tr('تعذّر فتح الدرج: {e}', {'e': e}),
             type: PosNotificationType.error);
       }
     }
@@ -3143,11 +3143,11 @@ class _QuickReturnInvoicePickerDialogState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.arrowUUpLeft, color: AppColors.error),
-            SizedBox(width: 8),
-            Text('اختر فاتورةً للمرتجع'),
+            const Icon(PhosphorIconsBold.arrowUUpLeft, color: AppColors.error),
+            const SizedBox(width: 8),
+            Text(tr('اختر فاتورةً للمرتجع')),
           ],
         ),
         content: SizedBox(
@@ -3156,10 +3156,10 @@ class _QuickReturnInvoicePickerDialogState
           child: Column(
             children: [
               TextField(
-                decoration: const InputDecoration(
-                  hintText: 'بحث برقم الفاتورة',
+                decoration:  InputDecoration(
+                  hintText: tr('بحث برقم الفاتورة'),
                   isDense: true,
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
                 onChanged: (v) => setState(() => _query = v),
               ),
@@ -3174,7 +3174,7 @@ class _QuickReturnInvoicePickerDialogState
                     }
                     if (snapshot.hasError) {
                       return Center(
-                          child: Text('تعذّر التحميل: ${snapshot.error}'));
+                          child: Text(tr('تعذّر التحميل: {p0}', {'p0': snapshot.error})));
                     }
                     var invoices = snapshot.data ?? const <SalesInvoiceData>[];
                     if (_query.isNotEmpty) {
@@ -3185,8 +3185,8 @@ class _QuickReturnInvoicePickerDialogState
                           .toList();
                     }
                     if (invoices.isEmpty) {
-                      return const Center(
-                        child: Text('لا توجد فواتيرُ قابلةٌ للإرجاع'),
+                      return  Center(
+                        child: Text(tr('لا توجد فواتيرُ قابلةٌ للإرجاع')),
                       );
                     }
                     return ListView.separated(
@@ -3197,7 +3197,7 @@ class _QuickReturnInvoicePickerDialogState
                         return ListTile(
                           leading: const Icon(PhosphorIconsBold.receipt,
                               color: AppColors.info),
-                          title: Text('فاتورة #${inv.invoiceNumber}'),
+                          title: Text(tr('فاتورة #{p0}', {'p0': inv.invoiceNumber})),
                           subtitle: Text(inv.total.toStringAsFixed(2)),
                           onTap: () => Navigator.pop(context, inv),
                         );
@@ -3212,7 +3212,7 @@ class _QuickReturnInvoicePickerDialogState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
         ],
       ),
@@ -3302,7 +3302,7 @@ class _QuickReturnLinesEditorDialogState
     if (!mounted) return;
 
     if (product == null) {
-      showPosToast(context, ref, 'لم يُعثر على صنفٍ بهذا الباركود/الكود',
+      showPosToast(context, ref, tr('لم يُعثر على صنفٍ بهذا الباركود/الكود'),
           type: PosNotificationType.warning);
       return;
     }
@@ -3314,8 +3314,8 @@ class _QuickReturnLinesEditorDialogState
         context,
         ref,
         inInvoice
-            ? 'كلُّ كمية «${product.name}» المتاحة للإرجاع طُلِبت بالفعل'
-            : '«${product.name}» ليس ضمن أصناف هذه الفاتورة',
+            ? tr('كلُّ كمية «{p0}» المتاحة للإرجاع طُلِبت بالفعل', {'p0': product.name})
+            : tr('«{p0}» ليس ضمن أصناف هذه الفاتورة', {'p0': product.name}),
         type: PosNotificationType.warning,
       );
       return;
@@ -3376,7 +3376,7 @@ class _QuickReturnLinesEditorDialogState
     final current = _mode.requestedQty[line.invoiceItemId] ?? 0;
     final result = await PicPosNumericKeypadDialog.show(
       context,
-      title: 'كميةُ إرجاع «${line.productName}»',
+      title: tr('كميةُ إرجاع «{p0}»', {'p0': line.productName}),
       initialValue: current,
       decimals: 3,
       min: 0,
@@ -3417,7 +3417,7 @@ class _QuickReturnLinesEditorDialogState
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'أصنافُ الإرجاع — فاتورة #${widget.invoiceNumber}',
+                tr('أصنافُ الإرجاع — فاتورة #{p0}', {'p0': widget.invoiceNumber}),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -3431,11 +3431,11 @@ class _QuickReturnLinesEditorDialogState
             children: [
               TextField(
                 controller: _searchController,
-                decoration: const InputDecoration(
-                  hintText: 'باركود أو كود الصنف — يزيد الكميةَ سطراً بسطر',
+                decoration:  InputDecoration(
+                  hintText: tr('باركود أو كود الصنف — يزيد الكميةَ سطراً بسطر'),
                   isDense: true,
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(PhosphorIconsBold.barcode, size: 18),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(PhosphorIconsBold.barcode, size: 18),
                 ),
                 onSubmitted: _resolveSearch,
               ),
@@ -3445,13 +3445,13 @@ class _QuickReturnLinesEditorDialogState
                   TextButton.icon(
                     onPressed: _selectAllFull,
                     icon: const Icon(PhosphorIconsBold.checkCircle, size: 16),
-                    label: const Text('تحديد الكلّ (مرتجعٌ كامل)'),
+                    label:  Text(tr('تحديد الكلّ (مرتجعٌ كامل)')),
                   ),
                   const SizedBox(width: 4),
                   TextButton.icon(
                     onPressed: _hasAnyQty ? _clearAll : null,
                     icon: const Icon(PhosphorIconsBold.xCircle, size: 16),
-                    label: const Text('تصفيرُ الكلّ'),
+                    label:  Text(tr('تصفيرُ الكلّ')),
                   ),
                 ],
               ),
@@ -3468,8 +3468,8 @@ class _QuickReturnLinesEditorDialogState
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
                   children: [
-                    const Text('مبلغُ الاسترداد',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                     Text(tr('مبلغُ الاسترداد'),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                     const Spacer(),
                     Text(
                       _refundTotal.toStringAsFixed(2),
@@ -3488,7 +3488,7 @@ class _QuickReturnLinesEditorDialogState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           // ٧: يعمل بالماوس/اللمس دوماً — لا يعتمد على سلّة البيع إطلاقاً،
           // ومعطَّلٌ فقط حين تكون كلُّ الكميّات أصفاراً.
@@ -3499,7 +3499,7 @@ class _QuickReturnLinesEditorDialogState
               foregroundColor: Colors.white,
             ),
             icon: const Icon(PhosphorIconsBold.check, size: 18),
-            label: const Text('تأكيد المرتجع'),
+            label:  Text(tr('تأكيد المرتجع')),
           ),
         ],
       ),
@@ -3585,7 +3585,7 @@ class _QuickReturnLinesEditorDialogState
             IconButton(
               icon: const Icon(PhosphorIconsBold.x,
                   size: 16, color: AppColors.error),
-              tooltip: 'استبعادُ الصنف من المرتجع',
+              tooltip: tr('استبعادُ الصنف من المرتجع'),
               onPressed: () => _setQty(line, 0),
             ),
         ],

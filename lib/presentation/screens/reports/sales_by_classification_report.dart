@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -84,9 +85,9 @@ class _SalesByClassificationReportState
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
@@ -182,7 +183,7 @@ class _SalesByClassificationReportState
     final data = isCategory ? _categoryData : _saleTypeData;
     if (data.isEmpty) {
       if (mounted) {
-        AppToast.show(context, 'لا توجد بيانات للتصدير', type: ToastType.error);
+        AppToast.show(context, tr('لا توجد بيانات للتصدير'), type: ToastType.error);
       }
       return;
     }
@@ -194,11 +195,11 @@ class _SalesByClassificationReportState
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
       title: isCategory
-          ? 'تقرير المبيعات حسب التصنيف'
-          : 'تقرير المبيعات حسب نوع البيع',
+          ? tr('تقرير المبيعات حسب التصنيف')
+          : tr('تقرير المبيعات حسب نوع البيع'),
       headers: isCategory
-          ? ['التصنيف', 'الكمية', 'القيمة']
-          : ['نوع البيع', 'عدد الفواتير', 'القيمة'],
+          ? [tr('التصنيف'), tr('الكمية'), tr('القيمة')]
+          : [tr('نوع البيع'), tr('عدد الفواتير'), tr('القيمة')],
       rows: isCategory
           ? (_categoryData)
                 .map<List<dynamic>>(
@@ -215,7 +216,7 @@ class _SalesByClassificationReportState
     if (path != null && mounted) {
       AppToast.show(
         context,
-        'تم تصدير التقرير بنجاح: $path',
+        tr('تم تصدير التقرير بنجاح: {path}', {'path': path}),
         type: ToastType.success,
       );
     }
@@ -231,7 +232,7 @@ class _SalesByClassificationReportState
 
     if (printData.isEmpty) {
       if (mounted) {
-        AppToast.show(context, 'لا توجد بيانات للطباعة', type: ToastType.error);
+        AppToast.show(context, tr('لا توجد بيانات للطباعة'), type: ToastType.error);
       }
       return;
     }
@@ -251,7 +252,7 @@ class _SalesByClassificationReportState
       isCategory: isCategory,
       fromDate: _dateRange.start,
       toDate: _dateRange.end,
-      companyName: receiptSettings['companyName'] as String? ?? 'الشركة',
+      companyName: receiptSettings['companyName'] as String? ?? tr('الشركة'),
     );
   }
 
@@ -272,7 +273,7 @@ class _SalesByClassificationReportState
       return Directionality(
         textDirection: ui.TextDirection.rtl,
         child: Scaffold(
-          body: Center(child: Text('تعذر تحديد صلاحيات الفرع: ${scopeAsync.error}')),
+          body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
         ),
       );
     }
@@ -283,8 +284,8 @@ class _SalesByClassificationReportState
 
     return reportScaffold(
       context: context,
-      title: 'تقرير المبيعات حسب التصنيف',
-      subtitle: 'المبيعاتُ حسبَ تصنيف الأصناف ونوعِ البيع',
+      title: tr('تقرير المبيعات حسب التصنيف'),
+      subtitle: tr('المبيعاتُ حسبَ تصنيف الأصناف ونوعِ البيع'),
       icon: PhosphorIconsBold.chartPieSlice,
       // ⚠️ **لا لونَ علامةٍ هنا**: هذه الشاشةُ لم تكن تكتب لوناً لـ`AppBar`
       //    فتتبع الثيم، وفرضُ لون العلامة عليها تبديلٌ في مسار UralCash.
@@ -293,14 +294,14 @@ class _SalesByClassificationReportState
       // تبويباتُ التصميم لفرع PicPos، وشريطُ UralCash كما هو حرفاً بحرف.
       subHeader: PicPosReportTabs(
         controller: _tabController,
-        tabs: const [
+        tabs:  [
           (
-            label: 'حسب تصنيف الأصناف (Categories)',
+            label: tr('حسب تصنيف الأصناف (Categories)'),
             icon: PhosphorIconsBold.tag,
             badge: null
           ),
           (
-            label: 'حسب نوع البيع (Classification)',
+            label: tr('حسب نوع البيع (Classification)'),
             icon: PhosphorIconsBold.storefront,
             badge: null
           ),
@@ -308,9 +309,9 @@ class _SalesByClassificationReportState
       ),
       appBarBottom: TabBar(
         controller: _tabController,
-        tabs: const [
-          Tab(text: 'حسب تصنيف الأصناف (Categories)'),
-          Tab(text: 'حسب نوع البيع (Classification)'),
+        tabs:  [
+          Tab(text: tr('حسب تصنيف الأصناف (Categories)')),
+          Tab(text: tr('حسب نوع البيع (Classification)')),
         ],
         indicatorColor: AppColors.primary,
         labelColor: AppColors.primary,
@@ -321,7 +322,7 @@ class _SalesByClassificationReportState
             IconButton(
               onPressed: _printReport,
               icon: const Icon(PhosphorIconsBold.printer),
-              tooltip: 'طباعة/PDF',
+              tooltip: tr('طباعة/PDF'),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -415,8 +416,8 @@ class _SalesByClassificationReportState
                   _buildCategoryReport(),
                   PermissionGuard(
                     permission: PermissionCodes.reportsOrderType,
-                    fallback: const Center(
-                      child: Text('لا تملك صلاحية عرض تقرير المبيعات حسب نوع الطلب'),
+                    fallback:  Center(
+                      child: Text(tr('لا تملك صلاحية عرض تقرير المبيعات حسب نوع الطلب')),
                     ),
                     child: _buildSaleTypeReport(),
                   ),
@@ -445,12 +446,12 @@ class _SalesByClassificationReportState
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text('حدث خطأ: ${snapshot.error}'));
+          return Center(child: Text(tr('حدث خطأ: {p0}', {'p0': snapshot.error})));
         }
 
         final data = snapshot.data ?? [];
         if (data.isEmpty) {
-          return const Center(child: Text('لا توجد بيانات لهذه الفترة'));
+          return  Center(child: Text(tr('لا توجد بيانات لهذه الفترة')));
         }
 
         double totalSales = data.fold(0, (sum, item) => sum + item.total);
@@ -459,10 +460,10 @@ class _SalesByClassificationReportState
           padding: const EdgeInsets.all(16),
           children: [
             _buildSummaryCard(
-              'إجمالي المبيعات',
+              tr('إجمالي المبيعات'),
               totalSales,
               data.length,
-              'تصنيف',
+              tr('تصنيف'),
             ),
             const SizedBox(height: 16),
             Card(
@@ -471,11 +472,11 @@ class _SalesByClassificationReportState
                 borderRadius: BorderRadius.circular(12),
               ),
               child: DataTable(
-                columns: const [
-                  DataColumn(label: Text('القسم / التصنيف')),
-                  DataColumn(label: Text('الكمية المباعة')),
-                  DataColumn(label: Text('القيمة الإجمالية')),
-                  DataColumn(label: Text('النسبة')),
+                columns:  [
+                  DataColumn(label: Text(tr('القسم / التصنيف'))),
+                  DataColumn(label: Text(tr('الكمية المباعة'))),
+                  DataColumn(label: Text(tr('القيمة الإجمالية'))),
+                  DataColumn(label: Text(tr('النسبة'))),
                 ],
                 rows: data.map((item) {
                   final amount = item.total;
@@ -542,25 +543,25 @@ class _SalesByClassificationReportState
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text('حدث خطأ: ${snapshot.error}'));
+          return Center(child: Text(tr('حدث خطأ: {p0}', {'p0': snapshot.error})));
         }
 
         final data = snapshot.data ?? [];
         if (data.isEmpty) {
-          return const Center(child: Text('لا توجد بيانات لهذه الفترة'));
+          return  Center(child: Text(tr('لا توجد بيانات لهذه الفترة')));
         }
 
         double totalSales = data.fold(0, (sum, item) => sum + item.total);
 
         // Map keys to readable names
         final Map<String, String> typeNames = {
-          'default': 'داخلي (معرض)',
-          'delivery': 'توصيل',
-          'talabat': 'طلبات',
-          'careem': 'كريم',
-          'ashyae': 'أشيائي',
-          'table': 'طاولات',
-          'return': 'مرتجعات',
+          'default': tr('داخلي (معرض)'),
+          'delivery': tr('توصيل'),
+          'talabat': tr('طلبات'),
+          'careem': tr('كريم'),
+          'ashyae': tr('أشيائي'),
+          'table': tr('طاولات'),
+          'return': tr('مرتجعات'),
         };
 
         final Map<String, Color> typeColors = {
@@ -589,10 +590,10 @@ class _SalesByClassificationReportState
           padding: const EdgeInsets.all(16),
           children: [
             _buildSummaryCard(
-              'إجمالي المبيعات',
+              tr('إجمالي المبيعات'),
               totalSales,
               data.fold<int>(0, (sum, item) => sum + item.count),
-              'فاتورة',
+              tr('فاتورة'),
             ),
             const SizedBox(height: 16),
             ...data.map((item) {
@@ -632,7 +633,7 @@ class _SalesByClassificationReportState
                     children: [
                       const SizedBox(height: 4),
                       Text(
-                        '$count فاتورة • ${(percentage * 100).toStringAsFixed(1)}%',
+                        tr('{count} فاتورة • {p0}%', {'count': count, 'p0': (percentage * 100).toStringAsFixed(1)}),
                         style: const TextStyle(
                           color: AppColors.textMuted,
                           fontSize: 12,
@@ -680,9 +681,9 @@ class _SalesByClassificationReportState
 
                         final invoices = detailSnap.data ?? [];
                         if (invoices.isEmpty) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Text('لا توجد فواتير'),
+                          return  Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(tr('لا توجد فواتير')),
                           );
                         }
 
@@ -705,17 +706,17 @@ class _SalesByClassificationReportState
                               child: Row(
                                 children: [
                                   _buildMiniStat(
-                                    'الإجمالي',
+                                    tr('الإجمالي'),
                                     amount,
                                     color,
                                   ),
                                   _buildMiniStat(
-                                    'المحصل',
+                                    tr('المحصل'),
                                     totalPaid,
                                     AppColors.success,
                                   ),
                                   _buildMiniStat(
-                                    'المتبقي',
+                                    tr('المتبقي'),
                                     totalRemaining,
                                     totalRemaining > 0
                                         ? AppColors.error
@@ -731,14 +732,14 @@ class _SalesByClassificationReportState
                                 columnSpacing: 16,
                                 dataRowMinHeight: 36,
                                 dataRowMaxHeight: 40,
-                                columns: const [
-                                  DataColumn(label: Text('رقم الفاتورة')),
-                                  DataColumn(label: Text('التاريخ')),
-                                  DataColumn(label: Text('العميل')),
-                                  DataColumn(label: Text('الإجمالي')),
-                                  DataColumn(label: Text('المدفوع')),
-                                  DataColumn(label: Text('المتبقي')),
-                                  DataColumn(label: Text('الدفع')),
+                                columns:  [
+                                  DataColumn(label: Text(tr('رقم الفاتورة'))),
+                                  DataColumn(label: Text(tr('التاريخ'))),
+                                  DataColumn(label: Text(tr('العميل'))),
+                                  DataColumn(label: Text(tr('الإجمالي'))),
+                                  DataColumn(label: Text(tr('المدفوع'))),
+                                  DataColumn(label: Text(tr('المتبقي'))),
+                                  DataColumn(label: Text(tr('الدفع'))),
                                 ],
                                 rows: invoices.map((inv) {
                                   final invTotal = inv.total;

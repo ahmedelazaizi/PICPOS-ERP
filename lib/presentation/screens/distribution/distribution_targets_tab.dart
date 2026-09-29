@@ -27,7 +27,7 @@ class _TargetsTabState extends State<_TargetsTab> {
               const Icon(PhosphorIconsBold.target, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(
-                'أهداف ${DateFormat('MMMM yyyy', 'ar').format(_selectedMonth)}',
+                tr('أهداف {p0}', {'p0': DateFormat('MMMM yyyy', 'ar').format(_selectedMonth)}),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -45,7 +45,7 @@ class _TargetsTabState extends State<_TargetsTab> {
                   if (picked != null) setState(() => _selectedMonth = picked);
                 },
                 icon: const Icon(PhosphorIconsBold.calendar, size: 18),
-                label: const Text('تغيير الشهر'),
+                label:  Text(tr('تغيير الشهر')),
               ),
               const SizedBox(width: 8),
               // نفس صلاحية إدارة التوزيع — راجع نفس التعليق في
@@ -53,12 +53,12 @@ class _TargetsTabState extends State<_TargetsTab> {
               PermissionGuard(
                 permission: PermissionCodes.distributionManage,
                 allowManagerOverride: true,
-                actionName: 'إضافة هدف شهري',
+                actionName: tr('إضافة هدف شهري'),
                 onGranted: () => _showAddTargetDialog(context, ctrl),
                 child: ElevatedButton.icon(
                   onPressed: () => _showAddTargetDialog(context, ctrl),
                   icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                  label: const Text('إضافة هدف'),
+                  label:  Text(tr('إضافة هدف')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                   ),
@@ -90,7 +90,7 @@ class _TargetsTabState extends State<_TargetsTab> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'لا توجد أهداف لهذا الشهر',
+                        tr('لا توجد أهداف لهذا الشهر'),
                         style: TextStyle(color: Colors.grey.shade600),
                       ),
                     ],
@@ -115,7 +115,7 @@ class _TargetsTabState extends State<_TargetsTab> {
                           FutureBuilder<Employee?>(
                             future: ctrl.getEmployeeById(t.salesRepId),
                             builder: (ctx, snap) => Text(
-                              snap.data?.name ?? 'مندوب #${t.salesRepId}',
+                              snap.data?.name ?? tr('مندوب #{p0}', {'p0': t.salesRepId}),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -130,10 +130,10 @@ class _TargetsTabState extends State<_TargetsTab> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'الهدف: ${t.targetAmount.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+                                      tr('الهدف: {p0} {p1}', {'p0': t.targetAmount.toStringAsFixed(0), 'p1': AppConstants.currencySymbol}),
                                     ),
                                     Text(
-                                      'المحقق: ${t.achievedAmount.toStringAsFixed(0)} ${AppConstants.currencySymbol}',
+                                      tr('المحقق: {p0} {p1}', {'p0': t.achievedAmount.toStringAsFixed(0), 'p1': AppConstants.currencySymbol}),
                                       style: TextStyle(
                                         color: pct >= 100
                                             ? Colors.green
@@ -142,7 +142,7 @@ class _TargetsTabState extends State<_TargetsTab> {
                                     ),
                                     if (t.targetVisits > 0)
                                       Text(
-                                        'الزيارات: ${t.achievedVisits}/${t.targetVisits}',
+                                        tr('الزيارات: {p0}/{p1}', {'p0': t.achievedVisits, 'p1': t.targetVisits}),
                                       ),
                                   ],
                                 ),
@@ -194,7 +194,7 @@ class _TargetsTabState extends State<_TargetsTab> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: const Text('إضافة هدف شهري'),
+          title:  Text(tr('إضافة هدف شهري')),
           content: SizedBox(
             width: 400,
             child: Column(
@@ -206,9 +206,9 @@ class _TargetsTabState extends State<_TargetsTab> {
                     final employees = snap.data ?? [];
                     return DropdownButtonFormField<int>(
                       initialValue: selectedRepId,
-                      decoration: const InputDecoration(
-                        labelText: 'المندوب',
-                        border: OutlineInputBorder(),
+                      decoration:  InputDecoration(
+                        labelText: tr('المندوب'),
+                        border: const OutlineInputBorder(),
                       ),
                       items: employees
                           .map((e) => DropdownMenuItem(
@@ -225,7 +225,7 @@ class _TargetsTabState extends State<_TargetsTab> {
                   controller: amountCtrl,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: 'المبلغ المستهدف (${AppConstants.currencySymbol})',
+                    labelText: tr('المبلغ المستهدف ({p0})', {'p0': AppConstants.currencySymbol}),
                     border: const OutlineInputBorder(),
                   ),
                 ),
@@ -233,9 +233,9 @@ class _TargetsTabState extends State<_TargetsTab> {
                 TextField(
                   controller: visitsCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'الزيارات المستهدفة (اختياري)',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('الزيارات المستهدفة (اختياري)'),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ],
@@ -244,7 +244,7 @@ class _TargetsTabState extends State<_TargetsTab> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -260,11 +260,11 @@ class _TargetsTabState extends State<_TargetsTab> {
                 );
                 if (ctx.mounted) Navigator.pop(ctx);
                 if (context.mounted) {
-                  AppToast.show(context, 'تمت إضافة الهدف');
+                  AppToast.show(context, tr('تمت إضافة الهدف'));
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-              child: const Text('إضافة'),
+              child:  Text(tr('إضافة')),
             ),
           ],
         ),

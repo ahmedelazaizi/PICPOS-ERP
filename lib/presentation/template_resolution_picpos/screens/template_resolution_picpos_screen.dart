@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ حسم القوالب — تصميمُ `PicPos Template Resolution.dc.html`.
 //
 // ── ما تحلّه ──────────────────────────────────────────────────────────────
@@ -47,16 +48,16 @@ class TemplateResolutionPicposScreen extends ConsumerWidget {
     final broken = rows.where((r) => r.health.needsAttention).length;
 
     return PicPosScreenScaffold(
-      title: 'حسم القوالب والطابعات',
+      title: tr('حسم القوالب والطابعات'),
       subtitle: 'أي مستند ← أي قالب ← أي طابعة · '
           'المفتاح: نوع المستند + الفرع + الطابعة + اللغة',
       icon: PhosphorIconsBold.gitFork,
       headerActions: [
-        _HeaderStat(label: 'مسارات الطباعة', value: '${rows.length}'),
+        _HeaderStat(label: tr('مسارات الطباعة'), value: '${rows.length}'),
         _HeaderStat(
-            label: 'حسم سليم', value: '$healthy', tone: AppColors.success),
+            label: tr('حسم سليم'), value: '$healthy', tone: AppColors.success),
         _HeaderStat(
-            label: 'يحتاج معالجة', value: '$broken', tone: AppColors.error),
+            label: tr('يحتاج معالجة'), value: '$broken', tone: AppColors.error),
       ],
       subHeader: PicPosFilterStrip(
         children: [
@@ -68,8 +69,8 @@ class TemplateResolutionPicposScreen extends ConsumerWidget {
               onTap: () =>
                   ref.read(resolutionBranchProvider.notifier).set(b.id),
             ),
-          for (final l in const [
-            (code: 'ar', label: 'عربي'),
+          for (final l in  [
+            (code: 'ar', label: tr('عربي')),
             (code: 'en', label: 'English'),
           ])
             PicPosFilterPill(
@@ -85,7 +86,7 @@ class TemplateResolutionPicposScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => PicPosEmptyState(
           icon: PhosphorIconsBold.warning,
-          title: 'تعذّر قراءةُ مسارات الطباعة',
+          title: tr('تعذّر قراءةُ مسارات الطباعة'),
           hint: '$e',
         ),
         data: (_) => LayoutBuilder(
@@ -166,10 +167,10 @@ class _ResolutionTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (rows.isEmpty) {
-      return const PicPosEmptyState(
+      return  PicPosEmptyState(
         icon: PhosphorIconsBold.gitFork,
-        title: 'لا مسارَ طباعةٍ مسجَّل',
-        hint: 'أنواعُ المستندات تُعلَن في `TemplateResolver.documentTypes`',
+        title: tr('لا مسارَ طباعةٍ مسجَّل'),
+        hint: tr('أنواعُ المستندات تُعلَن في `TemplateResolver.documentTypes`'),
       );
     }
 
@@ -178,8 +179,8 @@ class _ResolutionTable extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PicPosSectionHeader(
-            title: 'مسارات الطباعة',
-            subtitle: '${rows.length} نوعَ مستند',
+            title: tr('مسارات الطباعة'),
+            subtitle: tr('{p0} نوعَ مستند', {'p0': rows.length}),
             icon: PhosphorIconsBold.funnel,
           ),
           const _TableHead(),
@@ -207,13 +208,13 @@ class _TableHead extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const titles = [
-      'نوع المستند',
-      'الفئة والورق',
-      'القالب المحسوم',
-      'الطابعة',
-      'النُّسخ',
-      'الحالة',
+    final titles = [
+      tr('نوع المستند'),
+      tr('الفئة والورق'),
+      tr('القالب المحسوم'),
+      tr('الطابعة'),
+      tr('النُّسخ'),
+      tr('الحالة'),
     ];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
@@ -311,7 +312,7 @@ class _ResolutionRowTile extends StatelessWidget {
             Expanded(
               flex: _columnFlex[3],
               child: _TwoLine(
-                top: row.printerName ?? 'غير محدَّدة',
+                top: row.printerName ?? tr('غير محدَّدة'),
                 bottom: row.printerNote,
                 topTone: row.printerName == null ? context.picposMuted : null,
               ),

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../data/providers/providers.dart';
@@ -24,8 +25,8 @@ class _SetPinDialogState extends AppFormDialogState<bool, SetPinDialog> {
 
   @override
   String get dialogTitle => widget.user.pin != null
-      ? 'تغيير PIN للمستخدم ${widget.user.displayName}'
-      : 'تعيين PIN للمستخدم ${widget.user.displayName}';
+      ? tr('تغيير PIN للمستخدم {p0}', {'p0': widget.user.displayName})
+      : tr('تعيين PIN للمستخدم {p0}', {'p0': widget.user.displayName});
 
   @override
   IconData get dialogIcon => PhosphorIconsBold.password;
@@ -38,7 +39,7 @@ class _SetPinDialogState extends AppFormDialogState<bool, SetPinDialog> {
       'نقطة البيع';
 
   @override
-  String? get dialogSaveLabel => 'حفظ الـ PIN';
+  String? get dialogSaveLabel => tr('حفظ الـ PIN');
 
   /// لوحةُ `PANELS.pin` — الرقمُ ثمّ الخياراتُ ثمّ التنبيه.
   ///
@@ -53,12 +54,12 @@ class _SetPinDialogState extends AppFormDialogState<bool, SetPinDialog> {
   @override
   List<PicPosPanelGroup> buildPicposGroups(BuildContext context) => [
         PicPosPanelGroup(
-          label: 'الرقم السري الجديد',
-          hint: 'من ٤ إلى ٦ أرقام',
+          label: tr('الرقم السري الجديد'),
+          hint: tr('من ٤ إلى ٦ أرقام'),
           child: _pinField(),
         ),
         PicPosPanelGroup(
-          label: 'خيارات',
+          label: tr('خيارات'),
           child: PicPosPanelBox(
             children: [
               // ⚠️ **مفتاحٌ معطَّلٌ لا مفتاحٌ يعمل — والفرقُ مقصود.** التصميمُ
@@ -82,9 +83,9 @@ class _SetPinDialogState extends AppFormDialogState<bool, SetPinDialog> {
             ],
           ),
         ),
-        const PicPosPanelGroup(
-          label: 'تنبيه',
-          child: PicPosDialogBanner(
+         PicPosPanelGroup(
+          label: tr('تنبيه'),
+          child: const PicPosDialogBanner(
             icon: PhosphorIconsBold.info,
             color: AppColors.info,
             text: 'يُستخدم رمزُ PIN لتسجيل الدخول السريع في البيع السريع '
@@ -97,10 +98,10 @@ class _SetPinDialogState extends AppFormDialogState<bool, SetPinDialog> {
         controller: pinController,
         keyboardType: TextInputType.number,
         maxLength: 6,
-        decoration: const InputDecoration(
-          labelText: 'رمز PIN (أرقام فقط)',
-          hintText: 'مثال: 1234',
-          prefixIcon: Icon(PhosphorIconsLight.hash),
+        decoration:  InputDecoration(
+          labelText: tr('رمز PIN (أرقام فقط)'),
+          hintText: tr('مثال: 1234'),
+          prefixIcon: const Icon(PhosphorIconsLight.hash),
         ),
       );
 
@@ -111,9 +112,9 @@ class _SetPinDialogState extends AppFormDialogState<bool, SetPinDialog> {
       children: [
         // الحقلُ نفسُه الذي تلفّه المجموعةُ في فرع PicPos — لا نسختان منه.
         _pinField(),
-        const Text(
-          'تنبيه: يُستخدم رمز PIN لتسجيل الدخول السريع في البيع السريع (POS).',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
+         Text(
+          tr('تنبيه: يُستخدم رمز PIN لتسجيل الدخول السريع في البيع السريع (POS).'),
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
           textAlign: TextAlign.center,
         ),
       ],
@@ -151,7 +152,7 @@ class _SetPinDialogState extends AppFormDialogState<bool, SetPinDialog> {
         auth.user?.id ?? 0,
         auth.user?.displayName ?? '',
         widget.user.displayName,
-        pin.isEmpty ? 'إزالة PIN' : 'تغيير PIN',
+        pin.isEmpty ? tr('إزالة PIN') : tr('تغيير PIN'),
       );
     } catch (e) {
       debugPrint('[ActivityLog] Error: $e');

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -66,8 +67,8 @@ class _VatReconciliationScreenState
         backgroundColor: const Color(0xFFF1F5F9),
         appBar: AppBar(
           backgroundColor: AppColors.surface,
-          title: const Text('تسوية ضريبة القيمة المضافة',
-              style: TextStyle(fontWeight: FontWeight.bold)),
+          title:  Text(tr('تسوية ضريبة القيمة المضافة'),
+              style: const TextStyle(fontWeight: FontWeight.bold)),
           actions: [
             IconButton(
               icon: const Icon(PhosphorIconsBold.arrowClockwise,
@@ -88,7 +89,7 @@ class _VatReconciliationScreenState
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      'خطأ في تحميل بيانات الضريبة: $e',
+                      tr('خطأ في تحميل بيانات الضريبة: {e}', {'e': e}),
                       style: const TextStyle(color: AppColors.error),
                     ),
                   ),
@@ -109,7 +110,7 @@ class _VatReconciliationScreenState
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          const Text('الشهر:', style: TextStyle(fontWeight: FontWeight.bold)),
+           Text(tr('الشهر:'), style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(width: 8),
           DropdownButton<int>(
             value: _month,
@@ -126,7 +127,7 @@ class _VatReconciliationScreenState
             },
           ),
           const SizedBox(width: 16),
-          const Text('السنة:', style: TextStyle(fontWeight: FontWeight.bold)),
+           Text(tr('السنة:'), style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(width: 8),
           DropdownButton<int>(
             value: _year,
@@ -155,39 +156,39 @@ class _VatReconciliationScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _sectionHeader(
-              'ضريبة المخرجات (Output VAT)  — حساب ${d.outputVatAccCode}',
+              tr('ضريبة المخرجات (Output VAT)  — حساب {p0}', {'p0': d.outputVatAccCode}),
               const Color(0xFFDC2626)),
           _buildCard([
-            _row('إجمالي ضريبة الفواتير (مبيعات)', d.invoiceOutputVat,
+            _row(tr('إجمالي ضريبة الفواتير (مبيعات)'), d.invoiceOutputVat,
                 bold: true),
-            _row('رصيد الأستاذ العام', d.glOutputVat),
+            _row(tr('رصيد الأستاذ العام'), d.glOutputVat),
             _divider(),
-            _row('الفرق', diffOutput,
+            _row(tr('الفرق'), diffOutput,
                 color:
                     diffOutput.abs() > 0.01 ? Colors.orange : Colors.green,
                 bold: true),
           ]),
           const SizedBox(height: 16),
           _sectionHeader(
-              'ضريبة المدخلات (Input VAT)  — حساب ${d.inputVatAccCode}',
+              tr('ضريبة المدخلات (Input VAT)  — حساب {p0}', {'p0': d.inputVatAccCode}),
               const Color(0xFF059669)),
           _buildCard([
-            _row('إجمالي ضريبة الفواتير (مشتريات)', d.invoiceInputVat,
+            _row(tr('إجمالي ضريبة الفواتير (مشتريات)'), d.invoiceInputVat,
                 bold: true),
-            _row('رصيد الأستاذ العام', d.glInputVat),
+            _row(tr('رصيد الأستاذ العام'), d.glInputVat),
             _divider(),
-            _row('الفرق', diffInput,
+            _row(tr('الفرق'), diffInput,
                 color:
                     diffInput.abs() > 0.01 ? Colors.orange : Colors.green,
                 bold: true),
           ]),
           const SizedBox(height: 16),
-          _sectionHeader('صافي الضريبة المستحقة', const Color(0xFF7C3AED)),
+          _sectionHeader(tr('صافي الضريبة المستحقة'), const Color(0xFF7C3AED)),
           _buildCard([
-            _row('صافي (فواتير): مخرجات − مدخلات', netInvoice, bold: true),
-            _row('صافي (أستاذ عام)', netGl),
+            _row(tr('صافي (فواتير): مخرجات − مدخلات'), netInvoice, bold: true),
+            _row(tr('صافي (أستاذ عام)'), netGl),
             _divider(),
-            _row('الضريبة المستحقة للدفع', netInvoice,
+            _row(tr('الضريبة المستحقة للدفع'), netInvoice,
                 color: netInvoice > 0 ? AppColors.error : Colors.green,
                 bold: true),
           ]),

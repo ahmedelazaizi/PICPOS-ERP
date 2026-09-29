@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -25,7 +26,7 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
   bool forcePasswordChange = true;
 
   @override
-  String get dialogTitle => 'إعادة تعيين كلمة مرور ${widget.user.displayName}';
+  String get dialogTitle => tr('إعادة تعيين كلمة مرور {p0}', {'p0': widget.user.displayName});
 
   @override
   IconData get dialogIcon => PhosphorIconsBold.key;
@@ -37,7 +38,7 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
       'الحفظ';
 
   @override
-  String? get dialogSaveLabel => 'حفظ كلمة المرور';
+  String? get dialogSaveLabel => tr('حفظ كلمة المرور');
 
   /// لوحةُ `PANELS.resetpw` — القوّةُ ثمّ الخياراتُ ثمّ التنبيه.
   ///
@@ -54,8 +55,8 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
     final result = SecurityService.validatePassword(pwd);
     return [
       PicPosPanelGroup(
-        label: 'كلمة المرور الجديدة',
-        hint: 'مؤشّرُ القوّة إرشاديٌّ وليس إلزاميّاً',
+        label: tr('كلمة المرور الجديدة'),
+        hint: tr('مؤشّرُ القوّة إرشاديٌّ وليس إلزاميّاً'),
         child: PicPosPanelStrength(
           field: _passwordField(),
           strength: pwd.isEmpty ? 0 : result.strength,
@@ -73,14 +74,14 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
         ),
       ),
       PicPosPanelGroup(
-        label: 'خيارات',
+        label: tr('خيارات'),
         child: PicPosPanelBox(
           children: [
             SettingsSwitchRow(
               first: true,
               icon: PhosphorIconsBold.arrowsClockwise,
-              title: 'فرض التغيير عند الدخول القادم',
-              sub: 'سيُطلب منه تعيينُ كلمةٍ يعرفها هو وحدَه',
+              title: tr('فرض التغيير عند الدخول القادم'),
+              sub: tr('سيُطلب منه تعيينُ كلمةٍ يعرفها هو وحدَه'),
               value: forcePasswordChange,
               onChanged: (v) => setState(() => forcePasswordChange = v),
             ),
@@ -90,9 +91,9 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
       // «تنبيه» في `PANELS.resetpw` — ونصُّه مقيسٌ لا منقولٌ على عواهنه:
       // كلمةُ المرور تُحفَظ بـ`updateUserPassword`، والـPIN يُحفَظ بـ
       // `updateUserPin` من حوارٍ آخر. فالجملةُ تصف فصلاً قائماً في الكود.
-      const PicPosPanelGroup(
-        label: 'تنبيه',
-        child: PicPosDialogBanner(
+       PicPosPanelGroup(
+        label: tr('تنبيه'),
+        child: const PicPosDialogBanner(
           icon: PhosphorIconsBold.info,
           color: AppColors.info,
           text: 'كلمةُ المرور للدخول للبرنامج، وهي غيرُ الـPIN المستخدَم على '
@@ -106,9 +107,9 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
         controller: passwordController,
         obscureText: true,
         onChanged: (_) => setState(() {}),
-        decoration: const InputDecoration(
-          labelText: 'كلمة المرور الجديدة',
-          prefixIcon: Icon(PhosphorIconsLight.lock),
+        decoration:  InputDecoration(
+          labelText: tr('كلمة المرور الجديدة'),
+          prefixIcon: const Icon(PhosphorIconsLight.lock),
         ),
       );
 
@@ -125,8 +126,8 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
         ],
         const SizedBox(height: 12),
         CheckboxListTile(
-          title: const Text('فرض تغيير كلمة المرور عند الدخول القادم'),
-          subtitle: const Text('سيُطلب من المستخدم تغيير كلمة المرور فور تسجيل دخوله التالي'),
+          title:  Text(tr('فرض تغيير كلمة المرور عند الدخول القادم')),
+          subtitle:  Text(tr('سيُطلب من المستخدم تغيير كلمة المرور فور تسجيل دخوله التالي')),
           value: forcePasswordChange,
           onChanged: (v) => setState(() => forcePasswordChange = v ?? true),
           contentPadding: EdgeInsets.zero,
@@ -244,7 +245,7 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
         auth.user?.id ?? 0,
         auth.user?.displayName ?? '',
         widget.user.displayName,
-        'إعادة تعيين كلمة المرور',
+        tr('إعادة تعيين كلمة المرور'),
       );
     } catch (e) {
       debugPrint('[ActivityLog] Error: $e');

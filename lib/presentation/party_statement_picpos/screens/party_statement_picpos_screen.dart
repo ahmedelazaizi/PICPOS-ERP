@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // كشفُ حساب العميل والمورد على هويّة PicPos.
 //
 // المصدر: «PicPos Customer Statement.dc.html» (١٤٨٢ سطراً) و«PicPos Supplier
@@ -425,15 +426,15 @@ class _PartyStatementPicposScreenState
 
   @override
   Widget build(BuildContext context) {
-    final label = widget.isSupplier ? 'مورد' : 'عميل';
+    final label = widget.isSupplier ? tr('مورد') : tr('عميل');
     final name = _party?.name ?? widget.partyName;
     final hasParty = _partyId != null && _party != null;
 
     return PicPosScreenScaffold(
-      title: 'كشف حساب $label',
+      title: tr('كشف حساب {label}', {'label': label}),
       subtitle: hasParty
           ? '$name · ${_df.format(_range.start)} — ${_df.format(_range.end)}'
-          : 'اختر $label لعرض كشف حسابه',
+          : tr('اختر {label} لعرض كشف حسابه', {'label': label}),
       icon: widget.isSupplier
           ? PhosphorIconsBold.truck
           : PhosphorIconsBold.userList,
@@ -444,7 +445,7 @@ class _PartyStatementPicposScreenState
               onChanged: (v) => _queryVN.value = v,
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'ابحث بمستند أو مبلغ داخل الكشف...',
+                hintText: tr('ابحث بمستند أو مبلغ داخل الكشف...'),
                 prefixIcon:
                     const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
                 suffixIcon: ValueListenableBuilder<String>(
@@ -453,7 +454,7 @@ class _PartyStatementPicposScreenState
                       ? const SizedBox.shrink()
                       : IconButton(
                           icon: const Icon(PhosphorIconsBold.x, size: 14),
-                          tooltip: 'امسح البحث',
+                          tooltip: tr('امسح البحث'),
                           onPressed: () {
                             _searchCtrl.clear();
                             _queryVN.value = '';
@@ -478,7 +479,7 @@ class _PartyStatementPicposScreenState
           label: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 150),
             child: Text(
-              hasParty ? name : 'اختر $label',
+              hasParty ? name : tr('اختر {label}', {'label': label}),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -538,15 +539,15 @@ class _PartyStatementPicposScreenState
                   ? PhosphorIconsBold.hourglass
                   : PhosphorIconsBold.userList,
               text: _loadingParties
-                  ? 'جارٍ تحميل قائمة الأطراف…'
+                  ? tr('جارٍ تحميل قائمة الأطراف…')
                   : (_partyId != null
-                      ? 'الطرفُ المطلوب غيرُ موجود'
-                      : 'لم يُختَر $label بعد'),
+                      ? tr('الطرفُ المطلوب غيرُ موجود')
+                      : tr('لم يُختَر {label} بعد', {'label': label})),
               sub: _loadingParties
                   ? ''
                   : (_partyId != null
-                      ? 'قد يكون محذوفاً أو خارجَ نطاق فروعك — اختر طرفاً آخر'
-                      : 'اضغط «اختر $label» في الترويسة'),
+                      ? tr('قد يكون محذوفاً أو خارجَ نطاق فروعك — اختر طرفاً آخر')
+                      : tr('اضغط «اختر {label}» في الترويسة', {'label': label})),
               tint: AppColors.primary,
             ),
     );
@@ -578,7 +579,7 @@ class _TabBody extends StatelessWidget {
           //    عاملاً وهو ليس كذلك.
           return _StatementMessage(
             icon: PhosphorIconsBold.warningCircle,
-            text: 'تعذّر حسابُ هذه التبويبة',
+            text: tr('تعذّر حسابُ هذه التبويبة'),
             sub: '${snap.error}',
             tint: Theme.of(context).colorScheme.error,
           );
@@ -588,8 +589,8 @@ class _TabBody extends StatelessWidget {
         if (data.isEmpty) {
           return _StatementMessage(
             icon: PhosphorIconsBold.chartBar,
-            text: 'لا بيانات في هذه الفترة',
-            sub: 'غيّرِ المدى من الشريط أعلاه',
+            text: tr('لا بيانات في هذه الفترة'),
+            sub: tr('غيّرِ المدى من الشريط أعلاه'),
             tint: context.picposMuted,
           );
         }
@@ -700,14 +701,14 @@ class _PartyPickerDialogState extends State<_PartyPickerDialog> {
                 (p.code ?? '').toLowerCase().contains(q) ||
                 (p.phone ?? '').contains(q);
           }).toList();
-    final label = widget.isSupplier ? 'مورد' : 'عميل';
+    final label = widget.isSupplier ? tr('مورد') : tr('عميل');
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
         backgroundColor: context.picposCard,
         title: Text(
-          'اختر $label',
+          tr('اختر {label}', {'label': label}),
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -723,7 +724,7 @@ class _PartyPickerDialogState extends State<_PartyPickerDialog> {
                 autofocus: true,
                 onChanged: (v) => setState(() => _q = v),
                 decoration: InputDecoration(
-                  hintText: 'ابحث بالاسم أو الكود أو الهاتف…',
+                  hintText: tr('ابحث بالاسم أو الكود أو الهاتف…'),
                   prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass,
                       size: 18),
                   filled: true,
@@ -739,7 +740,7 @@ class _PartyPickerDialogState extends State<_PartyPickerDialog> {
                 child: rows.isEmpty
                     ? Center(
                         child: Text(
-                          'لا $label يطابق البحث',
+                          tr('لا {label} يطابق البحث', {'label': label}),
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
@@ -798,7 +799,7 @@ class _PartyPickerDialogState extends State<_PartyPickerDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
         ],
       ),
@@ -828,7 +829,7 @@ class _BranchPickerButton extends ConsumerWidget {
     if (branches.length < 2) return const SizedBox.shrink();
 
     final match = branches.where((b) => b.id == selectedId);
-    final label = match.isEmpty ? 'جميع الفروع' : match.first.name;
+    final label = match.isEmpty ? tr('جميع الفروع') : match.first.name;
     final on = selectedId != null;
 
     return Material(
@@ -840,7 +841,7 @@ class _BranchPickerButton extends ConsumerWidget {
             context: context,
             position: _menuPosition(context),
             items: [
-              const PopupMenuItem<int>(value: -1, child: Text('جميع الفروع')),
+               PopupMenuItem<int>(value: -1, child: Text(tr('جميع الفروع'))),
               for (final b in branches)
                 PopupMenuItem<int>(value: b.id, child: Text(b.name)),
             ],
@@ -929,7 +930,7 @@ class _ColumnPickerDialogState extends State<_ColumnPickerDialog> {
       child: AlertDialog(
         backgroundColor: context.picposCard,
         title: Text(
-          'تخصيص الأعمدة',
+          tr('تخصيص الأعمدة'),
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -950,7 +951,7 @@ class _ColumnPickerDialogState extends State<_ColumnPickerDialog> {
                       style: TextStyle(
                           fontSize: 13, color: context.picposText)),
                   subtitle: c.id == kStatementColumnDate
-                      ? Text('ثابتٌ — لا يُخفى',
+                      ? Text(tr('ثابتٌ — لا يُخفى'),
                           style: TextStyle(
                               fontSize: 11, color: context.picposMuted))
                       : null,
@@ -966,7 +967,7 @@ class _ColumnPickerDialogState extends State<_ColumnPickerDialog> {
                 ),
               const SizedBox(height: 6),
               Text(
-                'يُحفَظ لك وحدَك على هذا النظام.',
+                tr('يُحفَظ لك وحدَك على هذا النظام.'),
                 style:
                     TextStyle(fontSize: 11, color: context.picposMuted),
               ),
@@ -977,15 +978,15 @@ class _ColumnPickerDialogState extends State<_ColumnPickerDialog> {
           TextButton(
             onPressed: () =>
                 setState(() => _sel = {...kDefaultStatementColumns}),
-            child: const Text('إعادة ضبط'),
+            child:  Text(tr('إعادة ضبط')),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(_sel),
-            child: const Text('تطبيق'),
+            child:  Text(tr('تطبيق')),
           ),
         ],
       ),

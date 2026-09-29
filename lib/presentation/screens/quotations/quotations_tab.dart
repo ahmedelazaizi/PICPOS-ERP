@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
@@ -81,7 +82,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
       if (mounted) {
         AppToast.show(
           context,
-          'انتهت مهلة تحميل تفاصيل العرض — تأكد من الاتصال بالسيرفر',
+          tr('انتهت مهلة تحميل تفاصيل العرض — تأكد من الاتصال بالسيرفر'),
           type: ToastType.error,
         );
       }
@@ -89,7 +90,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
     } catch (e) {
       closeLoading();
       if (mounted) {
-        AppToast.show(context, 'حدث خطأ غير متوقع', type: ToastType.error);
+        AppToast.show(context, tr('حدث خطأ غير متوقع'), type: ToastType.error);
       }
       return;
     }
@@ -100,7 +101,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
     if (details == null) {
       AppToast.show(
         context,
-        'فشل في تحميل تفاصيل العرض',
+        tr('فشل في تحميل تفاصيل العرض'),
         type: ToastType.error,
       );
       return;
@@ -114,17 +115,17 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
       showDialog(
         context: context,
         builder: (dialogCtx) => AlertDialog(
-          title: Text('عرض سعر #${loaded.quotationNumber}'),
+          title: Text(tr('عرض سعر #{p0}', {'p0': loaded.quotationNumber})),
           content: SizedBox(
             width: double.maxFinite,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('العميل: ${loaded.customerName ?? "نقدي"}'),
-                Text('بواسطة: ${loaded.userName}'),
+                Text(tr('العميل: {p0}', {'p0': loaded.customerName ?? "نقدي"})),
+                Text(tr('بواسطة: {p0}', {'p0': loaded.userName})),
                 Text(
-                  'التاريخ: ${DateFormat('yyyy-MM-dd').format(loaded.quotationDate)}',
+                  tr('التاريخ: {p0}', {'p0': DateFormat('yyyy-MM-dd').format(loaded.quotationDate)}),
                 ),
                 const Divider(),
                 Expanded(
@@ -134,7 +135,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                     itemBuilder: (context, index) {
                       final item = loaded.items[index];
                       return ListTile(
-                        title: Text(item.productName ?? 'صنف غير معروف'),
+                        title: Text(item.productName ?? tr('صنف غير معروف')),
                         subtitle: Text(
                           '${item.quantity} x ${NumberUtils.formatCurrency(item.unitPrice)}',
                         ),
@@ -149,9 +150,9 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'الإجمالي',
-                      style: TextStyle(
+                     Text(
+                      tr('الإجمالي'),
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
@@ -172,11 +173,11 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
             IconButton(
               icon: const Icon(PhosphorIconsBold.printer),
-              tooltip: 'طباعة',
+              tooltip: tr('طباعة'),
               color: AppColors.primary,
               onPressed: () {
                 InvoiceGenerator.printSalesInvoice(
@@ -186,7 +187,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                   items: loaded.items
                       .map(
                         (i) => InvoiceItem(
-                          name: i.productName ?? 'صنف غير معروف',
+                          name: i.productName ?? tr('صنف غير معروف'),
                           quantity: i.quantity,
                           price: i.unitPrice,
                           total: i.total,
@@ -199,7 +200,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                   total: loaded.total,
                   paid: 0,
                   notes: loaded.notes, // ADDED: Pass quotation notes
-                  title: 'عرض سعر',
+                  title: tr('عرض سعر'),
                   db: ref.read(databaseProvider),
                 );
               },
@@ -208,7 +209,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                 loaded.status == 'draft')
               IconButton(
                 icon: const Icon(PhosphorIconsBold.pencilSimple),
-                tooltip: 'تعديل',
+                tooltip: tr('تعديل'),
                 color: AppColors.info,
                 onPressed: () {
                   Navigator.pop(dialogCtx);
@@ -218,27 +219,27 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
             if (loaded.status == 'draft')
               IconButton(
                 icon: const Icon(PhosphorIconsBold.trash),
-                tooltip: 'حذف',
+                tooltip: tr('حذف'),
                 color: AppColors.error,
                 onPressed: () async {
                   final confirm = await showDialog<bool>(
                     context: dialogCtx,
                     builder: (ctx) => AlertDialog(
-                      title: const Text('حذف عرض سعر'),
+                      title:  Text(tr('حذف عرض سعر')),
                       content: Text(
-                        'هل أنت متأكد من حذف عرض السعر رقم ${loaded.quotationNumber}؟',
+                        tr('هل أنت متأكد من حذف عرض السعر رقم {p0}؟', {'p0': loaded.quotationNumber}),
                       ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('إلغاء'),
+                          child:  Text(tr('إلغاء')),
                         ),
                         FilledButton(
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.error,
                           ),
                           onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('حذف'),
+                          child:  Text(tr('حذف')),
                         ),
                       ],
                     ),
@@ -256,7 +257,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                     if (!mounted) return;
                     AppToast.show(
                       context,
-                      'تم حذف عرض السعر بنجاح',
+                      tr('تم حذف عرض السعر بنجاح'),
                       type: ToastType.success,
                     );
                   }
@@ -266,7 +267,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                 loaded.status == 'draft')
               FilledButton.icon(
                 icon: const Icon(PhosphorIconsBold.shoppingCart),
-                label: const Text('تحويل إلى فاتورة'),
+                label:  Text(tr('تحويل إلى فاتورة')),
                 onPressed: () async {
                   Navigator.pop(dialogCtx);
                   widget.onConvertQuotation!(loaded);
@@ -280,7 +281,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
       // spinner is already closed at this point, so don't try to pop it
       // again). Just inform the user.
       if (mounted) {
-        AppToast.show(context, 'حدث خطأ غير متوقع', type: ToastType.error);
+        AppToast.show(context, tr('حدث خطأ غير متوقع'), type: ToastType.error);
       }
     }
   }
@@ -303,7 +304,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'بحث برقم العرض أو اسم العميل...',
+                    hintText: tr('بحث برقم العرض أو اسم العميل...'),
                     prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -321,7 +322,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                   label: Text(
                     state.dateRange != null
                         ? '${state.dateRange!.start.day}/${state.dateRange!.start.month} - ${state.dateRange!.end.day}/${state.dateRange!.end.month}'
-                        : 'تاريخ',
+                        : tr('تاريخ'),
                   ),
                   onPressed: () async {
                     final range = await showDateRangePicker(
@@ -361,17 +362,17 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                 const SizedBox(width: 4),
                 IconButton(
                   icon: const Icon(PhosphorIconsBold.x, size: 16),
-                  tooltip: 'إلغاء فلتر التاريخ',
+                  tooltip: tr('إلغاء فلتر التاريخ'),
                   onPressed: () => controller.updateDateRange(null),
                 ),
               ],
               const SizedBox(width: 12),
               // Status Filter
               SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'all', label: Text('الكل')),
-                  ButtonSegment(value: 'draft', label: Text('مسودة')),
-                  ButtonSegment(value: 'converted', label: Text('محول')),
+                segments:  [
+                  ButtonSegment(value: 'all', label: Text(tr('الكل'))),
+                  ButtonSegment(value: 'draft', label: Text(tr('مسودة'))),
+                  ButtonSegment(value: 'converted', label: Text(tr('محول'))),
                 ],
                 selected: {state.statusFilter},
                 onSelectionChanged: (Set<String> newSelection) {
@@ -388,7 +389,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
           child: AppStateView(
             isLoading: state.isLoading && state.quotations.isEmpty,
             isEmpty: state.quotations.isEmpty,
-            emptyMessage: 'لا توجد عروض أسعار',
+            emptyMessage: tr('لا توجد عروض أسعار'),
             emptyIcon: PhosphorIconsBold.fileText,
             loadingItemCount: 10,
             child: ListView.builder(
@@ -462,7 +463,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                                 ),
                               ),
                               child: Text(
-                                isConverted ? 'محول' : 'مسودة',
+                                isConverted ? tr('محول') : tr('مسودة'),
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -487,7 +488,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  quotation.customerName ?? 'عميل نقدي',
+                                  quotation.customerName ?? tr('عميل نقدي'),
                                   style: const TextStyle(fontSize: 12),
                                 ),
                                 const SizedBox(width: 16),

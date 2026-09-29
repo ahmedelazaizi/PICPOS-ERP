@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'dart:typed_data';
@@ -83,33 +84,33 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
             const SizedBox(height: 16),
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'اسم الشركة',
-                prefixIcon: Icon(PhosphorIconsBold.buildings),
+              decoration:  InputDecoration(
+                labelText: tr('اسم الشركة'),
+                prefixIcon: const Icon(PhosphorIconsBold.buildings),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _addressController,
-              decoration: const InputDecoration(
-                labelText: 'العنوان',
-                prefixIcon: Icon(PhosphorIconsBold.mapPin),
+              decoration:  InputDecoration(
+                labelText: tr('العنوان'),
+                prefixIcon: const Icon(PhosphorIconsBold.mapPin),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _phoneController,
-              decoration: const InputDecoration(
-                labelText: 'رقم الهاتف',
-                prefixIcon: Icon(PhosphorIconsBold.phone),
+              decoration:  InputDecoration(
+                labelText: tr('رقم الهاتف'),
+                prefixIcon: const Icon(PhosphorIconsBold.phone),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _taxIdController,
-              decoration: const InputDecoration(
-                labelText: 'الرقم الضريبي',
-                prefixIcon: Icon(PhosphorIconsBold.identificationCard),
+              decoration:  InputDecoration(
+                labelText: tr('الرقم الضريبي'),
+                prefixIcon: const Icon(PhosphorIconsBold.identificationCard),
               ),
             ),
             const SizedBox(height: 24),
@@ -118,7 +119,7 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
               height: 48,
               child: ElevatedButton(
                 onPressed: _saveSettings,
-                child: const Text('حفظ التغييرات'),
+                child:  Text(tr('حفظ التغييرات')),
               ),
             ),
           ],
@@ -138,11 +139,11 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
       ),
       child: Column(
         children: [
-          const Row(
+           Row(
             children: [
-              Icon(PhosphorIconsBold.image, color: AppColors.primary, size: 18),
-              SizedBox(width: 8),
-              Text('شعار الشركة', style: AppTypography.h4),
+              const Icon(PhosphorIconsBold.image, color: AppColors.primary, size: 18),
+              const SizedBox(width: 8),
+              Text(tr('شعار الشركة'), style: AppTypography.h4),
             ],
           ),
           const SizedBox(height: 12),
@@ -184,18 +185,18 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
                             );
                           } catch (_) {}
                         }
-                        return const Column(
+                        return  Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
+                            const Icon(
                               PhosphorIconsBold.uploadSimple,
                               size: 32,
                               color: AppColors.textMuted,
                             ),
-                            SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             Text(
-                              'اضغط لاختيار',
-                              style: TextStyle(
+                              tr('اضغط لاختيار'),
+                              style: const TextStyle(
                                 fontSize: 12,
                                 color: AppColors.textMuted,
                               ),
@@ -215,16 +216,16 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
                 size: 16,
                 color: AppColors.error,
               ),
-              label: const Text(
-                'إزالة الشعار',
-                style: TextStyle(color: AppColors.error),
+              label:  Text(
+                tr('إزالة الشعار'),
+                style: const TextStyle(color: AppColors.error),
               ),
             ),
           ],
           const SizedBox(height: 8),
-          const Text(
-            'يظهر الشعار على الفواتير والإيصالات',
-            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+           Text(
+            tr('يظهر الشعار على الفواتير والإيصالات'),
+            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -269,7 +270,7 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
       'company_tax_id': _taxIdController.text,
     });
     if (mounted) {
-      AppToast.show(context, 'تم حفظ معلومات الشركة', type: ToastType.success);
+      AppToast.show(context, tr('تم حفظ معلومات الشركة'), type: ToastType.success);
     }
   }
 }
@@ -279,19 +280,19 @@ Future<void> showCompanyInfoDialog(BuildContext context) {
   return showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Row(
+      title:  Row(
         children: [
-          Icon(PhosphorIconsBold.buildings, color: AppColors.primary),
-          SizedBox(width: 8),
-          Text('معلومات الشركة'),
-          Spacer(),
+          const Icon(PhosphorIconsBold.buildings, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Text(tr('معلومات الشركة')),
+          const Spacer(),
         ],
       ),
       content: const SizedBox(width: 450, child: CompanyInfoWidget()),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إغلاق'),
+          child:  Text(tr('إغلاق')),
         ),
       ],
     ),

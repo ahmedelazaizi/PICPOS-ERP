@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // حوارُ «مصروف تشغيلي جديد» بهويّة PicPos — فورك `DLGS.expense` في
 // `PicPos Operating Expenses.dc.html`.
 //
@@ -78,11 +79,11 @@ class NewExpenseForm {
   final int? costCenterId;
 }
 
-const _periods = <(String, String, IconData, String)>[
-  ('monthly', 'شهري', PhosphorIconsBold.calendar, 'تصنيفٌ للتقارير'),
-  ('weekly', 'أسبوعي', PhosphorIconsBold.calendarDots, 'تصنيفٌ للتقارير'),
-  ('daily', 'يومي', PhosphorIconsBold.sun, 'تصنيفٌ للتقارير'),
-  ('one_time', 'لمرة واحدة', PhosphorIconsBold.dot, 'مصروف عارض'),
+List<(String, String, IconData, String)> get _periods => <(String, String, IconData, String)>[
+  ('monthly', tr('شهري'), PhosphorIconsBold.calendar, tr('تصنيفٌ للتقارير')),
+  ('weekly', tr('أسبوعي'), PhosphorIconsBold.calendarDots, tr('تصنيفٌ للتقارير')),
+  ('daily', tr('يومي'), PhosphorIconsBold.sun, tr('تصنيفٌ للتقارير')),
+  ('one_time', tr('لمرة واحدة'), PhosphorIconsBold.dot, tr('مصروف عارض')),
 ];
 
 /// يفتح الحوارَ ويُرجع النموذجَ، أو `null` عند الإلغاء.
@@ -149,12 +150,12 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
 
   String? get _blocker {
     if (widget.categories.isEmpty) {
-      return 'لا فئاتِ مصروفاتٍ — أنشئ فئةً من تبويب «الفئات» أوّلاً';
+      return tr('لا فئاتِ مصروفاتٍ — أنشئ فئةً من تبويب «الفئات» أوّلاً');
     }
-    if (_categoryId == null) return 'اختر الفئة';
+    if (_categoryId == null) return tr('اختر الفئة');
     final a = _amount;
-    if (a == null || a <= 0) return 'المبلغُ مطلوبٌ وأكبرُ من صفر';
-    if (_descCtrl.text.trim().isEmpty) return 'البيانُ مطلوب';
+    if (a == null || a <= 0) return tr('المبلغُ مطلوبٌ وأكبرُ من صفر');
+    if (_descCtrl.text.trim().isEmpty) return tr('البيانُ مطلوب');
     return null;
   }
 
@@ -189,15 +190,15 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
 
     return PicPosDialog(
       icon: PhosphorIconsBold.receiptX,
-      title: 'مصروف تشغيلي جديد',
-      subtitle: 'الفئة تحدد الحساب وطريقة التحميل على الإنتاج',
+      title: tr('مصروف تشغيلي جديد'),
+      subtitle: tr('الفئة تحدد الحساب وطريقة التحميل على الإنتاج'),
       width: 880,
       onCancel: () => Navigator.pop(context),
       footerHint: blocker,
       primaryAction: PicPosDialogAction(
         // ⚠️ **لا «حفظ كمسوّدة»**: الحفظُ يرحّل القيدَ ويخصم من الخزنة —
         //    راجع تعليقَ الرأس. واسمُ الزرّ يقول ما يفعل.
-        label: 'حفظ وترحيل',
+        label: tr('حفظ وترحيل'),
         icon: PhosphorIconsBold.check,
         onPressed: blocker != null
             ? null
@@ -223,17 +224,17 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                 ),
       ),
       body: [
-        _sectionLabel('الفئة والمبلغ'),
+        _sectionLabel(tr('الفئة والمبلغ')),
         PicPosDialogRow(
           children: [
             DropdownButtonFormField<int>(
               initialValue: _categoryId,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'الفئة *',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('الفئة *'),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.folders, size: 16),
+                prefixIcon: const Icon(PhosphorIconsBold.folders, size: 16),
               ),
               items: [
                 for (final c in widget.categories)
@@ -244,11 +245,11 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
             // ⚠️ الحسابُ **مشتَقٌّ** من الفئة لا مكتوبٌ بيد: `accountCode`
             //    هو ما يُرحَّل عليه القيدُ فعلاً، وحقلٌ ثانٍ يسمح باختلافهما.
             InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'الحساب',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('الحساب'),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.bank, size: 16),
+                prefixIcon: const Icon(PhosphorIconsBold.bank, size: 16),
               ),
               child: Text(
                 cat == null ? '—' : '${cat.accountCode} · ${cat.name}',
@@ -263,22 +264,22 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
               controller: _amountCtrl,
               keyboardType: TextInputType.number,
               onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                labelText: 'المبلغ *',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('المبلغ *'),
+                border: const OutlineInputBorder(),
                 isDense: true,
                 prefixIcon:
-                    Icon(PhosphorIconsBold.currencyCircleDollar, size: 16),
+                    const Icon(PhosphorIconsBold.currencyCircleDollar, size: 16),
               ),
             ),
             InkWell(
               onTap: _pickDate,
               child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'تاريخ المصروف',
-                  border: OutlineInputBorder(),
+                decoration:  InputDecoration(
+                  labelText: tr('تاريخ المصروف'),
+                  border: const OutlineInputBorder(),
                   isDense: true,
-                  prefixIcon: Icon(PhosphorIconsBold.calendarBlank, size: 16),
+                  prefixIcon: const Icon(PhosphorIconsBold.calendarBlank, size: 16),
                 ),
                 child: Text(
                   _fmt.format(_date),
@@ -291,26 +292,26 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
         TextField(
           controller: _descCtrl,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'البيان *',
-            border: OutlineInputBorder(),
+          decoration:  InputDecoration(
+            labelText: tr('البيان *'),
+            border: const OutlineInputBorder(),
             isDense: true,
-            prefixIcon: Icon(PhosphorIconsBold.textAa, size: 16),
+            prefixIcon: const Icon(PhosphorIconsBold.textAa, size: 16),
           ),
         ),
-        _sectionLabel('النطاق'),
+        _sectionLabel(tr('النطاق')),
         PicPosDialogRow(
           children: [
             DropdownButtonFormField<int>(
               initialValue: _branchId,
               isExpanded: true,
-              decoration: const InputDecoration(
+              decoration:  InputDecoration(
                 // ⚠️ الفراغُ **ليس نقصاً**: مصروفٌ بلا فرعٍ مصروفُ إدارةٍ
                 //    مشتركٌ، وتقاريرُ الفروع تعامله كذلك عمداً.
-                labelText: 'الفرع (فارغٌ = كل الفروع)',
-                border: OutlineInputBorder(),
+                labelText: tr('الفرع (فارغٌ = كل الفروع)'),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.storefront, size: 16),
+                prefixIcon: const Icon(PhosphorIconsBold.storefront, size: 16),
               ),
               items: [
                 for (final b in widget.branches)
@@ -321,11 +322,11 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
             DropdownButtonFormField<int>(
               initialValue: _costCentreId,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'مركز التكلفة',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('مركز التكلفة'),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.target, size: 16),
+                prefixIcon: const Icon(PhosphorIconsBold.target, size: 16),
               ),
               items: [
                 for (final cc in widget.costCentres)
@@ -339,26 +340,26 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
           children: [
             TextField(
               controller: _refCtrl,
-              decoration: const InputDecoration(
-                labelText: 'رقم مرجعي',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('رقم مرجعي'),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.hash, size: 16),
+                prefixIcon: const Icon(PhosphorIconsBold.hash, size: 16),
               ),
             ),
             TextField(
               controller: _notesCtrl,
-              decoration: const InputDecoration(
-                labelText: 'ملاحظات',
-                border: OutlineInputBorder(),
+              decoration:  InputDecoration(
+                labelText: tr('ملاحظات'),
+                border: const OutlineInputBorder(),
                 isDense: true,
-                prefixIcon: Icon(PhosphorIconsBold.note, size: 16),
+                prefixIcon: const Icon(PhosphorIconsBold.note, size: 16),
               ),
             ),
           ],
         ),
         // ⚠️ «الأصل المرتبط» في التصميم بلا عمودٍ في القاعدة — راجع الرأس.
-        _sectionLabel('الدورية'),
+        _sectionLabel(tr('الدورية')),
         PicPosDialogRow(
           children: [
             for (final (id, label, icon, _) in _periods)
@@ -370,39 +371,39 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
               ),
           ],
         ),
-        _sectionLabel('الدفع'),
+        _sectionLabel(tr('الدفع')),
         PicPosDialogRow(
           children: [
             PicPosDialogChoice(
               icon: PhosphorIconsBold.money,
-              label: 'نقدي',
+              label: tr('نقدي'),
               selected: _payment == 'cash',
               onTap: () => setState(() => _payment = 'cash'),
             ),
             PicPosDialogChoice(
               icon: PhosphorIconsBold.bank,
-              label: 'بنك',
+              label: tr('بنك'),
               selected: _payment == 'bank',
               onTap: () => setState(() => _payment = 'bank'),
             ),
           ],
         ),
-        _sectionLabel('ما سيحدث'),
+        _sectionLabel(tr('ما سيحدث')),
         PicPosDialogSummary(
           rows: [
             (
-              label: '${cat?.accountCode ?? '—'} مدين',
+              label: tr('{p0} مدين', {'p0': cat?.accountCode ?? '—'}),
               value: _money.format(amount),
               color: AppColors.primary,
             ),
             (
-              label: _payment == 'cash' ? 'الخزينة دائن' : 'البنك دائن',
+              label: _payment == 'cash' ? tr('الخزينة دائن') : tr('البنك دائن'),
               value: _money.format(amount),
               color: AppColors.success,
             ),
             (
-              label: 'حالة المصروف',
-              value: 'مسوّدة',
+              label: tr('حالة المصروف'),
+              value: tr('مسوّدة'),
               color: AppColors.warning,
             ),
           ],

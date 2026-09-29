@@ -85,11 +85,11 @@ mixin _ActivityLogFiltersMixin on ConsumerState<ActivityLogScreen> {
         runSpacing: 12,
         children: [
           // Date Range (auto-reload on pick)
-          _buildDateButton('من', fromDate, (date) {
+          _buildDateButton(tr('من'), fromDate, (date) {
             setState(() => fromDate = date);
             loadLogs();
           }),
-          _buildDateButton('إلى', toDate, (date) {
+          _buildDateButton(tr('إلى'), toDate, (date) {
             setState(() => toDate = date);
             loadLogs();
           }),
@@ -102,50 +102,50 @@ mixin _ActivityLogFiltersMixin on ConsumerState<ActivityLogScreen> {
 
           // Quick Category Chips
           const SizedBox(width: 8),
-          _buildCategoryChip('الأصناف', 'items', PhosphorIconsBold.package),
+          _buildCategoryChip(tr('الأصناف'), 'items', PhosphorIconsBold.package),
           _buildCategoryChip(
-            'المبيعات',
+            tr('المبيعات'),
             'sales',
             PhosphorIconsBold.shoppingCart,
           ),
           _buildCategoryChip(
-            'المشتريات',
+            tr('المشتريات'),
             'purchases',
             PhosphorIconsBold.receipt,
           ),
-          _buildCategoryChip('الخزينة', 'treasury', PhosphorIconsBold.money),
-          _buildCategoryChip('العملاء', 'customers', PhosphorIconsBold.users),
-          _buildCategoryChip('الموردين', 'suppliers', PhosphorIconsBold.truck),
-          _buildCategoryChip('البيع السريع', 'pos', PhosphorIconsBold.storefront),
-          _buildCategoryChip('نقطة بيع الطاولات', 'table_pos', PhosphorIconsBold.table),
-          _buildCategoryChip('العروض', 'offers', PhosphorIconsBold.tag),
+          _buildCategoryChip(tr('الخزينة'), 'treasury', PhosphorIconsBold.money),
+          _buildCategoryChip(tr('العملاء'), 'customers', PhosphorIconsBold.users),
+          _buildCategoryChip(tr('الموردين'), 'suppliers', PhosphorIconsBold.truck),
+          _buildCategoryChip(tr('البيع السريع'), 'pos', PhosphorIconsBold.storefront),
+          _buildCategoryChip(tr('نقطة بيع الطاولات'), 'table_pos', PhosphorIconsBold.table),
+          _buildCategoryChip(tr('العروض'), 'offers', PhosphorIconsBold.tag),
           _buildCategoryChip(
-            'المخزون',
+            tr('المخزون'),
             'inventory',
             PhosphorIconsBold.warehouse,
           ),
-          _buildCategoryChip('الإعدادات', 'settings', PhosphorIconsBold.gear),
-          _buildCategoryChip('الجلسات', 'auth', PhosphorIconsBold.userCircle),
+          _buildCategoryChip(tr('الإعدادات'), 'settings', PhosphorIconsBold.gear),
+          _buildCategoryChip(tr('الجلسات'), 'auth', PhosphorIconsBold.userCircle),
           _buildCategoryChip(
-            'المستخدمين',
+            tr('المستخدمين'),
             'users',
             PhosphorIconsBold.usersThree,
           ),
-          _buildCategoryChip('الطاولات', 'tables', PhosphorIconsBold.table),
-          _buildCategoryChip('التوصيل', 'delivery', PhosphorIconsBold.moped),
-          _buildCategoryChip('الطابعات', 'printers', PhosphorIconsBold.printer),
+          _buildCategoryChip(tr('الطاولات'), 'tables', PhosphorIconsBold.table),
+          _buildCategoryChip(tr('التوصيل'), 'delivery', PhosphorIconsBold.moped),
+          _buildCategoryChip(tr('الطابعات'), 'printers', PhosphorIconsBold.printer),
           _buildCategoryChip(
-            'الموارد البشرية',
+            tr('الموارد البشرية'),
             'hr',
             PhosphorIconsBold.userPlus,
           ),
-          _buildCategoryChip('الأدوار', 'roles', PhosphorIconsBold.shieldCheck),
+          _buildCategoryChip(tr('الأدوار'), 'roles', PhosphorIconsBold.shieldCheck),
           _buildCategoryChip(
-            'تصميم الفواتير',
+            tr('تصميم الفواتير'),
             'invoice_design',
             PhosphorIconsBold.fileText,
           ),
-          _buildCategoryChip('الفروع', 'branches', PhosphorIconsBold.buildings),
+          _buildCategoryChip(tr('الفروع'), 'branches', PhosphorIconsBold.buildings),
 
           // Sub-filter chips (appear when category is selected)
           if (selectedCategory != null &&
@@ -166,7 +166,7 @@ mixin _ActivityLogFiltersMixin on ConsumerState<ActivityLogScreen> {
           ElevatedButton.icon(
             onPressed: loadLogs,
             icon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
-            label: const Text('بحث'),
+            label:  Text(tr('بحث')),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
@@ -187,7 +187,7 @@ mixin _ActivityLogFiltersMixin on ConsumerState<ActivityLogScreen> {
               });
               loadLogs();
             },
-            child: const Text('مسح الفلاتر'),
+            child:  Text(tr('مسح الفلاتر')),
           ),
 
           // Log Count
@@ -198,7 +198,7 @@ mixin _ActivityLogFiltersMixin on ConsumerState<ActivityLogScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              'عدد العمليات: ${logs.length}',
+              tr('عدد العمليات: {p0}', {'p0': logs.length}),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: AppColors.info,
@@ -297,7 +297,7 @@ mixin _ActivityLogFiltersMixin on ConsumerState<ActivityLogScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              '$label: ${date != null ? '${date.day}/${date.month}/${date.year}' : 'اختر'}',
+              tr('{label}: {p0}', {'label': label, 'p0': date != null ? '${date.day}/${date.month}/${date.year}' : 'اختر'}),
             ),
           ],
         ),
@@ -318,22 +318,22 @@ mixin _ActivityLogFiltersMixin on ConsumerState<ActivityLogScreen> {
           child: DropdownButtonHideUnderline(
             child: DropdownButton<int?>(
               value: selectedUserId,
-              hint: const Row(
+              hint:  Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
+                  const Icon(
                     PhosphorIconsBold.user,
                     size: 16,
                     color: AppColors.textMuted,
                   ),
-                  SizedBox(width: 8),
-                  Text('كل المستخدمين'),
+                  const SizedBox(width: 8),
+                  Text(tr('كل المستخدمين')),
                 ],
               ),
               items: [
-                const DropdownMenuItem<int?>(
+                 DropdownMenuItem<int?>(
                   value: null,
-                  child: Text('كل المستخدمين'),
+                  child: Text(tr('كل المستخدمين')),
                 ),
                 ...users.map(
                   (u) => DropdownMenuItem<int?>(
@@ -369,22 +369,22 @@ mixin _ActivityLogFiltersMixin on ConsumerState<ActivityLogScreen> {
           child: DropdownButtonHideUnderline(
             child: DropdownButton<int?>(
               value: selectedBranchId,
-              hint: const Row(
+              hint:  Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
+                  const Icon(
                     PhosphorIconsBold.buildings,
                     size: 16,
                     color: AppColors.textMuted,
                   ),
-                  SizedBox(width: 8),
-                  Text('كل الفروع'),
+                  const SizedBox(width: 8),
+                  Text(tr('كل الفروع')),
                 ],
               ),
               items: [
-                const DropdownMenuItem<int?>(
+                 DropdownMenuItem<int?>(
                   value: null,
-                  child: Text('كل الفروع'),
+                  child: Text(tr('كل الفروع')),
                 ),
                 ...branches.map(
                   (b) => DropdownMenuItem<int?>(

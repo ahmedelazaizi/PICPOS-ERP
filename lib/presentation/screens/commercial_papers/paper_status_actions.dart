@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // انتقالاتُ حالة الورقة التجاريّة — **مسارٌ واحدٌ تستدعيه الشاشتان**.
 //
 // ═══ لماذا ملفٌّ مستقلّ ═══
@@ -42,7 +43,7 @@ Future<void> redepositBouncedPaper({
       paperId: paperId,
       status: 'deposited',
       changedBy: changedBy,
-      notes: notes ?? 'إعادة إيداع بعد ارتجاع',
+      notes: notes ?? tr('إعادة إيداع بعد ارتجاع'),
     );
 
 /// يسجّل تحصيلَ ورقةٍ واردةٍ — أو خصمَ ورقةٍ صادرةٍ من البنك.

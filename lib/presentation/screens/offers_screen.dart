@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,12 +29,12 @@ Widget buildOffersCreateButton({required VoidCallback onPressed}) {
   return PermissionGuard(
     permission: PermissionCodes.offersCreate,
     allowManagerOverride: true,
-    actionName: 'إضافة عرض',
+    actionName: tr('إضافة عرض'),
     onGranted: onPressed,
     child: ElevatedButton.icon(
       onPressed: onPressed,
       icon: const Icon(PhosphorIconsBold.plus),
-      label: const Text('إضافة عرض'),
+      label:  Text(tr('إضافة عرض')),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.warning,
         padding: const EdgeInsets.symmetric(
@@ -84,11 +85,11 @@ class _OffersScreenState extends ConsumerState<OffersScreen>
   String offerTypeLabel(String type) {
     switch (type) {
       case 'buy_x_get_y':
-        return 'اشترِ X واحصل Y';
+        return tr('اشترِ X واحصل Y');
       case 'percentage':
-        return 'خصم نسبة';
+        return tr('خصم نسبة');
       case 'fixed_discount':
-        return 'خصم مبلغ';
+        return tr('خصم مبلغ');
       case 'bundle':
       default:
         return 'باقة';
@@ -140,20 +141,20 @@ class _OffersScreenState extends ConsumerState<OffersScreen>
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'العروض',
-                          style: TextStyle(
+                          tr('العروض'),
+                          style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
-                          'إدارة عروض الباقات والأسعار الخاصة',
-                          style: TextStyle(color: AppColors.textMuted),
+                          tr('إدارة عروض الباقات والأسعار الخاصة'),
+                          style: const TextStyle(color: AppColors.textMuted),
                         ),
                       ],
                     ),
@@ -172,7 +173,7 @@ class _OffersScreenState extends ConsumerState<OffersScreen>
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'بحث في العروض...',
+                        hintText: tr('بحث في العروض...'),
                         prefixIcon: const Icon(
                           PhosphorIconsBold.magnifyingGlass,
                         ),
@@ -194,7 +195,7 @@ class _OffersScreenState extends ConsumerState<OffersScreen>
                   ),
                   const SizedBox(width: 16),
                   FilterChip(
-                    label: const Text('العروض الفعالة فقط'),
+                    label:  Text(tr('العروض الفعالة فقط')),
                     selected: _showActiveOnly,
                     onSelected: (v) => setState(() => _showActiveOnly = v),
                     avatar: Icon(
@@ -257,9 +258,9 @@ class _OffersScreenState extends ConsumerState<OffersScreen>
                               color: AppColors.textMuted.withValues(alpha: 0.3),
                             ),
                             const SizedBox(height: 24),
-                            const Text(
-                              'لا توجد عروض',
-                              style: TextStyle(
+                             Text(
+                              tr('لا توجد عروض'),
+                              style: const TextStyle(
                                 fontSize: 18,
                                 color: AppColors.textMuted,
                               ),
@@ -269,7 +270,7 @@ class _OffersScreenState extends ConsumerState<OffersScreen>
                               onPressed: () =>
                                   showAddOfferDialog(context, repo),
                               icon: const Icon(PhosphorIconsBold.plus),
-                              label: const Text('إضافة عرض جديد'),
+                              label:  Text(tr('إضافة عرض جديد')),
                             ),
                           ],
                         ),

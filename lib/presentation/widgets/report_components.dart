@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart';
@@ -295,10 +296,10 @@ class DateRangeFilter extends StatelessWidget {
   /// الآخر شيئاً آخر — والتقريرُ كلُّه يُحسَب من هذه الحدود، فالانحرافُ هنا
   /// أرقامٌ خاطئةٌ لا اختلافُ شكل.
   static List<({String label, DateTimeRange range})> presets() => [
-        (label: 'اليوم', range: _todayRange()),
-        (label: 'أمس', range: _yesterdayRange()),
-        (label: 'الشهر', range: _monthToDateRange()),
-        (label: 'السنة', range: _yearToDateRange()),
+        (label: tr('اليوم'), range: _todayRange()),
+        (label: tr('أمس'), range: _yesterdayRange()),
+        (label: tr('الشهر'), range: _monthToDateRange()),
+        (label: tr('السنة'), range: _yearToDateRange()),
       ];
 
   /// هل [range] هو المدى المعروض حاليّاً؟ مقارنةُ **يومٍ** لا لحظة.

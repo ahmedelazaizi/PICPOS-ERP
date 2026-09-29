@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
@@ -165,15 +166,15 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: const Text('إدارة الفروع والمخازن'),
+          title:  Text(tr('إدارة الفروع والمخازن')),
           bottom: TabBar(
             controller: _tabController,
             indicatorColor: Colors.white,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
-            tabs: const [
-              Tab(icon: Icon(PhosphorIconsBold.buildings), text: 'الفروع'),
-              Tab(icon: Icon(PhosphorIconsBold.warehouse), text: 'المخازن'),
+            tabs:  [
+              Tab(icon: const Icon(PhosphorIconsBold.buildings), text: tr('الفروع')),
+              Tab(icon: const Icon(PhosphorIconsBold.warehouse), text: tr('المخازن')),
             ],
           ),
         ),
@@ -186,7 +187,7 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'بحث عن فرع أو مخزن...',
+                        hintText: tr('بحث عن فرع أو مخزن...'),
                         prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); })
@@ -217,7 +218,7 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
           backgroundColor: AppColors.primary,
           icon: const Icon(PhosphorIconsBold.plus, color: Colors.white),
           label: Text(
-            _tabController.index == 0 ? 'فرع جديد' : 'مخزن جديد',
+            _tabController.index == 0 ? tr('فرع جديد') : tr('مخزن جديد'),
             style: const TextStyle(color: Colors.white),
           ),
         ),
@@ -238,7 +239,7 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
     }
 
     if (filteredBranches.isEmpty) {
-      return _buildEmptyState('لا توجد فروع', 'أضف فرعاً جديداً للبدء');
+      return _buildEmptyState(tr('لا توجد فروع'), tr('أضف فرعاً جديداً للبدء'));
     }
 
     return ListView.builder(
@@ -264,10 +265,10 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
                 if (branch.phone != null && branch.phone!.isNotEmpty)
                   Text('📞 ${branch.phone}'),
                 if (ccName != null)
-                  Text('🎯 مركز التكلفة: $ccName',
+                  Text(tr('🎯 مركز التكلفة: {ccName}', {'ccName': ccName}),
                       style: TextStyle(color: AppColors.primary.withValues(alpha: 0.8), fontSize: 12)),
                 if (whCount > 0)
-                  Text('🏭 المخازن: $whCount',
+                  Text(tr('🏭 المخازن: {whCount}', {'whCount': whCount}),
                       style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
               ],
             ),
@@ -291,7 +292,7 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
     }
 
     if (filteredWarehouses.isEmpty) {
-      return _buildEmptyState('لا توجد مخازن', 'أضف مخزناً جديداً للبدء');
+      return _buildEmptyState(tr('لا توجد مخازن'), tr('أضف مخزناً جديداً للبدء'));
     }
 
     return ListView.builder(
@@ -306,15 +307,15 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
         Color typeColor;
         switch (warehouse.type) {
           case 'raw_materials':
-            typeLabel = 'خامات';
+            typeLabel = tr('خامات');
             typeColor = Colors.orange;
             break;
           case 'finished_goods':
-            typeLabel = 'منتج تام';
+            typeLabel = tr('منتج تام');
             typeColor = Colors.blue;
             break;
           case 'retail':
-            typeLabel = 'بيع';
+            typeLabel = tr('بيع');
             typeColor = Colors.purple;
             break;
           default:
@@ -346,7 +347,7 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
                       color: Colors.green.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text('افتراضي', style: TextStyle(color: Colors.green, fontSize: 10)),
+                    child:  Text(tr('افتراضي'), style: const TextStyle(color: Colors.green, fontSize: 10)),
                   ),
                 ],
                 const SizedBox(width: 4),
@@ -365,11 +366,11 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (branchName != null)
-                  Text('🏢 الفرع: $branchName', style: const TextStyle(fontSize: 12))
+                  Text(tr('🏢 الفرع: {branchName}', {'branchName': branchName}), style: const TextStyle(fontSize: 12))
                 else
-                  const Text('🏢 بدون فرع', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                   Text(tr('🏢 بدون فرع'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 if (ccName != null)
-                  Text('🎯 مركز التكلفة: $ccName',
+                  Text(tr('🎯 مركز التكلفة: {ccName}', {'ccName': ccName}),
                       style: TextStyle(color: AppColors.primary.withValues(alpha: 0.8), fontSize: 12)),
               ],
             ),

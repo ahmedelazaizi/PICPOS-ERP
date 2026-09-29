@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -183,7 +184,7 @@ class _InvoiceDesignerScreenState extends ConsumerState<InvoiceDesignerScreen>
     if (template != null) {
       final templatesRepo = ref.read(invoiceTemplatesRepositoryProvider);
       double width = 100, height = 30;
-      String content = 'نص جديد';
+      String content = tr('نص جديد');
 
       if (elementType == 'image') {
         width = 100; height = 100; content = variableContent ?? '';

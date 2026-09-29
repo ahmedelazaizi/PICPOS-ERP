@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شاشةُ الطاولات بهوية PicPos — تخطيطٌ ثلاثيّ: عمودُ حالاتٍ · خريطةٌ أو
 // شبكة · شريطُ أفعال.
 //
@@ -70,13 +71,13 @@ Widget buildTablesOpenDesignerButton({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.tablesManage,
     allowManagerOverride: true,
-    actionName: 'مصمم القاعة',
+    actionName: tr('مصمم القاعة'),
     onGranted: onOpen,
     child: OutlinedButton.icon(
       key: const Key('tables_open_designer'),
       onPressed: onOpen,
       icon: const Icon(PhosphorIconsBold.squaresFour, size: 18),
-      label: const Text('مصمم القاعة'),
+      label:  Text(tr('مصمم القاعة')),
       style: OutlinedButton.styleFrom(foregroundColor: AppColors.warning),
     ),
   );
@@ -139,19 +140,19 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
     final selectedTable = _byId(tables, uiState.selectedTableId);
 
     return PicPosScreenScaffold(
-      title: 'إدارة الطاولات',
+      title: tr('إدارة الطاولات'),
       subtitle: _scopeLabel(sections, scopeId),
       icon: PhosphorIconsBold.circlesThree,
       headerActions: [
         PermissionGuard(
           permission: PermissionCodes.tablesManage,
           allowManagerOverride: true,
-          actionName: 'إضافة طاولة',
+          actionName: tr('إضافة طاولة'),
           onGranted: () => widget.actions.addTable(sectionId: scopeId),
           child: OutlinedButton.icon(
             onPressed: () => widget.actions.addTable(sectionId: scopeId),
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label: const Text('إضافة طاولة'),
+            label:  Text(tr('إضافة طاولة')),
             style: OutlinedButton.styleFrom(foregroundColor: AppColors.success),
           ),
         ),
@@ -162,12 +163,12 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
         PermissionGuard(
           permission: PermissionCodes.tablesManage,
           allowManagerOverride: true,
-          actionName: 'إدارة أقسام الطاولات',
+          actionName: tr('إدارة أقسام الطاولات'),
           onGranted: widget.actions.manageSections,
           child: OutlinedButton.icon(
             onPressed: widget.actions.manageSections,
             icon: const Icon(PhosphorIconsBold.mapPinArea, size: 18),
-            label: const Text('إدارة الأقسام'),
+            label:  Text(tr('إدارة الأقسام')),
             style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
           ),
         ),
@@ -187,7 +188,7 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
                 : PhosphorIconsBold.mapTrifold,
             size: 18,
           ),
-          label: Text(uiState.isVisualView ? 'عرض الشبكة' : 'عرض الخريطة'),
+          label: Text(uiState.isVisualView ? tr('عرض الشبكة') : tr('عرض الخريطة')),
           style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
         ),
         // مصمّمُ القاعة — **في العرضَين كلَيهما**. كان القديمُ محصوراً
@@ -309,11 +310,11 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
         : [for (final t in tables) if (t.status == uiState.statusFilter) t];
 
     if (shown.isEmpty) {
-      return const PicPosContentCard(
+      return  PicPosContentCard(
         child: Center(
           child: Text(
-            'لا توجد طاولاتٌ في هذا النطاق',
-            style: TextStyle(color: AppColors.textMuted),
+            tr('لا توجد طاولاتٌ في هذا النطاق'),
+            style: const TextStyle(color: AppColors.textMuted),
           ),
         ),
       );
@@ -352,11 +353,11 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
     bool isVisualView,
   ) {
     return PopupMenuButton<int?>(
-      tooltip: 'المنطقة',
+      tooltip: tr('المنطقة'),
       onSelected: (id) => setState(() => _sectionId = id),
       itemBuilder: (context) => [
         if (!isVisualView)
-          const PopupMenuItem<int?>(value: null, child: Text('كل المناطق')),
+           PopupMenuItem<int?>(value: null, child: Text(tr('كل المناطق'))),
         for (final section in sections)
           PopupMenuItem<int?>(value: section.id, child: Text(section.name)),
       ],
@@ -384,7 +385,7 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
   /// الخدمة. وحراسةُ مدخلِ قائمةٍ منبثقةٍ بلفّ نصِّه لا تمنع اختيارَه.
   Widget _buildMoreMenu(RestaurantTable? selectedTable) {
     return PopupMenuButton<String>(
-      tooltip: 'مزيد من الخيارات',
+      tooltip: tr('مزيد من الخيارات'),
       icon: const Icon(PhosphorIconsBold.dotsThreeOutline, size: 20),
       onSelected: (value) {
         final table = selectedTable;
@@ -400,12 +401,12 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
         PopupMenuItem<String>(
           value: 'log',
           enabled: selectedTable != null,
-          child: const Text('سجل الطاولة'),
+          child:  Text(tr('سجل الطاولة')),
         ),
         PopupMenuItem<String>(
           value: 'cancel',
           enabled: selectedTable != null,
-          child: const Text('إلغاء الطلب'),
+          child:  Text(tr('إلغاء الطلب')),
         ),
       ],
     );
@@ -423,20 +424,20 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
               color: AppColors.textMuted,
             ),
             const SizedBox(height: Spacing.md),
-            const Text(
-              'لا توجد أقسام — أضف قسماً قبل الطاولات',
-              style: TextStyle(color: AppColors.textMuted),
+             Text(
+              tr('لا توجد أقسام — أضف قسماً قبل الطاولات'),
+              style: const TextStyle(color: AppColors.textMuted),
             ),
             const SizedBox(height: Spacing.md),
             PermissionGuard(
               permission: PermissionCodes.tablesManage,
               allowManagerOverride: true,
-              actionName: 'إدارة أقسام الطاولات',
+              actionName: tr('إدارة أقسام الطاولات'),
               onGranted: widget.actions.manageSections,
               child: ElevatedButton.icon(
                 onPressed: widget.actions.manageSections,
                 icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                label: const Text('إدارة الأقسام'),
+                label:  Text(tr('إدارة الأقسام')),
               ),
             ),
           ],
@@ -446,11 +447,11 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
   }
 
   String _scopeLabel(List<TableSection> sections, int? scopeId) {
-    if (scopeId == null) return 'كل المناطق';
+    if (scopeId == null) return tr('كل المناطق');
     for (final section in sections) {
       if (section.id == scopeId) return section.name;
     }
-    return 'كل المناطق';
+    return tr('كل المناطق');
   }
 
   RestaurantTable? _byId(List<RestaurantTable> tables, int? id) {

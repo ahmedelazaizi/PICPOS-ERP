@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -21,8 +22,8 @@ class AdditionalCostsTab extends ConsumerWidget {
     final repository = ref.read(manufacturingRepositoryProvider);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       PicPosPageHeader(
-        title: 'التكاليف الإضافية',
-        subtitle: 'تكاليف مرتبطة بأوامر الإنتاج والتوزيع الشهري',
+        title: tr('التكاليف الإضافية'),
+        subtitle: tr('تكاليف مرتبطة بأوامر الإنتاج والتوزيع الشهري'),
         icon: PhosphorIconsBold.coins,
         actions: [
           AppButton.secondary(
@@ -37,13 +38,13 @@ class AdditionalCostsTab extends ConsumerWidget {
                   description: form.description,
                   amount: form.amount,
                 );
-                messenger.showSnackBar(const SnackBar(content: Text('تمت إضافة التكلفة')));
+                messenger.showSnackBar( SnackBar(content: Text(tr('تمت إضافة التكلفة'))));
               } catch (error) {
                 _showError(messenger, error);
               }
             },
             icon: const Icon(PhosphorIconsBold.plus),
-            child: const Text('إضافة تكلفة'),
+            child:  Text(tr('إضافة تكلفة')),
           ),
           AppButton.primary(
             onPressed: () async {
@@ -51,31 +52,31 @@ class AdditionalCostsTab extends ConsumerWidget {
               final confirmed = await showPicPosConfirm(
                 context,
                 icon: PhosphorIconsBold.arrowsClockwise,
-                title: 'توزيع التكاليف الشهرية',
-                message: 'سيتم تحميل المصروفات الإنتاجية غير الموزعة على أوامر هذا الشهر.',
-                confirmLabel: 'تشغيل التوزيع',
+                title: tr('توزيع التكاليف الشهرية'),
+                message: tr('سيتم تحميل المصروفات الإنتاجية غير الموزعة على أوامر هذا الشهر.'),
+                confirmLabel: tr('تشغيل التوزيع'),
               );
               if (!confirmed || !context.mounted) return;
               try {
                 await repository.allocateMonthlyExpenses(month: DateTime.now());
-                messenger.showSnackBar(const SnackBar(content: Text('تم تشغيل التوزيع الشهري')));
+                messenger.showSnackBar( SnackBar(content: Text(tr('تم تشغيل التوزيع الشهري'))));
               } catch (error) {
                 _showError(messenger, error);
               }
             },
             icon: const Icon(PhosphorIconsBold.arrowsClockwise),
-            child: const Text('توزيع الشهر'),
+            child:  Text(tr('توزيع الشهر')),
           ),
         ],
       ),
       PicPosDataTable(
-        title: 'التكاليف المرتبطة',
-        subtitle: 'كل سطر مرتبط بأمر إنتاج ولا يُحذف بعد الترحيل',
-        columns: const [
-          PicPosTableColumn('أمر الإنتاج'),
-          PicPosTableColumn('النوع'),
-          PicPosTableColumn('الوصف', flex: 2),
-          PicPosTableColumn('المبلغ', align: PicPosCellAlign.end),
+        title: tr('التكاليف المرتبطة'),
+        subtitle: tr('كل سطر مرتبط بأمر إنتاج ولا يُحذف بعد الترحيل'),
+        columns:  [
+          PicPosTableColumn(tr('أمر الإنتاج')),
+          PicPosTableColumn(tr('النوع')),
+          PicPosTableColumn(tr('الوصف'), flex: 2),
+          PicPosTableColumn(tr('المبلغ'), align: PicPosCellAlign.end),
         ],
         rows: [
           for (final cost in costs)
@@ -135,27 +136,27 @@ class _MfgCostDialogState extends State<_MfgCostDialog> {
   @override
   Widget build(BuildContext context) => PicPosDialog(
         icon: PhosphorIconsBold.coins,
-        title: 'إضافة تكلفة إنتاج',
+        title: tr('إضافة تكلفة إنتاج'),
         body: [
           DropdownButtonFormField<int>(
             value: _orderId,
-            decoration: const InputDecoration(labelText: 'أمر الإنتاج'),
+            decoration:  InputDecoration(labelText: tr('أمر الإنتاج')),
             items: [for (final order in widget.orders) DropdownMenuItem(value: order.id, child: Text(order.orderNumber))],
             onChanged: (value) => setState(() => _orderId = value),
           ),
           DropdownButtonFormField<String>(
             value: _costType,
-            decoration: const InputDecoration(labelText: 'نوع التكلفة'),
-            items: const [
-              DropdownMenuItem(value: 'overhead', child: Text('تحميل')), DropdownMenuItem(value: 'labor', child: Text('عمالة')), DropdownMenuItem(value: 'other', child: Text('أخرى')),
+            decoration:  InputDecoration(labelText: tr('نوع التكلفة')),
+            items:  [
+              DropdownMenuItem(value: 'overhead', child: Text(tr('تحميل'))), DropdownMenuItem(value: 'labor', child: Text(tr('عمالة'))), DropdownMenuItem(value: 'other', child: Text(tr('أخرى'))),
             ],
             onChanged: (value) => setState(() => _costType = value ?? 'overhead'),
           ),
-          TextField(controller: _description, decoration: const InputDecoration(labelText: 'الوصف')),
-          TextField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'المبلغ')),
+          TextField(controller: _description, decoration:  InputDecoration(labelText: tr('الوصف'))),
+          TextField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration:  InputDecoration(labelText: tr('المبلغ'))),
         ],
         primaryAction: PicPosDialogAction(
-          label: 'إضافة',
+          label: tr('إضافة'),
           icon: PhosphorIconsBold.floppyDisk,
           onPressed: () {
             final amount = double.tryParse(_amount.text);

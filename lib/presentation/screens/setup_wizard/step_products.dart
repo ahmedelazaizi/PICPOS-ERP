@@ -8,14 +8,14 @@ extension _SetupWizardProductsExt on _SetupWizardScreenState {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'أضف منتجاتك الأولى',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+         Text(
+          tr('أضف منتجاتك الأولى'),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'أضف بعض المنتجات للبدء. يمكنك استيراد المزيد لاحقاً من ملف Excel.',
-          style: TextStyle(color: AppColors.textMuted),
+         Text(
+          tr('أضف بعض المنتجات للبدء. يمكنك استيراد المزيد لاحقاً من ملف Excel.'),
+          style: const TextStyle(color: AppColors.textMuted),
         ),
         const SizedBox(height: 24),
         // Add Product Form
@@ -35,8 +35,8 @@ extension _SetupWizardProductsExt on _SetupWizardScreenState {
                       flex: 3,
                       child: _buildTextField(
                         controller: _productNameController,
-                        label: 'اسم المنتج',
-                        hint: 'مثال: حليب كامل الدسم',
+                        label: tr('اسم المنتج'),
+                        hint: tr('مثال: حليب كامل الدسم'),
                         icon: PhosphorIconsBold.package,
                       ),
                     ),
@@ -45,7 +45,7 @@ extension _SetupWizardProductsExt on _SetupWizardScreenState {
                       flex: 2,
                       child: _buildTextField(
                         controller: _productPriceController,
-                        label: 'سعر البيع',
+                        label: tr('سعر البيع'),
                         hint: '25.00',
                         icon: PhosphorIconsBold.tag,
                         isNumber: true,
@@ -56,7 +56,7 @@ extension _SetupWizardProductsExt on _SetupWizardScreenState {
                       flex: 2,
                       child: _buildTextField(
                         controller: _productCostController,
-                        label: 'سعر الشراء',
+                        label: tr('سعر الشراء'),
                         hint: '20.00',
                         icon: PhosphorIconsBold.money,
                         isNumber: true,
@@ -66,7 +66,7 @@ extension _SetupWizardProductsExt on _SetupWizardScreenState {
                     ElevatedButton.icon(
                       onPressed: _addProduct,
                       icon: const Icon(PhosphorIconsBold.plus, size: 16),
-                      label: const Text('إضافة'),
+                      label:  Text(tr('إضافة')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -93,9 +93,9 @@ extension _SetupWizardProductsExt on _SetupWizardScreenState {
                 Icon(PhosphorIconsBold.package,
                     size: 48, color: Colors.grey.withValues(alpha: 0.3)),
                 const SizedBox(height: 12),
-                const Text(
-                  'لم تُضف منتجات بعد — يمكنك تخطي هذه الخطوة',
-                  style: TextStyle(color: AppColors.textMuted),
+                 Text(
+                  tr('لم تُضف منتجات بعد — يمكنك تخطي هذه الخطوة'),
+                  style: const TextStyle(color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -118,7 +118,7 @@ extension _SetupWizardProductsExt on _SetupWizardScreenState {
                 ),
                 title: Text(p['name']!,
                     style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text('بيع: ${p['price']}  |  شراء: ${p['cost']}'),
+                subtitle: Text(tr('بيع: {p0}  |  شراء: {p1}', {'p0': p['price'], 'p1': p['cost']})),
                 trailing: IconButton(
                   icon: const Icon(PhosphorIconsBold.trash,
                       color: AppColors.error, size: 18),

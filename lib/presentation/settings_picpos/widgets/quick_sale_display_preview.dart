@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -29,7 +30,7 @@ const _muted = Color(0xFF7C8AA3);
 ///
 /// «صناعة الحلويات» هو الاسمُ الذي صوّره المالكُ مبتوراً 2026-08-29، فوجودُه
 /// هنا يجعل أثرَ «عرض التسمية» مرئيّاً في اللحظة التي يُجَرُّ فيها المِنزلق.
-const _catNames = ['صناعة الحلويات', 'مشروبات', 'ألبان', 'خضار'];
+List<String> get _catNames => [tr('صناعة الحلويات'), tr('مشروبات'), tr('ألبان'), tr('خضار')];
 
 class QuickSaleDisplayPreview extends StatelessWidget {
   final bool showTopBar;
@@ -112,9 +113,9 @@ class QuickSaleDisplayPreview extends StatelessWidget {
         child: Row(children: [
           const Icon(PhosphorIconsBold.eye, size: 14, color: _muted),
           const SizedBox(width: 7),
-          const Expanded(
-            child: Text('معاينة شاشة الكاشير',
-                style: TextStyle(
+           Expanded(
+            child: Text(tr('معاينة شاشة الكاشير'),
+                style: const TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w800,
                     color: _ink)),
@@ -125,8 +126,8 @@ class QuickSaleDisplayPreview extends StatelessWidget {
               color: const Color(0xFF4A80E8).withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(999),
             ),
-            child: const Text('مقياس ٥٠٪',
-                style: TextStyle(
+            child:  Text(tr('مقياس ٥٠٪'),
+                style: const TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF9EC1FF))),
@@ -142,11 +143,11 @@ class QuickSaleDisplayPreview extends StatelessWidget {
           border: Border(bottom: BorderSide(color: _line)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: const Row(children: [
-          Icon(PhosphorIconsBold.bell, size: 11, color: Color(0xFFF59E0B)),
-          SizedBox(width: 6),
-          Text('الفرع الرئيسي',
-              style: TextStyle(fontSize: 8.5, color: _muted)),
+        child:  Row(children: [
+          const Icon(PhosphorIconsBold.bell, size: 11, color: Color(0xFFF59E0B)),
+          const SizedBox(width: 6),
+          Text(tr('الفرع الرئيسي'),
+              style: const TextStyle(fontSize: 8.5, color: _muted)),
         ]),
       );
 
@@ -157,11 +158,11 @@ class QuickSaleDisplayPreview extends StatelessWidget {
           border: Border.all(color: _line),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Row(children: [
-          Icon(PhosphorIconsBold.barcode, size: 12, color: _muted),
-          SizedBox(width: 7),
-          Text('امسح الباركود…',
-              style: TextStyle(fontSize: 9, color: _muted)),
+        child:  Row(children: [
+          const Icon(PhosphorIconsBold.barcode, size: 12, color: _muted),
+          const SizedBox(width: 7),
+          Text(tr('امسح الباركود…'),
+              style: const TextStyle(fontSize: 9, color: _muted)),
         ]),
       );
 
@@ -198,14 +199,14 @@ class QuickSaleDisplayPreview extends StatelessWidget {
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: AlignmentDirectional.centerStart,
-              child: Text('صنف',
+              child: Text(tr('صنف'),
                   style: TextStyle(
                       fontSize: nameFontSize / 2, color: _ink)),
             ),
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: AlignmentDirectional.centerStart,
-              child: Text('٣٢.٠٠',
+              child: Text(tr('٣٢.٠٠'),
                   style: TextStyle(
                       fontSize: priceFontSize / 2,
                       fontWeight: FontWeight.w800,

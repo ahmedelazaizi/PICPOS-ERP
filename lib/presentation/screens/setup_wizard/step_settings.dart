@@ -8,19 +8,19 @@ extension _SetupWizardSettingsExt on _SetupWizardScreenState {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'الضرائب والإعدادات',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+         Text(
+          tr('الضرائب والإعدادات'),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'حدد إعدادات الضريبة. يمكنك تغييرها لاحقاً من الإعدادات.',
-          style: TextStyle(color: AppColors.textMuted),
+         Text(
+          tr('حدد إعدادات الضريبة. يمكنك تغييرها لاحقاً من الإعدادات.'),
+          style: const TextStyle(color: AppColors.textMuted),
         ),
         const SizedBox(height: 32),
         SwitchListTile(
-          title: const Text('تفعيل ضريبة القيمة المضافة'),
-          subtitle: const Text('إضافة الضريبة تلقائياً على الفواتير'),
+          title:  Text(tr('تفعيل ضريبة القيمة المضافة')),
+          subtitle:  Text(tr('إضافة الضريبة تلقائياً على الفواتير')),
           value: _enableTax,
           activeThumbColor: AppColors.primary,
           onChanged: (v) => setState(() => _enableTax = v),
@@ -31,7 +31,7 @@ extension _SetupWizardSettingsExt on _SetupWizardScreenState {
             width: 200,
             child: _buildTextField(
               controller: TextEditingController(text: _taxRate.toString()),
-              label: 'نسبة الضريبة %',
+              label: tr('نسبة الضريبة %'),
               hint: '14',
               icon: PhosphorIconsBold.percent,
               isNumber: true,
@@ -50,27 +50,27 @@ extension _SetupWizardSettingsExt on _SetupWizardScreenState {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.success.withValues(alpha: 0.2)),
           ),
-          child: const Row(
+          child:  Row(
             children: [
-              Icon(PhosphorIconsBold.checkCircle,
+              const Icon(PhosphorIconsBold.checkCircle,
                   color: AppColors.success, size: 32),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'أنت جاهز للبدء!',
-                      style: TextStyle(
+                      tr('أنت جاهز للبدء!'),
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: AppColors.success,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'اضغط "إنهاء الإعداد" لحفظ بياناتك والانتقال للنظام.',
-                      style: TextStyle(color: AppColors.textMuted),
+                      tr('اضغط "إنهاء الإعداد" لحفظ بياناتك والانتقال للنظام.'),
+                      style: const TextStyle(color: AppColors.textMuted),
                     ),
                   ],
                 ),

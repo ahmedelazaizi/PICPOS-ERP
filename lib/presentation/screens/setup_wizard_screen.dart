@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'setup_wizard/setup_step_meta.dart';
 import 'dart:io';
@@ -138,8 +139,8 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   bool _developerPasswordVisible = false;
 
   // Step 2: Branch & Warehouse
-  final _branchNameController = TextEditingController(text: 'الفرع الرئيسي');
-  final _warehouseNameController = TextEditingController(text: 'المخزن الرئيسي');
+  final _branchNameController = TextEditingController(text: tr('الفرع الرئيسي'));
+  final _warehouseNameController = TextEditingController(text: tr('المخزن الرئيسي'));
 
   // Step 3: First Products
   final List<Map<String, String>> _sampleProducts = [];
@@ -192,12 +193,12 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   bool _provisioningDone = false;
   String? _provisioningError;
   final List<_ProvisionStep> _provisionSteps = [
-    _ProvisionStep('اختبار الاتصال بالسيرفر'),
-    _ProvisionStep('إنشاء جداول قاعدة البيانات'),
-    _ProvisionStep('زرع البيانات الأساسية (أدوار، فرع، مخزن، خزائن…)'),
-    _ProvisionStep('زرع شجرة الحسابات'),
-    _ProvisionStep('إنشاء السنة المالية الحالية'),
-    _ProvisionStep('التحقق من اكتمال البيانات'),
+    _ProvisionStep(tr('اختبار الاتصال بالسيرفر')),
+    _ProvisionStep(tr('إنشاء جداول قاعدة البيانات')),
+    _ProvisionStep(tr('زرع البيانات الأساسية (أدوار، فرع، مخزن، خزائن…)')),
+    _ProvisionStep(tr('زرع شجرة الحسابات')),
+    _ProvisionStep(tr('إنشاء السنة المالية الحالية')),
+    _ProvisionStep(tr('التحقق من اكتمال البيانات')),
   ];
 
   bool _isSaving = false;
@@ -345,8 +346,8 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                           // بيتشال من الـ snapshot أصلاً. وقيمة UralCash
                           // متروكة بالحرف عشان شكله ما يتغيّرش.
                           Brand.isPicPos
-                              ? 'مرحباً بك في ${Brand.name}'
-                              : 'مرحباً بك في URAL-ERP',
+                              ? tr('مرحباً بك في {p0}', {'p0': Brand.name})
+                              : tr('مرحباً بك في URAL-ERP'),
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -358,7 +359,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                         //    للوضع الفاتح وحدَه، فيذوب في الداكن. ولونُ
                         //    `bodySmall` من الثيم يتبع الوضعَين.
                         Text(
-                          'دعنا نُعد نظامك في دقائق معدودة',
+                          tr('دعنا نُعد نظامك في دقائق معدودة'),
                           style: TextStyle(
                             color: Theme.of(context)
                                 .textTheme
@@ -459,7 +460,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                                   OutlinedButton.icon(
                                     onPressed: () => setState(() => _currentStep = _prevStep),
                                     icon: const Icon(PhosphorIconsBold.arrowRight),
-                                    label: const Text('السابق'),
+                                    label:  Text(tr('السابق')),
                                     style: OutlinedButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 32,
@@ -471,7 +472,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                                   TextButton(
                                     onPressed: _skipSetup,
                                     child: Text(
-                                      'تخطي الإعداد',
+                                      tr('تخطي الإعداد'),
                                       style: TextStyle(color: _mutedInk(context)),
                                     ),
                                   ),
@@ -491,7 +492,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                                             ? () => setState(() => _currentStep = _nextStep)
                                             : null,
                                         icon: const Icon(PhosphorIconsBold.arrowLeft),
-                                        label: const Text('التالي'),
+                                        label:  Text(tr('التالي')),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppColors.primary,
                                           foregroundColor: Colors.white,
@@ -513,7 +514,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                                                 ),
                                               )
                                             : const Icon(PhosphorIconsBold.checkCircle),
-                                        label: const Text('إنهاء الإعداد والبدء'),
+                                        label:  Text(tr('إنهاء الإعداد والبدء')),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppColors.success,
                                           foregroundColor: Colors.white,
@@ -595,7 +596,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           isDark ? PhosphorIconsBold.sun : PhosphorIconsBold.moon,
           size: 16,
         ),
-        label: Text(isDark ? 'الوضع الفاتح' : 'الوضع الداكن'),
+        label: Text(isDark ? tr('الوضع الفاتح') : tr('الوضع الداكن')),
         style: TextButton.styleFrom(foregroundColor: _mutedInk(context)),
       ),
     );
@@ -693,7 +694,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'الخطوة ${_activeStepIndex + 1} من $_totalSteps',
+          tr('الخطوة {p0} من {_totalSteps}', {'p0': _activeStepIndex + 1, '_totalSteps': _totalSteps}),
           style: TextStyle(color: muted, fontSize: 14),
         ),
         const SizedBox(width: 12),
@@ -711,7 +712,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         ),
         const SizedBox(width: 10),
         Text(
-          '${(progress * 100).round()}٪',
+          tr('{p0}٪', {'p0': (progress * 100).round()}),
           style: const TextStyle(
             color: AppColors.primary,
             fontSize: 14,
@@ -767,7 +768,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                 Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
           ),
           child: Text(
-            'الخطوة ${_activeStepIndex + 1} من $_totalSteps',
+            tr('الخطوة {p0} من {_totalSteps}', {'p0': _activeStepIndex + 1, '_totalSteps': _totalSteps}),
             style: text.labelSmall?.copyWith(
               fontWeight: FontWeight.w800,
               color: AppColors.primary,
@@ -811,7 +812,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                   const Icon(PhosphorIconsBold.lightbulb,
                       size: 17, color: AppColors.primary),
                   const SizedBox(width: 8),
-                  Text('لماذا هذه الخطوة',
+                  Text(tr('لماذا هذه الخطوة'),
                       style: text.labelLarge
                           ?.copyWith(fontWeight: FontWeight.w800)),
                 ],
@@ -825,7 +826,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                 ),
               ),
               const Divider(height: 24),
-              Text('تحقّقْ قبل المتابعة',
+              Text(tr('تحقّقْ قبل المتابعة'),
                   style:
                       text.labelLarge?.copyWith(fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
@@ -1061,7 +1062,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         if (mounted) {
           setState(() {
             _isConnecting = false;
-            _connectionResult = '❌ فشل الاتصال بالسيرفر: ${testResult['error']}';
+            _connectionResult = tr('❌ فشل الاتصال بالسيرفر: {p0}', {'p0': testResult['error']});
           });
         }
         return;
@@ -1105,7 +1106,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         if (mounted) {
           setState(() {
             _isConnecting = false;
-            _connectionResult = '⚠️ فشلت المزامنة: ${e.message}';
+            _connectionResult = tr('⚠️ فشلت المزامنة: {p0}', {'p0': e.message});
           });
         }
         return;
@@ -1127,7 +1128,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
 
       if (mounted) {
         final warningSuffix = firstSyncResult.warningCount > 0
-            ? ' (${firstSyncResult.warningCount} تحذير)'
+            ? tr(' ({p0} تحذير)', {'p0': firstSyncResult.warningCount})
             : '';
         setState(() {
           _isConnecting = false;
@@ -1141,7 +1142,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       if (mounted) {
         setState(() {
           _isConnecting = false;
-          _connectionResult = '❌ خطأ: $e';
+          _connectionResult = tr('❌ خطأ: {e}', {'e': e});
         });
       }
     }
@@ -1209,7 +1210,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       if (mounted) {
         setState(() {
           _isConnecting = false;
-          _connectionResult = '❌ خطأ: $e';
+          _connectionResult = tr('❌ خطأ: {e}', {'e': e});
         });
       }
     }
@@ -1218,11 +1219,11 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   String _progressLabel(String stage) {
     switch (stage) {
       case 'wipe':
-        return 'تجهيز قاعدة البيانات';
+        return tr('تجهيز قاعدة البيانات');
       case 'sync':
-        return 'مزامنة الجداول';
+        return tr('مزامنة الجداول');
       case 'finalize':
-        return 'الانتهاء';
+        return tr('الانتهاء');
       default:
         return stage;
     }
@@ -1237,7 +1238,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('إعادة ربط الجهاز'),
+        title:  Text(tr('إعادة ربط الجهاز')),
         content: const Text(
           'سيتم مسح البيانات الرئيسية المحلية (الفروع، المخازن، الخزائن، '
           'شركات التوصيل، دليل الحسابات) واستبدالها بنسخة السيرفر.\n\n'
@@ -1247,11 +1248,11 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           TextButton(
             autofocus: true,
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('متابعة'),
+            child:  Text(tr('متابعة')),
           ),
         ],
       ),
@@ -1266,7 +1267,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     if (name.isEmpty) {
       // BUG-U11: tell the user why "إضافة" did nothing.
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('أدخل اسم المنتج أولاً')),
+         SnackBar(content: Text(tr('أدخل اسم المنتج أولاً'))),
       );
       return;
     }
@@ -1288,17 +1289,17 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     final password = _userPasswordController.text;
 
     if (displayName.isEmpty || username.isEmpty || password.isEmpty) {
-      AppToast.show(context, 'يجب ملء جميع الحقول المطلوبة', type: ToastType.error);
+      AppToast.show(context, tr('يجب ملء جميع الحقول المطلوبة'), type: ToastType.error);
       return;
     }
     if (_userSelectedRoleId == null) {
-      AppToast.show(context, 'يجب اختيار دور للمستخدم', type: ToastType.error);
+      AppToast.show(context, tr('يجب اختيار دور للمستخدم'), type: ToastType.error);
       return;
     }
 
     // Check duplicate username
     if (_wizardUsers.any((u) => u['username'] == username)) {
-      AppToast.show(context, 'اسم المستخدم "$username" مضاف بالفعل', type: ToastType.error);
+      AppToast.show(context, tr('اسم المستخدم "{username}" مضاف بالفعل', {'username': username}), type: ToastType.error);
       return;
     }
 
@@ -1339,7 +1340,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       _userSelectedRoleId = null;
     });
 
-    AppToast.show(context, 'تم إضافة المستخدم "$displayName"', type: ToastType.success);
+    AppToast.show(context, tr('تم إضافة المستخدم "{displayName}"', {'displayName': displayName}), type: ToastType.success);
   }
 
   Future<void> _skipSetup() async {
@@ -1442,7 +1443,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         await devAuth.setPassword(_developerPasswordController.text.trim());
       } catch (e, st) {
         debugPrint('[SetupWizard] developer password save failed: $e\n$st');
-        warnings.add('لم يُحفَظ كلمة مرور المطوّر');
+        warnings.add(tr('لم يُحفَظ كلمة مرور المطوّر'));
       }
 
       // Save company info
@@ -1595,7 +1596,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         if (failed.isNotEmpty && mounted) {
           AppToast.show(
             context,
-            'تعذّر إنشاءُ ${failed.length} مستخدم:\n${failed.join('\n')}',
+            tr('تعذّر إنشاءُ {p0} مستخدم:\n{p1}', {'p0': failed.length, 'p1': failed.join('\n')}),
             type: ToastType.error,
           );
         }
@@ -1761,14 +1762,14 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       if (!await ref
           .read(configServiceProvider)
           .rehydrateRuntimeConfigCache(exitPath: 'finish')) {
-        warnings.add('تعذّر تحديث ذاكرة الإعدادات المؤقتة');
+        warnings.add(tr('تعذّر تحديث ذاكرة الإعدادات المؤقتة'));
       }
 
       if (mounted) {
         if (warnings.isEmpty) {
           AppToast.show(
             context,
-            'تم إعداد النظام بنجاح! مرحباً بك 🎉',
+            tr('تم إعداد النظام بنجاح! مرحباً بك 🎉'),
             type: ToastType.success,
           );
         } else {
@@ -1790,7 +1791,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في الحفظ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الحفظ: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

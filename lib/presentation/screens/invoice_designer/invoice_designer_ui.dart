@@ -48,11 +48,11 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
             color: AppColors.primary.withValues(alpha: 0.1),
             border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
           ),
-          child: const Row(
+          child:  Row(
             children: [
-              Icon(PhosphorIconsBold.listBullets, size: 18, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('عناصر الفاتورة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const Icon(PhosphorIconsBold.listBullets, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(tr('عناصر الفاتورة'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ],
           ),
         ),
@@ -60,108 +60,108 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
           child: ListView(
             padding: const EdgeInsets.all(8),
             children: [
-              _buildPaletteSection('معلومات الشركة', [
-                const _PaletteItem('اسم الشركة', 'variable', 'company_name', PhosphorIconsBold.buildings),
-                const _PaletteItem('عنوان الشركة', 'variable', 'company_address', PhosphorIconsBold.mapPin),
-                const _PaletteItem('هاتف الشركة', 'variable', 'company_phone', PhosphorIconsBold.phone),
-                const _PaletteItem('شعار الشركة', 'image', 'logo', PhosphorIconsBold.image),
+              _buildPaletteSection(tr('معلومات الشركة'), [
+                 _PaletteItem(tr('اسم الشركة'), 'variable', 'company_name', PhosphorIconsBold.buildings),
+                 _PaletteItem(tr('عنوان الشركة'), 'variable', 'company_address', PhosphorIconsBold.mapPin),
+                 _PaletteItem(tr('هاتف الشركة'), 'variable', 'company_phone', PhosphorIconsBold.phone),
+                 _PaletteItem(tr('شعار الشركة'), 'image', 'logo', PhosphorIconsBold.image),
               ]),
               const SizedBox(height: 12),
-              _buildPaletteSection('معلومات الفاتورة', [
-                const _PaletteItem('رقم الفاتورة', 'variable', 'invoice_number', PhosphorIconsBold.hash),
-                const _PaletteItem('رقم الطلب', 'variable', 'order_number', PhosphorIconsBold.listNumbers),
-                const _PaletteItem('التاريخ', 'variable', 'date', PhosphorIconsBold.calendar),
-                const _PaletteItem('الوقت', 'variable', 'time', PhosphorIconsBold.clock),
-                const _PaletteItem('الكاشير', 'variable', 'cashier_name', PhosphorIconsBold.user),
-                const _PaletteItem('نوع الدفع', 'variable', 'payment_method', PhosphorIconsBold.creditCard),
+              _buildPaletteSection(tr('معلومات الفاتورة'), [
+                 _PaletteItem(tr('رقم الفاتورة'), 'variable', 'invoice_number', PhosphorIconsBold.hash),
+                 _PaletteItem(tr('رقم الطلب'), 'variable', 'order_number', PhosphorIconsBold.listNumbers),
+                 _PaletteItem(tr('التاريخ'), 'variable', 'date', PhosphorIconsBold.calendar),
+                 _PaletteItem(tr('الوقت'), 'variable', 'time', PhosphorIconsBold.clock),
+                 _PaletteItem(tr('الكاشير'), 'variable', 'cashier_name', PhosphorIconsBold.user),
+                 _PaletteItem(tr('نوع الدفع'), 'variable', 'payment_method', PhosphorIconsBold.creditCard),
               ]),
               const SizedBox(height: 12),
-              _buildPaletteSection('العميل (مسجل)', [
-                const _PaletteItem('اسم العميل', 'variable', 'customer_name', PhosphorIconsBold.user),
-                const _PaletteItem('هاتف العميل', 'variable', 'customer_phone', PhosphorIconsBold.phone),
-                const _PaletteItem('عنوان العميل', 'variable', 'customer_address', PhosphorIconsBold.mapPin),
+              _buildPaletteSection(tr('العميل (مسجل)'), [
+                 _PaletteItem(tr('اسم العميل'), 'variable', 'customer_name', PhosphorIconsBold.user),
+                 _PaletteItem(tr('هاتف العميل'), 'variable', 'customer_phone', PhosphorIconsBold.phone),
+                 _PaletteItem(tr('عنوان العميل'), 'variable', 'customer_address', PhosphorIconsBold.mapPin),
               ]),
               const SizedBox(height: 12),
-              _buildPaletteSection('العميل (نصي)', [
-                const _PaletteItem('اسم العميل النصي', 'variable', 'adhoc_customer_name', PhosphorIconsBold.userCircle),
-                const _PaletteItem('هاتف العميل النصي', 'variable', 'adhoc_customer_phone', PhosphorIconsBold.phoneCall),
-                const _PaletteItem('ملاحظات الفاتورة', 'variable', 'notes', PhosphorIconsBold.notepad),
+              _buildPaletteSection(tr('العميل (نصي)'), [
+                 _PaletteItem(tr('اسم العميل النصي'), 'variable', 'adhoc_customer_name', PhosphorIconsBold.userCircle),
+                 _PaletteItem(tr('هاتف العميل النصي'), 'variable', 'adhoc_customer_phone', PhosphorIconsBold.phoneCall),
+                 _PaletteItem(tr('ملاحظات الفاتورة'), 'variable', 'notes', PhosphorIconsBold.notepad),
               ]),
               const SizedBox(height: 12),
-              _buildPaletteSection('جدول الأصناف', [
-                const _PaletteItem('جدول الأصناف', 'variable', 'items_table', PhosphorIconsBold.table),
+              _buildPaletteSection(tr('جدول الأصناف'), [
+                 _PaletteItem(tr('جدول الأصناف'), 'variable', 'items_table', PhosphorIconsBold.table),
               ]),
               const SizedBox(height: 12),
-              _buildPaletteSection('المبالغ', [
-                const _PaletteItem('الإجمالي الفرعي', 'variable', 'subtotal', PhosphorIconsBold.currencyDollar),
-                const _PaletteItem('الضريبة', 'variable', 'tax_amount', PhosphorIconsBold.percent),
-                const _PaletteItem('الخصم', 'variable', 'discount', PhosphorIconsBold.tag),
-                const _PaletteItem('الإجمالي النهائي', 'variable', 'grand_total', PhosphorIconsBold.coins),
-                const _PaletteItem('المدفوع', 'variable', 'paid_amount', PhosphorIconsBold.money),
-                const _PaletteItem('الباقي', 'variable', 'change', PhosphorIconsBold.arrowsLeftRight),
+              _buildPaletteSection(tr('المبالغ'), [
+                 _PaletteItem(tr('الإجمالي الفرعي'), 'variable', 'subtotal', PhosphorIconsBold.currencyDollar),
+                 _PaletteItem(tr('الضريبة'), 'variable', 'tax_amount', PhosphorIconsBold.percent),
+                 _PaletteItem(tr('الخصم'), 'variable', 'discount', PhosphorIconsBold.tag),
+                 _PaletteItem(tr('الإجمالي النهائي'), 'variable', 'grand_total', PhosphorIconsBold.coins),
+                 _PaletteItem(tr('المدفوع'), 'variable', 'paid_amount', PhosphorIconsBold.money),
+                 _PaletteItem(tr('الباقي'), 'variable', 'change', PhosphorIconsBold.arrowsLeftRight),
               ]),
               const SizedBox(height: 12),
-              _buildPaletteSection('عناصر التصميم', [
-                const _PaletteItem('نص ثابت', 'text', '', PhosphorIconsBold.textT),
-                const _PaletteItem('خط فاصل', 'line', '', PhosphorIconsBold.lineSegment),
-                const _PaletteItem('مستطيل', 'rectangle', '', PhosphorIconsBold.square),
-                const _PaletteItem('صورة', 'image', '', PhosphorIconsBold.image),
+              _buildPaletteSection(tr('عناصر التصميم'), [
+                 _PaletteItem(tr('نص ثابت'), 'text', '', PhosphorIconsBold.textT),
+                 _PaletteItem(tr('خط فاصل'), 'line', '', PhosphorIconsBold.lineSegment),
+                 _PaletteItem(tr('مستطيل'), 'rectangle', '', PhosphorIconsBold.square),
+                 _PaletteItem(tr('صورة'), 'image', '', PhosphorIconsBold.image),
               ]),
               const SizedBox(height: 12),
-              _buildPaletteSection('ملصقات الباركود', [
-                const _PaletteItem('اسم المنتج', 'variable', 'product_name', PhosphorIconsBold.tag),
-                const _PaletteItem('كود المنتج', 'variable', 'product_code', PhosphorIconsBold.barcode),
-                const _PaletteItem('صورة الباركود', 'variable', 'barcode_image', PhosphorIconsBold.barcode),
-                const _PaletteItem('سعر المنتج', 'variable', 'product_price', PhosphorIconsBold.currencyDollar),
+              _buildPaletteSection(tr('ملصقات الباركود'), [
+                 _PaletteItem(tr('اسم المنتج'), 'variable', 'product_name', PhosphorIconsBold.tag),
+                 _PaletteItem(tr('كود المنتج'), 'variable', 'product_code', PhosphorIconsBold.barcode),
+                 _PaletteItem(tr('صورة الباركود'), 'variable', 'barcode_image', PhosphorIconsBold.barcode),
+                 _PaletteItem(tr('سعر المنتج'), 'variable', 'product_price', PhosphorIconsBold.currencyDollar),
               ]),
               const SizedBox(height: 12),
-              _buildPaletteSection('الإضافات والخيارات', [
-                const _PaletteItem('الإضافات', 'variable', 'item_additions', PhosphorIconsBold.plusCircle),
-                const _PaletteItem('الخيارات', 'variable', 'item_options', PhosphorIconsBold.faders),
+              _buildPaletteSection(tr('الإضافات والخيارات'), [
+                 _PaletteItem(tr('الإضافات'), 'variable', 'item_additions', PhosphorIconsBold.plusCircle),
+                 _PaletteItem(tr('الخيارات'), 'variable', 'item_options', PhosphorIconsBold.faders),
               ]),
               const SizedBox(height: 12),
-              _buildPaletteSection('حقول إضافية', [
+              _buildPaletteSection(tr('حقول إضافية'), [
                 const _PaletteItem('QR Code', 'variable', 'qr_code', PhosphorIconsBold.qrCode),
-                const _PaletteItem('الرقم الضريبي', 'variable', 'tax_registration', PhosphorIconsBold.identificationBadge),
-                const _PaletteItem('اسم المندوب', 'variable', 'courier_name', PhosphorIconsBold.motorcycle),
-                const _PaletteItem('رقم الوردية', 'variable', 'shift_number', PhosphorIconsBold.clockCounterClockwise),
+                 _PaletteItem(tr('الرقم الضريبي'), 'variable', 'tax_registration', PhosphorIconsBold.identificationBadge),
+                 _PaletteItem(tr('اسم المندوب'), 'variable', 'courier_name', PhosphorIconsBold.motorcycle),
+                 _PaletteItem(tr('رقم الوردية'), 'variable', 'shift_number', PhosphorIconsBold.clockCounterClockwise),
               ]),
               if (templateCategory == 'shift_closing') ...[
                 const SizedBox(height: 12),
-                _buildPaletteSection('ملخص المبيعات', [
-                  const _PaletteItem('عدد الفواتير', 'variable', 'shift_invoice_count', PhosphorIconsBold.receipt),
-                  const _PaletteItem('إجمالي المبيعات', 'variable', 'shift_total_sales', PhosphorIconsBold.currencyDollar),
-                  const _PaletteItem('مصروفات الوردية', 'variable', 'shift_total_expenses', PhosphorIconsBold.arrowDown),
-                  const _PaletteItem('مرتجعات نقدية', 'variable', 'shift_cash_refunds', PhosphorIconsBold.arrowUUpLeft),
+                _buildPaletteSection(tr('ملخص المبيعات'), [
+                   _PaletteItem(tr('عدد الفواتير'), 'variable', 'shift_invoice_count', PhosphorIconsBold.receipt),
+                   _PaletteItem(tr('إجمالي المبيعات'), 'variable', 'shift_total_sales', PhosphorIconsBold.currencyDollar),
+                   _PaletteItem(tr('مصروفات الوردية'), 'variable', 'shift_total_expenses', PhosphorIconsBold.arrowDown),
+                   _PaletteItem(tr('مرتجعات نقدية'), 'variable', 'shift_cash_refunds', PhosphorIconsBold.arrowUUpLeft),
                 ]),
                 const SizedBox(height: 12),
-                _buildPaletteSection('تسوية النقد', [
-                  const _PaletteItem('رصيد النقد (نظام)', 'variable', 'shift_system_cash', PhosphorIconsBold.coins),
-                  const _PaletteItem('النقد الفعلي', 'variable', 'shift_actual_cash', PhosphorIconsBold.money),
-                  const _PaletteItem('فارق النقد', 'variable', 'shift_cash_variance', PhosphorIconsBold.plusMinus),
+                _buildPaletteSection(tr('تسوية النقد'), [
+                   _PaletteItem(tr('رصيد النقد (نظام)'), 'variable', 'shift_system_cash', PhosphorIconsBold.coins),
+                   _PaletteItem(tr('النقد الفعلي'), 'variable', 'shift_actual_cash', PhosphorIconsBold.money),
+                   _PaletteItem(tr('فارق النقد'), 'variable', 'shift_cash_variance', PhosphorIconsBold.plusMinus),
                 ]),
                 const SizedBox(height: 12),
-                _buildPaletteSection('تسوية البطاقة', [
-                  const _PaletteItem('رصيد البطاقة (نظام)', 'variable', 'shift_system_card', PhosphorIconsBold.creditCard),
-                  const _PaletteItem('البطاقة الفعلي', 'variable', 'shift_actual_card', PhosphorIconsBold.creditCard),
-                  const _PaletteItem('فارق البطاقة', 'variable', 'shift_card_variance', PhosphorIconsBold.plusMinus),
+                _buildPaletteSection(tr('تسوية البطاقة'), [
+                   _PaletteItem(tr('رصيد البطاقة (نظام)'), 'variable', 'shift_system_card', PhosphorIconsBold.creditCard),
+                   _PaletteItem(tr('البطاقة الفعلي'), 'variable', 'shift_actual_card', PhosphorIconsBold.creditCard),
+                   _PaletteItem(tr('فارق البطاقة'), 'variable', 'shift_card_variance', PhosphorIconsBold.plusMinus),
                 ]),
                 const SizedBox(height: 12),
                 // §٥-٢ — «كليك» تدخل في «إجمالي النظام» و«إجمالي الفعلي» تحت،
                 // ولم تكن لها عناصرُ تعرضها هنا. فالمصمّمُ لا يملك وضعَها في
                 // القالب أصلاً، والمطبوعُ يعرض النقدَ والبطاقةَ بإجماليٍّ
                 // يشملها — فلا يجمع.
-                _buildPaletteSection('تسوية كليك', [
-                  const _PaletteItem('رصيد كليك (نظام)', 'variable', 'shift_system_click', PhosphorIconsBold.deviceMobile),
-                  const _PaletteItem('كليك الفعلي', 'variable', 'shift_actual_click', PhosphorIconsBold.deviceMobile),
-                  const _PaletteItem('فارق كليك', 'variable', 'shift_click_variance', PhosphorIconsBold.plusMinus),
+                _buildPaletteSection(tr('تسوية كليك'), [
+                   _PaletteItem(tr('رصيد كليك (نظام)'), 'variable', 'shift_system_click', PhosphorIconsBold.deviceMobile),
+                   _PaletteItem(tr('كليك الفعلي'), 'variable', 'shift_actual_click', PhosphorIconsBold.deviceMobile),
+                   _PaletteItem(tr('فارق كليك'), 'variable', 'shift_click_variance', PhosphorIconsBold.plusMinus),
                 ]),
                 const SizedBox(height: 12),
-                _buildPaletteSection('الإجماليات', [
-                  const _PaletteItem('إجمالي النظام', 'variable', 'shift_total_system', PhosphorIconsBold.calculator),
-                  const _PaletteItem('إجمالي الفعلي', 'variable', 'shift_total_actual', PhosphorIconsBold.wallet),
-                  const _PaletteItem('الفارق الكلي', 'variable', 'shift_total_variance', PhosphorIconsBold.chartBar),
-                  const _PaletteItem('الحالة', 'variable', 'shift_status', PhosphorIconsBold.checkCircle),
+                _buildPaletteSection(tr('الإجماليات'), [
+                   _PaletteItem(tr('إجمالي النظام'), 'variable', 'shift_total_system', PhosphorIconsBold.calculator),
+                   _PaletteItem(tr('إجمالي الفعلي'), 'variable', 'shift_total_actual', PhosphorIconsBold.wallet),
+                   _PaletteItem(tr('الفارق الكلي'), 'variable', 'shift_total_variance', PhosphorIconsBold.chartBar),
+                   _PaletteItem(tr('الحالة'), 'variable', 'shift_status', PhosphorIconsBold.checkCircle),
                 ]),
               ],
             ],
@@ -203,7 +203,7 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
     );
 
     return Tooltip(
-      message: 'اسحب للكانفاس أو انقر لإضافة: ${item.label}',
+      message: tr('اسحب للكانفاس أو انقر لإضافة: {p0}', {'p0': item.label}),
       child: Draggable<PaletteDragData>(
         data: PaletteDragData(item.type, item.content),
         feedback: Material(
@@ -304,14 +304,14 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
   /// فحقلٌ لا يرشّح كزرٍّ لا يعمل. يُبنى حين يُبنى الترشيحُ في المحرّر.
   Widget _buildPicposBody() {
     return PicPosScreenScaffold(
-      title: 'مصمم الفواتير',
-      subtitle: 'الإعدادات ← الأجهزة والطباعة',
+      title: tr('مصمم الفواتير'),
+      subtitle: tr('الإعدادات ← الأجهزة والطباعة'),
       icon: PhosphorIconsBold.fileText,
       headerActions: [
         ElevatedButton.icon(
           onPressed: saveTemplate,
           icon: const Icon(PhosphorIconsBold.check, size: 15),
-          label: const Text('حفظ القالب'),
+          label:  Text(tr('حفظ القالب')),
         ),
       ],
       subHeader: SizedBox(
@@ -344,7 +344,7 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
           Expanded(
             child: TextField(
               controller: nameController,
-              decoration: const InputDecoration(hintText: 'اسم القالب', border: InputBorder.none, isDense: true),
+              decoration:  InputDecoration(hintText: tr('اسم القالب'), border: InputBorder.none, isDense: true),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               onChanged: (_) => setState(() => hasChanges = true),
             ),
@@ -360,14 +360,14 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
               child: DropdownButton<String>(
                 value: templateCategory, isDense: true,
                 style: const TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.w600),
-                items: const [
-                  DropdownMenuItem(value: 'receipt', child: Text('البيع السريع')),
-                  DropdownMenuItem(value: 'invoice', child: Text('فواتير المبيعات')),
-                  DropdownMenuItem(value: 'purchase', child: Text('فواتير المشتريات')),
-                  DropdownMenuItem(value: 'kitchen', child: Text('طلبات المطبخ')),
-                  DropdownMenuItem(value: 'quotation', child: Text('عروض الأسعار')),
-                  DropdownMenuItem(value: 'barcode', child: Text('ملصقات الباركود')),
-                  DropdownMenuItem(value: 'shift_closing', child: Text('تقرير إغلاق الوردية')),
+                items:  [
+                  DropdownMenuItem(value: 'receipt', child: Text(tr('البيع السريع'))),
+                  DropdownMenuItem(value: 'invoice', child: Text(tr('فواتير المبيعات'))),
+                  DropdownMenuItem(value: 'purchase', child: Text(tr('فواتير المشتريات'))),
+                  DropdownMenuItem(value: 'kitchen', child: Text(tr('طلبات المطبخ'))),
+                  DropdownMenuItem(value: 'quotation', child: Text(tr('عروض الأسعار'))),
+                  DropdownMenuItem(value: 'barcode', child: Text(tr('ملصقات الباركود'))),
+                  DropdownMenuItem(value: 'shift_closing', child: Text(tr('تقرير إغلاق الوردية'))),
                 ],
                 onChanged: (val) { if (val != null) setState(() => templateCategory = val); },
               ),
@@ -389,14 +389,14 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
               Container(width: 1, height: 24, color: AppColors.primary),
               _buildTypeButton('A4', 'a4'),
               Container(width: 1, height: 24, color: AppColors.primary),
-              _buildTypeButton('مطبخ', 'kitchen'),
+              _buildTypeButton(tr('مطبخ'), 'kitchen'),
             ],
           ),
         ),
         const SizedBox(width: 16),
-        IconButton(icon: const Icon(PhosphorIconsBold.uploadSimple), tooltip: 'تصدير التصميم كملف', onPressed: exportTemplateToFile),
+        IconButton(icon: const Icon(PhosphorIconsBold.uploadSimple), tooltip: tr('تصدير التصميم كملف'), onPressed: exportTemplateToFile),
         PopupMenuButton<String>(
-          icon: const Icon(PhosphorIconsBold.downloadSimple), tooltip: 'استيراد تصميم',
+          icon: const Icon(PhosphorIconsBold.downloadSimple), tooltip: tr('استيراد تصميم'),
           onSelected: (value) {
             if (value == 'preset') {
               showImportDialog();
@@ -405,11 +405,11 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
             }
           },
           itemBuilder: (_) => [
-            const PopupMenuItem(value: 'preset', child: Row(children: [Icon(PhosphorIconsBold.package, size: 20), SizedBox(width: 8), Text('نماذج جاهزة')])),
-            const PopupMenuItem(value: 'file', child: Row(children: [Icon(PhosphorIconsBold.fileArrowDown, size: 20), SizedBox(width: 8), Text('استيراد من ملف')])),
+             PopupMenuItem(value: 'preset', child: Row(children: [const Icon(PhosphorIconsBold.package, size: 20), const SizedBox(width: 8), Text(tr('نماذج جاهزة'))])),
+             PopupMenuItem(value: 'file', child: Row(children: [const Icon(PhosphorIconsBold.fileArrowDown, size: 20), const SizedBox(width: 8), Text(tr('استيراد من ملف'))])),
           ],
         ),
-        IconButton(icon: const Icon(PhosphorIconsBold.folder), tooltip: 'القوالب المحفوظة', onPressed: showTemplatesList),
+        IconButton(icon: const Icon(PhosphorIconsBold.folder), tooltip: tr('القوالب المحفوظة'), onPressed: showTemplatesList),
         const SizedBox(width: 8),
       ],
     );

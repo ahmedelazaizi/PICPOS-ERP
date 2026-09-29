@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // منطق منسوخ من users_management_screen.dart (monolith) — أي إصلاح منطقي
 // يتصلّح في المصدر أولاً ثم يُنقل بـ patch لهذا الملف (مصيدة النسخ §٥.٨). لا
 // يُنسخ أبداً من D:\URAL-ERP.
@@ -109,8 +110,8 @@ class _UsersManagementPicposScreenState
     if (perms == null || !canManageUsersCodes(perms)) {
       return _deniedScaffold(
         perms == null
-            ? 'جارٍ التحقّق من الصلاحية…'
-            : 'ليس لديك صلاحية «إدارة المستخدمين».',
+            ? tr('جارٍ التحقّق من الصلاحية…')
+            : tr('ليس لديك صلاحية «إدارة المستخدمين».'),
       );
     }
 
@@ -120,14 +121,14 @@ class _UsersManagementPicposScreenState
     final theme = Theme.of(context);
 
     return PicPosScreenScaffold(
-      title: 'المستخدمون',
-      subtitle: 'إدارة حسابات المستخدمين والصلاحيات',
+      title: tr('المستخدمون'),
+      subtitle: tr('إدارة حسابات المستخدمين والصلاحيات'),
       icon: PhosphorIconsBold.users,
       headerActions: [
         IconButton(
           icon: const Icon(PhosphorIconsBold.userPlus),
           onPressed: () => _showAddUserDialog(),
-          tooltip: 'إضافة مستخدم',
+          tooltip: tr('إضافة مستخدم'),
         ),
       ],
       body: usersAsync.when(
@@ -152,13 +153,13 @@ class _UsersManagementPicposScreenState
             padding: const EdgeInsets.all(16),
             child: ShimmerLoading.list(itemCount: 4),
           ),
-          error: (e, _) => Center(child: Text('خطأ: $e')),
+          error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
         ),
         loading: () => Padding(
           padding: const EdgeInsets.all(16),
           child: ShimmerLoading.list(itemCount: 4),
         ),
-        error: (e, _) => Center(child: Text('خطأ: $e')),
+        error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
       ),
     );
   }
@@ -185,10 +186,10 @@ class _UsersManagementPicposScreenState
     Map<int, List<String>> userBranchNames,
   ) {
     if (users.isEmpty) {
-      return const EmptyStateWidget(
+      return  EmptyStateWidget(
         icon: PhosphorIconsBold.users,
-        message: 'لا توجد مستخدمين',
-        description: 'أضف أول مستخدم للنظام',
+        message: tr('لا توجد مستخدمين'),
+        description: tr('أضف أول مستخدم للنظام'),
       );
     }
 
@@ -236,11 +237,11 @@ class _UsersManagementPicposScreenState
     // شارةُ الحالة: المقفولُ أخصُّ من المعطَّل، والمعطَّلُ أخصُّ من النشط —
     // فمستخدمٌ معطَّلٌ ومقفولٌ يُعرَض «مقفول» لأنه العائقُ الأقربُ للحلّ.
     final (String stLabel, Color stColor) = user.isLocked
-        ? ('مقفول', Colors.orange)
-        : (!user.isActive ? ('معطل', AppColors.error) : ('نشط', AppColors.success));
+        ? (tr('مقفول'), Colors.orange)
+        : (!user.isActive ? (tr('معطل'), AppColors.error) : (tr('نشط'), AppColors.success));
 
     final branches = userBranchNames[user.id] ?? const <String>[];
-    final branchLabel = branches.isEmpty ? 'كل الفروع' : branches.join('، ');
+    final branchLabel = branches.isEmpty ? tr('كل الفروع') : branches.join(tr('، '));
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
@@ -323,7 +324,7 @@ class _UsersManagementPicposScreenState
           const SizedBox(height: 11),
           _userMetaLine(
             PhosphorIconsBold.shieldCheck,
-            role?.name ?? 'بلا دور',
+            role?.name ?? tr('بلا دور'),
             tint,
             bold: true,
           ),
@@ -336,7 +337,7 @@ class _UsersManagementPicposScreenState
           const SizedBox(height: 6),
           _userMetaLine(
             PhosphorIconsBold.house,
-            'الشاشة الافتراضية: ${_homeScreenLabel(user.defaultScreen)}',
+            tr('الشاشة الافتراضية: {p0}', {'p0': _homeScreenLabel(user.defaultScreen)}),
             AppColors.textMuted,
           ),
           const Spacer(),
@@ -348,7 +349,7 @@ class _UsersManagementPicposScreenState
                   key: Key('user-edit-${user.id}'),
                   icon: PhosphorIconsBold.pencilSimple,
                   iconColor: AppColors.warning,
-                  label: 'تعديل البيانات',
+                  label: tr('تعديل البيانات'),
                   onPressed: () => _showEditUserDialog(user),
                 ),
               ),
@@ -359,7 +360,7 @@ class _UsersManagementPicposScreenState
                   key: Key('user-password-${user.id}'),
                   icon: PhosphorIconsBold.key,
                   iconColor: AppColors.primary,
-                  label: 'كلمة المرور',
+                  label: tr('كلمة المرور'),
                   onPressed: () => _showResetPasswordDialog(user),
                 ),
               ),
@@ -369,7 +370,7 @@ class _UsersManagementPicposScreenState
                 height: 32,
                 child: PopupMenuButton<String>(
                   key: Key('user-more-${user.id}'),
-                  tooltip: 'المزيد',
+                  tooltip: tr('المزيد'),
                   padding: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -381,40 +382,40 @@ class _UsersManagementPicposScreenState
                   ),
                   onSelected: (v) => _onUserMenu(v, userWithRole, roles),
                   itemBuilder: (_) => [
-                    const PopupMenuItem(
+                     PopupMenuItem(
                       value: 'settings',
-                      child: Text('الدور والإعدادات',
-                          style: TextStyle(fontSize: 12)),
+                      child: Text(tr('الدور والإعدادات'),
+                          style: const TextStyle(fontSize: 12)),
                     ),
                     PopupMenuItem(
                       value: 'toggle',
-                      child: Text(user.isActive ? 'تعطيل' : 'تفعيل',
+                      child: Text(user.isActive ? tr('تعطيل') : tr('تفعيل'),
                           style: const TextStyle(fontSize: 12)),
                     ),
                     PopupMenuItem(
                       value: 'lock',
-                      child: Text(user.isLocked ? 'فتح القفل' : 'قفل',
+                      child: Text(user.isLocked ? tr('فتح القفل') : tr('قفل'),
                           style: const TextStyle(fontSize: 12)),
                     ),
-                    const PopupMenuItem(
+                     PopupMenuItem(
                       value: 'pin',
-                      child: Text('تعيين PIN',
-                          style: TextStyle(fontSize: 12)),
+                      child: Text(tr('تعيين PIN'),
+                          style: const TextStyle(fontSize: 12)),
                     ),
-                    const PopupMenuItem(
+                     PopupMenuItem(
                       value: 'branches',
                       child:
-                          Text('إدارة الفروع', style: TextStyle(fontSize: 12)),
+                          Text(tr('إدارة الفروع'), style: const TextStyle(fontSize: 12)),
                     ),
-                    const PopupMenuItem(
+                     PopupMenuItem(
                       value: 'warehouses',
-                      child: Text('إدارة المخازن',
-                          style: TextStyle(fontSize: 12)),
+                      child: Text(tr('إدارة المخازن'),
+                          style: const TextStyle(fontSize: 12)),
                     ),
-                    const PopupMenuItem(
+                     PopupMenuItem(
                       value: 'delete',
-                      child: Text('حذف',
-                          style: TextStyle(fontSize: 12, color: AppColors.error)),
+                      child: Text(tr('حذف'),
+                          style: const TextStyle(fontSize: 12, color: AppColors.error)),
                     ),
                   ],
                 ),
@@ -491,7 +492,7 @@ class _UsersManagementPicposScreenState
   /// زوجٌ بديلٌ نصفَ محرف.
   String _initialsOf(String name) {
     final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
-    if (words.isEmpty) return '؟';
+    if (words.isEmpty) return tr('؟');
     return words
         .take(2)
         .map((w) => String.fromCharCodes(w.runes.take(1)))
@@ -503,13 +504,13 @@ class _UsersManagementPicposScreenState
   String _homeScreenLabel(String? screen) {
     switch (screen) {
       case 'pos':
-        return 'البيع السريع';
+        return tr('البيع السريع');
       case 'dashboard':
-        return 'لوحة القيادة';
+        return tr('لوحة القيادة');
       case 'products':
-        return 'المنتجات';
+        return tr('المنتجات');
       case 'inventory':
-        return 'المخزون';
+        return tr('المخزون');
       default:
         return 'غير محددة';
     }
@@ -526,11 +527,11 @@ class _UsersManagementPicposScreenState
   Future<void> _confirmToggleLock(User user) async {
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: user.isLocked ? 'فك قفل المستخدم' : 'قفل المستخدم',
+      title: user.isLocked ? tr('فك قفل المستخدم') : tr('قفل المستخدم'),
       message: user.isLocked
-          ? 'هل أنت متأكد من فك قفل المستخدم ${user.displayName}؟'
-          : 'هل أنت متأكد من قفل المستخدم ${user.displayName}؟ لن يتمكن من تسجيل الدخول.',
-      confirmLabel: user.isLocked ? 'فك القفل' : 'قفل',
+          ? tr('هل أنت متأكد من فك قفل المستخدم {p0}؟', {'p0': user.displayName})
+          : tr('هل أنت متأكد من قفل المستخدم {p0}؟ لن يتمكن من تسجيل الدخول.', {'p0': user.displayName}),
+      confirmLabel: user.isLocked ? tr('فك القفل') : tr('قفل'),
       icon: user.isLocked ? PhosphorIconsBold.lockOpen : PhosphorIconsBold.lock,
       color: user.isLocked ? AppColors.info : Colors.orange,
     );
@@ -566,7 +567,7 @@ class _UsersManagementPicposScreenState
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('الدور والإعدادات — ${user.displayName}'),
+        title: Text(tr('الدور والإعدادات — {p0}', {'p0': user.displayName})),
         content: SizedBox(
           width: 520,
           child: SingleChildScrollView(
@@ -576,7 +577,7 @@ class _UsersManagementPicposScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -590,9 +591,9 @@ class _UsersManagementPicposScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Role Assignment
-                    const Text(
-                      'تعيين الدور:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                     Text(
+                      tr('تعيين الدور:'),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     // Spec 061 (D1-003): role dropdown disabled for the
@@ -627,9 +628,9 @@ class _UsersManagementPicposScreenState
                     const SizedBox(height: 16),
 
                     // Default Screen
-                    const Text(
-                      'الشاشة الافتراضية:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                     Text(
+                      tr('الشاشة الافتراضية:'),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
@@ -641,22 +642,22 @@ class _UsersManagementPicposScreenState
                         ),
                       ),
                       initialValue: user.defaultScreen,
-                      items: const [
+                      items:  [
                         DropdownMenuItem(
                           value: 'pos',
-                          child: Text('البيع السريع'),
+                          child: Text(tr('البيع السريع')),
                         ),
                         DropdownMenuItem(
                           value: 'dashboard',
-                          child: Text('لوحة القيادة'),
+                          child: Text(tr('لوحة القيادة')),
                         ),
                         DropdownMenuItem(
                           value: 'products',
-                          child: Text('المنتجات'),
+                          child: Text(tr('المنتجات')),
                         ),
                         DropdownMenuItem(
                           value: 'inventory',
-                          child: Text('المخزون'),
+                          child: Text(tr('المخزون')),
                         ),
                       ],
                       onChanged: (screen) =>
@@ -665,9 +666,9 @@ class _UsersManagementPicposScreenState
                     const SizedBox(height: 16),
 
                     // Max Discount Percent
-                    const Text(
-                      'حد الخصم الأقصى (%):',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                     Text(
+                      tr('حد الخصم الأقصى (%):'),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -686,11 +687,11 @@ class _UsersManagementPicposScreenState
                                 horizontal: 12,
                                 vertical: 8,
                               ),
-                              hintText: 'بلا حد',
+                              hintText: tr('بلا حد'),
                               suffixText: '%',
                               helperText: user.maxDiscountPercent != null
-                                  ? 'الحد الحالي: ${user.maxDiscountPercent!.toStringAsFixed(0)}%'
-                                  : 'لا يوجد حد - اتركه فارغاً لعدم التحديد',
+                                  ? tr('الحد الحالي: {p0}%', {'p0': user.maxDiscountPercent!.toStringAsFixed(0)})
+                                  : tr('لا يوجد حد - اتركه فارغاً لعدم التحديد'),
                             ),
                             onFieldSubmitted: (val) =>
                                 _updateMaxDiscount(user.id, val),
@@ -703,7 +704,7 @@ class _UsersManagementPicposScreenState
                               color: AppColors.error,
                               size: 18,
                             ),
-                            tooltip: 'إزالة الحد',
+                            tooltip: tr('إزالة الحد'),
                             onPressed: () => _updateMaxDiscount(user.id, ''),
                           ),
                       ],
@@ -718,8 +719,8 @@ class _UsersManagementPicposScreenState
   /// بيضاءَ تُقرأ عطلاً. والرسالةُ تسمّي الصلاحيةَ الناقصةَ كي يعرف المديرُ
   /// ما يمنحه بدل أن يجرّب.
   Widget _deniedScaffold(String message) => PicPosScreenScaffold(
-        title: 'المستخدمون',
-        subtitle: 'إدارة حسابات المستخدمين والصلاحيات',
+        title: tr('المستخدمون'),
+        subtitle: tr('إدارة حسابات المستخدمين والصلاحيات'),
         icon: PhosphorIconsBold.users,
         body: Center(
           child: Padding(
@@ -761,7 +762,7 @@ class _UsersManagementPicposScreenState
     if (result == true) {
       ref.invalidate(allUsersProvider);
       if (!mounted) return;
-      AppToast.show(context, 'تم حفظ التعديلات', type: ToastType.success);
+      AppToast.show(context, tr('تم حفظ التعديلات'), type: ToastType.success);
     }
   }
 
@@ -780,7 +781,7 @@ class _UsersManagementPicposScreenState
         ref.read(currentUserPermissionsProvider).value ?? const <String>[];
     if (!canAssignUserRoleCodes(perms)) {
       if (mounted) {
-        AppToast.show(context, 'ليس لديك صلاحية «إدارة صلاحيات الأدوار»',
+        AppToast.show(context, tr('ليس لديك صلاحية «إدارة صلاحيات الأدوار»'),
             type: ToastType.error);
       }
       return;
@@ -791,11 +792,11 @@ class _UsersManagementPicposScreenState
       context,
       ref,
       operation: DualApprovalOperation.userRoleChange,
-      details: 'تغيير دور المستخدم #$userId',
+      details: tr('تغيير دور المستخدم #{userId}', {'userId': userId}),
     );
     if (!approved) {
       if (mounted) {
-        AppToast.show(context, 'الموافقة الثنائية مرفوضة — لم يتم تغيير الدور', type: ToastType.warning);
+        AppToast.show(context, tr('الموافقة الثنائية مرفوضة — لم يتم تغيير الدور'), type: ToastType.warning);
       }
       return;
     }
@@ -815,7 +816,7 @@ class _UsersManagementPicposScreenState
         auth.user?.id ?? 0,
         auth.user?.displayName ?? '',
         'User#$userId',
-        'تغيير الدور',
+        tr('تغيير الدور'),
       );
     } catch (e) {
       debugPrint('[ActivityLog] Error: $e');
@@ -826,7 +827,7 @@ class _UsersManagementPicposScreenState
     ref.invalidate(userAllowedScreensProvider);
 
     if (!mounted) return;
-    AppToast.show(context, 'تم تحديث الدور', type: ToastType.success);
+    AppToast.show(context, tr('تم تحديث الدور'), type: ToastType.success);
   }
 
   Future<void> _updateDefaultScreen(int userId, String? screen) async {
@@ -859,7 +860,7 @@ class _UsersManagementPicposScreenState
         auth.user?.id ?? 0,
         auth.user?.displayName ?? '',
         'User#$userId',
-        'تغيير الشاشة الافتراضية',
+        tr('تغيير الشاشة الافتراضية'),
         newValue: screen,
       );
     } catch (e) {
@@ -868,7 +869,7 @@ class _UsersManagementPicposScreenState
     if (!mounted) return;
     AppToast.show(
       context,
-      'تم تحديث الشاشة الافتراضية',
+      tr('تم تحديث الشاشة الافتراضية'),
       type: ToastType.success,
     );
   }
@@ -877,14 +878,14 @@ class _UsersManagementPicposScreenState
     final maxDiscount = value.isEmpty ? null : double.tryParse(value);
 
     if (value.isNotEmpty && maxDiscount == null) {
-      AppToast.show(context, 'يرجى إدخال رقم صحيح', type: ToastType.error);
+      AppToast.show(context, tr('يرجى إدخال رقم صحيح'), type: ToastType.error);
       return;
     }
 
     if (maxDiscount != null && (maxDiscount < 0 || maxDiscount > 100)) {
       AppToast.show(
         context,
-        'يجب أن تكون النسبة بين 0 و 100',
+        tr('يجب أن تكون النسبة بين 0 و 100'),
         type: ToastType.error,
       );
       return;
@@ -917,8 +918,8 @@ class _UsersManagementPicposScreenState
         auth.user?.id ?? 0,
         auth.user?.displayName ?? '',
         'User#$userId',
-        'تغيير حد الخصم',
-        newValue: maxDiscount?.toStringAsFixed(0) ?? 'بدون حد',
+        tr('تغيير حد الخصم'),
+        newValue: maxDiscount?.toStringAsFixed(0) ?? tr('بدون حد'),
       );
     } catch (e) {
       debugPrint('[ActivityLog] Error: $e');
@@ -927,8 +928,8 @@ class _UsersManagementPicposScreenState
     AppToast.show(
       context,
       maxDiscount != null
-          ? 'تم تحديد حد الخصم: ${maxDiscount.toStringAsFixed(0)}%'
-          : 'تم إزالة حد الخصم',
+          ? tr('تم تحديد حد الخصم: {p0}%', {'p0': maxDiscount.toStringAsFixed(0)})
+          : tr('تم إزالة حد الخصم'),
       type: ToastType.success,
     );
     // Refresh the list
@@ -967,7 +968,7 @@ class _UsersManagementPicposScreenState
     if (!mounted) return;
     AppToast.show(
       context,
-      user.isActive ? 'تم تعطيل المستخدم' : 'تم تفعيل المستخدم',
+      user.isActive ? tr('تم تعطيل المستخدم') : tr('تم تفعيل المستخدم'),
       type: ToastType.success,
     );
   }
@@ -1004,7 +1005,7 @@ class _UsersManagementPicposScreenState
     if (!mounted) return;
     AppToast.show(
       context,
-      user.isLocked ? 'تم فك قفل المستخدم' : 'تم قفل المستخدم',
+      user.isLocked ? tr('تم فك قفل المستخدم') : tr('تم قفل المستخدم'),
       type: ToastType.success,
     );
   }
@@ -1025,21 +1026,21 @@ class _UsersManagementPicposScreenState
     final confirmed = await showPicPosDangerConfirm(
       context,
       icon: PhosphorIconsBold.userMinus,
-      title: 'تعطيل المستخدم',
+      title: tr('تعطيل المستخدم'),
       subtitle: user.displayName,
       message: 'يُقفَل الحساب فلا يستطيع صاحبُه الدخول. وحركاتُه السابقة '
           'تبقى مسجّلةً باسمه كما هي.',
-      actionLabel: 'تعطيل الحساب',
-      willDeleteLabel: 'سيحدث',
-      willDelete: const [
-        'تعطيل الحساب فلا يظهر في قوائم المستخدمين النشطين',
-        'قفلُه فلا يُقبَل منه تسجيلُ دخول',
+      actionLabel: tr('تعطيل الحساب'),
+      willDeleteLabel: tr('سيحدث'),
+      willDelete:  [
+        tr('تعطيل الحساب فلا يظهر في قوائم المستخدمين النشطين'),
+        tr('قفلُه فلا يُقبَل منه تسجيلُ دخول'),
       ],
-      willRemainLabel: 'يبقى كما هو',
-      willRemain: const [
-        'فواتيره وحركاته السابقة',
-        'أثرُه في سجلّ العمليات',
-        'الورديات المغلقة باسمه',
+      willRemainLabel: tr('يبقى كما هو'),
+      willRemain:  [
+        tr('فواتيره وحركاته السابقة'),
+        tr('أثرُه في سجلّ العمليات'),
+        tr('الورديات المغلقة باسمه'),
       ],
     );
     if (!confirmed) return;
@@ -1068,7 +1069,7 @@ class _UsersManagementPicposScreenState
       debugPrint('[ActivityLog] Error: $e');
     }
     if (!mounted) return;
-    AppToast.show(context, 'تم تعطيل الحساب وقفله', type: ToastType.success);
+    AppToast.show(context, tr('تم تعطيل الحساب وقفله'), type: ToastType.success);
     ref.invalidate(allUsersProvider);
     ref.invalidate(allUserBranchNamesProvider);
   }
@@ -1116,9 +1117,9 @@ class _UsersManagementPicposScreenState
     final String label;
     if (branches.isEmpty) {
       // Empty list = full access (admin/system role)
-      label = 'كل الفروع';
+      label = tr('كل الفروع');
     } else {
-      label = branches.join('، ');
+      label = branches.join(tr('، '));
     }
 
     return Container(

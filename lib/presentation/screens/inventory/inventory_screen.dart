@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -144,17 +145,17 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        title: const Text('إدارة المخزون'),
+        title:  Text(tr('إدارة المخزون')),
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: 'أرصدة المستودع', icon: Icon(PhosphorIconsBold.package)),
+          tabs:  [
+            Tab(text: tr('أرصدة المستودع'), icon: const Icon(PhosphorIconsBold.package)),
             Tab(
-              text: 'حركة الأصناف',
-              icon: Icon(PhosphorIconsBold.arrowsLeftRight),
+              text: tr('حركة الأصناف'),
+              icon: const Icon(PhosphorIconsBold.arrowsLeftRight),
             ),
           ],
         ),
@@ -204,7 +205,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
       onChanged: (v) =>
           ref.read(inventoryNotifierProvider.notifier).setSearchQuery(v),
       decoration: InputDecoration(
-        hintText: 'بحث عن صنف أو كود...',
+        hintText: tr('بحث عن صنف أو كود...'),
         prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
         filled: true,
         fillColor: Theme.of(context).cardColor,
@@ -232,9 +233,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
           child: DropdownButtonHideUnderline(
             child: DropdownButton<int?>(
               value: ref.watch(inventoryNotifierProvider).selectedWarehouseId,
-              hint: const Text('كل المستودعات'),
+              hint:  Text(tr('كل المستودعات')),
               items: [
-                const DropdownMenuItem(value: null, child: Text('كل المستودعات')),
+                 DropdownMenuItem(value: null, child: Text(tr('كل المستودعات'))),
                 ...warehouses.map(
                   (w) => DropdownMenuItem(value: w.id, child: Text(w.name)),
                 ),
@@ -263,9 +264,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
         child: DropdownButtonHideUnderline(
           child: DropdownButton<int?>(
             value: ref.watch(inventoryNotifierProvider).selectedCategoryId,
-            hint: const Text('كل التصنيفات'),
+            hint:  Text(tr('كل التصنيفات')),
             items: [
-              const DropdownMenuItem(value: null, child: Text('كل التصنيفات')),
+               DropdownMenuItem(value: null, child: Text(tr('كل التصنيفات'))),
               ...cats.map(
                 (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
               ),
@@ -282,7 +283,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
 
   Widget _buildLowStockToggle(WidgetRef ref, InventoryState state) {
     return FilterChip(
-      label: const Text('نواقص المخزون'),
+      label:  Text(tr('نواقص المخزون')),
       selected: state.showLowStockOnly,
       onSelected: (v) =>
           ref.read(inventoryNotifierProvider.notifier).toggleLowStock(v),
@@ -358,7 +359,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
     );
     // Surface category-load errors in a banner; don't kill the table.
     final categoriesError = categoriesAsync.maybeWhen(
-      error: (e, _) => 'خطأ في تحميل التصنيفات: $e',
+      error: (e, _) => tr('خطأ في تحميل التصنيفات: {e}', {'e': e}),
       orElse: () => null,
     );
 
@@ -508,9 +509,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
                   child: DropdownButton<int?>(
                     value: selectedProductId,
                     isExpanded: true,
-                    hint: const Text('كل الأصناف'),
+                    hint:  Text(tr('كل الأصناف')),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('كل الأصناف')),
+                       DropdownMenuItem(value: null, child: Text(tr('كل الأصناف'))),
                       ...products.map(
                         (p) => DropdownMenuItem(
                           value: p.id,
@@ -541,23 +542,23 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _movementTypeChip(null, 'الكل', PhosphorIconsBold.listBullets),
+                _movementTypeChip(null, tr('الكل'), PhosphorIconsBold.listBullets),
                 const SizedBox(width: 6),
-                _movementTypeChip('sale', 'مبيعات', PhosphorIconsBold.receipt),
+                _movementTypeChip('sale', tr('مبيعات'), PhosphorIconsBold.receipt),
                 const SizedBox(width: 6),
-                _movementTypeChip('purchase', 'مشتريات', PhosphorIconsBold.shoppingCart),
+                _movementTypeChip('purchase', tr('مشتريات'), PhosphorIconsBold.shoppingCart),
                 const SizedBox(width: 6),
-                _movementTypeChip('return', 'مرتجع', PhosphorIconsBold.arrowUDownLeft),
+                _movementTypeChip('return', tr('مرتجع'), PhosphorIconsBold.arrowUDownLeft),
                 const SizedBox(width: 6),
-                _movementTypeChip('adjustment', 'تسوية', PhosphorIconsBold.faders),
+                _movementTypeChip('adjustment', tr('تسوية'), PhosphorIconsBold.faders),
                 const SizedBox(width: 6),
-                _movementTypeChip('waste', 'هدر/تالف', PhosphorIconsBold.trash),
+                _movementTypeChip('waste', tr('هدر/تالف'), PhosphorIconsBold.trash),
                 const SizedBox(width: 6),
-                _movementTypeChip('damage', 'تلف', PhosphorIconsBold.warning),
+                _movementTypeChip('damage', tr('تلف'), PhosphorIconsBold.warning),
                 const SizedBox(width: 6),
-                _movementTypeChip('transfer', 'تحويل', PhosphorIconsBold.arrowsLeftRight),
+                _movementTypeChip('transfer', tr('تحويل'), PhosphorIconsBold.arrowsLeftRight),
                 const SizedBox(width: 6),
-                _movementTypeChip('opening_stock', 'رصيد افتتاحي', PhosphorIconsBold.package),
+                _movementTypeChip('opening_stock', tr('رصيد افتتاحي'), PhosphorIconsBold.package),
               ],
             ),
           ),
@@ -572,7 +573,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
               setState(() => _selectedMovementType = null);
             },
             icon: const Icon(PhosphorIconsBold.x, size: 18),
-            tooltip: 'إزالة الفلاتر',
+            tooltip: tr('إزالة الفلاتر'),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.error.withValues(alpha: 0.1),
               foregroundColor: AppColors.error,
@@ -623,51 +624,51 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
         builder: (context, setDialogState) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: Text('تسوية مخزون: ${product.name}'),
+            title: Text(tr('تسوية مخزون: {p0}', {'p0': product.name})),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
                   initialValue: adjustmentType,
-                  items: const [
+                  items:  [
                     DropdownMenuItem(
                       value: 'add',
-                      child: Text('إضافة للمخزون'),
+                      child: Text(tr('إضافة للمخزون')),
                     ),
                     DropdownMenuItem(
                       value: 'remove',
-                      child: Text('سحب من المخزون'),
+                      child: Text(tr('سحب من المخزون')),
                     ),
                     DropdownMenuItem(
                       value: 'waste',
-                      child: Text('هدر / تالف'),
+                      child: Text(tr('هدر / تالف')),
                     ),
                     DropdownMenuItem(
                       value: 'damage',
-                      child: Text('تلف (ضرر)'),
+                      child: Text(tr('تلف (ضرر)')),
                     ),
                     DropdownMenuItem(
                       value: 'opening',
-                      child: Text('تعديل الرصيد الإفتتاحي'),
+                      child: Text(tr('تعديل الرصيد الإفتتاحي')),
                     ),
                   ],
                   onChanged: (v) => setDialogState(() => adjustmentType = v!),
-                  decoration: const InputDecoration(labelText: 'نوع التسوية'),
+                  decoration:  InputDecoration(labelText: tr('نوع التسوية')),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _adjQtyController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'الكمية',
-                    suffixText: 'وحدة',
+                  decoration:  InputDecoration(
+                    labelText: tr('الكمية'),
+                    suffixText: tr('وحدة'),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _adjNotesController,
-                  decoration: const InputDecoration(
-                    labelText: 'ملاحظات (اختياري)',
+                  decoration:  InputDecoration(
+                    labelText: tr('ملاحظات (اختياري)'),
                   ),
                 ),
               ],
@@ -675,7 +676,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: saving
@@ -705,7 +706,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
                         if (context.mounted) {
                           AppToast.show(
                             context,
-                            'الموافقة الثنائية مرفوضة — لم يتم تنفيذ التسوية',
+                            tr('الموافقة الثنائية مرفوضة — لم يتم تنفيذ التسوية'),
                             type: ToastType.warning,
                           );
                         }
@@ -736,7 +737,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
                     }
                   }
                 },
-                child: const Text('حفظ التسوية'),
+                child:  Text(tr('حفظ التسوية')),
               ),
             ],
           ),

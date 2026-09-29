@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // نموذجُ سندِ القبض والصرف — تصميمُ المالك `(11)` و`(12)` و`(13)`.
 //
 // ═══ ⚠️ ودجتٌ واحدةٌ للسندَين ═══
@@ -71,25 +72,25 @@ final _money = NumberFormat('#,##0.00');
 final _dateFmt = DateFormat('dd-MM-yyyy');
 
 /// رقمُ السند قبل الحفظ — **لا يُخمَّن**. راجع رأسَ الملفّ (‏Spec 066).
-const String kVoucherNumberPlaceholder = 'يُولَّد عند الحفظ';
+String get kVoucherNumberPlaceholder => tr('يُولَّد عند الحفظ');
 
 enum PicPosVoucherKind { receipt, payment }
 
 extension PicPosVoucherKindX on PicPosVoucherKind {
   bool get isReceipt => this == PicPosVoucherKind.receipt;
 
-  String get title => isReceipt ? 'سند قبض' : 'سند صرف';
+  String get title => isReceipt ? tr('سند قبض') : tr('سند صرف');
 
   /// اسمُ الطرف كما يسمّيه التصميم.
-  String get partyLabel => isReceipt ? 'العميل' : 'المستفيد';
+  String get partyLabel => isReceipt ? tr('العميل') : tr('المستفيد');
 
-  String get methodLabel => isReceipt ? 'طريقة القبض' : 'طريقة الصرف';
+  String get methodLabel => isReceipt ? tr('طريقة القبض') : tr('طريقة الصرف');
 
   /// حالةُ الشيك المعروضةُ — **تُعرَض ولا تُحرَّر**.
   ///
   /// 🔴 المحرّكُ يُنشئ الورقةَ عند `pending` دائماً ويقيّد عندها قيدَ أوراق
   /// القبض/الدفع. وحقلٌ يُحرَّر كان يَعِد بحالةٍ لا يكتبها أحد.
-  String get chequeStatusLabel => isReceipt ? 'برسم التحصيل' : 'صادر';
+  String get chequeStatusLabel => isReceipt ? tr('برسم التحصيل') : tr('صادر');
 
   Color get accent => isReceipt ? AppColors.success : AppColors.error;
 
@@ -337,12 +338,12 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
   ///
   /// ⚠️ **يُعرَض ولا يُبتلَع**: زرٌّ معطَّلٌ بلا سببٍ ظاهرٍ يُقرأ «معطوب».
   String? get blockReason {
-    if (_partyId == null) return 'اختر ${widget.kind.partyLabel}.';
-    if (_safeId == null) return 'اختر الخزينة.';
+    if (_partyId == null) return tr('اختر {p0}.', {'p0': widget.kind.partyLabel});
+    if (_safeId == null) return tr('اختر الخزينة.');
     // ⚠️ مراكزُ التكلفة حين تكون معرَّفةً **إلزاميّة**: بدونها يسقط القيدُ
     //    على «عام» ويُقرأ في تقارير المراكز على غير موضعه.
     if (widget.costCenters.isNotEmpty && _costCenterId == null) {
-      return 'اختر مركز التكلفة.';
+      return tr('اختر مركز التكلفة.');
     }
     if (_isCheque) {
       // 🔴 **والدفترُ يُفحَص قبل الأرقام**: لو لم يبقَ فيه ما يكفي فرسالةُ
@@ -360,24 +361,24 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
           ),
           count: _cheques.length,
         );
-        if (plan.error != null) return 'الدفتر: ${plan.error}';
+        if (plan.error != null) return tr('الدفتر: {p0}', {'p0': plan.error});
       }
       for (var i = 0; i < _cheques.length; i++) {
         final c = _cheques[i];
         if (book == null && c.numberCtrl.text.trim().isEmpty) {
-          return 'الشيك ${i + 1}: اكتب رقمه.';
+          return tr('الشيك {p0}: اكتب رقمه.', {'p0': i + 1});
         }
         // 🔴 مبلغٌ صفرٌ يعني قسمةً بالتساوي في المسار القديم — وهنا يُرفَض.
-        if (c.amount <= 0) return 'الشيك ${i + 1}: اكتب مبلغه.';
-        if (c.dueDate == null) return 'الشيك ${i + 1}: اختر تاريخ استحقاقه.';
+        if (c.amount <= 0) return tr('الشيك {p0}: اكتب مبلغه.', {'p0': i + 1});
+        if (c.dueDate == null) return tr('الشيك {p0}: اختر تاريخ استحقاقه.', {'p0': i + 1});
       }
     }
-    if (_grossAmount <= 0) return 'أدخل مبلغاً أكبر من صفر.';
-    if (_discount < 0) return 'الخصم لا يكون سالباً.';
+    if (_grossAmount <= 0) return tr('أدخل مبلغاً أكبر من صفر.');
+    if (_discount < 0) return tr('الخصم لا يكون سالباً.');
     if (_commissionPercent < 0 || _commissionPercent > 100) {
-      return 'نسبة العمولة بين صفر ومئة.';
+      return tr('نسبة العمولة بين صفر ومئة.');
     }
-    if (_netAmount <= 0) return 'صافي المبلغ يجب أن يكون أكبر من صفر.';
+    if (_netAmount <= 0) return tr('صافي المبلغ يجب أن يكون أكبر من صفر.');
     // 🔴 التوزيعُ لا يتجاوز الصافي: تخصيصٌ أكبرُ يُقفل فواتيرَ بمالٍ لم يُقبَض.
     if (_allocatedTotal > _netAmount + 0.001) {
       return 'التوزيع (${_money.format(_allocatedTotal)}) يتجاوز الصافي '
@@ -396,7 +397,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
     return PicPosScreenScaffold(
       title: widget.kind.title,
       // 🔴 لا رقمَ قبل الحفظ — راجع رأسَ الملفّ.
-      subtitle: 'رقم السند: $kVoucherNumberPlaceholder',
+      subtitle: tr('رقم السند: {kVoucherNumberPlaceholder}', {'kVoucherNumberPlaceholder': kVoucherNumberPlaceholder}),
       icon: widget.kind.icon,
       bodyPadding: EdgeInsets.zero,
       body: Column(
@@ -415,20 +416,20 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                   const SizedBox(height: 12),
                   PicPosTotalsBar(items: [
                     PicPosTotal(
-                      label: 'الإجمالي',
+                      label: tr('الإجمالي'),
                       value: _money.format(_grossAmount),
                     ),
                     if (_isDeliveryCompany)
                       PicPosTotal(
-                        label: 'العمولة',
+                        label: tr('العمولة'),
                         value: _money.format(_commissionAmount),
                       ),
                     PicPosTotal(
-                      label: 'الخصم',
+                      label: tr('الخصم'),
                       value: _money.format(_discount),
                     ),
                     PicPosTotal(
-                      label: 'الصافي',
+                      label: tr('الصافي'),
                       value: _money.format(_netAmount),
                       emphasis: true,
                       tone: widget.kind.accent,
@@ -440,13 +441,13 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
           ),
           PicPosFormActionBar(
             onBack: widget.busy ? null : widget.onCancel,
-            backLabel: 'رجوع',
+            backLabel: tr('رجوع'),
             busy: widget.busy,
-            hint: reason ?? 'يُرحَّل السندُ فورَ الاعتماد',
+            hint: reason ?? tr('يُرحَّل السندُ فورَ الاعتماد'),
             // ⚠️ **لا زرَّ مسوّدة** — راجع رأسَ الملفّ: لا حالةَ مسوّدةٍ في
             //    المحرّك، وزرٌّ يحفظ مُرحَّلاً وهو يقول «مسودة» أسوأُ من غيابه.
             primary: PicPosFormAction(
-              label: 'مراجعة واعتماد',
+              label: tr('مراجعة واعتماد'),
               icon: PhosphorIconsBold.check,
               onPressed:
                   (widget.busy || reason != null) ? null : _submit,
@@ -464,7 +465,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
           children: [
             PicPosSectionHeader(
               icon: PhosphorIconsBold.info,
-              title: 'بيانات ${widget.kind.title}',
+              title: tr('بيانات {p0}', {'p0': widget.kind.title}),
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -482,11 +483,11 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
             TextField(
               key: const Key('voucher_notes'),
               controller: _notesCtrl,
-              decoration: const InputDecoration(
-                labelText: 'البيان',
-                hintText: 'اختياري',
+              decoration:  InputDecoration(
+                labelText: tr('البيان'),
+                hintText: tr('اختياري'),
                 isDense: true,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
             ),
           ],
@@ -529,11 +530,11 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
           if (picked != null) setState(() => _date = picked);
         },
         child: InputDecorator(
-          decoration: const InputDecoration(
-            labelText: 'التاريخ',
+          decoration:  InputDecoration(
+            labelText: tr('التاريخ'),
             isDense: true,
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(PhosphorIconsBold.calendar, size: 15),
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(PhosphorIconsBold.calendar, size: 15),
           ),
           child: Text(_dateFmt.format(_date)),
         ),
@@ -543,10 +544,10 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
         key: const Key('voucher_cost_center'),
         initialValue: _costCenterId,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'مركز التكلفة',
+        decoration:  InputDecoration(
+          labelText: tr('مركز التكلفة'),
           isDense: true,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         items: [
           for (final c in widget.costCenters)
@@ -556,10 +557,10 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
       );
 
   Widget _methodSegments() {
-    const methods = <({String value, String label, IconData icon})>[
-      (value: 'cash', label: 'نقدي', icon: PhosphorIconsBold.money),
-      (value: 'bank', label: 'بنك', icon: PhosphorIconsBold.bank),
-      (value: 'check', label: 'شيكات', icon: PhosphorIconsBold.creditCard),
+    final methods = <({String value, String label, IconData icon})>[
+      (value: 'cash', label: tr('نقدي'), icon: PhosphorIconsBold.money),
+      (value: 'bank', label: tr('بنك'), icon: PhosphorIconsBold.bank),
+      (value: 'check', label: tr('شيكات'), icon: PhosphorIconsBold.creditCard),
     ];
     return Row(
       children: [
@@ -608,10 +609,10 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                     controller: _amountCtrl,
                     keyboardType: TextInputType.number,
                     onChanged: (_) => setState(() {}),
-                    decoration: const InputDecoration(
-                      labelText: 'المبلغ',
+                    decoration:  InputDecoration(
+                      labelText: tr('المبلغ'),
                       isDense: true,
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ),
@@ -623,10 +624,10 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                       controller: _discountCtrl,
                       keyboardType: TextInputType.number,
                       onChanged: (_) => setState(() {}),
-                      decoration: const InputDecoration(
-                        labelText: 'خصم سداد معجَّل',
+                      decoration:  InputDecoration(
+                        labelText: tr('خصم سداد معجَّل'),
                         isDense: true,
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                       ),
                     ),
                   ),
@@ -640,10 +641,10 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                         controller: _commissionCtrl,
                         keyboardType: TextInputType.number,
                         onChanged: (_) => setState(() {}),
-                        decoration: const InputDecoration(
-                          labelText: 'عمولة التوصيل ٪',
+                        decoration:  InputDecoration(
+                          labelText: tr('عمولة التوصيل ٪'),
                           isDense: true,
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
                         ),
                       ),
                     ),
@@ -658,10 +659,10 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
         key: const Key('voucher_safe'),
         initialValue: _safeId,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'الخزينة',
+        decoration:  InputDecoration(
+          labelText: tr('الخزينة'),
           isDense: true,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         items: [
           for (final s in widget.safes)
@@ -681,10 +682,10 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
           children: [
             Row(
               children: [
-                const Expanded(
+                 Expanded(
                   child: PicPosSectionHeader(
                     icon: PhosphorIconsBold.creditCard,
-                    title: 'الشيكات',
+                    title: tr('الشيكات'),
                   ),
                 ),
                 TextButton.icon(
@@ -692,7 +693,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                   onPressed: () =>
                       setState(() => _cheques.add(VoucherChequeDraft())),
                   icon: const Icon(PhosphorIconsBold.plus, size: 14),
-                  label: const Text('إضافة شيك'),
+                  label:  Text(tr('إضافة شيك')),
                 ),
               ],
             ),
@@ -718,10 +719,10 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                 dense: true,
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
-                title: const Text('أودِعه للتحصيل فوراً'),
-                subtitle: const Text(
-                  'يُنشأ الشيكُ برسم التحصيل ثمّ يُنقَل إلى «أودِع» بقيده',
-                  style: TextStyle(fontSize: 11),
+                title:  Text(tr('أودِعه للتحصيل فوراً')),
+                subtitle:  Text(
+                  tr('يُنشأ الشيكُ برسم التحصيل ثمّ يُنقَل إلى «أودِع» بقيده'),
+                  style: const TextStyle(fontSize: 11),
                 ),
               ),
           ],
@@ -738,21 +739,21 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
         initialValue: _chequeBookId,
         // ⚠️ راجع نظيرَه في شاشة الدفتر: بلا هذه يفيض الصفُّ على اسمٍ طويل.
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'دفتر الشيكات',
-          helperText: 'الرقمُ يُسحَب من الدفتر عند الحفظ — لا يُكتَب بيد',
+        decoration:  InputDecoration(
+          labelText: tr('دفتر الشيكات'),
+          helperText: tr('الرقمُ يُسحَب من الدفتر عند الحفظ — لا يُكتَب بيد'),
           isDense: true,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         items: [
-          const DropdownMenuItem<int?>(
+           DropdownMenuItem<int?>(
             value: null,
-            child: Text('بلا دفتر — أكتب الرقم بيدي'),
+            child: Text(tr('بلا دفتر — أكتب الرقم بيدي')),
           ),
           for (final b in widget.chequeBooks)
             DropdownMenuItem<int?>(
               value: b.id,
-              child: Text('${b.label} · متبقٍّ ${b.remaining}'),
+              child: Text(tr('{p0} · متبقٍّ {p1}', {'p0': b.label, 'p1': b.remaining})),
             ),
         ],
         onChanged: (v) => setState(() => _chequeBookId = v),
@@ -776,7 +777,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
         children: [
           Row(
             children: [
-              Text('شيك ${i + 1}',
+              Text(tr('شيك {p0}', {'p0': i + 1}),
                   style: const TextStyle(
                       fontSize: 11, fontWeight: FontWeight.w700)),
               const SizedBox(width: 10),
@@ -795,8 +796,8 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
               const Spacer(),
               IconButton(
                 tooltip: _cheques.length > 1
-                    ? 'حذف الشيك'
-                    : 'لا يقلّ السندُ عن شيكٍ واحد',
+                    ? tr('حذف الشيك')
+                    : tr('لا يقلّ السندُ عن شيكٍ واحد'),
                 onPressed: _cheques.length > 1
                     ? () => setState(() => _cheques.removeAt(i).dispose())
                     : null,
@@ -819,21 +820,21 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                     ? TextField(
                         controller: c.numberCtrl,
                         onChanged: (_) => setState(() {}),
-                        decoration: const InputDecoration(
-                          labelText: 'رقم الشيك',
+                        decoration:  InputDecoration(
+                          labelText: tr('رقم الشيك'),
                           isDense: true,
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
                         ),
                       )
                     // 🔴 **معاينةٌ مقفولةٌ لا حقلٌ محرَّر**: الرقمُ يُسحَب في
                     //    معاملة الحفظ، وحقلٌ يُكتَب فيه رقمٌ ثمّ يُستبدَل
                     //    بغيره عند الحفظ يكذب على من كتبه.
                     : InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'رقم الشيك',
-                          helperText: 'من الدفتر عند الحفظ',
+                        decoration:  InputDecoration(
+                          labelText: tr('رقم الشيك'),
+                          helperText: tr('من الدفتر عند الحفظ'),
                           isDense: true,
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
                         ),
                         child: Text(
                           _previewChequeNumber(book, i),
@@ -846,10 +847,10 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                 width: 170,
                 child: TextField(
                   controller: c.bankCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'البنك',
+                  decoration:  InputDecoration(
+                    labelText: tr('البنك'),
                     isDense: true,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -867,13 +868,13 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                     if (picked != null) setState(() => c.dueDate = picked);
                   },
                   child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'الاستحقاق',
+                    decoration:  InputDecoration(
+                      labelText: tr('الاستحقاق'),
                       isDense: true,
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
                     ),
                     child: Text(c.dueDate == null
-                        ? 'اختر التاريخ'
+                        ? tr('اختر التاريخ')
                         : _dateFmt.format(c.dueDate!)),
                   ),
                 ),
@@ -884,10 +885,10 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                   controller: c.amountCtrl,
                   keyboardType: TextInputType.number,
                   onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    labelText: 'المبلغ',
+                  decoration:  InputDecoration(
+                    labelText: tr('المبلغ'),
                     isDense: true,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -914,10 +915,10 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
             onTap: () => setState(() => _allocationOpen = !_allocationOpen),
             child: Row(
               children: [
-                const Expanded(
+                 Expanded(
                   child: PicPosSectionHeader(
                     icon: PhosphorIconsBold.receipt,
-                    title: 'توزيع المبلغ على الفواتير',
+                    title: tr('توزيع المبلغ على الفواتير'),
                   ),
                 ),
                 if (_allocatedTotal > 0)
@@ -939,7 +940,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
           if (_allocationOpen) ...[
             const SizedBox(height: 8),
             if (_partyId == null)
-              Text('اختر ${widget.kind.partyLabel} أوّلاً.',
+              Text(tr('اختر {p0} أوّلاً.', {'p0': widget.kind.partyLabel}),
                   style: const TextStyle(
                       fontSize: 12, color: AppColors.textMuted))
             else if (invoices.isEmpty)
@@ -954,9 +955,9 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
               const SizedBox(height: 6),
               // ⚠️ **التوزيعُ اختياريٌّ لا إلزاميّ**: سندٌ على الحساب بلا
               //    فاتورةٍ بعينها حالةٌ مشروعةٌ تماماً (دفعةٌ تحت الحساب).
-              const Text(
-                'التوزيع اختياريّ — وما لا يُوزَّع يبقى على حساب الطرف.',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+               Text(
+                tr('التوزيع اختياريّ — وما لا يُوزَّع يبقى على حساب الطرف.'),
+                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
             ],
           ],
@@ -997,10 +998,10 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
               controller: ctrl,
               keyboardType: TextInputType.number,
               onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                labelText: 'المخصَّص',
+              decoration:  InputDecoration(
+                labelText: tr('المخصَّص'),
                 isDense: true,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
             ),
           ),
@@ -1009,7 +1010,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
             // «الباقي» — أكثرُ ما يُكتَب، ويمنع تجاوزَ الفاتورة بالكتابة اليدويّة.
             onPressed: () => setState(
                 () => ctrl.text = remaining.toStringAsFixed(2)),
-            child: const Text('الباقي'),
+            child:  Text(tr('الباقي')),
           ),
         ],
       ),

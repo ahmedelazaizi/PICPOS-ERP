@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // Period Close Checklist Widget (F-04)
 // Pre-close validation checklist before fiscal period closing
@@ -62,41 +63,41 @@ class PeriodCloseChecklist extends StatefulWidget {
     return [
       ChecklistItem(
         id: 'trial_balance',
-        title: 'ميزان المراجعة متوازن',
-        description: 'التحقق من أن مجموع المدين يساوي مجموع الدائن',
+        title: tr('ميزان المراجعة متوازن'),
+        description: tr('التحقق من أن مجموع المدين يساوي مجموع الدائن'),
         icon: PhosphorIconsBold.scales,
         autoVerify: verifyTrialBalance,
       ),
       ChecklistItem(
         id: 'pending_entries',
-        title: 'لا توجد قيود معلقة',
-        description: 'جميع القيود المحاسبية تم ترحيلها',
+        title: tr('لا توجد قيود معلقة'),
+        description: tr('جميع القيود المحاسبية تم ترحيلها'),
         icon: PhosphorIconsBold.notebook,
         autoVerify: verifyPendingEntries,
       ),
       ChecklistItem(
         id: 'bank_reconciliation',
-        title: 'تسوية البنك مكتملة',
-        description: 'تم مطابقة كشف البنك مع السجلات',
+        title: tr('تسوية البنك مكتملة'),
+        description: tr('تم مطابقة كشف البنك مع السجلات'),
         icon: PhosphorIconsBold.bank,
         autoVerify: verifyBankReconciliation,
       ),
       ChecklistItem(
         id: 'inventory_count',
-        title: 'جرد المخزون',
-        description: 'تم جرد المخزون ومعالجة الفروقات',
+        title: tr('جرد المخزون'),
+        description: tr('تم جرد المخزون ومعالجة الفروقات'),
         icon: PhosphorIconsBold.package,
       ),
       ChecklistItem(
         id: 'ar_ap_review',
-        title: 'مراجعة الذمم المدينة والدائنة',
-        description: 'تأكيد أرصدة العملاء والموردين',
+        title: tr('مراجعة الذمم المدينة والدائنة'),
+        description: tr('تأكيد أرصدة العملاء والموردين'),
         icon: PhosphorIconsBold.usersThree,
       ),
       ChecklistItem(
         id: 'backup',
-        title: 'نسخة احتياطية',
-        description: 'تم أخذ نسخة احتياطية كاملة قبل الإقفال',
+        title: tr('نسخة احتياطية'),
+        description: tr('تم أخذ نسخة احتياطية كاملة قبل الإقفال'),
         icon: PhosphorIconsBold.database,
       ),
     ];
@@ -120,7 +121,7 @@ class _PeriodCloseChecklistState extends State<PeriodCloseChecklist> {
             setState(() {
               item.isCompleted = result;
               item.isVerifying = false;
-              item.errorMessage = result ? null : 'فشل التحقق';
+              item.errorMessage = result ? null : tr('فشل التحقق');
             });
           }
         } catch (e) {
@@ -198,7 +199,7 @@ class _PeriodCloseChecklistState extends State<PeriodCloseChecklist> {
                 child: ElevatedButton.icon(
                   onPressed: widget.onAllCompleted,
                   icon: const Icon(PhosphorIconsBold.checkCircle, size: 18),
-                  label: Text('تنفيذ الإقفال', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+                  label: Text(tr('تنفيذ الإقفال'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
@@ -288,7 +289,7 @@ class _PeriodCloseChecklistState extends State<PeriodCloseChecklist> {
                         setState(() {
                           item.isCompleted = result;
                           item.isVerifying = false;
-                          item.errorMessage = result ? null : 'فشل التحقق';
+                          item.errorMessage = result ? null : tr('فشل التحقق');
                         });
                       }
                     } catch (e) {
@@ -300,7 +301,7 @@ class _PeriodCloseChecklistState extends State<PeriodCloseChecklist> {
                       }
                     }
                   },
-                  tooltip: 'إعادة التحقق',
+                  tooltip: tr('إعادة التحقق'),
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 ),
             ],

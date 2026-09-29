@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -78,9 +79,9 @@ class _StockMovementsScreenState
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
+              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
@@ -88,18 +89,18 @@ class _StockMovementsScreenState
     });
   }
 
-  static const _movementTypes = <String, _TypeInfo>{
-    'all': _TypeInfo('الكل', Colors.grey, PhosphorIconsBold.list),
-    'sale': _TypeInfo('بيع', Color(0xFF059669), PhosphorIconsBold.shoppingCart),
-    'purchase': _TypeInfo('شراء', Color(0xFF2563EB), PhosphorIconsBold.package),
-    'adjustment': _TypeInfo('تعديل', Color(0xFFF59E0B), PhosphorIconsBold.pencilSimple),
-    'transfer': _TypeInfo('تحويل', Color(0xFF7C3AED), PhosphorIconsBold.arrowsLeftRight),
-    'transfer_in': _TypeInfo('وارد تحويل', Color(0xFF7C3AED), PhosphorIconsBold.arrowSquareIn),
-    'transfer_out': _TypeInfo('صادر تحويل', Color(0xFF9333EA), PhosphorIconsBold.arrowSquareOut),
-    'return': _TypeInfo('مرتجع', Color(0xFFDC2626), PhosphorIconsBold.arrowUUpLeft),
-    'manufacturing': _TypeInfo('تصنيع', Color(0xFF0891B2), PhosphorIconsBold.factory),
-    'manufacturing_in': _TypeInfo('إنتاج وارد', Color(0xFF0891B2), PhosphorIconsBold.factory),
-    'manufacturing_out': _TypeInfo('صرف إنتاج', Color(0xFF06B6D4), PhosphorIconsBold.factory),
+  static Map<String, _TypeInfo> get _movementTypes => <String, _TypeInfo>{
+    'all': _TypeInfo(tr('الكل'), Colors.grey, PhosphorIconsBold.list),
+    'sale': _TypeInfo(tr('بيع'), const Color(0xFF059669), PhosphorIconsBold.shoppingCart),
+    'purchase': _TypeInfo(tr('شراء'), const Color(0xFF2563EB), PhosphorIconsBold.package),
+    'adjustment': _TypeInfo(tr('تعديل'), const Color(0xFFF59E0B), PhosphorIconsBold.pencilSimple),
+    'transfer': _TypeInfo(tr('تحويل'), const Color(0xFF7C3AED), PhosphorIconsBold.arrowsLeftRight),
+    'transfer_in': _TypeInfo(tr('وارد تحويل'), const Color(0xFF7C3AED), PhosphorIconsBold.arrowSquareIn),
+    'transfer_out': _TypeInfo(tr('صادر تحويل'), const Color(0xFF9333EA), PhosphorIconsBold.arrowSquareOut),
+    'return': _TypeInfo(tr('مرتجع'), const Color(0xFFDC2626), PhosphorIconsBold.arrowUUpLeft),
+    'manufacturing': _TypeInfo(tr('تصنيع'), const Color(0xFF0891B2), PhosphorIconsBold.factory),
+    'manufacturing_in': _TypeInfo(tr('إنتاج وارد'), const Color(0xFF0891B2), PhosphorIconsBold.factory),
+    'manufacturing_out': _TypeInfo(tr('صرف إنتاج'), const Color(0xFF06B6D4), PhosphorIconsBold.factory),
   };
 
   @override
@@ -201,7 +202,7 @@ class _StockMovementsScreenState
           // from reports launcher); hidden when reached via the sidebar.
           if (Navigator.canPop(context)) ...[
             IconButton(
-              tooltip: 'رجوع',
+              tooltip: tr('رجوع'),
               icon: const Icon(PhosphorIconsBold.caretRight,
                   color: Colors.white, size: 20),
               onPressed: () => Navigator.pop(context),
@@ -221,9 +222,9 @@ class _StockMovementsScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('حركة المخزون',
+                Text(tr('حركة المخزون'),
                     style: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
-                Text('سجل جميع الحركات المخزنية',
+                Text(tr('سجل جميع الحركات المخزنية'),
                     style: GoogleFonts.cairo(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
               ],
             ),
@@ -232,7 +233,7 @@ class _StockMovementsScreenState
           ElevatedButton.icon(
             onPressed: _lastFilteredMovements.isEmpty ? null : _exportToExcel,
             icon: const Icon(PhosphorIconsBold.microsoftExcelLogo, size: 18),
-            label: Text('تصدير Excel', style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w700)),
+            label: Text(tr('تصدير Excel'), style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white.withValues(alpha: 0.2),
               foregroundColor: Colors.white,
@@ -254,7 +255,7 @@ class _StockMovementsScreenState
       final buf = StringBuffer();
       // BOM for Excel Arabic support
       buf.write('\uFEFF');
-      buf.writeln('التاريخ,الوقت,النوع,المنتج,المستودع,الكمية,التكلفة,الرصيد بعد,المرجع,ملاحظات');
+      buf.writeln(tr('التاريخ,الوقت,النوع,المنتج,المستودع,الكمية,التكلفة,الرصيد بعد,المرجع,ملاحظات'));
       for (final m in _lastFilteredMovements) {
         final typeLabel = _movementTypes[m.movementType]?.label ?? m.movementType;
         final productName = (m.productName ?? '#${m.productId}').replaceAll(',', ' ');
@@ -267,11 +268,11 @@ class _StockMovementsScreenState
       final file = File('${dir.path}/stock_movements_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.csv');
       await file.writeAsString(buf.toString());
       if (mounted) {
-        AppToast.show(context, 'تم التصدير بنجاح: ${file.path}');
+        AppToast.show(context, tr('تم التصدير بنجاح: {p0}', {'p0': file.path}));
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في التصدير: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في التصدير: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -301,9 +302,9 @@ class _StockMovementsScreenState
                     if (picked != null) setState(() => _fromDate = picked);
                   },
                   child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'من',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration:  InputDecoration(
+                      labelText: tr('من'),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     ),
                     child: Text(_dateFormat.format(_fromDate), style: GoogleFonts.cairo(fontSize: 12)),
                   ),
@@ -323,9 +324,9 @@ class _StockMovementsScreenState
                     if (picked != null) setState(() => _toDate = picked);
                   },
                   child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'إلى',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration:  InputDecoration(
+                      labelText: tr('إلى'),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     ),
                     child: Text(_dateFormat.format(_toDate), style: GoogleFonts.cairo(fontSize: 12)),
                   ),
@@ -339,7 +340,7 @@ class _StockMovementsScreenState
                   controller: _searchController,
                   onChanged: (v) => setState(() => _searchQuery = v),
                   decoration: InputDecoration(
-                    hintText: 'بحث...',
+                    hintText: tr('بحث...'),
                     prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     suffixIcon: _searchQuery.isNotEmpty
@@ -363,19 +364,19 @@ class _StockMovementsScreenState
                   return warehousesAsync.when(
                     data: (warehouses) => DropdownButtonFormField<int?>(
                       initialValue: _selectedWarehouseId,
-                      decoration: const InputDecoration(
-                        labelText: 'المستودع',
-                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration:  InputDecoration(
+                        labelText: tr('المستودع'),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       ),
                       isExpanded: true,
                       items: [
-                        const DropdownMenuItem<int?>(value: null, child: Text('جميع المستودعات', style: TextStyle(fontSize: 12))),
+                         DropdownMenuItem<int?>(value: null, child: Text(tr('جميع المستودعات'), style: const TextStyle(fontSize: 12))),
                         ...warehouses.map((w) => DropdownMenuItem<int?>(value: w.id, child: Text(w.name, style: const TextStyle(fontSize: 12)))),
                       ],
                       onChanged: (v) => setState(() => _selectedWarehouseId = v),
                     ),
                     loading: () => const SizedBox(height: 40, child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
-                    error: (_, _) => const Text('خطأ'),
+                    error: (_, _) =>  Text(tr('خطأ')),
                   );
                 },
               ),
@@ -433,7 +434,7 @@ class _StockMovementsScreenState
         children: [
           const Icon(PhosphorIconsBold.package, size: 64, color: AppColors.textMuted),
           const SizedBox(height: 16),
-          Text('لا توجد حركات في الفترة المحددة',
+          Text(tr('لا توجد حركات في الفترة المحددة'),
               style: GoogleFonts.cairo(fontSize: 14, color: AppColors.textMuted)),
         ],
       ),
@@ -465,13 +466,13 @@ class _StockMovementsScreenState
           color: context.picposField,
           child: Row(
             children: [
-              _statChip('إجمالي الحركات', '${filteredMovements.length}', AppColors.primary),
+              _statChip(tr('إجمالي الحركات'), '${filteredMovements.length}', AppColors.primary),
               const SizedBox(width: 8),
-              _statChip('الوارد', totalIn.toStringAsFixed(1), AppColors.success),
+              _statChip(tr('الوارد'), totalIn.toStringAsFixed(1), AppColors.success),
               const SizedBox(width: 8),
-              _statChip('الصادر', totalOut.toStringAsFixed(1), AppColors.error),
+              _statChip(tr('الصادر'), totalOut.toStringAsFixed(1), AppColors.error),
               const SizedBox(width: 8),
-              _statChip('القيمة', totalValue.toStringAsFixed(AppConstants.decimalPlaces), AppColors.info),
+              _statChip(tr('القيمة'), totalValue.toStringAsFixed(AppConstants.decimalPlaces), AppColors.info),
             ],
           ),
         ),
@@ -482,14 +483,14 @@ class _StockMovementsScreenState
           color: AppColors.primary.withValues(alpha: 0.04),
           child: Row(
             children: [
-              _headerCell('التاريخ', flex: 2),
-              _headerCell('النوع', flex: 1),
-              _headerCell('المنتج', flex: 2),
-              _headerCell('المستودع', flex: 1),
-              _headerCell('الكمية', flex: 1),
-              _headerCell('التكلفة', flex: 1),
-              _headerCell('الرصيد بعد', flex: 1),
-              _headerCell('المرجع', flex: 2),
+              _headerCell(tr('التاريخ'), flex: 2),
+              _headerCell(tr('النوع'), flex: 1),
+              _headerCell(tr('المنتج'), flex: 2),
+              _headerCell(tr('المستودع'), flex: 1),
+              _headerCell(tr('الكمية'), flex: 1),
+              _headerCell(tr('التكلفة'), flex: 1),
+              _headerCell(tr('الرصيد بعد'), flex: 1),
+              _headerCell(tr('المرجع'), flex: 2),
             ],
           ),
         ),
@@ -619,14 +620,14 @@ class _StockMovementsScreenState
 
   String _translateReference(String type, int? id) {
     final label = switch (type) {
-      'invoice' => 'فاتورة',
-      'purchase_invoice' => 'فاتورة شراء',
-      'pos_sale' => 'بيع POS',
-      'return' => 'مرتجع',
-      'transfer' => 'تحويل',
-      'adjustment' => 'تسوية',
-      'audit' => 'جرد',
-      'manufacturing' => 'تصنيع',
+      'invoice' => tr('فاتورة'),
+      'purchase_invoice' => tr('فاتورة شراء'),
+      'pos_sale' => tr('بيع POS'),
+      'return' => tr('مرتجع'),
+      'transfer' => tr('تحويل'),
+      'adjustment' => tr('تسوية'),
+      'audit' => tr('جرد'),
+      'manufacturing' => tr('تصنيع'),
       _ => type,
     };
     return id != null ? '$label #$id' : label;

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -185,12 +186,12 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
       ),
       child: Column(
         children: [
-          _buildRow('إجمالي الأصناف', widget.subtotal),
+          _buildRow(tr('إجمالي الأصناف'), widget.subtotal),
           if (widget.discount > 0)
-            _buildRow('الخصم', -widget.discount, color: AppColors.error),
-          if (widget.tax > 0) _buildRow('الضريبة', widget.tax),
+            _buildRow(tr('الخصم'), -widget.discount, color: AppColors.error),
+          if (widget.tax > 0) _buildRow(tr('الضريبة'), widget.tax),
           const Divider(),
-          _buildRow('الإجمالي', widget.total, isTotal: true),
+          _buildRow(tr('الإجمالي'), widget.total, isTotal: true),
         ],
       ),
     );
@@ -232,27 +233,27 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
     // When mixed is selected, only show the mixed chip (other methods are hidden)
     if (_paymentMethod != 'mixed') {
       if (_hasPermission(PermissionCodes.posPaymentCash)) {
-        methods.add(_buildMethodChip('cash', 'نقدي', PhosphorIconsBold.money));
+        methods.add(_buildMethodChip('cash', tr('نقدي'), PhosphorIconsBold.money));
       }
       if (_hasPermission(PermissionCodes.posPaymentCard)) {
-        methods.add(_buildMethodChip('card', 'بطاقة (بنك)', PhosphorIconsBold.creditCard));
+        methods.add(_buildMethodChip('card', tr('بطاقة (بنك)'), PhosphorIconsBold.creditCard));
       }
       if (_hasPermission(PermissionCodes.posPaymentTransfer)) {
-        methods.add(_buildMethodChip('click', 'كليك', PhosphorIconsBold.cellSignalFull));
+        methods.add(_buildMethodChip('click', tr('كليك'), PhosphorIconsBold.cellSignalFull));
       }
       if (_hasPermission(PermissionCodes.posPaymentCredit)) {
-        methods.add(_buildMethodChip('credit', 'آجل', PhosphorIconsBold.timer));
+        methods.add(_buildMethodChip('credit', tr('آجل'), PhosphorIconsBold.timer));
       }
     }
     if (_hasPermission(PermissionCodes.posPaymentMultiple)) {
-      methods.add(_buildMethodChip('mixed', 'متعدد', PhosphorIconsBold.splitVertical));
+      methods.add(_buildMethodChip('mixed', tr('متعدد'), PhosphorIconsBold.splitVertical));
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'طريقة الدفع:',
-          style: TextStyle(fontWeight: FontWeight.bold),
+         Text(
+          tr('طريقة الدفع:'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -326,7 +327,7 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                remaining.abs() < 0.01 ? 'تم تغطية المبلغ بالكامل ✓' : 'المتبقي:',
+                remaining.abs() < 0.01 ? tr('تم تغطية المبلغ بالكامل ✓') : tr('المتبقي:'),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: remaining.abs() < 0.01 ? AppColors.success : AppColors.warning,
@@ -346,21 +347,21 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
         ),
         // hint text
         if (remaining.abs() >= 0.01)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 8),
+           Padding(
+            padding: const EdgeInsets.only(bottom: 8),
             child: Text(
-              'أدخل قيمة الدفع في الخانات التالية وزعها كما يقرر العميل',
-              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+              tr('أدخل قيمة الدفع في الخانات التالية وزعها كما يقرر العميل'),
+              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
             ),
           ),
         // Cash field
-        _buildPaymentField('نقدي', _cashController, PhosphorIconsBold.money),
+        _buildPaymentField(tr('نقدي'), _cashController, PhosphorIconsBold.money),
         const SizedBox(height: 10),
         // Bank field
-        _buildPaymentField('بطاقة (بنك)', _bankController, PhosphorIconsBold.creditCard),
+        _buildPaymentField(tr('بطاقة (بنك)'), _bankController, PhosphorIconsBold.creditCard),
         const SizedBox(height: 10),
         // Click field
-        _buildPaymentField('كليك', _clickController, PhosphorIconsBold.cellSignalFull),
+        _buildPaymentField(tr('كليك'), _clickController, PhosphorIconsBold.cellSignalFull),
         // Show difference warning if there's a discrepancy
         if (hasDifference &&
             (_cashController.text.isNotEmpty ||
@@ -392,8 +393,8 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
                 Expanded(
                   child: Text(
                     difference > 0
-                        ? 'باقي (يتم الإرجاع): ${difference.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'
-                        : 'نقص: ${difference.abs().toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                        ? tr('باقي (يتم الإرجاع): {p0} {p1}', {'p0': difference.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn})
+                        : tr('نقص: {p0} {p1}', {'p0': difference.abs().toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
                     style: TextStyle(
                       color: difference > 0
                           ? AppColors.success
@@ -433,13 +434,13 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
 
     return customersAsync.when(
       loading: () => const LinearProgressIndicator(),
-      error: (e, _) => Text('خطأ: $e'),
+      error: (e, _) => Text(tr('خطأ: {e}', {'e': e})),
       data: (customers) => SearchableDropdown<Party>(
         items: customers,
         value: customers.where((c) => c.id == _customerId).firstOrNull,
-        hint: 'اختر العميل',
-        label: 'العميل *',
-        searchHint: 'بحث عن عميل...',
+        hint: tr('اختر العميل'),
+        label: tr('العميل *'),
+        searchHint: tr('بحث عن عميل...'),
         isRequired: true,
         labelBuilder: (c) => c.name,
         onChanged: (customer) {
@@ -455,9 +456,9 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
   String _getConfirmLabel() {
     switch (_paymentMethod) {
       case 'credit':
-        return 'تسجيل آجل';
+        return tr('تسجيل آجل');
       case 'delivery':
-        return 'تأكيد التوصيل';
+        return tr('تأكيد التوصيل');
       default:
         return 'تأكيد الدفع';
     }

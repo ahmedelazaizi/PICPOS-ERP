@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // مصفوفةُ الأدوار والصلاحيات — نسخةُ PicPos المستقلّة.
 //
 // المصدر: `BENCH.perms` في «PicPos Settings.dc.html» (‏المشروع
@@ -185,7 +186,7 @@ class _PermissionsMatrixDialogState
       ];
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'تعذّر تحميل المصفوفة: $e',
+        AppToast.show(context, tr('تعذّر تحميل المصفوفة: {e}', {'e': e}),
             type: ToastType.error);
       }
     }
@@ -324,12 +325,12 @@ class _PermissionsMatrixDialogState
 
     if (!mounted) return;
     if (failed.isEmpty) {
-      AppToast.show(context, '✓ حُفظت المصفوفة — $saved دور', type: ToastType.success);
+      AppToast.show(context, tr('✓ حُفظت المصفوفة — {saved} دور', {'saved': saved}), type: ToastType.success);
       Navigator.of(context).maybePop();
     } else {
       AppToast.show(
         context,
-        'تعذّر حفظ ${failed.length} دور: ${failed.join("، ")}',
+        tr('تعذّر حفظ {p0} دور: {p1}', {'p0': failed.length, 'p1': failed.join("، ")}),
         type: ToastType.error,
       );
     }
@@ -341,7 +342,7 @@ class _PermissionsMatrixDialogState
 
     return PicPosDialog(
       icon: PhosphorIconsBold.table,
-      title: 'مصفوفة الأدوار والصلاحيات',
+      title: tr('مصفوفة الأدوار والصلاحيات'),
       subtitle: 'قارن الأدوار جنباً إلى جنب وبدّل الصلاحية في مكانها بدلاً من '
           'فتح كل دور على حدة',
       width: 1480,
@@ -351,16 +352,16 @@ class _PermissionsMatrixDialogState
         if (pending > 0)
           PicPosDialogChip(
             icon: PhosphorIconsBold.pencilSimple,
-            label: '$pending تعديل غير محفوظ',
+            label: tr('{pending} تعديل غير محفوظ', {'pending': pending}),
             tint: AppColors.warning,
           ),
       ],
       footerHint: _loading
-          ? 'جارٍ تحميل الأدوار والصلاحيات…'
-          : '${_roles.length} دور · $_permCount صلاحية · $pending تعديل معلّق',
+          ? tr('جارٍ تحميل الأدوار والصلاحيات…')
+          : tr('{p0} دور · {_permCount} صلاحية · {pending} تعديل معلّق', {'p0': _roles.length, '_permCount': _permCount, 'pending': pending}),
       onCancel: () => Navigator.of(context).maybePop(),
       primaryAction: PicPosDialogAction(
-        label: 'حفظ المصفوفة',
+        label: tr('حفظ المصفوفة'),
         icon: PhosphorIconsBold.check,
         busy: _saving,
         onPressed: pending == 0 || _saving ? null : _save,
@@ -388,7 +389,7 @@ class _PermissionsMatrixDialogState
     if (_roles.isEmpty || _groups.isEmpty) {
       return Center(
         child: Text(
-          'لا أدوارَ أو صلاحياتٍ لعرضها',
+          tr('لا أدوارَ أو صلاحياتٍ لعرضها'),
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
@@ -477,7 +478,7 @@ class _PermissionsMatrixDialogState
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: Text(
-                  'الصلاحية',
+                  tr('الصلاحية'),
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w800,
@@ -559,7 +560,7 @@ class _PermissionsMatrixDialogState
             ),
           ),
           Text(
-            '${g.perms.length} صلاحية',
+            tr('{p0} صلاحية', {'p0': g.perms.length}),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -719,7 +720,7 @@ class _PermissionsMatrixDialogState
                   Border(bottom: BorderSide(color: context.picposHairline)),
             ),
             child: Text(
-              'التعديلات غير المحفوظة',
+              tr('التعديلات غير المحفوظة'),
               style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w800,
@@ -778,11 +779,11 @@ class _PermissionsMatrixDialogState
     //    فلو قيل «منح» لظنّها المشغّلُ منحاً كاملاً ولم يعلم أنّه اشترط
     //    موافقةً على كلّ تنفيذ.
     final label = switch (c.to) {
-      _Grant.allowed => 'منح «${c.permName}» لدور ${c.roleName}',
+      _Grant.allowed => tr('منح «{p0}» لدور {p1}', {'p0': c.permName, 'p1': c.roleName}),
       _Grant.conditional =>
         'جعل «${c.permName}» مشروطاً لدور ${c.roleName} — موافقةُ مسؤولٍ '
             'في كلّ مرّة',
-      _Grant.denied => 'سحب «${c.permName}» من دور ${c.roleName}',
+      _Grant.denied => tr('سحب «{p0}» من دور {p1}', {'p0': c.permName, 'p1': c.roleName}),
     };
     return Container(
       padding: const EdgeInsets.all(13),
@@ -814,7 +815,7 @@ class _PermissionsMatrixDialogState
           if (c.risky) ...[
             const SizedBox(height: 6),
             Text(
-              'صلاحيةٌ ماليّةٌ حرجة — تُفحَص على الخادم ولا يتخطّاها تجاوزُ المدير.',
+              tr('صلاحيةٌ ماليّةٌ حرجة — تُفحَص على الخادم ولا يتخطّاها تجاوزُ المدير.'),
               style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
@@ -900,7 +901,7 @@ class _PermissionsMatrixDialogState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'مفتاح الرموز',
+            tr('مفتاح الرموز'),
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
@@ -908,11 +909,11 @@ class _PermissionsMatrixDialogState
             ),
           ),
           row(PhosphorIconsBold.check, AppColors.success, Colors.white,
-              'مسموح بلا شرط'),
+              tr('مسموح بلا شرط')),
           row(PhosphorIconsBold.minus, AppColors.warning, Colors.white,
-              'مشروط — موافقةُ مسؤولٍ في كلّ مرّة'),
+              tr('مشروط — موافقةُ مسؤولٍ في كلّ مرّة')),
           row(PhosphorIconsBold.x, context.picposCard, context.picposMuted,
-              'ممنوع'),
+              tr('ممنوع')),
         ],
       ),
     );

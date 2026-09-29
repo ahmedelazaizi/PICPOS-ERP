@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,18 +40,18 @@ class _EnhancedRoleManagementScreenState
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: const Text('إدارة الأدوار والصلاحيات المتقدمة'),
+          title:  Text(tr('إدارة الأدوار والصلاحيات المتقدمة')),
           actions: [
             IconButton(
               icon: const Icon(PhosphorIconsBold.plus),
               onPressed: _showAddRoleDialog,
-              tooltip: 'إضافة دور جديد',
+              tooltip: tr('إضافة دور جديد'),
             ),
             if (_selectedRole != null && !_isSaving && _selectedRole!.name != 'مدير النظام')
               IconButton(
                 icon: const Icon(PhosphorIconsBold.floppyDisk),
                 onPressed: _savePermissions,
-                tooltip: 'حفظ الصلاحيات',
+                tooltip: tr('حفظ الصلاحيات'),
               ),
           ],
         ),
@@ -86,7 +87,7 @@ class _EnhancedRoleManagementScreenState
                           padding: const EdgeInsets.all(16),
                           child: ShimmerLoading.list(itemCount: 4),
                         ),
-                        error: (e, _) => Center(child: Text('خطأ: $e')),
+                        error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
                       ),
               ),
             ],
@@ -95,31 +96,31 @@ class _EnhancedRoleManagementScreenState
             padding: const EdgeInsets.all(16),
             child: ShimmerLoading.list(itemCount: 6),
           ),
-          error: (e, _) => Center(child: Text('خطأ: $e')),
+          error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
         ),
       ),
     );
   }
 
   Widget _buildEmptyState() {
-    return const Center(
+    return  Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             PhosphorIconsBold.shieldCheck,
             size: 80,
             color: AppColors.textMuted,
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
-            'اختر دوراً لتعديل صلاحياته',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 18),
+            tr('اختر دوراً لتعديل صلاحياته'),
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 18),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
-            'يمكنك تحديد الصلاحيات التفصيلية لكل دور',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+            tr('يمكنك تحديد الصلاحيات التفصيلية لكل دور'),
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
           ),
         ],
       ),
@@ -203,7 +204,7 @@ class _EnhancedRoleManagementScreenState
       final logger = ref.read(activityLoggerProvider);
       await logger.logUpdateRolePermissions(
         user?.id ?? 0,
-        user?.displayName ?? 'مجهول',
+        user?.displayName ?? tr('مجهول'),
         _selectedRole!.name,
         _selectedPermissionIds.length,
       );
@@ -211,13 +212,13 @@ class _EnhancedRoleManagementScreenState
       if (mounted) {
         AppToast.show(
           context,
-          '✅ تم حفظ الصلاحيات بنجاح',
+          tr('✅ تم حفظ الصلاحيات بنجاح'),
           type: ToastType.success,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, '❌ خطأ في الحفظ: $e', type: ToastType.error);
+        AppToast.show(context, tr('❌ خطأ في الحفظ: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) {
@@ -235,11 +236,11 @@ class _EnhancedRoleManagementScreenState
       builder: (context) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.userPlus, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('إضافة دور جديد'),
+              const Icon(PhosphorIconsBold.userPlus, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(tr('إضافة دور جديد')),
             ],
           ),
           content: Column(
@@ -247,19 +248,19 @@ class _EnhancedRoleManagementScreenState
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'اسم الدور',
-                  hintText: 'مثال: محاسب، أمين مخزن',
-                  prefixIcon: Icon(PhosphorIconsBold.user),
+                decoration:  InputDecoration(
+                  labelText: tr('اسم الدور'),
+                  hintText: tr('مثال: محاسب، أمين مخزن'),
+                  prefixIcon: const Icon(PhosphorIconsBold.user),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: descController,
-                decoration: const InputDecoration(
-                  labelText: 'الوصف (اختياري)',
-                  hintText: 'وصف مختصر للدور',
-                  prefixIcon: Icon(PhosphorIconsBold.textAa),
+                decoration:  InputDecoration(
+                  labelText: tr('الوصف (اختياري)'),
+                  hintText: tr('وصف مختصر للدور'),
+                  prefixIcon: const Icon(PhosphorIconsBold.textAa),
                 ),
                 maxLines: 2,
               ),
@@ -268,12 +269,12 @@ class _EnhancedRoleManagementScreenState
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () async {
                 if (nameController.text.trim().isEmpty) {
-                  AppToast.show(context, 'يرجى إدخال اسم الدور');
+                  AppToast.show(context, tr('يرجى إدخال اسم الدور'));
                   return;
                 }
                 final authRepo = ref.read(authRepositoryProvider);
@@ -296,13 +297,13 @@ class _EnhancedRoleManagementScreenState
                 final logger = ref.read(activityLoggerProvider);
                 await logger.logRoleCreate(
                   user?.id ?? 0,
-                  user?.displayName ?? 'مجهول',
+                  user?.displayName ?? tr('مجهول'),
                   nameController.text.trim(),
                 );
                 ref.invalidate(allRolesProvider);
                 if (context.mounted) Navigator.pop(context);
               },
-              child: const Text('إضافة'),
+              child:  Text(tr('إضافة')),
             ),
           ],
         ),
@@ -316,23 +317,23 @@ class _EnhancedRoleManagementScreenState
       builder: (context) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('تأكيد الحذف'),
+              const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('تأكيد الحذف')),
             ],
           ),
-          content: Text('هل أنت متأكد من حذف دور "${role.name}"؟'),
+          content: Text(tr('هل أنت متأكد من حذف دور "{p0}"؟', {'p0': role.name})),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('حذف'),
+              child:  Text(tr('حذف')),
             ),
           ],
         ),
@@ -346,7 +347,7 @@ class _EnhancedRoleManagementScreenState
       final logger = ref.read(activityLoggerProvider);
       await logger.logRoleDelete(
         user?.id ?? 0,
-        user?.displayName ?? 'مجهول',
+        user?.displayName ?? tr('مجهول'),
         role.name,
       );
       ref.invalidate(allRolesProvider);

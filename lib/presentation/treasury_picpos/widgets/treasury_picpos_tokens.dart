@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // رموزُ تصميم شاشة الخزينة — **مكانٌ واحدٌ لا سبعة**.
 //
 // قرارُ المالك 2026-08-22 يمنع مشاركةَ تعديلات PicPos مع UralCash، فالودجتُ
@@ -66,9 +67,9 @@ abstract final class TreasuryPicposTokens {
   /// تسميةُ النوع بالعربيّة. النوعُ المجهولُ يُعرض كما هو في العمود بدل أن
   /// يُترجَم إلى «مخصّص» فيضيع الفرقُ بين نوعَين مجهولَين.
   static String labelFor(String safeType) => switch (safeType) {
-        'cash' => 'نقدي',
-        'bank' => 'بنك',
-        'click' => 'تحويل كليك',
+        'cash' => tr('نقدي'),
+        'bank' => tr('بنك'),
+        'click' => tr('تحويل كليك'),
         _ => safeType,
       };
 }

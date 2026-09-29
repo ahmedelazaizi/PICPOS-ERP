@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -72,7 +73,7 @@ class CheckoutController extends Notifier<CheckoutState> {
       
       // Negative Sale Gating: Restrict if total is negative
       if (cartState.total < 0) {
-        state = state.copyWith(isProcessing: false, error: 'المبلغ الإجمالي بالسالب — يرجى تصحيح الأصناف أو تعويض الرصيد');
+        state = state.copyWith(isProcessing: false, error: tr('المبلغ الإجمالي بالسالب — يرجى تصحيح الأصناف أو تعويض الرصيد'));
         return false;
       }
 
@@ -96,7 +97,7 @@ class CheckoutController extends Notifier<CheckoutState> {
         click = total;
       } else if (method == 'credit') {
         if (customerId == null) {
-          state = state.copyWith(isProcessing: false, error: 'يجب اختيار عميل للبيع بالآجل');
+          state = state.copyWith(isProcessing: false, error: tr('يجب اختيار عميل للبيع بالآجل'));
           return false;
         }
         paid = 0;
@@ -253,7 +254,7 @@ class CheckoutController extends Notifier<CheckoutState> {
       if (result.isSuccess) {
         // #Forensic Log: Sale Completion (fire-and-forget — don't block UI)
         try {
-          final userName = authState.originalUser?.displayName ?? 'مجهول';
+          final userName = authState.originalUser?.displayName ?? tr('مجهول');
           final logger = ref.read(activityLoggerProvider);
           logger.logSale(
             userId,
@@ -310,7 +311,7 @@ class CheckoutController extends Notifier<CheckoutState> {
               '${result.invoiceId} — $e',
             );
             state = state.copyWith(
-              error: 'تمّ البيع، لكن تعذّر خصمُ عربون الحجز: $e',
+              error: tr('تمّ البيع، لكن تعذّر خصمُ عربون الحجز: {e}', {'e': e}),
             );
           }
         }
@@ -349,7 +350,7 @@ class CheckoutController extends Notifier<CheckoutState> {
     } catch (e) {
       state = state.copyWith(
         isProcessing: false,
-        error: 'حدث خطأ غير متوقع: $e',
+        error: tr('حدث خطأ غير متوقع: {e}', {'e': e}),
       );
       return false;
     }
@@ -371,7 +372,7 @@ class CheckoutController extends Notifier<CheckoutState> {
 
     final cartState = ref.read(cartControllerProvider);
     if (cartState.items.isEmpty) {
-      state = state.copyWith(isProcessing: false, error: 'السلة فارغة');
+      state = state.copyWith(isProcessing: false, error: tr('السلة فارغة'));
       return false;
     }
 
@@ -407,7 +408,7 @@ class CheckoutController extends Notifier<CheckoutState> {
           action: 'create_quotation',
           entityType: 'quotation',
           entityId: quotationId,
-          description: 'إنشاء عرض سعر',
+          description: tr('إنشاء عرض سعر'),
           amount: totals.total,
         );
       } catch (_) {}
@@ -418,7 +419,7 @@ class CheckoutController extends Notifier<CheckoutState> {
     } catch (e) {
       state = state.copyWith(
         isProcessing: false,
-        error: 'فشل حفظ عرض السعر: $e',
+        error: tr('فشل حفظ عرض السعر: {e}', {'e': e}),
       );
       return false;
     }

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // لوحُ تفاصيل الحساب — **يحلّ محلَّ الحوارات تماماً** (قرارُ المالك 2026-09-18).
 //
 // ═══ لماذا لوحٌ لا حوار ═══
@@ -150,7 +151,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
 
   Future<void> _submit() async {
     if (_code.text.trim().isEmpty || _name.text.trim().isEmpty) {
-      AppToast.show(context, 'الرمزُ والاسمُ مطلوبان', type: ToastType.error);
+      AppToast.show(context, tr('الرمزُ والاسمُ مطلوبان'), type: ToastType.error);
       return;
     }
     setState(() => _saving = true);
@@ -201,7 +202,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  _isNew ? 'حساب جديد' : 'تفاصيل الحساب',
+                  _isNew ? tr('حساب جديد') : tr('تفاصيل الحساب'),
                   style: text.labelLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
               ],
@@ -238,7 +239,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _field(
-                    'رمز الحساب',
+                    tr('رمز الحساب'),
                     TextField(
                       controller: _code,
                       enabled: !_isSystem,
@@ -247,7 +248,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                     ),
                   ),
                   _field(
-                    'اسم الحساب',
+                    tr('اسم الحساب'),
                     TextField(
                       controller: _name,
                       decoration: const InputDecoration(
@@ -255,7 +256,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                     ),
                   ),
                   _field(
-                    'الحساب الأب',
+                    tr('الحساب الأب'),
                     _isNew
                         ? DropdownButtonFormField<int?>(
                             initialValue: _parentId,
@@ -263,8 +264,8 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                             decoration: const InputDecoration(
                                 isDense: true, border: OutlineInputBorder()),
                             items: [
-                              const DropdownMenuItem(
-                                  value: null, child: Text('— حسابٌ رئيسيّ —')),
+                               DropdownMenuItem(
+                                  value: null, child: Text(tr('— حسابٌ رئيسيّ —'))),
                               for (final a in widget.allAccounts)
                                 DropdownMenuItem(
                                   value: a.id,
@@ -283,14 +284,14 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                             }),
                           )
                         : _readOnly(
-                            parentName ?? '— حسابٌ رئيسيّ —',
+                            parentName ?? tr('— حسابٌ رئيسيّ —'),
                             hint: 'النسبُ يُختار عند الإنشاء: تغييرُه يُعيد '
                                 'حسابَ المستوى للحساب وكلِّ ذرّيّته.',
                           ),
                   ),
                   if (_isNew)
                     _field(
-                      'نوع الحساب',
+                      tr('نوع الحساب'),
                       DropdownButtonFormField<String>(
                         initialValue: _type,
                         isExpanded: true,
@@ -306,40 +307,40 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                     ),
                   // مشتقٌّ لا مختار — راجع ترويسةَ الملفّ.
                   _field(
-                    'طبيعة الحساب',
+                    tr('طبيعة الحساب'),
                     _readOnly(
-                      normalBalanceFor(_type) == 'credit' ? 'دائن' : 'مدين',
-                      hint: 'تُشتقُّ من نوع الحساب — ولا تُحرَّر بيد.',
+                      normalBalanceFor(_type) == 'credit' ? tr('دائن') : tr('مدين'),
+                      hint: tr('تُشتقُّ من نوع الحساب — ولا تُحرَّر بيد.'),
                     ),
                   ),
                   _field(
-                    'مستوى الحساب',
+                    tr('مستوى الحساب'),
                     DropdownButtonFormField<String>(
                       initialValue: _nature,
                       isExpanded: true,
                       decoration: const InputDecoration(
                           isDense: true, border: OutlineInputBorder()),
-                      items: const [
+                      items:  [
                         DropdownMenuItem(
                             value: kAccountNatureDetail,
-                            child: Text('تفصيلي — يُرحَّل عليه')),
+                            child: Text(tr('تفصيلي — يُرحَّل عليه'))),
                         DropdownMenuItem(
                             value: kAccountNatureView,
-                            child: Text('رئيسي — لا يُرحَّل عليه')),
+                            child: Text(tr('رئيسي — لا يُرحَّل عليه'))),
                       ],
                       onChanged: (v) => setState(() => _nature = v ?? _nature),
                     ),
                   ),
                   _field(
-                    'حالة الحساب',
+                    tr('حالة الحساب'),
                     DropdownButtonFormField<bool>(
                       initialValue: _active,
                       isExpanded: true,
                       decoration: const InputDecoration(
                           isDense: true, border: OutlineInputBorder()),
-                      items: const [
-                        DropdownMenuItem(value: true, child: Text('نشط')),
-                        DropdownMenuItem(value: false, child: Text('موقوف')),
+                      items:  [
+                        DropdownMenuItem(value: true, child: Text(tr('نشط'))),
+                        DropdownMenuItem(value: false, child: Text(tr('موقوف'))),
                       ],
                       onChanged: (v) => setState(() => _active = v ?? _active),
                     ),
@@ -347,10 +348,10 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     dense: true,
-                    title: Text('إخفاء من سندات القيد',
+                    title: Text(tr('إخفاء من سندات القيد'),
                         style: text.labelMedium
                             ?.copyWith(fontWeight: FontWeight.w700)),
-                    subtitle: Text('لن يظهر عند إنشاء قيدٍ يدويّ',
+                    subtitle: Text(tr('لن يظهر عند إنشاء قيدٍ يدويّ'),
                         style: text.labelSmall
                             ?.copyWith(color: AppColors.textMuted)),
                     value: _hidden,
@@ -371,7 +372,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                   child: FilledButton.icon(
                     onPressed: _saving ? null : _submit,
                     icon: const Icon(PhosphorIconsBold.floppyDisk, size: 15),
-                    label: Text(_isNew ? 'حفظ الحساب' : 'تعديل الحساب'),
+                    label: Text(_isNew ? tr('حفظ الحساب') : tr('تعديل الحساب')),
                   ),
                 ),
                 if (!_isNew && widget.onOpenLedger != null) ...[
@@ -379,14 +380,14 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                   OutlinedButton.icon(
                     onPressed: widget.onOpenLedger,
                     icon: const Icon(PhosphorIconsBold.book, size: 14),
-                    label: const Text('دفتر الأستاذ'),
+                    label:  Text(tr('دفتر الأستاذ')),
                   ),
                 ],
                 const SizedBox(width: 8),
                 OutlinedButton.icon(
                   onPressed: widget.onClose,
                   icon: const Icon(PhosphorIconsBold.caretLeft, size: 14),
-                  label: const Text('رجوع'),
+                  label:  Text(tr('رجوع')),
                 ),
               ],
             ),

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // بطاقةُ قالبٍ في شبكة المكتبة.
 //
 // المصغَّرةُ تعلو، والاسمُ تحتَها، والشاراتُ في الزاوية — كما في التصميم.
@@ -65,7 +66,7 @@ class TemplateGalleryCard extends StatelessWidget {
                         // صدقٌ لا تزيين: هذا القالبُ يُطبع بالراسم التدفّقيّ،
                         // والمصغَّرةُ تخطيطُ المحرّك. الشكلان متقاربان
                         // ومشتقّان من نفس العناصر، وليسا عينَ بعضهما.
-                        message: 'قالبٌ لم يُهاجَر بعد — المصغَّرةُ تقريبيّة',
+                        message: tr('قالبٌ لم يُهاجَر بعد — المصغَّرةُ تقريبيّة'),
                         child: Icon(
                           PhosphorIconsBold.info,
                           size: 13,
@@ -101,7 +102,7 @@ class TemplateGalleryCard extends StatelessWidget {
                 const Spacer(),
                 if (card.isBound)
                   Text(
-                    '${card.bindings.length} مستند',
+                    tr('{p0} مستند', {'p0': card.bindings.length}),
                     style:
                         TextStyle(fontSize: 10.5, color: context.picposMuted),
                   ),

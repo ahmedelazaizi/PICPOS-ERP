@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../services/license_service.dart';
 
@@ -38,9 +39,9 @@ class TrialGuard extends StatelessWidget {
       return _buildBlockedWidget(
         context,
         icon: Icons.timer_off_rounded,
-        title: 'انتهت الفترة التجريبية',
+        title: tr('انتهت الفترة التجريبية'),
         message: blockedMessage ??
-            'انتهت فترة التجربة المجانية.\nيرجى التواصل مع الدعم للحصول على مفتاح التفعيل.',
+            tr('انتهت فترة التجربة المجانية.\nيرجى التواصل مع الدعم للحصول على مفتاح التفعيل.'),
       );
     }
 
@@ -49,9 +50,9 @@ class TrialGuard extends StatelessWidget {
       return _buildBlockedWidget(
         context,
         icon: Icons.lock_rounded,
-        title: 'ميزة مقفلة',
+        title: tr('ميزة مقفلة'),
         message: blockedMessage ??
-            'هذه الميزة غير متوفرة في النسخة التجريبية.\nقم بتفعيل النسخة الكاملة للوصول لجميع الميزات.',
+            tr('هذه الميزة غير متوفرة في النسخة التجريبية.\nقم بتفعيل النسخة الكاملة للوصول لجميع الميزات.'),
       );
     }
 
@@ -101,7 +102,7 @@ class TrialGuard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'الأيام المتبقية: $remainingDays يوم',
+                  tr('الأيام المتبقية: {remainingDays} يوم', {'remainingDays': remainingDays}),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: remainingDays > 7 ? Colors.orange : Colors.red,
@@ -113,7 +114,7 @@ class TrialGuard extends StatelessWidget {
             FilledButton.icon(
               onPressed: () => _showActivationDialog(context),
               icon: const Icon(Icons.key_rounded),
-              label: const Text('تفعيل النسخة الكاملة'),
+              label:  Text(tr('تفعيل النسخة الكاملة')),
             ),
           ],
         ),
@@ -126,9 +127,9 @@ class TrialGuard extends StatelessWidget {
     Navigator.of(context).popUntil((route) => route.isFirst);
     // The user can activate from the settings screen
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('يرجى الذهاب للإعدادات → الترخيص لتفعيل النسخة الكاملة'),
-        duration: Duration(seconds: 4),
+       SnackBar(
+        content: Text(tr('يرجى الذهاب للإعدادات → الترخيص لتفعيل النسخة الكاملة')),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -166,8 +167,8 @@ class TrialBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             remainingDays >= 0
-                ? 'نسخة تجريبية — متبقي $remainingDays يوم'
-                : 'نسخة تجريبية',
+                ? tr('نسخة تجريبية — متبقي {remainingDays} يوم', {'remainingDays': remainingDays})
+                : tr('نسخة تجريبية'),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 12,

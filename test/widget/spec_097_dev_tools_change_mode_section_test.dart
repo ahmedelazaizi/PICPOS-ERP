@@ -47,10 +47,10 @@ void main() {
       expect(block, contains('DeploymentMode.mirror'),
           reason: 'The 4th first-class mode must appear as a segment.');
       // All four labels in Arabic.
-      expect(block, contains("Text('مستقل')"));
-      expect(block, contains("Text('سيرفر')"));
-      expect(block, contains("Text('عميل')"));
-      expect(block, contains("Text('مرآة')"));
+      expect(block, contains("Text(tr('مستقل'))"));
+      expect(block, contains("Text(tr('سيرفر'))"));
+      expect(block, contains("Text(tr('عميل'))"));
+      expect(block, contains("Text(tr('مرآة'))"));
     });
 
     test('_apply opens MirrorPairingDialog when target is mirror + unconfigured',

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,7 +25,7 @@ Widget buildHeldOrderPrintButton({required VoidCallback onPrint}) {
     child: IconButton(
       icon: const Icon(PhosphorIconsBold.printer, size: 20),
       color: AppColors.info,
-      tooltip: 'طباعة',
+      tooltip: tr('طباعة'),
       onPressed: onPrint,
     ),
   );
@@ -58,7 +59,7 @@ class HeldOrdersDialog extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('الفواتير المعلقة'),
+             Text(tr('الفواتير المعلقة')),
           ],
         ),
         content: SizedBox(
@@ -66,7 +67,7 @@ class HeldOrdersDialog extends ConsumerWidget {
           height: 400,
           child: heldOrdersAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('خطأ: $e')),
+            error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
             data: (orders) {
               if (orders.isEmpty) {
                 return _buildEmptyState();
@@ -91,7 +92,7 @@ class HeldOrdersDialog extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -104,7 +105,7 @@ class HeldOrdersDialog extends ConsumerWidget {
       final orderData = await ref.read(heldOrderWithItemsProvider(order.id).future);
       if (orderData == null) {
         if (context.mounted) {
-          AppToast.show(context, 'لم يتم العثور على بيانات الطلب المعلق', type: ToastType.error);
+          AppToast.show(context, tr('لم يتم العثور على بيانات الطلب المعلق'), type: ToastType.error);
         }
         return;
       }
@@ -117,7 +118,7 @@ class HeldOrdersDialog extends ConsumerWidget {
       // Order: items keep their input order within a category; categories
       // appear in the order they're first seen so the layout is stable.
       final grouped = <String, List<Map<String, dynamic>>>{};
-      const uncategorized = 'غير مصنف';
+      final uncategorized = tr('غير مصنف');
       for (final item in items) {
         final categoryName = item['categoryName'] as String? ?? uncategorized;
         grouped.putIfAbsent(categoryName, () => []).add(item);
@@ -155,7 +156,7 @@ class HeldOrdersDialog extends ConsumerWidget {
       await InvoiceGenerator.printWorkOrderReceipt(
         orderNumber: order.holdNumber,
         date: order.createdAt,
-        categoryName: 'فاتورة معلقة',
+        categoryName: tr('فاتورة معلقة'),
         items: invoiceItems,
         customerName: order.customerName,
         // ISS-06: Raw DB access retained — printing utilities require the
@@ -164,25 +165,25 @@ class HeldOrdersDialog extends ConsumerWidget {
       );
 
       if (context.mounted) {
-        AppToast.show(context, 'تم طباعة الفاتورة المعلقة ${order.holdNumber}', type: ToastType.success);
+        AppToast.show(context, tr('تم طباعة الفاتورة المعلقة {p0}', {'p0': order.holdNumber}), type: ToastType.success);
       }
     } catch (e) {
       if (context.mounted) {
-        AppToast.show(context, 'فشل في طباعة الفاتورة المعلقة: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل في طباعة الفاتورة المعلقة: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
 
   Widget _buildEmptyState() {
-    return const Center(
+    return  Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(PhosphorIconsBold.tray, size: 64, color: AppColors.textMuted),
-          SizedBox(height: 16),
+          const Icon(PhosphorIconsBold.tray, size: 64, color: AppColors.textMuted),
+          const SizedBox(height: 16),
           Text(
-            'لا توجد فواتير معلقة',
-            style: TextStyle(color: AppColors.textMuted),
+            tr('لا توجد فواتير معلقة'),
+            style: const TextStyle(color: AppColors.textMuted),
           ),
         ],
       ),
@@ -258,7 +259,7 @@ class _HeldOrderTile extends ConsumerWidget {
                 size: 20,
               ),
               color: AppColors.success,
-              tooltip: 'استرجاع',
+              tooltip: tr('استرجاع'),
               onPressed: () {
                 Navigator.pop(context);
                 onRetrieve();
@@ -270,7 +271,7 @@ class _HeldOrderTile extends ConsumerWidget {
             child: IconButton(
               icon: const Icon(PhosphorIconsBold.trash, size: 20),
               color: AppColors.error,
-              tooltip: 'حذف',
+              tooltip: tr('حذف'),
               onPressed: () => _showDeleteConfirmation(context),
             ),
           ),
@@ -283,12 +284,12 @@ class _HeldOrderTile extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تأكيد الحذف'),
-        content: const Text('هل أنت متأكد من حذف هذه الفاتورة المعلقة؟'),
+        title:  Text(tr('تأكيد الحذف')),
+        content:  Text(tr('هل أنت متأكد من حذف هذه الفاتورة المعلقة؟')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -296,7 +297,7 @@ class _HeldOrderTile extends ConsumerWidget {
               Navigator.pop(ctx);
               onDelete();
             },
-            child: const Text('حذف'),
+            child:  Text(tr('حذف')),
           ),
         ],
       ),

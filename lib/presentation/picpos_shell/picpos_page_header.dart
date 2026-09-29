@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'picpos_surface.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
@@ -46,7 +47,7 @@ class PicPosPageHeader extends StatelessWidget {
               onPressed: () => Navigator.maybePop(context),
               icon: const Icon(Icons.arrow_forward),
               color: AppColors.primary,
-              tooltip: 'رجوع',
+              tooltip: tr('رجوع'),
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.primary.withValues(alpha: 0.08),
               ),

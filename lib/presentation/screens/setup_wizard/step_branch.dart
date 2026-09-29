@@ -8,30 +8,30 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'وضع التشغيل والفرع',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+         Text(
+          tr('وضع التشغيل والفرع'),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'حدد وضع التشغيل: مستقل، سيرفر، عميل، أو مرآة (لاب توب المدير).',
-          style: TextStyle(color: AppColors.textMuted),
+         Text(
+          tr('حدد وضع التشغيل: مستقل، سيرفر، عميل، أو مرآة (لاب توب المدير).'),
+          style: const TextStyle(color: AppColors.textMuted),
         ),
         const SizedBox(height: 24),
         // Network mode selector
         Row(
           children: [
             _buildModeChip(
-                NetworkMode.standalone, 'مستقل', PhosphorIconsBold.desktop),
+                NetworkMode.standalone, tr('مستقل'), PhosphorIconsBold.desktop),
             const SizedBox(width: 12),
             _buildModeChip(
-                NetworkMode.server, 'سيرفر', PhosphorIconsBold.hardDrives),
+                NetworkMode.server, tr('سيرفر'), PhosphorIconsBold.hardDrives),
             const SizedBox(width: 12),
             _buildModeChip(
-                NetworkMode.client, 'عميل', PhosphorIconsBold.monitor),
+                NetworkMode.client, tr('عميل'), PhosphorIconsBold.monitor),
             const SizedBox(width: 12),
             _buildModeChip(
-                NetworkMode.mirror, 'مرآة', PhosphorIconsBold.crown),
+                NetworkMode.mirror, tr('مرآة'), PhosphorIconsBold.crown),
           ],
         ),
         const SizedBox(height: 24),
@@ -43,16 +43,16 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
         else ...[
           _buildTextField(
             controller: _branchNameController,
-            label: 'اسم الفرع',
-            hint: 'الفرع الرئيسي',
+            label: tr('اسم الفرع'),
+            hint: tr('الفرع الرئيسي'),
             icon: PhosphorIconsBold.buildings,
             isRequired: true,
           ),
           const SizedBox(height: 20),
           _buildTextField(
             controller: _warehouseNameController,
-            label: 'اسم المخزن',
-            hint: 'المخزن الرئيسي',
+            label: tr('اسم المخزن'),
+            hint: tr('المخزن الرئيسي'),
             icon: PhosphorIconsBold.warehouse,
             isRequired: true,
           ),
@@ -72,10 +72,10 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
               Expanded(
                 child: Text(
                   _networkMode == NetworkMode.client
-                      ? 'في وضع العميل: أنشئ الفروع على السيرفر، ثم اتصل وزامن واختر الفرع المعين لهذا الجهاز.'
+                      ? tr('في وضع العميل: أنشئ الفروع على السيرفر، ثم اتصل وزامن واختر الفرع المعين لهذا الجهاز.')
                       : _networkMode == NetworkMode.mirror
-                          ? 'في وضع المرآة: لاب توب المدير يعمل كأنه HQ-Server — صلاحيات كاملة على كل الفروع والكتابات تذهب للسيرفر مباشرة.'
-                          : 'يمكنك إضافة فروع ومخازن إضافية من شاشة "الفروع والمخازن" بعد إتمام الإعداد.',
+                          ? tr('في وضع المرآة: لاب توب المدير يعمل كأنه HQ-Server — صلاحيات كاملة على كل الفروع والكتابات تذهب للسيرفر مباشرة.')
+                          : tr('يمكنك إضافة فروع ومخازن إضافية من شاشة "الفروع والمخازن" بعد إتمام الإعداد.'),
                   style: const TextStyle(color: AppColors.info, fontSize: 13),
                 ),
               ),
@@ -148,24 +148,24 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+               Row(
                 children: [
-                  Icon(PhosphorIconsBold.crown,
+                  const Icon(PhosphorIconsBold.crown,
                       color: AppColors.warning, size: 24),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'وضع المرآة — صلاحيات كاملة على كل الفروع',
-                      style: TextStyle(
+                      tr('وضع المرآة — صلاحيات كاملة على كل الفروع'),
+                      style: const TextStyle(
                           fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              _bullet('كل التعديلات تذهب لـ HQ-Server مباشرة'),
-              _bullet('Read-only عند فقد الاتصال'),
-              _bullet('يلزم حساب مدير على HQ-Server للتفعيل'),
+              _bullet(tr('كل التعديلات تذهب لـ HQ-Server مباشرة')),
+              _bullet(tr('Read-only عند فقد الاتصال')),
+              _bullet(tr('يلزم حساب مدير على HQ-Server للتفعيل')),
             ],
           ),
         ),
@@ -178,8 +178,8 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
               flex: 3,
               child: _buildTextField(
                 controller: _serverAddressController,
-                label: 'عنوان HQ-Server',
-                hint: '192.168.1.100 أو hq.example.com',
+                label: tr('عنوان HQ-Server'),
+                hint: tr('192.168.1.100 أو hq.example.com'),
                 icon: PhosphorIconsBold.globeSimple,
                 isRequired: true,
               ),
@@ -189,7 +189,7 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
               width: 100,
               child: _buildTextField(
                 controller: _serverPortController,
-                label: 'المنفذ',
+                label: tr('المنفذ'),
                 hint: '8080',
                 icon: PhosphorIconsBold.hash,
                 isNumber: true,
@@ -206,7 +206,7 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
             Expanded(
               child: _buildTextField(
                 controller: _mirrorAdminUsernameController,
-                label: 'اسم مدير HQ',
+                label: tr('اسم مدير HQ'),
                 hint: 'admin',
                 icon: PhosphorIconsBold.userCircle,
                 isRequired: true,
@@ -216,7 +216,7 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
             Expanded(
               child: _buildTextField(
                 controller: _mirrorAdminPasswordController,
-                label: 'كلمة مرور المدير',
+                label: tr('كلمة مرور المدير'),
                 hint: '••••••••',
                 icon: PhosphorIconsBold.lock,
                 isRequired: true,
@@ -237,10 +237,10 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
                 )
               : const Icon(PhosphorIconsBold.link, size: 18),
           label: Text(_isConnecting
-              ? 'جاري التحقق من الاتصال...'
+              ? tr('جاري التحقق من الاتصال...')
               : paired
-                  ? 'إعادة المصافحة مع السيرفر'
-                  : 'اختبار الاتصال وتفعيل المرآة'),
+                  ? tr('إعادة المصافحة مع السيرفر')
+                  : tr('اختبار الاتصال وتفعيل المرآة')),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.warning,
             foregroundColor: Colors.white,
@@ -275,7 +275,7 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'تمت المصافحة — متصل بـ ${MirrorState.instance.serverDisplayName}',
+                    tr('تمت المصافحة — متصل بـ {p0}', {'p0': MirrorState.instance.serverDisplayName}),
                     style: const TextStyle(
                         fontSize: 12, color: AppColors.success),
                   ),
@@ -314,8 +314,8 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
               flex: 3,
               child: _buildTextField(
                 controller: _serverAddressController,
-                label: 'عنوان السيرفر',
-                hint: '192.168.1.100 أو 100.x.x.x (Tailscale)',
+                label: tr('عنوان السيرفر'),
+                hint: tr('192.168.1.100 أو 100.x.x.x (Tailscale)'),
                 icon: PhosphorIconsBold.globeSimple,
                 isRequired: true,
               ),
@@ -325,7 +325,7 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
               width: 100,
               child: _buildTextField(
                 controller: _serverPortController,
-                label: 'المنفذ',
+                label: tr('المنفذ'),
                 hint: '8080',
                 icon: PhosphorIconsBold.hash,
                 isNumber: true,
@@ -344,7 +344,7 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
               : const Icon(PhosphorIconsBold.arrowsClockwise, size: 18),
-          label: Text(_isConnecting ? 'جاري الاتصال والمزامنة...' : 'اتصال ومزامنة'),
+          label: Text(_isConnecting ? tr('جاري الاتصال والمزامنة...') : tr('اتصال ومزامنة')),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.success,
             foregroundColor: Colors.white,
@@ -366,9 +366,9 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
         // Branch assignment dropdown (only after sync)
         if (_syncedBranches.isNotEmpty) ...[
           const SizedBox(height: 20),
-          const Text(
-            'اختر الفرع المعين لهذا الجهاز:',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+           Text(
+            tr('اختر الفرع المعين لهذا الجهاز:'),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<int?>(
@@ -379,7 +379,7 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
             items: [
-              const DropdownMenuItem<int?>(value: null, child: Text('غير محدد')),
+               DropdownMenuItem<int?>(value: null, child: Text(tr('غير محدد'))),
               ..._syncedBranches.map(
                 (b) => DropdownMenuItem<int?>(value: b.id, child: Text(b.name)),
               ),

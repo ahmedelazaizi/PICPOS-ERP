@@ -37,7 +37,11 @@ void main() {
 
   /// مفاتيحُ خريطةٍ ثابتةٍ بالاسم.
   Set<String> mapKeys(String name) {
-    final start = src.indexOf('const Map<String, String> $name = {');
+    final declaration = RegExp(
+      '(?:const\\s+)?Map<String, String>\\s+'
+      '(?:$name\\s*=|get\\s+$name\\s*=>)\\s*\\{',
+    ).firstMatch(src);
+    final start = declaration?.start ?? -1;
     expect(start, greaterThan(0), reason: 'الخريطةُ `$name` غيرُ موجودة.');
     final end = src.indexOf('\n};', start);
     expect(end, greaterThan(start));
@@ -75,15 +79,24 @@ void main() {
   test('ومجموعاتُ الفئات كلُّها من ترتيبٍ معرَّف', () {
     // مجموعةٌ باسمٍ خارج `_kGroupOrder` لا تُرسَم إطلاقاً: الشريطُ يمرّ على
     // الترتيب لا على قيم الخريطة.
-    final start = src.indexOf('const List<String> _kGroupOrder = [');
+    final orderDeclaration = RegExp(
+      r'(?:const\s+)?List<String>\s+'
+      r'(?:_kGroupOrder\s*=|get\s+_kGroupOrder\s*=>)\s*\[',
+    ).firstMatch(src);
+    final start = orderDeclaration?.start ?? -1;
     expect(start, greaterThan(0));
     final order = RegExp(r"'([^']+)'")
         .allMatches(src.substring(start, src.indexOf('\n];', start)))
         .map((m) => m.group(1)!)
         .toSet();
 
-    final gStart = src.indexOf('const Map<String, String> _kCatGroup = {');
-    final used = RegExp(r":\s*'([^']+)',")
+    final groupDeclaration = RegExp(
+      r'(?:const\s+)?Map<String, String>\s+'
+      r'(?:_kCatGroup\s*=|get\s+_kCatGroup\s*=>)\s*\{',
+    ).firstMatch(src);
+    final gStart = groupDeclaration?.start ?? -1;
+    expect(gStart, greaterThan(0));
+    final used = RegExp(r":\s*(?:tr\(\s*)?'([^']+)'(?:\s*\))?,")
         .allMatches(src.substring(gStart, src.indexOf('\n};', gStart)))
         .map((m) => m.group(1)!)
         .toSet();

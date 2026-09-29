@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -51,9 +52,9 @@ class _UnitsManagementScreenState
   Future<void> _deleteUnit(Unit unit) async {
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: 'حذف وحدة القياس',
-      message: 'هل أنت متأكد من حذف "${unit.name}"؟',
-      confirmLabel: 'حذف',
+      title: tr('حذف وحدة القياس'),
+      message: tr('هل أنت متأكد من حذف "{p0}"؟', {'p0': unit.name}),
+      confirmLabel: tr('حذف'),
       color: AppColors.error,
       icon: PhosphorIconsBold.trash,
     );
@@ -65,7 +66,7 @@ class _UnitsManagementScreenState
         _loadUnits();
       } catch (e) {
         if (mounted) {
-          AppToast.show(context, 'خطأ في الحذف: $e', type: ToastType.error);
+          AppToast.show(context, tr('خطأ في الحذف: {e}', {'e': e}), type: ToastType.error);
         }
       }
     }
@@ -77,11 +78,11 @@ class _UnitsManagementScreenState
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('إدارة وحدات القياس'),
+          title:  Text(tr('إدارة وحدات القياس')),
           actions: [
             IconButton(
               icon: const Icon(PhosphorIconsBold.plus),
-              tooltip: 'إضافة وحدة جديدة',
+              tooltip: tr('إضافة وحدة جديدة'),
               onPressed: () => _showUnitDialog(),
             ),
           ],
@@ -96,7 +97,7 @@ class _UnitsManagementScreenState
                         Icon(PhosphorIconsLight.package, size: 80, color: Colors.grey.shade400),
                         const SizedBox(height: 16),
                         Text(
-                          'لا توجد وحدات قياس بعد',
+                          tr('لا توجد وحدات قياس بعد'),
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.grey.shade600,
@@ -105,7 +106,7 @@ class _UnitsManagementScreenState
                         const SizedBox(height: 8),
                         ElevatedButton.icon(
                           icon: const Icon(PhosphorIconsBold.plus),
-                          label: const Text('إضافة وحدة'),
+                          label:  Text(tr('إضافة وحدة')),
                           onPressed: () => _showUnitDialog(),
                         ),
                       ],
@@ -136,7 +137,7 @@ class _UnitsManagementScreenState
                               style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             subtitle: Text(
-                              'معامل التحويل: ${unit.conversionFactor}',
+                              tr('معامل التحويل: {p0}', {'p0': unit.conversionFactor}),
                               style: TextStyle(color: Colors.grey.shade600),
                             ),
                             trailing: Row(
@@ -144,12 +145,12 @@ class _UnitsManagementScreenState
                               children: [
                                 IconButton(
                                   icon: const Icon(PhosphorIconsLight.pencilSimple),
-                                  tooltip: 'تعديل',
+                                  tooltip: tr('تعديل'),
                                   onPressed: () => _showUnitDialog(existing: unit),
                                 ),
                                 IconButton(
                                   icon: const Icon(PhosphorIconsLight.trash, color: AppColors.error),
-                                  tooltip: 'حذف',
+                                  tooltip: tr('حذف'),
                                   onPressed: () => _deleteUnit(unit),
                                 ),
                               ],

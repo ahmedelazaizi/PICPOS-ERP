@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 /// Business profile describes the operational behavior of the application.
 /// Unlike [AppFlavor], this layer is intended to drive modules and policies.
 enum BusinessProfile {
@@ -31,14 +32,14 @@ extension BusinessProfileX on BusinessProfile {
       };
 
   String get displayName => switch (this) {
-        BusinessProfile.unified => 'النظام الموحد',
-        BusinessProfile.restaurant => 'المطاعم',
-        BusinessProfile.cafe => 'الكافيهات',
-        BusinessProfile.supermarket => 'السوبرماركت',
-        BusinessProfile.supermarketPro => 'السوبرماركت برو',
-        BusinessProfile.supermarketPlus => 'السوبرماركت بلس',
-        BusinessProfile.commercial => 'التجاري',
-        BusinessProfile.lite => 'لايت',
+        BusinessProfile.unified => tr('النظام الموحد'),
+        BusinessProfile.restaurant => tr('المطاعم'),
+        BusinessProfile.cafe => tr('الكافيهات'),
+        BusinessProfile.supermarket => tr('السوبرماركت'),
+        BusinessProfile.supermarketPro => tr('السوبرماركت برو'),
+        BusinessProfile.supermarketPlus => tr('السوبرماركت بلس'),
+        BusinessProfile.commercial => tr('التجاري'),
+        BusinessProfile.lite => tr('لايت'),
       };
 
   String get defaultBusinessType => switch (this) {

@@ -8,12 +8,12 @@ Widget buildManufacturingManageBomButton({required VoidCallback onPressed}) {
   return PermissionGuard(
     permission: PermissionCodes.manufacturingManage,
     allowManagerOverride: true,
-    actionName: 'إنشاء قائمة مواد',
+    actionName: tr('إنشاء قائمة مواد'),
     onGranted: onPressed,
     child: ElevatedButton.icon(
       onPressed: onPressed,
       icon: const Icon(PhosphorIconsBold.plus, size: 18),
-      label: const Text('قائمة مواد جديدة'),
+      label:  Text(tr('قائمة مواد جديدة')),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -38,7 +38,7 @@ class _BomTab extends ConsumerWidget {
 
     return bomsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('خطأ: $e')),
+      error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
       data: (boms) {
         final products = productsAsync.value ?? [];
         return Column(
@@ -49,7 +49,7 @@ class _BomTab extends ConsumerWidget {
               child: Row(
                 children: [
                   Text(
-                    '${boms.length} قائمة مواد',
+                    tr('{p0} قائمة مواد', {'p0': boms.length}),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -71,9 +71,9 @@ class _BomTab extends ConsumerWidget {
                   ? _buildEmptyState(
                       context,
                       icon: PhosphorIconsBold.listDashes,
-                      title: 'لا توجد قوائم مواد',
+                      title: tr('لا توجد قوائم مواد'),
                       subtitle:
-                          'أضف أول قائمة مواد لتحديد المكونات اللازمة لتصنيع المنتجات',
+                          tr('أضف أول قائمة مواد لتحديد المكونات اللازمة لتصنيع المنتجات'),
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -86,7 +86,7 @@ class _BomTab extends ConsumerWidget {
                             .firstOrNull;
                         return _BomCard(
                           bom: bom,
-                          productName: product?.name ?? 'غير معروف',
+                          productName: product?.name ?? tr('غير معروف'),
                           onEdit: () => _showBomDialog(context, ref, products, bom),
                           onDelete: () => _deleteBom(context, ref, bom.id),
                         );
@@ -113,16 +113,16 @@ class _BomTab extends ConsumerWidget {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('حذف قائمة المواد'),
-          content: const Text('هل أنت متأكد من حذف قائمة المواد هذه؟'),
+          title:  Text(tr('حذف قائمة المواد')),
+          content:  Text(tr('هل أنت متأكد من حذف قائمة المواد هذه؟')),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('إلغاء')),
+                child:  Text(tr('إلغاء'))),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
               child:
-                  const Text('حذف', style: TextStyle(color: AppColors.error)),
+                   Text(tr('حذف'), style: const TextStyle(color: AppColors.error)),
             ),
           ],
         ),
@@ -186,12 +186,12 @@ class _BomCard extends ConsumerWidget {
         ),
         subtitle: Row(
           children: [
-            _chip('كود: ${bom.bomCode}', Colors.blue),
+            _chip(tr('كود: {p0}', {'p0': bom.bomCode}), Colors.blue),
             const SizedBox(width: 8),
-            _chip('الناتج: ${bom.expectedQuantity}', Colors.green),
+            _chip(tr('الناتج: {p0}', {'p0': bom.expectedQuantity}), Colors.green),
             const SizedBox(width: 8),
             _chip(
-                'التكلفة: ${bom.estimatedCost.toStringAsFixed(AppConstants.decimalPlaces)}', Colors.orange),
+                tr('التكلفة: {p0}', {'p0': bom.estimatedCost.toStringAsFixed(AppConstants.decimalPlaces)}), Colors.orange),
           ],
         ),
         trailing: Row(
@@ -200,23 +200,23 @@ class _BomCard extends ConsumerWidget {
             PermissionGuard(
               permission: PermissionCodes.manufacturingManage,
               allowManagerOverride: true,
-              actionName: 'تعديل قائمة مواد',
+              actionName: tr('تعديل قائمة مواد'),
               onGranted: onEdit,
               child: IconButton(
                 icon: const Icon(PhosphorIconsBold.pencilSimple, size: 18, color: AppColors.primary),
                 onPressed: onEdit,
-                tooltip: 'تعديل',
+                tooltip: tr('تعديل'),
               ),
             ),
             PermissionGuard(
               permission: PermissionCodes.manufacturingManage,
               allowManagerOverride: true,
-              actionName: 'حذف قائمة مواد',
+              actionName: tr('حذف قائمة مواد'),
               onGranted: onDelete,
               child: IconButton(
                 icon: const Icon(PhosphorIconsBold.trash, size: 18, color: AppColors.error),
                 onPressed: onDelete,
-                tooltip: 'حذف',
+                tooltip: tr('حذف'),
               ),
             ),
           ],
@@ -228,10 +228,10 @@ class _BomCard extends ConsumerWidget {
             error: (e, _) => Padding(padding: const EdgeInsets.all(16), child: Text('$e')),
             data: (components) {
               if (components.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('لا توجد مكونات',
-                      style: TextStyle(color: AppColors.textMuted)),
+                return  Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(tr('لا توجد مكونات'),
+                      style: const TextStyle(color: AppColors.textMuted)),
                 );
               }
               return _buildComponentsTable(context, ref, components);
@@ -258,11 +258,11 @@ class _BomCard extends ConsumerWidget {
         children: [
           TableRow(
             decoration: BoxDecoration(color: Colors.grey.shade50),
-            children: const [
-              _TableHeader('المادة الخام'),
-              _TableHeader('الكمية'),
-              _TableHeader('الوحدة'),
-              _TableHeader('هالك %'),
+            children:  [
+              _TableHeader(tr('المادة الخام')),
+              _TableHeader(tr('الكمية')),
+              _TableHeader(tr('الوحدة')),
+              _TableHeader(tr('هالك %')),
             ],
           ),
           ...components.map((c) {
@@ -270,7 +270,7 @@ class _BomCard extends ConsumerWidget {
                 products.where((p) => p.id == c.rawMaterialId).firstOrNull;
             return TableRow(
               children: [
-                _TableCell(product?.name ?? 'غير معروف'),
+                _TableCell(product?.name ?? tr('غير معروف')),
                 _TableCell(c.quantity.toStringAsFixed(2)),
                 _TableCell(c.unit),
                 _TableCell('${c.wastagePercent.toStringAsFixed(1)}%'),
@@ -410,7 +410,7 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
       _components.add({
         'rawMaterialId': null,
         'quantity': 1.0,
-        'unit': 'قطعة',
+        'unit': tr('قطعة'),
         'quantityInBase': 1.0,
         'wastagePercent': 0.0,
         'cost': 0.0,
@@ -470,11 +470,11 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
 
   Future<void> _save() async {
     if (_selectedProductId == null || _codeController.text.isEmpty) {
-      AppToast.show(context, 'يرجى ملء جميع الحقول المطلوبة', type: ToastType.info);
+      AppToast.show(context, tr('يرجى ملء جميع الحقول المطلوبة'), type: ToastType.info);
       return;
     }
     if (_components.isEmpty || _components.any((c) => c['rawMaterialId'] == null)) {
-      AppToast.show(context, 'يرجى إضافة مكون واحد على الأقل', type: ToastType.info);
+      AppToast.show(context, tr('يرجى إضافة مكون واحد على الأقل'), type: ToastType.info);
       return;
     }
 
@@ -515,7 +515,7 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('خطأ: $e')));
+            .showSnackBar(SnackBar(content: Text(tr('خطأ: {e}', {'e': e}))));
       }
     }
   }
@@ -542,8 +542,8 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                     const SizedBox(width: 10),
                     Text(
                       widget.existing == null
-                          ? 'قائمة مواد جديدة'
-                          : 'تعديل قائمة المواد',
+                          ? tr('قائمة مواد جديدة')
+                          : tr('تعديل قائمة المواد'),
                       style: const TextStyle(
                           fontSize: 18, fontWeight: FontWeight.w800),
                     ),
@@ -583,12 +583,12 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                           return TextFormField(
                             controller: controller,
                             focusNode: focusNode,
-                            decoration: const InputDecoration(
-                              labelText: 'المنتج التام *',
-                              hintText: 'ابحث بالاسم أو الكود...',
-                              border: OutlineInputBorder(),
+                            decoration:  InputDecoration(
+                              labelText: tr('المنتج التام *'),
+                              hintText: tr('ابحث بالاسم أو الكود...'),
+                              border: const OutlineInputBorder(),
                               isDense: true,
-                              prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
+                              prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                             ),
                           );
                         },
@@ -628,9 +628,9 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                       flex: 2,
                       child: TextFormField(
                         controller: _codeController,
-                        decoration: const InputDecoration(
-                          labelText: 'كود BOM *',
-                          border: OutlineInputBorder(),
+                        decoration:  InputDecoration(
+                          labelText: tr('كود BOM *'),
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                       ),
@@ -640,8 +640,8 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                       child: TextFormField(
                         controller: _qtyController,
                         decoration: InputDecoration(
-                          labelText: 'الناتج (لكل دفعة)',
-                          helperText: 'اضبطه = 1 إذا كانت الخامات لكل وحدة',
+                          labelText: tr('الناتج (لكل دفعة)'),
+                          helperText: tr('اضبطه = 1 إذا كانت الخامات لكل وحدة'),
                           helperStyle: TextStyle(
                               fontSize: 11, color: Colors.grey.shade600),
                           border: const OutlineInputBorder(),
@@ -673,14 +673,14 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                 // Components header
                 Row(
                   children: [
-                    const Text('المواد الخام',
-                        style: TextStyle(
+                     Text(tr('المواد الخام'),
+                        style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 14)),
                     const Spacer(),
                     TextButton.icon(
                       onPressed: _addComponent,
                       icon: const Icon(PhosphorIconsBold.plus, size: 16),
-                      label: const Text('إضافة مكون'),
+                      label:  Text(tr('إضافة مكون')),
                     ),
                   ],
                 ),
@@ -690,7 +690,7 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                 Expanded(
                   child: _components.isEmpty
                       ? Center(
-                          child: Text('اضغط "إضافة مكون" لإضافة المواد الخام',
+                          child: Text(tr('اضغط "إضافة مكون" لإضافة المواد الخام'),
                               style: TextStyle(
                                   color: Colors.grey.shade500, fontSize: 13)),
                         )
@@ -727,12 +727,12 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                                       return TextFormField(
                                         controller: controller,
                                         focusNode: focusNode,
-                                        decoration: const InputDecoration(
-                                          labelText: 'المادة الخام',
-                                          hintText: 'ابحث...',
-                                          border: OutlineInputBorder(),
+                                        decoration:  InputDecoration(
+                                          labelText: tr('المادة الخام'),
+                                          hintText: tr('ابحث...'),
+                                          border: const OutlineInputBorder(),
                                           isDense: true,
-                                          prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
+                                          prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
                                         ),
                                       );
                                     },
@@ -773,9 +773,9 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                                 Expanded(
                                   child: TextFormField(
                                     initialValue: comp['quantity'].toString(),
-                                    decoration: const InputDecoration(
-                                      labelText: 'الكمية',
-                                      border: OutlineInputBorder(),
+                                    decoration:  InputDecoration(
+                                      labelText: tr('الكمية'),
+                                      border: const OutlineInputBorder(),
                                       isDense: true,
                                     ),
                                     keyboardType: TextInputType.number,
@@ -809,9 +809,9 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                                       if (units.isEmpty) {
                                         return TextFormField(
                                           initialValue: comp['unit'] as String,
-                                          decoration: const InputDecoration(
-                                            labelText: 'الوحدة',
-                                            border: OutlineInputBorder(),
+                                          decoration:  InputDecoration(
+                                            labelText: tr('الوحدة'),
+                                            border: const OutlineInputBorder(),
                                             isDense: true,
                                           ),
                                           onChanged: (v) => comp['unit'] = v,
@@ -836,9 +836,9 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                                       }
                                       return DropdownButtonFormField<String>(
                                         initialValue: effectiveUnit,
-                                        decoration: const InputDecoration(
-                                          labelText: 'الوحدة',
-                                          border: OutlineInputBorder(),
+                                        decoration:  InputDecoration(
+                                          labelText: tr('الوحدة'),
+                                          border: const OutlineInputBorder(),
                                           isDense: true,
                                         ),
                                         items: units.map((u) => DropdownMenuItem(
@@ -864,9 +864,9 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                                   child: TextFormField(
                                     initialValue:
                                         comp['wastagePercent'].toString(),
-                                    decoration: const InputDecoration(
-                                      labelText: 'هالك%',
-                                      border: OutlineInputBorder(),
+                                    decoration:  InputDecoration(
+                                      labelText: tr('هالك%'),
+                                      border: const OutlineInputBorder(),
                                       isDense: true,
                                     ),
                                     keyboardType: TextInputType.number,
@@ -927,7 +927,7 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Text(
-                          'إجمالي التكلفة التقديرية (لكل دفعة): ',
+                          tr('إجمالي التكلفة التقديرية (لكل دفعة): '),
                           style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                         ),
                         Text(
@@ -951,7 +951,7 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Text(
-                            'تكلفة الوحدة الواحدة (≈ ÷ ${_expectedOutputQty.toStringAsFixed(_expectedOutputQty.truncateToDouble() == _expectedOutputQty ? 0 : 2)}): ',
+                            tr('تكلفة الوحدة الواحدة (≈ ÷ {p0}): ', {'p0': _expectedOutputQty.toStringAsFixed(_expectedOutputQty.truncateToDouble() == _expectedOutputQty ? 0 : 2)}),
                             style: TextStyle(
                                 fontSize: 12, color: Colors.grey.shade600),
                           ),
@@ -1011,9 +1011,9 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                 // Notes + Save button
                 TextFormField(
                   controller: _notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'ملاحظات',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('ملاحظات'),
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                 ),
@@ -1028,14 +1028,14 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                       : null,
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
-                  title: const Text(
-                    'خصم الخامات تلقائيًا عند البيع',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  title:  Text(
+                    tr('خصم الخامات تلقائيًا عند البيع'),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     _isActive
-                        ? 'عند بيع هذا الصنف، يتم خصم خاماته من المخزون مباشرة دون أمر إنتاج.'
-                        : 'لا يمكن تفعيل الخصم التلقائي على قائمة تصنيع غير مفعّلة.',
+                        ? tr('عند بيع هذا الصنف، يتم خصم خاماته من المخزون مباشرة دون أمر إنتاج.')
+                        : tr('لا يمكن تفعيل الخصم التلقائي على قائمة تصنيع غير مفعّلة.'),
                     style: TextStyle(
                         fontSize: 12, color: Colors.grey.shade600),
                   ),
@@ -1046,19 +1046,19 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     initialValue: _depletionPolicy,
-                    decoration: const InputDecoration(
-                      labelText: 'سياسة الخصم',
-                      border: OutlineInputBorder(),
+                    decoration:  InputDecoration(
+                      labelText: tr('سياسة الخصم'),
+                      border: const OutlineInputBorder(),
                       isDense: true,
                     ),
-                    items: const [
+                    items:  [
                       DropdownMenuItem(
                         value: 'always_auto_deplete',
-                        child: Text('الخامات دائمًا'),
+                        child: Text(tr('الخامات دائمًا')),
                       ),
                       DropdownMenuItem(
                         value: 'prefer_finished_stock',
-                        child: Text('الافتراضى من المنتج التام'),
+                        child: Text(tr('الافتراضى من المنتج التام')),
                       ),
                     ],
                     onChanged: (v) {
@@ -1070,8 +1070,8 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                   const SizedBox(height: 4),
                   Text(
                     _depletionPolicy == 'always_auto_deplete'
-                        ? 'كل الكمية المباعة تُخصم من الخامات. مناسب للمنتجات التى لا يُحفظ منها مخزون تام (مثل: الساندوتش الطازج).'
-                        : 'إذا توفر مخزون من المنتج التام يُخصم منه أولاً، والباقى من الخامات. مناسب للمنتجات المُجهَّزة مسبقًا.',
+                        ? tr('كل الكمية المباعة تُخصم من الخامات. مناسب للمنتجات التى لا يُحفظ منها مخزون تام (مثل: الساندوتش الطازج).')
+                        : tr('إذا توفر مخزون من المنتج التام يُخصم منه أولاً، والباقى من الخامات. مناسب للمنتجات المُجهَّزة مسبقًا.'),
                     style: TextStyle(
                         fontSize: 11,
                         color: Colors.grey.shade600,
@@ -1090,8 +1090,8 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text('حفظ',
-                        style: TextStyle(
+                    child:  Text(tr('حفظ'),
+                        style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 15)),
                   ),
                 ),

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../picpos_shell/picpos_danger_confirm.dart';
 import '../../picpos_shell/picpos_surface.dart';
@@ -150,7 +151,7 @@ class _BranchScopeAdminDialogState
                   alignment: AlignmentDirectional.centerEnd,
                   child: TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('إغلاق'),
+                    child:  Text(tr('إغلاق')),
                   ),
                 ),
               ],
@@ -162,16 +163,16 @@ class _BranchScopeAdminDialogState
   }
 
   Widget _header() {
-    return const Row(
+    return  Row(
       children: [
-        Icon(PhosphorIconsBold.shield,
+        const Icon(PhosphorIconsBold.shield,
             color: AppColors.primary, size: 22),
-        SizedBox(width: 10),
+        const SizedBox(width: 10),
         Text(
-          'أدوات صيانة المسؤول',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          tr('أدوات صيانة المسؤول'),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        Spacer(),
+        const Spacer(),
       ],
     );
   }
@@ -194,13 +195,13 @@ class _BranchScopeAdminDialogState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+             Row(
               children: [
-                Icon(PhosphorIconsBold.broom,
+                const Icon(PhosphorIconsBold.broom,
                     color: AppColors.warning, size: 20),
-                SizedBox(width: 8),
-                Text('حصر بيانات الفروع',
-                    style: TextStyle(
+                const SizedBox(width: 8),
+                Text(tr('حصر بيانات الفروع'),
+                    style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -222,7 +223,7 @@ class _BranchScopeAdminDialogState
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
-                  label: const Text('فحص'),
+                  label:  Text(tr('فحص')),
                   onPressed: _scanningForeign ? null : _scanForeign,
                 ),
                 const SizedBox(width: 8),
@@ -236,8 +237,8 @@ class _BranchScopeAdminDialogState
                         )
                       : const Icon(PhosphorIconsBold.trash, size: 16),
                   label: Text(hasForeign
-                      ? 'تنظيف ($totalForeign صف)'
-                      : 'تنظيف'),
+                      ? tr('تنظيف ({totalForeign} صف)', {'totalForeign': totalForeign})
+                      : tr('تنظيف')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
                         hasForeign ? AppColors.error : Colors.grey,
@@ -251,8 +252,8 @@ class _BranchScopeAdminDialogState
             if (counts != null) ...[
               const SizedBox(height: 12),
               if (counts.isEmpty)
-                const Text('✓ لا توجد صفوف من فروع أخرى محلياً.',
-                    style: TextStyle(color: AppColors.success))
+                 Text(tr('✓ لا توجد صفوف من فروع أخرى محلياً.'),
+                    style: const TextStyle(color: AppColors.success))
               else
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -263,8 +264,8 @@ class _BranchScopeAdminDialogState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('الصفوف الموجودة لفروع غير مسموحة:',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                       Text(tr('الصفوف الموجودة لفروع غير مسموحة:'),
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
                       ...counts.entries.map((e) => Text(
                           '  • ${e.key}: ${e.value}',
@@ -298,7 +299,7 @@ class _BranchScopeAdminDialogState
       if (!mounted) return;
       setState(() => _foreignCounts = result);
     } catch (e) {
-      if (mounted) AppToast.show(context, 'فشل الفحص: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('فشل الفحص: {e}', {'e': e}), type: ToastType.error);
     } finally {
       if (mounted) setState(() => _scanningForeign = false);
     }
@@ -320,26 +321,26 @@ class _BranchScopeAdminDialogState
     final confirmed = await showPicPosDangerConfirm(
       context,
       icon: PhosphorIconsBold.warning,
-      title: 'تنظيف بيانات الفروع غير المسموحة',
-      subtitle: '$total صفّاً في ${topTables.length} جدولاً',
+      title: tr('تنظيف بيانات الفروع غير المسموحة'),
+      subtitle: tr('{total} صفّاً في {p0} جدولاً', {'total': total, 'p0': topTables.length}),
       message: 'تُحذف من القاعدة المحليّة الصفوفُ التابعةُ لفروعٍ غيرِ '
           'مسموحةٍ لهذا الجهاز. تأكّد من وجود نسخةٍ احتياطيّةٍ حديثة.',
-      actionLabel: 'تنفيذ التنظيف',
-      typedWord: 'تنظيف',
-      willDeleteLabel: 'سيُحذف',
+      actionLabel: tr('تنفيذ التنظيف'),
+      typedWord: tr('تنظيف'),
+      willDeleteLabel: tr('سيُحذف'),
       willDelete: [
-        for (final e in topTables.take(3)) '${e.key} — ${e.value} صفّاً',
-        if (topTables.length > 3) 'و${topTables.length - 3} جدولاً آخر',
+        for (final e in topTables.take(3)) tr('{p0} — {p1} صفّاً', {'p0': e.key, 'p1': e.value}),
+        if (topTables.length > 3) tr('و{p0} جدولاً آخر', {'p0': topTables.length - 3}),
       ],
-      willRemainLabel: 'يبقى كما هو',
-      willRemain: const [
-        'بياناتُ الفروع المسموحة لهذا الجهاز',
-        'الإعداداتُ والمستخدمون والصلاحيات',
-        'ما على السيرفر — الحذفُ محلّيٌّ فقط',
+      willRemainLabel: tr('يبقى كما هو'),
+      willRemain:  [
+        tr('بياناتُ الفروع المسموحة لهذا الجهاز'),
+        tr('الإعداداتُ والمستخدمون والصلاحيات'),
+        tr('ما على السيرفر — الحذفُ محلّيٌّ فقط'),
       ],
       metaRows: [
-        (label: 'إجمالي الصفوف المتأثّرة', value: '$total'),
-        (label: 'عدد الجداول', value: '${topTables.length}'),
+        (label: tr('إجمالي الصفوف المتأثّرة'), value: '$total'),
+        (label: tr('عدد الجداول'), value: '${topTables.length}'),
       ],
     );
     if (!confirmed) return;
@@ -355,11 +356,11 @@ class _BranchScopeAdminDialogState
         _foreignCounts = const {};
       });
       final deletedTotal = deleted.values.fold<int>(0, (s, v) => s + v);
-      AppToast.show(context, 'تم حذف $deletedTotal صف بنجاح',
+      AppToast.show(context, tr('تم حذف {deletedTotal} صف بنجاح', {'deletedTotal': deletedTotal}),
           type: ToastType.success);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل التنظيف: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل التنظيف: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _wiping = false);
@@ -379,13 +380,13 @@ class _BranchScopeAdminDialogState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+             Row(
               children: [
-                Icon(PhosphorIconsBold.stethoscope,
+                const Icon(PhosphorIconsBold.stethoscope,
                     color: AppColors.info, size: 20),
-                SizedBox(width: 8),
-                Text('تشخيص قيود اليومية',
-                    style: TextStyle(
+                const SizedBox(width: 8),
+                Text(tr('تشخيص قيود اليومية'),
+                    style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -404,14 +405,14 @@ class _BranchScopeAdminDialogState
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
-              label: const Text('فحص'),
+              label:  Text(tr('فحص')),
               onPressed: _scanningOrphans ? null : _scanOrphans,
             ),
             if (orphans != null) ...[
               const SizedBox(height: 12),
               if (orphans.isEmpty)
-                const Text('✓ لا توجد قيود معطوبة.',
-                    style: TextStyle(color: AppColors.success))
+                 Text(tr('✓ لا توجد قيود معطوبة.'),
+                    style: const TextStyle(color: AppColors.success))
               else
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -422,7 +423,7 @@ class _BranchScopeAdminDialogState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('عدد المشاكل: ${orphans.length}',
+                      Text(tr('عدد المشاكل: {p0}', {'p0': orphans.length}),
                           style: const TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
                       ...orphans.take(20).map((o) => Padding(
@@ -434,7 +435,7 @@ class _BranchScopeAdminDialogState
                             ),
                           )),
                       if (orphans.length > 20)
-                        Text('  … و ${orphans.length - 20} مشكلة أخرى',
+                        Text(tr('  … و {p0} مشكلة أخرى', {'p0': orphans.length - 20}),
                             style: const TextStyle(
                                 fontSize: 12, color: AppColors.textMuted)),
                     ],
@@ -458,7 +459,7 @@ class _BranchScopeAdminDialogState
       if (!mounted) return;
       setState(() => _orphans = result);
     } catch (e) {
-      if (mounted) AppToast.show(context, 'فشل الفحص: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('فشل الفحص: {e}', {'e': e}), type: ToastType.error);
     } finally {
       if (mounted) setState(() => _scanningOrphans = false);
     }
@@ -482,13 +483,13 @@ class _BranchScopeAdminDialogState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+             Row(
               children: [
-                Icon(PhosphorIconsBold.copy,
+                const Icon(PhosphorIconsBold.copy,
                     color: AppColors.warning, size: 20),
-                SizedBox(width: 8),
-                Text('دمج التصنيفات المكرَّرة',
-                    style: TextStyle(
+                const SizedBox(width: 8),
+                Text(tr('دمج التصنيفات المكرَّرة'),
+                    style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -510,7 +511,7 @@ class _BranchScopeAdminDialogState
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
-                  label: const Text('فحص'),
+                  label:  Text(tr('فحص')),
                   onPressed: _scanningDupCategories ? null : _scanDupCategories,
                 ),
                 const SizedBox(width: 8),
@@ -523,7 +524,7 @@ class _BranchScopeAdminDialogState
                               strokeWidth: 2, color: Colors.white),
                         )
                       : const Icon(PhosphorIconsBold.gitMerge, size: 16),
-                  label: Text(hasDups ? 'دمج ($totalExtra صف)' : 'دمج'),
+                  label: Text(hasDups ? tr('دمج ({totalExtra} صف)', {'totalExtra': totalExtra}) : tr('دمج')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: hasDups ? AppColors.error : Colors.grey,
                     foregroundColor: Colors.white,
@@ -537,8 +538,8 @@ class _BranchScopeAdminDialogState
             if (groups != null) ...[
               const SizedBox(height: 12),
               if (groups.isEmpty)
-                const Text('✓ لا توجد تصنيفات مكرَّرة.',
-                    style: TextStyle(color: AppColors.success))
+                 Text(tr('✓ لا توجد تصنيفات مكرَّرة.'),
+                    style: const TextStyle(color: AppColors.success))
               else
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -549,7 +550,7 @@ class _BranchScopeAdminDialogState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('عدد المجموعات المكرَّرة: ${groups.length}',
+                      Text(tr('عدد المجموعات المكرَّرة: {p0}', {'p0': groups.length}),
                           style:
                               const TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
@@ -565,7 +566,7 @@ class _BranchScopeAdminDialogState
                         );
                       }),
                       if (groups.length > 20)
-                        Text('  … و ${groups.length - 20} مجموعة أخرى',
+                        Text(tr('  … و {p0} مجموعة أخرى', {'p0': groups.length - 20}),
                             style: const TextStyle(
                                 fontSize: 12, color: AppColors.textMuted)),
                     ],
@@ -590,7 +591,7 @@ class _BranchScopeAdminDialogState
       setState(() => _dupCategories = result);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل الفحص: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل الفحص: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _scanningDupCategories = false);
@@ -606,11 +607,11 @@ class _BranchScopeAdminDialogState
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('تأكيد الدمج'),
+              const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('تأكيد الدمج')),
             ],
           ),
           content: Text(
@@ -622,7 +623,7 @@ class _BranchScopeAdminDialogState
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
@@ -630,7 +631,7 @@ class _BranchScopeAdminDialogState
                 backgroundColor: AppColors.error,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('تأكيد الدمج'),
+              child:  Text(tr('تأكيد الدمج')),
             ),
           ],
         ),
@@ -644,11 +645,11 @@ class _BranchScopeAdminDialogState
       final merged = await db.mergeDuplicateCategories();
       if (!mounted) return;
       setState(() => _dupCategories = const []);
-      AppToast.show(context, 'تم دمج $merged تصنيف مكرَّر بنجاح',
+      AppToast.show(context, tr('تم دمج {merged} تصنيف مكرَّر بنجاح', {'merged': merged}),
           type: ToastType.success);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل الدمج: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل الدمج: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _mergingDupCategories = false);
@@ -675,13 +676,13 @@ class _BranchScopeAdminDialogState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+             Row(
               children: [
-                Icon(PhosphorIconsBold.buildings,
+                const Icon(PhosphorIconsBold.buildings,
                     color: AppColors.warning, size: 20),
-                SizedBox(width: 8),
-                Text('إصلاح الفروع المكررة (السيرفر)',
-                    style: TextStyle(
+                const SizedBox(width: 8),
+                Text(tr('إصلاح الفروع المكررة (السيرفر)'),
+                    style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -705,7 +706,7 @@ class _BranchScopeAdminDialogState
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
-                  label: const Text('فحص'),
+                  label:  Text(tr('فحص')),
                   onPressed: _scanningBranchDups ? null : _scanBranchDups,
                 ),
                 const SizedBox(width: 8),
@@ -718,7 +719,7 @@ class _BranchScopeAdminDialogState
                               strokeWidth: 2, color: Colors.white),
                         )
                       : const Icon(PhosphorIconsBold.gitMerge, size: 16),
-                  label: Text(hasDups ? 'دمج ($totalDups صف)' : 'دمج'),
+                  label: Text(hasDups ? tr('دمج ({totalDups} صف)', {'totalDups': totalDups}) : tr('دمج')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: hasDups ? AppColors.error : Colors.grey,
                     foregroundColor: Colors.white,
@@ -732,8 +733,8 @@ class _BranchScopeAdminDialogState
             if (groups != null) ...[
               const SizedBox(height: 12),
               if (groups.isEmpty)
-                const Text('✓ لا توجد فروع مكررة على السيرفر.',
-                    style: TextStyle(color: AppColors.success))
+                 Text(tr('✓ لا توجد فروع مكررة على السيرفر.'),
+                    style: const TextStyle(color: AppColors.success))
               else
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -744,7 +745,7 @@ class _BranchScopeAdminDialogState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('عدد المجموعات: ${groups.length}',
+                      Text(tr('عدد المجموعات: {p0}', {'p0': groups.length}),
                           style:
                               const TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
@@ -813,7 +814,7 @@ class _BranchScopeAdminDialogState
       setState(() => _branchDupGroups = result);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل الفحص: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل الفحص: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _scanningBranchDups = false);
@@ -838,11 +839,11 @@ class _BranchScopeAdminDialogState
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('تأكيد الإصلاح'),
+              const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('تأكيد الإصلاح')),
             ],
           ),
           content: Column(
@@ -860,9 +861,9 @@ class _BranchScopeAdminDialogState
               const SizedBox(height: 12),
               TextField(
                 controller: controller,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'اسم الفرع',
+                decoration:  InputDecoration(
+                  border: const OutlineInputBorder(),
+                  hintText: tr('اسم الفرع'),
                 ),
               ),
             ],
@@ -870,7 +871,7 @@ class _BranchScopeAdminDialogState
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ValueListenableBuilder<bool>(
               valueListenable: isMatch,
@@ -880,7 +881,7 @@ class _BranchScopeAdminDialogState
                   backgroundColor: AppColors.error,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('تأكيد الإصلاح'),
+                child:  Text(tr('تأكيد الإصلاح')),
               ),
             ),
           ],
@@ -901,13 +902,13 @@ class _BranchScopeAdminDialogState
       if (!mounted) return;
       setState(() => _branchDupGroups = refreshed);
       final msg = result.hasSkipped
-          ? 'تم دمج ${result.mergedCount} فرع، تخطي ${result.skippedCount} لوجود فواتير/ورديات'
-          : 'تم دمج ${result.mergedCount} فرع بنجاح';
+          ? tr('تم دمج {p0} فرع، تخطي {p1} لوجود فواتير/ورديات', {'p0': result.mergedCount, 'p1': result.skippedCount})
+          : tr('تم دمج {p0} فرع بنجاح', {'p0': result.mergedCount});
       AppToast.show(context, msg,
           type: result.hasSkipped ? ToastType.info : ToastType.success);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل الإصلاح: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل الإصلاح: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _repairingBranchDups = false);
@@ -947,13 +948,13 @@ class _BranchScopeAdminDialogState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+             Row(
               children: [
-                Icon(PhosphorIconsBold.users,
+                const Icon(PhosphorIconsBold.users,
                     color: AppColors.warning, size: 20),
-                SizedBox(width: 8),
-                Text('إصلاح العملاء/الموردين المكررين (السيرفر)',
-                    style: TextStyle(
+                const SizedBox(width: 8),
+                Text(tr('إصلاح العملاء/الموردين المكررين (السيرفر)'),
+                    style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -976,7 +977,7 @@ class _BranchScopeAdminDialogState
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
-                  label: const Text('فحص'),
+                  label:  Text(tr('فحص')),
                   onPressed: _scanningPartyDups ? null : _scanPartyDups,
                 ),
                 const SizedBox(width: 8),
@@ -990,8 +991,8 @@ class _BranchScopeAdminDialogState
                         )
                       : const Icon(PhosphorIconsBold.gitMerge, size: 16),
                   label: Text(hasDups
-                      ? 'دمج ($mergeable من $totalDups)'
-                      : 'دمج'),
+                      ? tr('دمج ({mergeable} من {totalDups})', {'mergeable': mergeable, 'totalDups': totalDups})
+                      : tr('دمج')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
                         mergeable > 0 ? AppColors.error : Colors.grey,
@@ -1006,8 +1007,8 @@ class _BranchScopeAdminDialogState
             if (groups != null) ...[
               const SizedBox(height: 12),
               if (groups.isEmpty)
-                const Text('✓ لا توجد أطراف مكررة على السيرفر.',
-                    style: TextStyle(color: AppColors.success))
+                 Text(tr('✓ لا توجد أطراف مكررة على السيرفر.'),
+                    style: const TextStyle(color: AppColors.success))
               else
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -1018,7 +1019,7 @@ class _BranchScopeAdminDialogState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('عدد المجموعات: ${groups.length}',
+                      Text(tr('عدد المجموعات: {p0}', {'p0': groups.length}),
                           style:
                               const TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
@@ -1091,7 +1092,7 @@ class _BranchScopeAdminDialogState
       setState(() => _partyDupGroups = result);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل الفحص: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل الفحص: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _scanningPartyDups = false);
@@ -1114,11 +1115,11 @@ class _BranchScopeAdminDialogState
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('تأكيد الإصلاح'),
+              const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+              const SizedBox(width: 8),
+              Text(tr('تأكيد الإصلاح')),
             ],
           ),
           content: Column(
@@ -1137,9 +1138,9 @@ class _BranchScopeAdminDialogState
               const SizedBox(height: 12),
               TextField(
                 controller: controller,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'اسم الطرف',
+                decoration:  InputDecoration(
+                  border: const OutlineInputBorder(),
+                  hintText: tr('اسم الطرف'),
                 ),
               ),
             ],
@@ -1147,7 +1148,7 @@ class _BranchScopeAdminDialogState
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ValueListenableBuilder<bool>(
               valueListenable: isMatch,
@@ -1157,7 +1158,7 @@ class _BranchScopeAdminDialogState
                   backgroundColor: AppColors.error,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('تأكيد الإصلاح'),
+                child:  Text(tr('تأكيد الإصلاح')),
               ),
             ),
           ],
@@ -1177,13 +1178,13 @@ class _BranchScopeAdminDialogState
       if (!mounted) return;
       setState(() => _partyDupGroups = refreshed);
       final msg = result.hasSkipped
-          ? 'تم دمج ${result.mergedCount} طرف، تخطي ${result.skippedCount} لوجود معاملات'
-          : 'تم دمج ${result.mergedCount} طرف بنجاح';
+          ? tr('تم دمج {p0} طرف، تخطي {p1} لوجود معاملات', {'p0': result.mergedCount, 'p1': result.skippedCount})
+          : tr('تم دمج {p0} طرف بنجاح', {'p0': result.mergedCount});
       AppToast.show(context, msg,
           type: result.hasSkipped ? ToastType.info : ToastType.success);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل الإصلاح: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل الإصلاح: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _repairingPartyDups = false);
@@ -1205,13 +1206,13 @@ class _BranchScopeAdminDialogState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+             Row(
               children: [
-                Icon(PhosphorIconsBold.wrench,
+                const Icon(PhosphorIconsBold.wrench,
                     color: AppColors.warning, size: 20),
-                SizedBox(width: 8),
-                Text('إصلاح حسابات الموردين والعملاء المفقودة',
-                    style: TextStyle(
+                const SizedBox(width: 8),
+                Text(tr('إصلاح حسابات الموردين والعملاء المفقودة'),
+                    style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -1230,7 +1231,7 @@ class _BranchScopeAdminDialogState
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(PhosphorIconsBold.play, size: 16),
-              label: const Text('تشغيل الإصلاح'),
+              label:  Text(tr('تشغيل الإصلاح')),
               onPressed: _repairingPartySubAccounts
                   ? null
                   : _runRepairPartySubAccounts,
@@ -1281,7 +1282,7 @@ class _BranchScopeAdminDialogState
       );
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) {
@@ -1305,13 +1306,13 @@ class _BranchScopeAdminDialogState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+             Row(
               children: [
-                Icon(PhosphorIconsBold.notebook,
+                const Icon(PhosphorIconsBold.notebook,
                     color: AppColors.warning, size: 20),
-                SizedBox(width: 8),
-                Text('إعادة ترحيل قيود اليومية للفواتير المفقودة',
-                    style: TextStyle(
+                const SizedBox(width: 8),
+                Text(tr('إعادة ترحيل قيود اليومية للفواتير المفقودة'),
+                    style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -1330,7 +1331,7 @@ class _BranchScopeAdminDialogState
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(PhosphorIconsBold.play, size: 16),
-              label: const Text('تشغيل إعادة الترحيل'),
+              label:  Text(tr('تشغيل إعادة الترحيل')),
               onPressed:
                   _repairingInvoiceJEs ? null : _runRepairInvoiceJEs,
             ),
@@ -1364,7 +1365,7 @@ class _BranchScopeAdminDialogState
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'الإجمالي المفحوص: ${r['totalScanned']}',
+                      tr('الإجمالي المفحوص: {p0}', {'p0': r['totalScanned']}),
                       style: const TextStyle(
                           fontSize: 12, color: AppColors.textMuted),
                     ),
@@ -1393,13 +1394,13 @@ class _BranchScopeAdminDialogState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+             Row(
               children: [
-                Icon(PhosphorIconsBold.shuffle,
+                const Icon(PhosphorIconsBold.shuffle,
                     color: AppColors.info, size: 20),
-                SizedBox(width: 8),
-                Text('نقل القيود إلى الحسابات الفرعية',
-                    style: TextStyle(
+                const SizedBox(width: 8),
+                Text(tr('نقل القيود إلى الحسابات الفرعية'),
+                    style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -1419,7 +1420,7 @@ class _BranchScopeAdminDialogState
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(PhosphorIconsBold.play, size: 16),
-              label: const Text('تشغيل النقل'),
+              label:  Text(tr('تشغيل النقل')),
               onPressed: _rewiringJELines ? null : _runRewireJELines,
             ),
             if (r != null) ...[
@@ -1459,14 +1460,14 @@ class _BranchScopeAdminDialogState
       setState(() => _rewireResult = result);
       AppToast.show(
         context,
-        'تم نقل ${result['linesMoved']} سطر قيد إلى الحسابات الفرعية',
+        tr('تم نقل {p0} سطر قيد إلى الحسابات الفرعية', {'p0': result['linesMoved']}),
         type: (result['failed'] ?? 0) > 0
             ? ToastType.error
             : ToastType.success,
       );
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _rewiringJELines = false);
@@ -1487,13 +1488,13 @@ class _BranchScopeAdminDialogState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+             Row(
               children: [
-                Icon(PhosphorIconsBold.cloudSlash,
+                const Icon(PhosphorIconsBold.cloudSlash,
                     color: AppColors.warning, size: 20),
-                SizedBox(width: 8),
-                Text('تنظيف صفوف المزامنة العالقة (Outbox)',
-                    style: TextStyle(
+                const SizedBox(width: 8),
+                Text(tr('تنظيف صفوف المزامنة العالقة (Outbox)'),
+                    style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -1515,7 +1516,7 @@ class _BranchScopeAdminDialogState
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
-                  label: const Text('فحص'),
+                  label:  Text(tr('فحص')),
                   onPressed:
                       _scanningStranded ? null : _scanStrandedOutbox,
                 ),
@@ -1529,7 +1530,7 @@ class _BranchScopeAdminDialogState
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(PhosphorIconsBold.broom, size: 16),
-                    label: Text('تصفية ($_strandedCount)'),
+                    label: Text(tr('تصفية ({_strandedCount})', {'_strandedCount': _strandedCount})),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.warning,
                       foregroundColor: Colors.white,
@@ -1552,8 +1553,8 @@ class _BranchScopeAdminDialogState
                 ),
                 child: Text(
                   _strandedCount! == 0
-                      ? '✓ لا توجد صفوف مزامنة عالقة.'
-                      : 'الصفوف العالقة: $_strandedCount',
+                      ? tr('✓ لا توجد صفوف مزامنة عالقة.')
+                      : tr('الصفوف العالقة: {_strandedCount}', {'_strandedCount': _strandedCount}),
                   style: const TextStyle(fontSize: 13),
                 ),
               ),
@@ -1576,7 +1577,7 @@ class _BranchScopeAdminDialogState
       setState(() => _strandedCount = pending.length);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل الفحص: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل الفحص: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _scanningStranded = false);
@@ -1589,7 +1590,7 @@ class _BranchScopeAdminDialogState
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('تأكيد التصفية'),
+          title:  Text(tr('تأكيد التصفية')),
           content: Text(
               'سيتم ختم $_strandedCount صف(صفوف) كـ "مُسوّاة يدوياً". '
               'هذه العملية لا تُرسل البيانات للسيرفر — فقط تُسكت التحذير. '
@@ -1597,7 +1598,7 @@ class _BranchScopeAdminDialogState
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -1605,7 +1606,7 @@ class _BranchScopeAdminDialogState
                 foregroundColor: Colors.white,
               ),
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('نعم، تصفية'),
+              child:  Text(tr('نعم، تصفية')),
             ),
           ],
         ),
@@ -1620,12 +1621,12 @@ class _BranchScopeAdminDialogState
       setState(() => _strandedCount = 0);
       AppToast.show(
         context,
-        'تم تصفية $affected صف(صفوف) عالقة',
+        tr('تم تصفية {affected} صف(صفوف) عالقة', {'affected': affected}),
         type: ToastType.success,
       );
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _clearingStranded = false);
@@ -1654,7 +1655,7 @@ class _BranchScopeAdminDialogState
       );
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _repairingInvoiceJEs = false);

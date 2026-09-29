@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,7 +31,7 @@ class FieldAuditHistoryWidget extends ConsumerWidget {
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text('خطأ في تحميل تفاصيل الحقول: ${snapshot.error}'));
+          return Center(child: Text(tr('خطأ في تحميل تفاصيل الحقول: {p0}', {'p0': snapshot.error})));
         }
 
         final changes = snapshot.data ?? [];
@@ -45,13 +46,13 @@ class FieldAuditHistoryWidget extends ConsumerWidget {
               padding: EdgeInsets.symmetric(vertical: 8.0),
               child: Divider(),
             ),
-            const Row(
+             Row(
               children: [
-                Icon(PhosphorIconsBold.listMagnifyingGlass, size: 18, color: AppColors.primary),
-                SizedBox(width: 8),
+                const Icon(PhosphorIconsBold.listMagnifyingGlass, size: 18, color: AppColors.primary),
+                const SizedBox(width: 8),
                 Text(
-                  'تفاصيل التغييرات على الحقول:',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                  tr('تفاصيل التغييرات على الحقول:'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
                 ),
               ],
             ),
@@ -91,8 +92,8 @@ class FieldAuditHistoryWidget extends ConsumerWidget {
                         children: [
                           Expanded(
                             child: _ValueBox(
-                              label: 'من',
-                              value: change.oldValue ?? '(فارغ)',
+                              label: tr('من'),
+                              value: change.oldValue ?? tr('(فارغ)'),
                               color: AppColors.error,
                               textColor: AppColors.error,
                             ),
@@ -103,8 +104,8 @@ class FieldAuditHistoryWidget extends ConsumerWidget {
                           ),
                           Expanded(
                             child: _ValueBox(
-                              label: 'إلى',
-                              value: change.newValue ?? '(فارغ)',
+                              label: tr('إلى'),
+                              value: change.newValue ?? tr('(فارغ)'),
                               color: Colors.green.shade50,
                               textColor: Colors.green.shade700,
                             ),
@@ -114,7 +115,7 @@ class FieldAuditHistoryWidget extends ConsumerWidget {
                       if (change.changeReason != null && change.changeReason!.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         Text(
-                          'السبب: ${change.changeReason}',
+                          tr('السبب: {p0}', {'p0': change.changeReason}),
                           style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey.shade700),
                         ),
                       ],

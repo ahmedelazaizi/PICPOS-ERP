@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -75,10 +76,10 @@ class _PicposOpeningBalanceDialogState
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                     Expanded(
                       child: Text(
-                        'افتتاح وردية جديدة',
-                        style: TextStyle(
+                        tr('افتتاح وردية جديدة'),
+                        style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
                         ),
@@ -105,16 +106,16 @@ class _PicposOpeningBalanceDialogState
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'الكاشير: ${widget.userName}',
+                      tr('الكاشير: {p0}', {'p0': widget.userName}),
                       style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'أدخل الرصيد الافتتاحي للصندوق:',
-                style: TextStyle(fontWeight: FontWeight.bold),
+               Text(
+                tr('أدخل الرصيد الافتتاحي للصندوق:'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -146,9 +147,9 @@ class _PicposOpeningBalanceDialogState
                 onSubmitted: (_) => _confirm(),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'يمكنك إدخال 0 إذا لم يكن هناك رصيد افتتاحي',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+               Text(
+                tr('يمكنك إدخال 0 إذا لم يكن هناك رصيد افتتاحي'),
+                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
               const SizedBox(height: 20),
               Row(
@@ -156,13 +157,13 @@ class _PicposOpeningBalanceDialogState
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(context, null),
-                    child: const Text('إلغاء'),
+                    child:  Text(tr('إلغاء')),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
                     onPressed: _confirm,
                     icon: const Icon(PhosphorIconsBold.play),
-                    label: const Text('بدء الوردية'),
+                    label:  Text(tr('بدء الوردية')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -333,30 +334,30 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
         children: [
           _toolBtn(
             icon: PhosphorIconsBold.gridFour,
-            label: 'تنظيم تلقائي',
+            label: tr('تنظيم تلقائي'),
             color: AppColors.primary,
             onTap: () => _autoLayout(tables),
           ),
           _divider(),
           _toolBtn(
             icon: PhosphorIconsBold.alignCenterHorizontal,
-            label: 'محاذاة أفقي',
+            label: tr('محاذاة أفقي'),
             onTap: () => _alignTables(tables, true),
           ),
           _toolBtn(
             icon: PhosphorIconsBold.alignCenterVertical,
-            label: 'محاذاة عمودي',
+            label: tr('محاذاة عمودي'),
             onTap: () => _alignTables(tables, false),
           ),
           _divider(),
           _toolBtn(
             icon: PhosphorIconsBold.arrowsOutLineHorizontal,
-            label: 'توزيع أفقي',
+            label: tr('توزيع أفقي'),
             onTap: () => _distributeTables(tables, true),
           ),
           _toolBtn(
             icon: PhosphorIconsBold.arrowsOutLineVertical,
-            label: 'توزيع عمودي',
+            label: tr('توزيع عمودي'),
             onTap: () => _distributeTables(tables, false),
           ),
           _divider(),
@@ -372,7 +373,7 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
           ),
           _toolBtn(
             icon: PhosphorIconsBold.arrowsOut,
-            label: 'إعادة',
+            label: tr('إعادة'),
             onTap: _zoomReset,
           ),
           _divider(),
@@ -380,7 +381,7 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
             icon: _showGrid
                 ? PhosphorIconsBold.gridFour
                 : PhosphorIconsBold.squaresFour,
-            label: _showGrid ? 'إخفاء الشبكة' : 'إظهار الشبكة',
+            label: _showGrid ? tr('إخفاء الشبكة') : tr('إظهار الشبكة'),
             onTap: () => setState(() => _showGrid = !_showGrid),
           ),
           // Grid size selector
@@ -686,18 +687,18 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
   String _statusLabel(String status) {
     switch (status) {
       case 'reserved':
-        return 'محجوزة';
+        return tr('محجوزة');
       case 'occupied':
       case 'seated':
-        return 'مشغولة';
+        return tr('مشغولة');
       case 'ordered':
-        return 'طلب';
+        return tr('طلب');
       case 'eating':
-        return 'تناول';
+        return tr('تناول');
       case 'billing':
-        return 'حساب';
+        return tr('حساب');
       case 'cleaning':
-        return 'تنظيف';
+        return tr('تنظيف');
       default:
         return status;
     }

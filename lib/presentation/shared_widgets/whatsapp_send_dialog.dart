@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -127,10 +128,10 @@ class _WhatsAppSendDialogState extends ConsumerState<WhatsAppSendDialog> {
               TextField(
                 controller: _phone,
                 onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
+                decoration:  InputDecoration(
                   isDense: true,
-                  labelText: 'رقم العميل',
-                  border: OutlineInputBorder(),
+                  labelText: tr('رقم العميل'),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 6),
@@ -139,8 +140,8 @@ class _WhatsAppSendDialogState extends ConsumerState<WhatsAppSendDialog> {
               // يعرض «الرقمُ غيرُ صالح» فيظنّ الموظّفُ أنّ العميلَ ليس عليه.
               Text(
                 normalized == null
-                    ? 'لا يمكن تسويةُ الرقم — راجِعه'
-                    : 'سيُفتَح على: $normalized',
+                    ? tr('لا يمكن تسويةُ الرقم — راجِعه')
+                    : tr('سيُفتَح على: {normalized}', {'normalized': normalized}),
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.bold,
@@ -154,10 +155,10 @@ class _WhatsAppSendDialogState extends ConsumerState<WhatsAppSendDialog> {
                 controller: _text,
                 maxLines: 8,
                 minLines: 5,
-                decoration: const InputDecoration(
-                  labelText: 'نصّ الرسالة',
+                decoration:  InputDecoration(
+                  labelText: tr('نصّ الرسالة'),
                   alignLabelWithHint: true,
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 8),
@@ -173,12 +174,12 @@ class _WhatsAppSendDialogState extends ConsumerState<WhatsAppSendDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton.icon(
             onPressed: normalized == null ? null : () => _open(normalized),
             icon: const Icon(PhosphorIconsBold.whatsappLogo, size: 16),
-            label: const Text('فتح واتساب'),
+            label:  Text(tr('فتح واتساب')),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
             ),
@@ -223,7 +224,7 @@ class _WhatsAppSendDialogState extends ConsumerState<WhatsAppSendDialog> {
     if (!mounted) return;
 
     if (!opened) {
-      AppToast.show(context, 'تعذّر فتح واتساب على هذا الجهاز');
+      AppToast.show(context, tr('تعذّر فتح واتساب على هذا الجهاز'));
       return;
     }
     try {
@@ -234,7 +235,7 @@ class _WhatsAppSendDialogState extends ConsumerState<WhatsAppSendDialog> {
         ref.read(activityLoggerProvider).logNavigation(
               user.id,
               user.displayName,
-              'فُتح واتساب — ${widget.actionLogLabel ?? widget.title} ($phone)',
+              tr('فُتح واتساب — {p0} ({phone})', {'p0': widget.actionLogLabel ?? widget.title, 'phone': phone}),
             );
       }
     } catch (_) {
@@ -273,7 +274,7 @@ class _CountryCodeFieldState extends ConsumerState<_CountryCodeField> {
     if (raw.isEmpty ||
         raw.length > 4 ||
         !RegExp(r'^\d+$').hasMatch(raw)) {
-      setState(() => _error = 'أرقامٌ فقط — مثال: 20 أو 966');
+      setState(() => _error = tr('أرقامٌ فقط — مثال: 20 أو 966'));
       return;
     }
     setState(() => _error = null);
@@ -294,18 +295,18 @@ class _CountryCodeFieldState extends ConsumerState<_CountryCodeField> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'رمزُ الدولة غيرُ مضبوط',
-            style: TextStyle(
+           Text(
+            tr('رمزُ الدولة غيرُ مضبوط'),
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 12.5,
               color: AppColors.error,
             ),
           ),
           const SizedBox(height: 2),
-          const Text(
-            'يلزم لتحويل أرقام العملاء المحلّيّة إلى الصيغة الدوليّة.',
-            style: TextStyle(fontSize: 11),
+           Text(
+            tr('يلزم لتحويل أرقام العملاء المحلّيّة إلى الصيغة الدوليّة.'),
+            style: const TextStyle(fontSize: 11),
           ),
           const SizedBox(height: 8),
           Row(
@@ -316,14 +317,14 @@ class _CountryCodeFieldState extends ConsumerState<_CountryCodeField> {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     isDense: true,
-                    hintText: 'مثال: 20',
+                    hintText: tr('مثال: 20'),
                     errorText: _error,
                     border: const OutlineInputBorder(),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
-              OutlinedButton(onPressed: _save, child: const Text('حفظ')),
+              OutlinedButton(onPressed: _save, child:  Text(tr('حفظ'))),
             ],
           ),
         ],

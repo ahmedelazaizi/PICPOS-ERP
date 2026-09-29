@@ -18,9 +18,9 @@ class ArabicLayout extends ConsumerWidget {
   const ArabicLayout({super.key});
 
   // Standard Arabic keyboard letter rows, trimmed to fit POS touch sizing.
-  static const _row1 = ['ض', 'ص', 'ث', 'ق', 'ف', 'غ', 'ع', 'ه', 'خ', 'ح', 'ج'];
-  static const _row2 = ['ش', 'س', 'ي', 'ب', 'ل', 'ا', 'ت', 'ن', 'م', 'ك', 'ط'];
-  static const _row3 = ['ذ', 'ئ', 'ء', 'ؤ', 'ر', 'ى', 'ة', 'و', 'ز', 'ظ', 'د'];
+  static final _row1 = ['ض', 'ص', 'ث', 'ق', 'ف', 'غ', 'ع', 'ه', 'خ', 'ح', 'ج'];
+  static final _row2 = ['ش', 'س', 'ي', 'ب', 'ل', 'ا', 'ت', 'ن', 'م', 'ك', 'ط'];
+  static final _row3 = ['ذ', 'ئ', 'ء', 'ؤ', 'ر', 'ى', 'ة', 'و', 'ز', 'ظ', 'د'];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

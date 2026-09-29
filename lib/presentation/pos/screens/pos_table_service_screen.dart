@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -146,16 +147,16 @@ class _TablePosScreenState extends ConsumerState<TablePosScreen>
     return Positioned.fill(
       child: Container(
         color: Colors.black.withValues(alpha: 0.5),
-        child: const Center(
+        child:  Center(
           child: Card(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('جاري تحميل الطلب...'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(tr('جاري تحميل الطلب...')),
                 ],
               ),
             ),

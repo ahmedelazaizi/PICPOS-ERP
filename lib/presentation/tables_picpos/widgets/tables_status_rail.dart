@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/design_system/spacing.dart';
@@ -72,7 +73,7 @@ class TablesStatusRail extends StatelessWidget {
         // عليها يُعيد المرشِّحَ إلى الكلّ بلا تبديلٍ — فهي مخرجٌ لا حالة.
         _StatusTile(
           key: tileKey(allKey),
-          label: 'عرض الكل',
+          label: tr('عرض الكل'),
           accent: _allAccent,
           count: total,
           isSelected: selected == null,

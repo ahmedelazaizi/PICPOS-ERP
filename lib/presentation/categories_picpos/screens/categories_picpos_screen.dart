@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // منطق منسوخ من categories_screen.dart (monolith) — أي إصلاح منطقي يتصلّح في
 // المصدر أولاً ثم patch (مصيدة النسخ §٥.٨).
 //
@@ -69,11 +70,11 @@ class _CategoriesPicposScreenState
         builder: (context, setDialogState) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: const Row(
+            title:  Row(
               children: [
-                Icon(PhosphorIconsBold.squaresFour, color: AppColors.primary),
-                SizedBox(width: 8),
-                Text('إضافة تصنيف جديد'),
+                const Icon(PhosphorIconsBold.squaresFour, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(tr('إضافة تصنيف جديد')),
               ],
             ),
             content: SizedBox(
@@ -84,15 +85,15 @@ class _CategoriesPicposScreenState
                   children: [
                     TextField(
                       controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'اسم التصنيف *',
+                      decoration:  InputDecoration(
+                        labelText: tr('اسم التصنيف *'),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: colorController,
-                      decoration: const InputDecoration(
-                        labelText: 'لون التصنيف',
+                      decoration:  InputDecoration(
+                        labelText: tr('لون التصنيف'),
                         hintText: '#2563EB',
                       ),
                     ),
@@ -113,15 +114,15 @@ class _CategoriesPicposScreenState
                           data: (printers) {
                             final activePrinters = printers.where((p) => p.isActive).toList();
                             return DropdownButtonFormField<int?>(
-                              decoration: const InputDecoration(
-                                labelText: 'طابعة المطبخ (أمر الشغل)',
-                                prefixIcon: Icon(PhosphorIconsLight.printer),
+                              decoration:  InputDecoration(
+                                labelText: tr('طابعة المطبخ (أمر الشغل)'),
+                                prefixIcon: const Icon(PhosphorIconsLight.printer),
                               ),
                               initialValue: selectedPrinterId,
                               items: [
-                                const DropdownMenuItem(
+                                 DropdownMenuItem(
                                   value: null,
-                                  child: Text('بدون طابعة'),
+                                  child: Text(tr('بدون طابعة')),
                                 ),
                                 ...activePrinters.map(
                                   (p) => DropdownMenuItem(
@@ -139,7 +140,7 @@ class _CategoriesPicposScreenState
                             padding: EdgeInsets.all(8),
                             child: LinearProgressIndicator(),
                           ),
-                          error: (e, _) => Text('خطأ في تحميل الطابعات: $e',
+                          error: (e, _) => Text(tr('خطأ في تحميل الطابعات: {e}', {'e': e}),
                             style: const TextStyle(color: AppColors.error, fontSize: 12)),
                         );
                       },
@@ -148,18 +149,18 @@ class _CategoriesPicposScreenState
                     const Divider(),
                     const SizedBox(height: 8),
                     SwitchListTile(
-                      title: const Text('ظهور في جميع الفروع',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: const Text('إذا تم التفعيل سيظهر التصنيف في كل الفروع والأسواق تلقائياً',
-                        style: TextStyle(fontSize: 12)),
+                      title:  Text(tr('ظهور في جميع الفروع'),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle:  Text(tr('إذا تم التفعيل سيظهر التصنيف في كل الفروع والأسواق تلقائياً'),
+                        style: const TextStyle(fontSize: 12)),
                       value: isGlobal,
                       onChanged: (v) => setDialogState(() => isGlobal = v),
                     ),
                     if (!isGlobal) ...[
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text('اختر الفروع التي يظهر فيها التصنيف:',
-                          style: TextStyle(fontSize: 13, color: Colors.grey)),
+                       Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Text(tr('اختر الفروع التي يظهر فيها التصنيف:'),
+                          style: const TextStyle(fontSize: 13, color: Colors.grey)),
                       ),
                       Consumer(
                         builder: (context, ref, _) {
@@ -182,7 +183,7 @@ class _CategoriesPicposScreenState
                               )).toList(),
                             ),
                             loading: () => const Center(child: CircularProgressIndicator()),
-                            error: (e, _) => Text('خطأ في تحميل الفروع: $e'),
+                            error: (e, _) => Text(tr('خطأ في تحميل الفروع: {e}', {'e': e})),
                           );
                         },
                       ),
@@ -194,7 +195,7 @@ class _CategoriesPicposScreenState
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -224,7 +225,7 @@ class _CategoriesPicposScreenState
                         final logger = ref.read(activityLoggerProvider);
                         await logger.logCategoryAdd(
                           user?.id ?? 0,
-                          user?.displayName ?? 'مجهول',
+                          user?.displayName ?? tr('مجهول'),
                           nameController.text,
                         );
                       } catch (e) {
@@ -233,16 +234,16 @@ class _CategoriesPicposScreenState
                     }());
                     AppToast.show(
                       context,
-                      'تم إضافة التصنيف',
+                      tr('تم إضافة التصنيف'),
                       type: ToastType.success,
                     );
                   } else {
                     final err = ref.read(categoriesControllerProvider).error
-                        ?? 'فشل إضافة التصنيف';
+                        ?? tr('فشل إضافة التصنيف');
                     AppToast.show(context, err, type: ToastType.error);
                   }
                 },
-                child: const Text('حفظ'),
+                child:  Text(tr('حفظ')),
               ),
             ],
           ),
@@ -271,11 +272,11 @@ class _CategoriesPicposScreenState
         builder: (context, setDialogState) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: const Row(
+            title:  Row(
               children: [
-                Icon(PhosphorIconsBold.pencilSimple, color: AppColors.warning),
-                SizedBox(width: 8),
-                Text('تعديل التصنيف'),
+                const Icon(PhosphorIconsBold.pencilSimple, color: AppColors.warning),
+                const SizedBox(width: 8),
+                Text(tr('تعديل التصنيف')),
               ],
             ),
             content: SizedBox(
@@ -286,15 +287,15 @@ class _CategoriesPicposScreenState
                   children: [
                     TextField(
                       controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'اسم التصنيف *',
+                      decoration:  InputDecoration(
+                        labelText: tr('اسم التصنيف *'),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: colorController,
-                      decoration: const InputDecoration(
-                        labelText: 'لون التصنيف',
+                      decoration:  InputDecoration(
+                        labelText: tr('لون التصنيف'),
                         hintText: '#2563EB',
                       ),
                     ),
@@ -315,17 +316,17 @@ class _CategoriesPicposScreenState
                           data: (printers) {
                             final activePrinters = printers.where((p) => p.isActive).toList();
                             return DropdownButtonFormField<int?>(
-                              decoration: const InputDecoration(
-                                labelText: 'طابعة المطبخ (أمر الشغل)',
-                                prefixIcon: Icon(PhosphorIconsLight.printer),
+                              decoration:  InputDecoration(
+                                labelText: tr('طابعة المطبخ (أمر الشغل)'),
+                                prefixIcon: const Icon(PhosphorIconsLight.printer),
                               ),
                               initialValue: activePrinters.any((p) => p.id == selectedPrinterId)
                                   ? selectedPrinterId
                                   : null,
                               items: [
-                                const DropdownMenuItem(
+                                 DropdownMenuItem(
                                   value: null,
-                                  child: Text('بدون طابعة'),
+                                  child: Text(tr('بدون طابعة')),
                                 ),
                                 ...activePrinters.map(
                                   (p) => DropdownMenuItem(
@@ -343,7 +344,7 @@ class _CategoriesPicposScreenState
                             padding: EdgeInsets.all(8),
                             child: LinearProgressIndicator(),
                           ),
-                            error: (e, _) => Text('خطأ في تحميل الطابعات: $e',
+                            error: (e, _) => Text(tr('خطأ في تحميل الطابعات: {e}', {'e': e}),
                             style: const TextStyle(color: AppColors.error, fontSize: 12)),
                         );
                       },
@@ -352,18 +353,18 @@ class _CategoriesPicposScreenState
                     const Divider(),
                     const SizedBox(height: 8),
                     SwitchListTile(
-                      title: const Text('ظهور في جميع الفروع',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: const Text('إذا تم التفعيل سيظهر التصنيف في كل الفروع والأسواق تلقائياً',
-                        style: TextStyle(fontSize: 12)),
+                      title:  Text(tr('ظهور في جميع الفروع'),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle:  Text(tr('إذا تم التفعيل سيظهر التصنيف في كل الفروع والأسواق تلقائياً'),
+                        style: const TextStyle(fontSize: 12)),
                       value: isGlobal,
                       onChanged: (v) => setDialogState(() => isGlobal = v),
                     ),
                     if (!isGlobal) ...[
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text('اختر الفروع التي يظهر فيها التصنيف:',
-                          style: TextStyle(fontSize: 13, color: Colors.grey)),
+                       Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Text(tr('اختر الفروع التي يظهر فيها التصنيف:'),
+                          style: const TextStyle(fontSize: 13, color: Colors.grey)),
                       ),
                       Consumer(
                         builder: (context, ref, _) {
@@ -386,7 +387,7 @@ class _CategoriesPicposScreenState
                               )).toList(),
                             ),
                             loading: () => const Center(child: CircularProgressIndicator()),
-                            error: (e, _) => Text('خطأ في تحميل الفروع: $e'),
+                            error: (e, _) => Text(tr('خطأ في تحميل الفروع: {e}', {'e': e})),
                           );
                         },
                       ),
@@ -398,7 +399,7 @@ class _CategoriesPicposScreenState
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -422,7 +423,7 @@ class _CategoriesPicposScreenState
                       final logger = ref.read(activityLoggerProvider);
                       await logger.logCategoryEdit(
                         user?.id ?? 0,
-                        user?.displayName ?? 'مجهول',
+                        user?.displayName ?? tr('مجهول'),
                         nameController.text,
                       );
                     } catch (e) { debugPrint('Category log failed: $e'); }
@@ -431,12 +432,12 @@ class _CategoriesPicposScreenState
                   if (context.mounted) {
                     AppToast.show(
                       context,
-                      success ? 'تم تعديل التصنيف' : 'فشل تعديل التصنيف',
+                      success ? tr('تم تعديل التصنيف') : tr('فشل تعديل التصنيف'),
                       type: success ? ToastType.success : ToastType.error,
                     );
                   }
                 },
-                child: const Text('حفظ'),
+                child:  Text(tr('حفظ')),
               ),
             ],
           ),
@@ -462,7 +463,7 @@ class _CategoriesPicposScreenState
           .countActiveProductsInCategory(category.id);
     } catch (e) {
       if (!context.mounted) return;
-      AppToast.show(context, 'تعذّر قراءة عدد المنتجات: $e',
+      AppToast.show(context, tr('تعذّر قراءة عدد المنتجات: {e}', {'e': e}),
           type: ToastType.error);
       return;
     }
@@ -540,11 +541,11 @@ class _CategoriesPicposScreenState
         builder: (context, setDialogState) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: const Row(
+            title:  Row(
               children: [
-                Icon(PhosphorIconsBold.warning, color: AppColors.error),
-                SizedBox(width: 8),
-                Text('تأكيد الحذف'),
+                const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+                const SizedBox(width: 8),
+                Text(tr('تأكيد الحذف')),
               ],
             ),
             content: Column(
@@ -561,7 +562,7 @@ class _CategoriesPicposScreenState
             actions: [
               TextButton(
                 onPressed: isDeleting ? null : () => Navigator.pop(context),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 style:
@@ -578,7 +579,7 @@ class _CategoriesPicposScreenState
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text('حذف'),
+                    :  Text(tr('حذف')),
               ),
             ],
           ),
@@ -623,7 +624,7 @@ class _CategoriesPicposScreenState
               children: [
                 const Icon(PhosphorIconsBold.warning, color: AppColors.error),
                 const SizedBox(width: 8),
-                Expanded(child: Text('حذف تصنيف "${deleting.name}"')),
+                Expanded(child: Text(tr('حذف تصنيف "{p0}"', {'p0': deleting.name}))),
               ],
             ),
             content: ConstrainedBox(
@@ -646,7 +647,7 @@ class _CategoriesPicposScreenState
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'هذا التصنيف يحتوي على $activeCount منتج نشط.',
+                            tr('هذا التصنيف يحتوي على {activeCount} منتج نشط.', {'activeCount': activeCount}),
                             style: const TextStyle(
                                 fontSize: 13, color: AppColors.warning),
                           ),
@@ -655,8 +656,8 @@ class _CategoriesPicposScreenState
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('انقل المنتجات إلى:',
-                      style: TextStyle(fontSize: 13)),
+                   Text(tr('انقل المنتجات إلى:'),
+                      style: const TextStyle(fontSize: 13)),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<int?>(
                     initialValue: selectedDestId,
@@ -668,9 +669,9 @@ class _CategoriesPicposScreenState
                           horizontal: 12, vertical: 10),
                     ),
                     items: [
-                      const DropdownMenuItem<int?>(
+                       DropdownMenuItem<int?>(
                         value: null,
-                        child: Text('بدون تصنيف (uncategorized)'),
+                        child: Text(tr('بدون تصنيف (uncategorized)')),
                       ),
                       ...candidates.map(
                         (c) => DropdownMenuItem<int?>(
@@ -696,7 +697,7 @@ class _CategoriesPicposScreenState
             actions: [
               TextButton(
                 onPressed: isDeleting ? null : () => Navigator.pop(context),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton.icon(
                 icon: const Icon(PhosphorIconsBold.arrowRight, size: 16),
@@ -714,7 +715,7 @@ class _CategoriesPicposScreenState
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text('نقل وحذف'),
+                    :  Text(tr('نقل وحذف')),
               ),
             ],
           ),
@@ -749,7 +750,7 @@ class _CategoriesPicposScreenState
             final logger = ref.read(activityLoggerProvider);
             await logger.logCategoryDelete(
               user?.id ?? 0,
-              user?.displayName ?? 'مجهول',
+              user?.displayName ?? tr('مجهول'),
               category.name,
             );
           } catch (e) {
@@ -757,17 +758,17 @@ class _CategoriesPicposScreenState
           }
         }());
         if (!context.mounted) return;
-        AppToast.show(context, 'تم حذف التصنيف', type: ToastType.success);
+        AppToast.show(context, tr('تم حذف التصنيف'), type: ToastType.success);
       } else {
         final error = ref.read(categoriesControllerProvider).error;
         if (!context.mounted) return;
-        AppToast.show(context, error ?? 'فشل حذف التصنيف',
+        AppToast.show(context, error ?? tr('فشل حذف التصنيف'),
             type: ToastType.error);
       }
     } catch (e) {
       if (!context.mounted) return;
       nav.pop();
-      AppToast.show(context, 'فشل حذف التصنيف: $e', type: ToastType.error);
+      AppToast.show(context, tr('فشل حذف التصنيف: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -832,15 +833,15 @@ class _CategoriesPicposScreenState
     final categories = ref.watch(allCategoriesProvider);
 
     return PicPosScreenScaffold(
-      title: 'التصنيفات',
-      subtitle: 'تنظيم تصنيفات الأصناف',
+      title: tr('التصنيفات'),
+      subtitle: tr('تنظيم تصنيفات الأصناف'),
       icon: PhosphorIconsBold.squaresFour,
       toolbar: PicPosToolbar(children: [
         if (_isReorderMode) ...[
           FilledButton.icon(
             onPressed: _saveReorder,
             icon: const Icon(PhosphorIconsBold.floppyDisk, size: 18),
-            label: const Text('حفظ الترتيب'),
+            label:  Text(tr('حفظ الترتيب')),
             style: FilledButton.styleFrom(backgroundColor: AppColors.success),
           ),
           OutlinedButton.icon(
@@ -849,7 +850,7 @@ class _CategoriesPicposScreenState
               _reorderableCategories = null;
             }),
             icon: const Icon(PhosphorIconsBold.x, size: 18),
-            label: const Text('إلغاء'),
+            label:  Text(tr('إلغاء')),
           ),
         ] else ...[
           OutlinedButton.icon(
@@ -866,12 +867,12 @@ class _CategoriesPicposScreenState
               });
             },
             icon: const Icon(PhosphorIconsBold.arrowsDownUp, size: 18),
-            label: const Text('ترتيب'),
+            label:  Text(tr('ترتيب')),
           ),
           ElevatedButton.icon(
             onPressed: () => _showAddCategoryDialog(context),
             icon: const Icon(PhosphorIconsBold.plus),
-            label: const Text('إضافة تصنيف'),
+            label:  Text(tr('إضافة تصنيف')),
           ),
         ],
       ]),
@@ -924,8 +925,8 @@ class _CategoriesPicposScreenState
                           AppToast.show(
                             context,
                             isLocked
-                                ? 'تم فتح التصنيف - يمكن بيع الأصناف الآن'
-                                : 'تم قفل التصنيف وجميع أصنافه - يمكنك فتح أصناف معينة من شاشة الأصناف',
+                                ? tr('تم فتح التصنيف - يمكن بيع الأصناف الآن')
+                                : tr('تم قفل التصنيف وجميع أصنافه - يمكنك فتح أصناف معينة من شاشة الأصناف'),
                             type: ToastType.warning,
                           );
                         }
@@ -942,13 +943,13 @@ class _CategoriesPicposScreenState
                           if (!isExcluded) {
                             AppToast.show(
                               context,
-                              'تم استثناء التصنيف - أصنافه مخفية من العرض ولكن يمكن البحث عنها',
+                              tr('تم استثناء التصنيف - أصنافه مخفية من العرض ولكن يمكن البحث عنها'),
                               type: ToastType.warning,
                             );
                           } else {
                             AppToast.show(
                               context,
-                              'تم إلغاء استثناء التصنيف - جميع الأصناف ظاهرة الآن',
+                              tr('تم إلغاء استثناء التصنيف - جميع الأصناف ظاهرة الآن'),
                               type: ToastType.success,
                             );
                           }
@@ -971,8 +972,8 @@ class _CategoriesPicposScreenState
                           AppToast.show(
                             context,
                             cat.showInPos
-                                ? 'تم إخفاء التصنيف من البيع السريع'
-                                : 'تم إظهار التصنيف في البيع السريع',
+                                ? tr('تم إخفاء التصنيف من البيع السريع')
+                                : tr('تم إظهار التصنيف في البيع السريع'),
                             type: cat.showInPos
                                 ? ToastType.warning
                                 : ToastType.success,
@@ -986,7 +987,7 @@ class _CategoriesPicposScreenState
                   padding: const EdgeInsets.all(16),
                   child: ShimmerLoading.list(itemCount: 5),
                 ),
-                error: (e, _) => Center(child: Text('خطأ: $e')),
+                error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
               ),
       ),
     );
@@ -1060,7 +1061,7 @@ class _CategoriesPicposScreenState
                         ? () => _swapCategories(index, index - 1)
                         : null,
                     icon: const Icon(PhosphorIconsBold.arrowUp, size: 20),
-                    tooltip: 'تحريك لأعلى',
+                    tooltip: tr('تحريك لأعلى'),
                     style: IconButton.styleFrom(
                       backgroundColor: index > 0
                           ? AppColors.primary.withValues(alpha: 0.1)
@@ -1073,7 +1074,7 @@ class _CategoriesPicposScreenState
                         ? () => _swapCategories(index, index + 1)
                         : null,
                     icon: const Icon(PhosphorIconsBold.arrowDown, size: 20),
-                    tooltip: 'تحريك لأسفل',
+                    tooltip: tr('تحريك لأسفل'),
                     style: IconButton.styleFrom(
                       backgroundColor: index < cats.length - 1
                           ? AppColors.primary.withValues(alpha: 0.1)
@@ -1112,7 +1113,7 @@ class _CategoriesPicposScreenState
       });
       AppToast.show(
         context,
-        'تم حفظ ترتيب التصنيفات بنجاح',
+        tr('تم حفظ ترتيب التصنيفات بنجاح'),
         type: ToastType.success,
       );
     }
@@ -1140,7 +1141,7 @@ class _CategoriesPicposScreenState
       if (mounted) {
         AppToast.show(
           context,
-          'لا توجد أصناف للميزان في هذا التصنيف',
+          tr('لا توجد أصناف للميزان في هذا التصنيف'),
           type: ToastType.warning,
         );
       }
@@ -1157,14 +1158,14 @@ class _CategoriesPicposScreenState
     if (connection == LabelScaleConnection.tcp || connection == LabelScaleConnection.ftp) {
       if (ipAddress == null || ipAddress.isEmpty) {
         if (mounted) {
-          AppToast.show(context, 'يجب إعداد عنوان IP للميزان أولاً من شاشة ميزان التسعير', type: ToastType.error);
+          AppToast.show(context, tr('يجب إعداد عنوان IP للميزان أولاً من شاشة ميزان التسعير'), type: ToastType.error);
         }
         return;
       }
     } else if (connection == LabelScaleConnection.serial) {
       if (comPort == null || comPort.isEmpty) {
         if (mounted) {
-          AppToast.show(context, 'يجب إعداد منفذ COM للميزان أولاً من شاشة ميزان التسعير', type: ToastType.error);
+          AppToast.show(context, tr('يجب إعداد منفذ COM للميزان أولاً من شاشة ميزان التسعير'), type: ToastType.error);
         }
         return;
       }
@@ -1189,7 +1190,7 @@ class _CategoriesPicposScreenState
     if (mounted) {
       AppToast.show(
         context,
-        'جاري ترحيل ${pluItems.length} صنف من ${category.name} للميزان...',
+        tr('جاري ترحيل {p0} صنف من {p1} للميزان...', {'p0': pluItems.length, 'p1': category.name}),
         type: ToastType.info,
       );
     }
@@ -1223,13 +1224,13 @@ class _CategoriesPicposScreenState
       if (mounted) {
         AppToast.show(
           context,
-          'تم ترحيل ${result.success}/${result.total} صنف بنجاح',
+          tr('تم ترحيل {p0}/{p1} صنف بنجاح', {'p0': result.success, 'p1': result.total}),
           type: result.failed == 0 ? ToastType.success : ToastType.warning,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في الترحيل: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في الترحيل: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }

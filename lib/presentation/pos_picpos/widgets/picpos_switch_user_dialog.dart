@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,7 +32,7 @@ class PicposSwitchUserDialog extends ConsumerStatefulWidget {
     await notifyOpenShift(
       context: context,
       ref: ref,
-      reason: 'قبل تحويل المستخدم',
+      reason: tr('قبل تحويل المستخدم'),
     );
     if (!context.mounted) return false;
 
@@ -68,11 +69,11 @@ class _PicposSwitchUserDialogState
   Future<void> _submit() async {
     final target = _selected;
     if (target == null) {
-      setState(() => _error = 'اختر المستخدم أولاً');
+      setState(() => _error = tr('اختر المستخدم أولاً'));
       return;
     }
     if (_passwordController.text.isEmpty) {
-      setState(() => _error = 'أدخل كلمة المرور');
+      setState(() => _error = tr('أدخل كلمة المرور'));
       return;
     }
 
@@ -92,7 +93,7 @@ class _PicposSwitchUserDialogState
       if (authenticated == null) {
         setState(() {
           _busy = false;
-          _error = 'كلمة المرور غير صحيحة';
+          _error = tr('كلمة المرور غير صحيحة');
           _passwordController.clear();
         });
         _passwordFocus.requestFocus();
@@ -171,7 +172,7 @@ class _PicposSwitchUserDialogState
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = 'تعذّر تحويل المستخدم: $e';
+        _error = tr('تعذّر تحويل المستخدم: {e}', {'e': e});
       });
     }
   }
@@ -184,11 +185,11 @@ class _PicposSwitchUserDialogState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.usersThree, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text('تحويل المستخدم'),
+            const Icon(PhosphorIconsBold.usersThree, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(tr('تحويل المستخدم')),
           ],
         ),
         content: SizedBox(
@@ -200,7 +201,7 @@ class _PicposSwitchUserDialogState
             ),
             error: (e, _) => SizedBox(
               height: 120,
-              child: Center(child: Text('تعذّر تحميل المستخدمين: $e')),
+              child: Center(child: Text(tr('تعذّر تحميل المستخدمين: {e}', {'e': e}))),
             ),
             data: (users) {
               // The current user is excluded — "switching" to yourself is a
@@ -210,12 +211,12 @@ class _PicposSwitchUserDialogState
                   .toList();
 
               if (candidates.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
+                return  Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
                   child: Text(
-                    'لا يوجد مستخدم آخر نشط للتحويل إليه.',
+                    tr('لا يوجد مستخدم آخر نشط للتحويل إليه.'),
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textMuted),
+                    style: const TextStyle(color: AppColors.textMuted),
                   ),
                 );
               }
@@ -227,10 +228,10 @@ class _PicposSwitchUserDialogState
                   DropdownButtonFormField<UserWithRole>(
                     initialValue: _selected,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'المستخدم الجديد',
-                      prefixIcon: Icon(PhosphorIconsBold.user, size: 18),
-                      border: OutlineInputBorder(),
+                    decoration:  InputDecoration(
+                      labelText: tr('المستخدم الجديد'),
+                      prefixIcon: const Icon(PhosphorIconsBold.user, size: 18),
+                      border: const OutlineInputBorder(),
                       isDense: true,
                     ),
                     items: candidates
@@ -267,7 +268,7 @@ class _PicposSwitchUserDialogState
                       FilteringTextInputFormatter.deny(RegExp(r'[\r\n]')),
                     ],
                     decoration: InputDecoration(
-                      labelText: 'كلمة المرور',
+                      labelText: tr('كلمة المرور'),
                       prefixIcon: const Icon(PhosphorIconsBold.lock, size: 18),
                       border: const OutlineInputBorder(),
                       isDense: true,
@@ -307,7 +308,7 @@ class _PicposSwitchUserDialogState
         actions: [
           TextButton(
             onPressed: _busy ? null : () => Navigator.of(context).pop(false),
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton.icon(
             onPressed: _busy ? null : _submit,
@@ -318,7 +319,7 @@ class _PicposSwitchUserDialogState
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(PhosphorIconsBold.signIn, size: 16),
-            label: const Text('تحويل'),
+            label:  Text(tr('تحويل')),
           ),
         ],
       ),

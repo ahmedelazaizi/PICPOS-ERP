@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // PARTY GROUPS SCREEN — Phase 2
 // ═══════════════════════════════════════════════════════════════════════════
@@ -25,11 +26,11 @@ class PartyGroupsScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.usersThree),
-              SizedBox(width: 8),
-              Text('مجموعات العملاء والموردين'),
+              const Icon(PhosphorIconsBold.usersThree),
+              const SizedBox(width: 8),
+              Text(tr('مجموعات العملاء والموردين')),
             ],
           ),
         ),

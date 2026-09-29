@@ -30,10 +30,10 @@ extension _SettlementMeta on _SettlementKind {
       };
 
   String get label => switch (this) {
-        _SettlementKind.creditNote => 'إشعار دائن من المورد',
-        _SettlementKind.goods => 'تعويض بضاعة',
-        _SettlementKind.invoiceDiscount => 'خصم من الفاتورة القادمة',
-        _SettlementKind.cashRefund => 'رد نقدي',
+        _SettlementKind.creditNote => tr('إشعار دائن من المورد'),
+        _SettlementKind.goods => tr('تعويض بضاعة'),
+        _SettlementKind.invoiceDiscount => tr('خصم من الفاتورة القادمة'),
+        _SettlementKind.cashRefund => tr('رد نقدي'),
       };
 
   IconData get icon => switch (this) {
@@ -101,7 +101,7 @@ class _SupplierClaimDialogState extends ConsumerState<_SupplierClaimDialog> {
   Future<void> _save() async {
     final net = double.tryParse(_netCtrl.text.trim()) ?? 0;
     if (_chosen.isEmpty) {
-      AppToast.show(context, 'لم يُختَر فرقٌ واحد', type: ToastType.warning);
+      AppToast.show(context, tr('لم يُختَر فرقٌ واحد'), type: ToastType.warning);
       return;
     }
     setState(() => _saving = true);
@@ -134,12 +134,12 @@ class _SupplierClaimDialogState extends ConsumerState<_SupplierClaimDialog> {
           );
       if (!mounted) return;
       Navigator.pop(context, true);
-      AppToast.show(context, 'سُجّلت المطالبة كمسوّدة',
+      AppToast.show(context, tr('سُجّلت المطالبة كمسوّدة'),
           type: ToastType.success);
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      AppToast.show(context, 'تعذّر حفظ المطالبة: $e', type: ToastType.error);
+      AppToast.show(context, tr('تعذّر حفظ المطالبة: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -148,13 +148,13 @@ class _SupplierClaimDialogState extends ConsumerState<_SupplierClaimDialog> {
     final df = DateFormat('yyyy/MM/dd');
     return PicPosDialog(
       icon: PhosphorIconsBold.scales,
-      title: 'تسوية ومطالبة المورد',
-      subtitle: 'الفروق المطالَب بها والمقابل المتفق عليه',
+      title: tr('تسوية ومطالبة المورد'),
+      subtitle: tr('الفروق المطالَب بها والمقابل المتفق عليه'),
       width: 760,
       accent: AppColors.warning,
       onCancel: _saving ? null : () => Navigator.pop(context),
       primaryAction: PicPosDialogAction(
-        label: 'حفظ المطالبة',
+        label: tr('حفظ المطالبة'),
         icon: PhosphorIconsBold.check,
         busy: _saving,
         onPressed: _saving ? null : _save,
@@ -163,25 +163,25 @@ class _SupplierClaimDialogState extends ConsumerState<_SupplierClaimDialog> {
           'إشعار المورد الدائن',
       body: [
         PicPosPanelGroup(
-          label: 'المورد والرصيد',
+          label: tr('المورد والرصيد'),
           child: Wrap(
             spacing: 12,
             runSpacing: 10,
             children: [
-              _readOnly('المورد', widget.party.name, PhosphorIconsBold.truck),
-              _readOnly('رصيده في دفاترنا', _money(widget.ledgerBalance),
+              _readOnly(tr('المورد'), widget.party.name, PhosphorIconsBold.truck),
+              _readOnly(tr('رصيده في دفاترنا'), _money(widget.ledgerBalance),
                   PhosphorIconsBold.book),
-              _readOnly('تاريخ المطابقة', df.format(DateTime.now()),
+              _readOnly(tr('تاريخ المطابقة'), df.format(DateTime.now()),
                   PhosphorIconsBold.calendarBlank),
-              _readOnly('عدد الفروق', '${widget.gaps.length}',
+              _readOnly(tr('عدد الفروق'), '${widget.gaps.length}',
                   PhosphorIconsBold.gitDiff),
             ],
           ),
         ),
         const SizedBox(height: 14),
         PicPosPanelGroup(
-          label: 'الفروق المطالَب بها',
-          hint: 'كميات من المطابقة الثلاثية — لا مبالغ',
+          label: tr('الفروق المطالَب بها'),
+          hint: tr('كميات من المطابقة الثلاثية — لا مبالغ'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -206,7 +206,7 @@ class _SupplierClaimDialogState extends ConsumerState<_SupplierClaimDialog> {
         ),
         const SizedBox(height: 14),
         PicPosPanelGroup(
-          label: 'شكل التسوية',
+          label: tr('شكل التسوية'),
           child: Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -227,14 +227,14 @@ class _SupplierClaimDialogState extends ConsumerState<_SupplierClaimDialog> {
         ),
         const SizedBox(height: 14),
         PicPosPanelGroup(
-          label: 'الصافي ومهلة الرد',
+          label: tr('الصافي ومهلة الرد'),
           // ⚠️ الصافي يُكتَب بيد: الفروقُ كمّيّاتٌ والاستعلامُ لا يحمل أسعارَ
           //    الأسطر، فاشتقاقُه كان سيُنتج رقماً يبدو محسوباً وهو مخترَع.
-          hint: 'الصافي يُكتب بيدك — الفروق كميات ولا سعر لسطرها في الاستعلام',
+          hint: tr('الصافي يُكتب بيدك — الفروق كميات ولا سعر لسطرها في الاستعلام'),
           child: Column(
             children: [
               PicPosDialogField(
-                label: 'صافي المطالبة (موجب = لنا على المورد)',
+                label: tr('صافي المطالبة (موجب = لنا على المورد)'),
                 child: TextField(
                   controller: _netCtrl,
                   keyboardType: const TextInputType.numberWithOptions(
@@ -248,7 +248,7 @@ class _SupplierClaimDialogState extends ConsumerState<_SupplierClaimDialog> {
               ),
               const SizedBox(height: 10),
               PicPosDialogField(
-                label: 'مهلة الرد',
+                label: tr('مهلة الرد'),
                 child: InkWell(
                   onTap: () async {
                     final now = DateTime.now();
@@ -263,14 +263,14 @@ class _SupplierClaimDialogState extends ConsumerState<_SupplierClaimDialog> {
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
                     child: Text(_replyDue == null
-                        ? 'اختر تاريخاً'
+                        ? tr('اختر تاريخاً')
                         : df.format(_replyDue!)),
                   ),
                 ),
               ),
               const SizedBox(height: 10),
               PicPosDialogField(
-                label: 'ملاحظات',
+                label: tr('ملاحظات'),
                 height: 76,
                 child: TextField(
                   controller: _notesCtrl,

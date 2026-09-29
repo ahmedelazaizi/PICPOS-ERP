@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // حوارُ «إضافة طرف جديد» بهويّة PicPos — **فوركٌ بقرار المالك 2026-08-22**
 // («انسخه إلى PicPos ولا تشارك تعديلاتِ PicPos على UralCash»).
 //
@@ -95,7 +96,7 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
           Future<void> save() async {
             setDialogState(() => saving = true);
             if (nameController.text.isEmpty) {
-              AppToast.show(context, 'يرجى إدخال الاسم',
+              AppToast.show(context, tr('يرجى إدخال الاسم'),
                   type: ToastType.error);
               if (context.mounted) setDialogState(() => saving = false);
               return;
@@ -181,7 +182,7 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
               // مفتوحاً** ليصحّح المستخدمُ بدل أن يفقد ما كتبه.
               if (context.mounted) {
                 setDialogState(() => saving = false);
-                AppToast.show(context, 'فشل حفظ الطرف: $e',
+                AppToast.show(context, tr('فشل حفظ الطرف: {e}', {'e': e}),
                     type: ToastType.error);
               }
               return;
@@ -194,7 +195,7 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
               final activityLogRepo = ref.read(activityLogRepositoryProvider);
               await activityLogRepo.logActivity(
                 userId: auth.user?.id,
-                userName: auth.user?.displayName ?? 'مستخدم',
+                userName: auth.user?.displayName ?? tr('مستخدم'),
                 action: actionKey,
                 entityType: 'party',
                 description: 'إضافة ${getTypeArabicName(selectedType)}: '
@@ -206,7 +207,7 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
               Navigator.pop(context);
               AppToast.show(
                 context,
-                'تم إضافة ${getTypeArabicName(selectedType)} بنجاح',
+                tr('تم إضافة {p0} بنجاح', {'p0': getTypeArabicName(selectedType)}),
                 type: ToastType.success,
               );
             }
@@ -214,40 +215,40 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
 
           return PicPosDialog(
             icon: PhosphorIconsBold.userPlus,
-            title: 'إضافة طرف جديد',
-            subtitle: 'عميلٌ أو موردٌ أو شركةُ توصيل',
+            title: tr('إضافة طرف جديد'),
+            subtitle: tr('عميلٌ أو موردٌ أو شركةُ توصيل'),
             width: 660,
             onCancel: () => Navigator.pop(context),
             primaryAction: PicPosDialogAction(
-              label: 'حفظ',
+              label: tr('حفظ'),
               icon: PhosphorIconsBold.floppyDisk,
               busy: saving,
               onPressed: saving ? null : save,
             ),
             body: [
-              const _FieldLabel('نوع الطرف *'),
+               _FieldLabel(tr('نوع الطرف *')),
               const SizedBox(height: 8),
               SegmentedButton<String>(
-                segments: const [
+                segments:  [
                   ButtonSegment(
                     value: 'customer',
-                    label: Text('عميل'),
-                    icon: Icon(PhosphorIconsBold.user, size: 16),
+                    label: Text(tr('عميل')),
+                    icon: const Icon(PhosphorIconsBold.user, size: 16),
                   ),
                   ButtonSegment(
                     value: 'supplier',
-                    label: Text('مورد'),
-                    icon: Icon(PhosphorIconsBold.truck, size: 16),
+                    label: Text(tr('مورد')),
+                    icon: const Icon(PhosphorIconsBold.truck, size: 16),
                   ),
                   ButtonSegment(
                     value: 'delivery',
-                    label: Text('توصيل'),
-                    icon: Icon(PhosphorIconsBold.moped, size: 16),
+                    label: Text(tr('توصيل')),
+                    icon: const Icon(PhosphorIconsBold.moped, size: 16),
                   ),
                   ButtonSegment(
                     value: 'both',
-                    label: Text('عميل مورد'),
-                    icon: Icon(PhosphorIconsBold.usersThree, size: 16),
+                    label: Text(tr('عميل مورد')),
+                    icon: const Icon(PhosphorIconsBold.usersThree, size: 16),
                   ),
                 ],
                 selected: {selectedType},
@@ -265,10 +266,10 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                     flex: 3,
                     child: TextField(
                       controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'الاسم *',
+                      decoration:  InputDecoration(
+                        labelText: tr('الاسم *'),
                         prefixIcon:
-                            Icon(PhosphorIconsBold.identificationCard),
+                            const Icon(PhosphorIconsBold.identificationCard),
                       ),
                     ),
                   ),
@@ -277,10 +278,10 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                     flex: 2,
                     child: TextField(
                       controller: codeController,
-                      decoration: const InputDecoration(
-                        labelText: 'الكود',
-                        prefixIcon: Icon(PhosphorIconsBold.hash),
-                        helperText: 'يُولَّد تلقائياً — قابل للتعديل',
+                      decoration:  InputDecoration(
+                        labelText: tr('الكود'),
+                        prefixIcon: const Icon(PhosphorIconsBold.hash),
+                        helperText: tr('يُولَّد تلقائياً — قابل للتعديل'),
                         helperMaxLines: 2,
                       ),
                     ),
@@ -291,9 +292,9 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
               TextField(
                 controller: phoneController,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'رقم الهاتف',
-                  prefixIcon: Icon(PhosphorIconsBold.phone),
+                decoration:  InputDecoration(
+                  labelText: tr('رقم الهاتف'),
+                  prefixIcon: const Icon(PhosphorIconsBold.phone),
                 ),
               ),
               const SizedBox(height: 12),
@@ -304,7 +305,7 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                       controller: openingBalanceController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: 'الرصيد الافتتاحي',
+                        labelText: tr('الرصيد الافتتاحي'),
                         prefixIcon: const Icon(PhosphorIconsBold.wallet),
                         suffixText: AppConstants.currencySymbolEn,
                       ),
@@ -316,7 +317,7 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                       controller: creditLimitController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: 'الحد الائتماني',
+                        labelText: tr('الحد الائتماني'),
                         prefixIcon: const Icon(PhosphorIconsBold.creditCard),
                         suffixText: AppConstants.currencySymbolEn,
                       ),
@@ -327,11 +328,11 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                     child: TextField(
                       controller: paymentTermsController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'مهلة السداد',
-                        prefixIcon: Icon(PhosphorIconsBold.calendarCheck),
-                        suffixText: 'يوم',
-                        helperText: 'صفر = يستحق فور الإصدار',
+                      decoration:  InputDecoration(
+                        labelText: tr('مهلة السداد'),
+                        prefixIcon: const Icon(PhosphorIconsBold.calendarCheck),
+                        suffixText: tr('يوم'),
+                        helperText: tr('صفر = يستحق فور الإصدار'),
                       ),
                     ),
                   ),
@@ -341,9 +342,9 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: selectedPriceLevel,
-                  decoration: const InputDecoration(
-                    labelText: 'تصنيف السعر',
-                    prefixIcon: Icon(PhosphorIconsBold.tag),
+                  decoration:  InputDecoration(
+                    labelText: tr('تصنيف السعر'),
+                    prefixIcon: const Icon(PhosphorIconsBold.tag),
                   ),
                   items: kPriceLevels.entries
                       .map((e) =>
@@ -369,15 +370,15 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                     }).toList();
                     return DropdownButtonFormField<int?>(
                       initialValue: selectedGroupId,
-                      decoration: const InputDecoration(
-                        labelText: 'المجموعة',
-                        prefixIcon: Icon(PhosphorIconsBold.usersThree),
-                        helperText: 'اختيارى — يمكن تركها فارغة',
+                      decoration:  InputDecoration(
+                        labelText: tr('المجموعة'),
+                        prefixIcon: const Icon(PhosphorIconsBold.usersThree),
+                        helperText: tr('اختيارى — يمكن تركها فارغة'),
                       ),
                       items: [
-                        const DropdownMenuItem<int?>(
+                         DropdownMenuItem<int?>(
                           value: null,
-                          child: Text('— بدون مجموعة —'),
+                          child: Text(tr('— بدون مجموعة —')),
                         ),
                         ...filtered.map((g) => DropdownMenuItem<int?>(
                             value: g.id, child: Text(g.name))),
@@ -400,10 +401,10 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const _FieldLabel('تحديد الفروع'),
+                         _FieldLabel(tr('تحديد الفروع')),
                         const SizedBox(height: 2),
                         Text(
-                          'اتركها فارغة لإتاحة الطرف لكل الفروع',
+                          tr('اتركها فارغة لإتاحة الطرف لكل الفروع'),
                           style: TextStyle(
                             fontSize: 11,
                             color: picposDialogMuted(context),
@@ -447,13 +448,13 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                     final ccList = snap.data ?? const <CostCenter>[];
                     return DropdownButtonFormField<int?>(
                       initialValue: selectedCostCenterId,
-                      decoration: const InputDecoration(
-                        labelText: 'مركز التكلفة (اختياري)',
-                        prefixIcon: Icon(PhosphorIconsBold.treeStructure),
+                      decoration:  InputDecoration(
+                        labelText: tr('مركز التكلفة (اختياري)'),
+                        prefixIcon: const Icon(PhosphorIconsBold.treeStructure),
                       ),
                       items: [
-                        const DropdownMenuItem<int?>(
-                            value: null, child: Text('— بدون —')),
+                         DropdownMenuItem<int?>(
+                            value: null, child: Text(tr('— بدون —'))),
                         ...ccList.map((cc) => DropdownMenuItem<int?>(
                             value: cc.id, child: Text(cc.name))),
                       ],

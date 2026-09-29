@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -122,7 +123,7 @@ class PosDialogs {
               TextField(
                 controller: priceController,
                 decoration: InputDecoration(
-                  labelText: 'السعر',
+                  labelText: tr('السعر'),
                   prefixIcon: const Icon(PhosphorIconsBold.money),
                   suffixText: AppConstants.currencySymbolEn,
                 ),
@@ -131,10 +132,10 @@ class PosDialogs {
               const SizedBox(height: 16),
               TextField(
                 controller: noteController,
-                decoration: const InputDecoration(
-                  labelText: 'ملاحظة',
-                  prefixIcon: Icon(PhosphorIconsBold.notepad),
-                  hintText: 'مثال: بدون سكر، إضافي...',
+                decoration:  InputDecoration(
+                  labelText: tr('ملاحظة'),
+                  prefixIcon: const Icon(PhosphorIconsBold.notepad),
+                  hintText: tr('مثال: بدون سكر، إضافي...'),
                 ),
                 maxLines: 2,
               ),
@@ -143,12 +144,12 @@ class PosDialogs {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             TextButton(
               style: TextButton.styleFrom(foregroundColor: AppColors.error),
               onPressed: () => Navigator.pop(ctx, const CartItemEditData.delete()),
-              child: const Text('حذف'),
+              child:  Text(tr('حذف')),
             ),
             FilledButton(
               onPressed: () {
@@ -158,7 +159,7 @@ class PosDialogs {
                     : noteController.text;
                 Navigator.pop(ctx, CartItemEditData(price: newPrice, note: note));
               },
-              child: const Text('حفظ'),
+              child:  Text(tr('حفظ')),
             ),
           ],
         ),
@@ -192,14 +193,14 @@ class PosDialogs {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text('تمت العملية بنجاح!'),
+               Text(tr('تمت العملية بنجاح!')),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'رقم الفاتورة: $invoiceNumber',
+                tr('رقم الفاتورة: {invoiceNumber}', {'invoiceNumber': invoiceNumber}),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -207,7 +208,7 @@ class PosDialogs {
               ),
               const SizedBox(height: 8),
               Text(
-                'الإجمالي: ${total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                tr('الإجمالي: {p0} {p1}', {'p0': total.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
                 style: const TextStyle(fontSize: 16),
               ),
               if (isDelivery)
@@ -219,36 +220,36 @@ class PosDialogs {
                       color: AppColors.info.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
+                    child:  Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
+                        const Icon(
                           PhosphorIconsBold.moped,
                           size: 16,
                           color: AppColors.info,
                         ),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text(
-                          'طلب توصيل - يرجى طباعة نسختين',
-                          style: TextStyle(fontSize: 12, color: AppColors.info),
+                          tr('طلب توصيل - يرجى طباعة نسختين'),
+                          style: const TextStyle(fontSize: 12, color: AppColors.info),
                         ),
                       ],
                     ),
                   ),
                 ),
               const SizedBox(height: 24),
-              const Text('هل تريد طباعة الإيصال؟'),
+               Text(tr('هل تريد طباعة الإيصال؟')),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('لا'),
+              child:  Text(tr('لا')),
             ),
             ElevatedButton.icon(
               onPressed: () => Navigator.pop(context, true),
               icon: const Icon(PhosphorIconsBold.printer),
-              label: const Text('طباعة'),
+              label:  Text(tr('طباعة')),
             ),
           ],
         ),

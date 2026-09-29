@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/design_system/typography.dart';
 // لوحةُ سلسلة السقوط — المستوياتُ الستّةُ بالترتيب، وأوّلُ مطابقٍ يفوز.
 //
@@ -27,11 +28,11 @@ class ResolutionChainPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final r = row;
     if (r == null) {
-      return const PicPosContentCard(
+      return  PicPosContentCard(
         child: PicPosEmptyState(
           icon: PhosphorIconsBold.stack,
-          title: 'اختر مساراً',
-          hint: 'تُعرض هنا سلسلةُ حسمِه ومستوياتُها الستّة',
+          title: tr('اختر مساراً'),
+          hint: tr('تُعرض هنا سلسلةُ حسمِه ومستوياتُها الستّة'),
         ),
       );
     }
@@ -47,8 +48,8 @@ class ResolutionChainPanel extends StatelessWidget {
           ),
           _Section(
             icon: PhosphorIconsBold.stack,
-            title: 'سلسلة السقوط',
-            subtitle: 'تُجرَّب بالترتيب — أول قاعدة تُطابِق تفوز',
+            title: tr('سلسلة السقوط'),
+            subtitle: tr('تُجرَّب بالترتيب — أول قاعدة تُطابِق تفوز'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -58,29 +59,29 @@ class ResolutionChainPanel extends StatelessWidget {
           ),
           _Section(
             icon: PhosphorIconsBold.printer,
-            title: 'سلوك الطباعة',
+            title: tr('سلوك الطباعة'),
             child: Column(
               children: [
                 _Behaviour(
                   icon: PhosphorIconsBold.copy,
-                  title: 'عدد النُّسخ',
-                  sub: 'تُطبع تلقائياً عند التأكيد',
+                  title: tr('عدد النُّسخ'),
+                  sub: tr('تُطبع تلقائياً عند التأكيد'),
                   value: '${r.copies}',
                   tone: context.picposBrandInk,
                 ),
                 _Behaviour(
                   icon: PhosphorIconsBold.lightning,
-                  title: 'طباعة مباشرة',
-                  sub: 'بلا نافذة اختيار طابعة',
-                  value: r.directPrint ? 'مُفعَّلة' : 'معطَّلة',
+                  title: tr('طباعة مباشرة'),
+                  sub: tr('بلا نافذة اختيار طابعة'),
+                  value: r.directPrint ? tr('مُفعَّلة') : tr('معطَّلة'),
                   tone: r.directPrint
                       ? AppColors.success
                       : context.picposMuted,
                 ),
                 _Behaviour(
                   icon: PhosphorIconsBold.ruler,
-                  title: 'عرض القالب',
-                  sub: 'يجب أن يطابق عرضَ الطابعة',
+                  title: tr('عرض القالب'),
+                  sub: tr('يجب أن يطابق عرضَ الطابعة'),
                   value: r.paperLabel,
                   tone: r.health == ResolutionHealth.paperMismatch
                       ? AppColors.error
@@ -88,12 +89,12 @@ class ResolutionChainPanel extends StatelessWidget {
                 ),
                 _Behaviour(
                   icon: PhosphorIconsBold.plugsConnected,
-                  title: 'مسار الطباعة',
-                  sub: 'هل يمرّر منادٍ حيٌّ نوعَ هذا المستند؟',
+                  title: tr('مسار الطباعة'),
+                  sub: tr('هل يمرّر منادٍ حيٌّ نوعَ هذا المستند؟'),
                   value: TemplateResolver.wiredDocumentTypes
                           .contains(r.documentType)
-                      ? 'موصول'
-                      : 'غير موصول',
+                      ? tr('موصول')
+                      : tr('غير موصول'),
                   tone: TemplateResolver.wiredDocumentTypes
                           .contains(r.documentType)
                       ? AppColors.success
@@ -230,8 +231,8 @@ class _ChainStep extends StatelessWidget {
                           color: AppColors.success.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(999),
                         ),
-                        child: const Text('المُطبَّق',
-                            style: TextStyle(
+                        child:  Text(tr('المُطبَّق'),
+                            style: const TextStyle(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.success)),

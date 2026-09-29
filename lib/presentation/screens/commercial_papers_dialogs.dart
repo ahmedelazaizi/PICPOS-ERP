@@ -40,9 +40,9 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
         if (!mounted) return;
         _invalidateStreams();
         setState(() {});
-        AppToast.show(context, 'تم إنشاء الشيك بنجاح', type: ToastType.success);
+        AppToast.show(context, tr('تم إنشاء الشيك بنجاح'), type: ToastType.success);
       } catch (e) {
-        if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -86,7 +86,7 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
     // remains as an audit echo so older reports still display it).
     String? finalNotes = notes?.isNotEmpty == true ? notes : null;
     if (selectedAccount != null) {
-      final acctInfo = 'حساب: ${selectedAccount.code} - ${selectedAccount.name}';
+      final acctInfo = tr('حساب: {p0} - {p1}', {'p0': selectedAccount.code, 'p1': selectedAccount.name});
       finalNotes = finalNotes != null ? '$finalNotes | $acctInfo' : acctInfo;
     }
 
@@ -108,13 +108,13 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
       if (mounted) {
         AppToast.show(
           context,
-          'تم تغيير الحالة إلى ${statusInfo.label}',
+          tr('تم تغيير الحالة إلى {p0}', {'p0': statusInfo.label}),
           type: ToastType.success,
         );
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -147,9 +147,9 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
         changedBy: authState.user?.id ?? 1,
         notes: (result['notes'] as String?)?.isNotEmpty == true ? result['notes'] : null,
       );
-      if (mounted) AppToast.show(context, 'تم تجديد الشيك', type: ToastType.success);
+      if (mounted) AppToast.show(context, tr('تم تجديد الشيك'), type: ToastType.success);
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -176,7 +176,7 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
     final authState = ref.read(authProvider);
     String? finalNotes = notes?.isNotEmpty == true ? notes : null;
     if (selectedAccount != null) {
-      final acctInfo = 'حساب: ${selectedAccount.code} - ${selectedAccount.name}';
+      final acctInfo = tr('حساب: {p0} - {p1}', {'p0': selectedAccount.code, 'p1': selectedAccount.name});
       finalNotes = finalNotes != null ? '$finalNotes | $acctInfo' : acctInfo;
     }
 
@@ -192,9 +192,9 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
         changedBy: authState.user?.id ?? 1,
         notes: finalNotes,
       );
-      if (mounted) AppToast.show(context, 'تم التحصيل الجزئي', type: ToastType.success);
+      if (mounted) AppToast.show(context, tr('تم التحصيل الجزئي'), type: ToastType.success);
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -226,9 +226,9 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
         result['partyId'] as int,
         changedBy: authState.user?.id ?? 1,
       );
-      if (mounted) AppToast.show(context, 'تم تظهير الشيك', type: ToastType.success);
+      if (mounted) AppToast.show(context, tr('تم تظهير الشيك'), type: ToastType.success);
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -262,9 +262,9 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
         result['bankId'] as int,
         changedBy: 1,
       );
-      if (mounted) AppToast.show(context, 'تم الإيداع برسم التحصيل', type: ToastType.success);
+      if (mounted) AppToast.show(context, tr('تم الإيداع برسم التحصيل'), type: ToastType.success);
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -297,9 +297,9 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
         changedBy: 1,
         notes: (result['notes'] as String?)?.isNotEmpty == true ? result['notes'] : null,
       );
-      if (mounted) AppToast.show(context, 'تم إعادة إصدار الشيك', type: ToastType.success);
+      if (mounted) AppToast.show(context, tr('تم إعادة إصدار الشيك'), type: ToastType.success);
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -318,7 +318,7 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
             Icon(getTypeIcon(paper.type), color: AppColors.primary),
             const SizedBox(width: 8),
             Text(
-              'شيك #${paper.paperNumber}',
+              tr('شيك #{p0}', {'p0': paper.paperNumber}),
               style: GoogleFonts.cairo(fontWeight: FontWeight.w700),
             ),
           ],
@@ -328,28 +328,28 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              detailRow('النوع', getTypeName(paper.type)),
-              detailRow('الاتجاه',
-                  paper.direction == 'received' ? 'وارد' : 'صادر'),
-              detailRow('الطرف', partyName ?? '-'),
-              detailRow('المبلغ', paper.amount.toStringAsFixed(AppConstants.decimalPlaces)),
-              detailRow('الحالة', getStatusInfo(paper.status).label),
-              detailRow('تاريخ الإصدار', _dateFormat.format(paper.issueDate)),
-              detailRow('تاريخ الاستحقاق', _dateFormat.format(paper.dueDate)),
+              detailRow(tr('النوع'), getTypeName(paper.type)),
+              detailRow(tr('الاتجاه'),
+                  paper.direction == 'received' ? tr('وارد') : tr('صادر')),
+              detailRow(tr('الطرف'), partyName ?? '-'),
+              detailRow(tr('المبلغ'), paper.amount.toStringAsFixed(AppConstants.decimalPlaces)),
+              detailRow(tr('الحالة'), getStatusInfo(paper.status).label),
+              detailRow(tr('تاريخ الإصدار'), _dateFormat.format(paper.issueDate)),
+              detailRow(tr('تاريخ الاستحقاق'), _dateFormat.format(paper.dueDate)),
               if (paper.bankName != null)
-                detailRow('البنك', paper.bankName!),
+                detailRow(tr('البنك'), paper.bankName!),
               if (paper.bankBranch != null)
-                detailRow('فرع البنك', paper.bankBranch!),
+                detailRow(tr('فرع البنك'), paper.bankBranch!),
               if (paper.accountNumber != null)
-                detailRow('رقم الحساب', paper.accountNumber!),
-              if (paper.notes != null) detailRow('ملاحظات', paper.notes!),
+                detailRow(tr('رقم الحساب'), paper.accountNumber!),
+              if (paper.notes != null) detailRow(tr('ملاحظات'), paper.notes!),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -396,13 +396,13 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
       builder: (ctx) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: AlertDialog(
-        title: Text('سجل التغييرات', style: GoogleFonts.cairo()),
+        title: Text(tr('سجل التغييرات'), style: GoogleFonts.cairo()),
         content: SizedBox(
           width: 400,
           height: 300,
           child: history.isEmpty
               ? Center(
-                  child: Text('لا يوجد سجل',
+                  child: Text(tr('لا يوجد سجل'),
                       style: GoogleFonts.cairo(color: Colors.grey)))
               : ListView.separated(
                   itemCount: history.length,
@@ -438,7 +438,7 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -455,23 +455,23 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
       builder: (ctx) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: AlertDialog(
-        title: Text('ملخص الأوراق التجارية',
+        title: Text(tr('ملخص الأوراق التجارية'),
             style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
         content: SizedBox(
           width: 400,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              summarySection('واردة', summary['received'] ?? {}),
+              summarySection(tr('واردة'), summary['received'] ?? {}),
               const Divider(),
-              summarySection('صادرة', summary['issued'] ?? {}),
+              summarySection(tr('صادرة'), summary['issued'] ?? {}),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -532,11 +532,11 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
   String getTypeName(String type) {
     switch (type) {
       case 'cheque':
-        return 'شيك';
+        return tr('شيك');
       case 'promissory_note':
-        return 'كمبيالة';
+        return tr('كمبيالة');
       case 'bill_of_exchange':
-        return 'سند لأمر';
+        return tr('سند لأمر');
       default:
         return type;
     }
@@ -545,23 +545,23 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
   StatusInfo getStatusInfo(String status) {
     switch (status) {
       case 'pending':
-        return StatusInfo('معلق', Colors.orange);
+        return StatusInfo(tr('معلق'), Colors.orange);
       case 'in_portfolio':
-        return StatusInfo('في الحافظة', Colors.indigo);
+        return StatusInfo(tr('في الحافظة'), Colors.indigo);
       case 'deposited':
-        return StatusInfo('مودع', Colors.blue);
+        return StatusInfo(tr('مودع'), Colors.blue);
       case 'deposited_for_collection':
-        return StatusInfo('برسم التحصيل', Colors.cyan);
+        return StatusInfo(tr('برسم التحصيل'), Colors.cyan);
       case 'cashed':
-        return StatusInfo('محصّل', AppColors.success);
+        return StatusInfo(tr('محصّل'), AppColors.success);
       case 'bounced':
-        return StatusInfo('مرتد', AppColors.error);
+        return StatusInfo(tr('مرتد'), AppColors.error);
       case 'endorsed':
-        return StatusInfo('مظهّر', Colors.purple);
+        return StatusInfo(tr('مظهّر'), Colors.purple);
       case 'cancelled':
-        return StatusInfo('ملغي', Colors.grey);
+        return StatusInfo(tr('ملغي'), Colors.grey);
       case 'partially_cashed':
-        return StatusInfo('محصّل جزئياً', Colors.teal);
+        return StatusInfo(tr('محصّل جزئياً'), Colors.teal);
       default:
         return StatusInfo(status, Colors.grey);
     }

@@ -51,11 +51,11 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
     final color = isDebit ? AppColors.error : AppColors.success;
 
     final typeLabel = switch (entry.referenceType) {
-      'purchase_return_balance' => 'تسوية رصيد مرتجع مشتريات',
-      'sales_return_balance'    => 'تسوية رصيد مرتجع مبيعات',
-      'receipt'                 => 'سند قبض',
-      'payment'                 => 'سند صرف',
-      _                         => 'معاملة مالية',
+      'purchase_return_balance' => tr('تسوية رصيد مرتجع مشتريات'),
+      'sales_return_balance'    => tr('تسوية رصيد مرتجع مبيعات'),
+      'receipt'                 => tr('سند قبض'),
+      'payment'                 => tr('سند صرف'),
+      _                         => tr('معاملة مالية'),
     };
 
     showDialog(
@@ -74,27 +74,27 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildInvoiceHeader(entry.date, widget.isSupplier ? 'المورد: ${widget.partyName}' : 'العميل: ${widget.partyName}'),
+                _buildInvoiceHeader(entry.date, widget.isSupplier ? tr('المورد: {p0}', {'p0': widget.partyName}) : tr('العميل: {p0}', {'p0': widget.partyName})),
                 const Divider(),
                 if (entry.invoiceNumber != null)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: _buildSummaryRow('رقم السند', entry.invoiceNumber!),
+                    child: _buildSummaryRow(tr('رقم السند'), entry.invoiceNumber!),
                   ),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: _buildSummaryRow('البيان', entry.description),
+                  child: _buildSummaryRow(tr('البيان'), entry.description),
                 ),
                 const Divider(),
                 _buildSummaryRow(
-                  isDebit ? 'مبلغ مدين' : 'مبلغ دائن',
+                  isDebit ? tr('مبلغ مدين') : tr('مبلغ دائن'),
                   '${amount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                   bold: true,
                   color: color,
                 ),
                 const SizedBox(height: 4),
                 _buildSummaryRow(
-                  'الرصيد بعد العملية',
+                  tr('الرصيد بعد العملية'),
                   '${entry.balance.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                   color: entry.balance > 0 ? AppColors.error : AppColors.success,
                 ),
@@ -109,7 +109,7 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
             // gets a signed proof of the balance adjustment).
             TextButton.icon(
               icon: const Icon(PhosphorIconsBold.printer),
-              label: const Text('طباعة'),
+              label:  Text(tr('طباعة')),
               onPressed: () async {
                 try {
                   final isReceipt = entry.referenceType == 'receipt' ||
@@ -124,12 +124,12 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
                   );
                 } catch (e) {
                   if (!mounted) return;
-                  AppToast.show(context, 'خطأ في الطباعة: $e',
+                  AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}),
                       type: ToastType.error);
                 }
               },
             ),
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إغلاق'))),
           ],
         ),
       ),
@@ -146,20 +146,20 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
           title: Row(children: [
             const Icon(PhosphorIconsBold.receipt, color: AppColors.primary),
             const SizedBox(width: 8),
-            Text('تفاصيل فاتورة شراء #${inv.invoiceNumber}'),
+            Text(tr('تفاصيل فاتورة شراء #{p0}', {'p0': inv.invoiceNumber})),
           ]),
           content: SizedBox(
             width: 600,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildInvoiceHeader(inv.invoiceDate, 'المورد: ${widget.partyName}'),
+                _buildInvoiceHeader(inv.invoiceDate, tr('المورد: {p0}', {'p0': widget.partyName})),
                 if (inv.supplierInvoiceNumber != null && inv.supplierInvoiceNumber!.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                     child: Align(
                       alignment: AlignmentDirectional.centerStart,
-                      child: Text('رقم وثيقة المورد: ${inv.supplierInvoiceNumber!}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      child: Text(tr('رقم وثيقة المورد: {p0}', {'p0': inv.supplierInvoiceNumber!}), style: const TextStyle(fontWeight: FontWeight.w600)),
                     ),
                   ),
                 if (inv.notes != null && inv.notes!.isNotEmpty)
@@ -167,7 +167,7 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                     child: Align(
                       alignment: AlignmentDirectional.centerStart,
-                      child: Text('ملاحظات: ${inv.notes!}'),
+                      child: Text(tr('ملاحظات: {p0}', {'p0': inv.notes!})),
                     ),
                   ),
                 const Divider(),
@@ -177,13 +177,13 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
                     child: Table(
                       columnWidths: const {0: FlexColumnWidth(3), 1: FixedColumnWidth(80), 2: FixedColumnWidth(80), 3: FixedColumnWidth(100)},
                       children: [
-                        const TableRow(
-                          decoration: BoxDecoration(color: AppColors.surface),
+                         TableRow(
+                          decoration: const BoxDecoration(color: AppColors.surface),
                           children: [
-                            Padding(padding: EdgeInsets.all(8), child: Text('الصنف', style: TextStyle(fontWeight: FontWeight.bold))),
-                            Padding(padding: EdgeInsets.all(8), child: Text('الكمية', style: TextStyle(fontWeight: FontWeight.bold))),
-                            Padding(padding: EdgeInsets.all(8), child: Text('السعر', style: TextStyle(fontWeight: FontWeight.bold))),
-                            Padding(padding: EdgeInsets.all(8), child: Text('الإجمالي', style: TextStyle(fontWeight: FontWeight.bold))),
+                            Padding(padding: const EdgeInsets.all(8), child: Text(tr('الصنف'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                            Padding(padding: const EdgeInsets.all(8), child: Text(tr('الكمية'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                            Padding(padding: const EdgeInsets.all(8), child: Text(tr('السعر'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                            Padding(padding: const EdgeInsets.all(8), child: Text(tr('الإجمالي'), style: const TextStyle(fontWeight: FontWeight.bold))),
                           ],
                         ),
                         ...items.map((item) => TableRow(children: [
@@ -204,7 +204,7 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
           actions: [
             TextButton.icon(
               icon: const Icon(PhosphorIconsBold.printer),
-              label: const Text('طباعة'),
+              label:  Text(tr('طباعة')),
               onPressed: () async {
                 try {
                   await ref
@@ -212,12 +212,12 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
                       .printPurchaseInvoiceA4(inv.id);
                 } catch (e) {
                   if (!context.mounted) return;
-                  AppToast.show(context, 'خطأ في الطباعة: $e',
+                  AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}),
                       type: ToastType.error);
                 }
               },
             ),
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إغلاق')),
+            TextButton(onPressed: () => Navigator.pop(context), child:  Text(tr('إغلاق'))),
           ],
         ),
       ),
@@ -234,14 +234,14 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
           title: Row(children: [
             const Icon(PhosphorIconsBold.receipt, color: AppColors.success),
             const SizedBox(width: 8),
-            Text('تفاصيل فاتورة مبيعات #${inv.invoiceNumber}'),
+            Text(tr('تفاصيل فاتورة مبيعات #{p0}', {'p0': inv.invoiceNumber})),
           ]),
           content: SizedBox(
             width: 600,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildInvoiceHeader(inv.invoiceDate, 'العميل: ${widget.partyName}'),
+                _buildInvoiceHeader(inv.invoiceDate, tr('العميل: {p0}', {'p0': widget.partyName})),
                 const Divider(),
                 const SizedBox(height: 8),
                 Flexible(
@@ -249,13 +249,13 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
                     child: Table(
                       columnWidths: const {0: FlexColumnWidth(3), 1: FixedColumnWidth(80), 2: FixedColumnWidth(80), 3: FixedColumnWidth(100)},
                       children: [
-                        const TableRow(
-                          decoration: BoxDecoration(color: AppColors.surface),
+                         TableRow(
+                          decoration: const BoxDecoration(color: AppColors.surface),
                           children: [
-                            Padding(padding: EdgeInsets.all(8), child: Text('الصنف', style: TextStyle(fontWeight: FontWeight.bold))),
-                            Padding(padding: EdgeInsets.all(8), child: Text('الكمية', style: TextStyle(fontWeight: FontWeight.bold))),
-                            Padding(padding: EdgeInsets.all(8), child: Text('السعر', style: TextStyle(fontWeight: FontWeight.bold))),
-                            Padding(padding: EdgeInsets.all(8), child: Text('الإجمالي', style: TextStyle(fontWeight: FontWeight.bold))),
+                            Padding(padding: const EdgeInsets.all(8), child: Text(tr('الصنف'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                            Padding(padding: const EdgeInsets.all(8), child: Text(tr('الكمية'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                            Padding(padding: const EdgeInsets.all(8), child: Text(tr('السعر'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                            Padding(padding: const EdgeInsets.all(8), child: Text(tr('الإجمالي'), style: const TextStyle(fontWeight: FontWeight.bold))),
                           ],
                         ),
                         ...items.map((item) => TableRow(children: [
@@ -282,7 +282,7 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
           actions: [
             TextButton.icon(
               icon: const Icon(PhosphorIconsBold.printer),
-              label: const Text('طباعة'),
+              label:  Text(tr('طباعة')),
               onPressed: () async {
                 try {
                   await ref
@@ -290,12 +290,12 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
                       .printSalesInvoiceA4(inv.id);
                 } catch (e) {
                   if (!context.mounted) return;
-                  AppToast.show(context, 'خطأ في الطباعة: $e',
+                  AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}),
                       type: ToastType.error);
                 }
               },
             ),
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إغلاق')),
+            TextButton(onPressed: () => Navigator.pop(context), child:  Text(tr('إغلاق'))),
           ],
         ),
       ),
@@ -309,7 +309,7 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(partyInfo, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text('التاريخ: ${dateFormat.format(date)}'),
+          Text(tr('التاريخ: {p0}', {'p0': dateFormat.format(date)})),
         ],
       ),
     );
@@ -320,9 +320,9 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(children: [
-        _buildSummaryRow('الإجمالي النهائي', '${total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}', bold: true),
-        _buildSummaryRow('المبلغ المدفوع', '${paid.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'),
-        _buildSummaryRow('المبلغ المتبقي', '${remaining.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}', color: remaining > 0 ? AppColors.error : AppColors.success),
+        _buildSummaryRow(tr('الإجمالي النهائي'), '${total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}', bold: true),
+        _buildSummaryRow(tr('المبلغ المدفوع'), '${paid.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'),
+        _buildSummaryRow(tr('المبلغ المتبقي'), '${remaining.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}', color: remaining > 0 ? AppColors.error : AppColors.success),
       ]),
     );
   }
@@ -371,28 +371,28 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
         company: company,
       );
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
   Future<void> exportToExcel() async {
     try {
       final excel = Excel.createExcel();
-      const sheetName = 'كشف حساب';
+      final sheetName = tr('كشف حساب');
       excel.rename('Sheet1', sheetName);
       final sheet = excel[sheetName];
 
-      sheet.appendRow([TextCellValue('كشف حساب: ${widget.partyName}')]);
-      sheet.appendRow([TextCellValue(widget.isSupplier ? 'مورد' : 'عميل')]);
+      sheet.appendRow([TextCellValue(tr('كشف حساب: {p0}', {'p0': widget.partyName}))]);
+      sheet.appendRow([TextCellValue(widget.isSupplier ? tr('مورد') : tr('عميل'))]);
       if (fromDate != null && toDate != null) {
-        sheet.appendRow([TextCellValue('الفترة: ${dateFormat.format(fromDate!)} - ${dateFormat.format(toDate!)}')]);
+        sheet.appendRow([TextCellValue(tr('الفترة: {p0} - {p1}', {'p0': dateFormat.format(fromDate!), 'p1': dateFormat.format(toDate!)}))]);
       }
-      sheet.appendRow([TextCellValue('الرصيد الحالي: ${party?.balance.toStringAsFixed(AppConstants.decimalPlaces) ?? 0} ${AppConstants.currencySymbolEn}')]);
+      sheet.appendRow([TextCellValue(tr('الرصيد الحالي: {p0} {p1}', {'p0': party?.balance.toStringAsFixed(AppConstants.decimalPlaces) ?? 0, 'p1': AppConstants.currencySymbolEn}))]);
       sheet.appendRow([TextCellValue('')]);
 
       sheet.appendRow([
-        TextCellValue('التاريخ'), TextCellValue('البيان'), TextCellValue('رقم المستند'),
-        TextCellValue('مدين'), TextCellValue('دائن'), TextCellValue('الرصيد'),
+        TextCellValue(tr('التاريخ')), TextCellValue(tr('البيان')), TextCellValue(tr('رقم المستند')),
+        TextCellValue(tr('مدين')), TextCellValue(tr('دائن')), TextCellValue(tr('الرصيد')),
       ]);
 
       for (final entry in entries) {
@@ -408,7 +408,7 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
 
       sheet.appendRow([TextCellValue('')]);
       sheet.appendRow([
-        TextCellValue(''), TextCellValue('الإجمالي'), TextCellValue(''),
+        TextCellValue(''), TextCellValue(tr('الإجمالي')), TextCellValue(''),
         DoubleCellValue(totalDebit), DoubleCellValue(totalCredit), DoubleCellValue(finalBalance),
       ]);
 
@@ -417,10 +417,10 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
       if (fileBytes != null) {
         final bytes = Uint8List.fromList(fileBytes);
         await fileUtils.saveFile(fileName, bytes);
-        if (mounted) AppToast.show(context, 'تم تصدير الكشف إلى: $fileName', type: ToastType.success);
+        if (mounted) AppToast.show(context, tr('تم تصدير الكشف إلى: {fileName}', {'fileName': fileName}), type: ToastType.success);
       }
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في التصدير: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ في التصدير: {e}', {'e': e}), type: ToastType.error);
     }
   }
 }

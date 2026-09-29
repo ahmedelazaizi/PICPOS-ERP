@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -25,12 +26,12 @@ class _EndorsePaperDialogState extends State<EndorsePaperDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('تظهير الشيك', style: GoogleFonts.cairo()),
+      title: Text(tr('تظهير الشيك'), style: GoogleFonts.cairo()),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'تظهير الشيك رقم ${widget.paperNumber} بمبلغ ${widget.amount.toStringAsFixed(2)}',
+            tr('تظهير الشيك رقم {p0} بمبلغ {p1}', {'p0': widget.paperNumber, 'p1': widget.amount.toStringAsFixed(2)}),
             style: GoogleFonts.cairo(fontSize: 13),
           ),
           const SizedBox(height: 16),
@@ -51,8 +52,8 @@ class _EndorsePaperDialogState extends State<EndorsePaperDialog> {
                     controller: controller,
                     focusNode: focusNode,
                     decoration: InputDecoration(
-                      labelText: 'تظهير إلى (عميل/مورد)',
-                      hintText: 'ابحث بالاسم أو الهاتف...',
+                      labelText: tr('تظهير إلى (عميل/مورد)'),
+                      hintText: tr('ابحث بالاسم أو الهاتف...'),
                       prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       isDense: true,
@@ -68,7 +69,7 @@ class _EndorsePaperDialogState extends State<EndorsePaperDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         ElevatedButton(
           onPressed: _endorsedToPartyId == null
@@ -79,7 +80,7 @@ class _EndorsePaperDialogState extends State<EndorsePaperDialog> {
                     'partyId': _endorsedToPartyId,
                   });
                 },
-          child: const Text('تأكيد التظهير'),
+          child:  Text(tr('تأكيد التظهير')),
         ),
       ],
     );

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -60,11 +61,11 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(bottom: 12),
+           Padding(
+            padding: const EdgeInsets.only(bottom: 12),
             child: Text(
-              'توجد أكثر من وردية مفتوحة — اختر الوردية المراد مطابقتها وإغلاقها',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              tr('توجد أكثر من وردية مفتوحة — اختر الوردية المراد مطابقتها وإغلاقها'),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
           ),
@@ -74,9 +75,9 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
               child: ListTile(
                 leading: const Icon(PhosphorIconsBold.cashRegister,
                     color: AppColors.primary),
-                title: Text('وردية رقم ${s.id} — كاشير #${s.userId}'),
+                title: Text(tr('وردية رقم {p0} — كاشير #{p1}', {'p0': s.id, 'p1': s.userId})),
                 subtitle: Text(
-                    'بدأت: ${fmt(s.startTime)} — رصيد افتتاحي: ${s.openingBalance.toStringAsFixed(AppConstants.decimalPlaces)}'),
+                    tr('بدأت: {p0} — رصيد افتتاحي: {p1}', {'p0': fmt(s.startTime), 'p1': s.openingBalance.toStringAsFixed(AppConstants.decimalPlaces)})),
                 trailing: const Icon(PhosphorIconsBold.caretLeft),
                 onTap: () => ref
                     .read(posClosingControllerProvider.notifier)
@@ -108,7 +109,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
           children: [
             const Icon(PhosphorIconsBold.signOut, color: AppColors.error),
             const SizedBox(width: 8),
-            const Text('إغلاق الوردية'),
+             Text(tr('إغلاق الوردية')),
             const Spacer(),
             Text(
               '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
@@ -130,28 +131,28 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                   // behaviour rendered phantom aggregates from
                   // already-closed shifts. Now we tell the operator
                   // exactly why and route them to the open-shift flow.
-                  ? const Center(
+                  ?  Center(
                       child: Padding(
-                        padding: EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(24),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
+                            const Icon(
                               PhosphorIconsBold.warningCircle,
                               size: 48,
                               color: AppColors.warning,
                             ),
-                            SizedBox(height: 12),
+                            const SizedBox(height: 12),
                             Text(
-                              'لا توجد وردية مفتوحة لإغلاقها',
-                              style: TextStyle(
+                              tr('لا توجد وردية مفتوحة لإغلاقها'),
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            SizedBox(height: 8),
-                            Text(
+                            const SizedBox(height: 8),
+                            const Text(
                               'افتح وردية جديدة من شاشة البيع السريع قبل '
                               'محاولة إغلاقها. القيم التي تظهر هنا '
                               'تُحسب فقط على معاملات الوردية الحالية '
@@ -166,7 +167,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                       ),
                     )
                   : (closingState.error != null)
-                      ? Center(child: Text('خطأ في تحميل البيانات: ${closingState.error}', style: const TextStyle(color: AppColors.error)))
+                      ? Center(child: Text(tr('خطأ في تحميل البيانات: {p0}', {'p0': closingState.error}), style: const TextStyle(color: AppColors.error)))
                       : SingleChildScrollView(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -182,7 +183,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                             _buildReconciliationTable(
                               closingState,
                               canViewDetails,
-                              authState.user?.displayName ?? 'غير معروف',
+                              authState.user?.displayName ?? tr('غير معروف'),
                             ),
 
                           const SizedBox(height: 16),
@@ -202,14 +203,14 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
             onPressed: () {
               if (!closingState.isProcessing) Navigator.pop(context);
             },
-            child: const Text('إلغاء'),
+            child:  Text(tr('إلغاء')),
           ),
           ElevatedButton.icon(
             onPressed: closingState.isLoading || closingState.needsShiftSelection || (!isAdmin && _selectedMethod == null) ? null : () => _handleClosingAction(isAdmin, closingState),
             icon: closingState.isProcessing
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Icon(PhosphorIconsBold.signOut),
-            label: const Text('تأكيد إغلاق الوردية'),
+            label:  Text(tr('تأكيد إغلاق الوردية')),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
           ),
         ],
@@ -293,12 +294,12 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
     return TableRow(
       decoration: BoxDecoration(color: Colors.grey.shade100),
       children: [
-        h('البند'),
-        h('نقد', bg: AppColors.primary.withValues(alpha: 0.08)),
-        h('بنك', bg: AppColors.info.withValues(alpha: 0.08)),
-        h('كليك', bg: AppColors.warning.withValues(alpha: 0.08)),
-        h('آجل', bg: AppColors.textMuted.withValues(alpha: 0.08)),
-        h('الإجمالى'),
+        h(tr('البند')),
+        h(tr('نقد'), bg: AppColors.primary.withValues(alpha: 0.08)),
+        h(tr('بنك'), bg: AppColors.info.withValues(alpha: 0.08)),
+        h(tr('كليك'), bg: AppColors.warning.withValues(alpha: 0.08)),
+        h(tr('آجل'), bg: AppColors.textMuted.withValues(alpha: 0.08)),
+        h(tr('الإجمالى')),
       ],
     );
   }
@@ -353,8 +354,8 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
 
     final expensesStart = a.shiftStartTime;
     final shiftTimeText = expensesStart == null
-        ? 'بدون وقت بدء مسجل'
-        : 'بدأت الساعة ${_hhmm(expensesStart)} — الآن ${_hhmm(DateTime.now())}';
+        ? tr('بدون وقت بدء مسجل')
+        : tr('بدأت الساعة {p0} — الآن {p1}', {'p0': _hhmm(expensesStart), 'p1': _hhmm(DateTime.now())});
 
     return Card(
       child: Padding(
@@ -370,7 +371,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'ملخص وردية $cashierName',
+                    tr('ملخص وردية {cashierName}', {'cashierName': cashierName}),
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.bold),
                   ),
@@ -402,7 +403,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                 _headerRow(),
 
                 // Opening balance — cash only (bank/click start at 0).
-                _dataRow('رصيد افتتاحى',
+                _dataRow(tr('رصيد افتتاحى'),
                     cash: a.openingBalance,
                     bank: 0,
                     click: 0,
@@ -413,7 +414,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
 
                 // Sales per channel — always a positive inflow.
                 _dataRow(
-                    'مبيعات (${a.salesCount})',
+                    tr('مبيعات ({p0})', {'p0': a.salesCount}),
                     cash: a.salesCash,
                     bank: a.salesBank,
                     click: a.salesClick,
@@ -425,7 +426,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
 
                 // Receipt vouchers — customers paying off old invoices.
                 _dataRow(
-                    'سندات قبض (${a.receiptCount})',
+                    tr('سندات قبض ({p0})', {'p0': a.receiptCount}),
                     cash: a.receiptCash,
                     bank: a.receiptBank,
                     click: a.receiptClick,
@@ -435,7 +436,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                     canViewDetails: canViewDetails),
 
                 // Subtotal — total inflow (income) per channel.
-                _dataRow('إجمالى الدخل',
+                _dataRow(tr('إجمالى الدخل'),
                     cash: a.openingBalance + a.totalIncomeCash,
                     bank: a.totalIncomeBank,
                     click: a.totalIncomeClick,
@@ -452,7 +453,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
 
                 // Returns per channel — negative outflow.
                 _dataRow(
-                    'مرتجعات مبيعات (${a.returnsCount})',
+                    tr('مرتجعات مبيعات ({p0})', {'p0': a.returnsCount}),
                     cash: a.returnsCash,
                     bank: a.returnsBank,
                     click: a.returnsClick,
@@ -467,7 +468,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
 
                 // Expenses — usually cash, but bank expenses supported.
                 _dataRow(
-                    'مصروفات (${a.expensesCount})',
+                    tr('مصروفات ({p0})', {'p0': a.expensesCount}),
                     cash: a.expensesCash,
                     bank: a.expensesBank,
                     click: a.expensesClick,
@@ -481,7 +482,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
 
                 // Payment vouchers — supplier settlements, etc.
                 _dataRow(
-                    'سندات صرف (${a.paymentCount})',
+                    tr('سندات صرف ({p0})', {'p0': a.paymentCount}),
                     cash: a.paymentCash,
                     bank: a.paymentBank,
                     click: a.paymentClick,
@@ -494,7 +495,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                     canViewDetails: canViewDetails),
 
                 // Subtotal — total outflow per channel.
-                _dataRow('إجمالى الخصم',
+                _dataRow(tr('إجمالى الخصم'),
                     cash: a.totalOutflowCash,
                     bank: a.totalOutflowBank,
                     click: a.totalOutflowClick,
@@ -512,7 +513,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                 // The row the accountant cares about most — system
                 // expected balance per channel after all inflows and
                 // outflows are applied.
-                _dataRow('المتوقع (نظام)',
+                _dataRow(tr('المتوقع (نظام)'),
                     cash: a.systemCash,
                     bank: a.systemBank,
                     click: a.systemClick,
@@ -540,7 +541,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                   childrenPadding:
                       const EdgeInsetsDirectional.only(start: 12, bottom: 8),
                   title: Text(
-                    'تفصيل المصروفات (${a.expensesList.length})',
+                    tr('تفصيل المصروفات ({p0})', {'p0': a.expensesList.length}),
                     style: const TextStyle(fontSize: 12),
                   ),
                   children: a.expensesList.map((e) {
@@ -570,10 +571,10 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                             ),
                             child: Text(
                               e.safeType == 'bank'
-                                  ? 'بنك'
+                                  ? tr('بنك')
                                   : (e.safeType == 'click'
-                                      ? 'كليك'
-                                      : 'نقد'),
+                                      ? tr('كليك')
+                                      : tr('نقد')),
                               style: const TextStyle(
                                   fontSize: 9,
                                   color: AppColors.textMuted),
@@ -601,22 +602,22 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
               runSpacing: 4,
               children: [
                 _statChip(
-                    'إجمالى فواتير',
+                    tr('إجمالى فواتير'),
                     '${a.salesCount + a.returnsCount}',
                     PhosphorIconsBold.receipt),
                 if (a.tableSalesCount > 0)
-                  _statChip('طاولات', '${a.tableSalesCount}',
+                  _statChip(tr('طاولات'), '${a.tableSalesCount}',
                       PhosphorIconsBold.table),
                 if (a.tableSalesCount > 0)
-                  _statChip('كاونتر', '${a.counterSalesCount}',
+                  _statChip(tr('كاونتر'), '${a.counterSalesCount}',
                       PhosphorIconsBold.storefront),
-                _statChip('مرتجعات', '${a.returnsCount}',
+                _statChip(tr('مرتجعات'), '${a.returnsCount}',
                     PhosphorIconsBold.arrowUDownLeft),
-                _statChip('سندات قبض', '${a.receiptCount}',
+                _statChip(tr('سندات قبض'), '${a.receiptCount}',
                     PhosphorIconsBold.arrowDown),
-                _statChip('سندات صرف', '${a.paymentCount}',
+                _statChip(tr('سندات صرف'), '${a.paymentCount}',
                     PhosphorIconsBold.arrowUp),
-                _statChip('مصروفات', '${a.expensesCount}',
+                _statChip(tr('مصروفات'), '${a.expensesCount}',
                     PhosphorIconsBold.wallet),
               ],
             ),
@@ -692,14 +693,14 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              const Text('جرد النقدية الفعلي', style: TextStyle(fontWeight: FontWeight.bold)),
+               Text(tr('جرد النقدية الفعلي'), style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               TextField(
                 controller: _actualCashController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 textAlign: TextAlign.center,
                 decoration: InputDecoration(
-                  hintText: 'أدخل المبلغ النقدي الفعلي (كاش)',
+                  hintText: tr('أدخل المبلغ النقدي الفعلي (كاش)'),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onChanged: (v) => ref.read(posClosingControllerProvider.notifier).updateActualCash(double.tryParse(v) ?? 0),
@@ -716,19 +717,19 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const Row(
+             Row(
               children: [
-                Icon(PhosphorIconsBold.scales, color: AppColors.primary, size: 20),
-                SizedBox(width: 8),
-                Text('المطابقة - أدخل المبالغ الفعلية', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Icon(PhosphorIconsBold.scales, color: AppColors.primary, size: 20),
+                const SizedBox(width: 8),
+                Text(tr('المطابقة - أدخل المبالغ الفعلية'), style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
             const Divider(),
-            _buildReconciliationRow('النقدى الفعلى', _actualCashController, state.cashVariance, PhosphorIconsBold.money, AppColors.primary, state.isRevealed),
+            _buildReconciliationRow(tr('النقدى الفعلى'), _actualCashController, state.cashVariance, PhosphorIconsBold.money, AppColors.primary, state.isRevealed),
             const SizedBox(height: 12),
-            _buildReconciliationRow('البنك الفعلى', _actualCardController, state.bankVariance, PhosphorIconsBold.creditCard, AppColors.info, state.isRevealed),
+            _buildReconciliationRow(tr('البنك الفعلى'), _actualCardController, state.bankVariance, PhosphorIconsBold.creditCard, AppColors.info, state.isRevealed),
             const SizedBox(height: 12),
-            _buildReconciliationRow('كليك الفعلى', _actualClickController, state.clickVariance, PhosphorIconsBold.deviceMobile, AppColors.warning, state.isRevealed),
+            _buildReconciliationRow(tr('كليك الفعلى'), _actualClickController, state.clickVariance, PhosphorIconsBold.deviceMobile, AppColors.warning, state.isRevealed),
             const SizedBox(height: 16),
             if (!state.isRevealed)
               SizedBox(
@@ -736,7 +737,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                 child: ElevatedButton(
                   onPressed: () => ref.read(posClosingControllerProvider.notifier).revealResults(),
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.all(16)),
-                  child: const Text('إظهار النتائج والمطابقة'),
+                  child:  Text(tr('إظهار النتائج والمطابقة')),
                 ),
               ),
             if (state.isRevealed) _buildTotalVarianceStatus(state.totalVariance),
@@ -785,7 +786,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
             width: 80,
             child: Column(
               children: [
-                const Text('الفرق', style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                 Text(tr('الفرق'), style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
                 Text(
                   '${variance > 0 ? '+' : ''}${variance.toStringAsFixed(AppConstants.decimalPlaces)}',
                   style: TextStyle(
@@ -820,8 +821,8 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
           const SizedBox(width: 8),
           Text(
             totalVar.abs() < 0.001
-                ? 'المطابقة تمام ✓'
-                : (totalVar < 0 ? 'نقص: ${totalVar.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}' : 'زيادة: +${totalVar.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'),
+                ? tr('المطابقة تمام ✓')
+                : (totalVar < 0 ? tr('نقص: {p0} {p1}', {'p0': totalVar.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}) : tr('زيادة: +{p0} {p1}', {'p0': totalVar.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn})),
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color),
           ),
         ],
@@ -833,13 +834,13 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('اختر طريقة إغلاق الوردية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+         Text(tr('اختر طريقة إغلاق الوردية'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           children: [
             ChoiceChip(
-              label: const Text('إغلاق سريع'),
+              label:  Text(tr('إغلاق سريع')),
               selected: _selectedMethod == 'quick',
               selectedColor: AppColors.warning.withValues(alpha: 0.2),
               avatar: _selectedMethod == 'quick' ? const Icon(PhosphorIconsBold.lightning, size: 16) : null,
@@ -849,7 +850,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
               },
             ),
             ChoiceChip(
-              label: const Text('بطاقة MSR'),
+              label:  Text(tr('بطاقة MSR')),
               selected: _selectedMethod == 'msr_card',
               selectedColor: AppColors.info.withValues(alpha: 0.2),
               avatar: _selectedMethod == 'msr_card' ? const Icon(PhosphorIconsBold.creditCard, size: 16) : null,
@@ -859,7 +860,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
               },
             ),
             ChoiceChip(
-              label: const Text('كلمة مرور المدير'),
+              label:  Text(tr('كلمة مرور المدير')),
               selected: _selectedMethod == 'admin_password',
               selectedColor: AppColors.primary.withValues(alpha: 0.2),
               avatar: _selectedMethod == 'admin_password' ? const Icon(PhosphorIconsBold.lock, size: 16) : null,
@@ -880,11 +881,11 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  const Row(
+                   Row(
                     children: [
-                      Icon(PhosphorIconsBold.creditCard, color: AppColors.info, size: 20),
-                      SizedBox(width: 8),
-                      Text('مرر بطاقة MSR', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.info)),
+                      const Icon(PhosphorIconsBold.creditCard, color: AppColors.info, size: 20),
+                      const SizedBox(width: 8),
+                      Text(tr('مرر بطاقة MSR'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.info)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -892,10 +893,10 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                     controller: _msrCardController,
                     autofocus: true,
                     decoration: InputDecoration(
-                      labelText: 'كود البطاقة',
+                      labelText: tr('كود البطاقة'),
                       prefixIcon: const Icon(PhosphorIconsBold.creditCard),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      hintText: 'مرر البطاقة أو أدخل الكود',
+                      hintText: tr('مرر البطاقة أو أدخل الكود'),
                     ),
                     onSubmitted: (_) => _handleClosingAction(false, closingState),
                   ),
@@ -912,11 +913,11 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  const Row(
+                   Row(
                     children: [
-                      Icon(PhosphorIconsBold.lock, color: AppColors.primary, size: 20),
-                      SizedBox(width: 8),
-                      Text('أدخل كلمة سر المدير', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                      const Icon(PhosphorIconsBold.lock, color: AppColors.primary, size: 20),
+                      const SizedBox(width: 8),
+                      Text(tr('أدخل كلمة سر المدير'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -924,7 +925,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                     controller: _passwordController,
                     obscureText: true,
                     decoration: InputDecoration(
-                      labelText: 'كلمة سر المدير',
+                      labelText: tr('كلمة سر المدير'),
                       prefixIcon: const Icon(PhosphorIconsBold.lock),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
@@ -939,16 +940,16 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
         if (_selectedMethod == 'quick') ...[
           Card(
             color: AppColors.warning.withValues(alpha: 0.05),
-            child: const Padding(
-              padding: EdgeInsets.all(16),
+            child:  Padding(
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  Icon(PhosphorIconsBold.lightning, color: AppColors.warning, size: 20),
-                  SizedBox(width: 8),
+                  const Icon(PhosphorIconsBold.lightning, color: AppColors.warning, size: 20),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'سيتم إغلاق الوردية بدون جرد. يمكن للمدير مراجعة الفروقات لاحقاً.',
-                      style: TextStyle(color: AppColors.warning, fontSize: 12),
+                      tr('سيتم إغلاق الوردية بدون جرد. يمكن للمدير مراجعة الفروقات لاحقاً.'),
+                      style: const TextStyle(color: AppColors.warning, fontSize: 12),
                     ),
                   ),
                 ],
@@ -968,11 +969,11 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.success),
       ),
-      child: const Row(
+      child:  Row(
         children: [
-          Icon(PhosphorIconsBold.shieldCheck, color: AppColors.success),
-          SizedBox(width: 8),
-          Expanded(child: Text('أنت مدير النظام - لا تحتاج كلمة مرور', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w500))),
+          const Icon(PhosphorIconsBold.shieldCheck, color: AppColors.success),
+          const SizedBox(width: 8),
+          Expanded(child: Text(tr('أنت مدير النظام - لا تحتاج كلمة مرور'), style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.w500))),
         ],
       ),
     );
@@ -984,15 +985,15 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
     // Validation for non-admin users based on selected method
     if (!isAdmin) {
       if (_selectedMethod == null) {
-        if (mounted) showPosToast(context, ref, 'اختر طريقة إغلاق الوردية', type: PosNotificationType.warning);
+        if (mounted) showPosToast(context, ref, tr('اختر طريقة إغلاق الوردية'), type: PosNotificationType.warning);
         return;
       }
       if (_selectedMethod == 'admin_password' && _passwordController.text.isEmpty) {
-        if (mounted) showPosToast(context, ref, 'أدخل كلمة سر المدير', type: PosNotificationType.warning);
+        if (mounted) showPosToast(context, ref, tr('أدخل كلمة سر المدير'), type: PosNotificationType.warning);
         return;
       }
       if (_selectedMethod == 'msr_card' && _msrCardController.text.isEmpty) {
-        if (mounted) showPosToast(context, ref, 'مرر بطاقة MSR أو أدخل الكود', type: PosNotificationType.warning);
+        if (mounted) showPosToast(context, ref, tr('مرر بطاقة MSR أو أدخل الكود'), type: PosNotificationType.warning);
         return;
       }
     }
@@ -1005,14 +1006,14 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
           builder: (ctx) => Directionality(
             textDirection: TextDirection.rtl,
             child: AlertDialog(
-              title: const Row(children: [Icon(PhosphorIconsBold.warning, color: AppColors.warning), SizedBox(width: 8), Text('تنبيه — مبلغ البنك')]),
-              content: const Text('يوجد تحصيل بطاقة/كليك ولم تُدخل مبلغ البنك الفعلي.\nهل تريد المتابعة بقيمة صفر؟'),
+              title:  Row(children: [const Icon(PhosphorIconsBold.warning, color: AppColors.warning), const SizedBox(width: 8), Text(tr('تنبيه — مبلغ البنك'))]),
+              content:  Text(tr('يوجد تحصيل بطاقة/كليك ولم تُدخل مبلغ البنك الفعلي.\nهل تريد المتابعة بقيمة صفر؟')),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('لا، أريد إدخال المبلغ')),
+                TextButton(onPressed: () => Navigator.pop(ctx, false), child:  Text(tr('لا، أريد إدخال المبلغ'))),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(ctx, true),
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
-                  child: const Text('نعم، متابعة بدون بنك'),
+                  child:  Text(tr('نعم، متابعة بدون بنك')),
                 ),
               ],
             ),
@@ -1037,10 +1038,10 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
             builder: (ctx) => Directionality(
               textDirection: TextDirection.rtl,
               child: AlertDialog(
-                title: const Row(children: [
-                  Icon(PhosphorIconsBold.warning, color: AppColors.warning),
-                  SizedBox(width: 8),
-                  Text('تحذير محاسبي'),
+                title:  Row(children: [
+                  const Icon(PhosphorIconsBold.warning, color: AppColors.warning),
+                  const SizedBox(width: 8),
+                  Text(tr('تحذير محاسبي')),
                 ]),
                 content: Text(
                   'تم إغلاق الوردية بنجاح، لكن لم يُسجَّل قيد فرق الخزينة '
@@ -1050,7 +1051,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                 actions: [
                   ElevatedButton(
                     onPressed: () => Navigator.pop(ctx),
-                    child: const Text('حسناً'),
+                    child:  Text(tr('حسناً')),
                   ),
                 ],
               ),
@@ -1060,7 +1061,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
         if (!mounted) return;
         Navigator.pop(context); // Close dialog
         ref.read(authProvider.notifier).logout();
-        showPosToast(context, ref, 'تم إغلاق الوردية وطباعة التقرير بنجاح', type: PosNotificationType.success);
+        showPosToast(context, ref, tr('تم إغلاق الوردية وطباعة التقرير بنجاح'), type: PosNotificationType.success);
       }
     } catch (e) {
       if (mounted) {

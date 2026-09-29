@@ -98,9 +98,9 @@ class _PicPosMoneyPanel extends StatelessWidget {
                             color: AppColors.warning.withValues(alpha: .4)),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Text(
-                        'مسودة',
-                        style: TextStyle(
+                      child:  Text(
+                        tr('مسودة'),
+                        style: const TextStyle(
                           fontSize: 9.5,
                           fontWeight: FontWeight.w800,
                           color: AppColors.warning,
@@ -176,20 +176,20 @@ class _PicPosMoneyPanel extends StatelessWidget {
                   spacing: 7,
                   runSpacing: 7,
                   children: [
-                    _chip('الفرعي', f0(t.subtotal), Colors.white),
+                    _chip(tr('الفرعي'), f0(t.subtotal), Colors.white),
                     // الخصمُ المعروضُ هو **ما يُمرَّر إلى المحرّك**: حقلُ
                     // الترويسة + خصومُ السطور. وعرضُ أحدهما وحدَه كان يُظهر
                     // رقماً لا يطابق فرقَ «المجموع − الإجمالي» على الشاشة
                     // نفسِها.
-                    _chip('خصم', '−${f0(t.discountTotal)}', AppColors.warning),
+                    _chip(tr('خصم'), '−${f0(t.discountTotal)}', AppColors.warning),
                     _chip(
                       // النسبةُ من الإعداد لا «١٤٪» مطبوعة — والتصميمُ كتبها
                       // قيمةَ عيّنةٍ لا عقداً.
-                      'ضريبة ${state.widget.systemTaxRate.toStringAsFixed(0)}%',
+                      tr('ضريبة {p0}%', {'p0': state.widget.systemTaxRate.toStringAsFixed(0)}),
                       '+${f0(t.tax)}',
                       const Color(0xFF7FB0FF),
                     ),
-                    _chip('البنود', '${t.lineCount}', Colors.white),
+                    _chip(tr('البنود'), '${t.lineCount}', Colors.white),
                   ],
                 ),
               ],
@@ -318,7 +318,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('المتبقي',
+                            Text(tr('المتبقي'),
                                 style: TextStyle(
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.w800,
@@ -350,7 +350,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
                 // خصمُ المستند — الخصمُ الوحيدُ الذي يصل القاعدةَ فعلاً.
                 _moneyBox(
                   context,
-                  label: 'خصم على الفاتورة',
+                  label: tr('خصم على الفاتورة'),
                   child: TextField(
                     controller: state._discountController,
                     keyboardType:
@@ -446,7 +446,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
           Icon(PhosphorIconsBold.calendarCheck,
               size: 13, color: hasTerms ? AppColors.info : muted),
           const SizedBox(width: 7),
-          Text('تاريخ الاستحقاق',
+          Text(tr('تاريخ الاستحقاق'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -454,7 +454,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              hasTerms ? due.toString().substring(0, 10) : 'بلا مهلة متفقة',
+              hasTerms ? due.toString().substring(0, 10) : tr('بلا مهلة متفقة'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -468,7 +468,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
           if (hasTerms)
             Flexible(
               child: Text(
-                '${state.widget.kind.isSales ? 'سماح' : 'سداد'} $terms يوماً',
+                tr('{p0} {terms} يوماً', {'p0': state.widget.kind.isSales ? 'سماح' : 'سداد', 'terms': terms}),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -486,10 +486,10 @@ class _PicPosMoneyPanel extends StatelessWidget {
   }
 
   Widget _methods(BuildContext context) {
-    const methods = [
-      ('cash', 'نقدي', PhosphorIconsBold.money),
-      ('credit', 'آجل', PhosphorIconsBold.calendarDot),
-      ('transfer', 'تحويل', PhosphorIconsBold.squaresFour),
+    final methods = [
+      ('cash', tr('نقدي'), PhosphorIconsBold.money),
+      ('credit', tr('آجل'), PhosphorIconsBold.calendarDot),
+      ('transfer', tr('تحويل'), PhosphorIconsBold.squaresFour),
     ];
     final muted = _fMuted(context);
     return Container(
@@ -579,16 +579,16 @@ class _PicPosMoneyPanel extends StatelessWidget {
             children: [
               Icon(PhosphorIconsBold.notePencil, size: 14, color: muted),
               const SizedBox(width: 8),
-              const Flexible(
-                child: Text('ملاحظات على الفاتورة',
+               Flexible(
+                child: Text(tr('ملاحظات على الفاتورة'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style:
-                        TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                        const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
               ),
               const SizedBox(width: 8),
               Flexible(
-                child: Text('تظهر في الطباعة',
+                child: Text(tr('تظهر في الطباعة'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.end,
@@ -618,7 +618,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
                 isDense: true,
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 6),
-                hintText: 'اكتب ملاحظة تخص هذا المستند…',
+                hintText: tr('اكتب ملاحظة تخص هذا المستند…'),
                 hintStyle: TextStyle(fontSize: 11.5, color: muted),
               ),
             ),
@@ -646,7 +646,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
       if (kind.isSales) {
         items.add(_Notice(
           PhosphorIconsBold.arrowSquareOut,
-          'سيُخصم من المخزن $qty وحدة عند الحفظ.',
+          tr('سيُخصم من المخزن {qty} وحدة عند الحفظ.', {'qty': qty}),
           AppColors.info,
         ));
         final short = _shortages();
@@ -657,9 +657,9 @@ class _PicPosMoneyPanel extends StatelessWidget {
             AppColors.warning,
           ));
         } else if (state.widget.availableStock != null) {
-          items.add(const _Notice(
+          items.add( _Notice(
             PhosphorIconsBold.checkCircle,
-            'الرصيد المتاح يكفي جميع البنود.',
+            tr('الرصيد المتاح يكفي جميع البنود.'),
             AppColors.success,
           ));
         }
@@ -679,16 +679,16 @@ class _PicPosMoneyPanel extends StatelessWidget {
       items.add(_Notice(
         PhosphorIconsBold.warningCircle,
         kind.isSales
-            ? 'المتبقي $r سيُسجَّل على حساب العميل.'
-            : 'المتبقي $r سيُسجَّل كالتزام على حساب المورد.',
+            ? tr('المتبقي {r} سيُسجَّل على حساب العميل.', {'r': r})
+            : tr('المتبقي {r} سيُسجَّل كالتزام على حساب المورد.', {'r': r}),
         AppColors.warning,
       ));
     }
 
     if (state._supplierInvoiceMissing) {
-      items.add(const _Notice(
+      items.add( _Notice(
         PhosphorIconsBold.sealWarning,
-        'أدخل رقم فاتورة المورد قبل الحفظ — مطلوب للمطابقة الضريبية.',
+        tr('أدخل رقم فاتورة المورد قبل الحفظ — مطلوب للمطابقة الضريبية.'),
         AppColors.error,
       ));
     }
@@ -747,7 +747,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
       }
     }
     if (short.isEmpty) return null;
-    return 'الرصيد لا يكفي: ${short.join(' · ')}';
+    return tr('الرصيد لا يكفي: {p0}', {'p0': short.join(' · ')});
   }
 
   // ── الأزرار ─────────────────────────────────────────────────────────
@@ -766,8 +766,8 @@ class _PicPosMoneyPanel extends StatelessWidget {
                 // الاسمُ يقول ما يحدث: زرٌّ يقول «حفظ الفاتورة» على تحريرٍ
                 // يوهم بإنشاء ثانية.
                 label: state.widget.isEdit
-                    ? 'حفظ التعديلات'
-                    : 'حفظ الفاتورة',
+                    ? tr('حفظ التعديلات')
+                    : tr('حفظ الفاتورة'),
                 shortcut: 'F9',
                 onTap: busy ? null : () => state._save(printAfterSave: false),
               ),
@@ -780,8 +780,8 @@ class _PicPosMoneyPanel extends StatelessWidget {
                 onPressed:
                     busy ? null : () => state._save(printAfterSave: true),
                 icon: const Icon(PhosphorIconsBold.printer, size: 16),
-                label: const Text('حفظ وطباعة',
-                    style: TextStyle(
+                label:  Text(tr('حفظ وطباعة'),
+                    style: const TextStyle(
                         fontSize: 12.5, fontWeight: FontWeight.w700)),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.primary, width: 1.5),
@@ -803,13 +803,13 @@ class _PicPosMoneyPanel extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: busy ? null : state._saveDraft,
                     icon: const Icon(PhosphorIconsBold.floppyDisk, size: 14),
-                    label: const Text(
+                    label:  Text(
                       // ‏«عرض سعر» لا «مسودة»: الاسمُ يقول ما سيحدث فعلاً،
                       // والعرضُ يذهب إلى تبويبه. والفرعُ الآخرُ حُذف مع
                       // مسوّدةِ المشتريات — لم يكن خلفَه شيء، وتوكيدُ
                       // `PicPosInvoiceForm` يمنع عودتَه.
-                      'حفظ كعرض سعر',
-                      style: TextStyle(
+                      tr('حفظ كعرض سعر'),
+                      style: const TextStyle(
                           fontSize: 12, fontWeight: FontWeight.w700),
                     ),
                     style: OutlinedButton.styleFrom(
@@ -830,11 +830,11 @@ class _PicPosMoneyPanel extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: busy ? null : state._previewA4,
                     icon: const Icon(PhosphorIconsBold.filePdf, size: 14),
-                    label: const Text(
+                    label:  Text(
                       // ‏«معاينة» لا «طباعة»: لا مستندَ بعد، والورقةُ موسومةٌ
                       // «غير محفوظة» وبلا رقم — الرقمُ يُولَّد في معاملة الحفظ.
-                      'معاينة A4',
-                      style: TextStyle(
+                      tr('معاينة A4'),
+                      style: const TextStyle(
                           fontSize: 12, fontWeight: FontWeight.w700),
                     ),
                     style: OutlinedButton.styleFrom(
@@ -855,8 +855,8 @@ class _PicPosMoneyPanel extends StatelessWidget {
                   onPressed: busy ? null : state.widget.onCancel,
                   icon: const Icon(PhosphorIconsBold.xCircle,
                       size: 14, color: AppColors.error),
-                  label: const Text('إلغاء',
-                      style: TextStyle(
+                  label:  Text(tr('إلغاء'),
+                      style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: AppColors.error)),

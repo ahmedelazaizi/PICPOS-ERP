@@ -150,8 +150,8 @@ void main() {
 
   test('🔴 ووسمُ الترحيل على الصفّ لا على الجدول', () {
     final card = _code(_card);
-    expect(card.contains("PicPosPillCell('مُرحَّل'"), isTrue);
-    expect(card.contains("PicPosPillCell('متوقَّع'"), isTrue);
+    expect(card.contains("PicPosPillCell(tr('مُرحَّل')"), isTrue);
+    expect(card.contains("PicPosPillCell(tr('متوقَّع')"), isTrue);
     expect(card.contains('rows[i].posted'), isTrue,
         reason: '🔴 وسمٌ واحدٌ فوق الجدول يكذب على أحد النصفين — وجدولُ أصلٍ '
             'نصفُه مُرحَّلٌ ونصفُه توقّعٌ هو الحالةُ الطبيعيّة');

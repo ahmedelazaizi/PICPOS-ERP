@@ -9,6 +9,7 @@
 /// }
 /// ```
 library;
+import 'package:ural_erp/core/i18n/tr.dart';
 
 /// Base result type
 sealed class Result<T> {
@@ -165,11 +166,11 @@ final class InsufficientStockException extends BusinessException {
   final double available;
   final double requested;
 
-  const InsufficientStockException({
+  InsufficientStockException({
     required this.productId,
     required this.available,
     required this.requested,
-  }) : super('الكمية المتاحة ($available) أقل من المطلوبة ($requested)');
+  }) : super(tr('الكمية المتاحة ({available}) أقل من المطلوبة ({requested})', {'available': available, 'requested': requested}));
 }
 
 /// Credit limit exceeded exception
@@ -178,9 +179,9 @@ final class CreditLimitException extends BusinessException {
   final double currentBalance;
   final double requestedAmount;
 
-  const CreditLimitException({
+  CreditLimitException({
     required this.limit,
     required this.currentBalance,
     required this.requestedAmount,
-  }) : super('تجاوز الحد الائتماني');
+  }) : super(tr('تجاوز الحد الائتماني'));
 }

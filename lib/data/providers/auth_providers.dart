@@ -663,7 +663,7 @@ const kNavGroupDefs = <NavGroupDef>[
 /// `screen_permission_map_test.dart` يقدر يتأكد إن عنصر القائمة الخاص
 /// بكل شاشة متفق مع `screenPermissionMap[screenId]` — من غير ما يحتاج
 /// يشغّل الـ provider بكل تبعياته (auth state, DB, إلخ).
-const kAllNavItemDefs = [
+final kAllNavItemDefs = [
   // ═══════════════════════════════════════════
   // 🏠 Dashboard
   // ═══════════════════════════════════════════
@@ -672,22 +672,22 @@ const kAllNavItemDefs = [
   // قسراً لكل الناس؛ دلوقتي screenPermissionMap بيربطها بـ dashboard_access
   // فعلاً، فلازم عنصر القائمة يتحكم بنفس الكود عشان مايفضلش رابط ميت لشاشة
   // ممنوعة (أو العكس).
-  NavItemDef(icon: PhosphorIconsBold.house, label: 'Dashboard', permission: PermissionCodes.dashboardAccess, index: 0, section: 'Dashboard', group: 'home'),
+  const NavItemDef(icon: PhosphorIconsBold.house, label: 'Dashboard', permission: PermissionCodes.dashboardAccess, index: 0, section: 'Dashboard', group: 'home'),
 
   // ═══════════════════════════════════════════
   // 💰 المبيعات
   // ═══════════════════════════════════════════
-  NavItemDef(icon: PhosphorIconsBold.shoppingCart, label: 'البيع السريع', permission: 'pos_access', index: 1, section: 'المبيعات', group: 'sales'),
-  NavItemDef(icon: PhosphorIconsBold.fileText, label: 'فواتير المبيعات', permission: 'sales_view', index: 17, group: 'sales'),
-  NavItemDef(icon: PhosphorIconsBold.notepad, label: 'طلبات البيع', permission: 'sales_orders_view', index: 37, group: 'sales'),
+  const NavItemDef(icon: PhosphorIconsBold.shoppingCart, label: 'البيع السريع', permission: 'pos_access', index: 1, section: 'المبيعات', group: 'sales'),
+  const NavItemDef(icon: PhosphorIconsBold.fileText, label: 'فواتير المبيعات', permission: 'sales_view', index: 17, group: 'sales'),
+  const NavItemDef(icon: PhosphorIconsBold.notepad, label: 'طلبات البيع', permission: 'sales_orders_view', index: 37, group: 'sales'),
   // ⚠️ **الموضعُ السادس** — لا الخامس. حارسُ `bookings_screen_wiring_test`
   // كان يقيس خمسةً (`ScreenId` · `AppScreen` · `screenPermissionMap` ·
   // نطاقاتُ الملفّات · `ScreenConfig`) والشاشةُ **ما زالت غائبةً عن القائمة
   // الجانبيّة**: هذه القائمةُ مصدرٌ مستقلٌّ لا يُشتقّ من تلك الخمسة.
   // بلاغُ المالك 2026-08-23. والحارسُ وُسِّع ليقيسها.
-  NavItemDef(icon: PhosphorIconsBold.calendarCheck, label: 'الحجوزات', permission: 'tables_view', index: 61, group: 'sales'),
-  NavItemDef(icon: PhosphorIconsBold.tag, label: 'العروض', permission: 'offers_view', index: 2, group: 'sales'),
-  NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مرتجع المبيعات', permission: 'sales_return_view', index: 44, group: 'sales'),
+  const NavItemDef(icon: PhosphorIconsBold.calendarCheck, label: 'الحجوزات', permission: 'tables_view', index: 61, group: 'sales'),
+  const NavItemDef(icon: PhosphorIconsBold.tag, label: 'العروض', permission: 'offers_view', index: 2, group: 'sales'),
+  const NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مرتجع المبيعات', permission: 'sales_return_view', index: 44, group: 'sales'),
 
   // ═══════════════════════════════════════════
   // 🍽️ ادارة المطاعم — طلبُ المالك 2026-09-12
@@ -695,57 +695,57 @@ const kAllNavItemDefs = [
   // ⚠️ **الحجوزاتُ تبقى في المبيعات** ولم تُنقَل معهما: أمرُ المالك سمّى
   // شاشتَين بعينِهما، والحجوزاتُ نطاقُها أوسعُ من المطعم (الصالوناتُ تحجز
   // ولا مطبخَ لها ولا طاولاتِ خدمة) — ونطاقُها في `ScreenRegistry` يشهد.
-  NavItemDef(icon: PhosphorIconsBold.circlesThree, label: 'الطاولات', permission: 'tables_view', index: 3, section: 'ادارة المطاعم', group: 'restaurant'),
+  const NavItemDef(icon: PhosphorIconsBold.circlesThree, label: 'الطاولات', permission: 'tables_view', index: 3, section: 'ادارة المطاعم', group: 'restaurant'),
   // مصمّمُ القاعة — مدخلٌ جانبيٌّ مستقلٌّ بأمر المالك 2026-09-18.
   //
   // ⚠️ **وصلاحيّتُه `tables_manage` لا `tables_view`**: النادلُ يرى
   //    الخريطةَ ولا يرسمُها، ومدخلٌ يراه ثمّ يُرفَض عند النقر أسوأُ
   //    من غيابِه.
-  NavItemDef(icon: PhosphorIconsBold.squaresFour, label: 'مصمم القاعة', permission: 'tables_manage', index: 72, group: 'restaurant'),
-  NavItemDef(icon: PhosphorIconsBold.cookingPot, label: 'المطبخ', permission: 'kitchen_view', index: 14, group: 'restaurant'),
+  const NavItemDef(icon: PhosphorIconsBold.squaresFour, label: 'مصمم القاعة', permission: 'tables_manage', index: 72, group: 'restaurant'),
+  const NavItemDef(icon: PhosphorIconsBold.cookingPot, label: 'المطبخ', permission: 'kitchen_view', index: 14, group: 'restaurant'),
 
   // ═══════════════════════════════════════════
   // 🛒 المشتريات
   // ═══════════════════════════════════════════
-  NavItemDef(icon: PhosphorIconsBold.receipt, label: 'فواتير المشتريات', permission: 'purchases_create', index: 9, section: 'المشتريات', group: 'purchases'),
-  NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'أوامر الشراء', permission: 'purchase_orders_view', index: 30, group: 'purchases'),
-  NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مرتجع المشتريات', permission: 'purchases_return_view', index: 45, group: 'purchases'),
+  const NavItemDef(icon: PhosphorIconsBold.receipt, label: 'فواتير المشتريات', permission: 'purchases_create', index: 9, section: 'المشتريات', group: 'purchases'),
+  const NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'أوامر الشراء', permission: 'purchase_orders_view', index: 30, group: 'purchases'),
+  const NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مرتجع المشتريات', permission: 'purchases_return_view', index: 45, group: 'purchases'),
   // 🆕 المشتريات الخارجيّة — بندُ المالك 2026-09-18، آخرُ مجموعةِ
   // «المشتريات». وفيها وحدَها تُبلَغ «التكاليف المحمّلة».
-  NavItemDef(icon: PhosphorIconsBold.globeHemisphereEast, label: 'المشتريات الخارجية', permission: 'purchases_create', index: 71, group: 'purchases'),
+  const NavItemDef(icon: PhosphorIconsBold.globeHemisphereEast, label: 'المشتريات الخارجية', permission: 'purchases_create', index: 71, group: 'purchases'),
 
   // ═══════════════════════════════════════════
   // 📦 الاصناف والمخزون
   // ═══════════════════════════════════════════
-  NavItemDef(icon: PhosphorIconsBold.package, label: 'الأصناف', permission: 'products_add', index: 4, section: 'الاصناف والمخزون', group: 'inventory'),
-  NavItemDef(icon: PhosphorIconsBold.squaresFour, label: 'التصنيفات', permission: 'products_add', index: 5, group: 'inventory'),
-  NavItemDef(icon: PhosphorIconsBold.warehouse, label: 'المخزون', permission: 'inventory_view', index: 8, group: 'inventory'),
-  NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'أرصدة المخزون', permission: 'inventory_view', index: 19, group: 'inventory'),
-  NavItemDef(icon: PhosphorIconsBold.arrowsLeftRight, label: 'سند تحويل اصناف', permission: 'inventory_transfer', index: 20, group: 'inventory'),
-  NavItemDef(icon: PhosphorIconsBold.arrowsDownUp, label: 'حركة المخزون', permission: 'inventory_view', index: 29, group: 'inventory'),
+  const NavItemDef(icon: PhosphorIconsBold.package, label: 'الأصناف', permission: 'products_add', index: 4, section: 'الاصناف والمخزون', group: 'inventory'),
+  const NavItemDef(icon: PhosphorIconsBold.squaresFour, label: 'التصنيفات', permission: 'products_add', index: 5, group: 'inventory'),
+  const NavItemDef(icon: PhosphorIconsBold.warehouse, label: 'المخزون', permission: 'inventory_view', index: 8, group: 'inventory'),
+  const NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'أرصدة المخزون', permission: 'inventory_view', index: 19, group: 'inventory'),
+  const NavItemDef(icon: PhosphorIconsBold.arrowsLeftRight, label: 'سند تحويل اصناف', permission: 'inventory_transfer', index: 20, group: 'inventory'),
+  const NavItemDef(icon: PhosphorIconsBold.arrowsDownUp, label: 'حركة المخزون', permission: 'inventory_view', index: 29, group: 'inventory'),
   // ⚠️ الثلاثةُ التاليةُ **متقاعدةٌ في PicPos** بأمر المالك 2026-09-12 —
   // راجع [kPicPosRetiredNavIndexes]. وتبقى مكتوبةً هنا لأن القائمةَ مشتركةٌ
   // مع الفورك الآخر، فحذفُ السطر يسحب الشاشةَ منه أيضاً.
-  NavItemDef(icon: PhosphorIconsBold.truck, label: 'طلبات الصرف', permission: 'inventory_view', index: 38, group: 'inventory'),
-  NavItemDef(icon: PhosphorIconsBold.money, label: 'التكاليف المحملة', permission: 'purchases_create', index: 41, group: 'inventory'),
-  NavItemDef(icon: PhosphorIconsBold.listChecks, label: 'الجرد الدوري', permission: 'inventory_view', index: 42, group: 'inventory'),
+  const NavItemDef(icon: PhosphorIconsBold.truck, label: 'طلبات الصرف', permission: 'inventory_view', index: 38, group: 'inventory'),
+  const NavItemDef(icon: PhosphorIconsBold.money, label: 'التكاليف المحملة', permission: 'purchases_create', index: 41, group: 'inventory'),
+  const NavItemDef(icon: PhosphorIconsBold.listChecks, label: 'الجرد الدوري', permission: 'inventory_view', index: 42, group: 'inventory'),
 
   // ═══════════════════════════════════════════
   // 🏭 ادارة التصنيع — طلبُ المالك 2026-09-12
   // ═══════════════════════════════════════════
-  NavItemDef(icon: PhosphorIconsBold.factory, label: 'التصنيع', permission: 'manufacturing_view', index: 25, section: 'ادارة التصنيع', group: 'manufacturing'),
+  const NavItemDef(icon: PhosphorIconsBold.factory, label: 'التصنيع', permission: 'manufacturing_view', index: 25, section: 'ادارة التصنيع', group: 'manufacturing'),
 
   // ═══════════════════════════════════════════
   // 👥 العملاء والموردين
   // ═══════════════════════════════════════════
-  NavItemDef(icon: PhosphorIconsBold.usersThree, label: 'العملاء والموردين', permission: 'customers_view', index: 6, section: 'العملاء والموردين', group: 'relations'),
-  NavItemDef(icon: PhosphorIconsBold.trophy, label: 'نقاط العملاء', permission: 'loyalty_view', index: 23, group: 'relations'),
-  NavItemDef(icon: PhosphorIconsBold.truck, label: 'التوزيع', permission: 'distribution_view', index: 24, group: 'relations'),
+  const NavItemDef(icon: PhosphorIconsBold.usersThree, label: 'العملاء والموردين', permission: 'customers_view', index: 6, section: 'العملاء والموردين', group: 'relations'),
+  const NavItemDef(icon: PhosphorIconsBold.trophy, label: 'نقاط العملاء', permission: 'loyalty_view', index: 23, group: 'relations'),
+  const NavItemDef(icon: PhosphorIconsBold.truck, label: 'التوزيع', permission: 'distribution_view', index: 24, group: 'relations'),
 
   // ═══════════════════════════════════════════
   // 🧑‍💼 الموارد البشرية — طلبُ المالك 2026-09-12
   // ═══════════════════════════════════════════
-  NavItemDef(icon: PhosphorIconsBold.users, label: 'الموظفين', permission: 'hr_view', index: 16, section: 'الموارد البشرية', group: 'hr'),
+  const NavItemDef(icon: PhosphorIconsBold.users, label: 'الموظفين', permission: 'hr_view', index: 16, section: 'الموارد البشرية', group: 'hr'),
 
   // ═══════════════════════════════════════════
   // 💵 المالية والمحاسبة
@@ -759,34 +759,34 @@ const kAllNavItemDefs = [
   //    (`kPicPosFoldedIntoAccountingHub` فيه الفهرس ٣٢). فصدرُ المجموعة
   //    المرئيُّ في PicPos يبدأ بما بعدها — والترتيبُ النسبيُّ كما طُلب،
   //    والطيُّ قرارٌ سابقٌ مستقلٌّ يُرفَع بسطر.
-  NavItemDef(icon: PhosphorIconsBold.arrowCircleDown, label: 'سند قبض', permission: 'treasury_view', index: 68, section: 'المالية والمحاسبة', group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.arrowCircleUp, label: 'سند صرف', permission: 'treasury_view', index: 69, group: 'accounting'),
+  const NavItemDef(icon: PhosphorIconsBold.arrowCircleDown, label: 'سند قبض', permission: 'treasury_view', index: 68, section: 'المالية والمحاسبة', group: 'accounting'),
+  const NavItemDef(icon: PhosphorIconsBold.arrowCircleUp, label: 'سند صرف', permission: 'treasury_view', index: 69, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.checks, label: chequesScreenLabel, permission: 'treasury_view', index: 34, group: 'accounting'),
   // ⚠️ مصدرُ توصيلٍ **سادسٌ مستقلٌّ**: شاشةٌ صحيحةٌ في `ScreenId` و`AppScreen`
   //    وخريطةِ الصلاحيات والنطاقِ و`ScreenConfig` تبقى **غائبةً عن القائمة
   //    الجانبيّة** بلا هذين السطرين. وقع فعلاً مع الحجوزات 2026-08-22 وكلُّ
   //    الحرّاس خضراء.
-  NavItemDef(icon: PhosphorIconsBold.notePencil, label: 'سند قيد', permission: 'settings_view', index: 67, group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.folders, label: 'فئات الأصول', permission: 'assets_view', index: 65, group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.mapPin, label: 'التوزيع والمواقع', permission: 'assets_view', index: 66, group: 'accounting'),
+  const NavItemDef(icon: PhosphorIconsBold.notePencil, label: 'سند قيد', permission: 'settings_view', index: 67, group: 'accounting'),
+  const NavItemDef(icon: PhosphorIconsBold.folders, label: 'فئات الأصول', permission: 'assets_view', index: 65, group: 'accounting'),
+  const NavItemDef(icon: PhosphorIconsBold.mapPin, label: 'التوزيع والمواقع', permission: 'assets_view', index: 66, group: 'accounting'),
   // ⚠️ **بعد صدرِ المجموعة لا داخلَه.** ترتيبُ السبعةِ الأُوَل أمرُ مالكٍ
   //    2026-09-18 ويثبّته `asset_screens_have_their_writers_test`، وقد رُسم
   //    قبل أن يوجد الدفترُ أصلاً. ووضعُه بجوار «إدارة الشيكات» — وهو موضعُه
   //    المنطقيّ — يزيح ترتيباً طلبه المالكُ بنفسه، فذاك قرارُه لا اجتهادُنا.
-  NavItemDef(icon: PhosphorIconsBold.checkSquareOffset, label: 'دفتر الشيكات', permission: 'treasury_view', index: 70, group: 'accounting'),
+  const NavItemDef(icon: PhosphorIconsBold.checkSquareOffset, label: 'دفتر الشيكات', permission: 'treasury_view', index: 70, group: 'accounting'),
   // ── بقيّةُ المجموعة كما هي ────────────────────────────────────────────
-  NavItemDef(icon: PhosphorIconsBold.wallet, label: 'الخزينة', permission: 'treasury_view', index: 10, group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.lockKey, label: 'إغلاق الوردية', permission: PermissionCodes.posShiftClose, index: 56, group: 'accounting'),
+  const NavItemDef(icon: PhosphorIconsBold.wallet, label: 'الخزينة', permission: 'treasury_view', index: 10, group: 'accounting'),
+  const NavItemDef(icon: PhosphorIconsBold.lockKey, label: 'إغلاق الوردية', permission: PermissionCodes.posShiftClose, index: 56, group: 'accounting'),
   // حاويةُ «الحسابات» — مدخلٌ واحدٌ يفتح تبويباتِ التصميم السبعة. تظهر في
   // PicPos وحدَها، وتُطوى تحتها مداخلُ [kPicPosFoldedIntoAccountingHub].
-  NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الأصول الثابتة', permission: 'assets_view', index: 35, group: 'accounting'),
+  const NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الأصول الثابتة', permission: 'assets_view', index: 35, group: 'accounting'),
   // ⚠️ مصدرُ توصيلٍ **سادسٌ مستقلٌّ** لا يُشتقّ من الخمسة قبله: شاشةٌ صحيحةٌ
   //    في `ScreenId` و`AppScreen` وخريطةِ الصلاحيات والنطاقِ و`ScreenConfig`
   //    تبقى **غائبةً عن القائمة الجانبيّة** بلا هذا السطر. وقع فعلاً مع
   //    الحجوزات 2026-08-22 وكلُّ الحرّاس خضراء.
-  NavItemDef(icon: PhosphorIconsBold.invoice, label: 'الفوترة الإلكترونية', permission: 'einvoice_view', index: 22, group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.calendar, label: 'السنوات المالية', permission: 'settings_view', index: 28, group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.coins, label: 'المصروفات التشغيلية', permission: 'settings_view', index: 26, group: 'accounting'),
+  const NavItemDef(icon: PhosphorIconsBold.invoice, label: 'الفوترة الإلكترونية', permission: 'einvoice_view', index: 22, group: 'accounting'),
+  const NavItemDef(icon: PhosphorIconsBold.calendar, label: 'السنوات المالية', permission: 'settings_view', index: 28, group: 'accounting'),
+  const NavItemDef(icon: PhosphorIconsBold.coins, label: 'المصروفات التشغيلية', permission: 'settings_view', index: 26, group: 'accounting'),
 
   // ═══════════════════════════════════════════
   // 📘 الحسابات — رأسٌ لا مدخل (أمرُ المالك 2026-09-20)
@@ -799,12 +799,12 @@ const kAllNavItemDefs = [
   // ⚠️ **وموضعُ الرأس من هنا لا من `kNavGroupDefs`**: الشريطُ يبني
   //    ترتيبَه من **أوّل ظهورٍ** لكلّ مفتاح، فنقلُ أوّل مدخلٍ
   //    ينقل الرأسَ كلَّه.
-  NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'دليل الحسابات', permission: 'settings_view', index: 27, section: 'الحسابات', group: 'accounts'),
-  NavItemDef(icon: PhosphorIconsBold.crosshair, label: 'مراكز التكلفة', permission: 'settings_view', index: 33, group: 'accounts'),
-  NavItemDef(icon: PhosphorIconsBold.book, label: 'دفتر الأستاذ', permission: 'settings_view', index: 36, group: 'accounts'),
+  const NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'دليل الحسابات', permission: 'settings_view', index: 27, section: 'الحسابات', group: 'accounts'),
+  const NavItemDef(icon: PhosphorIconsBold.crosshair, label: 'مراكز التكلفة', permission: 'settings_view', index: 33, group: 'accounts'),
+  const NavItemDef(icon: PhosphorIconsBold.book, label: 'دفتر الأستاذ', permission: 'settings_view', index: 36, group: 'accounts'),
   // ⚠️ **شاشةٌ جديدةٌ لما لم يكن شاشةً**: ميزانُ المراجعة كان
   //    `view` داخلَ القوائم المالية يُبلَغ من تبويب `tb` وحدَه.
-  NavItemDef(icon: PhosphorIconsBold.scales, label: 'ميزان المراجعة', permission: 'reports_view', index: 73, group: 'accounts'),
+  const NavItemDef(icon: PhosphorIconsBold.scales, label: 'ميزان المراجعة', permission: 'reports_view', index: 73, group: 'accounts'),
 
   // ═══════════════════════════════════════════
   // 📒 اليومية العامة — رأسٌ جديد (أمرُ المالك 2026-09-20)
@@ -812,21 +812,21 @@ const kAllNavItemDefs = [
   NavItemDef(icon: PhosphorIconsBold.notebook, label: journalEntriesScreenLabel, permission: 'settings_view', index: 32, section: 'اليومية العامة', group: 'journal'),
   // ⚠️ **وقوالبُ القيود لم يكن لها معرِّفٌ ولا مدخل**: تُفتَح
   //    بدفعةٍ من شاشة اليومية وبتبويب `tpl`. والدفعةُ تبقى.
-  NavItemDef(icon: PhosphorIconsBold.stack, label: 'قوالب القيود', permission: 'settings_view', index: 74, group: 'journal'),
-  NavItemDef(icon: PhosphorIconsBold.bank, label: 'المطابقة البنكية', permission: 'settings_view', index: 53, group: 'journal'),
+  const NavItemDef(icon: PhosphorIconsBold.stack, label: 'قوالب القيود', permission: 'settings_view', index: 74, group: 'journal'),
+  const NavItemDef(icon: PhosphorIconsBold.bank, label: 'المطابقة البنكية', permission: 'settings_view', index: 53, group: 'journal'),
 
   // ═══════════════════════════════════════════
   // 📊 التقارير والتحليلات
   // ═══════════════════════════════════════════
-  NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'التقارير', permission: 'reports_view', index: 11, section: 'التقارير', group: 'reports'),
+  const NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'التقارير', permission: 'reports_view', index: 11, section: 'التقارير', group: 'reports'),
   // Task 3d — كان على 'reports_view' وده كود عام؛ screenPermissionMap
   // بيربط الشاشة بـ analytics_view من زمان. اللي عنده reports_view بس
   // كان بيشوف الرابط وميقدرش يفتح الشاشة (رابط ميت). اتصلّح ليتفق مع
   // الخريطة — راجع منح analytics_view في RoleGrantMatrix.defaultGrants
   // والسيدر عشان محاسب/مدير مالي/مدير فرع/مدير مخزون ما يفقدوش الرابط.
-  NavItemDef(icon: PhosphorIconsBold.chartPie, label: 'التحليلات', permission: PermissionCodes.analyticsView, index: 15, group: 'reports'),
-  NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'أداء الفروع', permission: 'reports_view', index: 39, group: 'reports'),
-  NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'اعداد وتصميم التقارير', permission: 'reports_view', index: 43, group: 'reports'),
+  const NavItemDef(icon: PhosphorIconsBold.chartPie, label: 'التحليلات', permission: PermissionCodes.analyticsView, index: 15, group: 'reports'),
+  const NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'أداء الفروع', permission: 'reports_view', index: 39, group: 'reports'),
+  const NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'اعداد وتصميم التقارير', permission: 'reports_view', index: 43, group: 'reports'),
 
   // ═══════════════════════════════════════════
   // ⚙️ اعداد النظام
@@ -835,19 +835,19 @@ const kAllNavItemDefs = [
   // كان على 'settings_view' بينما screenPermissionMap يربط الشاشة بـ
   // branches_manage. راجع منح branches_manage لمحاسب متقدم تحت (كان
   // بيشوف الرابط عبر settings_view بس ماعندوش الكود الفعلي).
-  NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الفروع والمخازن', permission: PermissionCodes.branchesManage, index: 13, section: 'اعداد النظام', group: 'system'),
-  NavItemDef(icon: PhosphorIconsBold.mapPin, label: 'المناطق', permission: 'settings_view', index: 60, group: 'system'),
-  NavItemDef(icon: PhosphorIconsBold.scales, label: 'ميزان التسعير', permission: 'settings_scale', index: 21, group: 'system'),
-  NavItemDef(icon: PhosphorIconsBold.gear, label: 'الإعدادات', permission: 'settings_view', index: 12, group: 'system'),
+  const NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الفروع والمخازن', permission: PermissionCodes.branchesManage, index: 13, section: 'اعداد النظام', group: 'system'),
+  const NavItemDef(icon: PhosphorIconsBold.mapPin, label: 'المناطق', permission: 'settings_view', index: 60, group: 'system'),
+  const NavItemDef(icon: PhosphorIconsBold.scales, label: 'ميزان التسعير', permission: 'settings_scale', index: 21, group: 'system'),
+  const NavItemDef(icon: PhosphorIconsBold.gear, label: 'الإعدادات', permission: 'settings_view', index: 12, group: 'system'),
   // طلبُ المالك 2026-09-12: نُقل من «التقارير» إلى شاشات النظام **تحت**
   // الإعدادات. وصلاحيّتُه `audit_view` كما هي — النقلُ يمسّ الموضعَ لا الحقّ.
-  NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'سجل العمليات', permission: 'audit_view', index: 18, group: 'system'),
+  const NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'سجل العمليات', permission: 'audit_view', index: 18, group: 'system'),
   // ⚠️ المصدرُ **السادسُ** للتوصيل ولا يُشتقّ من الخمسة قبله: شاشةٌ صحيحةٌ في
   //    `ScreenId` و`AppScreen` والصلاحياتِ والنطاقِ و`ScreenConfig` تبقى
   //    غائبةً عن القائمة الجانبيّة بلا هذا السطر — وقع مع الحجوزات
   //    2026-08-22 وكلُّ الحرّاس خضراء.
-  NavItemDef(icon: PhosphorIconsBold.gitFork, label: 'حسم القوالب', permission: PermissionCodes.settingsPrinter, index: 64, group: 'system'),
-  NavItemDef(icon: PhosphorIconsBold.question, label: 'مركز المساعدة', permission: 'pos_access', index: 40, group: 'system'),
+  const NavItemDef(icon: PhosphorIconsBold.gitFork, label: 'حسم القوالب', permission: PermissionCodes.settingsPrinter, index: 64, group: 'system'),
+  const NavItemDef(icon: PhosphorIconsBold.question, label: 'مركز المساعدة', permission: 'pos_access', index: 40, group: 'system'),
 ];
 
 /// ✅ **الطيُّ رُفِع 2026-09-20 بأمر المالك — والحاويةُ حُذفت.**
@@ -926,7 +926,7 @@ bool navItemVisibleForBrand(int index) {
 }
 
 final userNavItemsProvider = FutureProvider<List<NavItemDef>>((ref) async {
-  const allNavItems = kAllNavItemDefs;
+  final allNavItems = kAllNavItemDefs;
 
   final authState = ref.watch(authProvider);
   // Use effectiveUser so explicit "Manager Mode" elevation expands the

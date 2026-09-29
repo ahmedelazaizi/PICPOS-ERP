@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -188,20 +189,20 @@ class ProductFormState extends State<ProductForm> {
           // Basic Info
           _buildTextField(
             nameController,
-            'اسم المنتج *',
+            tr('اسم المنتج *'),
             icon: PhosphorIconsBold.package,
           ),
           const SizedBox(height: 12),
           _buildTextField(
             codeController,
-            'الكود (PLU)',
+            tr('الكود (PLU)'),
             icon: PhosphorIconsBold.barcode,
           ),
-          const Padding(
-            padding: EdgeInsetsDirectional.only(start: 12, top: 4, bottom: 8),
+           Padding(
+            padding: const EdgeInsetsDirectional.only(start: 12, top: 4, bottom: 8),
             child: Text(
-              'كود الصنف الداخلي — يُستخدم في باركود الميزان. أدخل نفس الكود المبرمج على الميزان.',
-              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+              tr('كود الصنف الداخلي — يُستخدم في باركود الميزان. أدخل نفس الكود المبرمج على الميزان.'),
+              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
             ),
           ),
 
@@ -211,7 +212,7 @@ class ProductFormState extends State<ProductForm> {
               Expanded(
                 child: _buildTextField(
                   salePriceController,
-                  'سعر البيع *',
+                  tr('سعر البيع *'),
                   isNumber: true,
                 ),
               ),
@@ -219,7 +220,7 @@ class ProductFormState extends State<ProductForm> {
               Expanded(
                 child: _buildTextField(
                   costPriceController,
-                  'سعر التكلفة',
+                  tr('سعر التكلفة'),
                   isNumber: true,
                 ),
               ),
@@ -228,9 +229,9 @@ class ProductFormState extends State<ProductForm> {
           const SizedBox(height: 12),
 
           // Multi-level pricing
-          const Text(
-            'أسعار المنصات',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+           Text(
+            tr('أسعار المنصات'),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           const SizedBox(height: 8),
           Row(
@@ -238,7 +239,7 @@ class ProductFormState extends State<ProductForm> {
               Expanded(
                 child: _buildTextField(
                   priceTalabatController,
-                  'سعر طلبات',
+                  tr('سعر طلبات'),
                   isNumber: true,
                 ),
               ),
@@ -246,7 +247,7 @@ class ProductFormState extends State<ProductForm> {
               Expanded(
                 child: _buildTextField(
                   priceCareemController,
-                  'سعر كريم',
+                  tr('سعر كريم'),
                   isNumber: true,
                 ),
               ),
@@ -254,7 +255,7 @@ class ProductFormState extends State<ProductForm> {
               Expanded(
                 child: _buildTextField(
                   priceAshyaeController,
-                  'سعر أشيائي',
+                  tr('سعر أشيائي'),
                   isNumber: true,
                 ),
               ),
@@ -264,7 +265,7 @@ class ProductFormState extends State<ProductForm> {
           const SizedBox(height: 12),
           _buildTextField(
             minStockController,
-            'الحد الأدنى',
+            tr('الحد الأدنى'),
             isNumber: true,
             icon: PhosphorIconsBold.warning,
           ),
@@ -275,13 +276,13 @@ class ProductFormState extends State<ProductForm> {
             DropdownButtonFormField<int?>(
               initialValue: selectedWarehouseId,
               decoration: InputDecoration(
-                labelText: 'المخزن الرئيسي',
+                labelText: tr('المخزن الرئيسي'),
                 prefixIcon: const Icon(PhosphorIconsBold.warehouse, size: 18),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 isDense: true,
               ),
               items: [
-                const DropdownMenuItem<int?>(value: null, child: Text('بدون مخزن')),
+                 DropdownMenuItem<int?>(value: null, child: Text(tr('بدون مخزن'))),
                 ...widget.warehouses.map((w) => DropdownMenuItem<int?>(
                   value: w['id'] as int,
                   child: Text(w['name'] as String),
@@ -296,12 +297,12 @@ class ProductFormState extends State<ProductForm> {
 
           // Expiry Tracking
           _buildSectionHeader(
-            'إدارة الصلاحية',
+            tr('إدارة الصلاحية'),
             PhosphorIconsBold.calendarBlank,
             AppColors.warning,
           ),
           SwitchListTile(
-            title: const Text('يتطلب تتبع صلاحية'),
+            title:  Text(tr('يتطلب تتبع صلاحية')),
             value: trackExpiry,
             onChanged: (v) => setState(() => trackExpiry = v),
             dense: true,
@@ -312,7 +313,7 @@ class ProductFormState extends State<ProductForm> {
                 Expanded(
                   child: _buildTextField(
                     shelfDaysController,
-                    'مدة الصلاحية (أيام)',
+                    tr('مدة الصلاحية (أيام)'),
                     isNumber: true,
                   ),
                 ),
@@ -320,7 +321,7 @@ class ProductFormState extends State<ProductForm> {
                 Expanded(
                   child: _buildTextField(
                     alertDaysController,
-                    'التنبيه قبل (أيام)',
+                    tr('التنبيه قبل (أيام)'),
                     isNumber: true,
                   ),
                 ),
@@ -333,7 +334,7 @@ class ProductFormState extends State<ProductForm> {
 
           // Scale Type Selection (replaces old isSoldByWeight toggle)
           _buildSectionHeader(
-            'نوع البيع والميزان',
+            tr('نوع البيع والميزان'),
             PhosphorIconsBold.scales,
             AppColors.info,
           ),
@@ -345,15 +346,15 @@ class ProductFormState extends State<ProductForm> {
           if (scaleType == 'weight' || scaleType == 'weightByPiece') ...[
             _buildTextField(
               scalePluNumberController,
-              'رقم المادة عالميزان (PLU)',
+              tr('رقم المادة عالميزان (PLU)'),
               isNumber: true,
               icon: PhosphorIconsBold.hash,
             ),
-            const Padding(
-              padding: EdgeInsetsDirectional.only(start: 12, top: 4, bottom: 4),
+             Padding(
+              padding: const EdgeInsetsDirectional.only(start: 12, top: 4, bottom: 4),
               child: Text(
-                'الرقم المخزن على الميزان لهذا الصنف — يُستخدم لتصدير الأصناف للميزان',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                tr('الرقم المخزن على الميزان لهذا الصنف — يُستخدم لتصدير الأصناف للميزان'),
+                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
             ),
             const SizedBox(height: 8),
@@ -363,7 +364,7 @@ class ProductFormState extends State<ProductForm> {
           if (isSoldByWeight)
             _buildTextField(
               pricePerUnitController,
-              'سعر الكيلو',
+              tr('سعر الكيلو'),
               isNumber: true,
             ),
 
@@ -372,7 +373,7 @@ class ProductFormState extends State<ProductForm> {
 
           // Image
           _buildSectionHeader(
-            'صورة المنتج',
+            tr('صورة المنتج'),
             PhosphorIconsBold.image,
             AppColors.success,
           ),
@@ -386,26 +387,26 @@ class ProductFormState extends State<ProductForm> {
   /// Builds the 4-option scale type selector matching the reference system
   Widget _buildScaleTypeSelector() {
     return SegmentedButton<String>(
-      segments: const [
+      segments:  [
         ButtonSegment(
           value: 'count',
-          label: Text('عدد', style: TextStyle(fontSize: 12)),
-          icon: Icon(PhosphorIconsBold.cube, size: 16),
+          label: Text(tr('عدد'), style: const TextStyle(fontSize: 12)),
+          icon: const Icon(PhosphorIconsBold.cube, size: 16),
         ),
         ButtonSegment(
           value: 'weight',
-          label: Text('ميزان', style: TextStyle(fontSize: 12)),
-          icon: Icon(PhosphorIconsBold.scales, size: 16),
+          label: Text(tr('ميزان'), style: const TextStyle(fontSize: 12)),
+          icon: const Icon(PhosphorIconsBold.scales, size: 16),
         ),
         ButtonSegment(
           value: 'weightByPiece',
-          label: Text('ميزان بالحبة', style: TextStyle(fontSize: 12)),
-          icon: Icon(PhosphorIconsBold.circleHalf, size: 16),
+          label: Text(tr('ميزان بالحبة'), style: const TextStyle(fontSize: 12)),
+          icon: const Icon(PhosphorIconsBold.circleHalf, size: 16),
         ),
         ButtonSegment(
           value: 'display',
-          label: Text('عرض', style: TextStyle(fontSize: 12)),
-          icon: Icon(PhosphorIconsBold.eye, size: 16),
+          label: Text(tr('عرض'), style: const TextStyle(fontSize: 12)),
+          icon: const Icon(PhosphorIconsBold.eye, size: 16),
         ),
       ],
       selected: {scaleType},
@@ -482,7 +483,7 @@ class ProductFormState extends State<ProductForm> {
             OutlinedButton.icon(
               onPressed: _pickImage,
               icon: const Icon(PhosphorIconsBold.upload, size: 16),
-              label: const Text('اختيار'),
+              label:  Text(tr('اختيار')),
             ),
             if (selectedImage != null) ...[
               const SizedBox(width: 8),

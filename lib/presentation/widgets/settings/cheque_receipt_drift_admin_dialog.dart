@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // Spec 133 — Cheque Receipt Voucher: Single Customer Credit (FR-011 UI surface).
 //
 // Server-mode-only admin maintenance dialog that displays which customers
@@ -80,7 +81,7 @@ class _ChequeReceiptDriftAdminDialogState
     // here so the action can never run without the accounting-management
     // permission even if reached another way.
     if (!_canRunRepair()) {
-      AppToast.show(context, 'ليس لديك صلاحية تنفيذ هذا الإصلاح.',
+      AppToast.show(context, tr('ليس لديك صلاحية تنفيذ هذا الإصلاح.'),
           type: ToastType.error);
       return;
     }
@@ -95,11 +96,11 @@ class _ChequeReceiptDriftAdminDialogState
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.warning),
-              SizedBox(width: 8),
-              Text('تأكيد تطبيق الإصلاح'),
+              const Icon(PhosphorIconsBold.warning, color: AppColors.warning),
+              const SizedBox(width: 8),
+              Text(tr('تأكيد تطبيق الإصلاح')),
             ],
           ),
           content: Text(
@@ -113,7 +114,7 @@ class _ChequeReceiptDriftAdminDialogState
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
@@ -121,7 +122,7 @@ class _ChequeReceiptDriftAdminDialogState
                 backgroundColor: AppColors.warning,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('تأكيد الإصلاح'),
+              child:  Text(tr('تأكيد الإصلاح')),
             ),
           ],
         ),
@@ -146,7 +147,7 @@ class _ChequeReceiptDriftAdminDialogState
               : ToastType.success);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'فشل الإصلاح: $e', type: ToastType.error);
+        AppToast.show(context, tr('فشل الإصلاح: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _repairing = false);
@@ -160,21 +161,21 @@ class _ChequeReceiptDriftAdminDialogState
             '${r.totalHealed.toStringAsFixed(AppConstants.decimalPlaces)} '
             '${AppConstants.currencySymbolEn}.';
       case ChequeDriftRepairOutcome.noop:
-        return 'لا يوجد ازدواج لإصلاحه — لم يتم تعديل أي بيانات.';
+        return tr('لا يوجد ازدواج لإصلاحه — لم يتم تعديل أي بيانات.');
       case ChequeDriftRepairOutcome.skipped:
         if (r.reason == ChequeDriftRepairReason.alreadyApplied) {
-          return 'تم تطبيق الإصلاح مسبقاً على هذا الجهاز.';
+          return tr('تم تطبيق الإصلاح مسبقاً على هذا الجهاز.');
         }
         if (r.reason == ChequeDriftRepairReason.notServer) {
           return 'الإصلاح يعمل على جهاز السيرفر فقط — تصل الأجهزة الأخرى '
               'للحالة المصححة عبر المزامنة.';
         }
-        return 'تم تخطي الإصلاح.';
+        return tr('تم تخطي الإصلاح.');
       case ChequeDriftRepairOutcome.failed:
         if (r.reason == ChequeDriftRepairReason.missingCorrectionAccount) {
           return kChequeDriftMissingCorrectionAccountMessage;
         }
-        return 'فشل الإصلاح.';
+        return tr('فشل الإصلاح.');
     }
   }
 
@@ -228,12 +229,12 @@ class _ChequeReceiptDriftAdminDialogState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.magnifyingGlass,
+            const Icon(PhosphorIconsBold.magnifyingGlass,
                 color: AppColors.warning),
-            SizedBox(width: 8),
-            Text('تدقيق ازدواج شيكات القبض'),
+            const SizedBox(width: 8),
+            Text(tr('تدقيق ازدواج شيكات القبض')),
           ],
         ),
         content: SizedBox(
@@ -244,7 +245,7 @@ class _ChequeReceiptDriftAdminDialogState
               : _error != null
                   ? Center(
                       child: Text(
-                        'فشل التدقيق: $_error',
+                        tr('فشل التدقيق: {_error}', {'_error': _error}),
                         style: const TextStyle(color: AppColors.error),
                       ),
                     )
@@ -253,7 +254,7 @@ class _ChequeReceiptDriftAdminDialogState
         actions: [
           TextButton(
             onPressed: (_loading || _repairing) ? null : _runAudit,
-            child: const Text('إعادة الفحص'),
+            child:  Text(tr('إعادة الفحص')),
           ),
           // R1 — the repair action is hidden for users without the
           // accounting-management permission; the read-only audit above stays
@@ -268,7 +269,7 @@ class _ChequeReceiptDriftAdminDialogState
                           strokeWidth: 2, color: Colors.white),
                     )
                   : const Icon(PhosphorIconsBold.wrench, size: 16),
-              label: const Text('تطبيق الإصلاح'),
+              label:  Text(tr('تطبيق الإصلاح')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.warning,
                 foregroundColor: Colors.white,
@@ -279,7 +280,7 @@ class _ChequeReceiptDriftAdminDialogState
             ),
           TextButton(
             onPressed: _repairing ? null : () => Navigator.of(context).pop(),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -292,22 +293,22 @@ class _ChequeReceiptDriftAdminDialogState
     List<ChequeReceiptDriftRecord> records,
   ) {
     if (records.isEmpty) {
-      return const Column(
+      return  Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(PhosphorIconsBold.checkCircle,
+          const Icon(PhosphorIconsBold.checkCircle,
               size: 48, color: AppColors.success),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Text(
-            'لا يوجد ازدواج في سجلات شيكات القبض.',
+            tr('لا يوجد ازدواج في سجلات شيكات القبض.'),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14),
+            style: const TextStyle(fontSize: 14),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
-            'كل سندات قبض الشيكات تم تسجيلها بقيد واحد لكل شيك.',
+            tr('كل سندات قبض الشيكات تم تسجيلها بقيد واحد لكل شيك.'),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
         ],
       );
@@ -328,11 +329,11 @@ class _ChequeReceiptDriftAdminDialogState
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _Stat(
-                label: 'عملاء متأثرون',
+                label: tr('عملاء متأثرون'),
                 value: totalCustomers.toString(),
               ),
               _Stat(
-                label: 'إجمالي مبلغ الازدواج',
+                label: tr('إجمالي مبلغ الازدواج'),
                 value:
                     '${totalOverCredit.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                 color: AppColors.error,
@@ -355,12 +356,12 @@ class _ChequeReceiptDriftAdminDialogState
           child: SingleChildScrollView(
             child: DataTable(
               columnSpacing: 16,
-              columns: const [
-                DataColumn(label: Text('العميل')),
+              columns:  [
+                DataColumn(label: Text(tr('العميل'))),
                 DataColumn(
-                    label: Text('عدد الشيكات'), numeric: true),
+                    label: Text(tr('عدد الشيكات')), numeric: true),
                 DataColumn(
-                    label: Text('مبلغ الازدواج'), numeric: true),
+                    label: Text(tr('مبلغ الازدواج')), numeric: true),
               ],
               rows: records
                   .map((r) => DataRow(cells: [

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -180,7 +181,7 @@ class _PicposPastShiftsPanelState
         builder: (ctx) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: Text('وردية #${shift.id} لسه مفتوحة'),
+            title: Text(tr('وردية #{p0} لسه مفتوحة', {'p0': shift.id})),
             content: const Text(
               'الوردية دي لسه ما اتقفلتش، فمفيش تقرير أرصدة ليها. '
               'تحب تقفلها دلوقتي؟',
@@ -188,7 +189,7 @@ class _PicposPastShiftsPanelState
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('إغلاق'),
+                child:  Text(tr('إغلاق')),
               ),
               ElevatedButton.icon(
                 style:
@@ -198,7 +199,7 @@ class _PicposPastShiftsPanelState
                   PicposCashierClosingDialog.show(context);
                 },
                 icon: const Icon(PhosphorIconsBold.lockKey, size: 16),
-                label: const Text('إغلاق الوردية'),
+                label:  Text(tr('إغلاق الوردية')),
               ),
             ],
           ),
@@ -236,7 +237,7 @@ class _PicposPastShiftsPanelState
       );
     } catch (e) {
       if (!mounted) return;
-      AppToast.show(context, 'تعذّرت الطباعة: $e', type: ToastType.error);
+      AppToast.show(context, tr('تعذّرت الطباعة: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -262,7 +263,7 @@ class _PicposPastShiftsPanelState
             IconButton(
               onPressed: _loading ? null : _load,
               icon: const Icon(PhosphorIconsBold.arrowsClockwise, size: 18),
-              tooltip: 'تحديث',
+              tooltip: tr('تحديث'),
             ),
           ],
         ),
@@ -276,13 +277,13 @@ class _PicposPastShiftsPanelState
           _Notice(
             icon: PhosphorIconsBold.warningCircle,
             color: AppColors.error,
-            text: 'تعذّر تحميل الورديات: $_error',
+            text: tr('تعذّر تحميل الورديات: {_error}', {'_error': _error}),
           )
         else if (_shifts.isEmpty)
-          const _Notice(
+           _Notice(
             icon: PhosphorIconsBold.calendarX,
             color: AppColors.textMuted,
-            text: 'لا توجد ورديات في الفترة المحددة',
+            text: tr('لا توجد ورديات في الفترة المحددة'),
           )
         else
           PicPosContentCard(
@@ -385,21 +386,21 @@ class _ShiftTile extends StatelessWidget {
               ),
             ),
             if (isOpen)
-              const _Pill(text: 'مفتوحة', color: AppColors.warning)
+               _Pill(text: tr('مفتوحة'), color: AppColors.warning)
             else if (variance.abs() > 0.01)
               _Pill(
-                text: 'فرق ${NumberUtils.formatCurrency(variance)}',
+                text: tr('فرق {p0}', {'p0': NumberUtils.formatCurrency(variance)}),
                 color: variance < 0 ? AppColors.error : AppColors.info,
               )
             else
-              const _Pill(text: 'مطابقة', color: AppColors.success),
+               _Pill(text: tr('مطابقة'), color: AppColors.success),
             const SizedBox(width: 8),
             // Signals up front whether opening this row yields the original
             // paper or a reconstruction, before the user commits to a tap.
             if (!isOpen && shift.closingSnapshot == null)
-              const Tooltip(
-                message: 'بدون لقطة أصلية — التقرير هيتعاد احتسابه',
-                child: Icon(PhosphorIconsBold.arrowsClockwise,
+               Tooltip(
+                message: tr('بدون لقطة أصلية — التقرير هيتعاد احتسابه'),
+                child: const Icon(PhosphorIconsBold.arrowsClockwise,
                     size: 13, color: AppColors.textMuted),
               ),
             const SizedBox(width: 6),
@@ -463,7 +464,7 @@ class _ShiftReportDialog extends StatelessWidget {
             const Icon(PhosphorIconsBold.receipt,
                 size: 20, color: AppColors.primary),
             const SizedBox(width: 8),
-            Expanded(child: Text('تقرير وردية #${shift.id}')),
+            Expanded(child: Text(tr('تقرير وردية #{p0}', {'p0': shift.id}))),
           ],
         ),
         content: SizedBox(
@@ -510,55 +511,55 @@ class _ShiftReportDialog extends StatelessWidget {
                     spacing: 24,
                     runSpacing: 8,
                     children: [
-                      _Meta(label: 'الكاشير', value: shift.userName),
+                      _Meta(label: tr('الكاشير'), value: shift.userName),
                       _Meta(
-                          label: 'البداية',
+                          label: tr('البداية'),
                           value: fmt.format(shift.startTime)),
                       _Meta(
-                        label: 'النهاية',
+                        label: tr('النهاية'),
                         value: shift.endTime != null
                             ? fmt.format(shift.endTime!)
                             : '—',
                       ),
                       _Meta(
-                        label: 'عدد الفواتير',
+                        label: tr('عدد الفواتير'),
                         value: '${snapshot.invoiceCount}',
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 16),
-                const _SectionLabel('الحركة'),
-                _Row('الرصيد الافتتاحي', snapshot.openingBalance),
+                 _SectionLabel(tr('الحركة')),
+                _Row(tr('الرصيد الافتتاحي'), snapshot.openingBalance),
                 // الآجلُ تحت الإجمالي مباشرةً و«منها» تربطه به — بعيداً عنه
                 // كان يُقرأ بنداً مستقلاً فيُجمع مرّتين. ونفسُ الترتيب على
                 // الورقة كي لا تفترق الشاشةُ عن المطبوع.
-                _Row('إجمالي المبيعات (شامل الآجل)', snapshot.totalSales),
+                _Row(tr('إجمالي المبيعات (شامل الآجل)'), snapshot.totalSales),
                 _Row(
-                  'منها آجل — خارج التسوية (${snapshot.creditSalesCount})',
+                  tr('منها آجل — خارج التسوية ({p0})', {'p0': snapshot.creditSalesCount}),
                   snapshot.creditSales,
                 ),
-                _Row('دخل النقد', snapshot.cashIncome),
-                _Row('المصروفات', snapshot.totalExpenses),
-                _Row('المرتجعات', snapshot.cashRefunds),
+                _Row(tr('دخل النقد'), snapshot.cashIncome),
+                _Row(tr('المصروفات'), snapshot.totalExpenses),
+                _Row(tr('المرتجعات'), snapshot.cashRefunds),
                 const SizedBox(height: 16),
-                const _SectionLabel('تفاصيل التسوية'),
+                 _SectionLabel(tr('تفاصيل التسوية')),
                 const _ReconHeader(),
                 _ReconRow(
-                  label: 'النقد',
+                  label: tr('النقد'),
                   system: snapshot.systemCash,
                   actual: snapshot.actualCash,
                   variance: snapshot.cashVariance,
                 ),
                 _ReconRow(
-                  label: 'البطاقة',
+                  label: tr('البطاقة'),
                   system: snapshot.systemCard,
                   actual: snapshot.actualCard,
                   variance: snapshot.cardVariance,
                   unavailable: recomputed,
                 ),
                 _ReconRow(
-                  label: 'كليك',
+                  label: tr('كليك'),
                   system: snapshot.systemClick,
                   actual: snapshot.actualClick,
                   variance: snapshot.clickVariance,
@@ -566,7 +567,7 @@ class _ShiftReportDialog extends StatelessWidget {
                 ),
                 const Divider(height: 22),
                 _Row(
-                  'إجمالي الفارق',
+                  tr('إجمالي الفارق'),
                   snapshot.totalVariance,
                   emphasize: true,
                   color: snapshot.totalVariance.abs() < 0.01
@@ -583,11 +584,11 @@ class _ShiftReportDialog extends StatelessWidget {
           TextButton.icon(
             onPressed: onReprint,
             icon: const Icon(PhosphorIconsBold.printer, size: 16),
-            label: const Text('إعادة الطباعة'),
+            label:  Text(tr('إعادة الطباعة')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -674,20 +675,20 @@ class _ReconHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     const style = TextStyle(
         fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted);
-    return const Padding(
-      padding: EdgeInsets.only(bottom: 4),
+    return  Padding(
+      padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
-          Expanded(flex: 3, child: Text('القناة', style: style)),
+          Expanded(flex: 3, child: Text(tr('القناة'), style: style)),
           Expanded(
               flex: 3,
-              child: Text('النظام', style: style, textAlign: TextAlign.end)),
+              child: Text(tr('النظام'), style: style, textAlign: TextAlign.end)),
           Expanded(
               flex: 3,
-              child: Text('الفعلي', style: style, textAlign: TextAlign.end)),
+              child: Text(tr('الفعلي'), style: style, textAlign: TextAlign.end)),
           Expanded(
               flex: 3,
-              child: Text('الفارق', style: style, textAlign: TextAlign.end)),
+              child: Text(tr('الفارق'), style: style, textAlign: TextAlign.end)),
         ],
       ),
     );

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // طرقُ الدفع — مصدرٌ واحدٌ للحقيقة.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -61,14 +62,14 @@ abstract final class PaymentMethods {
   static String canonical(String? key) =>
       key == null ? '' : (_canonical[key] ?? key);
 
-  static const Map<String, String> _labels = {
-    cash: 'نقدي',
-    card: 'بطاقة',
-    transfer: 'تحويل',
-    bank: 'بنك',
-    credit: 'آجل',
-    click: 'كليك',
-    multiple: 'متعدد',
+  static Map<String, String> get _labels => {
+    cash: tr('نقدي'),
+    card: tr('بطاقة'),
+    transfer: tr('تحويل'),
+    bank: tr('بنك'),
+    credit: tr('آجل'),
+    click: tr('كليك'),
+    multiple: tr('متعدد'),
   };
 
   /// التسميةُ العربية القياسية. المفتاحُ غيرُ المعروف يُعاد **كما هو** لا
@@ -84,11 +85,11 @@ abstract final class PaymentMethods {
   /// ⚠️ وهي السببُ في أن الفاتورةَ الواحدة تُقرأ «بطاقة» في شاشةٍ و«بطاقة/
   /// تحويل» في أخرى — قرارُ توحيدها مؤجَّلٌ لصاحب المنتج.
   static String groupedLabel(String? key) => switch (canonical(key)) {
-        cash => 'نقدي',
-        card || transfer || bank => 'بطاقة/تحويل',
-        click => 'كليك',
-        multiple => 'متعدد',
-        credit => 'آجل',
+        cash => tr('نقدي'),
+        card || transfer || bank => tr('بطاقة/تحويل'),
+        click => tr('كليك'),
+        multiple => tr('متعدد'),
+        credit => tr('آجل'),
         _ => key ?? '-',
       };
 }

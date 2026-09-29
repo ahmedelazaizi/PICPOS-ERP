@@ -71,7 +71,7 @@ mixin _InvoiceDesignerTemplatesMixin
   Future<void> createInitialTemplate() async {
     final templatesRepo = ref.read(invoiceTemplatesRepositoryProvider);
     final templateId = await templatesRepo.createTemplate(
-      name: nameController.text.isEmpty ? 'قالب جديد' : nameController.text,
+      name: nameController.text.isEmpty ? tr('قالب جديد') : nameController.text,
       type: templateType,
       templateCategory: templateCategory,
     );
@@ -96,13 +96,13 @@ mixin _InvoiceDesignerTemplatesMixin
         final activityLogRepo = ref.read(activityLogRepositoryProvider);
         await activityLogRepo.logActivity(
           userId: user?.id,
-          userName: user?.displayName ?? 'مجهول',
+          userName: user?.displayName ?? tr('مجهول'),
           action: 'create_invoice_template',
           entityType: 'invoice_template',
-          description: 'إنشاء قالب فاتورة: ${nameController.text.isEmpty ? 'قالب جديد' : nameController.text} ($templateType)',
+          description: tr('إنشاء قالب فاتورة: {p0} ({templateType})', {'p0': nameController.text.isEmpty ? 'قالب جديد' : nameController.text, 'templateType': templateType}),
         );
         if (!mounted) return;
-        AppToast.show(context, 'تم حفظ القالب بنجاح', type: ToastType.success);
+        AppToast.show(context, tr('تم حفظ القالب بنجاح'), type: ToastType.success);
       }
     } else {
       await templatesRepo.updateTemplate(
@@ -189,18 +189,18 @@ mixin _InvoiceDesignerTemplatesMixin
         final activityLogRepo = ref.read(activityLogRepositoryProvider);
         await activityLogRepo.logActivity(
           userId: user?.id,
-          userName: user?.displayName ?? 'مجهول',
+          userName: user?.displayName ?? tr('مجهول'),
           action: 'update_invoice_template',
           entityType: 'invoice_template',
           entityId: template!.id,
-          description: 'تعديل قالب فاتورة: ${nameController.text}',
+          description: tr('تعديل قالب فاتورة: {p0}', {'p0': nameController.text}),
         );
         if (!mounted) return;
         // Bug 5: Persist last-edited template ID so designer reopens to this template
         final settingsRepo = ref.read(settingsRepositoryProvider);
         await settingsRepo.saveSetting('last_edited_template_id', template!.id.toString());
         if (!mounted) return;
-        AppToast.show(context, 'تم حفظ التغييرات', type: ToastType.success);
+        AppToast.show(context, tr('تم حفظ التغييرات'), type: ToastType.success);
       }
     }
   }
@@ -219,7 +219,7 @@ mixin _InvoiceDesignerTemplatesMixin
     
     // ReceiptSettings object mapping
     final companyName = rsData['companyName'] ?? '';
-    final companyAddress = rsData['companyAddress'] ?? 'عنوان الشركة';
+    final companyAddress = rsData['companyAddress'] ?? tr('عنوان الشركة');
     final companyPhone = rsData['companyPhone'] ?? '01000000000';
     final taxNumber = rsData['taxNumber'] ?? '';
 
@@ -254,11 +254,11 @@ mixin _InvoiceDesignerTemplatesMixin
           children: [
             const Icon(PhosphorIconsBold.folder, color: AppColors.primary),
             const SizedBox(width: 8),
-            const Text('القوالب المحفوظة'),
+             Text(tr('القوالب المحفوظة')),
             const Spacer(),
             TextButton.icon(
               icon: const Icon(PhosphorIconsBold.plus, size: 18),
-              label: const Text('قالب جديد'),
+              label:  Text(tr('قالب جديد')),
               onPressed: () { Navigator.pop(ctx); createNewTemplate(); },
             ),
           ],
@@ -266,13 +266,13 @@ mixin _InvoiceDesignerTemplatesMixin
         content: SizedBox(
           width: 500, height: 400,
           child: templates.isEmpty
-              ? const Center(
+              ?  Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(PhosphorIconsLight.fileText, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text('لا توجد قوالب محفوظة', style: TextStyle(color: Colors.grey)),
+                      const Icon(PhosphorIconsLight.fileText, size: 64, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      Text(tr('لا توجد قوالب محفوظة'), style: const TextStyle(color: Colors.grey)),
                     ],
                   ),
                 )
@@ -304,13 +304,13 @@ mixin _InvoiceDesignerTemplatesMixin
                                 color: AppColors.success.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Text('افتراضي', style: TextStyle(fontSize: 10, color: AppColors.success)),
+                              child:  Text(tr('افتراضي'), style: const TextStyle(fontSize: 10, color: AppColors.success)),
                             ),
                           ],
                         ],
                       ),
                       subtitle: Text(
-                        '${t.type == 'thermal' ? 'حراري' : t.type == 'kitchen' ? 'مطبخ' : t.type == 'shift_closing' ? 'تقرير إغلاق' : 'A4'} • ${t.paperSize}',
+                        tr('{p0} • {p1}', {'p0': t.type == 'thermal' ? 'حراري' : t.type == 'kitchen' ? 'مطبخ' : t.type == 'shift_closing' ? 'تقرير إغلاق' : 'A4', 'p1': t.paperSize}),
                       ),
                       trailing: PopupMenuButton<String>(
                         icon: const Icon(PhosphorIconsBold.dotsThreeVertical),
@@ -324,15 +324,15 @@ mixin _InvoiceDesignerTemplatesMixin
                               // Reload the newly-defaulted template into memory
                               loadTemplateById(t.id);
                                if (!context.mounted) return;
-                               AppToast.show(context, 'تم تعيين القالب كافتراضي');
+                               AppToast.show(context, tr('تم تعيين القالب كافتراضي'));
                               break;
                             case 'delete': await confirmDeleteTemplate(t); break;
                           }
                         },
                         itemBuilder: (context) => [
-                          const PopupMenuItem(value: 'edit', child: Row(children: [Icon(PhosphorIconsBold.pencil, size: 18), SizedBox(width: 8), Text('تعديل')])),
-                          if (!t.isDefault) const PopupMenuItem(value: 'default', child: Row(children: [Icon(PhosphorIconsBold.star, size: 18), SizedBox(width: 8), Text('تعيين كافتراضي')])),
-                          const PopupMenuItem(value: 'delete', child: Row(children: [Icon(PhosphorIconsBold.trash, size: 18, color: AppColors.error), SizedBox(width: 8), Text('حذف', style: TextStyle(color: AppColors.error))])),
+                           PopupMenuItem(value: 'edit', child: Row(children: [const Icon(PhosphorIconsBold.pencil, size: 18), const SizedBox(width: 8), Text(tr('تعديل'))])),
+                          if (!t.isDefault)  PopupMenuItem(value: 'default', child: Row(children: [const Icon(PhosphorIconsBold.star, size: 18), const SizedBox(width: 8), Text(tr('تعيين كافتراضي'))])),
+                           PopupMenuItem(value: 'delete', child: Row(children: [const Icon(PhosphorIconsBold.trash, size: 18, color: AppColors.error), const SizedBox(width: 8), Text(tr('حذف'), style: const TextStyle(color: AppColors.error))])),
                         ],
                       ),
                       onTap: () { Navigator.pop(ctx); loadTemplateById(t.id); },
@@ -340,7 +340,7 @@ mixin _InvoiceDesignerTemplatesMixin
                   },
                 ),
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق'))],
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إغلاق')))],
       ),
     );
   }
@@ -376,14 +376,14 @@ mixin _InvoiceDesignerTemplatesMixin
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تأكيد الحذف'),
-        content: Text('هل تريد حذف القالب "${t.name}"?'),
+        title:  Text(tr('تأكيد الحذف')),
+        content: Text(tr('هل تريد حذف القالب "{p0}"?', {'p0': t.name})),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child:  Text(tr('إلغاء'))),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
-            child: const Text('حذف'),
+            child:  Text(tr('حذف')),
           ),
         ],
       ),
@@ -396,14 +396,14 @@ mixin _InvoiceDesignerTemplatesMixin
       final activityLogRepo = ref.read(activityLogRepositoryProvider);
       await activityLogRepo.logActivity(
         userId: user?.id,
-        userName: user?.displayName ?? 'مجهول',
+        userName: user?.displayName ?? tr('مجهول'),
         action: 'delete_invoice_template',
         entityType: 'invoice_template',
         entityId: t.id,
-        description: 'حذف قالب فاتورة: ${t.name}',
+        description: tr('حذف قالب فاتورة: {p0}', {'p0': t.name}),
       );
       if (!mounted) return;
-      AppToast.show(context, 'تم حذف القالب', type: ToastType.success);
+      AppToast.show(context, tr('تم حذف القالب'), type: ToastType.success);
     }
   }
 
@@ -414,11 +414,11 @@ mixin _InvoiceDesignerTemplatesMixin
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.downloadSimple, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text('استيراد نموذج جاهز'),
+            const Icon(PhosphorIconsBold.downloadSimple, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(tr('استيراد نموذج جاهز')),
           ],
         ),
         content: SizedBox(
@@ -427,7 +427,7 @@ mixin _InvoiceDesignerTemplatesMixin
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('اختر نموذجاً جاهزاً لاستيراده:', style: TextStyle(fontWeight: FontWeight.w500)),
+               Text(tr('اختر نموذجاً جاهزاً لاستيراده:'), style: const TextStyle(fontWeight: FontWeight.w500)),
               const SizedBox(height: 16),
               ...availableTemplates.map(
                 (t) => Card(
@@ -439,12 +439,12 @@ mixin _InvoiceDesignerTemplatesMixin
                           : PhosphorIconsBold.file,
                       color: AppColors.primary,
                     ),
-                    title: Text(t['name'] ?? 'نموذج', style: const TextStyle(fontWeight: FontWeight.w600)),
+                    title: Text(t['name'] ?? tr('نموذج'), style: const TextStyle(fontWeight: FontWeight.w600)),
                     subtitle: Text(
-                      t['type'] == 'thermal' ? 'فاتورة حرارية 80mm'
-                          : t['type'] == 'kitchen' ? 'طلب مطبخ 80mm'
-                          : t['type'] == 'a4' ? 'فاتورة A4'
-                          : 'نموذج',
+                      t['type'] == 'thermal' ? tr('فاتورة حرارية 80mm')
+                          : t['type'] == 'kitchen' ? tr('طلب مطبخ 80mm')
+                          : t['type'] == 'a4' ? tr('فاتورة A4')
+                          : tr('نموذج'),
                       style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                     trailing: const Icon(PhosphorIconsBold.arrowRight),
@@ -455,7 +455,7 @@ mixin _InvoiceDesignerTemplatesMixin
             ],
           ),
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء'))],
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child:  Text(tr('إلغاء')))],
       ),
     );
   }
@@ -470,22 +470,22 @@ mixin _InvoiceDesignerTemplatesMixin
         final user = ref.read(authProvider).user;
         final activityLogRepo = ref.read(activityLogRepositoryProvider);
         await activityLogRepo.logActivity(
-          userId: user?.id, userName: user?.displayName ?? 'مجهول',
+          userId: user?.id, userName: user?.displayName ?? tr('مجهول'),
           action: 'import_invoice_template', entityType: 'invoice_template',
-          description: 'استيراد قالب فاتورة من نموذج: $filename',
+          description: tr('استيراد قالب فاتورة من نموذج: {filename}', {'filename': filename}),
         );
         if (!mounted) return;
-        AppToast.show(context, 'تم استيراد النموذج بنجاح!', type: ToastType.success);
+        AppToast.show(context, tr('تم استيراد النموذج بنجاح!'), type: ToastType.success);
         await loadTemplateById(newId);
       }
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في الاستيراد: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ في الاستيراد: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
   Future<void> exportTemplateToFile() async {
     if (template == null) {
-      AppToast.show(context, 'لا يوجد قالب لتصديره', type: ToastType.warning);
+      AppToast.show(context, tr('لا يوجد قالب لتصديره'), type: ToastType.warning);
       return;
     }
     // Auto-save before export to ensure DB is up-to-date with in-memory edits
@@ -496,24 +496,24 @@ mixin _InvoiceDesignerTemplatesMixin
       final prettyJson = const JsonEncoder.withIndent('  ').convert(jsonDecode(jsonString));
 
       final result = await FilePicker.saveFile(
-        dialogTitle: 'تصدير تصميم الفاتورة',
+        dialogTitle: tr('تصدير تصميم الفاتورة'),
         fileName: '${template!.name.replaceAll(RegExp(r'[^\w\u0600-\u06FF]'), '_')}.json',
         type: FileType.custom, allowedExtensions: ['json'],
       );
 
       if (result != null) {
         await File(result).writeAsString(prettyJson, flush: true);
-        if (mounted) AppToast.show(context, 'تم تصدير "${template!.name}" بنجاح!', type: ToastType.success);
+        if (mounted) AppToast.show(context, tr('تم تصدير "{p0}" بنجاح!', {'p0': template!.name}), type: ToastType.success);
       }
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في التصدير: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ في التصدير: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
   Future<void> importTemplateFromFile() async {
     try {
       final result = await FilePicker.pickFiles(
-        dialogTitle: 'استيراد تصميم فاتورة',
+        dialogTitle: tr('استيراد تصميم فاتورة'),
         type: FileType.custom, allowedExtensions: ['json'], withData: true,
       );
 
@@ -541,17 +541,17 @@ mixin _InvoiceDesignerTemplatesMixin
           final user = ref.read(authProvider).user;
           final activityLogRepo = ref.read(activityLogRepositoryProvider);
           await activityLogRepo.logActivity(
-            userId: user?.id, userName: user?.displayName ?? 'مجهول',
+            userId: user?.id, userName: user?.displayName ?? tr('مجهول'),
             action: 'import_invoice_template', entityType: 'invoice_template',
-            description: 'استيراد قالب فاتورة من ملف: ${data['name'] ?? 'نموذج'}',
+            description: tr('استيراد قالب فاتورة من ملف: {p0}', {'p0': data['name'] ?? 'نموذج'}),
           );
           if (!mounted) return;
-          AppToast.show(context, 'تم استيراد "${data['name'] ?? 'نموذج'}" بنجاح!', type: ToastType.success);
+          AppToast.show(context, tr('تم استيراد "{p0}" بنجاح!', {'p0': data['name'] ?? 'نموذج'}), type: ToastType.success);
           await loadTemplateById(newId);
         }
       }
     } catch (e) {
-      if (mounted) AppToast.show(context, 'خطأ في الاستيراد: $e', type: ToastType.error);
+      if (mounted) AppToast.show(context, tr('خطأ في الاستيراد: {e}', {'e': e}), type: ToastType.error);
     }
   }
 }

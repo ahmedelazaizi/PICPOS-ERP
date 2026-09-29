@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -70,15 +71,15 @@ class _JournalTemplatesPicPosScreenState
           final active = all.where((t) => t.isActive).length;
 
           return PicPosScreenScaffold(
-            title: 'قوالب القيود',
-            subtitle: 'قيود متكررة جاهزة للاستخدام',
+            title: tr('قوالب القيود'),
+            subtitle: tr('قيود متكررة جاهزة للاستخدام'),
             icon: PhosphorIconsBold.stack,
             headerSearch: TextField(
               controller: _searchController,
               onChanged: (v) => setState(() => _searchQuery = v),
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'بحث في القوالب...',
+                hintText: tr('بحث في القوالب...'),
                 prefixIcon:
                     const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
                 suffixIcon: _searchQuery.isNotEmpty
@@ -94,13 +95,13 @@ class _JournalTemplatesPicPosScreenState
             ),
             headerActions: [
               _CountChip(
-                label: 'الإجمالي',
+                label: tr('الإجمالي'),
                 value: '$total',
                 tint: AppColors.primary,
               ),
               const SizedBox(width: 8),
               _CountChip(
-                label: 'النشطة',
+                label: tr('النشطة'),
                 value: '$active',
                 tint: AppColors.success,
               ),
@@ -111,7 +112,7 @@ class _JournalTemplatesPicPosScreenState
                 child: FilledButton.icon(
                   onPressed: () => _showTemplateDialog(repo),
                   icon: const Icon(PhosphorIconsBold.plus, size: 16),
-                  label: const Text('قالب جديد'),
+                  label:  Text(tr('قالب جديد')),
                 ),
               ),
             ],
@@ -131,7 +132,7 @@ class _JournalTemplatesPicPosScreenState
     if (snapshot.hasError) {
       return PicPosEmptyState(
         icon: PhosphorIconsBold.warning,
-        title: 'تعذّرت قراءةُ القوالب',
+        title: tr('تعذّرت قراءةُ القوالب'),
         hint: '${snapshot.error}',
       );
     }
@@ -140,9 +141,9 @@ class _JournalTemplatesPicPosScreenState
     }
 
     if (total == 0) {
-      return const PicPosEmptyState(
+      return  PicPosEmptyState(
         icon: PhosphorIconsBold.stack,
-        title: 'لا توجد قوالب قيود',
+        title: tr('لا توجد قوالب قيود'),
         hint: 'استخدم القوالب لتسريع إنشاء القيود المتكررة '
             'كرواتب الموظفين أو الإيجارات.',
       );
@@ -150,15 +151,15 @@ class _JournalTemplatesPicPosScreenState
     if (filtered.isEmpty) {
       return PicPosEmptyState(
         icon: PhosphorIconsBold.magnifyingGlass,
-        title: 'لا قالبَ يطابق البحث',
-        hint: 'البحثُ عن «$_searchQuery» لم يطابق أيّاً من $total قالباً.',
+        title: tr('لا قالبَ يطابق البحث'),
+        hint: tr('البحثُ عن «{_searchQuery}» لم يطابق أيّاً من {total} قالباً.', {'_searchQuery': _searchQuery, 'total': total}),
         action: TextButton.icon(
           onPressed: () {
             _searchController.clear();
             setState(() => _searchQuery = '');
           },
           icon: const Icon(PhosphorIconsBold.x, size: 14),
-          label: const Text('امسح البحث'),
+          label:  Text(tr('امسح البحث')),
         ),
       );
     }
@@ -200,18 +201,18 @@ class _JournalTemplatesPicPosScreenState
     final confirmed = await showPicPosConfirm(
       context,
       icon: PhosphorIconsBold.trash,
-      title: 'تأكيد الحذف',
+      title: tr('تأكيد الحذف'),
       subtitle: template.name,
       message: 'هل أنت متأكد من حذف القالب «${template.name}»؟ '
           'لا يؤثّر الحذفُ على القيود المُنشأة منه سابقاً.',
-      confirmLabel: 'حذف',
+      confirmLabel: tr('حذف'),
       danger: true,
     );
     if (!confirmed) return;
 
     await repo.deleteJournalTemplate(template.id);
     if (mounted) {
-      AppToast.show(context, 'تم حذف القالب بنجاح', type: ToastType.warning);
+      AppToast.show(context, tr('تم حذف القالب بنجاح'), type: ToastType.warning);
     }
   }
 
@@ -295,8 +296,8 @@ class _TemplateCard extends StatelessWidget {
                         Text(
                           // بديلُ `code · uses` اللذَين لا وجودَ لهما.
                           snap.hasData
-                              ? '${lines.length} سطر'
-                              : '— سطر',
+                              ? tr('{p0} سطر', {'p0': lines.length})
+                              : tr('— سطر'),
                           style: text.labelSmall
                               ?.copyWith(color: AppColors.textMuted),
                         ),
@@ -311,7 +312,7 @@ class _TemplateCard extends StatelessWidget {
                         color: AppColors.textMuted.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text('غير نشط',
+                      child: Text(tr('غير نشط'),
                           style: text.labelSmall
                               ?.copyWith(color: AppColors.textMuted)),
                     ),
@@ -323,7 +324,7 @@ class _TemplateCard extends StatelessWidget {
                 child: Text(
                   template.description?.isNotEmpty == true
                       ? template.description!
-                      : 'بلا وصف',
+                      : tr('بلا وصف'),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: text.bodySmall?.copyWith(color: AppColors.textMuted),
@@ -349,7 +350,7 @@ class _TemplateCard extends StatelessWidget {
                       onPressed:
                           snap.hasData ? () => onEdit(lines) : null,
                       icon: const Icon(PhosphorIconsBold.pencilSimple, size: 13),
-                      label: const Text('تعديل القالب'),
+                      label:  Text(tr('تعديل القالب')),
                     ),
                   ),
                   const SizedBox(width: 7),
@@ -357,7 +358,7 @@ class _TemplateCard extends StatelessWidget {
                     onPressed: onDelete,
                     icon: const Icon(PhosphorIconsBold.trash, size: 14),
                     color: AppColors.error,
-                    tooltip: 'حذف القالب',
+                    tooltip: tr('حذف القالب'),
                     style: IconButton.styleFrom(
                       backgroundColor: AppColors.error.withValues(alpha: 0.08),
                       shape: RoundedRectangleBorder(
@@ -386,7 +387,7 @@ class _LinesPreview extends StatelessWidget {
     if (lines.isEmpty) {
       return Align(
         alignment: AlignmentDirectional.centerStart,
-        child: Text('بلا سطور',
+        child: Text(tr('بلا سطور'),
             style: Theme.of(context)
                 .textTheme
                 .labelSmall
@@ -406,7 +407,7 @@ class _LinesPreview extends StatelessWidget {
           const SizedBox(height: 5),
         ],
         if (rest > 0)
-          Text('و$rest سطراً غيرها',
+          Text(tr('و{rest} سطراً غيرها', {'rest': rest}),
               style: Theme.of(context)
                   .textTheme
                   .labelSmall
@@ -448,7 +449,7 @@ class _LineChip extends StatelessWidget {
               borderRadius: BorderRadius.circular(5),
             ),
             child: Text(
-              isDebit ? 'مدين' : 'دائن',
+              isDebit ? tr('مدين') : tr('دائن'),
               style: text.labelSmall?.copyWith(
                 color: sideColor,
                 fontWeight: FontWeight.w800,

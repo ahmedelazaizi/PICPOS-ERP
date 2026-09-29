@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../core/widgets/app_shortcuts.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
@@ -75,17 +76,17 @@ class _PurchaseInvoicesScreenState
           textDirection: ui.TextDirection.rtl,
           child: AlertDialog(
             title: Text(isPosted
-                ? 'تعديل فاتورة مُرحّلة محاسبياً'
-                : 'تعديل فاتورة مدفوعة'),
+                ? tr('تعديل فاتورة مُرحّلة محاسبياً')
+                : tr('تعديل فاتورة مدفوعة')),
             content: Text(
               isPosted
-                  ? 'هذه الفاتورة مُرحّلة إلى دفتر الأستاذ. التعديل سيعكس القيد المحاسبي وحركة المخزون والتكلفة المتوسطة ثم يعيد ترحيلها بالقيم الجديدة، وسيُسجَّل في سجل التدقيق.\n\nهل تريد المتابعة؟'
-                  : 'هذه الفاتورة تم دفع مبلغ منها. التعديل سيؤدي إلى عكس القيود المحاسبية وحركة المخزون وإعادة تطبيقها.\n\nهل تريد المتابعة؟',
+                  ? tr('هذه الفاتورة مُرحّلة إلى دفتر الأستاذ. التعديل سيعكس القيد المحاسبي وحركة المخزون والتكلفة المتوسطة ثم يعيد ترحيلها بالقيم الجديدة، وسيُسجَّل في سجل التدقيق.\n\nهل تريد المتابعة؟')
+                  : tr('هذه الفاتورة تم دفع مبلغ منها. التعديل سيؤدي إلى عكس القيود المحاسبية وحركة المخزون وإعادة تطبيقها.\n\nهل تريد المتابعة؟'),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, true),
@@ -93,7 +94,7 @@ class _PurchaseInvoicesScreenState
                   backgroundColor: AppColors.warning,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('تعديل الفاتورة'),
+                child:  Text(tr('تعديل الفاتورة')),
               ),
             ],
           ),
@@ -129,20 +130,20 @@ class _PurchaseInvoicesScreenState
         child: Scaffold(
         backgroundColor: AppColors.surface,
         appBar: AppBar(
-          title: const Text('فواتير المشتريات'),
+          title:  Text(tr('فواتير المشتريات')),
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           actions: [
             IconButton(
               icon: const Icon(PhosphorIconsBold.arrowClockwise),
-              tooltip: 'تحديث',
+              tooltip: tr('تحديث'),
               onPressed: () => ref.invalidate(purchaseInvoicesControllerProvider),
             ),
             const SizedBox(width: 8),
             // Excel Import/Export Button
             PopupMenuButton<String>(
               icon: const Icon(PhosphorIconsBold.fileXls),
-              tooltip: 'استيراد / تصدير Excel',
+              tooltip: tr('استيراد / تصدير Excel'),
               onSelected: (value) async {
                 final excelService = ref.read(excelServiceProvider) as ExcelService?;
                 if (excelService == null) return;
@@ -151,7 +152,7 @@ class _PurchaseInvoicesScreenState
                   if (context.mounted) {
                     AppToast.show(
                       context,
-                      path != null ? 'تم تصدير القالب بنجاح' : 'فشل تصدير القالب',
+                      path != null ? tr('تم تصدير القالب بنجاح') : tr('فشل تصدير القالب'),
                       type: path != null ? ToastType.success : ToastType.error,
                     );
                   }
@@ -170,19 +171,19 @@ class _PurchaseInvoicesScreenState
                 }
               },
               itemBuilder: (context) => [
-                const PopupMenuItem(
+                 PopupMenuItem(
                   value: 'export_template',
                   child: ListTile(
-                    leading: Icon(PhosphorIconsBold.export),
-                    title: Text('تصدير قالب فارغ'),
+                    leading: const Icon(PhosphorIconsBold.export),
+                    title: Text(tr('تصدير قالب فارغ')),
                     dense: true,
                   ),
                 ),
-                const PopupMenuItem(
+                 PopupMenuItem(
                   value: 'import',
                   child: ListTile(
-                    leading: Icon(PhosphorIconsBold.upload),
-                    title: Text('استيراد من Excel'),
+                    leading: const Icon(PhosphorIconsBold.upload),
+                    title: Text(tr('استيراد من Excel')),
                     dense: true,
                   ),
                 ),
@@ -196,7 +197,7 @@ class _PurchaseInvoicesScreenState
                 );
               },
               icon: const Icon(PhosphorIconsBold.clipboardText, size: 16),
-              label: const Text('طلبات الشراء'),
+              label:  Text(tr('طلبات الشراء')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
                 side: const BorderSide(color: Colors.white54),
@@ -206,7 +207,7 @@ class _PurchaseInvoicesScreenState
             ElevatedButton.icon(
               onPressed: createNewInvoice,
               icon: const Icon(PhosphorIconsBold.plus),
-              label: const Text('فاتورة جديدة'),
+              label:  Text(tr('فاتورة جديدة')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.primary,
@@ -219,13 +220,13 @@ class _PurchaseInvoicesScreenState
         body: AppStateView(
           isLoading: state.isLoading,
           isEmpty: state.allInvoices.isEmpty && !state.isLoading,
-          emptyMessage: 'لا توجد فواتير مشتريات',
+          emptyMessage: tr('لا توجد فواتير مشتريات'),
           emptyIcon: PhosphorIconsBold.shoppingCart,
           child: Column(
                 children: [
-                  const SyncPendingBanner(
+                   SyncPendingBanner(
                     tableName: 'purchase_invoices',
-                    label: 'فاتورة مشتريات',
+                    label: tr('فاتورة مشتريات'),
                   ),
                   // Summary Cards — مكوّن موحّد مع شاشة المبيعات
                   Padding(
@@ -239,13 +240,13 @@ class _PurchaseInvoicesScreenState
                         final cards = <Widget>[
                           AppKpiCard(
                             icon: PhosphorIconsBold.shoppingCart,
-                            label: 'إجمالي المشتريات',
+                            label: tr('إجمالي المشتريات'),
                             value: '${state.totalAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                             color: AppColors.info,
                           ),
                           AppKpiCard(
                             icon: PhosphorIconsBold.wallet,
-                            label: 'المدفوع',
+                            label: tr('المدفوع'),
                             value: '${state.totalPaid.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                             color: AppColors.success,
                           ),
@@ -253,19 +254,19 @@ class _PurchaseInvoicesScreenState
                           //   المتبقي = الإجمالي − المدفوع − إجمالي المرتجعات
                           AppKpiCard(
                             icon: PhosphorIconsBold.arrowUUpLeft,
-                            label: 'إجمالي المرتجعات',
+                            label: tr('إجمالي المرتجعات'),
                             value: '${state.totalReturns.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                             color: AppColors.error,
                           ),
                           AppKpiCard(
                             icon: PhosphorIconsBold.clock,
-                            label: 'المتبقي',
+                            label: tr('المتبقي'),
                             value: '${state.totalRemaining.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                             color: AppColors.warning,
                           ),
                           AppKpiCard(
                             icon: PhosphorIconsBold.receipt,
-                            label: 'عدد الفواتير',
+                            label: tr('عدد الفواتير'),
                             value: '${state.invoiceCount}',
                             color: AppColors.primary,
                           ),
@@ -292,7 +293,7 @@ class _PurchaseInvoicesScreenState
                             controller: _searchController,
                             focusNode: _searchFocusNode,
                             decoration: InputDecoration(
-                              hintText: 'بحث برقم الفاتورة...',
+                              hintText: tr('بحث برقم الفاتورة...'),
                               prefixIcon: const Icon(
                                 PhosphorIconsBold.magnifyingGlass,
                               ),
@@ -321,10 +322,10 @@ class _PurchaseInvoicesScreenState
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<int?>(
                                     value: state.selectedBranchId,
-                                    hint: const Text('كل الفروع'),
+                                    hint:  Text(tr('كل الفروع')),
                                     isDense: true,
                                     items: [
-                                      const DropdownMenuItem(value: null, child: Text('كل الفروع')),
+                                       DropdownMenuItem(value: null, child: Text(tr('كل الفروع'))),
                                       ...branches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name))),
                                     ],
                                     onChanged: (v) => controller.updateBranchFilter(v),
@@ -349,10 +350,10 @@ class _PurchaseInvoicesScreenState
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<int?>(
                                   value: state.selectedWarehouseId,
-                                  hint: const Text('كل المستودعات'),
+                                  hint:  Text(tr('كل المستودعات')),
                                   isDense: true,
                                   items: [
-                                    const DropdownMenuItem(value: null, child: Text('كل المستودعات')),
+                                     DropdownMenuItem(value: null, child: Text(tr('كل المستودعات'))),
                                     ...warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(w.name))),
                                   ],
                                   onChanged: (v) => controller.updateWarehouseFilter(v),
@@ -379,10 +380,10 @@ class _PurchaseInvoicesScreenState
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<int?>(
                                     value: state.selectedCostCenterId,
-                                    hint: const Text('كل مراكز التكلفة'),
+                                    hint:  Text(tr('كل مراكز التكلفة')),
                                     isDense: true,
                                     items: [
-                                      const DropdownMenuItem(value: null, child: Text('كل مراكز التكلفة')),
+                                       DropdownMenuItem(value: null, child: Text(tr('كل مراكز التكلفة'))),
                                       ...centers.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
                                     ],
                                     onChanged: (v) => controller.updateCostCenterFilter(v),
@@ -400,7 +401,7 @@ class _PurchaseInvoicesScreenState
                             label: Text(
                               state.dateRange != null
                                   ? '${state.dateRange!.start.day}/${state.dateRange!.start.month} - ${state.dateRange!.end.day}/${state.dateRange!.end.month}'
-                                  : 'تاريخ',
+                                  : tr('تاريخ'),
                             ),
                             onPressed: () async {
                               final range = await showDateRangePicker(
@@ -440,16 +441,16 @@ class _PurchaseInvoicesScreenState
                         ),
                         const SizedBox(width: 12),
                         SegmentedButton<String>(
-                          segments: const [
-                            ButtonSegment(value: 'all', label: Text('الكل')),
-                            ButtonSegment(value: 'paid', label: Text('مدفوع')),
+                          segments:  [
+                            ButtonSegment(value: 'all', label: Text(tr('الكل'))),
+                            ButtonSegment(value: 'paid', label: Text(tr('مدفوع'))),
                             ButtonSegment(
                               value: 'partial',
-                              label: Text('جزئي'),
+                              label: Text(tr('جزئي')),
                             ),
                             ButtonSegment(
                               value: 'unpaid',
-                              label: Text('غير مدفوع'),
+                              label: Text(tr('غير مدفوع')),
                             ),
                           ],
                           selected: {state.statusFilter},
@@ -477,9 +478,9 @@ class _PurchaseInvoicesScreenState
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                const Text(
-                                  'لا توجد فواتير مشتريات',
-                                  style: TextStyle(color: AppColors.textMuted),
+                                 Text(
+                                  tr('لا توجد فواتير مشتريات'),
+                                  style: const TextStyle(color: AppColors.textMuted),
                                 ),
                               ],
                             ),
@@ -489,20 +490,20 @@ class _PurchaseInvoicesScreenState
                             onSelectAll: (_) {
                               ref.read(purchaseInvoicesControllerProvider.notifier).toggleAllSelection();
                             },
-                            columns: const [
-                              DataColumn(label: Text('رقم الفاتورة')),
-                              DataColumn(label: Text('المورد')),
-                              DataColumn(label: Text('التاريخ')),
-                              DataColumn(label: Text('الإجمالي')),
-                              DataColumn(label: Text('المدفوع')),
-                              DataColumn(label: Text('المتبقي')),
-                              DataColumn(label: Text('الحالة')),
-                              DataColumn(label: Text('الفرع / المخزن')),
-                              DataColumn(label: Text('مركز التكلفة')),
+                            columns:  [
+                              DataColumn(label: Text(tr('رقم الفاتورة'))),
+                              DataColumn(label: Text(tr('المورد'))),
+                              DataColumn(label: Text(tr('التاريخ'))),
+                              DataColumn(label: Text(tr('الإجمالي'))),
+                              DataColumn(label: Text(tr('المدفوع'))),
+                              DataColumn(label: Text(tr('المتبقي'))),
+                              DataColumn(label: Text(tr('الحالة'))),
+                              DataColumn(label: Text(tr('الفرع / المخزن'))),
+                              DataColumn(label: Text(tr('مركز التكلفة'))),
                               // نفسُ عطبِ شاشة المبيعات: أربعةُ أزرارٍ (192)
                               // في حصّةٍ متساويةٍ بين عشرة أعمدةٍ تقلّ عنها،
                               // فيفيض أوّلُ زرٍّ خارجَ خليّته ويموت.
-                              DataColumn2(label: Text('الإجراءات'), fixedWidth: 210),
+                              DataColumn2(label: Text(tr('الإجراءات')), fixedWidth: 210),
                             ],
                             rows: state.filteredInvoices.map((invoice) {
                                   // Subtract any purchase return value from
@@ -519,8 +520,8 @@ class _PurchaseInvoicesScreenState
                                       invoice.status == InvoiceStatus.partial;
                                   final supplierName = invoice.partyId != null
                                       ? (state.supplierNames[invoice.partyId] ??
-                                      'غير محدد')
-                                      : 'غير محدد';
+                                      tr('غير محدد'))
+                                      : tr('غير محدد');
 
                                   return DataRow(
                                     selected: state.selectedInvoices.contains(invoice.id ?? 0),
@@ -633,12 +634,12 @@ class _PurchaseInvoicesScreenState
                                           ),
                                           child: Text(
                                             isPaid
-                                                ? 'مدفوع'
+                                                ? tr('مدفوع')
                                                 : isPartial
-                                                ? 'جزئي'
+                                                ? tr('جزئي')
                                                 : invoice.status == InvoiceStatus.cancelled
-                                                ? 'ملغي'
-                                                : 'غير مدفوع',
+                                                ? tr('ملغي')
+                                                : tr('غير مدفوع'),
                                             style: TextStyle(
                                               color: isPaid
                                                   ? AppColors.success
@@ -661,7 +662,7 @@ class _PurchaseInvoicesScreenState
                                           final brId = invoice.branchId ??
                                               state.warehouseBranchId[whId];
                                           final brName = brId != null
-                                              ? (state.branchNames[brId] ?? 'فرع #$brId')
+                                              ? (state.branchNames[brId] ?? tr('فرع #{brId}', {'brId': brId}))
                                               : null;
                                           return Text.rich(
                                             TextSpan(
@@ -705,7 +706,7 @@ class _PurchaseInvoicesScreenState
                                                 size: 18,
                                               ),
                                               color: AppColors.info,
-                                              tooltip: 'عرض التفاصيل',
+                                              tooltip: tr('عرض التفاصيل'),
                                               onPressed: () =>
                                                   showInvoiceDetails(invoice),
                                             ),
@@ -720,9 +721,9 @@ class _PurchaseInvoicesScreenState
                                               ),
                                               tooltip: canEditPurchase
                                                   ? (invoice.isLocked
-                                                      ? 'تعديل فاتورة مُرحّلة'
-                                                      : 'تعديل')
-                                                  : 'لا تملك صلاحية تعديل فواتير المشتريات',
+                                                      ? tr('تعديل فاتورة مُرحّلة')
+                                                      : tr('تعديل'))
+                                                  : tr('لا تملك صلاحية تعديل فواتير المشتريات'),
                                               onPressed: canEditPurchase
                                                   ? () => _confirmEditInvoice(
                                                       invoice)
@@ -737,7 +738,7 @@ class _PurchaseInvoicesScreenState
                                                   .purchasesPrint,
                                               allowManagerOverride: true,
                                               actionName:
-                                                  'طباعة فاتورة مشتريات',
+                                                  tr('طباعة فاتورة مشتريات'),
                                               onGranted: () =>
                                                   printInvoice(invoice),
                                               child: IconButton(
@@ -746,7 +747,7 @@ class _PurchaseInvoicesScreenState
                                                   size: 18,
                                                 ),
                                                 color: AppColors.primary,
-                                                tooltip: 'طباعة',
+                                                tooltip: tr('طباعة'),
                                                 onPressed: () =>
                                                     printInvoice(invoice),
                                               ),
@@ -788,7 +789,7 @@ class _PurchaseInvoicesScreenState
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'تم تحديد ${state.selectedInvoices.length} فاتورة مسجلة',
+            tr('تم تحديد {p0} فاتورة مسجلة', {'p0': state.selectedInvoices.length}),
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
           ),
           Row(
@@ -798,13 +799,13 @@ class _PurchaseInvoicesScreenState
                   controller.clearSelection();
                 },
                 icon: const Icon(PhosphorIconsBold.x, color: Colors.white70),
-                label: const Text('إلغاء التحديد', style: TextStyle(color: Colors.white70)),
+                label:  Text(tr('إلغاء التحديد'), style: const TextStyle(color: Colors.white70)),
               ),
               const SizedBox(width: 16),
               ElevatedButton.icon(
                 onPressed: () => _batchPrint(state),
                 icon: const Icon(PhosphorIconsBold.printer, size: 18),
-                label: const Text('طباعة المحددة'),
+                label:  Text(tr('طباعة المحددة')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: AppColors.primary,
@@ -818,23 +819,23 @@ class _PurchaseInvoicesScreenState
                     builder: (ctx) => Directionality(
                       textDirection: ui.TextDirection.rtl,
                       child: AlertDialog(
-                        title: const Row(
+                        title:  Row(
                           children: [
-                            Icon(PhosphorIconsBold.warning, color: AppColors.error),
-                            SizedBox(width: 8),
-                            Text('تأكيد الحذف المجمع'),
+                            const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+                            const SizedBox(width: 8),
+                            Text(tr('تأكيد الحذف المجمع')),
                           ],
                         ),
-                        content: Text('هل أنت متأكد من حذف ${state.selectedInvoices.length} فاتورة مشتريات محددة؟'),
+                        content: Text(tr('هل أنت متأكد من حذف {p0} فاتورة مشتريات محددة؟', {'p0': state.selectedInvoices.length})),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('إلغاء'),
+                            child:  Text(tr('إلغاء')),
                           ),
                           ElevatedButton(
                             onPressed: () => Navigator.pop(ctx, true),
                             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-                            child: const Text('حذف الجميع'),
+                            child:  Text(tr('حذف الجميع')),
                           ),
                         ],
                       ),
@@ -849,11 +850,11 @@ class _PurchaseInvoicesScreenState
                      }
                      controller.clearSelection();
                       if (!mounted) return;
-                      AppToast.show(context, 'تم حذف الفواتير المحددة بنجاح', type: ToastType.success);
+                      AppToast.show(context, tr('تم حذف الفواتير المحددة بنجاح'), type: ToastType.success);
                   }
                 },
                 icon: const Icon(PhosphorIconsBold.trash, size: 18),
-                label: const Text('حذف المحددة'),
+                label:  Text(tr('حذف المحددة')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.error,
                   foregroundColor: Colors.white,
@@ -875,7 +876,7 @@ class _PurchaseInvoicesScreenState
         .toList();
 
     if (invoicesToPrint.isEmpty) {
-      AppToast.show(context, 'لم يتم العثور على الفواتير المحددة', type: ToastType.warning);
+      AppToast.show(context, tr('لم يتم العثور على الفواتير المحددة'), type: ToastType.warning);
       return;
     }
 
@@ -886,7 +887,7 @@ class _PurchaseInvoicesScreenState
 
     AppToast.show(
       context,
-      'جاري طباعة ${invoicesToPrint.length} فاتورة...',
+      tr('جاري طباعة {p0} فاتورة...', {'p0': invoicesToPrint.length}),
       type: ToastType.info,
     );
   }
@@ -906,8 +907,8 @@ class _PurchaseReturnBadge extends StatelessWidget {
     final color = full ? AppColors.error : AppColors.warning;
     return Tooltip(
       message: full
-          ? 'تم إرجاع الفاتورة بالكامل — راجع شاشة مرتجع المشتريات للتفاصيل'
-          : 'تم إرجاع جزء من الفاتورة — راجع شاشة مرتجع المشتريات للتفاصيل',
+          ? tr('تم إرجاع الفاتورة بالكامل — راجع شاشة مرتجع المشتريات للتفاصيل')
+          : tr('تم إرجاع جزء من الفاتورة — راجع شاشة مرتجع المشتريات للتفاصيل'),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
@@ -925,7 +926,7 @@ class _PurchaseReturnBadge extends StatelessWidget {
             ),
             const SizedBox(width: 3),
             Text(
-              full ? 'مُرتجعة' : 'مُرتجعة جزئياً',
+              full ? tr('مُرتجعة') : tr('مُرتجعة جزئياً'),
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,

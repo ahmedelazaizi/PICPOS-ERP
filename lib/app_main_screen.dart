@@ -17,6 +17,7 @@ import 'services/license_service.dart';
 import 'services/permission_sync_bridge.dart';
 import 'presentation/shell/app_shell.dart';
 import 'core/config/brand.dart';
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'presentation/pos/screens/pos_main_screen.dart';
 import 'presentation/pos_picpos/screens/picpos_pos_screen.dart';
 import 'presentation/offers_picpos/offers_picpos_screen.dart';
@@ -362,8 +363,8 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
                 ),
               ),
               const SizedBox(width: 12),
-              const Expanded(
-                child: Text('تنبيه: منتجات قاربت على انتهاء الصلاحية'),
+               Expanded(
+                child: Text(tr('تنبيه: منتجات قاربت على انتهاء الصلاحية')),
               ),
             ],
           ),
@@ -374,7 +375,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'يوجد ${expiringBatches.length} منتج(ات) ستنتهي صلاحيتها خلال 30 يوم:',
+                  tr('يوجد {p0} منتج(ات) ستنتهي صلاحيتها خلال 30 يوم:', {'p0': expiringBatches.length}),
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 12),
@@ -405,11 +406,11 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
                           ),
                         ),
                         title: Text(
-                          batch.productName ?? 'منتج غير معروف',
+                          batch.productName ?? tr('منتج غير معروف'),
                           style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
                         subtitle: Text(
-                          'الكمية: ${batch.quantity} | تاريخ الشراء: ${batch.purchaseDate != null ? '${batch.purchaseDate!.day}/${batch.purchaseDate!.month}/${batch.purchaseDate!.year}' : 'غير محدد'}',
+                          tr('الكمية: {p0} | تاريخ الشراء: {p1}', {'p0': batch.quantity, 'p1': batch.purchaseDate != null ? '${batch.purchaseDate!.day}/${batch.purchaseDate!.month}/${batch.purchaseDate!.year}' : 'غير محدد'}),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,
@@ -428,8 +429,8 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
                           ),
                           child: Text(
                             daysUntilExpiry <= 0
-                                ? 'منتهي'
-                                : '$daysUntilExpiry يوم',
+                                ? tr('منتهي')
+                                : tr('{daysUntilExpiry} يوم', {'daysUntilExpiry': daysUntilExpiry}),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -447,7 +448,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      'و ${expiringBatches.length - 10} منتج(ات) أخرى...',
+                      tr('و {p0} منتج(ات) أخرى...', {'p0': expiringBatches.length - 10}),
                       style: TextStyle(
                         color: Colors.grey.shade600,
                         fontStyle: FontStyle.italic,
@@ -461,7 +462,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
             ElevatedButton.icon(
               onPressed: () => Navigator.pop(ctx),
               icon: const Icon(Icons.check),
-              label: const Text('حسناً، فهمت'),
+              label:  Text(tr('حسناً، فهمت')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange.shade700,
                 foregroundColor: Colors.white,
@@ -509,11 +510,11 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
             textDirection: TextDirection.rtl,
             child: AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Row(
+              title:  Row(
                 children: [
-                  Icon(Icons.cloud_done_rounded, color: Color(0xFF16C79A), size: 28),
-                  SizedBox(width: 10),
-                  Text('السيرفر يعمل في الخلفية'),
+                  const Icon(Icons.cloud_done_rounded, color: Color(0xFF16C79A), size: 28),
+                  const SizedBox(width: 10),
+                  Text(tr('السيرفر يعمل في الخلفية')),
                 ],
               ),
               content: const Text(
@@ -529,7 +530,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
                     backgroundColor: const Color(0xFF16C79A),
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('حسناً'),
+                  child:  Text(tr('حسناً')),
                 ),
               ],
             ),
@@ -570,27 +571,27 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (ctx) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: const Row(
+            title:  Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.warning_amber_rounded,
                   color: Colors.orange,
                   size: 28,
                 ),
-                SizedBox(width: 12),
-                Text('تأكيد إغلاق البرنامج'),
+                const SizedBox(width: 12),
+                Text(tr('تأكيد إغلاق البرنامج')),
               ],
             ),
-            content: const Text('هل أنت متأكد من أنك تريد إغلاق البرنامج؟'),
+            content:  Text(tr('هل أنت متأكد من أنك تريد إغلاق البرنامج؟')),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('لا، البقاء'),
+                child:  Text(tr('لا، البقاء')),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, true),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text('نعم، إغلاق'),
+                child:  Text(tr('نعم، إغلاق')),
               ),
             ],
           ),
@@ -654,7 +655,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         // cart/checkout controllers; only layout and key bindings differ.
         builder: (_) =>
             Brand.isPicPos ? const PicPosPosScreen() : const PosScreenV2(),
-        label: 'البيع السريع',
+        label: tr('البيع السريع'),
         icon: PhosphorIconsBold.shoppingCart,
       ),
       ScreenConfig(
@@ -662,7 +663,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         // Brand fork, not a profile fork — same pattern as its neighbours.
         builder: (_) =>
             Brand.isPicPos ? const OffersPicPosScreen() : const OffersScreen(),
-        label: 'العروض',
+        label: tr('العروض'),
         icon: PhosphorIconsBold.tag,
       ),
       ScreenConfig(
@@ -673,7 +674,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const TablesPicposScreen()
             : const TablesScreen(),
-        label: 'الطاولات',
+        label: tr('الطاولات'),
         icon: PhosphorIconsBold.circlesThree,
       ),
       ScreenConfig(
@@ -681,7 +682,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const ProductsPicposScreen()
             : const ProductsScreen(),
-        label: 'الأصناف',
+        label: tr('الأصناف'),
         icon: PhosphorIconsBold.package,
       ),
       ScreenConfig(
@@ -689,7 +690,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const CategoriesPicposScreen()
             : const CategoriesScreen(),
-        label: 'التصنيفات',
+        label: tr('التصنيفات'),
         icon: PhosphorIconsBold.squaresFour,
       ),
       ScreenConfig(
@@ -697,56 +698,56 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const PartiesPicposScreen()
             : const UnifiedPartiesScreen(),
-        label: 'العملاء والموردين',
+        label: tr('العملاء والموردين'),
         icon: PhosphorIconsBold.usersThree,
       ),
       ScreenConfig(
         appScreen: AppScreen.inventory,
-        builder: (_) => const SecurityScreenGate(
+        builder: (_) =>  SecurityScreenGate(
           settingKey: 'inventory_access_password',
-          title: 'المخازن',
-          child: Brand.isPicPos ? InventoryPicposScreen() : InventoryScreen(),
+          title: tr('المخازن'),
+          child: Brand.isPicPos ? const InventoryPicposScreen() : const InventoryScreen(),
         ),
-        label: 'المخزون',
+        label: tr('المخزون'),
         icon: PhosphorIconsBold.warehouse,
       ),
       ScreenConfig(
         appScreen: AppScreen.purchases,
-        builder: (_) => const SecurityScreenGate(
+        builder: (_) =>  SecurityScreenGate(
           settingKey: 'purchases_access_password',
-          title: 'المشتريات',
+          title: tr('المشتريات'),
           child: Brand.isPicPos
-              ? PurchasesPicposScreen()
-              : PurchaseInvoicesScreen(),
+              ? const PurchasesPicposScreen()
+              : const PurchaseInvoicesScreen(),
         ),
-        label: 'المشتريات',
+        label: tr('المشتريات'),
         icon: PhosphorIconsBold.receipt,
       ),
       ScreenConfig(
         appScreen: AppScreen.treasury,
-        builder: (_) => const SecurityScreenGate(
+        builder: (_) =>  SecurityScreenGate(
           settingKey: 'accounting_access_password',
-          title: 'الحسابات والمالية',
-          child: Brand.isPicPos ? TreasuryPicposScreen() : TreasuryScreen(),
+          title: tr('الحسابات والمالية'),
+          child: Brand.isPicPos ? const TreasuryPicposScreen() : const TreasuryScreen(),
         ),
-        label: 'الخزينة',
+        label: tr('الخزينة'),
         icon: PhosphorIconsBold.wallet,
       ),
       ScreenConfig(
         appScreen: AppScreen.reports,
-        builder: (_) => const SecurityScreenGate(
+        builder: (_) =>  SecurityScreenGate(
           settingKey: 'reports_access_password',
-          title: 'التقارير',
-          child: Brand.isPicPos ? ReportsPicposScreen() : ReportsScreen(),
+          title: tr('التقارير'),
+          child: Brand.isPicPos ? const ReportsPicposScreen() : const ReportsScreen(),
         ),
-        label: 'التقارير',
+        label: tr('التقارير'),
         icon: PhosphorIconsBold.chartBar,
       ),
       ScreenConfig(
         appScreen: AppScreen.settings,
         builder: (_) =>
             Brand.isPicPos ? const SettingsPicposScreen() : const SettingsScreen(),
-        label: 'الإعدادات',
+        label: tr('الإعدادات'),
         icon: PhosphorIconsBold.gear,
       ),
       ScreenConfig(
@@ -756,19 +757,19 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const BranchesPicposScreen()
             : const BranchManagementScreen(),
-        label: 'الفروع والمخازن',
+        label: tr('الفروع والمخازن'),
         icon: PhosphorIconsBold.buildings,
       ),
       ScreenConfig(
         appScreen: AppScreen.regions,
         builder: (_) => const RegionManagementScreen(),
-        label: 'المناطق',
+        label: tr('المناطق'),
         icon: PhosphorIconsBold.mapPin,
       ),
       ScreenConfig(
         appScreen: AppScreen.kitchen,
         builder: (_) => const KitchenDisplayScreen(),
-        label: 'المطبخ',
+        label: tr('المطبخ'),
         icon: PhosphorIconsBold.cookingPot,
       ),
       ScreenConfig(
@@ -780,17 +781,17 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const AnalyticsPicposScreen()
             : const AnalyticsDashboardScreen(),
-        label: 'التحليلات',
+        label: tr('التحليلات'),
         icon: PhosphorIconsBold.chartPie,
       ),
       ScreenConfig(
         appScreen: AppScreen.hr,
-        builder: (_) => const SecurityScreenGate(
+        builder: (_) =>  SecurityScreenGate(
           settingKey: 'hr_access_password',
-          title: 'شؤون الموظفين',
-          child: HRScreen(),
+          title: tr('شؤون الموظفين'),
+          child: const HRScreen(),
         ),
-        label: 'الموظفين',
+        label: tr('الموظفين'),
         icon: PhosphorIconsBold.users,
       ),
       ScreenConfig(
@@ -798,7 +799,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const SalesInvoicesPicposScreen()
             : const SalesInvoicesScreen(),
-        label: 'فواتير المبيعات',
+        label: tr('فواتير المبيعات'),
         icon: PhosphorIconsBold.fileText,
       ),
       ScreenConfig(
@@ -806,7 +807,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const ActivityLogPicposScreen()
             : const ActivityLogScreen(),
-        label: 'سجل العمليات',
+        label: tr('سجل العمليات'),
         icon: PhosphorIconsBold.clipboardText,
       ),
       ScreenConfig(
@@ -814,7 +815,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const InventoryBondsPicposScreen()
             : const InventoryBondsScreen(),
-        label: 'أرصدة المخزون',
+        label: tr('أرصدة المخزون'),
         icon: PhosphorIconsBold.clipboardText,
       ),
       ScreenConfig(
@@ -822,13 +823,13 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const StockTransferPicposScreen()
             : const StockTransferScreen(),
-        label: 'سند تحويل اصناف',
+        label: tr('سند تحويل اصناف'),
         icon: PhosphorIconsBold.arrowsLeftRight,
       ),
       ScreenConfig(
         appScreen: AppScreen.stockRequisitions,
         builder: (_) => const StockRequisitionsScreen(),
-        label: 'طلبات الصرف',
+        label: tr('طلبات الصرف'),
         icon: PhosphorIconsBold.truck,
       ),
       ScreenConfig(
@@ -836,7 +837,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const ScalePluPicposScreen()
             : const ScalePluExportScreen(),
-        label: 'ميزان التسعير',
+        label: tr('ميزان التسعير'),
         icon: PhosphorIconsBold.scales,
       ),
       ScreenConfig(
@@ -847,13 +848,13 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const EInvoicingPicposScreen()
             : const EInvoiceDashboardScreen(),
-        label: 'الفوترة الإلكترونية',
+        label: tr('الفوترة الإلكترونية'),
         icon: PhosphorIconsBold.invoice,
       ),
       ScreenConfig(
         appScreen: AppScreen.loyalty,
         builder: (_) => const LoyaltyScreen(),
-        label: 'نقاط العملاء',
+        label: tr('نقاط العملاء'),
         icon: PhosphorIconsBold.trophy,
       ),
       ScreenConfig(
@@ -863,7 +864,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const DistributionPicposScreen()
             : const DistributionScreen(),
-        label: 'التوزيع',
+        label: tr('التوزيع'),
         icon: PhosphorIconsBold.truck,
       ),
       ScreenConfig(
@@ -871,7 +872,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
              ? const ManufacturingPicposScreen()
              : const ManufacturingScreen(),
-        label: 'التصنيع',
+        label: tr('التصنيع'),
         icon: PhosphorIconsBold.factory,
       ),
       ScreenConfig(
@@ -883,7 +884,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const OpexPicposScreen()
             : const OperationalExpensesScreen(),
-        label: 'المصروفات التشغيلية',
+        label: tr('المصروفات التشغيلية'),
         icon: PhosphorIconsBold.coins,
       ),
       ScreenConfig(
@@ -891,32 +892,32 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         // Brand fork, not a profile fork — same pattern as its neighbours.
         // ⚠️ و`SecurityScreenGate` يبقى **حول الاثنين**: الفوركُ يبدّل الشكلَ
         //    لا الحراسة، وإسقاطُه هنا يفتح دليلَ الحسابات بلا كلمة مرور.
-        builder: (_) => const SecurityScreenGate(
+        builder: (_) =>  SecurityScreenGate(
           settingKey: 'accounting_access_password',
-          title: 'دليل الحسابات',
+          title: tr('دليل الحسابات'),
           child: Brand.isPicPos
-              ? ChartOfAccountsPicPosScreen()
-              : ChartOfAccountsScreen(),
+              ? const ChartOfAccountsPicPosScreen()
+              : const ChartOfAccountsScreen(),
         ),
-        label: 'دليل الحسابات',
+        label: tr('دليل الحسابات'),
         icon: PhosphorIconsBold.treeStructure,
       ),
       ScreenConfig(
         appScreen: AppScreen.fiscalYear,
         builder: (_) => const FiscalYearScreen(),
-        label: 'السنوات المالية',
+        label: tr('السنوات المالية'),
         icon: PhosphorIconsBold.calendar,
       ),
       ScreenConfig(
         appScreen: AppScreen.stockMovements,
         builder: (_) => const StockMovementsScreen(),
-        label: 'حركة المخزون',
+        label: tr('حركة المخزون'),
         icon: PhosphorIconsBold.arrowsDownUp,
       ),
       ScreenConfig(
         appScreen: AppScreen.purchaseOrders,
         builder: (_) => const PurchaseOrdersScreen(),
-        label: 'أوامر الشراء',
+        label: tr('أوامر الشراء'),
         icon: PhosphorIconsBold.clipboardText,
       ),
       ScreenConfig(
@@ -928,7 +929,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const AccountMappingPicPosScreen()
             : const AccountMappingSettingsScreen(),
-        label: 'ربط الحسابات',
+        label: tr('ربط الحسابات'),
         icon: PhosphorIconsBold.link,
       ),
       ScreenConfig(
@@ -938,12 +939,12 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         // حاوية الحسابات، بينما هذا المدخلُ الجانبيُّ — وهو الظاهرُ في
         // القائمة — يفتح القديمةَ. فكلُّ ما يُعاد تصميمُه فيها لا يراه من
         // يدخل من الباب المعتاد.
-        builder: (_) => const SecurityScreenGate(
+        builder: (_) => SecurityScreenGate(
           settingKey: 'accounting_access_password',
           title: journalEntriesScreenLabel,
           child: Brand.isPicPos
-              ? JournalEntriesPicPosScreen()
-              : JournalEntriesScreen(),
+              ? const JournalEntriesPicPosScreen()
+              : const JournalEntriesScreen(),
         ),
         label: journalEntriesScreenLabel,
         icon: PhosphorIconsBold.notebook,
@@ -957,7 +958,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const CostCentersPicPosScreen()
             : const CostCentersScreen(),
-        label: 'مراكز التكلفة',
+        label: tr('مراكز التكلفة'),
         icon: PhosphorIconsBold.treeStructure,
       ),
       ScreenConfig(
@@ -978,7 +979,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const FixedAssetsPicposScreen()
             : const FixedAssetsScreen(),
-        label: 'الأصول الثابتة',
+        label: tr('الأصول الثابتة'),
         icon: PhosphorIconsBold.buildings,
       ),
       ScreenConfig(
@@ -989,32 +990,32 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         //    تصميمُه لا يراه من يدخل من الباب المعتاد.
         //    ⚠️ و`SecurityScreenGate` يبقى **حول الاثنين**: الفوركُ
         //       يبدّل الشكلَ لا الحراسة.
-        builder: (_) => const SecurityScreenGate(
+        builder: (_) =>  SecurityScreenGate(
           settingKey: 'accounting_access_password',
-          title: 'دفتر الأستاذ',
+          title: tr('دفتر الأستاذ'),
           child: Brand.isPicPos
-              ? GeneralLedgerPicPosScreen()
-              : GeneralLedgerScreen(),
+              ? const GeneralLedgerPicPosScreen()
+              : const GeneralLedgerScreen(),
         ),
-        label: 'دفتر الأستاذ',
+        label: tr('دفتر الأستاذ'),
         icon: PhosphorIconsBold.book,
       ),
       ScreenConfig(
         appScreen: AppScreen.salesOrders,
         builder: (_) => const SalesOrdersScreen(),
-        label: 'طلبات البيع',
+        label: tr('طلبات البيع'),
         icon: PhosphorIconsBold.fileText,
       ),
       ScreenConfig(
         appScreen: AppScreen.branchPerformance,
         builder: (_) => const BranchPerformanceScreen(),
-        label: 'أداء الفروع',
+        label: tr('أداء الفروع'),
         icon: PhosphorIconsBold.chartBar,
       ),
       ScreenConfig(
         appScreen: AppScreen.helpCenter,
         builder: (_) => const HelpCenterScreen(),
-        label: 'مركز المساعدة',
+        label: tr('مركز المساعدة'),
         icon: PhosphorIconsBold.question,
       ),
       ScreenConfig(
@@ -1025,7 +1026,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const LandedCostPicposScreen()
             : const LandedCostScreen(),
-        label: 'التكاليف المحملة',
+        label: tr('التكاليف المحملة'),
         icon: PhosphorIconsBold.money,
       ),
       ScreenConfig(
@@ -1033,7 +1034,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const CycleCountPicposScreen()
             : const CycleCountScreen(),
-        label: 'الجرد الدوري',
+        label: tr('الجرد الدوري'),
         icon: PhosphorIconsBold.listChecks,
       ),
       ScreenConfig(
@@ -1044,7 +1045,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const ReportBuilderPicposScreen()
             : const ReportBuilderScreen(),
-        label: 'اعداد وتصميم التقارير',
+        label: tr('اعداد وتصميم التقارير'),
         icon: PhosphorIconsBold.chartBar,
       ),
       ScreenConfig(
@@ -1052,7 +1053,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const SalesReturnsPicposScreen()
             : const SalesReturnsScreen(),
-        label: 'مرتجع المبيعات',
+        label: tr('مرتجع المبيعات'),
         icon: PhosphorIconsBold.arrowUUpLeft,
       ),
       // مرتجعُ المشتريات — **السجلُّ في PicPos وحدَها** (خ‑٩): المدخلُ كان
@@ -1066,7 +1067,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const PurchaseReturnRecordsPicPosScreen()
             : const PurchaseReturnsScreen(),
-        label: 'مرتجع المشتريات',
+        label: tr('مرتجع المشتريات'),
         icon: PhosphorIconsBold.arrowUUpLeft,
       ),
       ScreenConfig(
@@ -1074,7 +1075,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const ShiftClosePicposScreen()
             : const ShiftCloseScreen(),
-        label: 'إغلاق الوردية',
+        label: tr('إغلاق الوردية'),
         icon: PhosphorIconsBold.lockKey,
       ),
       // الحجوزات — PicPos وحدَها اليوم: لا نظيرَ لها في UralCash، والشاشةُ
@@ -1082,7 +1083,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ScreenConfig(
         appScreen: AppScreen.bookings,
         builder: (_) => const BookingsPicPosScreen(),
-        label: 'الحجوزات',
+        label: tr('الحجوزات'),
         icon: PhosphorIconsBold.calendarCheck,
       ),
       ScreenConfig(
@@ -1091,7 +1092,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const FinancialStatementsPicPosScreen()
             : const FinancialStatementsScreen(),
-        label: 'القوائم المالية',
+        label: tr('القوائم المالية'),
         icon: PhosphorIconsBold.scales,
       ),
       // المطابقةُ البنكيّة — PicPos وحدَها (لا نظيرَ لها في UralCash).
@@ -1102,7 +1103,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ScreenConfig(
         appScreen: AppScreen.bankReconciliation,
         builder: (_) => const BankReconciliationPicposScreen(),
-        label: 'المطابقة البنكية',
+        label: tr('المطابقة البنكية'),
         icon: PhosphorIconsBold.bank,
       ),
       // ميزانُ المراجعة — شاشةٌ مستقلّةٌ بأمر المالك 2026-09-20.
@@ -1115,13 +1116,13 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const FinancialStatementsPicPosScreen(
           view: FinancialStatementsView.trialBalance,
         ),
-        label: 'ميزان المراجعة',
+        label: tr('ميزان المراجعة'),
         icon: PhosphorIconsBold.scales,
       ),
       ScreenConfig(
         appScreen: AppScreen.journalTemplates,
         builder: (_) => const JournalTemplatesPicPosScreen(),
-        label: 'قوالب القيود',
+        label: tr('قوالب القيود'),
         icon: PhosphorIconsBold.stack,
       ),
       // حسمُ القوالب — PicPos وحدَها اليوم: مبنيّةٌ على `picpos_shell` ولا
@@ -1129,7 +1130,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ScreenConfig(
         appScreen: AppScreen.templateResolution,
         builder: (_) => const TemplateResolutionPicposScreen(),
-        label: 'حسم القوالب',
+        label: tr('حسم القوالب'),
         icon: PhosphorIconsBold.gitFork,
       ),
       // فئاتُ الأصول والتوزيعُ والمواقع — PicPos وحدَها: تفصيلان في شاشة
@@ -1138,13 +1139,13 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ScreenConfig(
         appScreen: AppScreen.assetCategories,
         builder: (_) => const AssetCategoriesPicposScreen(),
-        label: 'فئات الأصول',
+        label: tr('فئات الأصول'),
         icon: PhosphorIconsBold.folders,
       ),
       ScreenConfig(
         appScreen: AppScreen.assetLocations,
         builder: (_) => const AssetLocationsPicposScreen(),
-        label: 'التوزيع والمواقع',
+        label: tr('التوزيع والمواقع'),
         icon: PhosphorIconsBold.mapPin,
       ),
       // «سند قيد» — PicPos وحدَها: صفحةٌ كاملةٌ تحلّ محلَّ حوارٍ مدفونٍ في
@@ -1152,7 +1153,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ScreenConfig(
         appScreen: AppScreen.journalVoucher,
         builder: (_) => const JournalVoucherPicposScreen(),
-        label: 'سند قيد',
+        label: tr('سند قيد'),
         icon: PhosphorIconsBold.notePencil,
       ),
       // سندا القبض والصرف — PicPos وحدَها. والمدخلُ يفتح **السجلَّ** لا
@@ -1163,7 +1164,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const VoucherRecordsPicPosScreen(
           direction: VoucherDirection.receipt,
         ),
-        label: 'سند قبض',
+        label: tr('سند قبض'),
         icon: PhosphorIconsBold.arrowCircleDown,
       ),
       ScreenConfig(
@@ -1171,21 +1172,21 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const VoucherRecordsPicPosScreen(
           direction: VoucherDirection.payment,
         ),
-        label: 'سند صرف',
+        label: tr('سند صرف'),
         icon: PhosphorIconsBold.arrowCircleUp,
       ),
       // دفترُ الشيكات — أوّلُ كاتبٍ لجدول v174، ومنه يسحب سندُ الصرف رقمَه.
       ScreenConfig(
         appScreen: AppScreen.chequeBooks,
         builder: (_) => const ChequeBooksPicposScreen(),
-        label: 'دفتر الشيكات',
+        label: tr('دفتر الشيكات'),
         icon: PhosphorIconsBold.checkSquareOffset,
       ),
       // المشتريات الخارجيّة — وفيها وحدَها تُبلَغ «التكاليف المحمّلة».
       ScreenConfig(
         appScreen: AppScreen.importPurchases,
         builder: (_) => const ImportPurchasesPicposScreen(),
-        label: 'المشتريات الخارجية',
+        label: tr('المشتريات الخارجية'),
         icon: PhosphorIconsBold.globeHemisphereEast,
       ),
       // مصمّمُ القاعة — شاشةٌ مستقلّةٌ عن شاشة الطاولات: النادلُ يقرأ
@@ -1193,19 +1194,19 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ScreenConfig(
         appScreen: AppScreen.floorPlanDesigner,
         builder: (_) => const FloorPlanDesignerPicposScreen(),
-        label: 'مصمم القاعة',
+        label: tr('مصمم القاعة'),
         icon: PhosphorIconsBold.squaresFour,
       ),
       ScreenConfig(
         appScreen: AppScreen.syncConflicts,
         builder: (_) => const SyncConflictsScreen(),
-        label: 'تعارضات المزامنة',
+        label: tr('تعارضات المزامنة'),
         icon: PhosphorIconsBold.arrowsClockwise,
       ),
       ScreenConfig(
         appScreen: AppScreen.auditDashboard,
         builder: (_) => const AuditDashboardScreen(),
-        label: 'لوحة التدقيق',
+        label: tr('لوحة التدقيق'),
         icon: PhosphorIconsBold.shieldCheck,
       ),
     ];
@@ -1273,7 +1274,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         SnackBar(
           duration: const Duration(seconds: 3),
           content: Text(
-            'أُغلق تاب «$label» — السقف $kMaxScreenTabs تابات',
+            tr('أُغلق تاب «{label}» — السقف {kMaxScreenTabs} تابات', {'label': label, 'kMaxScreenTabs': kMaxScreenTabs}),
             textDirection: TextDirection.rtl,
           ),
         ),
@@ -1300,7 +1301,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
     for (final s in _getAllScreens()) {
       if (s.index == screenIndex) return s.label;
     }
-    return 'شاشة $screenIndex';
+    return tr('شاشة {screenIndex}', {'screenIndex': screenIndex});
   }
 
   /// يُتلف نطاقاتِ التابات التي لم تعد مفتوحة.
@@ -1396,21 +1397,21 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
               builder: (ctx) => Directionality(
                 textDirection: TextDirection.rtl,
                 child: AlertDialog(
-                  title: const Text('تنبيه'),
-                  content: const Text(
-                    'إغلاق تاب نقطة البيع يمسح السلة. هل تريد المتابعة؟',
+                  title:  Text(tr('تنبيه')),
+                  content:  Text(
+                    tr('إغلاق تاب نقطة البيع يمسح السلة. هل تريد المتابعة؟'),
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text('لا'),
+                      child:  Text(tr('لا')),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(ctx, true),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                       ),
-                      child: const Text('نعم، إغلاق'),
+                      child:  Text(tr('نعم، إغلاق')),
                     ),
                   ],
                 ),
@@ -1487,8 +1488,8 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
 
     if (allowedIndices == null) {
       if (allowedScreensAsync.hasError) {
-        return const Scaffold(
-          body: Center(child: Text('خطأ في تحميل الصلاحيات')),
+        return  Scaffold(
+          body: Center(child: Text(tr('خطأ في تحميل الصلاحيات'))),
         );
       }
       return Scaffold(
@@ -1520,9 +1521,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
-                'جاري تحميل الصلاحيات...',
-                style: TextStyle(fontSize: 14, color: Colors.white70),
+               Text(
+                tr('جاري تحميل الصلاحيات...'),
+                style: const TextStyle(fontSize: 14, color: Colors.white70),
               ),
             ],
           ),
@@ -1579,27 +1580,27 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
             builder: (context) => Directionality(
               textDirection: TextDirection.rtl,
               child: AlertDialog(
-                title: const Row(
+                title:  Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                    SizedBox(width: 8),
-                    Text('تأكيد الخروج'),
+                    const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                    const SizedBox(width: 8),
+                    Text(tr('تأكيد الخروج')),
                   ],
                 ),
-                content: const Text(
-                  'هل أنت متأكد من أنك تريد الخروج من البرنامج؟',
+                content:  Text(
+                  tr('هل أنت متأكد من أنك تريد الخروج من البرنامج؟'),
                 ),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context, false),
-                    child: const Text('إلغاء'),
+                    child:  Text(tr('إلغاء')),
                   ),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                     ),
-                    child: const Text('خروج'),
+                    child:  Text(tr('خروج')),
                   ),
                 ],
               ),
@@ -1670,8 +1671,8 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
                       icon: const Icon(PhosphorIconsBold.arrowsClockwise,
                           size: 16,
                           color: Color(0xFF388E3C)), // green shade700
-                      label: const Text('مزامنة الآن',
-                          style: TextStyle(
+                      label:  Text(tr('مزامنة الآن'),
+                          style: const TextStyle(
                               color: Color(0xFF388E3C),
                               fontWeight: FontWeight.bold)),
                       onPressed: () => _showSyncDialog(context),
@@ -1685,8 +1686,8 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
                         if (error == null) {
                           if (mounted) {
                             messenger.showSnackBar(
-                              const SnackBar(
-                                content: Text('✅ السيرفر متاح — اضغط "مزامنة الآن" لنقل البيانات'),
+                               SnackBar(
+                                content: Text(tr('✅ السيرفر متاح — اضغط "مزامنة الآن" لنقل البيانات')),
                                 backgroundColor: Colors.green,
                               ),
                             );
@@ -1695,15 +1696,15 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
                           if (mounted) {
                             messenger.showSnackBar(
                               SnackBar(
-                                content: Text('❌ السيرفر غير متاح: $error'),
+                                content: Text(tr('❌ السيرفر غير متاح: {error}', {'error': error})),
                                 backgroundColor: Colors.red,
                               ),
                             );
                           }
                         }
                       },
-                      child: const Text('اختبار الاتصال',
-                          style: TextStyle(
+                      child:  Text(tr('اختبار الاتصال'),
+                          style: const TextStyle(
                               color: Color(0xFFE65100))), // orange shade900
                     ),
                   ],
@@ -1734,9 +1735,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
 
   String _formatOfflineTime(DateTime start) {
     final diff = DateTime.now().difference(start);
-    if (diff.inDays > 0) return '${diff.inDays} يوم';
-    if (diff.inHours > 0) return '${diff.inHours} ساعة';
-    return '${diff.inMinutes} دقيقة';
+    if (diff.inDays > 0) return tr('{p0} يوم', {'p0': diff.inDays});
+    if (diff.inHours > 0) return tr('{p0} ساعة', {'p0': diff.inHours});
+    return tr('{p0} دقيقة', {'p0': diff.inMinutes});
   }
 
   void _showSyncDialog(BuildContext context) {
@@ -1828,7 +1829,7 @@ Future<void> enforceShiftForUser(
 
   if (!context.mounted) return;
   final userName =
-      authState.user?.displayName ?? authState.user?.username ?? 'كاشير';
+      authState.user?.displayName ?? authState.user?.username ?? tr('كاشير');
 
   // Prompt for opening balance — barrierDismissible: false makes it mandatory.
   final opening = await showDialog<double>(
@@ -1935,7 +1936,7 @@ class _AdminCloseDialogState extends ConsumerState<_AdminCloseDialog> {
   Future<void> _verify() async {
     final input = _passwordController.text.trim();
     if (input.isEmpty) {
-      setState(() => _errorMessage = 'الرجاء إدخال كلمة المرور');
+      setState(() => _errorMessage = tr('الرجاء إدخال كلمة المرور'));
       return;
     }
 
@@ -1971,7 +1972,7 @@ class _AdminCloseDialogState extends ConsumerState<_AdminCloseDialog> {
         } else {
           setState(() {
             _isLoading = false;
-            _errorMessage = 'هذا المستخدم ليس لديه صلاحية إغلاق البرنامج';
+            _errorMessage = tr('هذا المستخدم ليس لديه صلاحية إغلاق البرنامج');
           });
           return;
         }
@@ -1979,12 +1980,12 @@ class _AdminCloseDialogState extends ConsumerState<_AdminCloseDialog> {
 
       setState(() {
         _isLoading = false;
-        _errorMessage = 'كلمة المرور غير صحيحة';
+        _errorMessage = tr('كلمة المرور غير صحيحة');
       });
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'خطأ: $e';
+        _errorMessage = tr('خطأ: {e}', {'e': e});
       });
     }
   }
@@ -1992,19 +1993,19 @@ class _AdminCloseDialogState extends ConsumerState<_AdminCloseDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Row(
+      title:  Row(
         children: [
-          Icon(Icons.lock_outline, color: Colors.red, size: 28),
-          SizedBox(width: 12),
-          Expanded(child: Text('إغلاق البرنامج يتطلب كلمة مرور المدير')),
+          const Icon(Icons.lock_outline, color: Colors.red, size: 28),
+          const SizedBox(width: 12),
+          Expanded(child: Text(tr('إغلاق البرنامج يتطلب كلمة مرور المدير'))),
         ],
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'لا يمكن إغلاق البرنامج إلا بإدخال كلمة مرور مدير النظام.',
-            style: TextStyle(color: Colors.grey),
+           Text(
+            tr('لا يمكن إغلاق البرنامج إلا بإدخال كلمة مرور مدير النظام.'),
+            style: const TextStyle(color: Colors.grey),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -2013,7 +2014,7 @@ class _AdminCloseDialogState extends ConsumerState<_AdminCloseDialog> {
             autofocus: true,
             textDirection: TextDirection.ltr,
             decoration: InputDecoration(
-              labelText: 'كلمة مرور المدير',
+              labelText: tr('كلمة مرور المدير'),
               prefixIcon: const Icon(Icons.vpn_key),
               suffixIcon: IconButton(
                 icon: Icon(
@@ -2034,7 +2035,7 @@ class _AdminCloseDialogState extends ConsumerState<_AdminCloseDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('إلغاء'),
+          child:  Text(tr('إلغاء')),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _verify,
@@ -2048,7 +2049,7 @@ class _AdminCloseDialogState extends ConsumerState<_AdminCloseDialog> {
                     color: Colors.white,
                   ),
                 )
-              : const Text('إغلاق البرنامج'),
+              :  Text(tr('إغلاق البرنامج')),
         ),
       ],
     );
@@ -2115,8 +2116,8 @@ class _OfflineSyncDialogState extends State<_OfflineSyncDialog> {
               Expanded(
                 child: Text(
                   isDone
-                      ? (hasError ? 'فشلت المزامنة' : 'تمت المزامنة بنجاح')
-                      : 'جاري المزامنة...',
+                      ? (hasError ? tr('فشلت المزامنة') : tr('تمت المزامنة بنجاح'))
+                      : tr('جاري المزامنة...'),
                 ),
               ),
             ],
@@ -2140,7 +2141,7 @@ class _OfflineSyncDialogState extends State<_OfflineSyncDialog> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${progress.rowsSynced} سجل تم مزامنته',
+                    tr('{p0} سجل تم مزامنته', {'p0': progress.rowsSynced}),
                     style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                 ],
@@ -2148,12 +2149,12 @@ class _OfflineSyncDialogState extends State<_OfflineSyncDialog> {
                   const Icon(Icons.check_circle, color: Colors.green, size: 48),
                   const SizedBox(height: 12),
                   Text(
-                    'تم نقل ${progress.rowsSynced} سجل إلى سيرفر PostgreSQL.',
+                    tr('تم نقل {p0} سجل إلى سيرفر PostgreSQL.', {'p0': progress.rowsSynced}),
                     style: const TextStyle(fontSize: 14),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'أعد تشغيل البرنامج للعمل مباشرة على قاعدة بيانات السيرفر.',
+                    tr('أعد تشغيل البرنامج للعمل مباشرة على قاعدة بيانات السيرفر.'),
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.orange.shade800,
@@ -2172,7 +2173,7 @@ class _OfflineSyncDialogState extends State<_OfflineSyncDialog> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'تم مزامنة ${progress.rowsSynced} سجل قبل الخطأ.',
+                    tr('تم مزامنة {p0} سجل قبل الخطأ.', {'p0': progress.rowsSynced}),
                     style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                 ],
@@ -2187,7 +2188,7 @@ class _OfflineSyncDialogState extends State<_OfflineSyncDialog> {
                   backgroundColor: hasError ? Colors.grey : Colors.green,
                   foregroundColor: Colors.white,
                 ),
-                child: Text(hasError ? 'إغلاق' : 'حسناً'),
+                child: Text(hasError ? tr('إغلاق') : tr('حسناً')),
               ),
             if (isDone && hasError)
               TextButton(
@@ -2195,7 +2196,7 @@ class _OfflineSyncDialogState extends State<_OfflineSyncDialog> {
                   _started = false;
                   _startSync();
                 },
-                child: const Text('إعادة المحاولة'),
+                child:  Text(tr('إعادة المحاولة')),
               ),
           ],
         );

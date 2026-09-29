@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -203,12 +204,12 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
       cancelLabel: localizations.cancel,
       secondaryActions: [
         PicPosDialogAction(
-          label: 'طباعة A4',
+          label: tr('طباعة A4'),
           icon: PhosphorIconsBold.printer,
           onPressed: () => _printA4Preview(),
         ),
         PicPosDialogAction(
-          label: 'حفظ + حراري',
+          label: tr('حفظ + حراري'),
           icon: PhosphorIconsBold.receipt,
           onPressed: () =>
               _saveVoucher(context, ref, localizations, printMode: 'thermal'),
@@ -264,30 +265,30 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                 const SizedBox(height: 16),
 
                 // Payment Method selection
-                const Text(
-                  'طريقة الدفع',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                 Text(
+                  tr('طريقة الدفع'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     _buildPaymentMethodButton(
                       id: 'cash',
-                      label: 'نقدي',
+                      label: tr('نقدي'),
                       icon: PhosphorIconsFill.money,
                       color: AppColors.success,
                     ),
                     const SizedBox(width: 8),
                     _buildPaymentMethodButton(
                       id: 'bank',
-                      label: 'تحويل بنكي',
+                      label: tr('تحويل بنكي'),
                       icon: PhosphorIconsFill.bank,
                       color: AppColors.primary,
                     ),
                     const SizedBox(width: 8),
                     _buildPaymentMethodButton(
                       id: 'check',
-                      label: 'شيك',
+                      label: tr('شيك'),
                       icon: PhosphorIconsFill.newspaper,
                       color: AppColors.warning,
                     ),
@@ -314,9 +315,9 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                           DropdownButtonFormField<int>(
                             isExpanded: true,
                             initialValue: null,
-                            decoration: const InputDecoration(
-                              labelText: 'اختر من الشيكات المحفوظة',
-                              prefixIcon: Icon(PhosphorIconsLight.listChecks, size: 20),
+                            decoration:  InputDecoration(
+                              labelText: tr('اختر من الشيكات المحفوظة'),
+                              prefixIcon: const Icon(PhosphorIconsLight.listChecks, size: 20),
                             ),
                             items: _availableCheques
                                 .where((p) => !checkNumbers.contains(p.paperNumber))
@@ -370,7 +371,7 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                               child: TextField(
                                 controller: paperNumberController,
                                 decoration: InputDecoration(
-                                  labelText: 'رقم الشيك',
+                                  labelText: tr('رقم الشيك'),
                                   prefixIcon: const Icon(PhosphorIconsLight.hash, size: 20),
                                   suffixIcon: IconButton(
                                     icon: const Icon(PhosphorIconsBold.plus, size: 18, color: AppColors.success),
@@ -384,7 +385,7 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                                       }
                                     },
                                   ),
-                                  hintText: 'أدخل رقم الشيك يدوياً + إضافة',
+                                  hintText: tr('أدخل رقم الشيك يدوياً + إضافة'),
                                 ),
                                 onSubmitted: (v) {
                                   final num = v.trim();
@@ -435,9 +436,9 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                         const SizedBox(height: 12),
                         TextField(
                           controller: paperBankController,
-                          decoration: const InputDecoration(
-                            labelText: 'البنك المسحوب عليه',
-                            prefixIcon: Icon(PhosphorIconsLight.bank, size: 20),
+                          decoration:  InputDecoration(
+                            labelText: tr('البنك المسحوب عليه'),
+                            prefixIcon: const Icon(PhosphorIconsLight.bank, size: 20),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -452,12 +453,12 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                             if (date != null) setState(() => paperDueDate = date);
                           },
                           child: InputDecorator(
-                            decoration: const InputDecoration(
-                                labelText: 'تاريخ الاستحقاق',
-                                prefixIcon: Icon(PhosphorIconsLight.calendar, size: 20)),
+                            decoration:  InputDecoration(
+                                labelText: tr('تاريخ الاستحقاق'),
+                                prefixIcon: const Icon(PhosphorIconsLight.calendar, size: 20)),
                             child: Text(
                               paperDueDate == null
-                                  ? 'اختر التاريخ'
+                                  ? tr('اختر التاريخ')
                                   : '${paperDueDate!.day}/${paperDueDate!.month}/${paperDueDate!.year}',
                             ),
                           ),
@@ -474,7 +475,7 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                     controller: searchController,
                     decoration: InputDecoration(
                       hintText:
-                          'ابحث بالاسم أو الهاتف...', // Consider localizing
+                          tr('ابحث بالاسم أو الهاتف...'), // Consider localizing
                       prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass),
                       suffixIcon: selectedParty != null
                           ? IconButton(
@@ -507,7 +508,7 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                                 dense: true,
                                 title: Text(p.name),
                                 subtitle: Text(
-                                  'رصيد: ${p.balance.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                                  tr('رصيد: {p0} {p1}', {'p0': p.balance.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
                                 ),
                                 trailing: Text(
                                   p.phone ?? '',
@@ -552,7 +553,7 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                                   ),
                                 ),
                                 Text(
-                                  'الرصيد المستحق له: ${selectedParty!.balance.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                                  tr('الرصيد المستحق له: {p0} {p1}', {'p0': selectedParty!.balance.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
                                   style: TextStyle(
                                     color: selectedParty!.balance > 0
                                         ? AppColors.error
@@ -578,7 +579,7 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                   decoration: InputDecoration(
                     labelText: localizations.amount,
                     helperText: _amountLockedByCheque
-                        ? 'قيمة الشيك تلقائية — احذف الشيك من القائمة لتعديل المبلغ'
+                        ? tr('قيمة الشيك تلقائية — احذف الشيك من القائمة لتعديل المبلغ')
                         : null,
                     filled: _amountLockedByCheque,
                   ),
@@ -588,13 +589,13 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                 const SizedBox(height: 16),
 
                 if (_showForeignFields) ...[
-                  Text('عملة التسوية: ${_foreignCurrency!.code} — ${_foreignCurrency!.name}'),
+                  Text(tr('عملة التسوية: {p0} — {p1}', {'p0': _foreignCurrency!.code, 'p1': _foreignCurrency!.name})),
                   Row(children: [
-                    Expanded(child: TextField(controller: foreignAmountController, decoration: const InputDecoration(labelText: 'المبلغ الأجنبي'), keyboardType: TextInputType.number, onChanged: (_) => setState(() {}))),
+                    Expanded(child: TextField(controller: foreignAmountController, decoration:  InputDecoration(labelText: tr('المبلغ الأجنبي')), keyboardType: TextInputType.number, onChanged: (_) => setState(() {}))),
                     const SizedBox(width: 12),
-                    Expanded(child: TextField(controller: paymentRateController, decoration: const InputDecoration(labelText: 'سعر الدفع'), keyboardType: TextInputType.number, onChanged: (_) => setState(() {}))),
+                    Expanded(child: TextField(controller: paymentRateController, decoration:  InputDecoration(labelText: tr('سعر الدفع')), keyboardType: TextInputType.number, onChanged: (_) => setState(() {}))),
                   ]),
-                  Text('المبلغ المحلي المحسوب: ${((double.tryParse(foreignAmountController.text) ?? 0) * (double.tryParse(paymentRateController.text) ?? 0)).toStringAsFixed(AppConstants.decimalPlaces)}'),
+                  Text(tr('المبلغ المحلي المحسوب: {p0}', {'p0': ((double.tryParse(foreignAmountController.text) ?? 0) * (double.tryParse(paymentRateController.text) ?? 0)).toStringAsFixed(AppConstants.decimalPlaces)})),
                   const SizedBox(height: 12),
                 ],
 
@@ -602,9 +603,9 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                 if (category == 'supplier_payment' || category == 'expense') ...[
                   TextField(
                     controller: discountController,
-                    decoration: const InputDecoration(
-                      labelText: 'خصم معجل دفع (Discount Received)',
-                      prefixIcon: Icon(PhosphorIconsLight.tag, size: 20),
+                    decoration:  InputDecoration(
+                      labelText: tr('خصم معجل دفع (Discount Received)'),
+                      prefixIcon: const Icon(PhosphorIconsLight.tag, size: 20),
                       hintText: '0.00',
                     ),
                     keyboardType: TextInputType.number,
@@ -638,7 +639,7 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                           // falls back to a default safe in client mode.
                           decoration: InputDecoration(
                             labelText: '${localizations.safe} *',
-                            helperText: 'مطلوب',
+                            helperText: tr('مطلوب'),
                           ),
                           items: safes.whereType<SafeData>().map((s) {
                             return DropdownMenuItem<int>(
@@ -678,11 +679,11 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                           // "بدون مركز تكلفة" option so the entry can't
                           // silently route to whichever centre the GL
                           // defaulting logic picks.
-                          decoration: const InputDecoration(
-                            labelText: 'مركز التكلفة *',
-                            helperText: 'مطلوب',
+                          decoration:  InputDecoration(
+                            labelText: tr('مركز التكلفة *'),
+                            helperText: tr('مطلوب'),
                             prefixIcon:
-                                Icon(PhosphorIconsLight.target, size: 20),
+                                const Icon(PhosphorIconsLight.target, size: 20),
                           ),
                           items: _costCenters
                               .map((cc) => DropdownMenuItem<int?>(
@@ -745,7 +746,7 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
   Future<void> _printA4Preview() async {
     final amount = double.tryParse(amountController.text) ?? 0;
     if (amount <= 0) {
-      AppToast.show(context, 'يرجى إدخال مبلغ صحيح للمعاينة');
+      AppToast.show(context, tr('يرجى إدخال مبلغ صحيح للمعاينة'));
       return;
     }
 
@@ -803,12 +804,12 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
     // Phase 5B.6 (Issue 7) — when cost centers exist on the system, one
     // MUST be selected (matches receipt_voucher_dialog).
     if (_costCenters.isNotEmpty && selectedCostCenterId == null) {
-      AppToast.show(context, 'الرجاء اختيار مركز التكلفة');
+      AppToast.show(context, tr('الرجاء اختيار مركز التكلفة'));
       return;
     }
 
     if (selectedSafe == null && paymentMethod != 'check') {
-      AppToast.show(context, 'الرجاء اختيار الخزينة');
+      AppToast.show(context, tr('الرجاء اختيار الخزينة'));
       return;
     }
 
@@ -830,7 +831,7 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
         checkNumbers.add(currentText);
       }
       if (checkNumbers.isEmpty) {
-        AppToast.show(context, 'يرجى إدخال رقم شيك واحد على الأقل');
+        AppToast.show(context, tr('يرجى إدخال رقم شيك واحد على الأقل'));
         return;
       }
     }
@@ -838,7 +839,7 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
     // Validate discount is not negative
     final discountVal = double.tryParse(discountController.text) ?? 0;
     if (discountVal < 0) {
-      AppToast.show(context, 'الخصم لا يمكن أن يكون سالباً');
+      AppToast.show(context, tr('الخصم لا يمكن أن يكون سالباً'));
       return;
     }
 
@@ -847,11 +848,11 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
       final proceed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Row(
+          title:  Row(
             children: [
-              Icon(PhosphorIconsBold.warning, color: Colors.orange),
-              SizedBox(width: 8),
-              Text('تنبيه: رصيد الخزينة لا يكفي'),
+              const Icon(PhosphorIconsBold.warning, color: Colors.orange),
+              const SizedBox(width: 8),
+              Text(tr('تنبيه: رصيد الخزينة لا يكفي')),
             ],
           ),
           content: Text(
@@ -862,12 +863,12 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('متابعة'),
+              child:  Text(tr('متابعة')),
             ),
           ],
         ),
@@ -882,14 +883,14 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
 
       String description = descriptionController.text.isEmpty
           ? (category == 'supplier_payment'
-              ? 'دفع لمورد: ${selectedParty!.name}'
+              ? tr('دفع لمورد: {p0}', {'p0': selectedParty!.name})
               : localizations.paymentVoucher)
           : descriptionController.text;
 
       // Build check numbers string for description
       final allCheckNumbers = checkNumbers.join(', ');
       if (paymentMethod == 'check') {
-        description += ' | شيك رقم: $allCheckNumbers';
+        description += tr(' | شيك رقم: {allCheckNumbers}', {'allCheckNumbers': allCheckNumbers});
       }
 
       // Spec 135 BUG-C — attribute the voucher JE to the operator's working
@@ -951,7 +952,7 @@ userId: ref.read(authProvider).user?.id,
           final perCheck = double.parse((amount / count).toStringAsFixed(AppConstants.decimalPlaces));
           final lastCheck = double.parse((amount - perCheck * (count - 1)).toStringAsFixed(AppConstants.decimalPlaces));
           final selectedPartyName =
-              selectedParty?.name ?? 'مستفيد غير محدد';
+              selectedParty?.name ?? tr('مستفيد غير محدد');
 
           for (int i = 0; i < count; i++) {
             final num = checkNumbers[i];
@@ -966,7 +967,7 @@ userId: ref.read(authProvider).user?.id,
               // becomes the audit-trail anchor without re-posting any JE.
               final existing = preExisting.first;
               final note =
-                  'استُخدمت في سند صرف $voucherNumber لـ $selectedPartyName';
+                  tr('استُخدمت في سند صرف {voucherNumber} لـ {selectedPartyName}', {'voucherNumber': voucherNumber, 'selectedPartyName': selectedPartyName});
               try {
                 await ClientWriteInterceptor.updateCommercialPaperStatus(
                   existing.id,
@@ -995,7 +996,7 @@ userId: ref.read(authProvider).user?.id,
             final bankName = paperBankController.text.isNotEmpty
                 ? paperBankController.text
                 : null;
-            final paperNotes = 'ترحيل تلقائي من سند صرف $voucherNumber';
+            final paperNotes = tr('ترحيل تلقائي من سند صرف {voucherNumber}', {'voucherNumber': voucherNumber});
 
             await ClientWriteInterceptor.createCommercialPaper(
               paperNumber: num,
@@ -1025,7 +1026,7 @@ userId: ref.read(authProvider).user?.id,
           }
         } catch (e) {
           if (context.mounted) {
-            AppToast.show(context, 'خطأ في الأوراق التجارية: $e', type: ToastType.error);
+            AppToast.show(context, tr('خطأ في الأوراق التجارية: {e}', {'e': e}), type: ToastType.error);
           }
         }
       }
@@ -1034,11 +1035,11 @@ userId: ref.read(authProvider).user?.id,
       final activityLogRepo = ref.read(activityLogRepositoryProvider);
       await activityLogRepo.logActivity(
         userId: user?.id,
-        userName: user?.displayName ?? 'مجهول',
+        userName: user?.displayName ?? tr('مجهول'),
         action: 'expense',
         entityType: 'payment',
         description:
-            'سند صرف $paymentMethod رقم $voucherNumber بمبلغ ${amount.toStringAsFixed(AppConstants.decimalPlaces)}',
+            tr('سند صرف {paymentMethod} رقم {voucherNumber} بمبلغ {p0}', {'paymentMethod': paymentMethod, 'voucherNumber': voucherNumber, 'p0': amount.toStringAsFixed(AppConstants.decimalPlaces)}),
         amount: amount,
       );
 
@@ -1088,11 +1089,11 @@ userId: ref.read(authProvider).user?.id,
 
       if (context.mounted) {
         Navigator.pop(context);
-        AppToast.show(context, 'تم حفظ سند الصرف بنجاح');
+        AppToast.show(context, tr('تم حفظ سند الصرف بنجاح'));
       }
     } catch (e) {
       if (context.mounted) {
-        AppToast.show(context, 'خطأ في الحفظ: $e');
+        AppToast.show(context, tr('خطأ في الحفظ: {e}', {'e': e}));
       }
     }
 

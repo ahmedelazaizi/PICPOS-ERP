@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // lib/presentation/shell/screen_tabs_bar.dart
 //
 // شريطُ تابات الشاشات — بلاغُ المالك 2026-09-12: «لو خلينا الشاشات فعلا
@@ -84,7 +85,7 @@ class ScreenTabsBar extends StatelessWidget {
               splashRadius: 15,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-              tooltip: 'الشاشة الأولى',
+              tooltip: tr('الشاشة الأولى'),
             ),
           Expanded(
             // ⚠️ **والتمريرُ لازمٌ لا تحسين**: ثمانيةُ تابات بعناوينَ عربيّةٍ

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -94,13 +95,13 @@ class _PosBarcodeInputState extends ConsumerState<PosBarcodeInput> {
         .trim();
 
     // 2. Normalize Arabic Indic numbers to English numbers
-    const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    final arabicNumbers = [tr('٠'), tr('١'), tr('٢'), tr('٣'), tr('٤'), tr('٥'), tr('٦'), tr('٧'), tr('٨'), tr('٩')];
     for (int i = 0; i < 10; i++) {
       cleaned = cleaned.replaceAll(arabicNumbers[i], i.toString());
     }
 
     // 3. Normalize Persian numbers to English numbers
-    const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    final persianNumbers = [tr('۰'), tr('۱'), tr('۲'), tr('۳'), tr('۴'), tr('۵'), tr('۶'), tr('۷'), tr('۸'), tr('۹')];
     for (int i = 0; i < 10; i++) {
       cleaned = cleaned.replaceAll(persianNumbers[i], i.toString());
     }
@@ -229,8 +230,8 @@ class _PosBarcodeInputState extends ConsumerState<PosBarcodeInput> {
                 ),
                 decoration: InputDecoration(
                   hintText: isSupermarket
-                      ? 'امسح الباركود الآن...'
-                      : 'امسح الباركود أو اكتب الرقم واضغط Enter...',
+                      ? tr('امسح الباركود الآن...')
+                      : tr('امسح الباركود أو اكتب الرقم واضغط Enter...'),
                   prefixIcon: const Icon(
                     PhosphorIconsBold.barcode,
                     color: AppColors.primary,
@@ -285,11 +286,11 @@ class _PosBarcodeInputState extends ConsumerState<PosBarcodeInput> {
   }
 
   Widget _buildScannerPulse() {
-    return const Padding(
-      padding: EdgeInsets.all(12.0),
+    return  Padding(
+      padding: const EdgeInsets.all(12.0),
       child: Tooltip(
-        message: 'الماسح الضوئي نشط — امسح الباركود أو اكتب واضغط Enter',
-        child: Icon(PhosphorIconsBold.scan, color: AppColors.success, size: 20),
+        message: tr('الماسح الضوئي نشط — امسح الباركود أو اكتب واضغط Enter'),
+        child: const Icon(PhosphorIconsBold.scan, color: AppColors.success, size: 20),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // شريطُ وجهاتِ الحجوزات — ثمانٍ، وبحثٌ سريعٌ بجوارها.
 //
 // ⚠️ **قابلٌ للتمرير أفقيّاً عن قصد**: ثمانِ حبّاتٍ بنصوصٍ عربيّةٍ تتجاوز
@@ -70,7 +71,7 @@ class BookingsDestinationTabs extends ConsumerWidget {
                 fillColor: theme.brightness == Brightness.dark
                     ? Colors.white10
                     : const Color(0xFFF4F7FC),
-                hintText: 'بحث سريع (اسم، هاتف، خدمة...)',
+                hintText: tr('بحث سريع (اسم، هاتف، خدمة...)'),
                 hintStyle: const TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,

@@ -125,7 +125,12 @@ void main() {
           File('lib/presentation/screens/settings/widgets/${e.key}.dart')
               .readAsStringSync(),
         );
-        expect(src.contains("dialogSaveLabel => '${e.value}'"), isTrue,
+        final saveLabel = RegExp(
+          r"dialogSaveLabel\s*=>\s*(?:tr\(\s*)?'"
+          '${RegExp.escape(e.value)}'
+          r"'(?:\s*\))?",
+        );
+        expect(saveLabel.hasMatch(src), isTrue,
             reason: '${e.key} بلا `dialogSaveLabel` = «${e.value}» — '
                 'فزرُّ الحفظ يقول «حفظ» عامّاً بدل ما يسمّيه التصميم.');
       });

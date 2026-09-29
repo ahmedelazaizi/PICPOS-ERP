@@ -225,18 +225,18 @@ class PicPosActivityTableHeader extends StatelessWidget {
         children: [
           const SizedBox(width: _ActivityCellWidths.icon),
           const SizedBox(width: 12),
-          cell('الإجراء', _ActivityCellWidths.action),
+          cell(tr('الإجراء'), _ActivityCellWidths.action),
           const SizedBox(width: 12),
-          cell('المستند / النوع', _ActivityCellWidths.entity),
+          cell(tr('المستند / النوع'), _ActivityCellWidths.entity),
           const SizedBox(width: 12),
-          cell('التفاصيل', _ActivityCellWidths.detail),
+          cell(tr('التفاصيل'), _ActivityCellWidths.detail),
           const SizedBox(width: 12),
-          cell('المستخدم', _ActivityCellWidths.user),
+          cell(tr('المستخدم'), _ActivityCellWidths.user),
           const SizedBox(width: 12),
           SizedBox(
             width: _ActivityCellWidths.time,
             child: Text(
-              'الوقت',
+              tr('الوقت'),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -281,10 +281,10 @@ class PicPosActivityTable extends StatelessWidget {
           const PicPosActivityTableHeader(),
           Expanded(
             child: rows.isEmpty
-                ? const PicPosEmptyState(
+                ?  PicPosEmptyState(
                     icon: PhosphorIconsBold.clipboardText,
-                    title: 'لا توجد عمليات مسجلة',
-                    hint: 'جرّب توسيع المدى أو مسح الفلاتر.',
+                    title: tr('لا توجد عمليات مسجلة'),
+                    hint: tr('جرّب توسيع المدى أو مسح الفلاتر.'),
                   )
                 : ListView.builder(
                     itemCount: rows.length,

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/utils/friendly_error.dart';
 import 'package:ural_erp/presentation/widgets/dialogs/app_confirm_dialog.dart';
@@ -75,9 +76,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     final ok = await AppConfirmDialog.show(
       context,
-      title: 'إغلاق البرنامج',
-      message: 'هل تريد إغلاق البرنامج؟',
-      confirmLabel: 'إغلاق',
+      title: tr('إغلاق البرنامج'),
+      message: tr('هل تريد إغلاق البرنامج؟'),
+      confirmLabel: tr('إغلاق'),
       isDangerous: true,
     );
     if (ok) exit(0);
@@ -86,7 +87,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _login() async {
     // Password is required, username is optional
     if (_passwordController.text.isEmpty) {
-      setState(() => _errorMessage = 'يرجى إدخال كلمة المرور');
+      setState(() => _errorMessage = tr('يرجى إدخال كلمة المرور'));
       return;
     }
 
@@ -99,7 +100,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final minutes = lockoutRemaining.inMinutes;
       final seconds = lockoutRemaining.inSeconds % 60;
       setState(() => _errorMessage =
-          'محاولات كثيرة — انتظر $minutes:${seconds.toString().padLeft(2, '0')} دقيقة');
+          tr('محاولات كثيرة — انتظر {minutes}:{p0} دقيقة', {'minutes': minutes, 'p0': seconds.toString().padLeft(2, '0')}));
       return;
     }
 
@@ -367,7 +368,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
           if (changed != true) {
             if (mounted) {
-              setState(() => _errorMessage = 'يجب تغيير كلمة المرور للمتابعة');
+              setState(() => _errorMessage = tr('يجب تغيير كلمة المرور للمتابعة'));
             }
             return;
           }
@@ -398,11 +399,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final remaining = LoginRateLimiter.recordFailure(loginKey);
         setState(() {
           if (remaining <= 0) {
-            _errorMessage = 'تم قفل الحساب لمدة 15 دقيقة بسبب محاولات كثيرة';
+            _errorMessage = tr('تم قفل الحساب لمدة 15 دقيقة بسبب محاولات كثيرة');
           } else {
             _errorMessage = _usernameController.text.isEmpty
-                ? 'كلمة المرور غير صحيحة ($remaining محاولات متبقية)'
-                : 'اسم المستخدم أو كلمة المرور غير صحيحة ($remaining محاولات متبقية)';
+                ? tr('كلمة المرور غير صحيحة ({remaining} محاولات متبقية)', {'remaining': remaining})
+                : tr('اسم المستخدم أو كلمة المرور غير صحيحة ({remaining} محاولات متبقية)', {'remaining': remaining});
           }
         });
       }
@@ -447,7 +448,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
           if (changed != true) {
             if (mounted) {
-              setState(() => _errorMessage = 'يجب تغيير كلمة المرور للمتابعة');
+              setState(() => _errorMessage = tr('يجب تغيير كلمة المرور للمتابعة'));
             }
             return;
           }
@@ -471,7 +472,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           debugPrint('[ActivityLog] Error: $e');
         }
       } else {
-        setState(() => _errorMessage = 'بطاقة غير معرّفة في النظام');
+        setState(() => _errorMessage = tr('بطاقة غير معرّفة في النظام'));
       }
     } catch (e) {
       if (mounted) {
@@ -665,7 +666,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'نظام إدارة الموارد المتكامل',
+            tr('نظام إدارة الموارد المتكامل'),
             style: TextStyle(
               fontSize: 13,
               color: Colors.white.withValues(alpha: 0.85),
@@ -678,9 +679,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             color: Colors.white.withValues(alpha: 0.18),
           ),
           const SizedBox(height: 22),
-          const Text(
-            'تسجيل الدخول',
-            style: TextStyle(
+           Text(
+            tr('تسجيل الدخول'),
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: Colors.white,
@@ -688,7 +689,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'أدخل كلمة المرور للمتابعة',
+            tr('أدخل كلمة المرور للمتابعة'),
             style: TextStyle(
               fontSize: 12,
               color: Colors.white.withValues(alpha: 0.75),
@@ -741,7 +742,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             style: const TextStyle(color: Colors.white, fontSize: 14),
             cursorColor: Colors.white,
             decoration: InputDecoration(
-              labelText: 'كلمة المرور',
+              labelText: tr('كلمة المرور'),
               labelStyle: TextStyle(
                 color: Colors.white.withValues(alpha: 0.85),
               ),
@@ -802,14 +803,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Row(
+                  :  Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(PhosphorIconsBold.signIn, size: 20),
-                        SizedBox(width: 8),
+                        const Icon(PhosphorIconsBold.signIn, size: 20),
+                        const SizedBox(width: 8),
                         Text(
-                          'تسجيل الدخول',
-                          style: TextStyle(
+                          tr('تسجيل الدخول'),
+                          style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
                           ),
@@ -828,9 +829,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _openOnScreenKeyboard,
                     icon: const Icon(PhosphorIconsBold.keyboard, size: 16),
-                    label: const Text(
-                      'لوحة المفاتيح',
-                      style: TextStyle(fontSize: 12),
+                    label:  Text(
+                      tr('لوحة المفاتيح'),
+                      style: const TextStyle(fontSize: 12),
                     ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
@@ -854,9 +855,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       size: 16,
                       color: AppColors.error,
                     ),
-                    label: const Text(
-                      'إغلاق البرنامج',
-                      style: TextStyle(
+                    label:  Text(
+                      tr('إغلاق البرنامج'),
+                      style: const TextStyle(
                         color: AppColors.error,
                         fontSize: 12,
                       ),
@@ -899,7 +900,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             color: Colors.white.withValues(alpha: 0.18),
           ),
           Text(
-            'تطوير: Ural Technology',
+            tr('تطوير: Ural Technology'),
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.92),
               fontWeight: FontWeight.w700,

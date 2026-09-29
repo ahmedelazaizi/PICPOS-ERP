@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async' show unawaited;
 
 import 'package:flutter/foundation.dart';
@@ -464,11 +465,11 @@ class PosSearchController extends Notifier<PosSearchState> {
           state = state.copyWith(
             error: switch (outcome) {
               ApplyOfferOutcome.alreadyInCart =>
-                'العرض "${offer.name}" مضاف بالفعل إلى السلة.',
+                tr('العرض "{p0}" مضاف بالفعل إلى السلة.', {'p0': offer.name}),
               ApplyOfferOutcome.notADiscount =>
                 'العرض "${offer.name}" سعره أعلى من مجموع أسعار بيع أصنافه — '
                     'اترفض عشان ما يرفعش الأسعار. راجع سعر العرض.',
-              _ => 'تعذّر تطبيق العرض "${offer.name}" — تأكد من أصناف العرض.',
+              _ => tr('تعذّر تطبيق العرض "{p0}" — تأكد من أصناف العرض.', {'p0': offer.name}),
             },
             errorKind: BarcodeSearchErrorKind.general,
             searchResults: [],
@@ -562,7 +563,7 @@ class PosSearchController extends Notifier<PosSearchState> {
       debugPrint('[BarcodeSearch] ! Diagnostic: Product exists but is INACTIVE: ${inactiveProduct.name}');
       _playErrorBeep();
       state = state.copyWith(
-        error: 'عفواً، الصنف (${inactiveProduct.name}) موجود ولكنه "غير نشط".\nيرجى تفعيله من شاشة الأصناف ليظهر في البيع السريع.',
+        error: tr('عفواً، الصنف ({p0}) موجود ولكنه "غير نشط".\nيرجى تفعيله من شاشة الأصناف ليظهر في البيع السريع.', {'p0': inactiveProduct.name}),
         errorKind: BarcodeSearchErrorKind.inactive,
         searchResults: [],
         isSearchActive: false,
@@ -572,7 +573,7 @@ class PosSearchController extends Notifier<PosSearchState> {
 
     _playErrorBeep();
     state = state.copyWith(
-      error: 'لم يتم العثور على منتج بهذا الباركود: "$barcode"',
+      error: tr('لم يتم العثور على منتج بهذا الباركود: "{barcode}"', {'barcode': barcode}),
       errorKind: BarcodeSearchErrorKind.notFound,
       searchResults: [],
       isSearchActive: false,
@@ -591,7 +592,7 @@ class PosSearchController extends Notifier<PosSearchState> {
         _playErrorBeep();
       } catch (_) {}
       state = state.copyWith(
-        error: 'خطأ في معالجة الباركود — حاول مرة أخرى.',
+        error: tr('خطأ في معالجة الباركود — حاول مرة أخرى.'),
         errorKind: BarcodeSearchErrorKind.general,
         searchResults: [],
         isSearchActive: false,

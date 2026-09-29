@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -110,7 +111,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
           const Icon(PhosphorIconsBold.treeStructure, color: Colors.white, size: 24),
           const SizedBox(width: 12),
           Text(
-            'مراكز التكلفة والفروع',
+            tr('مراكز التكلفة والفروع'),
             style: GoogleFonts.cairo(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -126,7 +127,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
               onChanged: (_) => setState(() {}),
               style: GoogleFonts.cairo(color: Colors.white, fontSize: 13),
               decoration: InputDecoration(
-                hintText: 'بحث بالاسم أو الرمز...',
+                hintText: tr('بحث بالاسم أو الرمز...'),
                 hintStyle: GoogleFonts.cairo(color: Colors.white60, fontSize: 13),
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.15),
@@ -145,7 +146,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('عرض غير النشطة', style: GoogleFonts.cairo(color: Colors.white70, fontSize: 12)),
+              Text(tr('عرض غير النشطة'), style: GoogleFonts.cairo(color: Colors.white70, fontSize: 12)),
               Switch(
                 value: _showInactive,
                 onChanged: (v) => setState(() => _showInactive = v),
@@ -157,7 +158,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
           ElevatedButton.icon(
             onPressed: () => _showAddDialog(context),
             icon: const Icon(PhosphorIconsBold.plus, size: 16),
-            label: Text('إضافة مركز تكلفة', style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
+            label: Text(tr('إضافة مركز تكلفة'), style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: AppColors.primary,
@@ -190,10 +191,10 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
               children: [
                 const Icon(PhosphorIconsBold.treeStructure, size: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
-                Text('الهيكل الشجري', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 14)),
+                Text(tr('الهيكل الشجري'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 14)),
                 const Spacer(),
                 Text(
-                  '${centers.length} مركز',
+                  tr('{p0} مركز', {'p0': centers.length}),
                   style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
                 ),
               ],
@@ -209,12 +210,12 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                         const Icon(PhosphorIconsBold.treeStructure, size: 48, color: AppColors.textMuted),
                         const SizedBox(height: 8),
                         Text(
-                          'لا توجد مراكز تكلفة',
+                          tr('لا توجد مراكز تكلفة'),
                           style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 14),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'أضف فرع أو مركز تكلفة للبدء',
+                          tr('أضف فرع أو مركز تكلفة للبدء'),
                           style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 12),
                         ),
                       ],
@@ -306,7 +307,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                       color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(3),
                     ),
-                    child: Text('معطل', style: GoogleFonts.cairo(fontSize: 8, color: AppColors.error)),
+                    child: Text(tr('معطل'), style: GoogleFonts.cairo(fontSize: 8, color: AppColors.error)),
                   ),
                 if (hasChildren)
                   Container(
@@ -347,7 +348,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
               Icon(PhosphorIconsBold.cursorClick, size: 48, color: AppColors.textMuted.withValues(alpha: 0.5)),
               const SizedBox(height: 12),
               Text(
-                'اختر مركز تكلفة لعرض التفاصيل',
+                tr('اختر مركز تكلفة لعرض التفاصيل'),
                 style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 14),
               ),
             ],
@@ -358,7 +359,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
 
     final center = centers.where((c) => c.id == _selectedCenterId).firstOrNull;
     if (center == null) {
-      return const Center(child: Text('مركز التكلفة غير موجود'));
+      return  Center(child: Text(tr('مركز التكلفة غير موجود')));
     }
 
     final children = centers.where((c) => c.parentId == center.id).toList();
@@ -398,13 +399,13 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                       Row(
                         children: [
                           Text(
-                            'الرمز: ${center.code}',
+                            tr('الرمز: {p0}', {'p0': center.code}),
                             style: GoogleFonts.jetBrainsMono(fontSize: 11, color: AppColors.textMuted),
                           ),
                           if (parent != null) ...[
                             const SizedBox(width: 12),
                             Text(
-                              'تابع لـ: ${parent.name}',
+                              tr('تابع لـ: {p0}', {'p0': parent.name}),
                               style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
                             ),
                           ],
@@ -417,7 +418,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                 IconButton(
                   onPressed: () => _showEditDialog(context, center),
                   icon: const Icon(PhosphorIconsBold.pencilSimple, size: 16),
-                  tooltip: 'تعديل',
+                  tooltip: tr('تعديل'),
                   style: IconButton.styleFrom(
                     backgroundColor: AppColors.primary.withValues(alpha: 0.08),
                     foregroundColor: AppColors.primary,
@@ -428,7 +429,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                 IconButton(
                   onPressed: () => _showAddDialog(context, parentId: center.id),
                   icon: const Icon(PhosphorIconsBold.plus, size: 16),
-                  tooltip: 'إضافة مركز فرعي',
+                  tooltip: tr('إضافة مركز فرعي'),
                   style: IconButton.styleFrom(
                     backgroundColor: AppColors.success.withValues(alpha: 0.08),
                     foregroundColor: AppColors.success,
@@ -440,7 +441,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                   IconButton(
                     onPressed: () => _confirmDeactivate(context, repo, center),
                     icon: const Icon(PhosphorIconsBold.prohibit, size: 16),
-                    tooltip: 'تعطيل',
+                    tooltip: tr('تعطيل'),
                     style: IconButton.styleFrom(
                       backgroundColor: AppColors.error.withValues(alpha: 0.08),
                       foregroundColor: AppColors.error,
@@ -457,19 +458,19 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
             child: Row(
               children: [
                 _buildInfoCard(
-                  'الحالة',
-                  center.isActive ? 'نشط ✓' : 'معطل ✗',
+                  tr('الحالة'),
+                  center.isActive ? tr('نشط ✓') : tr('معطل ✗'),
                   center.isActive ? AppColors.success : AppColors.error,
                 ),
                 const SizedBox(width: 8),
                 _buildInfoCard(
-                  'النوع',
-                  center.parentId == null ? 'فرع رئيسي' : 'مركز فرعي',
+                  tr('النوع'),
+                  center.parentId == null ? tr('فرع رئيسي') : tr('مركز فرعي'),
                   AppColors.primary,
                 ),
                 const SizedBox(width: 8),
                 _buildInfoCard(
-                  'مراكز فرعية',
+                  tr('مراكز فرعية'),
                   '${children.length}',
                   AppColors.warning,
                 ),
@@ -485,7 +486,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                     // the value is a closing balance (it equals the ledger's
                     // last running-balance row), not gross turnover.
                     return _buildInfoCard(
-                      'الرصيد',
+                      tr('الرصيد'),
                       '${(debit - credit).toStringAsFixed(0)} ${AppConstants.currencySymbol}',
                       AppColors.primary,
                     );
@@ -524,7 +525,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                         const Icon(PhosphorIconsBold.info, size: 16, color: Colors.orange),
                         const SizedBox(width: 8),
                         Text(
-                          'لا توجد فروع أو مخازن مرتبطة بهذا المركز',
+                          tr('لا توجد فروع أو مخازن مرتبطة بهذا المركز'),
                           style: GoogleFonts.cairo(fontSize: 12, color: Colors.orange.shade700),
                         ),
                       ],
@@ -538,7 +539,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('الكيانات المرتبطة',
+                    Text(tr('الكيانات المرتبطة'),
                         style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 13)),
                     const SizedBox(height: 6),
                     Wrap(
@@ -573,7 +574,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
           // Ledger section
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text('دفتر الأستاذ', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 14)),
+            child: Text(tr('دفتر الأستاذ'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 14)),
           ),
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -591,7 +592,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                 if (entries.isEmpty) {
                   return Center(
                     child: Text(
-                      'لا توجد حركات لهذا المركز',
+                      tr('لا توجد حركات لهذا المركز'),
                       style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 13),
                     ),
                   );
@@ -747,9 +748,9 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
   void _confirmDeactivate(BuildContext context, IAccountingRepository repo, CostCenter center) async {
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: 'تأكيد التعطيل',
-      message: 'هل أنت متأكد من تعطيل مركز التكلفة "${center.name}"؟',
-      confirmLabel: 'تعطيل',
+      title: tr('تأكيد التعطيل'),
+      message: tr('هل أنت متأكد من تعطيل مركز التكلفة "{p0}"؟', {'p0': center.name}),
+      confirmLabel: tr('تعطيل'),
       isDangerous: true,
     );
 

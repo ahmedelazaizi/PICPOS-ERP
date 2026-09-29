@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -25,20 +26,20 @@ class InventoryHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-            const Column(
+             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'إدارة المخزون',
-                  style: TextStyle(
+                  tr('إدارة المخزون'),
+                  style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
                 ),
                 Text(
-                  'متابعة مستويات المخزون وحركات الأصناف ولائحة الصلاحيات',
-                  style: TextStyle(fontSize: 14, color: AppColors.textMuted),
+                  tr('متابعة مستويات المخزون وحركات الأصناف ولائحة الصلاحيات'),
+                  style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
                 ),
               ],
             ),

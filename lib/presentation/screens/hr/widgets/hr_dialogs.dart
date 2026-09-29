@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -51,38 +52,38 @@ class HRDialogs {
         textDirection: ui.TextDirection.rtl,
         child: StatefulBuilder(
           builder: (context, setState) => AlertDialog(
-            title: Text(employee == null ? 'إضافة موظف' : 'تعديل موظف'),
+            title: Text(employee == null ? tr('إضافة موظف') : tr('تعديل موظف')),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: 'الاسم رباعي'),
+                    decoration:  InputDecoration(labelText: tr('الاسم رباعي')),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: phoneCtrl,
-                    decoration: const InputDecoration(labelText: 'رقم الهاتف'),
+                    decoration:  InputDecoration(labelText: tr('رقم الهاتف')),
                     keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: role,
-                    decoration: const InputDecoration(labelText: 'المسمى الوظيفي'),
-                    items: const [
-                      DropdownMenuItem(value: 'manager', child: Text('مدير')),
-                      DropdownMenuItem(value: 'cashier', child: Text('كاشير')),
+                    decoration:  InputDecoration(labelText: tr('المسمى الوظيفي')),
+                    items:  [
+                      DropdownMenuItem(value: 'manager', child: Text(tr('مدير'))),
+                      DropdownMenuItem(value: 'cashier', child: Text(tr('كاشير'))),
                       DropdownMenuItem(
                         value: 'waiter',
-                        child: Text('نادل (ويتر)'),
+                        child: Text(tr('نادل (ويتر)')),
                       ),
-                      DropdownMenuItem(value: 'chef', child: Text('شيف')),
+                      DropdownMenuItem(value: 'chef', child: Text(tr('شيف'))),
                       DropdownMenuItem(
                         value: 'cleaner',
-                        child: Text('عامل نظافة'),
+                        child: Text(tr('عامل نظافة')),
                       ),
-                      DropdownMenuItem(value: 'staff', child: Text('موظف عام')),
+                      DropdownMenuItem(value: 'staff', child: Text(tr('موظف عام'))),
                     ],
                     onChanged: (v) => setState(() => role = v!),
                   ),
@@ -92,7 +93,7 @@ class HRDialogs {
                       Expanded(
                         child: TextField(
                           controller: salaryCtrl,
-                          decoration: const InputDecoration(labelText: 'الراتب'),
+                          decoration:  InputDecoration(labelText: tr('الراتب')),
                           keyboardType: TextInputType.number,
                         ),
                       ),
@@ -100,19 +101,19 @@ class HRDialogs {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: salaryType,
-                          decoration: const InputDecoration(labelText: 'نظام الراتب'),
-                          items: const [
+                          decoration:  InputDecoration(labelText: tr('نظام الراتب')),
+                          items:  [
                             DropdownMenuItem(
                               value: 'monthly',
-                              child: Text('شهري'),
+                              child: Text(tr('شهري')),
                             ),
                             DropdownMenuItem(
                               value: 'daily',
-                              child: Text('يومي'),
+                              child: Text(tr('يومي')),
                             ),
                             DropdownMenuItem(
                               value: 'hourly',
-                              child: Text('بالساعة'),
+                              child: Text(tr('بالساعة')),
                             ),
                           ],
                           onChanged: (v) => setState(() => salaryType = v!),
@@ -123,13 +124,13 @@ class HRDialogs {
                   const SizedBox(height: 12),
                   TextField(
                     controller: hoursPerDayCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'ساعات العمل اليومية',
+                    decoration:  InputDecoration(
+                      labelText: tr('ساعات العمل اليومية'),
                       helperText:
                           'مطلوب لأجر الساعة، ويُستعمل لاحتساب الوقت '
                           'الإضافي تلقائياً',
                       helperMaxLines: 2,
-                      prefixIcon: Icon(PhosphorIconsBold.timer),
+                      prefixIcon: const Icon(PhosphorIconsBold.timer),
                     ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
@@ -138,15 +139,15 @@ class HRDialogs {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<int?>(
                     initialValue: branchId,
-                    decoration: const InputDecoration(labelText: 'الفرع'),
+                    decoration:  InputDecoration(labelText: tr('الفرع')),
                     items: [
                       // «بلا فرع» = موظفٌ على مستوى الشركة، يراه كلُّ الفروع.
                       // مقصورٌ على من له وصولٌ كامل: مديرُ فرعٍ يختاره كان
                       // يُنشئ موظفاً مرئياً لكل الفروع من داخل نطاقه.
                       if (scope == null || scope.hasFullAccess)
-                        const DropdownMenuItem<int?>(
+                         DropdownMenuItem<int?>(
                           value: null,
-                          child: Text('بلا فرع (مستوى الشركة)'),
+                          child: Text(tr('بلا فرع (مستوى الشركة)')),
                         ),
                       ...visibleBranches.map(
                         (b) => DropdownMenuItem<int?>(
@@ -163,7 +164,7 @@ class HRDialogs {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -179,7 +180,7 @@ class HRDialogs {
                       (hoursPerDay == null || hoursPerDay <= 0)) {
                     AppToast.show(
                       context,
-                      'ساعاتُ العمل اليومية مطلوبةٌ لموظفٍ بأجر الساعة',
+                      tr('ساعاتُ العمل اليومية مطلوبةٌ لموظفٍ بأجر الساعة'),
                       type: ToastType.error,
                     );
                     return;
@@ -198,7 +199,7 @@ class HRDialogs {
 
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
-                child: const Text('حفظ'),
+                child:  Text(tr('حفظ')),
               ),
             ],
           ),
@@ -228,8 +229,8 @@ class HRDialogs {
           builder: (context, setState) => AlertDialog(
             title: Text(
               type == 'advance'
-                  ? 'تسجيل سلفة - ${employee.name}'
-                  : 'تسجيل خصم - ${employee.name}',
+                  ? tr('تسجيل سلفة - {p0}', {'p0': employee.name})
+                  : tr('تسجيل خصم - {p0}', {'p0': employee.name}),
             ),
             content: SingleChildScrollView(
               child: Column(
@@ -237,9 +238,9 @@ class HRDialogs {
                 children: [
                   TextField(
                     controller: amountCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'المبلغ',
-                      prefixIcon: Icon(PhosphorIconsBold.money),
+                    decoration:  InputDecoration(
+                      labelText: tr('المبلغ'),
+                      prefixIcon: const Icon(PhosphorIconsBold.money),
                     ),
                     keyboardType: TextInputType.number,
                     autofocus: true,
@@ -247,15 +248,15 @@ class HRDialogs {
                   const SizedBox(height: 12),
                   TextField(
                     controller: descCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'ملاحظات / السبب',
-                      prefixIcon: Icon(PhosphorIconsBold.textT),
+                    decoration:  InputDecoration(
+                      labelText: tr('ملاحظات / السبب'),
+                      prefixIcon: const Icon(PhosphorIconsBold.textT),
                     ),
                   ),
                   const SizedBox(height: 12),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('التاريخ'),
+                    title:  Text(tr('التاريخ')),
                     subtitle: Text(
                       DateFormat('yyyy/MM/dd').format(transactionDate),
                     ),
@@ -277,7 +278,7 @@ class HRDialogs {
                   if (type == 'advance')
                     CheckboxListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('يؤثر على الخزينة (صرف نقدي)'),
+                      title:  Text(tr('يؤثر على الخزينة (صرف نقدي)')),
                       value: affectsTreasury,
                       onChanged: (v) => setState(() => affectsTreasury = v!),
                     ),
@@ -288,22 +289,22 @@ class HRDialogs {
                       return safesAsync.when(
                         data: (safes) {
                           if (safes.isEmpty) {
-                            return const Padding(
-                              padding: EdgeInsets.only(top: 8),
-                              child: Text('لا توجد صناديق متاحة', style: TextStyle(color: AppColors.error)),
+                            return  Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(tr('لا توجد صناديق متاحة'), style: const TextStyle(color: AppColors.error)),
                             );
                           }
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: DropdownButtonFormField<int>(
                               initialValue: selectedSafeId,
-                              decoration: const InputDecoration(
-                                labelText: 'الصندوق',
-                                prefixIcon: Icon(PhosphorIconsBold.vault),
-                                border: OutlineInputBorder(),
+                              decoration:  InputDecoration(
+                                labelText: tr('الصندوق'),
+                                prefixIcon: const Icon(PhosphorIconsBold.vault),
+                                border: const OutlineInputBorder(),
                                 isDense: true,
                               ),
-                              hint: const Text('اختيار الصندوق (اختياري)'),
+                              hint:  Text(tr('اختيار الصندوق (اختياري)')),
                               items: safes
                                   .map((s) => DropdownMenuItem(
                                       value: s.id,
@@ -327,7 +328,7 @@ class HRDialogs {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -357,8 +358,8 @@ class HRDialogs {
                     AppToast.show(
                       context,
                       type == 'advance'
-                          ? 'تم تسجيل السلفة بنجاح'
-                          : 'تم تسجيل الخصم بنجاح',
+                          ? tr('تم تسجيل السلفة بنجاح')
+                          : tr('تم تسجيل الخصم بنجاح'),
                       type: ToastType.success,
                     );
                   }
@@ -368,7 +369,7 @@ class HRDialogs {
                       ? AppColors.error
                       : AppColors.warning,
                 ),
-                child: Text(type == 'advance' ? 'تسجيل سلفة' : 'تسجيل خصم'),
+                child: Text(type == 'advance' ? tr('تسجيل سلفة') : tr('تسجيل خصم')),
               ),
             ],
           ),
@@ -388,7 +389,7 @@ class HRDialogs {
       builder: (ctx) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: AlertDialog(
-          title: Text('سجل معاملات: ${employee.name}'),
+          title: Text(tr('سجل معاملات: {p0}', {'p0': employee.name})),
           content: SizedBox(
             width: 500,
             height: 400,
@@ -404,7 +405,7 @@ class HRDialogs {
 
                 final transactions = snapshot.data ?? [];
                 if (transactions.isEmpty) {
-                  return const Center(child: Text('لا توجد معاملات مسجلة'));
+                  return  Center(child: Text(tr('لا توجد معاملات مسجلة')));
                 }
 
                 return ListView.separated(
@@ -422,7 +423,7 @@ class HRDialogs {
                         color: isAdvance ? AppColors.error : AppColors.warning,
                       ),
                       title: Text(
-                        '${isAdvance ? "سلفة" : "خصم"}: ${t.amount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                        tr('{p0}: {p1} {p2}', {'p0': isAdvance ? "سلفة" : "خصم", 'p1': t.amount.toStringAsFixed(AppConstants.decimalPlaces), 'p2': AppConstants.currencySymbolEn}),
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -447,18 +448,18 @@ class HRDialogs {
                           final confirm = await showDialog<bool>(
                             context: context,
                             builder: (c) => AlertDialog(
-                              title: const Text('تأكيد الحذف'),
-                              content: const Text(
-                                'هل أنت متأكد من حذف هذه المعاملة؟',
+                              title:  Text(tr('تأكيد الحذف')),
+                              content:  Text(
+                                tr('هل أنت متأكد من حذف هذه المعاملة؟'),
                               ),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(c, false),
-                                  child: const Text('إلغاء'),
+                                  child:  Text(tr('إلغاء')),
                                 ),
                                 TextButton(
                                   onPressed: () => Navigator.pop(c, true),
-                                  child: const Text('حذف'),
+                                  child:  Text(tr('حذف')),
                                 ),
                               ],
                             ),
@@ -478,7 +479,7 @@ class HRDialogs {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
+              child:  Text(tr('إغلاق')),
             ),
           ],
         ),

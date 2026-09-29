@@ -86,11 +86,11 @@ class _CartDisplaySettingsDialogState extends ConsumerState<_CartDisplaySettings
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
-        title: const Row(
+        title:  Row(
           children: [
-            Icon(PhosphorIconsBold.slidersHorizontal, color: AppColors.primary, size: 22),
-            SizedBox(width: 8),
-            Text('إعدادات عرض السلة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Icon(PhosphorIconsBold.slidersHorizontal, color: AppColors.primary, size: 22),
+            const SizedBox(width: 8),
+            Text(tr('إعدادات عرض السلة'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: SizedBox(
@@ -99,7 +99,7 @@ class _CartDisplaySettingsDialogState extends ConsumerState<_CartDisplaySettings
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildSliderRow(
-                label: 'حجم نص الأصناف',
+                label: tr('حجم نص الأصناف'),
                 icon: PhosphorIconsBold.textAa,
                 value: _cartItemScale,
                 min: 0.7,
@@ -113,7 +113,7 @@ class _CartDisplaySettingsDialogState extends ConsumerState<_CartDisplaySettings
               ),
               const Divider(height: 24),
               _buildSliderRow(
-                label: 'حجم منطقة الدفع',
+                label: tr('حجم منطقة الدفع'),
                 icon: PhosphorIconsBold.rectangleDashed,
                 value: _bottomPanelScale,
                 min: 0.7,
@@ -127,7 +127,7 @@ class _CartDisplaySettingsDialogState extends ConsumerState<_CartDisplaySettings
               ),
               const Divider(height: 24),
               _buildSliderRow(
-                label: 'ارتفاع الأزرار',
+                label: tr('ارتفاع الأزرار'),
                 icon: PhosphorIconsBold.arrowsOutLineVertical,
                 value: _buttonHeight,
                 min: 30,
@@ -141,7 +141,7 @@ class _CartDisplaySettingsDialogState extends ConsumerState<_CartDisplaySettings
               ),
               const Divider(height: 24),
               _buildSliderRow(
-                label: 'حجم خط الأزرار',
+                label: tr('حجم خط الأزرار'),
                 icon: PhosphorIconsBold.textT,
                 value: _buttonFontSize,
                 min: 10,
@@ -155,7 +155,7 @@ class _CartDisplaySettingsDialogState extends ConsumerState<_CartDisplaySettings
               ),
               const Divider(height: 24),
               _buildSliderRow(
-                label: 'ارتفاع أزرار الدفع',
+                label: tr('ارتفاع أزرار الدفع'),
                 icon: PhosphorIconsBold.creditCard,
                 value: _paymentButtonHeight,
                 min: 30,
@@ -173,7 +173,7 @@ class _CartDisplaySettingsDialogState extends ConsumerState<_CartDisplaySettings
         actions: [
           TextButton(
             onPressed: () => _resetDefaults(),
-            child: const Text('استعادة الافتراضي', style: TextStyle(color: AppColors.warning)),
+            child:  Text(tr('استعادة الافتراضي'), style: const TextStyle(color: AppColors.warning)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
@@ -181,7 +181,7 @@ class _CartDisplaySettingsDialogState extends ConsumerState<_CartDisplaySettings
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
-            child: const Text('تم'),
+            child:  Text(tr('تم')),
           ),
         ],
       ),

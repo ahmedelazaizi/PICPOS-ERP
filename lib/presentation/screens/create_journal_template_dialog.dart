@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../../domain/models/journal_balance.dart';
@@ -87,17 +88,17 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
   Future<void> _saveTemplate() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
-      AppToast.show(context, 'يرجى إدخال اسم القالب', type: ToastType.info);
+      AppToast.show(context, tr('يرجى إدخال اسم القالب'), type: ToastType.info);
       return;
     }
 
     for (final line in _lines) {
       if (line.account == null) {
-        AppToast.show(context, 'يرجى اختيار حساب لكل بند', type: ToastType.info);
+        AppToast.show(context, tr('يرجى اختيار حساب لكل بند'), type: ToastType.info);
         return;
       }
       if (line.debit <= 0 && line.credit <= 0) {
-        AppToast.show(context, 'كل بند يجب أن يحتوي على قيمة مدين أو دائن', type: ToastType.info);
+        AppToast.show(context, tr('كل بند يجب أن يحتوي على قيمة مدين أو دائن'), type: ToastType.info);
         return;
       }
     }
@@ -106,7 +107,7 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
     final totalCredit = _lines.fold(0.0, (s, l) => s + l.credit);
     if (!JournalBalance(debit: totalDebit, credit: totalCredit)
         .isBalanced) {
-      AppToast.show(context, 'القيد غير متوازن، يجب أن يتساوى إجمالي المدين والدائن', type: ToastType.info);
+      AppToast.show(context, tr('القيد غير متوازن، يجب أن يتساوى إجمالي المدين والدائن'), type: ToastType.info);
       return;
     }
 
@@ -136,11 +137,11 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
       }
       if (mounted) {
         Navigator.pop(context);
-        AppToast.show(context, 'تم الحفظ بنجاح');
+        AppToast.show(context, tr('تم الحفظ بنجاح'));
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
       }
     }
   }
@@ -159,7 +160,7 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
           children: [
             const Icon(PhosphorIconsBold.notebook, color: AppColors.primary, size: 20),
             const SizedBox(width: 8),
-            Text(widget.templateToEdit == null ? 'إنشاء قالب جديد' : 'تعديل القالب', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            Text(widget.templateToEdit == null ? tr('إنشاء قالب جديد') : tr('تعديل القالب'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
           ],
         ),
         content: SizedBox(
@@ -175,10 +176,10 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
                       flex: 2,
                       child: TextField(
                         controller: _nameCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'اسم القالب',
-                          hintText: 'قالب رواتب الموظفين...',
-                          border: OutlineInputBorder(),
+                        decoration:  InputDecoration(
+                          labelText: tr('اسم القالب'),
+                          hintText: tr('قالب رواتب الموظفين...'),
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                       ),
@@ -188,9 +189,9 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
                       flex: 3,
                       child: TextField(
                         controller: _descCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'الوصف (اختياري)',
-                          border: OutlineInputBorder(),
+                        decoration:  InputDecoration(
+                          labelText: tr('الوصف (اختياري)'),
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                       ),
@@ -203,7 +204,7 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
                           onChanged: (v) => setState(() => _isActive = v ?? true),
                           activeColor: AppColors.primary,
                         ),
-                        Text('نشط', style: GoogleFonts.cairo()),
+                        Text(tr('نشط'), style: GoogleFonts.cairo()),
                       ],
                     ),
                   ],
@@ -211,13 +212,13 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Text('بنود القيد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 14)),
+                    Text(tr('بنود القيد'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 14)),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _TemplateCostCenterPicker(
                         repo: ref.read(accountingRepositoryProvider),
                         selectedId: _globalCostCenterId,
-                        labelOverride: 'الفرع / مركز التكلفة لجميع البنود',
+                        labelOverride: tr('الفرع / مركز التكلفة لجميع البنود'),
                         onChanged: (id) {
                           setState(() {
                             _globalCostCenterId = id;
@@ -235,7 +236,7 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
                         _lines.add(newLine);
                       }),
                       icon: const Icon(PhosphorIconsBold.plus, size: 14),
-                      label: const Text('إضافة بند'),
+                      label:  Text(tr('إضافة بند')),
                     ),
                   ],
                 ),
@@ -265,7 +266,7 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
                                 color: AppColors.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: Text('بند ${i + 1}', style: GoogleFonts.cairo(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                              child: Text(tr('بند {p0}', {'p0': i + 1}), style: GoogleFonts.cairo(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.primary)),
                             ),
                             const Spacer(),
                             if (_lines.length > 2)
@@ -291,7 +292,7 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
                               child: TextField(
                                 controller: line.descCtrl,
                                 decoration: InputDecoration(
-                                  hintText: 'البيان',
+                                  hintText: tr('البيان'),
                                   isDense: true,
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -319,7 +320,7 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
                                 keyboardType: TextInputType.number,
                                 onChanged: (_) => setState(() {}),
                                 decoration: InputDecoration(
-                                  labelText: 'مدين',
+                                  labelText: tr('مدين'),
                                   labelStyle: GoogleFonts.cairo(fontSize: 11),
                                   hintText: '0.00',
                                   isDense: true,
@@ -336,7 +337,7 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
                                 keyboardType: TextInputType.number,
                                 onChanged: (_) => setState(() {}),
                                 decoration: InputDecoration(
-                                  labelText: 'دائن',
+                                  labelText: tr('دائن'),
                                   labelStyle: GoogleFonts.cairo(fontSize: 11),
                                   hintText: '0.00',
                                   isDense: true,
@@ -364,11 +365,11 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
                     children: [
                       Icon(isBalanced ? PhosphorIconsBold.checkCircle : PhosphorIconsBold.warning, size: 18, color: isBalanced ? AppColors.success : AppColors.error),
                       const SizedBox(width: 8),
-                      Text('مجموع المدين: ${totalDebit.toStringAsFixed(2)}', style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
+                      Text(tr('مجموع المدين: {p0}', {'p0': totalDebit.toStringAsFixed(2)}), style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
                       const SizedBox(width: 16),
-                      Text('مجموع الدائن: ${totalCredit.toStringAsFixed(2)}', style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
+                      Text(tr('مجموع الدائن: {p0}', {'p0': totalCredit.toStringAsFixed(2)}), style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
                       const Spacer(),
-                      Text(isBalanced ? 'متوازن ✓' : 'غير متوازن!', style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w700, color: isBalanced ? AppColors.success : AppColors.error)),
+                      Text(isBalanced ? tr('متوازن ✓') : tr('غير متوازن!'), style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w700, color: isBalanced ? AppColors.success : AppColors.error)),
                     ],
                   ),
                 ),
@@ -377,11 +378,11 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(context), child:  Text(tr('إلغاء'))),
           ElevatedButton.icon(
             onPressed: isBalanced ? _saveTemplate : null,
             icon: const Icon(PhosphorIconsBold.floppyDisk, size: 16),
-            label: const Text('حفظ القالب'),
+            label:  Text(tr('حفظ القالب')),
           ),
         ],
       ),
@@ -458,7 +459,7 @@ class _TemplateAccountAutocompleteState extends State<_TemplateAccountAutocomple
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(6)),
-        child: Text('تحميل الحسابات...', style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+        child: Text(tr('تحميل الحسابات...'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
       );
     }
 
@@ -491,7 +492,7 @@ class _TemplateAccountAutocompleteState extends State<_TemplateAccountAutocomple
               controller: controller,
               focusNode: focusNode,
               decoration: InputDecoration(
-                hintText: 'اكتب اسم أو رمز الحساب...',
+                hintText: tr('اكتب اسم أو رمز الحساب...'),
                 hintStyle: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
                 isDense: true,
                 prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 14, color: AppColors.primary),
@@ -601,7 +602,7 @@ class _TemplateCostCenterPickerState extends State<_TemplateCostCenterPicker> {
       value: widget.selectedId,
       isExpanded: true,
       decoration: InputDecoration(
-        labelText: widget.labelOverride ?? 'مركز التكلفة',
+        labelText: widget.labelOverride ?? tr('مركز التكلفة'),
         labelStyle: GoogleFonts.cairo(fontSize: 11),
         isDense: true,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
@@ -609,7 +610,7 @@ class _TemplateCostCenterPickerState extends State<_TemplateCostCenterPicker> {
       ),
       style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textPrimary),
       items: [
-        DropdownMenuItem<int?>(value: null, child: Text('بدون', style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted))),
+        DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted))),
         ..._centers!.map((c) => DropdownMenuItem<int?>(value: c.id, child: Text('${c.code} - ${c.name}', style: GoogleFonts.cairo(fontSize: 11)))),
       ],
       onChanged: widget.onChanged,

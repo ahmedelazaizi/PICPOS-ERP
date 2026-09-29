@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -32,14 +33,14 @@ class PicPosExchangeModeBanner extends StatelessWidget {
   /// نصُّ الفرق ولونُه — الاتّجاهُ يحمل الإشارةَ لا الرقم.
   (String, Color) get _difference => switch (direction) {
         ExchangeCashDirection.collect => (
-            'يُحصَّل ${NumberUtils.formatCurrency(difference)}',
+            tr('يُحصَّل {p0}', {'p0': NumberUtils.formatCurrency(difference)}),
             AppColors.success,
           ),
         ExchangeCashDirection.refund => (
-            'يُرَدّ ${NumberUtils.formatCurrency(difference)}',
+            tr('يُرَدّ {p0}', {'p0': NumberUtils.formatCurrency(difference)}),
             AppColors.error,
           ),
-        ExchangeCashDirection.none => ('لا فرق', AppColors.textSecondary),
+        ExchangeCashDirection.none => (tr('لا فرق'), AppColors.textSecondary),
       };
 
   @override
@@ -62,7 +63,7 @@ class PicPosExchangeModeBanner extends StatelessWidget {
               const Icon(PhosphorIconsBold.arrowsLeftRight,
                   size: 16, color: AppColors.warning),
               const SizedBox(width: 8),
-              Text('وضع الاستبدال',
+              Text(tr('وضع الاستبدال'),
                   style: PicPosText.v(context, 13, color: AppColors.warning)),
               const SizedBox(width: 8),
               Expanded(
@@ -79,14 +80,14 @@ class PicPosExchangeModeBanner extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'المرتجع ${NumberUtils.formatCurrency(refundTotal)}',
+                  tr('المرتجع {p0}', {'p0': NumberUtils.formatCurrency(refundTotal)}),
                   overflow: TextOverflow.ellipsis,
                   style: PicPosText.v(context, 12, color: AppColors.textSecondary),
                 ),
               ),
               Expanded(
                 child: Text(
-                  'البديل ${NumberUtils.formatCurrency(replacementTotal)}',
+                  tr('البديل {p0}', {'p0': NumberUtils.formatCurrency(replacementTotal)}),
                   overflow: TextOverflow.ellipsis,
                   style: PicPosText.v(context, 12, color: AppColors.textSecondary),
                 ),

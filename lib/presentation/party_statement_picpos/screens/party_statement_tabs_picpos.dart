@@ -29,10 +29,10 @@ String _count(int v, String unit) => '$v $unit';
 /// نسبةٌ لا تُقسَم على صفر.
 double _ratio(double part, double whole) => whole == 0 ? 0 : part / whole * 100;
 
-String _pct(double v) => '${v.toStringAsFixed(0)}٪';
+String _pct(double v) => tr('{p0}٪', {'p0': v.toStringAsFixed(0)});
 
 /// `null` = لا سجلَّ يُقاس عليه — و«لا بيانات» ليست «صفر٪».
-String _pctOrNone(double? v) => v == null ? 'لا بيانات' : _pct(v);
+String _pctOrNone(double? v) => v == null ? tr('لا بيانات') : _pct(v);
 
 const _tintOk = AppColors.success;
 const _tintWarn = AppColors.warning;
@@ -74,46 +74,46 @@ typedef StatementColumnDef = ({
   PicPosCellAlign align,
 });
 
-const List<StatementColumnDef> kStatementColumnCatalogue = [
+List<StatementColumnDef> get kStatementColumnCatalogue => [
   (
     id: kStatementColumnDate,
-    label: 'التاريخ',
+    label: tr('التاريخ'),
     flex: 1.1,
     align: PicPosCellAlign.start
   ),
   (
     id: kStatementColumnDoc,
-    label: 'المستند',
+    label: tr('المستند'),
     flex: 1.4,
     align: PicPosCellAlign.start
   ),
   (
     id: kStatementColumnDesc,
-    label: 'البيان',
+    label: tr('البيان'),
     flex: 2,
     align: PicPosCellAlign.start
   ),
   (
     id: kStatementColumnDebit,
-    label: 'مدين',
+    label: tr('مدين'),
     flex: 1.2,
     align: PicPosCellAlign.end
   ),
   (
     id: kStatementColumnCredit,
-    label: 'دائن',
+    label: tr('دائن'),
     flex: 1.2,
     align: PicPosCellAlign.end
   ),
   (
     id: kStatementColumnBalance,
-    label: 'الرصيد الجاري',
+    label: tr('الرصيد الجاري'),
     flex: 1.3,
     align: PicPosCellAlign.end
   ),
   (
     id: kStatementColumnStatus,
-    label: 'الحالة',
+    label: tr('الحالة'),
     flex: 1.2,
     align: PicPosCellAlign.start
   ),
@@ -170,69 +170,69 @@ const Set<String> kDefaultStatementColumns = {
 
 // ═══ تعريفاتُ التبويبات ═══════════════════════════════════════════════════
 
-const List<_StatementTab> _customerTabs = [
+List<_StatementTab> get _customerTabs => [
   (
     id: 'ledger',
-    label: 'الحركة والرصيد',
+    label: tr('الحركة والرصيد'),
     icon: PhosphorIconsBold.listNumbers,
-    note: 'الرصيد الجاري يُحسب بالترتيب الزمني — مدين ناقص دائن',
+    note: tr('الرصيد الجاري يُحسب بالترتيب الزمني — مدين ناقص دائن'),
   ),
   (
     id: 'aging',
-    label: 'أعمار الدين',
+    label: tr('أعمار الدين'),
     icon: PhosphorIconsBold.hourglass,
-    note: 'العمر يُحسب من تاريخ استحقاق الفاتورة لا تاريخ إصدارها',
+    note: tr('العمر يُحسب من تاريخ استحقاق الفاتورة لا تاريخ إصدارها'),
   ),
   (
     id: 'match',
-    label: 'مطابقة الدفعات',
+    label: tr('مطابقة الدفعات'),
     icon: PhosphorIconsBold.link,
-    note: 'الدفعة تُخصم من أقدم فاتورة ما لم تُربط يدوياً',
+    note: tr('الدفعة تُخصم من أقدم فاتورة ما لم تُربط يدوياً'),
   ),
   (
     id: 'papers',
-    label: 'الأوراق والضمانات',
+    label: tr('الأوراق والضمانات'),
     icon: PhosphorIconsBold.note,
-    note: 'الشيك لا يُنقص الذمة إلا عند التحصيل',
+    note: tr('الشيك لا يُنقص الذمة إلا عند التحصيل'),
   ),
   (
     id: 'profile',
-    label: 'ملف العميل والائتمان',
+    label: tr('ملف العميل والائتمان'),
     icon: PhosphorIconsBold.identificationCard,
-    note: 'حد الائتمان ومدة السماح وسلوك السداد',
+    note: tr('حد الائتمان ومدة السماح وسلوك السداد'),
   ),
 ];
 
-const List<_StatementTab> _supplierTabs = [
+List<_StatementTab> get _supplierTabs => [
   (
     id: 'ledger',
-    label: 'الحركة والرصيد',
+    label: tr('الحركة والرصيد'),
     icon: PhosphorIconsBold.listNumbers,
-    note: 'الدائن يزيد ما علينا والمدين ينقصه — عكس كشف العميل',
+    note: tr('الدائن يزيد ما علينا والمدين ينقصه — عكس كشف العميل'),
   ),
   (
     id: 'due',
-    label: 'المستحق والاستحقاق',
+    label: tr('المستحق والاستحقاق'),
     icon: PhosphorIconsBold.calendarCheck,
-    note: 'الخصم النقدي المتاح يُقارن بتكلفة التمويل',
+    note: tr('الخصم النقدي المتاح يُقارن بتكلفة التمويل'),
   ),
   (
     id: 'match',
-    label: 'مطابقة الفواتير بالاستلام',
+    label: tr('مطابقة الفواتير بالاستلام'),
     icon: PhosphorIconsBold.gitDiff,
-    note: 'ثلاثية المطابقة: أمر شراء ← إذن استلام ← فاتورة',
+    note: tr('ثلاثية المطابقة: أمر شراء ← إذن استلام ← فاتورة'),
   ),
   (
     id: 'papers',
-    label: 'الأوراق والمقايضات',
+    label: tr('الأوراق والمقايضات'),
     icon: PhosphorIconsBold.note,
-    note: 'الشيك الصادر التزام قائم حتى يُخصم من البنك',
+    note: tr('الشيك الصادر التزام قائم حتى يُخصم من البنك'),
   ),
   (
     id: 'profile',
-    label: 'ملف المورد والتقييم',
+    label: tr('ملف المورد والتقييم'),
     icon: PhosphorIconsBold.identificationCard,
-    note: 'شروط السداد والالتزام بالتوريد وجودة التسليم',
+    note: tr('شروط السداد والالتزام بالتوريد وجودة التسليم'),
   ),
 ];
 
@@ -327,7 +327,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
     final p = party;
     if (p == null) return;
     if (gaps.isEmpty) {
-      AppToast.show(context, 'لا فروقَ يُطالَب بها', type: ToastType.warning);
+      AppToast.show(context, tr('لا فروقَ يُطالَب بها'), type: ToastType.warning);
       return;
     }
     final saved = await showDialog<bool>(
@@ -404,7 +404,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
     final kpis = <PicPosHubKpi>[
       PicPosHubKpi(
         icon: PhosphorIconsBold.arrowSquareIn,
-        label: 'رصيد أول الفترة',
+        label: tr('رصيد أول الفترة'),
         value: _money(opening),
         tint: _tintIdle,
         vs: df.format(range.start),
@@ -413,67 +413,67 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
         icon: isSupplier
             ? PhosphorIconsBold.handCoins
             : PhosphorIconsBold.receipt,
-        label: 'إجمالي المدين',
+        label: tr('إجمالي المدين'),
         value: _money(debit),
         tint: isSupplier ? _tintOk : _tintErr,
-        vs: isSupplier ? 'مدفوعات ومرتجعات' : 'فواتير ورسوم',
+        vs: isSupplier ? tr('مدفوعات ومرتجعات') : tr('فواتير ورسوم'),
       ),
       PicPosHubKpi(
         icon: isSupplier
             ? PhosphorIconsBold.receipt
             : PhosphorIconsBold.handCoins,
-        label: 'إجمالي الدائن',
+        label: tr('إجمالي الدائن'),
         value: _money(credit),
         tint: isSupplier ? _tintErr : _tintOk,
-        vs: isSupplier ? 'فواتير شراء' : 'تحصيلات ومرتجعات',
+        vs: isSupplier ? tr('فواتير شراء') : tr('تحصيلات ومرتجعات'),
       ),
       PicPosHubKpi(
         icon: PhosphorIconsBold.scales,
-        label: 'الرصيد الختامي',
+        label: tr('الرصيد الختامي'),
         value: _money(closing),
         tint: closing == 0
             ? _tintIdle
             : (isSupplier ? _tintErr : _tintBrand),
         vs: closing == 0
-            ? 'مسوّى'
-            : (isSupplier ? 'دائن لصالح المورد' : 'مدين على العميل'),
+            ? tr('مسوّى')
+            : (isSupplier ? tr('دائن لصالح المورد') : tr('مدين على العميل')),
       ),
       if (isSupplier)
         PicPosHubKpi(
           icon: PhosphorIconsBold.clock,
-          label: 'يستحق خلال ٧ أيام',
+          label: tr('يستحق خلال ٧ أيام'),
           value: _money(dueSoon),
           tint: dueSoon > 0 ? _tintErr : _tintOk,
-          vs: 'شاملاً المتأخر',
+          vs: tr('شاملاً المتأخر'),
         )
       else
         PicPosHubKpi(
           icon: PhosphorIconsBold.warning,
-          label: 'المتأخر منه',
+          label: tr('المتأخر منه'),
           value: _money(overdue),
           tint: overdue > 0 ? _tintErr : _tintOk,
-          vs: 'فوق مدة السماح',
+          vs: tr('فوق مدة السماح'),
         ),
     ];
 
     // شرائحُ الترشيح **تعمل فعلاً**: شريحةٌ لا تُرشِّح تكذب كزرٍّ لا يفعل.
     final groups = <({String label, List<PartyStatementEntry> items})>[
-      (label: 'كل الحركات', items: entries),
+      (label: tr('كل الحركات'), items: entries),
       (
-        label: 'فواتير',
+        label: tr('فواتير'),
         items: entries
             .where((e) => e.entryType == 'invoice' || e.entryType == 'purchase')
             .toList()
       ),
       (
-        label: isSupplier ? 'مدفوعات' : 'تحصيلات',
+        label: isSupplier ? tr('مدفوعات') : tr('تحصيلات'),
         items: entries
             .where((e) =>
                 e.entryType == (isSupplier ? 'payment' : 'receipt'))
             .toList()
       ),
       (
-        label: 'مرتجعات',
+        label: tr('مرتجعات'),
         items: entries
             .where((e) =>
                 e.entryType == 'sales_return' || e.entryType == 'memo')
@@ -481,12 +481,12 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       ),
       if (isSupplier)
         (
-          label: 'خصومات',
+          label: tr('خصومات'),
           items: entries.where((e) => e.entryType == 'discount').toList()
         )
       else
         (
-          label: 'أوراق',
+          label: tr('أوراق'),
           items:
               entries.where((e) => e.entryType == 'commercial_paper').toList()
         ),
@@ -520,7 +520,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
     String totalOf(String columnId, List<PartyStatementEntry> rows) {
       switch (columnId) {
         case kStatementColumnDate:
-          return _count(rows.length, 'حركة');
+          return _count(rows.length, tr('حركة'));
         case kStatementColumnDebit:
           return _money(rows.fold<double>(0, (t, e) => t + e.debit));
         case kStatementColumnCredit:
@@ -542,8 +542,8 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
           query: query,
           groups: groups,
           subtitle: isSupplier
-              ? 'الدائن يزيد ما علينا للمورد والمدين ينقصه · الرصيد الجاري تراكمي'
-              : 'مرتّب زمنياً · المدين يزيد الذمة والدائن ينقصها · الرصيد الجاري تراكمي',
+              ? tr('الدائن يزيد ما علينا للمورد والمدين ينقصه · الرصيد الجاري تراكمي')
+              : tr('مرتّب زمنياً · المدين يزيد الذمة والدائن ينقصها · الرصيد الجاري تراكمي'),
           cell: cellOf,
           total: totalOf,
           onCustomize: openColumnPicker,
@@ -586,19 +586,19 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
   ) {
     if (e.entryType == 'invoice' || e.entryType == 'purchase') {
       final o = openByNumber[e.invoiceNumber ?? ''];
-      if (o == null) return const PicPosPillCell('مسدَّدة', _tintOk);
+      if (o == null) return  PicPosPillCell(tr('مسدَّدة'), _tintOk);
       return o.overdue
-          ? PicPosPillCell('متأخرة ${o.daysLate} يوماً', _tintErr)
-          : const PicPosPillCell('قائمة', _tintWarn);
+          ? PicPosPillCell(tr('متأخرة {p0} يوماً', {'p0': o.daysLate}), _tintErr)
+          :  PicPosPillCell(tr('قائمة'), _tintWarn);
     }
     return switch (e.entryType) {
-      'opening' => const PicPosPillCell('مُدوَّر', _tintIdle),
-      'receipt' => const PicPosPillCell('محصَّل', _tintOk),
-      'payment' => const PicPosPillCell('مدفوع', _tintOk),
-      'sales_return' || 'memo' => const PicPosPillCell('مرتجع', _tintViolet),
-      'commercial_paper' => const PicPosPillCell('ورقة', _tintBrand),
-      'discount' => const PicPosPillCell('خصم', _tintOk),
-      _ => const PicPosPillCell('حركة', _tintIdle),
+      'opening' =>  PicPosPillCell(tr('مُدوَّر'), _tintIdle),
+      'receipt' =>  PicPosPillCell(tr('محصَّل'), _tintOk),
+      'payment' =>  PicPosPillCell(tr('مدفوع'), _tintOk),
+      'sales_return' || 'memo' =>  PicPosPillCell(tr('مرتجع'), _tintViolet),
+      'commercial_paper' =>  PicPosPillCell(tr('ورقة'), _tintBrand),
+      'discount' =>  PicPosPillCell(tr('خصم'), _tintOk),
+      _ =>  PicPosPillCell(tr('حركة'), _tintIdle),
     };
   }
 
@@ -611,7 +611,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
     final metrics =
         await _repo.getPartyProfileMetrics(partyId: pid, supplier: false);
 
-    const order = ['لم يحن', '١—٣٠', '٣١—٦٠', 'فوق ٦٠'];
+    final order = [tr('لم يحن'), tr('١—٣٠'), tr('٣١—٦٠'), tr('فوق ٦٠')];
     final sums = {for (final b in order) b: 0.0};
     final counts = {for (final b in order) b: 0};
     for (final o in open) {
@@ -630,10 +630,10 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             2 => PhosphorIconsBold.clockCountdown,
             _ => PhosphorIconsBold.warningOctagon,
           },
-          label: i == 0 ? 'مستحق لم يحن' : '${order[i]} يوماً',
+          label: i == 0 ? tr('مستحق لم يحن') : tr('{p0} يوماً', {'p0': order[i]}),
           value: _money(sums[order[i]]!),
           tint: _bucketTint(order[i]),
-          vs: '${_pct(_ratio(sums[order[i]]!, total))} من القائم',
+          vs: tr('{p0} من القائم', {'p0': _pct(_ratio(sums[order[i]]!, total))}),
         ),
       // ⚠️ التصميمُ يسمّيه «متوسط أيام التحصيل ٣٤» — أي من الإصدار إلى
       //    السداد. والمقيسُ في `getPartyProfileMetrics` هو الفرقُ بين
@@ -642,16 +642,16 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       //    فيُعرَض ما قِيس بالضبط، وتُذكَر المهلةُ بجانبه.
       PicPosHubKpi(
         icon: PhosphorIconsBold.timer,
-        label: 'متوسط السداد بعد الاستحقاق',
+        label: tr('متوسط السداد بعد الاستحقاق'),
         value: metrics.settledInvoices == 0
-            ? 'لا بيانات'
-            : '${metrics.avgSettlementDays.toStringAsFixed(0)} يوماً',
+            ? tr('لا بيانات')
+            : tr('{p0} يوماً', {'p0': metrics.avgSettlementDays.toStringAsFixed(0)}),
         tint: metrics.settledInvoices == 0
             ? _tintIdle
             : (metrics.avgSettlementDays > 0 ? _tintErr : _tintOk),
         vs: terms == 0
-            ? 'بلا مهلة متفقة'
-            : 'مدة السماح $terms يوماً',
+            ? tr('بلا مهلة متفقة')
+            : tr('مدة السماح {terms} يوماً', {'terms': terms}),
       ),
     ];
 
@@ -660,8 +660,8 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       blocks: [
         PicPosHubKpiRow(items: kpis),
         PicPosBarList(
-          title: 'توزيع الرصيد على أعمار الدين',
-          subtitle: 'العمر من تاريخ الاستحقاق',
+          title: tr('توزيع الرصيد على أعمار الدين'),
+          subtitle: tr('العمر من تاريخ الاستحقاق'),
           items: [
             for (final b in order)
               PicPosBarItem(
@@ -672,8 +672,8 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
                   _ => PhosphorIconsBold.warningOctagon,
                 },
                 tint: _bucketTint(b),
-                label: b == 'لم يحن' ? 'لم يحن استحقاقه' : 'متأخر $b يوماً',
-                sub: _count(counts[b]!, 'فاتورة'),
+                label: b == 'لم يحن' ? tr('لم يحن استحقاقه') : tr('متأخر {b} يوماً', {'b': b}),
+                sub: _count(counts[b]!, tr('فاتورة')),
                 value: sums[b]!,
                 caption: _pct(_ratio(sums[b]!, total)),
                 display: _money(sums[b]!),
@@ -682,32 +682,32 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
         ),
         _FilterableTable<PartyOpenInvoiceRow>(
           query: query,
-          title: 'الفواتير القائمة وأعمارها',
-          subtitle: 'كل فاتورة بما سُدّد منها وما تبقّى وعمر تأخرها',
+          title: tr('الفواتير القائمة وأعمارها'),
+          subtitle: tr('كل فاتورة بما سُدّد منها وما تبقّى وعمر تأخرها'),
           // ⚠️ **عمودا إجراءٍ لا واحدٌ كالتصميم.** التصميمُ يضع «تحصيل» وحدَه
           //    ويفتح «متابعة» من مكانٍ لا يظهر في الصورة. والفعلان مختلفان
           //    تماماً — أحدُهما يحرّك مالاً والآخرُ يسجّل مكالمة — فدمجُهما
           //    في زرٍّ واحدٍ كان يُخفي أحدَهما. والحدُّ الأدنى رُفع فيتمرّر
           //    الجدولُ أفقيّاً بدل أن تزدحم تسعةُ أعمدةٍ على شاشةٍ ضيّقة.
           minWidth: 940,
-          columns: const [
-            PicPosTableColumn('الفاتورة', flex: 1.5),
-            PicPosTableColumn('التاريخ', flex: 1.2),
-            PicPosTableColumn('الاستحقاق', flex: 1.2),
-            PicPosTableColumn('القيمة',
+          columns:  [
+            PicPosTableColumn(tr('الفاتورة'), flex: 1.5),
+            PicPosTableColumn(tr('التاريخ'), flex: 1.2),
+            PicPosTableColumn(tr('الاستحقاق'), flex: 1.2),
+            PicPosTableColumn(tr('القيمة'),
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('المسدَّد',
+            PicPosTableColumn(tr('المسدَّد'),
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('المتبقي',
+            PicPosTableColumn(tr('المتبقي'),
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('عمر التأخر', flex: 1.3),
-            PicPosTableColumn('إجراء', flex: 1.2),
-            PicPosTableColumn('متابعة', flex: 1.2),
+            PicPosTableColumn(tr('عمر التأخر'), flex: 1.3),
+            PicPosTableColumn(tr('إجراء'), flex: 1.2),
+            PicPosTableColumn(tr('متابعة'), flex: 1.2),
           ],
           groups: [
-            (label: 'القائمة', items: open),
+            (label: tr('القائمة'), items: open),
             (
-              label: 'متأخرة',
+              label: tr('متأخرة'),
               items: open.where((o) => o.overdue).toList()
             ),
           ],
@@ -731,7 +731,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
           PicPosTextCell(o.paid == 0 ? '—' : _money(o.paid)),
           PicPosTextCell(_money(o.remaining)),
           PicPosBarCell(
-            o.overdue ? _count(o.daysLate, 'يوماً') : 'لم يحن',
+            o.overdue ? _count(o.daysLate, tr('يوماً')) : tr('لم يحن'),
             // شريطُ التأخّر يُقاس على ٩٠ يوماً — حدُّ آخرِ شريحةٍ في التقادم،
             // وما فوقَه يمتلئ. ونسبةٌ بلا سقفٍ كانت ستجعل فاتورةً واحدةً
             // قديمةً تسحق باقيَ الصفوف بصريّاً.
@@ -739,13 +739,13 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             _bucketTint(o.bucket),
           ),
           PicPosButtonCell(
-            'تحصيل',
+            tr('تحصيل'),
             icon: PhosphorIconsBold.handCoins,
             tint: _tintOk,
             onPressed: openVoucher,
           ),
           PicPosButtonCell(
-            'متابعة',
+            tr('متابعة'),
             icon: PhosphorIconsBold.phone,
             tint: _tintBrand,
             onPressed: () => openFollowUp(o),
@@ -763,7 +763,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       r += o.remaining;
     }
     return [
-      _count(rows.length, 'بند'),
+      _count(rows.length, tr('بند')),
       '',
       '',
       _money(t),
@@ -812,31 +812,31 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
     final kpis = <PicPosHubKpi>[
       PicPosHubKpi(
         icon: PhosphorIconsBold.warningOctagon,
-        label: 'متأخر السداد',
+        label: tr('متأخر السداد'),
         value: _money(overdueSum),
         tint: overdueSum > 0 ? _tintErr : _tintOk,
-        vs: overdueSum > 0 ? 'فات استحقاقه' : 'لا متأخرات',
+        vs: overdueSum > 0 ? tr('فات استحقاقه') : tr('لا متأخرات'),
       ),
       PicPosHubKpi(
         icon: PhosphorIconsBold.clock,
-        label: 'يستحق خلال ٧ أيام',
+        label: tr('يستحق خلال ٧ أيام'),
         value: _money(week),
         tint: week > 0 ? _tintErr : _tintOk,
-        vs: 'التزام قريب',
+        vs: tr('التزام قريب'),
       ),
       PicPosHubKpi(
         icon: PhosphorIconsBold.calendarCheck,
-        label: 'يستحق ٨—٣٠ يوماً',
+        label: tr('يستحق ٨—٣٠ يوماً'),
         value: _money(month),
         tint: _tintWarn,
-        vs: 'ضمن الشهر',
+        vs: tr('ضمن الشهر'),
       ),
       PicPosHubKpi(
         icon: PhosphorIconsBold.checkCircle,
-        label: 'لم يحن',
+        label: tr('لم يحن'),
         value: _money(later),
         tint: _tintOk,
-        vs: 'فوق ٣٠ يوماً',
+        vs: tr('فوق ٣٠ يوماً'),
       ),
       // ⚠️ التصميمُ يضع هنا «الرصيد البنكي 186,400» ليُقارَن بالمستحقّ. وهو
       //    بيانةُ خزينةٍ لا بيانةُ طرف، وقراءتُها تربط كشفَ المورد بمستودعِ
@@ -844,11 +844,11 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       //    السداد فعلاً — والمقارنةُ بالبنك بندٌ لم يُطلَب.
       PicPosHubKpi(
         icon: PhosphorIconsBold.percent,
-        label: 'خصم نقدي متاح',
-        value: hasDiscount ? _money(discount) : 'لا خصم متفق',
+        label: tr('خصم نقدي متاح'),
+        value: hasDiscount ? _money(discount) : tr('لا خصم متفق'),
         tint: hasDiscount && discount > 0 ? _tintOk : _tintIdle,
         vs: hasDiscount
-            ? '${pct.toStringAsFixed(pct % 1 == 0 ? 0 : 1)}٪ خلال $days يوماً'
+            ? tr('{p0}٪ خلال {days} يوماً', {'p0': pct.toStringAsFixed(pct % 1 == 0 ? 0 : 1), 'days': days})
             : '',
       ),
     ];
@@ -859,29 +859,29 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
         PicPosHubKpiRow(items: kpis),
         _FilterableTable<PartyOpenInvoiceRow>(
           query: query,
-          title: 'المستحق للمورد وتواريخه',
-          subtitle: 'الخصم النقدي المتاح يُقارن بتكلفة الاحتفاظ بالنقد',
-          columns: const [
-            PicPosTableColumn('المستند', flex: 1.5),
-            PicPosTableColumn('التاريخ', flex: 1.2),
-            PicPosTableColumn('الاستحقاق', flex: 1.2),
-            PicPosTableColumn('القيمة',
+          title: tr('المستحق للمورد وتواريخه'),
+          subtitle: tr('الخصم النقدي المتاح يُقارن بتكلفة الاحتفاظ بالنقد'),
+          columns:  [
+            PicPosTableColumn(tr('المستند'), flex: 1.5),
+            PicPosTableColumn(tr('التاريخ'), flex: 1.2),
+            PicPosTableColumn(tr('الاستحقاق'), flex: 1.2),
+            PicPosTableColumn(tr('القيمة'),
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('المسدَّد',
+            PicPosTableColumn(tr('المسدَّد'),
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('المتبقي',
+            PicPosTableColumn(tr('المتبقي'),
                 flex: 1.4, align: PicPosCellAlign.end),
-            PicPosTableColumn('خصم نقدي', flex: 1.3),
-            PicPosTableColumn('إجراء', flex: 1.2),
+            PicPosTableColumn(tr('خصم نقدي'), flex: 1.3),
+            PicPosTableColumn(tr('إجراء'), flex: 1.2),
           ],
           groups: [
-            (label: 'كل المستحق', items: open),
+            (label: tr('كل المستحق'), items: open),
             (
-              label: 'خلال ٧ أيام',
+              label: tr('خلال ٧ أيام'),
               items: open.where((o) => o.daysLate >= -7).toList()
             ),
             (
-              label: 'بخصم نقدي',
+              label: tr('بخصم نقدي'),
               items: open.where((o) => discountOf(o) > 0).toList()
             ),
           ],
@@ -895,8 +895,8 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             PicPosTextCell(
               df.format(o.dueDate),
               sub: o.overdue
-                  ? 'تأخر ${o.daysLate} يوماً'
-                  : 'باقٍ ${-o.daysLate} يوماً',
+                  ? tr('تأخر {p0} يوماً', {'p0': o.daysLate})
+                  : tr('باقٍ {p0} يوماً', {'p0': -o.daysLate}),
             ),
             PicPosTextCell(_money(o.total)),
             PicPosTextCell(o.paid == 0 ? '—' : _money(o.paid)),
@@ -905,7 +905,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
                 ? PicPosTrendCell(_money(discountOf(o)), up: true)
                 : const PicPosTextCell('—'),
             PicPosButtonCell(
-              'سداد',
+              tr('سداد'),
               icon: PhosphorIconsBold.handCoins,
               tint: _tintOk,
               onPressed: openVoucher,
@@ -923,7 +923,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
               d += discountOf(o);
             }
             return [
-              _count(rows.length, 'بند'),
+              _count(rows.length, tr('بند')),
               '',
               '',
               _money(t),
@@ -935,14 +935,14 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
           },
         ),
         PicPosBarList(
-          title: 'جدول الالتزامات القادمة',
-          subtitle: 'ما علينا للمورد موزَّعاً على الأسابيع',
+          title: tr('جدول الالتزامات القادمة'),
+          subtitle: tr('ما علينا للمورد موزَّعاً على الأسابيع'),
           items: [
             PicPosBarItem(
               icon: PhosphorIconsBold.warningOctagon,
               tint: _tintErr,
-              label: 'متأخر الآن',
-              sub: _count(open.where((o) => o.daysLate > 0).length, 'مستند'),
+              label: tr('متأخر الآن'),
+              sub: _count(open.where((o) => o.daysLate > 0).length, tr('مستند')),
               value: overdueSum,
               caption: _pct(_ratio(overdueSum, overdueSum + week + month + later)),
               display: _money(overdueSum),
@@ -950,10 +950,10 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             PicPosBarItem(
               icon: PhosphorIconsBold.clock,
               tint: _tintErr,
-              label: 'هذا الأسبوع',
+              label: tr('هذا الأسبوع'),
               sub: _count(
                 open.where((o) => o.daysLate <= 0 && o.daysLate >= -7).length,
-                'مستند',
+                tr('مستند'),
               ),
               value: week,
               caption: _pct(_ratio(week, overdueSum + week + month + later)),
@@ -962,12 +962,12 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             PicPosBarItem(
               icon: PhosphorIconsBold.calendarCheck,
               tint: _tintWarn,
-              label: 'خلال الشهر',
+              label: tr('خلال الشهر'),
               sub: _count(
                 open
                     .where((o) => o.daysLate < -7 && o.daysLate >= -30)
                     .length,
-                'مستند',
+                tr('مستند'),
               ),
               value: month,
               caption: _pct(_ratio(month, overdueSum + week + month + later)),
@@ -976,10 +976,10 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             PicPosBarItem(
               icon: PhosphorIconsBold.checkCircle,
               tint: _tintOk,
-              label: 'بعد الشهر',
+              label: tr('بعد الشهر'),
               sub: _count(
                 open.where((o) => o.daysLate < -30).length,
-                'مستند',
+                tr('مستند'),
               ),
               value: later,
               caption: _pct(_ratio(later, overdueSum + week + month + later)),
@@ -1010,33 +1010,33 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
     final kpis = <PicPosHubKpi>[
       PicPosHubKpi(
         icon: PhosphorIconsBold.link,
-        label: 'دفعات مطابَقة',
+        label: tr('دفعات مطابَقة'),
         value: '${matched.length}',
         tint: _tintOk,
         vs: _money(matched.fold<double>(0, (s, p) => s + p.amount)),
       ),
       PicPosHubKpi(
         icon: PhosphorIconsBold.linkBreak,
-        label: 'غير مطابَقة',
+        label: tr('غير مطابَقة'),
         value: '${loose.length}',
         tint: loose.isEmpty ? _tintOk : _tintWarn,
         vs: _money(loose.fold<double>(0, (s, p) => s + p.unallocated)),
       ),
       PicPosHubKpi(
         icon: PhosphorIconsBold.receipt,
-        label: 'فواتير مسدَّدة جزئياً',
+        label: tr('فواتير مسدَّدة جزئياً'),
         value: '${partial.length}',
         tint: partial.isEmpty ? _tintOk : _tintWarn,
         vs: _money(partial.fold<double>(0, (s, o) => s + o.remaining)),
       ),
       // ليس رقماً مقيساً بل **وصفُ سلوكِ النظام** — والدفعةُ فعلاً تُخصم من
       // أقدم فاتورةٍ ما لم تُربَط يدويّاً. وذكرُه هنا يشرح عمودَ «المقترحة».
-      const PicPosHubKpi(
+       PicPosHubKpi(
         icon: PhosphorIconsBold.gear,
-        label: 'قاعدة المطابقة',
-        value: 'الأقدم أولاً',
+        label: tr('قاعدة المطابقة'),
+        value: tr('الأقدم أولاً'),
         tint: _tintBrand,
-        vs: 'ما لم تُربط يدوياً',
+        vs: tr('ما لم تُربط يدوياً'),
       ),
     ];
 
@@ -1044,8 +1044,8 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       badge: '${loose.length}',
       blocks: [
         PicPosHubKpiRow(items: kpis),
-        const PicPosSectionHeader(
-          title: 'حالة مطابقة الدفعات',
+         PicPosSectionHeader(
+          title: tr('حالة مطابقة الدفعات'),
           subtitle:
               'الدفعة غير المطابَقة تُنقص الرصيد الكلي لكنها لا تُقفل فاتورة '
               'بعينها — وهذا ما يُربك أعمار الدين',
@@ -1059,7 +1059,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
           query: query,
           columns: [
             PicPosBoardColumn(
-              label: 'دفعات غير مطابَقة',
+              label: tr('دفعات غير مطابَقة'),
               icon: PhosphorIconsBold.linkBreak,
               tint: _tintWarn,
               total: loose.length,
@@ -1070,8 +1070,8 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
                     subtitle: '${df.format(p.paymentDate)} · ${p.method}',
                     value: _money(p.unallocated),
                     meta: p.invoiceCount == 0
-                        ? 'دفعة تحت الحساب بلا فاتورة'
-                        : 'مخصَّصة جزئياً على ${p.invoiceCount} فاتورة',
+                        ? tr('دفعة تحت الحساب بلا فاتورة')
+                        : tr('مخصَّصة جزئياً على {p0} فاتورة', {'p0': p.invoiceCount}),
                     metaIcon: p.invoiceCount == 0
                         ? PhosphorIconsBold.question
                         : PhosphorIconsBold.arrowRight,
@@ -1081,7 +1081,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             ),
             _suggestionColumn(loose, open),
             PicPosBoardColumn(
-              label: 'مطابَقة بالفعل',
+              label: tr('مطابَقة بالفعل'),
               icon: PhosphorIconsBold.link,
               tint: _tintOk,
               total: matched.length,
@@ -1091,7 +1091,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
                     title: p.paymentNumber,
                     subtitle: '${df.format(p.paymentDate)} · ${p.method}',
                     value: _money(p.amount),
-                    meta: 'وُزّعت على ${p.invoiceCount} فاتورة',
+                    meta: tr('وُزّعت على {p0} فاتورة', {'p0': p.invoiceCount}),
                     metaIcon: PhosphorIconsBold.checkCircle,
                     metaTint: _tintOk,
                   ),
@@ -1130,11 +1130,11 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
         cards.add(PicPosBoardCard(
           title: '${p.paymentNumber} ← ${target.row.invoiceNumber}',
           subtitle:
-              'استحقاق ${df.format(target.row.dueDate)} · ${target.row.bucket}',
+              tr('استحقاق {p0} · {p1}', {'p0': df.format(target.row.dueDate), 'p1': target.row.bucket}),
           value: _money(take),
           meta: take >= target.left - 0.01
-              ? 'يُقفل الفاتورة بالكامل'
-              : 'سداد جزئي — يتبقّى ${_money(target.left - take)}',
+              ? tr('يُقفل الفاتورة بالكامل')
+              : tr('سداد جزئي — يتبقّى {p0}', {'p0': _money(target.left - take)}),
           metaIcon: take >= target.left - 0.01
               ? PhosphorIconsBold.checkCircle
               : PhosphorIconsBold.arrowRight,
@@ -1146,10 +1146,10 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       }
       if (left > 0.01) {
         cards.add(PicPosBoardCard(
-          title: '${p.paymentNumber} · متبقٍ',
-          subtitle: 'لا فاتورة قائمة تستوعبه',
+          title: tr('{p0} · متبقٍ', {'p0': p.paymentNumber}),
+          subtitle: tr('لا فاتورة قائمة تستوعبه'),
           value: _money(left),
-          meta: 'يبقى تحت الحساب',
+          meta: tr('يبقى تحت الحساب'),
           metaIcon: PhosphorIconsBold.question,
           metaTint: _tintWarn,
         ));
@@ -1157,7 +1157,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
     }
 
     return PicPosBoardColumn(
-      label: 'مطابقة مقترحة',
+      label: tr('مطابقة مقترحة'),
       icon: PhosphorIconsBold.lightbulb,
       tint: _tintBrand,
       total: cards.length,
@@ -1198,31 +1198,31 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
     final kpis = <PicPosHubKpi>[
       PicPosHubKpi(
         icon: PhosphorIconsBold.checkCircle,
-        label: 'مطابقة ثلاثية سليمة',
+        label: tr('مطابقة ثلاثية سليمة'),
         value: '${clean.length}',
         tint: _tintOk,
-        vs: 'من ${rows.length} سطراً في ${orders.length} أمر',
+        vs: tr('من {p0} سطراً في {p1} أمر', {'p0': rows.length, 'p1': orders.length}),
       ),
       PicPosHubKpi(
         icon: PhosphorIconsBold.gitDiff,
-        label: 'بها فروق',
+        label: tr('بها فروق'),
         value: '${gaps.length}',
         tint: gaps.isEmpty ? _tintOk : _tintErr,
         vs: _pct(_ratio(gaps.length.toDouble(), rows.length.toDouble())),
       ),
       PicPosHubKpi(
         icon: PhosphorIconsBold.package,
-        label: 'فروق استلام',
+        label: tr('فروق استلام'),
         value: '${qtyGaps.length}',
         tint: qtyGaps.isEmpty ? _tintOk : _tintWarn,
-        vs: 'المستلم يخالف المطلوب',
+        vs: tr('المستلم يخالف المطلوب'),
       ),
       PicPosHubKpi(
         icon: PhosphorIconsBold.tag,
-        label: 'فروق فوترة',
+        label: tr('فروق فوترة'),
         value: '${billGaps.length}',
         tint: billGaps.isEmpty ? _tintOk : _tintErr,
-        vs: 'المفوتر يخالف المستلم',
+        vs: tr('المفوتر يخالف المستلم'),
       ),
     ];
 
@@ -1232,34 +1232,34 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
         PicPosHubKpiRow(items: kpis),
         _FilterableTable<PoMatchRow>(
           query: query,
-          title: 'مطابقة أمر الشراء بالمستلم بالمفوتر',
-          subtitle: 'الفرق بين المستلم والمفوتر هو ما يُطالَب به المورد · كميات',
+          title: tr('مطابقة أمر الشراء بالمستلم بالمفوتر'),
+          subtitle: tr('الفرق بين المستلم والمفوتر هو ما يُطالَب به المورد · كميات'),
           minWidth: 860,
-          columns: const [
-            PicPosTableColumn('أمر الشراء', flex: 1.4),
-            PicPosTableColumn('الصنف', flex: 1.6),
-            PicPosTableColumn('المطلوب',
+          columns:  [
+            PicPosTableColumn(tr('أمر الشراء'), flex: 1.4),
+            PicPosTableColumn(tr('الصنف'), flex: 1.6),
+            PicPosTableColumn(tr('المطلوب'),
                 flex: 1.1, align: PicPosCellAlign.end),
-            PicPosTableColumn('المستلم',
+            PicPosTableColumn(tr('المستلم'),
                 flex: 1.1, align: PicPosCellAlign.end),
-            PicPosTableColumn('المفوتر',
+            PicPosTableColumn(tr('المفوتر'),
                 flex: 1.1, align: PicPosCellAlign.end),
-            PicPosTableColumn('الفرق',
+            PicPosTableColumn(tr('الفرق'),
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('نوع الفرق', flex: 1.5),
-            PicPosTableColumn('إجراء', flex: 1.2),
+            PicPosTableColumn(tr('نوع الفرق'), flex: 1.5),
+            PicPosTableColumn(tr('إجراء'), flex: 1.2),
           ],
           groups: [
-            (label: 'الكل', items: rows),
-            (label: 'بها فروق', items: gaps),
-            (label: 'سليمة', items: clean),
+            (label: tr('الكل'), items: rows),
+            (label: tr('بها فروق'), items: gaps),
+            (label: tr('سليمة'), items: clean),
           ],
           buildRow: (r) => PicPosTableRow(cells: [
             PicPosTextCell(
               r.orderNumber,
               sub: r.receivedAt == null
-                  ? 'لم يُستلم بعد'
-                  : 'استُلم ${df.format(r.receivedAt!)}',
+                  ? tr('لم يُستلم بعد')
+                  : tr('استُلم {p0}', {'p0': df.format(r.receivedAt!)}),
               icon: PhosphorIconsBold.receipt,
               tint: r.clean ? _tintOk : _tintErr,
             ),
@@ -1286,7 +1286,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
               const PicPosTextCell('—')
             else
               PicPosButtonCell(
-                'مطالبة',
+                tr('مطالبة'),
                 icon: PhosphorIconsBold.bell,
                 tint: _tintWarn,
                 onPressed: () => openClaim(gaps),
@@ -1302,7 +1302,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
               iv += r.invoiced;
             }
             return [
-              _count(list.length, 'سطراً'),
+              _count(list.length, tr('سطراً')),
               '',
               _qty(o),
               _qty(rc),
@@ -1353,28 +1353,28 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       //    عمود «النوع» صفّاً صفّاً.
       PicPosHubKpi(
         icon: PhosphorIconsBold.note,
-        label: 'أوراق قائمة',
+        label: tr('أوراق قائمة'),
         value: '${live.length}',
         tint: live.isEmpty ? _tintIdle : AppColors.primaryLight,
         vs: _money(sum(live)),
       ),
       PicPosHubKpi(
         icon: PhosphorIconsBold.arrowBendUpLeft,
-        label: 'أوراق مُجيَّرة',
+        label: tr('أوراق مُجيَّرة'),
         value: '${endorsed.length}',
         tint: endorsed.isEmpty ? _tintIdle : _tintViolet,
         vs: _money(sum(endorsed)),
       ),
       PicPosHubKpi(
         icon: PhosphorIconsBold.warningOctagon,
-        label: 'أوراق مرتدة',
+        label: tr('أوراق مرتدة'),
         value: '${bounced.length}',
         tint: bounced.isEmpty ? _tintOk : _tintErr,
-        vs: bounced.isEmpty ? 'سجل نظيف' : _money(sum(bounced)),
+        vs: bounced.isEmpty ? tr('سجل نظيف') : _money(sum(bounced)),
       ),
       PicPosHubKpi(
         icon: PhosphorIconsBold.checkCircle,
-        label: isSupplier ? 'مخصومة' : 'محصَّلة',
+        label: isSupplier ? tr('مخصومة') : tr('محصَّلة'),
         value: '${cashed.length}',
         tint: cashed.isEmpty ? _tintIdle : _tintOk,
         vs: _money(sum(cashed)),
@@ -1388,26 +1388,26 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
         _FilterableTable<CommercialPaperData>(
           query: query,
           title: isSupplier
-              ? 'الأوراق الصادرة والمقايضات'
-              : 'الأوراق التجارية والضمانات',
+              ? tr('الأوراق الصادرة والمقايضات')
+              : tr('الأوراق التجارية والضمانات'),
           subtitle: isSupplier
-              ? 'الشيك الصادر التزام قائم حتى يُخصم · كل أوراق المورد بلا حصر بالمدى'
-              : 'الشيك تحت التحصيل لا يُنقص الذمة حتى تحصيله · كل أوراق العميل بلا حصر بالمدى',
-          columns: const [
-            PicPosTableColumn('الورقة', flex: 1.4),
-            PicPosTableColumn('النوع', flex: 1.4),
-            PicPosTableColumn('البنك', flex: 1.4),
-            PicPosTableColumn('الاستحقاق', flex: 1.2),
-            PicPosTableColumn('المبلغ',
+              ? tr('الشيك الصادر التزام قائم حتى يُخصم · كل أوراق المورد بلا حصر بالمدى')
+              : tr('الشيك تحت التحصيل لا يُنقص الذمة حتى تحصيله · كل أوراق العميل بلا حصر بالمدى'),
+          columns:  [
+            PicPosTableColumn(tr('الورقة'), flex: 1.4),
+            PicPosTableColumn(tr('النوع'), flex: 1.4),
+            PicPosTableColumn(tr('البنك'), flex: 1.4),
+            PicPosTableColumn(tr('الاستحقاق'), flex: 1.2),
+            PicPosTableColumn(tr('المبلغ'),
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('الحالة', flex: 1.4),
+            PicPosTableColumn(tr('الحالة'), flex: 1.4),
           ],
           groups: [
-            (label: 'الكل', items: papers),
-            (label: 'قائمة', items: live),
-            (label: 'مُجيَّرة', items: endorsed),
-            (label: isSupplier ? 'مخصومة' : 'محصَّلة', items: cashed),
-            (label: 'مرتدة', items: bounced),
+            (label: tr('الكل'), items: papers),
+            (label: tr('قائمة'), items: live),
+            (label: tr('مُجيَّرة'), items: endorsed),
+            (label: isSupplier ? tr('مخصومة') : tr('محصَّلة'), items: cashed),
+            (label: tr('مرتدة'), items: bounced),
           ],
           buildRow: (p) => PicPosTableRow(cells: [
             PicPosTextCell(
@@ -1417,7 +1417,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             ),
             PicPosTextCell(
               _paperType(p.type),
-              sub: p.direction == 'issued' ? 'صادر' : 'وارد',
+              sub: p.direction == 'issued' ? tr('صادر') : tr('وارد'),
             ),
             PicPosTextCell(
               (p.bankName ?? '').isEmpty ? '—' : p.bankName!,
@@ -1431,7 +1431,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             PicPosPillCell(_paperStatus(p.status), _paperTint(p.status)),
           ]),
           totals: (list) => [
-            _count(list.length, 'ورقة'),
+            _count(list.length, tr('ورقة')),
             '',
             '',
             '',
@@ -1444,21 +1444,21 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
   }
 
   String _paperType(String t) => switch (t) {
-        'cheque' => 'شيك',
-        'promissory_note' => 'سند إذني',
-        'bill_of_exchange' => 'كمبيالة',
+        'cheque' => tr('شيك'),
+        'promissory_note' => tr('سند إذني'),
+        'bill_of_exchange' => tr('كمبيالة'),
         _ => t,
       };
 
   String _paperStatus(String s) => switch (s) {
-        'pending' => 'معلق',
-        'in_portfolio' => 'في الحافظة',
-        'deposited' => 'مودع',
-        'deposited_for_collection' => 'برسم التحصيل',
-        'cashed' => 'محصَّل',
-        'bounced' => 'مرتد',
-        'endorsed' => 'مظهَّر',
-        'cancelled' => 'ملغي',
+        'pending' => tr('معلق'),
+        'in_portfolio' => tr('في الحافظة'),
+        'deposited' => tr('مودع'),
+        'deposited_for_collection' => tr('برسم التحصيل'),
+        'cashed' => tr('محصَّل'),
+        'bounced' => tr('مرتد'),
+        'endorsed' => tr('مظهَّر'),
+        'cancelled' => tr('ملغي'),
         _ => s,
       };
 
@@ -1499,169 +1499,169 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       if (!isSupplier)
         PicPosHubKpi(
           icon: PhosphorIconsBold.creditCard,
-          label: 'حد الائتمان',
-          value: p.creditLimit == 0 ? 'بلا حد' : _money(p.creditLimit),
+          label: tr('حد الائتمان'),
+          value: p.creditLimit == 0 ? tr('بلا حد') : _money(p.creditLimit),
           tint: p.creditLimit == 0
               ? _tintIdle
               : (usage >= 100 ? _tintErr : (usage >= 80 ? _tintWarn : _tintOk)),
-          vs: p.creditLimit == 0 ? 'لم يُحدَّد' : 'المستخدم ${_pct(usage)}',
+          vs: p.creditLimit == 0 ? tr('لم يُحدَّد') : tr('المستخدم {p0}', {'p0': _pct(usage)}),
         ),
       PicPosHubKpi(
         icon: PhosphorIconsBold.calendarCheck,
-        label: isSupplier ? 'مدة السداد المتفقة' : 'مدة السماح',
-        value: terms == 0 ? 'فوري' : '$terms',
+        label: isSupplier ? tr('مدة السداد المتفقة') : tr('مدة السماح'),
+        value: terms == 0 ? tr('فوري') : '$terms',
         tint: terms == 0 ? _tintIdle : _tintBrand,
-        vs: terms == 0 ? 'بلا أجل متفق' : 'يوماً',
+        vs: terms == 0 ? tr('بلا أجل متفق') : tr('يوماً'),
       ),
       if (isSupplier)
         PicPosHubKpi(
           icon: PhosphorIconsBold.percent,
-          label: 'خصم السداد المعجَّل',
+          label: tr('خصم السداد المعجَّل'),
           value: hasDiscount
-              ? '${discPct.toStringAsFixed(discPct % 1 == 0 ? 0 : 1)}٪'
-              : 'لا خصم',
+              ? tr('{p0}٪', {'p0': discPct.toStringAsFixed(discPct % 1 == 0 ? 0 : 1)})
+              : tr('لا خصم'),
           tint: hasDiscount ? _tintOk : _tintIdle,
-          vs: hasDiscount ? 'خلال $discDays يوماً' : '',
+          vs: hasDiscount ? tr('خلال {discDays} يوماً', {'discDays': discDays}) : '',
         ),
       if (isSupplier)
         PicPosHubKpi(
           icon: PhosphorIconsBold.truck,
-          label: 'الالتزام بمواعيد التوريد',
+          label: tr('الالتزام بمواعيد التوريد'),
           value: _pctOrNone(metrics.onTimeDeliveryPct),
           tint: metrics.onTimeDeliveryPct == null
               ? _tintIdle
               : (metrics.onTimeDeliveryPct! >= 80 ? _tintOk : _tintWarn),
-          vs: 'من ${metrics.receivedOrders} أمراً مستلماً',
+          vs: tr('من {p0} أمراً مستلماً', {'p0': metrics.receivedOrders}),
         )
       else ...[
         PicPosHubKpi(
           icon: PhosphorIconsBold.timer,
-          label: 'متوسط السداد بعد الاستحقاق',
+          label: tr('متوسط السداد بعد الاستحقاق'),
           value: metrics.settledInvoices == 0
-              ? 'لا بيانات'
-              : '${metrics.avgSettlementDays.toStringAsFixed(0)} يوماً',
+              ? tr('لا بيانات')
+              : tr('{p0} يوماً', {'p0': metrics.avgSettlementDays.toStringAsFixed(0)}),
           tint: metrics.settledInvoices == 0
               ? _tintIdle
               : (metrics.avgSettlementDays > 0 ? _tintErr : _tintOk),
-          vs: 'من ${metrics.settledInvoices} فاتورة مسدَّدة',
+          vs: tr('من {p0} فاتورة مسدَّدة', {'p0': metrics.settledInvoices}),
         ),
         PicPosHubKpi(
           icon: PhosphorIconsBold.star,
-          label: 'الالتزام بالسداد',
+          label: tr('الالتزام بالسداد'),
           value: _pctOrNone(metrics.onTimeSettlementPct),
           tint: metrics.onTimeSettlementPct == null
               ? _tintIdle
               : (metrics.onTimeSettlementPct! >= 80 ? _tintOk : _tintWarn),
-          vs: 'سُدِّدت في موعدها',
+          vs: tr('سُدِّدت في موعدها'),
         ),
       ],
       if (isSupplier)
         PicPosHubKpi(
           icon: PhosphorIconsBold.star,
-          label: 'تقييم المورد',
+          label: tr('تقييم المورد'),
           // `null` = لم يُقيَّم — وهي حالةٌ مختلفةٌ عن «تقييمٌ منخفض».
-          value: p.supplierRating == null ? 'لم يُقيَّم' : '${p.supplierRating}/5',
+          value: p.supplierRating == null ? tr('لم يُقيَّم') : '${p.supplierRating}/5',
           tint: p.supplierRating == null
               ? _tintIdle
               : (p.supplierRating! >= 4
                   ? _tintOk
                   : (p.supplierRating! >= 3 ? _tintWarn : _tintErr)),
-          vs: p.supplierRating == null ? 'حكم بشري لم يُسجَّل' : 'من ٥ درجات',
+          vs: p.supplierRating == null ? tr('حكم بشري لم يُسجَّل') : tr('من ٥ درجات'),
         ),
     ];
 
     final rows = <PicPosTableRow>[
       _profileRow(
-        isSupplier ? 'اسم المورد' : 'اسم العميل',
+        isSupplier ? tr('اسم المورد') : tr('اسم العميل'),
         p.name,
-        sub: (p.code ?? '').isEmpty ? '' : 'كود ${p.code}',
+        sub: (p.code ?? '').isEmpty ? '' : tr('كود {p0}', {'p0': p.code}),
         icon: isSupplier
             ? PhosphorIconsBold.truck
             : PhosphorIconsBold.storefront,
-        status: p.isActive ? 'نشط' : 'موقوف',
+        status: p.isActive ? tr('نشط') : tr('موقوف'),
         tint: p.isActive ? _tintOk : _tintErr,
       ),
       _profileRow(
-        'الهاتف',
+        tr('الهاتف'),
         (p.phone ?? '').isEmpty ? '—' : p.phone!,
         icon: PhosphorIconsBold.phone,
-        status: (p.phone ?? '').isEmpty ? 'ناقص' : 'مسجَّل',
+        status: (p.phone ?? '').isEmpty ? tr('ناقص') : tr('مسجَّل'),
         tint: (p.phone ?? '').isEmpty ? _tintWarn : _tintOk,
       ),
       _profileRow(
-        'العنوان',
+        tr('العنوان'),
         (p.address ?? '').isEmpty ? '—' : p.address!,
         icon: PhosphorIconsBold.mapPin,
-        status: (p.address ?? '').isEmpty ? 'ناقص' : 'مسجَّل',
+        status: (p.address ?? '').isEmpty ? tr('ناقص') : tr('مسجَّل'),
         tint: (p.address ?? '').isEmpty ? _tintWarn : _tintOk,
       ),
       _profileRow(
-        'الرقم الضريبي',
+        tr('الرقم الضريبي'),
         [p.taxId, p.tin].where((v) => (v ?? '').isNotEmpty).join(' · ').isEmpty
             ? '—'
             : [p.taxId, p.tin]
                 .where((v) => (v ?? '').isNotEmpty)
                 .join(' · '),
         icon: PhosphorIconsBold.identificationCard,
-        status: (p.taxId ?? p.tin ?? '').isEmpty ? 'ناقص' : 'موثَّق',
+        status: (p.taxId ?? p.tin ?? '').isEmpty ? tr('ناقص') : tr('موثَّق'),
         tint: (p.taxId ?? p.tin ?? '').isEmpty ? _tintWarn : _tintOk,
       ),
       _profileRow(
-        'حد الائتمان',
-        p.creditLimit == 0 ? 'بلا حد' : _money(p.creditLimit),
-        sub: p.creditLimit == 0 ? '' : 'المستخدم ${_pct(usage)}',
+        tr('حد الائتمان'),
+        p.creditLimit == 0 ? tr('بلا حد') : _money(p.creditLimit),
+        sub: p.creditLimit == 0 ? '' : tr('المستخدم {p0}', {'p0': _pct(usage)}),
         icon: PhosphorIconsBold.creditCard,
         status: p.creditLimit == 0
-            ? 'غير محدد'
-            : (usage >= 100 ? 'تجاوز' : 'ضمن الحد'),
+            ? tr('غير محدد')
+            : (usage >= 100 ? tr('تجاوز') : tr('ضمن الحد')),
         tint: p.creditLimit == 0
             ? _tintIdle
             : (usage >= 100 ? _tintErr : _tintOk),
       ),
       _profileRow(
-        isSupplier ? 'مدة السداد المتفقة' : 'مدة السماح',
-        terms == 0 ? 'فوري' : '$terms يوماً',
-        sub: 'يُشتق منها استحقاق كل فاتورة عند إصدارها',
+        isSupplier ? tr('مدة السداد المتفقة') : tr('مدة السماح'),
+        terms == 0 ? tr('فوري') : tr('{terms} يوماً', {'terms': terms}),
+        sub: tr('يُشتق منها استحقاق كل فاتورة عند إصدارها'),
         icon: PhosphorIconsBold.calendarCheck,
-        status: terms == 0 ? 'بلا أجل' : 'مفعَّل',
+        status: terms == 0 ? tr('بلا أجل') : tr('مفعَّل'),
         tint: terms == 0 ? _tintIdle : _tintOk,
       ),
       _profileRow(
-        'خصم السداد المعجَّل',
+        tr('خصم السداد المعجَّل'),
         hasDiscount
-            ? '${discPct.toStringAsFixed(discPct % 1 == 0 ? 0 : 1)}٪ خلال $discDays يوماً'
-            : 'لا خصم',
+            ? tr('{p0}٪ خلال {discDays} يوماً', {'p0': discPct.toStringAsFixed(discPct % 1 == 0 ? 0 : 1), 'discDays': discDays})
+            : tr('لا خصم'),
         icon: PhosphorIconsBold.percent,
-        status: hasDiscount ? 'مفعَّل' : 'غير مفعَّل',
+        status: hasDiscount ? tr('مفعَّل') : tr('غير مفعَّل'),
         tint: hasDiscount ? _tintOk : _tintIdle,
       ),
       _profileRow(
-        'الرصيد الحالي',
+        tr('الرصيد الحالي'),
         _money(p.balance),
         sub: p.balance == 0
-            ? 'مسوّى'
-            : (p.balance > 0 ? 'مدين' : 'دائن'),
+            ? tr('مسوّى')
+            : (p.balance > 0 ? tr('مدين') : tr('دائن')),
         icon: PhosphorIconsBold.scales,
         status: p.balance == 0
-            ? 'صفر'
-            : (p.balance > 0 ? 'له عليه' : 'عليه له'),
+            ? tr('صفر')
+            : (p.balance > 0 ? tr('له عليه') : tr('عليه له')),
         tint: p.balance == 0 ? _tintIdle : _tintBrand,
       ),
       if (isSupplier)
         _profileRow(
-          'تقييم المورد',
-          p.supplierRating == null ? 'لم يُقيَّم' : '${p.supplierRating} من ٥',
-          sub: 'حكم بشري لا يُشتق من البيانات',
+          tr('تقييم المورد'),
+          p.supplierRating == null ? tr('لم يُقيَّم') : tr('{p0} من ٥', {'p0': p.supplierRating}),
+          sub: tr('حكم بشري لا يُشتق من البيانات'),
           icon: PhosphorIconsBold.star,
-          status: p.supplierRating == null ? 'بلا تقييم' : 'مسجَّل',
+          status: p.supplierRating == null ? tr('بلا تقييم') : tr('مسجَّل'),
           tint: p.supplierRating == null ? _tintIdle : _tintOk,
         )
       else
         _profileRow(
-          'تاريخ الإضافة',
+          tr('تاريخ الإضافة'),
           df.format(p.createdAt),
           icon: PhosphorIconsBold.clockCounterClockwise,
-          status: p.isActive ? 'نشط' : 'موقوف',
+          status: p.isActive ? tr('نشط') : tr('موقوف'),
           tint: p.isActive ? _tintOk : _tintErr,
         ),
     ];
@@ -1675,18 +1675,18 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
         _FilterableTable<PicPosTableRow>(
           query: query,
           title: isSupplier
-              ? 'ملف المورد وشروط التعامل'
-              : 'ملف العميل وشروط التعامل',
+              ? tr('ملف المورد وشروط التعامل')
+              : tr('ملف العميل وشروط التعامل'),
           subtitle: isSupplier
-              ? 'الشروط المتفقة تُطبَّق تلقائياً على كل أمر شراء'
-              : 'حد الائتمان يُفحص لحظياً قبل كل فاتورة آجلة',
+              ? tr('الشروط المتفقة تُطبَّق تلقائياً على كل أمر شراء')
+              : tr('حد الائتمان يُفحص لحظياً قبل كل فاتورة آجلة'),
           minWidth: 560,
-          columns: const [
-            PicPosTableColumn('البند', flex: 1.6),
-            PicPosTableColumn('القيمة', flex: 2.2),
-            PicPosTableColumn('الحالة', flex: 1.4),
+          columns:  [
+            PicPosTableColumn(tr('البند'), flex: 1.6),
+            PicPosTableColumn(tr('القيمة'), flex: 2.2),
+            PicPosTableColumn(tr('الحالة'), flex: 1.4),
           ],
-          groups: [(label: 'البيانات', items: rows)],
+          groups: [(label: tr('البيانات'), items: rows)],
           buildRow: (r) => r,
         ),
         // التصميمُ يضع الرسمَ **تحتَ** الجدول في هذه التبويبة وحدَها —
@@ -1707,10 +1707,10 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
   PicPosBarList _settlementBars(List<PartySettlementRow> rows, int terms) {
     final now = DateTime.now();
     return PicPosBarList(
-      title: 'سلوك السداد — آخر ${rows.length} فواتير',
+      title: tr('سلوك السداد — آخر {p0} فواتير', {'p0': rows.length}),
       subtitle: terms == 0
-          ? 'أيام السداد الفعلية · لا مهلة متفقة'
-          : 'أيام السداد الفعلية مقابل مهلة $terms يوماً',
+          ? tr('أيام السداد الفعلية · لا مهلة متفقة')
+          : tr('أيام السداد الفعلية مقابل مهلة {terms} يوماً', {'terms': terms}),
       items: [
         for (final r in rows.reversed)
           () {
@@ -1730,14 +1730,14 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
               label: r.invoiceNumber,
               sub: paidDays == null
                   ? (r.paid > 0
-                      ? 'سُدّد جزء منها — والباقي معلّق'
-                      : 'لم تُسدَّد بعد')
-                  : 'سُدّدت في ${_count(paidDays, 'يوماً')}',
+                      ? tr('سُدّد جزء منها — والباقي معلّق')
+                      : tr('لم تُسدَّد بعد'))
+                  : tr('سُدّدت في {p0}', {'p0': _count(paidDays, 'يوماً')}),
               value: days.toDouble(),
-              caption: _count(days, 'يوماً'),
+              caption: _count(days, tr('يوماً')),
               display: paidDays == null
-                  ? 'جارية'
-                  : (late ? 'تجاوز ${days - terms}' : 'داخل المهلة'),
+                  ? tr('جارية')
+                  : (late ? tr('تجاوز {p0}', {'p0': days - terms}) : tr('داخل المهلة')),
             );
           }(),
       ],
@@ -1757,8 +1757,8 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
     final has = pct > 0 && days > 0;
     if (!has) {
       return PicPosBarList(
-        title: 'سلوك السداد — آخر ${rows.length} فواتير',
-        subtitle: 'لا خصم معجَّل متفق عليه — تُعرض أيام السداد وحدها',
+        title: tr('سلوك السداد — آخر {p0} فواتير', {'p0': rows.length}),
+        subtitle: tr('لا خصم معجَّل متفق عليه — تُعرض أيام السداد وحدها'),
         items: [
           for (final r in rows.reversed)
             PicPosBarItem(
@@ -1768,20 +1768,20 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
               tint: r.daysToPay == null ? _tintIdle : _tintOk,
               label: r.invoiceNumber,
               sub: r.daysToPay == null
-                  ? 'لم تُسدَّد بعد'
-                  : 'سُدّدت في ${_count(r.daysToPay!, 'يوماً')}',
+                  ? tr('لم تُسدَّد بعد')
+                  : tr('سُدّدت في {p0}', {'p0': _count(r.daysToPay!, 'يوماً')}),
               value: (r.daysToPay ?? 0).toDouble(),
-              caption: r.daysToPay == null ? '' : _count(r.daysToPay!, 'يوماً'),
-              display: r.daysToPay == null ? 'جارية' : _money(r.total),
+              caption: r.daysToPay == null ? '' : _count(r.daysToPay!, tr('يوماً')),
+              display: r.daysToPay == null ? tr('جارية') : _money(r.total),
             ),
         ],
       );
     }
 
     return PicPosBarList(
-      title: 'الخصم النقدي — المُستغَل مقابل المُهدَر',
+      title: tr('الخصم النقدي — المُستغَل مقابل المُهدَر'),
       subtitle:
-          '${pct.toStringAsFixed(pct % 1 == 0 ? 0 : 1)}٪ خلال $days يوماً · آخر ${rows.length} فواتير',
+          tr('{p0}٪ خلال {days} يوماً · آخر {p1} فواتير', {'p0': pct.toStringAsFixed(pct % 1 == 0 ? 0 : 1), 'days': days, 'p1': rows.length}),
       items: [
         for (final r in rows.reversed)
           () {
@@ -1798,12 +1798,12 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
                   : (captured ? _tintOk : _tintErr),
               label: r.invoiceNumber,
               sub: r.daysToPay == null
-                  ? 'لم تُسدَّد بعد — الخصم ما زال ممكناً'
-                  : 'سُدّدت في ${_count(r.daysToPay!, 'يوماً')}',
+                  ? tr('لم تُسدَّد بعد — الخصم ما زال ممكناً')
+                  : tr('سُدّدت في {p0}', {'p0': _count(r.daysToPay!, 'يوماً')}),
               value: value,
               caption: captured == null
-                  ? 'متاح'
-                  : (captured ? 'استُغل الخصم' : 'فات الخصم'),
+                  ? tr('متاح')
+                  : (captured ? tr('استُغل الخصم') : tr('فات الخصم')),
               // الإشارةُ تقول الاتّجاه: ما استُغلّ وفرٌ، وما فات خسارةٌ مقيسة.
               display: captured == null
                   ? _money(value)
@@ -1953,8 +1953,8 @@ class _FilterableTableState<T> extends State<_FilterableTable<T>> {
           rows: [for (final p in shown) p.row],
           totals: widget.totals?.call([for (final p in shown) p.item]),
           emptyLabel: q.isEmpty
-              ? 'لا صفوفَ لعرضها'
-              : 'لا نتيجةَ للبحث عن «$raw»',
+              ? tr('لا صفوفَ لعرضها')
+              : tr('لا نتيجةَ للبحث عن «{raw}»', {'raw': raw}),
         );
       },
     );
@@ -1991,7 +1991,7 @@ class _FilterableBoard extends StatelessWidget {
       builder: (context, raw, _) {
         final q = raw.trim().toLowerCase();
         return PicPosStatusBoard(
-          emptyLabel: q.isEmpty ? 'لا شيءَ هنا' : 'لا نتيجةَ للبحث',
+          emptyLabel: q.isEmpty ? tr('لا شيءَ هنا') : tr('لا نتيجةَ للبحث'),
           columns: [
             for (final col in columns)
               () {
@@ -2069,7 +2069,7 @@ class _LedgerTable extends StatelessWidget {
             //    يحمل الأعمدةَ كان سيُعيد بناءَ الحالة عند كلّ تخصيصٍ فيرتدّ
             //    الترشيحُ إلى «كل الحركات» بلا سبب.
             query: query,
-            title: 'كشف الحركة — الرصيد الجاري',
+            title: tr('كشف الحركة — الرصيد الجاري'),
             subtitle: subtitle,
             headerAction: _CustomizeColumnsButton(onTap: onCustomize),
             columns: [
@@ -2120,7 +2120,7 @@ class _CustomizeColumnsButton extends StatelessWidget {
                   size: 13, color: context.picposMuted),
               const SizedBox(width: 6),
               Text(
-                'تخصيص الأعمدة',
+                tr('تخصيص الأعمدة'),
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
@@ -2195,9 +2195,9 @@ class _StatementActionBar extends ConsumerWidget {
               Flexible(
                 child: Text(
                   selected == null
-                      ? 'اختر سطراً لعرض مستنده'
+                      ? tr('اختر سطراً لعرض مستنده')
                       : (target == null
-                          ? '${selected.description} — لا مستندَ يُفتَح'
+                          ? tr('{p0} — لا مستندَ يُفتَح', {'p0': selected.description})
                           : '${selected.invoiceNumber ?? selected.description}'
                               ' · ${target.label}'),
                   maxLines: 1,
@@ -2212,7 +2212,7 @@ class _StatementActionBar extends ConsumerWidget {
               OutlinedButton.icon(
                 onPressed: () => unawaited(onExport()),
                 icon: const Icon(PhosphorIconsBold.downloadSimple, size: 16),
-                label: const Text('تصدير'),
+                label:  Text(tr('تصدير')),
                 style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.success),
               ),
@@ -2220,7 +2220,7 @@ class _StatementActionBar extends ConsumerWidget {
               OutlinedButton.icon(
                 onPressed: () => unawaited(onPrint()),
                 icon: const Icon(PhosphorIconsBold.printer, size: 16),
-                label: const Text('طباعة الكشف'),
+                label:  Text(tr('طباعة الكشف')),
               ),
               const SizedBox(width: 8),
               FilledButton.icon(
@@ -2233,7 +2233,7 @@ class _StatementActionBar extends ConsumerWidget {
                         .read(screenNavigationProvider.notifier)
                         .open(target.screenId.navigationIndex),
                 icon: const Icon(PhosphorIconsBold.arrowSquareOut, size: 16),
-                label: const Text('عرض المستند'),
+                label:  Text(tr('عرض المستند')),
               ),
             ],
           ),

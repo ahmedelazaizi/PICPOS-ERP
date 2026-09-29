@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
@@ -59,9 +60,9 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
           children: [
             const Icon(PhosphorIconsBold.database, color: AppColors.primary),
             const SizedBox(width: 8),
-            const Text(
-              'إدارة النسخ الاحتياطي',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+             Text(
+              tr('إدارة النسخ الاحتياطي'),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const Spacer(),
             // Export button
@@ -76,7 +77,7 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(PhosphorIconsBold.export, size: 16),
-              label: Text(_isExporting ? 'جاري التصدير...' : 'تصدير'),
+              label: Text(_isExporting ? tr('جاري التصدير...') : tr('تصدير')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.info,
                 side: const BorderSide(color: AppColors.info),
@@ -96,7 +97,7 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
                     )
                   : const Icon(PhosphorIconsBold.plus, size: 16),
               label: Text(
-                _isBackingUp ? 'جاري النسخ...' : 'إنشاء نسخة احتياطية',
+                _isBackingUp ? tr('جاري النسخ...') : tr('إنشاء نسخة احتياطية'),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.success,
@@ -141,18 +142,18 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
       ),
       child: Row(
         children: [
-          _buildStatChip(PhosphorIconsBold.archive, '$count', 'نسخة'),
+          _buildStatChip(PhosphorIconsBold.archive, '$count', tr('نسخة')),
           const SizedBox(width: 24),
           _buildStatChip(
             PhosphorIconsBold.hardDrive,
             '$sizeInMB MB',
-            'الحجم الإجمالي',
+            tr('الحجم الإجمالي'),
           ),
           const SizedBox(width: 24),
           _buildStatChip(
             PhosphorIconsBold.clockCounterClockwise,
-            lastBackup != null ? dateFormat.format(lastBackup) : 'لا يوجد',
-            'آخر نسخة',
+            lastBackup != null ? dateFormat.format(lastBackup) : tr('لا يوجد'),
+            tr('آخر نسخة'),
           ),
           const Spacer(),
           Container(
@@ -161,18 +162,18 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
               color: AppColors.success.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Row(
+            child:  Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                const Icon(
                   PhosphorIconsBold.check,
                   size: 14,
                   color: AppColors.success,
                 ),
-                SizedBox(width: 4),
+                const SizedBox(width: 4),
                 Text(
-                  'النسخ التلقائي مُفعّل',
-                  style: TextStyle(
+                  tr('النسخ التلقائي مُفعّل'),
+                  style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.success,
                     fontWeight: FontWeight.bold,
@@ -217,12 +218,12 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
           Icon(PhosphorIconsLight.archive, size: 48, color: Colors.grey[400]),
           const SizedBox(height: 12),
           Text(
-            'لا توجد نسخ احتياطية',
+            tr('لا توجد نسخ احتياطية'),
             style: TextStyle(color: Colors.grey[600], fontSize: 14),
           ),
           const SizedBox(height: 4),
           Text(
-            'اضغط "إنشاء نسخة احتياطية" للبدء',
+            tr('اضغط "إنشاء نسخة احتياطية" للبدء'),
             style: TextStyle(color: Colors.grey[400], fontSize: 12),
           ),
         ],
@@ -263,9 +264,9 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
                   color: AppColors.warning.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
-                  'الأحدث',
-                  style: TextStyle(
+                child:  Text(
+                  tr('الأحدث'),
+                  style: const TextStyle(
                     fontSize: 10,
                     color: AppColors.warning,
                     fontWeight: FontWeight.bold,
@@ -288,7 +289,7 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
                 color: AppColors.info,
                 size: 20,
               ),
-              tooltip: 'استعادة',
+              tooltip: tr('استعادة'),
               onPressed: () => _restoreBackup(backupPath),
             ),
             IconButton(
@@ -297,7 +298,7 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
                 color: AppColors.error,
                 size: 20,
               ),
-              tooltip: 'حذف',
+              tooltip: tr('حذف'),
               onPressed: () => _deleteBackup(backupPath),
             ),
           ],
@@ -313,7 +314,7 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
       if (path != null && mounted) {
         AppToast.show(
           context,
-          'تم إنشاء النسخة الاحتياطية بنجاح',
+          tr('تم إنشاء النسخة الاحتياطية بنجاح'),
           type: ToastType.success,
         );
         await _loadBackups();
@@ -322,7 +323,7 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
       if (mounted) {
         AppToast.show(
           context,
-          'خطأ في إنشاء النسخة: $e',
+          tr('خطأ في إنشاء النسخة: {e}', {'e': e}),
           type: ToastType.error,
         );
       }
@@ -335,21 +336,21 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
     setState(() => _isExporting = true);
     try {
       final result = await FilePicker.getDirectoryPath(
-        dialogTitle: 'اختر مجلد لتصدير النسخة الاحتياطية',
+        dialogTitle: tr('اختر مجلد لتصدير النسخة الاحتياطية'),
       );
       if (result != null) {
         final success = await ref.read(settingsControllerProvider.notifier).exportBackup(result);
         if (mounted && success) {
           AppToast.show(
             context,
-            'تم تصدير النسخة بنجاح',
+            tr('تم تصدير النسخة بنجاح'),
             type: ToastType.success,
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'خطأ في التصدير: $e', type: ToastType.error);
+        AppToast.show(context, tr('خطأ في التصدير: {e}', {'e': e}), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _isExporting = false);
@@ -362,21 +363,21 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('تأكيد الاستعادة'),
-          content: const Text(
-            'هل أنت متأكد؟ سيتم استبدال قاعدة البيانات الحالية بالنسخة الاحتياطية.\nيُنصح بإنشاء نسخة احتياطية قبل الاستعادة.',
+          title:  Text(tr('تأكيد الاستعادة')),
+          content:  Text(
+            tr('هل أنت متأكد؟ سيتم استبدال قاعدة البيانات الحالية بالنسخة الاحتياطية.\nيُنصح بإنشاء نسخة احتياطية قبل الاستعادة.'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.warning,
               ),
-              child: const Text('استعادة'),
+              child:  Text(tr('استعادة')),
             ),
           ],
         ),
@@ -389,13 +390,13 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
         if (success && mounted) {
           AppToast.show(
             context,
-            'تمت الاستعادة بنجاح. يرجى إعادة تشغيل التطبيق.',
+            tr('تمت الاستعادة بنجاح. يرجى إعادة تشغيل التطبيق.'),
             type: ToastType.success,
           );
         }
       } catch (e) {
         if (mounted) {
-          AppToast.show(context, 'خطأ في الاستعادة: $e', type: ToastType.error);
+          AppToast.show(context, tr('خطأ في الاستعادة: {e}', {'e': e}), type: ToastType.error);
         }
       }
     }
@@ -408,17 +409,17 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: const Text('تأكيد الحذف'),
-          content: Text('هل تريد حذف النسخة الاحتياطية "$name"؟'),
+          title:  Text(tr('تأكيد الحذف')),
+          content: Text(tr('هل تريد حذف النسخة الاحتياطية "{name}"؟', {'name': name})),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('حذف'),
+              child:  Text(tr('حذف')),
             ),
           ],
         ),
@@ -431,14 +432,14 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
         if (success && mounted) {
           AppToast.show(
             context,
-            'تم حذف النسخة بنجاح',
+            tr('تم حذف النسخة بنجاح'),
             type: ToastType.success,
           );
           await _loadBackups();
         }
       } catch (e) {
         if (mounted) {
-          AppToast.show(context, 'خطأ في الحذف: $e', type: ToastType.error);
+          AppToast.show(context, tr('خطأ في الحذف: {e}', {'e': e}), type: ToastType.error);
         }
       }
     }

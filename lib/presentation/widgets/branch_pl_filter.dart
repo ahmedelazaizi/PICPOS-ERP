@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // B-01: Branch-Level P&L Filter Widget
 // Reusable branch/cost center filter bar for financial reports
@@ -46,10 +47,10 @@ class BranchPLFilterBar extends StatelessWidget {
             // Branch Filter
             if (branches.isNotEmpty) ...[
               _filterDropdown<int?>(
-                label: 'الفرع',
+                label: tr('الفرع'),
                 value: selectedBranchId,
                 items: [
-                  const DropdownMenuItem<int?>(value: null, child: Text('كل الفروع')),
+                   DropdownMenuItem<int?>(value: null, child: Text(tr('كل الفروع'))),
                   ...branches.map((b) => DropdownMenuItem<int?>(
                     value: b.id,
                     child: Text(b.name),
@@ -62,10 +63,10 @@ class BranchPLFilterBar extends StatelessWidget {
             // Cost Center Filter
             if (costCenters.isNotEmpty) ...[
               _filterDropdown<int?>(
-                label: 'مركز التكلفة',
+                label: tr('مركز التكلفة'),
                 value: selectedCostCenterId,
                 items: [
-                  const DropdownMenuItem<int?>(value: null, child: Text('كل المراكز')),
+                   DropdownMenuItem<int?>(value: null, child: Text(tr('كل المراكز'))),
                   ...costCenters.map((c) => DropdownMenuItem<int?>(
                     value: c.id,
                     child: Text(c.name),
@@ -83,7 +84,7 @@ class BranchPLFilterBar extends StatelessWidget {
                   onCostCenterChanged(null);
                 },
                 icon: const Icon(PhosphorIconsBold.x, size: 14),
-                label: Text('مسح الفلاتر', style: GoogleFonts.cairo(fontSize: 11)),
+                label: Text(tr('مسح الفلاتر'), style: GoogleFonts.cairo(fontSize: 11)),
                 style: TextButton.styleFrom(foregroundColor: AppColors.error),
               ),
           ],

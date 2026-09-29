@@ -53,7 +53,7 @@ Set<String> _actionLabelKeys() {
   }
   final end = src.indexOf('\n  };', start);
   if (end < 0) throw StateError('لم تُغلَق actionLabels في $_screen');
-  return RegExp("'([a-z0-9_]+)':\\s*'")
+  return RegExp("'([a-z0-9_]+)':\\s*(?:tr\\(\\s*)?'")
       .allMatches(src.substring(start, end))
       .map((m) => m.group(1)!)
       .toSet();

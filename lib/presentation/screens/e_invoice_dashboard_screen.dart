@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,10 +36,10 @@ Widget buildEinvoiceSubmitButton({required VoidCallback onPressed}) {
   return PermissionGuard(
     permission: PermissionCodes.einvoiceSubmit,
     allowManagerOverride: true,
-    actionName: 'إعادة إرسال فواتير إلكترونية معلقة',
+    actionName: tr('إعادة إرسال فواتير إلكترونية معلقة'),
     onGranted: onPressed,
     child: _ActionButton(
-      label: 'إعادة إرسال المعلقة',
+      label: tr('إعادة إرسال المعلقة'),
       icon: Icons.refresh,
       onPressed: onPressed,
     ),
@@ -110,26 +111,26 @@ class _EInvoiceDashboardScreenState
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('الفوترة الإلكترونية'),
+          title:  Text(tr('الفوترة الإلكترونية')),
           actions: [
             // Platform filter
             PopupMenuButton<String?>(
               icon: const Icon(Icons.filter_list),
-              tooltip: 'فلترة حسب المنصة',
+              tooltip: tr('فلترة حسب المنصة'),
               onSelected: (v) => setState(() => _filterPlatform = v),
               itemBuilder: (_) => [
-                const PopupMenuItem(value: null, child: Text('الكل')),
-                const PopupMenuItem(value: 'eta', child: Text('🇪🇬 ETA مصر')),
-                const PopupMenuItem(
+                 PopupMenuItem(value: null, child: Text(tr('الكل'))),
+                 PopupMenuItem(value: 'eta', child: Text(tr('🇪🇬 ETA مصر'))),
+                 PopupMenuItem(
                   value: 'jofotara',
-                  child: Text('🇯🇴 JOFOTARA الأردن'),
+                  child: Text(tr('🇯🇴 JOFOTARA الأردن')),
                 ),
               ],
             ),
             // Settings
             IconButton(
               icon: const Icon(Icons.settings),
-              tooltip: 'إعدادات الفوترة',
+              tooltip: tr('إعدادات الفوترة'),
               onPressed: () => _showConfigDialog(context),
             ),
           ],
@@ -138,11 +139,11 @@ class _EInvoiceDashboardScreenState
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
             indicatorColor: Colors.white,
-            tabs: const [
-              Tab(text: 'لوحة التحكم', icon: Icon(Icons.dashboard)),
-              Tab(text: 'الفواتير', icon: Icon(Icons.receipt_long)),
-              Tab(text: 'التحليلات', icon: Icon(Icons.analytics)),
-              Tab(text: 'الإعدادات', icon: Icon(Icons.tune)),
+            tabs:  [
+              Tab(text: tr('لوحة التحكم'), icon: const Icon(Icons.dashboard)),
+              Tab(text: tr('الفواتير'), icon: const Icon(Icons.receipt_long)),
+              Tab(text: tr('التحليلات'), icon: const Icon(Icons.analytics)),
+              Tab(text: tr('الإعدادات'), icon: const Icon(Icons.tune)),
             ],
           ),
         ),
@@ -166,7 +167,7 @@ class _EInvoiceDashboardScreenState
   Widget _buildDashboardTab(AsyncValue<Map<String, int>> stats) {
     return stats.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('خطأ: $e')),
+      error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
       data: (data) => Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -176,25 +177,25 @@ class _EInvoiceDashboardScreenState
             Row(
               children: [
                 _StatCard(
-                  title: 'إجمالي',
+                  title: tr('إجمالي'),
                   value: '${data['total'] ?? 0}',
                   icon: Icons.description,
                   color: Colors.blue,
                 ),
                 _StatCard(
-                  title: 'مقبولة',
+                  title: tr('مقبولة'),
                   value: '${data['valid'] ?? 0}',
                   icon: Icons.check_circle,
                   color: Colors.green,
                 ),
                 _StatCard(
-                  title: 'معلقة',
+                  title: tr('معلقة'),
                   value: '${data['pending'] ?? 0}',
                   icon: Icons.hourglass_empty,
                   color: Colors.orange,
                 ),
                 _StatCard(
-                  title: 'مرفوضة',
+                  title: tr('مرفوضة'),
                   value: '${data['invalid'] ?? 0}',
                   icon: Icons.cancel,
                   color: AppColors.error,
@@ -209,7 +210,7 @@ class _EInvoiceDashboardScreenState
 
             // Quick actions
             Text(
-              'إجراءات سريعة',
+              tr('إجراءات سريعة'),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
@@ -219,12 +220,12 @@ class _EInvoiceDashboardScreenState
               children: [
                 buildEinvoiceSubmitButton(onPressed: _retryPending),
                 _ActionButton(
-                  label: 'فحص الحالات',
+                  label: tr('فحص الحالات'),
                   icon: Icons.sync,
                   onPressed: _pollStatuses,
                 ),
                 _ActionButton(
-                  label: 'تصدير التقرير',
+                  label: tr('تصدير التقرير'),
                   icon: Icons.picture_as_pdf,
                   onPressed: _exportReport,
                 ),
@@ -250,18 +251,18 @@ class _EInvoiceDashboardScreenState
         ),
         title: Text(
           isConfigured
-              ? 'متصل بـ ${platform == EInvoicePlatform.eta ? "ETA مصر 🇪🇬" : "JOFOTARA الأردن 🇯🇴"}'
-              : 'غير متصل — قم بإعداد المنصة',
+              ? tr('متصل بـ {p0}', {'p0': platform == EInvoicePlatform.eta ? "ETA مصر 🇪🇬" : "JOFOTARA الأردن 🇯🇴"})
+              : tr('غير متصل — قم بإعداد المنصة'),
         ),
         subtitle: Text(
           isConfigured
-              ? 'الخدمة جاهزة للإرسال'
-              : 'اذهب إلى الإعدادات لتكوين الاتصال',
+              ? tr('الخدمة جاهزة للإرسال')
+              : tr('اذهب إلى الإعدادات لتكوين الاتصال'),
         ),
         trailing: isConfigured
             ? ElevatedButton(
                 onPressed: _testConnection,
-                child: const Text('اختبار'),
+                child:  Text(tr('اختبار')),
               )
             : null,
       ),
@@ -284,12 +285,12 @@ class _EInvoiceDashboardScreenState
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildFilterChip('الكل', 'all'),
-                _buildFilterChip('معلقة', 'pending'),
-                _buildFilterChip('مرسلة', 'submitted'),
-                _buildFilterChip('مقبولة', 'valid'),
-                _buildFilterChip('مرفوضة', 'invalid'),
-                _buildFilterChip('ملغاة', 'cancelled'),
+                _buildFilterChip(tr('الكل'), 'all'),
+                _buildFilterChip(tr('معلقة'), 'pending'),
+                _buildFilterChip(tr('مرسلة'), 'submitted'),
+                _buildFilterChip(tr('مقبولة'), 'valid'),
+                _buildFilterChip(tr('مرفوضة'), 'invalid'),
+                _buildFilterChip(tr('ملغاة'), 'cancelled'),
               ],
             ),
           ),
@@ -298,22 +299,22 @@ class _EInvoiceDashboardScreenState
         Expanded(
           child: submissions.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('خطأ: $e')),
+            error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
             data: (items) {
               final filtered = _filterStatus == 'all'
                   ? items
                   : items.where((s) => s.status == _filterStatus).toList();
 
               if (filtered.isEmpty) {
-                return const Center(
+                return  Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.inbox, size: 64, color: Colors.grey),
-                      SizedBox(height: 12),
+                      const Icon(Icons.inbox, size: 64, color: Colors.grey),
+                      const SizedBox(height: 12),
                       Text(
-                        'لا توجد فواتير',
-                        style: TextStyle(color: Colors.grey),
+                        tr('لا توجد فواتير'),
+                        style: const TextStyle(color: Colors.grey),
                       ),
                     ],
                   ),
@@ -361,8 +362,8 @@ class _EInvoiceDashboardScreenState
           Card(
             child: ExpansionTile(
               leading: const Text('🇪🇬', style: TextStyle(fontSize: 24)),
-              title: const Text('منظومة ETA المصرية'),
-              subtitle: const Text('الفاتورة الإلكترونية — مصلحة الضرائب'),
+              title:  Text(tr('منظومة ETA المصرية')),
+              subtitle:  Text(tr('الفاتورة الإلكترونية — مصلحة الضرائب')),
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16),
@@ -381,8 +382,8 @@ class _EInvoiceDashboardScreenState
           Card(
             child: ExpansionTile(
               leading: const Text('🇯🇴', style: TextStyle(fontSize: 24)),
-              title: const Text('منظومة JOFOTARA الأردنية'),
-              subtitle: const Text('الفوترة الإلكترونية — دائرة ضريبة الدخل'),
+              title:  Text(tr('منظومة JOFOTARA الأردنية')),
+              subtitle:  Text(tr('الفوترة الإلكترونية — دائرة ضريبة الدخل')),
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16),
@@ -400,11 +401,11 @@ class _EInvoiceDashboardScreenState
         Card(
           child: ListTile(
             leading: const Icon(Icons.data_object),
-            title: const Text('بيانات الضرائب المرجعية'),
-            subtitle: const Text('أنواع الضرائب والفئات الفرعية'),
+            title:  Text(tr('بيانات الضرائب المرجعية')),
+            subtitle:  Text(tr('أنواع الضرائب والفئات الفرعية')),
             trailing: ElevatedButton.icon(
               icon: const Icon(Icons.sync),
-              label: const Text('تحديث'),
+              label:  Text(tr('تحديث')),
               onPressed: _seedTaxTypes,
             ),
           ),
@@ -415,11 +416,11 @@ class _EInvoiceDashboardScreenState
         Card(
           child: ListTile(
             leading: const Icon(Icons.qr_code),
-            title: const Text('تكويد المنتجات'),
-            subtitle: const Text('توليد أكواد EGS لجميع المنتجات'),
+            title:  Text(tr('تكويد المنتجات')),
+            subtitle:  Text(tr('توليد أكواد EGS لجميع المنتجات')),
             trailing: ElevatedButton.icon(
               icon: const Icon(Icons.auto_fix_high),
-              label: const Text('توليد'),
+              label:  Text(tr('توليد')),
               onPressed: _bulkGenerateCodes,
             ),
           ),
@@ -439,7 +440,7 @@ class _EInvoiceDashboardScreenState
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? 'الاتصال ناجح ✅' : 'فشل الاتصال ❌'),
+        content: Text(ok ? tr('الاتصال ناجح ✅') : tr('فشل الاتصال ❌')),
         backgroundColor: ok ? Colors.green : AppColors.error,
       ),
     );
@@ -475,7 +476,7 @@ class _EInvoiceDashboardScreenState
         } else {
           await repo.markSubmissionFailed(
             sub.id,
-            result.errorMessage ?? 'فشل غير معروف',
+            result.errorMessage ?? tr('فشل غير معروف'),
           );
           failed++;
         }
@@ -486,7 +487,7 @@ class _EInvoiceDashboardScreenState
     }
 
     if (!mounted) return;
-    AppToast.show(context, 'تم: $success نجحت، $failed فشلت من ${pending.length}', type: ToastType.error);
+    AppToast.show(context, tr('تم: {success} نجحت، {failed} فشلت من {p0}', {'success': success, 'failed': failed, 'p0': pending.length}), type: ToastType.error);
   }
 
   Future<void> _pollStatuses() async {
@@ -508,7 +509,7 @@ class _EInvoiceDashboardScreenState
             'invalid',
             errorMessage: status.errors.isNotEmpty
                 ? status.errors.first.toString()
-                : 'مرفوضة',
+                : tr('مرفوضة'),
           );
           updated++;
         }
@@ -518,14 +519,14 @@ class _EInvoiceDashboardScreenState
     }
 
     if (!mounted) return;
-    AppToast.show(context, 'تم تحديث $updated فاتورة من ${submitted.length}');
+    AppToast.show(context, tr('تم تحديث {updated} فاتورة من {p0}', {'updated': updated, 'p0': submitted.length}));
   }
 
   Future<void> _retrySingle(EInvoiceSubmissionData sub) async {
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('جاري إعادة الإرسال...')));
+    ).showSnackBar( SnackBar(content: Text(tr('جاري إعادة الإرسال...'))));
   }
 
   Future<void> _checkSingleStatus(EInvoiceSubmissionData sub) async {
@@ -536,10 +537,10 @@ class _EInvoiceDashboardScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('الحالة: ${status.status}')));
+      ).showSnackBar(SnackBar(content: Text(tr('الحالة: {p0}', {'p0': status.status}))));
     } catch (e) {
       if (!mounted) return;
-      AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+      AppToast.show(context, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
     }
   }
 
@@ -553,7 +554,7 @@ class _EInvoiceDashboardScreenState
         const <String>[];
     if (!canCancelEInvoice(perms)) {
       if (mounted) {
-        AppToast.show(context, 'ليس لديك صلاحية إلغاء الفوترة الإلكترونية',
+        AppToast.show(context, tr('ليس لديك صلاحية إلغاء الفوترة الإلكترونية'),
             type: ToastType.error);
       }
       return;
@@ -562,7 +563,7 @@ class _EInvoiceDashboardScreenState
     final wrapper = ref.read(eInvoiceServiceProvider);
     final ok = await wrapper.cancelDocument(
       sub.documentUuid!,
-      'إلغاء من المستخدم',
+      tr('إلغاء من المستخدم'),
     );
 
     if (ok) {
@@ -573,7 +574,7 @@ class _EInvoiceDashboardScreenState
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? 'تم الإلغاء ✅' : 'فشل الإلغاء ❌'),
+        content: Text(ok ? tr('تم الإلغاء ✅') : tr('فشل الإلغاء ❌')),
         backgroundColor: ok ? Colors.green : AppColors.error,
       ),
     );
@@ -581,7 +582,7 @@ class _EInvoiceDashboardScreenState
 
   Future<void> _exportReport() async {
     if (!mounted) return;
-    AppToast.show(context, 'قريبًا: تصدير تقرير الفوترة الإلكترونية', type: ToastType.info);
+    AppToast.show(context, tr('قريبًا: تصدير تقرير الفوترة الإلكترونية'), type: ToastType.info);
   }
 
   Future<void> _saveConfig(String platform, Map<String, dynamic> config) async {
@@ -600,7 +601,7 @@ class _EInvoiceDashboardScreenState
     await initializeEInvoiceService(ref, platform);
 
     if (!mounted) return;
-    AppToast.show(context, 'تم حفظ الإعدادات ✅');
+    AppToast.show(context, tr('تم حفظ الإعدادات ✅'));
   }
 
   Future<void> _seedTaxTypes() async {
@@ -608,7 +609,7 @@ class _EInvoiceDashboardScreenState
     await repo.seedTaxTypes();
 
     if (!mounted) return;
-    AppToast.show(context, 'تم تحديث بيانات الضرائب ✅');
+    AppToast.show(context, tr('تم تحديث بيانات الضرائب ✅'));
   }
 
   Future<void> _bulkGenerateCodes() async {
@@ -617,7 +618,7 @@ class _EInvoiceDashboardScreenState
     final count = await repo.bulkGenerateEgsCodes();
 
     if (!mounted) return;
-    AppToast.show(context, 'تم توليد أكواد لـ $count منتج ✅');
+    AppToast.show(context, tr('تم توليد أكواد لـ {count} منتج ✅', {'count': count}));
   }
 
   void _showConfigDialog(BuildContext context) {
@@ -634,7 +635,7 @@ class _EInvoiceDashboardScreenState
   ) {
     return stats.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('خطأ: $e')),
+      error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
       data: (data) {
         final total = data['total'] ?? 0;
         final valid = data['valid'] ?? 0;
@@ -658,7 +659,7 @@ class _EInvoiceDashboardScreenState
                       children: [
                         const Icon(Icons.pie_chart, color: Colors.blue, size: 22),
                         const SizedBox(width: 8),
-                        Text('معدل النجاح', style: Theme.of(context).textTheme.titleMedium),
+                        Text(tr('معدل النجاح'), style: Theme.of(context).textTheme.titleMedium),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -675,7 +676,7 @@ class _EInvoiceDashboardScreenState
                                   color: Colors.green,
                                 ),
                               ),
-                              const Text('معدل القبول', style: TextStyle(color: Colors.grey)),
+                               Text(tr('معدل القبول'), style: const TextStyle(color: Colors.grey)),
                             ],
                           ),
                         ),
@@ -690,7 +691,7 @@ class _EInvoiceDashboardScreenState
                                   color: AppColors.error,
                                 ),
                               ),
-                              const Text('معدل الرفض', style: TextStyle(color: Colors.grey)),
+                               Text(tr('معدل الرفض'), style: const TextStyle(color: Colors.grey)),
                             ],
                           ),
                         ),
@@ -724,17 +725,17 @@ class _EInvoiceDashboardScreenState
                       children: [
                         const Icon(Icons.bar_chart, color: Colors.blue, size: 22),
                         const SizedBox(width: 8),
-                        Text('توزيع الحالات', style: Theme.of(context).textTheme.titleMedium),
+                        Text(tr('توزيع الحالات'), style: Theme.of(context).textTheme.titleMedium),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    _buildAnalyticsRow('مقبولة', valid, total, Colors.green),
+                    _buildAnalyticsRow(tr('مقبولة'), valid, total, Colors.green),
                     const SizedBox(height: 8),
-                    _buildAnalyticsRow('معلقة', pending, total, Colors.orange),
+                    _buildAnalyticsRow(tr('معلقة'), pending, total, Colors.orange),
                     const SizedBox(height: 8),
-                    _buildAnalyticsRow('مرفوضة', invalid, total, AppColors.error),
+                    _buildAnalyticsRow(tr('مرفوضة'), invalid, total, AppColors.error),
                     const SizedBox(height: 8),
-                    _buildAnalyticsRow('ملغاة', cancelled, total, Colors.grey),
+                    _buildAnalyticsRow(tr('ملغاة'), cancelled, total, Colors.grey),
                   ],
                 ),
               ),
@@ -752,13 +753,13 @@ class _EInvoiceDashboardScreenState
                       children: [
                         const Icon(Icons.compare_arrows, color: Colors.blue, size: 22),
                         const SizedBox(width: 8),
-                        Text('مقارنة المنصات', style: Theme.of(context).textTheme.titleMedium),
+                        Text(tr('مقارنة المنصات'), style: Theme.of(context).textTheme.titleMedium),
                       ],
                     ),
                     const SizedBox(height: 16),
                     submissions.when(
                       loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (e, _) => Text('خطأ: $e'),
+                      error: (e, _) => Text(tr('خطأ: {e}', {'e': e})),
                       data: (items) {
                         final etaCount = items.where((s) => s.platform == 'eta').length;
                         final jofotaraCount = items.where((s) => s.platform == 'jofotara').length;
@@ -769,8 +770,8 @@ class _EInvoiceDashboardScreenState
                           children: [
                             ListTile(
                               leading: const Text('🇪🇬', style: TextStyle(fontSize: 28)),
-                              title: const Text('ETA مصر'),
-                              subtitle: Text('$etaCount فاتورة · $etaSuccess مقبولة'),
+                              title:  Text(tr('ETA مصر')),
+                              subtitle: Text(tr('{etaCount} فاتورة · {etaSuccess} مقبولة', {'etaCount': etaCount, 'etaSuccess': etaSuccess})),
                               trailing: etaCount > 0
                                   ? Chip(
                                       label: Text(
@@ -784,8 +785,8 @@ class _EInvoiceDashboardScreenState
                             const Divider(),
                             ListTile(
                               leading: const Text('🇯🇴', style: TextStyle(fontSize: 28)),
-                              title: const Text('JOFOTARA الأردن'),
-                              subtitle: Text('$jofotaraCount فاتورة · $jofotaraSuccess مقبولة'),
+                              title:  Text(tr('JOFOTARA الأردن')),
+                              subtitle: Text(tr('{jofotaraCount} فاتورة · {jofotaraSuccess} مقبولة', {'jofotaraCount': jofotaraCount, 'jofotaraSuccess': jofotaraSuccess})),
                               trailing: jofotaraCount > 0
                                   ? Chip(
                                       label: Text(
@@ -817,24 +818,24 @@ class _EInvoiceDashboardScreenState
                       children: [
                         const Icon(Icons.refresh, color: Colors.blue, size: 22),
                         const SizedBox(width: 8),
-                        Text('آلية إعادة المحاولة', style: Theme.of(context).textTheme.titleMedium),
+                        Text(tr('آلية إعادة المحاولة'), style: Theme.of(context).textTheme.titleMedium),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    const ListTile(
-                      leading: Icon(Icons.check_circle, color: Colors.green),
-                      title: Text('إعادة المحاولة التلقائية'),
-                      subtitle: Text('3 محاولات مع تأخير تصاعدي (2s, 4s, 6s)'),
+                     ListTile(
+                      leading: const Icon(Icons.check_circle, color: Colors.green),
+                      title: Text(tr('إعادة المحاولة التلقائية')),
+                      subtitle: Text(tr('3 محاولات مع تأخير تصاعدي (2s, 4s, 6s)')),
                     ),
-                    const ListTile(
-                      leading: Icon(Icons.check_circle, color: Colors.green),
-                      title: Text('إعادة المصادقة التلقائية'),
-                      subtitle: Text('تجديد التوكن عند انتهاء الصلاحية (401)'),
+                     ListTile(
+                      leading: const Icon(Icons.check_circle, color: Colors.green),
+                      title: Text(tr('إعادة المصادقة التلقائية')),
+                      subtitle: Text(tr('تجديد التوكن عند انتهاء الصلاحية (401)')),
                     ),
-                    const ListTile(
-                      leading: Icon(Icons.check_circle, color: Colors.green),
-                      title: Text('أخطاء الخادم (5xx)'),
-                      subtitle: Text('إعادة محاولة تلقائية مع backoff'),
+                     ListTile(
+                      leading: const Icon(Icons.check_circle, color: Colors.green),
+                      title: Text(tr('أخطاء الخادم (5xx)')),
+                      subtitle: Text(tr('إعادة محاولة تلقائية مع backoff')),
                     ),
                   ],
                 ),

@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -34,17 +35,17 @@ class RoleListPanel extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.05),
               border: Border(bottom: BorderSide(color: theme.dividerColor)),
             ),
-            child: const Row(
+            child:  Row(
               children: [
-                Icon(
+                const Icon(
                   PhosphorIconsBold.users,
                   size: 20,
                   color: AppColors.primary,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(
-                  'الأدوار المتوفرة',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  tr('الأدوار المتوفرة'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],
             ),
@@ -78,9 +79,9 @@ class RoleListPanel extends StatelessWidget {
                       : null,
                   onTap: () => onSelectRole(role),
                   trailing: role.isSystemRole
-                      ? const Tooltip(
-                          message: 'دور نظام - لا يمكن حذفه',
-                          child: Icon(
+                      ?  Tooltip(
+                          message: tr('دور نظام - لا يمكن حذفه'),
+                          child: const Icon(
                             PhosphorIconsBold.lock,
                             size: 14,
                             color: AppColors.textMuted,
@@ -93,7 +94,7 @@ class RoleListPanel extends StatelessWidget {
                             color: AppColors.error,
                           ),
                           onPressed: () => onDeleteRole(role),
-                          tooltip: 'حذف الدور',
+                          tooltip: tr('حذف الدور'),
                         ),
                 );
               },

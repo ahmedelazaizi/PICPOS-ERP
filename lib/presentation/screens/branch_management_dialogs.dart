@@ -23,7 +23,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
       builder: (context) => const BranchEditDialog(),
     );
     if (result == true && mounted) {
-      AppToast.show(context, 'تم إضافة الفرع بنجاح', type: ToastType.success);
+      AppToast.show(context, tr('تم إضافة الفرع بنجاح'), type: ToastType.success);
     }
   }
 
@@ -33,7 +33,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
       builder: (context) => const WarehouseEditDialog(),
     );
     if (result == true && mounted) {
-      AppToast.show(context, 'تم إضافة المخزن بنجاح', type: ToastType.success);
+      AppToast.show(context, tr('تم إضافة المخزن بنجاح'), type: ToastType.success);
     }
   }
 
@@ -51,34 +51,34 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
           children: [
             SimpleDialogOption(
               onPressed: () { Navigator.pop(dialogCtx); handleBranchAction('edit', branch); },
-              child: const Row(children: [
-                Icon(PhosphorIconsBold.pencil, color: AppColors.primary, size: 20),
-                SizedBox(width: 12),
-                Text('تعديل'),
+              child:  Row(children: [
+                const Icon(PhosphorIconsBold.pencil, color: AppColors.primary, size: 20),
+                const SizedBox(width: 12),
+                Text(tr('تعديل')),
               ]),
             ),
             SimpleDialogOption(
               onPressed: () { Navigator.pop(dialogCtx); handleBranchAction('warehouses', branch); },
-              child: const Row(children: [
-                Icon(PhosphorIconsBold.warehouse, color: Colors.teal, size: 20),
-                SizedBox(width: 12),
-                Text('المخازن'),
+              child:  Row(children: [
+                const Icon(PhosphorIconsBold.warehouse, color: Colors.teal, size: 20),
+                const SizedBox(width: 12),
+                Text(tr('المخازن')),
               ]),
             ),
             SimpleDialogOption(
               onPressed: () { Navigator.pop(dialogCtx); handleBranchAction('stats', branch); },
-              child: const Row(children: [
-                Icon(PhosphorIconsBold.chartBar, color: Colors.blue, size: 20),
-                SizedBox(width: 12),
-                Text('إحصائيات'),
+              child:  Row(children: [
+                const Icon(PhosphorIconsBold.chartBar, color: Colors.blue, size: 20),
+                const SizedBox(width: 12),
+                Text(tr('إحصائيات')),
               ]),
             ),
             SimpleDialogOption(
               onPressed: () { Navigator.pop(dialogCtx); handleBranchAction('delete', branch); },
-              child: const Row(children: [
-                Icon(PhosphorIconsBold.trash, color: AppColors.error, size: 20),
-                SizedBox(width: 12),
-                Text('حذف', style: TextStyle(color: AppColors.error)),
+              child:  Row(children: [
+                const Icon(PhosphorIconsBold.trash, color: AppColors.error, size: 20),
+                const SizedBox(width: 12),
+                Text(tr('حذف'), style: const TextStyle(color: AppColors.error)),
               ]),
             ),
           ],
@@ -97,10 +97,10 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
           children: [
             SimpleDialogOption(
               onPressed: () { Navigator.pop(dialogCtx); handleWarehouseAction('edit', warehouse); },
-              child: const Row(children: [
-                Icon(PhosphorIconsBold.pencil, color: AppColors.primary, size: 20),
-                SizedBox(width: 12),
-                Text('تعديل'),
+              child:  Row(children: [
+                const Icon(PhosphorIconsBold.pencil, color: AppColors.primary, size: 20),
+                const SizedBox(width: 12),
+                Text(tr('تعديل')),
               ]),
             ),
             SimpleDialogOption(
@@ -108,15 +108,15 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
               child: Row(children: [
                 Icon(warehouse.isDefault ? PhosphorIconsBold.starHalf : PhosphorIconsBold.star, color: Colors.amber, size: 20),
                 const SizedBox(width: 12),
-                Text(warehouse.isDefault ? 'إلغاء الافتراضي' : 'تعيين كافتراضي'),
+                Text(warehouse.isDefault ? tr('إلغاء الافتراضي') : tr('تعيين كافتراضي')),
               ]),
             ),
             SimpleDialogOption(
               onPressed: () { Navigator.pop(dialogCtx); handleWarehouseAction('delete', warehouse); },
-              child: const Row(children: [
-                Icon(PhosphorIconsBold.trash, color: AppColors.error, size: 20),
-                SizedBox(width: 12),
-                Text('حذف', style: TextStyle(color: AppColors.error)),
+              child:  Row(children: [
+                const Icon(PhosphorIconsBold.trash, color: AppColors.error, size: 20),
+                const SizedBox(width: 12),
+                Text(tr('حذف'), style: const TextStyle(color: AppColors.error)),
               ]),
             ),
           ],
@@ -166,7 +166,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
       userCount = await branchRepo.countUsersWithBranchAccess(branch.id as int);
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, 'تعذّر قراءة عدد المستخدمين: $e',
+        AppToast.show(context, tr('تعذّر قراءة عدد المستخدمين: {e}', {'e': e}),
             type: ToastType.error);
       }
       return;
@@ -177,9 +177,9 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
       // No user assignments to reassign — regular confirm.
       final confirmed = await AppConfirmDialog.show(
         context,
-        title: 'تأكيد الحذف',
-        message: 'هل تريد حذف الفرع "${branch.name}"؟',
-        confirmLabel: 'حذف',
+        title: tr('تأكيد الحذف'),
+        message: tr('هل تريد حذف الفرع "{p0}"؟', {'p0': branch.name}),
+        confirmLabel: tr('حذف'),
         isDangerous: true,
       );
       if (confirmed != true || !mounted) return;
@@ -195,7 +195,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
         .toList();
     if (candidates.isEmpty) {
       AppToast.show(context,
-          'لا يوجد فرع آخر نشط لنقل المستخدمين إليه. أضف فرعاً آخر أولاً.',
+          tr('لا يوجد فرع آخر نشط لنقل المستخدمين إليه. أضف فرعاً آخر أولاً.'),
           type: ToastType.error);
       return;
     }
@@ -213,7 +213,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
               children: [
                 const Icon(PhosphorIconsBold.warning, color: AppColors.error),
                 const SizedBox(width: 8),
-                Expanded(child: Text('حذف فرع "${branch.name}"')),
+                Expanded(child: Text(tr('حذف فرع "{p0}"', {'p0': branch.name}))),
               ],
             ),
             content: ConstrainedBox(
@@ -235,7 +235,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'هذا الفرع مرتبط بـ $userCount مستخدم.',
+                            tr('هذا الفرع مرتبط بـ {userCount} مستخدم.', {'userCount': userCount}),
                             style: const TextStyle(
                                 fontSize: 13, color: AppColors.warning),
                           ),
@@ -244,8 +244,8 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('انقل المستخدمين إلى:',
-                      style: TextStyle(fontSize: 13)),
+                   Text(tr('انقل المستخدمين إلى:'),
+                      style: const TextStyle(fontSize: 13)),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<int>(
                     initialValue: selectedDestId,
@@ -279,7 +279,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
             actions: [
               TextButton(
                 onPressed: isDeleting ? null : () => Navigator.pop(ctx),
-                child: const Text('إلغاء'),
+                child:  Text(tr('إلغاء')),
               ),
               ElevatedButton.icon(
                 icon: const Icon(PhosphorIconsBold.arrowRight, size: 16),
@@ -300,7 +300,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text('نقل وحذف'),
+                    :  Text(tr('نقل وحذف')),
               ),
             ],
           ),
@@ -318,7 +318,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
           'حذف فرع: ${branch.name}'
           '${reassignTo != null ? ' (نُقل المستخدمون إلى فرع #$reassignTo)' : ''}');
       if (mounted) {
-        AppToast.show(context, 'تم حذف الفرع', type: ToastType.warning);
+        AppToast.show(context, tr('تم حذف الفرع'), type: ToastType.warning);
       }
     } catch (e) {
       if (mounted) {
@@ -342,10 +342,10 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
           if (!intercepted) {
             await branchRepo.setDefaultWarehouse(warehouse.id);
           }
-          if (mounted) AppToast.show(context, 'تم تعيين المخزن كافتراضي', type: ToastType.success);
+          if (mounted) AppToast.show(context, tr('تم تعيين المخزن كافتراضي'), type: ToastType.success);
         } catch (e) {
           if (mounted) {
-            AppToast.show(context, 'خطأ: ${e.toString().replaceAll('Exception: ', '')}', type: ToastType.error);
+            AppToast.show(context, tr('خطأ: {p0}', {'p0': e.toString().replaceAll('Exception: ', '')}), type: ToastType.error);
           }
         }
         break;
@@ -355,19 +355,19 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
           if (!intercepted) {
             await branchRepo.unsetDefaultWarehouse(warehouse.id);
           }
-          if (mounted) AppToast.show(context, 'تم إلغاء المخزن الافتراضي', type: ToastType.success);
+          if (mounted) AppToast.show(context, tr('تم إلغاء المخزن الافتراضي'), type: ToastType.success);
         } catch (e) {
           if (mounted) {
-            AppToast.show(context, 'خطأ: ${e.toString().replaceAll('Exception: ', '')}', type: ToastType.error);
+            AppToast.show(context, tr('خطأ: {p0}', {'p0': e.toString().replaceAll('Exception: ', '')}), type: ToastType.error);
           }
         }
         break;
       case 'delete':
         final confirmed = await AppConfirmDialog.show(
           context,
-          title: 'تأكيد الحذف',
-          message: 'هل تريد حذف المخزن "${warehouse.name}"؟',
-          confirmLabel: 'حذف',
+          title: tr('تأكيد الحذف'),
+          message: tr('هل تريد حذف المخزن "{p0}"؟', {'p0': warehouse.name}),
+          confirmLabel: tr('حذف'),
           isDangerous: true,
         );
         if (confirmed == true) {
@@ -376,9 +376,9 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
             if (!intercepted) {
               await branchRepo.deleteWarehouse(warehouse.id);
             }
-            _logActivity('delete_warehouse', 'warehouse', warehouse.id, 'حذف مخزن: ${warehouse.name}');
+            _logActivity('delete_warehouse', 'warehouse', warehouse.id, tr('حذف مخزن: {p0}', {'p0': warehouse.name}));
             if (mounted) {
-              AppToast.show(context, 'تم حذف المخزن', type: ToastType.warning);
+              AppToast.show(context, tr('تم حذف المخزن'), type: ToastType.warning);
             }
           } catch (e) {
             if (mounted) {
@@ -404,20 +404,20 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('إحصائيات: ${branch.name}'),
+        title: Text(tr('إحصائيات: {p0}', {'p0': branch.name})),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildStatRow('إجمالي المبيعات', '${stats.totalSales.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'),
-            _buildStatRow('عدد الفواتير', stats.invoiceCount.toString()),
-            _buildStatRow('متوسط الفاتورة', '${stats.averageInvoiceValue.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'),
-            _buildStatRow('قيمة المخزون', '${inventoryValue.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'),
+            _buildStatRow(tr('إجمالي المبيعات'), '${stats.totalSales.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'),
+            _buildStatRow(tr('عدد الفواتير'), stats.invoiceCount.toString()),
+            _buildStatRow(tr('متوسط الفاتورة'), '${stats.averageInvoiceValue.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'),
+            _buildStatRow(tr('قيمة المخزون'), '${inventoryValue.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),
@@ -447,7 +447,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
       builder: (context) => BranchEditDialog(existing: branch),
     );
     if (result == true && mounted) {
-      AppToast.show(context, 'تم تحديث الفرع بنجاح', type: ToastType.success);
+      AppToast.show(context, tr('تم تحديث الفرع بنجاح'), type: ToastType.success);
     }
   }
 
@@ -457,7 +457,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
       builder: (context) => WarehouseEditDialog(existing: warehouse),
     );
     if (result == true && mounted) {
-      AppToast.show(context, 'تم تحديث المخزن بنجاح', type: ToastType.success);
+      AppToast.show(context, tr('تم تحديث المخزن بنجاح'), type: ToastType.success);
     }
   }
 

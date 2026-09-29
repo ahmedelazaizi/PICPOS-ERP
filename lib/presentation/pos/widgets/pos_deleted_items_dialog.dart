@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -36,10 +37,10 @@ class PosDeletedItemsDialog extends ConsumerWidget {
           children: [
             const Icon(PhosphorIconsBold.trash, color: AppColors.error),
             const SizedBox(width: 8),
-            const Text('الأصناف المحذوفة'),
+             Text(tr('الأصناف المحذوفة')),
             const Spacer(),
             Text(
-              '${deletedItems.length} صنف',
+              tr('{p0} صنف', {'p0': deletedItems.length}),
               style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),
           ],
@@ -48,10 +49,10 @@ class PosDeletedItemsDialog extends ConsumerWidget {
           width: 500,
           height: 350,
           child: deletedItems.isEmpty
-              ? const Center(
+              ?  Center(
                   child: Text(
-                    'لا توجد أصناف محذوفة',
-                    style: TextStyle(color: AppColors.textMuted),
+                    tr('لا توجد أصناف محذوفة'),
+                    style: const TextStyle(color: AppColors.textMuted),
                   ),
                 )
               : ListView.separated(
@@ -96,11 +97,11 @@ class PosDeletedItemsDialog extends ConsumerWidget {
                 Navigator.pop(context);
               },
               icon: const Icon(PhosphorIconsBold.trash, size: 16),
-              label: const Text('مسح الكل'),
+              label:  Text(tr('مسح الكل')),
             ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
+            child:  Text(tr('إغلاق')),
           ),
         ],
       ),

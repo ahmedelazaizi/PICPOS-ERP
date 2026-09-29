@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -25,7 +26,7 @@ class _BomEditorDialogState extends ConsumerState<BomEditorDialog> {
   final _componentBaseFactor = TextEditingController(text: '1');
   int? _finishedProduct;
   int? _rawMaterial;
-  String _componentUnit = 'قطعة';
+  String _componentUnit = tr('قطعة');
   String _basis = 'after_overhead';
   BomCostPreview? _preview;
 
@@ -46,56 +47,56 @@ class _BomEditorDialogState extends ConsumerState<BomEditorDialog> {
   @override
   Widget build(BuildContext context) => PicPosDialog(
         icon: PhosphorIconsBold.listDashes,
-        title: widget.bomId == null ? 'قائمة مكوّنات جديدة' : 'تحرير قائمة المكوّنات',
-        subtitle: 'التكلفة والتحميل والهامش والوزن والقطع',
+        title: widget.bomId == null ? tr('قائمة مكوّنات جديدة') : tr('تحرير قائمة المكوّنات'),
+        subtitle: tr('التكلفة والتحميل والهامش والوزن والقطع'),
         body: [
-          TextField(controller: _code, decoration: const InputDecoration(labelText: 'كود القائمة')),
+          TextField(controller: _code, decoration:  InputDecoration(labelText: tr('كود القائمة'))),
           DropdownButtonFormField<int>(
             value: _finishedProduct,
-            decoration: const InputDecoration(labelText: 'المنتج التام'),
+            decoration:  InputDecoration(labelText: tr('المنتج التام')),
             items: [for (final p in widget.products) DropdownMenuItem(value: p.id, child: Text(p.name))],
             onChanged: (value) => setState(() => _finishedProduct = value),
           ),
-          TextField(controller: _expected, decoration: const InputDecoration(labelText: 'كمية الناتج المتوقعة')),
+          TextField(controller: _expected, decoration:  InputDecoration(labelText: tr('كمية الناتج المتوقعة'))),
           DropdownButtonFormField<int>(
             value: _rawMaterial,
-            decoration: const InputDecoration(labelText: 'الخامة الأولى'),
+            decoration:  InputDecoration(labelText: tr('الخامة الأولى')),
             items: [for (final p in widget.products.where((p) => p.id != _finishedProduct)) DropdownMenuItem(value: p.id, child: Text(p.name))],
             onChanged: (value) => setState(() => _rawMaterial = value),
           ),
           Row(children: [
-            Expanded(child: TextField(controller: _componentQuantity, decoration: const InputDecoration(labelText: 'كمية الخامة'))),
+            Expanded(child: TextField(controller: _componentQuantity, decoration:  InputDecoration(labelText: tr('كمية الخامة')))),
             const SizedBox(width: 8),
-            Expanded(child: TextField(controller: _componentBaseFactor, decoration: const InputDecoration(labelText: 'معامل التحويل'))),
+            Expanded(child: TextField(controller: _componentBaseFactor, decoration:  InputDecoration(labelText: tr('معامل التحويل')))),
           ]),
           DropdownButtonFormField<String>(
             value: _componentUnit,
-            decoration: const InputDecoration(labelText: 'وحدة الخامة'),
-            items: const [
-              DropdownMenuItem(value: 'جرام', child: Text('جرام')),
-              DropdownMenuItem(value: 'كجم', child: Text('كجم')),
-              DropdownMenuItem(value: 'قطعة', child: Text('قطعة')),
+            decoration:  InputDecoration(labelText: tr('وحدة الخامة')),
+            items:  [
+              DropdownMenuItem(value: tr('جرام'), child: Text(tr('جرام'))),
+              DropdownMenuItem(value: tr('كجم'), child: Text(tr('كجم'))),
+              DropdownMenuItem(value: tr('قطعة'), child: Text(tr('قطعة'))),
             ],
-            onChanged: (value) => setState(() => _componentUnit = value ?? 'قطعة'),
+            onChanged: (value) => setState(() => _componentUnit = value ?? tr('قطعة')),
           ),
-          TextField(controller: _overhead, decoration: const InputDecoration(labelText: 'التحميل %')),
-          TextField(controller: _profit, decoration: const InputDecoration(labelText: 'الربح %')),
+          TextField(controller: _overhead, decoration:  InputDecoration(labelText: tr('التحميل %'))),
+          TextField(controller: _profit, decoration:  InputDecoration(labelText: tr('الربح %'))),
           DropdownButtonFormField<String>(
             value: _basis,
-            decoration: const InputDecoration(labelText: 'أساس الربح'),
-            items: const [
-              DropdownMenuItem(value: 'after_overhead', child: Text('بعد التحميل')),
-              DropdownMenuItem(value: 'materials_only', child: Text('المواد فقط')),
+            decoration:  InputDecoration(labelText: tr('أساس الربح')),
+            items:  [
+              DropdownMenuItem(value: 'after_overhead', child: Text(tr('بعد التحميل'))),
+              DropdownMenuItem(value: 'materials_only', child: Text(tr('المواد فقط'))),
             ],
             onChanged: (value) => setState(() => _basis = value ?? 'after_overhead'),
           ),
-          TextField(controller: _pieceWeight, decoration: const InputDecoration(labelText: 'وزن القطعة بالجرام (اختياري)')),
-          const Text('معاينة التكلفة: المواد + مبلغ التحميل = الإجمالي', style: TextStyle(fontWeight: FontWeight.w700)),
-          Text('السعر المقترح: ${_preview?.suggestedSellingPrice.toStringAsFixed(2) ?? '—'}'),
-          Text('عدد القطع: ${_preview?.pieces?.toString() ?? '—'}'),
+          TextField(controller: _pieceWeight, decoration:  InputDecoration(labelText: tr('وزن القطعة بالجرام (اختياري)'))),
+           Text(tr('معاينة التكلفة: المواد + مبلغ التحميل = الإجمالي'), style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(tr('السعر المقترح: {p0}', {'p0': _preview?.suggestedSellingPrice.toStringAsFixed(2) ?? '—'})),
+          Text(tr('عدد القطع: {p0}', {'p0': _preview?.pieces?.toString() ?? '—'})),
         ],
-        primaryAction: PicPosDialogAction(label: 'حفظ', icon: PhosphorIconsBold.floppyDisk, onPressed: _save),
-        secondaryActions: [PicPosDialogAction(label: 'تطبيق كسعر بيع', icon: PhosphorIconsBold.tag, onPressed: _applySalePrice)],
+        primaryAction: PicPosDialogAction(label: tr('حفظ'), icon: PhosphorIconsBold.floppyDisk, onPressed: _save),
+        secondaryActions: [PicPosDialogAction(label: tr('تطبيق كسعر بيع'), icon: PhosphorIconsBold.tag, onPressed: _applySalePrice)],
         onCancel: () => Navigator.pop(context),
       );
 
@@ -170,9 +171,9 @@ class _BomEditorDialogState extends ConsumerState<BomEditorDialog> {
     final confirmed = await showPicPosConfirm(
       context,
       icon: PhosphorIconsBold.tag,
-      title: 'تطبيق كسعر بيع',
-      message: 'سيُستبدل سعر بيع المنتج التام بالسعر المقترح.',
-      confirmLabel: 'تأكيد',
+      title: tr('تطبيق كسعر بيع'),
+      message: tr('سيُستبدل سعر بيع المنتج التام بالسعر المقترح.'),
+      confirmLabel: tr('تأكيد'),
     );
     if (confirmed) await ref.read(databaseProvider).applyBomSuggestedSalePrice(widget.bomId!);
   }

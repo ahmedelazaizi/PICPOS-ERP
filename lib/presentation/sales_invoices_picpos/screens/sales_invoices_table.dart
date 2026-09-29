@@ -31,12 +31,12 @@ Widget buildSalesPrintButtonGuarded({required VoidCallback onPrint}) {
   return PermissionGuard(
     permission: PermissionCodes.salesPrint,
     allowManagerOverride: true,
-    actionName: 'طباعة فاتورة بيع',
+    actionName: tr('طباعة فاتورة بيع'),
     onGranted: onPrint,
     child: IconButton(
       icon: const Icon(PhosphorIconsBold.printer, size: 18),
       color: AppColors.primary,
-      tooltip: 'طباعة',
+      tooltip: tr('طباعة'),
       onPressed: onPrint,
     ),
   );
@@ -173,10 +173,10 @@ class SalesInvoicesTable extends ConsumerWidget {
                     color: AppColors.warning.withValues(alpha: 0.35),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'لا فروعَ مُسنَدةٌ لحسابك',
+                   Text(
+                    tr('لا فروعَ مُسنَدةٌ لحسابك'),
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontWeight: FontWeight.w800,
                       color: AppColors.textMuted,
                     ),
@@ -211,8 +211,8 @@ class SalesInvoicesTable extends ConsumerWidget {
               const SizedBox(height: 16),
               Text(
                 hasFilters
-                    ? 'لا نتائج تطابق الفلاتر الحالية'
-                    : 'لا توجد فواتير مبيعات',
+                    ? tr('لا نتائج تطابق الفلاتر الحالية')
+                    : tr('لا توجد فواتير مبيعات'),
                 style: const TextStyle(color: AppColors.textMuted),
               ),
               if (hasFilters) ...[
@@ -220,7 +220,7 @@ class SalesInvoicesTable extends ConsumerWidget {
                 OutlinedButton.icon(
                   icon: const Icon(PhosphorIconsBold.arrowsCounterClockwise,
                       size: 16),
-                  label: const Text('إعادة تعيين الفلاتر'),
+                  label:  Text(tr('إعادة تعيين الفلاتر')),
                   onPressed: () => ref
                       .read(salesInvoicesControllerProvider.notifier)
                       .clearAllFilters(),
@@ -317,16 +317,16 @@ class _HeaderRow extends StatelessWidget {
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
-          label('رقم الفاتورة', _kColNum),
-          label('العميل', _kColParty),
-          label('التاريخ', _kColDate),
-          label('الفرع · المخزن · مركز التكلفة', _kColPlace),
-          label('الإجمالي', _kColTotal, align: TextAlign.end),
-          label('التحصيل', _kColCollect),
+          label(tr('رقم الفاتورة'), _kColNum),
+          label(tr('العميل'), _kColParty),
+          label(tr('التاريخ'), _kColDate),
+          label(tr('الفرع · المخزن · مركز التكلفة'), _kColPlace),
+          label(tr('الإجمالي'), _kColTotal, align: TextAlign.end),
+          label(tr('التحصيل'), _kColCollect),
           SizedBox(
             width: _kColStatusW,
             child: Text(
-              'الحالة',
+              tr('الحالة'),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -337,7 +337,7 @@ class _HeaderRow extends StatelessWidget {
           SizedBox(
             width: _kColActionsW,
             child: Text(
-              'الإجراءات',
+              tr('الإجراءات'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,
@@ -388,7 +388,7 @@ class _InvoiceCard extends StatelessWidget {
   final Function(InvoiceEntity) onWhatsApp;
 
   String get _customerName {
-    if (invoice.partyId == null) return 'عميل نقدي';
+    if (invoice.partyId == null) return tr('عميل نقدي');
     final found = customerNames[invoice.partyId];
     if (found != null) return found;
     // Spec 002 (B4): the lookup map should resolve every existing FK now
@@ -397,7 +397,7 @@ class _InvoiceCard extends StatelessWidget {
     // see chronic gaps.
     debugPrint('[SalesList] customer name fallback for '
         'partyId=${invoice.partyId} on invoice ${invoice.invoiceNumber}');
-    return 'عميل #${invoice.partyId}';
+    return tr('عميل #{p0}', {'p0': invoice.partyId});
   }
 
   @override
@@ -420,12 +420,12 @@ class _InvoiceCard extends StatelessWidget {
             ? AppColors.warning
             : AppColors.error;
     final statusLabel = isPaid
-        ? 'مدفوع'
+        ? tr('مدفوع')
         : isPartial
-            ? 'جزئي'
+            ? tr('جزئي')
             : isCancelled
-                ? 'ملغي'
-                : 'غير مدفوع';
+                ? tr('ملغي')
+                : tr('غير مدفوع');
     final statusIcon = isPaid
         ? PhosphorIconsBold.checkCircle
         : isPartial
@@ -440,7 +440,7 @@ class _InvoiceCard extends StatelessWidget {
     // resolving via warehouse → branch FK for legacy rows not yet backfilled.
     final brId =
         invoice.branchId ?? (whId != null ? warehouseBranchId[whId] : null);
-    final brName = brId != null ? (branchNames[brId] ?? 'فرع #$brId') : null;
+    final brName = brId != null ? (branchNames[brId] ?? tr('فرع #{brId}', {'brId': brId})) : null;
     // Spec 119 (Bug K) — «—» أنظفُ من «م.ت #6» حين يغيب مركزُ التكلفة من
     // الخريطة (سباقٌ مع delta pull، أو مركزٌ محذوف).
     final ccName = invoice.costCenterId != null
@@ -503,7 +503,7 @@ class _InvoiceCard extends StatelessWidget {
                     if (invoice.isLocked) ...[
                       const SizedBox(width: 5),
                       Tooltip(
-                        message: 'مُرحّلة محاسبياً',
+                        message: tr('مُرحّلة محاسبياً'),
                         child: Icon(PhosphorIconsBold.lockSimple,
                             size: 11, color: muted),
                       ),
@@ -674,7 +674,7 @@ class _InvoiceCard extends StatelessWidget {
                 _RowAction(
                   icon: PhosphorIconsBold.eye,
                   color: AppColors.info,
-                  tooltip: 'عرض التفاصيل',
+                  tooltip: tr('عرض التفاصيل'),
                   onTap: () => onView(invoice),
                 ),
                 const SizedBox(width: 5),
@@ -682,7 +682,7 @@ class _InvoiceCard extends StatelessWidget {
                   _RowAction(
                     icon: PhosphorIconsBold.pencilSimple,
                     color: AppColors.warning,
-                    tooltip: 'تعديل الدفع / وسيلة الدفع',
+                    tooltip: tr('تعديل الدفع / وسيلة الدفع'),
                     onTap: () => onEdit(invoice),
                   ),
                   const SizedBox(width: 5),
@@ -694,7 +694,7 @@ class _InvoiceCard extends StatelessWidget {
                 _RowAction(
                   icon: PhosphorIconsBold.whatsappLogo,
                   color: AppColors.success,
-                  tooltip: 'إرسال على واتساب',
+                  tooltip: tr('إرسال على واتساب'),
                   onTap: () => onWhatsApp(invoice),
                 ),
                 if (!invoice.isLocked) ...[
@@ -702,7 +702,7 @@ class _InvoiceCard extends StatelessWidget {
                   _RowAction(
                     icon: PhosphorIconsBold.trash,
                     color: AppColors.error,
-                    tooltip: 'حذف',
+                    tooltip: tr('حذف'),
                     onTap: () => onDelete(invoice),
                   ),
                 ],
@@ -788,7 +788,7 @@ class _CollectionCell extends StatelessWidget {
             const SizedBox(width: 6),
             Flexible(
               child: Text(
-                'متبقي ${fmt(remaining)}',
+                tr('متبقي {p0}', {'p0': fmt(remaining)}),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end,
@@ -860,8 +860,8 @@ class _ReturnBadge extends StatelessWidget {
     final color = full ? AppColors.error : AppColors.warning;
     return Tooltip(
       message: full
-          ? 'تم إرجاع الفاتورة بالكامل — راجع شاشة مرتجع المبيعات للتفاصيل'
-          : 'تم إرجاع جزء من الفاتورة — راجع شاشة مرتجع المبيعات للتفاصيل',
+          ? tr('تم إرجاع الفاتورة بالكامل — راجع شاشة مرتجع المبيعات للتفاصيل')
+          : tr('تم إرجاع جزء من الفاتورة — راجع شاشة مرتجع المبيعات للتفاصيل'),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
         decoration: BoxDecoration(
@@ -879,7 +879,7 @@ class _ReturnBadge extends StatelessWidget {
             ),
             const SizedBox(width: 3),
             Text(
-              full ? 'مُرتجعة' : 'مُرتجعة جزئياً',
+              full ? tr('مُرتجعة') : tr('مُرتجعة جزئياً'),
               style: TextStyle(
                 fontSize: 9.5,
                 fontWeight: FontWeight.bold,

@@ -50,10 +50,10 @@ class LoyaltyPointsAdjustMenu extends ConsumerWidget {
         const <String>[];
     return PopupMenuButton<String>(
       icon: const Icon(PhosphorIconsBold.dotsThreeVertical),
-      tooltip: 'خيارات',
+      tooltip: tr('خيارات'),
       onSelected: (action) {
         if (!canAdjustLoyaltyPoints(perms)) {
-          AppToast.show(context, 'ليس لديك صلاحية تعديل نقاط الولاء',
+          AppToast.show(context, tr('ليس لديك صلاحية تعديل نقاط الولاء'),
               type: ToastType.error);
           return;
         }
@@ -64,23 +64,23 @@ class LoyaltyPointsAdjustMenu extends ConsumerWidget {
         }
       },
       itemBuilder: (_) => [
-        const PopupMenuItem(
+         PopupMenuItem(
           value: 'add',
           child: Row(
             children: [
-              Icon(PhosphorIconsBold.plusCircle, color: Colors.green, size: 18),
-              SizedBox(width: 8),
-              Text('إضافة نقاط'),
+              const Icon(PhosphorIconsBold.plusCircle, color: Colors.green, size: 18),
+              const SizedBox(width: 8),
+              Text(tr('إضافة نقاط')),
             ],
           ),
         ),
-        const PopupMenuItem(
+         PopupMenuItem(
           value: 'subtract',
           child: Row(
             children: [
-              Icon(PhosphorIconsBold.minusCircle, color: Colors.orange, size: 18),
-              SizedBox(width: 8),
-              Text('خصم نقاط'),
+              const Icon(PhosphorIconsBold.minusCircle, color: Colors.orange, size: 18),
+              const SizedBox(width: 8),
+              Text(tr('خصم نقاط')),
             ],
           ),
         ),
@@ -115,9 +115,9 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
                 color: AppColors.primary,
               ),
               const SizedBox(width: 8),
-              const Text(
-                'أرصدة نقاط العملاء',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+               Text(
+                tr('أرصدة نقاط العملاء'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               StreamBuilder<List<LoyaltyProgram>>(
@@ -127,11 +127,11 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
                   if (programs.isEmpty) {
                     // BUG-U21: tell the user a loyalty program must be created
                     // first instead of rendering nothing.
-                    return const Padding(
-                      padding: EdgeInsets.all(12),
+                    return  Padding(
+                      padding: const EdgeInsets.all(12),
                       child: Text(
-                        'لا يوجد برنامج ولاء. أنشئ برنامجاً أولاً لتفعيل النقاط.',
-                        style: TextStyle(color: AppColors.textMuted),
+                        tr('لا يوجد برنامج ولاء. أنشئ برنامجاً أولاً لتفعيل النقاط.'),
+                        style: const TextStyle(color: AppColors.textMuted),
                       ),
                     );
                   }
@@ -174,12 +174,12 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'لا توجد أرصدة بعد',
+                          tr('لا توجد أرصدة بعد'),
                           style: TextStyle(color: Colors.grey.shade600),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'ستظهر الأرصدة تلقائياً عند كسب العملاء للنقاط',
+                          tr('ستظهر الأرصدة تلقائياً عند كسب العملاء للنقاط'),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade500,
@@ -214,10 +214,10 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _statChip('مكتسب', '$totalEarned', Colors.green),
-                          _statChip('مستبدل', '$totalRedeemed', Colors.orange),
+                          _statChip(tr('مكتسب'), '$totalEarned', Colors.green),
+                          _statChip(tr('مستبدل'), '$totalRedeemed', Colors.orange),
                           _statChip(
-                            'الرصيد',
+                            tr('الرصيد'),
                             '$totalBalance',
                             AppColors.primary,
                           ),
@@ -247,11 +247,11 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
                                 future: partiesRepo.getPartyById(pt.customerId),
                                 builder: (ctx, snap) => Text(
                                   snap.data?.name ??
-                                      'عميل #${pt.customerId}',
+                                      tr('عميل #{p0}', {'p0': pt.customerId}),
                                 ),
                               ),
                               subtitle: Text(
-                                'مكتسب: ${pt.totalEarned} | مستبدل: ${pt.totalRedeemed}',
+                                tr('مكتسب: {p0} | مستبدل: {p1}', {'p0': pt.totalEarned, 'p1': pt.totalRedeemed}),
                               ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -268,7 +268,7 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
-                                      '${pt.currentBalance} نقطة',
+                                      tr('{p0} نقطة', {'p0': pt.currentBalance}),
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: AppColors.primary,
@@ -339,7 +339,7 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(isPositive ? 'إضافة نقاط' : 'خصم نقاط'),
+          title: Text(isPositive ? tr('إضافة نقاط') : tr('خصم نقاط')),
           content: SizedBox(
             width: 350,
             child: Column(
@@ -350,7 +350,7 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
                   keyboardType: TextInputType.number,
                   autofocus: true,
                   decoration: InputDecoration(
-                    labelText: 'عدد النقاط',
+                    labelText: tr('عدد النقاط'),
                     border: const OutlineInputBorder(),
                     prefixIcon: Icon(
                       isPositive
@@ -363,9 +363,9 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: notesCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'ملاحظات (اختياري)',
-                    border: OutlineInputBorder(),
+                  decoration:  InputDecoration(
+                    labelText: tr('ملاحظات (اختياري)'),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ],
@@ -374,7 +374,7 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
           actions: [
             TextButton(
               onPressed: saving ? null : () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: saving
@@ -391,15 +391,15 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
                           points: adjustValue,
                           notes: notesCtrl.text.isNotEmpty
                               ? notesCtrl.text
-                              : (isPositive ? 'تعديل يدوي +$points' : 'تعديل يدوي -$points'),
+                              : (isPositive ? tr('تعديل يدوي +{points}', {'points': points}) : tr('تعديل يدوي -{points}', {'points': points})),
                         );
                         if (ctx.mounted) Navigator.pop(ctx);
                         if (context.mounted) {
                           AppToast.show(
                             context,
                             isPositive
-                                ? 'تمت إضافة $points نقطة'
-                                : 'تم خصم $points نقطة',
+                                ? tr('تمت إضافة {points} نقطة', {'points': points})
+                                : tr('تم خصم {points} نقطة', {'points': points}),
                           );
                         }
                       } finally {
@@ -418,7 +418,7 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
                         color: Colors.white,
                       ),
                     )
-                  : Text(isPositive ? 'إضافة' : 'خصم'),
+                  : Text(isPositive ? tr('إضافة') : tr('خصم')),
             ),
           ],
         ),

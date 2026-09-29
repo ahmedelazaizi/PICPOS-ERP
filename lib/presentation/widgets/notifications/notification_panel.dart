@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,7 +32,7 @@ class NotificationPanel extends ConsumerWidget {
                   const Icon(PhosphorIconsBold.bellRinging, color: AppColors.primary),
                   const SizedBox(width: 12),
                   Text(
-                    'الإشعارات',
+                    tr('الإشعارات'),
                     style: GoogleFonts.cairo(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -51,7 +52,7 @@ class NotificationPanel extends ConsumerWidget {
                     },
                     icon: const Icon(PhosphorIconsRegular.checks, size: 16),
                     label: Text(
-                      'تحديد الكل كمقروء',
+                      tr('تحديد الكل كمقروء'),
                       style: GoogleFonts.cairo(fontSize: 12),
                     ),
                     style: TextButton.styleFrom(
@@ -61,7 +62,7 @@ class NotificationPanel extends ConsumerWidget {
                   IconButton(
                     icon: const Icon(PhosphorIconsRegular.x, size: 20),
                     onPressed: () => Navigator.of(context).pop(),
-                    tooltip: 'إغلاق',
+                    tooltip: tr('إغلاق'),
                   ),
                 ],
               ),
@@ -100,7 +101,7 @@ class NotificationPanel extends ConsumerWidget {
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, stack) => Center(
-              child: Text('خطأ في تحميل الإشعارات', style: GoogleFonts.cairo(color: AppColors.error)),
+              child: Text(tr('خطأ في تحميل الإشعارات'), style: GoogleFonts.cairo(color: AppColors.error)),
             ),
           ),
         ),
@@ -116,7 +117,7 @@ class NotificationPanel extends ConsumerWidget {
           Icon(PhosphorIconsRegular.bellSlash, size: 60, color: AppColors.textMuted.withValues(alpha: 0.5)),
           const SizedBox(height: 16),
           Text(
-            'لا توجد إشعارات جديدة',
+            tr('لا توجد إشعارات جديدة'),
             style: GoogleFonts.cairo(
               fontSize: 16,
               color: AppColors.textMuted,
@@ -248,13 +249,13 @@ class _NotificationTile extends StatelessWidget {
     final difference = now.difference(date);
 
     if (difference.inDays > 0) {
-      return 'منذ ${difference.inDays} يوم';
+      return tr('منذ {p0} يوم', {'p0': difference.inDays});
     } else if (difference.inHours > 0) {
-      return 'منذ ${difference.inHours} ساعة';
+      return tr('منذ {p0} ساعة', {'p0': difference.inHours});
     } else if (difference.inMinutes > 0) {
-      return 'منذ ${difference.inMinutes} دقيقة';
+      return tr('منذ {p0} دقيقة', {'p0': difference.inMinutes});
     } else {
-      return 'الآن';
+      return tr('الآن');
     }
   }
 }

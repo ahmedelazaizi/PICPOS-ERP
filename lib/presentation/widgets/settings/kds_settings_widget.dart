@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,11 +27,11 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ExpansionTile(
         leading: const Icon(PhosphorIconsBold.chefHat, color: AppColors.primary),
-        title: const Text(
-          'إعدادات شاشة المطبخ (KDS)',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title:  Text(
+          tr('إعدادات شاشة المطبخ (KDS)'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: const Text('ربط التصنيفات بمحطات المطبخ'),
+        subtitle:  Text(tr('ربط التصنيفات بمحطات المطبخ')),
         children: [
           const Divider(height: 1),
           // Stations list
@@ -53,12 +54,12 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
             children: [
               const Icon(PhosphorIconsBold.house, size: 18, color: AppColors.primary),
               const SizedBox(width: 8),
-              const Text('محطات المطبخ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+               Text(tr('محطات المطبخ'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const Spacer(),
               TextButton.icon(
                 onPressed: () => _showAddStationDialog(kitchenRepo),
                 icon: const Icon(PhosphorIconsBold.plus, size: 16),
-                label: const Text('إضافة محطة'),
+                label:  Text(tr('إضافة محطة')),
               ),
             ],
           ),
@@ -74,10 +75,10 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
                     color: context.picposField,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Center(
+                  child:  Center(
                     child: Text(
-                      'لا توجد محطات — أضف أول محطة (مثل: مطبخ، بار، حلويات)',
-                      style: TextStyle(color: AppColors.textMuted),
+                      tr('لا توجد محطات — أضف أول محطة (مثل: مطبخ، بار، حلويات)'),
+                      style: const TextStyle(color: AppColors.textMuted),
                     ),
                   ),
                 );
@@ -105,17 +106,17 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+           Row(
             children: [
-              Icon(PhosphorIconsBold.arrowsLeftRight, size: 18, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('ربط التصنيف بالمحطة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const Icon(PhosphorIconsBold.arrowsLeftRight, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(tr('ربط التصنيف بالمحطة'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ],
           ),
           const SizedBox(height: 4),
-          const Text(
-            'عند إرسال الطلب للمطبخ، يتم توزيع الأصناف تلقائياً على المحطات حسب تصنيفها',
-            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+           Text(
+            tr('عند إرسال الطلب للمطبخ، يتم توزيع الأصناف تلقائياً على المحطات حسب تصنيفها'),
+            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
           ),
           const SizedBox(height: 12),
           Consumer(
@@ -129,9 +130,9 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
                       if (!stSnap.hasData) return const SizedBox.shrink();
                       final stations = stSnap.data!;
                       if (stations.isEmpty) {
-                        return const Text(
-                          'أضف محطات أولاً لبدء الربط',
-                          style: TextStyle(color: AppColors.textMuted),
+                        return  Text(
+                          tr('أضف محطات أولاً لبدء الربط'),
+                          style: const TextStyle(color: AppColors.textMuted),
                         );
                       }
 
@@ -173,11 +174,11 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
                                       contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       isDense: true,
                                     ),
-                                    hint: const Text('تلقائي (مطبخ)', style: TextStyle(fontSize: 12)),
+                                    hint:  Text(tr('تلقائي (مطبخ)'), style: const TextStyle(fontSize: 12)),
                                     items: [
-                                      const DropdownMenuItem<int?>(
+                                       DropdownMenuItem<int?>(
                                         value: null,
-                                        child: Text('تلقائي (مطبخ)', style: TextStyle(fontSize: 12)),
+                                        child: Text(tr('تلقائي (مطبخ)'), style: const TextStyle(fontSize: 12)),
                                       ),
                                       ...stations.map((s) => DropdownMenuItem<int?>(
                                         value: s.id,
@@ -235,23 +236,23 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('إضافة محطة مطبخ'),
+          title:  Text(tr('إضافة محطة مطبخ')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameC,
-                decoration: const InputDecoration(
-                  labelText: 'اسم المحطة',
-                  hintText: 'مثال: البار، الشواء، الحلويات',
+                decoration:  InputDecoration(
+                  labelText: tr('اسم المحطة'),
+                  hintText: tr('مثال: البار، الشواء، الحلويات'),
                 ),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: codeC,
-                decoration: const InputDecoration(
-                  labelText: 'رمز المحطة',
-                  hintText: 'مثال: BAR, GRILL, DESSERT',
+                decoration:  InputDecoration(
+                  labelText: tr('رمز المحطة'),
+                  hintText: tr('مثال: BAR, GRILL, DESSERT'),
                 ),
               ),
             ],
@@ -259,7 +260,7 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               onPressed: saving ? null : () async {
@@ -277,7 +278,7 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
                   rethrow;
                 }
               },
-              child: const Text('إضافة'),
+              child:  Text(tr('إضافة')),
             ),
           ],
         ),
@@ -291,12 +292,12 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('حذف المحطة'),
-          content: Text('هل تريد حذف محطة "${station.name}"؟'),
+          title:  Text(tr('حذف المحطة')),
+          content: Text(tr('هل تريد حذف محطة "{p0}"؟', {'p0': station.name})),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+              child:  Text(tr('إلغاء')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -311,7 +312,7 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
                   rethrow;
                 }
               },
-              child: const Text('حذف'),
+              child:  Text(tr('حذف')),
             ),
           ],
         ),

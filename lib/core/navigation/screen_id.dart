@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 /// Stable identifiers for navigation entries.
 ///
 /// The attached [index] keeps backward compatibility with the current
@@ -8,7 +9,7 @@
 /// وكان مكتوباً في **أربعة مواضع** (المدخلُ الجانبيُّ · عنوانُ الشاشة ·
 /// وسمُ التاب · بطاقةُ حاوية الحسابات)، فتغييرُ واحدٍ يترك الثلاثةَ تقول
 /// غيرَه — ويقرأ المستخدمُ اسمَين لشاشةٍ واحدة.
-const String journalEntriesScreenLabel = 'اليومية العامة';
+String get journalEntriesScreenLabel => tr('اليومية العامة');
 
 /// اسمُ شاشة الأوراق التجارية — **موضعٌ واحدٌ يقرؤه الجميع**.
 ///
@@ -19,7 +20,7 @@ const String journalEntriesScreenLabel = 'اليومية العامة';
 ///
 /// ⚠️ **و«إدارة» ليست زينةً**: الشاشةُ تُنشئ وتُودع وتُظهِّر وتُرتجع، لا
 /// تعرض وحدَها. والاسمُ القديمُ كان يَعِد بقائمةٍ فحسب.
-const String chequesScreenLabel = 'إدارة الشيكات';
+String get chequesScreenLabel => tr('إدارة الشيكات');
 
 enum ScreenId {
   dashboard(0),
