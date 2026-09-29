@@ -57,8 +57,7 @@ class SalesSummaryRow extends ConsumerWidget {
         // الـtooltip بيفصّل مدفوعات الفواتير وسندات القبض — نفس المبالغ،
         // فبيتحجب مع الكارت لا قبله.
         message: hasReceiptVouchers
-            ? 'مدفوعات الفواتير: ${totalPaid.toStringAsFixed(AppConstants.decimalPlaces)}\n'
-                'سندات القبض: ${receiptVouchersTotal.toStringAsFixed(AppConstants.decimalPlaces)}'
+            ? tr('مدفوعات الفواتير: {p0}\nسندات القبض: {p1}', {'p0': totalPaid.toStringAsFixed(AppConstants.decimalPlaces), 'p1': receiptVouchersTotal.toStringAsFixed(AppConstants.decimalPlaces)})
             : tr('مدفوعات الفواتير'),
         child: buildMaskedAmountKpiCard(
           icon: PhosphorIconsBold.wallet,

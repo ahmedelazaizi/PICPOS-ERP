@@ -22,11 +22,9 @@ Future<void> showCartNotEmptyCloseBlockedDialog(BuildContext context) {
             Text(tr('لا يمكن إغلاق البرنامج')),
           ],
         ),
-        content: const Text(
-          'يوجد أصنافٌ في سلة البيع الحالية.\n'
-          'أتمّ عمليةَ البيع، أو علّق الطلبَ، أو امسح السلّةَ يدوياً — ثم '
-          'أعد محاولة الإغلاق.',
-          style: TextStyle(height: 1.6),
+        content:  Text(
+          tr('يوجد أصنافٌ في سلة البيع الحالية.\nأتمّ عمليةَ البيع، أو علّق الطلبَ، أو امسح السلّةَ يدوياً — ثم أعد محاولة الإغلاق.'),
+          style: const TextStyle(height: 1.6),
         ),
         actions: [
           ElevatedButton(

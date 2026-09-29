@@ -496,8 +496,7 @@ class _TableProperties extends StatelessWidget {
       children: [
         PicPosSectionHeader(
           title: tr('جدول الأصناف'),
-          subtitle: '${table.visibleColumns.length} من ${table.columns.length}'
-              ' عمودٍ مُفعَّل',
+          subtitle: tr('{p0} من {p1} عمودٍ مُفعَّل', {'p0': table.visibleColumns.length, 'p1': table.columns.length}),
           icon: PhosphorIconsBold.table,
         ),
         _Section(

@@ -343,8 +343,7 @@ class _PermissionsMatrixDialogState
     return PicPosDialog(
       icon: PhosphorIconsBold.table,
       title: tr('مصفوفة الأدوار والصلاحيات'),
-      subtitle: 'قارن الأدوار جنباً إلى جنب وبدّل الصلاحية في مكانها بدلاً من '
-          'فتح كل دور على حدة',
+      subtitle: tr('قارن الأدوار جنباً إلى جنب وبدّل الصلاحية في مكانها بدلاً من فتح كل دور على حدة'),
       width: 1480,
       scrollable: false,
       bodyFill: true,
@@ -607,10 +606,9 @@ class _PermissionsMatrixDialogState
                   ),
                   if (risky) ...[
                     const SizedBox(width: 7),
-                    const Tooltip(
-                      message: 'صلاحيةٌ ماليّةٌ حرجة — تُفحَص على الخادم '
-                          'ولا يتخطّاها تجاوزُ المدير',
-                      child: Icon(
+                     Tooltip(
+                      message: tr('صلاحيةٌ ماليّةٌ حرجة — تُفحَص على الخادم ولا يتخطّاها تجاوزُ المدير'),
+                      child: const Icon(
                         PhosphorIconsBold.warning,
                         size: 13,
                         color: AppColors.warning,
@@ -738,8 +736,7 @@ class _PermissionsMatrixDialogState
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 22),
                       child: Text(
-                        'لا تعديلَ بعد — اضغط أيَّ خليّةٍ لتبديل الصلاحية، '
-                        'ويظهر التعديلُ هنا قبل الحفظ.',
+                        tr('لا تعديلَ بعد — اضغط أيَّ خليّةٍ لتبديل الصلاحية، ويظهر التعديلُ هنا قبل الحفظ.'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 11.5,
@@ -781,8 +778,7 @@ class _PermissionsMatrixDialogState
     final label = switch (c.to) {
       _Grant.allowed => tr('منح «{p0}» لدور {p1}', {'p0': c.permName, 'p1': c.roleName}),
       _Grant.conditional =>
-        'جعل «${c.permName}» مشروطاً لدور ${c.roleName} — موافقةُ مسؤولٍ '
-            'في كلّ مرّة',
+        tr('جعل «{p0}» مشروطاً لدور {p1} — موافقةُ مسؤولٍ في كلّ مرّة', {'p0': c.permName, 'p1': c.roleName}),
       _Grant.denied => tr('سحب «{p0}» من دور {p1}', {'p0': c.permName, 'p1': c.roleName}),
     };
     return Container(
@@ -845,9 +841,7 @@ class _PermissionsMatrixDialogState
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'التغيير يسري على كل مستخدمي الدور عند العملية التالية، '
-              'والصلاحيات المعلَّمة بمثلث تحذير تُفحَص على الخادم ولا يمكن '
-              'تجاوزها محلياً.',
+              tr('التغيير يسري على كل مستخدمي الدور عند العملية التالية، والصلاحيات المعلَّمة بمثلث تحذير تُفحَص على الخادم ولا يمكن تجاوزها محلياً.'),
               style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,

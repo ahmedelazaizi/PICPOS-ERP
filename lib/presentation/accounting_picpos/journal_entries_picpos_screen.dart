@@ -519,8 +519,7 @@ class _JournalEntriesPicPosScreenState
       title: tr('اعتماد القيد'),
       subtitle: '${entry.entryNumber} · ${_dateFormat.format(entry.entryDate)}',
       accent: AppColors.success,
-      message: 'بعد الاعتماد يصبح القيدُ مؤثّراً على أرصدة الحسابات ولا يمكن '
-          'تعديله — يمكن عكسُه بقيدٍ مضادٍّ فقط.',
+      message: tr('بعد الاعتماد يصبح القيدُ مؤثّراً على أرصدة الحسابات ولا يمكن تعديله — يمكن عكسُه بقيدٍ مضادٍّ فقط.'),
       confirmLabel: tr('تأكيد الاعتماد'),
       details: details,
     );
@@ -696,8 +695,7 @@ class _JournalEntriesPicPosScreenState
         tr('سيُنشأ قيدٌ عكسيٌّ بمبالغَ معكوسة (المدين يصبح دائناً والعكس).'),
         // ⚠️ تحذيرُ MJE-2 — يُحذَّر ولا يُمنَع.
         if (entry.isAutoPosted)
-          'هذا قيدٌ آليّ — الأفضل عكسُه من المستند المصدر '
-              '(الفاتورة/السند)، وإلّا افترق الأستاذُ عن حالة المستند.',
+          tr('هذا قيدٌ آليّ — الأفضل عكسُه من المستند المصدر (الفاتورة/السند)، وإلّا افترق الأستاذُ عن حالة المستند.'),
       ].join('\n\n'),
       confirmLabel: tr('تأكيد العكس'),
       details: details,

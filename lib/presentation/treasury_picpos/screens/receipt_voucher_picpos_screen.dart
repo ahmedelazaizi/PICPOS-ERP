@@ -234,8 +234,7 @@ userId: ref.read(authProvider).user?.id,
             userName: user?.displayName ?? tr('مجهول'),
             action: 'receipt',
             entityType: 'payment',
-            description: 'سند قبض ${v.method} رقم $voucherNumber بمبلغ '
-                '${grossAmount.toStringAsFixed(AppConstants.decimalPlaces)}',
+            description: tr('سند قبض {p0} رقم {voucherNumber} بمبلغ {p1}', {'p0': v.method, 'voucherNumber': voucherNumber, 'p1': grossAmount.toStringAsFixed(AppConstants.decimalPlaces)}),
             amount: grossAmount,
           );
 
@@ -257,14 +256,10 @@ userId: ref.read(authProvider).user?.id,
   ) {
     var d = v.notes.isEmpty ? tr('تحصيل من عميل') : v.notes;
     if (v.commissionPercent > 0) {
-      d += ' | المبلغ الكلي: '
-          '${grossAmount.toStringAsFixed(AppConstants.decimalPlaces)}'
-          ' | عمولة: ${v.commissionPercent.toStringAsFixed(1)}%'
-          ' (${commissionAmt.toStringAsFixed(AppConstants.decimalPlaces)})';
+      d += tr(' | المبلغ الكلي: {p0} | عمولة: {p1}% ({p2})', {'p0': grossAmount.toStringAsFixed(AppConstants.decimalPlaces), 'p1': v.commissionPercent.toStringAsFixed(1), 'p2': commissionAmt.toStringAsFixed(AppConstants.decimalPlaces)});
     }
     if (v.discount > 0) {
-      d += ' | خصم: '
-          '${v.discount.toStringAsFixed(AppConstants.decimalPlaces)}';
+      d += tr(' | خصم: {p0}', {'p0': v.discount.toStringAsFixed(AppConstants.decimalPlaces)});
     }
     if (v.method == 'check') d += tr(' | شيك رقم: {allCheckNumbers}', {'allCheckNumbers': allCheckNumbers});
     return d;
@@ -340,8 +335,7 @@ userId: ref.read(authProvider).user?.id,
     if (interceptedByServer) {
       // ⚠️ راجع رأسَ الملفّ: المعرّفاتُ المحلّيّةُ تتصادم مع معرّفات الخادم.
       _toast(
-        'حُفظ السندُ على الخادم — والتوزيعُ على الفواتير لا يُسجَّل من جهازٍ '
-        'عميل.',
+        tr('حُفظ السندُ على الخادم — والتوزيعُ على الفواتير لا يُسجَّل من جهازٍ عميل.'),
         ToastType.info,
       );
       return;

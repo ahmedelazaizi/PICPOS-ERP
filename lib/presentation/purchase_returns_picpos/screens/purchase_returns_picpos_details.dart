@@ -75,10 +75,7 @@ mixin _PurchaseReturnsPicposDetailsPanel
     return PicPosDocumentHeader(
       title: tr('مردود مشتريات'),
       icon: PhosphorIconsBold.arrowUUpLeft,
-      note: 'من فاتورة ${invoice.invoiceNumber} • '
-          '${d.day}/${d.month}/${d.year} • '
-          '${invoice.total.toStringAsFixed(AppConstants.decimalPlaces)} '
-          '${AppConstants.currencySymbolAr}',
+      note: tr('من فاتورة {p0} • {p1}/{p2}/{p3} • {p4} {p5}', {'p0': invoice.invoiceNumber, 'p1': d.day, 'p2': d.month, 'p3': d.year, 'p4': invoice.total.toStringAsFixed(AppConstants.decimalPlaces), 'p5': AppConstants.currencySymbolAr}),
       trailing: [
         Container(
           padding:
@@ -130,8 +127,7 @@ mixin _PurchaseReturnsPicposDetailsPanel
                     children: [
                       Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                       Text(
-                        'المشتراة: ${purchasedQty.toStringAsFixed(0)}'
-                        ' • السعر: ${item.item.unitCost.toStringAsFixed(AppConstants.decimalPlaces)}',
+                        tr('المشتراة: {p0} • السعر: {p1}', {'p0': purchasedQty.toStringAsFixed(0), 'p1': item.item.unitCost.toStringAsFixed(AppConstants.decimalPlaces)}),
                         style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                       ),
                       // 🔴 **والمتاحُ ليس عرضاً فحسب — هو السقفُ نفسُه.**
@@ -139,8 +135,7 @@ mixin _PurchaseReturnsPicposDetailsPanel
                       // خمسةٍ من خمسةٍ مرّتَين كان يمرّ ويخصم المخزونَ
                       // مرّتَين ويخفّض ذمّةَ المورّد مرّتَين.
                       Text(
-                        'المرتجع سابقاً: ${alreadyReturned.toStringAsFixed(0)}'
-                        ' • المتاح حالياً: ${maxQty.toStringAsFixed(0)}',
+                        tr('المرتجع سابقاً: {p0} • المتاح حالياً: {p1}', {'p0': alreadyReturned.toStringAsFixed(0), 'p1': maxQty.toStringAsFixed(0)}),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,

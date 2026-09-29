@@ -70,8 +70,7 @@ class BusinessProfileCatalog {
       profile: BusinessProfile.lite,
       arabicName: tr('لايت — نقطة بيع ومخازن'),
       arabicDescription:
-          'نقطة بيع + مخازن + صناديق + تقارير (ومعها المشتريات) — بدون طاولات '
-          'أو كيتشن أو فروع أو موظفين أو محاسبة موسّعة.',
+          tr('نقطة بيع + مخازن + صناديق + تقارير (ومعها المشتريات) — بدون طاولات أو كيتشن أو فروع أو موظفين أو محاسبة موسّعة.'),
     ),
     BusinessProfileMeta.build(
       profile: BusinessProfile.restaurant,

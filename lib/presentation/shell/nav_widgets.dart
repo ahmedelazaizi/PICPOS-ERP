@@ -123,7 +123,10 @@ class _EnhancedNavItemState extends State<_EnhancedNavItem> {
                             ? FontWeight.bold
                             : FontWeight.normal,
                       ),
-                      child: Text(widget.item.label),
+                      child: ValueListenableBuilder<Locale>(
+                         valueListenable: I18nCatalog.localeNotifier,
+                         builder: (context, locale, child) => Text(tr(widget.item.label)),
+                       ),
                     ),
                   ),
                   // Active indicator
@@ -188,6 +191,7 @@ class _CollapsibleNavGroups extends StatefulWidget {
   final Widget? Function(NavItemDef item)? itemExtraBuilder;
 
   const _CollapsibleNavGroups({
+    super.key,
     required this.groupOrder,
     required this.groups,
     required this.activeGroup,
@@ -270,7 +274,7 @@ class _CollapsibleNavGroupsState extends State<_CollapsibleNavGroups> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        meta.label,
+                        tr(meta.label),
                         style: TextStyle(
                           color: hasActiveItem
                               ? Colors.white
@@ -336,12 +340,15 @@ class _CollapsibleNavGroupsState extends State<_CollapsibleNavGroups> {
           children: [
             Icon(item.icon, color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.6), size: 18),
             const SizedBox(width: 10),
-            Text(
-              item.label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.7),
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            ValueListenableBuilder<Locale>(
+              valueListenable: I18nCatalog.localeNotifier,
+              builder: (context, locale, child) => Text(
+                tr(item.label),
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.7),
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
               ),
             ),
           ],
@@ -375,14 +382,17 @@ class _CollapsibleNavGroupsState extends State<_CollapsibleNavGroups> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                item.label,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.65),
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              child: ValueListenableBuilder<Locale>(
+                valueListenable: I18nCatalog.localeNotifier,
+                builder: (context, locale, child) => Text(
+                  tr(item.label),
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.65),
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             if (isSelected)

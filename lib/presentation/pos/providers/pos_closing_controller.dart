@@ -461,11 +461,7 @@ class PosClosingController extends Notifier<PosClosingState> {
           userName: authState.user?.displayName ?? authState.user?.username ?? 'unknown',
           action: 'shift_close_attempt',
           entityType: 'shift',
-          description: 'بدء إغلاق الوردية: method=$closingMethod '
-              'actualCash=${state.actualCashAmount.toStringAsFixed(3)} '
-              'actualBank=${state.actualBankAmount.toStringAsFixed(3)} '
-              'actualClick=${state.actualClickAmount.toStringAsFixed(3)} '
-              '(Feature 048 close-attempt audit)',
+          description: tr('بدء إغلاق الوردية: method={closingMethod} actualCash={p0} actualBank={p1} actualClick={p2} (Feature 048 close-attempt audit)', {'closingMethod': closingMethod, 'p0': state.actualCashAmount.toStringAsFixed(3), 'p1': state.actualBankAmount.toStringAsFixed(3), 'p2': state.actualClickAmount.toStringAsFixed(3)}),
         );
       } catch (e) {
         debugPrint('[ShiftClose] activity_logs audit write failed (non-fatal): $e');

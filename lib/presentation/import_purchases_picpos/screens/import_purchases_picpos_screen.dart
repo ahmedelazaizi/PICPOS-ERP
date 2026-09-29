@@ -383,9 +383,7 @@ class _ImportDocumentPanelState extends State<ImportDocumentPanel> {
           if (widget.showCurrency && picked != null) ...[
             const SizedBox(height: 8),
             Text(
-              'الأسعارُ في الجدول بـ${picked.code}. يُحوَّل الإجماليُّ إلى '
-              '${AppConstants.currencySymbolEn} بسعرِ يومِه عند الحفظ، '
-              'وتُحفظ لقطة السعر لفروق التسوية وإعادة التقييم.',
+              tr('الأسعارُ في الجدول بـ{p0}. يُحوَّل الإجماليُّ إلى {p1} بسعرِ يومِه عند الحفظ، وتُحفظ لقطة السعر لفروق التسوية وإعادة التقييم.', {'p0': picked.code, 'p1': AppConstants.currencySymbolEn}),
               key: const Key('import_rate_hint'),
               style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
             ),
@@ -605,8 +603,7 @@ class _ImportPurchasesPicposScreenState
                 r.invoice.total.toStringAsFixed(AppConstants.decimalPlaces),
                 sub: r.currencyCode == null
                     ? null
-                    : 'حُوِّلت من ${r.currencyCode}'
-                        '${r.invoice.exchangeRate == null ? '' : ' @ ${r.invoice.exchangeRate}'}',
+                    : tr('حُوِّلت من {p0}{p1}', {'p0': r.currencyCode, 'p1': r.invoice.exchangeRate == null ? '' : ' @ ${r.invoice.exchangeRate}'}),
               ),
               PicPosTextCell(
                 r.landedApplied.toStringAsFixed(AppConstants.decimalPlaces),

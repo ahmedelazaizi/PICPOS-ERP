@@ -162,8 +162,7 @@ class LandedCostScreen extends ConsumerWidget {
                       style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   Text(
-                    'طريقة التوزيع: ${_methodLabel(sheet.allocationMethod)} | '
-                    'الإجمالي: ${_fmt.format(sheet.totalAdditionalCost)}',
+                    tr('طريقة التوزيع: {p0} | الإجمالي: {p1}', {'p0': _methodLabel(sheet.allocationMethod), 'p1': _fmt.format(sheet.totalAdditionalCost)}),
                     style: theme.textTheme.bodySmall,
                   ),
                 ],

@@ -1134,8 +1134,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           _isConnecting = false;
           _syncedBranches = branches;
           _connectionResult =
-              '✅ تم الاتصال والمزامنة — ${firstSyncResult.tablesSynced} جدول'
-              '$warningSuffix';
+              tr('✅ تم الاتصال والمزامنة — {p0} جدول{warningSuffix}', {'p0': firstSyncResult.tablesSynced, 'warningSuffix': warningSuffix});
         });
       }
     } catch (e) {
@@ -1202,8 +1201,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         setState(() {
           _isConnecting = false;
           _connectionResult =
-              '✅ تم التحقق من المدير "${result.adminDisplayName}" — '
-              'سيتم تفعيل وضع المرآة عند إنهاء المعالج';
+              tr('✅ تم التحقق من المدير "{p0}" — سيتم تفعيل وضع المرآة عند إنهاء المعالج', {'p0': result.adminDisplayName});
         });
       }
     } catch (e) {
@@ -1239,10 +1237,8 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         title:  Text(tr('إعادة ربط الجهاز')),
-        content: const Text(
-          'سيتم مسح البيانات الرئيسية المحلية (الفروع، المخازن، الخزائن، '
-          'شركات التوصيل، دليل الحسابات) واستبدالها بنسخة السيرفر.\n\n'
-          'هل أنت متأكد من المتابعة؟',
+        content:  Text(
+          tr('سيتم مسح البيانات الرئيسية المحلية (الفروع، المخازن، الخزائن، شركات التوصيل، دليل الحسابات) واستبدالها بنسخة السيرفر.\n\nهل أنت متأكد من المتابعة؟'),
         ),
         actions: [
           TextButton(
@@ -1315,8 +1311,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     if (duplicateOf != null) {
       AppToast.show(
         context,
-        'كلمةُ المرور هذه مستعملةٌ سلفاً للمستخدم "$duplicateOf". اختر كلمةً '
-        'مختلفة — كلمتان متطابقتان تمنعان أحدَ صاحبَيهما من الدخول.',
+        tr('كلمةُ المرور هذه مستعملةٌ سلفاً للمستخدم "{duplicateOf}". اختر كلمةً مختلفة — كلمتان متطابقتان تمنعان أحدَ صاحبَيهما من الدخول.', {'duplicateOf': duplicateOf}),
         type: ToastType.error,
       );
       return;
@@ -1387,8 +1382,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       if (!cacheOk) {
         AppToast.show(
           context,
-          'تم تخطي الإعداد، لكن تعذّر تحديث ذاكرة الإعدادات المؤقتة. '
-          'يُفضَّل إعادة تشغيل التطبيق قبل استخدام أدوات المطوّر.',
+          tr('تم تخطي الإعداد، لكن تعذّر تحديث ذاكرة الإعدادات المؤقتة. يُفضَّل إعادة تشغيل التطبيق قبل استخدام أدوات المطوّر.'),
           type: ToastType.warning,
         );
       }
@@ -1779,8 +1773,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           // the app rather than trap the user on the wizard.
           AppToast.show(
             context,
-            'اكتمل الإعداد، لكن مع تحذيرات: ${warnings.join('، ')}. '
-            'يُفضَّل إعادة تشغيل التطبيق.',
+            tr('اكتمل الإعداد، لكن مع تحذيرات: {p0}. يُفضَّل إعادة تشغيل التطبيق.', {'p0': warnings.join('، ')}),
             type: ToastType.warning,
           );
         }

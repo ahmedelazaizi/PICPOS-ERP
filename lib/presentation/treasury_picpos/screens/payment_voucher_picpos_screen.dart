@@ -210,8 +210,7 @@ userId: ref.read(authProvider).user?.id,
             userName: user?.displayName ?? tr('مجهول'),
             action: 'payment',
             entityType: 'payment',
-            description: 'سند صرف ${v.method} بمبلغ '
-                '${amount.toStringAsFixed(AppConstants.decimalPlaces)}',
+            description: tr('سند صرف {p0} بمبلغ {p1}', {'p0': v.method, 'p1': amount.toStringAsFixed(AppConstants.decimalPlaces)}),
             amount: amount,
           );
 
@@ -225,8 +224,7 @@ userId: ref.read(authProvider).user?.id,
       //    الرقم، ثمّ يجد فجوةً في الدفتر لا يعرف سببَها.
       final burnt = _drawn.isEmpty
           ? ''
-          : ' — وقد سُحبت من الدفتر الأرقامُ ${_drawn.join('، ')} ولم '
-              'تُكتَب على شيك. صحّح «التالي» من شاشة دفتر الشيكات إن لزم.';
+          : tr(' — وقد سُحبت من الدفتر الأرقامُ {p0} ولم تُكتَب على شيك. صحّح «التالي» من شاشة دفتر الشيكات إن لزم.', {'p0': _drawn.join('، ')});
       _toast(tr('خطأ في الحفظ: {e}{burnt}', {'e': e, 'burnt': burnt}), ToastType.error);
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -322,8 +320,7 @@ userId: ref.read(authProvider).user?.id,
     if (v.allocations.isEmpty) return;
     if (interceptedByServer) {
       _toast(
-        'حُفظ السندُ على الخادم — والتوزيعُ على الفواتير لا يُسجَّل من جهازٍ '
-        'عميل.',
+        tr('حُفظ السندُ على الخادم — والتوزيعُ على الفواتير لا يُسجَّل من جهازٍ عميل.'),
         ToastType.info,
       );
       return;

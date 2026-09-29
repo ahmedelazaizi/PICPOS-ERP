@@ -149,8 +149,7 @@ class _AssetCategoriesPicposScreenState
       permission: PermissionCodes.assetsView,
       child: PicPosScreenScaffold(
         title: tr('فئات الأصول'),
-        subtitle: 'الفئة تحدد العمر الافتراضي وطريقة الإهلاك وحسابَي الأصل '
-            'والإهلاك',
+        subtitle: tr('الفئة تحدد العمر الافتراضي وطريقة الإهلاك وحسابَي الأصل والإهلاك'),
         icon: PhosphorIconsBold.folders,
         headerActions: [
           PermissionGuard(
@@ -502,10 +501,9 @@ class _AssetCategoryPanelState extends State<AssetCategoryPanel> {
           // ⚠️ **يُقال دائماً لا عند الضغط**: الحساباتُ المعروضةُ تفصيليّةٌ
           //    وحدَها، وغيابُ الرئيسيِّ من القائمة بلا تفسيرٍ يُقرأ «الحساب
           //    ناقص».
-          const Text(
-            'الحساباتُ المعروضة تفصيليّةٌ نشطةٌ وحدَها — والمحرّك يرفض '
-            'الترحيل على حسابٍ رئيسيّ.',
-            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+           Text(
+            tr('الحساباتُ المعروضة تفصيليّةٌ نشطةٌ وحدَها — والمحرّك يرفض الترحيل على حسابٍ رئيسيّ.'),
+            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
           ),
           if (reason != null) ...[
             const SizedBox(height: 8),

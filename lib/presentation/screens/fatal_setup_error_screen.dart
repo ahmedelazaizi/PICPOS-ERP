@@ -144,13 +144,10 @@ class FatalSetupErrorScreen extends StatelessWidget {
             ? tr('تعارض فى بيانات المرآة')
             : tr('النظام يحتاج لإعادة الإعداد');
     final subtitleAr = isPgParity
-        ? 'تم اكتشاف انحراف فى مخطط قاعدة بيانات PostgreSQL لم يستطع '
-            'الإصلاح الذاتى معالجته. الكتابة والقراءة محظورتان حتى الإصلاح.'
+        ? tr('تم اكتشاف انحراف فى مخطط قاعدة بيانات PostgreSQL لم يستطع الإصلاح الذاتى معالجته. الكتابة والقراءة محظورتان حتى الإصلاح.')
         : isMirrorDivergence
-            ? 'بعض البيانات الأساسية محلياً لا تطابق السيرفر — أعد '
-                'المزامنة لاستعادة التوافق.'
-            : 'تم اكتشاف عدم اتساق بين إعدادات النظام والبيانات '
-                'المخزّنة محلياً.';
+            ? tr('بعض البيانات الأساسية محلياً لا تطابق السيرفر — أعد المزامنة لاستعادة التوافق.')
+            : tr('تم اكتشاف عدم اتساق بين إعدادات النظام والبيانات المخزّنة محلياً.');
     return PopScope(
       // Block Android-back / Esc — this is a hard blocker by design.
       canPop: false,
@@ -260,11 +257,10 @@ class FatalSetupErrorScreen extends StatelessWidget {
                       FilledButton.icon(
                         onPressed: onRetrySelfHeal,
                         icon: const Icon(PhosphorIconsBold.arrowsClockwise),
-                        label: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
+                        label:  Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           child: Text(
-                            'إعادة محاولة الإصلاح الذاتى\n'
-                            '(بعد منح صلاحيات DB المطلوبة)',
+                            tr('إعادة محاولة الإصلاح الذاتى\n(بعد منح صلاحيات DB المطلوبة)'),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -278,11 +274,10 @@ class FatalSetupErrorScreen extends StatelessWidget {
                       FilledButton.icon(
                         onPressed: onMirrorRepair,
                         icon: const Icon(PhosphorIconsBold.arrowsCounterClockwise),
-                        label: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
+                        label:  Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           child: Text(
-                            'إعادة المزامنة مع السيرفر\n'
-                            '(يستبدل بيانات المرآة بأحدث ما على السيرفر)',
+                            tr('إعادة المزامنة مع السيرفر\n(يستبدل بيانات المرآة بأحدث ما على السيرفر)'),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -323,8 +318,7 @@ class FatalSetupErrorScreen extends StatelessWidget {
                       child: Column(
                         children: [
                           Text(tr('رمز المشكلة: {p0}', {'p0': result.reasonCode})),
-                          Text('وضع النظام فى قاعدة البيانات: '
-                              '${_arabicMode(result.dbMode)}'),
+                          Text(tr('وضع النظام فى قاعدة البيانات: {p0}', {'p0': _arabicMode(result.dbMode)})),
                            Text(tr('يرجى تصوير هذه الشاشة عند طلب الدعم الفنى.')),
                         ],
                       ),

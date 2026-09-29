@@ -383,8 +383,7 @@ class PartyGroupsTab extends ConsumerWidget {
             ),
             title:  Text(tr('لا يمكن الحذف')),
             content: Text(
-              'المجموعة "${group.name}" بها $memberCount طرف. '
-              'انقل الأطراف لمجموعة أخرى أولاً، أو قم بتعطيلها بدلاً من الحذف.',
+              tr('المجموعة "{p0}" بها {memberCount} طرف. انقل الأطراف لمجموعة أخرى أولاً، أو قم بتعطيلها بدلاً من الحذف.', {'p0': group.name, 'memberCount': memberCount}),
               textAlign: TextAlign.center,
             ),
             actions: [
@@ -468,11 +467,9 @@ class PartyGroupsTab extends ConsumerWidget {
                 return membersAsync.when(
                   data: (members) {
                     if (members.isEmpty) {
-                      return const Center(
+                      return  Center(
                         child: Text(
-                          'لا توجد أطراف فى هذه المجموعة حتى الآن.\n'
-                          'من شاشة العملاء أو الموردين، افتح تعديل أى طرف '
-                          'واختر هذه المجموعة من قائمة "المجموعة".',
+                          tr('لا توجد أطراف فى هذه المجموعة حتى الآن.\nمن شاشة العملاء أو الموردين، افتح تعديل أى طرف واختر هذه المجموعة من قائمة "المجموعة".'),
                           textAlign: TextAlign.center,
                         ),
                       );
@@ -566,14 +563,12 @@ class _EmptyState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 40),
+           Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'المجموعات تُمكّنك من تقسيم العملاء والموردين لفئات '
-              '(جملة، VIP، تجزئة، ...) ثم تطبيق خصومات أو تسويات '
-              'مالية مجمّعة عليهم دفعة واحدة.',
+              tr('المجموعات تُمكّنك من تقسيم العملاء والموردين لفئات (جملة، VIP، تجزئة، ...) ثم تطبيق خصومات أو تسويات مالية مجمّعة عليهم دفعة واحدة.'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textMuted,
               ),

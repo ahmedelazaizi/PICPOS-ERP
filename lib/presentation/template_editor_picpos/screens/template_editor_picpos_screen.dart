@@ -267,8 +267,7 @@ class _TemplateEditorPicposScreenState
         s.document.bands.fold<int>(0, (a, b) => a + b.elements.length);
     final cols = s.document.table?.visibleColumns.length ?? 0;
     final paper = s.document.paper;
-    return '${paper.widthMm.toStringAsFixed(0)}مم · $elements عنصراً · '
-        '$cols عمود';
+    return tr('{p0}مم · {elements} عنصراً · {cols} عمود', {'p0': paper.widthMm.toStringAsFixed(0), 'elements': elements, 'cols': cols});
   }
 
   Future<void> _save(TemplateEditorNotifier editor,

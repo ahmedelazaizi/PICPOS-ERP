@@ -217,15 +217,13 @@ class _MirrorParityAuditDialogState
                       border: Border.all(color: Colors.amber.shade200),
                     ),
                     child: Text(
-                      'هذه الأداة متاحة فقط فى وضع المرآة. '
-                      'الوضع الحالى: ${_arabicMode(NetworkService.instance.mode)}.',
+                      tr('هذه الأداة متاحة فقط فى وضع المرآة. الوضع الحالى: {p0}.', {'p0': _arabicMode(NetworkService.instance.mode)}),
                       style: TextStyle(color: Colors.amber.shade900),
                     ),
                   ),
                 ] else ...[
                   Text(
-                    'تظهر هنا أعداد البيانات الأساسية محلياً على المرآة. '
-                    'استخدم زر إعادة المزامنة لاستبدالها بأحدث ما على السيرفر.',
+                    tr('تظهر هنا أعداد البيانات الأساسية محلياً على المرآة. استخدم زر إعادة المزامنة لاستبدالها بأحدث ما على السيرفر.'),
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),
@@ -257,8 +255,7 @@ class _MirrorParityAuditDialogState
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'يحذف البيانات الأساسية المحلية ويستبدلها بنسخة '
-                              'السيرفر. لن يمس الفواتير أو القيود المحفوظة.',
+                              tr('يحذف البيانات الأساسية المحلية ويستبدلها بنسخة السيرفر. لن يمس الفواتير أو القيود المحفوظة.'),
                               style: theme.textTheme.bodySmall,
                             ),
                             const SizedBox(height: 12),

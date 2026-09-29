@@ -666,9 +666,8 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
         context: context,
         builder: (ctx) => AlertDialog(
           title:  Text(tr('استبدال البنود؟')),
-          content: const Text(
-              'بنودُ أمر الشراء ستحلّ محلَّ البنود الحالية — لأنّ الأمرَ '
-              'يُستهلَك كاملاً بهذه الفاتورة.'),
+          content:  Text(
+              tr('بنودُ أمر الشراء ستحلّ محلَّ البنود الحالية — لأنّ الأمرَ يُستهلَك كاملاً بهذه الفاتورة.')),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),

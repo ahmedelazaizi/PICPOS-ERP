@@ -381,8 +381,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
     if (_netAmount <= 0) return tr('صافي المبلغ يجب أن يكون أكبر من صفر.');
     // 🔴 التوزيعُ لا يتجاوز الصافي: تخصيصٌ أكبرُ يُقفل فواتيرَ بمالٍ لم يُقبَض.
     if (_allocatedTotal > _netAmount + 0.001) {
-      return 'التوزيع (${_money.format(_allocatedTotal)}) يتجاوز الصافي '
-          '(${_money.format(_netAmount)}).';
+      return tr('التوزيع ({p0}) يتجاوز الصافي ({p1}).', {'p0': _money.format(_allocatedTotal), 'p1': _money.format(_netAmount)});
     }
     return null;
   }
@@ -944,10 +943,9 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                   style: const TextStyle(
                       fontSize: 12, color: AppColors.textMuted))
             else if (invoices.isEmpty)
-              const Text(
-                'لا فواتيرَ مفتوحةً لهذا الطرف — ويُحفَظ السندُ على حسابه '
-                'بلا توزيع.',
-                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+               Text(
+                tr('لا فواتيرَ مفتوحةً لهذا الطرف — ويُحفَظ السندُ على حسابه بلا توزيع.'),
+                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
               )
             else
               for (final inv in invoices) _allocationRow(inv),
@@ -982,8 +980,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                     style: const TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w700)),
                 Text(
-                  '${_dateFmt.format(inv.date)} · الباقي '
-                  '${_money.format(remaining)}',
+                  tr('{p0} · الباقي {p1}', {'p0': _dateFmt.format(inv.date), 'p1': _money.format(remaining)}),
                   style: const TextStyle(
                       fontSize: 10.5, color: AppColors.textMuted),
                 ),

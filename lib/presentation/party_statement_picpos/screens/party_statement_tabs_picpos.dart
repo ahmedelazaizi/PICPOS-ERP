@@ -1047,8 +1047,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
          PicPosSectionHeader(
           title: tr('حالة مطابقة الدفعات'),
           subtitle:
-              'الدفعة غير المطابَقة تُنقص الرصيد الكلي لكنها لا تُقفل فاتورة '
-              'بعينها — وهذا ما يُربك أعمار الدين',
+              tr('الدفعة غير المطابَقة تُنقص الرصيد الكلي لكنها لا تُقفل فاتورة بعينها — وهذا ما يُربك أعمار الدين'),
           icon: PhosphorIconsBold.link,
           showDivider: false,
         ),

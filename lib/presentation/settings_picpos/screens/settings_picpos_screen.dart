@@ -435,8 +435,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         icon: PhosphorIconsBold.slidersHorizontal,
         group: tr('التشغيل'),
         desc: tr('الشركة · العملة · المظهر'),
-        keywords: 'شركة صناعة عملة مظهر ثيم داكن نهاري شاشة رئيسية قاعدة '
-            'بيانات صيانة مزامنة مرآة شيكات فروع سيرفر شبكة لمس كيبورد',
+        keywords: tr('شركة صناعة عملة مظهر ثيم داكن نهاري شاشة رئيسية قاعدة بيانات صيانة مزامنة مرآة شيكات فروع سيرفر شبكة لمس كيبورد'),
         children: () => [
           // ═══ 1. النظام والمظهر — على بلوكات التصميم ═══
           SettingsBlockGrid(
@@ -549,8 +548,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         icon: PhosphorIconsBold.printer,
         group: tr('التشغيل'),
         desc: tr('طابعات · نقاط بيع · قوالب'),
-        keywords: 'طابعة باركود ماسح ميزان حراري قوالب فواتير نقاط بيع '
-            'بصمة تصميم',
+        keywords: tr('طابعة باركود ماسح ميزان حراري قوالب فواتير نقاط بيع بصمة تصميم'),
         children: () => [
           // ═══ 2. الأجهزة والطباعة — شبكةُ بلوكاتِ التصميم ═══
           SettingsBlockGrid(
@@ -592,9 +590,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         icon: PhosphorIconsBold.shoppingCart,
         group: tr('التشغيل'),
         desc: tr('الكاشير · الدفع · الخصم'),
-        keywords: 'تراكم أصناف ميزان وزن سلة أزرار تصنيفات شبكة منتجات '
-            'إيصال طباعة تلقائية بيع بالسالب خصم ضريبة درج مصروفات وردية '
-            'مخزن افتراضي بادئة ترقيم طرق الدفع نقدي بطاقة تحويل آجل متعدد',
+        keywords: tr('تراكم أصناف ميزان وزن سلة أزرار تصنيفات شبكة منتجات إيصال طباعة تلقائية بيع بالسالب خصم ضريبة درج مصروفات وردية مخزن افتراضي بادئة ترقيم طرق الدفع نقدي بطاقة تحويل آجل متعدد'),
         children: () => [
           // ═══ 3. البيع السريع — شبكةُ بلوكاتِ التصميم ═══
           //
@@ -758,8 +754,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         icon: PhosphorIconsBold.lockKey,
         group: tr('الأمان'),
         desc: tr('أقفال الشاشات'),
-        keywords: 'قفل كلمة مرور حماية اقسام مخازن مشتريات تقارير حسابات '
-            'موظفين بديلة',
+        keywords: tr('قفل كلمة مرور حماية اقسام مخازن مشتريات تقارير حسابات موظفين بديلة'),
         children: () => [
           SettingsBlockGrid(
             blocks: [
@@ -782,8 +777,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         icon: PhosphorIconsBold.bank,
         group: tr('المال والبيانات'),
         desc: tr('ربط الحسابات · التكلفة · الفوترة'),
-        keywords: 'حسابات ربط تلقائي تكلفة تسعير نقص مخزون فوترة إلكترونية '
-            'ضريبة قيمة مضافة',
+        keywords: tr('حسابات ربط تلقائي تكلفة تسعير نقص مخزون فوترة إلكترونية ضريبة قيمة مضافة'),
         children: () => [
           // ═══ 5. الإعدادات المالية ═══
           PermissionGuard(
@@ -861,8 +855,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         //    أصلاً بـ`features.hrEnabled` (‏قرارُ المالك: lite تؤجّل الأجور).
         group: tr('المال والبيانات'),
         desc: tr('الورديات · الإجازات · الرواتب'),
-        keywords: 'عطلات عطل إجازات أسبوعية أعياد أيام العمل رواتب '
-            'أجر الساعة إضافي وقت',
+        keywords: tr('عطلات عطل إجازات أسبوعية أعياد أيام العمل رواتب أجر الساعة إضافي وقت'),
         children: () => [
           // ═══ 5.1 شؤون الموظفين ═══
           // `features.hrEnabled` **شرطٌ لا تجميل**: بروفايل `lite` — وهو
@@ -930,8 +923,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         icon: PhosphorIconsBold.plugsConnected,
         group: tr('الامتدادات'),
         desc: tr('شاشة العميل · المطبخ · التوصيل · رمز الطاولة · واتساب'),
-        keywords: 'توصيل مناديب شاشة عميل CFD مطبخ KDS إضافات معدلات '
-            'رمز طاولة QR حساب ضيف دومين واتساب whatsapp رمز دولة رسائل عملاء',
+        keywords: tr('توصيل مناديب شاشة عميل CFD مطبخ KDS إضافات معدلات رمز طاولة QR حساب ضيف دومين واتساب whatsapp رمز دولة رسائل عملاء'),
         children: () => [
           // ═══ 7. التكاملات والخدمات ═══
           SettingsBlockGrid(
@@ -1414,8 +1406,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
             // ورقمُ البناء يُعرض معه: نسختان بنفس الرقم وبناءَين مختلفَين
             // تقعان فعلاً بين إصدارَين تجريبيَّين، والرقمُ وحدَه لا يفرّقهما.
             Text(
-              'الإصدار ${AppConstants.appVersion} '
-              '(${AppConstants.appBuildNumber})',
+              tr('الإصدار {p0} ({p1})', {'p0': AppConstants.appVersion, 'p1': AppConstants.appBuildNumber}),
               style: const TextStyle(
                 color: AppColors.textMuted,
                 fontSize: 12,
@@ -1565,10 +1556,9 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
           tr('أدوات المطوّر'),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: const Text(
-          'تغيير ملف النشاط، نمط التشغيل، الميزات وكلمة مرور المطوّر '
-          '(محمى بكلمة مرور منفصلة).',
-          style: TextStyle(fontSize: 12),
+        subtitle:  Text(
+          tr('تغيير ملف النشاط، نمط التشغيل، الميزات وكلمة مرور المطوّر (محمى بكلمة مرور منفصلة).'),
+          style: const TextStyle(fontSize: 12),
         ),
         trailing: const Icon(PhosphorIconsBold.caretLeft),
         onTap: () => Navigator.push(

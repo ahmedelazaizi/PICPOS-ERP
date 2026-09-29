@@ -161,8 +161,7 @@ class _FollowUpDialogState extends ConsumerState<_FollowUpDialog> {
         busy: _saving,
         onPressed: _saving ? null : _save,
       ),
-      footerHint: 'موعد الإجراء التالي تاريخٌ يُعرض في المتابعات — '
-          'لا تنبيه تلقائي',
+      footerHint: tr('موعد الإجراء التالي تاريخٌ يُعرض في المتابعات — لا تنبيه تلقائي'),
       body: [
         PicPosPanelGroup(
           label: tr('موضوع المتابعة'),

@@ -322,8 +322,7 @@ class _ReminderCard extends ConsumerWidget {
             width: 170,
             child: _kv(
               tr('القناة والتوقيت'),
-              '${bookingReminderChannelLabel(row.channel)} · '
-                  'قبل ${row.offsetMinutes} دقيقة',
+              tr('{p0} · قبل {p1} دقيقة', {'p0': bookingReminderChannelLabel(row.channel), 'p1': row.offsetMinutes}),
             ),
           ),
           SizedBox(

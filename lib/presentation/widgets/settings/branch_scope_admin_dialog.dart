@@ -206,11 +206,9 @@ class _BranchScopeAdminDialogState
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'فحص الصفوف التابعة لفروع أخرى التي بقيت محلياً قبل تفعيل '
-              'الحصر من السيرفر. التنظيف الفعلي اختياري ويتم بعد عرض '
-              'الأعداد لكل جدول.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+             Text(
+              tr('فحص الصفوف التابعة لفروع أخرى التي بقيت محلياً قبل تفعيل الحصر من السيرفر. التنظيف الفعلي اختياري ويتم بعد عرض الأعداد لكل جدول.'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             Row(
@@ -323,8 +321,7 @@ class _BranchScopeAdminDialogState
       icon: PhosphorIconsBold.warning,
       title: tr('تنظيف بيانات الفروع غير المسموحة'),
       subtitle: tr('{total} صفّاً في {p0} جدولاً', {'total': total, 'p0': topTables.length}),
-      message: 'تُحذف من القاعدة المحليّة الصفوفُ التابعةُ لفروعٍ غيرِ '
-          'مسموحةٍ لهذا الجهاز. تأكّد من وجود نسخةٍ احتياطيّةٍ حديثة.',
+      message: tr('تُحذف من القاعدة المحليّة الصفوفُ التابعةُ لفروعٍ غيرِ مسموحةٍ لهذا الجهاز. تأكّد من وجود نسخةٍ احتياطيّةٍ حديثة.'),
       actionLabel: tr('تنفيذ التنظيف'),
       typedWord: tr('تنظيف'),
       willDeleteLabel: tr('سيُحذف'),
@@ -391,10 +388,9 @@ class _BranchScopeAdminDialogState
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'فحص قيود غير متوازنة أو سطور تشير لحسابات غير موجودة. '
-              'إجراء قراءة فقط — لا يعدّل أي بيانات.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+             Text(
+              tr('فحص قيود غير متوازنة أو سطور تشير لحسابات غير موجودة. إجراء قراءة فقط — لا يعدّل أي بيانات.'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             ElevatedButton.icon(
@@ -429,8 +425,7 @@ class _BranchScopeAdminDialogState
                       ...orphans.take(20).map((o) => Padding(
                             padding: const EdgeInsets.symmetric(vertical: 2),
                             child: Text(
-                              '  • قيد ${o['entryNumber']} '
-                              '(${o['issue']}): ${o['detail']}',
+                              tr('  • قيد {p0} ({p1}): {p2}', {'p0': o['entryNumber'], 'p1': o['issue'], 'p2': o['detail']}),
                               style: const TextStyle(fontSize: 12),
                             ),
                           )),
@@ -494,11 +489,9 @@ class _BranchScopeAdminDialogState
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'البحث عن التصنيفات التي تشترك في نفس الاسم بعد إزالة '
-              'الفراغات وتوحيد حالة الأحرف. الدمج يبقي أقدم صف ويُعيد '
-              'ربط المنتجات والفروع به ثم يحذف المكرَّر.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+             Text(
+              tr('البحث عن التصنيفات التي تشترك في نفس الاسم بعد إزالة الفراغات وتوحيد حالة الأحرف. الدمج يبقي أقدم صف ويُعيد ربط المنتجات والفروع به ثم يحذف المكرَّر.'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             Row(
@@ -615,10 +608,7 @@ class _BranchScopeAdminDialogState
             ],
           ),
           content: Text(
-            'سيتم دمج $totalExtra صف من التصنيفات المكرَّرة في الصفوف '
-            'الأقدم وإعادة ربط المنتجات والفروع بها.\n\n'
-            'هذا الإجراء لا يمكن التراجع عنه.\n\n'
-            'تأكد من وجود نسخة احتياطية حديثة قبل المتابعة.',
+            tr('سيتم دمج {totalExtra} صف من التصنيفات المكرَّرة في الصفوف الأقدم وإعادة ربط المنتجات والفروع بها.\n\nهذا الإجراء لا يمكن التراجع عنه.\n\nتأكد من وجود نسخة احتياطية حديثة قبل المتابعة.', {'totalExtra': totalExtra}),
           ),
           actions: [
             TextButton(
@@ -687,13 +677,9 @@ class _BranchScopeAdminDialogState
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'فحص ودمج الفروع التي لها نفس الاسم على السيرفر. '
-              'الدمج يُعيد ربط صلاحيات المستخدمين بالفرع الأساسي '
-              '(الأكثر استخدامًا) ثم يُلغي تفعيل المكرر. الفروع التي '
-              'لها فواتير أو ورديات يتم تجاوزها — استخدم نافذة حذف '
-              'الفرع لدمج بياناتها يدويًا أولاً.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+             Text(
+              tr('فحص ودمج الفروع التي لها نفس الاسم على السيرفر. الدمج يُعيد ربط صلاحيات المستخدمين بالفرع الأساسي (الأكثر استخدامًا) ثم يُلغي تفعيل المكرر. الفروع التي لها فواتير أو ورديات يتم تجاوزها — استخدم نافذة حذف الفرع لدمج بياناتها يدويًا أولاً.'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             Row(
@@ -765,8 +751,7 @@ class _BranchScopeAdminDialogState
                                 padding: const EdgeInsetsDirectional.only(
                                     start: 16, top: 2),
                                 child: Text(
-                                  '  أساسي: id=${g.canonical.id} '
-                                  '(refs=${g.canonical.refCount})',
+                                  tr('  أساسي: id={p0} (refs={p1})', {'p0': g.canonical.id, 'p1': g.canonical.refCount}),
                                   style: const TextStyle(
                                       fontSize: 12,
                                       color: AppColors.success),
@@ -776,11 +761,7 @@ class _BranchScopeAdminDialogState
                                     padding: const EdgeInsetsDirectional
                                         .only(start: 16, top: 2),
                                     child: Text(
-                                      '  مكرر: id=${d.id} '
-                                      '(refs=${d.refCount}'
-                                      '${d.attachedTxnRefs > 0
-                                          ? ", فواتير/ورديات=${d.attachedTxnRefs} — سيتم تخطيه"
-                                          : ""})',
+                                      tr('  مكرر: id={p0} (refs={p1}{p2})', {'p0': d.id, 'p1': d.refCount, 'p2': d.attachedTxnRefs > 0 ? ", فواتير/ورديات=${d.attachedTxnRefs} — سيتم تخطيه" : ""}),
                                       style: TextStyle(
                                           fontSize: 12,
                                           color: d.attachedTxnRefs > 0
@@ -851,11 +832,7 @@ class _BranchScopeAdminDialogState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'سيتم دمج الفروع المكررة في الفرع الأساسي وإلغاء تفعيل '
-                'المكرر. الفروع التي لها فواتير أو ورديات سيتم تخطيها.\n\n'
-                'هذا الإجراء يعمل على السيرفر مباشرة — لا يمكن التراجع. '
-                'تأكد من وجود نسخة احتياطية حديثة.\n\n'
-                'اكتب اسم الفرع للتأكيد: "$expectedName"',
+                tr('سيتم دمج الفروع المكررة في الفرع الأساسي وإلغاء تفعيل المكرر. الفروع التي لها فواتير أو ورديات سيتم تخطيها.\n\nهذا الإجراء يعمل على السيرفر مباشرة — لا يمكن التراجع. تأكد من وجود نسخة احتياطية حديثة.\n\nاكتب اسم الفرع للتأكيد: "{expectedName}"', {'expectedName': expectedName}),
                 style: const TextStyle(fontSize: 13),
               ),
               const SizedBox(height: 12),
@@ -959,12 +936,9 @@ class _BranchScopeAdminDialogState
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'فحص ودمج العملاء أو الموردين الذين يتشاركون نفس الاسم على '
-              'السيرفر. يتم إلغاء تفعيل المكررات الفارغة (التي لا تملك أي '
-              'فواتير/سندات/أوراق تجارية). المكررات التي لها معاملات يتم '
-              'تخطيها — استخدم أداة دمج الطرف يدويًا قبل الإصلاح.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+             Text(
+              tr('فحص ودمج العملاء أو الموردين الذين يتشاركون نفس الاسم على السيرفر. يتم إلغاء تفعيل المكررات الفارغة (التي لا تملك أي فواتير/سندات/أوراق تجارية). المكررات التي لها معاملات يتم تخطيها — استخدم أداة دمج الطرف يدويًا قبل الإصلاح.'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             Row(
@@ -1042,9 +1016,7 @@ class _BranchScopeAdminDialogState
                                 padding: const EdgeInsetsDirectional.only(
                                     start: 16, top: 2),
                                 child: Text(
-                                  '  أساسي: id=${g.canonical.id} '
-                                  '(refs=${g.canonical.refCount}, '
-                                  'رصيد=${g.canonical.balance.toStringAsFixed(3)})',
+                                  tr('  أساسي: id={p0} (refs={p1}, رصيد={p2})', {'p0': g.canonical.id, 'p1': g.canonical.refCount, 'p2': g.canonical.balance.toStringAsFixed(3)}),
                                   style: const TextStyle(
                                       fontSize: 12,
                                       color: AppColors.success),
@@ -1054,11 +1026,7 @@ class _BranchScopeAdminDialogState
                                     padding: const EdgeInsetsDirectional
                                         .only(start: 16, top: 2),
                                     child: Text(
-                                      '  مكرر: id=${d.id} '
-                                      '(refs=${d.refCount}, رصيد=${d.balance.toStringAsFixed(3)}'
-                                      '${d.attachedTxnRefs > 0
-                                          ? ", معاملات=${d.attachedTxnRefs} — سيتم تخطيه"
-                                          : ""})',
+                                      tr('  مكرر: id={p0} (refs={p1}, رصيد={p2}{p3})', {'p0': d.id, 'p1': d.refCount, 'p2': d.balance.toStringAsFixed(3), 'p3': d.attachedTxnRefs > 0 ? ", معاملات=${d.attachedTxnRefs} — سيتم تخطيه" : ""}),
                                       style: TextStyle(
                                           fontSize: 12,
                                           color: d.attachedTxnRefs > 0
@@ -1127,12 +1095,7 @@ class _BranchScopeAdminDialogState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'سيتم إلغاء تفعيل الأطراف المكررة الفارغة (بدون فواتير '
-                'أو سندات). الأطراف التي لها معاملات سيتم تخطيها — '
-                'استخدم أداة دمج الطرف يدويًا أولًا.\n\n'
-                'هذا الإجراء يعمل على قاعدة بيانات هذا الجهاز '
-                'مباشرة — لا يمكن التراجع. تأكد من وجود نسخة احتياطية حديثة.\n\n'
-                'اكتب اسم الطرف للتأكيد: "$expectedName"',
+                tr('سيتم إلغاء تفعيل الأطراف المكررة الفارغة (بدون فواتير أو سندات). الأطراف التي لها معاملات سيتم تخطيها — استخدم أداة دمج الطرف يدويًا أولًا.\n\nهذا الإجراء يعمل على قاعدة بيانات هذا الجهاز مباشرة — لا يمكن التراجع. تأكد من وجود نسخة احتياطية حديثة.\n\nاكتب اسم الطرف للتأكيد: "{expectedName}"', {'expectedName': expectedName}),
                 style: const TextStyle(fontSize: 13),
               ),
               const SizedBox(height: 12),
@@ -1217,10 +1180,9 @@ class _BranchScopeAdminDialogState
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'إنشاء حساب فرعي في دليل الحسابات لكل مورد/عميل تنقصه ربط. '
-              'يتم تشغيلها مرة واحدة عند ظهور خطأ "حساب رئيسي" في القيود.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+             Text(
+              tr('إنشاء حساب فرعي في دليل الحسابات لكل مورد/عميل تنقصه ربط. يتم تشغيلها مرة واحدة عند ظهور خطأ "حساب رئيسي" في القيود.'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             ElevatedButton.icon(
@@ -1248,8 +1210,7 @@ class _BranchScopeAdminDialogState
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'تم: ${r['repaired']} | تخطي: ${r['skipped']} | '
-                  'فشل: ${r['failed']} | الإجمالي: ${r['total']}',
+                  tr('تم: {p0} | تخطي: {p1} | فشل: {p2} | الإجمالي: {p3}', {'p0': r['repaired'], 'p1': r['skipped'], 'p2': r['failed'], 'p3': r['total']}),
                   style: const TextStyle(fontSize: 13),
                 ),
               ),
@@ -1270,9 +1231,7 @@ class _BranchScopeAdminDialogState
       final result = await db.repairMissingPartySubAccounts();
       if (!mounted) return;
       setState(() => _partySubAccountResult = result);
-      final msg = 'تم: ${result['repaired']} | '
-          'تخطي: ${result['skipped']} | '
-          'فشل: ${result['failed']}';
+      final msg = tr('تم: {p0} | تخطي: {p1} | فشل: {p2}', {'p0': result['repaired'], 'p1': result['skipped'], 'p2': result['failed']});
       AppToast.show(
         context,
         msg,
@@ -1317,10 +1276,9 @@ class _BranchScopeAdminDialogState
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'إعادة ترحيل القيود المحاسبية لكل فاتورة (مبيعات / مشتريات) '
-              'لم يتم ترحيلها سابقاً. شغّل أداة إصلاح الحسابات أولاً.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+             Text(
+              tr('إعادة ترحيل القيود المحاسبية لكل فاتورة (مبيعات / مشتريات) لم يتم ترحيلها سابقاً. شغّل أداة إصلاح الحسابات أولاً.'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             ElevatedButton.icon(
@@ -1351,16 +1309,12 @@ class _BranchScopeAdminDialogState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'مبيعات — تم: ${r['salesRepaired']} | '
-                      'تخطي: ${r['salesSkipped']} | '
-                      'فشل: ${r['salesFailed']}',
+                      tr('مبيعات — تم: {p0} | تخطي: {p1} | فشل: {p2}', {'p0': r['salesRepaired'], 'p1': r['salesSkipped'], 'p2': r['salesFailed']}),
                       style: const TextStyle(fontSize: 13),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'مشتريات — تم: ${r['purchasesRepaired']} | '
-                      'تخطي: ${r['purchasesSkipped']} | '
-                      'فشل: ${r['purchasesFailed']}',
+                      tr('مشتريات — تم: {p0} | تخطي: {p1} | فشل: {p2}', {'p0': r['purchasesRepaired'], 'p1': r['purchasesSkipped'], 'p2': r['purchasesFailed']}),
                       style: const TextStyle(fontSize: 13),
                     ),
                     const SizedBox(height: 4),
@@ -1405,11 +1359,9 @@ class _BranchScopeAdminDialogState
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'بعد إنشاء الحسابات الفرعية للأطراف، تُنقَل القيود التاريخية '
-              'من حسابات الذمم الرئيسية (1121 / 2111) إلى الحسابات الفرعية '
-              'المُنشأة. يجعل كشف دفتر الأستاذ لكل طرف يعرض حركاته الفعلية.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+             Text(
+              tr('بعد إنشاء الحسابات الفرعية للأطراف، تُنقَل القيود التاريخية من حسابات الذمم الرئيسية (1121 / 2111) إلى الحسابات الفرعية المُنشأة. يجعل كشف دفتر الأستاذ لكل طرف يعرض حركاته الفعلية.'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             ElevatedButton.icon(
@@ -1435,9 +1387,7 @@ class _BranchScopeAdminDialogState
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'سطور تم نقلها: ${r['linesMoved']} | '
-                  'أطراف مفحوصة: ${r['partiesScanned']} | '
-                  'فشل: ${r['failed']}',
+                  tr('سطور تم نقلها: {p0} | أطراف مفحوصة: {p1} | فشل: {p2}', {'p0': r['linesMoved'], 'p1': r['partiesScanned'], 'p2': r['failed']}),
                   style: const TextStyle(fontSize: 13),
                 ),
               ),
@@ -1499,11 +1449,9 @@ class _BranchScopeAdminDialogState
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'إذا تم تحويل جهاز عميل سابق إلى مستقل/سيرفر بعد كتابات لم تُرسل، '
-              'تبقى تلك الصفوف عالقة في outbox ولن تُرسل أبداً. هذه الأداة '
-              'تحصرها ثم تختمها (mark as synced) لإسكات تحذير SYNC-WARN.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+             Text(
+              tr('إذا تم تحويل جهاز عميل سابق إلى مستقل/سيرفر بعد كتابات لم تُرسل، تبقى تلك الصفوف عالقة في outbox ولن تُرسل أبداً. هذه الأداة تحصرها ثم تختمها (mark as synced) لإسكات تحذير SYNC-WARN.'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             Row(
@@ -1592,9 +1540,7 @@ class _BranchScopeAdminDialogState
         child: AlertDialog(
           title:  Text(tr('تأكيد التصفية')),
           content: Text(
-              'سيتم ختم $_strandedCount صف(صفوف) كـ "مُسوّاة يدوياً". '
-              'هذه العملية لا تُرسل البيانات للسيرفر — فقط تُسكت التحذير. '
-              'لا يمكن التراجع. هل أنت متأكد؟'),
+              tr('سيتم ختم {_strandedCount} صف(صفوف) كـ "مُسوّاة يدوياً". هذه العملية لا تُرسل البيانات للسيرفر — فقط تُسكت التحذير. لا يمكن التراجع. هل أنت متأكد؟', {'_strandedCount': _strandedCount})),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -1649,8 +1595,7 @@ class _BranchScopeAdminDialogState
       final purchF = result['purchasesFailed'] ?? 0;
       AppToast.show(
         context,
-        'مبيعات: $salesR/${salesF == 0 ? "نجح" : "$salesF فشل"} | '
-            'مشتريات: $purchR/${purchF == 0 ? "نجح" : "$purchF فشل"}',
+        tr('مبيعات: {salesR}/{p0} | مشتريات: {purchR}/{p1}', {'salesR': salesR, 'p0': salesF == 0 ? "نجح" : "$salesF فشل", 'purchR': purchR, 'p1': purchF == 0 ? "نجح" : "$purchF فشل"}),
         type: (salesF + purchF) > 0 ? ToastType.error : ToastType.success,
       );
     } catch (e) {

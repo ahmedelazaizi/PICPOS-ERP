@@ -185,8 +185,7 @@ class _DeveloperPasswordGateState
                 const SizedBox(height: 8),
                 Text(
                   isFirstTime
-                      ? 'لم يتم تعيين كلمة مرور مطوّر على هذا التركيب. '
-                          'عيّن واحدة الآن لحماية الشاشة وفتحها.'
+                      ? tr('لم يتم تعيين كلمة مرور مطوّر على هذا التركيب. عيّن واحدة الآن لحماية الشاشة وفتحها.')
                       : tr('هذه الشاشة محمية. أدخل كلمة مرور المطوّر للمتابعة.'),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
@@ -513,10 +512,9 @@ class _ChangeProfileSectionState
               label: tr('تغيير ملف النشاط'),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'يبدّل قائمة الشاشات والـ feature flags بالكامل. أى overrides '
-              'يدوية تظل سارية فوق الـ defaults الجديدة.',
-              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+             Text(
+              tr('يبدّل قائمة الشاشات والـ feature flags بالكامل. أى overrides يدوية تظل سارية فوق الـ defaults الجديدة.'),
+              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<BusinessProfile>(
@@ -653,9 +651,7 @@ class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
       builder: (ctx) => AlertDialog(
         title:  Text(tr('تأكيد تغيير نمط التشغيل')),
         content: Text(
-          'سيتم تحويل النظام إلى وضع "${_modeLabelAr(target)}".\n\n'
-          'تغيير نمط التشغيل يتطلّب إعادة تشغيل التطبيق ليأخذ تأثيره '
-          'الكامل (network service / sync). هل تريد المتابعة؟',
+          tr('سيتم تحويل النظام إلى وضع "{p0}".\n\nتغيير نمط التشغيل يتطلّب إعادة تشغيل التطبيق ليأخذ تأثيره الكامل (network service / sync). هل تريد المتابعة؟', {'p0': _modeLabelAr(target)}),
         ),
         actions: [
           TextButton(
@@ -689,12 +685,7 @@ class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'سيتم تحويل النظام إلى وضع "${_modeLabelAr(target)}".\n\n'
-                  'سيُمسح: البيانات الأساسية المحلية (الفروع، المخازن، '
-                  'الخزن، الحسابات).\n'
-                  'سيُستعاد من السيرفر: نفس البيانات بالنسخ الرسمية.\n'
-                  'المدة المتوقعة: 10-30 ثانية على شبكة LAN عادية.\n\n'
-                  'اكتب "تأكيد" أدناه للمتابعة:',
+                  tr('سيتم تحويل النظام إلى وضع "{p0}".\n\nسيُمسح: البيانات الأساسية المحلية (الفروع، المخازن، الخزن، الحسابات).\nسيُستعاد من السيرفر: نفس البيانات بالنسخ الرسمية.\nالمدة المتوقعة: 10-30 ثانية على شبكة LAN عادية.\n\nاكتب "تأكيد" أدناه للمتابعة:', {'p0': _modeLabelAr(target)}),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -825,11 +816,9 @@ class _FeatureOverridesSection extends ConsumerWidget {
               label: tr('تخصيص الميزات'),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'كل ميزة لها قيمة افتراضية من ملف النشاط. أى توجيه يدوى '
-              'هنا يحلّ محل الافتراضى. الميزات الأساسية (محاسبة / مخزون / '
-              'مبيعات / خزينة) محمية ولا تظهر هنا.',
-              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+             Text(
+              tr('كل ميزة لها قيمة افتراضية من ملف النشاط. أى توجيه يدوى هنا يحلّ محل الافتراضى. الميزات الأساسية (محاسبة / مخزون / مبيعات / خزينة) محمية ولا تظهر هنا.'),
+              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
             ),
             const SizedBox(height: 12),
             for (final entry in byModule.entries) ...[
@@ -1041,9 +1030,8 @@ class _ResetWizardSection extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title:  Text(tr('إعادة ضبط الإعداد')),
-        content: const Text(
-          'سيتم تشغيل الـ wizard من جديد عند بدء التطبيق التالى. '
-          'البيانات (مبيعات / مشتريات / عملاء…) لا تُحذف. هل تريد المتابعة؟',
+        content:  Text(
+          tr('سيتم تشغيل الـ wizard من جديد عند بدء التطبيق التالى. البيانات (مبيعات / مشتريات / عملاء…) لا تُحذف. هل تريد المتابعة؟'),
         ),
         actions: [
           TextButton(
@@ -1089,10 +1077,9 @@ class _ResetWizardSection extends ConsumerWidget {
               color: AppColors.error,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'يعيد تشغيل الـ setup wizard. البيانات تظل سليمة لكن إعدادات '
-              'التشغيل (الملف، النمط، الميزات) ستُسأل من جديد.',
-              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+             Text(
+              tr('يعيد تشغيل الـ setup wizard. البيانات تظل سليمة لكن إعدادات التشغيل (الملف، النمط، الميزات) ستُسأل من جديد.'),
+              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
             ),
             const SizedBox(height: 12),
             Align(
@@ -1194,13 +1181,9 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
                 border:
                     Border.all(color: AppColors.error.withValues(alpha: 0.3)),
               ),
-              child: const Text(
-                'كل عملية هنا بتحذف من قاعدة البيانات مباشرة ومفيش تراجع. '
-                'بتتاخد نسخة احتياطية تلقائياً قبل أي حذف، والعملية بتُلغى لو '
-                'النسخة فشلت — النسخة دي هي طريق الرجوع الوحيد.\n\n'
-                'العمليات المالية بتحذف قيود اليومية وحركات المخزون المرتبطة '
-                'كمان: فاتورة محذوفة وقيدها موجود معناها دفتر أستاذ مش متوازن.',
-                style: TextStyle(fontSize: 12, height: 1.6),
+              child:  Text(
+                tr('كل عملية هنا بتحذف من قاعدة البيانات مباشرة ومفيش تراجع. بتتاخد نسخة احتياطية تلقائياً قبل أي حذف، والعملية بتُلغى لو النسخة فشلت — النسخة دي هي طريق الرجوع الوحيد.\n\nالعمليات المالية بتحذف قيود اليومية وحركات المخزون المرتبطة كمان: فاتورة محذوفة وقيدها موجود معناها دفتر أستاذ مش متوازن.'),
+                style: const TextStyle(fontSize: 12, height: 1.6),
               ),
             ),
             const SizedBox(height: 12),
@@ -1241,8 +1224,7 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
             ),
             _wipeTile(
               label: tr('حذف جميع الأصناف'),
-              detail: 'الأصناف وأرصدتها وباركوداتها ووحداتها — بيُرفض لو فيه '
-                  'بنود فواتير مرتبطة',
+              detail: tr('الأصناف وأرصدتها وباركوداتها ووحداتها — بيُرفض لو فيه بنود فواتير مرتبطة'),
               confirmWord: tr('حذف الأصناف'),
               action: (s) => s.wipeProducts(),
               willDelete:  [
@@ -1257,8 +1239,7 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
             ),
             _wipeTile(
               label: tr('حذف جميع العملاء'),
-              detail: 'الطرف اللي هو عميل ومورد في نفس الوقت بتُلغى صفة '
-                  'العميل عنه فقط ومبيتحذفش',
+              detail: tr('الطرف اللي هو عميل ومورد في نفس الوقت بتُلغى صفة العميل عنه فقط ومبيتحذفش'),
               confirmWord: tr('حذف العملاء'),
               action: (s) => s.wipeParties(customers: true),
               willDelete:  [
@@ -1286,8 +1267,7 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
             ),
             _wipeTile(
               label: tr('حذف الحسابات المضافة في دليل الحسابات'),
-              detail: 'الحسابات وربطها وقوالب اليومية — بيُرفض لو فيه بنود '
-                  'يومية مرتبطة',
+              detail: tr('الحسابات وربطها وقوالب اليومية — بيُرفض لو فيه بنود يومية مرتبطة'),
               confirmWord: tr('حذف الحسابات'),
               action: (s) => s.wipeChartOfAccounts(),
               willDelete:  [
@@ -1304,9 +1284,7 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
             const Divider(height: 24),
             _wipeTile(
               label: tr('تصفير كامل لقاعدة البيانات'),
-              detail: 'كل البيانات الحركية. بيسيب الإعدادات والمستخدمين '
-                  'والصلاحيات والفروع والمستودعات وتعريفات الصناديق — تركيب '
-                  'بلا مستخدمين مش مصفّر، ده تركيب مكسور',
+              detail: tr('كل البيانات الحركية. بيسيب الإعدادات والمستخدمين والصلاحيات والفروع والمستودعات وتعريفات الصناديق — تركيب بلا مستخدمين مش مصفّر، ده تركيب مكسور'),
               confirmWord: tr('تصفير كامل'),
               action: (s) => s.wipeAllTransactionalData(),
               extraDanger: true,
@@ -1411,8 +1389,7 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
       context,
       icon: PhosphorIconsBold.warningOctagon,
       title: label,
-      message: 'العمليةُ بلا رجعة. تُؤخَذ نسخةٌ احتياطيّةٌ تلقائيّاً قبل '
-          'التنفيذ، وفشلُها يوقف العملية.',
+      message: tr('العمليةُ بلا رجعة. تُؤخَذ نسخةٌ احتياطيّةٌ تلقائيّاً قبل التنفيذ، وفشلُها يوقف العملية.'),
       actionLabel: tr('نفّذ'),
       typedWord: confirmWord,
       willDelete: willDelete,

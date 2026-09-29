@@ -1676,8 +1676,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Text(
-                    'أصناف بتكلفة صفر لها رصيد: ${result.zeroCostItemCount} صنف '
-                    '(كمية ${result.zeroCostStockQty.toStringAsFixed(2)})'),
+                    tr('أصناف بتكلفة صفر لها رصيد: {p0} صنف (كمية {p1})', {'p0': result.zeroCostItemCount, 'p1': result.zeroCostStockQty.toStringAsFixed(2)})),
               ),
               if (result.isBalanced)
                  Padding(

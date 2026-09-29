@@ -75,11 +75,10 @@ class _InlineErrorCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'باقي الشاشة يعمل بشكل طبيعي. ارجع للخلف ثم افتح الشاشة مرة '
-              'أخرى. إذا تكرر الخطأ أرسل ملف السجل للدعم الفني.',
+             Text(
+              tr('باقي الشاشة يعمل بشكل طبيعي. ارجع للخلف ثم افتح الشاشة مرة أخرى. إذا تكرر الخطأ أرسل ملف السجل للدعم الفني.'),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),
             const SizedBox(height: 8),
             Text(

@@ -261,8 +261,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
     _snack(
       result.allSucceeded
           ? tr('أُودعت {p0} ورقة', {'p0': result.count})
-          : 'أُودعت ${result.count} من ${form.paperIds.length} — '
-              'تعذّر: ${result.failed.keys.join('، ')}',
+          : tr('أُودعت {p0} من {p1} — تعذّر: {p2}', {'p0': result.count, 'p1': form.paperIds.length, 'p2': result.failed.keys.join('، ')}),
     );
   }
 

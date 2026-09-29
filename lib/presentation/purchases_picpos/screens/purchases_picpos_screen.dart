@@ -342,9 +342,7 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
                     icon: PhosphorIconsBold.warning,
                     danger: true,
                     title: tr('تأكيد الحذف المجمع'),
-                    message: 'هل أنت متأكد من حذف '
-                        '${state.selectedInvoices.length} '
-                        'فاتورة مشتريات محددة؟',
+                    message: tr('هل أنت متأكد من حذف {p0} فاتورة مشتريات محددة؟', {'p0': state.selectedInvoices.length}),
                     confirmLabel: tr('حذف الجميع'),
                   );
 

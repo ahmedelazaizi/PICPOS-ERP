@@ -272,8 +272,7 @@ class _StockBalancesTableState extends ConsumerState<StockBalancesTablePicpos> {
                 ),
                 color: AppColors.warning.withValues(alpha: 0.08),
                 child: Text(
-                  'يتم عرض أول $_maxRenderedRows من ${filteredAll.length} '
-                  'صنف. استخدم البحث لتضييق النتائج.',
+                  tr('يتم عرض أول {_maxRenderedRows} من {p0} صنف. استخدم البحث لتضييق النتائج.', {'_maxRenderedRows': _maxRenderedRows, 'p0': filteredAll.length}),
                   style: const TextStyle(
                     color: AppColors.warning,
                     fontSize: 12,

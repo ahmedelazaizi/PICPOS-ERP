@@ -564,8 +564,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                             );
                             if (ctx.mounted) {
                               if (result['success'] == true) {
-                                setDialogState(() => testResult = 'تم كشف الميزان بنجاح!\n'
-                                    'البروتوكول: ${result['protocol'] ?? '-'} | المنفذ: ${result['port'] ?? '-'} | أقصى PLU: ${result['maxPlu'] ?? '-'}');
+                                setDialogState(() => testResult = tr('تم كشف الميزان بنجاح!\nالبروتوكول: {p0} | المنفذ: {p1} | أقصى PLU: {p2}', {'p0': result['protocol'] ?? '-', 'p1': result['port'] ?? '-', 'p2': result['maxPlu'] ?? '-'}));
                               } else {
                                 final errDetail = result['error']?.toString() ?? tr('لم يتم العثور على الميزان');
                                 setDialogState(() => testResult = tr('{errDetail}\nتأكد من: (1) AclasSDK.dll موجود بجوار البرنامج  (2) الميزان مُشغّل  (3) الـ IP صحيح', {'errDetail': errDetail}));

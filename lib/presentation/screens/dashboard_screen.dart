@@ -164,19 +164,11 @@ class DashboardScreen extends ConsumerWidget {
                           data: (k) {
                             final f = NumberFormat('#,##0.00', 'ar');
                             return TextSpan(
-                              text: 'صافي إيراد دفتر الأستاذ — عن الفترة '
-                                  'والفرع المحددين أعلى الشاشة\n\n'
-                                  'صافي الإيراد (بدون ضريبة)   ${f.format(k.revenue)}\n'
-                                  '+ ضريبة المخرجات (صافية)    ${f.format(k.outputVatNet)}\n'
-                                  '= صافي الإيراد شامل الضريبة ${f.format(k.netRevenueInclVat)}\n\n'
-                                  'المردودات المخصومة أصلاً    ${f.format(k.salesReturns)}\n\n'
-                                  'ملاحظة: الإيرادات غير البيعية (فائض الخزنة، '
-                                  'خصم المشتريات) لا تدخل هذا الرقم.',
+                              text: tr('صافي إيراد دفتر الأستاذ — عن الفترة والفرع المحددين أعلى الشاشة\n\nصافي الإيراد (بدون ضريبة)   {p0}\n+ ضريبة المخرجات (صافية)    {p1}\n= صافي الإيراد شامل الضريبة {p2}\n\nالمردودات المخصومة أصلاً    {p3}\n\nملاحظة: الإيرادات غير البيعية (فائض الخزنة، خصم المشتريات) لا تدخل هذا الرقم.', {'p0': f.format(k.revenue), 'p1': f.format(k.outputVatNet), 'p2': f.format(k.netRevenueInclVat), 'p3': f.format(k.salesReturns)}),
                             );
                           },
-                          orElse: () => const TextSpan(
-                            text: 'صافي إيراد دفتر الأستاذ — غير شامل الضريبة '
-                                'وبعد خصم المردودات',
+                          orElse: () =>  TextSpan(
+                            text: tr('صافي إيراد دفتر الأستاذ — غير شامل الضريبة وبعد خصم المردودات'),
                           ),
                         ),
                         // dashboard_sales_today — نفس شكل كارتَي الخزنة

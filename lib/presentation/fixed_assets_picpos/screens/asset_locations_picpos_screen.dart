@@ -94,8 +94,7 @@ class _AssetLocationsPicposScreenState
       permission: PermissionCodes.assetsView,
       child: PicPosScreenScaffold(
         title: tr('التوزيع والمواقع'),
-        subtitle: 'الأصل يتبع موقعاً ومركزَ تكلفة — ويُستعمل ذلك في توزيع '
-            'الإهلاك',
+        subtitle: tr('الأصل يتبع موقعاً ومركزَ تكلفة — ويُستعمل ذلك في توزيع الإهلاك'),
         icon: PhosphorIconsBold.mapPin,
         subHeader: PicPosKpiRow(
           kpis: [
@@ -129,8 +128,7 @@ class _AssetLocationsPicposScreenState
             ?  PicPosEmptyState(
                 icon: PhosphorIconsBold.mapPin,
                 title: tr('لا أصولَ نشطةً لتوزَّع'),
-                hint: 'الأصل يتبع موقعاً ومركزَ تكلفة — ويُستعمل ذلك في '
-                    'توزيع الإهلاك على مراكز التكلفة.',
+                hint: tr('الأصل يتبع موقعاً ومركزَ تكلفة — ويُستعمل ذلك في توزيع الإهلاك على مراكز التكلفة.'),
               )
             : SingleChildScrollView(
                 child: Column(
@@ -322,9 +320,7 @@ class _RenameLocationDialogState extends State<_RenameLocationDialog> {
           else if (plan.isMerge)
             // 🔴 **الدمجُ يُقال قبل وقوعه** — وهو لا يُفَكّ بعدها.
             Text(
-              'الاسمُ قائمٌ سلفاً: سيُدمَج ${_ar(plan.assetIds.length)} أصلاً '
-              'مع ${_ar(plan.mergesInto)} هناك — ولا سبيلَ لفصلهما بعدها '
-              'إلّا بإعادة تسميةِ كلِّ أصلٍ على حدة.',
+              tr('الاسمُ قائمٌ سلفاً: سيُدمَج {p0} أصلاً مع {p1} هناك — ولا سبيلَ لفصلهما بعدها إلّا بإعادة تسميةِ كلِّ أصلٍ على حدة.', {'p0': _ar(plan.assetIds.length), 'p1': _ar(plan.mergesInto)}),
               style: const TextStyle(fontSize: 12, color: _warn),
             )
           else

@@ -422,8 +422,7 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
             context,
             tr('الفئة'),
             a.categoryName,
-            'الفئةُ تحدّد حسابَي الأصل والإهلاك، وقيودٌ مرحَّلةٌ ذهبت إليهما '
-                '— فتغييرُها هنا يترك الأستاذَ على حسابٍ والبطاقةَ على آخر',
+            tr('الفئةُ تحدّد حسابَي الأصل والإهلاك، وقيودٌ مرحَّلةٌ ذهبت إليهما — فتغييرُها هنا يترك الأستاذَ على حسابٍ والبطاقةَ على آخر'),
           ),
         ),
         const SizedBox(height: 14),
@@ -438,8 +437,7 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
             context,
             tr('التكلفة'),
             _money.format(a.purchasePrice),
-            'دخلت الأستاذَ بقيد اقتناءٍ مرحَّل — وبابُ تغييرها المحاسبيُّ '
-                '«إعادة التقييم» لأنّها تقيّد الفرق',
+            tr('دخلت الأستاذَ بقيد اقتناءٍ مرحَّل — وبابُ تغييرها المحاسبيُّ «إعادة التقييم» لأنّها تقيّد الفرق'),
           ),
         ),
         const SizedBox(height: 14),
@@ -510,8 +508,7 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
         if (_custodian != null && valid == null)
           _reason(
             context,
-            'المسؤولُ المسجَّلُ لم يعد في قائمة المستخدمين — اختر بديلاً أو '
-                'ارفع العهدة',
+            tr('المسؤولُ المسجَّلُ لم يعد في قائمة المستخدمين — اختر بديلاً أو ارفع العهدة'),
           ),
       ],
     );
@@ -569,8 +566,7 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
               context,
               tr('العمر الإنتاجي'),
               tr('{p0} شهراً', {'p0': usefulLifeMonths(a.usefulLifeYears)}),
-              'يُخزَّن بالسنوات ويُعرَض بالشهور — والتحويلُ موضعٌ واحدٌ '
-                  'في `depreciation_math`'),
+              tr('يُخزَّن بالسنوات ويُعرَض بالشهور — والتحويلُ موضعٌ واحدٌ في `depreciation_math`')),
         ),
         const SizedBox(height: 14),
         _pair(
@@ -692,8 +688,7 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
       return  PicPosEmptyState(
         icon: PhosphorIconsBold.arrowsLeftRight,
         title: tr('لا حركاتٍ على هذا الأصل'),
-        hint: 'الاقتناءُ والإهلاكُ وإعادةُ التقييم والاستبعاد تظهر هنا فورَ '
-            'ترحيل قيودها.',
+        hint: tr('الاقتناءُ والإهلاكُ وإعادةُ التقييم والاستبعاد تظهر هنا فورَ ترحيل قيودها.'),
       );
     }
     return PicPosDataTable(

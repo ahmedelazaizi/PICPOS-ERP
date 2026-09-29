@@ -222,12 +222,9 @@ class _PicposCashierClosingDialogState
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              'افتح وردية جديدة من شاشة البيع السريع قبل '
-                              'محاولة إغلاقها. القيم التي تظهر هنا '
-                              'تُحسب فقط على معاملات الوردية الحالية '
-                              'لتمنع اختلاط أرقام ورديات سابقة.',
-                              style: TextStyle(
+                             Text(
+                              tr('افتح وردية جديدة من شاشة البيع السريع قبل محاولة إغلاقها. القيم التي تظهر هنا تُحسب فقط على معاملات الوردية الحالية لتمنع اختلاط أرقام ورديات سابقة.'),
+                              style: const TextStyle(
                                 color: AppColors.textMuted,
                               ),
                               textAlign: TextAlign.center,
@@ -715,16 +712,15 @@ class _PicposCashierClosingDialogState
                   color: AppColors.info.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Row(
+                child:  Row(
                   children: [
-                    Icon(PhosphorIconsBold.info,
+                    const Icon(PhosphorIconsBold.info,
                         size: 14, color: AppColors.info),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        'عمود "آجل" عرض فقط — لا يُطلب جرد فعلى له '
-                        '(تحرك على ذمم العملاء بدون حركة نقدية).',
-                        style: TextStyle(
+                        tr('عمود "آجل" عرض فقط — لا يُطلب جرد فعلى له (تحرك على ذمم العملاء بدون حركة نقدية).'),
+                        style: const TextStyle(
                             fontSize: 10, color: AppColors.textMuted),
                       ),
                     ),
@@ -1132,8 +1128,7 @@ class _PicposCashierClosingDialogState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'الفرق ${difference.abs().toStringAsFixed(AppConstants.decimalPlaces)} يتجاوز الحدَّ المسموح ${limit.toStringAsFixed(0)}.'
-                '\nاكتب سببَ الفرق ليُحفَظ مع الوردية.',
+                tr('الفرق {p0} يتجاوز الحدَّ المسموح {p1}.\nاكتب سببَ الفرق ليُحفَظ مع الوردية.', {'p0': difference.abs().toStringAsFixed(AppConstants.decimalPlaces), 'p1': limit.toStringAsFixed(0)}),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -1282,9 +1277,7 @@ class _PicposCashierClosingDialogState
                   Text(tr('تحذير محاسبي')),
                 ]),
                 content: Text(
-                  'تم إغلاق الوردية بنجاح، لكن لم يُسجَّل قيد فرق الخزينة '
-                  '(${finalState.varianceJeWarning!.toStringAsFixed(2)}).\n'
-                  'تأكد من إعداد حسابات فائض/عجز الخزينة في الربط المحاسبي.',
+                  tr('تم إغلاق الوردية بنجاح، لكن لم يُسجَّل قيد فرق الخزينة ({p0}).\nتأكد من إعداد حسابات فائض/عجز الخزينة في الربط المحاسبي.', {'p0': finalState.varianceJeWarning!.toStringAsFixed(2)}),
                 ),
                 actions: [
                   ElevatedButton(

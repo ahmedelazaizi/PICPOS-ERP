@@ -153,9 +153,8 @@ class _DatabaseSettingsDialogState
           icon: const Icon(PhosphorIconsBold.arrowsClockwise,
               size: 48, color: AppColors.primary),
           title:  Text(tr('يلزم إعادة تشغيل التطبيق')),
-          content: const Text(
-            'تم حفظ إعدادات قاعدة البيانات بنجاح.\n'
-            'يلزم إغلاق التطبيق وإعادة فتحه لتفعيل التغييرات.',
+          content:  Text(
+            tr('تم حفظ إعدادات قاعدة البيانات بنجاح.\nيلزم إغلاق التطبيق وإعادة فتحه لتفعيل التغييرات.'),
           ),
           actions: [
             ElevatedButton(

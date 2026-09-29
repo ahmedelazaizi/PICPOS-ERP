@@ -82,12 +82,18 @@ void main() {
   // يعود العطبُ نفسُه. فلو أزال أحدٌ الغلافَ لاحقاً سقط الاختبارُ الأوّل.
   testWidgets('بلا حدٍّ للارتفاع: `stretch` ترمي — وهو العطبُ المشحون',
       (tester) async {
-    await tester.pumpWidget(
-      body(rowCross: CrossAxisAlignment.stretch, intrinsic: false),
-    );
-    await tester.pump();
+    Object? layoutException;
+    try {
+      await tester.pumpWidget(
+        body(rowCross: CrossAxisAlignment.stretch, intrinsic: false),
+      );
+      await tester.pump();
+    } catch (error) {
+      layoutException = error;
+    }
+    layoutException ??= tester.takeException();
 
-    expect(tester.takeException(), isNotNull,
+    expect(layoutException, isNotNull,
         reason: 'ارتفاعٌ غيرُ محدودٍ مع stretch يجب أن يرمي — وإلّا فالحارسُ '
             'الأوّل لا يحرس شيئاً');
   });

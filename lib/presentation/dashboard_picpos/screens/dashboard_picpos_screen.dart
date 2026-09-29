@@ -804,8 +804,7 @@ class _DeferredMetricsNotice extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'مؤشرات إضافية غير متاحة حالياً (${deferred.join('، ')}) — '
-              'بانتظار مصدر بيانات مخصّص.',
+              tr('مؤشرات إضافية غير متاحة حالياً ({p0}) — بانتظار مصدر بيانات مخصّص.', {'p0': deferred.join('، ')}),
               style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
             ),
           ),

@@ -162,9 +162,7 @@ class CheckoutController extends Notifier<CheckoutState> {
       if (scope.isEmptyScope) {
         state = state.copyWith(
           isProcessing: false,
-          error: 'لا فروعَ مُسنَدةٌ لحسابك — لا يمكن إتمام البيع. اطلب من '
-              'مدير النظام إسنادَ فرعٍ واحدٍ على الأقل، وإلّا سُجّلت البيعةُ '
-              'ثمّ اختفت عنك.',
+          error: tr('لا فروعَ مُسنَدةٌ لحسابك — لا يمكن إتمام البيع. اطلب من مدير النظام إسنادَ فرعٍ واحدٍ على الأقل، وإلّا سُجّلت البيعةُ ثمّ اختفت عنك.'),
         );
         return false;
       }

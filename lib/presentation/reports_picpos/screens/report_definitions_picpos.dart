@@ -190,8 +190,7 @@ PicPosReportDefinition profitMarginReport() => PicPosReportDefinition(
           id: 'margin',
           label: tr('هامش الربح'),
           icon: PhosphorIconsBold.percent,
-          note: 'الأصنافُ التي هامشُها سالبٌ أو أقلُّ من ٥٪ — تحتاج مراجعةَ سعر. '
-              'والتكلفةُ لقطةُ **وقتِ البيع** لا تكلفةُ اليوم.',
+          note: tr('الأصنافُ التي هامشُها سالبٌ أو أقلُّ من ٥٪ — تحتاج مراجعةَ سعر. والتكلفةُ لقطةُ **وقتِ البيع** لا تكلفةُ اليوم.'),
           load: (ref, range) async {
             final repo = ref.read(reportingRepositoryProvider);
             final all = await repo.getProductProfitReport(
@@ -510,8 +509,7 @@ PicPosReportDefinition customerSegmentsReport() => PicPosReportDefinition(
           label: tr('التقسيم'),
           icon: PhosphorIconsBold.chartDonut,
           note:
-              'الدرجاتُ ١..٣ من أثلاثِ توزيع المدى نفسِه — لا من حدودٍ ثابتة. '
-              'حداثةٌ أقلُّ يوماً = درجةٌ أعلى.',
+              tr('الدرجاتُ ١..٣ من أثلاثِ توزيع المدى نفسِه — لا من حدودٍ ثابتة. حداثةٌ أقلُّ يوماً = درجةٌ أعلى.'),
           load: (ref, range) async {
             final rows = await _partyRows(ref, range, suppliers: false);
             if (rows.isEmpty) return const PicPosReportTabContent();
@@ -798,8 +796,7 @@ PicPosReportDefinition inventoryTurnoverReport() => PicPosReportDefinition(
           label: tr('الدوران'),
           icon: PhosphorIconsBold.arrowsClockwise,
           note:
-              'الدورانُ = تكلفةُ المبيعات ÷ متوسّطِ المخزون بين طرفَي المدى. '
-              'والكمّيّةُ تاريخيّةٌ والتكلفةُ متوسّطٌ مرجّحٌ حاليّ.',
+              tr('الدورانُ = تكلفةُ المبيعات ÷ متوسّطِ المخزون بين طرفَي المدى. والكمّيّةُ تاريخيّةٌ والتكلفةُ متوسّطٌ مرجّحٌ حاليّ.'),
           load: (ref, range) async {
             final repo = ref.read(reportingRepositoryProvider);
             final scope = await _scope(ref);

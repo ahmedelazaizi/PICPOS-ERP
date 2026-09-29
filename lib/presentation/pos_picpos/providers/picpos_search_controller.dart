@@ -276,9 +276,7 @@ class PicposSearchController extends Notifier<PicposSearchState> {
       _playDuplicateWeightBeep();
       state = state.copyWith(
         duplicateWeightWarning:
-            'نفس الوزن (${weightKg.toStringAsFixed(3)} كجم) '
-            'تم إضافته لصنف "$productName" من قبل — '
-            'غيّر الوزن على الميزان لتجنب التكرار.',
+            tr('نفس الوزن ({p0} كجم) تم إضافته لصنف "{productName}" من قبل — غيّر الوزن على الميزان لتجنب التكرار.', {'p0': weightKg.toStringAsFixed(3), 'productName': productName}),
       );
     }
     return isDup;
@@ -396,8 +394,7 @@ class PicposSearchController extends Notifier<PicposSearchState> {
 
       _playErrorBeep();
       state = state.copyWith(
-        error: 'باركود ميزان: رقم PLU المستخرج "$pluPart" (=$pluInt) غير مطابق لأي صنف.\n'
-            'تأكد من تسجيل رقم PLU في إعدادات الصنف أو مطابقة كود الصنف.',
+        error: tr('باركود ميزان: رقم PLU المستخرج "{pluPart}" (={pluInt}) غير مطابق لأي صنف.\nتأكد من تسجيل رقم PLU في إعدادات الصنف أو مطابقة كود الصنف.', {'pluPart': pluPart, 'pluInt': pluInt}),
         errorKind: PicposBarcodeSearchErrorKind.invalidScale,
         searchResults: [],
         isSearchActive: false,
@@ -527,8 +524,7 @@ class PicposSearchController extends Notifier<PicposSearchState> {
               ApplyOfferOutcome.alreadyInCart =>
                 tr('العرض "{p0}" مضاف بالفعل إلى السلة.', {'p0': offer.name}),
               ApplyOfferOutcome.notADiscount =>
-                'العرض "${offer.name}" سعره أعلى من مجموع أسعار بيع أصنافه — '
-                    'اترفض عشان ما يرفعش الأسعار. راجع سعر العرض.',
+                tr('العرض "{p0}" سعره أعلى من مجموع أسعار بيع أصنافه — اترفض عشان ما يرفعش الأسعار. راجع سعر العرض.', {'p0': offer.name}),
               _ => tr('تعذّر تطبيق العرض "{p0}" — تأكد من أصناف العرض.', {'p0': offer.name}),
             },
             errorKind: PicposBarcodeSearchErrorKind.general,

@@ -25,6 +25,7 @@
 //       هنا — ولهذا هذا الشريطُ نحيفٌ بسطرٍ واحد.
 
 import 'package:flutter/material.dart';
+import '../../core/i18n/tr.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -153,7 +154,7 @@ class _Crumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      text,
+      tr(text),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: TextStyle(

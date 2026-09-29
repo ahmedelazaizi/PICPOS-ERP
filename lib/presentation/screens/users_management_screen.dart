@@ -742,8 +742,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
     final confirmed = await AppConfirmDialog.show(
       context,
       title: tr('حذف المستخدم'),
-      message: 'هل أنت متأكد من حذف المستخدم "${user.displayName}"؟\n'
-          'سيتم تعطيل الحساب وقفله نهائياً.',
+      message: tr('هل أنت متأكد من حذف المستخدم "{p0}"؟\nسيتم تعطيل الحساب وقفله نهائياً.', {'p0': user.displayName}),
       confirmLabel: tr('حذف'),
       icon: PhosphorIconsBold.trash,
       color: AppColors.error,

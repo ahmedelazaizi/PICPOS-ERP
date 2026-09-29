@@ -158,8 +158,7 @@ class _ChequeBooksPicposScreenState
       permission: PermissionCodes.treasuryView,
       child: PicPosScreenScaffold(
         title: tr('دفتر الشيكات'),
-        subtitle: 'مدًى محجوزٌ على حسابٍ بنكيّ — ورقمٌ يُسحَب آليّاً لا '
-            'يُكتَب بيد',
+        subtitle: tr('مدًى محجوزٌ على حسابٍ بنكيّ — ورقمٌ يُسحَب آليّاً لا يُكتَب بيد'),
         icon: PhosphorIconsBold.checkSquareOffset,
         headerActions: [
           PermissionGuard(
@@ -212,14 +211,12 @@ class _ChequeBooksPicposScreenState
             //    «دفتر جديد» معطَّلاً بلا سبب — وزرٌّ معطَّلٌ بلا سببٍ ظاهرٍ
             //    يُقرأ «معطوب».
             if (banks.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 10),
+               Padding(
+                padding: const EdgeInsets.only(bottom: 10),
                 child: Text(
-                  'لا خزنةَ بنكيّةً نشطةً لها حسابٌ مرتبطٌ في دليل الحسابات — '
-                  'والدفتر يُفتَح على حسابٍ بنكيّ. اربط الخزنةَ من شاشة '
-                  'الخزينة أوّلاً.',
-                  key: Key('cheque_book_no_bank_notice'),
-                  style: TextStyle(fontSize: 12, color: _err),
+                  tr('لا خزنةَ بنكيّةً نشطةً لها حسابٌ مرتبطٌ في دليل الحسابات — والدفتر يُفتَح على حسابٍ بنكيّ. اربط الخزنةَ من شاشة الخزينة أوّلاً.'),
+                  key: const Key('cheque_book_no_bank_notice'),
+                  style: const TextStyle(fontSize: 12, color: _err),
                 ),
               ),
             Expanded(
@@ -512,9 +509,7 @@ class _ChequeBookPanelState extends State<ChequeBookPanel> {
       editingId: widget.value?.id,
     );
     if (clash != null) {
-      return 'المدى يتداخل مع دفترٍ قائمٍ على نفس الحساب '
-          '(${clash.fromNumber} – ${clash.toNumber}) — ورقمٌ مكرَّرٌ في شيكٍ '
-          'صادرٍ يصل البنك.';
+      return tr('المدى يتداخل مع دفترٍ قائمٍ على نفس الحساب ({p0} – {p1}) — ورقمٌ مكرَّرٌ في شيكٍ صادرٍ يصل البنك.', {'p0': clash.fromNumber, 'p1': clash.toNumber});
     }
     return null;
   }
@@ -615,8 +610,7 @@ class _ChequeBookPanelState extends State<ChequeBookPanel> {
           //    «من». وهو الطريقُ الوحيدُ لتصحيح ذلك بلا حذفٍ وإعادةِ فتح.
           Text(
             isNew
-                ? 'اترك «التالي» فارغاً ليبدأ من أوّل الدفتر — أو اكتبه إن '
-                    'كانت أوراقٌ منه قد صُرفت قبل تسجيله.'
+                ? tr('اترك «التالي» فارغاً ليبدأ من أوّل الدفتر — أو اكتبه إن كانت أوراقٌ منه قد صُرفت قبل تسجيله.')
                 : tr('المتبقّي {p0} شيكاً.', {'p0': _ar(left)}),
             style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
           ),

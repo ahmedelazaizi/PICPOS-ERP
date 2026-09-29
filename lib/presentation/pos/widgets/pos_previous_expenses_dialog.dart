@@ -280,8 +280,7 @@ class _PosPreviousExpensesDialogState
         child: AlertDialog(
           title:  Text(tr('تأكيد حذف المصروف')),
           content: Text(
-            'هل أنت متأكد من حذف سند مصروف ${voucher.amount.toStringAsFixed(AppConstants.decimalPlaces)} د.أ؟\n'
-            'سيتم إرجاع المبلغ للخزنة.',
+            tr('هل أنت متأكد من حذف سند مصروف {p0} د.أ؟\nسيتم إرجاع المبلغ للخزنة.', {'p0': voucher.amount.toStringAsFixed(AppConstants.decimalPlaces)}),
           ),
           actions: [
             TextButton(

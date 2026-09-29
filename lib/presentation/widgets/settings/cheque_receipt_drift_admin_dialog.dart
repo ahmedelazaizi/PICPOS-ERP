@@ -104,12 +104,7 @@ class _ChequeReceiptDriftAdminDialogState
             ],
           ),
           content: Text(
-            'سيتم تصحيح رصيد $totalCustomers عميل بإجمالي '
-            '${totalOverCredit.toStringAsFixed(AppConstants.decimalPlaces)} '
-            '${AppConstants.currencySymbolEn} عبر قيد تسوية متوازن.\n\n'
-            'لا يتم تعديل أرصدة الخزائن أو حركاتها.\n'
-            'يُطبَّق هذا الإصلاح مرة واحدة فقط لكل جهاز.\n\n'
-            'تأكد من وجود نسخة احتياطية حديثة قبل المتابعة.',
+            tr('سيتم تصحيح رصيد {totalCustomers} عميل بإجمالي {p0} {p1} عبر قيد تسوية متوازن.\n\nلا يتم تعديل أرصدة الخزائن أو حركاتها.\nيُطبَّق هذا الإصلاح مرة واحدة فقط لكل جهاز.\n\nتأكد من وجود نسخة احتياطية حديثة قبل المتابعة.', {'totalCustomers': totalCustomers, 'p0': totalOverCredit.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
           ),
           actions: [
             TextButton(
@@ -157,9 +152,7 @@ class _ChequeReceiptDriftAdminDialogState
   String _resultMessage(ChequeDriftRepairResult r) {
     switch (r.outcome) {
       case ChequeDriftRepairOutcome.healed:
-        return 'تم تصحيح ${r.healedCount} عميل بإجمالي '
-            '${r.totalHealed.toStringAsFixed(AppConstants.decimalPlaces)} '
-            '${AppConstants.currencySymbolEn}.';
+        return tr('تم تصحيح {p0} عميل بإجمالي {p1} {p2}.', {'p0': r.healedCount, 'p1': r.totalHealed.toStringAsFixed(AppConstants.decimalPlaces), 'p2': AppConstants.currencySymbolEn});
       case ChequeDriftRepairOutcome.noop:
         return tr('لا يوجد ازدواج لإصلاحه — لم يتم تعديل أي بيانات.');
       case ChequeDriftRepairOutcome.skipped:
@@ -167,8 +160,7 @@ class _ChequeReceiptDriftAdminDialogState
           return tr('تم تطبيق الإصلاح مسبقاً على هذا الجهاز.');
         }
         if (r.reason == ChequeDriftRepairReason.notServer) {
-          return 'الإصلاح يعمل على جهاز السيرفر فقط — تصل الأجهزة الأخرى '
-              'للحالة المصححة عبر المزامنة.';
+          return tr('الإصلاح يعمل على جهاز السيرفر فقط — تصل الأجهزة الأخرى للحالة المصححة عبر المزامنة.');
         }
         return tr('تم تخطي الإصلاح.');
       case ChequeDriftRepairOutcome.failed:
@@ -342,10 +334,9 @@ class _ChequeReceiptDriftAdminDialogState
           ),
         ),
         const SizedBox(height: 12),
-        const Text(
-          'اضغط "تطبيق الإصلاح" لتصحيح أرصدة العملاء المتأثرين بقيد تسوية '
-          'متوازن (لا يتم المساس بأرصدة الخزائن). يُطبَّق مرة واحدة فقط لكل جهاز.',
-          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+         Text(
+          tr('اضغط "تطبيق الإصلاح" لتصحيح أرصدة العملاء المتأثرين بقيد تسوية متوازن (لا يتم المساس بأرصدة الخزائن). يُطبَّق مرة واحدة فقط لكل جهاز.'),
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
         ),
         if (_lastResult != null) ...[
           const SizedBox(height: 8),

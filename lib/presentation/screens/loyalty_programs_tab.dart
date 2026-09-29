@@ -183,8 +183,7 @@ class _ProgramsTab extends StatelessWidget {
         builder: (ctx, setDialogState) => AlertDialog(
           title:  Text(tr('حذف البرنامج')),
           content: Text(
-            'هل أنت متأكد من حذف برنامج "${program.name}"؟\n'
-            'سيتم حذف جميع النقاط والحركات المرتبطة.',
+            tr('هل أنت متأكد من حذف برنامج "{p0}"؟\nسيتم حذف جميع النقاط والحركات المرتبطة.', {'p0': program.name}),
           ),
           actions: [
             TextButton(

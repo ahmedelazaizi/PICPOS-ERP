@@ -155,19 +155,15 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),
-      child: const Row(
+      child:  Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(PhosphorIconsBold.warning, color: AppColors.warning),
-          SizedBox(width: 12),
+          const Icon(PhosphorIconsBold.warning, color: AppColors.warning),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'فحصُ الصلاحيات على السيرفر **مُفعَّلٌ دائماً** — السيرفر يرفض '
-              'أي عملية يقوم بها مستخدم لا يملك صلاحيتها (مثلاً: كاشير '
-              'يحاول حذف فاتورة بدون صلاحية sales_delete). الفحصُ أدناه '
-              'يكشف الأدوارَ التي ينقصها منحٌ فيُرفَض عملُها في الميدان — '
-              'شغّله بعد أي تعديل على الأدوار.',
-              style: TextStyle(fontSize: 13),
+              tr('فحصُ الصلاحيات على السيرفر **مُفعَّلٌ دائماً** — السيرفر يرفض أي عملية يقوم بها مستخدم لا يملك صلاحيتها (مثلاً: كاشير يحاول حذف فاتورة بدون صلاحية sales_delete). الفحصُ أدناه يكشف الأدوارَ التي ينقصها منحٌ فيُرفَض عملُها في الميدان — شغّله بعد أي تعديل على الأدوار.'),
+              style: const TextStyle(fontSize: 13),
             ),
           ),
         ],
@@ -230,8 +226,7 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '$roleCount دور يحتاج صلاحيات إضافية '
-                  '(${report.totalMissingPairs} صلاحية ناقصة)',
+                  tr('{roleCount} دور يحتاج صلاحيات إضافية ({p0} صلاحية ناقصة)', {'roleCount': roleCount, 'p0': report.totalMissingPairs}),
                   style: const TextStyle(color: AppColors.error),
                 ),
               ),
@@ -302,13 +297,11 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
             ),
           ),
           const SizedBox(height: 6),
-          const Padding(
-            padding: EdgeInsetsDirectional.only(start: 24),
+           Padding(
+            padding: const EdgeInsetsDirectional.only(start: 24),
             child: Text(
-              'هذه الأدوار خارج المصفوفة الافتراضية. تأكد من منحها '
-              'الصلاحيات المناسبة من شاشة "إدارة صلاحيات الأدوار" قبل '
-              'التفعيل، وإلا سيواجه مستخدموها أخطاء 403.',
-              style: TextStyle(fontSize: 11, color: Colors.grey),
+              tr('هذه الأدوار خارج المصفوفة الافتراضية. تأكد من منحها الصلاحيات المناسبة من شاشة "إدارة صلاحيات الأدوار" قبل التفعيل، وإلا سيواجه مستخدموها أخطاء 403.'),
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
             ),
           ),
         ],

@@ -393,8 +393,7 @@ class _CostCentersPicPosScreenState
       icon: PhosphorIconsBold.prohibit,
       title: tr('تعطيل مركز التكلفة'),
       subtitle: '${center.code} — ${center.name}',
-      message: 'سيختفي المركزُ من قوائم الاختيار ولا تُحذف حركاتُه السابقة. '
-          'يمكن إظهارُه مجدَّداً بمفتاح «عرض غير النشطة».',
+      message: tr('سيختفي المركزُ من قوائم الاختيار ولا تُحذف حركاتُه السابقة. يمكن إظهارُه مجدَّداً بمفتاح «عرض غير النشطة».'),
       confirmLabel: tr('تعطيل'),
       danger: true,
     );

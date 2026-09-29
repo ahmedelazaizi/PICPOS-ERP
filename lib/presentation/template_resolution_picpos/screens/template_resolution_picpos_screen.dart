@@ -49,8 +49,7 @@ class TemplateResolutionPicposScreen extends ConsumerWidget {
 
     return PicPosScreenScaffold(
       title: tr('حسم القوالب والطابعات'),
-      subtitle: 'أي مستند ← أي قالب ← أي طابعة · '
-          'المفتاح: نوع المستند + الفرع + الطابعة + اللغة',
+      subtitle: tr('أي مستند ← أي قالب ← أي طابعة · المفتاح: نوع المستند + الفرع + الطابعة + اللغة'),
       icon: PhosphorIconsBold.gitFork,
       headerActions: [
         _HeaderStat(label: tr('مسارات الطباعة'), value: '${rows.length}'),

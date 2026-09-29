@@ -418,8 +418,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
       await _runProvisionStep(5, () async {
         final check = await db!.verifyPostgresBaseline();
         _provisionSteps[5].detail =
-            '${check.counts['accounts'] ?? 0} حساب، '
-            '${check.counts['roles'] ?? 0} أدوار';
+            tr('{p0} حساب، {p1} أدوار', {'p0': check.counts['accounts'] ?? 0, 'p1': check.counts['roles'] ?? 0});
         if (!check.ok) {
           throw Exception('باقية جداول ناقصة: ${check.missing.join(', ')}');
         }
@@ -582,10 +581,8 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
         barrierDismissible: false,
         builder: (_) => AlertDialog(
           title:  Text(tr('اكتملت التهيئة')),
-          content: const Text(
-            'تم حفظ إعدادات السيرفر بنجاح.\n'
-            'سيتم إغلاق التطبيق الآن — افتحه مجدداً ليتصل بـ PostgreSQL '
-            'وتظهر شاشة POS جاهزة للعمل.',
+          content:  Text(
+            tr('تم حفظ إعدادات السيرفر بنجاح.\nسيتم إغلاق التطبيق الآن — افتحه مجدداً ليتصل بـ PostgreSQL وتظهر شاشة POS جاهزة للعمل.'),
           ),
           actions: [
             FilledButton(
@@ -644,10 +641,9 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'يحدد هذا الاختيار الشاشات والميزات الظاهرة للمستخدم. يمكن تعديله '
-          'لاحقًا من "أدوات المطوّر" فقط (محمية بكلمة مرور مطوّر منفصلة).',
-          style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+         Text(
+          tr('يحدد هذا الاختيار الشاشات والميزات الظاهرة للمستخدم. يمكن تعديله لاحقًا من "أدوات المطوّر" فقط (محمية بكلمة مرور مطوّر منفصلة).'),
+          style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
         ),
         const SizedBox(height: 16),
         ...metas.map((m) {
@@ -783,11 +779,9 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'كلمة مرور منفصلة عن الأدمن — تتحكم فى تغيير ملف النشاط ونمط '
-          'التشغيل والميزات بعد التثبيت. لا يُفترض مشاركتها مع العميل. '
-          'لو نسيتها، استخدم التشغيل مع --reset-dev-password.',
-          style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+         Text(
+          tr('كلمة مرور منفصلة عن الأدمن — تتحكم فى تغيير ملف النشاط ونمط التشغيل والميزات بعد التثبيت. لا يُفترض مشاركتها مع العميل. لو نسيتها، استخدم التشغيل مع --reset-dev-password.'),
+          style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
         ),
         const SizedBox(height: 20),
         TextField(
@@ -849,9 +843,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'احفظ كلمة المرور فى مكان آمن — لا يمكن استردادها من '
-                  'داخل النظام. استخدم تشغيل الـ exe بـ --reset-dev-password '
-                  'لإعادة التعيين فى حالة الضرورة.',
+                  tr('احفظ كلمة المرور فى مكان آمن — لا يمكن استردادها من داخل النظام. استخدم تشغيل الـ exe بـ --reset-dev-password لإعادة التعيين فى حالة الضرورة.'),
                   style: TextStyle(
                     fontSize: 11,
                     color: AppColors.warning.withValues(alpha: 0.9),

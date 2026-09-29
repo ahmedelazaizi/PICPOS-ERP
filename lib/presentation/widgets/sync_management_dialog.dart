@@ -144,11 +144,8 @@ class _SyncManagementDialogState extends ConsumerState<SyncManagementDialog> {
                     textDirection: TextDirection.rtl,
                     child: AlertDialog(
                       title:  Text(tr('تأكيد مطابقة المزامنة')),
-                      content: const Text(
-                        'هذا الإجراء يضع كل العناصر المعلّقة/الفاشلة/دائمة الفشل '
-                        'كـ"تم مزامنتها" بدون إعادة إرسالها للسيرفر.\n\n'
-                        'استخدمه فقط بعد أن تتحقّق يدوياً من أن البيانات فعلاً '
-                        'موجودة على السيرفر. هل أنت متأكد؟',
+                      content:  Text(
+                        tr('هذا الإجراء يضع كل العناصر المعلّقة/الفاشلة/دائمة الفشل كـ"تم مزامنتها" بدون إعادة إرسالها للسيرفر.\n\nاستخدمه فقط بعد أن تتحقّق يدوياً من أن البيانات فعلاً موجودة على السيرفر. هل أنت متأكد؟'),
                       ),
                       actions: [
                         TextButton(

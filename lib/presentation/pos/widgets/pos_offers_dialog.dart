@@ -230,8 +230,7 @@ class PosOffersDialog extends ConsumerWidget {
         ApplyOfferOutcome.alreadyInCart =>
           tr('العرض "{p0}" مضاف بالفعل إلى السلة', {'p0': offer.name}),
         ApplyOfferOutcome.notADiscount =>
-          'العرض "${offer.name}" سعره أعلى من مجموع أسعار بيع أصنافه — '
-              'اترفض عشان ما يرفعش الأسعار. راجع سعر العرض.',
+          tr('العرض "{p0}" سعره أعلى من مجموع أسعار بيع أصنافه — اترفض عشان ما يرفعش الأسعار. راجع سعر العرض.', {'p0': offer.name}),
         _ => tr('تعذّر تطبيق العرض "{p0}" — تأكد من أصناف العرض', {'p0': offer.name}),
       };
       showPosToast(

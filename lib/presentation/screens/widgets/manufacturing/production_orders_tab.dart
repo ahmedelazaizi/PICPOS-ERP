@@ -441,10 +441,7 @@ class _ProductionOrderCard extends ConsumerWidget {
         child: AlertDialog(
           title:  Text(tr('بدء التصنيع')),
           content: Text(
-              'سيتم سحب المواد الخام من المخزن.\n'
-              'المنتج: $productName\n'
-              'الكمية: ${order.orderedQty.toStringAsFixed(0)}\n\n'
-              'هل تريد المتابعة؟'),
+              tr('سيتم سحب المواد الخام من المخزن.\nالمنتج: {productName}\nالكمية: {p0}\n\nهل تريد المتابعة؟', {'productName': productName, 'p0': order.orderedQty.toStringAsFixed(0)})),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),

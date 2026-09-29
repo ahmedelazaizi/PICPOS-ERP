@@ -174,9 +174,7 @@ class BackupRestoreWidget extends ConsumerWidget {
       icon: PhosphorIconsBold.arrowCounterClockwise,
       title: tr('استعادة نسخة احتياطية'),
       subtitle: filename,
-      message: 'يُستبدل محتوى قاعدة البيانات الحاليّة بمحتوى النسخة '
-          'المختارة. والاستعادةُ تكتمل عند إعادة تشغيل البرنامج — قبلها '
-          'لا يتغيّر شيءٌ على الشاشة.',
+      message: tr('يُستبدل محتوى قاعدة البيانات الحاليّة بمحتوى النسخة المختارة. والاستعادةُ تكتمل عند إعادة تشغيل البرنامج — قبلها لا يتغيّر شيءٌ على الشاشة.'),
       actionLabel: tr('استعادة النسخة'),
       typedWord: tr('استعادة'),
       warnTone: true,

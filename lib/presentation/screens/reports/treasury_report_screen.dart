@@ -676,8 +676,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                                     label: Text(
                                       _runningBalances.isEmpty
                                           ? tr('الرصيد')
-                                          : 'الرصيد (افتتاحي: '
-                                              '${_currencyFormat.format(_openingBalance)})',
+                                          : tr('الرصيد (افتتاحي: {p0})', {'p0': _currencyFormat.format(_openingBalance)}),
                                     ),
                                   ),
                                    DataColumn(label: Text(tr('المستخدم'))),

@@ -79,9 +79,7 @@ class _BookingInvoiceDialogState extends ConsumerState<BookingInvoiceDialog> {
         const SizedBox(height: 12),
         _note(
           PhosphorIconsBold.info,
-          'الفاتورةُ تُصدَر من نقطة البيع — هناك تُحسَب الضريبةُ وتُوجَّه '
-          'الخزنةُ وتُربَط الورديّةُ وتُرحَّل القيود. والعربونُ يُخصَم '
-          'تلقائيّاً عند إتمام البيع.',
+          tr('الفاتورةُ تُصدَر من نقطة البيع — هناك تُحسَب الضريبةُ وتُوجَّه الخزنةُ وتُربَط الورديّةُ وتُرحَّل القيود. والعربونُ يُخصَم تلقائيّاً عند إتمام البيع.'),
           AppColors.info,
         ),
         if (_error != null) ...[

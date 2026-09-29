@@ -205,7 +205,7 @@ class _QuickSalePolicyScreenState
               child: QuickSaleNavTile(
                 icon: _stepIcon[kQuickSaleSteps[i].id]!,
                 tint: AppColors.primary,
-                title: kQuickSaleSteps[i].label,
+                title: tr(kQuickSaleSteps[i].label),
                 settingCount: kQuickSaleSteps[i].rows.length,
                 selected: i == _step,
                 dirty: kQuickSaleSteps[i]
@@ -227,15 +227,15 @@ class _QuickSalePolicyScreenState
         QuickSaleSectionHeader(
           icon: _stepIcon[step.id]!,
           tint: AppColors.primary,
-          title: step.label,
-          hint: step.sub,
+          title: tr(step.label),
+          hint: tr(step.sub),
         ),
         const SizedBox(height: 10),
-        _buildLede(step.lede),
+        _buildLede(tr(step.lede)),
         const SizedBox(height: 14),
         for (final group in step.groups) ...[
           QuickSaleGroupCard(
-            label: group.title,
+            label: tr(group.title),
             tint: AppColors.primary,
             rows: [
               for (var i = 0; i < group.rows.length; i++)
@@ -243,7 +243,7 @@ class _QuickSalePolicyScreenState
                     isLast: i == group.rows.length - 1),
             ],
           ),
-          if (group.note != null) _buildNote(group.note!),
+          if (group.note != null) _buildNote(tr(group.note!)),
           const SizedBox(height: 14),
         ],
         if (step.pick != null) _buildPick(step.pick!, values),
@@ -290,9 +290,9 @@ class _QuickSalePolicyScreenState
         QuickSaleSettingRow(
           icon: look.$1,
           tint: look.$2,
-          title: row.title,
+          title: tr(row.title),
           settingKey: row.settingKey,
-          sub: row.sub,
+          sub: tr(row.sub ?? ''),
           isLast: true,
           control: _buildControl(row, values),
         ),
@@ -326,7 +326,7 @@ class _QuickSalePolicyScreenState
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(row.notEnforcedReason ?? '',
+          child: Text(tr(row.notEnforcedReason ?? ''),
               style: TextStyle(
                   fontSize: 10.5, height: 1.55, color: context.picposMuted)),
         ),
@@ -337,7 +337,7 @@ class _QuickSalePolicyScreenState
   Widget _buildCaveat(String caveat) {
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 44, 10),
-      child: Text('⚠︎ $caveat',
+      child: Text('⚠︎ ${tr(caveat)}',
           style: TextStyle(
               fontSize: 10.5, height: 1.55, color: context.picposMuted)),
     );
@@ -400,7 +400,7 @@ class _QuickSalePolicyScreenState
         children: [
           for (var i = 0; i < row.options.length; i++)
             ChoiceChip(
-              label: Text(row.options[i],
+              label: Text(tr(row.options[i]),
                   style: const TextStyle(fontSize: 11.5)),
               selected: i == selected,
               onSelected: (_) => _put(QuickSalePolicyValues.write(row, i)),
@@ -443,7 +443,7 @@ class _QuickSalePolicyScreenState
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(row.options[i],
+                      Text(tr(row.options[i]),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -452,7 +452,7 @@ class _QuickSalePolicyScreenState
                                 : context.picposText,
                           )),
                       if (i < row.optionSubs.length)
-                        Text(row.optionSubs[i],
+                        Text(tr(row.optionSubs[i]),
                             textAlign: TextAlign.end,
                             style: TextStyle(
                                 fontSize: 10,
@@ -473,9 +473,9 @@ class _QuickSalePolicyScreenState
     final selected = values.pickOf(pick);
 
     return QuickSaleGroupCard(
-      label: pick.title,
+      label: tr(pick.title),
       tint: AppColors.success,
-      note: pick.sub,
+      note: tr(pick.sub),
       rows: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -485,8 +485,8 @@ class _QuickSalePolicyScreenState
             children: [
               for (final item in pick.items)
                 FilterChip(
-                  label: Text(item.label),
-                  tooltip: item.sub,
+                  label: Text(tr(item.label)),
+                  tooltip: tr(item.sub),
                   selected: selected.contains(item.id),
                   onSelected: (on) {
                     final next = [...selected];
@@ -501,7 +501,7 @@ class _QuickSalePolicyScreenState
             ],
           ),
         ),
-        if (pick.note != null) _buildNote(pick.note!),
+        if (pick.note != null) _buildNote(tr(pick.note!)),
       ],
     );
   }
@@ -556,7 +556,7 @@ class _QuickSalePolicyScreenState
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(line.text,
+                  child: Text(tr(line.text),
                       style: TextStyle(
                           fontSize: 12,
                           height: 1.7,

@@ -181,9 +181,8 @@ class BookingsPicPosScreen extends ConsumerWidget {
       final handed = await showBookingInvoiceDialog(context, row: row);
       if (handed == true && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('افتح نقطة البيع لإتمام الفاتورة — العربون سيُخصَم '
-                'تلقائيّاً.'),
+           SnackBar(
+            content: Text(tr('افتح نقطة البيع لإتمام الفاتورة — العربون سيُخصَم تلقائيّاً.')),
           ),
         );
       }

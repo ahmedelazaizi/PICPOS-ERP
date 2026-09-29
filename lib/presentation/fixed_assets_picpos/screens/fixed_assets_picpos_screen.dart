@@ -637,8 +637,7 @@ class _FixedAssetsPicposScreenState
         PicPosDataTable(
           title: tr('بطاقات الأصول'),
           subtitle: historical
-              ? 'الأرقامُ كما في ${_dateFmt.format(_asOf)} — من لقطات '
-                  'الإهلاك المرحَّلة لا من أرصدة اليوم'
+              ? tr('الأرقامُ كما في {p0} — من لقطات الإهلاك المرحَّلة لا من أرصدة اليوم', {'p0': _dateFmt.format(_asOf)})
               : tr('القيمة الدفترية = التكلفة ناقص مجمع الإهلاك'),
           minWidth: 1020,
           columns:  [
@@ -1280,8 +1279,7 @@ class _FixedAssetsPicposScreenState
       return  PicPosEmptyState(
         icon: PhosphorIconsBold.trash,
         title: tr('لا طلباتِ استبعادٍ ولا أصولَ مستبعدة'),
-        hint: 'ابدأ من «طلب استبعاد» في جدول الأصول — والمسوّدةُ بلا أثرٍ '
-            'محاسبيّ حتى تُعتمَد.',
+        hint: tr('ابدأ من «طلب استبعاد» في جدول الأصول — والمسوّدةُ بلا أثرٍ محاسبيّ حتى تُعتمَد.'),
       );
     }
 
@@ -1427,8 +1425,7 @@ class _FixedAssetsPicposScreenState
   Widget _disposalRequestsTable(List<AssetDisposalListRow> rows) {
     return PicPosDataTable(
       title: tr('طلبات الاستبعاد'),
-      subtitle: 'المسوّدةُ بلا أثرٍ محاسبيّ — والاعتمادُ يُخرج الأصلَ ويقيّد '
-          'الفرق',
+      subtitle: tr('المسوّدةُ بلا أثرٍ محاسبيّ — والاعتمادُ يُخرج الأصلَ ويقيّد الفرق'),
       minWidth: 1020,
       emptyLabel: tr('لا طلبات'),
       columns:  [
@@ -1521,9 +1518,7 @@ class _FixedAssetsPicposScreenState
         icon: const Icon(PhosphorIconsBold.arrowDownRight, color: _warn),
         title: Text(tr('ترحيل إهلاك {periodLabel}', {'periodLabel': periodLabel})),
         content: Text(
-          'سيُقيَّد قسطُ ${_ar(pending.length)} أصلٍ بإجمالي '
-          '${_money.format(amount)} — يخصم مصروفَ الإهلاك ويزيد مجمعَه. '
-          'والأصولُ المُرحَّلةُ لهذا الشهر لا تُرحَّل مرّتين.',
+          tr('سيُقيَّد قسطُ {p0} أصلٍ بإجمالي {p1} — يخصم مصروفَ الإهلاك ويزيد مجمعَه. والأصولُ المُرحَّلةُ لهذا الشهر لا تُرحَّل مرّتين.', {'p0': _ar(pending.length), 'p1': _money.format(amount)}),
         ),
         actions: [
           TextButton(

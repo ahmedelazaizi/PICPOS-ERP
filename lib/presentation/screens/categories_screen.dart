@@ -495,9 +495,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'هذا التصنيف به أصناف عليها '
-              '$branchInvoicedCount حركة فاتورة على فرعك الحالي.\n'
-              'الحذف ينتشر لكل الفروع — تأكد قبل المتابعة.',
+              tr('هذا التصنيف به أصناف عليها {branchInvoicedCount} حركة فاتورة على فرعك الحالي.\nالحذف ينتشر لكل الفروع — تأكد قبل المتابعة.', {'branchInvoicedCount': branchInvoicedCount}),
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
@@ -531,8 +529,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
               children: [
                 ?banner,
                 Text(
-                  'هل تريد حذف التصنيف "${category.name}"؟\n\n'
-                  'لا يوجد منتجات نشطة تحت هذا التصنيف.',
+                  tr('هل تريد حذف التصنيف "{p0}"؟\n\nلا يوجد منتجات نشطة تحت هذا التصنيف.', {'p0': category.name}),
                 ),
               ],
             ),
@@ -663,8 +660,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'بعد النقل سيتم حذف تصنيف "${deleting.name}" '
-                    '(يمكن استرجاعه من سجل النشاطات).',
+                    tr('بعد النقل سيتم حذف تصنيف "{p0}" (يمكن استرجاعه من سجل النشاطات).', {'p0': deleting.name}),
                     style: const TextStyle(
                         fontSize: 12, color: AppColors.textSecondary),
                   ),

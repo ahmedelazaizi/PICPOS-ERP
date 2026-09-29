@@ -293,8 +293,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
       title: tr('التقارير'),
       // ⚠️ العددُ **مقيسٌ من الشجرة** لا مكتوبٌ نصّاً: «كل تقارير المبيعات
       //    والمخزون والمالية» جملةٌ لا تتغيّر مهما أُضيف أو حُذف.
-      subtitle: '${_allItems.length} تقريراً واختصاراً '
-          'في ${_categories.length} فئة',
+      subtitle: tr('{p0} تقريراً واختصاراً في {p1} فئة', {'p0': _allItems.length, 'p1': _categories.length}),
       icon: PhosphorIconsBold.chartBar,
       headerSearch: _searchBar(),
       headerActions: [_customReportButton()],
@@ -625,8 +624,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${_allItems.length} تقريراً واختصاراً '
-                  'في ${_categories.length} فئة',
+                  tr('{p0} تقريراً واختصاراً في {p1} فئة', {'p0': _allItems.length, 'p1': _categories.length}),
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
@@ -1790,8 +1788,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Text(
-                    'أصناف بتكلفة صفر لها رصيد: ${result.zeroCostItemCount} صنف '
-                    '(كمية ${result.zeroCostStockQty.toStringAsFixed(2)})'),
+                    tr('أصناف بتكلفة صفر لها رصيد: {p0} صنف (كمية {p1})', {'p0': result.zeroCostItemCount, 'p1': result.zeroCostStockQty.toStringAsFixed(2)})),
               ),
               if (result.isBalanced)
                  Padding(
@@ -1964,19 +1961,15 @@ Map<String, String> get _kCatGroup => {
 /// و«القوائم المالية» فئةٌ مستقلّةٌ في التصميم وهي هنا **تقريرٌ داخل
 /// التحليلات** — فلم تُخترَع فئةٌ جديدةٌ لتطابق الرسم.
 Map<String, String> get _kCatDesc => {
-  'sales': 'كل ما يخص حركة البيع: الفواتير، الكاشير، الأصناف، المجموعات، '
-      'وطرق الدفع',
+  'sales': tr('كل ما يخص حركة البيع: الفواتير، الكاشير، الأصناف، المجموعات، وطرق الدفع'),
   'profit': tr('تكلفة المبيعات وصافي الربح وهامش الربح على مستوى الصنف والتصنيف'),
   'returns': tr('مرتجعات المبيعات والمشتريات والمبالغ المستردة'),
   'inventory': tr('أرصدة وقيم المخزون، كرت الصنف، الجرد، والصلاحيات'),
   'purchases': tr('المشتريات بفلاتر كاملة ومتابعة أوامر الشراء المفتوحة'),
-  'customers': 'كشوف الحساب، تقادم الذمم، سلوك الشراء، وتسوية الذمم مع '
-      'الأستاذ العام',
+  'customers': tr('كشوف الحساب، تقادم الذمم، سلوك الشراء، وتسوية الذمم مع الأستاذ العام'),
   'suppliers': tr('كشوف حساب الموردين وحجم التعامل'),
-  'cashbox': 'حركة الخزينة، الورديات وعجز النقدية، التوصيل، والمصروفات '
-      'التشغيلية',
-  'taxes': 'الضريبة المحصلة والمدفوعة وصافي الالتزام وحالة الفاتورة '
-      'الإلكترونية',
+  'cashbox': tr('حركة الخزينة، الورديات وعجز النقدية، التوصيل، والمصروفات التشغيلية'),
+  'taxes': tr('الضريبة المحصلة والمدفوعة وصافي الالتزام وحالة الفاتورة الإلكترونية'),
   'users': tr('نشاط المستخدمين وسجل الدخول ومصفوفة الصلاحيات لكل دور'),
   'branches': tr('مقارنة أداء الفروع والتحويلات المخزنية بينها'),
   'audit': tr('سجل العمليات والتعديلات والطباعة والإلغاءات — أثر كامل لكل حركة'),

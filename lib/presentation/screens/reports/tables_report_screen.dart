@@ -420,32 +420,28 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
         width: double.infinity,
         padding: const EdgeInsetsDirectional.fromSTEB(24, 8, 24, 8),
         color: AppColors.info.withValues(alpha: 0.07),
-        child: const Row(
+        child:  Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
+            const Padding(
               padding: EdgeInsets.only(top: 1),
               child: Icon(PhosphorIconsBold.info,
                   size: 14, color: AppColors.info),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'المدى الزمنيّ يقع على وقت فتح الجلسة لا إغلاقها — '
-                    'جلسةٌ فُتحت 23:30 وأُغلقت 01:00 يقع إيرادُها في يوم '
-                    'الفتح، فقد يختلف عن تقرير المبيعات.',
-                    style: TextStyle(fontSize: 11, color: AppColors.info),
+                    tr('المدى الزمنيّ يقع على وقت فتح الجلسة لا إغلاقها — جلسةٌ فُتحت 23:30 وأُغلقت 01:00 يقع إيرادُها في يوم الفتح، فقد يختلف عن تقرير المبيعات.'),
+                    style: const TextStyle(fontSize: 11, color: AppColors.info),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
-                    'الطلبات التي لم تصدر لها فاتورةٌ بعد (المفتوحة) تظهر '
-                    'تحت كل نطاق فروع — فرعُ الطلب يُعرَف من فاتورته. فعددُ '
-                    'الطلبات والضيوف قد يشمل فروعاً خارج نطاقك.',
-                    style: TextStyle(fontSize: 11, color: AppColors.info),
+                    tr('الطلبات التي لم تصدر لها فاتورةٌ بعد (المفتوحة) تظهر تحت كل نطاق فروع — فرعُ الطلب يُعرَف من فاتورته. فعددُ الطلبات والضيوف قد يشمل فروعاً خارج نطاقك.'),
+                    style: const TextStyle(fontSize: 11, color: AppColors.info),
                   ),
                 ],
               ),
@@ -489,8 +485,7 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
             icon: PhosphorIconsBold.users,
             color: AppColors.success,
             subtitle: _totalGuests > 0
-                ? 'نصيب الضيف: '
-                    '${_currencyFormat.format(_totalRevenue / _totalGuests)}'
+                ? tr('نصيب الضيف: {p0}', {'p0': _currencyFormat.format(_totalRevenue / _totalGuests)})
                 : tr('لا ضيوف في هذا المدى'),
           ),
         ),

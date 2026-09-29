@@ -94,8 +94,7 @@ Widget buildOpenShiftsSection({
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'فُتحت: ${_formatShiftStart(shift.startTime)}'
-                        ' · رصيد افتتاحي: ${shift.openingBalance.toStringAsFixed(2)}',
+                        tr('فُتحت: {p0} · رصيد افتتاحي: {p1}', {'p0': _formatShiftStart(shift.startTime), 'p1': shift.openingBalance.toStringAsFixed(2)}),
                         style: const TextStyle(
                           color: AppColors.textMuted,
                           fontSize: 12,

@@ -223,9 +223,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'التقرير مقتطع عند $_truncatedAt صف — البيانات أكثر من ذلك. '
-                  'الإجماليات المحسوبة من هذا الجدول ناقصة؛ ضيّق الفترة أو '
-                  'أضف فلتراً.',
+                  tr('التقرير مقتطع عند {_truncatedAt} صف — البيانات أكثر من ذلك. الإجماليات المحسوبة من هذا الجدول ناقصة؛ ضيّق الفترة أو أضف فلتراً.', {'_truncatedAt': _truncatedAt}),
                   style: theme.textTheme.bodySmall
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),

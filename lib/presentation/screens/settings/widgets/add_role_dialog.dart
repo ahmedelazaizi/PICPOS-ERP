@@ -87,12 +87,10 @@ class _AddRoleDialogState extends AppFormDialogState<bool, AddRoleDialog> {
       ),
        PicPosPanelGroup(
         label: tr('تنبيه'),
-        child: const PicPosDialogBanner(
+        child:  PicPosDialogBanner(
           icon: PhosphorIconsBold.warning,
           color: AppColors.warning,
-          text: 'تعديلُ صلاحيات دورٍ يسري فوراً على كلّ مستخدميه، وأيُّ '
-              'مستخدمٍ مفتوحةٌ له جلسةٌ يُطبَّق عليه التغييرُ عند العملية '
-              'التالية.',
+          text: tr('تعديلُ صلاحيات دورٍ يسري فوراً على كلّ مستخدميه، وأيُّ مستخدمٍ مفتوحةٌ له جلسةٌ يُطبَّق عليه التغييرُ عند العملية التالية.'),
         ),
       ),
     ];

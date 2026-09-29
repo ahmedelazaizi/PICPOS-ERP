@@ -197,8 +197,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
                 _readOnly(
                   svc == null
                       ? '—'
-                      : '${svc.durationMinutes} دقيقة'
-                          '${svc.bufferMinutes > 0 ? ' (+${svc.bufferMinutes} فاصل)' : ''}',
+                      : tr('{p0} دقيقة{p1}', {'p0': svc.durationMinutes, 'p1': svc.bufferMinutes > 0 ? ' (+${svc.bufferMinutes} فاصل)' : ''}),
                 ),
               ),
             ),
@@ -234,8 +233,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
           // يُنشئ سندَ قبضٍ مقابلَه حسابُ التزامٍ، ويُخصَم عند التفويتر.
           _note(
             PhosphorIconsBold.wallet,
-            'سيُسجَّل سندُ قبضٍ بالعربون فور الحفظ، ويُخصَم من الفاتورة عند '
-            'التفويتر.',
+            tr('سيُسجَّل سندُ قبضٍ بالعربون فور الحفظ، ويُخصَم من الفاتورة عند التفويتر.'),
             AppColors.info,
           ),
         ],

@@ -242,11 +242,10 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
               ),
               if (_allBranches && !allBranchesAllowed) ...[
                 const SizedBox(height: 12),
-                const PicPosDialogBanner(
+                 PicPosDialogBanner(
                   icon: PhosphorIconsBold.warning,
                   color: AppColors.warning,
-                  text: 'غيرُ متاحٍ لهذا الدور — وبلا إسنادِ فرعٍ لن يرى '
-                      'المستخدمُ أيَّ فاتورةٍ ولو أصدرها بنفسه.',
+                  text: tr('غيرُ متاحٍ لهذا الدور — وبلا إسنادِ فرعٍ لن يرى المستخدمُ أيَّ فاتورةٍ ولو أصدرها بنفسه.'),
                 ),
               ],
             ],
@@ -382,11 +381,10 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
               roles.where((r) => r.id == selectedRoleId).firstOrNull?.name,
             )
                 ? null
-                : const Text(
-                    'غيرُ متاحٍ لهذا الدور — بلا إسنادِ فرعٍ لن يرى '
-                    'المستخدمُ أيَّ فاتورةٍ ولو أصدرها بنفسه.',
+                :  Text(
+                    tr('غيرُ متاحٍ لهذا الدور — بلا إسنادِ فرعٍ لن يرى المستخدمُ أيَّ فاتورةٍ ولو أصدرها بنفسه.'),
                     style:
-                        TextStyle(fontSize: 11, color: AppColors.warning),
+                        const TextStyle(fontSize: 11, color: AppColors.warning),
                   ),
             value: true,
             groupValue: _allBranches,

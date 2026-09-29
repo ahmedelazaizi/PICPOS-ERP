@@ -490,10 +490,9 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
-            'شاشة العميل عبر الشبكة تعمل تلقائياً عند تشغيل السيرفر من إعدادات وضع الشبكة. '
-            'يمكن لأي جهاز (تابلت، هاتف) على نفس الشبكة فتح الرابط أعلاه.',
-            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+           Text(
+            tr('شاشة العميل عبر الشبكة تعمل تلقائياً عند تشغيل السيرفر من إعدادات وضع الشبكة. يمكن لأي جهاز (تابلت، هاتف) على نفس الشبكة فتح الرابط أعلاه.'),
+            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
           ),
           const SizedBox(height: 8),
           if (!_ns.isServerRunning)
@@ -785,10 +784,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
             monitorIndex: _selectedMonitor,
           );
           if (!result) {
-            errorDetail = 'تعذر فتح المنفذ. تأكد من:\n'
-                '• عدم استخدام المنفذ من برنامج آخر\n'
-                '• تثبيت الدرايفر الصحيح\n'
-                '• توصيل الشاشة بشكل صحيح';
+            errorDetail = tr('تعذر فتح المنفذ. تأكد من:\n• عدم استخدام المنفذ من برنامج آخر\n• تثبيت الدرايفر الصحيح\n• توصيل الشاشة بشكل صحيح');
           }
         }
       } else {
@@ -798,9 +794,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
         diagnostics[tr('الشاشة المحددة')] = tr('شاشة رقم {_selectedMonitor}', {'_selectedMonitor': _selectedMonitor});
 
         if (monitors.length <= 1) {
-          errorDetail = 'لم يتم اكتشاف شاشة ثانية.\n'
-              '• تأكد من توصيل الشاشة عبر HDMI/DisplayPort\n'
-              '• اضبط الشاشة كـ "Extended Display" من إعدادات Windows';
+          errorDetail = tr('لم يتم اكتشاف شاشة ثانية.\n• تأكد من توصيل الشاشة عبر HDMI/DisplayPort\n• اضبط الشاشة كـ "Extended Display" من إعدادات Windows');
         } else {
           result = await _cfd.testConnection(
             _selectedType,

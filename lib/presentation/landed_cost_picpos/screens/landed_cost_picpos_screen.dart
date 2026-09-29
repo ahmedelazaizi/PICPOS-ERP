@@ -313,8 +313,7 @@ class _LandedCostPicposScreenState
             ? tr('لا أوراقَ تحميلٍ بعد')
             : tr('لا ورقةَ تطابق «{_query}»', {'_query': _query}),
         hint: _query.isEmpty
-            ? 'ورقةُ التحميل تُنشأ على فاتورة شراءٍ قائمة، ثمّ تُضاف بنودُ '
-                'التكلفة فتُوزَّع على أصناف الفاتورة.'
+            ? tr('ورقةُ التحميل تُنشأ على فاتورة شراءٍ قائمة، ثمّ تُضاف بنودُ التكلفة فتُوزَّع على أصناف الفاتورة.')
             : null,
       );
     }
@@ -537,9 +536,7 @@ class _LandedCostPicposScreenState
                         invoice.when(
                           data: (inv) => inv == null
                               ? tr('فاتورة الشراء #{p0}', {'p0': s.purchaseInvoiceId})
-                              : 'فاتورة الشراء ${inv.invoiceNumber}'
-                                  '${inv.partyName == null ? '' : ' · ${inv.partyName}'}'
-                                  ' · ${DateFormat('yyyy-MM-dd').format(inv.invoiceDate)}',
+                              : tr('فاتورة الشراء {p0}{p1} · {p2}', {'p0': inv.invoiceNumber, 'p1': inv.partyName == null ? '' : ' · ${inv.partyName}', 'p2': DateFormat('yyyy-MM-dd').format(inv.invoiceDate)}),
                           // العارضُ يبتلع رمْيَ SQL في بطاقة، فالإخفاقُ يُقال
                           // صراحةً بدل أن يبدو التقريرُ عاملاً وهو ليس كذلك.
                           error: (_, _) => tr('تعذّر قراءةُ فاتورة الشراء'),
@@ -932,8 +929,7 @@ class _LandedCostPicposScreenState
   Widget _allocationTable(LandedCostSheetView s, _Computed c) {
     return PicPosDataTable(
       title: tr('جدول التوزيع على الأصناف'),
-      subtitle: 'التكلفة الأصلية زائد المحمَّل يساوي التكلفة الجديدة — وهي ما '
-          'يُقيَّد في المخزون · فرق التقريب يُحمَّل على أكبر بند',
+      subtitle: tr('التكلفة الأصلية زائد المحمَّل يساوي التكلفة الجديدة — وهي ما يُقيَّد في المخزون · فرق التقريب يُحمَّل على أكبر بند'),
       minWidth: 980,
       columns:  [
         PicPosTableColumn(tr('الصنف'), flex: 2),
@@ -1200,8 +1196,7 @@ class _LandedCostPicposScreenState
         icon: const Icon(PhosphorIconsBold.warning, color: _warn),
         title:  Text(tr('تطبيق ورقة التحميل')),
         content: Text(
-          'سيُنشأ قيدٌ بقيمة ${_money0.format(s.totalCost)} وتتغيّر تكلفةُ '
-          'الوحدة لكلّ صنفٍ في الورقة. ولا رجوعَ عن ذلك إلّا بإلغاء التطبيق.',
+          tr('سيُنشأ قيدٌ بقيمة {p0} وتتغيّر تكلفةُ الوحدة لكلّ صنفٍ في الورقة. ولا رجوعَ عن ذلك إلّا بإلغاء التطبيق.', {'p0': _money0.format(s.totalCost)}),
         ),
         actions: [
           TextButton(

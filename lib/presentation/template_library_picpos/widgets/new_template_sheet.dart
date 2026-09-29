@@ -74,8 +74,7 @@ class _NewTemplateSheetState extends ConsumerState<_NewTemplateSheet> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'ابدأ من نموذجٍ جاهز — كلُّها قابلةٌ للتعديل بالكامل بعد '
-                'الإنشاء، وتُنشأ **بلا رابطات** فلا تخطف مستنداً.',
+                tr('ابدأ من نموذجٍ جاهز — كلُّها قابلةٌ للتعديل بالكامل بعد الإنشاء، وتُنشأ **بلا رابطات** فلا تخطف مستنداً.'),
                 style: TextStyle(fontSize: 11.5, color: context.picposMuted),
               ),
             ),

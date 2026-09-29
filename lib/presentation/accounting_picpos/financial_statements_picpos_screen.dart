@@ -1672,9 +1672,7 @@ class _FinancialStatementsPicPosScreenState
       branchLine = tr('تعذّر حساب معاينة إصلاح مراكز الفروع.');
     } else if (preview.hasWork) {
       branchLine =
-          'قيود آلية مسجّلة على «عام» وتخص فروعاً لها مركز تكلفة خاص: '
-          '${preview.affectedEntries} قيد / ${preview.affectedLines} سطر — '
-          'ستُنقل إلى مركز تكلفة الفرع.';
+          tr('قيود آلية مسجّلة على «عام» وتخص فروعاً لها مركز تكلفة خاص: {p0} قيد / {p1} سطر — ستُنقل إلى مركز تكلفة الفرع.', {'p0': preview.affectedEntries, 'p1': preview.affectedLines});
     } else {
       branchLine = tr('لا توجد قيود بحاجة لإعادة التوزيع على مراكز الفروع.');
     }

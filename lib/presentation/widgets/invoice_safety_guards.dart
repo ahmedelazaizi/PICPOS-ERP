@@ -77,9 +77,7 @@ class CreditLimitWarningBanner extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'الحد: ${_currFmt.format(customer!.creditLimit)} | '
-                  'الرصيد الحالي: ${_currFmt.format(customer!.balance)} | '
-                  'المتاح: ${_currFmt.format(customer!.availableCredit)}',
+                  tr('الحد: {p0} | الرصيد الحالي: {p1} | المتاح: {p2}', {'p0': _currFmt.format(customer!.creditLimit), 'p1': _currFmt.format(customer!.balance), 'p2': _currFmt.format(customer!.availableCredit)}),
                   style: GoogleFonts.cairo(
                     fontSize: 10,
                     color: AppColors.textMuted,

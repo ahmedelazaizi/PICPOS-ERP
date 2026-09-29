@@ -271,8 +271,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
           if (!mounted) return;
           AppToast.show(
             context,
-            '⚠️ فاتورة #${result.orphanInvoiceId} صدرت ورُحِّلت لكن لم '
-            'تُسجَّل على ${widget.sourceTable.name} — راجع الطاولةَ يدويّاً',
+            tr('⚠️ فاتورة #{p0} صدرت ورُحِّلت لكن لم تُسجَّل على {p1} — راجع الطاولةَ يدويّاً', {'p0': result.orphanInvoiceId, 'p1': widget.sourceTable.name}),
             type: ToastType.error,
           );
           setState(() => _processing = false);
@@ -306,9 +305,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
             entityType: 'table',
             entityId: widget.sourceTable.id,
             description:
-                'فاتورةٌ #${result.orphanInvoiceId} صدرت ورُحِّلت في تقسيم '
-                '${widget.sourceTable.name}، لكن تعذّر تسجيلُ دفعتها — '
-                'يحتاج تسويةً يدويّة. ${result.message ?? ''}',
+                tr('فاتورةٌ #{p0} صدرت ورُحِّلت في تقسيم {p1}، لكن تعذّر تسجيلُ دفعتها — يحتاج تسويةً يدويّة. {p2}', {'p0': result.orphanInvoiceId, 'p1': widget.sourceTable.name, 'p2': result.message ?? ''}),
             amount: result.orphanAmount,
           );
     } catch (_) {}
@@ -523,10 +520,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${done.isEmpty ? 'حُصِّل من هذا الحساب' : 'هذا الحسابُ مقسَّمٌ ومُحصَّلٌ جزئيّاً:'} '
-                  '${_paidSoFar.toStringAsFixed(AppConstants.decimalPlaces)} '
-                  'من ${_total.toStringAsFixed(AppConstants.decimalPlaces)} '
-                  '${AppConstants.currencySymbolEn}.',
+                  tr('{p0} {p1} من {p2} {p3}.', {'p0': done.isEmpty ? 'حُصِّل من هذا الحساب' : 'هذا الحسابُ مقسَّمٌ ومُحصَّلٌ جزئيّاً:', 'p1': _paidSoFar.toStringAsFixed(AppConstants.decimalPlaces), 'p2': _total.toStringAsFixed(AppConstants.decimalPlaces), 'p3': AppConstants.currencySymbolEn}),
                   style: const TextStyle(
                       fontSize: 12, fontWeight: FontWeight.bold),
                 ),
@@ -538,12 +532,8 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
                       // تحصيلٌ بلا تسمية (من شاشة الطاولة لا من التقسيم):
                       // لا حصّةَ تُقارَن به، والخطّةُ تُبنى على الإجماليّ
                       // كاملاً — فالتنبيهُ هنا أن التقسيمَ قد لا يستقيم.
-                      ? 'هذا التحصيلُ ليس حصّةَ تقسيم، فلا تُقابله تسميةٌ '
-                          'تُستأنَف. راجِع المتبقّي من شاشة الطاولة قبل '
-                          'التقسيم.'
-                      : 'أعِد إدخال نفسِ التركيبة التي سُوِّيت عليها هذه '
-                          'الحصص ثم أكمِل الباقي. تركيبةٌ مخالفةٌ تُرفَض قبل '
-                          'إصدار أيّ فاتورة، فلا يضيع مالٌ بصمت.',
+                      ? tr('هذا التحصيلُ ليس حصّةَ تقسيم، فلا تُقابله تسميةٌ تُستأنَف. راجِع المتبقّي من شاشة الطاولة قبل التقسيم.')
+                      : tr('أعِد إدخال نفسِ التركيبة التي سُوِّيت عليها هذه الحصص ثم أكمِل الباقي. تركيبةٌ مخالفةٌ تُرفَض قبل إصدار أيّ فاتورة، فلا يضيع مالٌ بصمت.'),
                   style: const TextStyle(fontSize: 12),
                 ),
               ],
@@ -577,8 +567,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
         ),
         const Spacer(),
         Text(
-          'الإجماليُّ: ${_total.toStringAsFixed(AppConstants.decimalPlaces)} '
-          '${AppConstants.currencySymbolEn}',
+          tr('الإجماليُّ: {p0} {p1}', {'p0': _total.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
           style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
         ),
       ],
@@ -642,8 +631,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            'المتبقّي: ${remaining.toStringAsFixed(AppConstants.decimalPlaces)} '
-            '${AppConstants.currencySymbolEn}',
+            tr('المتبقّي: {p0} {p1}', {'p0': remaining.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontWeight: FontWeight.bold,
@@ -740,8 +728,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
     final plan = preview.plan!;
     final message = plan.producesSeparateInvoices
         ? tr('سيصدر لكلّ ضيفٍ فاتورةٌ مستقلّةٌ بأصنافه — {p0} فواتيرَ منفصلة.', {'p0': plan.parts.length})
-        : 'الفاتورةُ واحدةٌ لكلّ الأصناف، ولكلّ دافعٍ إيصالُ حصّته — '
-            'فاتورةٌ واحدة و${plan.parts.length} إيصالات.';
+        : tr('الفاتورةُ واحدةٌ لكلّ الأصناف، ولكلّ دافعٍ إيصالُ حصّته — فاتورةٌ واحدة و{p0} إيصالات.', {'p0': plan.parts.length});
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(8),
@@ -779,8 +766,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
                 LinearProgressIndicator(value: progress),
                 const SizedBox(height: 12),
                 Text(
-                  'دُفع ${_paidSoFar.toStringAsFixed(AppConstants.decimalPlaces)} '
-                  'من ${_total.toStringAsFixed(AppConstants.decimalPlaces)}',
+                  tr('دُفع {p0} من {p1}', {'p0': _paidSoFar.toStringAsFixed(AppConstants.decimalPlaces), 'p1': _total.toStringAsFixed(AppConstants.decimalPlaces)}),
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ],

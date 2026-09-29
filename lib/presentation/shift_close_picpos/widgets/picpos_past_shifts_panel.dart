@@ -182,9 +182,8 @@ class _PicposPastShiftsPanelState
           textDirection: TextDirection.rtl,
           child: AlertDialog(
             title: Text(tr('وردية #{p0} لسه مفتوحة', {'p0': shift.id})),
-            content: const Text(
-              'الوردية دي لسه ما اتقفلتش، فمفيش تقرير أرصدة ليها. '
-              'تحب تقفلها دلوقتي؟',
+            content:  Text(
+              tr('الوردية دي لسه ما اتقفلتش، فمفيش تقرير أرصدة ليها. تحب تقفلها دلوقتي؟'),
             ),
             actions: [
               TextButton(
@@ -484,17 +483,15 @@ class _ShiftReportDialog extends StatelessWidget {
                       border: Border.all(
                           color: AppColors.warning.withValues(alpha: 0.4)),
                     ),
-                    child: const Row(
+                    child:  Row(
                       children: [
-                        Icon(PhosphorIconsBold.warningCircle,
+                        const Icon(PhosphorIconsBold.warningCircle,
                             size: 16, color: AppColors.warning),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'معاد احتسابه — بدون لقطة أصلية. الوردية دي اتقفلت '
-                            'قبل حفظ لقطة الإغلاق، فالمبالغ الفعلية للبطاقة '
-                            'وكليك غير متاحة.',
-                            style: TextStyle(fontSize: 11),
+                            tr('معاد احتسابه — بدون لقطة أصلية. الوردية دي اتقفلت قبل حفظ لقطة الإغلاق، فالمبالغ الفعلية للبطاقة وكليك غير متاحة.'),
+                            style: const TextStyle(fontSize: 11),
                           ),
                         ),
                       ],

@@ -400,9 +400,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               color: AppColors.primary,
                             ),
                             title:  Text(tr('تدقيق مزامنة المرآة')),
-                            subtitle: const Text(
-                              'مقارنة البيانات الأساسية محلياً مع السيرفر + '
-                              'إعادة المزامنة الكاملة عند الحاجة',
+                            subtitle:  Text(
+                              tr('مقارنة البيانات الأساسية محلياً مع السيرفر + إعادة المزامنة الكاملة عند الحاجة'),
                             ),
                             trailing:
                                 const Icon(PhosphorIconsBold.caretLeft),
@@ -418,9 +417,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               color: AppColors.warning,
                             ),
                             title:  Text(tr('تدقيق ازدواج شيكات القبض')),
-                            subtitle: const Text(
-                              'سرد العملاء الذين تأثرت أرصدتهم بازدواج تسجيل '
-                              'سندات قبض الشيكات قبل الإصلاح',
+                            subtitle:  Text(
+                              tr('سرد العملاء الذين تأثرت أرصدتهم بازدواج تسجيل سندات قبض الشيكات قبل الإصلاح'),
                             ),
                             trailing:
                                 const Icon(PhosphorIconsBold.caretLeft),
@@ -1200,10 +1198,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           tr('أدوات المطوّر'),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: const Text(
-          'تغيير ملف النشاط، نمط التشغيل، الميزات وكلمة مرور المطوّر '
-          '(محمى بكلمة مرور منفصلة).',
-          style: TextStyle(fontSize: 12),
+        subtitle:  Text(
+          tr('تغيير ملف النشاط، نمط التشغيل، الميزات وكلمة مرور المطوّر (محمى بكلمة مرور منفصلة).'),
+          style: const TextStyle(fontSize: 12),
         ),
         trailing: const Icon(PhosphorIconsBold.caretLeft),
         onTap: () => Navigator.push(

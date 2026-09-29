@@ -175,8 +175,7 @@ class TemplateDetailPanel extends ConsumerWidget {
       if (context.mounted) {
         _toast(
           context,
-          'لا يُحذف «${c.name}»: مربوطٌ بـ${c.bindings.length} مستند. '
-          'فُكَّ الرابطةَ أوّلاً.',
+          tr('لا يُحذف «{p0}»: مربوطٌ بـ{p1} مستند. فُكَّ الرابطةَ أوّلاً.', {'p0': c.name, 'p1': c.bindings.length}),
           AppColors.error,
         );
       }

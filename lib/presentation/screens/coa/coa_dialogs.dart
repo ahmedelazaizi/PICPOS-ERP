@@ -163,10 +163,7 @@ void showAddAccountDialog(
                   if (context.mounted) {
                     AppToast.show(
                       context,
-                      'يوجد حساب باسم "$trimmedName" تحت نفس الأب '
-                      '(الكود ${dupSafeAccount.code}). '
-                      'لتجنّب التكرار، أنشئ الصندوق من شاشة "إدارة الصناديق" '
-                      'وسيتم ربط الحساب تلقائياً.',
+                      tr('يوجد حساب باسم "{trimmedName}" تحت نفس الأب (الكود {p0}). لتجنّب التكرار، أنشئ الصندوق من شاشة "إدارة الصناديق" وسيتم ربط الحساب تلقائياً.', {'trimmedName': trimmedName, 'p0': dupSafeAccount.code}),
                       type: ToastType.error,
                     );
                   }

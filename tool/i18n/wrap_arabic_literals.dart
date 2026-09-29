@@ -105,6 +105,13 @@ class _NonUiUnwrapper extends RecursiveAstVisitor<void> {
   }
 }
 
+class _TextTemplate {
+  const _TextTemplate(this.value, this.arguments);
+
+  final String value;
+  final Map<String, String> arguments;
+}
+
 class _ArabicVisitor extends RecursiveAstVisitor<void> {
   _ArabicVisitor(this.source, this.path);
 
@@ -113,6 +120,30 @@ class _ArabicVisitor extends RecursiveAstVisitor<void> {
   final edits = <_Edit>[];
   final constChanges = <int, String>{};
   final skipped = <String, int>{};
+
+  @override
+  void visitAdjacentStrings(AdjacentStrings node) {
+    final parts = _literalParts(node);
+    if (parts == null) {
+      super.visitAdjacentStrings(node);
+      return;
+    }
+    _visitLiteralGroup(node, parts);
+  }
+
+  @override
+  void visitBinaryExpression(BinaryExpression node) {
+    if (node.operator.lexeme != '+') {
+      super.visitBinaryExpression(node);
+      return;
+    }
+    final parts = _literalParts(node);
+    if (parts == null) {
+      super.visitBinaryExpression(node);
+      return;
+    }
+    _visitLiteralGroup(node, parts);
+  }
 
   @override
   void visitSimpleStringLiteral(SimpleStringLiteral node) {
@@ -146,35 +177,74 @@ class _ArabicVisitor extends RecursiveAstVisitor<void> {
     }
   }
 
-  String? _replacement(StringLiteral node) {
-    if (node is StringInterpolation) {
-      final template = StringBuffer();
-      final arguments = <String, String>{};
-      var complexIndex = 0;
-      for (final element in node.elements) {
-        if (element is InterpolationString) {
-          template.write(element.value);
-        } else if (element is InterpolationExpression) {
-          final expression = element.expression;
-          if (expression is SimpleIdentifier) {
-            final name = expression.name;
-            template.write('{$name}');
-            arguments[name] = name;
-          } else {
-            final name = 'p${complexIndex++}';
-            template.write('{$name}');
-            arguments[name] = expression.toSource();
-          }
-        }
-      }
-      return _trCall(template.toString(), arguments);
-    }
-    final value = node.stringValue;
-    if (value == null) return null;
-    return _trCall(value, const <String, String>{});
+  List<StringLiteral>? _literalParts(Expression node) {
+    if (node is AdjacentStrings) return node.strings;
+    if (node is StringLiteral) return [node];
+    if (node is! BinaryExpression || node.operator.lexeme != '+') return null;
+    final left = _literalParts(node.leftOperand);
+    final right = _literalParts(node.rightOperand);
+    if (left == null || right == null) return null;
+    return [...left, ...right];
   }
 
-  String? _skipReason(StringLiteral node) {
+  void _visitLiteralGroup(Expression node, List<StringLiteral> parts) {
+    final template = _templateFor(parts);
+    if (template == null || !_containsArabic(template.value)) return;
+    final skipReason = _skipReason(parts.first, allowLiteralGroup: true);
+    if (skipReason != null) {
+      skipped[skipReason] = (skipped[skipReason] ?? 0) + 1;
+      return;
+    }
+    edits.add(_Edit(node.offset, node.end,
+        _trCall(template.value, template.arguments)));
+    for (final change in _constKeywordChanges(parts.first)) {
+      constChanges[change.offset] = change.replacement;
+    }
+  }
+
+  _TextTemplate? _templateFor(List<StringLiteral> parts) {
+    final template = StringBuffer();
+    final arguments = <String, String>{};
+    var complexIndex = 0;
+    for (final part in parts) {
+      if (part is SimpleStringLiteral) {
+        final value = part.stringValue;
+        if (value == null) return null;
+        template.write(value);
+        continue;
+      }
+      if (part is! StringInterpolation) return null;
+      for (final element in part.elements) {
+        if (element is InterpolationString) {
+          template.write(element.value);
+          continue;
+        }
+        final expression = (element as InterpolationExpression).expression;
+        var name = expression is SimpleIdentifier
+            ? expression.name
+            : 'p${complexIndex++}';
+        while (arguments.containsKey(name)) {
+          name = 'p${complexIndex++}';
+        }
+        template.write('{$name}');
+        arguments[name] = expression is SimpleIdentifier
+            ? name
+            : expression.toSource();
+      }
+    }
+    return _TextTemplate(template.toString(), arguments);
+  }
+
+  String? _replacement(StringLiteral node) {
+    final template = _templateFor([node]);
+    if (template == null) return null;
+    return _trCall(template.value, template.arguments);
+  }
+
+  String? _skipReason(
+    StringLiteral node, {
+    bool allowLiteralGroup = false,
+  }) {
     if (_hasI18nIgnoreComment(node)) return 'i18n_ignore';
     if (_hasRegExpAncestor(node)) return 'non_ui_operation';
     if (_isPersistedWriteArgument(node)) return 'persisted_write';
@@ -194,7 +264,9 @@ class _ArabicVisitor extends RecursiveAstVisitor<void> {
     }
     if (_hasAncestor<ConstantPattern>(node)) return 'pattern';
     if (_hasAncestor<EnumConstantDeclaration>(node)) return 'enum_constant';
-    if (_hasAncestor<AdjacentStrings>(node)) return 'adjacent_string';
+    if (!allowLiteralGroup && _hasAncestor<AdjacentStrings>(node)) {
+      return 'adjacent_string';
+    }
     final value = node.stringValue;
     if (value != null && _isNonUiToken(value)) return 'non_ui_token';
     if (_hasAncestor<StringInterpolation>(node)) {

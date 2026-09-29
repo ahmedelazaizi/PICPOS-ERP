@@ -1049,11 +1049,9 @@ class PermissionCodes {
     'system_updates': tr('محجوز — الخاصية ما اتبنتش'),
     // ── أثر داخلي جوه عملية تانية، مش فعل يقدر المستخدم يستدعيه لوحده ──
     'delete_posted_journal':
-        'أثر داخلي جوه عكس قيد اليومية القديم عند تعديل أو إلغاء فاتورة '
-        'مرحّلة (_reverseOldXJournalEntry)، مش فعل للمستخدم',
+        tr('أثر داخلي جوه عكس قيد اليومية القديم عند تعديل أو إلغاء فاتورة مرحّلة (_reverseOldXJournalEntry)، مش فعل للمستخدم'),
     'purchases_return_delete':
-        'أثر داخلي جوه تعديل مرتجع الشراء (editPurchaseReturn عبر '
-        '_reversePurchaseReturn)، مش فعل للمستخدم',
+        tr('أثر داخلي جوه تعديل مرتجع الشراء (editPurchaseReturn عبر _reversePurchaseReturn)، مش فعل للمستخدم'),
   };
 
   // ═══════════════════════════════════════════════════════════════════════════

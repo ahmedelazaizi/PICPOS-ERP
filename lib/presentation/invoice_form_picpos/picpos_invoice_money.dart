@@ -666,8 +666,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
       } else {
         items.add(_Notice(
           PhosphorIconsBold.arrowSquareIn,
-          'سيُضاف للمخزن $qty وحدة عند الحفظ، ويُحدَّث متوسط سعر التكلفة '
-              'لكل صنف.',
+          tr('سيُضاف للمخزن {qty} وحدة عند الحفظ، ويُحدَّث متوسط سعر التكلفة لكل صنف.', {'qty': qty}),
           AppColors.info,
         ));
       }
@@ -742,8 +741,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
       // أصلاً (خدمة). فيُتخطّى بدل أن يُتَّهم بالنقص.
       if (have == null) continue;
       if (l.quantity > have) {
-        short.add('${l.productName} (متاح '
-            '${have.toStringAsFixed(AppConstants.decimalPlaces)})');
+        short.add(tr('{p0} (متاح {p1})', {'p0': l.productName, 'p1': have.toStringAsFixed(AppConstants.decimalPlaces)}));
       }
     }
     if (short.isEmpty) return null;

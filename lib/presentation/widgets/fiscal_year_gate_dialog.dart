@@ -37,19 +37,15 @@ class FiscalYearGateDialog {
       if (currentFy == null) {
         // No fiscal year at all
         message =
-            'لا توجد سنة مالية مفتوحة حالياً.\n'
-            'يجب فتح سنة مالية جديدة لتتمكن من تسجيل العمليات.';
+            tr('لا توجد سنة مالية مفتوحة حالياً.\nيجب فتح سنة مالية جديدة لتتمكن من تسجيل العمليات.');
       } else if (currentFy.endDate.isBefore(now)) {
         // Fiscal year has expired
         message =
-            'انتهت السنة المالية "${currentFy.name}" '
-            'بتاريخ ${_formatDate(currentFy.endDate)}.\n'
-            'يرجى التواصل مع الشركة المصممة لفتح سنة مالية جديدة.';
+            tr('انتهت السنة المالية "{p0}" بتاريخ {p1}.\nيرجى التواصل مع الشركة المصممة لفتح سنة مالية جديدة.', {'p0': currentFy.name, 'p1': _formatDate(currentFy.endDate)});
       } else if (currentFy.isClosed) {
         // Fiscal year is closed
         message =
-            'السنة المالية "${currentFy.name}" مغلقة.\n'
-            'يرجى فتح سنة مالية جديدة لتتمكن من تسجيل العمليات.';
+            tr('السنة المالية "{p0}" مغلقة.\nيرجى فتح سنة مالية جديدة لتتمكن من تسجيل العمليات.', {'p0': currentFy.name});
       }
 
       if (message == null) return false; // All good

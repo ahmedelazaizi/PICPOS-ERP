@@ -98,8 +98,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(table.status == TableStatus.paid
-                      ? 'حسابُ هذه الطاولة سُدِّد. سيُغلَق طلبُها المدفوع '
-                          'ويُفتح طلبٌ جديدٌ بفاتورةٍ ثانية.'
+                      ? tr('حسابُ هذه الطاولة سُدِّد. سيُغلَق طلبُها المدفوع ويُفتح طلبٌ جديدٌ بفاتورةٍ ثانية.')
                       : tr('هل تريد فتح طلب جديد لهذه الطاولة؟')),
                   const SizedBox(height: 12),
                   Row(

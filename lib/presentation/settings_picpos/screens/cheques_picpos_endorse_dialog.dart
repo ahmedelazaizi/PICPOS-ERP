@@ -225,10 +225,9 @@ class _EndorseDialogState extends State<_EndorseDialog> {
         ),
         // ⚠️ نصٌّ لا مفتاح: لا عمودَ لمسؤولية الضمان في القاعدة — راجع
         //    تعليقَ الرأس. والقاعدةُ نفسُها صحيحةٌ في كلّ الأحوال.
-        const PicPosDialogBanner(
+         PicPosDialogBanner(
           icon: PhosphorIconsBold.shieldWarning,
-          text: 'المُجيِّر ضامنٌ للوفاء: لو ارتجعت الورقة عاد الالتزامُ على '
-              'منشأتنا لا على الطرف الأصليّ.',
+          text: tr('المُجيِّر ضامنٌ للوفاء: لو ارتجعت الورقة عاد الالتزامُ على منشأتنا لا على الطرف الأصليّ.'),
           color: AppColors.error,
         ),
       ],

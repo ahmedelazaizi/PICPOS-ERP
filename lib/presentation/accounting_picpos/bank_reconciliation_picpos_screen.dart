@@ -689,12 +689,10 @@ class _BankReconciliationPicposScreenState
       final outOfPeriod = _allLinesOutsidePeriod(lines);
       var message = tr('استُورد {p0} سطراً', {'p0': _arabicDigits(n)});
       if (hasErrors) {
-        message += '، ورُفض ${_arabicDigits(errors.length)}: '
-            '${errors.join('؛ ')}';
+        message += tr('، ورُفض {p0}: {p1}', {'p0': _arabicDigits(errors.length), 'p1': errors.join('؛ ')});
       }
       if (outOfPeriod) {
-        message += ' — ولا سطرَ منها يقع في الفترة المختارة، فلن تظهر في '
-            'المطابقة';
+        message += tr(' — ولا سطرَ منها يقع في الفترة المختارة، فلن تظهر في المطابقة');
       }
       AppToast.show(context, message,
           type: hasErrors || outOfPeriod
@@ -1058,8 +1056,7 @@ class _BankReconciliationPicposScreenState
       context,
       icon: PhosphorIconsBold.lockSimple,
       title: tr('إقفال جلسة المطابقة'),
-      message: 'الفرقُ الحاليّ: ${_money.format(difference)}. إقفالُ الجلسة '
-          'يجب تصفير الفرق أو اختيار حساب تسوية صريح قبل الإقفال.',
+      message: tr('الفرقُ الحاليّ: {p0}. إقفالُ الجلسة يجب تصفير الفرق أو اختيار حساب تسوية صريح قبل الإقفال.', {'p0': _money.format(difference)}),
       confirmLabel: tr('إقفال'),
     );
     if (!proceed || !mounted) return;

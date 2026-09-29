@@ -121,8 +121,7 @@ class _PicPosAttachmentsPanelState
       context,
       icon: PhosphorIconsBold.trash,
       title: tr('حذفُ مرفق'),
-      message: 'يُحذَف «${row.fileName}» ولا يعود ملفُّه. '
-          'ويبقى في المستند أثرُ أنَّ ورقةً كانت معه.',
+      message: tr('يُحذَف «{p0}» ولا يعود ملفُّه. ويبقى في المستند أثرُ أنَّ ورقةً كانت معه.', {'p0': row.fileName}),
       confirmLabel: tr('حذف'),
       danger: true,
     );
@@ -228,8 +227,7 @@ class _PicPosAttachmentsPanelState
       return _shell([
         _header(0),
         const SizedBox(height: Spacing.xs),
-        _notice('احفظ $label أوّلاً — المرفقُ يُربَط بهُويّته لا برقمه '
-            'على هذا الجهاز.', key: const Key('attachments_locked')),
+        _notice(tr('احفظ {label} أوّلاً — المرفقُ يُربَط بهُويّته لا برقمه على هذا الجهاز.', {'label': label}), key: const Key('attachments_locked')),
       ]);
     }
 
@@ -264,8 +262,7 @@ class _PicPosAttachmentsPanelState
             _header(0),
             const SizedBox(height: Spacing.xs),
             _notice(
-                'لم يَنَل $label هُويّتَه العالميّةَ بعد — يُرفَق بعد أوّل '
-                'مزامنةٍ أو إعادةِ حفظ.',
+                tr('لم يَنَل {label} هُويّتَه العالميّةَ بعد — يُرفَق بعد أوّل مزامنةٍ أو إعادةِ حفظ.', {'label': label}),
                 key: const Key('attachments_locked')),
           ]);
         }

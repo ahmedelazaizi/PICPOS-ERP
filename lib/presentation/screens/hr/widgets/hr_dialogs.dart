@@ -127,8 +127,7 @@ class HRDialogs {
                     decoration:  InputDecoration(
                       labelText: tr('ساعات العمل اليومية'),
                       helperText:
-                          'مطلوب لأجر الساعة، ويُستعمل لاحتساب الوقت '
-                          'الإضافي تلقائياً',
+                          tr('مطلوب لأجر الساعة، ويُستعمل لاحتساب الوقت الإضافي تلقائياً'),
                       helperMaxLines: 2,
                       prefixIcon: const Icon(PhosphorIconsBold.timer),
                     ),

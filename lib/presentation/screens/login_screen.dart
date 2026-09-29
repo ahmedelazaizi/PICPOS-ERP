@@ -21,6 +21,8 @@ import '../../services/login_rate_limiter.dart';
 import '../../services/network_service.dart';
 import '../../services/server_proxy.dart';
 import '../widgets/dialogs/force_change_password_dialog.dart';
+import '../widgets/user_language_selector.dart';
+import '../../core/i18n/locale_provider.dart';
 
 /// Login screen for user authentication.
 ///
@@ -508,8 +510,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final locale = ref.watch(userLocaleProvider);
+    final direction = locale.languageCode == 'en'
+        ? TextDirection.ltr
+        : TextDirection.rtl;
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: direction,
       child: KeyboardListener(
         focusNode: FocusNode(),
         autofocus: true,
@@ -561,7 +567,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   start: 60,
                   child: _decorBlob(36, 0.05, square: true),
                 ),
-
                 SafeArea(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
@@ -588,6 +593,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       );
                     },
+                  ),
+                ),
+                const PositionedDirectional(
+                  top: 16,
+                  end: 16,
+                  child: SizedBox(
+                    width: 150,
+                    child: UserLanguageToggle(),
                   ),
                 ),
               ],

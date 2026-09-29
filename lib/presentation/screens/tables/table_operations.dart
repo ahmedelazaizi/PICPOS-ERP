@@ -456,9 +456,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
                 ],
               ),
               content: Text(
-                'سيُلغى طلبُ ${table.name} بالكامل وتعود الطاولةُ متاحة. '
-                'هذا هدمٌ لا رجعةَ فيه — ولا يُقبل إن كان قد دُفع من الطلب '
-                'شيء.',
+                tr('سيُلغى طلبُ {p0} بالكامل وتعود الطاولةُ متاحة. هذا هدمٌ لا رجعةَ فيه — ولا يُقبل إن كان قد دُفع من الطلب شيء.', {'p0': table.name}),
               ),
               actions: [
                 TextButton(

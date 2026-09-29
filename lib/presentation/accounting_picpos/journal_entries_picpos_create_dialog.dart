@@ -397,8 +397,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                         icon: PhosphorIconsBold.floppyDisk,
                         title: tr('حفظ كمسودة'),
                         message:
-                            'المسودة لا تؤثر على الأرصدة، ويمكن استكمالها '
-                            'واعتمادها لاحقاً من قائمة القيود.',
+                            tr('المسودة لا تؤثر على الأرصدة، ويمكن استكمالها واعتمادها لاحقاً من قائمة القيود.'),
                         confirmLabel: tr('حفظ المسودة'),
                         details: [
                           PicPosDialogSummary(

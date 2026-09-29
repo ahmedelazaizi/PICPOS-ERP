@@ -32,9 +32,8 @@ bool isBootstrapAdmin(int userId, {String? username}) =>
 
 /// Generic message for deactivate / lock / delete attempts on the
 /// bootstrap admin. Used by DAO StateError throws and screen snackbars.
-const String bootstrapAdminGuardMessage =
-    'لا يمكن تعطيل أو قفل أو حذف المستخدم الإداري الأساسي '
-    '(يُسبّب قفل النظام بالكامل).';
+String get bootstrapAdminGuardMessage =>
+    tr('لا يمكن تعطيل أو قفل أو حذف المستخدم الإداري الأساسي (يُسبّب قفل النظام بالكامل).');
 
 /// Message for role-change attempts on the bootstrap admin.
 String get bootstrapAdminRoleGuardMessage => tr('لا يمكن تغيير دور المستخدم الإداري الأساسي.');

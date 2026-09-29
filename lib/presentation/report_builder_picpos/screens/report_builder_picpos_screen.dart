@@ -730,8 +730,7 @@ class _ReportBuilderPicposScreenState
                   ?  PicPosEmptyState(
                       icon: PhosphorIconsBold.table,
                       title: tr('لا نتيجةَ بعد'),
-                      hint: 'اختر تقريراً محفوظاً من القائمة ثمّ اضغط «تشغيل» '
-                          '— أو ابنِ تعريفاً جديداً واحفظْه أوّلاً.',
+                      hint: tr('اختر تقريراً محفوظاً من القائمة ثمّ اضغط «تشغيل» — أو ابنِ تعريفاً جديداً واحفظْه أوّلاً.'),
                     )
                   : _resultTable(),
         ),
@@ -950,8 +949,7 @@ class _ReportBuilderPicposScreenState
           await ref.read(reportingRepositoryProvider).executeReport(
                 reportId,
                 onRowLimitReached: (limit) {
-                  _truncatedNote = 'الناتجُ مقتطعٌ عند ${_ar(limit)} صفّاً — '
-                      'ضيِّقِ الشروطَ فالمجاميعُ أدناه ناقصة.';
+                  _truncatedNote = tr('الناتجُ مقتطعٌ عند {p0} صفّاً — ضيِّقِ الشروطَ فالمجاميعُ أدناه ناقصة.', {'p0': _ar(limit)});
                 },
               );
       if (!mounted) return;

@@ -718,9 +718,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                             setDialogState(() => isLoading = false);
                             AppToast.show(
                               ctx,
-                              'سعر العرض ($price) أعلى من أو يساوي مجموع أسعار '
-                              'بيع الأصناف ($normalTotal) — العرض بهذا السعر '
-                              'سيرفع الأسعار بدل خفضها.',
+                              tr('سعر العرض ({price}) أعلى من أو يساوي مجموع أسعار بيع الأصناف ({normalTotal}) — العرض بهذا السعر سيرفع الأسعار بدل خفضها.', {'price': price, 'normalTotal': normalTotal}),
                               type: ToastType.warning,
                             );
                             return;

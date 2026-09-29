@@ -1,3 +1,4 @@
+import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -61,7 +62,7 @@ class _MirrorOfflineBannerState extends State<MirrorOfflineBanner> {
     _ticker = Stream<int>.periodic(
       const Duration(seconds: 15),
       (i) => i,
-    ).asBroadcastStream();
+    );
   }
 
   @override
@@ -80,28 +81,27 @@ class _MirrorOfflineBannerState extends State<MirrorOfflineBanner> {
             if (!visible) return const SizedBox.shrink();
             return Material(
               color: AppColors.error.withValues(alpha: 0.95),
-              child: const SafeArea(
+              child:  SafeArea(
                 top: false,
                 bottom: false,
                 child: Padding(
-                  padding: EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 8,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      const Icon(
                         PhosphorIconsBold.wifiSlash,
                         color: Colors.white,
                         size: 16,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          'فقد الاتصال بـ HQ-Server — التعديلات معطّلة '
-                          'حتى يُستعاد الاتصال',
-                          style: TextStyle(
+                          tr('فقد الاتصال بـ HQ-Server — التعديلات معطّلة حتى يُستعاد الاتصال'),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,

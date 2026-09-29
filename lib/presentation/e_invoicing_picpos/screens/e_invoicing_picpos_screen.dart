@@ -466,9 +466,7 @@ class _EInvoicingPicposScreenState
           meta,
           cfg,
           sentToday,
-          'تسجيل ${cfg.registrationNumber} · نشاط ${cfg.activityCode ?? '—'}'
-          ' · فرع ${cfg.branchId ?? '—'} · إصدار ${cfg.documentVersion}'
-          ' · ترميز ${cfg.codingSystem}',
+          tr('تسجيل {p0} · نشاط {p1} · فرع {p2} · إصدار {p3} · ترميز {p4}', {'p0': cfg.registrationNumber, 'p1': cfg.activityCode ?? '—', 'p2': cfg.branchId ?? '—', 'p3': cfg.documentVersion, 'p4': cfg.codingSystem}),
           platformId: id,
         );
       },
@@ -721,8 +719,7 @@ class _EInvoicingPicposScreenState
                       ? tr('لا مستنداتٍ في الطابور')
                       : tr('لا مستندَ يطابق الترشيح'),
                   hint: all.isEmpty
-                      ? 'المستندُ يُنشأ من فاتورة البيع بعد ترحيلها، ثمّ '
-                          'يُرسَل للمنظومة ويُتابَع حتّى يُقبَل.'
+                      ? tr('المستندُ يُنشأ من فاتورة البيع بعد ترحيلها، ثمّ يُرسَل للمنظومة ويُتابَع حتّى يُقبَل.')
                       : null,
                 )
               : ListView.builder(
@@ -1126,8 +1123,7 @@ class _EInvoicingPicposScreenState
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('سيُسحَب ${r.reference} من الإقرار الضريبيّ. '
-                'والإلغاءُ لا رجعةَ فيه.'),
+            Text(tr('سيُسحَب {p0} من الإقرار الضريبيّ. والإلغاءُ لا رجعةَ فيه.', {'p0': r.reference})),
             const SizedBox(height: 12),
             TextField(
               controller: reasonCtl,
@@ -1579,8 +1575,7 @@ class _EInvoicingPicposScreenState
         icon: const Icon(PhosphorIconsBold.paperPlaneTilt,
             color: AppColors.primary),
         title:  Text(tr('إرسال المستندات المعلَّقة')),
-        content: Text('سيُرسَل ${_ar(count)} مستنداً للمنظومة، ويُسجَّل لكلٍّ '
-            'تغييرُ حالته في سجلٍّ لا يُحذف.'),
+        content: Text(tr('سيُرسَل {p0} مستنداً للمنظومة، ويُسجَّل لكلٍّ تغييرُ حالته في سجلٍّ لا يُحذف.', {'p0': _ar(count)})),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),

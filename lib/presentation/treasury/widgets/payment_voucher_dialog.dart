@@ -858,9 +858,7 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
             ],
           ),
           content: Text(
-            'رصيد الخزينة الحالي: ${selectedSafe!.balance.toStringAsFixed(AppConstants.decimalPlaces)}\n'
-            'المبلغ المطلوب: ${amount.toStringAsFixed(AppConstants.decimalPlaces)}\n\n'
-            'سيصبح الرصيد سالباً. هل تريد المتابعة؟',
+            tr('رصيد الخزينة الحالي: {p0}\nالمبلغ المطلوب: {p1}\n\nسيصبح الرصيد سالباً. هل تريد المتابعة؟', {'p0': selectedSafe!.balance.toStringAsFixed(AppConstants.decimalPlaces), 'p1': amount.toStringAsFixed(AppConstants.decimalPlaces)}),
           ),
           actions: [
             TextButton(

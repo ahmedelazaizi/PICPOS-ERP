@@ -108,9 +108,7 @@ class HRNotifier extends Notifier<HRState> {
     await _hrRepo.markEmployeeAbsent(employee.id, date);
     await _log(
       'employee_absent',
-      'تعليم غياب: ${employee.name} — '
-          '${date.year}/${date.month.toString().padLeft(2, '0')}/'
-          '${date.day.toString().padLeft(2, '0')}',
+      tr('تعليم غياب: {p0} — {p1}/{p2}/{p3}', {'p0': employee.name, 'p1': date.year, 'p2': date.month.toString().padLeft(2, '0'), 'p3': date.day.toString().padLeft(2, '0')}),
       entityId: employee.id,
     );
   }
@@ -236,8 +234,7 @@ class HRNotifier extends Notifier<HRState> {
       );
       return null;
     } on StateError catch (e) {
-      return 'تعذّر احتسابُ المبلغ تلقائياً: ${e.message}. '
-          'أدخِل ساعاتِ العمل اليومية للموظف، أو أدخِل المبلغَ يدوياً.';
+      return tr('تعذّر احتسابُ المبلغ تلقائياً: {p0}. أدخِل ساعاتِ العمل اليومية للموظف، أو أدخِل المبلغَ يدوياً.', {'p0': e.message});
     } catch (e) {
       return tr('تعذّر تسجيلُ الوقت الإضافي: {e}', {'e': e});
     }

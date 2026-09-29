@@ -51,12 +51,11 @@ class _VatReconciliationScreenState
     // كانت **بلا أي فحص صلاحية** قبل كده.
     return PermissionGuard(
       permission: PermissionCodes.reportsTaxes,
-      fallback: const Center(
+      fallback:  Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Text(
-            'تسوية ضريبة القيمة المضافة تقرير على مستوى الشركة — '
-            'لا تملك صلاحية عرضه.',
+            tr('تسوية ضريبة القيمة المضافة تقرير على مستوى الشركة — لا تملك صلاحية عرضه.'),
             textAlign: TextAlign.center,
           ),
         ),
@@ -201,14 +200,13 @@ class _VatReconciliationScreenState
                 border: Border.all(color: Colors.orange),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Row(children: [
-                Icon(Icons.warning_amber, color: Colors.orange),
-                SizedBox(width: 8),
+              child:  Row(children: [
+                const Icon(Icons.warning_amber, color: Colors.orange),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'يوجد فرق بين ضريبة الفواتير والأستاذ العام. '
-                    'راجع القيود المحاسبية أو تأكد من الترحيل التلقائي.',
-                    style: TextStyle(color: Colors.orange),
+                    tr('يوجد فرق بين ضريبة الفواتير والأستاذ العام. راجع القيود المحاسبية أو تأكد من الترحيل التلقائي.'),
+                    style: const TextStyle(color: Colors.orange),
                   ),
                 ),
               ]),

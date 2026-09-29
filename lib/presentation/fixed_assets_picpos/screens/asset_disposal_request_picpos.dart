@@ -247,8 +247,7 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
           busy: widget.busy,
           hint: _isApproved
               ? tr('طلبٌ مُعتمَدٌ — الأصلُ خرج من الدفاتر ولا يُعدَّل')
-              : 'المسوّدةُ بلا أثرٍ محاسبيّ · والاعتمادُ يُخرج الأصلَ ويقيّد '
-                  'الفرق',
+              : tr('المسوّدةُ بلا أثرٍ محاسبيّ · والاعتمادُ يُخرج الأصلَ ويقيّد الفرق'),
           draft: PicPosFormAction(
             label: tr('حفظ مسودة'),
             icon: PhosphorIconsBold.floppyDisk,
@@ -542,8 +541,7 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
             const SizedBox(height: 6),
             if (!_carriesProceeds)
               Text(
-                '${disposalMethodLabel(_method)} بلا تحصيل — ولا قيدَ نقديّةٍ '
-                'ولا ذمّة.',
+                tr('{p0} بلا تحصيل — ولا قيدَ نقديّةٍ ولا ذمّة.', {'p0': disposalMethodLabel(_method)}),
                 key: const Key('disposal_no_collection'),
                 style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
               )

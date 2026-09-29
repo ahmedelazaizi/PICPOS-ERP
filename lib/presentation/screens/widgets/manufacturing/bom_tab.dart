@@ -647,15 +647,11 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                           border: const OutlineInputBorder(),
                           isDense: true,
                           // Quick reference for users who hover the i icon.
-                          suffixIcon: const Tooltip(
+                          suffixIcon:  Tooltip(
                             triggerMode: TooltipTriggerMode.tap,
                             message:
-                                'الناتج = كم وحدة تنتجها الدفعة الواحدة من '
-                                'هذه الخامات.\n'
-                                'مثال: لو ضبطت الناتج=12 واللحمة=1كجم، '
-                                'يبقى 12 سيخ يحتاج 1كجم لحمة (≈ 83 جرام لكل سيخ).\n'
-                                'لو عايز "1 سيخ = 1كجم لحمة" — اضبط الناتج=1.',
-                            child: Icon(PhosphorIconsBold.info,
+                                tr('الناتج = كم وحدة تنتجها الدفعة الواحدة من هذه الخامات.\nمثال: لو ضبطت الناتج=12 واللحمة=1كجم، يبقى 12 سيخ يحتاج 1كجم لحمة (≈ 83 جرام لكل سيخ).\nلو عايز "1 سيخ = 1كجم لحمة" — اضبط الناتج=1.'),
+                            child: const Icon(PhosphorIconsBold.info,
                                 size: 16, color: Colors.grey),
                           ),
                         ),
@@ -989,13 +985,7 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'تنبيه: الناتج = ${_expectedOutputQty.toStringAsFixed(_expectedOutputQty.truncateToDouble() == _expectedOutputQty ? 0 : 2)}'
-                              ' يعنى أن الخامات أعلاه لـ "دفعة" تنتج '
-                              '${_expectedOutputQty.toStringAsFixed(_expectedOutputQty.truncateToDouble() == _expectedOutputQty ? 0 : 2)} '
-                              'وحدة. عند البيع، يتم خصم الخامات بنسبة '
-                              '(الكمية المباعة ÷ الناتج). إذا كنت تريد '
-                              '"1 وحدة = الكميات المذكورة بالضبط"، اضبط '
-                              'الناتج = 1.',
+                              tr('تنبيه: الناتج = {p0} يعنى أن الخامات أعلاه لـ "دفعة" تنتج {p1} وحدة. عند البيع، يتم خصم الخامات بنسبة (الكمية المباعة ÷ الناتج). إذا كنت تريد "1 وحدة = الكميات المذكورة بالضبط"، اضبط الناتج = 1.', {'p0': _expectedOutputQty.toStringAsFixed(_expectedOutputQty.truncateToDouble() == _expectedOutputQty ? 0 : 2), 'p1': _expectedOutputQty.toStringAsFixed(_expectedOutputQty.truncateToDouble() == _expectedOutputQty ? 0 : 2)}),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.amber.shade900,

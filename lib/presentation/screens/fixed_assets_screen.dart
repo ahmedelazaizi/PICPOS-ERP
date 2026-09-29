@@ -543,8 +543,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                 title: Text(cat.name,
                     style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
                 subtitle: Text(
-                  'العمر الافتراضي: ${cat.defaultUsefulLife > 0 ? '${cat.defaultUsefulLife} سنة' : 'غير محدد'} | '
-                  '${getDepreciationMethodLabel(cat.defaultDepreciationMethod)}',
+                  tr('العمر الافتراضي: {p0} | {p1}', {'p0': cat.defaultUsefulLife > 0 ? '${cat.defaultUsefulLife} سنة' : 'غير محدد', 'p1': getDepreciationMethodLabel(cat.defaultDepreciationMethod)}),
                   style: GoogleFonts.cairo(fontSize: 11, color: Colors.grey),
                 ),
                 trailing: PermissionGuard(
@@ -623,8 +622,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                             style: GoogleFonts.cairo(
                                 fontSize: 12, fontWeight: FontWeight.w600)),
                         subtitle: Text(
-                          '${_dateFormat.format(entry.periodDate)} | '
-                          'ق.د: ${_currencyFormat.format(entry.bookValue)}',
+                          tr('{p0} | ق.د: {p1}', {'p0': _dateFormat.format(entry.periodDate), 'p1': _currencyFormat.format(entry.bookValue)}),
                           style: GoogleFonts.cairo(
                               fontSize: 10, color: Colors.grey),
                         ),

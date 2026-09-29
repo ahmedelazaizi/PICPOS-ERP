@@ -702,11 +702,10 @@ class _FloorPlanDesignerPicposScreenState
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Row(
         children: [
-          const Expanded(
+           Expanded(
             child: Text(
-              'الأقسامُ تُرى معاً على أرضيّةٍ واحدة — اسحب القسمَ ليجاور '
-              'موضعَه الحقيقيَّ في المحلّ.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+              tr('الأقسامُ تُرى معاً على أرضيّةٍ واحدة — اسحب القسمَ ليجاور موضعَه الحقيقيَّ في المحلّ.'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
           ),
           FilledButton.icon(

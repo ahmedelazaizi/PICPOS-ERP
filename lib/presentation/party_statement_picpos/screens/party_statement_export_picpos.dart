@@ -125,9 +125,7 @@ mixin _StatementExportMixin on ConsumerState<PartyStatementPicposScreen> {
       ]);
       sheet.appendRow([
         TextCellValue(
-          'الرصيد الحالي: '
-          '${(party?.balance ?? 0).toStringAsFixed(AppConstants.decimalPlaces)} '
-          '${AppConstants.currencySymbolEn}',
+          tr('الرصيد الحالي: {p0} {p1}', {'p0': (party?.balance ?? 0).toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
         )
       ]);
       sheet.appendRow([TextCellValue('')]);

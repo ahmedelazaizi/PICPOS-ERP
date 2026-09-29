@@ -136,8 +136,7 @@ class _CurrencySelector extends ConsumerWidget {
       return SettingsValueRow(
         icon: PhosphorIconsBold.lockSimple,
         title: tr('عملة النظام'),
-        sub: 'مقفولة بعد تسجيل حركات مالية — الدقة العشرية جزءٌ من كل '
-            'مبلغ محفوظ',
+        sub: tr('مقفولة بعد تسجيل حركات مالية — الدقة العشرية جزءٌ من كل مبلغ محفوظ'),
         value: info.code,
         tint: AppColors.textMuted,
       );

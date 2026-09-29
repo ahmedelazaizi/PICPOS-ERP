@@ -368,8 +368,7 @@ class ProductsController extends Notifier<ProductsState> {
         if (!ok) {
           state = state.copyWith(
             isLoading: false,
-            error: 'تعذّر حفظ التعديل على الخادم — لم يُحفظ محلياً '
-                'لمنع رجوع القيم القديمة مع المزامنة القادمة.',
+            error: tr('تعذّر حفظ التعديل على الخادم — لم يُحفظ محلياً لمنع رجوع القيم القديمة مع المزامنة القادمة.'),
           );
           return false;
         }
@@ -421,8 +420,7 @@ class ProductsController extends Notifier<ProductsState> {
         if (!ok) {
           state = state.copyWith(
             isLoading: false,
-            error: 'تعذّر حذف الصنف على الخادم — لم يتم الحذف محلياً '
-                'لمنع رجوع الصنف مع المزامنة القادمة.',
+            error: tr('تعذّر حذف الصنف على الخادم — لم يتم الحذف محلياً لمنع رجوع الصنف مع المزامنة القادمة.'),
           );
           return false;
         }
@@ -518,8 +516,7 @@ class ProductsController extends Notifier<ProductsState> {
         selectedIds: {},
         error: blocked.isEmpty
             ? null
-            : 'تم حذف $count صنف، وتعذّر حذف ${blocked.length} '
-                '(مرتبط بمعاملات أو رفضه الخادم).',
+            : tr('تم حذف {count} صنف، وتعذّر حذف {p0} (مرتبط بمعاملات أو رفضه الخادم).', {'count': count, 'p0': blocked.length}),
       );
       
       if (user != null) {

@@ -151,10 +151,9 @@ class _AccountMappingPicPosScreenState
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (readOnly) ...[
-                    const _Banner(
+                     _Banner(
                       icon: PhosphorIconsBold.lockKey,
-                      text: 'وضع القراءة فقط — الربط المحاسبي يُضبط مركزيّاً '
-                          'على الخادم.',
+                      text: tr('وضع القراءة فقط — الربط المحاسبي يُضبط مركزيّاً على الخادم.'),
                       tint: AppColors.warning,
                     ),
                     const SizedBox(height: 8),
@@ -162,8 +161,7 @@ class _AccountMappingPicPosScreenState
                   if (unmapped > 0) ...[
                     _Banner(
                       icon: PhosphorIconsBold.warning,
-                      text: '$unmapped عملية تحتاج ضبط الربط قبل الترحيل '
-                          'التلقائي',
+                      text: tr('{unmapped} عملية تحتاج ضبط الربط قبل الترحيل التلقائي', {'unmapped': unmapped}),
                       tint: AppColors.error,
                     ),
                     const SizedBox(height: 8),
@@ -204,8 +202,7 @@ class _AccountMappingPicPosScreenState
       context,
       icon: PhosphorIconsBold.arrowCounterClockwise,
       title: tr('استعادة الربط الافتراضي'),
-      message: 'سيُحذف الربطُ المحاسبيُّ الحاليُّ كلُّه ويُستعاد الافتراضيُّ '
-          'من دليل الحسابات. القيودُ المرحَّلةُ سابقاً لا تتأثّر.',
+      message: tr('سيُحذف الربطُ المحاسبيُّ الحاليُّ كلُّه ويُستعاد الافتراضيُّ من دليل الحسابات. القيودُ المرحَّلةُ سابقاً لا تتأثّر.'),
       confirmLabel: tr('استعادة'),
       danger: true,
     );

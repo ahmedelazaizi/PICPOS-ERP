@@ -162,8 +162,7 @@ extension _SetupWizardCompanyInfoExt on _SetupWizardScreenState {
           icon: PhosphorIconsBold.warningCircle,
           tone: AppColors.error,
           title: tr('العملة قرار نهائي'),
-          body: 'تدخل كلَّ فاتورةٍ وكلَّ قيدٍ محاسبيّ، ولا تحويلَ بأثرٍ '
-              'رجعيّ. تبديلُها بعد أوّل فاتورةٍ يترك دفتراً بعملتَين.',
+          body: tr('تدخل كلَّ فاتورةٍ وكلَّ قيدٍ محاسبيّ، ولا تحويلَ بأثرٍ رجعيّ. تبديلُها بعد أوّل فاتورةٍ يترك دفتراً بعملتَين.'),
         ),
       ],
     );

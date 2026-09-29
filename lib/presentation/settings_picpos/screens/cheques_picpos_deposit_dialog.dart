@@ -259,10 +259,9 @@ class _DepositBatchDialogState extends State<_DepositBatchDialog> {
         ),
         _sectionLabel(tr('الشيكات المختارة')),
         if (widget.candidates.isEmpty)
-          const PicPosDialogBanner(
+           PicPosDialogBanner(
             icon: PhosphorIconsBold.info,
-            text: 'لا أوراقَ بالخزنة قابلةً للإيداع. الإيداعُ يقبل الورقةَ '
-                'المعلَّقةَ أو التي في الحافظة وحدَها.',
+            text: tr('لا أوراقَ بالخزنة قابلةً للإيداع. الإيداعُ يقبل الورقةَ المعلَّقةَ أو التي في الحافظة وحدَها.'),
             color: AppColors.textMuted,
           )
         else
@@ -315,10 +314,9 @@ class _DepositBatchDialogState extends State<_DepositBatchDialog> {
         // ⚠️ قاعدةُ محاسبةٍ تشرح سلوكاً يبدو خطأً — نفسُ انضباط ملاحظات
         //    التبويبات: البنكُ لا يُدان بالإيداع بل بالتحصيل، فمن يودع ثمّ
         //    ينظر إلى رصيد البنك لا يجد المبلغَ ويظنّ الإيداعَ فشل.
-        const PicPosDialogBanner(
+         PicPosDialogBanner(
           icon: PhosphorIconsBold.scales,
-          text: 'الإيداع حالةٌ وسيطة: الورقة تنتقل إلى «تحت التحصيل» ولا '
-              'يُدان البنكُ إلّا عند التحصيل.',
+          text: tr('الإيداع حالةٌ وسيطة: الورقة تنتقل إلى «تحت التحصيل» ولا يُدان البنكُ إلّا عند التحصيل.'),
           color: AppColors.warning,
         ),
       ],

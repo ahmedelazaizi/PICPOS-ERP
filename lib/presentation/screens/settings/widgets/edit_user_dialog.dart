@@ -77,15 +77,14 @@ class _EditUserDialogState extends AppFormDialogState<bool, EditUserDialog> {
             borderRadius: BorderRadius.circular(6),
             border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
           ),
-          child: const Row(
+          child:  Row(
             children: [
-              Icon(PhosphorIconsBold.info, size: 14, color: Colors.amber),
-              SizedBox(width: 8),
+              const Icon(PhosphorIconsBold.info, size: 14, color: Colors.amber),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'لتغيير كلمة المرور أو الدور أو الفروع استخدم الأزرار '
-                  'المخصصة في صف المستخدم.',
-                  style: TextStyle(fontSize: 11),
+                  tr('لتغيير كلمة المرور أو الدور أو الفروع استخدم الأزرار المخصصة في صف المستخدم.'),
+                  style: const TextStyle(fontSize: 11),
                 ),
               ),
             ],

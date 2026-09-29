@@ -91,8 +91,7 @@ class TableBillQrDialog extends ConsumerWidget {
                 _banner(
                   icon: PhosphorIconsBold.wifiSlash,
                   color: AppColors.error,
-                  text: 'الجهازُ ليس خادماً يعمل — الرابطُ لن يفتح على هواتف '
-                      'الضيوف. شغّل وضعَ الخادم أوّلاً.',
+                  text: tr('الجهازُ ليس خادماً يعمل — الرابطُ لن يفتح على هواتف الضيوف. شغّل وضعَ الخادم أوّلاً.'),
                 ),
               // ⚠️ **المفتاحُ هنا لا في شاشة الإعدادات.** هذا هو الموضعُ
               // الذي يُطبَع منه الرمز؛ ومفتاحٌ في شاشةٍ أخرى يعني ورقةً
@@ -106,10 +105,9 @@ class TableBillQrDialog extends ConsumerWidget {
                     tr('تفعيل رمز حساب الطاولة'),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
-                  subtitle: const Text(
-                    'يفتح مساراً على شبكة المحلّ يقرأ منه الضيفُ حسابَ طاولته '
-                    'بلا تسجيل دخول. أطفِئه إن لم تكن تستعمله.',
-                    style: TextStyle(fontSize: 11.5),
+                  subtitle:  Text(
+                    tr('يفتح مساراً على شبكة المحلّ يقرأ منه الضيفُ حسابَ طاولته بلا تسجيل دخول. أطفِئه إن لم تكن تستعمله.'),
+                    style: const TextStyle(fontSize: 11.5),
                   ),
                   onChanged: enabled.isLoading
                       ? null
@@ -127,9 +125,7 @@ class TableBillQrDialog extends ConsumerWidget {
                 _banner(
                   icon: PhosphorIconsBold.globe,
                   color: AppColors.warning,
-                  text: 'الخادمُ منشورٌ على دومين — الرمزُ يفتح من خارج المحلّ. '
-                      'ولذلك يُطلَب من الضيف **رقمُ الطاولة** قبل أن يطلب '
-                      'الحساب أو يضيف أصنافاً، ويقوله له النادل.',
+                  text: tr('الخادمُ منشورٌ على دومين — الرمزُ يفتح من خارج المحلّ. ولذلك يُطلَب من الضيف **رقمُ الطاولة** قبل أن يطلب الحساب أو يضيف أصنافاً، ويقوله له النادل.'),
                 ),
               const SizedBox(height: 8),
               Flexible(

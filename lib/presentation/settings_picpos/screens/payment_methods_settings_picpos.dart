@@ -38,10 +38,9 @@ class _QuickCloseSettingTile extends ConsumerWidget {
     return SwitchListTile(
       value: enabled,
       title:  Text(tr('إظهار «إغلاق سريع»')),
-      subtitle: const Text(
-        'إغلاق بلا مصادقة يجعل الفرق صفراً — أطفئه ليمرّ كل إغلاق '
-        'ببطاقة أو كلمة مرور.',
-        style: TextStyle(fontSize: 12),
+      subtitle:  Text(
+        tr('إغلاق بلا مصادقة يجعل الفرق صفراً — أطفئه ليمرّ كل إغلاق ببطاقة أو كلمة مرور.'),
+        style: const TextStyle(fontSize: 12),
       ),
       secondary: const Icon(PhosphorIconsBold.lightning,
           color: AppColors.warning),
@@ -135,10 +134,9 @@ class _PaymentMethodsSettingsCardState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'الطرقُ المؤشَّرة وحدَها تظهر للكاشير عند إتمام الدفع — '
-            'والصلاحياتُ تضيّق عليها ولا توسّعها.',
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+           Text(
+            tr('الطرقُ المؤشَّرة وحدَها تظهر للكاشير عند إتمام الدفع — والصلاحياتُ تضيّق عليها ولا توسّعها.'),
+            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 12),
           ..._paymentMethodLabels.entries.map(
@@ -169,8 +167,7 @@ class _PaymentMethodsSettingsCardState
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'طريقةٌ واحدةٌ مؤشَّرة (${_paymentMethodLabels[fastPath]}) '
-                      '⇒ «إتمام الدفع» يحفظ مباشرةً بلا حوار.',
+                      tr('طريقةٌ واحدةٌ مؤشَّرة ({p0}) ⇒ «إتمام الدفع» يحفظ مباشرةً بلا حوار.', {'p0': _paymentMethodLabels[fastPath]}),
                       style: const TextStyle(fontSize: 12),
                     ),
                   ),

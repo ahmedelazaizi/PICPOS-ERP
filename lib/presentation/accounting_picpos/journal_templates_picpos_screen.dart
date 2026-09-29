@@ -144,8 +144,7 @@ class _JournalTemplatesPicPosScreenState
       return  PicPosEmptyState(
         icon: PhosphorIconsBold.stack,
         title: tr('لا توجد قوالب قيود'),
-        hint: 'استخدم القوالب لتسريع إنشاء القيود المتكررة '
-            'كرواتب الموظفين أو الإيجارات.',
+        hint: tr('استخدم القوالب لتسريع إنشاء القيود المتكررة كرواتب الموظفين أو الإيجارات.'),
       );
     }
     if (filtered.isEmpty) {
@@ -203,8 +202,7 @@ class _JournalTemplatesPicPosScreenState
       icon: PhosphorIconsBold.trash,
       title: tr('تأكيد الحذف'),
       subtitle: template.name,
-      message: 'هل أنت متأكد من حذف القالب «${template.name}»؟ '
-          'لا يؤثّر الحذفُ على القيود المُنشأة منه سابقاً.',
+      message: tr('هل أنت متأكد من حذف القالب «{p0}»؟ لا يؤثّر الحذفُ على القيود المُنشأة منه سابقاً.', {'p0': template.name}),
       confirmLabel: tr('حذف'),
       danger: true,
     );

@@ -29,8 +29,12 @@ class PicPosScreenScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context);
+    final direction = locale.languageCode == 'en'
+        ? TextDirection.ltr
+        : TextDirection.rtl;
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: direction,
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Column(

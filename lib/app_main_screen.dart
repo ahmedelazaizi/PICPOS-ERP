@@ -346,7 +346,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: AlertDialog(
           title: Row(
             children: [
@@ -507,7 +507,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
           context: context,
           barrierDismissible: true,
           builder: (ctx) => Directionality(
-            textDirection: TextDirection.rtl,
+            textDirection: Directionality.of(context),
             child: AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title:  Row(
@@ -517,11 +517,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
                   Text(tr('السيرفر يعمل في الخلفية')),
                 ],
               ),
-              content: const Text(
-                'تم تصغير النافذة وإخفاؤها.\n'
-                'السيرفر لا يزال يعمل في الخلفية ويستقبل اتصالات العملاء.\n\n'
-                'لإغلاق السيرفر نهائياً، افتح النافذة وأغلقها من الإعدادات.',
-                style: TextStyle(height: 1.6),
+              content:  Text(
+                tr('تم تصغير النافذة وإخفاؤها.\nالسيرفر لا يزال يعمل في الخلفية ويستقبل اتصالات العملاء.\n\nلإغلاق السيرفر نهائياً، افتح النافذة وأغلقها من الإعدادات.'),
+                style: const TextStyle(height: 1.6),
               ),
               actions: [
                 ElevatedButton(
@@ -569,7 +567,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         barrierDismissible: false,
         barrierColor: Colors.black.withValues(alpha: 0.95),
         builder: (ctx) => Directionality(
-          textDirection: TextDirection.rtl,
+          textDirection: Directionality.of(context),
           child: AlertDialog(
             title:  Row(
               children: [
@@ -607,9 +605,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         context: context,
         barrierDismissible: false,
         barrierColor: Colors.black.withValues(alpha: 0.95),
-        builder: (ctx) => const Directionality(
-          textDirection: TextDirection.rtl,
-          child: _AdminCloseDialog(),
+        builder: (ctx) => Directionality(
+          textDirection: Directionality.of(context),
+          child: const _AdminCloseDialog(),
         ),
       );
 
@@ -1275,7 +1273,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
           duration: const Duration(seconds: 3),
           content: Text(
             tr('أُغلق تاب «{label}» — السقف {kMaxScreenTabs} تابات', {'label': label, 'kMaxScreenTabs': kMaxScreenTabs}),
-            textDirection: TextDirection.rtl,
+            textDirection: Directionality.of(context),
           ),
         ),
       );
@@ -1395,7 +1393,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         final shouldClose = await showDialog<bool>(
               context: context,
               builder: (ctx) => Directionality(
-                textDirection: TextDirection.rtl,
+                textDirection: Directionality.of(context),
                 child: AlertDialog(
                   title:  Text(tr('تنبيه')),
                   content:  Text(
@@ -1578,7 +1576,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
           final shouldExit = await showDialog<bool>(
             context: context,
             builder: (context) => Directionality(
-              textDirection: TextDirection.rtl,
+              textDirection: Directionality.of(context),
               child: AlertDialog(
                 title:  Row(
                   children: [
@@ -1659,8 +1657,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
                   leading: const Icon(PhosphorIconsBold.wifiSlash,
                       color: Color(0xFFEF6C00)), // orange shade800
                   content: Text(
-                    'وضع أوفلاين — العمل على قاعدة البيانات المحلية. '
-                    '${PostgresConfig.offlineFallbackStart != null ? "منذ ${_formatOfflineTime(PostgresConfig.offlineFallbackStart!)}" : ""}',
+                    tr('وضع أوفلاين — العمل على قاعدة البيانات المحلية. {p0}', {'p0': PostgresConfig.offlineFallbackStart != null ? "منذ ${_formatOfflineTime(PostgresConfig.offlineFallbackStart!)}" : ""}),
                     style: const TextStyle(
                         color: Color(0xFFE65100), // orange shade900
                         fontSize: 13),
@@ -1748,7 +1745,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: _OfflineSyncDialog(
           syncService: syncService,
           localDb: db,

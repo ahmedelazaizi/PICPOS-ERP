@@ -562,8 +562,7 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
                       border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
                     ),
                     child: Text(
-                      'فتح سنة مالية جديدة عملية حساسة تؤثر على جميع القيود والتقارير المحاسبية. '
-                      'يُسمح فقط للمطور بتنفيذ هذه العملية.',
+                      tr('فتح سنة مالية جديدة عملية حساسة تؤثر على جميع القيود والتقارير المحاسبية. يُسمح فقط للمطور بتنفيذ هذه العملية.'),
                       style: GoogleFonts.cairo(fontSize: 12, color: AppColors.warning),
                     ),
                   ),

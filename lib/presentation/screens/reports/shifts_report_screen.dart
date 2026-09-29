@@ -307,17 +307,15 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                 color: AppColors.warning.withValues(alpha: 0.12),
-                child: const Row(
+                child:  Row(
                   children: [
-                    Icon(PhosphorIconsBold.warning,
+                    const Icon(PhosphorIconsBold.warning,
                         size: 16, color: AppColors.warning),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'معروضٌ أحدثُ $kShiftsReportPageLimit ورديةٍ فقط — '
-                        'هناك ورديّاتٌ أقدمُ خارج هذه الصفحة. ضيّق المدى '
-                        'الزمنيّ أو الفرعَ أو المستخدمَ لرؤيتها.',
-                        style: TextStyle(
+                        tr('معروضٌ أحدثُ {kShiftsReportPageLimit} ورديةٍ فقط — هناك ورديّاتٌ أقدمُ خارج هذه الصفحة. ضيّق المدى الزمنيّ أو الفرعَ أو المستخدمَ لرؤيتها.', {'kShiftsReportPageLimit': kShiftsReportPageLimit}),
+                        style: const TextStyle(
                             fontSize: 12, color: AppColors.warning),
                       ),
                     ),

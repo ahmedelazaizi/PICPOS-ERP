@@ -182,12 +182,10 @@ class SalesInvoicesTable extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'الفواتيرُ المرتبطةُ بفرعٍ مخفيّةٌ عنك حتى يُسنِد لك مديرُ '
-                    'النظام فرعاً واحداً على الأقل. وهذا ليس عطباً في '
-                    'البيانات — الفواتيرُ موجودةٌ ومحجوبة.',
+                   Text(
+                    tr('الفواتيرُ المرتبطةُ بفرعٍ مخفيّةٌ عنك حتى يُسنِد لك مديرُ النظام فرعاً واحداً على الأقل. وهذا ليس عطباً في البيانات — الفواتيرُ موجودةٌ ومحجوبة.'),
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                 ],
               ),

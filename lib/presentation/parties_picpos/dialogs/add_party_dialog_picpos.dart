@@ -198,8 +198,7 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                 userName: auth.user?.displayName ?? tr('مستخدم'),
                 action: actionKey,
                 entityType: 'party',
-                description: 'إضافة ${getTypeArabicName(selectedType)}: '
-                    '${nameController.text}',
+                description: tr('إضافة {p0}: {p1}', {'p0': getTypeArabicName(selectedType), 'p1': nameController.text}),
               );
             } catch (_) {}
 

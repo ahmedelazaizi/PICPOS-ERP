@@ -1028,8 +1028,7 @@ class _UsersManagementPicposScreenState
       icon: PhosphorIconsBold.userMinus,
       title: tr('تعطيل المستخدم'),
       subtitle: user.displayName,
-      message: 'يُقفَل الحساب فلا يستطيع صاحبُه الدخول. وحركاتُه السابقة '
-          'تبقى مسجّلةً باسمه كما هي.',
+      message: tr('يُقفَل الحساب فلا يستطيع صاحبُه الدخول. وحركاتُه السابقة تبقى مسجّلةً باسمه كما هي.'),
       actionLabel: tr('تعطيل الحساب'),
       willDeleteLabel: tr('سيحدث'),
       willDelete:  [

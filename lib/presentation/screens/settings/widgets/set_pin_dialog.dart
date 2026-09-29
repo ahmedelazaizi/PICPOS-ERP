@@ -35,8 +35,7 @@ class _SetPinDialogState extends AppFormDialogState<bool, SetPinDialog> {
   //    سطران في الحوار نفسِه يقولان عددَين. والمقيسُ هو ما يقبله الحفظ.
   @override
   String? get dialogSubtitle =>
-      '${widget.user.displayName} — من ٤ إلى ٦ أرقامٍ للدخول السريع على '
-      'نقطة البيع';
+      tr('{p0} — من ٤ إلى ٦ أرقامٍ للدخول السريع على نقطة البيع', {'p0': widget.user.displayName});
 
   @override
   String? get dialogSaveLabel => tr('حفظ الـ PIN');
@@ -73,10 +72,8 @@ class _SetPinDialogState extends AppFormDialogState<bool, SetPinDialog> {
               SettingsSwitchRow(
                 first: true,
                 icon: PhosphorIconsBold.shieldWarning,
-                title: 'قفل الحساب بعد '
-                    '${LoginRateLimiter.maxAttempts} محاولاتٍ فاشلة',
-                sub: 'سياسةٌ عامّةٌ مفعَّلةٌ دائماً — القفلُ '
-                    '${LoginRateLimiter.lockoutDuration.inMinutes} دقيقة',
+                title: tr('قفل الحساب بعد {p0} محاولاتٍ فاشلة', {'p0': LoginRateLimiter.maxAttempts}),
+                sub: tr('سياسةٌ عامّةٌ مفعَّلةٌ دائماً — القفلُ {p0} دقيقة', {'p0': LoginRateLimiter.lockoutDuration.inMinutes}),
                 value: true,
                 onChanged: null,
               ),
@@ -85,11 +82,10 @@ class _SetPinDialogState extends AppFormDialogState<bool, SetPinDialog> {
         ),
          PicPosPanelGroup(
           label: tr('تنبيه'),
-          child: const PicPosDialogBanner(
+          child:  PicPosDialogBanner(
             icon: PhosphorIconsBold.info,
             color: AppColors.info,
-            text: 'يُستخدم رمزُ PIN لتسجيل الدخول السريع في البيع السريع '
-                '(POS).',
+            text: tr('يُستخدم رمزُ PIN لتسجيل الدخول السريع في البيع السريع (POS).'),
           ),
         ),
       ];

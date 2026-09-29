@@ -523,9 +523,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      'يوجد ${orphanCats.length} فئة بدون '
-                                      'حسابات مرتبطة — اربط حساب الأصل '
-                                      'وحساب مجمع الإهلاك لتظهر فى القائمة.',
+                                      tr('يوجد {p0} فئة بدون حسابات مرتبطة — اربط حساب الأصل وحساب مجمع الإهلاك لتظهر فى القائمة.', {'p0': orphanCats.length}),
                                       style: const TextStyle(
                                           fontSize: 11,
                                           color: AppColors.warning),
@@ -868,12 +866,11 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                         label: tr('الحساب المربوط'),
                         value:
                             '${linkedAccount.code} - ${linkedAccount.name}'),
-                  const Padding(
-                    padding: EdgeInsets.only(top: 4, bottom: 8),
+                   Padding(
+                    padding: const EdgeInsets.only(top: 4, bottom: 8),
                     child: Text(
-                      'الحقول أعلاه غير قابلة للتعديل — تغيير القيمة أو '
-                      'التاريخ بعد الإنشاء يتطلب إنشاء قيد عكسي عبر المحاسب.',
-                      style: TextStyle(
+                      tr('الحقول أعلاه غير قابلة للتعديل — تغيير القيمة أو التاريخ بعد الإنشاء يتطلب إنشاء قيد عكسي عبر المحاسب.'),
+                      style: const TextStyle(
                           fontSize: 11,
                           color: AppColors.warning,
                           fontStyle: FontStyle.italic),
@@ -1238,8 +1235,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                         style: GoogleFonts.cairo(fontSize: 12),
                       ),
                       subtitle: Text(
-                        'متراكم: ${_currencyFormat.format(e.accumulatedDepreciation)} | '
-                        'دفتري: ${_currencyFormat.format(e.bookValue)}',
+                        tr('متراكم: {p0} | دفتري: {p1}', {'p0': _currencyFormat.format(e.accumulatedDepreciation), 'p1': _currencyFormat.format(e.bookValue)}),
                         style: GoogleFonts.cairo(
                             fontSize: 10, color: Colors.grey),
                       ),

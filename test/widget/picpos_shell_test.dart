@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
@@ -8,8 +9,17 @@ import 'package:ural_erp/presentation/picpos_shell/picpos_content_card.dart';
 import 'package:ural_erp/presentation/picpos_shell/picpos_screen_scaffold.dart';
 
 void main() {
-  Widget wrap(Widget child) =>
-      MaterialApp(theme: PicPosTheme.lightTheme, home: child);
+  Widget wrap(Widget child) => MaterialApp(
+        theme: PicPosTheme.lightTheme,
+        locale: const Locale('ar', 'EG'),
+        supportedLocales: const [Locale('ar', 'EG')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: child,
+      );
 
   group('PicPosPageHeader', () {
     testWidgets('يعرض العنوان والوصف والأزرار', (tester) async {

@@ -268,8 +268,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'بعد النقل سيتم حذف فرع "${branch.name}" بشكل آمن '
-                    '(soft-delete: تاريخ الفرع وسجلاته يبقى محفوظاً).',
+                    tr('بعد النقل سيتم حذف فرع "{p0}" بشكل آمن (soft-delete: تاريخ الفرع وسجلاته يبقى محفوظاً).', {'p0': branch.name}),
                     style: const TextStyle(
                         fontSize: 12, color: AppColors.textSecondary),
                   ),
@@ -315,8 +314,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
       await branchRepo.deleteBranch(branch.id as int,
           reassignUsersToBranchId: reassignTo);
       _logActivity('delete_branch', 'branch', branch.id as int,
-          'حذف فرع: ${branch.name}'
-          '${reassignTo != null ? ' (نُقل المستخدمون إلى فرع #$reassignTo)' : ''}');
+          tr('حذف فرع: {p0}{p1}', {'p0': branch.name, 'p1': reassignTo != null ? ' (نُقل المستخدمون إلى فرع #$reassignTo)' : ''}));
       if (mounted) {
         AppToast.show(context, tr('تم حذف الفرع'), type: ToastType.warning);
       }

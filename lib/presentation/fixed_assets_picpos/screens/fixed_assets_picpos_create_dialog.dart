@@ -441,16 +441,14 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
           ],
         ),
         // حقيقتان لا مفتاحان — راجع تعليقَ الرأس.
-        const PicPosDialogBanner(
+         PicPosDialogBanner(
           icon: PhosphorIconsBold.bank,
-          text: 'يُنشأ للأصل حسابٌ فرعيٌّ ذرّيّاً مع إنشائه. والقيودُ تبقى '
-              'على حساب الفئة.',
+          text: tr('يُنشأ للأصل حسابٌ فرعيٌّ ذرّيّاً مع إنشائه. والقيودُ تبقى على حساب الفئة.'),
           color: AppColors.primary,
         ),
-        const PicPosDialogBanner(
+         PicPosDialogBanner(
           icon: PhosphorIconsBold.warningCircle,
-          text: 'الإهلاك يبدأ بأوّل ترحيلٍ بعد الإنشاء بقسطٍ كامل — المحرّك '
-              'لا يجزّئ شهر الشراء.',
+          text: tr('الإهلاك يبدأ بأوّل ترحيلٍ بعد الإنشاء بقسطٍ كامل — المحرّك لا يجزّئ شهر الشراء.'),
           color: AppColors.warning,
         ),
       ],

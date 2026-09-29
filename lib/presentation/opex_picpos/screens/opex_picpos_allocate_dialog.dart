@@ -316,20 +316,14 @@ class _AllocateDialogState extends State<_AllocateDialog> {
           PicPosDialogBanner(
             icon: PhosphorIconsBold.warningCircle,
             text: over
-                ? 'المعدلُ أعلى من الواقع: التحميلُ يفوق المصروفَ بـ'
-                    '${_money.format(plan.unallocated.abs())} ج.م — تكلفةُ '
-                    'الوحدة تخرج أعلى من الحقيقيّة.'
-                : 'يبقى ${_money.format(plan.unallocated)} ج.م غيرَ محمَّل. '
-                    'تكلفةُ الوحدة المسجَّلة تخرج أقلَّ من الحقيقيّة فيتضخّم '
-                    'هامشُ الربح الظاهر — راجع معدلَ الفئة أو وزّع كاملَ '
-                    'المبلغ.',
+                ? tr('المعدلُ أعلى من الواقع: التحميلُ يفوق المصروفَ بـ{p0} ج.م — تكلفةُ الوحدة تخرج أعلى من الحقيقيّة.', {'p0': _money.format(plan.unallocated.abs())})
+                : tr('يبقى {p0} ج.م غيرَ محمَّل. تكلفةُ الوحدة المسجَّلة تخرج أقلَّ من الحقيقيّة فيتضخّم هامشُ الربح الظاهر — راجع معدلَ الفئة أو وزّع كاملَ المبلغ.', {'p0': _money.format(plan.unallocated)}),
             color: AppColors.error,
           ),
         // ⚠️ التحميلُ **فعلٌ محاسبيّ** — راجع تعليقَ الرأس.
-        const PicPosDialogBanner(
+         PicPosDialogBanner(
           icon: PhosphorIconsBold.scales,
-          text: 'التحميل يدخل تكلفةَ الأمر ثمّ تكلفةَ الوحدة، ويُرحَّل قيدَ '
-              'تحميلٍ غير مباشر على الخادم.',
+          text: tr('التحميل يدخل تكلفةَ الأمر ثمّ تكلفةَ الوحدة، ويُرحَّل قيدَ تحميلٍ غير مباشر على الخادم.'),
           color: AppColors.warning,
         ),
       ],

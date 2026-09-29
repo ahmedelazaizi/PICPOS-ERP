@@ -1,8 +1,9 @@
 # Arabic literal codemod skip list
 
-`tool/i18n/wrap_arabic_literals.dart` only scans the UI roots requested for Phase 10a. It skips literals that are not UI copy:
+`tool/i18n/wrap_arabic_literals.dart` only scans the UI roots requested for Phase 10a. It skips literals that are not UI copy. Adjacent and literal-plus concatenations are merged into one `tr(...)` template before these rules are applied:
 
 - map keys, switch/case expressions, annotation arguments, default parameter values, and import/part directives;
+- literal groups that cannot be represented as a single UI template are reported as `unsupported_literal`;
 - `print`, `debugPrint`, logger/diagnostic calls, thrown exception expressions, and assertion messages;
 - SQL-like text, setting keys, permission/data codes, URLs, file paths, and identifier-like ASCII values;
 - generated or embedded-print paths: `lib/services/print*`, PDF/ESC-POS generators, and invoice template paths;

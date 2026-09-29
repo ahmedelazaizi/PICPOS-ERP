@@ -64,53 +64,85 @@ class ScreenTabsBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      height: 38,
-      decoration: BoxDecoration(
-        color: theme.cardColor.withValues(alpha: 0.5),
-        border: Border(
-          bottom: BorderSide(
-            color: theme.dividerColor.withValues(alpha: 0.1),
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 6),
-          if (onHome != null)
-            IconButton(
-              onPressed: onHome,
-              icon: const Icon(PhosphorIconsBold.house, size: 15),
-              color: AppColors.textMuted,
-              splashRadius: 15,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-              tooltip: tr('الشاشة الأولى'),
-            ),
-          Expanded(
-            // ⚠️ **والتمريرُ لازمٌ لا تحسين**: ثمانيةُ تابات بعناوينَ عربيّةٍ
-            // تتجاوز عرضَ النافذة على شاشةٍ ١٣٦٦، و`Row` بلا تمريرٍ يرمي
-            // بتراً في زمن التشغيل لا يراه أحدٌ إلّا في السجلّ.
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (final t in tabs)
-                    _Tab(
-                      tab: t,
-                      isActive: t.index == active,
-                      onSelect: () => onSelect(t.index),
-                      onClose: () => onClose(t.index),
-                    ),
-                ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 120;
+        return Container(
+          height: 38,
+          decoration: BoxDecoration(
+            color: theme.cardColor.withValues(alpha: 0.5),
+            border: Border(
+              bottom: BorderSide(
+                color: theme.dividerColor.withValues(alpha: 0.1),
               ),
             ),
           ),
+          child: compact ? _compactBarContent() : _regularBarContent(),
+        );
+      },
+    );
+  }
+
+  Widget _regularBarContent() {
+    return Row(
+      children: [
+        const SizedBox(width: 6),
+        if (onHome != null) _homeButton(),
+        Expanded(
+          // ⚠️ **والتمريرُ لازمٌ لا تحسين**: ثمانيةُ تابات بعناوينَ عربيّةٍ
+          // تتجاوز عرضَ النافذة على شاشةٍ ١٣٦٦، و`Row` بلا تمريرٍ يرمي
+          // بتراً في زمن التشغيل لا يراه أحدٌ إلّا في السجلّ.
+          child: _tabScrollView(),
+        ),
+        const SizedBox(width: 8),
+        const NotificationBell(),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
+  Widget _compactBarContent() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          const SizedBox(width: 6),
+          if (onHome != null) _homeButton(),
+          _tabRow(),
           const SizedBox(width: 8),
           const NotificationBell(),
           const SizedBox(width: 8),
         ],
       ),
+    );
+  }
+
+  Widget _tabScrollView() => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: _tabRow(),
+      );
+
+  Widget _tabRow() => Row(
+        children: [
+          for (final t in tabs)
+            _Tab(
+              tab: t,
+              isActive: t.index == active,
+              onSelect: () => onSelect(t.index),
+              onClose: () => onClose(t.index),
+            ),
+        ],
+      );
+
+  Widget _homeButton() {
+    return IconButton(
+      onPressed: onHome,
+      icon: const Icon(PhosphorIconsBold.house, size: 15),
+      color: AppColors.textMuted,
+      splashRadius: 15,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+      tooltip: tr('الشاشة الأولى'),
     );
   }
 }
@@ -178,7 +210,7 @@ class _TabState extends State<_Tab> {
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  widget.tab.label,
+                  tr(widget.tab.label),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                   style: TextStyle(

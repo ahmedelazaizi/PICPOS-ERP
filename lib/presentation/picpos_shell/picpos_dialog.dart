@@ -166,7 +166,7 @@ class PicPosDialog extends StatelessWidget {
     final muted = picposDialogMuted(context);
 
     return Directionality(
-      textDirection: ui.TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,

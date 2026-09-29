@@ -484,9 +484,8 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           textDirection: TextDirection.rtl,
           child: AlertDialog(
             title:  Text(tr('السلة غير فارغة')),
-            content: const Text(
-              'فيه أصناف في السلة لسه ما اتحفظتش. تحويل المستخدم هيمسحها. '
-              'تحب تكمّل؟',
+            content:  Text(
+              tr('فيه أصناف في السلة لسه ما اتحفظتش. تحويل المستخدم هيمسحها. تحب تكمّل؟'),
             ),
             actions: [
               TextButton(
@@ -830,8 +829,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
               ),
               const Divider(height: 18),
               Text(
-                'تسمح بالبيع بالسالب في هذه الفاتورة؟ الرصيد هيبقى سالب '
-                'ولازم جرد يصحّحه.',
+                tr('تسمح بالبيع بالسالب في هذه الفاتورة؟ الرصيد هيبقى سالب ولازم جرد يصحّحه.'),
                 style: PicPosText.l(context, 13),
               ),
             ],
@@ -1027,8 +1025,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
             ],
           ),
           content: Text(
-            'الباركود "$barcode" غير مسجل في النظام.\n'
-            'هل تريد إضافته كصنف جديد؟',
+            tr('الباركود "{barcode}" غير مسجل في النظام.\nهل تريد إضافته كصنف جديد؟', {'barcode': barcode}),
           ),
           actions: [
             TextButton(
@@ -2255,8 +2252,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       final ok = await AppConfirmDialog.show(
         context,
         title: tr('إلغاء الاستبدال'),
-        message: 'سيُلغى وضعُ الاستبدال بلا حفظ، **وتُفرَّغ سلّةُ البديل**. '
-            'متأكد؟',
+        message: tr('سيُلغى وضعُ الاستبدال بلا حفظ، **وتُفرَّغ سلّةُ البديل**. متأكد؟'),
         confirmLabel: tr('إلغاء الاستبدال'),
         isDangerous: true,
       );
@@ -2516,9 +2512,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         context,
         title: tr('سلّةُ بيعٍ قيدَ التحضير'),
         message:
-            'في السلّة أصنافُ بيعٍ لم تُحفَظ بعد. الدخولُ في وضع المرتجع '
-            'يبقيها كما هي أثناء التحرير، لكنّ حفظَ المرتجع سيُفرغها. '
-            'متابعة؟',
+            tr('في السلّة أصنافُ بيعٍ لم تُحفَظ بعد. الدخولُ في وضع المرتجع يبقيها كما هي أثناء التحرير، لكنّ حفظَ المرتجع سيُفرغها. متابعة؟'),
         confirmLabel: tr('متابعة المرتجع'),
         isDangerous: true,
       );
@@ -3342,8 +3336,7 @@ class _QuickReturnLinesEditorDialogState
       showPosToast(
         context,
         ref,
-        'الكميةُ مرفوضة — أقصى متاحٍ لـ«${line.productName}» '
-        '${line.availableQty.toStringAsFixed(2)}',
+        tr('الكميةُ مرفوضة — أقصى متاحٍ لـ«{p0}» {p1}', {'p0': line.productName, 'p1': line.availableQty.toStringAsFixed(2)}),
         type: PosNotificationType.error,
       );
       return;
@@ -3363,8 +3356,7 @@ class _QuickReturnLinesEditorDialogState
       showPosToast(
         context,
         ref,
-        'بلغتَ الحدَّ الأقصى المتاح لـ«${line.productName}» '
-        '(${line.availableQty.toStringAsFixed(2)})',
+        tr('بلغتَ الحدَّ الأقصى المتاح لـ«{p0}» ({p1})', {'p0': line.productName, 'p1': line.availableQty.toStringAsFixed(2)}),
         type: PosNotificationType.warning,
       );
       return;
@@ -3523,10 +3515,7 @@ class _QuickReturnLinesEditorDialogState
                     style: const TextStyle(fontWeight: FontWeight.bold)),
                 // ١: المباع، المرتجعُ سابقاً، المتاح، السعر — الأربعةُ معاً.
                 Text(
-                  'مباع ${line.soldQty.toStringAsFixed(2)} · مرتجعٌ سابقاً '
-                  '${line.alreadyReturnedQty.toStringAsFixed(2)} · متاح '
-                  '${line.availableQty.toStringAsFixed(2)} · السعر '
-                  '${_mode.unitPriceOf(line.invoiceItemId).toStringAsFixed(2)}',
+                  tr('مباع {p0} · مرتجعٌ سابقاً {p1} · متاح {p2} · السعر {p3}', {'p0': line.soldQty.toStringAsFixed(2), 'p1': line.alreadyReturnedQty.toStringAsFixed(2), 'p2': line.availableQty.toStringAsFixed(2), 'p3': _mode.unitPriceOf(line.invoiceItemId).toStringAsFixed(2)}),
                   style: const TextStyle(
                       fontSize: 11, color: AppColors.textMuted),
                 ),

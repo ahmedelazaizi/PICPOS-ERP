@@ -247,11 +247,10 @@ class _PartyStatementScreenState extends ConsumerState<PartyStatementScreen>
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              const Text(
-                                'قد يكون الحساب محذوفاً أو غير متاح من هذا الجهاز. '
-                                'جرّب المزامنة أو افتح كشف حساب طرف آخر.',
+                               Text(
+                                tr('قد يكون الحساب محذوفاً أو غير متاح من هذا الجهاز. جرّب المزامنة أو افتح كشف حساب طرف آخر.'),
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 14,
                                   color: AppColors.textMuted,
                                 ),

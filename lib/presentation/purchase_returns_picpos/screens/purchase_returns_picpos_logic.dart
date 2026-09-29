@@ -372,9 +372,7 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
                             final invStr = invoice.total.toStringAsFixed(AppConstants.decimalPlaces);
                             final cur = AppConstants.currencySymbolAr;
                             return Text(
-                              'التاريخ: $dateStr • '
-                              'قيمة المرتجع: $retStr $cur '
-                              '(الفاتورة الأصلية: $invStr $cur)',
+                              tr('التاريخ: {dateStr} • قيمة المرتجع: {retStr} {cur} (الفاتورة الأصلية: {invStr} {p0})', {'dateStr': dateStr, 'retStr': retStr, 'cur': cur, 'invStr': invStr, 'p0': invoice.invoiceNumber}),
                             );
                           },
                         ),
@@ -457,14 +455,11 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
             width: 480,
             height: 350,
             child: items.isEmpty
-                ? const Center(
+                ?  Center(
                     child: Padding(
-                      padding: EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
                       child: Text(
-                        'تفاصيل المرتجع غير متاحة محلياً.\n'
-                        'قد يكون هذا مرتجع جزئي تم قبل تحديث النسخة — '
-                        'انتظر المزامنة التالية أو نفّذ مزامنة يدوية '
-                        'لتحديث البيانات من السيرفر.',
+                        tr('تفاصيل المرتجع غير متاحة محلياً.\nقد يكون هذا مرتجع جزئي تم قبل تحديث النسخة — انتظر المزامنة التالية أو نفّذ مزامنة يدوية لتحديث البيانات من السيرفر.'),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -565,8 +560,7 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
     if (closed) {
       AppToast.show(
         context,
-        'لا يمكن تعديل المرتجع — الفترة المحاسبية مقفلة. '
-        'افتح الفترة من شاشة السنوات المالية أولاً.',
+        tr('لا يمكن تعديل المرتجع — الفترة المحاسبية مقفلة. افتح الفترة من شاشة السنوات المالية أولاً.'),
         type: ToastType.error,
       );
       return;

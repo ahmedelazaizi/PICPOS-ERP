@@ -38,6 +38,8 @@ import '../../main_desktop.dart'
     as platform;
 import 'screen_breadcrumbs.dart';
 import 'screen_tabs_bar.dart';
+import '../widgets/user_language_selector.dart';
+import '../../core/i18n/locale_provider.dart';
 import '../widgets/sync_management_dialog.dart';
 import '../widgets/sync_status_badge.dart';
 import '../widgets/mirror_badge.dart';
@@ -131,8 +133,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           .listen((event) {
         if (!mounted) return;
         _showSyncBanner(
-          message: 'تعارض في ${event.table} #${event.recordId} — '
-              'البيانات المحلية أحدث، تم الاحتفاظ بها',
+          message: tr('تعارض في {p0} #{p1} — البيانات المحلية أحدث، تم الاحتفاظ بها', {'p0': event.table, 'p1': event.recordId}),
           color: AppColors.warning,
           icon: PhosphorIconsBold.warning,
           actionLabel: tr('التفاصيل'),
@@ -263,7 +264,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     showDialog(
       context: context,
       builder: (context) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: AlertDialog(
           title:  Row(
             children: [
@@ -329,7 +330,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     showDialog(
       context: context,
       builder: (context) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: AlertDialog(
           title:  Row(
             children: [
@@ -456,7 +457,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     final password = await showDialog<String>(
       context: context,
       builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: AlertDialog(
           title:  Row(
             children: [
@@ -765,7 +766,7 @@ class _AppShellState extends ConsumerState<AppShell> {
             // ⚠️ **تسميةُ النتيجة لا تسميةُ الشاشة.** كلُّ مداخل التقارير
             // تحمل فهرسَ شاشة التقارير، فقراءةُ `item.label` كانت تعرض
             // ستّةً وأربعينَ صفّاً كلُّها «التقارير».
-            hit.label,
+            tr(hit.label),
             style: TextStyle(
               color: isSelected ? AppColors.primary : Colors.white,
               fontSize: isReport ? 12 : 12.5,
@@ -775,7 +776,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           subtitle: groupLabel == null
               ? null
               : Text(
-                  groupLabel,
+                  tr(groupLabel),
                   style: const TextStyle(
                     color: AppColors.textMuted,
                     fontSize: 10.5,
@@ -834,6 +835,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final locale = ref.watch(userLocaleProvider);
     final navItemsAsync = ref.watch(userNavItemsProvider);
     final roleAsync = ref.watch(userRoleProvider);
 
@@ -911,16 +913,21 @@ class _AppShellState extends ConsumerState<AppShell> {
     // Initialize CFD listener (SSE broadcasting)
     ref.watch(cfdControllerProvider);
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
+    return ValueListenableBuilder<Locale>(
+      valueListenable: I18nCatalog.localeNotifier,
+      builder: (context, activeLocale, _) {
+        final direction = activeLocale.languageCode == 'en'
+            ? TextDirection.ltr
+            : TextDirection.rtl;
+        return Directionality(
+          textDirection: direction,
+          child: Scaffold(
         // #12 FAB to show sidebar when hidden - requires admin password.
         // ويتراكب معه اختصار «البيع السريع» أحياناً (كاشيرٌ اتّخذ عنه مديرٌ
         // ثم أسقط الرفع وهو على شاشةٍ غير البيع — القائمةُ تختفي والزرّان
         // كلاهما وجيهان)، فيُكدَّسان عمودياً بنفس الموضع بدل التزاحم.
-        floatingActionButton: (!_isHidden && !showPosShortcutFab)
-            ? null
-            : Column(
+        floatingActionButton: _isHidden
+            ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (_isHidden)
@@ -936,7 +943,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                     ),
                   if (_isHidden && showPosShortcutFab)
                     const SizedBox(height: 10),
-                  if (showPosShortcutFab)
+                  if (_isHidden && showPosShortcutFab)
                     FloatingActionButton.small(
                       heroTag: 'appShellPosShortcutFab',
                       backgroundColor: AppColors.primary.withValues(alpha: 0.9),
@@ -948,8 +955,9 @@ class _AppShellState extends ConsumerState<AppShell> {
                       ),
                     ),
                 ],
-              ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
+              )
+            : null,
+         floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
         body: Column(children: [
           // Feature 006 / MM.D — banner that surfaces when the most
           // recent HQ handshake is older than 5 minutes. Self-collapses
@@ -988,14 +996,14 @@ class _AppShellState extends ConsumerState<AppShell> {
                   Container(
                     height: 56, // Reduced from 80
                     padding: EdgeInsets.symmetric(
-                      horizontal: _isExpanded ? 12 : 8, // Reduced from 20 / 12
+                      horizontal: _isExpanded ? 12 : 4,
                       vertical: 10, // Reduced from 16
                     ),
                     child: Row(
                       children: [
                         Container(
-                          width: 36, // Reduced from 44
-                          height: 36, // Reduced from 44
+                          width: _isExpanded ? 36 : 24,
+                          height: _isExpanded ? 36 : 24,
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(
@@ -1011,7 +1019,8 @@ class _AppShellState extends ConsumerState<AppShell> {
                           const SizedBox(width: 8), // Reduced from 12
                           Expanded(
                             child: Text(
-                              AppConfig.appName,
+                              key: const ValueKey('picposSidebarBrand'),
+                               AppConfig.appName,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14, // Reduced from 18
@@ -1088,6 +1097,25 @@ class _AppShellState extends ConsumerState<AppShell> {
                               },
                             ),
                         ],
+                        if (showPosShortcutFab && !_isHidden)
+                          Padding(
+                            padding: const EdgeInsetsDirectional.only(start: 4),
+                            child: IconButton(
+                              key: const ValueKey('picposSidebarPosShortcut'),
+                              onPressed: _navigateToPosShortcut,
+                              tooltip: tr('الذهاب إلى البيع السريع'),
+                              padding: EdgeInsets.zero,
+                              constraints: BoxConstraints.tightFor(
+                                width: _isExpanded ? 32 : 24,
+                                height: _isExpanded ? 32 : 24,
+                              ),
+                              icon: Icon(
+                                PhosphorIconsBold.cashRegister,
+                                color: AppColors.primary,
+                                size: _isExpanded ? 20 : 16,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -1144,6 +1172,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                             .firstOrNull;
 
                         return _CollapsibleNavGroups(
+                          key: ValueKey(locale),
                           groupOrder: groupOrder,
                           groups: groups,
                           activeGroup: activeGroup,
@@ -1287,7 +1316,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     Text(
-                                      role?.name ?? '',
+                                      role == null ? '' : tr(role.name),
                                       style: const TextStyle(
                                         color: AppColors.textMuted,
                                         fontSize: 11,
@@ -1318,6 +1347,13 @@ class _AppShellState extends ConsumerState<AppShell> {
                       error: (e, s) => const SizedBox.shrink(),
                     ),
                   ],
+
+                  // Language Toggle — available before opening Settings.
+                  if (_isExpanded)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: UserLanguageToggle(),
+                    ),
 
                   // Dark Mode Toggle (Sprint 18)
                   if (_isExpanded)
@@ -1504,7 +1540,9 @@ class _AppShellState extends ConsumerState<AppShell> {
           ],
         )), // close Row + close Expanded
         ]), // close Column.children + close Column
-      ),
+          ),
+        );
+      },
     );
   }
 

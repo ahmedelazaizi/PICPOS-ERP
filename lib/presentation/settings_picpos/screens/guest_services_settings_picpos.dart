@@ -165,8 +165,7 @@ class _PublicBaseUrlRowState extends ConsumerState<_PublicBaseUrlRow> {
           Text(
             widget.current == null
                 ? tr('اتركه فارغاً ليعمل الرمزُ على شبكة المحلّ وحدَها.')
-                : 'منشورٌ على دومين — ويُطلَب من الضيف رقمُ الطاولة (٤ خانات) '
-                    'قبل طلب الحساب أو إضافة الأصناف، يقوله له النادل.',
+                : tr('منشورٌ على دومين — ويُطلَب من الضيف رقمُ الطاولة (٤ خانات) قبل طلب الحساب أو إضافة الأصناف، يقوله له النادل.'),
             style: TextStyle(
               fontSize: 11,
               color: widget.current == null
@@ -262,11 +261,9 @@ class _WhatsAppSettingsCardState extends ConsumerState<WhatsAppSettingsCard> {
               const SizedBox(height: 6),
               // ⚠️ ولا يُفترَض رمزٌ في الشيفرة: المنتجُ يُشحَن في أكثرَ من
               // سوق، وافتراضُ دولةٍ يُشوِّه أرقامَ السوق الآخر كلَّها بصمت.
-              const Text(
-                'يُضاف إلى الأرقام المحلّيّة قبل فتح واتساب. بدونه لا يُبنى '
-                'رابطٌ أصلاً — لأنّ رابطاً برقمٍ ناقصٍ يفتح «الرقم غير صالح» '
-                'فيُظنّ أنّ العميل ليس على واتساب.',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+               Text(
+                tr('يُضاف إلى الأرقام المحلّيّة قبل فتح واتساب. بدونه لا يُبنى رابطٌ أصلاً — لأنّ رابطاً برقمٍ ناقصٍ يفتح «الرقم غير صالح» فيُظنّ أنّ العميل ليس على واتساب.'),
+                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
             ],
           ),

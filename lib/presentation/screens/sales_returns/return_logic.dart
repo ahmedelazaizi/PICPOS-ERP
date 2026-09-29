@@ -428,9 +428,7 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
                                       AppConstants.decimalPlaces);
                               final cur = AppConstants.currencySymbolAr;
                               return Text(
-                                '$customerName • ${d.day}/${d.month}/${d.year} • '
-                                'قيمة المرتجع: $ret $cur '
-                                '(الفاتورة الأصلية: $orig $cur)',
+                                tr('{customerName} • {p0}/{p1}/{p2} • قيمة المرتجع: {ret} {cur} (الفاتورة الأصلية: {orig} {p3})', {'customerName': customerName, 'p0': d.day, 'p1': d.month, 'p2': d.year, 'ret': ret, 'cur': cur, 'orig': orig, 'p3': entry.invoice.invoiceNumber}),
                               );
                             },
                           ),

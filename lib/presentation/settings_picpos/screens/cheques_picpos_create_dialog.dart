@@ -340,18 +340,16 @@ class _CreatePaperPicposDialogState extends State<_CreatePaperPicposDialog> {
         // نصُّ التنبيه من التصميم حرفاً — وهو قاعدةُ محاسبةٍ تشرح سلوكاً
         // يبدو خطأً للمشغّل: الرصيدُ لم ينقص بعد استلام الشيك.
         if (_direction == 'received')
-          const PicPosDialogBanner(
+           PicPosDialogBanner(
             icon: PhosphorIconsBold.warning,
             color: AppColors.warning,
-            text: 'استلام الشيك لا يُنقص ذمة العميل — الذمة تُنقص عند التحصيل '
-                'الفعلي. حتى ذلك الحين تظهر الورقة في «شيكات تحت التحصيل».',
+            text: tr('استلام الشيك لا يُنقص ذمة العميل — الذمة تُنقص عند التحصيل الفعلي. حتى ذلك الحين تظهر الورقة في «شيكات تحت التحصيل».'),
           )
         else
-          const PicPosDialogBanner(
+           PicPosDialogBanner(
             icon: PhosphorIconsBold.warning,
             color: AppColors.warning,
-            text: 'الشيك الصادر يُقيَّد كالتزام قائم حتى يُخصم من البنك فعلاً '
-                '— لا عند تحريره.',
+            text: tr('الشيك الصادر يُقيَّد كالتزام قائم حتى يُخصم من البنك فعلاً — لا عند تحريره.'),
           ),
       ],
     );

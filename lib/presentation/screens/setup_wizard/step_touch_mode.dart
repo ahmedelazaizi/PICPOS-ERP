@@ -22,19 +22,16 @@ extension _TouchModeStep on _SetupWizardScreenState {
           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'اختر نوع الجهاز الذي يعمل عليه النظام. يمكن تغيير هذا الخيار '
-          'لاحقًا من شاشة الإعدادات. الإعداد محلي على هذا الجهاز فقط ولا '
-          'ينتشر إلى أجهزة أخرى في المزامنة.',
-          style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+         Text(
+          tr('اختر نوع الجهاز الذي يعمل عليه النظام. يمكن تغيير هذا الخيار لاحقًا من شاشة الإعدادات. الإعداد محلي على هذا الجهاز فقط ولا ينتشر إلى أجهزة أخرى في المزامنة.'),
+          style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
         ),
         const SizedBox(height: 24),
         _touchModeCard(
           selected: !_touchMode,
           icon: PhosphorIconsBold.keyboard,
           title: tr('جهاز عادي (لوحة مفاتيح)'),
-          description: 'كمبيوتر مكتبي أو لاب توب مع لوحة مفاتيح فعلية. لن '
-              'تظهر أي لوحة مفاتيح على الشاشة.',
+          description: tr('كمبيوتر مكتبي أو لاب توب مع لوحة مفاتيح فعلية. لن تظهر أي لوحة مفاتيح على الشاشة.'),
           onTap: () => _onTouchModePicked(false),
         ),
         const SizedBox(height: 12),
@@ -42,9 +39,7 @@ extension _TouchModeStep on _SetupWizardScreenState {
           selected: _touchMode,
           icon: PhosphorIconsBold.handTap,
           title: tr('جهاز لمسي / POS'),
-          description: 'جهاز نقاط بيع أو شاشة لمس أو كاشير all-in-one. '
-              'تظهر لوحة مفاتيح عربية / إنجليزية / رقمية على الشاشة عند '
-              'لمس أي حقل إدخال.',
+          description: tr('جهاز نقاط بيع أو شاشة لمس أو كاشير all-in-one. تظهر لوحة مفاتيح عربية / إنجليزية / رقمية على الشاشة عند لمس أي حقل إدخال.'),
           onTap: () => _onTouchModePicked(true),
         ),
       ],

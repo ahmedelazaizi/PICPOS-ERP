@@ -532,8 +532,7 @@ class _PicPosLinesTable extends StatelessWidget {
                 Flexible(
                   child: Text(
                     // متوسّطٌ على صفرِ بنودٍ يعطي `NaN` لا استثناءً — فيُحرَس.
-                    'متوسط قيمة البند '
-                    '${n(t.lineCount == 0 ? 0 : t.subtotal / t.lineCount)}',
+                    tr('متوسط قيمة البند {p0}', {'p0': n(t.lineCount == 0 ? 0 : t.subtotal / t.lineCount)}),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -854,8 +853,7 @@ class _LineRow extends StatelessWidget {
                   ),
                   if (line.taxEnabled && line.taxAmount > 0)
                     Text(
-                      'منها ضريبة '
-                      '${line.taxAmount.toStringAsFixed(AppConstants.decimalPlaces)}',
+                      tr('منها ضريبة {p0}', {'p0': line.taxAmount.toStringAsFixed(AppConstants.decimalPlaces)}),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

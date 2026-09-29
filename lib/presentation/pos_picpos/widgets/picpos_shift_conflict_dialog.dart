@@ -54,8 +54,7 @@ Future<ShiftConflictChoice> showPicposShiftConflictDialog(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'المستخدم «$userName» له وردية مفتوحة رقم #$shiftId '
-              'بدأت $sinceText على طرف آخر.',
+              tr('المستخدم «{userName}» له وردية مفتوحة رقم #{shiftId} بدأت {sinceText} على طرف آخر.', {'userName': userName, 'shiftId': shiftId, 'sinceText': sinceText}),
             ),
             const SizedBox(height: 12),
              Text(

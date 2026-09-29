@@ -192,24 +192,20 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
         //    اللوحة كتلةٌ ظاهرةٌ بلا رقمٍ يقابلها في العمود.
          PicPosPanelGroup(
           label: tr('تنبيه'),
-          child: const Column(
+          child:  Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
               PicPosDialogBanner(
                 icon: PhosphorIconsBold.fileText,
                 color: AppColors.info,
-                text: 'للأجهزة المعزولة عن الإنترنت: ضع ملفّ الترخيص باسم '
-                    '«license.txt» أو «activation.key» أو «license.key» في نفس '
-                    'مجلّد البرنامج — يُقرأ تلقائيّاً عند التشغيل بلا إدخال '
-                    'مفتاح.',
+                text: tr('للأجهزة المعزولة عن الإنترنت: ضع ملفّ الترخيص باسم «license.txt» أو «activation.key» أو «license.key» في نفس مجلّد البرنامج — يُقرأ تلقائيّاً عند التشغيل بلا إدخال مفتاح.'),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               PicPosDialogBanner(
                 icon: PhosphorIconsBold.warning,
                 color: AppColors.warning,
-                text: 'المفتاحُ مرتبطٌ برقم هذا الجهاز وحدَه. تشغيلُ البرنامج '
-                    'على جهازٍ آخر يحتاج مفتاحاً جديداً من الدعم الفنّي.',
+                text: tr('المفتاحُ مرتبطٌ برقم هذا الجهاز وحدَه. تشغيلُ البرنامج على جهازٍ آخر يحتاج مفتاحاً جديداً من الدعم الفنّي.'),
               ),
             ],
           ),

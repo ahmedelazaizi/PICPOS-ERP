@@ -281,8 +281,7 @@ class _AnalyticsPicposScreenState
             return  PicPosEmptyState(
               icon: PhosphorIconsBold.chartLineUp,
               title: tr('لا تكفي البياناتُ لرسم اتجاه'),
-              hint: 'الانحدارُ الخطّيُّ يحتاج شهرَين على الأقلّ فيهما حركة. '
-                  'سجِّلْ مبيعاتٍ ثمّ عُدْ.',
+              hint: tr('الانحدارُ الخطّيُّ يحتاج شهرَين على الأقلّ فيهما حركة. سجِّلْ مبيعاتٍ ثمّ عُدْ.'),
             );
           }
           return _body(all);
@@ -527,9 +526,7 @@ class _AnalyticsPicposScreenState
         children: [
           PicPosSectionHeader(
             title: tr('{p0} — الاتجاه والتنبؤ', {'p0': focus.label}),
-            subtitle: '${_ar(f.points.length)} نقطة'
-                '${_smooth ? ' · مُنعَّمة بمتوسط متحرك ٣ أشهر' : ' · قيم خام'}'
-                ' · تنبؤ ٣ أشهر قادمة بالانحدار الخطي',
+            subtitle: tr('{p0} نقطة{p1} · تنبؤ ٣ أشهر قادمة بالانحدار الخطي', {'p0': _ar(f.points.length), 'p1': _smooth ? ' · مُنعَّمة بمتوسط متحرك ٣ أشهر' : ' · قيم خام'}),
             icon: focus.icon,
           ),
           _ChartLegend(tint: focus.tint),
@@ -598,8 +595,7 @@ class _AnalyticsPicposScreenState
                   tint: (t.slope >= 0) == m.inverse ? _err : _ok,
                 ),
                 PicPosTextCell(
-                  '${t.changePercent >= 0 ? '+' : ''}'
-                  '${_num1.format(t.changePercent)}٪',
+                  tr('{p0}{p1}٪', {'p0': t.changePercent >= 0 ? '+' : '', 'p1': _num1.format(t.changePercent)}),
                   tint: good ? _ok : _err,
                 ),
                 PicPosTextCell(_fmt(t.forecastNext ?? t.endValue, m.unit),
@@ -702,10 +698,7 @@ class _AnalyticsPicposScreenState
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'ميل المبيعات ${_num1.format(salesGrowth)}٪ شهرياً مقابل '
-                  '${_num1.format(expGrowth)}٪ للمصروفات التشغيلية — '
-                  'كلاهما محسوبٌ بالانحدار الخطي على '
-                  '${_ar(_seriesFor(all, 'sales').points.length)} نقطة.',
+                  tr('ميل المبيعات {p0}٪ شهرياً مقابل {p1}٪ للمصروفات التشغيلية — كلاهما محسوبٌ بالانحدار الخطي على {p2} نقطة.', {'p0': _num1.format(salesGrowth), 'p1': _num1.format(expGrowth), 'p2': _ar(_seriesFor(all, 'sales').points.length)}),
                   style: TextStyle(
                       fontSize: 12,
                       height: 1.6,

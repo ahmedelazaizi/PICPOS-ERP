@@ -462,8 +462,7 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
         if (mounted) {
           AppToast.show(
             context,
-            '⚠️ فاتورة #${outcome.invoiceId} صدرت والمبلغُ مسجَّلٌ على '
-            '${widget.tableName}، لكن تعذّر ربطُهما — راجع الطاولةَ يدويّاً',
+            tr('⚠️ فاتورة #{p0} صدرت والمبلغُ مسجَّلٌ على {p1}، لكن تعذّر ربطُهما — راجع الطاولةَ يدويّاً', {'p0': outcome.invoiceId, 'p1': widget.tableName}),
             type: ToastType.error,
           );
         }

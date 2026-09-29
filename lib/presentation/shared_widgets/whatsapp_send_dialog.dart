@@ -165,8 +165,7 @@ class _WhatsAppSendDialogState extends ConsumerState<WhatsAppSendDialog> {
               _note(
                 color: AppColors.info,
                 icon: PhosphorIconsBold.info,
-                text: 'يفتح واتساب بالنصّ جاهزاً — وأنت من يضغط «إرسال». '
-                    'ولا يصل النظامَ إشعارُ تسليم.',
+                text: tr('يفتح واتساب بالنصّ جاهزاً — وأنت من يضغط «إرسال». ولا يصل النظامَ إشعارُ تسليم.'),
               ),
             ],
           ),

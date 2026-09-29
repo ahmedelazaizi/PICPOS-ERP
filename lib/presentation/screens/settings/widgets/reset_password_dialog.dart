@@ -34,8 +34,7 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
   @override
   // نصُّ التصميم: يقول أثرَ الحفظ على المستخدم بدل وصفٍ عامّ.
   String? get dialogSubtitle =>
-      ' — لن يستطيع الدخولَ بكلمته القديمة بعد '
-      'الحفظ';
+      tr(' — لن يستطيع الدخولَ بكلمته القديمة بعد الحفظ');
 
   @override
   String? get dialogSaveLabel => tr('حفظ كلمة المرور');
@@ -93,11 +92,10 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
       // `updateUserPin` من حوارٍ آخر. فالجملةُ تصف فصلاً قائماً في الكود.
        PicPosPanelGroup(
         label: tr('تنبيه'),
-        child: const PicPosDialogBanner(
+        child:  PicPosDialogBanner(
           icon: PhosphorIconsBold.info,
           color: AppColors.info,
-          text: 'كلمةُ المرور للدخول للبرنامج، وهي غيرُ الـPIN المستخدَم على '
-              'نقطة البيع — عيّنِ الـPIN من زرِّ القفل في صفِّ المستخدم.',
+          text: tr('كلمةُ المرور للدخول للبرنامج، وهي غيرُ الـPIN المستخدَم على نقطة البيع — عيّنِ الـPIN من زرِّ القفل في صفِّ المستخدم.'),
         ),
       ),
     ];

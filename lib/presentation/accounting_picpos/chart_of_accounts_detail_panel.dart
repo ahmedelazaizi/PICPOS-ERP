@@ -223,8 +223,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'حسابُ نظام — رمزُه ثابتٌ ولا يُحذَف. يقرؤه المحرّكُ '
-                      'بالرمز في الترحيل الآليّ، وتغييرُه يقطع الترحيل.',
+                      tr('حسابُ نظام — رمزُه ثابتٌ ولا يُحذَف. يقرؤه المحرّكُ بالرمز في الترحيل الآليّ، وتغييرُه يقطع الترحيل.'),
                       style: text.labelSmall
                           ?.copyWith(color: AppColors.textSecondary),
                     ),
@@ -285,8 +284,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                           )
                         : _readOnly(
                             parentName ?? tr('— حسابٌ رئيسيّ —'),
-                            hint: 'النسبُ يُختار عند الإنشاء: تغييرُه يُعيد '
-                                'حسابَ المستوى للحساب وكلِّ ذرّيّته.',
+                            hint: tr('النسبُ يُختار عند الإنشاء: تغييرُه يُعيد حسابَ المستوى للحساب وكلِّ ذرّيّته.'),
                           ),
                   ),
                   if (_isNew)

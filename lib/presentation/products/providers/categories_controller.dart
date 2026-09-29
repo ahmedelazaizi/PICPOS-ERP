@@ -63,8 +63,7 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
         if (serverId == null) {
           state = state.copyWith(
             isLoading: false,
-            error: 'تعذّر إنشاء التصنيف على الخادم — لم يُنشأ محلياً '
-                'حتى لا يظهر على هذا الجهاز وحده.',
+            error: tr('تعذّر إنشاء التصنيف على الخادم — لم يُنشأ محلياً حتى لا يظهر على هذا الجهاز وحده.'),
           );
           return false;
         }
@@ -122,8 +121,7 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
         if (!ok) {
           state = state.copyWith(
             isLoading: false,
-            error: 'تعذّر حفظ التعديل على الخادم — لم يُحفظ محلياً '
-                'لمنع رجوع القيم القديمة مع المزامنة القادمة.',
+            error: tr('تعذّر حفظ التعديل على الخادم — لم يُحفظ محلياً لمنع رجوع القيم القديمة مع المزامنة القادمة.'),
           );
           return false;
         }
@@ -203,8 +201,7 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
         if (!ok) {
           state = state.copyWith(
             isLoading: false,
-            error: 'تعذّر حذف التصنيف على الخادم — لم يتم الحذف محلياً '
-                'لمنع رجوع التصنيف مع المزامنة القادمة.',
+            error: tr('تعذّر حذف التصنيف على الخادم — لم يتم الحذف محلياً لمنع رجوع التصنيف مع المزامنة القادمة.'),
           );
           return false;
         }

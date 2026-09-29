@@ -134,8 +134,7 @@ class ExcessReturnError extends AppError {
 
   @override
   String get messageAr =>
-      'الكمية المرتجعة ($requested) أكبر من المتاح للإرجاع ($maxReturnable) '
-      'للصنف رقم $productId';
+      tr('الكمية المرتجعة ({requested}) أكبر من المتاح للإرجاع ({maxReturnable}) للصنف رقم {productId}', {'requested': requested, 'maxReturnable': maxReturnable, 'productId': productId});
 
   @override
   String get messageTech =>
@@ -162,8 +161,7 @@ class ReconciliationError extends AppError {
 
   @override
   String get messageAr =>
-      'تم اكتشاف فرق في رصيد $entityType (رقم $entityId): '
-      'القيمة المخزنة ($cachedValue) ≠ المحسوبة ($calculatedValue)';
+      tr('تم اكتشاف فرق في رصيد {entityType} (رقم {entityId}): القيمة المخزنة ({cachedValue}) ≠ المحسوبة ({calculatedValue})', {'entityType': entityType, 'entityId': entityId, 'cachedValue': cachedValue, 'calculatedValue': calculatedValue});
 
   @override
   String get messageTech =>

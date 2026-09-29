@@ -280,9 +280,7 @@ class _ManualAttendanceButton extends StatelessWidget {
       builder: (confirmCtx) => AlertDialog(
         title:  Text(tr('تأكيد تعليم غياب')),
         content: Text(
-          'تعليم ${employee.name} غائباً يوم '
-          '${DateFormat('yyyy/MM/dd').format(date)}؟'
-          '${employee.salaryType == 'monthly' ? '\n\nسيُخصم يومٌ من راتبه الشهري.' : ''}',
+          tr('تعليم {p0} غائباً يوم {p1}؟{p2}', {'p0': employee.name, 'p1': DateFormat('yyyy/MM/dd').format(date), 'p2': employee.salaryType == 'monthly' ? '\n\nسيُخصم يومٌ من راتبه الشهري.' : ''}),
         ),
         actions: [
           TextButton(

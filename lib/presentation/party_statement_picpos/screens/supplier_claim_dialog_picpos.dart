@@ -159,8 +159,7 @@ class _SupplierClaimDialogState extends ConsumerState<_SupplierClaimDialog> {
         busy: _saving,
         onPressed: _saving ? null : _save,
       ),
-      footerHint: 'المطالبة مراسلة لا قيد — الرصيد لا يتحرك حتى يصل '
-          'إشعار المورد الدائن',
+      footerHint: tr('المطالبة مراسلة لا قيد — الرصيد لا يتحرك حتى يصل إشعار المورد الدائن'),
       body: [
         PicPosPanelGroup(
           label: tr('المورد والرصيد'),

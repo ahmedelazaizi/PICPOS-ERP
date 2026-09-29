@@ -33,10 +33,9 @@ class _TouchInputSettings extends ConsumerWidget {
               tr('جهاز لمسي / POS'),
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
-            subtitle: const Text(
-              'تظهر لوحة مفاتيح عربية / إنجليزية / رقمية على الشاشة عند '
-              'لمس أي حقل إدخال في كل شاشات النظام.',
-              style: TextStyle(fontSize: 12),
+            subtitle:  Text(
+              tr('تظهر لوحة مفاتيح عربية / إنجليزية / رقمية على الشاشة عند لمس أي حقل إدخال في كل شاشات النظام.'),
+              style: const TextStyle(fontSize: 12),
             ),
             value: isOn,
             onChanged: (v) =>
@@ -49,20 +48,19 @@ class _TouchInputSettings extends ConsumerWidget {
               color: AppColors.info.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Row(
+            child:  Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
+                const Icon(
                   PhosphorIconsBold.info,
                   color: AppColors.info,
                   size: 16,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'هذا الإعداد محلي على هذا الجهاز فقط ولا ينتقل للأجهزة '
-                    'الأخرى في المزامنة. التغيير يُفعَّل فوراً بدون إعادة تشغيل.',
-                    style: TextStyle(fontSize: 11, color: AppColors.info),
+                    tr('هذا الإعداد محلي على هذا الجهاز فقط ولا ينتقل للأجهزة الأخرى في المزامنة. التغيير يُفعَّل فوراً بدون إعادة تشغيل.'),
+                    style: const TextStyle(fontSize: 11, color: AppColors.info),
                   ),
                 ),
               ],
