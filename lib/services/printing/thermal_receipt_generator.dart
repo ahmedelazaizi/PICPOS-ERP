@@ -2,6 +2,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart' as printing_pkg;
 import 'pdf_compute_helper.dart';
+import 'pdf_text_sanitizer.dart';
 import 'package:flutter/foundation.dart';
 import '../printer_resolver.dart';
 import '../license_service.dart';
@@ -118,6 +119,12 @@ class ThermalReceiptGenerator {
     /// لم يُمرَّر إليه طُبع رمزٌ غيرُ ضريبيٍّ من جهازٍ مسجَّلٍ دون أن يعرف أحد.
     ReceiptQr? receiptQr,
 
+    /// عرضُ الورق بالمليمتر — 80mm افتراضيّاً، 58mm للطابعات الضيّقة.
+    ///
+    /// المولِّدُ الاحتياطيُّ كان يصلِّب 80mm صلباً فيُرسل ملفَّ 226pt إلى طابعة
+    /// عرضُها 164pt فيُقطع النصُّ. الآن يقبل المنادي أيَّ عرضٍ مدعوم.
+    double paperWidthMm = 80,
+
     /// تُبنى الوثيقةُ وتُعاد بايتاتُها **بلا دفعٍ إلى الطابعة** — نفسُ عقد
     /// `TemplatedInvoiceService.debugBuildOnly`: لا مِقبضَ يقيس ما يصل الورقة
     /// بدونه، ولا يغيّر المطبوعَ بحرف.
@@ -125,8 +132,8 @@ class ThermalReceiptGenerator {
   }) async {
     await _initFont();
     final pdf = await BaseGenerator.newDocument();
-    const thermalFormat = PdfPageFormat(
-      80 * PdfPageFormat.mm,
+    final thermalFormat = PdfPageFormat(
+      paperWidthMm * PdfPageFormat.mm,
       double.infinity,
       marginAll: 4 * PdfPageFormat.mm,
     );
@@ -179,7 +186,7 @@ class ThermalReceiptGenerator {
                 customerAddress,
                 isDelivery,
               ),
-            _buildItemsTable(items),
+            _buildItemsTable(items, paperWidthMm),
             pw.SizedBox(height: 8),
             _buildTotalsSection(
               itemsSubtotal,
@@ -437,7 +444,7 @@ class ThermalReceiptGenerator {
               ),
               pw.SizedBox(height: 5),
             ],
-            pw.Text('*********************', style: const pw.TextStyle(fontSize: 10)),
+            pw.Text('*********************', style: pw.TextStyle(font: _arabicFont, fontSize: 10)),
           ],
         ),
       ),
@@ -639,7 +646,21 @@ class ThermalReceiptGenerator {
     );
   }
 
-  static pw.Widget _buildItemsTable(List<InvoiceItem> items) {
+  /// عرضُ الأعمدة يتناسب مع عرض الورق: على 58mm تُضيَّق لإتاحة مساحةٍ
+  /// معقولةٍ لاسم الصنف بدلاً من اقتطاعه.
+  static pw.Widget _buildItemsTable(
+    List<InvoiceItem> items,
+    double paperWidthMm,
+  ) {
+    // Scale factor: 1.0 for 80mm, 0.725 for 58mm
+    final scale = (paperWidthMm / 80.0).clamp(0.6, 1.0);
+    final totalW = (32 * scale).roundToDouble();
+    final qtyW   = (24 * scale).roundToDouble();
+    final priceW = (24 * scale).roundToDouble();
+    final idxW   = (14 * scale).roundToDouble();
+    final colFs  = scale < 0.8 ? 6.0 : 7.0;
+    final rowFs  = scale < 0.8 ? 7.0 : 8.0;
+
     return pw.Container(
       decoration: pw.BoxDecoration(
         border: pw.Border.all(color: PdfColors.grey800, width: 0.8),
@@ -652,12 +673,12 @@ class ThermalReceiptGenerator {
             child: pw.Row(
               children: [
                 pw.SizedBox(
-                  width: 32,
+                  width: totalW,
                   child: pw.Text(
                     'الإجمالي',
                     style: pw.TextStyle(
                       font: _arabicFont,
-                      fontSize: 7,
+                      fontSize: colFs,
                       fontWeight: pw.FontWeight.bold,
                       color: PdfColors.white,
                     ),
@@ -665,12 +686,12 @@ class ThermalReceiptGenerator {
                   ),
                 ),
                 pw.SizedBox(
-                  width: 24,
+                  width: qtyW,
                   child: pw.Text(
                     'العدد',
                     style: pw.TextStyle(
                       font: _arabicFont,
-                      fontSize: 7,
+                      fontSize: colFs,
                       fontWeight: pw.FontWeight.bold,
                       color: PdfColors.white,
                     ),
@@ -678,12 +699,12 @@ class ThermalReceiptGenerator {
                   ),
                 ),
                 pw.SizedBox(
-                  width: 24,
+                  width: priceW,
                   child: pw.Text(
                     'السعر',
                     style: pw.TextStyle(
                       font: _arabicFont,
-                      fontSize: 7,
+                      fontSize: colFs,
                       fontWeight: pw.FontWeight.bold,
                       color: PdfColors.white,
                     ),
@@ -695,7 +716,7 @@ class ThermalReceiptGenerator {
                     'الوصف',
                     style: pw.TextStyle(
                       font: _arabicFont,
-                      fontSize: 7,
+                      fontSize: colFs,
                       fontWeight: pw.FontWeight.bold,
                       color: PdfColors.white,
                     ),
@@ -703,12 +724,12 @@ class ThermalReceiptGenerator {
                   ),
                 ),
                 pw.SizedBox(
-                  width: 14,
+                  width: idxW,
                   child: pw.Text(
                     'م',
                     style: pw.TextStyle(
                       font: _arabicFont,
-                      fontSize: 7,
+                      fontSize: colFs,
                       fontWeight: pw.FontWeight.bold,
                       color: PdfColors.white,
                     ),
@@ -739,45 +760,46 @@ class ThermalReceiptGenerator {
                   pw.Row(
                     children: [
                       pw.SizedBox(
-                        width: 32,
+                        width: totalW,
                         child: pw.Text(
                           item.total.toStringAsFixed(AppConstants.decimalPlaces),
                           style: pw.TextStyle(
                             font: _arabicFont,
-                            fontSize: 8,
+                            fontSize: rowFs,
                             fontWeight: pw.FontWeight.bold,
                           ),
                           textAlign: pw.TextAlign.center,
                         ),
                       ),
                       pw.SizedBox(
-                        width: 24,
+                        width: qtyW,
                         child: pw.Text(
                           '${item.quantity}',
-                          style: pw.TextStyle(font: _arabicFont, fontSize: 8),
+                          style: pw.TextStyle(font: _arabicFont, fontSize: rowFs),
                           textAlign: pw.TextAlign.center,
                         ),
                       ),
                       pw.SizedBox(
-                        width: 24,
+                        width: priceW,
                         child: pw.Text(
                           item.price.toStringAsFixed(AppConstants.decimalPlaces),
-                          style: pw.TextStyle(font: _arabicFont, fontSize: 8),
+                          style: pw.TextStyle(font: _arabicFont, fontSize: rowFs),
                           textAlign: pw.TextAlign.center,
                         ),
                       ),
                       pw.Expanded(
                         child: pw.Text(
-                          item.name,
-                          style: pw.TextStyle(font: _arabicFont, fontSize: 8),
+                          sanitizeForPdf(item.name),
+                          style: pw.TextStyle(font: _arabicFont, fontSize: rowFs),
                           textAlign: pw.TextAlign.right,
+                          softWrap: true,
                         ),
                       ),
                       pw.SizedBox(
-                        width: 14,
+                        width: idxW,
                         child: pw.Text(
                           '$index.',
-                          style: pw.TextStyle(font: _arabicFont, fontSize: 8),
+                          style: pw.TextStyle(font: _arabicFont, fontSize: rowFs),
                           textAlign: pw.TextAlign.center,
                         ),
                       ),
@@ -787,7 +809,9 @@ class ThermalReceiptGenerator {
                     pw.Padding(
                       padding: const pw.EdgeInsets.only(right: 14, top: 1),
                       child: pw.Text(
-                        item.note!.replaceAll(' | ', '\n').replaceAll('📝 ', '').trim(),
+                        sanitizeForPdf(
+                          item.note!.replaceAll(' | ', '\n').replaceAll('📝 ', '').trim(),
+                        ),
                         style: pw.TextStyle(
                           font: _arabicFont,
                           fontSize: 7,
@@ -1032,7 +1056,7 @@ class ThermalReceiptGenerator {
         data: data,
         width: 140,
         height: 30,
-        textStyle: const pw.TextStyle(fontSize: 6),
+        textStyle: pw.TextStyle(font: _arabicFont, fontSize: 6),
       );
     } else if (type == 'qr_code') {
       // لا اعتمادَ من البوّابة بعد على جهازٍ مُفعَّل ⇒ لا رمزَ إطلاقاً.
@@ -1046,6 +1070,8 @@ class ThermalReceiptGenerator {
             data: qr?.payload ?? data,
             width: 50,
             height: 50,
+            drawText: false,
+            textStyle: pw.TextStyle(font: _arabicFont, fontSize: 6),
           ),
           // وسمُ الرمز غير الضريبيّ على الورقة نفسِها — من يقرأ الإيصالَ لا
           // يرى قرارَ الكود.

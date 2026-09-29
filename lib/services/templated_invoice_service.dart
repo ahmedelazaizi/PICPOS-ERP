@@ -8,6 +8,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'generators/base_generator.dart';
 import 'package:printing/printing.dart';
 import 'printing/pdf_compute_helper.dart';
+import 'printing/pdf_text_sanitizer.dart' show sanitizeForPdf;
 import 'package:flutter/foundation.dart';
 import '../core/logging/diagnostic_logger.dart';
 import '../core/utils/template_json_flags.dart';
@@ -1013,15 +1014,23 @@ class TemplatedInvoiceService {
   }) {
     final style = _getStyle(element);
     final align = _getAlignment(element.textAlign);
+    // تُطهِّر labelAr وcontent من emoji قبل وصولهما إلى pw.Text.
+    // باقي الكود يستخدم eLbl وeCnt بدلاً من element.labelAr و element.content.
+    final eLbl = element.labelAr != null ? sanitizeForPdf(element.labelAr!) : null;
+    final eCnt = element.content != null ? sanitizeForPdf(element.content!) : null;
+    String lbl(String? elLabel, String fallback) {
+      final s = sanitizeForPdf(elLabel ?? '');
+      return s.isEmpty ? fallback : s;
+    }
 
     // عناصرُ الورديّة أولاً: أنواعُها لا تتقاطع مع أنواع الفاتورة، والمُحلِّل
     // يرجّع `null` لأيّ نوعٍ ليس منها — فلا يخطف شيئاً.
     if (shift != null) {
       final shiftValue = resolveShiftValue(resolvedType, shift);
       if (shiftValue != null) {
-        final label = element.labelAr?.trim();
+        final label = lbl(eLbl?.trim(), '');
         return pw.Text(
-          label == null || label.isEmpty ? shiftValue : '$label: $shiftValue',
+          label.isEmpty ? shiftValue : '$label: $shiftValue',
           style: style,
           textAlign: align,
         );
@@ -1036,9 +1045,9 @@ class TemplatedInvoiceService {
           decimals: _docDecimals);
       if (v != null) {
         if (v.isEmpty) return pw.SizedBox();
-        final label = element.labelAr?.trim();
+        final label = lbl(eLbl?.trim(), '');
         return pw.Text(
-          label == null || label.isEmpty ? v : '$label: $v',
+          label.isEmpty ? v : '$label: $v',
           style: style,
           textAlign: align,
         );
@@ -1096,37 +1105,37 @@ class TemplatedInvoiceService {
         return pw.Padding(
           padding: const pw.EdgeInsets.symmetric(vertical: 4),
           child: pw.Text(
-            element.content ?? 'فاتورة مبيعات',
+            eCnt ?? 'فاتورة مبيعات',
             style: style,
             textAlign: align,
           ),
         );
       case 'invoice_number':
         return pw.Text(
-          '${element.labelAr ?? 'رقم الفاتورة'}: $invoiceNumber',
+          '${eLbl ?? 'رقم الفاتورة'}: $invoiceNumber',
           style: style,
           textAlign: align,
         );
       case 'date':
         return pw.Text(
-          '${element.labelAr ?? 'التاريخ'}: ${date.day}/${date.month}/${date.year}',
+          '${eLbl ?? 'التاريخ'}: ${date.day}/${date.month}/${date.year}',
           style: style,
           textAlign: align,
         );
       case 'time':
         return pw.Text(
-          '${element.labelAr ?? 'الوقت'}: ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}',
+          '${eLbl ?? 'الوقت'}: ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}',
           style: style,
           textAlign: align,
         );
       case 'cashier_name':
         return pw.Text(
-          '${element.labelAr ?? 'الكاشير'}: ${cashierName ?? ''}',
+          '${eLbl ?? 'الكاشير'}: ${cashierName ?? ''}',
           style: style,
           textAlign: align,
         );
       case 'order_number':
-        final orderLabel = element.labelAr?.trim().isNotEmpty == true ? element.labelAr! : 'رقم الطلب';
+        final orderLabel = eLbl?.trim().isNotEmpty == true ? eLbl! : 'رقم الطلب';
         return pw.Text(
           '$orderLabel: ${platformOrderNumber ?? orderNumber ?? invoiceNumber}',
           style: style,
@@ -1135,7 +1144,7 @@ class TemplatedInvoiceService {
       case 'table_number':
         final tableValue = platformOrderNumber ?? adhocCustomerName ?? customerName ?? '';
         if (tableValue.isEmpty) return pw.SizedBox();
-        final tableLabel = element.labelAr?.trim().isNotEmpty == true ? element.labelAr! : 'رقم الطاولة';
+        final tableLabel = eLbl?.trim().isNotEmpty == true ? eLbl! : 'رقم الطاولة';
         return pw.Text(
           '$tableLabel: $tableValue',
           style: style,
@@ -1143,7 +1152,7 @@ class TemplatedInvoiceService {
         );
       case 'payment_method':
         return pw.Text(
-          '${element.labelAr ?? 'طريقة الدفع'}: '
+          '${eLbl ?? 'طريقة الدفع'}: '
           '${mapPaymentMethodLabel(paymentMethod)}',
           style: style,
           textAlign: align,
@@ -1153,7 +1162,7 @@ class TemplatedInvoiceService {
       case 'customer':
         return customerName != null
             ? pw.Text(
-                '${element.labelAr ?? 'العميل'}: $customerName',
+                '${eLbl ?? 'العميل'}: $customerName',
                 style: style,
                 textAlign: align,
               )
@@ -1161,7 +1170,7 @@ class TemplatedInvoiceService {
       case 'customer_phone':
         return customerPhone != null
             ? pw.Text(
-                '${element.labelAr ?? 'الهاتف'}: ${pv.ltrIsolate(customerPhone)}',
+                '${eLbl ?? 'الهاتف'}: ${pv.ltrIsolate(customerPhone)}',
                 style: style,
                 textAlign: align,
               )
@@ -1169,7 +1178,7 @@ class TemplatedInvoiceService {
       case 'customer_address':
         return customerAddress != null
             ? pw.Text(
-                '${element.labelAr ?? 'العنوان'}: $customerAddress',
+                '${eLbl ?? 'العنوان'}: $customerAddress',
                 style: style,
                 textAlign: align,
               )
@@ -1177,7 +1186,7 @@ class TemplatedInvoiceService {
       case 'adhoc_customer_name':
         return adhocCustomerName != null && adhocCustomerName.isNotEmpty
             ? pw.Text(
-                '${element.labelAr ?? 'اسم العميل'}: $adhocCustomerName',
+                '${eLbl ?? 'اسم العميل'}: $adhocCustomerName',
                 style: style,
                 textAlign: align,
               )
@@ -1185,7 +1194,7 @@ class TemplatedInvoiceService {
       case 'adhoc_customer_phone':
         return adhocCustomerPhone != null && adhocCustomerPhone.isNotEmpty
             ? pw.Text(
-                '${element.labelAr ?? 'هاتف العميل'}: ${pv.ltrIsolate(adhocCustomerPhone)}',
+                '${eLbl ?? 'هاتف العميل'}: ${pv.ltrIsolate(adhocCustomerPhone)}',
                 style: style,
                 textAlign: align,
               )
@@ -1198,7 +1207,7 @@ class TemplatedInvoiceService {
       // Totals
       case 'subtotal':
         return _totalRow(
-          element.labelAr ?? 'المجموع الفرعي',
+          eLbl ?? 'المجموع الفرعي',
           subtotal,
           style,
           align,
@@ -1206,7 +1215,7 @@ class TemplatedInvoiceService {
       case 'discount':
         return discount > 0
             ? _totalRow(
-                element.labelAr ?? 'الخصم',
+                eLbl ?? 'الخصم',
                 discount,
                 style,
                 align,
@@ -1215,27 +1224,27 @@ class TemplatedInvoiceService {
             : pw.SizedBox();
       case 'tax':
         return tax > 0
-            ? _totalRow(element.labelAr ?? 'الضريبة', tax, style, align)
+            ? _totalRow(eLbl ?? 'الضريبة', tax, style, align)
             : pw.SizedBox();
       case 'total':
         return _totalRow(
-          element.labelAr ?? 'الإجمالي',
+          eLbl ?? 'الإجمالي',
           total,
           style.copyWith(fontWeight: pw.FontWeight.bold),
           align,
         );
       case 'paid':
-        return _totalRow(element.labelAr ?? 'المدفوع', paid, style, align);
+        return _totalRow(eLbl ?? 'المدفوع', paid, style, align);
       case 'remaining':
         return _totalRow(
-          element.labelAr ?? 'المتبقي',
+          eLbl ?? 'المتبقي',
           remaining,
           style.copyWith(color: remaining > 0 ? PdfColors.red : null),
           align,
         );
       case 'delivery_fee':
         return deliveryFee > 0
-            ? _totalRow(element.labelAr ?? 'رسوم التوصيل', deliveryFee, style, align)
+            ? _totalRow(eLbl ?? 'رسوم التوصيل', deliveryFee, style, align)
             : pw.SizedBox();
 
       // Info-only fields (label: value)
@@ -1248,7 +1257,7 @@ class TemplatedInvoiceService {
         // بلا عنوانٍ بجوار «طريقة الدفع: نقدي» المُسمّاة، فيقرؤها المشغّلُ
         // كلمةً شاردة. جاراتُها كلُّها تسبق القيمةَ بتسميتها (‏`supplier_name`
         // تحتها مباشرةً مثالاً). رُصد على ورق 2026-08-12.
-        final saleTypeLabel = element.labelAr ?? _getLabel(resolvedType);
+        final saleTypeLabel = eLbl ?? _getLabel(resolvedType);
         return pw.Text(
           saleTypeLabel.isEmpty
   // ignore: dead_code
@@ -1260,7 +1269,7 @@ class TemplatedInvoiceService {
         );
       case 'supplier_name':
         return pw.Text(
-          '${element.labelAr ?? 'المورد'}: ${customerName ?? ''}',
+          '${eLbl ?? 'المورد'}: ${customerName ?? ''}',
           style: style,
           textAlign: align,
         );
@@ -1288,6 +1297,8 @@ class TemplatedInvoiceService {
                 data: receiptQr?.payload ?? invoiceNumber,
                 width: 50,
                 height: 50,
+                drawText: false,
+                textStyle: pw.TextStyle(font: _arabicFont, fontSize: 6),
               ),
               // وسمُ الرمز غير الضريبيّ على الورقة نفسِها — من يقرأ الإيصالَ
               // لا يرى قرارَ الكود.
@@ -1312,17 +1323,18 @@ class TemplatedInvoiceService {
             data: invoiceNumber,
             width: 60,
             height: 25,
+            textStyle: pw.TextStyle(font: _arabicFont, fontSize: 6),
           ),
         );
 
       // Custom text / notes / footer
       case 'text':
       case 'custom_text':
-        return element.content != null
-            ? pw.Text(element.content!, style: style, textAlign: align)
+        return eCnt != null
+            ? pw.Text(eCnt, style: style, textAlign: align)
             : pw.SizedBox();
       case 'notes':
-        final noteText = notes ?? element.content;
+        final noteText = notes ?? eCnt;
         return noteText != null && noteText.isNotEmpty
             ? pw.Text(noteText, style: style, textAlign: align)
             : pw.SizedBox();
@@ -1333,7 +1345,7 @@ class TemplatedInvoiceService {
       case 'item_additions':
         final additions = extractItemAdditions(items);
         if (additions.isEmpty) return pw.SizedBox();
-        final addLabel = element.labelAr?.trim();
+        final addLabel = eLbl?.trim();
         return pw.Text(
           addLabel == null || addLabel.isEmpty
               ? 'الإضافات: $additions'
@@ -1344,7 +1356,7 @@ class TemplatedInvoiceService {
       case 'item_options':
         final options = extractItemOptions(items);
         if (options.isEmpty) return pw.SizedBox();
-        final optLabel = element.labelAr?.trim();
+        final optLabel = eLbl?.trim();
         return pw.Text(
           optLabel == null || optLabel.isEmpty
               ? 'الخيارات: $options'
@@ -1356,7 +1368,7 @@ class TemplatedInvoiceService {
         return pw.Padding(
           padding: const pw.EdgeInsets.only(top: 8),
           child: pw.Text(
-            element.content ?? 'شكراً لتعاملكم معنا',
+            eCnt ?? 'شكراً لتعاملكم معنا',
             style: style, textAlign: align,
           ),
         );
@@ -1381,11 +1393,11 @@ class TemplatedInvoiceService {
         // على سلوكه القديم فيُحَلّ قيمةً.
         if ((element.elementType == 'text' ||
                 element.elementType == 'custom_text') &&
-            (element.content?.isNotEmpty ?? false)) {
-          return pw.Text(element.content!, style: style, textAlign: align);
+            (eCnt?.isNotEmpty ?? false)) {
+          return pw.Text(eCnt!, style: style, textAlign: align);
         }
 
-        final label = element.labelAr ?? _getLabel(resolvedType);
+        final label = eLbl ?? _getLabel(resolvedType);
         final value = _getDataValue(
           resolvedType,
           invoiceNumber: invoiceNumber,
@@ -2370,7 +2382,7 @@ class TemplatedInvoiceService {
             width: w,
             height: h * 0.8,
             drawText: true,
-            textStyle: pw.TextStyle(fontSize: el.fontSize),
+            textStyle: pw.TextStyle(font: _arabicFont, fontSize: el.fontSize),
           );
           break;
         case 'product_price':

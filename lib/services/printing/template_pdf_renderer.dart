@@ -4,6 +4,7 @@ import 'package:pdf/widgets.dart' as pw;
 import '../generators/base_generator.dart' show BaseGenerator;
 import 'package:printing/printing.dart' as printing_pkg;
 import 'pdf_compute_helper.dart';
+import 'pdf_text_sanitizer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../data/database/database.dart' hide Printer;
@@ -328,6 +329,8 @@ class TemplatePdfRenderer {
           data: qrData,
           width: el.width.clamp(40, 80),
           height: el.height.clamp(40, 80),
+          drawText: false,
+          textStyle: pw.TextStyle(font: font, fontSize: 6),
         );
 
         return pw.Container(
@@ -356,7 +359,8 @@ class TemplatePdfRenderer {
 
       // ── All text-based elements ──
       default:
-        final text = _resolveValue(el, data) ?? '';
+        final rawText = _resolveValue(el, data) ?? '';
+        final text = sanitizeForPdf(rawText);
         if (text.isEmpty) return pw.SizedBox.shrink();
         return pw.Padding(
           padding: const pw.EdgeInsets.symmetric(vertical: 1),
@@ -782,11 +786,12 @@ class TemplatePdfRenderer {
             ),
           );
 
+          // pw.Container لا يقبل color وdecoration معاً؛ نُدمج rowBg في decoration.
           return pw.Container(
-            color: rowBg,
             constraints: pw.BoxConstraints(minHeight: settings.rowHeight),
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(
+            decoration: pw.BoxDecoration(
+              color: rowBg, // null = بلا خلفية، قيمة = لون الصف المتناوب
+              border: const pw.Border(
                 bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.3),
               ),
             ),

@@ -74,6 +74,11 @@ class InvoiceGenerator {
     /// قرارُ رمز الإيصال — يُمرَّر إلى **المسارين** معاً: القالبِ والتخطيطِ
     /// المكتوبِ في الكود الذي يسقط إليه صامتاً. `null` يُبقي السلوكَ القديم.
     ReceiptQr? receiptQr,
+
+    /// عرضُ الورق بالمليمتر — 80mm افتراضيّاً، 58mm للطابعات الضيّقة.
+    /// يُمرَّر إلى المسار الاحتياطيّ فقط؛ المسارُ القائمُ على القوالب
+    /// يقرأ العرضَ من بيانات القالب نفسِه.
+    double paperWidthMm = 80,
   }) async {
     // ── Try template-driven rendering ──
     if (db != null) {
@@ -163,6 +168,7 @@ class InvoiceGenerator {
       notes: notes,
       locale: locale,
       receiptQr: receiptQr,
+      paperWidthMm: paperWidthMm,
     ))
         .printed;
   }

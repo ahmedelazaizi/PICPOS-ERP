@@ -367,6 +367,7 @@ class PrintingServiceImpl implements IPrintingService {
         // السقوطُ إلى هذا المسار يُفقد الشعارَ صامتاً.
         logoBytes: receiptSettings.logoImage,
         receiptQr: receiptQr,
+        paperWidthMm: receiptSettings.paperWidth.toDouble(),
       );
       if (!printed) return false;
       await _logPrint(
