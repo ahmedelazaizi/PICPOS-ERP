@@ -127,6 +127,8 @@ void main() {
         ScreenId.reports,
         ScreenId.purchases,
         ScreenId.parties,
+        // قرار المالك 2026-09-28: التصنيع ظاهر في كل النطاقات ومحكوم بالصلاحية.
+        ScreenId.manufacturing,
       ]) {
         expect(screens, contains(inScope),
             reason: '$inScope جوّه نطاق lite المعلن');
@@ -137,7 +139,6 @@ void main() {
         ScreenId.hr,
         ScreenId.branches,
         ScreenId.regions,
-        ScreenId.manufacturing,
         ScreenId.chartOfAccounts,
         ScreenId.offers,
       ]) {
