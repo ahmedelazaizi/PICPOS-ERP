@@ -749,6 +749,8 @@ extension DatabaseSeederPermissions on AppDatabase {
       // so the cashier can also list their previous invoices.
       'sales_create',
       'sales_view',
+      // عروض الأسعار: شاشة مستقلّة بـ`quotes_view` (كانت تبويباً تحت `sales_view`).
+      'quotes_view',
       // Spec 3c — Dashboard بقت متبوّبة بـ`dashboard_access`؛ الكود ده
       // بيتمنح لكل دور تشغيلي عشان الترقية ما تسحبش الشاشة من حد.
       'dashboard_access',
@@ -830,6 +832,7 @@ extension DatabaseSeederPermissions on AppDatabase {
       'customers_view',
       'suppliers_view',
       'sales_view',
+      'quotes_view',
       'purchases_view',
       'dashboard_access',
       'dashboard_alerts',
@@ -909,7 +912,7 @@ extension DatabaseSeederPermissions on AppDatabase {
       'pos_payment_card', 'pos_hold_order', 'customers_view',
       'pos_shift_open', 'pos_shift_close', 'pos_exchange',
       // Spec 084 — same gap as basic cashier; spreads into branchManagerPerms below.
-      'sales_create', 'sales_view',
+      'sales_create', 'sales_view', 'quotes_view',
       // Spec 3c — dashboard_access؛ يورّث لمدير الفرع عبر الـ spread تحت.
       'dashboard_access',
       'dashboard_alerts',
@@ -940,6 +943,7 @@ extension DatabaseSeederPermissions on AppDatabase {
       'inventory_view', 'reports_view', 'treasury_view',
       'pos_closing_view_details', 'products_add', 'branches_manage',
       'users_manage', 'sales_view', 'purchases_create', 'settings_view',
+      'quotes_view',
       // §٤ — نفسُ سبب منحة «مدير مالي»: الدورُ مُعفىً باسمه اليومَ فيلزم أن
       // يظهر المربّعُ مؤشَّراً.
       'system_sidebar_open',
@@ -971,7 +975,7 @@ extension DatabaseSeederPermissions on AppDatabase {
     final advancedAccountantPerms = [
       'treasury_view', 'reports_view', 'settings_view',
       'pos_closing_view_details', 'sales_view', 'purchases_create',
-      'inventory_view', 'analytics_view',
+      'inventory_view', 'analytics_view', 'quotes_view',
       // Spec 3c — نفس منحة dashboard_access للأدوار التشغيلية.
       'dashboard_access',
       'dashboard_alerts',
@@ -1001,7 +1005,7 @@ extension DatabaseSeederPermissions on AppDatabase {
     // ── مدير مخزون (Inventory Manager) permissions ──
     final inventoryManagerPerms = [
       'inventory_view', 'inventory_transfer', 'products_add',
-      'purchases_create', 'reports_view', 'sales_view',
+      'purchases_create', 'reports_view', 'sales_view', 'quotes_view',
       // Spec 3c — نفس منحة dashboard_access للأدوار التشغيلية.
       'dashboard_access',
       'dashboard_alerts',

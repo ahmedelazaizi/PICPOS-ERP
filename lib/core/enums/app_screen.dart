@@ -106,7 +106,10 @@ enum AppScreen {
   trialBalance(73),
 
   /// يجب أن تطابق `ScreenId.journalTemplates`.
-  journalTemplates(74);
+  journalTemplates(74),
+
+  /// يجب أن تطابق `ScreenId.quotations`.
+  quotations(75);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;

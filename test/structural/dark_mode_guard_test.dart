@@ -100,8 +100,6 @@ const _allowlistedFiles = <String, String>{
       'Operating-expense status controls use semantic action surfaces.',
   'lib/presentation/screens/opex_expenses_tab.dart':
       'Operating-expense status controls use semantic action surfaces.',
-  'lib/presentation/screens/products/widgets/product_edit_dialog.dart':
-      'Product image/preview and status controls use intentional surfaces.',
   'lib/presentation/screens/purchase_returns/return_details_panel.dart':
       'Return detail status/table controls use semantic surfaces.',
   'lib/presentation/screens/reports/ar_aging_report_screen.dart':

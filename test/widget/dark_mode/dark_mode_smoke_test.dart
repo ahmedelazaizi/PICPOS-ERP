@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/theme/app_theme.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 import 'package:ural_erp/data/providers/providers.dart';
+import 'package:ural_erp/domain/entities/product_entity.dart';
 import 'package:ural_erp/presentation/manufacturing_picpos/manufacturing_picpos_screen.dart';
 import 'package:ural_erp/presentation/products_picpos/screens/products_picpos_screen.dart';
 import 'package:ural_erp/presentation/screens/login_screen.dart';
@@ -12,6 +13,8 @@ import 'package:ural_erp/presentation/screens/settings_screen.dart';
 import 'package:ural_erp/presentation/screens/widgets/sales_invoices/sales_invoice_form.dart';
 import 'package:ural_erp/presentation/treasury/widgets/payment_voucher_dialog.dart';
 import 'package:ural_erp/presentation/pos/screens/pos_main_screen.dart';
+import 'package:ural_erp/presentation/screens/products/widgets/product_edit_dialog.dart';
+import 'package:ural_erp/presentation/widgets/dialogs/add_product_dialog.dart';
 
 const _coveredScreens = <String>[
   'POS main screen',
@@ -21,6 +24,8 @@ const _coveredScreens = <String>[
   'manufacturing PicPos screen',
   'PicPos products/data-table screen',
   'login',
+  'Add Item dialog',
+  'Edit Item dialog',
 ];
 
 final _darkTheme = AppTheme.darkTheme;
@@ -110,6 +115,61 @@ List<String> _contrastViolations(WidgetTester tester, String screenName) {
           '${_contrast(ink, background).toStringAsFixed(2)}');
     }
   }
+  return violations;
+}
+
+/// Light, opaque fills inside a dialog are the "white panel on a dark
+/// dialog" regression: the text inside keeps the dark theme's light ink and
+/// disappears. Translucent tints (status washes at alpha ≤ 0.5) are allowed.
+List<String> _lightSurfaceViolations(WidgetTester tester, String screenName) {
+  final violations = <String>[];
+  final boxes = find.descendant(
+    of: find.byType(AlertDialog),
+    matching: find.byType(DecoratedBox),
+  );
+  for (final element in boxes.evaluate()) {
+    final color = _decorationColor((element.widget as DecoratedBox).decoration);
+    if (color == null || color.a <= 0.5) continue;
+    if (color.computeLuminance() > 0.5) {
+      violations.add('$screenName: light surface $color');
+    }
+  }
+  return violations;
+}
+
+Future<List<String>> _pumpDialogAndCheck(
+  WidgetTester tester,
+  AppDatabase database,
+  String screenName,
+  Widget dialog,
+) async {
+  tester.view.physicalSize = const Size(3840, 2160);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+
+  // This probe is about colors. The Ahem test font renders every glyph as a
+  // full square, which overflows the dialogs' narrow inline dropdowns; only
+  // that layout-overflow class is tolerated here — every other error fails.
+  final previousOnError = FlutterError.onError;
+  FlutterError.onError = (details) {
+    if (details.exceptionAsString().contains('A RenderFlex overflowed')) {
+      return;
+    }
+    previousOnError?.call(details);
+  };
+  addTearDown(() => FlutterError.onError = previousOnError);
+
+  await tester.pumpWidget(_shell(Scaffold(body: dialog), database));
+  await tester.pump(const Duration(milliseconds: 250));
+  await tester.pump(const Duration(milliseconds: 250));
+  expect(find.byType(AlertDialog), findsOneWidget,
+      reason: '$screenName did not render its dialog');
+  final violations = [
+    ..._contrastViolations(tester, screenName),
+    ..._lightSurfaceViolations(tester, screenName),
+  ];
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump(const Duration(milliseconds: 1));
   return violations;
 }
 
@@ -211,6 +271,44 @@ void main() {
       isEmpty,
       reason: 'WCAG contrast threshold is 3.0. Covered screens: '
           '${_coveredScreens.join(', ')}.\n${violations.join('\n')}',
+    );
+  });
+
+  testWidgets('dark mode covers Add Item and Edit Item product dialogs',
+      (tester) async {
+    final database = AppDatabase.forTesting();
+    // An in-memory entity, not a seeded row: awaiting real drift I/O here
+    // deadlocks once the previous test's database is still booting.
+    const product = ProductEntity(
+      id: 1,
+      code: 'DM-1',
+      name: 'Dark mode item',
+      salePrice: 10,
+      costPrice: 4,
+      currentStock: 0,
+      minStock: 0,
+    );
+
+    final violations = <String>[];
+    violations.addAll(await _pumpDialogAndCheck(
+      tester,
+      database,
+      'Add Item dialog',
+      const AddProductDialog(),
+    ));
+    violations.addAll(await _pumpDialogAndCheck(
+      tester,
+      database,
+      'Edit Item dialog',
+      const ProductEditDialog(product: product),
+    ));
+
+    expect(
+      violations,
+      isEmpty,
+      reason: 'Product dialogs must use theme-aware surfaces and ink in dark '
+          'mode (WCAG contrast 3.0, no opaque light panels).\n'
+          '${violations.join('\n')}',
     );
   });
 }

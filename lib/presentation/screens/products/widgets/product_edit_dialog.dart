@@ -275,6 +275,8 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
   bool get _lockedFromServer =>
       NetworkService.instance.isClient && widget.product.createdOnServer;
 
+  ColorScheme get _colors => Theme.of(context).colorScheme;
+
   @override
   Widget build(BuildContext context) {
     final locked = _lockedFromServer;
@@ -355,12 +357,15 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
   }
 
   Widget _buildLockedBanner() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.amber.shade50,
+        color: isDark
+            ? Colors.amber.withValues(alpha: 0.14)
+            : Colors.amber.shade50,
         border: Border.all(color: Colors.amber.shade300),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -372,7 +377,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
             child: Text(
               tr('هذا الصنف تم إنشاؤه على السيرفر — التعديل متاح من شاشة السيرفر فقط.'),
               style: TextStyle(
-                color: Colors.amber.shade900,
+                color: isDark ? Colors.amber.shade200 : Colors.amber.shade900,
                 fontSize: 13,
               ),
             ),
@@ -844,9 +849,9 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: _colors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: _colors.outlineVariant),
       ),
       child: Column(
         children: [
@@ -893,9 +898,9 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: _colors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: _colors.outlineVariant),
       ),
       child: Column(
         children: [
@@ -957,9 +962,9 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: _colors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: _colors.outlineVariant),
       ),
       child: Row(
         children: [
@@ -998,9 +1003,9 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: _colors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: _colors.outlineVariant),
             ),
             child: Column(
               children: [
@@ -1009,8 +1014,8 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                   height: 100,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.border),
-                    color: Colors.white,
+                    border: Border.all(color: _colors.outlineVariant),
+                    color: Theme.of(context).cardColor,
                   ),
                   child: selectedImage != null
                       ? ClipRRect(
@@ -1020,10 +1025,10 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                             fit: BoxFit.cover,
                           ),
                         )
-                      : const Icon(
+                      : Icon(
                           PhosphorIconsBold.image,
                           size: 32,
-                          color: AppColors.textMuted,
+                          color: _colors.onSurfaceVariant,
                         ),
                 ),
                 const SizedBox(height: 8),
@@ -1290,7 +1295,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
   Widget _buildWarehousePricingSection() {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: _colors.outlineVariant),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -1395,7 +1400,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: _colors.outlineVariant),
         ),
         child: Column(
           children: [
@@ -1552,7 +1557,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                 const Icon(PhosphorIconsBold.package, size: 18, color: AppColors.info),
                 const SizedBox(width: 8),
                  Text(tr('وحدات التعبئة'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.info)),
-                 Text(tr('  (قطعة → علبة → كرتونة)'), style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                 Text(tr('  (قطعة → علبة → كرتونة)'), style: TextStyle(fontSize: 11, color: _colors.onSurfaceVariant)),
                 const Spacer(),
                 if (_unitRows.isNotEmpty)
                   Container(
@@ -1571,9 +1576,9 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: _colors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: _colors.outlineVariant),
             ),
             child: Column(
               children: [
@@ -1632,7 +1637,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                                     child: Text(u.name, style: const TextStyle(fontSize: 12)),
                                   )).toList(),
                                   onChanged: (v) => setState(() => row.unitName = v ?? ''),
-                                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                  style: TextStyle(fontSize: 12, color: _colors.onSurface),
                                 ),
                               );
                             },

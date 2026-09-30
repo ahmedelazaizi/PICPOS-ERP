@@ -396,6 +396,8 @@ class _StockShortagePolicyToggleState
       ref.read(settingsRepositoryProvider),
       picked,
     );
+    // The POS stock guard reads the resolved sale policy.
+    ref.invalidate(enableNegativeSalesProvider);
     if (mounted) setState(() => _policy = picked);
   }
 
@@ -572,6 +574,8 @@ class _ShortagePolicyPerBranchDialogState
                     ref.read(settingsRepositoryProvider),
                     _selections,
                   );
+                  // The POS stock guard reads the resolved sale policy.
+                  ref.invalidate(enableNegativeSalesProvider);
                   if (context.mounted) Navigator.pop(context);
                 } finally {
                   if (mounted) setState(() => _saving = false);

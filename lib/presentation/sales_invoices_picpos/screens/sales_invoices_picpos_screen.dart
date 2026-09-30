@@ -26,7 +26,6 @@ import '../../../domain/models/warehouse_branch_scope.dart';
 import '../../../services/network_service.dart';
 import '../../../core/constants/app_constants.dart' hide InvoiceStatus;
 import '../../screens/sales_invoices_controller.dart';
-import '../../screens/sales_orders_screen.dart';
 
 // Additional imports for sales_invoice_dialogs.dart / sales_invoice_save_edit.dart
 import '../../widgets/searchable_unit_selection_dialog.dart';
@@ -85,28 +84,33 @@ part 'sales_batch_action_bar.dart';
 ///
 /// راجع lib/presentation/screens/sales_invoices_screen.dart (الأصل).
 class SalesInvoicesPicposScreen extends ConsumerStatefulWidget {
-  const SalesInvoicesPicposScreen({super.key});
+  final bool quotationsOnly;
+
+  const SalesInvoicesPicposScreen({super.key}) : quotationsOnly = false;
+
+  const SalesInvoicesPicposScreen.quotations({super.key})
+      : quotationsOnly = true;
 
   @override
   ConsumerState<SalesInvoicesPicposScreen> createState() =>
       _SalesInvoicesPicposScreenState();
 }
 
+/// عروض الأسعار — شاشةٌ مستقلّةٌ بمدخلها الجانبيّ تحت «فواتير المبيعات»
+/// (كانت تبويباً ثانياً هنا). تعيد استعمال `QuotationsTab` وقِمع
+/// `_createNewInvoice` نفسَه، فتعديلُ العرض وتحويلُه لفاتورة لم يتغيّرا.
+class QuotationsPicposScreen extends SalesInvoicesPicposScreen {
+  const QuotationsPicposScreen({super.key}) : super.quotations();
+}
+
 class _SalesInvoicesPicposScreenState
-    extends ConsumerState<SalesInvoicesPicposScreen>
-    with SingleTickerProviderStateMixin {
+    extends ConsumerState<SalesInvoicesPicposScreen> {
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
-  // Fix round 1 — parity tab (فواتير المبيعات / عروض الأسعار). Explicit
-  // TabController (not DefaultTabController) so the TabBar can live in
-  // PicPosScreenScaffold's `subHeader` slot while TabBarView lives in `body`
-  // — same pattern as inventory_picpos_screen.dart.
-  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_searchController.text.isNotEmpty) {
         ref
@@ -118,7 +122,6 @@ class _SalesInvoicesPicposScreenState
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -126,27 +129,82 @@ class _SalesInvoicesPicposScreenState
 
   @override
   Widget build(BuildContext context) {
+    final quotationsOnly = widget.quotationsOnly;
     final state = ref.watch(salesInvoicesControllerProvider);
+    final body = quotationsOnly
+        ? QuotationsTab(
+            onEditQuotation: (quotation) => _createNewInvoice(
+              editQuotation: quotation,
+              isConvert: false,
+            ),
+            onConvertQuotation: (quotation) => _createNewInvoice(
+              editQuotation: quotation,
+              isConvert: true,
+            ),
+          )
+        : AppStateView(
+            isLoading: state.isLoading,
+            isEmpty: state.allInvoices.isEmpty && !state.isLoading,
+            emptyMessage: tr('لا توجد فواتير مبيعات'),
+            emptyIcon: PhosphorIconsBold.receipt,
+            child: Column(
+              children: [
+                SyncPendingBanner(
+                  tableName: 'sales',
+                  label: tr('فاتورة مبيعات'),
+                ),
+                const SalesSummaryRow(),
+                SalesFilterBar(
+                  searchController: _searchController,
+                  searchFocusNode: _searchFocusNode,
+                ),
+                const SizedBox(height: 16),
+                // ملاحظة تخطيط: SalesInvoicesTable بترجع Expanded من جوّاها
+                // (منسوخة حرفياً بلا تعديل منطقي — مصيدة النسخ)، فما بتتلفّش
+                // بـ PicPosContentCard (Container بيكسر ParentDataWidget بتاع
+                // Expanded لو حط بينها وبين الـ Flex). AppDataTable أصلاً
+                // بترسم حدودها كـ"كارت" بنفسها، فمفيش فرق بصري محسوس.
+                SalesInvoicesTable(
+                  onView: _showInvoiceDetails,
+                  onEdit: _editInvoice,
+                  onPrint: _printInvoice,
+                  onDelete: _deleteInvoice,
+                  onWhatsApp: _sendInvoiceWhatsApp,
+                ),
+                const SalesBatchActionBar(),
+              ],
+            ),
+          );
 
     return AppShortcuts(
       searchFocusNode: _searchFocusNode,
       searchController: _searchController,
       onNew: _createNewInvoice, // من الملف المنسوخ sales_invoice_dialogs.dart
       child: PicPosScreenScaffold(
-        title: tr('فواتير البيع'),
-        subtitle: tr('إدارة فواتير المبيعات ومتابعة التحصيل'),
-        icon: PhosphorIconsBold.receipt,
+        title: quotationsOnly ? tr('عروض الأسعار') : tr('فواتير البيع'),
+        subtitle: quotationsOnly
+            ? tr('إدارة عروض الأسعار وتحويلها إلى فواتير')
+            : tr('إدارة فواتير المبيعات ومتابعة التحصيل'),
+        icon: quotationsOnly
+            ? PhosphorIconsBold.fileText
+            : PhosphorIconsBold.receipt,
         headerActions: [
           IconButton(
             icon: const Icon(PhosphorIconsBold.arrowClockwise),
             tooltip: tr('تحديث'),
-            onPressed: () =>
-                ref.read(salesInvoicesControllerProvider.notifier).refresh(),
+            onPressed: quotationsOnly
+                ? () => ref
+                    .read(quotationsControllerProvider.notifier)
+                    .loadQuotations(refresh: true)
+                : () => ref
+                    .read(salesInvoicesControllerProvider.notifier)
+                    .refresh(),
           ),
           // Recovery tool: push local sales that haven't reached the server
           // yet — verbatim from sales_invoices_screen.dart's AppBar actions.
-          if (NetworkService.instance.isClient ||
-              NetworkService.instance.isMirror)
+          if (!quotationsOnly &&
+              (NetworkService.instance.isClient ||
+                  NetworkService.instance.isMirror))
             IconButton(
               icon: const Icon(PhosphorIconsBold.cloudArrowUp),
               tooltip: tr('دفع الفواتير المحلية للسيرفر'),
@@ -168,86 +226,15 @@ class _SalesInvoicesPicposScreenState
               },
             ),
           const SizedBox(width: 8),
-          OutlinedButton.icon(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SalesOrdersScreen()),
-              );
-            },
-            icon: const Icon(PhosphorIconsBold.clipboardText, size: 16),
-            label:  Text(tr('طلبات البيع')),
-          ),
-          const SizedBox(width: 8),
           ElevatedButton.icon(
             onPressed: _createNewInvoice,
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label:  Text(tr('فاتورة جديدة')),
+            label: Text(
+              quotationsOnly ? tr('عرض سعر جديد') : tr('فاتورة جديدة'),
+            ),
           ),
         ],
-        // Fix round 1 — parity tab bar. Unconditional, same order/text as
-        // the original's AppBar.bottom TabBar. Styling comes from
-        // PicPosTheme.tabBarTheme automatically (no hardcoded colors here,
-        // unlike the original which hardcodes white for its primary-colored
-        // AppBar background).
-        subHeader: Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 0),
-          child: TabBar(
-            controller: _tabController,
-            tabs:  [
-              Tab(text: tr('فواتير المبيعات')),
-              Tab(text: tr('عروض الأسعار')),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            // Tab 1: Sales Invoices — unchanged from before this fix.
-            AppStateView(
-              isLoading: state.isLoading,
-              isEmpty: state.allInvoices.isEmpty && !state.isLoading,
-              emptyMessage: tr('لا توجد فواتير مبيعات'),
-              emptyIcon: PhosphorIconsBold.receipt,
-              child: Column(
-                children: [
-                   SyncPendingBanner(
-                    tableName: 'sales',
-                    label: tr('فاتورة مبيعات'),
-                  ),
-                  const SalesSummaryRow(),
-                  SalesFilterBar(
-                    searchController: _searchController,
-                    searchFocusNode: _searchFocusNode,
-                  ),
-                  const SizedBox(height: 16),
-                  // ملاحظة تخطيط: SalesInvoicesTable بترجع Expanded من جوّاها
-                  // (منسوخة حرفياً بلا تعديل منطقي — مصيدة النسخ)، فما بتتلفّش
-                  // بـ PicPosContentCard (Container بيكسر ParentDataWidget بتاع
-                  // Expanded لو حط بينها وبين الـ Flex). AppDataTable أصلاً
-                  // بترسم حدودها كـ"كارت" بنفسها، فمفيش فرق بصري محسوس.
-                  SalesInvoicesTable(
-                    onView: _showInvoiceDetails,
-                    onEdit: _editInvoice,
-                    onPrint: _printInvoice,
-                    onDelete: _deleteInvoice,
-                    onWhatsApp: _sendInvoiceWhatsApp,
-                  ),
-                  const SalesBatchActionBar(),
-                ],
-              ),
-            ),
-            // Tab 2: Quotations — reused as-is (verbatim from the original's
-            // TabBarView second child), same onEditQuotation/onConvertQuotation
-            // wiring into _createNewInvoice from the copied
-            // sales_invoice_dialogs.dart.
-            QuotationsTab(
-              onEditQuotation: (q) =>
-                  _createNewInvoice(editQuotation: q, isConvert: false),
-              onConvertQuotation: (q) =>
-                  _createNewInvoice(editQuotation: q, isConvert: true),
-            ),
-          ],
-        ),
+        body: body,
       ),
     );
   }

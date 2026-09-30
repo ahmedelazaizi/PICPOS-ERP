@@ -226,6 +226,28 @@ class SalesTransactionOrchestrator {
         }
       }
 
+      final warehouse = await _db.getWarehouseById(warehouseId);
+      final branchId = warehouse?.branchId;
+      // Feature 009 / T025: resolve the active shortage policy via the
+      // three-tier service (per-terminal → per-branch → global default).
+      // The legacy `enable_negative_sales` toggle is now a *fallback*
+      // only — if the admin hasn't picked an explicit per-install policy
+      // yet, we honour the old toggle so existing installs keep their
+      // current behaviour (Constitution I). New deployments rely on the
+      // settings-screen entry from T027.
+      //
+      // Resolved BEFORE the invoice is persisted: the sold item's own stock
+      // deduction runs inside `createSalesInvoice`, and it used to consult
+      // only `enable_negative_sales` / the product flag — so a sale the
+      // configured policy allows failed there before this policy was read.
+      final terminalId =
+          PosTerminalRegistrationService.instance.getCurrentTerminalId();
+      final stockPolicy = await StockShortagePolicyService.resolveForSaleWith(
+        get: _db.getSettingValue,
+        terminalId: terminalId,
+        branchId: branchId,
+      );
+
       // 3. Persist invoice via DAO
       final invoiceId = await _db.createSalesInvoice(
         globalId: saleGlobalId,
@@ -263,6 +285,8 @@ class SalesTransactionOrchestrator {
         // قبلنا بلا تكلفة. اقرا `SalesMutationsDao.createSalesInvoice →
         // deferAutoPost`.
         deferAutoPost: (saleType ?? 'default') != 'return' && !isClientMode,
+        allowNegativeStock:
+            stockPolicy == StockShortagePolicy.allowNegative,
       );
 
       // Fetch the generated invoice record
@@ -290,9 +314,6 @@ class SalesTransactionOrchestrator {
       final savedItems = await (_db.select(_db.salesInvoiceItems)
             ..where((i) => i.invoiceId.equals(invoiceId)))
           .get();
-
-      final warehouse = await _db.getWarehouseById(warehouseId);
-      final branchId = warehouse?.branchId;
 
       String? branchName;
       String? regionName;
@@ -352,41 +373,12 @@ class SalesTransactionOrchestrator {
                   warehouseId: warehouseId,
                 ))
             .toList();
-        // Feature 009 / T025: resolve the active shortage policy via the
-        // three-tier service (per-terminal → per-branch → global default).
-        // The legacy `enable_negative_sales` toggle is now a *fallback*
-        // only — if the admin hasn't picked an explicit per-install policy
-        // yet, we honour the old toggle so existing installs keep their
-        // current behaviour (Constitution I). New deployments rely on the
-        // settings-screen entry from T027.
-        final terminalId =
-            PosTerminalRegistrationService.instance.getCurrentTerminalId();
-        final resolvedPolicy =
-            await StockShortagePolicyService.resolveWith(
-          get: _db.getSettingValue,
-          terminalId: terminalId,
-          branchId: branchId,
-        );
-        // If the admin hasn't configured ANY policy yet (resolver returned
-        // the hard-coded default), keep honouring the legacy toggle so
-        // existing installs see no behaviour change at upgrade time.
-        var policyWire = resolvedPolicy.wireName;
-        if (resolvedPolicy == StockShortagePolicyService.defaultPolicy) {
-          final globalRaw =
-              await _db.getSettingValue('stock_shortage_policy');
-          if (globalRaw == null || globalRaw.isEmpty) {
-            final negativeSalesRaw =
-                await _db.getSettingValue('enable_negative_sales');
-            policyWire =
-                (negativeSalesRaw == 'true') ? 'allow_negative' : 'block';
-          }
-        }
         try {
           final result = await _db.applyAutoDepleteForSale(
             saleInvoiceId: invoiceId,
             items: saleLineRefs,
             branchId: branchId,
-            shortagePolicy: policyWire,
+            shortagePolicy: stockPolicy.wireName,
             saleGlobalId: saleGlobalId,
             posTerminalId: terminalId,
           );

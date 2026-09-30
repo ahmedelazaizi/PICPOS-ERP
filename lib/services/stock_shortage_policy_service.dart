@@ -180,6 +180,34 @@ class StockShortagePolicyService {
     return _cachedGlobal!;
   }
 
+  /// The policy a SALE actually runs under — [resolveWith] plus the legacy
+  /// `enable_negative_sales` fallback for installs that never configured any
+  /// shortage-policy tier (Feature 009 / T025, Constitution I).
+  ///
+  /// Single source for the sales orchestrator (which passes the allowance down
+  /// to the sold item's own stock deduction) and the POS "out of stock" guard
+  /// (`enableNegativeSalesProvider`), so the till never warns about — or the
+  /// save never rejects — a sale the configured policy allows.
+  static Future<StockShortagePolicy> resolveForSaleWith({
+    required Future<String?> Function(String) get,
+    int? terminalId,
+    int? branchId,
+  }) async {
+    final resolved = await resolveWith(
+      get: get,
+      terminalId: terminalId,
+      branchId: branchId,
+    );
+    for (final key in const [_globalKey, _perBranchKey, _perTerminalKey]) {
+      final raw = await get(key);
+      if (raw != null && raw.isNotEmpty) return resolved;
+    }
+    final legacy = await get('enable_negative_sales');
+    return legacy == 'true'
+        ? StockShortagePolicy.allowNegative
+        : StockShortagePolicy.block;
+  }
+
   /// Save the global default. Invalidates cache.
   static Future<void> saveGlobal(
     ISettingsRepository settings,

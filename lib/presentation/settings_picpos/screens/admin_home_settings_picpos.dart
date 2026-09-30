@@ -210,6 +210,7 @@ class _DefaultHomeScreenSelectorState
       ScreenId.analytics: tr('تحليلات المبيعات'),
       ScreenId.hr: tr('شؤون الموظفين (HR)'),
       ScreenId.salesInvoices: tr('فواتير المبيعات'),
+      ScreenId.quotations: tr('عروض الأسعار'),
       ScreenId.activityLog: tr('سجل العمليات (Audit)'),
       ScreenId.inventoryBonds: tr('أرصدة المخزون'),
       ScreenId.stockTransfer: tr('التحويل المخزني'),

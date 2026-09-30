@@ -186,6 +186,9 @@ class RoleGrantMatrix {
       // `sales_view` lets the cashier list their previous invoices.
       'sales_create',
       'sales_view',
+      // عروض الأسعار صارت شاشةً مستقلّةً مبوّبةً بـ`quotes_view` بعد أن كانت
+      // تبويباً داخل فواتير البيع (‏`sales_view`) — المنحةُ تُبقي الوصولَ.
+      'quotes_view',
       'dashboard_access',
       'dashboard_alerts',
       // دفعة ٩ — `sales_amounts_view` بيحجب مبالغ قائمة فواتير البيع، وأي
@@ -236,6 +239,9 @@ class RoleGrantMatrix {
       'customers_view',
       'suppliers_view',
       'sales_view',
+      // عروض الأسعار صارت شاشةً مستقلّةً مبوّبةً بـ`quotes_view` بعد أن كانت
+      // تبويباً داخل فواتير البيع (‏`sales_view`) — المنحةُ تُبقي الوصولَ.
+      'quotes_view',
       'purchases_view',
       'dashboard_access',
       'dashboard_alerts',
@@ -269,6 +275,9 @@ class RoleGrantMatrix {
       'customers_view',
       'suppliers_view',
       'sales_view',
+      // عروض الأسعار صارت شاشةً مستقلّةً مبوّبةً بـ`quotes_view` بعد أن كانت
+      // تبويباً داخل فواتير البيع (‏`sales_view`) — المنحةُ تُبقي الوصولَ.
+      'quotes_view',
       'purchases_view',
       'dashboard_access',
       'dashboard_alerts',
@@ -301,6 +310,9 @@ class RoleGrantMatrix {
       // Spec 084 — same gap as basic cashier.
       'sales_create',
       'sales_view',
+      // عروض الأسعار صارت شاشةً مستقلّةً مبوّبةً بـ`quotes_view` بعد أن كانت
+      // تبويباً داخل فواتير البيع (‏`sales_view`) — المنحةُ تُبقي الوصولَ.
+      'quotes_view',
       'dashboard_access',
       'dashboard_alerts',
       // دفعة ٩ — نفس منحة الكاشير العادي.
@@ -344,6 +356,9 @@ class RoleGrantMatrix {
       'branches_manage',
       'users_manage',
       'sales_view',
+      // عروض الأسعار صارت شاشةً مستقلّةً مبوّبةً بـ`quotes_view` بعد أن كانت
+      // تبويباً داخل فواتير البيع (‏`sales_view`) — المنحةُ تُبقي الوصولَ.
+      'quotes_view',
       'purchases_create',
       'settings_view',
       'dashboard_access',
@@ -380,6 +395,9 @@ class RoleGrantMatrix {
       'settings_view',
       'pos_closing_view_details',
       'sales_view',
+      // عروض الأسعار صارت شاشةً مستقلّةً مبوّبةً بـ`quotes_view` بعد أن كانت
+      // تبويباً داخل فواتير البيع (‏`sales_view`) — المنحةُ تُبقي الوصولَ.
+      'quotes_view',
       'purchases_create',
       'inventory_view',
       'analytics_view',
@@ -404,6 +422,9 @@ class RoleGrantMatrix {
       'purchases_create',
       'reports_view',
       'sales_view',
+      // عروض الأسعار صارت شاشةً مستقلّةً مبوّبةً بـ`quotes_view` بعد أن كانت
+      // تبويباً داخل فواتير البيع (‏`sales_view`) — المنحةُ تُبقي الوصولَ.
+      'quotes_view',
       'dashboard_access',
       'dashboard_alerts',
       // Task 3d — نفس منطق analytics_view فوق (محاسب).

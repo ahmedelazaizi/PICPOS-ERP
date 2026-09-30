@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/config/industry_tables_policy.dart';
 import '../../domain/models/table_order_totals.dart';
+import '../../services/pos_terminal_registration_service.dart';
+import '../../services/stock_shortage_policy_service.dart';
 import 'providers.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -21,10 +23,27 @@ import 'providers.dart';
 /// were still gating on `product.allowNegativeSale` alone — so even with the
 /// global ON, the operator couldn't add an out-of-stock item to the cart.
 /// Surface the setting as a provider those guards can watch.
+///
+/// Reads the same sale policy the orchestrator saves under
+/// ([StockShortagePolicyService.resolveForSaleWith]): with the shortage
+/// policy set to «allow negative», the till used to raise the stock-balance
+/// prompt although the sale was allowed.
 final enableNegativeSalesProvider = FutureProvider<bool>((ref) async {
   final db = ref.watch(databaseProvider);
   final value = await db.getSettingValue('enable_negative_sales');
-  return value == 'true';
+  if (value == 'true') return true;
+  int? branchId;
+  try {
+    branchId = await ref.watch(activeBranchIdProvider.future);
+  } catch (_) {
+    branchId = null; // no session yet → terminal/global tiers still apply
+  }
+  final policy = await StockShortagePolicyService.resolveForSaleWith(
+    get: db.getSettingValue,
+    terminalId: PosTerminalRegistrationService.instance.getCurrentTerminalId(),
+    branchId: branchId,
+  );
+  return policy == StockShortagePolicy.allowNegative;
 });
 
 /// Show tax button in POS setting provider

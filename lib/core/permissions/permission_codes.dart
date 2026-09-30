@@ -994,7 +994,6 @@ class PermissionCodes {
     'products_view': tr('الشاشة كلها مبوّبة بـ products_add'),
     'parties_view': tr('الشاشة كلها مبوّبة بـ customers_view'),
     'purchases_view': tr('الشاشة كلها مبوّبة بـ purchases_create'),
-    'quotes_view': tr('تبويب داخل فواتير البيع، والشاشة مبوّبة بـ sales_view'),
     'returns_view': tr('شاشة المرتجعات مبوّبة بـ sales_return_view'),
     'stock_view': tr('حركة المخزون مبوّبة بـ inventory_view'),
     'stock_audit': tr('الجرد الدوري مبوّب بـ inventory_view'),

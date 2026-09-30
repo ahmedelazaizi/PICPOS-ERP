@@ -71,6 +71,10 @@ extension SalesMutationsDao on AppDatabase {
     /// المنادون الآخرون (‏معالجُ الـAPI، الإيرادُ المؤجَّل، مسارا الإصلاح،
     /// التوصيل) لا يمرّرونها فيبقى سلوكُهم كما هو بالضبط.
     bool deferAutoPost = false,
+
+    /// Allows the orchestrator's resolved branch/terminal shortage policy to
+    /// authorize a tracked sale deduction before BOM depletion runs.
+    bool allowNegativeStock = false,
   }) async {
     final invoiceId = await transaction(() async {
       // Use client-provided date or current server time
@@ -370,6 +374,7 @@ extension SalesMutationsDao on AppDatabase {
               referenceType: 'sales_invoice',
               referenceId: invoiceId,
               notes: 'مبيعات فاتورة #$invNumber',
+              allowNegativeSale: allowNegativeStock,
             );
           }
         }

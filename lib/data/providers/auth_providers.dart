@@ -679,6 +679,7 @@ final kAllNavItemDefs = [
   // ═══════════════════════════════════════════
   const NavItemDef(icon: PhosphorIconsBold.shoppingCart, label: 'البيع السريع', permission: 'pos_access', index: 1, section: 'المبيعات', group: 'sales'),
   const NavItemDef(icon: PhosphorIconsBold.fileText, label: 'فواتير المبيعات', permission: 'sales_view', index: 17, group: 'sales'),
+  const NavItemDef(icon: PhosphorIconsBold.fileText, label: 'عروض الأسعار', permission: PermissionCodes.quotesView, index: 75, group: 'sales'),
   const NavItemDef(icon: PhosphorIconsBold.notepad, label: 'طلبات البيع', permission: 'sales_orders_view', index: 37, group: 'sales'),
   // ⚠️ **الموضعُ السادس** — لا الخامس. حارسُ `bookings_screen_wiring_test`
   // كان يقيس خمسةً (`ScreenId` · `AppScreen` · `screenPermissionMap` ·
@@ -905,6 +906,8 @@ const kPicPosRetiredNavIndexes = <int>{
   42, // الجرد الدوري (‏= `fieldAudit`، اسمان لفهرسٍ واحد)
 };
 
+const kPicPosOnlyNavIndexes = <int>{75};
+
 /// هل يظهر مدخلُ القائمة صاحبُ [index] لهذه العلامة؟
 ///
 /// دالّةٌ خالصةٌ عن قصد: الفرعُ داخلَها ثابتُ ترجمةٍ (`Brand.isPicPos`)،
@@ -922,7 +925,7 @@ bool navItemVisibleForBrand(int index) {
     if (kPicPosRetiredNavIndexes.contains(index)) return false;
     return !kPicPosFoldedIntoAccountingHub.contains(index);
   }
-  return true;
+  return !kPicPosOnlyNavIndexes.contains(index);
 }
 
 final userNavItemsProvider = FutureProvider<List<NavItemDef>>((ref) async {
@@ -1032,6 +1035,7 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.analytics: 'analytics_view',
   ScreenId.hr: 'hr_view',
   ScreenId.salesInvoices: 'sales_view',
+  ScreenId.quotations: PermissionCodes.quotesView,
   ScreenId.activityLog: 'audit_view',
   ScreenId.inventoryBonds: 'inventory_view',
   ScreenId.stockTransfer: 'inventory_transfer',

@@ -801,6 +801,12 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         icon: PhosphorIconsBold.fileText,
       ),
       ScreenConfig(
+        appScreen: AppScreen.quotations,
+        builder: (_) => const QuotationsPicposScreen(),
+        label: tr('عروض الأسعار'),
+        icon: PhosphorIconsBold.fileText,
+      ),
+      ScreenConfig(
         appScreen: AppScreen.activityLog,
         builder: (_) => Brand.isPicPos
             ? const ActivityLogPicposScreen()

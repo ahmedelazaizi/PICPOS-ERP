@@ -145,6 +145,7 @@ extension InventoryDao on AppDatabase {
     // double-count the same variance in the GL. Default true ⇒ every existing
     // caller (manual adjustments, write-offs, losses) is unchanged.
     bool postAdjustmentJournal = true,
+    bool allowNegativeSale = false,
   }) async {
     // PIR-04: Entire adjustStock wrapped in transaction for atomicity.
     // Prevents partial writes (product stock updated but warehouse balance/movement missing).
@@ -208,8 +209,9 @@ extension InventoryDao on AppDatabase {
       // product when it's on so the global toggle becomes single-source.
       final negativeSalesRaw = await getSettingValue('enable_negative_sales');
       final globalAllowNegative = negativeSalesRaw == 'true';
-      final effectiveAllowNegative =
-          globalAllowNegative || product.allowNegativeSale;
+      final effectiveAllowNegative = allowNegativeSale ||
+          globalAllowNegative ||
+          product.allowNegativeSale;
 
       // B10 (S-INV-COST / PUR-1 / INV-2): on an INFLOW with a known receipt
       // cost, blend the per-warehouse average_cost against that ACTUAL

@@ -126,6 +126,8 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
   bool _showBomComponents = false;
   final List<_BomComponentRow> _bomRows = [];
 
+  ColorScheme get _colors => Theme.of(context).colorScheme;
+
   bool get _isSoldByWeight =>
       _scaleType == 'weight' || _scaleType == 'weightByPiece';
 
@@ -525,9 +527,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: AppColors.surface,
+                                    color: _colors.surfaceContainerLow,
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: AppColors.border),
+                                    border: Border.all(color: _colors.outlineVariant),
                                   ),
                                   child: Column(
                                     children: [
@@ -590,9 +592,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: _colors.surfaceContainerLow,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.border),
+                              border: Border.all(color: _colors.outlineVariant),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -672,9 +674,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: _colors.surfaceContainerLow,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.border),
+                              border: Border.all(color: _colors.outlineVariant),
                             ),
                             child: Row(
                               children: [
@@ -723,9 +725,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: _colors.surfaceContainerLow,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.border),
+                              border: Border.all(color: _colors.outlineVariant),
                             ),
                             child: Column(
                               children: [
@@ -734,7 +736,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                   height: 100,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: AppColors.border),
+                                    border: Border.all(color: _colors.outlineVariant),
                                     color: Theme.of(context).cardColor,
                                   ),
                                   child: _selectedImage != null
@@ -747,10 +749,10 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                             fit: BoxFit.cover,
                                           ),
                                         )
-                                      : const Icon(
+                                      : Icon(
                                           PhosphorIconsBold.image,
                                           size: 32,
-                                          color: AppColors.textMuted,
+                                          color: _colors.onSurfaceVariant,
                                         ),
                                 ),
                                 const SizedBox(height: 8),
@@ -1377,7 +1379,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                 ),
                  Text(
                   tr('  (قطعة → علبة → كرتونة → صندوق)'),
-                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  style: TextStyle(fontSize: 11, color: _colors.onSurfaceVariant),
                 ),
                 const Spacer(),
                 Icon(
@@ -1394,9 +1396,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: _colors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: _colors.outlineVariant),
             ),
             child: Column(
               children: [
@@ -1577,7 +1579,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
   Widget _buildWarehousePricingSection() {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: _colors.outlineVariant),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -1682,7 +1684,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: _colors.outlineVariant),
         ),
         child: Column(
           children: [
@@ -1805,7 +1807,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                 ),
                  Text(
                   tr('  (يتم خصم الخامات تلقائيًا عند البيع)'),
-                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  style: TextStyle(fontSize: 11, color: _colors.onSurfaceVariant),
                 ),
                 const Spacer(),
                 Icon(
@@ -1824,9 +1826,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: _colors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: _colors.outlineVariant),
             ),
             child: Column(
               children: [

@@ -6874,6 +6874,8 @@
   "عرضُ القالب يتجاوز عرضَ الطابعة المربوطة، فيُقصّ المطبوعُ من الحافّة بلا رسالةِ خطأ — وعمودُ الإجمالي أوّلُ ما يضيع. العلاج: اربط قالباً بعرض الطابعة، أو غيّر الطابعةَ في الرابطة.": "The width of the template exceeds the width of the bound printer, so the printout is cut from the edge without an error message — and the total column is the first to be lost. Treatment: Attach a template to the width of the printer, or change the printer in the link.",
   "عروض": "Offers",
   "عروض الأسعار": "Quotations",
+  "عرض سعر جديد": "New Quotation",
+  "إدارة عروض الأسعار وتحويلها إلى فواتير": "Manage quotations and convert them to invoices",
   "عروض خاصة": "Special Offers",
   "عريض": "Bold",
   "عزل العمليات الفاشلة لمراجعتها": "Isolate failed operations for review",

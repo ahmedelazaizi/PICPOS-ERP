@@ -211,7 +211,10 @@ enum ScreenId {
   /// ⚠️ **وكانت بلا معرِّفٍ ولا مدخل** — تُفتَح بدفعةٍ من شاشة
   /// اليومية وبتبويب `tpl` في الحاوية. والدفعةُ تبقى:
   /// من يحرِّر قيداً يفتح قالباً من مكانِه لا من الشريط.
-  journalTemplates(74);
+  journalTemplates(74),
+
+  /// عروض الأسعار — شاشة PicPos مستقلّة تحت فواتير المبيعات.
+  quotations(75);
 
   const ScreenId(this.navigationIndex);
   final int navigationIndex;

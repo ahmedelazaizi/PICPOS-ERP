@@ -1135,6 +1135,10 @@ extension ManufacturingDao on AppDatabase {
         referenceId: context.referenceId,
         notes: context.notes,
         branchId: branchId,
+        // The policy already accepted this shortage above; without passing it
+        // down, `adjustStock` re-checks only `enable_negative_sales` / the
+        // component's own flag and rejects what the policy allowed.
+        allowNegativeSale: shortagePolicy == StockShortagePolicy.allowNegative,
       );
 
       consumed.add(ConsumedLine(
