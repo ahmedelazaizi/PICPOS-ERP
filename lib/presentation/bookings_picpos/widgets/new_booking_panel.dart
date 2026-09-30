@@ -197,7 +197,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
                 _readOnly(
                   svc == null
                       ? '—'
-                      : tr('{p0} دقيقة{p1}', {'p0': svc.durationMinutes, 'p1': svc.bufferMinutes > 0 ? ' (+${svc.bufferMinutes} فاصل)' : ''}),
+                      : tr('{p0} دقيقة{p1}', {'p0': svc.durationMinutes, 'p1': svc.bufferMinutes > 0 ? tr(' (+{p0} فاصل)', {'p0': svc.bufferMinutes}) : ''}),
                 ),
               ),
             ),

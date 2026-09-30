@@ -280,7 +280,13 @@ class _ArabicVisitor extends RecursiveAstVisitor<void> {
       }
       if (current is MethodInvocation) {
         final name = current.methodName.name;
-        if (name == 'tr') return 'already_translated';
+        if (name == 'tr') {
+          if (_isTrArgumentMapValue(node)) {
+            current = current.parent;
+            continue;
+          }
+          return 'already_translated';
+        }
         if (_loggerMethods.contains(name)) return 'logger_message';
         if (_nonUiMethods.contains(name)) return 'non_ui_operation';
       }
@@ -308,6 +314,24 @@ class _ArabicVisitor extends RecursiveAstVisitor<void> {
 
     if (_looksLikeData(_rawLiteral(node))) return 'data_or_setting_key';
     return null;
+  }
+
+  bool _isTrArgumentMapValue(AstNode node) {
+    AstNode? current = node.parent;
+    while (current != null) {
+      if (current is MapLiteralEntry) {
+        final map = current.parent;
+        final arguments = map?.parent;
+        final invocation = arguments?.parent;
+        return arguments is ArgumentList &&
+            invocation is MethodInvocation &&
+            invocation.methodName.name == 'tr' &&
+            invocation.argumentList.arguments.contains(map);
+      }
+      if (current is MethodInvocation) return false;
+      current = current.parent;
+    }
+    return false;
   }
 
   bool _hasAncestor<T extends AstNode>(AstNode node) =>

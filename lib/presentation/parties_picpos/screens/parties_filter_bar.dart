@@ -31,7 +31,7 @@ class _PartyTypePill extends StatelessWidget {
     return Semantics(
       selected: selected,
       button: true,
-      label: filter.label,
+      label: filter.displayLabel,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -53,7 +53,7 @@ class _PartyTypePill extends StatelessWidget {
                 Icon(icon, size: 13, color: selected ? Colors.white : muted),
                 const SizedBox(width: 6),
                 Text(
-                  filter.label,
+                  filter.displayLabel,
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,

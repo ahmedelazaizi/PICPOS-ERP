@@ -147,7 +147,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
                         );
                       },
                       displayStringForOption: (e) =>
-                          tr('{p0}{p1}', {'p0': e.name, 'p1': e.role == 'waiter' ? ' (نادل)' : ''}),
+                          tr('{p0}{p1}', {'p0': e.name, 'p1': e.role == 'waiter' ? tr(' (نادل)') : ''}),
                       initialValue: selectedEmployeeId != null
                           ? TextEditingValue(
                               text:

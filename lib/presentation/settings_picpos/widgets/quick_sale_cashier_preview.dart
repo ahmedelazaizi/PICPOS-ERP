@@ -296,7 +296,7 @@ class QuickSaleCashierPreview extends StatelessWidget {
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                  tr('تحصيل {p0} · إتمام فوري', {'p0': labels[_methods.first] ?? 'نقدي'}),
+                  tr('تحصيل {p0} · إتمام فوري', {'p0': labels[_methods.first] ?? tr('نقدي')}),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(

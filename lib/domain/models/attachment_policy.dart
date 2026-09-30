@@ -11,6 +11,7 @@
 //
 // فالنصُّ واحدٌ هنا، والثلاثةُ يقرؤونه.
 
+import '../../core/i18n/tr.dart';
 import '../../core/permissions/permission_codes.dart';
 
 /// سقفُ حجم الملفّ الواحد — **٥ ميغا** (قرارُ المالك §٨٫٤).
@@ -94,6 +95,8 @@ enum AttachmentDocType {
         AttachmentDocType.other => 'أخرى',
       };
 
+  String get displayLabel => tr(labelAr);
+
   static AttachmentDocType fromCode(String? code) {
     for (final t in AttachmentDocType.values) {
       if (t.code == code) return t;
@@ -120,6 +123,8 @@ class AttachmentEntity {
   /// الرمزُ المخزَّن في `attachments.entity_type`.
   final String type;
   final String labelAr;
+
+  String get displayLabel => tr(labelAr);
 
   /// جدولُ المستند في SQL — **به يُحوِّل الخادمُ الهُويّةَ العالميّةَ
   /// إلى رقمِه المحلّيّ**.
@@ -222,11 +227,11 @@ bool isAttachmentPdf(String mimeType) => mimeType == 'application/pdf';
 /// الشاشات، والوحدةُ عربيّة.
 String formatAttachmentSize(int bytes) {
   if (bytes < 0) return '—';
-  if (bytes < 1024) return '$bytes بايت';
+  if (bytes < 1024) return tr('{p0} بايت', {'p0': bytes});
   if (bytes < 1024 * 1024) {
-    return '${(bytes / 1024).toStringAsFixed(1)} ك.ب';
+    return tr('{p0} ك.ب', {'p0': (bytes / 1024).toStringAsFixed(1)});
   }
-  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} م.ب';
+  return tr('{p0} م.ب', {'p0': (bytes / (1024 * 1024)).toStringAsFixed(1)});
 }
 
 /// 🔴 **الحارسُ الواحدُ الذي يقرؤه الثلاثة.**
@@ -244,19 +249,19 @@ String? validateAttachment({
   required int existingCount,
 }) {
   if (attachmentEntityFor(entityType) == null) {
-    return 'نوعُ المستند غيرُ مدعومٍ للمرفقات: $entityType';
+    return tr('نوعُ المستند غيرُ مدعومٍ للمرفقات: {p0}', {'p0': entityType});
   }
-  if (fileName.trim().isEmpty) return 'اسمُ الملفّ مفقود';
-  if (fileName.length > 255) return 'اسمُ الملفّ أطولُ من ٢٥٥ محرفاً';
+  if (fileName.trim().isEmpty) return tr('اسمُ الملفّ مفقود');
+  if (fileName.length > 255) return tr('اسمُ الملفّ أطولُ من ٢٥٥ محرفاً');
   if (!kAttachmentAllowedMimeTypes.contains(mimeType)) {
-    return 'نوعٌ غيرُ مسموحٍ — الصورُ وملفّاتُ PDF فقط';
+    return tr('نوعٌ غيرُ مسموحٍ — الصورُ وملفّاتُ PDF فقط');
   }
-  if (byteSize <= 0) return 'الملفُّ فارغ';
+  if (byteSize <= 0) return tr('الملفُّ فارغ');
   if (byteSize > kAttachmentMaxBytes) {
-    return 'الملفُّ أكبرُ من ${formatAttachmentSize(kAttachmentMaxBytes)}';
+    return tr('الملفُّ أكبرُ من {p0}', {'p0': formatAttachmentSize(kAttachmentMaxBytes)});
   }
   if (existingCount >= kAttachmentMaxPerDocument) {
-    return 'بلغ المستندُ سقفَ $kAttachmentMaxPerDocument مرفقاتٍ';
+    return tr('بلغ المستندُ سقفَ {p0} مرفقاتٍ', {'p0': kAttachmentMaxPerDocument});
   }
   return null;
 }
@@ -272,10 +277,10 @@ String? validateAttachmentBytes({
   required String actualSha,
 }) {
   if (actualSize != expectedSize) {
-    return 'حجمُ المرفق لا يطابق الوصف ($actualSize ≠ $expectedSize)';
+    return tr('حجمُ المرفق لا يطابق الوصف ({p0} ≠ {p1})', {'p0': actualSize, 'p1': expectedSize});
   }
   if (actualSha.toLowerCase() != expectedSha.toLowerCase()) {
-    return 'بصمةُ المرفق لا تطابق الوصف — وصل ناقصاً أو تبدّل';
+    return tr('بصمةُ المرفق لا تطابق الوصف — وصل ناقصاً أو تبدّل');
   }
   return null;
 }

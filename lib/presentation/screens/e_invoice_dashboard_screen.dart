@@ -251,7 +251,7 @@ class _EInvoiceDashboardScreenState
         ),
         title: Text(
           isConfigured
-              ? tr('متصل بـ {p0}', {'p0': platform == EInvoicePlatform.eta ? "ETA مصر 🇪🇬" : "JOFOTARA الأردن 🇯🇴"})
+              ? tr('متصل بـ {p0}', {'p0': platform == EInvoicePlatform.eta ? tr('ETA مصر 🇪🇬') : tr('JOFOTARA الأردن 🇯🇴')})
               : tr('غير متصل — قم بإعداد المنصة'),
         ),
         subtitle: Text(

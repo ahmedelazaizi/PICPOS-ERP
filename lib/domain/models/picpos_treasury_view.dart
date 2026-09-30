@@ -3,6 +3,7 @@
 // **حسابٌ خالصٌ بلا واجهةٍ ولا قاعدة**: يستقبل أزواجَ (نوعٍ، رصيد) ويُخرج
 // شرائحَ بنسبها. فيُختبَر بلا فتحِ قاعدةٍ ولا حقنِ مزوِّد.
 import '../../core/constants/app_constants.dart';
+import '../../core/i18n/tr.dart';
 import '../../core/utils/financial_utils.dart';
 
 /// شريحةٌ واحدةٌ في شريط التقسيم.
@@ -82,19 +83,19 @@ class PicPosTreasurySplit {
       slices: [
         PicPosTreasurySlice(
           kind: 'cash',
-          label: 'نقدي',
+          label: tr('نقدي'),
           value: FinancialUtils.fromMinorUnits(cashMinor),
           fraction: frac(cashMinor),
         ),
         PicPosTreasurySlice(
           kind: 'bank',
-          label: 'بنوك',
+          label: tr('بنوك'),
           value: FinancialUtils.fromMinorUnits(bankMinor),
           fraction: frac(bankMinor),
         ),
         PicPosTreasurySlice(
           kind: 'click',
-          label: 'كليك',
+          label: tr('كليك'),
           value: FinancialUtils.fromMinorUnits(clickMinor),
           fraction: frac(clickMinor),
         ),

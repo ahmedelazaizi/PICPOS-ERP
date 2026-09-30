@@ -40,7 +40,16 @@ class AppConstants {
   static int decimalPlaces = CurrencyInfo.jod.decimals;
 
   // Currency fields — mutable, set from settings on app startup
-  static String currencySymbol = tr('د.أ');
+  static String _currencySymbol = tr('د.أ');
+
+  /// Currency shown by UI widgets in the active interface language.
+  static String get currencySymbol =>
+      I18nCatalog.activeLocale.languageCode == 'en'
+          ? currencySymbolEn
+          : _currencySymbol;
+
+  static set currencySymbol(String value) => _currencySymbol = value;
+
   static String currencySymbolAr = tr('د.أ');
   static String currencySymbolEn = 'JOD';
   static String currencyNameAr = tr('دينار أردني');

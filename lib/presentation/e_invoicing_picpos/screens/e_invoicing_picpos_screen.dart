@@ -1841,7 +1841,7 @@ class _EInvoiceConfigDialogState extends ConsumerState<_EInvoiceConfigDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(tr('إعداد {p0}', {'p0': widget.platform == 'eta' ? 'مصلحة الضرائب' : 'جوفوترة'})),
+      title: Text(tr('إعداد {p0}', {'p0': widget.platform == 'eta' ? tr('مصلحة الضرائب') : tr('جوفوترة')})),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(

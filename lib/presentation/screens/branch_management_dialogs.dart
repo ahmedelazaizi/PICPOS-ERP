@@ -314,7 +314,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
       await branchRepo.deleteBranch(branch.id as int,
           reassignUsersToBranchId: reassignTo);
       _logActivity('delete_branch', 'branch', branch.id as int,
-          tr('حذف فرع: {p0}{p1}', {'p0': branch.name, 'p1': reassignTo != null ? ' (نُقل المستخدمون إلى فرع #$reassignTo)' : ''}));
+          tr('حذف فرع: {p0}{p1}', {'p0': branch.name, 'p1': reassignTo != null ? tr(' (نُقل المستخدمون إلى فرع #{reassignTo})', {'reassignTo': reassignTo}) : ''}));
       if (mounted) {
         AppToast.show(context, tr('تم حذف الفرع'), type: ToastType.warning);
       }

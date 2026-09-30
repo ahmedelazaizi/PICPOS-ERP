@@ -89,7 +89,7 @@ Widget buildOpenShiftsSection({
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        tr('وردية #{p0} — {p1}', {'p0': shift.id, 'p1': userNames[shift.userId] ?? 'مستخدم #${shift.userId}'}),
+                        tr('وردية #{p0} — {p1}', {'p0': shift.id, 'p1': userNames[shift.userId] ?? tr('مستخدم #{p0}', {'p0': shift.userId})}),
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),

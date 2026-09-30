@@ -651,7 +651,7 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
       action: user.isActive ? 'DEACTIVATE_USER' : 'ACTIVATE_USER',
       entityType: 'user',
       entityId: user.id,
-      description: tr('{p0} المستخدم: {p1}', {'p0': user.isActive ? 'تعطيل' : 'تفعيل', 'p1': user.username}),
+      description: tr('{p0} المستخدم: {p1}', {'p0': user.isActive ? tr('تعطيل') : tr('تفعيل'), 'p1': user.username}),
     );
   }
 

@@ -14,6 +14,7 @@
 // `lastModifiedAt` حقلُ مزامنةٍ لا حركةٌ ماليّة — فأُسقط السطرُ ولم يُختلق.
 // راجع §الفجوات المعروفة في نهاية الملف.
 import '../../core/constants/app_constants.dart';
+import '../../core/i18n/tr.dart';
 import '../../core/utils/financial_utils.dart';
 
 /// ترشيحُ نوع الطرف — الأشرطةُ الخمسةُ في شريط التصميم.
@@ -32,6 +33,8 @@ enum PicPosPartyFilter {
 
   final String id;
   final String label;
+
+  String get displayLabel => tr(label);
 
   static PicPosPartyFilter fromId(String id) => values.firstWhere(
         (f) => f.id == id,
@@ -92,11 +95,11 @@ class PicPosPartyCard {
   /// الأولويّة. الفوركان يعرضان نفسَ الطرف؛ فلو كتبتُ «توصيل» هنا و«شركة
   /// توصيل» هناك لصار الاختلافُ عيباً يُبلَّغ عنه لا اختصاراً.
   String get typeLabel {
-    if (isDeliveryCompany) return 'شركة توصيل';
-    if (isCustomer && isSupplier) return 'عميل مورد';
-    if (isCustomer) return 'عميل';
-    if (isSupplier) return 'مورد';
-    return 'غير محدد';
+    if (isDeliveryCompany) return tr('شركة توصيل');
+    if (isCustomer && isSupplier) return tr('عميل مورد');
+    if (isCustomer) return tr('عميل');
+    if (isSupplier) return tr('مورد');
+    return tr('غير محدد');
   }
 
   /// هل تجاوز الرصيدُ حدَّ الائتمان؟
@@ -114,8 +117,8 @@ class PicPosPartyCard {
 
   /// تسميةُ حدّ الائتمان — أو «بلا حدّ» حين يكون صفراً.
   String get creditLimitLabel => creditLimit > 0
-      ? 'حد ${creditLimit.toStringAsFixed(0)}'
-      : 'بلا حدّ ائتمان';
+      ? tr('حد {p0}', {'p0': creditLimit.toStringAsFixed(0)})
+      : tr('بلا حدّ ائتمان');
 
   /// سطرُ التفاصيل تحت الاسم: «الهاتف · العنوان».
   ///
@@ -127,7 +130,7 @@ class PicPosPartyCard {
       if (phone != null && phone!.trim().isNotEmpty) phone!.trim(),
       if (address != null && address!.trim().isNotEmpty) address!.trim(),
     ];
-    return parts.isEmpty ? 'لا توجد بيانات اتصال' : parts.join(' · ');
+    return parts.isEmpty ? tr('لا توجد بيانات اتصال') : parts.join(' · ');
   }
 
   /// هل يطابق هذا الطرفُ الترشيحَ والبحث؟

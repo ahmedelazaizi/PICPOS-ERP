@@ -512,7 +512,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       showPosToast(
         context,
         ref,
-        tr('تم التحويل إلى {p0}', {'p0': ref.read(authProvider).effectiveUser?.displayName ?? 'المستخدم الجديد'}),
+        tr('تم التحويل إلى {p0}', {'p0': ref.read(authProvider).effectiveUser?.displayName ?? tr('المستخدم الجديد')}),
         type: PosNotificationType.success,
       );
 

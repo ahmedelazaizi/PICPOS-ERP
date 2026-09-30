@@ -176,7 +176,7 @@ class _AllocateDialogState extends State<_AllocateDialog> {
       onCancel: () => Navigator.pop(context),
       footerHint: blocker,
       primaryAction: PicPosDialogAction(
-        label: n == 0 ? tr('تحميل') : tr('تحميل على {n} {p0}', {'n': n, 'p0': n == 1 ? 'أمر' : 'أوامر'}),
+        label: n == 0 ? tr('تحميل') : tr('تحميل على {n} {p0}', {'n': n, 'p0': n == 1 ? tr('أمر') : tr('أوامر')}),
         icon: PhosphorIconsBold.check,
         onPressed: blocker != null
             ? null

@@ -228,7 +228,7 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
       await _repository.setCategoryLocked(id, isLocked);
       _logActivity(
         'category_lock_toggle',
-        tr('{p0} تصنيف: {name}', {'p0': isLocked ? "إقفال" : "فتح", 'name': name}),
+        tr('{p0} تصنيف: {name}', {'p0': isLocked ? tr('إقفال') : tr('فتح'), 'name': name}),
         entityId: id,
       );
     } catch (e, st) {
@@ -249,7 +249,7 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
       }
       _logActivity(
         'category_exclude_toggle',
-        tr('{p0} تصنيف: {name}', {'p0': isExcluded ? "استثناء" : "إلغاء استثناء", 'name': name}),
+        tr('{p0} تصنيف: {name}', {'p0': isExcluded ? tr('استثناء') : tr('إلغاء استثناء'), 'name': name}),
         entityId: id,
       );
     } catch (e, st) {
@@ -271,7 +271,7 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
       await _repository.setCategoryShowInPos(id, showInPos);
       _logActivity(
         'category_pos_visibility',
-        tr('{p0} تصنيف في البيع السريع: {name}', {'p0': showInPos ? "إظهار" : "إخفاء", 'name': name}),
+        tr('{p0} تصنيف في البيع السريع: {name}', {'p0': showInPos ? tr('إظهار') : tr('إخفاء'), 'name': name}),
         entityId: id,
       );
     } catch (e, st) {

@@ -188,7 +188,7 @@ class _CustomerRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  tier.label,
+                  tr(tier.label),
                   style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w800,

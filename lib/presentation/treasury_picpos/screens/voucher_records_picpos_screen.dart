@@ -110,7 +110,7 @@ class _VoucherRecordsPicPosScreenState
       // نفسُ كودِ الاستمارة التي يفتحها — فلا دورٌ يفقد باباً كان يملكه.
       permission: PermissionCodes.treasuryView,
       child: PicPosScreenScaffold(
-        title: widget.direction.labelAr,
+        title: widget.direction.displayLabel,
         subtitle: tr('سجلُّ ما حُفظ — واضغط «جديد» لتحرير سندٍ'),
         icon: _isReceipt
             ? PhosphorIconsBold.arrowCircleDown
@@ -265,7 +265,7 @@ class _VoucherRecordsPicPosScreenState
     showDialog<void>(
       context: context,
       builder: (ctx) => PicPosDialog(
-        title: '${widget.direction.labelAr} ${r.voucherNumber}',
+        title: '${widget.direction.displayLabel} ${r.voucherNumber}',
         subtitle: _dateFmt.format(r.date),
         icon: r.isCheque
             ? PhosphorIconsBold.checkSquareOffset

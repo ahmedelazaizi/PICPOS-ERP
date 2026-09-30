@@ -543,7 +543,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                 title: Text(cat.name,
                     style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
                 subtitle: Text(
-                  tr('العمر الافتراضي: {p0} | {p1}', {'p0': cat.defaultUsefulLife > 0 ? '${cat.defaultUsefulLife} سنة' : 'غير محدد', 'p1': getDepreciationMethodLabel(cat.defaultDepreciationMethod)}),
+                  tr('العمر الافتراضي: {p0} | {p1}', {'p0': cat.defaultUsefulLife > 0 ? tr('{p0} سنة', {'p0': cat.defaultUsefulLife}) : tr('غير محدد'), 'p1': getDepreciationMethodLabel(cat.defaultDepreciationMethod)}),
                   style: GoogleFonts.cairo(fontSize: 11, color: Colors.grey),
                 ),
                 trailing: PermissionGuard(

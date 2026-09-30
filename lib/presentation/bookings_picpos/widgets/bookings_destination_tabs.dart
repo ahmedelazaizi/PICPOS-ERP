@@ -133,7 +133,7 @@ class _Tab extends StatelessWidget {
                   color: selected ? Colors.white : AppColors.textMuted),
               const SizedBox(width: 6),
               Text(
-                label,
+                tr(label),
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,

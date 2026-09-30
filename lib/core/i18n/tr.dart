@@ -66,5 +66,9 @@ class I18nCatalog {
 }
 
 /// Translate an Arabic source template using the active UI locale.
+/// Locale tag for UI-facing number and date formatters.
+String get uiLocaleCode =>
+    I18nCatalog.activeLocale.languageCode == 'en' ? 'en' : 'ar';
+
 String tr(String arabic, [Map<String, Object?>? args]) =>
     I18nCatalog.translate(arabic, args);

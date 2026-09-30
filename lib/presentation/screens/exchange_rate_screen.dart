@@ -126,7 +126,7 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
         builder: (ctx) => AlertDialog(
           title:  Text(tr('معاينة إعادة تقييم الأرصدة الأجنبية')),
           content: Text(
-            tr('الفترة: {p0}\nالفواتير المتأثرة: {p1}\nصافي الفرق المحلي: {p2}\n\n{p3}', {'p0': preview.periodKey, 'p1': preview.invoiceCount, 'p2': preview.totalAdjustment.toStringAsFixed(2), 'p3': preview.alreadyPosted ? 'هذه الفترة مرحّلة بالفعل وستبقى بلا تغيير.' : 'سيُنشأ قيد إعادة تقييم وعكسه في أول يوم من الفترة التالية.'}),
+            tr('الفترة: {p0}\nالفواتير المتأثرة: {p1}\nصافي الفرق المحلي: {p2}\n\n{p3}', {'p0': preview.periodKey, 'p1': preview.invoiceCount, 'p2': preview.totalAdjustment.toStringAsFixed(2), 'p3': preview.alreadyPosted ? tr('هذه الفترة مرحّلة بالفعل وستبقى بلا تغيير.') : tr('سيُنشأ قيد إعادة تقييم وعكسه في أول يوم من الفترة التالية.')}),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child:  Text(tr('إلغاء'))),

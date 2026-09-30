@@ -122,7 +122,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(tr('العميل: {p0}', {'p0': loaded.customerName ?? "نقدي"})),
+                Text(tr('العميل: {p0}', {'p0': loaded.customerName ?? tr('نقدي')})),
                 Text(tr('بواسطة: {p0}', {'p0': loaded.userName})),
                 Text(
                   tr('التاريخ: {p0}', {'p0': DateFormat('yyyy-MM-dd').format(loaded.quotationDate)}),

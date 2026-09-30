@@ -25,6 +25,7 @@
 // ولذلك **لا يقرأ أيُّ قارئٍ السعرَ ليضربَ به**: الضربُ تمّ.
 //
 
+import '../../core/i18n/tr.dart';
 import '../../core/utils/financial_utils.dart';
 
 /// أدنى سعرِ صرفٍ يُقبَل. صفرٌ يُصفّر الفاتورةَ كلَّها، والسالبُ يقلب
@@ -76,17 +77,17 @@ String? validateExchangeRate({
   if (currencyId == null) {
     // 🔴 سعرٌ بلا عملةٍ مُعامِلٌ بلا وحدة: يضرب الأرقامَ ولا يقول بماذا.
     if (localPerForeign != null) {
-      return 'سعرُ صرفٍ بلا عملة — اختر العملة أو امسح السعر';
+      return tr('سعرُ صرفٍ بلا عملة — اختر العملة أو امسح السعر');
     }
     return null;
   }
   if (localPerForeign == null) {
     // 🔴 وعملةٌ بلا سعرٍ تُقرأ لاحقاً على أنّها ١: تُقيَّد ألفُ دولارٍ
     //    على أنّها ألفُ وحدةٍ محلّيّة، والقيدُ متّزنٌ على الرقم الخاطئ.
-    return 'اكتب سعر الصرف — العملةُ بلا سعرٍ تُقيَّد كأنّها محلّيّة';
+    return tr('اكتب سعر الصرف — العملةُ بلا سعرٍ تُقيَّد كأنّها محلّيّة');
   }
   if (localPerForeign < kMinExchangeRate) {
-    return 'سعرُ الصرف لا بدّ أن يكون أكبر من صفر';
+    return tr('سعرُ الصرف لا بدّ أن يكون أكبر من صفر');
   }
   return null;
 }
@@ -144,7 +145,7 @@ ImportDocumentFields normalizeImportDocument({
 String? validateImportDocument(ImportDocumentFields d) {
   String? tooLong(String label, String? value, int max) =>
       (value != null && value.length > max)
-          ? '$label أطولُ من $max حرفاً'
+          ? tr('{p0} أطولُ من {p1} حرفاً', {'p0': label, 'p1': max})
           : null;
 
   return tooLong('البيان الجمركي', d.customsDeclarationNo,

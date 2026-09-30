@@ -761,7 +761,7 @@ class _BranchScopeAdminDialogState
                                     padding: const EdgeInsetsDirectional
                                         .only(start: 16, top: 2),
                                     child: Text(
-                                      tr('  مكرر: id={p0} (refs={p1}{p2})', {'p0': d.id, 'p1': d.refCount, 'p2': d.attachedTxnRefs > 0 ? ", فواتير/ورديات=${d.attachedTxnRefs} — سيتم تخطيه" : ""}),
+                                      tr('  مكرر: id={p0} (refs={p1}{p2})', {'p0': d.id, 'p1': d.refCount, 'p2': d.attachedTxnRefs > 0 ? tr(', فواتير/ورديات={p0} — سيتم تخطيه', {'p0': d.attachedTxnRefs}) : ""}),
                                       style: TextStyle(
                                           fontSize: 12,
                                           color: d.attachedTxnRefs > 0
@@ -1026,7 +1026,7 @@ class _BranchScopeAdminDialogState
                                     padding: const EdgeInsetsDirectional
                                         .only(start: 16, top: 2),
                                     child: Text(
-                                      tr('  مكرر: id={p0} (refs={p1}, رصيد={p2}{p3})', {'p0': d.id, 'p1': d.refCount, 'p2': d.balance.toStringAsFixed(3), 'p3': d.attachedTxnRefs > 0 ? ", معاملات=${d.attachedTxnRefs} — سيتم تخطيه" : ""}),
+                                      tr('  مكرر: id={p0} (refs={p1}, رصيد={p2}{p3})', {'p0': d.id, 'p1': d.refCount, 'p2': d.balance.toStringAsFixed(3), 'p3': d.attachedTxnRefs > 0 ? tr(', معاملات={p0} — سيتم تخطيه', {'p0': d.attachedTxnRefs}) : ""}),
                                       style: TextStyle(
                                           fontSize: 12,
                                           color: d.attachedTxnRefs > 0
@@ -1595,7 +1595,7 @@ class _BranchScopeAdminDialogState
       final purchF = result['purchasesFailed'] ?? 0;
       AppToast.show(
         context,
-        tr('مبيعات: {salesR}/{p0} | مشتريات: {purchR}/{p1}', {'salesR': salesR, 'p0': salesF == 0 ? "نجح" : "$salesF فشل", 'purchR': purchR, 'p1': purchF == 0 ? "نجح" : "$purchF فشل"}),
+        tr('مبيعات: {salesR}/{p0} | مشتريات: {purchR}/{p1}', {'salesR': salesR, 'p0': salesF == 0 ? tr('نجح') : tr('{salesF} فشل', {'salesF': salesF}), 'purchR': purchR, 'p1': purchF == 0 ? tr('نجح') : tr('{purchF} فشل', {'purchF': purchF})}),
         type: (salesF + purchF) > 0 ? ToastType.error : ToastType.success,
       );
     } catch (e) {

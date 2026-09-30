@@ -410,7 +410,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
                           style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
                         subtitle: Text(
-                          tr('الكمية: {p0} | تاريخ الشراء: {p1}', {'p0': batch.quantity, 'p1': batch.purchaseDate != null ? '${batch.purchaseDate!.day}/${batch.purchaseDate!.month}/${batch.purchaseDate!.year}' : 'غير محدد'}),
+                          tr('الكمية: {p0} | تاريخ الشراء: {p1}', {'p0': batch.quantity, 'p1': batch.purchaseDate != null ? '${batch.purchaseDate!.day}/${batch.purchaseDate!.month}/${batch.purchaseDate!.year}' : tr('غير محدد')}),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,
@@ -1657,7 +1657,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
                   leading: const Icon(PhosphorIconsBold.wifiSlash,
                       color: Color(0xFFEF6C00)), // orange shade800
                   content: Text(
-                    tr('وضع أوفلاين — العمل على قاعدة البيانات المحلية. {p0}', {'p0': PostgresConfig.offlineFallbackStart != null ? "منذ ${_formatOfflineTime(PostgresConfig.offlineFallbackStart!)}" : ""}),
+                    tr('وضع أوفلاين — العمل على قاعدة البيانات المحلية. {p0}', {'p0': PostgresConfig.offlineFallbackStart != null ? tr('منذ {p0}', {'p0': _formatOfflineTime(PostgresConfig.offlineFallbackStart!)}) : ""}),
                     style: const TextStyle(
                         color: Color(0xFFE65100), // orange shade900
                         fontSize: 13),

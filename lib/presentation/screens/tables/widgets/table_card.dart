@@ -35,7 +35,7 @@ class TableCard extends ConsumerWidget {
     // Calculate elapsed time
     final elapsed = DateTime.now().difference(table.lastStatusAt);
     final elapsedStr = elapsed.inMinutes > 0
-        ? tr('{p0}{p1}د', {'p0': elapsed.inHours > 0 ? '${elapsed.inHours}س ' : '', 'p1': elapsed.inMinutes % 60})
+        ? tr('{p0}{p1}د', {'p0': elapsed.inHours > 0 ? tr('{p0}س ', {'p0': elapsed.inHours}) : '', 'p1': elapsed.inMinutes % 60})
         : tr('الآن');
 
     final isRound = table.capacity <= 4;

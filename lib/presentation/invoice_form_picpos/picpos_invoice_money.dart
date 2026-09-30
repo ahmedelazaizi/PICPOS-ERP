@@ -468,7 +468,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
           if (hasTerms)
             Flexible(
               child: Text(
-                tr('{p0} {terms} يوماً', {'p0': state.widget.kind.isSales ? 'سماح' : 'سداد', 'terms': terms}),
+                tr('{p0} {terms} يوماً', {'p0': state.widget.kind.isSales ? tr('سماح') : tr('سداد'), 'terms': terms}),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

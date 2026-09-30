@@ -767,7 +767,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
         allRows.add({
           'entry_date': entry.entryDate,
           'entry_number': entry.entryNumber,
-          'description': tr('{p0} {p1}', {'p0': _cleanDescription(entry.description), 'p1': entry.isAutoPosted ? '[تلقائي]' : '[يدوي]'}),
+          'description': tr('{p0} {p1}', {'p0': _cleanDescription(entry.description), 'p1': entry.isAutoPosted ? tr('[تلقائي]') : tr('[يدوي]')}),
           'debit': 0.0,
           'credit': 0.0,
           'balance': 0.0,

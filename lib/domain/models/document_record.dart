@@ -1,3 +1,5 @@
+import '../../core/i18n/tr.dart';
+
 // صفوفُ **سجلّ المستندات** — ما تعرضه شاشاتُ السجلّ في خ‑٩.
 //
 // ═══ لماذا هنا لا في الـDAO ═══
@@ -33,6 +35,8 @@ enum VoucherDirection {
   final String chequePrefix;
 
   final String labelAr;
+
+  String get displayLabel => tr(labelAr);
 }
 
 /// نوعُ صفِّ سند الشيك في `safe_transactions` — مستندٌ بلا أثرٍ ماليّ.
@@ -121,21 +125,21 @@ class PurchaseReturnRecord {
 
 /// تسميةُ طريقة الردّ بالعربيّة.
 String refundMethodLabelAr(String method) => switch (method) {
-      'cash' => 'نقداً',
-      'bank' => 'بنكيّاً',
-      'credit' => 'على الحساب',
+      'cash' => tr('نقداً'),
+      'bank' => tr('بنكيّاً'),
+      'credit' => tr('على الحساب'),
       _ => method,
     };
 
 /// تسميةُ تصنيف السند بالعربيّة — وما لا يُعرَف يُعرَض كما هو لا يُبتَلع.
 String voucherCategoryLabelAr(String category) => switch (category) {
-      'customer_payment' => 'تحصيل من عميل',
-      'supplier_payment' => 'سداد لمورّد',
-      'expense' => 'مصروف',
-      'salary' => 'راتب',
-      'advance' => 'سلفة',
-      'sales' => 'مبيعات',
-      'purchase' => 'مشتريات',
-      'other' => 'أخرى',
+      'customer_payment' => tr('تحصيل من عميل'),
+      'supplier_payment' => tr('سداد لمورّد'),
+      'expense' => tr('مصروف'),
+      'salary' => tr('راتب'),
+      'advance' => tr('سلفة'),
+      'sales' => tr('مبيعات'),
+      'purchase' => tr('مشتريات'),
+      'other' => tr('أخرى'),
       _ => category,
     };

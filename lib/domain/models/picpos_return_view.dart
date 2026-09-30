@@ -16,6 +16,7 @@
 // المشتريات تمرّر `null` ويظهر التاريخُ وحدَه، كما هي اليوم. اختلاقُ اسمٍ
 // هناك كان سيتطلّب استعلاماً لكلّ صفٍّ (N+1) أو كذباً.
 import '../../core/constants/app_constants.dart';
+import '../../core/i18n/tr.dart';
 import '../../core/utils/financial_utils.dart';
 
 /// حالةُ الفاتورة كما تُعرَض في الشارة.
@@ -33,6 +34,8 @@ enum PicPosReturnStatus {
 
   final String code;
   final String label;
+
+  String get displayLabel => tr(label);
 
   /// حالةٌ مجهولةٌ ترتدّ إلى «معلقة» — نفسُ `default` في الدالّة الأصليّة.
   static PicPosReturnStatus fromCode(String code) => values.firstWhere(

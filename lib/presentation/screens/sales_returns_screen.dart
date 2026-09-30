@@ -443,7 +443,7 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                   ),
                 ),
                 subtitle: Text(
-                  tr('{p0} • {p1}/{p2}', {'p0': state.customerNames[invoice.customerId] ?? 'عميل نقدي', 'p1': invoice.invoiceDate.day, 'p2': invoice.invoiceDate.month}),
+                  tr('{p0} • {p1}/{p2}', {'p0': state.customerNames[invoice.customerId] ?? tr('عميل نقدي'), 'p1': invoice.invoiceDate.day, 'p2': invoice.invoiceDate.month}),
                   style: const TextStyle(fontSize: 12),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

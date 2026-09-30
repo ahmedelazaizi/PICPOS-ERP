@@ -335,7 +335,7 @@ class _DeliveryManagementBodyState
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
-                      tr('{p0} | {p1}', {'p0': courier.phone ?? "-", 'p1': company?.name ?? "توصيل داخلي"}),
+                      tr('{p0} | {p1}', {'p0': courier.phone ?? "-", 'p1': company?.name ?? tr('توصيل داخلي')}),
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,

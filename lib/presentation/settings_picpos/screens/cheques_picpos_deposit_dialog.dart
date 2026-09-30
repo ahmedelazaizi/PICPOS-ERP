@@ -183,7 +183,7 @@ class _DepositBatchDialogState extends State<_DepositBatchDialog> {
       footerHint: blocker,
       primaryAction: PicPosDialogAction(
         // ‏`save:'إيداع ٣ شيكات'` في التصميم — والعددُ محسوبٌ لا مكتوب.
-        label: n == 0 ? tr('إيداع') : tr('إيداع {n} {p0}', {'n': n, 'p0': n == 1 ? 'شيك' : 'شيكات'}),
+        label: n == 0 ? tr('إيداع') : tr('إيداع {n} {p0}', {'n': n, 'p0': n == 1 ? tr('شيك') : tr('شيكات')}),
         icon: PhosphorIconsBold.check,
         onPressed: blocker != null
             ? null

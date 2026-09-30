@@ -17,6 +17,8 @@
 // بنيويٌّ أنّ كلَّ `referenceType` يكتبه ذلك الملفُّ موجودٌ في هذه القائمة.
 library;
 
+import '../../core/i18n/tr.dart';
+
 /// اقتناءُ الأصل — `createFixedAsset`.
 const String kAssetJeAcquisition = 'fixed_asset';
 
@@ -42,10 +44,10 @@ const List<String> kAssetJeReferenceTypes = [
 
 /// ما يُقرأ على صفّ الحركة.
 String assetMovementLabel(String? referenceType) => switch (referenceType) {
-      kAssetJeAcquisition => 'اقتناء',
-      kAssetJeDepreciation => 'إهلاك',
-      kAssetJeDisposal => 'استبعاد',
-      kAssetJeTransfer => 'نقل',
-      kAssetJeRevaluation => 'إعادة تقييم',
-      _ => 'حركة',
+      kAssetJeAcquisition => tr('اقتناء'),
+      kAssetJeDepreciation => tr('إهلاك'),
+      kAssetJeDisposal => tr('استبعاد'),
+      kAssetJeTransfer => tr('نقل'),
+      kAssetJeRevaluation => tr('إعادة تقييم'),
+      _ => tr('حركة'),
     };

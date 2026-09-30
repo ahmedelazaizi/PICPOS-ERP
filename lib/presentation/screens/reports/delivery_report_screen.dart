@@ -381,8 +381,8 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
                       Text(
                         tr('التاريخ: {p0}', {'p0': DateFormat('yyyy-MM-dd HH:mm').format(invoice.invoiceDate)}),
                       ),
-                      Text(tr('المندوب: {p0}', {'p0': courier?.name ?? "غير محدد"})),
-                      Text(tr('الشركة: {p0}', {'p0': company?.name ?? "بدون شركة"})),
+                      Text(tr('المندوب: {p0}', {'p0': courier?.name ?? tr('غير محدد')})),
+                      Text(tr('الشركة: {p0}', {'p0': company?.name ?? tr('بدون شركة')})),
                       const SizedBox(height: 4),
                       _buildStatusBadge(invoice.deliveryStatus ?? 'pending'),
                     ],

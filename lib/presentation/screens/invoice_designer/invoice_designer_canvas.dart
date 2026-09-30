@@ -505,7 +505,7 @@ class InvoiceDesignerCanvas extends StatelessWidget {
         case 'text':
           return element.content ?? tr('نص');
         case 'variable':
-          return tr('{{p0}}', {'p0': element.content ?? 'متغير'});
+          return tr('{{p0}}', {'p0': element.content ?? tr('متغير')});
         default:
           return element.content ?? element.elementType;
       }

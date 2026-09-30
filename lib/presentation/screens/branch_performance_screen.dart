@@ -121,9 +121,9 @@ class _BranchPerformanceScreenState
 
   @override
   Widget build(BuildContext context) {
-    final fmt = NumberFormat('#,##0.00', 'ar_EG');
-    final fmtInt = NumberFormat('#,##0', 'ar_EG');
-    final dateFmt = DateFormat('yyyy/MM/dd', 'ar_EG');
+    final fmt = NumberFormat('#,##0.00', uiLocaleCode);
+    final fmtInt = NumberFormat('#,##0', uiLocaleCode);
+    final dateFmt = DateFormat('yyyy/MM/dd', uiLocaleCode);
 
     // Totals
     final totalSales = _branchData.fold(0.0, (s, b) => s + b.totalSales);

@@ -218,7 +218,7 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
               FilledButton.icon(
                 onPressed: selected != null ? () => Navigator.pop(ctx, selected) : null,
                 icon: const Icon(PhosphorIconsBold.upload, size: 16),
-                label: Text(tr('ترحيل {p0}', {'p0': selected != null ? "إلى \"${selected!.name}\"" : ""})),
+                label: Text(tr('ترحيل {p0}', {'p0': selected != null ? tr('إلى "{p0}"', {'p0': selected!.name}) : ""})),
                 style: FilledButton.styleFrom(backgroundColor: Colors.teal),
               ),
             ],

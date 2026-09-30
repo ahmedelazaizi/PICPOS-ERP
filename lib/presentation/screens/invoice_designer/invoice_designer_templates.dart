@@ -99,7 +99,7 @@ mixin _InvoiceDesignerTemplatesMixin
           userName: user?.displayName ?? tr('مجهول'),
           action: 'create_invoice_template',
           entityType: 'invoice_template',
-          description: tr('إنشاء قالب فاتورة: {p0} ({templateType})', {'p0': nameController.text.isEmpty ? 'قالب جديد' : nameController.text, 'templateType': templateType}),
+          description: tr('إنشاء قالب فاتورة: {p0} ({templateType})', {'p0': nameController.text.isEmpty ? tr('قالب جديد') : nameController.text, 'templateType': templateType}),
         );
         if (!mounted) return;
         AppToast.show(context, tr('تم حفظ القالب بنجاح'), type: ToastType.success);
@@ -310,7 +310,7 @@ mixin _InvoiceDesignerTemplatesMixin
                         ],
                       ),
                       subtitle: Text(
-                        tr('{p0} • {p1}', {'p0': t.type == 'thermal' ? 'حراري' : t.type == 'kitchen' ? 'مطبخ' : t.type == 'shift_closing' ? 'تقرير إغلاق' : 'A4', 'p1': t.paperSize}),
+                        tr('{p0} • {p1}', {'p0': t.type == 'thermal' ? tr('حراري') : t.type == 'kitchen' ? tr('مطبخ') : t.type == 'shift_closing' ? tr('تقرير إغلاق') : 'A4', 'p1': t.paperSize}),
                       ),
                       trailing: PopupMenuButton<String>(
                         icon: const Icon(PhosphorIconsBold.dotsThreeVertical),
@@ -543,10 +543,10 @@ mixin _InvoiceDesignerTemplatesMixin
           await activityLogRepo.logActivity(
             userId: user?.id, userName: user?.displayName ?? tr('مجهول'),
             action: 'import_invoice_template', entityType: 'invoice_template',
-            description: tr('استيراد قالب فاتورة من ملف: {p0}', {'p0': data['name'] ?? 'نموذج'}),
+            description: tr('استيراد قالب فاتورة من ملف: {p0}', {'p0': data['name'] ?? tr('نموذج')}),
           );
           if (!mounted) return;
-          AppToast.show(context, tr('تم استيراد "{p0}" بنجاح!', {'p0': data['name'] ?? 'نموذج'}), type: ToastType.success);
+          AppToast.show(context, tr('تم استيراد "{p0}" بنجاح!', {'p0': data['name'] ?? tr('نموذج')}), type: ToastType.success);
           await loadTemplateById(newId);
         }
       }

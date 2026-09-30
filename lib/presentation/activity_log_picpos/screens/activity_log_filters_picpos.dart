@@ -304,7 +304,7 @@ mixin _ActivityLogFiltersPicposMixin on ConsumerState<ActivityLogPicposScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              tr('{label}: {p0}', {'label': label, 'p0': date != null ? '${date.day}/${date.month}/${date.year}' : 'اختر'}),
+              tr('{label}: {p0}', {'label': label, 'p0': date != null ? '${date.day}/${date.month}/${date.year}' : tr('اختر')}),
             ),
           ],
         ),

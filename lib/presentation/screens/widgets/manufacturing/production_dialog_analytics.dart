@@ -147,7 +147,7 @@ class _ProductionOrderDialogState
                     return DropdownMenuItem(
                       value: bom.id,
                       child: Text(
-                          tr('{p0} ({p1})', {'p0': product?.name ?? 'غير معروف', 'p1': bom.bomCode})),
+                          tr('{p0} ({p1})', {'p0': product?.name ?? tr('غير معروف'), 'p1': bom.bomCode})),
                     );
                   }).toList(),
                   onChanged: (v) => setState(() => _selectedBomId = v),

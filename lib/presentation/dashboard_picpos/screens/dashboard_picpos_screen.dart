@@ -362,11 +362,14 @@ String _dashboardPeriodLabel(DateTime from, DateTime to) {
   final now = DateTime.now();
   final todayStart = DateTime(now.year, now.month, now.day);
   final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
-  final f = DateFormat('yyyy/MM/dd', 'ar');
+  final f = DateFormat('yyyy/MM/dd', uiLocaleCode);
   if (!from.isBefore(todayStart) && !to.isAfter(todayEnd)) {
-    return 'اليوم • ${f.format(from)}';
+    return tr('اليوم • {p0}', {'p0': f.format(from)});
   }
-  return 'الفترة: ${f.format(from)} — ${f.format(to)}';
+  return tr('الفترة: {p0} — {p1}', {
+    'p0': f.format(from),
+    'p1': f.format(to),
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -939,7 +942,7 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('yyyy/MM/dd', 'ar');
+      final dateFormat = DateFormat('yyyy/MM/dd', uiLocaleCode);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(

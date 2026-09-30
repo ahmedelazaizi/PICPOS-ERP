@@ -1,3 +1,5 @@
+import '../../core/i18n/tr.dart';
+
 // حسابُ طلبِ استبعاد الأصل — **خالصٌ**، بلا قاعدةٍ ولا ودجت.
 //
 // ═══ 🔴 ولماذا خطّةٌ مستقلّةٌ أصلاً ═══
@@ -30,15 +32,15 @@ const List<String> kDisposalMethods = ['sale', 'scrap', 'donation', 'writeoff'];
 const List<String> kDisposalCollectionMethods = ['cash', 'credit'];
 
 String disposalMethodLabel(String method) => switch (method) {
-      'sale' => 'بيع',
-      'scrap' => 'إعدام',
-      'donation' => 'تبرّع',
-      'writeoff' => 'تخريد',
+      'sale' => tr('بيع'),
+      'scrap' => tr('إعدام'),
+      'donation' => tr('تبرّع'),
+      'writeoff' => tr('تخريد'),
       _ => method,
     };
 
 String disposalCollectionLabel(String method) =>
-    method == 'credit' ? 'آجل على ذمّة العميل' : 'نقدي';
+    method == 'credit' ? tr('آجل على ذمّة العميل') : tr('نقدي');
 
 /// هل تُحصَّل قيمةٌ من هذه الطريقة؟ — **البيعُ وحدَه**.
 ///
@@ -67,10 +69,10 @@ DisposalOutcome computeDisposalOutcome({
     gainLoss: delta,
     isGain: delta > 0,
     label: delta > 0
-        ? 'الربح المتوقَّع'
+        ? tr('الربح المتوقَّع')
         : delta < 0
-            ? 'الخسارة المتوقَّعة'
-            : 'بلا ربحٍ ولا خسارة',
+            ? tr('الخسارة المتوقَّعة')
+            : tr('بلا ربحٍ ولا خسارة'),
   );
 }
 
@@ -93,34 +95,34 @@ String? validateAssetDisposal({
   required String assetStatus,
 }) {
   if (assetStatus != 'active') {
-    return 'الأصل غير نشط — لا يُستبعَد مرّتين';
+    return tr('الأصل غير نشط — لا يُستبعَد مرّتين');
   }
   if (!kDisposalMethods.contains(method)) {
-    return 'طريقة استبعاد غير معروفة';
+    return tr('طريقة استبعاد غير معروفة');
   }
-  if (reason.trim().isEmpty) return 'اكتب سبب الاستبعاد';
+  if (reason.trim().isEmpty) return tr('اكتب سبب الاستبعاد');
 
   if (!disposalCarriesProceeds(method)) {
     // 🔴 بلا هذا يُقيَّد نقدٌ على «تبرّع» فيدخل الدفترَ مالٌ لم يُقبَض.
     if (disposalValue != 0) {
-      return '${disposalMethodLabel(method)} بلا ثمن — امسح قيمة البيع';
+      return tr('{p0} بلا ثمن — امسح قيمة البيع', {'p0': disposalMethodLabel(method)});
     }
     return null;
   }
 
-  if (disposalValue <= 0) return 'اكتب قيمة البيع';
+  if (disposalValue <= 0) return tr('اكتب قيمة البيع');
   if (!kDisposalCollectionMethods.contains(collectionMethod)) {
-    return 'طريقة تحصيل غير معروفة';
+    return tr('طريقة تحصيل غير معروفة');
   }
   if (collectionMethod == 'credit' && buyerPartyId == null) {
     // ⚠️ نصٌّ حرٌّ لا يكفي: القيدُ يحتاج حساباً، والذمّةُ تحتاج طرفاً يُطالَب.
-    return 'الآجل يحتاج مشترياً مسجَّلاً — بلا طرفٍ لا ذمّةَ تُحمَّل';
+    return tr('الآجل يحتاج مشترياً مسجَّلاً — بلا طرفٍ لا ذمّةَ تُحمَّل');
   }
   if (collectionMethod == 'cash' && safeId == null) {
     // 🔴 `disposeAsset` القائمةُ تقيّد مدينَ نقديّةٍ **ولا تحرّك خزنة**، فيزيد
     //    النقدُ في الأستاذ ولا يزيد في أيّ درج. والخزنةُ هنا شرطٌ لا حقلٌ
     //    اختياريّ.
-    return 'اختر الخزينة — وإلّا زاد النقدُ في الدفتر ولم يزد في أيّ درج';
+    return tr('اختر الخزينة — وإلّا زاد النقدُ في الدفتر ولم يزد في أيّ درج');
   }
   return null;
 }

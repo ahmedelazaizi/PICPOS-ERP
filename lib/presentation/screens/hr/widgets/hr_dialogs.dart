@@ -422,7 +422,7 @@ class HRDialogs {
                         color: isAdvance ? AppColors.error : AppColors.warning,
                       ),
                       title: Text(
-                        tr('{p0}: {p1} {p2}', {'p0': isAdvance ? "سلفة" : "خصم", 'p1': t.amount.toStringAsFixed(AppConstants.decimalPlaces), 'p2': AppConstants.currencySymbolEn}),
+                        tr('{p0}: {p1} {p2}', {'p0': isAdvance ? tr('سلفة') : tr('خصم'), 'p1': t.amount.toStringAsFixed(AppConstants.decimalPlaces), 'p2': AppConstants.currencySymbolEn}),
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

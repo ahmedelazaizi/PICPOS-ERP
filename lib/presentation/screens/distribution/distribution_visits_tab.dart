@@ -14,7 +14,7 @@ class _VisitsTab extends StatefulWidget {
 
 class _VisitsTabState extends State<_VisitsTab> {
   DateTime _selectedDate = DateTime.now();
-  final _fmt = DateFormat('yyyy/MM/dd', 'ar');
+  DateFormat get _fmt => DateFormat('yyyy/MM/dd', uiLocaleCode);
 
   @override
   Widget build(BuildContext context) {

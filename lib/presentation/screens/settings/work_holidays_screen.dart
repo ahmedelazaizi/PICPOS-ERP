@@ -231,7 +231,7 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
                         child: OutlinedButton.icon(
                           icon: const Icon(PhosphorIconsBold.calendar),
                           label: Text(
-                            DateFormat('yyyy/MM/dd', 'ar').format(date),
+                            DateFormat('yyyy/MM/dd', uiLocaleCode).format(date),
                           ),
                           onPressed: () async {
                             final picked = await showDatePicker(
@@ -358,7 +358,7 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
                       child: OutlinedButton.icon(
                         icon: const Icon(PhosphorIconsBold.calendar),
                         label:
-                            Text(DateFormat('yyyy/MM/dd', 'ar').format(date)),
+                            Text(DateFormat('yyyy/MM/dd', uiLocaleCode).format(date)),
                         onPressed: () async {
                           final picked = await showDatePicker(
                             context: context,
@@ -429,7 +429,7 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
 
   String _describe(WorkHoliday h) {
     if (h.weekday != null) return _kWeekdayNames[h.weekday!];
-    return DateFormat('yyyy/MM/dd', 'ar').format(h.date!);
+    return DateFormat('yyyy/MM/dd', uiLocaleCode).format(h.date!);
   }
 
   /// ترشيحٌ بالاسم أو الوصف (‏اليوم/التاريخ) أو اسمِ الفرع. استعلامٌ فارغٌ

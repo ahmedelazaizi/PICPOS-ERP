@@ -81,14 +81,14 @@ class PicPosPageHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  title,
+                  tr(title),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: text.headlineSmall,
                 ),
                 if (subtitle != null)
                   Text(
-                    subtitle!,
+                    tr(subtitle!),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: text.bodySmall,

@@ -605,7 +605,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
                   tint: _catTypeLabels[e['category_type']]?.$2 ??
                       AppColors.primary,
                 ),
-                PicPosTextCell(tr('{p0}', {'p0': e['branch_name'] ?? 'كل الفروع'})),
+                PicPosTextCell(tr('{p0}', {'p0': e['branch_name'] ?? tr('كل الفروع')})),
                 PicPosTextCell(_money.format(_num(e['amount']))),
                 PicPosTextCell(_d(e['expense_date'] as DateTime?)),
                 PicPosPillCell(
@@ -973,7 +973,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
                 subtitle: '${e['branch_name'] ?? 'كل الفروع'} · '
                     '${_d(e['expense_date'] as DateTime?)}',
                 value: _money.format(_num(e['amount'])),
-                meta: tr('{p0}', {'p0': e['user_name'] ?? 'غير معروف'}),
+                meta: tr('{p0}', {'p0': e['user_name'] ?? tr('غير معروف')}),
                 metaIcon: PhosphorIconsBold.user,
                 metaTint: tint,
                 // ⚠️ **صفُّ `safe_tx` لا يُنقَل**: `getExpensesForReport`
@@ -1099,7 +1099,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
     // مصروفُ الشهر بمركز التكلفة — شريطُ التصميم الثاني.
     final byCostCentre = <String, double>{};
     for (final e in expenses) {
-      final key = tr('{p0}', {'p0': e['category_name'] ?? 'غير مصنَّف'});
+      final key = tr('{p0}', {'p0': e['category_name'] ?? tr('غير مصنَّف')});
       byCostCentre.update(key, (v) => v + _num(e['amount']),
           ifAbsent: () => _num(e['amount']));
     }

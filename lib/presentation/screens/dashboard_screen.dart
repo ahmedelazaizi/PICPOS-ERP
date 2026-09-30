@@ -105,8 +105,8 @@ class DashboardScreen extends ConsumerWidget {
                           const SizedBox(width: 6),
                           Text(
                             DateFormat(
-                              tr('EEEE، d MMMM yyyy'),
-                              'ar',
+                              'EEEE, d MMMM yyyy',
+                              uiLocaleCode,
                             ).format(DateTime.now()),
                             style: const TextStyle(
                               fontSize: 12,
@@ -162,7 +162,7 @@ class DashboardScreen extends ConsumerWidget {
                         // هو ضريبة المخرجات المعروضة هنا صراحةً.
                         richMessage: kpi.maybeWhen(
                           data: (k) {
-                            final f = NumberFormat('#,##0.00', 'ar');
+                            final f = NumberFormat('#,##0.00', uiLocaleCode);
                             return TextSpan(
                               text: tr('صافي إيراد دفتر الأستاذ — عن الفترة والفرع المحددين أعلى الشاشة\n\nصافي الإيراد (بدون ضريبة)   {p0}\n+ ضريبة المخرجات (صافية)    {p1}\n= صافي الإيراد شامل الضريبة {p2}\n\nالمردودات المخصومة أصلاً    {p3}\n\nملاحظة: الإيرادات غير البيعية (فائض الخزنة، خصم المشتريات) لا تدخل هذا الرقم.', {'p0': f.format(k.revenue), 'p1': f.format(k.outputVatNet), 'p2': f.format(k.netRevenueInclVat), 'p3': f.format(k.salesReturns)}),
                             );
@@ -193,7 +193,7 @@ class DashboardScreen extends ConsumerWidget {
                             title: tr('صافي الإيراد'),
                             value: kpi.when(
                               data: (k) =>
-                                  NumberFormat('#,##0.00', 'ar').format(k.revenue),
+                                  NumberFormat('#,##0.00', uiLocaleCode).format(k.revenue),
                               loading: () => '...',
                               error: (e, s) => '0.00',
                             ),
@@ -240,7 +240,7 @@ class DashboardScreen extends ConsumerWidget {
                           title: cashCardTitle,
                           value: cashBalance.when(
                             data: (balance) =>
-                                NumberFormat('#,##0.00', 'ar').format(balance),
+                                NumberFormat('#,##0.00', uiLocaleCode).format(balance),
                             loading: () => '...',
                             error: (e, s) => '0.00',
                           ),
@@ -268,7 +268,7 @@ class DashboardScreen extends ConsumerWidget {
                           title: tr('صافي الربح'),
                           value: kpi.when(
                                 data: (k) =>
-                                    NumberFormat('#,##0.00', 'ar').format(k.netProfit),
+                                    NumberFormat('#,##0.00', uiLocaleCode).format(k.netProfit),
                                 loading: () => '...',
                                 error: (e, s) => '0.00',
                               ),
@@ -519,7 +519,7 @@ class DashboardScreen extends ConsumerWidget {
                                     subtitle: Text(
                                       DateFormat(
                                         'hh:mm a',
-                                        'ar',
+                                        uiLocaleCode,
                                       ).format(sale.invoiceDate),
                                       style: const TextStyle(
                                         color: AppColors.textMuted,
@@ -527,7 +527,7 @@ class DashboardScreen extends ConsumerWidget {
                                       ),
                                     ),
                                     trailing: Text(
-                                      '${NumberFormat('#,##0.00', 'ar').format(sale.total)} ${AppConstants.currencySymbolEn}',
+                                      '${NumberFormat('#,##0.00', uiLocaleCode).format(sale.total)} ${AppConstants.currencySymbolEn}',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: AppColors.success,
@@ -566,11 +566,14 @@ String _dashboardPeriodLabel(DateTime from, DateTime to) {
   final now = DateTime.now();
   final todayStart = DateTime(now.year, now.month, now.day);
   final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
-  final f = DateFormat('yyyy/MM/dd', 'ar');
+  final f = DateFormat('yyyy/MM/dd', uiLocaleCode);
   if (!from.isBefore(todayStart) && !to.isAfter(todayEnd)) {
-    return 'اليوم • ${f.format(from)}';
+    return tr('اليوم • {p0}', {'p0': f.format(from)});
   }
-  return 'الفترة: ${f.format(from)} — ${f.format(to)}';
+  return tr('الفترة: {p0} — {p1}', {
+    'p0': f.format(from),
+    'p1': f.format(to),
+  });
 }
 
 /// Fix 3 (spec 150, BUG-6) — short label for the KPI cards' trend badge.
@@ -670,7 +673,7 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 1)),
       initialDateRange: DateTimeRange(start: _fromDate, end: _toDate),
-      locale: const Locale('ar'),
+      locale: Locale(uiLocaleCode),
     );
     if (picked == null) return;
     setState(() {
@@ -718,7 +721,7 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('yyyy/MM/dd', 'ar');
+    final dateFormat = DateFormat('yyyy/MM/dd', uiLocaleCode);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
@@ -959,7 +962,7 @@ class _HoverableStatCardState extends State<_HoverableStatCard> {
                   const Icon(PhosphorIconsBold.trendUp, size: 10, color: AppColors.success),
                   const SizedBox(width: 2),
                   Text(
-                    widget.trendLabel,
+                    tr(widget.trendLabel),
                     style: const TextStyle(fontSize: 9, color: AppColors.success, fontWeight: FontWeight.bold),
                   ),
                 ],

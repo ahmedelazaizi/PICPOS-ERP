@@ -1,3 +1,4 @@
+import '../core/i18n/tr.dart';
 import '../core/utils/financial_utils.dart';
 import '../domain/repositories/settings_repository.dart';
 
@@ -84,7 +85,7 @@ class CostingMethodService {
   static String label(CostingMethod method) {
     switch (method) {
       case CostingMethod.weightedAverage:
-        return 'متوسط مرجح (WAC)';
+        return tr('متوسط مرجح (WAC)');
     }
   }
 }

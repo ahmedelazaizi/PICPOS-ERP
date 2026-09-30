@@ -26,3 +26,11 @@
 | التشفية | Carcass Breakdown |
 | قائمة المكوّنات | Bill of Materials |
 | أمر إنتاج | Production Order |
+| التحصيل من العميل | Collection from Customer |
+| السداد للمورد | Payment to Supplier |
+| الإجمالي المستحق على العميل | Total Due from Customer |
+| الإجمالي المستحق للمورد | Total Due to Supplier |
+| سعر البيع | Selling Price |
+| سعر الشراء | Purchase Price |
+| المحصّل الآن | Collected Now |
+| المسدّد الآن | Paid Now |

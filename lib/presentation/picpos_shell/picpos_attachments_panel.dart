@@ -211,7 +211,7 @@ class _PicPosAttachmentsPanelState
   @override
   Widget build(BuildContext context) {
     final entity = attachmentEntityFor(widget.entityType);
-    final label = entity?.labelAr ?? tr('المستند');
+    final label = entity?.displayLabel ?? tr('المستند');
     final id = widget.entityId;
 
     if (entity == null) {
@@ -358,7 +358,7 @@ class _AttachmentTile extends StatelessWidget {
                             fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                       Text(
-                        '${docType.labelAr} · '
+                        '${docType.displayLabel} · '
                         '${formatAttachmentSize(row.byteSize)}',
                         style: const TextStyle(
                             fontSize: 11, color: AppColors.textMuted),

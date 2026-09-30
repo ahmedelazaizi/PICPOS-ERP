@@ -1050,7 +1050,7 @@ Future<void> _exportTemplate(BuildContext context, WidgetRef ref, {bool isSuppli
         userName: auth.user?.displayName ?? tr('مستخدم'),
         action: 'export_template',
         entityType: 'party',
-        description: tr('تصدير قالب {p0}', {'p0': isSupplier ? "موردين" : "عملاء"}),
+        description: tr('تصدير قالب {p0}', {'p0': isSupplier ? tr('موردين') : tr('عملاء')}),
       );
     } catch (_) {}
   }
@@ -1076,7 +1076,7 @@ Future<void> _importData(BuildContext context, WidgetRef ref, {bool isSupplier =
           action: 'import_data',
           entityType: 'party',
           description:
-              tr('استيراد بيانات {p0} من Excel', {'p0': isSupplier ? "موردين" : "عملاء"}),
+              tr('استيراد بيانات {p0} من Excel', {'p0': isSupplier ? tr('موردين') : tr('عملاء')}),
         );
       } catch (_) {}
     }

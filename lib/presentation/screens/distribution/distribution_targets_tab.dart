@@ -27,7 +27,7 @@ class _TargetsTabState extends State<_TargetsTab> {
               const Icon(PhosphorIconsBold.target, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(
-                tr('أهداف {p0}', {'p0': DateFormat('MMMM yyyy', 'ar').format(_selectedMonth)}),
+                tr('أهداف {p0}', {'p0': DateFormat('MMMM yyyy', uiLocaleCode).format(_selectedMonth)}),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

@@ -21,6 +21,7 @@
 // ويتمرّر الجدولُ أفقيّاً حين لا يتّسع بدل أن يهرس الأعمدة.
 import 'package:flutter/material.dart';
 
+import '../../core/i18n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import 'picpos_surface.dart';
 
@@ -323,7 +324,7 @@ class PicPosDataTable extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                c.label,
+                tr(c.label),
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
@@ -388,7 +389,7 @@ class PicPosDataTable extends StatelessWidget {
                 ? AlignmentDirectional.centerEnd
                 : AlignmentDirectional.centerStart,
             child: Text(
-              c.label,
+              tr(c.label),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -437,7 +438,7 @@ class PicPosDataTable extends StatelessWidget {
                 ? AlignmentDirectional.centerEnd
                 : AlignmentDirectional.centerStart,
             child: Text(
-              totals![i],
+              tr(totals![i]),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -456,7 +457,7 @@ class PicPosDataTable extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 34),
         child: Center(
           child: Text(
-            emptyLabel,
+            tr(emptyLabel),
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
@@ -527,7 +528,7 @@ class PicPosDataTable extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    c.text,
+                    tr(c.text),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: end ? TextAlign.end : TextAlign.start,
@@ -544,7 +545,7 @@ class PicPosDataTable extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
-                        c.sub!,
+                        tr(c.sub!),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: end ? TextAlign.end : TextAlign.start,
@@ -575,7 +576,7 @@ class PicPosDataTable extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  c.text,
+                  tr(c.text),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -605,7 +606,7 @@ class PicPosDataTable extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              c.text,
+              tr(c.text),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
@@ -630,7 +631,7 @@ class PicPosDataTable extends StatelessWidget {
             const SizedBox(width: 5),
             Flexible(
               child: Text(
-                c.text,
+                tr(c.text),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -670,7 +671,7 @@ class PicPosDataTable extends StatelessWidget {
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            c.text,
+                            tr(c.text),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -723,7 +724,7 @@ class PicPosTabNote extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              note,
+              tr(note),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

@@ -319,7 +319,7 @@ mixin _ScaleLogicMixin on ConsumerState<ScalePluExportScreen> {
         if (result['success'] == true) {
           AppToast.show(context, tr('الاتصال بـ {p0} ناجح ✓', {'p0': scale.name}), type: ToastType.success);
         } else {
-          AppToast.show(context, tr('فشل الاتصال: {p0}', {'p0': result['error'] ?? 'غير معروف'}), type: ToastType.error);
+          AppToast.show(context, tr('فشل الاتصال: {p0}', {'p0': result['error'] ?? tr('غير معروف')}), type: ToastType.error);
         }
       }
     } catch (e) {
@@ -599,7 +599,7 @@ mixin _ScaleLogicMixin on ConsumerState<ScalePluExportScreen> {
                                         } else {
                                           setDialogState(() {
                                             portCtrl.text = '${ports.first}';
-                                            testResult = tr('تم العثور على {p0}', {'p0': ports.length == 1 ? "المنفذ: ${ports.first}" : "منافذ: ${ports.join(", ")} — تم اختيار ${ports.first}"});
+                                            testResult = tr('تم العثور على {p0}', {'p0': ports.length == 1 ? tr('المنفذ: {p0}', {'p0': ports.first}) : tr('منافذ: {p0} — تم اختيار {p1}', {'p0': ports.join(", "), 'p1': ports.first})});
                                           });
                                         }
                                       }
@@ -704,7 +704,7 @@ mixin _ScaleLogicMixin on ConsumerState<ScalePluExportScreen> {
                             final result = await _scaleRepo.testConnection(scale);
                             if (ctx.mounted) {
                               final ok = result['success'] == true;
-                              setDialogState(() => testResult = ok ? tr('الاتصال ناجح ✓') : tr('فشل: {p0}', {'p0': result['error'] ?? 'غير معروف'}));
+                              setDialogState(() => testResult = ok ? tr('الاتصال ناجح ✓') : tr('فشل: {p0}', {'p0': result['error'] ?? tr('غير معروف')}));
                             }
                           } catch (e) {
                             if (ctx.mounted) setDialogState(() => testResult = tr('خطأ: {e}', {'e': e}));

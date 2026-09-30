@@ -341,7 +341,7 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
       title: isDue ? tr('مطالبة بالمستحقّ') : tr('إرسال كشف الحساب'),
       rawPhone: party.phone,
       message: message,
-      actionLogLabel: tr('{p0} — {p1}', {'p0': isDue ? 'مطالبة' : 'كشف حساب', 'p1': party.name}),
+      actionLogLabel: tr('{p0} — {p1}', {'p0': isDue ? tr('مطالبة') : tr('كشف حساب'), 'p1': party.name}),
     );
   }
 

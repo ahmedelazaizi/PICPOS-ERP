@@ -207,7 +207,7 @@ class _EndorseDialogState extends State<_EndorseDialog> {
               color: const Color(0xFF8B5CF6),
             ),
             (
-              label: tr('مديونية {p0}', {'p0': to?.name ?? 'المُجيَّر إليه'}),
+              label: tr('مديونية {p0}', {'p0': to?.name ?? tr('المُجيَّر إليه')}),
               value: '-${widget.amount.toStringAsFixed(2)}',
               color: AppColors.success,
             ),

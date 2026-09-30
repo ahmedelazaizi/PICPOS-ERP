@@ -348,7 +348,7 @@ class _ButcheryOrderDialogState extends State<_ButcheryOrderDialog> {
   Widget _weightLine(int index) {
     final line = _lines[index];
     return Row(children: [
-      Expanded(child: Text(tr('{p0} (متوقع {p1}%)', {'p0': line['output_name'] ?? 'قطعة', 'p1': _number(line['expected_yield_percent']).toStringAsFixed(1)}))),
+      Expanded(child: Text(tr('{p0} (متوقع {p1}%)', {'p0': line['output_name'] ?? tr('قطعة'), 'p1': _number(line['expected_yield_percent']).toStringAsFixed(1)}))),
       SizedBox(
         width: 170,
         child: TextField(

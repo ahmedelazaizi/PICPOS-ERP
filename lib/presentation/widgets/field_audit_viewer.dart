@@ -193,7 +193,7 @@ class _FieldAuditViewerState extends State<FieldAuditViewer> {
     bool isDark,
   ) {
     final theme = Theme.of(context);
-    final dateStr = DateFormat('yyyy/MM/dd  HH:mm', 'ar').format(log.createdAt);
+    final dateStr = DateFormat('yyyy/MM/dd  HH:mm', uiLocaleCode).format(log.createdAt);
 
     // Determine change type colors
     final isAddition = log.oldValue == null && log.newValue != null;

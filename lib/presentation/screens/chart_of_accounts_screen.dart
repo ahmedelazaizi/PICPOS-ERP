@@ -564,7 +564,7 @@ class _ChartOfAccountsScreenState
           return {
             'entry_date': DateTime.now(),
             'entry_number': r['code'] ?? '',
-            'description': tr('{prefix}{p0}{p1}', {'prefix': prefix, 'p0': r['name'], 'p1': r['is_system'] == true ? ' [نظام]' : ''}),
+            'description': tr('{prefix}{p0}{p1}', {'prefix': prefix, 'p0': r['name'], 'p1': r['is_system'] == true ? tr(' [نظام]') : ''}),
             'debit': 0.0,
             'credit': 0.0,
             'balance': (r['balance'] as double?) ?? 0.0,

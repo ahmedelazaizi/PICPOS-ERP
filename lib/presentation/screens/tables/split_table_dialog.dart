@@ -520,7 +520,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  tr('{p0} {p1} من {p2} {p3}.', {'p0': done.isEmpty ? 'حُصِّل من هذا الحساب' : 'هذا الحسابُ مقسَّمٌ ومُحصَّلٌ جزئيّاً:', 'p1': _paidSoFar.toStringAsFixed(AppConstants.decimalPlaces), 'p2': _total.toStringAsFixed(AppConstants.decimalPlaces), 'p3': AppConstants.currencySymbolEn}),
+                  tr('{p0} {p1} من {p2} {p3}.', {'p0': done.isEmpty ? tr('حُصِّل من هذا الحساب') : tr('هذا الحسابُ مقسَّمٌ ومُحصَّلٌ جزئيّاً:'), 'p1': _paidSoFar.toStringAsFixed(AppConstants.decimalPlaces), 'p2': _total.toStringAsFixed(AppConstants.decimalPlaces), 'p3': AppConstants.currencySymbolEn}),
                   style: const TextStyle(
                       fontSize: 12, fontWeight: FontWeight.bold),
                 ),

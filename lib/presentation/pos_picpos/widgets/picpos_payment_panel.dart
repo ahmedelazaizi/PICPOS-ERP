@@ -600,7 +600,7 @@ class _SafeChipRow extends ConsumerWidget {
       return _SafeChip(
         icon: PhosphorIconsBold.timer,
         color: AppColors.warning,
-        label: tr('آجل — {p0}', {'p0': cart.selectedCustomerName ?? 'بدون عميل'}),
+        label: tr('آجل — {p0}', {'p0': cart.selectedCustomerName ?? tr('بدون عميل')}),
         scale: scale,
       );
     }

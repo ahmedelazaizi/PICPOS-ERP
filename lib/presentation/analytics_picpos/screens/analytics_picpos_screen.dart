@@ -526,7 +526,7 @@ class _AnalyticsPicposScreenState
         children: [
           PicPosSectionHeader(
             title: tr('{p0} — الاتجاه والتنبؤ', {'p0': focus.label}),
-            subtitle: tr('{p0} نقطة{p1} · تنبؤ ٣ أشهر قادمة بالانحدار الخطي', {'p0': _ar(f.points.length), 'p1': _smooth ? ' · مُنعَّمة بمتوسط متحرك ٣ أشهر' : ' · قيم خام'}),
+            subtitle: tr('{p0} نقطة{p1} · تنبؤ ٣ أشهر قادمة بالانحدار الخطي', {'p0': _ar(f.points.length), 'p1': _smooth ? tr(' · مُنعَّمة بمتوسط متحرك ٣ أشهر') : tr(' · قيم خام')}),
             icon: focus.icon,
           ),
           _ChartLegend(tint: focus.tint),

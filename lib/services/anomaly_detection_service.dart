@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../core/i18n/tr.dart';
 import '../core/theme/app_colors.dart';
 
 /// Types of anomalies that can be detected
@@ -19,13 +20,13 @@ enum AnomalyType {
   bulkDeletion;
 
   String get labelAr => switch (this) {
-    AnomalyType.excessiveDiscount => 'خصم مفرط',
-    AnomalyType.afterHoursActivity => 'نشاط خارج ساعات العمل',
-    AnomalyType.highVoidRate => 'معدل إلغاء عالي',
-    AnomalyType.unusualRefund => 'مرتجع غير عادي',
-    AnomalyType.priceOverride => 'تعديل أسعار متكرر',
-    AnomalyType.repeatedFailedLogin => 'محاولات دخول فاشلة',
-    AnomalyType.bulkDeletion => 'حذف جماعي',
+    AnomalyType.excessiveDiscount => tr('خصم مفرط'),
+    AnomalyType.afterHoursActivity => tr('نشاط خارج ساعات العمل'),
+    AnomalyType.highVoidRate => tr('معدل إلغاء عالي'),
+    AnomalyType.unusualRefund => tr('مرتجع غير عادي'),
+    AnomalyType.priceOverride => tr('تعديل أسعار متكرر'),
+    AnomalyType.repeatedFailedLogin => tr('محاولات دخول فاشلة'),
+    AnomalyType.bulkDeletion => tr('حذف جماعي'),
   };
 
   IconData get icon => switch (this) {
@@ -57,10 +58,10 @@ enum AnomalySeverity {
   critical;
 
   String get labelAr => switch (this) {
-    AnomalySeverity.low => 'منخفض',
-    AnomalySeverity.medium => 'متوسط',
-    AnomalySeverity.high => 'عالي',
-    AnomalySeverity.critical => 'حرج',
+    AnomalySeverity.low => tr('منخفض'),
+    AnomalySeverity.medium => tr('متوسط'),
+    AnomalySeverity.high => tr('عالي'),
+    AnomalySeverity.critical => tr('حرج'),
   };
 
   Color get color => switch (this) {
@@ -111,7 +112,7 @@ class AnomalyDetectionService {
       return AnomalyAlert(
         type: AnomalyType.excessiveDiscount,
         severity: discountPercent > 50 ? AnomalySeverity.critical : AnomalySeverity.high,
-        message: 'خصم $discountPercent% بواسطة $userName',
+        message: tr('خصم {p0}% بواسطة {p1}', {'p0': discountPercent, 'p1': userName}),
         detectedAt: DateTime.now(),
         userName: userName,
         userId: userId,
@@ -132,7 +133,7 @@ class AnomalyDetectionService {
       return AnomalyAlert(
         type: AnomalyType.afterHoursActivity,
         severity: AnomalySeverity.medium,
-        message: '$action خارج ساعات العمل بواسطة $userName',
+        message: tr('{p0} خارج ساعات العمل بواسطة {p1}', {'p0': action, 'p1': userName}),
         detectedAt: DateTime.now(),
         userName: userName,
         userId: userId,
@@ -152,7 +153,7 @@ class AnomalyDetectionService {
       return AnomalyAlert(
         type: AnomalyType.highVoidRate,
         severity: voidsThisShift > 10 ? AnomalySeverity.critical : AnomalySeverity.high,
-        message: '$voidsThisShift عملية إلغاء في الوردية الحالية - $userName',
+        message: tr('{p0} عملية إلغاء في الوردية الحالية - {p1}', {'p0': voidsThisShift, 'p1': userName}),
         detectedAt: DateTime.now(),
         userName: userName,
         userId: userId,

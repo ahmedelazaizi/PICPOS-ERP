@@ -364,8 +364,8 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
           AppToast.show(
             context,
             isReturnMode
-                ? tr('تم {p0} إشعار المرتجع بنجاح #{invoiceId}', {'p0': printedOk ? 'حفظ وطباعة' : (printAfterSave ? 'حفظ (بلا طباعة)' : 'إنشاء'), 'invoiceId': invoiceId})
-                : tr('تم {p0} الفاتورة بنجاح #{invoiceId}', {'p0': printedOk ? 'حفظ وطباعة' : (printAfterSave ? 'حفظ (بلا طباعة)' : 'إنشاء'), 'invoiceId': invoiceId}),
+                ? tr('تم {p0} إشعار المرتجع بنجاح #{invoiceId}', {'p0': printedOk ? tr('حفظ وطباعة') : (printAfterSave ? tr('حفظ (بلا طباعة)') : tr('إنشاء')), 'invoiceId': invoiceId})
+                : tr('تم {p0} الفاتورة بنجاح #{invoiceId}', {'p0': printedOk ? tr('حفظ وطباعة') : (printAfterSave ? tr('حفظ (بلا طباعة)') : tr('إنشاء')), 'invoiceId': invoiceId}),
             type: ToastType.success,
           );
         }

@@ -214,7 +214,7 @@ class PicPosReturnInvoiceTile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
-                        row.status.label,
+                        row.status.displayLabel,
                         style: TextStyle(fontSize: 9.5, color: statusColor),
                       ),
                     ),

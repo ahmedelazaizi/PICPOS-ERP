@@ -9,6 +9,7 @@
 // [FinancialUtils] — نفسِ الدوالِّ التي يستعملها نموذجا المبيعات والمشتريات
 // القائمان. فلو انحرف التقريبُ هنا لاختلف ما تعرضه الشاشةُ عمّا يُحفَظ،
 // وهو أسوأُ من خطأٍ صريح.
+import '../../core/i18n/tr.dart';
 import '../../core/utils/financial_utils.dart';
 
 /// نمطُ المستند — يقلب التسمياتِ والحقولَ لا الحساب.
@@ -22,10 +23,10 @@ enum PicPosInvoiceKind {
   bool get isSales => this == PicPosInvoiceKind.sales;
 
   /// تسميةُ الطرف — «العميل» أو «المورد».
-  String get partyLabel => isSales ? 'العميل' : 'المورد';
+  String get partyLabel => isSales ? tr('العميل') : tr('المورد');
 
   /// تسميةُ عمود السعر — `priceLabel` في التصميم.
-  String get priceLabel => isSales ? 'سعر البيع' : 'سعر الشراء';
+  String get priceLabel => isSales ? tr('سعر البيع') : tr('سعر الشراء');
 
   /// هل يقبل مسارُ الحفظ خصماً **لكلّ سطر**؟
   ///
@@ -41,14 +42,16 @@ enum PicPosInvoiceKind {
   bool get supportsLineDiscount => this == PicPosInvoiceKind.purchase;
 
   /// عنوانُ بطاقة الدفع.
-  String get payTitle => isSales ? 'التحصيل من العميل' : 'السداد للمورد';
+  String get payTitle =>
+      isSales ? tr('التحصيل من العميل') : tr('السداد للمورد');
 
   /// تسميةُ المبلغ المدفوع الآن.
-  String get paidLabel => isSales ? 'المحصّل الآن' : 'المسدّد الآن';
+  String get paidLabel => isSales ? tr('المحصّل الآن') : tr('المسدّد الآن');
 
   /// تسميةُ الصافي في البطاقة الداكنة.
-  String get netLabel =>
-      isSales ? 'الإجمالي المستحق على العميل' : 'الإجمالي المستحق للمورد';
+  String get netLabel => isSales
+      ? tr('الإجمالي المستحق على العميل')
+      : tr('الإجمالي المستحق للمورد');
 }
 
 /// طرفٌ في المنتقي — عميلٌ أو مورّد.

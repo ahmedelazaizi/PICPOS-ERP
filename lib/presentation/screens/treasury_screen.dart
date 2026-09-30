@@ -645,7 +645,7 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
                 child: Text(
                   totalDiscrepancies == 0
                       ? tr('جميع الأرصدة متطابقة ✅')
-                      : tr('{totalDiscrepancies} فرق مكتشف{p0}', {'totalDiscrepancies': totalDiscrepancies, 'p0': totalFixed > 0 ? ' — تم إصلاح $totalFixed' : ''}),
+                      : tr('{totalDiscrepancies} فرق مكتشف{p0}', {'totalDiscrepancies': totalDiscrepancies, 'p0': totalFixed > 0 ? tr(' — تم إصلاح {totalFixed}', {'totalFixed': totalFixed}) : ''}),
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.w700,
                     color: totalDiscrepancies == 0 ? AppColors.success : AppColors.warning,
@@ -678,7 +678,7 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
         ),
         title: Text(report.entityType, style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
         subtitle: Text(
-          tr('تم فحص {p0} — {p1} فرق{p2}', {'p0': report.totalChecked, 'p1': report.discrepanciesFound, 'p2': report.fixed > 0 ? ' — تم إصلاح ${report.fixed}' : ''}),
+          tr('تم فحص {p0} — {p1} فرق{p2}', {'p0': report.totalChecked, 'p1': report.discrepanciesFound, 'p2': report.fixed > 0 ? tr(' — تم إصلاح {p0}', {'p0': report.fixed}) : ''}),
           style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
         ),
         children: report.discrepancies.map((d) => ListTile(
