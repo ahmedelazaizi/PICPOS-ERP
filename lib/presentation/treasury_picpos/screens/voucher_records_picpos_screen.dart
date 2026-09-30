@@ -245,7 +245,7 @@ class _VoucherRecordsPicPosScreenState
               PicPosTextCell(_dateFmt.format(r.date)),
               PicPosTextCell(r.partyName ?? '—',
                   sub: voucherCategoryLabelAr(r.category)),
-              PicPosTextCell(r.safeName ?? '—'),
+              PicPosTextCell(trData(r.safeName)),
               if (r.isCheque)
                  PicPosPillCell(tr('شيك'), AppColors.info)
               else
@@ -280,7 +280,7 @@ class _VoucherRecordsPicPosScreenState
             children: [
               _field(tr('التاريخ'), _dateFmt.format(r.date)),
               _field(tr('الطرف'), r.partyName ?? '—'),
-              _field(tr('الخزنة'), r.safeName ?? '—'),
+              _field(tr('الخزنة'), trData(r.safeName)),
               _field(tr('التصنيف'), voucherCategoryLabelAr(r.category)),
               _field(tr('المبلغ'), _money.format(r.amount)),
               if (r.discount > 0) _field(tr('الخصم'), _money.format(r.discount)),

@@ -338,7 +338,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
                          DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
                         ..._costCenters.map((cc) => DropdownMenuItem<int?>(
                               value: cc.id,
-                              child: Text(cc.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
+                              child: Text(trData(cc.name), overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
                             )),
                       ],
                       onChanged: (v) {

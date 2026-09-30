@@ -362,7 +362,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                          DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'), style: const TextStyle(fontSize: 13))),
                         ..._costCenters.map((cc) => DropdownMenuItem<int?>(
                               value: cc.id,
-                              child: Text(cc.name, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
+                              child: Text(trData(cc.name), style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
                             )),
                       ],
                       onChanged: (val) {

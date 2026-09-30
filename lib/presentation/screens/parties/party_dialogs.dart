@@ -298,7 +298,7 @@ void showAddPartyDialog(BuildContext context, WidgetRef ref) {
                           ),
                           items: [
                              DropdownMenuItem<int?>(value: null, child: Text(tr('— بدون —'))),
-                            ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name))),
+                            ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(trData(cc.name)))),
                           ],
                           onChanged: (v) => setDialogState(() => selectedCostCenterId = v),
                         );
@@ -722,7 +722,7 @@ void showEditPartyDialog(BuildContext context, WidgetRef ref, Party party) {
                           ),
                           items: [
                              DropdownMenuItem<int?>(value: null, child: Text(tr('— بدون —'))),
-                            ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name))),
+                            ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(trData(cc.name)))),
                           ],
                           onChanged: (v) => setDialogState(() => selectedCostCenterId = v),
                         );

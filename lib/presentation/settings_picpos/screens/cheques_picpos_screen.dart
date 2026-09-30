@@ -261,7 +261,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
     _snack(
       result.allSucceeded
           ? tr('أُودعت {p0} ورقة', {'p0': result.count})
-          : tr('أُودعت {p0} من {p1} — تعذّر: {p2}', {'p0': result.count, 'p1': form.paperIds.length, 'p2': result.failed.keys.join('، ')}),
+          : tr('أُودعت {p0} من {p1} — تعذّر: {p2}', {'p0': result.count, 'p1': form.paperIds.length, 'p2': result.failed.keys.join(tr('، '))}),
     );
   }
 
@@ -725,8 +725,9 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
               label: tr('عددُ الأوراق'),
               value: '${papers.length}',
               tint: AppColors.primary,
-              vs: '${papers.where((p) => p.status == 'pending').length} '
-                  'بالخزنة',
+              vs: tr('{count} بالخزنة', {
+                'count': papers.where((p) => p.status == 'pending').length,
+              }),
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.currencyCircleDollar,

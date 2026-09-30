@@ -420,7 +420,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                               ),
                               items: [
                                  DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'), style: const TextStyle(fontSize: 13))),
-                                ...warehouses.map((w) => DropdownMenuItem<int?>(value: w.id, child: Text(w.name, style: const TextStyle(fontSize: 13)))),
+                                ...warehouses.map((w) => DropdownMenuItem<int?>(value: w.id, child: Text(trData(w.name), style: const TextStyle(fontSize: 13)))),
                               ],
                               onChanged: (v) => setState(() => _selectedWarehouseId = v),
                             ),
@@ -1718,7 +1718,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                           items: available
                               .map((w) => DropdownMenuItem<int?>(
                                     value: w.id,
-                                    child: Text(w.name,
+                                    child: Text(trData(w.name),
                                         style: const TextStyle(fontSize: 12)),
                                   ))
                               .toList(),

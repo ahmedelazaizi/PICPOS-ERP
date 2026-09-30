@@ -510,7 +510,7 @@ class _AccountMappingSettingsScreenState
           // Account name
           Expanded(
             child: Text(
-              account?.name ?? tr('حساب غير موجود'),
+              account == null ? tr('حساب غير موجود') : trData(account.name),
               style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w500),
               overflow: TextOverflow.ellipsis,
             ),
@@ -591,7 +591,7 @@ class _AccountMappingSettingsScreenState
                             DropdownMenuItem<int?>(value: null, child: Text(tr('🌐 عالمي (افتراضي)'), style: GoogleFonts.cairo(fontSize: 12))),
                             ..._costCenters.map((cc) => DropdownMenuItem<int?>(
                                   value: cc.id,
-                                  child: Text('🏢 ${cc.name}', style: GoogleFonts.cairo(fontSize: 12)),
+                                  child: Text('🏢 ${trData(cc.name)}', style: GoogleFonts.cairo(fontSize: 12)),
                                 )),
                           ],
                           onChanged: (v) => setDialogState(() => selectedCostCenterId = v),
@@ -636,7 +636,7 @@ class _AccountMappingSettingsScreenState
                             ),
                           ),
                           title: Text(
-                            account.name,
+                            trData(account.name),
                             style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.w500),
                           ),
                           onTap: () async {
@@ -646,7 +646,7 @@ class _AccountMappingSettingsScreenState
                               if (ctx.mounted) Navigator.pop(ctx);
                               await _loadData();
                               if (mounted) {
-                                AppToast.show(context, tr('تم ربط "{p0}" بحساب "{p1}"', {'p0': item.label, 'p1': account.name}));
+                                AppToast.show(context, tr('تم ربط "{p0}" بحساب "{p1}"', {'p0': item.label, 'p1': trData(account.name)}));
                               }
                             } catch (e) {
                               if (mounted) {
@@ -724,7 +724,7 @@ class _AccountMappingSettingsScreenState
                             DropdownMenuItem<int?>(value: null, child: Text(tr('🌐 عالمي (افتراضي)'), style: GoogleFonts.cairo(fontSize: 12))),
                             ..._costCenters.map((cc) => DropdownMenuItem<int?>(
                                   value: cc.id,
-                                  child: Text('🏢 ${cc.name}', style: GoogleFonts.cairo(fontSize: 12)),
+                                  child: Text('🏢 ${trData(cc.name)}', style: GoogleFonts.cairo(fontSize: 12)),
                                 )),
                           ],
                           onChanged: (v) => setDialogState(() => selectedCostCenterId = v),
@@ -772,7 +772,7 @@ class _AccountMappingSettingsScreenState
                             ),
                           ),
                           title: Text(
-                            account.name,
+                            trData(account.name),
                             style: GoogleFonts.cairo(fontSize: 13, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
                           ),
                           trailing: isSelected
@@ -787,7 +787,7 @@ class _AccountMappingSettingsScreenState
                               if (ctx.mounted) Navigator.pop(ctx);
                               await _loadData();
                               if (mounted) {
-                                AppToast.show(context, tr('تم تعديل ربط "{p0}" إلى "{p1}"', {'p0': item.label, 'p1': account.name}));
+                                AppToast.show(context, tr('تم تعديل ربط "{p0}" إلى "{p1}"', {'p0': item.label, 'p1': trData(account.name)}));
                               }
                             } catch (e) {
                               if (mounted) {

@@ -131,7 +131,7 @@ class _BranchAccessDialogState extends AppFormDialogState<bool, BranchAccessDial
         ),
         const SizedBox(height: 16),
         ...allBranches.map((branch) => CheckboxListTile(
-              title: Text(branch.name),
+              title: Text(trData(branch.name)),
               subtitle: Text(branch.address ?? ''),
               value: selected.contains(branch.id),
               onChanged: (val) {

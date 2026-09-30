@@ -237,7 +237,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
               items: [
                  DropdownMenuItem(value: null, child: Text(tr('كل المستودعات'))),
                 ...warehouses.map(
-                  (w) => DropdownMenuItem(value: w.id, child: Text(w.name)),
+                  (w) => DropdownMenuItem(value: w.id, child: Text(trData(w.name))),
                 ),
               ],
               onChanged: (v) =>

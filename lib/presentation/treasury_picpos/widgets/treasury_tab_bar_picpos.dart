@@ -5,6 +5,7 @@
 // وهذا الشريطُ يقود نفسَ `TabController` فلا يتبدّل المنطق.
 import 'package:flutter/material.dart';
 
+import '../../../core/i18n/tr.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import 'treasury_picpos_tokens.dart';
@@ -20,7 +21,7 @@ class TreasuryTabBarPicpos extends StatelessWidget {
     required this.searchController,
     required this.onSearchChanged,
     required this.searchQuery,
-    this.searchHint = 'بحث في الخزينة (سندات، صناديق)...',
+    this.searchHint,
   });
 
   final TabController controller;
@@ -28,7 +29,7 @@ class TreasuryTabBarPicpos extends StatelessWidget {
   final TextEditingController searchController;
   final ValueChanged<String> onSearchChanged;
   final String searchQuery;
-  final String searchHint;
+  final String? searchHint;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +62,7 @@ class TreasuryTabBarPicpos extends StatelessWidget {
                 onChanged: onSearchChanged,
                 style: const TextStyle(fontSize: 12),
                 decoration: InputDecoration(
-                  hintText: searchHint,
+                  hintText: searchHint ?? tr('بحث في الخزينة (سندات، صناديق)...'),
                   hintStyle: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textMuted,

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/i18n/locale_provider.dart';
 import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/domain/repositories/settings_repository.dart';
+import 'package:ural_erp/services/stock_shortage_policy_service.dart';
 
 class _MemorySettingsRepository implements ISettingsRepository {
   final values = <String, String>{};
@@ -91,6 +92,49 @@ void main() {
     I18nCatalog.setLocale(englishUserLocale);
 
     expect(tr('مرحباً {name}', {'name': 'Sara'}), 'Hello Sara');
+  });
+
+  test('trData translates only exact seeded defaults in English', () {
+    I18nCatalog.setCatalog({'الأصول': 'Assets'});
+    I18nCatalog.setLocale(englishUserLocale);
+
+    expect(trData('الأصول'), 'Assets');
+    expect(trData('حسابي الخاص'), 'حسابي الخاص');
+    expect(trData(null), isEmpty);
+  });
+
+  test('trData translates only valid seeded fiscal-year names', () {
+    I18nCatalog.setCatalog({
+      'السنة المالية {year}': 'Fiscal Year {year}',
+    });
+    I18nCatalog.setLocale(englishUserLocale);
+
+    expect(trData('السنة المالية 2026'), 'Fiscal Year 2026');
+    expect(trData('السنة المالية التجريبية'), 'السنة المالية التجريبية');
+  });
+
+  test('trData preserves seeded stored values in Arabic', () {
+    I18nCatalog.setCatalog({'الأصول': 'Assets'});
+    I18nCatalog.setLocale(defaultUserLocale);
+
+    expect(trData('الأصول'), 'الأصول');
+  });
+
+  test('stock-shortage labels localize without changing wire values', () {
+    I18nCatalog.setCatalog({
+      'منع البيع': 'Block Sale',
+      'تحذير مع السماح بالسالب': 'Warn and Allow Negative Stock',
+      'تحذير وإيقاف الخصم عند صفر': 'Warn and Stop at Zero',
+    });
+    I18nCatalog.setLocale(englishUserLocale);
+
+    expect(StockShortagePolicy.block.displayLabel, 'Block Sale');
+    expect(
+      StockShortagePolicy.allowNegative.displayLabel,
+      'Warn and Allow Negative Stock',
+    );
+    expect(StockShortagePolicy.clampToZero.displayLabel, 'Warn and Stop at Zero');
+    expect(StockShortagePolicy.allowNegative.wireName, 'allow_negative');
   });
 
   test('user locale preference persists by user id', () async {

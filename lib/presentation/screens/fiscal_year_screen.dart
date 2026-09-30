@@ -199,7 +199,7 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
                       children: [
                         Row(
                           children: [
-                            Text(year.name, style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700)),
+                            Text(trData(year.name), style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700)),
                             const SizedBox(width: 8),
                             _buildStatusBadge(isClosed, isCurrent),
                           ],
@@ -641,7 +641,7 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(tr('هل أنت متأكد من إقفال السنة "{p0}"؟', {'p0': year.name})),
+                Text(tr('هل أنت متأكد من إقفال السنة "{p0}"؟', {'p0': trData(year.name)})),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(10),
@@ -673,7 +673,7 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
                     await repo.closeFiscalYear(year.id, 1);
                     if (ctx.mounted) Navigator.pop(ctx);
                     if (context.mounted) {
-                      AppToast.show(context, tr('تم إقفال السنة المالية {p0}', {'p0': year.name}));
+                      AppToast.show(context, tr('تم إقفال السنة المالية {p0}', {'p0': trData(year.name)}));
                     }
                   } catch (e) {
                     setDialogState(() => saving = false);

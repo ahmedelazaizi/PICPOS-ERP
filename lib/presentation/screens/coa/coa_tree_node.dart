@@ -121,7 +121,7 @@ class CoaTreeNode extends StatelessWidget {
                         ),
                       Expanded(
                         child: Text(
-                          account.name,
+                          trData(account.name),
                           style: GoogleFonts.cairo(
                             fontSize: 13,
                             fontWeight: hasChildren ? FontWeight.w700 : FontWeight.w500,

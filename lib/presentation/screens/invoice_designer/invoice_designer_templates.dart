@@ -295,7 +295,7 @@ mixin _InvoiceDesignerTemplatesMixin
                       ),
                       title: Row(
                         children: [
-                          Text(t.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                          Text(trData(t.name), style: const TextStyle(fontWeight: FontWeight.w500)),
                           if (t.isDefault) ...[
                             const SizedBox(width: 8),
                             Container(

@@ -554,7 +554,7 @@ class _LinkedEntities extends ConsumerWidget {
               _EntityChip(
                   icon: PhosphorIconsBold.buildings, label: b.name),
             for (final w in warehouses)
-              _EntityChip(icon: PhosphorIconsBold.package, label: w.name),
+              _EntityChip(icon: PhosphorIconsBold.package, label: trData(w.name)),
           ],
         );
       },

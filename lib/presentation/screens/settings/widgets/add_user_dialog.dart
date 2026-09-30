@@ -326,7 +326,7 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
                             color: role.isSystemRole ? AppColors.primary : Colors.grey,
                           ),
                           const SizedBox(width: 6),
-                          Text(role.name),
+                          Text(trData(role.name)),
                         ],
                       ),
                     ),
@@ -400,7 +400,7 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
           ),
           if (!_allBranches)
             ...branches.map((branch) => CheckboxListTile(
-              title: Text(branch.name),
+              title: Text(trData(branch.name)),
               value: selectedBranchIds.contains(branch.id),
               onChanged: (v) => setState(() {
                 if (v == true) selectedBranchIds.add(branch.id);

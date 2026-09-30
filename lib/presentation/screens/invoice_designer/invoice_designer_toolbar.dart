@@ -55,7 +55,7 @@ class InvoiceDesignerToolbar extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Chip(
-                label: Text(tr('جاري تعديل: {p0}', {'p0': currentTemplate!.name})),
+                label: Text(tr('جاري تعديل: {p0}', {'p0': trData(currentTemplate!.name)})),
                 backgroundColor: Colors.blue.shade50,
                 side: BorderSide.none,
               ),

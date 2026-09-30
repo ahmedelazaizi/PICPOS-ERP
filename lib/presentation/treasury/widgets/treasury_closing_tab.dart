@@ -236,7 +236,7 @@ class _SafeClosingCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      safe.name,
+                      trData(safe.name),
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,

@@ -276,7 +276,7 @@ class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
                     for (final p in StockShortagePolicy.values)
                       DropdownMenuItem<StockShortagePolicy?>(
                         value: p,
-                        child: Text(p.arabicLabel),
+                        child: Text(p.displayLabel),
                       ),
                   ],
                   onChanged: (v) => _setPerTerminalPolicy(t.id, v),

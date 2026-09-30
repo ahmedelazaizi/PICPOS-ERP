@@ -228,7 +228,7 @@ class _StockTransferPicposScreenState
                                 .map(
                                   (w) => DropdownMenuItem(
                                     value: w.id,
-                                    child: Text(w.name),
+                                    child: Text(trData(w.name)),
                                   ),
                                 )
                                 .toList(),
@@ -262,7 +262,7 @@ class _StockTransferPicposScreenState
                                 .map(
                                   (w) => DropdownMenuItem(
                                     value: w.id,
-                                    child: Text(w.name),
+                                    child: Text(trData(w.name)),
                                   ),
                                 )
                                 .toList(),

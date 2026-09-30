@@ -47,7 +47,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
       builder: (dialogCtx) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: SimpleDialog(
-          title: Text(branch.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(trData(branch.name), style: const TextStyle(fontWeight: FontWeight.bold)),
           children: [
             SimpleDialogOption(
               onPressed: () { Navigator.pop(dialogCtx); handleBranchAction('edit', branch); },
@@ -93,7 +93,7 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
       builder: (dialogCtx) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: SimpleDialog(
-          title: Text(warehouse.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(trData(warehouse.name), style: const TextStyle(fontWeight: FontWeight.bold)),
           children: [
             SimpleDialogOption(
               onPressed: () { Navigator.pop(dialogCtx); handleWarehouseAction('edit', warehouse); },

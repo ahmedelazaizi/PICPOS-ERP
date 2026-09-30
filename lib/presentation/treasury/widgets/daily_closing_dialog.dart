@@ -123,7 +123,7 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
             ),
           ),
           const SizedBox(width: 12),
-          Text(localizations.dailyClosingTitle(widget.safe.name)),
+          Text(localizations.dailyClosingTitle(trData(widget.safe.name))),
         ],
       ),
       content: SizedBox(

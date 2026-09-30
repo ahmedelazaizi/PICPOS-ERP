@@ -303,7 +303,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
             items: [
                DropdownMenuItem(value: 'all', child: Text(tr('جميع المحطات'))),
               ...stations.map(
-                (s) => DropdownMenuItem(value: s.code, child: Text(s.name)),
+                (s) => DropdownMenuItem(value: s.code, child: Text(trData(s.name))),
               ),
             ],
             onChanged: (value) {

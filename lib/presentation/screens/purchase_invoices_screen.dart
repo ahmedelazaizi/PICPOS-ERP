@@ -354,7 +354,7 @@ class _PurchaseInvoicesScreenState
                                   isDense: true,
                                   items: [
                                      DropdownMenuItem(value: null, child: Text(tr('كل المستودعات'))),
-                                    ...warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(w.name))),
+                                    ...warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(trData(w.name)))),
                                   ],
                                   onChanged: (v) => controller.updateWarehouseFilter(v),
                                 ),

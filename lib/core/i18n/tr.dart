@@ -4,6 +4,8 @@ import 'dart:ui' show Locale;
 import 'package:flutter/foundation.dart' show ValueNotifier, debugPrint, kDebugMode;
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
+part 'tr_data.dart';
+
 /// Runtime Arabic-as-key catalog used by the automated UI codemod.
 class I18nCatalog {
   I18nCatalog._();

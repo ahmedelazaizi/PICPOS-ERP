@@ -1660,7 +1660,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                  tr('حساب المخزون: {p0} — {p1}', {'p0': result.inventoryAccountCode, 'p1': result.inventoryAccountName})),
+                  tr('حساب المخزون: {p0} — {p1}', {'p0': result.inventoryAccountCode, 'p1': trData(result.inventoryAccountName)})),
               const Divider(),
               _reconcRow(tr('قيمة المخزون (بالتكلفة)'), result.reportValue),
               _reconcRow(tr('رصيد الأستاذ العام'), result.glBalance),

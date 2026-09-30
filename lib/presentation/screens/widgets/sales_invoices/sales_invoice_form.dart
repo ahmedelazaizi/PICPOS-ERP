@@ -562,7 +562,7 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
         items: widget.warehouses
             .map((w) => DropdownMenuItem<int>(
                   value: w.id,
-                  child: Text(w.name, style: const TextStyle(fontSize: 13)),
+                  child: Text(trData(w.name), style: const TextStyle(fontSize: 13)),
                 ))
             .toList(),
         onChanged: (val) => setState(() {
@@ -592,7 +592,7 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
            DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'))),
           ...widget.costCenters.map((cc) => DropdownMenuItem<int?>(
                 value: cc.id,
-                child: Text(cc.name),
+                child: Text(trData(cc.name)),
               )),
         ],
         onChanged: (v) => setState(() => _selectedCostCenterId = v),

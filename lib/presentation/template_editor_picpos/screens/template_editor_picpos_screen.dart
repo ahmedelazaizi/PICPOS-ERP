@@ -282,7 +282,7 @@ class _TemplateEditorPicposScreenState
         if (r.activated) tr('وأُنشئت الرابطة — الطباعةُ التالية تقرأ هذه النسخة'),
         // ⚠️ الإلغاءُ **يُقال**: صامتاً يجعل المستخدمَ يظنّ قالبين مفعّلَين.
         if (r.cancelledDocumentTypes.isNotEmpty)
-          tr('وأُلغيت رابطةُ: {p0}', {'p0': r.cancelledDocumentTypes.join('، ')}),
+          tr('وأُلغيت رابطةُ: {p0}', {'p0': r.cancelledDocumentTypes.join(tr('، '))}),
       ];
       AppToast.show(context, lines.join(' · '), type: ToastType.success);
     } catch (e) {

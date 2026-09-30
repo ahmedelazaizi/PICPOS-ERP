@@ -2158,7 +2158,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
                     const Icon(PhosphorIconsBold.bank,
                         size: 16, color: AppColors.info),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(safe.name)),
+                    Expanded(child: Text(trData(safe.name))),
                   ],
                 ),
               ),

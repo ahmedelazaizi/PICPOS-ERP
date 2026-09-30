@@ -353,7 +353,7 @@ class _StockShortagePolicyToggleState
         color: AppColors.warning,
       ),
       title:  Text(tr('سياسة النظام عند نقص الخامات')),
-      subtitle: Text(_policy.arabicLabel),
+      subtitle: Text(_policy.displayLabel),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: _showSelector,
     );
@@ -381,7 +381,7 @@ class _StockShortagePolicyToggleState
     return ListTile(
       leading: Icon(icon, color: isSelected ? AppColors.primary : null),
       title: Text(
-        policy.arabicLabel,
+        policy.displayLabel,
         style: TextStyle(
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
@@ -531,7 +531,7 @@ class _ShortagePolicyPerBranchDialogState
                                 for (final p in StockShortagePolicy.values)
                                   DropdownMenuItem<StockShortagePolicy?>(
                                     value: p,
-                                    child: Text(p.arabicLabel),
+                                    child: Text(p.displayLabel),
                                   ),
                               ],
                               onChanged: (v) => setState(() {

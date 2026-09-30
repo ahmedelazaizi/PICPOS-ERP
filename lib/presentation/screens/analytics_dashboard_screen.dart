@@ -301,7 +301,7 @@ class _AnalyticsDashboardScreenState
                     style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
                     items: [
                        DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
-                      ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name))),
+                      ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(trData(cc.name)))),
                     ],
                     onChanged: (v) {
                       setState(() => _selectedCostCenterId = v);

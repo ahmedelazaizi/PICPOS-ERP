@@ -122,7 +122,7 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
                                   : AppColors.textMuted,
                             ),
                             title: Text(
-                              role.name,
+                              trData(role.name),
                               style: TextStyle(
                                 fontWeight: isSelected
                                     ? FontWeight.bold
@@ -131,7 +131,7 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
                             ),
                             subtitle: role.description != null
                                 ? Text(
-                                    role.description!,
+                                    trData(role.description),
                                     style: const TextStyle(fontSize: 11),
                                   )
                                 : null,

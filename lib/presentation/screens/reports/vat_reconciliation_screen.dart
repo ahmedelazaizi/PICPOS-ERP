@@ -118,7 +118,8 @@ class _VatReconciliationScreenState
               (i) => DropdownMenuItem(
                 value: i + 1,
                 child:
-                    Text(DateFormat.MMMM('ar').format(DateTime(2024, i + 1))),
+                    Text(DateFormat.MMMM(uiLocaleCode)
+                        .format(DateTime(2024, i + 1))),
               ),
             ),
             onChanged: (v) {

@@ -224,7 +224,7 @@ userId: ref.read(authProvider).user?.id,
       //    الرقم، ثمّ يجد فجوةً في الدفتر لا يعرف سببَها.
       final burnt = _drawn.isEmpty
           ? ''
-          : tr(' — وقد سُحبت من الدفتر الأرقامُ {p0} ولم تُكتَب على شيك. صحّح «التالي» من شاشة دفتر الشيكات إن لزم.', {'p0': _drawn.join('، ')});
+          : tr(' — وقد سُحبت من الدفتر الأرقامُ {p0} ولم تُكتَب على شيك. صحّح «التالي» من شاشة دفتر الشيكات إن لزم.', {'p0': _drawn.join(tr('، '))});
       _toast(tr('خطأ في الحفظ: {e}{burnt}', {'e': e, 'burnt': burnt}), ToastType.error);
     } finally {
       if (mounted) setState(() => _busy = false);

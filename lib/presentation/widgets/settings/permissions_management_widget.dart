@@ -620,7 +620,7 @@ class _PermissionsManagementWidgetState
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  role.name,
+                                  trData(role.name),
                                   style: AppTypography.bodyRegular.copyWith(
                                     fontWeight: isSelected
                                         ? FontWeight.bold

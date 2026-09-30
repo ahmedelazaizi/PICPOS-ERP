@@ -576,7 +576,7 @@ class _MappingChip extends StatelessWidget {
             child: Text(
               account == null
                   ? tr('حساب #{p0} (غير موجود)', {'p0': mapping.accountId})
-                  : '${account!.code} — ${account!.name}',
+                  : '${account!.code} — ${trData(account!.name)}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: text.labelMedium?.copyWith(
@@ -593,7 +593,7 @@ class _MappingChip extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              costCenter == null ? tr('افتراضي') : tr('مركز: {p0}', {'p0': costCenter!.name}),
+              costCenter == null ? tr('افتراضي') : tr('مركز: {p0}', {'p0': trData(costCenter!.name)}),
               style: text.labelSmall?.copyWith(color: AppColors.primary),
             ),
           ),
@@ -686,7 +686,7 @@ class _MappingEditorDialogState extends State<_MappingEditorDialog> {
           items: [
              DropdownMenuItem(value: null, child: Text(tr('افتراضي — كل المراكز'))),
             for (final c in widget.costCenters)
-              DropdownMenuItem(value: c.id, child: Text('${c.code} — ${c.name}')),
+              DropdownMenuItem(value: c.id, child: Text('${c.code} — ${trData(c.name)}')),
           ],
           onChanged: (v) => setState(() => _costCenterId = v),
         ),
@@ -716,7 +716,7 @@ class _MappingEditorDialogState extends State<_MappingEditorDialog> {
                       value: a.id,
                       groupValue: _accountId,
                       onChanged: (v) => setState(() => _accountId = v),
-                      title: Text('${a.code} — ${a.name}',
+                      title: Text('${a.code} — ${trData(a.name)}',
                           style: const TextStyle(fontSize: 13)),
                     );
                   },

@@ -223,7 +223,7 @@ class _FinancialStatementsScreenState
                           style: const TextStyle(color: Colors.white, fontSize: 12),
                           items: [
                              DropdownMenuItem<int?>(value: null, child: Text(tr('كل الفروع'))),
-                            ...visibleBranches.map((b) => DropdownMenuItem<int?>(value: b.id, child: Text(b.name))),
+                            ...visibleBranches.map((b) => DropdownMenuItem<int?>(value: b.id, child: Text(trData(b.name)))),
                           ],
                           onChanged: (v) => setState(() { _selectedBranchId = v; _refreshKey++; }),
                         ),
@@ -257,7 +257,7 @@ class _FinancialStatementsScreenState
                       style: const TextStyle(color: Colors.white, fontSize: 12),
                       items: [
                          DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
-                        ...centers.map((c) => DropdownMenuItem<int?>(value: c.id, child: Text(c.name))),
+                        ...centers.map((c) => DropdownMenuItem<int?>(value: c.id, child: Text(trData(c.name)))),
                       ],
                       onChanged: (v) => setState(() { _selectedCostCenterId = v; _refreshKey++; }),
                     ),
@@ -609,7 +609,10 @@ class _FinancialStatementsScreenState
                             : null,
                         cells: [
                           DataCell(Text(row['code'] ?? '', style: style)),
-                          DataCell(Text(row['name'] ?? '', style: nameStyle)),
+                          DataCell(Text(
+                            isTotal ? tr('الإجمالي') : trData(row['name'] as String?),
+                            style: nameStyle,
+                          )),
                           DataCell(Text(fmt(row['openingDebit'] as double), style: style)),
                           DataCell(Text(fmt(row['openingCredit'] as double), style: style)),
                           DataCell(Text(fmt(row['movementDebit'] as double), style: style)),
@@ -1138,7 +1141,7 @@ class _FinancialStatementsScreenState
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            label,
+            trData(label),
             style: TextStyle(
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
               fontSize: large ? 18 : 14,

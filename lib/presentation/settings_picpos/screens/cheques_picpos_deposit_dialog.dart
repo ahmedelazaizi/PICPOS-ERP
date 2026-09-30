@@ -211,7 +211,7 @@ class _DepositBatchDialogState extends State<_DepositBatchDialog> {
               ),
               items: [
                 for (final s in widget.bankSafes)
-                  DropdownMenuItem(value: s.id, child: Text(s.name)),
+                  DropdownMenuItem(value: s.id, child: Text(trData(s.name))),
               ],
               onChanged: (v) => setState(() => _bankSafeId = v),
             ),

@@ -558,7 +558,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                         return DropdownButtonFormField<int>(
                           decoration:  InputDecoration(labelText: tr('المستودع *'), isDense: true, border: const OutlineInputBorder()),
                           initialValue: selectedWarehouseId,
-                          items: warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(w.name, style: const TextStyle(fontSize: 13)))).toList(),
+                          items: warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(trData(w.name), style: const TextStyle(fontSize: 13)))).toList(),
                           onChanged: (v) => setDialogState(() => selectedWarehouseId = v),
                         );
                       },
@@ -754,7 +754,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                           ),
                           items: [
                              DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'))),
-                            ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name))),
+                            ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(trData(cc.name)))),
                           ],
                           onChanged: (v) => setDialogState(() => selectedCostCenterId = v),
                         );

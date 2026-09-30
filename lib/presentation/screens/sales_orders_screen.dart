@@ -406,7 +406,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                           ),
                           items: warehouses.map((w) => DropdownMenuItem<int>(
                                 value: w.id,
-                                child: Text(w.name),
+                                child: Text(trData(w.name)),
                               )).toList(),
                           onChanged: (v) => setDialogState(() => selectedWarehouseId = v),
                         );
@@ -614,7 +614,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                           ),
                           items: [
                              DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'))),
-                            ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name))),
+                            ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(trData(cc.name)))),
                           ],
                           onChanged: (v) => setDialogState(() => selectedCostCenterId = v),
                         );

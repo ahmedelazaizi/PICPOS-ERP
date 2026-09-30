@@ -241,7 +241,7 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                       items: roles
                           .map(
                             (r) =>
-                                DropdownMenuItem(value: r, child: Text(r.name)),
+                                DropdownMenuItem(value: r, child: Text(trData(r.name))),
                           )
                           .toList(),
                       onChanged: (v) => setDialogState(() => selectedRole = v),
@@ -423,7 +423,7 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                   ),
                   items: roles
                       .map(
-                        (r) => DropdownMenuItem(value: r, child: Text(r.name)),
+                        (r) => DropdownMenuItem(value: r, child: Text(trData(r.name))),
                       )
                       .toList(),
                   onChanged: (v) => setDialogState(() => selectedRole = v),

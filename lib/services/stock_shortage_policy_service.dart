@@ -18,6 +18,8 @@
 library;
 
 import 'dart:convert';
+
+import '../core/i18n/tr.dart';
 import '../domain/repositories/settings_repository.dart';
 
 enum StockShortagePolicy {
@@ -48,15 +50,15 @@ extension StockShortagePolicyName on StockShortagePolicy {
     }
   }
 
-  /// Arabic label for UI display.
-  String get arabicLabel {
+  /// Localized label for UI display. The stable [wireName] remains unchanged.
+  String get displayLabel {
     switch (this) {
       case StockShortagePolicy.block:
-        return 'منع البيع';
+        return tr('منع البيع');
       case StockShortagePolicy.allowNegative:
-        return 'تحذير مع السماح بالسالب';
+        return tr('تحذير مع السماح بالسالب');
       case StockShortagePolicy.clampToZero:
-        return 'تحذير وإيقاف الخصم عند صفر';
+        return tr('تحذير وإيقاف الخصم عند صفر');
     }
   }
 }

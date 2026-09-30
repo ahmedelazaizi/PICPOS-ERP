@@ -242,7 +242,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                     future: accountingRepo.getAccountById(budget.accountId),
                                     builder: (context, accSnap) {
                                       final acc = accSnap.data;
-                                      return Text(acc != null ? '${acc.code} - ${acc.name}' : tr('حساب #{p0}', {'p0': budget.accountId}), style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted));
+                                      return Text(acc != null ? '${acc.code} - ${trData(acc.name)}' : tr('حساب #{p0}', {'p0': budget.accountId}), style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted));
                                     }
                                   ),
                                 ],
@@ -376,7 +376,9 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(row['accountName']?.toString() ?? tr('غير معروف'), style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 14)),
+                                Text(row['accountName'] == null
+                                     ? tr('غير معروف')
+                                     : trData(row['accountName'].toString()), style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 14)),
                                 Text(row['accountCode']?.toString() ?? '', style: GoogleFonts.jetBrainsMono(color: AppColors.textMuted, fontSize: 12)),
                               ],
                             ),

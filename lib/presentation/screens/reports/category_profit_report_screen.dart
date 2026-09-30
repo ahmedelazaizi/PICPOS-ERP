@@ -284,7 +284,7 @@ class _CategoryProfitReportScreenState
                       ),
                       ..._costCenters.map((cc) => DropdownMenuItem<int?>(
                             value: cc.id,
-                            child: Text(cc.name, overflow: TextOverflow.ellipsis),
+                            child: Text(trData(cc.name), overflow: TextOverflow.ellipsis),
                           )),
                     ],
                     onChanged: (v) {

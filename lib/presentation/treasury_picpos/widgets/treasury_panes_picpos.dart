@@ -82,7 +82,7 @@ class TreasuryPanesPicpos extends ConsumerWidget {
             safeNames: {
               for (final s in _visibleSafes(safes, safeType, searchQuery,
                   branchNames))
-                s.id: s.name,
+                s.id: trData(s.name),
             },
             searchQuery: searchQuery,
           ),
@@ -169,12 +169,14 @@ class _SafesPaneState extends State<_SafesPane> {
           itemBuilder: (context, i) {
             final s = visible[i];
             return TreasurySafeCardPicpos(
-              name: s.name,
+              name: trData(s.name),
               safeType: s.safeType,
               balance: s.balance,
               isDefault: s.isDefault,
               branchName:
-                  s.branchId == null ? null : widget.branchNames[s.branchId],
+                  s.branchId == null
+                      ? null
+                      : trData(widget.branchNames[s.branchId]),
             );
           },
         ),

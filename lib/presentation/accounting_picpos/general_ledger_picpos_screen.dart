@@ -389,7 +389,7 @@ class _GeneralLedgerPicPosScreenState
                                 ),
                               ),
                               title: Text(
-                                '${acc.code} — ${acc.name}',
+                                '${acc.code} — ${trData(acc.name)}',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: level <= 2
@@ -416,7 +416,7 @@ class _GeneralLedgerPicPosScreenState
     if (picked == null || !mounted) return;
     setState(() {
       _accountId = picked.id;
-      _accountName = '${picked.code} - ${picked.name}';
+      _accountName = '${picked.code} - ${trData(picked.name)}';
     });
   }
 
@@ -432,7 +432,7 @@ class _GeneralLedgerPicPosScreenState
       title: tr('مركز التكلفة'),
       allLabel: tr('كل مراكز التكلفة'),
       items: [
-        for (final c in centers) (c.id, '${c.code} — ${c.name}'),
+        for (final c in centers) (c.id, '${c.code} — ${trData(c.name)}'),
       ],
     );
     if (picked == null || !mounted) return;
@@ -444,7 +444,7 @@ class _GeneralLedgerPicPosScreenState
       icon: PhosphorIconsBold.buildings,
       title: tr('الفرع'),
       allLabel: tr('كل الفروع'),
-      items: [for (final b in branches) (b.id, b.name)],
+      items: [for (final b in branches) (b.id, trData(b.name))],
     );
     if (picked == null || !mounted) return;
     setState(() => _branchId = picked.$1);

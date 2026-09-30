@@ -165,7 +165,7 @@ class _ProductionOrderDialogState
                   items: warehousesList.map((w) {
                     return DropdownMenuItem(
                       value: w.id,
-                      child: Text(w.name),
+                      child: Text(trData(w.name)),
                     );
                   }).toList(),
                   onChanged: (v) => setState(() => _selectedWarehouseId = v),

@@ -182,7 +182,7 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                                 .map(
                                   (w) => DropdownMenuItem(
                                     value: w.id,
-                                    child: Text(w.name),
+                                    child: Text(trData(w.name)),
                                   ),
                                 )
                                 .toList(),
@@ -216,7 +216,7 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                                 .map(
                                   (w) => DropdownMenuItem(
                                     value: w.id,
-                                    child: Text(w.name),
+                                    child: Text(trData(w.name)),
                                   ),
                                 )
                                 .toList(),

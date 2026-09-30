@@ -74,7 +74,7 @@ class _WarehouseAccessDialogState extends AppFormDialogState<bool, WarehouseAcce
           children: [
             for (final wh in all)
               PicPosPanelChip(
-                label: wh.name,
+                label: trData(wh.name),
                 tooltip: [
                   if (wh.isDefault) tr('المخزن الافتراضيّ'),
                   if ((wh.location ?? '').isNotEmpty) wh.location!,
@@ -131,7 +131,7 @@ class _WarehouseAccessDialogState extends AppFormDialogState<bool, WarehouseAcce
         ),
         const SizedBox(height: 16),
         ...allWarehouses.map((wh) => CheckboxListTile(
-              title: Text(wh.name),
+              title: Text(trData(wh.name)),
               subtitle: wh.location != null ? Text(wh.location!) : null,
               secondary: Icon(
                 wh.isDefault ? PhosphorIconsBold.star : PhosphorIconsLight.warehouse,

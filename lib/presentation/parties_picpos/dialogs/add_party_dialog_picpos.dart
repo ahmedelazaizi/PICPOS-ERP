@@ -455,7 +455,7 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                          DropdownMenuItem<int?>(
                             value: null, child: Text(tr('— بدون —'))),
                         ...ccList.map((cc) => DropdownMenuItem<int?>(
-                            value: cc.id, child: Text(cc.name))),
+                            value: cc.id, child: Text(trData(cc.name)))),
                       ],
                       onChanged: (v) =>
                           setDialogState(() => selectedCostCenterId = v),

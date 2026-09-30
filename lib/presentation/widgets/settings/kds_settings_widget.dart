@@ -88,7 +88,7 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
                 runSpacing: 8,
                 children: stations.map((s) => Chip(
                   avatar: const Icon(PhosphorIconsBold.cookingPot, size: 16),
-                  label: Text(s.name),
+                  label: Text(trData(s.name)),
                   deleteIcon: const Icon(PhosphorIconsBold.x, size: 14),
                   onDeleted: () => _confirmDeleteStation(kitchenRepo, s),
                 )).toList(),
@@ -182,7 +182,7 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
                                       ),
                                       ...stations.map((s) => DropdownMenuItem<int?>(
                                         value: s.id,
-                                        child: Text(s.name, style: const TextStyle(fontSize: 12)),
+                                        child: Text(trData(s.name), style: const TextStyle(fontSize: 12)),
                                       )),
                                     ],
                                     onChanged: _savingMappingCategoryIds.contains(cat.id) ? null : (stationId) async {

@@ -219,7 +219,7 @@ class _OpexRecordEditDialogState extends ConsumerState<OpexRecordEditDialog> {
                       ),
                       items: [
                          DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'))),
-                        ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name))),
+                        ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(trData(cc.name)))),
                       ],
                       onChanged: (v) => setState(() => _selectedCostCenterId = v),
                     );

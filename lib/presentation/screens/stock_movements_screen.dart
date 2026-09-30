@@ -371,7 +371,7 @@ class _StockMovementsScreenState
                       isExpanded: true,
                       items: [
                          DropdownMenuItem<int?>(value: null, child: Text(tr('جميع المستودعات'), style: const TextStyle(fontSize: 12))),
-                        ...warehouses.map((w) => DropdownMenuItem<int?>(value: w.id, child: Text(w.name, style: const TextStyle(fontSize: 12)))),
+                        ...warehouses.map((w) => DropdownMenuItem<int?>(value: w.id, child: Text(trData(w.name), style: const TextStyle(fontSize: 12)))),
                       ],
                       onChanged: (v) => setState(() => _selectedWarehouseId = v),
                     ),

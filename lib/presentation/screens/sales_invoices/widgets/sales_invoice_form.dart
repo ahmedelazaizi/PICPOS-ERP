@@ -303,7 +303,7 @@ class SalesInvoiceForm extends ConsumerWidget {
                                      DropdownMenuItem<int?>(value: null, child: Text(tr('بدون مركز تكلفة'))),
                                     ...centers.map((cc) => DropdownMenuItem<int?>(
                                       value: cc.id,
-                                      child: Text(cc.name),
+                                      child: Text(trData(cc.name)),
                                     )),
                                   ],
                                   onChanged: (v) => notifier.setCostCenter(v),

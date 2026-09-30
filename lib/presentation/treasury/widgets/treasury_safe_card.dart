@@ -93,7 +93,7 @@ class TreasurySafeCard extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  safe.name,
+                  trData(safe.name),
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                   overflow: TextOverflow.ellipsis,
                 ),

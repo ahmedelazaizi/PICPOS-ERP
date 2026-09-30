@@ -330,7 +330,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
               ),
               items: [
                 for (final cc in widget.costCentres)
-                  DropdownMenuItem(value: cc.id, child: Text(cc.name)),
+                  DropdownMenuItem(value: cc.id, child: Text(trData(cc.name))),
               ],
               onChanged: (v) => setState(() => _costCentreId = v),
             ),

@@ -827,7 +827,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               ...warehouses.map(
                 (w) => DropdownMenuItem<int?>(
                   value: w.id,
-                  child: Text(w.name,
+                  child: Text(trData(w.name),
                       style: const TextStyle(fontSize: 13)),
                 ),
               ),
@@ -1430,7 +1430,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                           items: available
                               .map((w) => DropdownMenuItem<int?>(
                                     value: w.id,
-                                    child: Text(w.name,
+                                    child: Text(trData(w.name),
                                         style: const TextStyle(fontSize: 12)),
                                   ))
                               .toList(),

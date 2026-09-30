@@ -669,7 +669,7 @@ class _PaymentVoucherDialogPicposState extends ConsumerState<PaymentVoucherDialo
                                     size: 18,
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(s.name),
+                                  Text(trData(s.name)),
                                 ],
                               ),
                             );
@@ -704,7 +704,7 @@ class _PaymentVoucherDialogPicposState extends ConsumerState<PaymentVoucherDialo
                           items: _costCenters
                               .map((cc) => DropdownMenuItem<int?>(
                                     value: cc.id,
-                                    child: Text(cc.name),
+                                    child: Text(trData(cc.name)),
                                   ))
                               .toList(),
                           onChanged: (v) =>

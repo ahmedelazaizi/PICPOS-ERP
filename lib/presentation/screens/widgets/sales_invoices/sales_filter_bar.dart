@@ -158,7 +158,7 @@ class SalesFilterBar extends ConsumerWidget {
                     isDense: true,
                     items: [
                        DropdownMenuItem(value: null, child: Text(tr('كل المستودعات'))),
-                      ...warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(w.name))),
+                      ...warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(trData(w.name)))),
                     ],
                     onChanged: (v) {
                       // Issue 8 — auto-clear branch when warehouse belongs

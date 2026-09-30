@@ -224,7 +224,7 @@ class _ProductionOrderDialogState extends State<_ProductionOrderDialog> {
             decoration:  InputDecoration(labelText: tr('المخزن')),
             items: [
               for (final warehouse in widget.warehouses)
-                DropdownMenuItem(value: warehouse.id, child: Text(warehouse.name)),
+                DropdownMenuItem(value: warehouse.id, child: Text(trData(warehouse.name))),
             ],
             onChanged: (value) => setState(() => _warehouseId = value),
           ),

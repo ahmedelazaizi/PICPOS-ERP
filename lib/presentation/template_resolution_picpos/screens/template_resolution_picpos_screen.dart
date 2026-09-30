@@ -63,7 +63,7 @@ class TemplateResolutionPicposScreen extends ConsumerWidget {
           for (final b in branches)
             PicPosFilterPill(
               icon: PhosphorIconsBold.storefront,
-              label: b.label,
+              label: b.id == null ? tr('كل الفروع') : trData(b.label),
               tone: b.id == branchId ? context.picposBrandInk : null,
               onTap: () =>
                   ref.read(resolutionBranchProvider.notifier).set(b.id),
@@ -279,7 +279,7 @@ class _ResolutionRowTile extends StatelessWidget {
             Expanded(
               flex: _columnFlex[0],
               child: _TwoLine(
-                top: row.documentLabel,
+                top: tr(row.documentLabel),
                 bottom: row.documentType,
                 bottomMono: true,
               ),
@@ -300,8 +300,8 @@ class _ResolutionRowTile extends StatelessWidget {
                   const SizedBox(width: 6),
                   Expanded(
                     child: _TwoLine(
-                      top: row.templateName,
-                      bottom: row.health.note,
+                      top: trData(row.templateName),
+                      bottom: tr(row.health.note),
                       topTone: row.hasTemplate ? null : context.picposMuted,
                     ),
                   ),
@@ -312,7 +312,9 @@ class _ResolutionRowTile extends StatelessWidget {
               flex: _columnFlex[3],
               child: _TwoLine(
                 top: row.printerName ?? tr('غير محدَّدة'),
-                bottom: row.printerNote,
+                bottom: row.printerName == null
+                    ? tr(row.printerNote)
+                    : row.printerNote,
                 topTone: row.printerName == null ? context.picposMuted : null,
               ),
             ),
@@ -340,7 +342,7 @@ class _ResolutionRowTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    row.health.label,
+                    tr(row.health.label),
                     style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w800,

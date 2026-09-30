@@ -314,7 +314,7 @@ class _ImportDocumentPanelState extends State<ImportDocumentPanel> {
                       for (final c in widget.currencies)
                         DropdownMenuItem<int?>(
                           value: c.id,
-                          child: Text('${c.code} — ${c.name}'),
+                          child: Text('${c.code} — ${trData(c.name)}'),
                         ),
                     ],
                   ),
@@ -818,11 +818,11 @@ class _ImportPurchasesPicposScreenState
           ],
           warehouses: [
             for (final w in warehouses)
-              PicPosWarehouseOption(id: w.id, name: w.name),
+              PicPosWarehouseOption(id: w.id, name: trData(w.name)),
           ],
           costCenters: [
             for (final c in costCenters)
-              PicPosNamedOption(id: c.id, name: c.name),
+              PicPosNamedOption(id: c.id, name: trData(c.name)),
           ],
           systemTaxRate: taxRate,
           onSave: _save,

@@ -644,7 +644,7 @@ class _SafeChipRow extends ConsumerWidget {
                           ? AppColors.primary
                           : AppColors.textMuted),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(safe.name)),
+                  Expanded(child: Text(trData(safe.name))),
                   if (cart.bankSafeId == safe.id)
                     const Icon(PhosphorIconsBold.check,
                         size: 15, color: AppColors.primary),

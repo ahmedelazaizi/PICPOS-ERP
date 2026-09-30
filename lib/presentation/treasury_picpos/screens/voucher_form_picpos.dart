@@ -665,7 +665,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
         ),
         items: [
           for (final s in widget.safes)
-            DropdownMenuItem(value: s.id, child: Text(s.name)),
+            DropdownMenuItem(value: s.id, child: Text(trData(s.name))),
         ],
         onChanged: (v) => setState(() => _safeId = v),
       );

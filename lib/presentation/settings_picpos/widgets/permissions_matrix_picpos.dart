@@ -776,10 +776,10 @@ class _PermissionsMatrixDialogState
     //    فلو قيل «منح» لظنّها المشغّلُ منحاً كاملاً ولم يعلم أنّه اشترط
     //    موافقةً على كلّ تنفيذ.
     final label = switch (c.to) {
-      _Grant.allowed => tr('منح «{p0}» لدور {p1}', {'p0': c.permName, 'p1': c.roleName}),
+      _Grant.allowed => tr('منح «{p0}» لدور {p1}', {'p0': c.permName, 'p1': trData(c.roleName)}),
       _Grant.conditional =>
-        tr('جعل «{p0}» مشروطاً لدور {p1} — موافقةُ مسؤولٍ في كلّ مرّة', {'p0': c.permName, 'p1': c.roleName}),
-      _Grant.denied => tr('سحب «{p0}» من دور {p1}', {'p0': c.permName, 'p1': c.roleName}),
+        tr('جعل «{p0}» مشروطاً لدور {p1} — موافقةُ مسؤولٍ في كلّ مرّة', {'p0': c.permName, 'p1': trData(c.roleName)}),
+      _Grant.denied => tr('سحب «{p0}» من دور {p1}', {'p0': c.permName, 'p1': trData(c.roleName)}),
     };
     return Container(
       padding: const EdgeInsets.all(13),

@@ -256,7 +256,7 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
               backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               child: const Icon(PhosphorIconsBold.buildings, color: AppColors.primary),
             ),
-            title: Text(branch.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(trData(branch.name), style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -265,7 +265,7 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
                 if (branch.phone != null && branch.phone!.isNotEmpty)
                   Text('📞 ${branch.phone}'),
                 if (ccName != null)
-                  Text(tr('🎯 مركز التكلفة: {ccName}', {'ccName': ccName}),
+                  Text(tr('🎯 مركز التكلفة: {ccName}', {'ccName': trData(ccName)}),
                       style: TextStyle(color: AppColors.primary.withValues(alpha: 0.8), fontSize: 12)),
                 if (whCount > 0)
                   Text(tr('🏭 المخازن: {whCount}', {'whCount': whCount}),
@@ -303,6 +303,9 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
         final branchName = (warehouse as Warehouse).branchId != null ? _branchNameMap[warehouse.branchId!] : null;
         final ccName = warehouse.costCenterId != null ? _costCenterMap[warehouse.costCenterId!] : null;
         // Map type to Arabic label
+        // The fallback label is resolved before the switch so tr() stays out of
+        // switch-default data paths (see i18n_runtime_safety_test).
+        final generalTypeLabel = tr('عام');
         String typeLabel;
         Color typeColor;
         switch (warehouse.type) {
@@ -319,7 +322,7 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
             typeColor = Colors.purple;
             break;
           default:
-            typeLabel = 'عام';
+            typeLabel = generalTypeLabel;
             typeColor = Colors.grey;
         }
         return Card(
@@ -337,7 +340,7 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
             title: Row(
               children: [
                 Expanded(
-                  child: Text(warehouse.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text(trData(warehouse.name), style: const TextStyle(fontWeight: FontWeight.bold)),
                 ),
                 if (warehouse.isDefault) ...[
                   const SizedBox(width: 6),
@@ -370,7 +373,7 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
                 else
                    Text(tr('🏢 بدون فرع'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 if (ccName != null)
-                  Text(tr('🎯 مركز التكلفة: {ccName}', {'ccName': ccName}),
+                  Text(tr('🎯 مركز التكلفة: {ccName}', {'ccName': trData(ccName)}),
                       style: TextStyle(color: AppColors.primary.withValues(alpha: 0.8), fontSize: 12)),
               ],
             ),

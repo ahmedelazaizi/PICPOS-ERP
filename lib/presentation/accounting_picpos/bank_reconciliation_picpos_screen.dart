@@ -1042,7 +1042,7 @@ class _BankReconciliationPicposScreenState
         for (final account in accounts)
           PicPosOption<int?>(
             value: account.id,
-            label: account.name,
+            label: trData(account.name),
             sub: account.code,
           ),
       ],

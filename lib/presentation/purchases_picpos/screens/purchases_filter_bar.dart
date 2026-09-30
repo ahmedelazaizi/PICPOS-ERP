@@ -404,7 +404,7 @@ class PurchasesFilterBar extends ConsumerWidget {
                   items: [
                      DropdownMenuItem(value: null, child: Text(tr('الكل'))),
                     ...warehouses.map((w) =>
-                        DropdownMenuItem(value: w.id, child: Text(w.name))),
+                        DropdownMenuItem(value: w.id, child: Text(trData(w.name)))),
                   ],
                   onChanged: (v) => controller.updateWarehouseFilter(v),
                 );

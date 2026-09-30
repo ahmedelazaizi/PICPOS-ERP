@@ -741,7 +741,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                                   size: 18,
                                 ),
                                 const SizedBox(width: 8),
-                                Text(s.name),
+                                Text(trData(s.name)),
                               ],
                             ),
                           );
@@ -777,7 +777,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
                           items: _costCenters
                               .map((cc) => DropdownMenuItem<int?>(
                                     value: cc.id,
-                                    child: Text(cc.name),
+                                    child: Text(trData(cc.name)),
                                   ))
                               .toList(),
                           onChanged: (v) =>

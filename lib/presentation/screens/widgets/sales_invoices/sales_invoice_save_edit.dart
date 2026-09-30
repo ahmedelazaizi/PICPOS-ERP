@@ -519,7 +519,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesScreenState {
                                   border: const OutlineInputBorder(),
                                 ),
                                 items: warehousesList.map((w) {
-                                  return DropdownMenuItem<int>(value: w.id, child: Text(w.name));
+                                  return DropdownMenuItem<int>(value: w.id, child: Text(trData(w.name)));
                                 }).toList(),
                                 onChanged: (val) => setDialogState(() => selectedWarehouseId = val),
                               ),
@@ -540,7 +540,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesScreenState {
                           items: [
                              DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'))),
                             ...costCentersList.map((cc) {
-                              return DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name));
+                              return DropdownMenuItem<int?>(value: cc.id, child: Text(trData(cc.name)));
                             }),
                           ],
                           onChanged: (val) => setDialogState(() => selectedCostCenterId = val),

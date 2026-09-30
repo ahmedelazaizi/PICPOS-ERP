@@ -556,7 +556,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                             )),
                         ...linkedWarehhouses.map((w) => Chip(
                               avatar: const Icon(PhosphorIconsBold.warehouse, size: 14, color: Colors.green),
-                              label: Text(w.name, style: GoogleFonts.cairo(fontSize: 11)),
+                              label: Text(trData(w.name), style: GoogleFonts.cairo(fontSize: 11)),
                               backgroundColor: Colors.green.withValues(alpha: 0.08),
                               side: BorderSide(color: Colors.green.withValues(alpha: 0.2)),
                               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

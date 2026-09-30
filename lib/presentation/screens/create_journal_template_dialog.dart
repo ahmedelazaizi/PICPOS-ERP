@@ -552,7 +552,7 @@ class _TemplateAccountAutocompleteState extends State<_TemplateAccountAutocomple
                               child: Text(a.code, style: GoogleFonts.jetBrainsMono(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.primary)),
                             ),
                             const SizedBox(width: 8),
-                            Expanded(child: Text(a.name, style: GoogleFonts.cairo(fontSize: 11, fontWeight: (isSelected || isHighlighted) ? FontWeight.w700 : FontWeight.w500, color: (isSelected || isHighlighted) ? AppColors.primary : AppColors.textPrimary), overflow: TextOverflow.ellipsis)),
+                            Expanded(child: Text(trData(a.name), style: GoogleFonts.cairo(fontSize: 11, fontWeight: (isSelected || isHighlighted) ? FontWeight.w700 : FontWeight.w500, color: (isSelected || isHighlighted) ? AppColors.primary : AppColors.textPrimary), overflow: TextOverflow.ellipsis)),
                             if (isHighlighted) const Icon(PhosphorIconsBold.caretLeft, size: 12, color: AppColors.primary),
                           ],
                         ),

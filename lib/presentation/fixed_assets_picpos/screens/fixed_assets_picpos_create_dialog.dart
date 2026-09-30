@@ -321,7 +321,7 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
               ),
               items: [
                 for (final cc in widget.costCenters)
-                  DropdownMenuItem(value: cc.id, child: Text(cc.name)),
+                  DropdownMenuItem(value: cc.id, child: Text(trData(cc.name))),
               ],
               onChanged: (v) => setState(() => _costCenterId = v),
             ),

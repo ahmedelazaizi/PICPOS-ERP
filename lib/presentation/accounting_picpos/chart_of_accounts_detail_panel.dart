@@ -175,7 +175,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
     final text = Theme.of(context).textTheme;
     final parentName = widget.allAccounts
         .where((a) => a.id == _parentId)
-        .map((a) => '${a.code} — ${a.name}')
+        .map((a) => '${a.code} — ${trData(a.name)}')
         .firstOrNull;
 
     return Container(
@@ -268,7 +268,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                               for (final a in widget.allAccounts)
                                 DropdownMenuItem(
                                   value: a.id,
-                                  child: Text('${a.code} — ${a.name}',
+                                  child: Text('${a.code} — ${trData(a.name)}',
                                       overflow: TextOverflow.ellipsis),
                                 ),
                             ],

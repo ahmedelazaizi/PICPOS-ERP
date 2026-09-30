@@ -532,7 +532,7 @@ class _CycleCountScreenState extends ConsumerState<CycleCountScreen>
               items: warehouses.map((w) {
                 return DropdownMenuItem(
                     value: w.id,
-                    child: Text(w.name));
+                    child: Text(trData(w.name)));
               }).toList(),
               onChanged: (v) => warehouseId = v,
             ),

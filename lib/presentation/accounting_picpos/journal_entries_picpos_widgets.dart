@@ -63,7 +63,7 @@ class _AccountAutocompleteFieldState extends State<AccountAutocompleteField> {
     super.initState();
     _textCtrl = TextEditingController(
       text: widget.selectedAccount != null
-          ? '${widget.selectedAccount!.code} - ${widget.selectedAccount!.name}'
+          ? '${widget.selectedAccount!.code} - ${trData(widget.selectedAccount!.name)}'
           : '',
     );
     _focusNode = FocusNode();
@@ -75,7 +75,7 @@ class _AccountAutocompleteFieldState extends State<AccountAutocompleteField> {
     super.didUpdateWidget(old);
     if (old.selectedAccount?.id != widget.selectedAccount?.id) {
       _textCtrl.text = widget.selectedAccount != null
-          ? '${widget.selectedAccount!.code} - ${widget.selectedAccount!.name}'
+          ? '${widget.selectedAccount!.code} - ${trData(widget.selectedAccount!.name)}'
           : '';
     }
   }
@@ -130,7 +130,7 @@ class _AccountAutocompleteFieldState extends State<AccountAutocompleteField> {
           _highlightedIndex = filtered.isNotEmpty ? 0 : -1;
           return filtered;
         },
-        displayStringForOption: (a) => '${a.code} - ${a.name}',
+        displayStringForOption: (a) => '${a.code} - ${trData(a.name)}',
         onSelected: (account) {
           widget.onSelected(account);
         },
@@ -177,7 +177,7 @@ class _AccountAutocompleteFieldState extends State<AccountAutocompleteField> {
                     : 0;
                 if (_currentOptions.isNotEmpty) {
                   final selected = _currentOptions[idx];
-                  controller.text = '${selected.code} - ${selected.name}';
+                  controller.text = '${selected.code} - ${trData(selected.name)}';
                   widget.onSelected(selected);
                   focusNode.unfocus();
                 }
@@ -243,7 +243,7 @@ class _AccountAutocompleteFieldState extends State<AccountAutocompleteField> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                a.name,
+                                trData(a.name),
                                 style: GoogleFonts.cairo(
                                   fontSize: 11,
                                   fontWeight: (isSelected || isHighlighted) ? FontWeight.w700 : FontWeight.w500,

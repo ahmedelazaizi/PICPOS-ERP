@@ -53,7 +53,7 @@ class _UnitsManagementScreenState
     final confirmed = await AppConfirmDialog.show(
       context,
       title: tr('حذف وحدة القياس'),
-      message: tr('هل أنت متأكد من حذف "{p0}"؟', {'p0': unit.name}),
+      message: tr('هل أنت متأكد من حذف "{p0}"؟', {'p0': trData(unit.name)}),
       confirmLabel: tr('حذف'),
       color: AppColors.error,
       icon: PhosphorIconsBold.trash,
@@ -124,7 +124,7 @@ class _UnitsManagementScreenState
                             leading: CircleAvatar(
                               backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                               child: Text(
-                                unit.symbol,
+                                trData(unit.symbol),
                                 style: const TextStyle(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.bold,
@@ -133,7 +133,7 @@ class _UnitsManagementScreenState
                               ),
                             ),
                             title: Text(
-                              unit.name,
+                              trData(unit.name),
                               style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             subtitle: Text(

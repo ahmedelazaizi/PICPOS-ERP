@@ -391,7 +391,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
                       labelText: tr('المخزن'),
                       prefixIcon: const Icon(PhosphorIconsBold.warehouse),
                     ),
-                    items: _warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(w.name))).toList(),
+                    items: _warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(trData(w.name)))).toList(),
                     onChanged: (val) => setState(() {
                       _selectedWarehouseId = val;
                       _selectedCostCenterId =
@@ -407,7 +407,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
                       labelText: tr('مركز التكلفة'),
                       prefixIcon: const Icon(PhosphorIconsBold.chartPieSlice),
                     ),
-                    items: _costCenters.map((cc) => DropdownMenuItem(value: cc.id, child: Text(cc.name))).toList(),
+                    items: _costCenters.map((cc) => DropdownMenuItem(value: cc.id, child: Text(trData(cc.name)))).toList(),
                     onChanged: (val) => setState(() => _selectedCostCenterId = val),
                   ),
                 ),

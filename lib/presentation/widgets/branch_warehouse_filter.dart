@@ -106,7 +106,7 @@ class BranchWarehouseFilterBar extends ConsumerWidget {
                    DropdownMenuItem<int?>(value: null, child: Text(tr('كل الفروع'))),
                   ...branches.map((b) => DropdownMenuItem<int?>(
                         value: b.id,
-                        child: Text(b.name, overflow: TextOverflow.ellipsis),
+                        child: Text(trData(b.name), overflow: TextOverflow.ellipsis),
                       )),
                 ],
                 onChanged: (v) {
@@ -148,7 +148,7 @@ class BranchWarehouseFilterBar extends ConsumerWidget {
                    DropdownMenuItem<int?>(value: null, child: Text(tr('كل المخازن'))),
                   ...warehouses.map((w) => DropdownMenuItem<int?>(
                         value: w.id,
-                        child: Text(w.name, overflow: TextOverflow.ellipsis),
+                        child: Text(trData(w.name), overflow: TextOverflow.ellipsis),
                       )),
                 ],
                 onChanged: onWarehouseChanged,

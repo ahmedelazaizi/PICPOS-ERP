@@ -577,7 +577,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
               items: warehouses.map((w) {
                 return DropdownMenuItem(
                     value: w.id,
-                    child: Text(w.name));
+                    child: Text(trData(w.name)));
               }).toList(),
               onChanged: (v) => warehouseId = v,
             ),

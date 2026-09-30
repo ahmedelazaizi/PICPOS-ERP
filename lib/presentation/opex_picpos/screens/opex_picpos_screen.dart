@@ -475,7 +475,7 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
     _snack(
       failed.isEmpty
           ? tr('حُمِّل المصروفُ على {p0} أمراً', {'p0': form.lines.length})
-          : tr('حُمِّل على {p0} من {p1} — تعذّر: {p2}', {'p0': form.lines.length - failed.length, 'p1': form.lines.length, 'p2': failed.join('، ')}),
+          : tr('حُمِّل على {p0} من {p1} — تعذّر: {p2}', {'p0': form.lines.length - failed.length, 'p1': form.lines.length, 'p2': failed.join(tr('، '))}),
     );
   }
 

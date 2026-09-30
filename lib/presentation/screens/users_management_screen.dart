@@ -169,7 +169,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          role.name,
+                          trData(role.name),
                           style: TextStyle(
                             fontSize: 11,
                             color: _getRoleColor(role.name),
@@ -234,7 +234,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                             .map(
                               (role) => DropdownMenuItem(
                                 value: role.id,
-                                child: Text(role.name),
+                                child: Text(trData(role.name)),
                               ),
                             )
                             .toList(),

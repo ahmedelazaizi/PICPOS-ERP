@@ -42,7 +42,7 @@ class GuestRequestsBanner extends ConsumerWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    tr('{p0} طلبُ ضيفٍ ينتظر الاعتماد ({p1})', {'p0': pending.length, 'p1': pending.map((r) => r.tableName).toSet().join('، ')}),
+                    tr('{p0} طلبُ ضيفٍ ينتظر الاعتماد ({p1})', {'p0': pending.length, 'p1': pending.map((r) => r.tableName).toSet().join(tr('، '))}),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12.5,

@@ -515,7 +515,7 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
                               child: Text(acc.code.substring(0, 1), style: TextStyle(fontSize: 11, color: Colors.blue.shade700)),
                             ),
                             title: Text(
-                              '${acc.code} — ${acc.name}',
+                              '${acc.code} — ${trData(acc.name)}',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: level <= 2 ? FontWeight.bold : FontWeight.normal,
@@ -525,7 +525,8 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
                             onTap: () {
                               setState(() {
                                 _selectedAccountId = acc.id;
-                                _selectedAccountName = '${acc.code} - ${acc.name}';
+                                _selectedAccountName =
+                                    '${acc.code} - ${trData(acc.name)}';
                               });
                               Navigator.pop(ctx);
                             },
@@ -557,7 +558,7 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
             ),
             ...centers.map((c) => SimpleDialogOption(
               onPressed: () { setState(() => _selectedCostCenterId = c.id); Navigator.pop(ctx); },
-              child: Text('${c.code} — ${c.name}'),
+              child: Text('${c.code} — ${trData(c.name)}'),
             )),
           ],
         ),
@@ -579,7 +580,7 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
             ),
             ...branches.map((b) => SimpleDialogOption(
               onPressed: () { setState(() => _selectedBranchId = b.id); Navigator.pop(ctx); },
-              child: Text(b.name),
+              child: Text(trData(b.name)),
             )),
           ],
         ),

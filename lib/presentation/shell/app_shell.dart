@@ -1223,7 +1223,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  tr('وضع المدير — {p0}', {'p0': authState.originalUser?.displayName ?? ''}),
+                                  tr('وضع المدير — {p0}', {'p0': trData(authState.originalUser?.displayName)}),
                                   style: const TextStyle(
                                     color: AppColors.warning,
                                     fontSize: 11,
@@ -1307,7 +1307,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      authState.originalUser?.displayName ?? '',
+                                      trData(authState.originalUser?.displayName),
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 13,
@@ -1316,7 +1316,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     Text(
-                                      role == null ? '' : tr(role.name),
+                                      role == null ? '' : trData(role.name),
                                       style: const TextStyle(
                                         color: AppColors.textMuted,
                                         fontSize: 11,

@@ -66,14 +66,14 @@ class RoleListPanel extends StatelessWidget {
                     color: isSelected ? AppColors.primary : AppColors.textMuted,
                   ),
                   title: Text(
-                    role.name,
+                    trData(role.name),
                     style: TextStyle(
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                   subtitle: role.description != null && role.description!.isNotEmpty
                       ? Text(
-                          role.description!,
+                          trData(role.description),
                           style: const TextStyle(fontSize: 11),
                         )
                       : null,

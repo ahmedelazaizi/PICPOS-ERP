@@ -1773,7 +1773,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           // the app rather than trap the user on the wizard.
           AppToast.show(
             context,
-            tr('اكتمل الإعداد، لكن مع تحذيرات: {p0}. يُفضَّل إعادة تشغيل التطبيق.', {'p0': warnings.join('، ')}),
+            tr('اكتمل الإعداد، لكن مع تحذيرات: {p0}. يُفضَّل إعادة تشغيل التطبيق.', {'p0': warnings.join(tr('، '))}),
             type: ToastType.warning,
           );
         }

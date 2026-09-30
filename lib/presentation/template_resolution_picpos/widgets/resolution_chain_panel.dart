@@ -42,7 +42,7 @@ class ResolutionChainPanel extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           PicPosSectionHeader(
-            title: r.documentLabel,
+            title: tr(r.documentLabel),
             subtitle: '${r.category} · ${r.paperLabel}',
             icon: PhosphorIconsBold.fileText,
           ),
@@ -212,7 +212,7 @@ class _ChainStep extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        step.label,
+                        tr(step.label),
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w800,
@@ -252,7 +252,7 @@ class _ChainStep extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  step.result,
+                  _localizedStepResult(step),
                   style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -267,6 +267,27 @@ class _ChainStep extends StatelessWidget {
       ),
     );
   }
+}
+
+String _localizedStepResult(ResolutionStepView step) {
+  if (step.state == ResolutionStepState.missed) {
+    return tr('لا قاعدة مطابقة');
+  }
+  if (step.state == ResolutionStepState.notTried) {
+    return tr('لم يُجرَّب');
+  }
+  if (step.result == '← التصميم المدمج في الكود') {
+    return tr('← التصميم المدمج في الكود');
+  }
+
+  const prefix = '← ';
+  final value = step.result.startsWith(prefix)
+      ? step.result.substring(prefix.length)
+      : step.result;
+  if (value.startsWith('قالب #')) {
+    return tr('← قالب #{id}', {'id': value.substring('قالب #'.length)});
+  }
+  return '$prefix${trData(value)}';
 }
 
 class _Behaviour extends StatelessWidget {
@@ -348,7 +369,7 @@ class _Verdict extends StatelessWidget {
               Icon(PhosphorIconsBold.info, size: 15, color: tone),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(row.health.label,
+                child: Text(tr(row.health.label),
                     style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,

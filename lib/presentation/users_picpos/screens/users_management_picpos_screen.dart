@@ -615,7 +615,7 @@ class _UsersManagementPicposScreenState
                             .map(
                               (role) => DropdownMenuItem(
                                 value: role.id,
-                                child: Text(role.name),
+                                child: Text(trData(role.name)),
                               ),
                             )
                             .toList(),
