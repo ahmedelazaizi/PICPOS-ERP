@@ -104,6 +104,7 @@ class PicPosProductOption {
     this.categoryId,
     this.sub = '',
     this.taxRate = 0,
+    this.taxExempt = false,
     this.unitName = 'قطعة',
     this.barcode = '',
   });
@@ -118,6 +119,10 @@ class PicPosProductOption {
   final double costPrice;
   final int? categoryId;
   final double taxRate;
+
+  /// B3 — `products.tax_exempt`: the line is taxed at 0 % (sales and
+  /// purchases alike) — see `effectiveItemTaxRate`.
+  final bool taxExempt;
   final String unitName;
   final String barcode;
 

@@ -327,6 +327,11 @@ class ApiProductHandler extends ApiHandlerBase {
         ),
       );
 
+      // B3: «معفى» — raw column outside the companion; it drives money.
+      if (data.containsKey('taxExempt')) {
+        await db.setProductTaxExempt(id, parseBool(data['taxExempt'], false));
+      }
+
       // Materialise opening stock via the canonical adjustStock path so the
       // inventory_balances row is created together with current_stock and a
       // stock_movements audit row.
@@ -586,6 +591,11 @@ class ApiProductHandler extends ApiHandlerBase {
           productType: data['productType'] as String? ?? product.productType,
         ),
       );
+      // B3: «معفى» — raw column outside the data class; absent key = keep.
+      if (data.containsKey('taxExempt')) {
+        await db.setProductTaxExempt(
+            product.id, parseBool(data['taxExempt'], false));
+      }
       broadcast('products');
       return jsonResponse({'success': true, 'serverId': product.id});
     } on ArgumentError catch (e) {

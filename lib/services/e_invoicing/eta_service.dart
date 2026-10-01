@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../core/tax/einvoice_exempt_codes.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ETA EGYPT E-INVOICING SERVICE — منظومة الفاتورة الإلكترونية المصرية
@@ -398,7 +399,10 @@ class EtaService {
         'taxableItems': [
           {
             'taxType': item['taxType'] ?? 'T1',
-            'subType': item['taxSubtype'] ?? 'V009',
+            // B3: an «معفى» line is declared exempt (V003), never zero-rated.
+            'subType': item['taxExempt'] == true
+                ? kEtaExemptTaxSubtype
+                : (item['taxSubtype'] ?? 'V009'),
             'amount': _round(taxAmount),
             'rate': taxRate,
           },

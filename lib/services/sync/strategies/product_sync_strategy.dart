@@ -124,6 +124,12 @@ class ProductSyncStrategy extends SyncStrategy {
           createdOnServer: Value(parseBool(p['createdOnServer'], true)),
         ),
       );
+      // B3: `tax_exempt` is a raw column (v182) outside the companion; it
+      // changes money (0 % tax) so it is applied whenever the server sends
+      // it. An older server omits the key → the local flag is left as is.
+      if (p is Map && p.containsKey('taxExempt')) {
+        await db.setProductTaxExempt(useId, parseBool(p['taxExempt'], false));
+      }
     }
     // Force UI refresh after sync
     if (products.isNotEmpty) {

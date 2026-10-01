@@ -285,9 +285,16 @@ extension SalesMutationsDao on AppDatabase {
         // GAP-P2-FIX-10: Auto-populate taxRate and taxAmount from product card
         final productId = item.productId.value;
         final product = await getProductById(productId);
+        // B3: the product-card fallback honours «معفى» via the shared rule
+        // (no company default on this path — as before).
         final effectiveTaxRate = item.taxRate.present
             ? item.taxRate.value
-            : (product?.taxRate ?? 0.0);
+            : effectiveItemTaxRate(
+                rate: product?.taxRate ?? 0.0,
+                exempt: product != null &&
+                    (await getTaxExemptProductIds([productId])).isNotEmpty,
+                companyDefault: 0,
+              );
         final lineTotal = (item.unitPrice.present ? item.unitPrice.value : 0.0) *
             (item.quantity.present ? item.quantity.value : 1.0);
         final effectiveTaxAmount = item.taxAmount.present

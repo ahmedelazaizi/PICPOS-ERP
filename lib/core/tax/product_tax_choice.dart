@@ -22,6 +22,12 @@
 /// an item marked exempt is still taxed at the default rate there — exactly as
 /// the old «معفي» dropdown option was. Making exemption real needs those
 /// readers to honour `tax_exempt`; that is a calculation change, out of scope.
+///
+/// ── B3 (owner decision) — the two paragraphs above are SUPERSEDED ─────────
+/// Every sale/return/table/POS/purchase path now resolves the line rate via
+/// `effectiveItemTaxRate` (`effective_item_tax_rate.dart`): exempt → 0 %.
+/// `tax_exempt` syncs with the product and e-invoices classify such lines as
+/// exempt. Items with `tax_exempt = 0` compute exactly as before.
 library;
 
 import '../i18n/tr.dart';

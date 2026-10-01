@@ -706,9 +706,16 @@ extension EInvoicingDao on AppDatabase {
     // Build line items with product classification
     final lineItems = <Map<String, dynamic>>[];
     final productMap = await getProductsByIds(items.map((i) => i.productId).toList());
+    // B3: «معفى» products (raw `products.tax_exempt`) → exempt classification.
+    final exemptProductIds =
+        await getTaxExemptProductIds(items.map((i) => i.productId));
     for (final item in items) {
       final product = productMap[item.productId];
       if (product == null) continue;
+      final exemptLine = isExemptEInvoiceLine(
+        productExempt: exemptProductIds.contains(item.productId),
+        lineTaxAmount: item.taxAmount,
+      );
 
       // Determine item code based on config coding system
       String itemCode;
@@ -746,9 +753,12 @@ extension EInvoicingDao on AppDatabase {
         // `createSalesInvoice` على كلّ بند — نفسُ مبدأ `cost_price` و
         // `due_date` و`rounding_adjustment` المكتوبِ في المخطَّط.
         'taxType': product.itemTaxType,
-        'taxSubtype': product.itemTaxSubtype,
+        // B3: an exempt line is declared exempt (ETA V003), not zero-rated.
+        'taxSubtype':
+            exemptLine ? kEtaExemptTaxSubtype : product.itemTaxSubtype,
         'taxRate': item.taxRate,
         'taxAmount': item.taxAmount,
+        if (exemptLine) 'taxExempt': true,
       });
     }
 

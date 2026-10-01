@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/repositories/sales_repository.dart';
 import '../../../data/providers/providers.dart';
 import '../../../data/providers/e_invoicing_providers.dart';
+import '../../../core/tax/effective_item_tax_rate.dart';
 import '../../../core/utils/financial_utils.dart';
 import '../../../domain/usecases/sales/complete_sale_usecase.dart';
 import '../../../domain/usecases/sales/calculate_invoice_totals_usecase.dart';
@@ -242,13 +243,19 @@ class SalesInvoicesFormNotifier extends Notifier<SalesInvoicesFormState> {
       // Seed per-line tax from the product card. `taxEnabled` follows the
       // rate: a product flagged with a non-zero tax rate is taxable by
       // default; the cashier can toggle it off per line for exempt sales.
+      // B3: an «معفى» product resolves to 0 % (no company default here).
+      final rate = effectiveItemTaxRate(
+        rate: product.taxRate,
+        exempt: product.taxExempt,
+        companyDefault: 0,
+      );
       final newItem = SalesCartItem(
         productId: product.id,
         productName: product.name,
         productCode: product.code,
         unitPrice: product.salePrice,
-        taxRate: product.taxRate,
-        taxEnabled: product.taxRate > 0,
+        taxRate: rate,
+        taxEnabled: rate > 0,
       );
       state = state.copyWith(cart: [...state.cart, newItem]);
     }

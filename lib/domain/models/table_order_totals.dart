@@ -20,6 +20,7 @@
 import 'dart:math' as math;
 
 import '../../core/constants/app_constants.dart';
+import '../../core/tax/effective_item_tax_rate.dart';
 import '../../core/utils/number_utils.dart';
 import 'tax_rate_bounds.dart';
 
@@ -32,10 +33,15 @@ class TableOrderLine {
     required this.quantity,
     required this.unitPrice,
     this.taxRate = 0,
+    this.taxExempt = false,
   });
 
   final double quantity;
   final double unitPrice;
+
+  /// B3 (owner decision) — the product is «معفى من الضريبة» (`products.tax_exempt`):
+  /// 0 % whatever [taxRate] or the order rate say (`effectiveItemTaxRate`).
+  final bool taxExempt;
 
   /// نسبةُ ضريبة **البند**، مئويّةً (16 لا 0.16) — مرآةُ
   /// `TableOrderItems.taxRate` و`CartItemEntity.taxRate`، وكلاهما منسوخٌ عن
@@ -191,7 +197,11 @@ class TableOrderTotals {
       final base = line.lineNet * discountRatio;
       var lineTax = 0.0;
       if (taxEnabled) {
-        final rate = line.taxRate > 0 ? line.taxRate : taxPercent;
+        final rate = effectiveItemTaxRate(
+          rate: line.taxRate,
+          exempt: line.taxExempt,
+          companyDefault: taxPercent,
+        );
         lineTax = NumberUtils.roundCurrency(base * (rate / 100));
         taxAmount += lineTax;
       }

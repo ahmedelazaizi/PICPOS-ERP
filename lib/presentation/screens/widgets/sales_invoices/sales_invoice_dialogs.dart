@@ -362,6 +362,11 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
     if (!mounted) return;
 
     final systemTaxRate = ref.read(posDefaultTaxRateProvider).value ?? 0;
+    // B3 — «معفى» items (raw `products.tax_exempt`) are taxed at 0 %.
+    final exemptProductIds = await ref
+        .read(databaseProvider)
+        .getTaxExemptProductIds(products.map((p) => p.id));
+    if (!mounted) return;
     final activeWarehouses =
         warehousesList.whereType<WarehouseData>().toList();
 
@@ -407,6 +412,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
           systemTaxRate: systemTaxRate,
           editQuotation: editQuotation,
           isConvert: isConvert,
+          exemptProductIds: exemptProductIds,
           onSaveQuotation: ({
             required BuildContext dialogContext,
             required int? existingId,

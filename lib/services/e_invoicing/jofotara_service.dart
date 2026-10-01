@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../core/constants/app_constants.dart';
+import '../../core/tax/einvoice_exempt_codes.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // JOFOTARA JORDAN E-INVOICING SERVICE — منظومة الفوترة الإلكترونية الأردنية
@@ -283,6 +284,10 @@ class JofotaraService {
         'taxRate': taxRate,
         'taxAmount': _round(taxAmount),
         'totalAmount': _round(netAmount + taxAmount),
+        // B3: an «معفى» line is declared exempt (UBL category E), not
+        // zero-rated; other lines keep their exact previous shape.
+        if (item['taxExempt'] == true)
+          'taxCategory': kJofotaraExemptTaxCategory,
       };
     }).toList();
 

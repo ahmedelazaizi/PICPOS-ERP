@@ -73,6 +73,11 @@ class UnifiedLineItem {
   final String taxSubtype; // V009, etc.
   final double taxRate;
 
+  /// B3 — «معفى» line: ETA subtype V003 (carried in [taxSubtype]) and
+  /// JoFotara category E. Emitted in [toMap] only when true, so payloads of
+  /// non-exempt lines are unchanged.
+  final bool taxExempt;
+
   const UnifiedLineItem({
     required this.description,
     required this.itemCode,
@@ -84,6 +89,7 @@ class UnifiedLineItem {
     this.taxType = 'T1',
     this.taxSubtype = 'V009',
     required this.taxRate,
+    this.taxExempt = false,
   });
 
   double get netAmount => (quantity * unitPrice) - discount;
@@ -101,6 +107,7 @@ class UnifiedLineItem {
     'taxType': taxType,
     'taxSubtype': taxSubtype,
     'taxRate': taxRate,
+    if (taxExempt) 'taxExempt': true,
   };
 }
 
@@ -162,6 +169,7 @@ class UnifiedInvoice {
           taxType: str(m['taxType'], 'T1'),
           taxSubtype: str(m['taxSubtype'], 'V009'),
           taxRate: num_(m['taxRate'], 14),
+          taxExempt: m['taxExempt'] == true,
         ));
       }
     }

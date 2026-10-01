@@ -565,6 +565,10 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
       for (final b in await ref.read(databaseProvider).getBranches())
         b.id: b.name,
     };
+    // B3 — «معفى» items (raw `products.tax_exempt`) are taxed at 0 %.
+    final exemptProductIds = await ref
+        .read(databaseProvider)
+        .getTaxExemptProductIds(products.map((p) => p.id));
 
     List<WarehouseData> filteredWarehouses = activeWarehouses;
     if (SyncInterceptor.isClientMode) {
@@ -604,6 +608,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
           systemTaxRate: systemTaxRate,
           editQuotation: editQuotation,
           isConvert: isConvert,
+          exemptProductIds: exemptProductIds,
           onSaveQuotation: ({
             required BuildContext dialogContext,
             required int? existingId,
@@ -677,6 +682,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                 branchNames: branchNames,
                 costCenters: costCentersList,
                 systemTaxPercent: systemTaxPercent,
+                exemptProductIds: exemptProductIds,
               ),
       ),
     );
@@ -704,6 +710,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
     required List<CostCenter> costCenters,
     /// **مئويّةٌ** (‏١٦) لا كسر (‏٠٫١٦) — انظر [posDefaultTaxPercentProvider].
     required double systemTaxPercent,
+    Set<int> exemptProductIds = const <int>{},
   }) {
     return PicPosInvoiceForm(
       kind: PicPosInvoiceKind.sales,
@@ -729,6 +736,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
             costPrice: p.costPrice,
             categoryId: p.categoryId,
             taxRate: p.taxRate,
+            taxExempt: exemptProductIds.contains(p.id),
             barcode: p.barcode ?? '',
           ),
       ],

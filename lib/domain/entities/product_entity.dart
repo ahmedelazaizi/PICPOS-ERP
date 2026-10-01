@@ -43,6 +43,11 @@ class ProductEntity {
   /// to keep the SoT consistent across all clients.
   final bool createdOnServer;
 
+  /// B3 — `products.tax_exempt` (raw column, v182): the item is taxed at 0 %
+  /// everywhere. Resolve rates with `effectiveItemTaxRate`
+  /// (`lib/core/tax/effective_item_tax_rate.dart`).
+  final bool taxExempt;
+
   const ProductEntity({
     required this.id,
     required this.code,
@@ -76,6 +81,7 @@ class ProductEntity {
     this.productType = 'general',
     this.warehouseId,
     this.createdOnServer = true,
+    this.taxExempt = false,
   });
 
   /// Check if stock is low
@@ -126,6 +132,7 @@ class ProductEntity {
     String? productType,
     int? warehouseId,
     bool? createdOnServer,
+    bool? taxExempt,
   }) {
     return ProductEntity(
       id: id ?? this.id,
@@ -160,6 +167,7 @@ class ProductEntity {
       productType: productType ?? this.productType,
       warehouseId: warehouseId ?? this.warehouseId,
       createdOnServer: createdOnServer ?? this.createdOnServer,
+      taxExempt: taxExempt ?? this.taxExempt,
     );
   }
 }

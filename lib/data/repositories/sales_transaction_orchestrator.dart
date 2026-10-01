@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import '../../core/errors/app_exceptions.dart';
+import '../../core/tax/effective_item_tax_rate.dart';
 import '../../domain/entities/cart_item_entity.dart';
 import '../../domain/entities/sync_dtos.dart';
 import '../../domain/models/sales_return_refund_split.dart';
@@ -621,6 +622,22 @@ class SalesTransactionOrchestrator {
     // server submit. Without rounding, totals like `2.1033599999999995`
     // appeared in the field log instead of `2.10`, producing piastre-
     // level mismatches across invoices and POS receipts.
+    //
+    // B3 (owner decision) — an item flagged `products.tax_exempt` is taxed at
+    // 0 %. The flag is read from the DB here (authoritative for every caller:
+    // POS, sales invoice, exchange, mirror) and OR-ed with the line's own
+    // flag; the rate rule itself lives in `effectiveItemTaxRate`.
+    final exemptProductIds = await _db.getTaxExemptProductIds(
+      request.items.map((item) => item.productId),
+    );
+    double lineRate(CartItemEntity item) => request.taxEnabled
+        ? effectiveItemTaxRate(
+            rate: item.taxRate,
+            exempt:
+                item.taxExempt || exemptProductIds.contains(item.productId),
+            companyDefault: request.taxPercent,
+          )
+        : 0.0;
     final lineDiscounts = request.items
         .map((item) => FinancialUtils.round(
             (item.customPrice ?? item.unitPrice) * item.quantity *
@@ -636,9 +653,7 @@ class SalesTransactionOrchestrator {
           .map((item) => (
                 quantity: item.quantity,
                 unitPrice: item.customPrice ?? item.unitPrice,
-                taxRatePercent: request.taxEnabled
-                    ? (item.taxRate > 0 ? item.taxRate : request.taxPercent)
-                    : 0.0,
+                taxRatePercent: lineRate(item),
               ))
           .toList(),
       globalDiscountAmount: FinancialUtils.round(
@@ -654,11 +669,7 @@ class SalesTransactionOrchestrator {
     final totalDiscountValue = totals.totalDiscount;
     final perLineTax = totals.lineTaxes;
     final perLineBeforeTax = totals.lineNets;
-    final perLineRate = request.items
-        .map((item) => request.taxEnabled
-            ? (item.taxRate > 0 ? item.taxRate : request.taxPercent)
-            : 0.0)
-        .toList();
+    final perLineRate = request.items.map(lineRate).toList();
     final syncItems = <SyncSaleItem>[];
 
     for (var i = 0; i < request.items.length; i++) {

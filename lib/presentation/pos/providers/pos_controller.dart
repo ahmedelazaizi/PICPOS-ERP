@@ -174,7 +174,9 @@ class PosController extends Notifier<PosState> {
                 customPrice: item.unitPrice,
                 // نسبةُ البند من الطلب لا من بطاقة المنتج: لقطةٌ أُخذت ساعةَ
                 // الطلب، فلا يُعاد تسعيرُ ما طُلب لو غُيّرت البطاقةُ بعده.
-                taxRate: item.taxRate,
+                taxRate: product.taxExempt ? 0 : item.taxRate,
+                // B3: «معفى» is the product's flag, not an order snapshot.
+                taxExempt: product.taxExempt,
                 isSoldByWeight: product.isSoldByWeight,
               ),
             );

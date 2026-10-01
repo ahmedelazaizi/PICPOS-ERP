@@ -385,6 +385,7 @@ class CartController extends Notifier<CartState> {
       quantity: finalQuantity,
       customPrice: customPrice ?? effectivePrice,
       taxRate: taxRate ?? product.taxRate,
+      taxExempt: product.taxExempt,
       categoryId: product.categoryId,
       isSoldByWeight: product.isSoldByWeight,
       forceNewEntry: forceNewEntry,
@@ -566,6 +567,7 @@ class CartController extends Notifier<CartState> {
           selectedUnitId: i.selectedUnitId,
           selectedUnitName: i.selectedUnitName,
           quantityInBase: i.quantityInBase,
+          taxExempt: i.taxExempt,
           // note omitted → defaults to null (offer note cleared)
         );
       }).toList();
@@ -765,6 +767,7 @@ class CartController extends Notifier<CartState> {
         unitPrice: product.salePrice,
         quantity: freeQty.toDouble(),
         customPrice: 0, // Free!
+        taxExempt: product.taxExempt,
         isSoldByWeight: product.isSoldByWeight,
         note: tr('عرض: {p0} (مجاني)', {'p0': offer.name}),
       ));
@@ -913,6 +916,16 @@ class CartController extends Notifier<CartState> {
           : ApplyOfferOutcome.noItems;
     }
 
+    // B3: offer items arrive as plain mapped rows without the raw
+    // `tax_exempt` flag — re-read it through the repository.
+    final exemptIds = (await ref
+            .read(productRepositoryProvider)
+            .getProductsByIds(
+                pricedItems.map((p) => p.product.id).toList()))
+        .where((p) => p.taxExempt)
+        .map((p) => p.id)
+        .toSet();
+
     // Batch-add all offer items atomically (no per-item auto-apply)
     final newItems = <CartItemEntity>[];
     for (final pricedItem in pricedItems) {
@@ -926,7 +939,8 @@ class CartController extends Notifier<CartState> {
         unitPrice: product.salePrice,
         quantity: pricedItem.quantity,
         customPrice: pricedItem.customPrice,
-        taxRate: product.taxRate,
+        taxRate: exemptIds.contains(product.id) ? 0 : product.taxRate,
+        taxExempt: exemptIds.contains(product.id),
         isSoldByWeight: product.isSoldByWeight,
         note: manualNote,
       ));
@@ -1252,8 +1266,12 @@ class CartController extends Notifier<CartState> {
             // Previously dropped, so converting a taxed quotation to a POS
             // sale silently zeroed the tax. Fall back to the product's own
             // rate when the quotation line had none.
-            taxRate: item.item.taxRate > 0 ? item.item.taxRate : product.taxRate,
-            taxAmount: item.item.taxAmount,
+            // B3: an exempt product is 0 % whatever the quotation carried.
+            taxRate: product.taxExempt
+                ? 0
+                : (item.item.taxRate > 0 ? item.item.taxRate : product.taxRate),
+            taxAmount: product.taxExempt ? 0 : item.item.taxAmount,
+            taxExempt: product.taxExempt,
           ),
         );
       }

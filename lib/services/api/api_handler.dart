@@ -408,6 +408,10 @@ class ApiHandler {
         query.where((p) => p.warehouseId.isIn(warehouseIds) | p.warehouseId.isNull());
       }
       final products = await query.get();
+      // B3: `tax_exempt` changes money (0 % tax), so it travels with the
+      // product. Raw column (v182) — read beside the Drift rows.
+      final exemptIds =
+          await _db.getTaxExemptProductIds(products.map((p) => p.id));
       final jsonList = products
           .map(
             (p) => <String, dynamic>{
@@ -434,6 +438,7 @@ class ApiHandler {
               'weightUnit': p.weightUnit,
               'allowNegativeSale': p.allowNegativeSale,
               'taxRate': p.taxRate,
+              'taxExempt': exemptIds.contains(p.id),
               'scalePluNumber': p.scalePluNumber,
               'scaleType': p.scaleType,
               'sortOrder': p.sortOrder,
@@ -553,6 +558,7 @@ class ApiHandler {
           'weightUnit': product.weightUnit,
           'allowNegativeSale': product.allowNegativeSale,
           'taxRate': product.taxRate,
+          'taxExempt': await _db.getProductTaxExempt(product.id),
           'scalePluNumber': product.scalePluNumber,
           'scaleType': product.scaleType,
           'sortOrder': product.sortOrder,
@@ -630,6 +636,9 @@ class ApiHandler {
       // Removed warehouseId filtering here to make products globally synced
       
       final products = await query.get();
+      // B3: see `_getProducts` — the exempt flag travels with the product.
+      final exemptIds =
+          await _db.getTaxExemptProductIds(products.map((p) => p.id));
 
       final jsonList = products
           .map(
@@ -657,6 +666,7 @@ class ApiHandler {
               'weightUnit': p.weightUnit,
               'allowNegativeSale': p.allowNegativeSale,
               'taxRate': p.taxRate,
+              'taxExempt': exemptIds.contains(p.id),
               'scalePluNumber': p.scalePluNumber,
               'scaleType': p.scaleType,
               'sortOrder': p.sortOrder,

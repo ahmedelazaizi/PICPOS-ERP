@@ -44,6 +44,7 @@ import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/tax/effective_item_tax_rate.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/number_utils.dart';
 import '../../domain/models/import_purchase_plan.dart';
@@ -416,7 +417,11 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
         // بسعرَين وصار تدقيقُ الفاتورة أصعب.
         _lines[i] = _lines[i].copyWith(quantity: _lines[i].quantity + qty);
       } else {
-        final rate = p.taxRate > 0 ? p.taxRate : widget.systemTaxRate;
+        final rate = effectiveItemTaxRate(
+          rate: p.taxRate,
+          exempt: p.taxExempt,
+          companyDefault: widget.systemTaxRate,
+        );
         _lines.add(PicPosInvoiceLine(
           productId: p.id,
           productName: p.name,

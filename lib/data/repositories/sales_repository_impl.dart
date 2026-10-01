@@ -835,6 +835,12 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
       );
     }
 
+    // B3: «معفى» items are re-taxed at 0 % on edit too (shared rule).
+    items = applyTaxExemptProductIds(
+      items,
+      await db.getTaxExemptProductIds(items.map((i) => i.productId)),
+    );
+
     await db.transaction(() async {
       // 0.5) Soft/Hard Period Closing Gating
       await db.validateFinancialPeriod(oldInvoice.invoiceDate, operation: 'تعديل فاتورة مبيعات');

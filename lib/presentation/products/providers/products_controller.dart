@@ -334,6 +334,8 @@ class ProductsController extends Notifier<ProductsState> {
         'priceAshyae': product.priceAshyae,
         'pricePerUnit': product.pricePerUnit,
         'taxRate': product.taxRate,
+        // B3: «معفى» changes money, so the server must hold the same flag.
+        'taxExempt': product.taxExempt,
         // Inventory / behaviour
         'minStock': product.minStock,
         'trackInventory': product.trackInventory,

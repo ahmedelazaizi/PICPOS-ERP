@@ -560,16 +560,21 @@ class TableSessionService {
   /// (`TableOrders.taxRate` = 0.16، لقطةُ `pos_default_tax_rate`) إلى مئويّةٍ
   /// (16) التي يفهمها النموذج. نِسَبُ البنود مئويّةٌ أصلاً (منسوخةٌ عن
   /// `Products.taxRate`) فتُمرَّر كما هي.
-  Future<TableOrderTotals> _totalsOf(TableOrder order) async => _totalsOfItems(
-        order,
-        await (_db.select(_db.tableOrderItems)
-              ..where((i) => i.tableOrderId.equals(order.id)))
-            .get(),
-      );
+  Future<TableOrderTotals> _totalsOf(TableOrder order) async {
+    final items = await (_db.select(_db.tableOrderItems)
+          ..where((i) => i.tableOrderId.equals(order.id)))
+        .get();
+    return _totalsOfItems(order, items, await _exemptIdsOf(items));
+  }
+
+  /// B3 — «معفى» products among the order lines (raw `products.tax_exempt`).
+  Future<Set<int>> _exemptIdsOf(List<TableOrderItem> items) =>
+      _db.getTaxExemptProductIds(items.map((i) => i.productId));
 
   static TableOrderTotals _totalsOfItems(
     TableOrder order,
     List<TableOrderItem> items,
+    Set<int> exemptProductIds,
   ) {
     return TableOrderTotals.compute(
       lines: items
@@ -577,6 +582,7 @@ class TableSessionService {
                 quantity: i.quantity,
                 unitPrice: i.unitPrice,
                 taxRate: i.taxRate,
+                taxExempt: exemptProductIds.contains(i.productId),
               ))
           .toList(),
       discountType: order.discountType,
@@ -604,7 +610,7 @@ class TableSessionService {
     final items = await (_db.select(_db.tableOrderItems)
           ..where((i) => i.tableOrderId.equals(order.id)))
         .get();
-    final totals = _totalsOfItems(order, items);
+    final totals = _totalsOfItems(order, items, await _exemptIdsOf(items));
     return {
       for (var i = 0; i < items.length; i++)
         items[i].id: totals.lineTotals[i],

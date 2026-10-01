@@ -1,3 +1,4 @@
+import '../../../core/tax/effective_item_tax_rate.dart';
 import '../../../core/utils/financial_utils.dart';
 import '../../../core/utils/number_utils.dart';
 import '../../entities/cart_item_entity.dart';
@@ -35,7 +36,11 @@ class CalculateInvoiceTotalsUseCase {
               quantity: item.quantity,
               unitPrice: item.effectivePrice,
               taxRatePercent: taxEnabled
-                  ? (item.taxRate > 0 ? item.taxRate : taxPercent)
+                  ? effectiveItemTaxRate(
+                      rate: item.taxRate,
+                      exempt: item.taxExempt,
+                      companyDefault: taxPercent,
+                    )
                   : 0.0,
             ),
           )

@@ -42,6 +42,7 @@ class AddToCartUseCase {
     double quantity = 1,
     double? customPrice,
     double taxRate = 0,
+    bool taxExempt = false,
     bool isSoldByWeight = false,
     int? categoryId,
     bool forceNewEntry =
@@ -91,8 +92,12 @@ class AddToCartUseCase {
         quantity: quantity,
         unitPrice: unitPrice,
         customPrice: customPrice,
-        taxRate: taxRate,
-        taxAmount: (quantity * (customPrice ?? unitPrice)) * (taxRate / 100),
+        // B3: an exempt line stores rate 0 (`effectiveItemTaxRate`).
+        taxRate: taxExempt ? 0 : taxRate,
+        taxAmount: taxExempt
+            ? 0
+            : (quantity * (customPrice ?? unitPrice)) * (taxRate / 100),
+        taxExempt: taxExempt,
         categoryId: categoryId,
         isSoldByWeight: isSoldByWeight,
       );

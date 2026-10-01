@@ -9,8 +9,23 @@ class DriftProductRepository implements IProductRepository {
 
   DriftProductRepository(this._db);
 
-  ProductEntity _mapToEntity(db.Product p) {
+  /// B3 — maps rows and stamps `taxExempt` from the raw `products.tax_exempt`
+  /// column (one query per batch; not part of the Drift row).
+  Future<List<ProductEntity>> _mapAll(List<db.Product> rows) async {
+    if (rows.isEmpty) return const [];
+    final exempt = await _db.getTaxExemptProductIds(rows.map((p) => p.id));
+    return [
+      for (final p in rows)
+        _mapToEntity(p, taxExempt: exempt.contains(p.id)),
+    ];
+  }
+
+  Future<ProductEntity?> _mapOne(db.Product? p) async =>
+      p == null ? null : (await _mapAll([p])).single;
+
+  ProductEntity _mapToEntity(db.Product p, {bool taxExempt = false}) {
     return ProductEntity(
+      taxExempt: taxExempt,
       id: p.id,
       code: p.code,
       name: p.name,
@@ -47,9 +62,7 @@ class DriftProductRepository implements IProductRepository {
 
   @override
   Stream<List<ProductEntity>> watchAllProducts() {
-    return _db.watchAllProducts().map(
-      (list) => list.map(_mapToEntity).toList(),
-    );
+    return _db.watchAllProducts().asyncMap(_mapAll);
   }
 
   @override
@@ -68,7 +81,7 @@ class DriftProductRepository implements IProductRepository {
           lowStockOnly: lowStockOnly,
           restrictToIds: restrictToIds,
         )
-        .map((list) => list.map(_mapToEntity).toList());
+        .asyncMap(_mapAll);
   }
 
   @override
@@ -91,7 +104,7 @@ class DriftProductRepository implements IProductRepository {
           limit: limit,
           includeUncategorized: includeUncategorized,
         )
-        .map((list) => list.map(_mapToEntity).toList());
+        .asyncMap(_mapAll);
   }
 
   @override
@@ -116,7 +129,7 @@ class DriftProductRepository implements IProductRepository {
       lowStockOnly: lowStockOnly,
       restrictToIds: restrictToIds,
     );
-    return rows.map(_mapToEntity).toList();
+    return _mapAll(rows);
   }
 
   @override
@@ -181,20 +194,19 @@ class DriftProductRepository implements IProductRepository {
       debugPrint('[PRODUCTS_REPO] getProducts returned ${dbProducts.length} items '
           '(limit=$limit, offset=$offset, query=$query, categoryId=$categoryId)');
     }
-    return dbProducts.map(_mapToEntity).toList();
+    return _mapAll(dbProducts);
   }
 
   @override
   Stream<List<ProductEntity>> searchProducts(String query) {
     return _db
         .searchProducts(query)
-        .map((list) => list.map(_mapToEntity).toList());
+        .asyncMap(_mapAll);
   }
 
   @override
   Future<ProductEntity?> getProductById(int id) async {
-    final p = await _db.getProductById(id);
-    return p != null ? _mapToEntity(p) : null;
+    return _mapOne(await _db.getProductById(id));
   }
 
   @override
@@ -205,31 +217,27 @@ class DriftProductRepository implements IProductRepository {
     final rows = await (_db.select(_db.products)
           ..where((p) => p.id.isIn(unique)))
         .get();
-    return rows.map(_mapToEntity).toList();
+    return _mapAll(rows);
   }
 
   @override
   Future<ProductEntity?> getProductByCode(String code) async {
-    final p = await _db.getProductByCode(code);
-    return p != null ? _mapToEntity(p) : null;
+    return _mapOne(await _db.getProductByCode(code));
   }
 
   @override
   Future<ProductEntity?> getProductByBarcode(String barcode) async {
-    final p = await _db.getProductByBarcode(barcode);
-    return p != null ? _mapToEntity(p) : null;
+    return _mapOne(await _db.getProductByBarcode(barcode));
   }
 
   @override
   Future<ProductEntity?> getProductAnyStatusByBarcode(String barcode) async {
-    final p = await _db.getProductAnyStatusByBarcode(barcode);
-    return p != null ? _mapToEntity(p) : null;
+    return _mapOne(await _db.getProductAnyStatusByBarcode(barcode));
   }
 
   @override
   Future<ProductEntity?> getProductByScalePlu(int pluNumber) async {
-    final p = await _db.getProductByScalePlu(pluNumber);
-    return p != null ? _mapToEntity(p) : null;
+    return _mapOne(await _db.getProductByScalePlu(pluNumber));
   }
 
   @override
@@ -244,15 +252,12 @@ class DriftProductRepository implements IProductRepository {
 
   @override
   Stream<List<ProductEntity>> watchLowStockProducts() {
-    return _db.watchLowStockProducts().map(
-      (list) => list.map(_mapToEntity).toList(),
-    );
+    return _db.watchLowStockProducts().asyncMap(_mapAll);
   }
 
   @override
   Future<List<ProductEntity>> getLowStockProducts() async {
-    final list = await _db.getLowStockProducts();
-    return list.map(_mapToEntity).toList();
+    return _mapAll(await _db.getLowStockProducts());
   }
 
   @override

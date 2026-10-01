@@ -515,6 +515,10 @@ class PosSearchController extends Notifier<PosSearchState> {
               allowNegativeSale: Value(pd['allowNegativeSale'] as bool? ?? false),
             ),
           );
+          // B3: the «معفى» flag changes money — cache it with the row.
+          if (pd['taxExempt'] is bool) {
+            await db.setProductTaxExempt(pd['id'] as int, pd['taxExempt'] as bool);
+          }
           for (final b in barcodes) {
             final bm = b as Map<String, dynamic>;
             await db.into(db.productBarcodes).insertOnConflictUpdate(

@@ -1,6 +1,7 @@
 import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:ural_erp/core/errors/app_exceptions.dart';
+import 'package:ural_erp/core/tax/effective_item_tax_rate.dart';
 import 'package:ural_erp/core/utils/financial_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers/providers.dart';
@@ -362,8 +363,13 @@ class SalesReturnNotifier extends Notifier<SalesReturnState> {
     // products (taxRate == 0) add nothing.
     final product = state.exchangeProduct!;
     final lineTotal = product.salePrice * state.exchangeQuantity;
-    final tax =
-        product.taxRate > 0 ? lineTotal * (product.taxRate / 100) : 0.0;
+    // B3: «معفى» → 0 % through the shared rule (no company default here).
+    final rate = effectiveItemTaxRate(
+      rate: product.taxRate,
+      exempt: product.taxExempt,
+      companyDefault: 0,
+    );
+    final tax = rate > 0 ? lineTotal * (rate / 100) : 0.0;
     return FinancialUtils.round(lineTotal + tax);
   }
 

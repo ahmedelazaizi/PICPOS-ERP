@@ -1219,6 +1219,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
       imageData: selectedImage,
       allowNegativeSale: allowNegativeSale,
       taxRate: taxChoice.storedTaxRate,
+      taxExempt: taxChoice.storedTaxExempt,
       priceTalabat:
           NumberUtils.tryParseLocale(priceTalabatController.text) ??
           widget.product.priceTalabat,

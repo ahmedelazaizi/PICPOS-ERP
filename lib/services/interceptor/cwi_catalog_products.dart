@@ -24,6 +24,9 @@ class _CwiCatalogProducts {
     String? barcode,
     double minStock = 0,
     double taxRate = 0,
+    // B3: «معفى» (raw `products.tax_exempt`) — taxed at 0 %, so it must
+    // reach the server with the product.
+    bool taxExempt = false,
     bool isSoldByWeight = false,
     bool allowNegativeSale = false,
     bool trackExpiry = false,
@@ -138,6 +141,7 @@ class _CwiCatalogProducts {
       'barcode': barcode,
       'minStock': minStock,
       'taxRate': taxRate,
+      'taxExempt': taxExempt,
       'isSoldByWeight': isSoldByWeight,
       'allowNegativeSale': allowNegativeSale,
       'trackExpiry': trackExpiry,

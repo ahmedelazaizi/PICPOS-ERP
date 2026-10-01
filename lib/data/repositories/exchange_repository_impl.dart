@@ -279,6 +279,14 @@ class ExchangeRepositoryImpl {
     // (`CalculateInvoiceTotalsUseCase` هي الصيغةُ الخالصةُ التي يعكسها
     // مرورا `completeSalesTransaction`). يُستعمل مدخلاً فقط؛ الإجماليُّ
     // **المعتمَد** يُقرأ من الصفّ المحفوظ أدناه.
+    // B3: flag «معفى» replacements before pricing so the expected total
+    // matches what `completeSalesTransaction` persists (it reads the flag
+    // from the DB itself).
+    replacementItems = applyTaxExemptProductIds(
+      replacementItems,
+      await _db.getTaxExemptProductIds(
+          replacementItems.map((i) => i.productId)),
+    );
     final expectedSaleTotal = _totals
         .execute(
           items: replacementItems,

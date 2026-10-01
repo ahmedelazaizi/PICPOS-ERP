@@ -163,7 +163,11 @@ class HoldOrderUseCase {
         await db.deleteHeldOrder(id);
 
         return RetrieveHeldOrderResponse(
-          items: cartItems,
+          // B3: «معفى» comes from the product's current flag, not the hold.
+          items: applyTaxExemptProductIds(
+            cartItems,
+            await db.getTaxExemptProductIds(cartItems.map((i) => i.productId)),
+          ),
           customerId: order.customerId,
           customerName: order.customerName,
           discountPercent: order.discount,

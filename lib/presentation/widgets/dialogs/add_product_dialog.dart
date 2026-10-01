@@ -1019,6 +1019,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
           barcode: _barcodeController.text.isNotEmpty ? _barcodeController.text : null,
           minStock: NumberUtils.tryParseLocale(_minStockController.text) ?? 0,
           taxRate: taxChoice.storedTaxRate,
+          taxExempt: taxChoice.storedTaxExempt,
           isSoldByWeight: _isSoldByWeight,
           allowNegativeSale: _allowNegativeSale,
           trackExpiry: _trackExpiry,

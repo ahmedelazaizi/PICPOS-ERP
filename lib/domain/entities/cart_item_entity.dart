@@ -1,3 +1,4 @@
+import '../../core/tax/effective_item_tax_rate.dart';
 import '../../core/utils/number_utils.dart';
 import '../../presentation/pos/widgets/modifier_selection_dialog.dart';
 
@@ -32,6 +33,9 @@ class CartItemEntity {
   final int? selectedUnitId; // ProductUnit.id (null = base unit)
   final String? selectedUnitName; // e.g. 'كرتونة' for display
   final double quantityInBase; // conversion factor (e.g. 24 for carton=24 pieces)
+  /// B3 — the product is «معفى من الضريبة»: the line is taxed at 0 %
+  /// whatever [taxRate] or the company default say (`effectiveItemTaxRate`).
+  final bool taxExempt;
 
   const CartItemEntity({
     required this.productId,
@@ -53,6 +57,7 @@ class CartItemEntity {
     this.selectedUnitId,
     this.selectedUnitName,
     this.quantityInBase = 1.0,
+    this.taxExempt = false,
   });
 
   /// Effective price per unit
@@ -73,8 +78,10 @@ class CartItemEntity {
       NumberUtils.roundCurrency(subtotal - discountAmount);
 
   /// Line tax amount
-  double get calculatedTaxAmount =>
-      NumberUtils.roundCurrency(totalBeforeTax * (taxRate / 100));
+  double get calculatedTaxAmount => NumberUtils.roundCurrency(totalBeforeTax *
+      (effectiveItemTaxRate(
+              rate: taxRate, exempt: taxExempt, companyDefault: 0) /
+          100));
 
   /// Grand total for this line (including tax)
   double get total =>
@@ -101,6 +108,7 @@ class CartItemEntity {
     int? selectedUnitId,
     String? selectedUnitName,
     double? quantityInBase,
+    bool? taxExempt,
     // `x ?? this.x` معناها إن `null` = «ما تغيّرش»، فمفيش طريقة تمسح ملاحظة
     // اتكتبت غلط: الكاشير يمسحها ويحفظ وهي تفضل مكتوبة وتتطبع على تذكرة
     // المطبخ. العلمين دول المخرج الوحيد. القيمة الافتراضية `false` =
@@ -128,6 +136,7 @@ class CartItemEntity {
       selectedUnitId: selectedUnitId ?? this.selectedUnitId,
       selectedUnitName: selectedUnitName ?? this.selectedUnitName,
       quantityInBase: quantityInBase ?? this.quantityInBase,
+      taxExempt: taxExempt ?? this.taxExempt,
     );
   }
 
@@ -143,4 +152,21 @@ class CartItemEntity {
   @override
   int get hashCode =>
       productId.hashCode ^ quantity.hashCode ^ effectivePrice.hashCode;
+}
+
+/// B3 — marks every line whose product id is in [exemptProductIds] as
+/// [CartItemEntity.taxExempt] with its stored rate zeroed, so readers of the
+/// raw `taxRate` agree too. Other lines are returned untouched (same
+/// instances); a line already flagged is never un-flagged.
+List<CartItemEntity> applyTaxExemptProductIds(
+  List<CartItemEntity> items,
+  Set<int> exemptProductIds,
+) {
+  if (exemptProductIds.isEmpty) return items;
+  return [
+    for (final item in items)
+      exemptProductIds.contains(item.productId)
+          ? item.copyWith(taxExempt: true, taxRate: 0, taxAmount: 0)
+          : item,
+  ];
 }

@@ -41,6 +41,8 @@ import '../../core/constants/stock_movement_types.dart';
 import '../../core/auth/bootstrap_admin.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/permissions/permission_codes.dart';
+import '../../core/tax/effective_item_tax_rate.dart';
+import '../../core/tax/einvoice_exempt_codes.dart';
 import '../../core/utils/arabic_utils.dart';
 // Spec 139 — deterministic JE balancing uses FinancialUtils' minor-unit helpers
 // and the single balance-tolerance source of truth. `show` avoids importing its

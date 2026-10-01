@@ -28,6 +28,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../../core/constants/app_constants.dart' hide InvoiceStatus;
 import '../../../../core/logging/diagnostic_logger.dart';
+import '../../../../core/tax/effective_item_tax_rate.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/financial_utils.dart';
 import '../../../../core/widgets/unsaved_changes_dialog.dart';
@@ -89,6 +90,10 @@ class SalesInvoiceForm extends ConsumerStatefulWidget {
   final SalesInvoiceSaveQuotationCallback onSaveQuotation;
   final SalesInvoiceSaveInvoiceCallback onSaveInvoice;
 
+  /// B3 — ids of «معفى» products (raw `products.tax_exempt`): taxed at 0 %
+  /// via `effectiveItemTaxRate` instead of falling back to [systemTaxRate].
+  final Set<int> exemptProductIds;
+
   const SalesInvoiceForm({
     super.key,
     required this.customers,
@@ -101,6 +106,7 @@ class SalesInvoiceForm extends ConsumerStatefulWidget {
     required this.onSaveInvoice,
     this.editQuotation,
     this.isConvert = false,
+    this.exemptProductIds = const <int>{},
   });
 
   @override
@@ -209,8 +215,13 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
     final totals = FinancialUtils.calculateInvoiceTotals(
       items: _invoiceItems.map((item) {
         final itemTax = item['taxRate'] as double;
-        final appliedTax =
-            _taxEnabled ? (itemTax > 0 ? itemTax : effectiveTaxRate) : 0.0;
+        final appliedTax = _taxEnabled
+            ? effectiveItemTaxRate(
+                rate: itemTax,
+                exempt: widget.exemptProductIds.contains(item['productId']),
+                companyDefault: effectiveTaxRate,
+              )
+            : 0.0;
         return (
           quantity: item['quantity'] as double,
           unitPrice: item['unitPrice'] as double,

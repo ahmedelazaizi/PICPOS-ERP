@@ -198,6 +198,11 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
       final taxRate = await ref
           .read(posDefaultTaxPercentProvider.future)
           .timeout(const Duration(seconds: 10));
+      // B3 (owner decision) — an «معفى» item carries no input VAT either:
+      // the purchase line resolves to 0 % through `effectiveItemTaxRate`.
+      final exemptProductIds = await ref
+          .read(databaseProvider)
+          .getTaxExemptProductIds(products.map((p) => p.id));
 
       // أوامرُ الشراء **المفتوحة** — «ربط أمر شراء» (قرارُ المالك 2026-09-18).
       //
@@ -269,6 +274,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
                 costPrice: p.costPrice,
                 categoryId: p.categoryId,
                 taxRate: p.taxRate,
+                taxExempt: exemptProductIds.contains(p.id),
                 barcode: p.barcode ?? '',
               ),
           ],
