@@ -16,6 +16,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/config/app_config.dart';
 import 'package:ural_erp/core/config/brand.dart';
+import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/core/theme/app_theme.dart';
 import 'package:ural_erp/data/database/connection_io.dart';
 import 'package:ural_erp/data/providers/auth_providers.dart';
@@ -159,6 +160,12 @@ void main() {
         expect(navItemVisibleForBrand(retired), isTrue,
             reason: 'المدخلُ $retired اختفى عن UralCash — سياجُ العلامة مرفوع');
       }
+    });
+
+    test('يبقي المدخل الموحد ويخفي مدخلي PicPos المنفصلين', () {
+      expect(navItemVisibleForBrand(ScreenId.parties.navigationIndex), isTrue);
+      expect(navItemVisibleForBrand(ScreenId.customers.navigationIndex), isFalse);
+      expect(navItemVisibleForBrand(ScreenId.suppliers.navigationIndex), isFalse);
     });
 
     test('والطيُّ فارغٌ فلا يُخفي شيئاً عن أيّ علامة', () {

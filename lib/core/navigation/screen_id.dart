@@ -1,4 +1,5 @@
 import 'package:ural_erp/core/i18n/tr.dart';
+
 /// Stable identifiers for navigation entries.
 ///
 /// The attached [index] keeps backward compatibility with the current
@@ -116,7 +117,6 @@ enum ScreenId {
   /// والفهرسُ **لا يُعاد استعمالُه**: تفضيلاتُ مستخدمٍ
   /// قديمةٌ تحمله فتفتح شاشةً لا يعرفها صاحبُها.
 
-
   /// شاشةُ حسم القوالب — أيُّ مستندٍ يخرج بأيِّ قالبٍ على أيِّ طابعة.
   ///
   /// ⚠️ **وصلاحيّتُها `settings_printer` القائمةُ لا صلاحيةٌ جديدة**: هي
@@ -214,7 +214,11 @@ enum ScreenId {
   journalTemplates(74),
 
   /// عروض الأسعار — شاشة PicPos مستقلّة تحت فواتير المبيعات.
-  quotations(75);
+  quotations(75),
+
+  /// قائمتا PicPos المنفصلتان لنفس جدول الأطراف وصلاحيّته القائمة.
+  customers(76),
+  suppliers(77);
 
   const ScreenId(this.navigationIndex);
   final int navigationIndex;

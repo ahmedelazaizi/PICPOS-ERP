@@ -94,6 +94,7 @@ class PartiesFilterBar extends StatelessWidget {
     required this.onFilterChanged,
     required this.onSearchChanged,
     required this.onGroupsPressed,
+    this.showTypeFilters = true,
   });
 
   final TextEditingController controller;
@@ -101,6 +102,7 @@ class PartiesFilterBar extends StatelessWidget {
   final ValueChanged<PicPosPartyFilter> onFilterChanged;
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onGroupsPressed;
+  final bool showTypeFilters;
 
   @override
   Widget build(BuildContext context) {
@@ -149,14 +151,16 @@ class PartiesFilterBar extends StatelessWidget {
               ),
             ),
           ),
-          Container(width: 1, height: 24, color: theme.dividerColor),
-          for (final f in PicPosPartyFilter.values)
-            _PartyTypePill(
-              filter: f,
-              icon: _partyFilterIcon(f),
-              selected: filter == f,
-              onTap: () => onFilterChanged(f),
-            ),
+          if (showTypeFilters) ...[
+            Container(width: 1, height: 24, color: theme.dividerColor),
+            for (final f in PicPosPartyFilter.values)
+              _PartyTypePill(
+                filter: f,
+                icon: _partyFilterIcon(f),
+                selected: filter == f,
+                onTap: () => onFilterChanged(f),
+              ),
+          ],
           OutlinedButton.icon(
             onPressed: onGroupsPressed,
             icon: const Icon(PhosphorIconsBold.usersFour, size: 14),

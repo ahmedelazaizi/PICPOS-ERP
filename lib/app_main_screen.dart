@@ -700,6 +700,18 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         icon: PhosphorIconsBold.usersThree,
       ),
       ScreenConfig(
+        appScreen: AppScreen.customers,
+        builder: (_) => const PartiesPicposScreen.customers(),
+        label: tr('العملاء'),
+        icon: PhosphorIconsBold.user,
+      ),
+      ScreenConfig(
+        appScreen: AppScreen.suppliers,
+        builder: (_) => const PartiesPicposScreen.suppliers(),
+        label: tr('الموردون'),
+        icon: PhosphorIconsBold.truck,
+      ),
+      ScreenConfig(
         appScreen: AppScreen.inventory,
         builder: (_) =>  SecurityScreenGate(
           settingKey: 'inventory_access_password',

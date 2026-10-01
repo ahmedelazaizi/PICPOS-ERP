@@ -109,7 +109,11 @@ enum AppScreen {
   journalTemplates(74),
 
   /// يجب أن تطابق `ScreenId.quotations`.
-  quotations(75);
+  quotations(75),
+
+  /// قائمتا PicPos المنفصلتان لنفس جدول الأطراف.
+  customers(76),
+  suppliers(77);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;

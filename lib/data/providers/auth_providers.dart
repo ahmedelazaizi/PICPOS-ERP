@@ -740,6 +740,8 @@ final kAllNavItemDefs = [
   // 👥 العملاء والموردين
   // ═══════════════════════════════════════════
   const NavItemDef(icon: PhosphorIconsBold.usersThree, label: 'العملاء والموردين', permission: 'customers_view', index: 6, section: 'العملاء والموردين', group: 'relations'),
+  const NavItemDef(icon: PhosphorIconsBold.user, label: 'العملاء', permission: 'customers_view', index: 76, section: 'العملاء والموردين', group: 'relations'),
+  const NavItemDef(icon: PhosphorIconsBold.truck, label: 'الموردون', permission: 'customers_view', index: 77, group: 'relations'),
   const NavItemDef(icon: PhosphorIconsBold.trophy, label: 'نقاط العملاء', permission: 'loyalty_view', index: 23, group: 'relations'),
   const NavItemDef(icon: PhosphorIconsBold.truck, label: 'التوزيع', permission: 'distribution_view', index: 24, group: 'relations'),
 
@@ -906,7 +908,8 @@ const kPicPosRetiredNavIndexes = <int>{
   42, // الجرد الدوري (‏= `fieldAudit`، اسمان لفهرسٍ واحد)
 };
 
-const kPicPosOnlyNavIndexes = <int>{75};
+const kPicPosOnlyNavIndexes = <int>{75, 76, 77};
+const kPicPosReplacedNavIndexes = <int>{6};
 
 /// هل يظهر مدخلُ القائمة صاحبُ [index] لهذه العلامة؟
 ///
@@ -922,7 +925,8 @@ bool navItemVisibleForBrand(int index) {
   // ⚠️ ويبقى الطيُّ مقروءاً هنا ولو كان فارغاً: أوّلُ من يُعيد ملأه يُعيد
   //    السلوكَ كلَّه بسطر، والحارسان يمنعانه بلا قرار.
   if (Brand.isPicPos) {
-    if (kPicPosRetiredNavIndexes.contains(index)) return false;
+    if (kPicPosRetiredNavIndexes.contains(index) ||
+        kPicPosReplacedNavIndexes.contains(index)) return false;
     return !kPicPosFoldedIntoAccountingHub.contains(index);
   }
   return !kPicPosOnlyNavIndexes.contains(index);
@@ -1025,6 +1029,8 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.products: 'products_add',
   ScreenId.categories: 'products_add',
   ScreenId.parties: 'customers_view',
+  ScreenId.customers: 'customers_view',
+  ScreenId.suppliers: 'customers_view',
   ScreenId.inventory: 'inventory_view',
   ScreenId.purchases: 'purchases_create',
   ScreenId.treasury: 'treasury_view',

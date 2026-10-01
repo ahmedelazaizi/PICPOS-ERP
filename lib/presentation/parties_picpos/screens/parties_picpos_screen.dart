@@ -74,7 +74,26 @@ part 'parties_card_grid.dart';
 ///
 /// راجع lib/presentation/screens/unified_parties_screen.dart (الأصل).
 class PartiesPicposScreen extends ConsumerStatefulWidget {
-  const PartiesPicposScreen({super.key});
+  const PartiesPicposScreen({
+    super.key,
+    this.scope = PicPosPartyFilter.all,
+    this.title = 'العملاء والموردين',
+    this.subtitle = 'إدارة الأطراف والأرصدة',
+  });
+
+  const PartiesPicposScreen.customers({super.key})
+      : scope = PicPosPartyFilter.customer,
+        title = 'العملاء',
+        subtitle = 'إدارة العملاء والأرصدة';
+
+  const PartiesPicposScreen.suppliers({super.key})
+      : scope = PicPosPartyFilter.supplier,
+        title = 'الموردون',
+        subtitle = 'إدارة الموردين والأرصدة';
+
+  final PicPosPartyFilter scope;
+  final String title;
+  final String subtitle;
 
   @override
   ConsumerState<PartiesPicposScreen> createState() =>
@@ -84,8 +103,14 @@ class PartiesPicposScreen extends ConsumerStatefulWidget {
 
 class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
   final _searchController = TextEditingController();
-  PicPosPartyFilter _typeFilter = PicPosPartyFilter.all;
+  late PicPosPartyFilter _typeFilter;
   String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _typeFilter = widget.scope;
+  }
 
   @override
   void dispose() {
@@ -113,8 +138,8 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
   @override
   Widget build(BuildContext context) {
     return PicPosScreenScaffold(
-      title: tr('العملاء والموردين'),
-      subtitle: tr('إدارة الأطراف والأرصدة'),
+      title: tr(widget.title),
+      subtitle: tr(widget.subtitle),
       icon: PhosphorIconsBold.usersThree,
       headerActions: [
         OutlinedButton.icon(
@@ -160,7 +185,13 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
         ElevatedButton.icon(
           // فوركُ الحوار بهويّة PicPos — بلاغُ المالك 2026-08-22: الشاشةُ
           // كانت على التصميم والحوارُ وحدَه بقي `AlertDialog` خاماً.
-          onPressed: () => showAddPartyDialogPicpos(context, ref),
+          onPressed: () => showAddPartyDialogPicpos(
+            context,
+            ref,
+            initialType: widget.scope == PicPosPartyFilter.supplier
+                ? 'supplier'
+                : 'customer',
+          ),
           icon: const Icon(PhosphorIconsBold.plus),
           label:  Text(tr('إضافة')),
           style: ElevatedButton.styleFrom(
@@ -193,10 +224,12 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
 
   Widget _buildLoaded(List<Party> rows) {
     final cards = rows.map(_toCard).toList();
-    // العدّاداتُ من القائمة **الكاملة**؛ الشبكةُ من المرشَّحة.
-    final kpis = PicPosPartyKpis.from(cards);
+    final scoped = widget.scope == PicPosPartyFilter.all
+        ? cards
+        : cards.where((card) => card.matches(widget.scope, '')).toList();
+    final kpis = PicPosPartyKpis.from(scoped);
     final filtered =
-        cards.where((c) => c.matches(_typeFilter, _query)).toList();
+        scoped.where((card) => card.matches(_typeFilter, _query)).toList();
 
     // خريطةُ الرجوع إلى صفِّ القاعدة: الحوارُ والسندُ يحتاجان `Party` كاملاً،
     // والبطاقةُ لا تحمله. البحثُ بالمعرّف لا بالفهرس — الترشيحُ يُزيح
@@ -222,6 +255,7 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
           filter: _typeFilter,
           onFilterChanged: (f) => setState(() => _typeFilter = f),
           onSearchChanged: (v) => setState(() => _query = v),
+          showTypeFilters: widget.scope == PicPosPartyFilter.all,
           onGroupsPressed: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const PartyGroupsScreen()),
@@ -275,7 +309,7 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
     unawaited(DiagnosticLogger.log('PARTIES-ACTION',
         'edit tap partyId=${party.id} name="${party.name}"'));
     try {
-      showEditPartyDialog(context, ref, party);
+      showEditPartyDialogPicpos(context, ref, party);
     } catch (e, st) {
       unawaited(DiagnosticLogger.log(
           'PARTIES-ACTION', 'edit dialog threw partyId=${party.id}: $e\n$st'));

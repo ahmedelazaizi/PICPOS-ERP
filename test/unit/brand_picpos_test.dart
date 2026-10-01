@@ -126,7 +126,8 @@ void main() {
         ScreenId.treasury,
         ScreenId.reports,
         ScreenId.purchases,
-        ScreenId.parties,
+        ScreenId.customers,
+        ScreenId.suppliers,
         // قرار المالك 2026-09-28: التصنيع ظاهر في كل النطاقات ومحكوم بالصلاحية.
         ScreenId.manufacturing,
       ]) {
@@ -134,6 +135,7 @@ void main() {
             reason: '$inScope جوّه نطاق lite المعلن');
       }
       for (final outOfScope in [
+        ScreenId.parties,
         ScreenId.tables,
         ScreenId.kitchen,
         ScreenId.hr,
@@ -190,6 +192,19 @@ void main() {
 
       // «الخزينة» مدخلٌ مستقلٌّ في التصميم ولم تُطوَ قطّ.
       expect(navItemVisibleForBrand(ScreenId.treasury.navigationIndex), isTrue);
+    });
+
+    test('يستبدل مدخل الأطراف بمدخلي العملاء والموردين', () {
+      expect(navItemVisibleForBrand(ScreenId.parties.navigationIndex), isFalse);
+      expect(navItemVisibleForBrand(ScreenId.customers.navigationIndex), isTrue);
+      expect(navItemVisibleForBrand(ScreenId.suppliers.navigationIndex), isTrue);
+
+      final scope = ScreenRegistry.forProfile(BusinessProfile.unified);
+      expect(scope, isNot(contains(ScreenId.parties)));
+      expect(scope, containsAll(<ScreenId>[
+        ScreenId.customers,
+        ScreenId.suppliers,
+      ]));
     });
 
     test('والشاشاتُ الثلاثُ المتقاعدةُ تختفي من قائمة PicPos', () {

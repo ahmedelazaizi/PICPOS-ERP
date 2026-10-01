@@ -426,6 +426,45 @@ void main() {
     });
   });
 
+  testWidgets('الشاشة المنفصلة تخفي مرشحات الأنواع وتبقي البحث', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+    await show(
+      tester,
+      PartiesFilterBar(
+        controller: controller,
+        filter: PicPosPartyFilter.customer,
+        onFilterChanged: (_) {},
+        onSearchChanged: (_) {},
+        onGroupsPressed: () {},
+        showTypeFilters: false,
+      ),
+      size: const Size(1366, 768),
+    );
+
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.text(PicPosPartyFilter.customer.label), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('العميل المورد يقع في الشاشتين المنفصلتين', () {
+    final dualRole = _card(isCustomer: true, isSupplier: true);
+
+    expect(dualRole.matches(PicPosPartyFilter.customer, ''), isTrue);
+    expect(dualRole.matches(PicPosPartyFilter.supplier, ''), isTrue);
+  });
+
+  test('شاشتا العملاء والموردين تثبتان النطاق الصحيح', () {
+    expect(
+      const PartiesPicposScreen.customers().scope,
+      PicPosPartyFilter.customer,
+    );
+    expect(
+      const PartiesPicposScreen.suppliers().scope,
+      PicPosPartyFilter.supplier,
+    );
+  });
+
   testWidgets('PartiesPicposScreen موجودة وقابلة للإنشاء', (t) async {
     expect(const PartiesPicposScreen(), isA<Widget>());
   });

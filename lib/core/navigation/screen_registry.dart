@@ -455,6 +455,16 @@ class ScreenRegistry {
         ],
       ];
 
+  static List<ScreenId> withPicposPartyScreens(List<ScreenId> screens) => [
+        for (final screen in screens) ...[
+          if (screen == ScreenId.parties) ...[
+            ScreenId.customers,
+            ScreenId.suppliers,
+          ] else
+            screen,
+        ],
+      ];
+
   /// [features] اختياريٌّ عن قصد: تركُه `null` يعطي **بالضبط** ما كان
   /// يعطيه التوقيعُ القديم، فلا يتغيّر سلوكُ أيّ منادٍ لم يُحدَّث.
   static List<ScreenId> forProfile(
@@ -463,7 +473,9 @@ class ScreenRegistry {
   }) {
     final base = _baseForProfile(profile, features: features);
     if (!Brand.isPicPos) return base;
-    return withPicposQuotations(withoutPicposRetired(base));
+    return withPicposPartyScreens(
+      withPicposQuotations(withoutPicposRetired(base)),
+    );
   }
 
   static List<ScreenId> _baseForProfile(

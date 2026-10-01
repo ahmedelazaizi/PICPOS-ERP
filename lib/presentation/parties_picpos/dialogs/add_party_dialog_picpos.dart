@@ -51,20 +51,55 @@ import '../../screens/parties/party_helpers.dart';
 import '../../screens/parties/providers/party_groups_controller.dart';
 
 /// حوارُ إضافة طرفٍ بهويّة PicPos.
-void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
-  final nameController = TextEditingController();
-  final codeController = TextEditingController();
-  final phoneController = TextEditingController();
+void showAddPartyDialogPicpos(
+  BuildContext context,
+  WidgetRef ref, {
+  String initialType = 'customer',
+}) => _showPartyDialogPicpos(context, ref, initialType: initialType);
+
+/// نفسُ حوار PicPos، مع تهيئة بيانات الطرف ومسار التحديث القائم.
+void showEditPartyDialogPicpos(
+  BuildContext context,
+  WidgetRef ref,
+  Party party,
+) => _showPartyDialogPicpos(context, ref, party: party);
+
+void _showPartyDialogPicpos(
+  BuildContext context,
+  WidgetRef ref, {
+  Party? party,
+  String initialType = 'customer',
+}) {
+  final nameController = TextEditingController(text: party?.name ?? '');
+  final codeController = TextEditingController(text: party?.code ?? '');
+  final phoneController = TextEditingController(text: party?.phone ?? '');
+  final addressController = TextEditingController(text: party?.address ?? '');
   final openingBalanceController = TextEditingController(text: '0');
-  final creditLimitController = TextEditingController(text: '0');
-  // v164 — مهلةُ السداد المتّفقة. صفرٌ = يستحق يومَ الإصدار، وهو ما
-  // كان عليه كلُّ طرفٍ قبل هذا الحقل.
-  final paymentTermsController = TextEditingController(text: '0');
-  String selectedType = 'customer';
-  String selectedPriceLevel = 'default';
-  int? selectedGroupId;
-  final selectedBranchIds = <int>[];
-  int? selectedCostCenterId;
+  final creditLimitController = TextEditingController(
+    text: party?.creditLimit.toString() ?? '0',
+  );
+  final paymentTermsController = TextEditingController(
+    text: party?.paymentTermsDays.toString() ?? '0',
+  );
+  String selectedType = party == null
+      ? initialType
+      : party.isCustomer && party.isSupplier
+      ? 'both'
+      : party.isDeliveryCompany
+      ? 'delivery'
+      : party.isSupplier
+      ? 'supplier'
+      : 'customer';
+  String selectedPriceLevel = party?.priceLevel ?? 'default';
+  int? selectedGroupId = party?.groupId;
+  final selectedBranchIds = party == null || party.isGlobal
+      ? <int>[]
+      : (party.branchIds ?? '')
+            .split(',')
+            .map((id) => int.tryParse(id.trim()))
+            .whereType<int>()
+            .toList();
+  int? selectedCostCenterId = party?.costCenterId;
 
   // الكودُ يُقترَح من مولّد التسلسل في الـDAO، ويُعاد حسابُه كلّما تبدّل
   // النوعُ فتبقى البادئةُ متّسقةً (CUST-/SUP-/CS-/DLV-). وللمستخدم أن
@@ -83,21 +118,28 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
     }
   }
 
-  WidgetsBinding.instance.addPostFrameCallback((_) => refreshCodeSuggestion());
+  if (party == null) {
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => refreshCodeSuggestion(),
+    );
+  }
 
   var saving = false;
 
   showDialog<void>(
     context: context,
     builder: (context) => Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: StatefulBuilder(
         builder: (context, setDialogState) {
           Future<void> save() async {
             setDialogState(() => saving = true);
             if (nameController.text.isEmpty) {
-              AppToast.show(context, tr('يرجى إدخال الاسم'),
-                  type: ToastType.error);
+              AppToast.show(
+                context,
+                tr('يرجى إدخال الاسم'),
+                type: ToastType.error,
+              );
               if (context.mounted) setDialogState(() => saving = false);
               return;
             }
@@ -109,9 +151,8 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                 NumberUtils.tryParseLocale(creditLimitController.text) ?? 0;
             // سالبٌ لا معنى له — مهلةٌ بالسالب تجعل الفاتورةَ مستحقّةً
             // قبل صدورها. فيُقصّ إلى صفرٍ لا يُرفَض الإدخال.
-            final paymentTermsDays = (
-                    NumberUtils.tryParseLocale(paymentTermsController.text) ??
-                        0)
+            final paymentTermsDays =
+                (NumberUtils.tryParseLocale(paymentTermsController.text) ?? 0)
                 .round()
                 .clamp(0, 3650);
 
@@ -119,20 +160,72 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
             final partyCode = enteredCode.isEmpty ? null : enteredCode;
 
             try {
-              // R9 / Feature 010 issue 6: البوّابةُ `isClientMode` (صادقةٌ
-              // للعميل **والمرآة** معاً). و`NetworkService.instance.isClient`
-              // كاذبةٌ في وضع المرآة، فأطرافُ مديرِ المرآة ما كانت تصل
-              // المركزَ أبداً.
-              if (ref.read(isClientModeProvider)) {
+              final isCustomer =
+                  selectedType == 'customer' || selectedType == 'both';
+              final isSupplier =
+                  selectedType == 'supplier' || selectedType == 'both';
+              final isGlobal = selectedBranchIds.isEmpty;
+              final branchIds = isGlobal ? null : selectedBranchIds.join(',');
+
+              if (party != null) {
+                final updatedParty = party.copyWith(
+                  name: nameController.text,
+                  phone: Value(
+                    phoneController.text.isEmpty ? null : phoneController.text,
+                  ),
+                  address: Value(
+                    addressController.text.isEmpty
+                        ? null
+                        : addressController.text,
+                  ),
+                  isCustomer: isCustomer,
+                  isSupplier: isSupplier,
+                  isDeliveryCompany: selectedType == 'delivery',
+                  creditLimit: creditLimit,
+                  paymentTermsDays: paymentTermsDays,
+                  priceLevel: selectedPriceLevel,
+                  groupId: Value(selectedGroupId),
+                  isGlobal: isGlobal,
+                  branchIds: Value(branchIds),
+                  costCenterId: Value(selectedCostCenterId),
+                );
+                final updated =
+                    await ClientWriteInterceptor.updateParty(party.id, {
+                      'name': nameController.text,
+                      'phone': phoneController.text.isEmpty
+                          ? null
+                          : phoneController.text,
+                      'address': addressController.text.isEmpty
+                          ? null
+                          : addressController.text,
+                      'isCustomer': isCustomer,
+                      'isSupplier': isSupplier,
+                      'isDeliveryCompany': selectedType == 'delivery',
+                      'creditLimit': creditLimit,
+                      'paymentTermsDays': paymentTermsDays,
+                      'priceLevel': selectedPriceLevel,
+                      'groupId': selectedGroupId,
+                      'isGlobal': isGlobal,
+                      'branchIds': branchIds,
+                      'costCenterId': selectedCostCenterId,
+                    });
+                if (!updated) {
+                  await ref
+                      .read(partiesRepositoryProvider)
+                      .updateParty(updatedParty);
+                }
+              } else if (ref.read(isClientModeProvider)) {
                 await ClientWriteInterceptor.createParty(
                   name: nameController.text,
                   code: partyCode,
-                  phone:
-                      phoneController.text.isEmpty ? null : phoneController.text,
-                  isCustomer:
-                      selectedType == 'customer' || selectedType == 'both',
-                  isSupplier:
-                      selectedType == 'supplier' || selectedType == 'both',
+                  phone: phoneController.text.isEmpty
+                      ? null
+                      : phoneController.text,
+                  address: addressController.text.isEmpty
+                      ? null
+                      : addressController.text,
+                  isCustomer: isCustomer,
+                  isSupplier: isSupplier,
                   isDeliveryCompany: selectedType == 'delivery',
                   balance: openingBalance,
                   creditLimit: creditLimit,
@@ -143,21 +236,26 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                   costCenterId: selectedCostCenterId,
                 );
               } else {
-                final partiesRepo = ref.read(partiesRepositoryProvider);
-                final isGlobal = selectedBranchIds.isEmpty;
-                await partiesRepo.insertParty(
+                await ref
+                    .read(partiesRepositoryProvider)
+                    .insertParty(
                   PartiesCompanion.insert(
                     name: nameController.text,
                     code: partyCode != null
                         ? Value(partyCode)
                         : const Value.absent(),
-                    phone: Value(phoneController.text.isEmpty
+                        phone: Value(
+                          phoneController.text.isEmpty
                         ? null
-                        : phoneController.text),
-                    isCustomer: Value(
-                        selectedType == 'customer' || selectedType == 'both'),
-                    isSupplier: Value(
-                        selectedType == 'supplier' || selectedType == 'both'),
+                              : phoneController.text,
+                        ),
+                        address: Value(
+                          addressController.text.isEmpty
+                              ? null
+                              : addressController.text,
+                        ),
+                        isCustomer: Value(isCustomer),
+                        isSupplier: Value(isSupplier),
                     isDeliveryCompany: Value(selectedType == 'delivery'),
                     isActive: const Value(true),
                     balance: Value(openingBalance),
@@ -169,7 +267,7 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                         : const Value.absent(),
                     isGlobal: Value(isGlobal),
                     branchIds: !isGlobal
-                        ? Value(selectedBranchIds.join(','))
+                            ? Value(branchIds)
                         : const Value.absent(),
                     costCenterId: selectedCostCenterId != null
                         ? Value(selectedCostCenterId)
@@ -182,23 +280,35 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
               // مفتوحاً** ليصحّح المستخدمُ بدل أن يفقد ما كتبه.
               if (context.mounted) {
                 setDialogState(() => saving = false);
-                AppToast.show(context, tr('فشل حفظ الطرف: {e}', {'e': e}),
-                    type: ToastType.error);
+                AppToast.show(
+                  context,
+                  tr('فشل حفظ الطرف: {e}', {'e': e}),
+                  type: ToastType.error,
+                );
               }
               return;
             }
 
             try {
               final auth = ref.read(authProvider);
-              final actionKey =
-                  selectedType == 'supplier' ? 'add_supplier' : 'add_customer';
+              final actionKey = party != null
+                  ? (party.isSupplier ? 'update_supplier' : 'update_customer')
+                  : (selectedType == 'supplier'
+                        ? 'add_supplier'
+                        : 'add_customer');
               final activityLogRepo = ref.read(activityLogRepositoryProvider);
               await activityLogRepo.logActivity(
                 userId: auth.user?.id,
                 userName: auth.user?.displayName ?? tr('مستخدم'),
                 action: actionKey,
                 entityType: 'party',
-                description: tr('إضافة {p0}: {p1}', {'p0': getTypeArabicName(selectedType), 'p1': nameController.text}),
+                entityId: party?.id,
+                description: party != null
+                    ? tr('تعديل بيانات: {p0}', {'p0': party.name})
+                    : tr('إضافة {p0}: {p1}', {
+                        'p0': getTypeArabicName(selectedType),
+                        'p1': nameController.text,
+                      }),
               );
             } catch (_) {}
 
@@ -206,17 +316,25 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
               Navigator.pop(context);
               AppToast.show(
                 context,
-                tr('تم إضافة {p0} بنجاح', {'p0': getTypeArabicName(selectedType)}),
+                party != null
+                    ? tr('تم تحديث البيانات بنجاح')
+                    : tr('تم إضافة {p0} بنجاح', {
+                        'p0': getTypeArabicName(selectedType),
+                      }),
                 type: ToastType.success,
               );
             }
           }
 
           return PicPosDialog(
-            icon: PhosphorIconsBold.userPlus,
-            title: tr('إضافة طرف جديد'),
-            subtitle: tr('عميلٌ أو موردٌ أو شركةُ توصيل'),
-            width: 660,
+            icon: party == null
+                ? PhosphorIconsBold.userPlus
+                : PhosphorIconsBold.pencil,
+            title: party == null
+                ? tr('إضافة طرف جديد')
+                : tr('تعديل بيانات {p0}', {'p0': party.name}),
+            subtitle: tr('بيانات التعامل والتصنيف ونطاق الفروع'),
+            width: 900,
             onCancel: () => Navigator.pop(context),
             primaryAction: PicPosDialogAction(
               label: tr('حفظ'),
@@ -253,9 +371,11 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                 selected: {selectedType},
                 onSelectionChanged: (val) {
                   setDialogState(() => selectedType = val.first);
+                  if (party == null) {
                   refreshCodeSuggestion().then((_) {
                     if (context.mounted) setDialogState(() {});
                   });
+                  }
                 },
               ),
               const SizedBox(height: 16),
@@ -267,8 +387,9 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                       controller: nameController,
                       decoration:  InputDecoration(
                         labelText: tr('الاسم *'),
-                        prefixIcon:
-                            const Icon(PhosphorIconsBold.identificationCard),
+                        prefixIcon: const Icon(
+                          PhosphorIconsBold.identificationCard,
+                        ),
                       ),
                     ),
                   ),
@@ -277,6 +398,7 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                     flex: 2,
                     child: TextField(
                       controller: codeController,
+                      readOnly: party != null,
                       decoration:  InputDecoration(
                         labelText: tr('الكود'),
                         prefixIcon: const Icon(PhosphorIconsBold.hash),
@@ -297,8 +419,17 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                 ),
               ),
               const SizedBox(height: 12),
+              TextField(
+                controller: addressController,
+                decoration: InputDecoration(
+                  labelText: tr('العنوان / المنطقة'),
+                  prefixIcon: const Icon(PhosphorIconsBold.mapPin),
+                ),
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
+                  if (party == null) ...[
                   Expanded(
                     child: TextField(
                       controller: openingBalanceController,
@@ -311,6 +442,7 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                     ),
                   ),
                   const SizedBox(width: 12),
+                  ],
                   Expanded(
                     child: TextField(
                       controller: creditLimitController,
@@ -346,17 +478,23 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                     prefixIcon: const Icon(PhosphorIconsBold.tag),
                   ),
                   items: kPriceLevels.entries
-                      .map((e) =>
-                          DropdownMenuItem(value: e.key, child: Text(e.value)))
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e.key,
+                          child: Text(e.value),
+                        ),
+                      )
                       .toList(),
                   onChanged: (value) => setDialogState(
-                      () => selectedPriceLevel = value ?? 'default'),
+                    () => selectedPriceLevel = value ?? 'default',
+                  ),
                 ),
               ],
               const SizedBox(height: 12),
               // المجموعةُ تُرشَّح بالدور المختار: مجموعةُ «موردي الجملة» لا
               // تظهر لعميل. و`type == 'both'` تظهر دائماً.
-              Consumer(builder: (ctx, ref, _) {
+              Consumer(
+                builder: (ctx, ref, _) {
                 final groupsAsync = ref.watch(activePartyGroupsProvider);
                 return groupsAsync.maybeWhen(
                   data: (groups) {
@@ -379,8 +517,12 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                           value: null,
                           child: Text(tr('— بدون مجموعة —')),
                         ),
-                        ...filtered.map((g) => DropdownMenuItem<int?>(
-                            value: g.id, child: Text(g.name))),
+                          ...filtered.map(
+                            (g) => DropdownMenuItem<int?>(
+                              value: g.id,
+                              child: Text(g.name),
+                            ),
+                          ),
                       ],
                       onChanged: (v) =>
                           setDialogState(() => selectedGroupId = v),
@@ -388,11 +530,13 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                   },
                   orElse: () => const SizedBox.shrink(),
                 );
-              }),
+                },
+              ),
               const SizedBox(height: 12),
               // الفروعُ تُعرض دائماً ليقرّر المسؤولُ «عامّ» أو «مقصورٌ على
               // فرع» من البداية — وتُخفى فقط حين لا فرعَ أصلاً (قبل التهيئة).
-              Consumer(builder: (ctx, ref, _) {
+              Consumer(
+                builder: (ctx, ref, _) {
                 final branchesAsync = ref.watch(allBranchesProvider);
                 return branchesAsync.maybeWhen(
                   data: (branches) {
@@ -416,8 +560,10 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                           children: branches.map((b) {
                             final sel = selectedBranchIds.contains(b.id);
                             return FilterChip(
-                              label: Text(b.name,
-                                  style: const TextStyle(fontSize: 12)),
+                                label: Text(
+                                  b.name,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
                               selected: sel,
                               onSelected: (v) => setDialogState(() {
                                 if (v) {
@@ -434,13 +580,16 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                   },
                   orElse: () => const SizedBox.shrink(),
                 );
-              }),
+                },
+              ),
               const SizedBox(height: 12),
               // مركزُ التكلفة يُرسم دائماً بخيار «— بدون —» ليتركه المسؤولُ
               // فارغاً **عن قصد** لا أن يرثَ فراغاً بصمت.
-              Consumer(builder: (ctx, ref, _) {
-                final accountingRepo =
-                    ref.watch(accountingRepositoryProvider);
+              Consumer(
+                builder: (ctx, ref, _) {
+                  final accountingRepo = ref.watch(
+                    accountingRepositoryProvider,
+                  );
                 return FutureBuilder<List<CostCenter>>(
                   future: accountingRepo.getActiveCostCenters(),
                   builder: (context, snap) {
@@ -449,20 +598,29 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                       initialValue: selectedCostCenterId,
                       decoration:  InputDecoration(
                         labelText: tr('مركز التكلفة (اختياري)'),
-                        prefixIcon: const Icon(PhosphorIconsBold.treeStructure),
+                          prefixIcon: const Icon(
+                            PhosphorIconsBold.treeStructure,
+                          ),
                       ),
                       items: [
                          DropdownMenuItem<int?>(
-                            value: null, child: Text(tr('— بدون —'))),
-                        ...ccList.map((cc) => DropdownMenuItem<int?>(
-                            value: cc.id, child: Text(trData(cc.name)))),
+                            value: null,
+                            child: Text(tr('— بدون —')),
+                          ),
+                          ...ccList.map(
+                            (cc) => DropdownMenuItem<int?>(
+                              value: cc.id,
+                              child: Text(trData(cc.name)),
+                            ),
+                          ),
                       ],
                       onChanged: (v) =>
                           setDialogState(() => selectedCostCenterId = v),
                     );
                   },
                 );
-              }),
+                },
+              ),
             ],
           );
         },
