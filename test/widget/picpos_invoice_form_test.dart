@@ -57,6 +57,9 @@ void main() {
 
     final saves = <Map<String, dynamic>>[];
     await tester.pumpWidget(MaterialApp(
+      // الشاشةُ تتبع اتّجاهَ اللغة النشطة الآن (C1) — والتطبيقُ العربيُّ RTL.
+      builder: (context, child) =>
+          Directionality(textDirection: TextDirection.rtl, child: child!),
       home: Scaffold(
         body: PicPosInvoiceForm(
           kind: kind,
@@ -153,7 +156,7 @@ void main() {
     testWidgets('بلا مخزنٍ ولا طرفٍ ولا بنود ⇒ لا نداءَ حفظٍ إطلاقاً',
         (tester) async {
       final saves = await pump(tester, kind: PicPosInvoiceKind.sales);
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
       expect(saves, isEmpty,
           reason: 'المنعُ يعني ألّا يصل مسارَ الحفظ شيءٌ — لا أن يصله ناقصاً');
@@ -167,7 +170,7 @@ void main() {
         kind: PicPosInvoiceKind.sales,
         initialWarehouseId: 2,
       );
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
       expect(saves, isEmpty);
     });
@@ -348,7 +351,7 @@ void main() {
       );
       await pickParty(tester);
       await addLine(tester);
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
 
       expect(saves, hasLength(1), reason: 'التجهيزةُ سليمةٌ: الحفظُ وصل فعلاً');
@@ -371,7 +374,7 @@ void main() {
       // بندٌ ثانٍ بعد النقرة: القيمةُ المجمّدةُ عند لحظةِ النقر كانت تترك
       // فرقَ البندِ الثاني ديناً.
       await addLine(tester);
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
 
       expect(saves, hasLength(1));
@@ -388,7 +391,7 @@ void main() {
       await pickParty(tester);
       await addLine(tester);
       await tapMethod(tester, PhosphorIconsBold.calendarDot);
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
 
       expect(saves, hasLength(1));
@@ -423,7 +426,7 @@ void main() {
     }
 
     Future<void> save(WidgetTester tester) async {
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
     }
 
@@ -529,7 +532,7 @@ void main() {
         (tester) async {
       await pump(tester, kind: PicPosInvoiceKind.purchase, initial: initial);
       expect(find.text('حفظ التعديلات'), findsOneWidget);
-      expect(find.text('حفظ الفاتورة'), findsNothing,
+      expect(find.text('مراجعة واعتماد'), findsNothing,
           reason: 'زرٌّ يوهم بإنشاء فاتورةٍ ثانية');
     });
 
@@ -674,7 +677,7 @@ void main() {
         'SUP-9',
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
 
       expect(saves, hasLength(1), reason: 'الحفظُ مُنع لسببٍ غيرِ الربط');
@@ -697,7 +700,7 @@ void main() {
         'SUP-9',
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
       expect(saves.single['sourceOrderId'], 77);
     });
@@ -712,7 +715,7 @@ void main() {
         'SUP-9',
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
       expect(saves.single['sourceOrderId'], isNull);
     });
@@ -737,7 +740,7 @@ void main() {
         'SUP-9',
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
       expect(saves.single['sourceOrderId'], isNull,
           reason: 'الأمرُ يُستهلَك رغم فكّ الربط');
@@ -772,7 +775,7 @@ void main() {
         'SUP-9',
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
       expect(saves.single['sourceOrderId'], isNull);
     });
@@ -897,7 +900,7 @@ void main() {
     testWidgets('ما يُكتَب فيه يصل بندَ الحفظ', (tester) async {
       final saves = await pumpPurchase(tester);
       await typeDiscount(tester, '25');
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
 
       expect(saves, hasLength(1), reason: 'الحفظُ مُنع لسببٍ غيرِ الخصم');
@@ -912,7 +915,7 @@ void main() {
       // خصمٍ وسطوراً مخصومة.
       final saves = await pumpPurchase(tester);
       await typeDiscount(tester, '25');
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
       expect(saves.single['discount'], 25);
     });
@@ -925,14 +928,14 @@ void main() {
       // 🔴 ولو حُسبت الضريبةُ على الإجماليّ لبقيت ٨٫٤ وصار الصافي ٤٣٫٤ —
       // أي إقرارُ ضريبةِ مدخلاتٍ على مبلغٍ لم يُدفَع للمورّد.
       final saves = await pumpPurchase(tester);
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
       expect(saves.single['net'], closeTo(68.4, 0.001));
       expect(saves.single['tax'], closeTo(8.4, 0.001));
       saves.clear();
 
       await typeDiscount(tester, '25');
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
       expect(saves.single['net'], closeTo(39.9, 0.001),
           reason: 'الخصمُ لا يبلغ الصافيَ — يرى المستخدمُ رقماً ويدفع آخر');
@@ -947,7 +950,7 @@ void main() {
       // عن سطوره.
       final saves = await pumpPurchase(tester);
       await typeDiscount(tester, '9999');
-      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.tap(find.text('مراجعة واعتماد'));
       await tester.pump();
 
       final items = saves.single['items'] as List<Map<String, dynamic>>;

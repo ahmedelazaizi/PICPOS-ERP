@@ -51,6 +51,7 @@ import '../../domain/models/import_purchase_plan.dart';
 import '../../domain/models/invoice_due_date.dart';
 import '../../domain/models/picpos_invoice_draft.dart';
 
+part 'picpos_invoice_layout.dart';
 part 'picpos_invoice_lines.dart';
 part 'picpos_invoice_money.dart';
 
@@ -163,6 +164,9 @@ class PicPosInvoiceForm extends StatefulWidget {
     this.purchaseOrders = const [],
     this.onPullPurchaseOrder,
     this.initial,
+    this.revenueAccounts = const [],
+    this.defaultRevenueAccountId,
+    this.onRevenueAccountChanged,
   })  :
         // 🔴 **فعلُ المسوّدة للمبيعات وحدَها** — قرارُ المالك 2026-09-19.
         //
@@ -259,6 +263,19 @@ class PicPosInvoiceForm extends StatefulWidget {
   /// و`null` ⇒ فاتورةٌ محلّيّة، وهو حالُ كلِّ منادٍ قائم.
   final PicPosEntryCurrency? entryCurrency;
 
+  /// C2 — حساباتُ الإيراد التفصيليّة النشطة كلُّها، لحقل «حساب المبيعات».
+  /// فارغةٌ ⇒ لا حقل (المشتريات، أو منادٍ لا يعرفها) ويبقى الافتراضيّ.
+  final List<PicPosNamedOption> revenueAccounts;
+
+  /// الحسابُ المربوطُ لغرض المبيعات — القيمةُ الابتدائيّة للحقل.
+  final int? defaultRevenueAccountId;
+
+  /// يُنادى قبل [onSave] مباشرةً بالحساب المختار (`null` = الافتراضيّ).
+  ///
+  /// ردُّ نداءٍ منفصلٌ لا وسيطٌ في [PicPosInvoiceSaveCallback]: العقدُ
+  /// مشتركٌ بين ثلاثة منادين واختباراتهم، والمشترياتُ لا شأنَ لها بالإيراد.
+  final ValueChanged<int?>? onRevenueAccountChanged;
+
   bool get isEdit => initial != null;
 
   @override
@@ -280,6 +297,12 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
   int? _sourceOrderId;
   int? _warehouseId;
   int? _costCenterId;
+
+  /// C2 — «حساب المبيعات» المختار؛ يبدأ بالافتراضيّ المربوط.
+  int? _revenueAccountId;
+
+  /// «تفاصيل إضافية» مطويّةٌ ابتداءً — كما في التصميم.
+  bool _detailsOpen = false;
   DateTime _date = DateTime.now();
   String _paymentMethod = 'cash';
   bool _saving = false;
@@ -303,6 +326,7 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
     _warehouseId = widget.initialWarehouseId ??
         (widget.warehouses.length == 1 ? widget.warehouses.first.id : null);
     _costCenterId = widget.initialCostCenterId;
+    _revenueAccountId = widget.defaultRevenueAccountId;
 
     // ═══ التحرير: تُملأ الحقولُ كلُّها دفعةً ═══
     //
@@ -316,6 +340,8 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
       _costCenterId = init.costCenterId;
       _supplierInvoiceController.text = init.supplierInvoiceNumber;
       _notesController.text = init.notes;
+      // ملاحظةٌ قائمةٌ لا تُخفى خلف صفٍّ مطويّ.
+      _detailsOpen = init.notes.trim().isNotEmpty;
       if (init.date != null) _date = init.date!;
       _paymentMethod = init.paymentMethod;
       _discountController.text =
@@ -476,6 +502,16 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
     final t = _totals;
     setState(() => _saving = true);
     try {
+      // C2 — الحسابُ المختار يُسلَّم قبل الحفظ ليقرأه ردُّ النداء. والافتراضيُّ
+      // نفسُه يُسلَّم `null`: فاتورةٌ على الحساب المربوط تبقى على سلوكها
+      // القديم حرفاً (وتتبع الربطَ لو تغيّر لاحقاً).
+      if (widget.kind.isSales) {
+        widget.onRevenueAccountChanged?.call(
+          _revenueAccountId != widget.defaultRevenueAccountId
+              ? _revenueAccountId
+              : null,
+        );
+      }
       await widget.onSave(
         partyId: _partyId,
         supplierInvoiceNumber: _supplierInvoiceController.text.trim(),
@@ -578,7 +614,9 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: ui.TextDirection.rtl,
+      // اتّجاهُ اللغة النشطة لا RTL مفروض — الشاشةُ تعمل بالعربيّة والإنجليزيّة
+      // (المرحلة C1). والعربيّةُ تبقى RTL لأنّ التطبيقَ يضعها كذلك.
+      textDirection: Directionality.maybeOf(context) ?? ui.TextDirection.rtl,
       // الاختصاران مذكوران في التصميم على الزرَّين — فوُصِلا فعلاً. وشارةٌ
       // مرسومةٌ لاختصارٍ لا يعمل أسوأُ من غيابها: المستخدمُ يجرّبها فيظنّ
       // الشاشةَ معطوبة.
@@ -590,42 +628,15 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
             if (!_saving) _save(printAfterSave: false);
           },
         },
+        // ═══ تخطيطُ المرجع (المرحلة C1) — عمودٌ واحدٌ كما في تصميم المالك ═══
+        //
+        // رأسُ الصفحة ← بطاقةُ الحقول ← سطرُ البحث ← البنود ← الإجماليّات
+        // والدفع ← «تفاصيل إضافية» المطويّة ← شريطُ الأفعال الثابت. والبناءُ
+        // في `picpos_invoice_layout.dart`؛ الأفعالُ هي نفسُها `_save` و
+        // `_saveDraft` و`_previewA4` و`onCancel` بلا مسارٍ جديد.
         child: Focus(
           autofocus: true,
-          child: LayoutBuilder(
-            builder: (context, c) {
-              // العمودُ الماليُّ ٤٢٠ ثابتةً كما في التصميم. ودون ~٩٦٠ لا يبقى
-              // للبنود عرضٌ صالح، فينكسر التخطيطُ رأسيّاً بدل أن يُسحَق أفقيّاً.
-              final wide = c.maxWidth >= 960;
-              if (!wide) {
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SizedBox(height: 520, child: _buildDocumentColumn(context)),
-                      const SizedBox(height: 12),
-                      _PicPosMoneyPanel(state: this, expand: false),
-                    ],
-                  ),
-                );
-              }
-              return Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(20, 18, 20, 20),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(child: _buildDocumentColumn(context)),
-                    const SizedBox(width: 14),
-                    SizedBox(
-                      width: 420,
-                      child: _PicPosMoneyPanel(state: this, expand: true),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+          child: _PicPosInvoiceLayout(state: this),
         ),
       ),
     );
@@ -707,22 +718,6 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
     setState(() => _sourceOrderId = null);
   }
 
-  Widget _buildDocumentColumn(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _PicPosDocBar(state: this),
-        const SizedBox(height: 12),
-        if (_canLinkPurchaseOrder) ...[
-          _PicPosOrderLinkBar(state: this),
-          const SizedBox(height: 12),
-        ],
-        _PicPosQuickAdd(state: this),
-        const SizedBox(height: 12),
-        Expanded(child: _PicPosLinesTable(state: this)),
-      ],
-    );
-  }
 }
 
 /// شريطُ بيانات المستند — كتلةُ الطرف ثمّ حقولٌ متساوية.
@@ -840,33 +835,71 @@ class _PicPosDocBar extends StatelessWidget {
           onPick: (id) => state.setState(() => state._costCenterId = id),
         ),
       ),
+      // C2 — «حساب المبيعات»: اختيارٌ حرٌّ من كلّ حسابات الإيراد التفصيليّة
+      // النشطة، وافتراضُه الحسابُ المربوطُ لغرض المبيعات.
+      if (w.kind.isSales && w.revenueAccounts.isNotEmpty)
+        _field(
+          context,
+          key: const Key('picpos_revenue_account_field'),
+          icon: PhosphorIconsBold.chartLineUp,
+          label: tr('حساب المبيعات'),
+          value: w.revenueAccounts
+                  .where((x) => x.id == state._revenueAccountId)
+                  .firstOrNull
+                  ?.name ??
+              tr('الحساب الافتراضي'),
+          trailing: PhosphorIconsBold.caretDown,
+          onTap: () => _pick(
+            context,
+            title: tr('حساب المبيعات'),
+            options: w.revenueAccounts,
+            selected: state._revenueAccountId,
+            onPick: (id) => state.setState(() => state._revenueAccountId = id),
+          ),
+        ),
     ];
 
+    // ═══ شبكةُ حقول الترويسة — بطاقةٌ واحدة كما في التصميم المرجعيّ ═══
+    //
+    // الأعمدةُ تتبع العرضَ لا عدداً ثابتاً: أربعةٌ على ١٣٦٦ فما فوق، وثلاثةٌ
+    // ثمّ اثنان دونه — فلا حقلَ يُسحَق تحت ١٨٠ بكسل ولا فيضَ أفقيّ.
     return Container(
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.cardColor,
         border: Border.all(color: theme.dividerColor),
         borderRadius: BorderRadius.circular(14),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(width: 300, child: _partyBlock(context, party)),
-            for (final f in fields)
-              Expanded(
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final cols = c.maxWidth >= 1000
+              ? 4
+              : c.maxWidth >= 640
+                  ? 3
+                  : 2;
+          const gap = 10.0;
+          final cellW = (c.maxWidth - gap * (cols - 1)) / cols;
+          Widget cell(Widget child) => SizedBox(
+                width: cellW,
+                height: 64,
                 child: Container(
                   decoration: BoxDecoration(
-                    border: BorderDirectional(
-                      start: BorderSide(color: theme.dividerColor),
-                    ),
+                    border: Border.all(color: theme.dividerColor),
+                    borderRadius: BorderRadius.circular(11),
                   ),
-                  child: f,
+                  clipBehavior: Clip.antiAlias,
+                  child: child,
                 ),
-              ),
-          ],
-        ),
+              );
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: [
+              cell(_partyBlock(context, party)),
+              for (final f in fields) cell(f),
+            ],
+          );
+        },
       ),
     );
   }
@@ -879,15 +912,15 @@ class _PicPosDocBar extends StatelessWidget {
       child: InkWell(
         onTap: () => _pickParty(context),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(11),
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -1001,6 +1034,7 @@ class _PicPosDocBar extends StatelessWidget {
 
   Widget _field(
     BuildContext context, {
+    Key? key,
     required IconData icon,
     required String label,
     required String value,
@@ -1011,11 +1045,12 @@ class _PicPosDocBar extends StatelessWidget {
     final theme = Theme.of(context);
     final muted = _fMuted(context);
     return Material(
+      key: key,
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1130,7 +1165,7 @@ class _SearchPickerDialogState extends State<_SearchPickerDialog> {
             .toList();
 
     return Directionality(
-      textDirection: ui.TextDirection.rtl,
+      textDirection: Directionality.maybeOf(context) ?? ui.TextDirection.rtl,
       child: Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),

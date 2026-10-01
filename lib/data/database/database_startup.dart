@@ -31,6 +31,7 @@ extension DatabaseStartup on AppDatabase {
     await ensureManufacturingV180Schema();
     await ensureLanPairingSchema();
     await ensureProductTaxExemptSchema();
+    await ensureSalesInvoiceRevenueAccountSchema();
 
     // Phase 2b: Database integrity — ensure critical PK/UNIQUE constraints
     // exist on PG installs whose schema was created by an older or crashed

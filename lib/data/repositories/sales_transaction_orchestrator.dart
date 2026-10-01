@@ -137,6 +137,8 @@ class SalesTransactionOrchestrator {
     // the raw gross `CartItemEntity.taxAmount` is used verbatim, preserving that
     // path's existing behaviour.
     List<({double beforeTax, double tax, double rate})>? netLines,
+    // C2 (v183) — invoice-level «حساب المبيعات»; `null` ⇒ mapped default.
+    int? revenueAccountId,
   }) async {
     // Spec 002 (B1): mint the globalId here so the local insert and the
     // post-commit fire-and-forget push share the same identity. Without
@@ -288,6 +290,7 @@ class SalesTransactionOrchestrator {
         deferAutoPost: (saleType ?? 'default') != 'return' && !isClientMode,
         allowNegativeStock:
             stockPolicy == StockShortagePolicy.allowNegative,
+        revenueAccountId: revenueAccountId,
       );
 
       // Fetch the generated invoice record
@@ -452,6 +455,8 @@ class SalesTransactionOrchestrator {
           invoiceDate: invoice.invoiceDate,
           cogsBreakdown: cogsBreakdown,
           autoDepletedItemIds: autoDepletedItemIds,
+          revenueAccount:
+              await _db.resolveSalesRevenueAccountOverride(invoiceId),
         );
       }
 
@@ -562,6 +567,9 @@ class SalesTransactionOrchestrator {
             'deliveryCompanyId': deliveryCompanyId,
             'courierId': courierId,
             'deliveryStatus': deliveryStatus,
+            // C2: the server posts the authoritative JE — it must credit the
+            // same revenue account the client stored.
+            'revenueAccountId': ?revenueAccountId,
           };
 
           debugPrint(
@@ -977,6 +985,8 @@ class SalesTransactionOrchestrator {
         'deliveryCompanyId': request.deliveryCompanyId,
         'courierId': request.courierId,
         'deliveryStatus': request.deliveryStatus,
+        // C2: the server's JE must credit the invoice's chosen account.
+        'revenueAccountId': ?request.revenueAccountId,
       };
 
       // IMPORTANT: Do NOT await — local save must never block on network latency.
@@ -1156,6 +1166,10 @@ class SalesTransactionOrchestrator {
           ),
           items: itemCompanions,
         );
+        if (request.revenueAccountId != null) {
+          await _db.setSalesInvoiceRevenueAccountId(
+              localInvoiceId, request.revenueAccountId);
+        }
         return localInvoiceId;
         }); // 066: end client-mode atomic txn
       } else {
@@ -1204,6 +1218,7 @@ class SalesTransactionOrchestrator {
           adhocCustomerName: request.adhocCustomerName,
           adhocCustomerPhone: request.adhocCustomerPhone,
           adhocCustomerNote: request.adhocCustomerNote,
+          revenueAccountId: request.revenueAccountId,
         );
       }
 

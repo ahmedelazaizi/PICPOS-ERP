@@ -64,6 +64,9 @@ Future<_Pumped> _pumpAt(
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(MaterialApp(
+      // الشاشةُ تتبع اتّجاهَ اللغة النشطة الآن (C1) — والتطبيقُ العربيُّ RTL.
+      builder: (context, child) =>
+          Directionality(textDirection: TextDirection.rtl, child: child!),
       home: Scaffold(
         body: PicPosInvoiceForm(
           kind: kind,

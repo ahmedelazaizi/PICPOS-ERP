@@ -149,6 +149,12 @@ class SalesSyncStrategy extends SyncStrategy {
                 '(isDeleted=$serverIsDeleted, isLocked=$serverIsLocked, '
                 'status=$serverStatus)');
           }
+          // C2 (v183) — raw column outside the companion; an older server
+          // that omits the key leaves the local value untouched.
+          if (saleMap.containsKey('revenueAccountId')) {
+            await db.setSalesInvoiceRevenueAccountId(
+                serverId, parseIntNullable(saleMap['revenueAccountId']));
+          }
           return;
         }
 
@@ -230,6 +236,12 @@ class SalesSyncStrategy extends SyncStrategy {
             updatedAt: Value(serverUpdatedAt ?? DateTime.now()),
           ),
         );
+        // C2 (v183) — raw column outside the companion.
+        final revenueAccountId =
+            parseIntNullable(saleMap['revenueAccountId']);
+        if (revenueAccountId != null) {
+          await db.setSalesInvoiceRevenueAccountId(serverId, revenueAccountId);
+        }
 
         final items = saleMap['items'] as List? ?? [];
         for (final item in items) {

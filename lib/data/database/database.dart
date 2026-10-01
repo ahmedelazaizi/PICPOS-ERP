@@ -145,6 +145,7 @@ part 'daos/manufacturing_dao.dart';
 part 'daos/manufacturing_v180_dao.dart';
 part 'lan_pairing_schema.dart';
 part 'product_tax_exempt_schema.dart';
+part 'sales_invoice_revenue_account_schema.dart';
 part 'daos/fixed_assets_dao_ext.dart';
 part 'daos/e_invoicing_dao.dart';
 part 'daos/activity_logs_dao.dart';
@@ -1175,7 +1176,7 @@ class AppDatabase extends _$AppDatabase {
   //
   // Schema v177: sale reposts after an authorized edit may legitimately
   // produce multiple auto-posted JEs for one invoice reference.
-  int get schemaVersion => 182;
+  int get schemaVersion => 183;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.
@@ -2449,6 +2450,7 @@ class AppDatabase extends _$AppDatabase {
         await ensureManufacturingV180Schema();
         await ensureLanPairingSchema();
         await ensureProductTaxExemptSchema();
+        await ensureSalesInvoiceRevenueAccountSchema();
         // seedInitialData + syncDefaultAccounts moved to beforeOpen
         // (after defensive v110 column additions)
       },

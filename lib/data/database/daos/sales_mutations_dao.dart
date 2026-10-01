@@ -75,6 +75,11 @@ extension SalesMutationsDao on AppDatabase {
     /// Allows the orchestrator's resolved branch/terminal shortage policy to
     /// authorize a tracked sale deduction before BOM depletion runs.
     bool allowNegativeStock = false,
+
+    /// C2 (v183) — the invoice's chosen «حساب المبيعات». `null` ⇒ the mapped
+    /// `'sales'` account, exactly as before. Written inside the insert
+    /// transaction, before any JE (Phase 8 or the caller's) reads it.
+    int? revenueAccountId,
   }) async {
     final invoiceId = await transaction(() async {
       // Use client-provided date or current server time
@@ -279,6 +284,9 @@ extension SalesMutationsDao on AppDatabase {
           ),
         ),
       );
+      if (revenueAccountId != null) {
+        await setSalesInvoiceRevenueAccountId(invoiceId, revenueAccountId);
+      }
       // Insert items and update stock
       for (final item in items) {
         // PIR Phase 0: Auto-populate costPrice from product's current WAC

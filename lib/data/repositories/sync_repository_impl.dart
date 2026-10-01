@@ -136,6 +136,9 @@ class SyncRepositoryImpl implements ISyncRepository {
         final items = await (_db.select(_db.salesInvoiceItems)
               ..where((ii) => ii.invoiceId.equals(inv.id)))
             .get();
+        // C2 (v183) — raw column, invisible to the Drift row above.
+        final revenueAccountId =
+            await _db.getSalesInvoiceRevenueAccountId(inv.id);
 
         final payload = <String, dynamic>{
           'invoiceNumber': inv.invoiceNumber,
@@ -164,6 +167,7 @@ class SyncRepositoryImpl implements ISyncRepository {
           'notes': inv.notes,
           'saleType': inv.saleType,
           'invoiceDate': inv.invoiceDate.toIso8601String(),
+          'revenueAccountId': ?revenueAccountId,
           'items': items.map((i) => <String, dynamic>{
             'productId': i.productId,
             'quantity': i.quantity,

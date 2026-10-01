@@ -177,6 +177,11 @@ abstract class SalesRepository {
     String? notes,
     required List<CartItemEntity> items,
     int? costCenterId,
+    // C2 (v183) — when [changeRevenueAccount] is true, the invoice's
+    // «حساب المبيعات» becomes [revenueAccountId] (`null` ⇒ back to the mapped
+    // default) BEFORE the repost, so the new JE credits it. False ⇒ untouched.
+    bool changeRevenueAccount,
+    int? revenueAccountId,
   });
 
   /// Watch all raw sales invoices (Drift type)
@@ -329,6 +334,10 @@ class SaleRequest {
   final int? branchId; // auto-resolved from active branch
   final String? platformOrderNumber; // #Phase4: External platform order ID
 
+  /// C2 (v183) — the sales invoice's chosen «حساب المبيعات». `null` (POS
+  /// quick sale, every legacy caller) ⇒ the mapped `'sales'` account.
+  final int? revenueAccountId;
+
   const SaleRequest({
     required this.items,
     this.customerId,
@@ -361,6 +370,7 @@ class SaleRequest {
     this.costCenterId,
     this.branchId,
     this.platformOrderNumber,
+    this.revenueAccountId,
   });
 }
 

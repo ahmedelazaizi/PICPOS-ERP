@@ -823,6 +823,8 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
     String? notes,
     required List<CartItemEntity> items,
     int? costCenterId,
+    bool changeRevenueAccount = false,
+    int? revenueAccountId,
   }) async {
     // 0) Get original invoice to check if it's locked
     final oldInvoice = await db.getSalesInvoiceById(invoiceId);
@@ -962,6 +964,12 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
         ),
       );
 
+      // 4.5) C2 — the chosen «حساب المبيعات», written before the repost so
+      // the new JE credits it (the old JE was reversed in step 1).
+      if (changeRevenueAccount) {
+        await db.setSalesInvoiceRevenueAccountId(invoiceId, revenueAccountId);
+      }
+
       // 5) Re-post accounting — fetch updated invoice data for auto-post
       final updatedInvoice = await (db.select(db.salesInvoices)
             ..where((i) => i.id.equals(invoiceId)))
@@ -999,6 +1007,7 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
       'paymentMethod': paymentMethod,
       'notes': notes,
       'costCenterId': costCenterId,
+      if (changeRevenueAccount) 'revenueAccountId': revenueAccountId,
       // Spec 002 Round 7: explicitly type as <String, dynamic> so that
       // ClientWriteInterceptor._enrichItemsWithProductGlobalId can later
       // assign a String productGlobalId. Without the annotation Dart infers

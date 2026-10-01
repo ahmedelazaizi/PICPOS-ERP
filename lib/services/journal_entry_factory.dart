@@ -283,6 +283,9 @@ class JournalEntryFactory {
     // (Constitution I — byte-identical JE shape for sales with no
     // auto-deplete BOM in scope).
     List<CogsLine>? cogsBreakdown,
+    // C2 (v183) — the invoice's own «حساب المبيعات». `null` ⇒ the mapped
+    // 'sales' account, byte-identical to before.
+    Account? revenueAccount,
     // Feature 009 follow-up — sales_invoice_items.id whose cost was already
     // accounted for by [cogsBreakdown] because `applyAutoDepleteForSale`
     // consumed raw materials for them. Their own `costPrice` must NOT be added
@@ -458,7 +461,7 @@ class JournalEntryFactory {
     // debit; both net to the same revenue (IFRS recognises revenue net of
     // trade discount). Because the net is derived from the total, the former
     // `subtotal` / `discount` parameters were dead and have been removed.
-    final salesAcc = await _requireAccount('sales');
+    final salesAcc = revenueAccount ?? await _requireAccount('sales');
     final vatAcc = tax > 0 ? await _optionalAccount('output_vat') : null;
     final deliveryAcc = deliveryFee > 0
         ? await _optionalAccount('delivery_revenue')

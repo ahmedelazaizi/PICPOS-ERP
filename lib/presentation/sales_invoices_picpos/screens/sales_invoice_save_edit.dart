@@ -136,6 +136,8 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
     required List<Product> products,
     int? warehouseId,
     int? costCenterId,
+    // C2 — «حساب المبيعات» المختار؛ `null` ⇒ الحسابُ المربوط كما كان.
+    int? revenueAccountId,
   }) async {
     if (invoiceItems.isEmpty) {
       AppToast.show(
@@ -259,6 +261,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
         taxPercent: systemTaxRate,
         discountPercent: invoiceDiscountPercent,
         costCenterId: costCenterId,
+        revenueAccountId: isReturnMode ? null : revenueAccountId,
       );
 
       final useCase = container.read(completeSaleUseCaseProvider);
@@ -416,6 +419,12 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
         ? invoiceWhId
         : (warehousesList.isNotEmpty ? warehousesList.first.id : null);
     int? selectedCostCenterId = dbInvoice?.costCenterId ?? invoice.costCenterId;
+    // C2 — «حساب المبيعات»: المخزَّنُ على الفاتورة، و`null` = الحسابُ المربوط.
+    // وتغييرُه يمرّ بنفس مسار العكس وإعادة الترحيل في `updateFullSalesInvoice`.
+    final revenueAccounts = await database.getActiveRevenueDetailAccounts();
+    final originalRevenueAccountId =
+        await database.getSalesInvoiceRevenueAccountId(invoice.id!);
+    int? selectedRevenueAccountId = originalRevenueAccountId;
     String notes = invoice.notes ?? '';
     double subtotal = invoice.subtotal;
     double tax = invoice.taxAmount;
@@ -571,6 +580,31 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                           onChanged: (val) => setDialogState(() => selectedCostCenterId = val),
                         ),
                       const SizedBox(height: 12),
+
+                      // C2 — «حساب المبيعات»
+                      if (revenueAccounts.isNotEmpty) ...[
+                        DropdownButtonFormField<int?>(
+                          key: const Key('sales_edit_revenue_account'),
+                          initialValue: revenueAccounts.any(
+                                  (a) => a.id == selectedRevenueAccountId)
+                              ? selectedRevenueAccountId
+                              : null,
+                          decoration: InputDecoration(
+                            labelText: tr('حساب المبيعات'),
+                            prefixIcon: const Icon(PhosphorIconsBold.chartLineUp, size: 20),
+                            border: const OutlineInputBorder(),
+                          ),
+                          items: [
+                            DropdownMenuItem<int?>(value: null, child: Text(tr('الحساب الافتراضي'))),
+                            ...revenueAccounts.map((a) => DropdownMenuItem<int?>(
+                                  value: a.id,
+                                  child: Text('${a.code} — ${trData(a.name)}'),
+                                )),
+                          ],
+                          onChanged: (val) => setDialogState(() => selectedRevenueAccountId = val),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
 
                       // Product Search
                       Card(
@@ -871,6 +905,9 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                         notes: notes.isEmpty ? null : notes,
                         items: items,
                         costCenterId: selectedCostCenterId,
+                        changeRevenueAccount:
+                            selectedRevenueAccountId != originalRevenueAccountId,
+                        revenueAccountId: selectedRevenueAccountId,
                       );
 
                       if (context.mounted) {

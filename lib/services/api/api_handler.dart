@@ -1050,6 +1050,9 @@ class ApiHandler {
           'deliveryFee': inv.deliveryFee,
           'notes': inv.notes,
           'costCenterId': inv.costCenterId,
+          // C2 (v183) — raw column; the client's JE/return must use the same.
+          'revenueAccountId':
+              await _db.getSalesInvoiceRevenueAccountId(inv.id),
           'items': itemsJson,
         });
       }

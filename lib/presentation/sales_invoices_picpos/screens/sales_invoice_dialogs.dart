@@ -46,6 +46,13 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
         ? await controller.getCustomerById(invoice.partyId!)
         : null;
     final customerName = customer?.name ?? tr('عميل نقدي');
+    // C2 — «حساب المبيعات» المخزَّن؛ `null` ⇒ الحسابُ المربوطُ (لا يُعرَض).
+    final db = ref.read(databaseProvider);
+    final revenueAccountId =
+        await db.getSalesInvoiceRevenueAccountId(invoice.id!);
+    final revenueAccount = revenueAccountId == null
+        ? null
+        : await db.getAccountById(revenueAccountId);
 
     if (!mounted) return;
 
@@ -107,6 +114,12 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                           if (whName != null) _metaField(tr('المخزن'), whName),
                           if (ccName != null)
                             _metaField(tr('مركز التكلفة'), ccName),
+                          _metaField(
+                            tr('حساب المبيعات'),
+                            revenueAccount == null
+                                ? tr('الحساب الافتراضي')
+                                : '${revenueAccount.code} — ${trData(revenueAccount.name)}',
+                          ),
                           if (invoice.originClientId != null &&
                               invoice.originClientId!.isNotEmpty)
                             _metaField(tr('الجهاز'), invoice.originClientId!),
@@ -569,6 +582,12 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
     final exemptProductIds = await ref
         .read(databaseProvider)
         .getTaxExemptProductIds(products.map((p) => p.id));
+    // C2 — «حساب المبيعات»: كلُّ حسابات الإيراد التفصيليّة النشطة، وافتراضُه
+    // الحسابُ المربوطُ لغرض المبيعات (`'sales'`).
+    final revenueAccounts =
+        await ref.read(databaseProvider).getActiveRevenueDetailAccounts();
+    final defaultRevenueAccount =
+        await ref.read(databaseProvider).getLeafAccountByPurpose('sales');
 
     List<WarehouseData> filteredWarehouses = activeWarehouses;
     if (SyncInterceptor.isClientMode) {
@@ -683,6 +702,8 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                 costCenters: costCentersList,
                 systemTaxPercent: systemTaxPercent,
                 exemptProductIds: exemptProductIds,
+                revenueAccounts: revenueAccounts,
+                defaultRevenueAccountId: defaultRevenueAccount?.id,
               ),
       ),
     );
@@ -711,9 +732,19 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
     /// **مئويّةٌ** (‏١٦) لا كسر (‏٠٫١٦) — انظر [posDefaultTaxPercentProvider].
     required double systemTaxPercent,
     Set<int> exemptProductIds = const <int>{},
+    List<Account> revenueAccounts = const [],
+    int? defaultRevenueAccountId,
   }) {
+    // C2 — يُسلَّم من النموذج قبل `onSave` مباشرةً (`null` = الافتراضيّ).
+    int? revenueAccountId;
     return PicPosInvoiceForm(
       kind: PicPosInvoiceKind.sales,
+      revenueAccounts: [
+        for (final a in revenueAccounts)
+          PicPosNamedOption(id: a.id, name: '${a.code} — ${a.name}'),
+      ],
+      defaultRevenueAccountId: defaultRevenueAccountId,
+      onRevenueAccountChanged: (id) => revenueAccountId = id,
       parties: [
         for (final c in customers)
           PicPosPartyOption(
@@ -801,6 +832,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
           products: rawProducts,
           warehouseId: warehouseId,
           costCenterId: costCenterId,
+          revenueAccountId: revenueAccountId,
         );
       },
       // 🔴 **معاينةُ A4 قبل الحفظ** — قرارُ المالك على تصميم `12.02.29`.

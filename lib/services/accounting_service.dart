@@ -243,6 +243,8 @@ class AccountingService {
     // Feature 009 / T017 — see JournalEntryFactory for semantics.
     List<CogsLine>? cogsBreakdown,
     Set<int>? autoDepletedItemIds,
+    // C2 (v183) — invoice-level «حساب المبيعات»; `null` ⇒ mapped default.
+    Account? revenueAccount,
   }) => journalFactory.generateSalesAccountingEntry(
     invoiceId: invoiceId,
     invNumber: invNumber,
@@ -262,6 +264,7 @@ class AccountingService {
     invoiceDate: invoiceDate,
     cogsBreakdown: cogsBreakdown,
     autoDepletedItemIds: autoDepletedItemIds,
+    revenueAccount: revenueAccount,
   );
 
   Future<void> generatePurchaseAccountingEntry({

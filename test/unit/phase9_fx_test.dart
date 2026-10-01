@@ -133,12 +133,13 @@ void main() {
     }
   }
 
-  test('fresh database exposes schema version 182 for FX, manufacturing, LAN pairing and product tax-exempt columns', () async {
-    expect(db.schemaVersion, 182);
+  test('fresh database exposes schema version 183 for FX, manufacturing, LAN pairing, product tax-exempt and sales revenue-account columns', () async {
+    expect(db.schemaVersion, 183);
     final invoiceColumns = await db.customSelect(
       'PRAGMA table_info(sales_invoices)',
     ).get();
     expect(invoiceColumns.any((row) => row.data['name'] == 'currency_id'), isTrue);
+    expect(invoiceColumns.any((row) => row.data['name'] == 'revenue_account_id'), isTrue);
     expect(invoiceColumns.any((row) => row.data['name'] == 'exchange_rate'), isTrue);
   });
 

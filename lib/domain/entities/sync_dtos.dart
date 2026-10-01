@@ -69,6 +69,9 @@ class SyncSaleRequest {
   final String? adhocCustomerPhone;
   final String? adhocCustomerNote;
 
+  /// C2 (v183) — `sales_invoices.revenue_account_id`; omitted when `null`.
+  final int? revenueAccountId;
+
   SyncSaleRequest({
     required this.invoiceNumber,
     this.customerId,
@@ -93,6 +96,7 @@ class SyncSaleRequest {
     this.adhocCustomerName,
     this.adhocCustomerPhone,
     this.adhocCustomerNote,
+    this.revenueAccountId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -119,5 +123,6 @@ class SyncSaleRequest {
     'adhocCustomerName': adhocCustomerName,
     'adhocCustomerPhone': adhocCustomerPhone,
     'adhocCustomerNote': adhocCustomerNote,
+    'revenueAccountId': ?revenueAccountId,
   };
 }

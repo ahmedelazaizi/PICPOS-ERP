@@ -145,6 +145,8 @@ class MockSalesRepository implements SalesRepository {
     required List<CartItemEntity> items,
     int? costCenterId,
     required int? userId,
+    bool changeRevenueAccount = false,
+    int? revenueAccountId,
   }) async {}
 
   @override

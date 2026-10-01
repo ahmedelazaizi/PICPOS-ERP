@@ -3596,5 +3596,12 @@ extension Epoch3Migrations on AppDatabase {
       await _safeMigrate(
           'v182 products.tax_exempt', ensureProductTaxExemptSchema);
     }
+
+    // v183 — sales_invoices.revenue_account_id: the invoice's chosen revenue
+    // account (raw column; NULL ⇒ mapped 'sales' default, old invoices).
+    if (from < 183) {
+      await _safeMigrate('v183 sales_invoices.revenue_account_id',
+          ensureSalesInvoiceRevenueAccountSchema);
+    }
   }
 }

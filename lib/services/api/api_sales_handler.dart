@@ -315,6 +315,9 @@ class ApiSalesHandler extends ApiHandlerBase {
           deliveryCompanyId: parseIntNullable(data['deliveryCompanyId']),
           courierId: parseIntNullable(data['courierId']),
           deliveryStatus: data['deliveryStatus'] as String?,
+          // C2 (v183) — the client's chosen «حساب المبيعات»; absent ⇒ NULL ⇒
+          // mapped default (older clients unchanged).
+          revenueAccountId: parseIntNullable(data['revenueAccountId']),
         );
 
         // Feature 009 / T020 — server-side auto-deplete (R4 / Constitution III).

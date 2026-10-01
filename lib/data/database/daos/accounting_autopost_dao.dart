@@ -279,9 +279,12 @@ extension AccountingAutopostDao on AppDatabase {
     // branch sales to the admin cash account).
     final cashAccount = await _resolveSaleLegAccount(sale.id, branchId, 'cash');
     final bankAccount = await _resolveSaleLegAccount(sale.id, branchId, 'bank');
-    final salesAccount = await accountingDao.getAccountByCode(
-      await accountingDao.getMappedAccountCode('sales', AccountingDao.accountPurposes['sales']!),
-    );
+    // C2: the invoice's own «حساب المبيعات» wins over the mapped default;
+    // NULL (every pre-v183 invoice, POS quick sale) keeps the mapping.
+    final salesAccount = await resolveSalesRevenueAccountOverride(sale.id) ??
+        await accountingDao.getAccountByCode(
+          await accountingDao.getMappedAccountCode('sales', AccountingDao.accountPurposes['sales']!),
+        );
     final vatAccount = await accountingDao.getAccountByCode(
       await accountingDao.getMappedAccountCode('output_vat', AccountingDao.accountPurposes['output_vat']!),
     );
@@ -754,9 +757,11 @@ extension AccountingAutopostDao on AppDatabase {
       sale.customerId,
       receivableControlAccount,
     );
-    final salesAccount = await accountingDao.getAccountByCode(
-      await accountingDao.getMappedAccountCode('sales', AccountingDao.accountPurposes['sales']!),
-    );
+    // C2: the invoice's own «حساب المبيعات» wins over the mapped default.
+    final salesAccount = await resolveSalesRevenueAccountOverride(sale.id) ??
+        await accountingDao.getAccountByCode(
+          await accountingDao.getMappedAccountCode('sales', AccountingDao.accountPurposes['sales']!),
+        );
     final vatAccount = await accountingDao.getAccountByCode(
       await accountingDao.getMappedAccountCode('output_vat', AccountingDao.accountPurposes['output_vat']!),
     );
@@ -1522,9 +1527,14 @@ extension AccountingAutopostDao on AppDatabase {
     final warehouse = await (select(warehouses)..where((w) => w.id.equals(originalInvoice.warehouseId))).getSingleOrNull();
     final branchId = warehouse?.branchId;
 
-    final salesReturnAccount = await accountingDao.getAccountByCode(
-      await accountingDao.getMappedAccountCode('sales_return', AccountingDao.accountPurposes['sales_return']!),
-    );
+    // C2: a return of an invoice that chose its own «حساب المبيعات» debits
+    // that SAME account (resolved from the original — directly, or through
+    // the quick-return link note). NULL ⇒ the mapped 'sales_return' account.
+    final salesReturnAccount =
+        await resolveSalesRevenueAccountOverride(originalInvoice.id) ??
+            await accountingDao.getAccountByCode(
+              await accountingDao.getMappedAccountCode('sales_return', AccountingDao.accountPurposes['sales_return']!),
+            );
     final cashAccount = await accountingDao.getAccountByCode(
       await accountingDao.getMappedAccountCode('cash', AccountingDao.accountPurposes['cash']!),
     );
