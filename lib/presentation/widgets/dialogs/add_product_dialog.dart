@@ -10,6 +10,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:drift/drift.dart' hide Column;
 import '../../../core/theme/app_colors.dart';
 import 'product_form_helpers.dart';
+import 'product_tax_fields.dart';
 // دفعة ٨ — نفس حرّاس `products_expiry`/`products_image` بتوع ديالوج التعديل.
 // ديالوج «إضافة صنف» ده موقع تاني حيّ لنفس الحقول (شاشة الأصناف للبراندين،
 // وفورم فاتورة المبيعات، وفورم المشتريات كلهم بيفتحوه) وكان فايت من الفرز.
@@ -79,7 +80,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
   final _shelfDaysController = TextEditingController(text: '90');
   final _alertDaysController = TextEditingController(text: '30');
   final _pricePerUnitController = TextEditingController();
-  final _taxRateController = TextEditingController(text: '0');
+  // البند 5: «معفى» / «تفعيل الضريبة» + نسبة — يبدأ بافتراضي الشركة (tax_rate
+  // = 0، نفس القيمة الابتدائية للقائمة القديمة).
+  final _tax = ProductTaxController();
   final _priceTalabatController = TextEditingController(text: '0');
   final _priceCareemController = TextEditingController(text: '0');
   final _priceAshyaeController = TextEditingController(text: '0');
@@ -158,7 +161,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
     _shelfDaysController.dispose();
     _alertDaysController.dispose();
     _pricePerUnitController.dispose();
-    _taxRateController.dispose();
+    _tax.dispose();
     _priceTalabatController.dispose();
     _priceCareemController.dispose();
     _priceAshyaeController.dispose();
@@ -250,14 +253,6 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      // البند 4: كان حقلاً نصياً حراً يقبل أي رقم.
-                      child: ProductFormHelpers.buildTaxRateDropdown(
-                        _taxRateController,
-                        icon: PhosphorIconsBold.percent,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
                       child: _buildCompactTextField(
                         _minStockController,
                         tr('الحد الأدنى'),
@@ -280,6 +275,10 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
+                // البند 4 ثم البند 5: كانت قائمة نسب — صارت «معفى» / «تفعيل
+                // الضريبة» + نسبة مُتحقَّق منها على نفس السلّم.
+                ProductTaxFields(controller: _tax),
 
                 // Platform Prices (hidden in simplified mode)
                 if (!widget.simplified) ...[
@@ -857,6 +856,12 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
       return;
     }
 
+    final taxChoice = _tax.choice;
+    if (taxChoice == null) {
+      AppToast.show(context, _tax.rateError!, type: ToastType.error);
+      return;
+    }
+
     // Spec 136 ISS-26 — opening balance MUST target a warehouse. Pre-fix the
     // opening-stock step below was gated on `_selectedWarehouseId != null` and
     // silently DROPPED the balance when the warehouse dropdown was left on
@@ -1013,7 +1018,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
           supplierId: _selectedSupplierId,
           barcode: _barcodeController.text.isNotEmpty ? _barcodeController.text : null,
           minStock: NumberUtils.tryParseLocale(_minStockController.text) ?? 0,
-          taxRate: NumberUtils.tryParseLocale(_taxRateController.text) ?? 0,
+          taxRate: taxChoice.storedTaxRate,
           isSoldByWeight: _isSoldByWeight,
           allowNegativeSale: _allowNegativeSale,
           trackExpiry: _trackExpiry,
@@ -1078,7 +1083,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
         ),
         imageData: Value(_selectedImage),
         allowNegativeSale: Value(_allowNegativeSale),
-        taxRate: Value(NumberUtils.tryParseLocale(_taxRateController.text) ?? 0),
+        taxRate: Value(taxChoice.storedTaxRate),
         priceTalabat: Value(
           NumberUtils.tryParseLocale(_priceTalabatController.text) ?? 0,
         ),
@@ -1105,6 +1110,13 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
       } catch (e, st) {
         await DiagnosticLogger.log('ADD-PROD', 'step2 local insertProduct FAILED: $e\n$st');
         rethrow;
+      }
+
+      // البند 5: علَم «معفى» (tax_rate نفسه = 0 كالقائمة القديمة).
+      if (taxChoice.storedTaxExempt) {
+        await ref
+            .read(databaseProvider)
+            .setProductTaxExempt(productId, true);
       }
 
       // Insert barcode if provided

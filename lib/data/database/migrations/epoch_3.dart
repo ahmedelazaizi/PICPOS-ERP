@@ -3589,5 +3589,12 @@ extension Epoch3Migrations on AppDatabase {
     if (from < 181) {
       await _safeMigrate('v181 LAN pairing registry', ensureLanPairingSchema);
     }
+
+    // v182 — products.tax_exempt: the product form's «معفى من الضريبة» flag
+    // (raw column; tax calculation keeps reading tax_rate only).
+    if (from < 182) {
+      await _safeMigrate(
+          'v182 products.tax_exempt', ensureProductTaxExemptSchema);
+    }
   }
 }

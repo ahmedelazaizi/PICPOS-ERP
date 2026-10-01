@@ -198,9 +198,34 @@ class StockShortagePolicyService {
       terminalId: terminalId,
       branchId: branchId,
     );
+    return await _legacyFallbackWith(get) ?? resolved;
+  }
+
+  /// The global-tier policy the settings picker must DISPLAY — the value
+  /// [resolveForSaleWith] actually applies to a sale with no branch/terminal
+  /// override.
+  ///
+  /// The picker used to show [defaultPolicy] (`allowNegative`) whenever
+  /// `stock_shortage_policy` was unsaved, while a fresh install's sales fall
+  /// back to `enable_negative_sales` (false → `block`): the screen said
+  /// "allow" and the till blocked. Reads settings directly (no cache) so the
+  /// screen never shows a stale value.
+  static Future<StockShortagePolicy> effectiveGlobalWith(
+    Future<String?> Function(String) get,
+  ) async {
+    return await _legacyFallbackWith(get) ??
+        fromName(await get(_globalKey)) ??
+        defaultPolicy;
+  }
+
+  /// Legacy `enable_negative_sales` policy when NO shortage-policy tier was
+  /// ever configured; `null` once any tier is saved.
+  static Future<StockShortagePolicy?> _legacyFallbackWith(
+    Future<String?> Function(String) get,
+  ) async {
     for (final key in const [_globalKey, _perBranchKey, _perTerminalKey]) {
       final raw = await get(key);
-      if (raw != null && raw.isNotEmpty) return resolved;
+      if (raw != null && raw.isNotEmpty) return null;
     }
     final legacy = await get('enable_negative_sales');
     return legacy == 'true'

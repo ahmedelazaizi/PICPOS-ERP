@@ -133,8 +133,8 @@ void main() {
     }
   }
 
-  test('fresh database exposes schema version 181 for FX, manufacturing and LAN pairing columns', () async {
-    expect(db.schemaVersion, 181);
+  test('fresh database exposes schema version 182 for FX, manufacturing, LAN pairing and product tax-exempt columns', () async {
+    expect(db.schemaVersion, 182);
     final invoiceColumns = await db.customSelect(
       'PRAGMA table_info(sales_invoices)',
     ).get();

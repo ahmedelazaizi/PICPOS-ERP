@@ -13,6 +13,8 @@ import '../../../../services/network_service.dart';
 import '../../../products/providers/products_controller.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../widgets/dialogs/product_form_helpers.dart';
+import '../../../widgets/dialogs/product_tax_fields.dart';
+import '../../../../core/tax/product_tax_choice.dart';
 import '../../../../core/permissions/permission_codes.dart';
 import '../../../widgets/permission_guard.dart';
 
@@ -74,7 +76,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
   late final TextEditingController shelfDaysController;
   late final TextEditingController alertDaysController;
   late final TextEditingController pricePerUnitController;
-  late final TextEditingController taxRateController;
+  late final ProductTaxController taxController;
   late final TextEditingController priceTalabatController;
   late final TextEditingController priceCareemController;
   late final TextEditingController priceAshyaeController;
@@ -129,7 +131,10 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
     pricePerUnitController = TextEditingController(
       text: p.pricePerUnit?.toString() ?? '',
     );
-    taxRateController = TextEditingController(text: p.taxRate.toString());
+    // علَم «معفى» يصل مع `_refreshFromDatabase` (عمود خام خارج الكيان).
+    taxController = ProductTaxController(
+      ProductTaxChoice.fromStored(taxRate: p.taxRate, taxExempt: false),
+    );
     priceTalabatController = TextEditingController(
       text: p.priceTalabat.toString(),
     );
@@ -172,6 +177,16 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
     final repo = ref.read(productRepositoryProvider);
     final fresh = await repo.getProductById(widget.product.id);
     if (!mounted || fresh == null) return;
+    var taxExempt = false;
+    try {
+      taxExempt = await ref
+          .read(databaseProvider)
+          .getProductTaxExempt(widget.product.id);
+    } catch (e) {
+      debugPrint('[ProductEditDialog] tax_exempt read: $e');
+    }
+    if (!mounted) return;
+    taxController.loadStored(taxRate: fresh.taxRate, taxExempt: taxExempt);
     setState(() {
       nameController.text = fresh.name;
       codeController.text = fresh.code;
@@ -182,7 +197,6 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
       shelfDaysController.text = fresh.defaultShelfDays.toString();
       alertDaysController.text = fresh.alertDaysBefore.toString();
       pricePerUnitController.text = fresh.pricePerUnit?.toString() ?? '';
-      taxRateController.text = fresh.taxRate.toString();
       priceTalabatController.text = fresh.priceTalabat.toString();
       priceCareemController.text = fresh.priceCareem.toString();
       priceAshyaeController.text = fresh.priceAshyae.toString();
@@ -256,7 +270,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
     shelfDaysController.dispose();
     alertDaysController.dispose();
     pricePerUnitController.dispose();
-    taxRateController.dispose();
+    taxController.dispose();
     priceTalabatController.dispose();
     priceCareemController.dispose();
     priceAshyaeController.dispose();
@@ -514,14 +528,6 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               ),
               const SizedBox(width: 8),
               Expanded(
-                // البند 4: كان حقلاً نصياً حراً يقبل أي رقم.
-                child: ProductFormHelpers.buildTaxRateDropdown(
-                  taxRateController,
-                  icon: PhosphorIconsBold.percent,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
                 child: _buildCompactTextField(
                   minStockController,
                   tr('الحد الأدنى'),
@@ -531,6 +537,10 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          // البند 4 ثم البند 5: كانت قائمة نسب — صارت «معفى» / «تفعيل
+          // الضريبة» + نسبة مُتحقَّق منها على نفس السلّم.
+          ProductTaxFields(controller: taxController),
           const SizedBox(height: 16),
            Text(
             tr('أسعار المنصات'),
@@ -1096,6 +1106,11 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
       );
       return;
     }
+    if (taxController.choice == null) {
+      _tabController.animateTo(1); // تبويب الأسعار حيث حقل الضريبة
+      AppToast.show(context, taxController.rateError!, type: ToastType.error);
+      return;
+    }
     setState(() => _saving = true);
     try {
       await _doSaveProduct();
@@ -1106,6 +1121,8 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
 
   Future<void> _doSaveProduct() async {
     final repository = ref.read(productRepositoryProvider);
+    // Validated in [_saveProduct] before `_saving` was set.
+    final taxChoice = taxController.choice!;
 
     // Check code uniqueness
     if (codeController.text.isNotEmpty) {
@@ -1201,8 +1218,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
           : null,
       imageData: selectedImage,
       allowNegativeSale: allowNegativeSale,
-      taxRate:
-          NumberUtils.tryParseLocale(taxRateController.text) ?? widget.product.taxRate,
+      taxRate: taxChoice.storedTaxRate,
       priceTalabat:
           NumberUtils.tryParseLocale(priceTalabatController.text) ??
           widget.product.priceTalabat,
@@ -1229,6 +1245,11 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
 
     // Save warehouse prices
     if (success) {
+      // البند 5: علَم «معفى» — يُكتب دائماً كي يُلغى عند اختيار نسبة أو افتراضي.
+      await ref
+          .read(databaseProvider)
+          .setProductTaxExempt(widget.product.id, taxChoice.storedTaxExempt);
+
       // Delete removed rows
       for (final deletedId in _deletedWarehousePriceIds) {
         await repository.deleteWarehousePrice(deletedId);

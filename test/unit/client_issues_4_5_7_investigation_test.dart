@@ -126,24 +126,25 @@ void main() {
     // FIXED 2026-07-25 (البند 4) — this test originally asserted the BROKEN
     // state (bare TextField, no validator, no dropdown). It now guards the fix
     // so a future refactor can't quietly reintroduce a free-text tax field.
-    test('REGRESSION: both product dialogs pick the tax rate from the legal '
-        'ladder, not free text', () async {
-      final helpers = File(
-        'lib/presentation/widgets/dialogs/product_form_helpers.dart',
+    // UPDATED (owner item 5): the dropdown became «معفى من الضريبة» +
+    // «تفعيل الضريبة»/«نسبة الضريبة %». The typed rate is still validated
+    // against the same ladder, so the guard now pins that validation.
+    test('REGRESSION: both product dialogs validate the tax rate against the '
+        'legal ladder, not free text', () async {
+      final choice = File(
+        'lib/core/tax/product_tax_choice.dart',
       ).readAsStringSync();
-      expect(helpers.contains('buildTaxRateDropdown'), isTrue,
-          reason: 'the shared helper exposes a ladder-backed dropdown');
-      expect(helpers.contains('TaxRatePolicy'), isTrue,
-          reason: 'the dropdown is driven by the same policy the server and '
-              'the Excel importer enforce — one source of truth');
+      expect(choice.contains('TaxRatePolicy.isAllowed'), isTrue,
+          reason: 'the typed rate is checked against the same policy the '
+              'server and the Excel importer enforce — one source of truth');
 
       for (final path in const [
         'lib/presentation/widgets/dialogs/add_product_dialog.dart',
         'lib/presentation/screens/products/widgets/product_edit_dialog.dart',
       ]) {
         final src = File(path).readAsStringSync();
-        expect(src.contains('buildTaxRateDropdown'), isTrue,
-            reason: '$path must use the ladder dropdown for the tax rate');
+        expect(src.contains('ProductTaxFields('), isTrue,
+            reason: '$path must use the validated product tax controls');
       }
 
       // The guard must exist at the write boundaries too — a UI-only fix is

@@ -352,9 +352,11 @@ class _StockShortagePolicyToggleState
 
   Future<void> _load() async {
     final repo = ref.read(settingsRepositoryProvider);
-    final raw = await repo.getSetting('stock_shortage_policy');
-    final p = StockShortagePolicyService.fromName(raw) ??
-        StockShortagePolicyService.defaultPolicy;
+    // Show what a sale actually runs under — on a fresh install that is the
+    // legacy `enable_negative_sales` fallback, not [defaultPolicy].
+    final p = await StockShortagePolicyService.effectiveGlobalWith(
+      repo.getSetting,
+    );
     if (mounted) setState(() { _policy = p; _loading = false; });
   }
 
