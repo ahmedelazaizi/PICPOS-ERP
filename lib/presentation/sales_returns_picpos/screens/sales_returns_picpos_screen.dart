@@ -21,13 +21,20 @@ import '../../widgets/common/common.dart';
 import '../../shared_widgets/open_shift_prompt.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_returns_panel.dart';
+import '../../picpos_shell/picpos_return_form_kit.dart';
+import '../../picpos_shell/picpos_surface.dart';
+import '../../picpos_shell/picpos_totals_bar.dart';
+import '../../../data/providers/manufacturing_providers.dart'
+    show warehouseNameMapProvider;
 import '../../../domain/models/picpos_return_view.dart';
+import '../../../domain/models/sales_return_refund_split.dart';
 
 // ── Part files (منسوخة حرفياً من lib/presentation/screens/sales_returns/ —
 // الشاشة الأصل `part of _SalesReturnsScreenState` خاصة فما ينفعش تتعمل import،
 // فبتنتقل بنسخ حرفي هنا؛ راجع تعليق مصيدة النسخ في رأس كل ملف). ──────────────
 part 'sales_returns_picpos_logic.dart';
-part 'sales_returns_picpos_details.dart';
+// الاستمارةُ المعاد تصميمُها (C2) — حلّت محلَّ لوح التفاصيل المنسوخ.
+part 'sales_returns_picpos_form.dart';
 
 /// شاشة مرتجع المبيعات بهوية PicPos. تُختار بالعلامة في app_main_screen
 /// (`Brand.isPicPos`). تعيد استخدام نفس `salesReturnProvider` (وتوابعه
@@ -42,6 +49,10 @@ part 'sales_returns_picpos_details.dart';
 /// المرتجعات عالية القيمة.
 ///
 /// راجع lib/presentation/screens/sales_returns_screen.dart (الأصل).
+///
+/// ⚠️ **المرحلة C2 (البند ٣):** الشكلُ صار استمارةً واحدةً على تصميم المالك
+/// (`sales_returns_picpos_form.dart`)، وقائمةُ الفواتير بترشيحها وعدّاداتها
+/// انتقلت إلى منتقي «رقم الفاتورة الأصليّة». والإجراءاتُ أعلاه كما هي.
 class SalesReturnsPicposScreen extends ConsumerStatefulWidget {
   final SalesInvoiceData? initialInvoice;
 
@@ -54,7 +65,7 @@ class SalesReturnsPicposScreen extends ConsumerStatefulWidget {
 
 class _SalesReturnsPicposScreenState
     extends ConsumerState<SalesReturnsPicposScreen>
-    with _SalesReturnsPicposLogic, _SalesReturnsPicposDetailsPanel {
+    with _SalesReturnsPicposLogic, _SalesReturnsPicposForm {
   final _invoiceSearchController = TextEditingController();
   final _returnReasonController = TextEditingController();
   String _selectedReasonCategory = ''; // B4: Return reason categorization
@@ -153,61 +164,29 @@ class _SalesReturnsPicposScreenState
       );
 
   Widget _buildBody(SalesReturnState state, SalesReturnNotifier notifier) {
-    final allRows = [for (final inv in state.invoices) _toRow(inv, state)];
-    // العدّاداتُ من فواتير المدى كلِّها؛ القائمةُ من المرشَّحة بالبحث.
-    final kpis = PicPosReturnKpis.from(allRows);
-    final rows = allRows
-        .where((r) => r.matchesNumber(_invoiceSearchController.text))
-        .toList();
-    final byId = {for (final inv in state.invoices) inv.id: inv};
-
+    // القائمةُ وعدّاداتُها (من فواتير المدى كلِّها) ترشيحُها بالبحث صارا
+    // داخلَ منتقي الفاتورة الأصليّة — `_openInvoicePicker` في الاستمارة.
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        PicPosReturnsSummaryCards(kpis: kpis, isSales: true),
-        const SizedBox(height: 12),
          SyncPendingBanner(
           tableName: 'sales_returns',
           label: tr('مرتجع مبيعات'),
         ),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              // ‏٤٠٠ بكسلٍ هو عمودُ التصميم (`400px 1fr`)، لكنّه يتقلّص على
-              // لوحٍ ضيّقٍ بدل أن يسحق لوحَ التفاصيل إلى لا شيء.
-              final listWidth =
-                  constraints.maxWidth < 1000 ? constraints.maxWidth * .38 : 400.0;
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(
-                    width: listWidth,
-                    child: PicPosReturnsInvoicePanel(
-                      rows: rows,
-                      selectedId: state.selectedInvoice?.id,
-                      isLoading: state.isLoading,
-                      emptyMessage: tr('لا توجد فواتير في هذه الفترة'),
-                      onSelect: (r) {
-                        final inv = byId[r.id];
-                        if (inv != null) notifier.selectInvoice(inv);
-                      },
-                      filters: _buildListFilters(state),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildDetailsSide(state, notifier)),
-                ],
-              );
-            },
-          ),
-        ),
+        Expanded(child: buildReturnForm(state, notifier)),
       ],
     );
   }
 
   /// شريطُ ترشيح القائمة — مدىً وبحث. يُبنى هنا لا في اللوح المشترك، لأن
   /// شاشةَ المشتريات ترشّح في SQL ولها منتقي مورّدٍ إضافيّ.
-  Widget _buildListFilters(SalesReturnState state) {
+  ///
+  /// [onSearchChanged] يعيد رسمَ حوار المنتقي: البحثُ هنا في الذاكرة، و
+  /// `setState` الشاشة لا يصل الحوار.
+  Widget _buildListFilters(
+    SalesReturnState state, {
+    VoidCallback? onSearchChanged,
+  }) {
     return Column(
       children: [
         Row(
@@ -255,7 +234,10 @@ class _SalesReturnsPicposScreenState
                 borderSide: BorderSide.none,
               ),
             ),
-            onChanged: (_) => setState(() {}),
+            onChanged: (_) {
+              setState(() {});
+              onSearchChanged?.call();
+            },
           ),
         ),
       ],
@@ -298,37 +280,5 @@ class _SalesReturnsPicposScreenState
         ),
       ),
     );
-  }
-
-  Widget _buildDetailsSide(
-    SalesReturnState state,
-    SalesReturnNotifier notifier,
-  ) {
-    if (state.selectedInvoice == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              PhosphorIconsBold.arrowCounterClockwise,
-              size: 80,
-              color: AppColors.textMuted.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 24),
-             Text(
-              tr('اختر فاتورة من القائمة لعرض تفاصيلها'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 16),
-            ),
-          ],
-        ),
-      );
-    }
-    if (state.isLoading) {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: ShimmerLoading.list(itemCount: 6),
-      );
-    }
-    return buildReturnDetailsPanel(state, notifier);
   }
 }

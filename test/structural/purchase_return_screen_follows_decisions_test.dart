@@ -16,13 +16,24 @@
 //
 // ⚠️ **ورقمُ المستند لا يُعرَض قبل الحفظ**: يُولَّد داخلَ المعاملة
 // (`generateInvoiceNumber('PRET-')`)، فرقمٌ مُخمَّنٌ يُطبَع على مستندٍ ماليّ.
+//
+// ═══ المرحلة C2 (البند ٣) — تصميمُ المالك الجديد ═══
+//
+// الاستمارةُ أُعيد تصميمُها (`purchase_returns_picpos_form.dart` بدل
+// `purchase_returns_picpos_details.dart`)، والتصميمُ الجديدُ **يتقدّم على
+// القرارات أعلاه حيث يُظهر العنصرَ فقط**، وبلا وعدٍ كاذب:
+//   ١ — شارةُ الحالة عادت لأنّ التصميمَ يعرضها، **بنصّ «جديد» لا «مسودة»**.
+//   ٢ — «حفظ مسودة» **لا يعود**: لا منطقَ مسوّدةٍ خلفَه — يبقى كما هو.
+//   ٣ — «طريقة التسوية» تُعرَض لأنّ التصميمَ يعرضها، **حقلاً مقروءاً لا
+//       قائمة**: المحرّكُ بطريقةٍ واحدةٍ ثابتة.
+//   ورقمُ المستند: «يُولَّد تلقائياً» لا رقمٌ مُخمَّن — كما هو.
 
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
 const _detailsPath = 'lib/presentation/purchase_returns_picpos/screens/'
-    'purchase_returns_picpos_details.dart';
+    'purchase_returns_picpos_form.dart';
 
 /// نصُّ الملفّ بلا أسطر التعليق وبلا `\r` — الملفّاتُ هنا CRLF.
 String _code(String path) => [
@@ -40,19 +51,28 @@ String _body(String code, String start, String end) {
 }
 
 void main() {
-  test('الترويسةُ لبِنةُ القشرة — بلا وسمِ حالةٍ وبلا رقمٍ مُخمَّن', () {
+  test('الترويسةُ لبِنةُ الاستمارة — شارةُ «جديد» لا «مسودة» وبلا رقمٍ مُخمَّن',
+      () {
     final code = _code(_detailsPath);
     final header = _body(
       code,
       'Widget _buildInvoiceHeader(',
       '\n  Widget _buildItemsList(',
     );
-    expect(header.contains('PicPosDocumentHeader('), isTrue,
-        reason: 'الترويسةُ ما زالت مبنيّةً يدوياً — والقشرةُ وُحِّدت لهذا');
-    expect(header.contains('PicPosDocStatus'), isFalse,
-        reason: 'وسمُ حالةٍ على شاشةٍ بلا دورةِ مسوّدة — وعدٌ بحفظٍ لا يقع');
-    expect(header.contains('number:'), isFalse,
+    expect(header.contains('PicPosDocPageHeader('), isTrue,
+        reason: 'الترويسةُ ما زالت مبنيّةً يدوياً — واللبِنةُ وُحِّدت لهذا');
+    // C2: الشارةُ يعرضها التصميمُ الجديد فعادت — لكنّ «مسودة» تبقى وعداً
+    // بحفظٍ مؤقّتٍ لا يقع، فنصُّها «جديد».
+    expect(header.contains("statusLabel: tr('جديد')"), isTrue,
+        reason: 'شارةُ الحالة غائبةٌ أو تقول غيرَ «جديد»');
+    expect(header.contains("tr('مسودة')"), isFalse,
+        reason: 'وسمُ «مسودة» على شاشةٍ بلا دورةِ مسوّدة — وعدٌ بحفظٍ لا يقع');
+    // ⚠️ والرقمُ «يُولَّد تلقائياً» نصّاً — لا تخمينٌ ولا توليدٌ هنا.
+    expect(header.contains("number: tr('يُولَّد تلقائياً')"), isTrue,
         reason: 'رقمُ المرتجع يُولَّد في المعاملة — فأيُّ رقمٍ هنا مُخمَّن');
+    expect(header.contains('generateInvoiceNumber'), isFalse);
+    expect(header.contains("'PRET-"), isFalse,
+        reason: 'رقمٌ مُركَّبٌ باليد في الترويسة — مُخمَّنٌ لا محالة');
   });
 
   test('وفعلٌ واحدٌ لا فعلان — لا دورةَ مسوّدة', () {
@@ -61,28 +81,46 @@ void main() {
       'Widget _buildReturnFooter(',
       '\n}',
     );
-    expect(footer.contains('PicPosFormActionBar('), isTrue,
+    expect(footer.contains('PicPosReturnActionBar('), isTrue,
         reason: 'شريطُ الأفعال ما زال مبنيّاً يدوياً');
-    expect(footer.contains('draft:'), isFalse,
+    expect(footer.contains('draft'), isFalse,
         reason: 'زرُّ مسوّدةٍ لا دورةَ حياةٍ خلفَه — قرارُ المالك خطوةٌ واحدة');
-    expect(footer.contains('primary:'), isTrue,
+    expect(footer.contains('حفظ مسودة'), isFalse,
+        reason: 'التصميمُ الجديدُ يعرض «حفظ مسودة» — ولا منطقَ خلفَه');
+    expect(footer.contains('onPrimary:'), isTrue,
         reason: 'لا فعلَ مرحِّلاً أصلاً');
+    expect(footer.contains('processReturn'), isTrue,
+        reason: 'الفعلُ المرحِّلُ لا ينادي المعالجَ القائم');
+    // ⚠️ واللبِنةُ نفسُها لا تقبل فعلَ مسوّدة — فلا يُضاف من بابٍ آخر.
+    final kit = _code('lib/presentation/picpos_shell/picpos_return_form_kit.dart');
+    final bar = _body(
+      kit,
+      'class PicPosReturnActionBar ',
+      '\n}',
+    );
+    expect(bar.toLowerCase().contains('draft'), isFalse,
+        reason: 'شريطُ أفعال المرتجع صار يقبل مسوّدة — ولا دورةَ لها');
   });
 
   test('والإجماليّاتُ ثلاثةٌ — والضريبةُ ليست خفيّة', () {
     // ⚠️ الضريبةُ تدخل تسويةَ المورّد إجماليّاً، فعرضُ الصافي وحدَه يُظهر
     // «١٠٠» بينما يُخصَم من الذمّة «١١٤».
-    final footer = _body(
+    final totals = _body(
       _code(_detailsPath),
-      'Widget _buildReturnFooter(',
-      '\n}',
+      'Widget _buildReturnTotals(',
+      '\n  Widget _buildSettlementMirror(',
     );
-    expect(footer.contains('PicPosTotalsBar('), isTrue);
-    expect(footer.contains('calculateReturnVat()'), isTrue,
+    expect(totals.contains('PicPosTotalsBar('), isTrue);
+    expect(totals.contains('calculateReturnVat()'), isTrue,
         reason: 'الضريبةُ غائبةٌ عن العرض وهي داخلةٌ في التسوية');
+    expect(
+      _code(_detailsPath).contains('_buildReturnTotals(notifier)'),
+      isTrue,
+      reason: 'شريطُ الإجماليّات مبنيٌّ ولا يُعرَض',
+    );
   });
 
-  test('ولا قائمةَ لـ«طريقة التسوية» — المحرّكُ لا يستشيرها', () {
+  test('ولا قائمةَ لـ«طريقة التسوية» — حقلٌ مقروءٌ بما سيفعله المحرّك', () {
     final mirror = _body(
       _code(_detailsPath),
       'Widget _buildSettlementMirror(',
@@ -93,17 +131,31 @@ void main() {
             'رصيدُ الذمّة ولا يصله شيء');
     expect(mirror.contains('notifier.settlement'), isTrue,
         reason: 'المرآةُ لا تقرأ القسمةَ التي ينفّذها المحرّك');
+    // C2: التصميمُ يعرض الطريقة — فتُعرَض مشتقّةً من القسمة نفسِها.
+    expect(mirror.contains('method: tr(s.methodLabel)'), isTrue,
+        reason: '«طريقة التسوية» غائبةٌ أو غيرُ مشتقّةٍ من القسمة');
+    final kit = _code('lib/presentation/picpos_shell/picpos_return_form_kit.dart');
+    final card = _body(
+      kit,
+      'class PicPosSettlementCard ',
+      '\n}',
+    );
+    expect(card.contains('DropdownButton'), isFalse,
+        reason: 'كتلةُ التسوية المشتركة صارت تعرض قائمةً للطريقة');
   });
 
   test('ومرساةٌ — القائمةُ المشروعةُ الوحيدةُ هي سببُ المردود', () {
     // بلا هذه المرساة يمرّ الفحصُ أعلاه أخضرَ لو حُذفت كلُّ القوائم من
-    // الشاشة — لا لأنّ التسويةَ صارت مشتقّة.
-    final footer = _body(
+    // الشاشة — لا لأنّ التسويةَ صارت مشتقّة. (C2: السببُ انتقل إلى بطاقة
+    // الترويسة كما في التصميم.)
+    final header = _body(
       _code(_detailsPath),
-      'Widget _buildReturnFooter(',
-      '\n}',
+      'Widget _buildInvoiceHeader(',
+      '\n  Widget _buildItemsList(',
     );
-    expect(footer.contains('AppConstants.purchaseReturnReasons'), isTrue,
+    expect(header.contains('AppConstants.purchaseReturnReasons'), isTrue,
         reason: 'قائمةُ السبب اختفت — والقرارُ أنّها إلزاميّة');
+    expect(header.contains('notifier.updateReturnReason'), isTrue,
+        reason: 'الاختيارُ لا يصل المزوّد');
   });
 }

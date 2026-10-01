@@ -32,9 +32,11 @@ String _code(String path) => [
         if (!line.trimLeft().startsWith('//')) line.replaceAll('\r', ''),
     ].join('\n');
 
+// المرحلة C2: الاستمارةُ المعاد تصميمُها حلّت محلَّ لوح التفاصيل
+// (`purchase_returns_picpos_details.dart`) — والسلسلةُ نفسُها تُحرَس فيها.
 const _detailsPath =
     'lib/presentation/purchase_returns_picpos/screens/'
-    'purchase_returns_picpos_details.dart';
+    'purchase_returns_picpos_form.dart';
 const _providerPath = 'lib/presentation/providers/purchase_return_provider.dart';
 const _repoPath = 'lib/data/repositories/purchases_repository_impl.dart';
 const _autopostPath = 'lib/data/database/daos/accounting_autopost_dao.dart';

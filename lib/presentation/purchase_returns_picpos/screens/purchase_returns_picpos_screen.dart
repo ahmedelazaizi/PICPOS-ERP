@@ -31,17 +31,19 @@ import '../../widgets/permission_guard.dart'; // B5: Manager approval
 import '../../widgets/common/common.dart';
 
 import '../../picpos_shell/picpos_screen_scaffold.dart';
-import '../../picpos_shell/picpos_document_header.dart';
-import '../../picpos_shell/picpos_form_action_bar.dart';
+import '../../picpos_shell/picpos_return_form_kit.dart';
 import '../../picpos_shell/picpos_totals_bar.dart';
 import '../../picpos_shell/picpos_returns_panel.dart';
+import '../../../data/providers/manufacturing_providers.dart'
+    show warehouseNameMapProvider;
 import '../../../domain/models/picpos_return_view.dart';
 
 // ── Part files (منسوخة حرفياً من lib/presentation/screens/purchase_returns/ —
 // الشاشة الأصل `part of` خاص فما ينفعش تتعمل import، فبتنتقل بنسخ حرفي هنا؛
 // راجع تعليق مصيدة النسخ في رأس كل ملف). ──────────────────────────────────
 part 'purchase_returns_picpos_logic.dart';
-part 'purchase_returns_picpos_details.dart';
+// الاستمارةُ المعاد تصميمُها (C2) — حلّت محلَّ لوح التفاصيل المنسوخ.
+part 'purchase_returns_picpos_form.dart';
 
 /// شاشة مرتجع المشتريات بهوية PicPos. تُختار بالعلامة في app_main_screen
 /// (`Brand.isPicPos`). تعيد استخدام نفس `purchaseReturnProvider` (وتوابعه
@@ -57,6 +59,11 @@ part 'purchase_returns_picpos_details.dart';
 /// وتعديل مرتجع مُرحّل (Feature 015، محكوم بصلاحية `purchases_return_edit`).
 ///
 /// راجع lib/presentation/screens/purchase_returns_screen.dart (الأصل).
+///
+/// ⚠️ **المرحلة C2 (البند ٣):** الشكلُ صار استمارةً واحدةً على تصميم المالك
+/// (`purchase_returns_picpos_form.dart`)، وقائمةُ الفواتير بفلاترها
+/// وعدّاداتها انتقلت إلى منتقي «رقم الفاتورة الأصليّة». والإجراءاتُ أعلاه
+/// كما هي.
 class PurchaseReturnsPicposScreen extends ConsumerStatefulWidget {
   const PurchaseReturnsPicposScreen({super.key});
 
@@ -67,7 +74,7 @@ class PurchaseReturnsPicposScreen extends ConsumerStatefulWidget {
 
 class _PurchaseReturnsPicposScreenState
     extends ConsumerState<PurchaseReturnsPicposScreen>
-    with _PurchaseReturnsPicposLogic, _PurchaseReturnsPicposDetailsPanel {
+    with _PurchaseReturnsPicposLogic, _PurchaseReturnsPicposForm {
   final _searchController = TextEditingController();
   // حقلا السبب المحلّيّان حُذفا: السببُ يعيش في `PurchaseReturnState`
   // ويصل صفَّ المستند. حالةٌ محلّيّةٌ لا تغادر الودجت هي ما جعل
@@ -167,60 +174,27 @@ class _PurchaseReturnsPicposScreenState
     PurchaseReturnNotifier notifier,
   ) {
     // ‏لا ترشيحَ في الذاكرة: كلُّ الفلاتر (المدى · الرقم · المورد · الصنف)
-    // نُفِّذت في SQL، فما يصل هنا هو النتيجةُ الكاملةُ لا شريحةٌ مبتورةٌ منها.
-    // فالعدّاداتُ والقائمةُ يقرآن نفسَ القائمة — بخلاف توأم المبيعات الذي
-    // يرشّح بالبحث في الذاكرة فيفترقان.
-    final rows = [for (final inv in state.invoices) _toRow(inv)];
-    final kpis = PicPosReturnKpis.from(rows);
-    final byId = {for (final inv in state.invoices) inv.id: inv};
-
+    // نُفِّذت في SQL، فما يصل منتقي الفاتورة الأصليّة (`_openInvoicePicker`
+    // في الاستمارة) هو النتيجةُ الكاملةُ لا شريحةٌ مبتورةٌ منها. فالعدّاداتُ
+    // والقائمةُ هناك يقرآن نفسَ القائمة — بخلاف توأم المبيعات الذي يرشّح
+    // بالبحث في الذاكرة فيفترقان.
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        PicPosReturnsSummaryCards(kpis: kpis, isSales: false),
-        const SizedBox(height: 12),
          SyncPendingBanner(
           tableName: 'purchase_returns',
           label: tr('مرتجع مشتريات'),
         ),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              // عمودُ القائمة أعرضُ قليلاً من توأم المبيعات (‏٤٤٠ لا ٤٠٠):
-              // شريطُ الترشيح هنا يحمل منتقيَي المورد والصنف زيادةً.
-              final listWidth = constraints.maxWidth < 1040
-                  ? constraints.maxWidth * .40
-                  : 440.0;
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(
-                    width: listWidth,
-                    child: PicPosReturnsInvoicePanel(
-                      rows: rows,
-                      selectedId: state.selectedInvoice?.id,
-                      isLoading: state.isLoading,
-                      emptyMessage: tr('لا توجد فواتير مشتريات في هذه الفترة'),
-                      onSelect: (r) {
-                        final inv = byId[r.id];
-                        if (inv != null) notifier.selectInvoice(inv);
-                      },
-                      filters: _buildListFilters(state),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: buildReturnDetailsPanel(state, notifier)),
-                ],
-              );
-            },
-          ),
-        ),
+        Expanded(child: buildReturnForm(state, notifier)),
       ],
     );
   }
 
   /// شريطُ ترشيح القائمة — مدىً وبحثٌ ومنتقيا المورد والصنف.
-  Widget _buildListFilters(PurchaseReturnState state) {
+  ///
+  /// [r] مرجعُ الحوار الذي يُرسَم فيه الشريط: `ref.watch` الشاشة لا يصلح
+  /// خارجَ بنائها.
+  Widget _buildListFilters(PurchaseReturnState state, WidgetRef r) {
     return Column(
       children: [
         Row(
@@ -279,7 +253,7 @@ class _PurchaseReturnsPicposScreenState
           children: [
             Expanded(child: _buildSupplierFilter(state.supplierId)),
             const SizedBox(width: 8),
-            Expanded(child: _buildProductFilter(state.productId)),
+            Expanded(child: _buildProductFilter(state.productId, r)),
           ],
         ),
       ],
@@ -366,8 +340,8 @@ class _PurchaseReturnsPicposScreenState
   }
 
   /// البند 7 — فلتر الصنف: «الصنف الموجود في جميع الفواتير».
-  Widget _buildProductFilter(int? selected) {
-    final productsAsync = ref.watch(allProductsProvider);
+  Widget _buildProductFilter(int? selected, WidgetRef r) {
+    final productsAsync = r.watch(allProductsProvider);
     return productsAsync.when(
       loading: () => const SizedBox(height: 40),
       error: (_, _) => const SizedBox(height: 40),

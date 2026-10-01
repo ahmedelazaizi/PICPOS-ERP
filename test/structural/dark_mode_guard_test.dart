@@ -50,8 +50,6 @@ const _allowlistedFiles = <String, String>{
       'Batch action controls use an intentionally inverted colored toolbar.',
   'lib/presentation/sales_invoices_picpos/screens/sales_batch_action_bar.dart':
       'Batch action controls use an intentionally inverted colored toolbar.',
-  'lib/presentation/sales_returns_picpos/screens/sales_returns_picpos_details.dart':
-      'Return status controls use a colored action surface.',
   'lib/presentation/screens/account_mapping_settings_screen.dart':
       'Header count and controls sit on the brand-colored header.',
   'lib/presentation/screens/activity_log/activity_log_filters.dart':
