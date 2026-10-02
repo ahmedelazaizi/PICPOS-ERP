@@ -76,6 +76,14 @@ class CommercialPapersRepositoryImpl implements ICommercialPapersRepository {
   }
 
   @override
+  Future<void> setPaperDrawer(int paperId, {int? accountId, String? name}) =>
+      _db.setCommercialPaperDrawer(paperId, accountId: accountId, name: name);
+
+  @override
+  Future<Map<int, ({int? accountId, String? name})>> getPaperDrawers() =>
+      _db.commercialPaperDrawers();
+
+  @override
   Future<bool> updatePaperStatus(
     int id,
     String status, {

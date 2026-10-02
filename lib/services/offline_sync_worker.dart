@@ -1297,6 +1297,14 @@ class OfflineSyncWorker {
         }
         break;
 
+      case 'vouchers':
+        // E-fix ١ — سندُ العميل الكامل (`ClientVoucherInterceptor`). الخادمُ
+        // يُطابق على `globalId` فالتصريفُ المكرَّرُ لا يقيّد مرّتين.
+        if (operation == 'insert') {
+          return proxy.submitVoucher(payload, idempotencyKey: idempotencyKey);
+        }
+        break;
+
       case 'parties':
         if (operation == 'insert') {
           return proxy.createParty(payload, idempotencyKey: idempotencyKey);

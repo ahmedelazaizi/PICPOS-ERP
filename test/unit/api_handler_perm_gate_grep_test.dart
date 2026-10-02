@@ -29,6 +29,7 @@ const handlerFiles = <String>[
   'lib/services/api/api_product_handler.dart',
   'lib/services/api/api_purchase_handler.dart',
   'lib/services/api/api_data_handler.dart',
+  'lib/services/api/api_voucher_handler.dart',
   // api_handler.dart, api_auth_handler.dart, api_terminals_handler.dart
   // host the EXEMPT handlers — checked separately below.
 ];

@@ -39,21 +39,31 @@ void main() {
     expect(path.groupLabel, isNotNull);
   });
 
-  test('النطاقُ: تتبع «التوزيع» وتظهر في PicPos وحدَها', () {
+  test('النطاقُ: تحلّ محلَّ «التوزيع» وتظهر في PicPos وحدَها', () {
+    // E-fix ٤ب — الشاشةُ القديمة (٢٤) تُستبدَل في PicPos لا تُجاوَر.
     expect(
         ScreenRegistry.withPicposRepDistribution(
             [ScreenId.loyalty, ScreenId.distribution, ScreenId.hr]),
-        [ScreenId.loyalty, ScreenId.distribution, id, ScreenId.hr]);
+        [ScreenId.loyalty, id, ScreenId.hr]);
+    const legacy = ScreenId.distribution;
     if (Brand.isPicPos) {
       expect(ScreenRegistry.forProfile(BusinessProfile.unified), contains(id));
       expect(
           ScreenRegistry.forProfile(BusinessProfile.commercial), contains(id));
       expect(navItemVisibleForBrand(id.navigationIndex), isTrue);
+      expect(ScreenRegistry.forProfile(BusinessProfile.unified),
+          isNot(contains(legacy)));
+      expect(navItemVisibleForBrand(legacy.navigationIndex), isFalse);
     } else {
       expect(ScreenRegistry.forProfile(BusinessProfile.unified),
           isNot(contains(id)));
       expect(navItemVisibleForBrand(id.navigationIndex), isFalse);
+      expect(ScreenRegistry.forProfile(BusinessProfile.unified),
+          contains(legacy));
+      expect(navItemVisibleForBrand(legacy.navigationIndex), isTrue);
     }
+    // الصلاحيةُ باقيةٌ للعلامتَين.
+    expect(screenPermissionMap[legacy], PermissionCodes.distributionView);
   });
 
   test('`ScreenConfig` يبني الشاشة', () {

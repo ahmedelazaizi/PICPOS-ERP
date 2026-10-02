@@ -79,7 +79,8 @@ void main() {
   test('🔴 والسحبُ قبل أوّل كتابةٍ ماليّة', () {
     final code = _code(_payment);
     final draw = code.indexOf('await _drawNumbers(v)');
-    final expense = code.indexOf('ClientWriteInterceptor.createExpense(');
+    // E-fix ١ — أوّلُ كتابةٍ ماليّةٍ صارت حمولةَ السند الكاملة إلى الخادم.
+    final expense = code.indexOf('ClientVoucherInterceptor.submit(');
     expect(draw, greaterThan(-1));
     expect(expense, greaterThan(-1));
     expect(draw, lessThan(expense),

@@ -147,6 +147,9 @@ class VoucherChequeDraft {
   final amountCtrl = TextEditingController();
   /// E4 — الساحب (للشيك الوارد).
   final drawerCtrl = TextEditingController();
+
+  /// E-fix ٢ (v186) — الساحبُ (وارد) / المستفيدُ (صادر) من دليل الحسابات.
+  int? drawerAccountId;
   DateTime? dueDate;
 
   double get amount => double.tryParse(amountCtrl.text.trim()) ?? 0;
@@ -171,7 +174,7 @@ typedef VoucherSubmission = ({
   double discount,
   double commissionPercent,
   String notes,
-  List<({String number, String bank, DateTime? dueDate, double amount, String drawer})> cheques,
+  List<({String number, String bank, DateTime? dueDate, double amount, String drawer, int? drawerAccountId})> cheques,
   bool depositImmediately,
   List<({String invoiceType, int invoiceId, double amount})> allocations,
 
@@ -1008,6 +1011,22 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                     ),
                   ),
                 ),
+              // E-fix ٢ — الساحبُ (وارد) / المستفيدُ (صادر) من دليل الحسابات
+              // بمنتقي المرحلة هـ؛ يُحفَظ في `commercial_papers.drawer_*`.
+              if (widget.accounts.isNotEmpty)
+                SizedBox(
+                  width: 240,
+                  child: VoucherAccountField(
+                    key: Key('voucher_cheque_drawer_account_$i'),
+                    label: widget.kind.isReceipt
+                        ? tr('حساب الساحب')
+                        : tr('حساب المستفيد'),
+                    accounts: widget.accounts,
+                    selectedId: c.drawerAccountId,
+                    onChanged: (a) =>
+                        setState(() => c.drawerAccountId = a.id),
+                  ),
+                ),
               SizedBox(
                 width: 170,
                 child: InkWell(
@@ -1202,6 +1221,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
               dueDate: _cheques[i].dueDate,
               amount: _cheques[i].amount,
               drawer: _cheques[i].drawerCtrl.text.trim(),
+              drawerAccountId: _cheques[i].drawerAccountId,
             ),
       ],
       depositImmediately: _isCheque && _depositImmediately,

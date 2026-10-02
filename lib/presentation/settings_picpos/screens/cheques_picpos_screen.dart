@@ -103,6 +103,30 @@ final _papersProvider =
   return ref.watch(commercialPapersRepositoryProvider).watchCommercialPapers();
 });
 
+/// E-fix ٢ (v186) — ساحبُ كلِّ ورقةٍ (وارد) / مستفيدُها (صادر)، يتجدّد مع
+/// قائمة الأوراق. وفشلُ قراءته لا يُخفي القائمة: عرضٌ إضافيٌّ لا شرط.
+final _drawersProvider = FutureProvider.autoDispose<
+    Map<int, ({int? accountId, String? name})>>((ref) async {
+  ref.watch(_papersProvider);
+  try {
+    return await ref
+        .watch(commercialPapersRepositoryProvider)
+        .getPaperDrawers();
+  } catch (_) {
+    return const {};
+  }
+});
+
+/// «الساحب: …» / «المستفيد: …» — أو `null` حين لا ساحبَ مسجَّلاً.
+String? _drawerLabel(
+    CommercialPaperData p, Map<int, ({int? accountId, String? name})> all) {
+  final name = all[p.id]?.name;
+  if (name == null || name.isEmpty) return null;
+  return p.direction == 'issued'
+      ? tr('المستفيد: {p0}', {'p0': trData(name)})
+      : tr('الساحب: {p0}', {'p0': trData(name)});
+}
+
 final _historyProvider = StreamProvider.autoDispose
     .family<List<PaperStatusHistoryData>, int>((ref, paperId) {
   return ref.watch(commercialPapersRepositoryProvider).watchPaperHistory(paperId);
@@ -468,7 +492,9 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
               : PhosphorIconsBold.note,
           tint: _statusLabels[p.status]?.$2 ?? AppColors.primary,
         ),
-        PicPosTextCell(_partyName(parties, p.partyId)),
+        PicPosTextCell(_partyName(parties, p.partyId),
+            sub: _drawerLabel(
+                p, ref.watch(_drawersProvider).value ?? const {})),
         PicPosTextCell(p.bankName ?? '—', sub: p.bankBranch),
         PicPosTextCell(_d(p.issueDate)),
         PicPosTextCell(_d(p.dueDate)),
@@ -1059,6 +1085,8 @@ class _SelectionBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
     final voucherId = paper.sourceVoucherId;
+    final drawer =
+        _drawerLabel(paper, ref.watch(_drawersProvider).value ?? const {});
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -1098,6 +1126,20 @@ class _SelectionBar extends ConsumerWidget {
                 ),
               ),
             ),
+          // E-fix ٢ — ساحبُ الشيك / مستفيدُه من عموده (v186).
+          if (drawer != null) ...[
+            const SizedBox(width: 18),
+            Container(width: 1, height: 22, color: context.picposHairline),
+            const SizedBox(width: 18),
+            Flexible(
+              child: Text(
+                drawer,
+                key: const Key('cheque_selection_drawer'),
+                overflow: TextOverflow.ellipsis,
+                style: text.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
           const Spacer(),
           if (canDeposit)
             FilledButton.icon(

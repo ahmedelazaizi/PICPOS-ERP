@@ -41,10 +41,15 @@ CommercialPaperData _paper(
     );
 
 class _FakeRepo implements ICommercialPapersRepository {
-  _FakeRepo(this.papers, this.history);
+  _FakeRepo(this.papers, this.history, [this.drawers = const {}]);
 
   final List<CommercialPaperData> papers;
   final List<PaperStatusHistoryData> history;
+  final Map<int, ({int? accountId, String? name})> drawers;
+
+  @override
+  Future<Map<int, ({int? accountId, String? name})>> getPaperDrawers() async =>
+      drawers;
 
   @override
   Stream<List<CommercialPaperData>> watchCommercialPapers({
@@ -95,6 +100,7 @@ void main() {
     WidgetTester tester,
     Size size, {
     List<CommercialPaperData>? papersOverride,
+    Map<int, ({int? accountId, String? name})> drawers = const {},
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -102,8 +108,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          commercialPapersRepositoryProvider
-              .overrideWithValue(_FakeRepo(papersOverride ?? papers, history)),
+          commercialPapersRepositoryProvider.overrideWithValue(
+              _FakeRepo(papersOverride ?? papers, history, drawers)),
           allPartiesProvider
               .overrideWith((ref) => Stream.value(const <Party>[])),
         ],
@@ -132,6 +138,17 @@ void main() {
         await teardownTree(tester);
       });
     }
+  });
+
+  // E-fix ٢ (v186) — الساحبُ من عموده يظهر في القائمة وفي شريط الورقة.
+  testWidgets('ساحبُ الشيك يُعرَض في القائمة والتفاصيل', (tester) async {
+    await open(tester, const Size(1500, 900),
+        drawers: {1: (accountId: 9, name: 'شركة الساحب')});
+    expect(find.text('الساحب: شركة الساحب'), findsWidgets);
+    await tester.tap(find.text('8842').first);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('cheque_selection_drawer')), findsOneWidget);
+    await teardownTree(tester);
   });
 
   testWidgets('⚠️ القسمةُ بالاتّجاه صحيحةٌ — لا ورقةَ تظهر في الجهة الخطأ',

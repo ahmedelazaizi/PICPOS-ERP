@@ -29,6 +29,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/core/config/brand.dart';
 import 'package:ural_erp/core/enums/app_screen.dart';
 import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/core/navigation/screen_registry.dart';
@@ -186,7 +187,8 @@ void main() {
             reason: 'بلا مدخلٍ هنا لا يراها المستخدمُ مهما صحّ الباقي');
         expect(item.single.label, e.label);
         // E1 — شاشاتُ الأصول تحت «إدارة الحسابات» (‏`accounts`).
-        expect(item.single.group, 'accounts');
+        // E-fix ٣ — في PicPos وحدَه؛ UralCash على «المالية والمحاسبة».
+        expect(item.single.group, Brand.isPicPos ? 'accounts' : 'accounting');
         expect(item.single.permission, screenPermissionMap[id],
             reason: 'صلاحيّةٌ في القائمة تخالف الخريطةَ تُظهر مدخلاً يفتح '
                 'شاشةً ممنوعة');
@@ -213,6 +215,20 @@ void main() {
         'سند صرف',
         chequesScreenLabel,
       ]);
+      // E-fix ٣ — UralCash على ترتيبه قبل المرحلة هـ: صدرُ «المالية
+      // والمحاسبة» السبعةُ كما طلبها المالك 2026-09-18.
+      if (!Brand.isPicPos) {
+        expect(accounting.take(7).toList(), [
+          'سند قبض',
+          'سند صرف',
+          chequesScreenLabel,
+          'سند قيد',
+          'فئات الأصول',
+          'التوزيع والمواقع',
+          'دفتر الشيكات',
+        ]);
+        return;
+      }
       expect(accounting, isNot(contains('سند قيد')));
 
       final accounts = [

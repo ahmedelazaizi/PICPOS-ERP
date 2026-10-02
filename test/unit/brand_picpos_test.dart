@@ -194,6 +194,31 @@ void main() {
       expect(navItemVisibleForBrand(ScreenId.treasury.navigationIndex), isTrue);
     });
 
+    // E-fix ٣ — الفصلُ («الإدارة المالية» / «إدارة الحسابات») لـPicPos وحدَه.
+    test('رأسا المالية مفصولان في PicPos، ولا رأسَ «اليومية العامة»', () {
+      final labels = {for (final g in kNavGroupDefs) g.key: g.label};
+      expect(labels['accounting'], 'الإدارة المالية');
+      expect(labels['accounts'], 'إدارة الحسابات');
+      expect(labels.containsKey('journal'), isFalse);
+      expect(kAllNavItemDefs.where((i) => i.group == 'journal'), isEmpty);
+      expect(
+          [for (final i in kAllNavItemDefs) if (i.group == 'accounting') i.index],
+          [68, 69, 34, 70, 10, 56]);
+    });
+
+    // E-fix ٤ب — «التوزيع» القديمة (٢٤) تُخفى وتحلّ محلَّها ٧٨.
+    test('«إدارة المناديب والتوزيع» تحلّ محلَّ «التوزيع» القديمة', () {
+      expect(navItemVisibleForBrand(ScreenId.distribution.navigationIndex),
+          isFalse);
+      expect(navItemVisibleForBrand(ScreenId.repDistribution.navigationIndex),
+          isTrue);
+      final scope = ScreenRegistry.forProfile(BusinessProfile.unified);
+      expect(scope, isNot(contains(ScreenId.distribution)));
+      expect(scope, contains(ScreenId.repDistribution));
+      expect(screenPermissionMap[ScreenId.distribution], 'distribution_view',
+          reason: 'الصلاحيةُ باقية');
+    });
+
     test('يستبدل مدخل الأطراف بمدخلي العملاء والموردين', () {
       expect(navItemVisibleForBrand(ScreenId.parties.navigationIndex), isFalse);
       expect(navItemVisibleForBrand(ScreenId.customers.navigationIndex), isTrue);

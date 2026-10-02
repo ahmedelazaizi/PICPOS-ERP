@@ -133,6 +133,7 @@ class ApiRateLimiter {
     const MapEntry('/api/journals', RateLimitClass.critical),
     const MapEntry('/api/expenses', RateLimitClass.critical),
     const MapEntry('/api/receipts', RateLimitClass.critical),
+    const MapEntry('/api/vouchers', RateLimitClass.critical),
 
     // ── Telemetry ──────────────────────────────────────────────────────
     const MapEntry('/api/activity-logs', RateLimitClass.telemetry),

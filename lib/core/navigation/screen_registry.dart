@@ -467,11 +467,13 @@ class ScreenRegistry {
 
   /// المرحلة و — «إدارة المناديب والتوزيع» تتبع «التوزيع» في كلّ نطاقٍ
   /// يحمله (التجاريّ والموحَّد)، فلا تظهر لنشاطٍ لا توزيعَ فيه.
+  ///
+  /// E-fix ٤ب — و**تحلّ محلَّ** «التوزيع» القديمة (٢٤) في PicPos كما حلّت
+  /// شاشتا العملاء والموردين محلَّ «الأطراف»: إخفاءُ المدخل وحدَه يُبقيها
+  /// مبلوغةً بالفهرس. الصلاحيةُ والبياناتُ كما هي، وUralCash لا يمرّ من هنا.
   static List<ScreenId> withPicposRepDistribution(List<ScreenId> screens) => [
-        for (final screen in screens) ...[
-          screen,
-          if (screen == ScreenId.distribution) ScreenId.repDistribution,
-        ],
+        for (final screen in screens)
+          screen == ScreenId.distribution ? ScreenId.repDistribution : screen,
       ];
 
   /// [features] اختياريٌّ عن قصد: تركُه `null` يعطي **بالضبط** ما كان

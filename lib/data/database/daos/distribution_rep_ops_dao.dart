@@ -211,9 +211,20 @@ extension DistributionRepOpsDao on AppDatabase {
               s.invoiceDate.isSmallerThanValue(to) &
               s.isDeleted.equals(false)))
         .get();
+    final echoedReturns = _echoedReturnKeys(invoices);
     for (final inv in invoices) {
       final s = invoiceStamps[inv.id];
       if (!keep(s) || inv.status == 'cancelled') continue;
+      if (_isClientReturnCache(inv)) {
+        // E-fix ٤أ — صفُّ ذاكرة العميل يُعَدّ مرّةً واحدة: إن وصل نظيرُه من
+        // الخادم استُهلك به، وإلّا فهو المرتجعُ الوحيد بعد.
+        final key = _returnKey(inv);
+        final left = echoedReturns[key] ?? 0;
+        if (left > 0) {
+          echoedReturns[key] = left - 1;
+          continue;
+        }
+      }
       out.add(RepTransactionRow(
         date: inv.invoiceDate,
         kind: inv.saleType == 'return' ? 'return' : 'invoice',
@@ -269,6 +280,42 @@ extension DistributionRepOpsDao on AppDatabase {
       ));
     }
     out.sort((a, b) => a.date.compareTo(b.date));
+    return out;
+  }
+
+  /// E-fix ٤أ — مرتجعُ جهاز العميل يُكتَب **صفَّين** على ذلك الجهاز:
+  ///
+  ///   ‏١) صفُّ ذاكرةٍ محلّيٌّ (`returns_repository_impl`): رقمه `SRET-<gid>`،
+  ///      يحمل المعرّفَ العامَّ للمرتجع ورابطَ الأصل `|gid:<أصل>` في الملاحظة؛
+  ///   ‏٢) نظيرُه من الخادم حين تعود لقطةُ `/api/sales`: `SalesSyncStrategy`
+  ///      تُدرجه **بلا** `globalId` وبرقم الخادم، فلا يلتقيان بالمعرّف
+  ///      ولا بالرقم، ومطابقةُ «الإجماليّ+اليوم+العميل» تفشل حين يختلف
+  ///      معرّفُ العميل — وكلاهما مختومٌ بالمندوب ⇒ المرتجعُ يُعَدّ مرّتين.
+  ///
+  /// فالمفتاحُ: معرّفُ الأصل العامُّ + الإجماليّ. وكلُّ نظيرٍ من الخادم
+  /// يستهلك صفَّ ذاكرةٍ واحداً لا أكثر.
+  static bool _isClientReturnCache(SalesInvoiceData inv) =>
+      inv.saleType == 'return' &&
+      inv.invoiceNumber.startsWith('SRET-') &&
+      (inv.globalId ?? '').isNotEmpty;
+
+  static String? _returnKey(SalesInvoiceData inv) {
+    final original = returnOriginalGidFromNote(inv.notes);
+    if (original == null) return null;
+    return '$original|${inv.total.toStringAsFixed(2)}';
+  }
+
+  Map<String?, int> _echoedReturnKeys(List<SalesInvoiceData> invoices) {
+    final out = <String?, int>{};
+    for (final inv in invoices) {
+      if (inv.saleType != 'return' ||
+          inv.status == 'cancelled' ||
+          _isClientReturnCache(inv)) {
+        continue;
+      }
+      final key = _returnKey(inv);
+      if (key != null) out[key] = (out[key] ?? 0) + 1;
+    }
     return out;
   }
 

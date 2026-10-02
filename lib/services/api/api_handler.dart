@@ -37,6 +37,7 @@ import 'api_product_handler.dart';
 import 'api_purchase_handler.dart';
 import 'api_auth_handler.dart';
 import 'api_terminals_handler.dart';
+import 'api_voucher_handler.dart';
 import 'api_html_templates.dart';
 import 'table_bill_html.dart';
 import 'table_bill_token.dart';
@@ -66,6 +67,7 @@ class ApiHandler {
   late final ApiPurchaseHandler _purchases;
   late final ApiAuthHandler _auth;
   late final ApiTerminalsHandler _terminals;
+  late final ApiVoucherHandler _vouchers;
 
   ApiHandler(this._db) {
     _sales = ApiSalesHandler(_db, _wsClients);
@@ -75,6 +77,7 @@ class ApiHandler {
     _purchases = ApiPurchaseHandler(_db, _wsClients);
     _auth = ApiAuthHandler(_db, _wsClients);
     _terminals = ApiTerminalsHandler(_db, _wsClients);
+    _vouchers = ApiVoucherHandler(_db, _wsClients);
   }
 
   /// Build the shelf Router with all API endpoints
@@ -163,6 +166,9 @@ class ApiHandler {
     router.post('/api/expenses', _data.postExpense);
     router.delete('/api/expenses/<id>', _data.deleteExpense);
     router.post('/api/receipts', _data.postReceipt);
+    // E-fix ١ — سندا القبض والصرف من جهاز العميل (تحويلٌ/مستفيدٌ/دفتر).
+    router.post('/api/vouchers/receipt', _vouchers.postReceiptVoucher);
+    router.post('/api/vouchers/payment', _vouchers.postPaymentVoucher);
     // Shifts
     router.post('/api/shifts/open', _data.postOpenShift);
     router.post('/api/shifts/close', _data.postCloseShift);
@@ -1426,6 +1432,7 @@ class ApiHandler {
       }
       final papers = await query.get();
       final jsonList = <Map<String, dynamic>>[];
+      final drawers = await _db.commercialPaperDrawers(); // v186
 
       for (final p in papers) {
         final history = await (_db.select(_db.paperStatusHistory)
@@ -1448,6 +1455,8 @@ class ApiHandler {
           'endorsedToPartyId': p.endorsedToPartyId,
           'notes': p.notes,
           'safeId': p.safeId,
+          'drawerAccountId': drawers[p.id]?.accountId,
+          'drawerName': drawers[p.id]?.name,
           'createdAt': p.createdAt.toIso8601String(),
           'statusHistory': history.map((h) => {
             'id': h.id,

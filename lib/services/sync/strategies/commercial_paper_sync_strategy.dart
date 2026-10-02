@@ -71,6 +71,7 @@ class CommercialPaperSyncStrategy extends SyncStrategy {
             notes: Value(m['notes'] as String?),
           ));
         }
+        await _applyDrawer(serverId, m);
         return;
       }
 
@@ -100,6 +101,7 @@ class CommercialPaperSyncStrategy extends SyncStrategy {
           ),
         ),
       );
+      await _applyDrawer(serverId, m);
 
       // Sync status history if present
       final history = m['statusHistory'] as List? ?? [];
@@ -122,6 +124,15 @@ class CommercialPaperSyncStrategy extends SyncStrategy {
     } catch (e) {
       debugPrint('[Sync] Error in CommercialPaperSyncStrategy: $e');
     }
+  }
+
+  /// v186 — ساحبُ الشيك (عمودان خامان خارج نموذج Drift). خادمٌ أقدم بلا
+  /// المفتاحَين يترك قيمةَ العميل كما هي.
+  Future<void> _applyDrawer(int paperId, Map<String, dynamic> m) async {
+    final accountId = parseIntNullable(m['drawerAccountId']);
+    final name = m['drawerName'] as String?;
+    if (accountId == null && (name == null || name.isEmpty)) return;
+    await db.setCommercialPaperDrawer(paperId, accountId: accountId, name: name);
   }
 
   @override

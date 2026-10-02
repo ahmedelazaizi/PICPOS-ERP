@@ -35,9 +35,17 @@ class _CwiTradingPapers {
     // because the server's auto-minted globalId didn't match the
     // mirror's local one.
     String? globalId,
+    // E-fix ٢ (v186) — ساحبُ الشيك/مستفيدُه من الدليل؛ يُحَلّ على الخادم
+    // بالمعرّف العامّ ثمّ الرمز (`ApiDataHandler.postCommercialPaper`).
+    int? drawerAccountId,
+    String? drawerName,
   }) async {
     if (!SyncInterceptor.isClientMode) return null;
     debugPrint('[ClientInterceptor] Routing commercial paper create to server');
+    final db = ClientWriteInterceptor._db;
+    final drawerAccount = db == null
+        ? null
+        : await ClientVoucherInterceptor._account(db, drawerAccountId);
 
     // Feature 044 — thread `partyGlobalId` + `partyName` so the server
     // resolves the party via `resolvePartyId`. Field log:
@@ -66,6 +74,8 @@ class _CwiTradingPapers {
       'accountNumber': accountNumber,
       'notes': notes,
       'globalId': globalId,
+      'drawerAccount': ?drawerAccount,
+      'drawerName': ?drawerName,
     };
     return ClientWriteInterceptor._tryOrQueue(
       tableName: 'commercial_papers',

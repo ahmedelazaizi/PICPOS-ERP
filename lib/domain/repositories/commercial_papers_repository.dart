@@ -71,6 +71,13 @@ abstract class ICommercialPapersRepository {
   Future<List<db.PaperStatusHistoryData>> getPaperHistory(int paperId);
   Future<Map<String, dynamic>> getPapersSummary({String? direction});
   Stream<List<db.CommercialPaperData>> watchPortfolio();
+
+  /// E-fix ٢ (v186) — ساحبُ الشيك الوارد / مستفيدُ الصادر من دليل الحسابات،
+  /// مع لقطة اسمه. `name` فارغٌ ⇒ اسمُ الحساب.
+  Future<void> setPaperDrawer(int paperId, {int? accountId, String? name});
+
+  /// ساحبُ كلِّ ورقةٍ له ساحب — بمعرّف الورقة.
+  Future<Map<int, ({int? accountId, String? name})>> getPaperDrawers();
 }
 
 final commercialPapersRepositoryProvider = Provider<ICommercialPapersRepository>((ref) {

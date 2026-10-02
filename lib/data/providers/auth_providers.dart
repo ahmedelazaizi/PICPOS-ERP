@@ -637,7 +637,13 @@ class NavGroupDef {
 /// ⚠️ والترتيبُ المعروضُ **لا يُقرأ من هنا**: الشريطُ يبني ترتيبَه من أوّلِ
 /// ظهورٍ لكلّ مفتاحٍ في [kAllNavItemDefs]. فهذه القائمةُ تسميةٌ وأيقونة،
 /// وموضعُ الرأس يُضبَط بموضع مداخله هناك.
-const kNavGroupDefs = <NavGroupDef>[
+///
+/// ⚠️ **E-fix ٣ — الفصلُ لـPicPos وحدَه (قرارُ المالك).** UralCash يعود إلى
+/// رؤوسه قبل المرحلة هـ حرفاً بحرف: [_kNavGroupDefsUralCash].
+const kNavGroupDefs =
+    Brand.isPicPos ? _kNavGroupDefsPicPos : _kNavGroupDefsUralCash;
+
+const _kNavGroupDefsPicPos = <NavGroupDef>[
   NavGroupDef('home', 'Dashboard', PhosphorIconsBold.house),
   NavGroupDef('sales', 'المبيعات', PhosphorIconsBold.shoppingCart),
   // طلبُ المالك 2026-09-12: رأسٌ مستقلٌّ تحت المبيعات يجمع الطاولاتِ والمطبخ.
@@ -660,13 +666,92 @@ const kNavGroupDefs = <NavGroupDef>[
   NavGroupDef('system', 'اعداد النظام', PhosphorIconsBold.gear),
 ];
 
+/// رؤوسُ UralCash كما كانت قبل `2aa66285` (المرحلة هـ): «المالية والمحاسبة»
+/// و«الحسابات» و«اليومية العامة» — والمداخلُ في [_uralCashFinanceNavLayout].
+const _kNavGroupDefsUralCash = <NavGroupDef>[
+  NavGroupDef('home', 'Dashboard', PhosphorIconsBold.house),
+  NavGroupDef('sales', 'المبيعات', PhosphorIconsBold.shoppingCart),
+  NavGroupDef('restaurant', 'ادارة المطاعم', PhosphorIconsBold.forkKnife),
+  NavGroupDef('purchases', 'المشتريات', PhosphorIconsBold.receipt),
+  NavGroupDef('inventory', 'الاصناف والمخزون', PhosphorIconsBold.package),
+  NavGroupDef('manufacturing', 'ادارة التصنيع', PhosphorIconsBold.factory),
+  NavGroupDef('relations', 'العملاء والموردين', PhosphorIconsBold.usersThree),
+  NavGroupDef('hr', 'الموارد البشرية', PhosphorIconsBold.identificationBadge),
+  NavGroupDef('accounting', 'المالية والمحاسبة', PhosphorIconsBold.wallet),
+  NavGroupDef('accounts', 'الحسابات', PhosphorIconsBold.bookOpen),
+  NavGroupDef('journal', 'اليومية العامة', PhosphorIconsBold.notebook),
+  NavGroupDef('reports', 'التقارير', PhosphorIconsBold.chartBar),
+  NavGroupDef('system', 'اعداد النظام', PhosphorIconsBold.gear),
+];
+
+/// مداخلُ المالية في UralCash بترتيبها ورؤوسها قبل `2aa66285`:
+/// (الفهرس، المجموعة، عنوانُ القسم فوقه).
+const _kUralCashFinanceLayout = <(int, String, String?)>[
+  (68, 'accounting', 'المالية والمحاسبة'),
+  (69, 'accounting', null),
+  (34, 'accounting', null),
+  (67, 'accounting', null),
+  (65, 'accounting', null),
+  (66, 'accounting', null),
+  (70, 'accounting', null),
+  (10, 'accounting', null),
+  (56, 'accounting', null),
+  (35, 'accounting', null),
+  (22, 'accounting', null),
+  (28, 'accounting', null),
+  (26, 'accounting', null),
+  (27, 'accounts', 'الحسابات'),
+  (33, 'accounts', null),
+  (36, 'accounts', null),
+  (73, 'accounts', null),
+  (32, 'journal', 'اليومية العامة'),
+  (74, 'journal', null),
+  (53, 'journal', null),
+];
+
+/// يعيد ترتيبَ مداخل المالية من [shared] (تخطيطُ PicPos) إلى تخطيط UralCash
+/// القديم في موضع أوّلها. ما لم يُذكَر في [_kUralCashFinanceLayout] يبقى
+/// في موضعه — فمدخلٌ ماليٌّ جديدٌ لا يسقط من UralCash صامتاً.
+List<NavItemDef> _uralCashFinanceNavLayout(List<NavItemDef> shared) {
+  final byIndex = {for (final i in shared) i.index: i};
+  final moved = {
+    for (final e in _kUralCashFinanceLayout)
+      if (byIndex.containsKey(e.$1)) e.$1,
+  };
+  final first = shared.indexWhere((i) => moved.contains(i.index));
+  if (first < 0) return shared;
+  return [
+    for (final i in shared.take(first))
+      if (!moved.contains(i.index)) i,
+    for (final (index, group, section) in _kUralCashFinanceLayout)
+      if (byIndex[index] case final i?)
+        NavItemDef(
+          icon: i.icon,
+          label: i.label,
+          permission: i.permission,
+          index: i.index,
+          section: section,
+          group: group,
+        ),
+    for (final i in shared.skip(first))
+      if (!moved.contains(i.index)) i,
+  ];
+}
+
 /// كل عناصر القائمة الجانبية، بترتيبها ومرتبطة بأكواد الصلاحيات.
 ///
 /// اتشالت من جوّه `userNavItemsProvider` لثابت مستوى الملف عشان اختبار
 /// `screen_permission_map_test.dart` يقدر يتأكد إن عنصر القائمة الخاص
 /// بكل شاشة متفق مع `screenPermissionMap[screenId]` — من غير ما يحتاج
 /// يشغّل الـ provider بكل تبعياته (auth state, DB, إلخ).
-final kAllNavItemDefs = [
+///
+/// ⚠️ E-fix ٣ — القائمةُ أدناه تخطيطُ PicPos (فصلُ المرحلة هـ)، وUralCash
+/// يراها بتخطيط المالية القديم ([_uralCashFinanceNavLayout]).
+final kAllNavItemDefs = Brand.isPicPos
+    ? _kNavItemDefsShared
+    : _uralCashFinanceNavLayout(_kNavItemDefsShared);
+
+final _kNavItemDefsShared = [
   // ═══════════════════════════════════════════
   // 🏠 Dashboard
   // ═══════════════════════════════════════════
@@ -918,7 +1003,8 @@ const kPicPosRetiredNavIndexes = <int>{
 
 const kPicPosOnlyNavIndexes = <int>{75, 76, 77, 78};
 // E4 — `70` (دفتر الشيكات) صار تبويباً داخل «إدارة الشيكات» في PicPos.
-const kPicPosReplacedNavIndexes = <int>{6, 70};
+// E-fix ٤ب — `24` (التوزيع القديمة) حلّت محلَّها `78` في PicPos.
+const kPicPosReplacedNavIndexes = <int>{6, 24, 70};
 
 /// هل يظهر مدخلُ القائمة صاحبُ [index] لهذه العلامة؟
 ///

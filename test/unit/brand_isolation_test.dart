@@ -174,5 +174,30 @@ void main() {
         expect(navItemVisibleForBrand(folded), isTrue);
       }
     });
+
+    // E-fix ٣ — فصلُ المرحلة هـ («الإدارة المالية» / «إدارة الحسابات»)
+    // لـPicPos وحدَه: UralCash على رؤوسه قبل `2aa66285` حرفاً بحرف.
+    test('رؤوسُ المالية في UralCash كما كانت قبل المرحلة هـ', () {
+      final labels = {for (final g in kNavGroupDefs) g.key: g.label};
+      expect(labels['accounting'], 'المالية والمحاسبة');
+      expect(labels['accounts'], 'الحسابات');
+      expect(labels['journal'], 'اليومية العامة');
+      expect(labels.values, isNot(contains('الإدارة المالية')));
+      expect(labels.values, isNot(contains('إدارة الحسابات')));
+      List<int> of(String g) =>
+          [for (final i in kAllNavItemDefs) if (i.group == g) i.index];
+      expect(of('accounting'),
+          [68, 69, 34, 67, 65, 66, 70, 10, 56, 35, 22, 28, 26]);
+      expect(of('accounts'), [27, 33, 36, 73]);
+      expect(of('journal'), [32, 74, 53]);
+    });
+
+    // E-fix ٤ب — «التوزيع» القديمة (٢٤) تُخفى في PicPos وحدَه.
+    test('«التوزيع» القديمة ظاهرةٌ هنا، و«إدارة المناديب» لا', () {
+      expect(navItemVisibleForBrand(ScreenId.distribution.navigationIndex),
+          isTrue);
+      expect(navItemVisibleForBrand(ScreenId.repDistribution.navigationIndex),
+          isFalse);
+    });
   });
 }

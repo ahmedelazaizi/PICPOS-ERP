@@ -20,6 +20,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/core/config/brand.dart';
 import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/data/providers/auth_providers.dart';
 
@@ -70,7 +71,10 @@ void main() {
   // سند قبض · سند صرف · إدارة الشيكات · الخزينة · إغلاق الوردية؛
   // و«إدارة الحسابات» (‏`accounts`) = كلُّ شاشات المحاسبة الباقية، ومنها ما
   // كان تحت «اليومية العامة» — فرأسُ `journal` دُمج ولم يبقَ.
-  group('١ · الرأسان', () {
+  //
+  // ⚠️ E-fix ٣ — الفصلُ لـPicPos وحدَه: المجموعتان ١ و٢ تُقاسان ببناء PicPos
+  //    (`--dart-define=APP_BRAND=picpos`)، وUralCash يُقاس بمجموعة ١ب.
+  group('١ · الرأسان', skip: !Brand.isPicPos, () {
     test('«إدارة الحسابات» رأسُ مجموعةٍ — لا مدخلَ شاشة', () {
       final meta = kNavGroupDefs.firstWhere((g) => g.key == 'accounts',
           orElse: () => throw StateError('لا مجموعةَ باسم accounts'));
@@ -100,7 +104,56 @@ void main() {
     });
   });
 
-  group('٢ · محتوى المجموعتَين', () {
+  group('١ب · UralCash — رؤوسُ ما قبل المرحلة هـ حرفاً بحرف', skip: Brand.isPicPos,
+      () {
+    test('الرؤوسُ الثلاثةُ بتسمياتها القديمة وبترتيبها', () {
+      String label(String key) =>
+          kNavGroupDefs.firstWhere((g) => g.key == key).label;
+      expect(label('accounting'), 'المالية والمحاسبة');
+      expect(label('accounts'), 'الحسابات');
+      expect(label('journal'), 'اليومية العامة');
+      final order = _groupOrder();
+      expect(order.indexOf('accounts'), order.indexOf('accounting') + 1);
+      expect(order.indexOf('journal'), order.indexOf('accounts') + 1);
+    });
+
+    test('🔴 المداخلُ في مجموعاتها القديمة وبترتيبها وأقسامِها', () {
+      expect(_indexesOf('accounting'), [
+        ScreenId.receiptVoucher.navigationIndex,
+        ScreenId.paymentVoucher.navigationIndex,
+        ScreenId.commercialPapers.navigationIndex,
+        ScreenId.journalVoucher.navigationIndex,
+        ScreenId.assetCategories.navigationIndex,
+        ScreenId.assetLocations.navigationIndex,
+        ScreenId.chequeBooks.navigationIndex,
+        ScreenId.treasury.navigationIndex,
+        ScreenId.shiftClose.navigationIndex,
+        ScreenId.fixedAssets.navigationIndex,
+        ScreenId.eInvoice.navigationIndex,
+        ScreenId.fiscalYear.navigationIndex,
+        ScreenId.operationalExpenses.navigationIndex,
+      ]);
+      expect(_indexesOf('accounts'), [
+        ScreenId.chartOfAccounts.navigationIndex,
+        ScreenId.costCenters.navigationIndex,
+        ScreenId.generalLedger.navigationIndex,
+        ScreenId.trialBalance.navigationIndex,
+      ]);
+      expect(_indexesOf('journal'), [
+        ScreenId.journalEntries.navigationIndex,
+        ScreenId.journalTemplates.navigationIndex,
+        ScreenId.bankReconciliation.navigationIndex,
+      ]);
+      expect(_itemAt(ScreenId.receiptVoucher.navigationIndex)!.section,
+          'المالية والمحاسبة');
+      expect(_itemAt(ScreenId.chartOfAccounts.navigationIndex)!.section,
+          'الحسابات');
+      expect(_itemAt(ScreenId.journalEntries.navigationIndex)!.section,
+          'اليومية العامة');
+    });
+  });
+
+  group('٢ · محتوى المجموعتَين', skip: !Brand.isPicPos, () {
     test('🔴 «الإدارة المالية» خمسٌ بعينها وبترتيبها (+ دفتر الشيكات لـUralCash)',
         () {
       expect(_indexesOf('accounting'), [

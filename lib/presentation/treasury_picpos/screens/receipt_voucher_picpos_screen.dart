@@ -193,11 +193,6 @@ class _ReceiptVoucherPicposScreenState
       final isTransfer = v.method != 'check' &&
           v.safeId == null &&
           v.treasuryAccountId != null;
-      if (isTransfer && voucherRunsOnClient) {
-        _toast(tr('سند التحويل المحاسبي يُنشأ على جهاز الخادم.'),
-            ToastType.error);
-        return;
-      }
       if (docSafeId == null) {
         _toast(tr('اختر الخزينة.'), ToastType.error);
         return;
@@ -218,26 +213,33 @@ class _ReceiptVoucherPicposScreenState
       // Spec 135 BUG-C — فرعُ المشغِّل لا فرعُ الخزنة.
       final operatingBranchId = ref.read(activeBranchIdProvider).value;
 
-      // E2 — التحويلُ المحاسبيُّ مسارٌ محلّيٌّ وحدَه (رُفض في وضع العميل أعلاه).
-      final intercepted = isTransfer
-          ? null
-          : await ClientWriteInterceptor.createReceipt(
-              amount: netAmount,
-              category: category,
-              description: description,
-              partyId: v.partyId,
-              safeId: docSafeId,
-              branchId: operatingBranchId,
-              costCenterId: v.costCenterId,
-              linkedAccountId: v.beneficiaryAccountId,
-              globalId: sharedGlobalId,
-              paperType: v.method == 'check' ? 'cheque' : null,
-            );
+      // E-fix ١ — جهازُ العميل يرسل السندَ كاملاً إلى الخادم (التحويلَ
+      // والمستفيدَ وورقةَ الدفتر) ولا يكتبه محلّيّاً؛ `null` = الكتابةُ هنا.
+      final intercepted = await ClientVoucherInterceptor.submit(
+        isReceipt: true,
+        transfer: isTransfer,
+        globalId: sharedGlobalId,
+        amount: netAmount,
+        discount: totalDiscount,
+        category: category,
+        description: description,
+        partyId: v.partyId,
+        safeId: docSafeId,
+        treasuryAccountId: isTransfer ? v.treasuryAccountId : null,
+        beneficiaryAccountId: v.beneficiaryAccountId,
+        branchId: operatingBranchId,
+        costCenterId: v.costCenterId,
+        userId: ref.read(authProvider).user?.id,
+        paperType: v.method == 'check' ? 'cheque' : null,
+        bookId: v.bookId,
+        bookNumber: v.bookNumber,
+      );
 
       // ⚠️ يبقى صفراً في وضع العميل: الكتابةُ على الخادم والصفُّ يصل
       //    بالمزامنة. وصفرٌ يعني «لا سندَ محلّيّاً» لا خطأً.
+      // كُتب على الخادم (أو صُفّ) ⇒ لا كتابةَ محلّيّة، والصفُّ يصل بالمزامنة.
       int voucherRowId = 0;
-      if (isTransfer) {
+      if (intercepted == null && isTransfer) {
         voucherRowId = await treasuryRepo.createAccountTransferVoucher(
           isReceipt: true,
           amount: netAmount,
@@ -356,6 +358,8 @@ userId: ref.read(authProvider).user?.id,
         accountNumber: null,
         notes: notes,
         globalId: gid,
+        drawerAccountId: c.drawerAccountId,
+        drawerName: c.drawer.isEmpty ? null : c.drawer,
       );
 
       final paperId = await cpRepo.createPaper(
@@ -371,6 +375,12 @@ userId: ref.read(authProvider).user?.id,
         notes: notes,
         globalId: gid,
       );
+      // E-fix ٢ (v186) — الساحبُ في عموده لا في الملاحظة وحدَها.
+      if (c.drawerAccountId != null || c.drawer.isNotEmpty) {
+        await cpRepo.setPaperDrawer(paperId,
+            accountId: c.drawerAccountId,
+            name: c.drawer.isEmpty ? null : c.drawer);
+      }
 
       // 🔴 **الإيداعُ انتقالٌ بقيده لا وسمٌ عند الإنشاء.** المحرّكُ يُنشئ
       //    الورقةَ عند `pending` ويقيّد أوراقَ القبض؛ والإيداعُ حالةٌ تاليةٌ

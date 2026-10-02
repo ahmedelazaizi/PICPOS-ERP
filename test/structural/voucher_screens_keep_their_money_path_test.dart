@@ -91,7 +91,9 @@ void main() {
 
     // 🔴 سندُ الصرف يُسقط الخزنةَ للشيك — وإلّا خرجت نقديّةٌ مرّتين.
     final payment = _code(_payment);
-    expect(_count(payment, "safeId: v.method == 'check' ? null : v.safeId"), 2,
+    // E-fix ١ — نداءُ الخادم صار `ClientVoucherInterceptor.submit` ويمرّر
+    // خزنةَ المستند للتحويل، فيُعَدّ الشرطُ نفسُه لا بادئةُ الوسيط.
+    expect(_count(payment, "v.method == 'check' ? null : v.safeId"), 2,
         reason: '🔴 مسارٌ من المسارَين يمرّر الخزنةَ للشيك — والقيدُ يملكه '
             'ترحيلُ الأوراق التجارية، فتخرج النقديّةُ مرّتين');
   });

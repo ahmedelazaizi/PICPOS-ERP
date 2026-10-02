@@ -413,6 +413,74 @@ void main() {
       expect(coverage.single.customerId, c);
       expect(coverage.single.lastInvoiceDate, isNotNull);
     });
+
+    // E-fix ٤أ — صفّا مرتجعِ جهاز العميل (ذاكرةُ `SRET-<gid>` ونظيرُه من
+    // الخادم بلا `globalId`) يُعَدّان مرتجعاً واحداً.
+    test('🔴 مرتجعُ جهاز العميل يُعَدّ مرّةً واحدة', () async {
+      final x = await employee('ع');
+      final r = await db.saveDistributionRoute(name: 'ب', repEmployeeId: x);
+      final c = await customer('عميل المرتجع');
+      await db.assignCustomerToRoute(customerId: c, routeId: r);
+      final originalId = await sale(c, total: 400);
+      final original = await (db.select(db.salesInvoices)
+            ..where((s) => s.id.equals(originalId)))
+          .getSingle();
+      final from = DateTime.now().subtract(const Duration(days: 1));
+      final to = DateTime.now().add(const Duration(days: 1));
+      Future<double> returns() async =>
+          (await db.repSalesSummary(from: from, to: to)).single.returns;
+
+      // ‏١) صفُّ الذاكرة كما يكتبه `returns_repository_impl` في وضع العميل.
+      Future<void> cacheRow(String gid, double total) async {
+        await db.insertSalesInvoiceWithoutStock(
+          invoice: SalesInvoicesCompanion.insert(
+            invoiceNumber: 'SRET-${gid.substring(0, 8)}',
+            warehouseId: warehouseId,
+            userId: userId,
+            invoiceDate: DateTime.now(),
+            customerId: Value(c),
+            subtotal: Value(total),
+            total: Value(total),
+            saleType: const Value('return'),
+            globalId: Value(gid),
+            notes: Value(localReturnLinkNote(originalId,
+                originalGlobalId: original.globalId)),
+          ),
+          items: const [],
+        );
+        final row = await (db.select(db.salesInvoices)
+              ..where((s) => s.globalId.equals(gid)))
+            .getSingle();
+        await db.stampDocumentRep('sales_invoices', row.id, c);
+      }
+
+      await cacheRow('aaaaaaaa-0001', 150);
+      expect(await returns(), 150, reason: 'قبل وصول النظير: الذاكرةُ وحدَها');
+
+      // ‏٢) نظيرُ الخادم كما تُدرجه `SalesSyncStrategy`: رقمُ الخادم، بلا
+      //    `globalId`، ورابطُ الأصل نفسُه، ومختومٌ بالمندوب.
+      final echo = await db.insertSalesInvoiceWithoutStock(
+        invoice: SalesInvoicesCompanion.insert(
+          invoiceNumber: 'SRV-RET-77',
+          warehouseId: warehouseId,
+          userId: userId,
+          invoiceDate: DateTime.now(),
+          customerId: Value(c),
+          subtotal: const Value(150),
+          total: const Value(150),
+          saleType: const Value('return'),
+          notes: Value(localReturnLinkNote(9001,
+              originalGlobalId: original.globalId)),
+        ),
+        items: const [],
+      );
+      await db.stampDocumentRep('sales_invoices', echo, c);
+      expect(await returns(), 150, reason: 'المرتجعُ نفسُه لا يُعَدّ مرّتين');
+
+      // ومرتجعٌ ثانٍ مستقلٌّ (مبلغٌ آخر) يُعَدّ.
+      await cacheRow('bbbbbbbb-0002', 60);
+      expect(await returns(), 210);
+    });
   });
 
   group('المزامنة', () {

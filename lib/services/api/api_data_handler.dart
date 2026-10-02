@@ -20,6 +20,7 @@ import '../sync/strategies/setting_sync_strategy.dart'
 import 'api_user_context.dart';
 import '../../domain/entities/accounting_entities.dart';
 import 'api_handler_base.dart';
+import 'api_voucher_handler.dart' show resolveClientAccountId;
 import '../../core/config/brand.dart';
 
 /// Handles all data CRUD API endpoints (non-sales, non-display).
@@ -2844,6 +2845,10 @@ class ApiDataHandler extends ApiHandlerBase {
         notes: data['notes'] as String?,
         globalId: incomingGlobalId,
       );
+      // E-fix ٢ (v186) — ساحبُ الشيك/مستفيدُه من الدليل (معرّفُ العميل يُحَلّ).
+      await db.setCommercialPaperDrawer(id,
+          accountId: await resolveClientAccountId(db, data['drawerAccount']),
+          name: data['drawerName'] as String?);
       broadcast('commercial_papers');
       return jsonResponse({'success': true, 'serverId': id});
     } catch (e) {

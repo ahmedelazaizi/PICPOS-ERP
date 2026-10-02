@@ -158,14 +158,6 @@ class _PaymentVoucherPicposScreenState
       final isTransfer = v.method != 'check' &&
           v.safeId == null &&
           v.treasuryAccountId != null;
-      // E2 — التحويلُ والمستفيدُ من الدليل مساران محلّيّان: نقطةُ الخادم
-      //    للصرف لا تحمل حساباً مختاراً.
-      if ((isTransfer || v.beneficiaryAccountId != null) &&
-          voucherRunsOnClient) {
-        _toast(tr('سند التحويل المحاسبي يُنشأ على جهاز الخادم.'),
-            ToastType.error);
-        return;
-      }
       final category = v.partyId == null ? 'other' : 'supplier_payment';
 
       // 🔴 **السحبُ أوّلاً وفي معاملةٍ واحدة.** الأرقامُ التي عاينها النموذجُ
@@ -189,21 +181,33 @@ class _PaymentVoucherPicposScreenState
       // ⚠️ **الخزنةُ تُسقَط للشيك** (`safeId: null`): الشيكُ لا يدخل درجاً،
       //    والقيدُ يملكه ترحيلُ الأوراق التجارية. وتمريرُها كان يُخرج
       //    نقديّةً مرّتين.
-      final intercepted = isTransfer
-          ? null
-          : await ClientWriteInterceptor.createExpense(
-              amount: amount,
-              category: category,
-              description: description,
-              partyId: v.partyId,
-              safeId: v.method == 'check' ? null : v.safeId,
-              branchId: operatingBranchId,
-              costCenterId: v.costCenterId,
-              paperType: v.method == 'check' ? 'cheque' : null,
-            );
+      //
+      // E-fix ١ — جهازُ العميل يرسل السندَ كاملاً إلى الخادم (التحويلَ
+      // والمستفيدَ من الدليل وورقةَ الدفتر) ولا يكتبه محلّيّاً؛ `null` =
+      // الكتابةُ هنا.
+      final intercepted = await ClientVoucherInterceptor.submit(
+        isReceipt: false,
+        transfer: isTransfer,
+        globalId: UuidV7.generate(),
+        amount: amount,
+        discount: v.discount,
+        category: category,
+        description: description,
+        partyId: v.partyId,
+        safeId: isTransfer ? docSafeId : (v.method == 'check' ? null : v.safeId),
+        treasuryAccountId: isTransfer ? v.treasuryAccountId : null,
+        beneficiaryAccountId: v.beneficiaryAccountId,
+        branchId: operatingBranchId,
+        costCenterId: v.costCenterId,
+        userId: ref.read(authProvider).user?.id,
+        paperType: v.method == 'check' ? 'cheque' : null,
+        bookId: v.bookId,
+        bookNumber: v.bookNumber,
+      );
 
+      // كُتب على الخادم (أو صُفّ) ⇒ لا كتابةَ محلّيّة، والصفُّ يصل بالمزامنة.
       int voucherRowId = 0;
-      if (isTransfer) {
+      if (intercepted == null && isTransfer) {
         voucherRowId = await ref
             .read(treasuryRepositoryProvider)
             .createAccountTransferVoucher(
@@ -344,8 +348,9 @@ userId: ref.read(authProvider).user?.id,
         accountNumber: null,
         notes: notes,
         globalId: gid,
+        drawerAccountId: c.drawerAccountId,
       );
-      await cpRepo.createPaper(
+      final paperId = await cpRepo.createPaper(
         sourceVoucherId: voucherRowId > 0 ? voucherRowId : null,
         // v175 — الدفترُ الذي سُحب منه الرقمُ فعلاً. بلا هذا العمود يبقى
         // الدفترُ متقدّماً وشيكُه مجهولَ المصدر.
@@ -361,6 +366,10 @@ userId: ref.read(authProvider).user?.id,
         notes: notes,
         globalId: gid,
       );
+      // E-fix ٢ (v186) — مستفيدُ الشيك الصادر من الدليل، حين يُختار.
+      if (c.drawerAccountId != null) {
+        await cpRepo.setPaperDrawer(paperId, accountId: c.drawerAccountId);
+      }
     }
   }
 

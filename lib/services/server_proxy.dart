@@ -11,6 +11,7 @@ import '../core/logging/diagnostic_logger.dart';
 import 'network_service.dart';
 import 'device_identity_service.dart';
 import '../core/config/brand.dart';
+import '../domain/models/voucher_book.dart';
 
 /// Centralized proxy for all write operations in client mode.
 /// When the app is in client mode, all writes go through this proxy
@@ -537,6 +538,36 @@ class ServerProxy {
       if (paperType != null && paperType.isNotEmpty) 'paperType': paperType,
     }, idempotencyKey: idempotencyKey);
     return result['serverId'] as int?;
+  }
+
+  /// E-fix ١ — سندُ قبضٍ/صرفٍ كاملٌ من جهاز العميل (`/api/vouchers/<kind>`):
+  /// تحويلٌ محاسبيّ، مستفيدٌ من الدليل، ورقةُ دفتر. رفضُ الورقة (`409`)
+  /// يعود [VoucherBookException] بنصّه ليقرأه المستخدم لا «خطأ خادم».
+  Future<int?> submitVoucher(Map<String, dynamic> data,
+      {String? idempotencyKey}) async {
+    final kind = data['kind'] == 'payment' ? 'payment' : 'receipt';
+    try {
+      final result = await post('/api/vouchers/$kind', data,
+          idempotencyKey: idempotencyKey);
+      return result['serverId'] as int?;
+    } on Exception catch (e) {
+      throw voucherBookRejectionOf(e) ?? e;
+    }
+  }
+
+  /// The [VoucherBookException] a `409` body carries, else `null`.
+  static VoucherBookException? voucherBookRejectionOf(Object error) {
+    final text = '$error';
+    final start = text.indexOf('{');
+    if (!text.contains('voucherBookKey') || start < 0) return null;
+    try {
+      final body = json.decode(text.substring(start)) as Map<String, dynamic>;
+      return VoucherBookException(body['voucherBookKey'] as String, {
+        ...?(body['voucherBookParams'] as Map?)?.cast<String, Object?>(),
+      });
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> submitSetDefaultSafe({required int safeId, String? idempotencyKey}) async {

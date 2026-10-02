@@ -23,6 +23,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/core/config/brand.dart';
 import 'package:ural_erp/core/enums/app_screen.dart';
 import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/core/navigation/screen_registry.dart';
@@ -142,7 +143,8 @@ void main() {
           reason: 'بلا مدخلٍ هنا لا يراها المستخدمُ مهما صحّ الباقي');
       expect(item.single.label, 'سند قيد');
       // E1 — «سند قيد» قيدٌ محاسبيٌّ لا حركةُ خزينة: تحت «إدارة الحسابات».
-      expect(item.single.group, 'accounts');
+      // E-fix ٣ — والفصلُ لـPicPos وحدَه: UralCash على «المالية والمحاسبة».
+      expect(item.single.group, Brand.isPicPos ? 'accounts' : 'accounting');
       expect(item.single.permission, screenPermissionMap[id],
           reason: 'صلاحيّةٌ في القائمة تخالف الخريطةَ تُظهر مدخلاً يفتح '
               'شاشةً ممنوعة');

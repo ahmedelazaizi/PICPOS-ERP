@@ -3617,5 +3617,11 @@ extension Epoch3Migrations on AppDatabase {
       await _safeMigrate(
           'v185 distribution model', ensureDistributionModelSchema);
     }
+
+    // v186 — commercial_papers.drawer_account_id + drawer_name (raw): the
+    // cheque's drawer (received) / payee (issued) from the chart of accounts.
+    if (from < 186) {
+      await _safeMigrate('v186 cheque drawer', ensureChequeDrawerSchema);
+    }
   }
 }

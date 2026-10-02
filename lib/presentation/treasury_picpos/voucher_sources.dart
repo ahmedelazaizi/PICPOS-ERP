@@ -10,13 +10,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/i18n/tr.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/models/voucher_book.dart';
-import '../../services/server_proxy.dart';
 import 'screens/voucher_form_picpos.dart';
 
-/// جهازٌ عميل: الكتابةُ الماليّةُ تقع على الخادم عبر `ClientWriteInterceptor`
-/// — ومساراتُ E2 المحلّيّة (التحويلُ والمستفيدُ من الدليل في الصرف) لا
-/// نقطةَ لها هناك بعد، فتُرفَض بوضوحٍ لا تُكتَب محلّيّاً بصمت.
-bool get voucherRunsOnClient => ServerProxy.isClientMode;
+// جهازٌ عميل: السندُ كلُّه (ومنه التحويلُ المحاسبيُّ والمستفيدُ من الدليل
+// وورقةُ الدفتر) يُكتَب على الخادم عبر `ClientVoucherInterceptor` (E-fix ١).
 
 /// كلُّ حسابٍ تفصيليٍّ نشط — مرتّبٌ بالرمز.
 final voucherAccountOptionsProvider =
