@@ -15,6 +15,7 @@ import '../core/utils/template_json_flags.dart';
 import '../data/database/database.dart';
 import '../domain/entities/shift_closing_snapshot.dart';
 import '../domain/models/receipt_qr_decision.dart';
+import '../domain/printing/company_identity.dart';
 import '../domain/printing/print_values.dart' as pv;
 import '../domain/printing/party_statement_snapshot.dart';
 import 'printing/paint_plan.dart' show PaintDirection;
@@ -52,7 +53,9 @@ const kRenderableElementTypes = <String>{
   'barcode',
   'cashier_name',
   'company_address',
+  'company_cr_number',
   'company_name',
+  'company_name_en',
   'company_phone',
   'company_tax_id',
   'custom_text',
@@ -476,6 +479,15 @@ class TemplatedInvoiceService {
   }) async {
     await _initFont();
 
+    // الاسمُ الإنجليزيُّ والسجلُّ التجاريّ من إعدادات الشركة (يحفظهما معالجُ
+    // الإعداد وتحرّرهما «معلومات الشركة»). تُقرأ هنا لا في كلّ منادٍ: عشراتُ
+    // المنادين يمرّرون الاسمَ والرقمَ الضريبيَّ ولا أحدَ منهم يعرف هذين.
+    // الفارغُ يبقى فارغاً فلا يُطبع شيء.
+    final companyNameEn =
+        (await db.getSettingValue(kCompanyNameEnSetting))?.trim();
+    final companyCrNumber =
+        (await db.getSettingValue(kCompanyCrNumberSetting))?.trim();
+
     // Derive lookup type from category: kitchen templates have type='kitchen'
     final InvoiceTemplateWithData? templateData;
     templateData = await _resolveTemplate(
@@ -550,6 +562,9 @@ class TemplatedInvoiceService {
           platformOrderNumber: platformOrderNumber,
           cashAmount: cashAmount,
           bankAmount: bankAmount,
+          companyNameEn: companyNameEn,
+          companyCrNumber: companyCrNumber,
+          locale: locale,
         ),
         items: items,
         direction: locale == 'en' ? PaintDirection.ltr : PaintDirection.rtl,
@@ -647,6 +662,9 @@ class TemplatedInvoiceService {
         cashAmount: cashAmount,
         bankAmount: bankAmount,
         receiptQr: receiptQr,
+        companyNameEn: companyNameEn,
+        companyCrNumber: companyCrNumber,
+        locale: locale,
       );
     }
 
@@ -939,6 +957,9 @@ class TemplatedInvoiceService {
     String? platformOrderNumber,
     double? cashAmount,
     double? bankAmount,
+    String? companyNameEn,
+    String? companyCrNumber,
+    String locale = 'ar',
   }) =>
       pv.PrintPayload(
         invoiceNumber: invoiceNumber,
@@ -952,6 +973,9 @@ class TemplatedInvoiceService {
         companyAddress: companyAddress,
         companyPhone: companyPhone,
         companyTaxId: companyTaxId,
+        companyNameEn: companyNameEn,
+        companyCrNumber: companyCrNumber,
+        locale: locale,
         paymentMethod: paymentMethod,
         cashierName: cashierName,
         notes: notes,
@@ -1011,6 +1035,9 @@ class TemplatedInvoiceService {
     double? cashAmount,
     double? bankAmount,
     ReceiptQr? receiptQr,
+    String? companyNameEn,
+    String? companyCrNumber,
+    String locale = 'ar',
   }) {
     final style = _getStyle(element);
     final align = _getAlignment(element.textAlign);
@@ -1059,8 +1086,24 @@ class TemplatedInvoiceService {
       case 'company_name':
         return pw.Padding(
           padding: const pw.EdgeInsets.symmetric(vertical: 2),
-          child: pw.Text(companyName, style: style, textAlign: align),
+          child: pw.Text(
+            companyMainName(
+                nameAr: companyName, nameEn: companyNameEn, locale: locale),
+            style: style,
+            textAlign: align,
+          ),
         );
+      case 'company_name_en':
+        final nameEn = companySecondaryName(
+            nameAr: companyName, nameEn: companyNameEn, locale: locale);
+        return nameEn.isEmpty
+            ? pw.SizedBox()
+            : pw.Text(nameEn, style: style, textAlign: align);
+      case 'company_cr_number':
+        final crLine = companyCrLine(companyCrNumber, locale: locale);
+        return crLine.isEmpty
+            ? pw.SizedBox()
+            : pw.Text(crLine, style: style, textAlign: align);
       case 'company_address':
         return pw.Text(companyAddress, style: style, textAlign: align);
       case 'company_phone':
@@ -1072,7 +1115,7 @@ class TemplatedInvoiceService {
       case 'company_tax_id':
         return companyTaxId != null
             ? pw.Text(
-                'السجل الضريبي: ${pv.ltrIsolate(companyTaxId)}',
+                'السجل الضريبي: ${companyTaxWithCr(taxId: companyTaxId, crNumber: companyCrNumber, locale: locale)}',
                 style: style,
                 textAlign: align,
               )

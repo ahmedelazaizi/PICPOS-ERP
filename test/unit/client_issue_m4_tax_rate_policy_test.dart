@@ -18,7 +18,17 @@ import 'package:ural_erp/core/tax/tax_rate_policy.dart';
 
 void main() {
   test('السلّم الافتراضي هو ما طلبه العميل بالضبط', () {
-    expect(TaxRatePolicy.defaultAllowedRates, [0, 1, 2, 4, 5, 10, 16]);
+    // قرارُ المالك: السلّمُ يشمل 14 و15 كي يصحّ كلُّ ما يختاره معالجُ الإعداد.
+    expect(
+        TaxRatePolicy.defaultAllowedRates, [0, 1, 2, 4, 5, 10, 14, 15, 16]);
+  });
+
+  test('السلّم الافتراضي يقبل 14 و15 (قرار المالك)', () {
+    expect(TaxRatePolicy.defaultAllowedRates, containsAll([14, 15]));
+    expect(TaxRatePolicy.isAllowed(14), isTrue);
+    expect(TaxRatePolicy.isAllowed(15), isTrue);
+    expect(() => TaxRatePolicy.assertAllowed(14), returnsNormally);
+    expect(() => TaxRatePolicy.assertAllowed(15), returnsNormally);
   });
 
   test('النسب المسموحة تُقبل', () {
@@ -28,7 +38,7 @@ void main() {
   });
 
   test('النسب العشوائية تُرفض', () {
-    for (final rate in [37.5, 123.45, 999, 14, 3, 7.5]) {
+    for (final rate in [37.5, 123.45, 999, 13, 3, 7.5]) {
       expect(TaxRatePolicy.isAllowed(rate.toDouble()), isFalse,
           reason: 'النسبة $rate ليست في السلّم القانوني');
     }

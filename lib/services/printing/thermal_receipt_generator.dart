@@ -10,6 +10,7 @@ import '../generators/base_generator.dart' hide InvoiceItem;
 import '../../core/constants/app_constants.dart';
 import '../../domain/repositories/printers_repository.dart';
 import '../../domain/models/receipt_qr_decision.dart';
+import '../../domain/printing/company_identity.dart';
 import 'printing_models.dart';
 import '../../core/config/brand.dart';
 
@@ -91,6 +92,7 @@ class ThermalReceiptGenerator {
     required double change,
     String? companyName,
     String? companyNameEn,
+    String? companyCrNumber,
     String? companyPhone,
     String? companyAddress,
     String? taxId,
@@ -158,7 +160,15 @@ class ThermalReceiptGenerator {
         build: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.center,
           children: [
-            _buildHeader(companyName, companyAddress, companyPhone, taxId),
+            _buildHeader(
+              companyName,
+              companyAddress,
+              companyPhone,
+              taxId,
+              nameEn: companyNameEn,
+              crNumber: companyCrNumber,
+              locale: locale,
+            ),
             _buildSeparator(locale == 'en' ? 'Invoice' : 'فاتورة'),
             _buildMetadata(
               date,
@@ -507,15 +517,25 @@ class ThermalReceiptGenerator {
     String? name,
     String? address,
     String? phone,
-    String? taxId,
-  ) {
+    String? taxId, {
+    String? nameEn,
+    String? crNumber,
+    String locale = 'ar',
+  }) {
+    final nameAr = name ?? Brand.documentCompanyFallback;
+    final mainName =
+        companyMainName(nameAr: nameAr, nameEn: nameEn, locale: locale);
+    final secondName =
+        companySecondaryName(nameAr: nameAr, nameEn: nameEn, locale: locale);
+    final crLine = companyCrLine(crNumber, locale: locale);
+    final hasTax = taxId?.isNotEmpty ?? false;
     return pw.Container(
       width: double.infinity,
       padding: const pw.EdgeInsets.symmetric(vertical: 8),
       child: pw.Column(
         children: [
           pw.Text(
-            name ?? Brand.documentCompanyFallback,
+            mainName,
             style: pw.TextStyle(
               font: _arabicFont,
               fontSize: 18,
@@ -523,6 +543,12 @@ class ThermalReceiptGenerator {
             ),
             textAlign: pw.TextAlign.center,
           ),
+          if (secondName.isNotEmpty)
+            pw.Text(
+              secondName,
+              style: pw.TextStyle(font: _arabicFont, fontSize: 10),
+              textAlign: pw.TextAlign.center,
+            ),
           if (address?.isNotEmpty ?? false)
             pw.Text(
               address!,
@@ -535,9 +561,12 @@ class ThermalReceiptGenerator {
               style: pw.TextStyle(font: _arabicFont, fontSize: 8),
               textAlign: pw.TextAlign.center,
             ),
-          if (taxId?.isNotEmpty ?? false)
+          if (hasTax || crLine.isNotEmpty)
             pw.Text(
-              'الرقم الضريبي: $taxId',
+              [
+                if (hasTax) 'الرقم الضريبي: $taxId',
+                if (crLine.isNotEmpty) crLine,
+              ].join('  ·  '),
               style: pw.TextStyle(font: _arabicFont, fontSize: 7),
               textAlign: pw.TextAlign.center,
             ),

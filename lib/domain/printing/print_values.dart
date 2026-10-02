@@ -14,6 +14,7 @@
 // ولا `package:pdf` هنا ولا `package:flutter`: يحرسه
 // `test/structural/template_document_has_no_ui_deps_test.dart`.
 
+import 'company_identity.dart';
 import 'party_statement_snapshot.dart';
 
 /// علامةُ **يسار-إلى-يمين** — `U+200E LRM`.
@@ -98,6 +99,14 @@ class PrintPayload {
   final String companyPhone;
   final String? companyTaxId;
 
+  /// الاسمُ الإنجليزيُّ والسجلُّ التجاريُّ — يحفظهما المعالج ويحرّرهما
+  /// «معلومات الشركة». قاعدةُ ظهورهما في `company_identity.dart`.
+  final String? companyNameEn;
+  final String? companyCrNumber;
+
+  /// لغةُ المستند (`ar` | `en`) — تحسم أيُّ اسمٍ يكون الرئيسيّ.
+  final String locale;
+
   final String paymentMethod;
   final String? cashierName;
   final String? notes;
@@ -139,6 +148,9 @@ class PrintPayload {
     this.adhocCustomerName,
     this.adhocCustomerPhone,
     this.companyTaxId,
+    this.companyNameEn,
+    this.companyCrNumber,
+    this.locale = 'ar',
     this.paymentMethod = 'نقدي',
     this.cashierName,
     this.notes,
@@ -180,13 +192,27 @@ String resolveContentValue(String type, PrintPayload p) {
     case 'adhoc_customer_phone':
       return ltrIsolate(p.adhocCustomerPhone ?? '');
     case 'company_name':
-      return p.companyName;
+      // الرئيسيُّ وحدَه: الإنجليزيُّ في مستندٍ إنجليزيّ، وإلّا العربيّ. والسطرُ
+      // الثانويُّ عنصرٌ مستقلٌّ (`company_name_en`) — صندوقُ `company_name`
+      // بارتفاعٍ ثابتٍ ويليه عنصرٌ بإحداثيٍّ ثابت، فاسمان في صندوقٍ واحدٍ
+      // كانا يلتفّان ويفيضان فوق العنوان (قِيس على فاتورة A4).
+      return companyMainName(
+          nameAr: p.companyName, nameEn: p.companyNameEn, locale: p.locale);
+    case 'company_name_en':
+      // السطرُ الثانويُّ: الاسمُ الإنجليزيُّ على المستند العربيّ. وعلى
+      // الإنجليزيّ `''` لأنّه صار الاسمَ الرئيسيَّ فلا يتكرّر.
+      return companySecondaryName(
+          nameAr: p.companyName, nameEn: p.companyNameEn, locale: p.locale);
+    case 'company_cr_number':
+      return companyCrLine(p.companyCrNumber, locale: p.locale);
     case 'company_address':
       return p.companyAddress;
     case 'company_phone':
       return ltrIsolate(p.companyPhone);
     case 'company_tax_id':
     case 'company_tax_number':
+      return companyTaxWithCr(
+          taxId: p.companyTaxId, crNumber: p.companyCrNumber, locale: p.locale);
     case 'tax_registration':
       return ltrIsolate(p.companyTaxId ?? '');
     case 'payment_method':

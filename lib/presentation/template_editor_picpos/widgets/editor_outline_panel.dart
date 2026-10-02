@@ -20,6 +20,8 @@ List<({String label, Color tint, List<({String key, String label, IconData icon}
     tint: const Color(0xFF0250D3),
     items: [
       (key: 'company_name', label: tr('اسم الشركة'), icon: PhosphorIconsBold.buildings),
+      (key: 'company_name_en', label: tr('الاسم بالإنجليزية'), icon: PhosphorIconsBold.buildings),
+      (key: 'company_cr_number', label: tr('السجل التجاري'), icon: PhosphorIconsBold.identificationBadge),
       (key: 'company_address', label: tr('العنوان'), icon: PhosphorIconsBold.mapPin),
       (key: 'company_phone', label: tr('الهاتف'), icon: PhosphorIconsBold.phone),
       (key: 'company_tax_number', label: tr('الرقم الضريبي'), icon: PhosphorIconsBold.identificationBadge),

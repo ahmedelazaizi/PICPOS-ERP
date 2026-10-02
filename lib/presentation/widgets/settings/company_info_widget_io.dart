@@ -58,6 +58,11 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
   final _taxIdController = TextEditingController();
+  // الاسمُ الإنجليزيُّ والسجلُّ التجاريّ — يحفظهما معالجُ الإعداد في
+  // `company_name_en` / `company_cr_number`، وتطبعهما المطبوعاتُ
+  // (‏`domain/printing/company_identity.dart`).
+  final _nameEnController = TextEditingController();
+  final _crNumberController = TextEditingController();
   final _emailController = TextEditingController();
   final _phone2Controller = TextEditingController();
   final _footerController = TextEditingController();
@@ -89,6 +94,8 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
     final address = await settingsRepo.getSetting('company_address');
     final phone = await settingsRepo.getSetting('company_phone');
     final taxId = await settingsRepo.getSetting('company_tax_id');
+    final nameEn = await settingsRepo.getSetting('company_name_en');
+    final crNumber = await settingsRepo.getSetting('company_cr_number');
 
     String email = '';
     String phone2 = '';
@@ -116,6 +123,8 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
         _addressController.text = address ?? '';
         _phoneController.text = phone ?? '';
         _taxIdController.text = taxId ?? '';
+        _nameEnController.text = nameEn ?? '';
+        _crNumberController.text = crNumber ?? '';
         _emailController.text = email;
         _phone2Controller.text = phone2;
         _footerController.text = footer;
@@ -131,6 +140,8 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
     _addressController.dispose();
     _phoneController.dispose();
     _taxIdController.dispose();
+    _nameEnController.dispose();
+    _crNumberController.dispose();
     _emailController.dispose();
     _phone2Controller.dispose();
     _footerController.dispose();
@@ -146,6 +157,10 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
   ///
   /// و«رسالة الشكر» في التصميم مفتاحٌ، وهي في القاعدة **نصٌّ** (`footerText`)
   /// — فرُسمت حقلَ نصٍّ لا مفتاحاً: مفتاحٌ يخفي النصَّ الذي يُطبَع فعلاً.
+  ///
+  /// تحديثٌ: «السجل التجاري» والاسمُ الإنجليزيُّ صارا حقلَين هنا، يُحفَظان
+  /// في جدول الإعدادات (`company_cr_number` · `company_name_en`) — لا عمودَ
+  /// ولا هجرة — كما يكتبهما معالجُ الإعداد، وتطبعهما المطبوعات.
   List<PicPosPanelGroup> _picposGroups() {
     return [
       PicPosPanelGroup(
@@ -163,6 +178,15 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
                   PhosphorIconsBold.buildings),
               _field(_taxIdController, tr('الرقم الضريبي'),
                   PhosphorIconsBold.identificationCard),
+            ]),
+            const SizedBox(height: 12),
+            PicPosDialogRow(children: [
+              _field(_nameEnController, tr('الاسم بالإنجليزية'),
+                  PhosphorIconsBold.buildings,
+                  key: const Key('company_name_en_field')),
+              _field(_crNumberController, tr('السجل التجاري'),
+                  PhosphorIconsBold.identificationBadge,
+                  key: const Key('company_cr_number_field')),
             ]),
             const SizedBox(height: 12),
             PicPosDialogRow(children: [
@@ -220,8 +244,10 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
     ];
   }
 
-  Widget _field(TextEditingController c, String label, IconData icon) {
+  Widget _field(TextEditingController c, String label, IconData icon,
+      {Key? key}) {
     return TextField(
+      key: key,
       controller: c,
       decoration: InputDecoration(
         labelText: label,
@@ -281,6 +307,24 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
               decoration:  InputDecoration(
                 labelText: tr('الرقم الضريبي'),
                 prefixIcon: const Icon(PhosphorIconsBold.identificationCard),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('company_name_en_field'),
+              controller: _nameEnController,
+              decoration: InputDecoration(
+                labelText: tr('الاسم بالإنجليزية'),
+                prefixIcon: const Icon(PhosphorIconsBold.buildings),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('company_cr_number_field'),
+              controller: _crNumberController,
+              decoration: InputDecoration(
+                labelText: tr('السجل التجاري'),
+                prefixIcon: const Icon(PhosphorIconsBold.identificationBadge),
               ),
             ),
             const SizedBox(height: 24),
@@ -432,6 +476,10 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
     await settingsRepo.saveSetting('company_address', _addressController.text);
     await settingsRepo.saveSetting('company_phone', _phoneController.text);
     await settingsRepo.saveSetting('company_tax_id', _taxIdController.text);
+    await settingsRepo.saveSetting(
+        'company_name_en', _nameEnController.text.trim());
+    await settingsRepo.saveSetting(
+        'company_cr_number', _crNumberController.text.trim());
     if (_selectedLogo != null) {
       await settingsRepo.saveSetting('company_logo', String.fromCharCodes(_selectedLogo!));
     }

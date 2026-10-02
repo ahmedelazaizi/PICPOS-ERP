@@ -4,6 +4,7 @@ import 'base_generator.dart';
 import '../printing/pdf_compute_helper.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/config/brand.dart';
+import '../../domain/printing/company_identity.dart';
 
 /// Professional Voucher PDF Generator (A4 format)
 /// 
@@ -31,6 +32,8 @@ class VouchersPdfGenerator extends BaseGenerator {
     String? companyPhone,
     String? companyTaxId,
     String? companyLogo,
+    String? companyNameEn,
+    String? companyCrNumber,
   }) async {
     final arabicFont = await BaseGenerator.initFont();
     final pdf = await BaseGenerator.newDocument();
@@ -58,6 +61,8 @@ class VouchersPdfGenerator extends BaseGenerator {
               companyPhone,
               companyTaxId,
               amount,
+              companyNameEn: companyNameEn,
+              companyCrNumber: companyCrNumber,
             ),
             pw.SizedBox(height: 10),
             pw.Divider(thickness: 1.5, color: PdfColors.grey700),
@@ -261,8 +266,14 @@ class VouchersPdfGenerator extends BaseGenerator {
     String? companyAddress,
     String? companyPhone,
     String? companyTaxId,
-    double total,
-  ) {
+    double total, {
+    String? companyNameEn,
+    String? companyCrNumber,
+  }) {
+    final nameEn = companySecondaryName(
+        nameAr: companyName ?? Brand.documentCompanyFallback,
+        nameEn: companyNameEn);
+    final crLine = companyCrLine(companyCrNumber);
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -298,12 +309,20 @@ class VouchersPdfGenerator extends BaseGenerator {
               companyName ?? Brand.documentCompanyFallback,
               style: pw.TextStyle(font: font, fontSize: 20, fontWeight: pw.FontWeight.bold),
             ),
+            if (nameEn.isNotEmpty)
+              pw.Text(nameEn, style: pw.TextStyle(font: font, fontSize: 11)),
             if (companyAddress != null)
               pw.Text(companyAddress, style: pw.TextStyle(font: font, fontSize: 10)),
             if (companyPhone != null)
               pw.Text('هاتف: $companyPhone', style: pw.TextStyle(font: font, fontSize: 10)),
-            if (companyTaxId != null)
-              pw.Text('رقم ضريبي: $companyTaxId', style: pw.TextStyle(font: font, fontSize: 10)),
+            if (companyTaxId != null || crLine.isNotEmpty)
+              pw.Text(
+                [
+                  if (companyTaxId != null) 'رقم ضريبي: $companyTaxId',
+                  if (crLine.isNotEmpty) crLine,
+                ].join('  ·  '),
+                style: pw.TextStyle(font: font, fontSize: 10),
+              ),
           ],
         ),
       ],

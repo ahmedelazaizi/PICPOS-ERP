@@ -1,3 +1,5 @@
+import '../../domain/printing/company_identity.dart';
+
 class InvoiceItem {
   final String name;
   final double quantity;
@@ -75,13 +77,24 @@ class DocumentCompanyHeader {
   final String? address;
   final String? taxId;
 
+  /// الاسمُ الإنجليزيُّ والسجلُّ التجاريّ — `company_name_en` و
+  /// `company_cr_number`. فارغان ⇒ لا يُطبعان (‏`company_identity.dart`).
+  final String? nameEn;
+  final String? crNumber;
+
   const DocumentCompanyHeader({
     required this.name,
     this.phone,
     this.phone2,
     this.address,
     this.taxId,
+    this.nameEn,
+    this.crNumber,
   });
+
+  /// السطرُ الإنجليزيُّ تحت الاسم العربيّ، أو `''`.
+  String get secondaryNameLine =>
+      companySecondaryName(nameAr: displayName, nameEn: nameEn);
 
   static const _fallbackName = 'الشركة';
 
@@ -100,9 +113,13 @@ class DocumentCompanyHeader {
   /// phone but no address doesn't print a dangling separator.
   String get contactLine => _contactParts.join('  ·  ');
 
-  String get taxLine => (taxId ?? '').trim().isEmpty
-      ? ''
-      : 'الرقم الضريبي: ${taxId!.trim()}';
+  String get taxLine {
+    final tax = (taxId ?? '').trim().isEmpty
+        ? ''
+        : 'الرقم الضريبي: ${taxId!.trim()}';
+    final cr = companyCrLine(crNumber);
+    return [if (tax.isNotEmpty) tax, if (cr.isNotEmpty) cr].join('  ·  ');
+  }
 }
 
 /// إجماليات كشف الحساب — تُحسب على **كل** الحركات لا على صفحة واحدة.

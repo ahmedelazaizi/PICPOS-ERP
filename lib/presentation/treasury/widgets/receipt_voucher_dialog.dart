@@ -847,6 +847,8 @@ class _ReceiptVoucherDialogState extends ConsumerState<ReceiptVoucherDialog> {
       companyPhone: companyPhone,
       companyAddress: companyAddress,
       companyTaxId: companyTaxId,
+      companyNameEn: await settingsRepo.getSetting('company_name_en'),
+      companyCrNumber: await settingsRepo.getSetting('company_cr_number'),
     );
   }
 
@@ -1230,6 +1232,8 @@ userId: ref.read(authProvider).user?.id,
             companyPhone: companyPhone,
             companyAddress: companyAddress,
             companyTaxId: companyTaxId,
+            companyNameEn: await settingsRepo.getSetting('company_name_en'),
+            companyCrNumber: await settingsRepo.getSetting('company_cr_number'),
           );
         }
       }

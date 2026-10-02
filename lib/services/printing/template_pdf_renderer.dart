@@ -14,6 +14,7 @@ import '../printer_resolver.dart';
 import '../license_service.dart';
 import 'printing_models.dart';
 import '../../domain/models/receipt_qr_decision.dart';
+import '../../domain/printing/company_identity.dart';
 
 /// Invoice data container passed to the template renderer.
 class TemplateInvoiceData {
@@ -29,6 +30,9 @@ class TemplateInvoiceData {
   final double deliveryFee;
   final String? companyName;
   final String? companyNameEn;
+
+  /// رقمُ السجلّ التجاريّ — يُطبع بجوار الرقم الضريبيّ (‏`company_identity`).
+  final String? companyCrNumber;
   final String? companyPhone;
   final String? companyAddress;
   final String? taxId;
@@ -76,6 +80,7 @@ class TemplateInvoiceData {
     this.deliveryFee = 0,
     this.companyName,
     this.companyNameEn,
+    this.companyCrNumber,
     this.companyPhone,
     this.companyAddress,
     this.taxId,
@@ -393,7 +398,22 @@ class TemplatePdfRenderer {
 
     switch (el.elementType) {
       case 'company_name':
-        return isEn ? (data.companyNameEn ?? data.companyName ?? 'Company Name') : (data.companyName ?? 'اسم الشركة');
+        final shownName = companyMainName(
+            nameAr: data.companyName ?? '',
+            nameEn: data.companyNameEn,
+            locale: data.locale);
+        return shownName.isEmpty
+            ? (isEn ? 'Company Name' : 'اسم الشركة')
+            : shownName;
+      case 'company_name_en':
+        final nameEn = companySecondaryName(
+            nameAr: data.companyName ?? '',
+            nameEn: data.companyNameEn,
+            locale: data.locale);
+        return nameEn.isEmpty ? null : nameEn;
+      case 'company_cr_number':
+        final cr = companyCrLine(data.companyCrNumber, locale: data.locale);
+        return cr.isEmpty ? null : cr;
       case 'company_address':
         return data.companyAddress ?? '';
       case 'company_phone':
@@ -483,13 +503,27 @@ class TemplatePdfRenderer {
       case 'customer_address':
         return data.customerAddress ?? '';
       case 'company_name':
-        return data.companyName ?? '';
+        return companyMainName(
+            nameAr: data.companyName ?? '',
+            nameEn: data.companyNameEn,
+            locale: data.locale);
+      case 'company_name_en':
+        return companySecondaryName(
+            nameAr: data.companyName ?? '',
+            nameEn: data.companyNameEn,
+            locale: data.locale);
+      case 'company_cr_number':
+        return companyCrLine(data.companyCrNumber, locale: data.locale);
       case 'company_address':
         return data.companyAddress ?? '';
       case 'company_phone':
         return data.companyPhone ?? '';
       case 'company_tax_number':
-        return data.taxId ?? '';
+        final tax = (data.taxId ?? '').trim();
+        return tax.isEmpty
+            ? ''
+            : companyTaxWithCr(
+                taxId: tax, crNumber: data.companyCrNumber, locale: data.locale);
       case 'subtotal':
         return fmt.format(data.subtotal);
       case 'discount':

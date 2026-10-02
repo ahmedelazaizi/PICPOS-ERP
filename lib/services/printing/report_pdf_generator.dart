@@ -7,6 +7,7 @@ import 'pdf_compute_helper.dart';
 import 'package:intl/intl.dart';
 import '../generators/base_generator.dart' hide InvoiceItem, StatementItem;
 import '../../core/config/brand.dart';
+import '../../domain/printing/company_identity.dart';
 
 class ReportPdfGenerator {
   static pw.Font? _arabicFont;
@@ -29,6 +30,9 @@ class ReportPdfGenerator {
     String? companyAddress,
     String? companyPhone,
     String? companyTaxId,
+    String? companyNameEn,
+    String? companyCrNumber,
+    String locale = 'ar',
     String? notes,
     String title = 'فاتورة مبيعات',
     String? printedBy,
@@ -47,6 +51,9 @@ class ReportPdfGenerator {
       companyAddress: companyAddress,
       companyPhone: companyPhone,
       companyTaxId: companyTaxId,
+      companyNameEn: companyNameEn,
+      companyCrNumber: companyCrNumber,
+      locale: locale,
       notes: notes,
       title: title,
       printedBy: printedBy,
@@ -80,6 +87,9 @@ class ReportPdfGenerator {
     String? companyAddress,
     String? companyPhone,
     String? companyTaxId,
+    String? companyNameEn,
+    String? companyCrNumber,
+    String locale = 'ar',
     String? notes,
     String title = 'فاتورة مبيعات',
     String? printedBy,
@@ -105,6 +115,9 @@ class ReportPdfGenerator {
               companyPhone,
               companyTaxId,
               total,
+              nameEn: companyNameEn,
+              crNumber: companyCrNumber,
+              locale: locale,
             ),
             pw.SizedBox(height: 20),
             pw.Divider(),
@@ -370,6 +383,12 @@ class ReportPdfGenerator {
               fontWeight: pw.FontWeight.bold,
             ),
           ),
+          if (c.secondaryNameLine.isNotEmpty)
+            pw.Text(
+              c.secondaryNameLine,
+              style: pw.TextStyle(
+                  font: _arabicFont, fontSize: 11, color: PdfColors.grey800),
+            ),
           if (c.hasContactInfo)
             pw.Padding(
               padding: const pw.EdgeInsets.only(top: 2),
@@ -699,8 +718,17 @@ class ReportPdfGenerator {
     String? addr,
     String? phone,
     String? taxId,
-    double total,
-  ) {
+    double total, {
+    String? nameEn,
+    String? crNumber,
+    String locale = 'ar',
+  }) {
+    final nameAr = comp ?? Brand.documentCompanyFallback;
+    final mainName =
+        companyMainName(nameAr: nameAr, nameEn: nameEn, locale: locale);
+    final secondName =
+        companySecondaryName(nameAr: nameAr, nameEn: nameEn, locale: locale);
+    final crLine = companyCrLine(crNumber, locale: locale);
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
@@ -721,13 +749,18 @@ class ReportPdfGenerator {
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
             pw.Text(
-              comp ?? Brand.documentCompanyFallback,
+              mainName,
               style: pw.TextStyle(
                 font: _arabicFont,
                 fontSize: 18,
                 fontWeight: pw.FontWeight.bold,
               ),
             ),
+            if (secondName.isNotEmpty)
+              pw.Text(
+                secondName,
+                style: pw.TextStyle(font: _arabicFont, fontSize: 11),
+              ),
             if (addr != null)
               pw.Text(
                 addr,
@@ -738,9 +771,12 @@ class ReportPdfGenerator {
                 'هاتف: $phone',
                 style: pw.TextStyle(font: _arabicFont, fontSize: 10),
               ),
-            if (taxId != null)
+            if (taxId != null || crLine.isNotEmpty)
               pw.Text(
-                'السجل الضريبي: $taxId',
+                [
+                  if (taxId != null) 'السجل الضريبي: $taxId',
+                  if (crLine.isNotEmpty) crLine,
+                ].join('  ·  '),
                 style: pw.TextStyle(font: _arabicFont, fontSize: 10),
               ),
           ],

@@ -6,8 +6,10 @@
 part of '../setup_wizard_screen.dart';
 
 /// النسبُ المسموحة — المعتمدةُ في الأردن (‏١٦ العامّة و١٠ و٥ و٤ و٢ و١ و٠)
-/// ومصر (‏١٤ و٥ و٠).
-const List<double> kSetupAllowedVatRates = [0, 1, 2, 4, 5, 10, 14, 16];
+/// ومصر (‏١٤ و٥ و٠). وقرارُ المالك: القائمةُ بالضبط ٠ · ١ · ٢ · ٤ · ٥ · ١٠ ·
+/// ١٤ · ١٥ · ١٦ — وهي نفسُها سلّمُ `TaxRatePolicy.defaultAllowedRates`، فلا
+/// تُختار في المعالج نسبةٌ يرفضها الصنفُ أو الاستيرادُ أو الـAPI.
+const List<double> kSetupAllowedVatRates = [0, 1, 2, 4, 5, 10, 14, 15, 16];
 
 extension _SetupWizardCurrencyTaxExt on _SetupWizardScreenState {
   Widget _buildCurrencyTaxStep() {

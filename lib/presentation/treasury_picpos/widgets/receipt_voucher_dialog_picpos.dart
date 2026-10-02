@@ -863,6 +863,8 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
       companyPhone: companyPhone,
       companyAddress: companyAddress,
       companyTaxId: companyTaxId,
+      companyNameEn: await settingsRepo.getSetting('company_name_en'),
+      companyCrNumber: await settingsRepo.getSetting('company_cr_number'),
     );
   }
 
@@ -1252,6 +1254,8 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
             companyPhone: companyPhone,
             companyAddress: companyAddress,
             companyTaxId: companyTaxId,
+            companyNameEn: await settingsRepo.getSetting('company_name_en'),
+            companyCrNumber: await settingsRepo.getSetting('company_cr_number'),
           );
         }
       }

@@ -25,6 +25,8 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
   final _taxIdController = TextEditingController();
+  final _nameEnController = TextEditingController();
+  final _crNumberController = TextEditingController();
   Uint8List? _selectedLogo;
   bool _isLoading = true;
 
@@ -40,6 +42,8 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
     final address = await settingsRepo.getSetting('company_address');
     final phone = await settingsRepo.getSetting('company_phone');
     final taxId = await settingsRepo.getSetting('company_tax_id');
+    final nameEn = await settingsRepo.getSetting('company_name_en');
+    final crNumber = await settingsRepo.getSetting('company_cr_number');
 
     try {
       final rs = await settingsRepo.getReceiptSettings();
@@ -55,6 +59,8 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
         _addressController.text = address ?? '';
         _phoneController.text = phone ?? '';
         _taxIdController.text = taxId ?? '';
+        _nameEnController.text = nameEn ?? '';
+        _crNumberController.text = crNumber ?? '';
         _isLoading = false;
       });
     }
@@ -66,6 +72,8 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
     _addressController.dispose();
     _phoneController.dispose();
     _taxIdController.dispose();
+    _nameEnController.dispose();
+    _crNumberController.dispose();
     super.dispose();
   }
 
@@ -111,6 +119,24 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
               decoration:  InputDecoration(
                 labelText: tr('الرقم الضريبي'),
                 prefixIcon: const Icon(PhosphorIconsBold.identificationCard),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('company_name_en_field'),
+              controller: _nameEnController,
+              decoration: InputDecoration(
+                labelText: tr('الاسم بالإنجليزية'),
+                prefixIcon: const Icon(PhosphorIconsBold.buildings),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('company_cr_number_field'),
+              controller: _crNumberController,
+              decoration: InputDecoration(
+                labelText: tr('السجل التجاري'),
+                prefixIcon: const Icon(PhosphorIconsBold.identificationBadge),
               ),
             ),
             const SizedBox(height: 24),
@@ -251,6 +277,10 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
     await settingsRepo.saveSetting('company_address', _addressController.text);
     await settingsRepo.saveSetting('company_phone', _phoneController.text);
     await settingsRepo.saveSetting('company_tax_id', _taxIdController.text);
+    await settingsRepo.saveSetting(
+        'company_name_en', _nameEnController.text.trim());
+    await settingsRepo.saveSetting(
+        'company_cr_number', _crNumberController.text.trim());
     if (_selectedLogo != null) {
       await settingsRepo.saveSetting('company_logo', String.fromCharCodes(_selectedLogo!));
     }

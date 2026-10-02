@@ -1924,8 +1924,15 @@ extension InvoiceTemplateSeederDao on AppDatabase {
   List<Map<String, dynamic>> get _thermalDefaultElements => [
     {'type': 'image', 'content': 'logo', 'band': 'header', 'alignment': 'center'},
     {'type': 'variable', 'content': 'company_name', 'band': 'header', 'alignment': 'center', 'fontSize': 16.0, 'fontWeight': 'bold'},
+    // الاسمُ الإنجليزيُّ سطراً ثانوياً على المستند العربيّ (وفي الإنجليزيّ هو
+    // الاسمُ الرئيسيُّ أعلاه فيُطوى هذا). فارغٌ ⇒ لا يُطبع شيء.
+    {'type': 'variable', 'content': 'company_name_en', 'band': 'header', 'alignment': 'center', 'fontSize': 11.0},
     {'type': 'variable', 'content': 'company_address', 'band': 'header', 'alignment': 'center', 'fontSize': 10.0},
     {'type': 'variable', 'content': 'company_phone', 'band': 'header', 'alignment': 'center', 'fontSize': 10.0},
+    // السجلُّ التجاريُّ («س.ت: …» / "CR: …") — قيمتُه تحمل تسميتَها فلا
+    // `labelAr`، وفارغٌ ⇒ لا يُطبع شيء. في القالب الافتراضيّ المبذور وحدَه:
+    // قوالبُ المستخدم لا تُمسّ.
+    {'type': 'variable', 'content': 'company_cr_number', 'band': 'header', 'alignment': 'center', 'fontSize': 9.0},
     {'type': 'line', 'band': 'header'},
     {'type': 'variable', 'content': 'invoice_number', 'band': 'info', 'alignment': 'right', 'labelAr': 'رقم الفاتورة', 'labelEn': 'Invoice #'},
     {'type': 'variable', 'content': 'order_number', 'band': 'info', 'alignment': 'right', 'labelAr': 'رقم الطلب', 'labelEn': 'Order #'},
@@ -1974,9 +1981,12 @@ extension InvoiceTemplateSeederDao on AppDatabase {
   List<Map<String, dynamic>> get _a4DefaultElements => [
     // ── الرأس ──────────────────────────────────────────────────────────
     {'type': 'variable', 'content': 'company_name', 'band': 'header', 'x': 1.0, 'y': 5.0, 'w': 96.0, 'h': 8.0, 'fontSize': 15.0, 'fontWeight': 'bold', 'alignment': 'right', 'labelAr': 'اسم الشركة', 'labelEn': 'Company'},
-    {'type': 'variable', 'content': 'company_address', 'band': 'header', 'x': 1.0, 'y': 14.0, 'w': 96.0, 'h': 5.0, 'fontSize': 7.5, 'alignment': 'right'},
-    {'type': 'variable', 'content': 'company_phone', 'band': 'header', 'x': 1.0, 'y': 20.0, 'w': 60.0, 'h': 5.0, 'fontSize': 7.5, 'alignment': 'right', 'labelAr': 'هاتف', 'labelEn': 'Tel'},
-    {'type': 'variable', 'content': 'company_tax_number', 'band': 'header', 'x': 1.0, 'y': 26.0, 'w': 60.0, 'h': 5.0, 'fontSize': 7.5, 'alignment': 'right', 'labelAr': 'س.ت', 'labelEn': 'Tax Reg.'},
+    // الاسمُ الإنجليزيُّ تحت الاسم العربيّ (يُطوى فارغاً)، فنزل ما تحته
+    // ٤٫٥مم: ‏14→18.5 · 20→23.5 · 26→28.5 — وأسفلُ سطرٍ ٣٣٫٥ ≤ ٣٤ ارتفاعُ الرأس.
+    {'type': 'variable', 'content': 'company_name_en', 'band': 'header', 'x': 1.0, 'y': 13.0, 'w': 96.0, 'h': 5.0, 'fontSize': 9.0, 'alignment': 'right'},
+    {'type': 'variable', 'content': 'company_address', 'band': 'header', 'x': 1.0, 'y': 18.5, 'w': 96.0, 'h': 5.0, 'fontSize': 7.5, 'alignment': 'right'},
+    {'type': 'variable', 'content': 'company_phone', 'band': 'header', 'x': 1.0, 'y': 23.5, 'w': 60.0, 'h': 5.0, 'fontSize': 7.5, 'alignment': 'right', 'labelAr': 'هاتف', 'labelEn': 'Tel'},
+    {'type': 'variable', 'content': 'company_tax_number', 'band': 'header', 'x': 1.0, 'y': 28.5, 'w': 96.0, 'h': 5.0, 'fontSize': 7.5, 'alignment': 'right', 'labelAr': 'الرقم الضريبي', 'labelEn': 'Tax No.'},
     {'type': 'image', 'content': 'logo', 'band': 'header', 'x': 167.0, 'y': 5.0, 'w': 22.0, 'h': 22.0, 'fontSize': 8.0, 'alignment': 'center'},
     {'type': 'text', 'content': 'فاتورة ضريبية · TAX INVOICE', 'band': 'header', 'x': 61.0, 'y': 12.0, 'w': 78.0, 'h': 11.0, 'fontSize': 14.0, 'fontWeight': 'bold', 'alignment': 'center'},
 

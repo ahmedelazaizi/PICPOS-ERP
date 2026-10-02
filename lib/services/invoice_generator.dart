@@ -12,6 +12,7 @@ import 'printing/thermal_receipt_generator.dart';
 // وشاشتا المرتجع تمرّران الثاني.
 import 'generators/thermal_receipt_generator.dart' as gen;
 import 'generators/base_generator.dart' as gen_base;
+import 'printing/company_identity_loader.dart';
 import 'printing/template_pdf_renderer.dart';
 import 'templated_invoice_service.dart';
 import 'printing/report_pdf_generator.dart';
@@ -80,6 +81,7 @@ class InvoiceGenerator {
     /// يقرأ العرضَ من بيانات القالب نفسِه.
     double paperWidthMm = 80,
   }) async {
+    final identity = await loadCompanyIdentity(db);
     // ── Try template-driven rendering ──
     if (db != null) {
       try {
@@ -106,6 +108,8 @@ class InvoiceGenerator {
               remaining: remaining > 0 ? remaining : 0,
               deliveryFee: deliveryFee ?? 0,
               companyName: companyName,
+              companyNameEn: identity.nameEn,
+              companyCrNumber: identity.crNumber,
               companyPhone: companyPhone,
               companyAddress: companyAddress,
               taxId: taxId,
@@ -149,6 +153,8 @@ class InvoiceGenerator {
       customerAddress: customerAddress,
       employeeName: employeeName,
       companyName: companyName,
+      companyNameEn: identity.nameEn,
+      companyCrNumber: identity.crNumber,
       companyPhone: companyPhone,
       companyAddress: companyAddress,
       taxId: taxId,
@@ -245,7 +251,10 @@ class InvoiceGenerator {
       }
     }
     // Fallback to hardcoded A4 generator
+    final identity = await loadCompanyIdentity(db);
     return ReportPdfGenerator.printSalesInvoice(
+      companyNameEn: identity.nameEn,
+      companyCrNumber: identity.crNumber,
       invoiceNumber: invoiceNumber,
       date: date,
       customerName: customerName,

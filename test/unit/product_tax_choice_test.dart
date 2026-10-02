@@ -108,7 +108,12 @@ void main() {
     });
     test('an item\'s legacy off-ladder rate stays savable', () {
       expect(ProductTaxChoice.validateRate('14', legacyRate: 14), isNull);
-      expect(ProductTaxChoice.validateRate('15', legacyRate: 14), isNotNull);
+      expect(ProductTaxChoice.validateRate('13', legacyRate: 14), isNotNull);
+    });
+    test('14 and 15 are on the default ladder (owner decision)', () {
+      TaxRatePolicy.resetForTests();
+      expect(ProductTaxChoice.validateRate('14'), isNull);
+      expect(ProductTaxChoice.validateRate('15'), isNull);
     });
   });
 

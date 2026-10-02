@@ -8,16 +8,17 @@ PAGE 1 595.28x841.89
   TXT 384.25,797.51 NotoNaskhArabic-Bold 15.00 «ﻣﺆﺳﺴﺔ»
   TXT 354.71,797.51 NotoNaskhArabic-Bold 15.00 «ﺍﻟﻨﻮﺭ»
   TXT 308.05,797.51 NotoNaskhArabic-Bold 15.00 «ﺍﻟﺘﺠﺎﺭﻳﺔ»
-  TXT 370.20,779.31 NotoNaskhArabic-Regular 7.50 «ﺷﺎﺭﻉ»
-  TXT 341.88,779.31 NotoNaskhArabic-Regular 7.50 «ﺍﻟﺠﻤﻬﻮﺭﻳﺔ»
-  TXT 331.69,779.31 NotoNaskhArabic-Regular 7.50 «—»
-  TXT 306.94,779.31 NotoNaskhArabic-Regular 7.50 «ﺍﻟﻤﻨﺼﻮﺭﺓ»
-  TXT 460.01,762.31 NotoNaskhArabic-Regular 7.50 «ﻫﺎﺗﻒ:»
-  TXT 441.34,762.31 NotoNaskhArabic-Regular 7.50 «4567»
-  TXT 427.55,762.31 NotoNaskhArabic-Regular 7.50 «123»
-  TXT 408.86,762.31 NotoNaskhArabic-Regular 7.50 «0100»
-  TXT 467.86,745.30 NotoNaskhArabic-Regular 7.50 «ﺱ.ﺕ:»
-  TXT 409.08,745.30 NotoNaskhArabic-Regular 7.50 «310-123-456-789»
+  TXT 370.20,766.56 NotoNaskhArabic-Regular 7.50 «ﺷﺎﺭﻉ»
+  TXT 341.88,766.56 NotoNaskhArabic-Regular 7.50 «ﺍﻟﺠﻤﻬﻮﺭﻳﺔ»
+  TXT 331.69,766.56 NotoNaskhArabic-Regular 7.50 «—»
+  TXT 306.94,766.56 NotoNaskhArabic-Regular 7.50 «ﺍﻟﻤﻨﺼﻮﺭﺓ»
+  TXT 460.01,752.38 NotoNaskhArabic-Regular 7.50 «ﻫﺎﺗﻒ:»
+  TXT 441.34,752.38 NotoNaskhArabic-Regular 7.50 «4567»
+  TXT 427.55,752.38 NotoNaskhArabic-Regular 7.50 «123»
+  TXT 408.86,752.38 NotoNaskhArabic-Regular 7.50 «0100»
+  TXT 391.40,738.21 NotoNaskhArabic-Regular 7.50 «ﺍﻟﺮﻗﻢ»
+  TXT 365.88,738.21 NotoNaskhArabic-Regular 7.50 «ﺍﻟﻀﺮﻳﺒﻲ:»
+  TXT 307.03,738.21 NotoNaskhArabic-Regular 7.50 «310-123-456-789»
   TXT 355.79,775.07 NotoNaskhArabic-Bold 14.00 «ﻓﺎﺗﻮﺭﺓ»
   TXT 315.69,775.07 NotoNaskhArabic-Bold 14.00 «ﺿﺮﻳﺒﻴﺔ»
   TXT 308.63,775.07 NotoNaskhArabic-Bold 14.00 «·»

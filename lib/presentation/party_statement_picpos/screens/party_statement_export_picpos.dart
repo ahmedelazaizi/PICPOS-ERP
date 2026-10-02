@@ -73,6 +73,8 @@ mixin _StatementExportMixin on ConsumerState<PartyStatementPicposScreen> {
         phone2: await settingsRepo.getSetting('company_phone2'),
         address: await settingsRepo.getSetting('company_address'),
         taxId: await settingsRepo.getSetting('company_tax_id'),
+        nameEn: await settingsRepo.getSetting('company_name_en'),
+        crNumber: await settingsRepo.getSetting('company_cr_number'),
       );
 
       await InvoiceGenerator.printPartyStatement(
