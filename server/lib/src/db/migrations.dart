@@ -5,6 +5,7 @@
 /// desktop v167 sync columns: global_id, last_modified_at (epoch ms here),
 /// deleted_at, origin_client_id, row_version. `touch_row()` maintains
 /// last_modified_at / row_version on every insert and update.
+/// Never edit an applied migration; append a new one.
 library;
 
 class Migration {
@@ -345,5 +346,104 @@ CREATE TABLE audit_log (
   at BIGINT NOT NULL
 );
 ${_syncedTables.map((t) => 'CREATE TRIGGER ${t}_touch BEFORE INSERT OR UPDATE ON $t FOR EACH ROW EXECUTE FUNCTION touch_row();').join('\n')}
+'''),
+  // I-2: price lists, tax-inclusive pricing, returns, visits, token rotation.
+  Migration(2, 'i2_returns_visits_pricing', '''
+ALTER TABLE companies ADD COLUMN prices_include_tax BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE companies ADD COLUMN decimal_places INT NOT NULL DEFAULT 2;
+ALTER TABLE employees ADD COLUMN can_override_price BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE devices ADD COLUMN previous_token_hash TEXT;
+ALTER TABLE devices ADD COLUMN token_rotated_at BIGINT;
+ALTER TABLE sales_invoices ADD COLUMN returned_total NUMERIC(18,4) NOT NULL DEFAULT 0;
+ALTER TABLE sales_invoices ADD COLUMN return_ar_offset NUMERIC(18,4) NOT NULL DEFAULT 0;
+ALTER TABLE sales_invoices ADD COLUMN prices_include_tax BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Desktop: commercial_finance_tables.dart PriceLists / PriceListItems.
+CREATE TABLE price_lists (
+  id SERIAL PRIMARY KEY,
+  company_id INT NOT NULL REFERENCES companies(id),
+  name TEXT NOT NULL,
+  code TEXT,
+  is_default BOOLEAN NOT NULL DEFAULT FALSE,
+  start_date DATE,
+  end_date DATE,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  $_sync
+);
+
+CREATE TABLE price_list_items (
+  id SERIAL PRIMARY KEY,
+  company_id INT NOT NULL REFERENCES companies(id),
+  price_list_id INT NOT NULL REFERENCES price_lists(id),
+  product_id INT NOT NULL REFERENCES products(id),
+  price NUMERIC(18,4) NOT NULL,
+  min_quantity NUMERIC(18,4) NOT NULL DEFAULT 1,
+  max_discount NUMERIC(9,4) NOT NULL DEFAULT 0,
+  $_sync
+);
+
+-- Field credit notes (mobile). Desktop stores returns as sales_invoices
+-- with sale_type='return' (I-3 mapper).
+CREATE TABLE sales_returns (
+  id SERIAL PRIMARY KEY,
+  company_id INT NOT NULL REFERENCES companies(id),
+  return_number TEXT NOT NULL,
+  original_invoice_id INT NOT NULL REFERENCES sales_invoices(id),
+  customer_id INT NOT NULL REFERENCES parties(id),
+  warehouse_id INT NOT NULL REFERENCES warehouses(id),
+  safe_id INT REFERENCES safes(id),
+  rep_employee_id INT NOT NULL REFERENCES employees(id),
+  route_id INT REFERENCES sales_routes(id),
+  device_pk INT NOT NULL REFERENCES devices(id),
+  return_date TEXT NOT NULL,
+  subtotal NUMERIC(18,4) NOT NULL,
+  tax NUMERIC(18,4) NOT NULL,
+  total NUMERIC(18,4) NOT NULL,
+  ar_offset NUMERIC(18,4) NOT NULL,
+  cash_refund NUMERIC(18,4) NOT NULL,
+  reason TEXT,
+  status TEXT NOT NULL DEFAULT 'accepted',
+  posted_on_desktop_at BIGINT,
+  integrity_hash TEXT NOT NULL,
+  created_at BIGINT NOT NULL,
+  UNIQUE (company_id, return_number),
+  $_sync
+);
+
+CREATE TABLE sales_return_items (
+  id SERIAL PRIMARY KEY,
+  return_id INT NOT NULL REFERENCES sales_returns(id),
+  product_id INT NOT NULL REFERENCES products(id),
+  quantity NUMERIC(18,4) NOT NULL,
+  unit_price NUMERIC(18,4) NOT NULL,
+  tax_amount NUMERIC(18,4) NOT NULL,
+  total NUMERIC(18,4) NOT NULL
+);
+CREATE INDEX sales_return_items_return_idx ON sales_return_items(return_id);
+CREATE INDEX sales_returns_invoice_idx ON sales_returns(original_invoice_id);
+
+CREATE TABLE customer_visits (
+  id SERIAL PRIMARY KEY,
+  company_id INT NOT NULL REFERENCES companies(id),
+  customer_id INT NOT NULL REFERENCES parties(id),
+  route_id INT REFERENCES sales_routes(id),
+  rep_employee_id INT NOT NULL REFERENCES employees(id),
+  device_pk INT NOT NULL REFERENCES devices(id),
+  visit_date TEXT NOT NULL,
+  outcome TEXT NOT NULL,
+  no_sale_reason TEXT,
+  note TEXT,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
+  sequence INT,
+  created_at BIGINT NOT NULL,
+  $_sync
+);
+CREATE INDEX customer_visits_rep_idx ON customer_visits(rep_employee_id, visit_date);
+
+CREATE TRIGGER price_lists_touch BEFORE INSERT OR UPDATE ON price_lists FOR EACH ROW EXECUTE FUNCTION touch_row();
+CREATE TRIGGER price_list_items_touch BEFORE INSERT OR UPDATE ON price_list_items FOR EACH ROW EXECUTE FUNCTION touch_row();
+CREATE TRIGGER sales_returns_touch BEFORE INSERT OR UPDATE ON sales_returns FOR EACH ROW EXECUTE FUNCTION touch_row();
+CREATE TRIGGER customer_visits_touch BEFORE INSERT OR UPDATE ON customer_visits FOR EACH ROW EXECUTE FUNCTION touch_row();
 '''),
 ];

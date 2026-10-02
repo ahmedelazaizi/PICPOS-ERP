@@ -16,6 +16,9 @@ class Harness {
   final MockWhatsAppProvider provider;
   static const adminKey = 'test-admin';
 
+  /// Response headers of the last [call].
+  Map<String, String> lastHeaders = const {};
+
   static Future<Harness> start() async {
     final env = Platform.environment;
     final schema = 't_${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(1 << 20)}';
@@ -57,6 +60,7 @@ class Harness {
       body: body == null ? null : jsonEncode(body),
       headers: headers,
     ));
+    lastHeaders = res.headers;
     final text = await res.readAsString();
     return (res.statusCode, (jsonDecode(text) as Map).cast<String, dynamic>());
   }

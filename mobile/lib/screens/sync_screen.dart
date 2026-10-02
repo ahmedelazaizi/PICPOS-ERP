@@ -28,7 +28,10 @@ class SyncScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    InfoRow(s.t('connection'), s.t(c.online ? 'online' : 'offline'),
+                        valueColor: c.online ? null : cs.error),
                     InfoRow(s.t('lastSync'), c.lastSync == null ? s.t('never') : _fmt(c.lastSync!)),
+                    if (c.nextAutoSync != null) InfoRow(s.t('nextAutoSync'), _fmt(c.nextAutoSync!, seconds: true)),
                     InfoRow(s.t('pending'), '${count(OutboxStatus.pending)}'),
                     InfoRow(s.t('accepted'), '${count(OutboxStatus.accepted)}'),
                     InfoRow(s.t('rejected'), '${count(OutboxStatus.rejected)}',
@@ -36,8 +39,11 @@ class SyncScreen extends StatelessWidget {
                     if (c.lastSyncError != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
-                        child: Text(s.t('error'), style: TextStyle(color: cs.error)),
+                        child: Text(c.lastSyncError == 'sessionRequired' ? s.t('sessionRequired') : s.t('error'),
+                            style: TextStyle(color: cs.error)),
                       ),
+                    if (c.lastSyncError == 'sessionRequired')
+                      TextButton(key: const Key('signInAgain'), onPressed: c.signOut, child: Text(s.t('login'))),
                     const SizedBox(height: 12),
                     FilledButton.icon(
                       key: const Key('syncNow'),
@@ -59,7 +65,7 @@ class SyncScreen extends StatelessWidget {
               ListTile(
                 leading: Icon(e.status == OutboxStatus.rejected ? Icons.error_outline : Icons.schedule,
                     color: e.status == OutboxStatus.rejected ? cs.error : null),
-                title: Text('${e.payload['number'] ?? e.payload['bookNumber'] ?? ''}'),
+                title: Text('${s.t('kind_${e.kind}')} ${e.payload['number'] ?? e.payload['bookNumber'] ?? ''}'),
                 subtitle: Text(e.status == OutboxStatus.rejected ? '${s.t('rejected')}: ${e.error}' : s.t('pending')),
               ),
           ],
@@ -68,9 +74,10 @@ class SyncScreen extends StatelessWidget {
     );
   }
 
-  static String _fmt(DateTime d) =>
+  static String _fmt(DateTime d, {bool seconds = false}) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')} '
-      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}'
+      '${seconds ? ':${d.second.toString().padLeft(2, '0')}' : ''}';
 }
 
 class VanStockScreen extends StatelessWidget {

@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/strings.dart';
+import '../state/app_controller.dart';
 import 'common.dart';
 import 'customer_screen.dart';
+import 'visit_actions.dart';
 
 class _RouteRow {
-  _RouteRow(this.customer, this.balance, this.visited);
+  _RouteRow(this.customer, this.balance, this.visit);
   final Map<String, Object?> customer;
   final double balance;
-  final bool visited;
+  final (VisitState, String?) visit;
+  bool get visited => visit.$1 != VisitState.planned;
 }
 
-/// Today's route: customers in route sequence with visit status.
+/// Today's route: customers in route sequence with visit status
+/// (planned / visited / no sale + reason).
 class RouteScreen extends StatelessWidget {
   const RouteScreen({super.key});
 
@@ -19,7 +23,7 @@ class RouteScreen extends StatelessWidget {
     final c = AppScope.of(context);
     return [
       for (final cu in await c.routeCustomers())
-        _RouteRow(cu, await c.effectiveBalance(cu['globalId'] as String), await c.visitedToday(cu['globalId'] as String)),
+        _RouteRow(cu, await c.effectiveBalance(cu['globalId'] as String), await c.visitState(cu['globalId'] as String)),
     ];
   }
 
@@ -48,10 +52,7 @@ class RouteScreen extends StatelessWidget {
                 ),
                 title: Text('${r.customer['name']}'),
                 subtitle: Text('${s.t('balance')}: ${money(r.balance)}'),
-                trailing: Chip(
-                  avatar: Icon(r.visited ? Icons.check_circle : Icons.schedule, size: 18),
-                  label: Text(s.t(r.visited ? 'visited' : 'notVisited')),
-                ),
+                trailing: VisitChip(r.visit.$1, r.visit.$2),
                 onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
                   builder: (_) => CustomerScreen(customerGlobalId: r.customer['globalId'] as String),
                 )),

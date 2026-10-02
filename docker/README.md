@@ -20,7 +20,7 @@ docker compose ps                        # both services should show (healthy)
 curl.exe http://localhost:18080/health   # {"status":"ok","db":"ok","whatsappProvider":"mock"}
 ```
 
-End-to-end smoke (pairing → login → bootstrap → push → replay → pull → WhatsApp mock):
+End-to-end smoke (pairing → login → bootstrap → push → replay → sales return (+ over-return rejected) → visits → token rotation → pull → WhatsApp mock):
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\smoke.ps1
@@ -40,6 +40,7 @@ docker compose down -v                   # also delete the database volume
 - Rep 1 `…0000000000a1` PIN `1234`: route «خط الشمال» with customers `…c1` (credit limit 100, WhatsApp opt-in `+962790000001`) and `…c2` (no limit); van stock water 50, bread 20; receipt book `R-1001..1050`.
 - Rep 2 `…0000000000a2` PIN `5678`: route «خط الجنوب» with customer `…c3`; van stock water 10; book `R-2001..2050`.
 - Number series: invoices `VS-` and returns `VR-`, blocks of 500 per device.
+- Pricing (I-2): water wholesale price 2.20 (for `price_level='wholesale'` customers); default price list `…e1` «قائمة الكميات»: bread ≥ 10 → 0.90. Prices are tax-exclusive (`companies.prices_include_tax = false`).
 
 ## Pairing a device by hand
 

@@ -22,6 +22,10 @@ abstract class CloudApi {
   Future<({String deviceToken, String employeeGlobalId})> pair(
       String baseUrl, String code, String deviceId, String deviceName);
   Future<String> login(DeviceCredentials c, String pin);
+
+  /// `POST /mobile/token/rotate` → new device token (the old one stays valid
+  /// until the new one is first used, so a lost response is harmless).
+  Future<String> rotateToken(DeviceCredentials c);
   Future<Map<String, dynamic>> bootstrap(DeviceCredentials c, String session);
   Future<Map<String, dynamic>> pull(DeviceCredentials c, String session, int since);
   Future<List<Map<String, dynamic>>> push(
@@ -64,6 +68,12 @@ class HttpCloudApi implements CloudApi {
         .post(Uri.parse('${c.baseUrl}/mobile/login'), headers: _h(c), body: jsonEncode({'pin': pin}))
         .timeout(_timeout);
     return (await _decode(r))['sessionToken'] as String;
+  }
+
+  @override
+  Future<String> rotateToken(DeviceCredentials c) async {
+    final r = await _client.post(Uri.parse('${c.baseUrl}/mobile/token/rotate'), headers: _h(c)).timeout(_timeout);
+    return (await _decode(r))['deviceToken'] as String;
   }
 
   @override

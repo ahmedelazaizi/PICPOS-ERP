@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../domain/sale_math.dart';
 import '../l10n/strings.dart';
+import 'barcode_scanner.dart';
 import 'common.dart';
 
 /// New sale: barcode entry (hardware/keyboard-wedge scanners type into the
-/// field; camera scanning is I-2), product picker, cart, cash/credit, collect now.
+/// field) or camera scan, product picker, cart priced per customer/quantity
+/// (price level, price-list tiers), cash/credit, collect now.
 class SaleScreen extends StatefulWidget {
-  const SaleScreen({super.key, required this.customerGlobalId});
+  const SaleScreen({super.key, required this.customerGlobalId, this.cameraScan = openCameraScanner});
   final String customerGlobalId;
+  final CameraScan cameraScan;
   @override
   State<SaleScreen> createState() => _SaleScreenState();
 }
@@ -20,27 +23,53 @@ class _SaleScreenState extends State<SaleScreen> {
   bool _credit = false;
   bool _busy = false;
 
-  Totals get _totals => computeTotals(_cart);
+  DocTotals get _totals => AppScope.of(context).totalsOf(_cart);
 
-  void _add(Map<String, Object?> p) {
+  Future<void> _add(Map<String, Object?> p) async {
+    final existing = _cart.where((l) => l.productGlobalId == p['globalId']).firstOrNull;
+    if (existing != null) return _setQty(existing, existing.quantity + 1);
     final c = AppScope.of(context);
+    final price = await c.unitPriceFor(p, widget.customerGlobalId, 1);
+    if (!mounted) return;
     setState(() {
-      final existing = _cart.where((l) => l.productGlobalId == p['globalId']).firstOrNull;
-      if (existing != null) {
-        existing.quantity += 1;
-      } else {
-        _cart.add(CartLine(
-          productGlobalId: p['globalId'] as String,
-          name: '${p['name']}',
-          unitPrice: (p['salePrice'] as num).toDouble(),
-          taxRate: c.taxRateOf(p),
-        ));
-      }
+      _cart.add(CartLine(
+        productGlobalId: p['globalId'] as String,
+        name: '${p['name']}',
+        unitPrice: price.price,
+        taxRate: c.taxRateOf(p),
+      ));
       if (!_credit) _paid.text = money(_totals.total);
     });
   }
 
-  Future<void> _scan(String code) async {
+  /// Quantity change re-resolves the price (price-list quantity tiers).
+  Future<void> _setQty(CartLine l, double q) async {
+    final c = AppScope.of(context);
+    if (q <= 0) {
+      setState(() {
+        _cart.remove(l);
+        if (!_credit) _paid.text = money(_totals.total);
+      });
+      return;
+    }
+    final p = await c.product(l.productGlobalId);
+    final price = p == null ? null : await c.unitPriceFor(p, widget.customerGlobalId, q);
+    if (!mounted) return;
+    setState(() {
+      l.quantity = q;
+      if (price != null) l.unitPrice = price.price;
+      if (!_credit) _paid.text = money(_totals.total);
+    });
+  }
+
+  Future<void> _camera() async {
+    final code = await widget.cameraScan(context);
+    if (code != null && mounted) await _scan(code);
+  }
+
+  Future<void> _scan(String raw) async {
+    final code = normalizeBarcode(raw);
+    if (code.isEmpty) return;
     final p = await AppScope.of(context).productByBarcode(code);
     if (!mounted) return;
     _barcode.clear();
@@ -48,7 +77,7 @@ class _SaleScreenState extends State<SaleScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.of(context).t('unknownBarcode'))));
       return;
     }
-    _add(p);
+    await _add(p);
   }
 
   Future<void> _pick() async {
@@ -69,7 +98,7 @@ class _SaleScreenState extends State<SaleScreen> {
         ],
       ),
     );
-    if (p != null) _add(p);
+    if (p != null) await _add(p);
   }
 
   Future<void> _save() async {
@@ -117,6 +146,13 @@ class _SaleScreenState extends State<SaleScreen> {
                   ),
                   const SizedBox(width: 8),
                   IconButton.filledTonal(
+                    key: const Key('cameraScan'),
+                    tooltip: s.t('cameraScan'),
+                    icon: const Icon(Icons.photo_camera_outlined),
+                    onPressed: _camera,
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filledTonal(
                     tooltip: s.t('add'),
                     icon: const Icon(Icons.add),
                     onPressed: _pick,
@@ -137,14 +173,11 @@ class _SaleScreenState extends State<SaleScreen> {
                             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                               IconButton(
                                 icon: const Icon(Icons.remove_circle_outline),
-                                onPressed: () => setState(() {
-                                  l.quantity -= 1;
-                                  if (l.quantity <= 0) _cart.remove(l);
-                                }),
+                                onPressed: () => _setQty(l, l.quantity - 1),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.add_circle_outline),
-                                onPressed: () => setState(() => l.quantity += 1),
+                                onPressed: () => _setQty(l, l.quantity + 1),
                               ),
                             ]),
                           ),
@@ -159,7 +192,9 @@ class _SaleScreenState extends State<SaleScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    InfoRow(s.t('subtotal'), money(t.subtotal)),
+                    if (AppScope.of(context).pricesIncludeTax)
+                      Text(s.t('pricesIncludeTax'), style: Theme.of(context).textTheme.bodySmall),
+                    InfoRow(s.t('subtotal'), money(t.net)),
                     InfoRow(s.t('tax'), money(t.tax)),
                     InfoRow(s.t('total'), money(t.total)),
                     const SizedBox(height: 8),

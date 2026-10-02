@@ -1,0 +1,158 @@
+{
+  "_doc": "Shared parity fixture (Phase I-2). Loaded by server/test/pricing_parity_test.dart and mobile/test/pricing_parity_test.dart. Rules: docs/mobile/ARCHITECTURE-I.md §7.1. Values computed by hand from the desktop rules (FinancialUtils.calculateInvoiceTotals, effectiveItemTaxRate, CartController.resolveProductPrice, MultiCurrencyPricelistDao.resolveProductPrice, calculateReturnRefundTotal, SalesReturnRefundSplit).",
+  "taxRate": [
+    {"rate": 16, "exempt": true, "companyDefault": 16, "expect": 0},
+    {"rate": 8, "exempt": false, "companyDefault": 16, "expect": 8},
+    {"rate": 0, "exempt": false, "companyDefault": 16, "expect": 16},
+    {"rate": 0, "exempt": false, "companyDefault": 0, "expect": 0},
+    {"rate": 5, "exempt": true, "companyDefault": 0, "expect": 0}
+  ],
+  "totals": [
+    {
+      "name": "exclusive, line discount, exempt line (I-1 pinned)",
+      "pricesIncludeTax": false, "decimals": 2,
+      "lines": [
+        {"quantity": 3, "unitPrice": 2.5, "discount": 0.5, "taxRate": 16},
+        {"quantity": 2, "unitPrice": 1, "discount": 0, "taxRate": 0}
+      ],
+      "expect": {"subtotal": 9.5, "discount": 0.5, "net": 9.0, "tax": 1.12, "total": 10.12,
+        "lines": [{"net": 7.0, "tax": 1.12, "total": 8.12}, {"net": 2.0, "tax": 0, "total": 2.0}]}
+    },
+    {
+      "name": "inclusive 16 %",
+      "pricesIncludeTax": true, "decimals": 2,
+      "lines": [{"quantity": 2, "unitPrice": 2.9, "discount": 0, "taxRate": 16}],
+      "expect": {"subtotal": 5.8, "discount": 0, "net": 5.0, "tax": 0.8, "total": 5.8,
+        "lines": [{"net": 5.0, "tax": 0.8, "total": 5.8}]}
+    },
+    {
+      "name": "inclusive with rounding + exempt line",
+      "pricesIncludeTax": true, "decimals": 2,
+      "lines": [
+        {"quantity": 3, "unitPrice": 1.99, "discount": 0, "taxRate": 16},
+        {"quantity": 1, "unitPrice": 1, "discount": 0, "taxRate": 0}
+      ],
+      "expect": {"subtotal": 6.97, "discount": 0, "net": 6.15, "tax": 0.82, "total": 6.97,
+        "lines": [{"net": 5.15, "tax": 0.82, "total": 5.97}, {"net": 1.0, "tax": 0, "total": 1.0}]}
+    },
+    {
+      "name": "inclusive, discount before tax extraction",
+      "pricesIncludeTax": true, "decimals": 2,
+      "lines": [{"quantity": 4, "unitPrice": 2.5, "discount": 1, "taxRate": 16}],
+      "expect": {"subtotal": 10.0, "discount": 1.0, "net": 7.76, "tax": 1.24, "total": 9.0,
+        "lines": [{"net": 7.76, "tax": 1.24, "total": 9.0}]}
+    },
+    {
+      "name": "exclusive, 3 decimals (JOD)",
+      "pricesIncludeTax": false, "decimals": 3,
+      "lines": [{"quantity": 3, "unitPrice": 1.235, "discount": 0, "taxRate": 16}],
+      "expect": {"subtotal": 3.705, "discount": 0, "net": 3.705, "tax": 0.593, "total": 4.298,
+        "lines": [{"net": 3.705, "tax": 0.593, "total": 4.298}]}
+    },
+    {
+      "name": "inclusive, 3 decimals",
+      "pricesIncludeTax": true, "decimals": 3,
+      "lines": [{"quantity": 2, "unitPrice": 0.75, "discount": 0, "taxRate": 16}],
+      "expect": {"subtotal": 1.5, "discount": 0, "net": 1.293, "tax": 0.207, "total": 1.5,
+        "lines": [{"net": 1.293, "tax": 0.207, "total": 1.5}]}
+    },
+    {
+      "name": "discount above gross is clamped",
+      "pricesIncludeTax": false, "decimals": 2,
+      "lines": [{"quantity": 1, "unitPrice": 2, "discount": 5, "taxRate": 0}],
+      "expect": {"subtotal": 2.0, "discount": 2.0, "net": 0, "tax": 0, "total": 0,
+        "lines": [{"net": 0, "tax": 0, "total": 0}]}
+    }
+  ],
+  "price": [
+    {"name": "default level, no lists -> sale price", "salePrice": 2.5, "wholesalePrice": 2.2, "priceLevel": null,
+     "quantity": 1, "today": "2026-05-01", "lists": [], "expect": {"price": 2.5, "source": "sale_price"}},
+    {"name": "wholesale level -> wholesale price", "salePrice": 2.5, "wholesalePrice": 2.2, "priceLevel": "wholesale",
+     "quantity": 1, "today": "2026-05-01", "lists": [], "expect": {"price": 2.2, "source": "price_level"}},
+    {"name": "wholesale level but no wholesale price -> sale price", "salePrice": 2.5, "wholesalePrice": 0, "priceLevel": "wholesale",
+     "quantity": 1, "today": "2026-05-01", "lists": [], "expect": {"price": 2.5, "source": "sale_price"}},
+    {"name": "wholesale level beats price lists", "salePrice": 2.5, "wholesalePrice": 2.2, "priceLevel": "wholesale",
+     "quantity": 1, "today": "2026-05-01",
+     "lists": [{"globalId": "L1", "isDefault": true, "isActive": true, "startDate": null, "endDate": null, "order": 1,
+                "items": [{"price": 2.0, "minQuantity": 1}]}],
+     "expect": {"price": 2.2, "source": "price_level"}},
+    {"name": "list tier: highest min quantity that fits (qty 12)", "salePrice": 2.5, "wholesalePrice": null, "priceLevel": null,
+     "quantity": 12, "today": "2026-05-01",
+     "lists": [{"globalId": "L1", "isDefault": true, "isActive": true, "startDate": null, "endDate": null, "order": 1,
+                "items": [{"price": 2.4, "minQuantity": 1}, {"price": 2.3, "minQuantity": 10}]}],
+     "expect": {"price": 2.3, "source": "price_list", "listGlobalId": "L1"}},
+    {"name": "list tier: qty 5 below the 10 tier", "salePrice": 2.5, "wholesalePrice": null, "priceLevel": null,
+     "quantity": 5, "today": "2026-05-01",
+     "lists": [{"globalId": "L1", "isDefault": true, "isActive": true, "startDate": null, "endDate": null, "order": 1,
+                "items": [{"price": 2.4, "minQuantity": 1}, {"price": 2.3, "minQuantity": 10}]}],
+     "expect": {"price": 2.4, "source": "price_list", "listGlobalId": "L1"}},
+    {"name": "expired list ignored", "salePrice": 2.5, "wholesalePrice": null, "priceLevel": null,
+     "quantity": 1, "today": "2026-05-01",
+     "lists": [{"globalId": "L1", "isDefault": true, "isActive": true, "startDate": null, "endDate": "2026-04-30", "order": 1,
+                "items": [{"price": 2.4, "minQuantity": 1}]}],
+     "expect": {"price": 2.5, "source": "sale_price"}},
+    {"name": "future list ignored", "salePrice": 2.5, "wholesalePrice": null, "priceLevel": null,
+     "quantity": 1, "today": "2026-05-01",
+     "lists": [{"globalId": "L1", "isDefault": true, "isActive": true, "startDate": "2026-05-02", "endDate": null, "order": 1,
+                "items": [{"price": 2.4, "minQuantity": 1}]}],
+     "expect": {"price": 2.5, "source": "sale_price"}},
+    {"name": "inactive list ignored", "salePrice": 2.5, "wholesalePrice": null, "priceLevel": null,
+     "quantity": 1, "today": "2026-05-01",
+     "lists": [{"globalId": "L1", "isDefault": true, "isActive": false, "startDate": null, "endDate": null, "order": 1,
+                "items": [{"price": 2.4, "minQuantity": 1}]}],
+     "expect": {"price": 2.5, "source": "sale_price"}},
+    {"name": "start/end dates are inclusive", "salePrice": 2.5, "wholesalePrice": null, "priceLevel": null,
+     "quantity": 1, "today": "2026-05-01",
+     "lists": [{"globalId": "L1", "isDefault": false, "isActive": true, "startDate": "2026-05-01", "endDate": "2026-05-01", "order": 1,
+                "items": [{"price": 2.4, "minQuantity": 1}]}],
+     "expect": {"price": 2.4, "source": "price_list", "listGlobalId": "L1"}},
+    {"name": "default list wins over a lower-order list", "salePrice": 2.5, "wholesalePrice": null, "priceLevel": null,
+     "quantity": 1, "today": "2026-05-01",
+     "lists": [
+       {"globalId": "L2", "isDefault": false, "isActive": true, "startDate": null, "endDate": null, "order": 1,
+        "items": [{"price": 2.0, "minQuantity": 1}]},
+       {"globalId": "L1", "isDefault": true, "isActive": true, "startDate": null, "endDate": null, "order": 2,
+        "items": [{"price": 2.4, "minQuantity": 1}]}],
+     "expect": {"price": 2.4, "source": "price_list", "listGlobalId": "L1"}},
+    {"name": "list without a fitting tier falls through to the next list", "salePrice": 2.5, "wholesalePrice": null, "priceLevel": null,
+     "quantity": 3, "today": "2026-05-01",
+     "lists": [
+       {"globalId": "L1", "isDefault": true, "isActive": true, "startDate": null, "endDate": null, "order": 1,
+        "items": [{"price": 2.0, "minQuantity": 10}]},
+       {"globalId": "L2", "isDefault": false, "isActive": true, "startDate": null, "endDate": null, "order": 2,
+        "items": [{"price": 2.45, "minQuantity": 1}]}],
+     "expect": {"price": 2.45, "source": "price_list", "listGlobalId": "L2"}}
+  ],
+  "returnLines": [
+    {"name": "pro-rata (1 of 4, taxed)", "decimals": 2,
+     "sold": {"soldQty": 4, "soldTotal": 11.6, "soldTax": 1.6, "returnedQty": 0, "returnedTotal": 0, "returnedTax": 0},
+     "quantity": 1, "expect": {"total": 2.9, "tax": 0.4, "net": 2.5}},
+    {"name": "pro-rata with rounding (1 of 3)", "decimals": 2,
+     "sold": {"soldQty": 3, "soldTotal": 5.97, "soldTax": 0.82, "returnedQty": 0, "returnedTotal": 0, "returnedTax": 0},
+     "quantity": 1, "expect": {"total": 1.99, "tax": 0.27, "net": 1.72}},
+    {"name": "last unit takes exactly what is left", "decimals": 2,
+     "sold": {"soldQty": 3, "soldTotal": 5.97, "soldTax": 0.82, "returnedQty": 2, "returnedTotal": 3.98, "returnedTax": 0.54},
+     "quantity": 1, "expect": {"total": 1.99, "tax": 0.28, "net": 1.71}},
+    {"name": "whole remainder after a partial return", "decimals": 2,
+     "sold": {"soldQty": 3, "soldTotal": 5.97, "soldTax": 0.82, "returnedQty": 1, "returnedTotal": 1.99, "returnedTax": 0.27},
+     "quantity": 2, "expect": {"total": 3.98, "tax": 0.55, "net": 3.43}},
+    {"name": "more than sold - previously returned is refused", "decimals": 2,
+     "sold": {"soldQty": 3, "soldTotal": 5.97, "soldTax": 0.82, "returnedQty": 2, "returnedTotal": 3.98, "returnedTax": 0.54},
+     "quantity": 2, "expect": null},
+    {"name": "zero quantity is refused", "decimals": 2,
+     "sold": {"soldQty": 3, "soldTotal": 5.97, "soldTax": 0.82, "returnedQty": 0, "returnedTotal": 0, "returnedTax": 0},
+     "quantity": 0, "expect": null}
+  ],
+  "settlement": [
+    {"name": "credit invoice: return reduces the balance", "invoiceTotal": 11.6, "invoicePaid": 0, "previousArOffset": 0,
+     "returnTotal": 2.9, "expect": {"arOffset": 2.9, "cashRefund": 0}},
+    {"name": "cash invoice: cash refund", "invoiceTotal": 11.6, "invoicePaid": 11.6, "previousArOffset": 0,
+     "returnTotal": 2.9, "expect": {"arOffset": 0, "cashRefund": 2.9}},
+    {"name": "mixed: offset the unpaid part first, refund the rest", "invoiceTotal": 14.6, "invoicePaid": 5, "previousArOffset": 0,
+     "returnTotal": 11.6, "expect": {"arOffset": 9.6, "cashRefund": 2.0}},
+    {"name": "unpaid part already offset by an earlier return", "invoiceTotal": 14.6, "invoicePaid": 5, "previousArOffset": 9.6,
+     "returnTotal": 2.0, "expect": {"arOffset": 0, "cashRefund": 2.0}},
+    {"name": "partial offset leaves open amount", "invoiceTotal": 10, "invoicePaid": 2, "previousArOffset": 3,
+     "returnTotal": 4, "expect": {"arOffset": 4, "cashRefund": 0}}
+  ]
+}

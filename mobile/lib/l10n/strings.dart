@@ -66,11 +66,56 @@ class S {
     'language': ('English', 'العربية'),
     'invalidPin': ('الرمز السري غير صحيح', 'Incorrect PIN'),
     'error': ('تعذّر الاتصال بالخادم', 'Could not reach the server'),
+    // I-2
+    'cameraScan': ('مسح بالكاميرا', 'Scan with camera'),
+    'torch': ('الإضاءة', 'Torch'),
+    'cameraUnavailable': ('الكاميرا غير متاحة. امنح إذن الكاميرا أو اكتب الباركود.',
+        'Camera unavailable. Allow camera access or type the barcode.'),
+    'pricesIncludeTax': ('الأسعار شاملة الضريبة', 'Prices include tax'),
+    'priceNotAllowed': ('السعر غير مسموح لهذا العميل', 'Price not allowed for this customer'),
+    'salesReturn': ('مرتجع مبيعات', 'Sales return'),
+    'pickInvoice': ('اختر الفاتورة الأصلية', 'Pick the original invoice'),
+    'noReturnableInvoices': ('لا توجد فواتير قابلة للإرجاع لهذا العميل. زامن لتحديث الفواتير.',
+        'No returnable invoices for this customer. Sync to refresh invoices.'),
+    'sold': ('المباع', 'Sold'),
+    'returnable': ('قابل للإرجاع', 'Returnable'),
+    'returnReason': ('سبب الإرجاع', 'Return reason'),
+    'ret_damaged': ('تالف', 'Damaged'),
+    'ret_expired': ('منتهي الصلاحية', 'Expired'),
+    'ret_wrong_item': ('صنف خاطئ', 'Wrong item'),
+    'ret_customer_request': ('طلب العميل', 'Customer request'),
+    'ret_other': ('أخرى', 'Other'),
+    'returnTotal': ('قيمة المرتجع', 'Return total'),
+    'arOffset': ('خصم من رصيد العميل', 'Offset against balance'),
+    'cashRefund': ('مردود نقداً', 'Cash refund'),
+    'returnQtyExceeds': ('الكمية أكبر من المباع ناقص المرتجع سابقاً', 'Quantity exceeds sold minus already returned'),
+    'emptyReturn': ('اختر كمية للإرجاع', 'Choose a quantity to return'),
+    'noInvoice': ('الفاتورة غير موجودة على الجهاز', 'Invoice not on this device'),
+    'planned': ('مخطط', 'Planned'),
+    'noSale': ('لا بيع', 'No sale'),
+    'markVisited': ('تمت الزيارة', 'Mark visited'),
+    'noSaleReason': ('سبب عدم البيع', 'No-sale reason'),
+    'reasonRequired': ('اختر سبب عدم البيع', 'Choose a no-sale reason'),
+    'nsr_closed': ('المحل مغلق', 'Shop closed'),
+    'nsr_owner_absent': ('صاحب المحل غير موجود', 'Owner absent'),
+    'nsr_has_stock': ('لديه بضاعة', 'Has stock'),
+    'nsr_no_cash': ('لا يوجد نقد', 'No cash'),
+    'nsr_refused': ('رفض الشراء', 'Refused'),
+    'nsr_other': ('أخرى', 'Other'),
+    'connection': ('الاتصال', 'Connection'),
+    'online': ('متصل', 'Online'),
+    'offline': ('غير متصل', 'Offline'),
+    'nextAutoSync': ('المزامنة التلقائية التالية', 'Next automatic sync'),
+    'sessionRequired': ('انتهت الجلسة. سجّل الدخول مجدداً للإرسال.', 'Session expired. Sign in again to send.'),
+    'kind_sales_invoice': ('فاتورة', 'Invoice'),
+    'kind_sales_return': ('مرتجع', 'Return'),
+    'kind_collection': ('سند قبض', 'Receipt'),
+    'kind_visit': ('زيارة', 'Visit'),
   };
 
   String t(String key) {
     final v = _t[key];
-    if (v == null) return key;
+    if (v == null) return key.startsWith('nsr_') ? key.substring(4) : key;
     return isAr ? v.$1 : v.$2;
   }
 }

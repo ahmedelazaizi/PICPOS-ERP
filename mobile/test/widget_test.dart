@@ -34,7 +34,7 @@ void main() {
     expect(find.text('خط اليوم'), findsWidgets);
     expect(find.text('بقالة الأمل'), findsOneWidget);
     expect(find.text('سوبرماركت النور'), findsOneWidget);
-    expect(find.text('لم تتم الزيارة'), findsNWidgets(2));
+    expect(find.text('مخطط'), findsNWidgets(2)); // visit state: planned
   });
 
   testWidgets('English locale renders LTR', (tester) async {

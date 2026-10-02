@@ -8,10 +8,11 @@ import '../db/database.dart';
 import '../security.dart';
 import '../service/auth_service.dart';
 import '../service/errors.dart';
+import '../service/rate_limiter.dart';
 import '../service/sync_service.dart';
 import '../whatsapp/whatsapp.dart';
 
-/// HTTP surface of the cloud API (I-1). Header conventions follow the desktop
+/// HTTP surface of the cloud API (I-1 + I-2). Header conventions follow the desktop
 /// LAN API: `Authorization: Bearer <device token>`, `X-Device-Id`,
 /// `X-Session-Token`.
 class CloudApp {
@@ -21,7 +22,8 @@ class CloudApp {
     required this.sync,
     required this.outbox,
     required this.adminKey,
-  });
+    RateLimiter? pushLimiter,
+  }) : pushLimiter = pushLimiter ?? RateLimiter(max: 60, window: const Duration(minutes: 1));
 
   final CloudDatabase db;
   final AuthService auth;
@@ -30,6 +32,9 @@ class CloudApp {
 
   /// Test-stack admin key (production admin flows come from desktop, I-3).
   final String adminKey;
+
+  /// 60 pushes per device per minute (ARCHITECTURE-I §11).
+  final RateLimiter pushLimiter;
 
   Handler get handler => const Pipeline()
       .addMiddleware(_errors())
@@ -60,7 +65,7 @@ class CloudApp {
     });
     r.post('/admin/devices/<deviceId>/revoke', (Request req, String deviceId) async {
       _requireAdmin(req);
-      await auth.revokeDevice(deviceId);
+      await auth.revokeDevice(deviceId, ip: _ip(req), reason: 'admin');
       return _json(200, {'revoked': deviceId});
     });
     r.get('/admin/whatsapp/outbox', (Request req) async {
@@ -96,6 +101,10 @@ class CloudApp {
       final token = await auth.login(d, '${b['pin'] ?? ''}');
       return _json(200, {'sessionToken': token});
     });
+    r.post('/mobile/token/rotate', (Request req) async {
+      final d = await _device(req);
+      return _json(200, {'deviceToken': await auth.rotateToken(d), 'deviceId': d.deviceId});
+    });
     r.get('/mobile/bootstrap', (Request req) async {
       final d = await _session(req);
       return _json(200, await sync.bootstrap(d));
@@ -107,6 +116,7 @@ class CloudApp {
     });
     r.post('/mobile/sync/push', (Request req) async {
       final d = await _session(req);
+      pushLimiter.hit(d.deviceId);
       final b = await _body(req);
       final docs = b['documents'];
       if (docs is! List || docs.length > 50) throw ApiError(400, 'documents_required_max_50');
@@ -127,7 +137,7 @@ class CloudApp {
   Future<DeviceContext> _device(Request req) {
     final authz = req.headers['authorization'] ?? '';
     final bearer = authz.startsWith('Bearer ') ? authz.substring(7).trim() : null;
-    return auth.authenticateDevice(bearer, req.headers['x-device-id']);
+    return auth.authenticateDevice(bearer, req.headers['x-device-id'], ip: _ip(req));
   }
 
   Future<DeviceContext> _session(Request req) async {
@@ -149,14 +159,15 @@ class CloudApp {
     throw ApiError(400, 'invalid_json');
   }
 
-  static Response _json(int status, Object body) => Response(status,
-      body: jsonEncode(body), headers: {'content-type': 'application/json; charset=utf-8'});
+  static Response _json(int status, Object body, [Map<String, String> extra = const {}]) => Response(status,
+      body: jsonEncode(body), headers: {'content-type': 'application/json; charset=utf-8', ...extra});
 
   static Middleware _errors() => (inner) => (req) async {
         try {
           return await inner(req);
         } on ApiError catch (e) {
-          return _json(e.status, e.toJson());
+          return _json(e.status, e.toJson(),
+              {if (e.retryAfterSeconds != null) 'retry-after': '${e.retryAfterSeconds}'});
         } catch (e, st) {
           stderr.writeln('[api] ${req.method} ${req.requestedUri.path}: $e\n$st');
           return _json(500, {'error': 'internal_error'});

@@ -7,6 +7,10 @@ abstract class Kinds {
   static const vanStock = 'van_stock';
   static const voucherBooks = 'voucher_books';
   static const leases = 'leases';
+  static const priceLists = 'price_lists';
+
+  /// Recent accepted invoices with per-product sold/returned amounts (returns).
+  static const invoices = 'invoices';
 }
 
 enum OutboxStatus { pending, accepted, rejected }

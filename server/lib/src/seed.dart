@@ -19,14 +19,38 @@ class Demo {
   static const prodBreadGid = '00000000-0000-4000-8000-0000000000b2'; // tax exempt
   static const book1Gid = '00000000-0000-4000-8000-0000000000d1'; // rep1, 1001..1050
   static const book2Gid = '00000000-0000-4000-8000-0000000000d2'; // rep2, 2001..2050
+  static const priceListGid = '00000000-0000-4000-8000-0000000000e1'; // default list: bread ≥ 10 → 0.90
 }
 
 /// Seeds one demo company with two reps, two routes, three customers, two
-/// products, two van warehouses with stock and one receipt book per rep.
-/// Idempotent: does nothing when the demo company exists.
+/// products, two van warehouses with stock and one receipt book per rep, then
+/// the I-2 additions (water wholesale price 2.20, a default price list).
+/// Idempotent: each part does nothing when its rows exist.
 Future<void> seedDemo(CloudDatabase db, {int pinIterations = 120000}) async {
   final exists = await db.query('SELECT 1 FROM companies WHERE global_id=@g', {'g': Demo.companyGid});
-  if (exists.isNotEmpty) return;
+  if (exists.isEmpty) await _seedI1(db, pinIterations);
+  await _seedI2(db);
+}
+
+Future<void> _seedI2(CloudDatabase db) async {
+  final has = await db.query('SELECT 1 FROM price_lists WHERE global_id=@g', {'g': Demo.priceListGid});
+  if (has.isNotEmpty) return;
+  await db.tx((s) async {
+    final c = (await db.q(s, 'SELECT id FROM companies WHERE global_id=@g', {'g': Demo.companyGid})).first[0];
+    await db.q(s, 'UPDATE products SET wholesale_price = 2.2 WHERE global_id=@g', {'g': Demo.prodWaterGid});
+    final list = (await db.q(s,
+            "INSERT INTO price_lists (company_id, global_id, name, code, is_default) "
+            "VALUES (@c, @g, 'قائمة الكميات', 'QTY', TRUE) RETURNING id",
+            {'c': c, 'g': Demo.priceListGid}))
+        .first[0];
+    await db.q(s, '''
+      INSERT INTO price_list_items (company_id, global_id, price_list_id, product_id, price, min_quantity)
+      SELECT @c, @g, @l, id, 0.9, 10 FROM products WHERE global_id=@p''',
+        {'c': c, 'g': _uuid.v4(), 'l': list, 'p': Demo.prodBreadGid});
+  });
+}
+
+Future<void> _seedI1(CloudDatabase db, int pinIterations) async {
   await db.tx((s) async {
     Future<int> ins(String sql, Map<String, Object?> p) async =>
         (await db.q(s, '$sql RETURNING id', p)).first[0] as int;

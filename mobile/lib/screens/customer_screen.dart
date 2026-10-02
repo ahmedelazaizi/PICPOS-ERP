@@ -4,7 +4,9 @@ import '../data/local_store.dart';
 import '../l10n/strings.dart';
 import 'collection_screen.dart';
 import 'common.dart';
+import 'return_screen.dart';
 import 'sale_screen.dart';
+import 'visit_actions.dart';
 
 /// Customer card: balance (last synced + unsent docs), credit limit, actions.
 class CustomerScreen extends StatelessWidget {
@@ -69,6 +71,17 @@ class CustomerScreen extends StatelessWidget {
                           builder: (_) => CollectionScreen(customerGlobalId: customerGlobalId),
                         )),
                       ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        key: const Key('openReturn'),
+                        icon: const Icon(Icons.assignment_return_outlined),
+                        label: Text(s.t('salesReturn')),
+                        onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                          builder: (_) => ReturnScreen(customerGlobalId: customerGlobalId),
+                        )),
+                      ),
+                      const SizedBox(height: 16),
+                      VisitActions(customerGlobalId: customerGlobalId),
                     ],
                   ),
                 ),

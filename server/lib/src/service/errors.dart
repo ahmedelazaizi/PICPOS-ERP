@@ -1,8 +1,11 @@
 class ApiError implements Exception {
-  ApiError(this.status, this.code, [this.message]);
+  ApiError(this.status, this.code, [this.message, this.retryAfterSeconds]);
   final int status;
   final String code;
   final String? message;
+
+  /// Sent as `Retry-After` (429 responses).
+  final int? retryAfterSeconds;
   Map<String, Object?> toJson() => {'error': code, if (message != null) 'message': message};
   @override
   String toString() => 'ApiError($status, $code, $message)';
@@ -23,9 +26,16 @@ class DeviceContext {
     required this.deviceId,
     required this.companyId,
     required this.employeeId,
+    this.ip = 'unknown',
+    this.tokenHash,
   });
+
+  /// SHA-256 of the device token used on this request (current or the
+  /// pre-rotation token during its grace period).
+  final String? tokenHash;
   final int devicePk;
   final String deviceId;
   final int companyId;
   final int employeeId;
+  final String ip;
 }

@@ -46,5 +46,20 @@ void main() {
     final ob = {for (final e in await c.store.outbox()) e.globalId: e};
     expect(ob[sale.globalId]!.status, OutboxStatus.accepted, reason: ob[sale.globalId]!.error);
     expect(ob[col.globalId]!.status, OutboxStatus.accepted, reason: ob[col.globalId]!.error);
+
+    // I-2: the accepted invoice comes back as returnable; return it and record visits.
+    expect((await c.returnableInvoices(cust['globalId'] as String)).map((i) => i['globalId']),
+        contains(sale.globalId));
+    final ret = await c.createReturn(
+        invoiceGlobalId: sale.globalId, quantities: {water['globalId'] as String: 1}, reason: 'damaged');
+    final v1 = await c.createVisit(customerGlobalId: cust['globalId'] as String, outcome: 'visited');
+    final v2 = await c.createVisit(
+        customerGlobalId: '00000000-0000-4000-8000-0000000000c1', outcome: 'no_sale', noSaleReason: 'closed');
+    await c.syncNow();
+    expect(c.lastSyncError, isNull);
+    final ob2 = {for (final e in await c.store.outbox()) e.globalId: e};
+    for (final e in [ret, v1, v2]) {
+      expect(ob2[e.globalId]!.status, OutboxStatus.accepted, reason: '${e.kind}: ${ob2[e.globalId]!.error}');
+    }
   }, skip: base == null ? 'CLOUD_URL not set' : false);
 }

@@ -1,27 +1,57 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:path/path.dart' as p;
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/sqflite.dart' as plain;
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 import 'local_store.dart';
 
-/// On-device SQLite store (app-private storage). SQLCipher encryption with a
-/// Keystore-held key is an I-2 item (ARCHITECTURE-I §11).
+/// On-device store: SQLCipher-encrypted SQLite in app-private storage. The
+/// passphrase comes from `DatabaseKey` (Android Keystore via
+/// flutter_secure_storage), ARCHITECTURE-I §11.
 class SqfliteLocalStore implements LocalStore {
   SqfliteLocalStore._(this._db);
   final Database _db;
 
-  static Future<SqfliteLocalStore> open() async {
-    final path = p.join(await getDatabasesPath(), 'picpos_van.db');
-    final db = await openDatabase(path, version: 1, onCreate: (db, _) async {
-      await db.execute('CREATE TABLE kv (key TEXT PRIMARY KEY, value TEXT)');
-      await db.execute('CREATE TABLE entities (kind TEXT NOT NULL, global_id TEXT NOT NULL, '
-          'json TEXT NOT NULL, PRIMARY KEY (kind, global_id))');
-      await db.execute('CREATE TABLE outbox (global_id TEXT PRIMARY KEY, kind TEXT NOT NULL, '
-          'payload TEXT NOT NULL, created_at INTEGER NOT NULL, status TEXT NOT NULL, '
-          'attempts INTEGER NOT NULL DEFAULT 0, error TEXT)');
-    });
+  static const _file = 'picpos_van_enc.db';
+
+  /// I-1 plaintext database, migrated once then deleted.
+  static const _legacyFile = 'picpos_van.db';
+
+  static Future<void> _create(Database db, int _) async {
+    await db.execute('CREATE TABLE kv (key TEXT PRIMARY KEY, value TEXT)');
+    await db.execute('CREATE TABLE entities (kind TEXT NOT NULL, global_id TEXT NOT NULL, '
+        'json TEXT NOT NULL, PRIMARY KEY (kind, global_id))');
+    await db.execute('CREATE TABLE outbox (global_id TEXT PRIMARY KEY, kind TEXT NOT NULL, '
+        'payload TEXT NOT NULL, created_at INTEGER NOT NULL, status TEXT NOT NULL, '
+        'attempts INTEGER NOT NULL DEFAULT 0, error TEXT)');
+  }
+
+  static Future<SqfliteLocalStore> open({required String password}) async {
+    final dir = await getDatabasesPath();
+    final db = await openDatabase(p.join(dir, _file), version: 1, password: password, onCreate: _create);
+    await _migrateLegacy(db, p.join(dir, _legacyFile));
     return SqfliteLocalStore._(db);
+  }
+
+  /// Copies the unencrypted I-1 database (pending outbox included) into the
+  /// encrypted one, then deletes it.
+  static Future<void> _migrateLegacy(Database db, String legacyPath) async {
+    if (!File(legacyPath).existsSync()) return;
+    final old = await plain.openDatabase(legacyPath, readOnly: true);
+    try {
+      await db.transaction((tx) async {
+        for (final table in const ['kv', 'entities', 'outbox']) {
+          for (final row in await old.query(table)) {
+            await tx.insert(table, row, conflictAlgorithm: ConflictAlgorithm.replace);
+          }
+        }
+      });
+    } finally {
+      await old.close();
+    }
+    await plain.deleteDatabase(legacyPath);
   }
 
   @override

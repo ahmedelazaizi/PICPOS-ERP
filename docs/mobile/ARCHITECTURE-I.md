@@ -1,6 +1,6 @@
 # Phase I — Cloud server + Android cash-van app (Architecture)
 
-> Status: **I-1 skeleton implemented** (see §14 for what is real vs stubbed).
+> Status: **I-1 skeleton and I-2 implemented** (see §14 for what is real vs stubbed).
 > Owner decisions (final): central cloud server (PostgreSQL + HTTPS API, desktop also syncs to it) — Docker **test** server for now; Android cash-van app, offline-first; per-device number ranges; **server authoritative**; only the rep deducts from **his van** stock; credit limit is checked against the **last-synced** balance; WhatsApp Business API automatic messages — **test mode (mock provider)** until Meta approval.
 
 ---
@@ -97,7 +97,7 @@ Goals: no number collision across offline devices; numbers gap-auditable; tie-in
 2. **Pair** (`POST /mobile/pair {code, deviceId, deviceName}`): server consumes the code, creates/updates `devices` row (bound to the rep), returns `deviceToken` (32 random bytes, base64url). Only `sha256(token)` is stored. Rate limit: 5 attempts / IP / 10 min.
 3. **Rep login** (`POST /mobile/login {pin}` + device token): verifies the PIN (PBKDF2-SHA256, per-user salt, stored as `pbkdf2$iter$salt$hash`) of the rep bound to the device; returns a short-lived **session token** (HMAC-signed `{uid, did, exp}`, 12 h default). Login works offline on the device against the last verified PIN hash cached locally (for opening the app only; push always requires a valid server session, refreshed on reconnect).
 4. Every `/mobile/*` call: `Authorization: Bearer <deviceToken>` + `X-Device-Id`; data calls also `X-Session-Token`.
-5. **Revocation**: `devices.revoked_at` → all calls 401 `device_revoked`; app wipes local data after showing the reason. **Rotation**: `POST /mobile/token/rotate` returns a new device token and invalidates the old hash (planned I-2; the app rotates every 30 days).
+5. **Revocation**: `devices.revoked_at` → all calls 401 `device_revoked`; app wipes local data after showing the reason. **Rotation** (I-2): `POST /mobile/token/rotate` returns a new device token; the previous hash stays valid only until the new token is first used (a lost response cannot lock the device out); the app rotates every 30 days.
 6. Rep reassignment (route changes rep): device stays bound to the employee; scoping follows the route's current rep (`sales_routes.sales_rep_id` / `route_rep_history`), so the old rep stops seeing the customers at next pull.
 
 ## 5. Offline queue & idempotency
@@ -132,10 +132,19 @@ Pull: `GET /mobile/sync/pull?since=<ms>` returns per-entity changed rows since t
 - **Scoping**: customer must be on one of the rep's routes today, otherwise `customer_not_on_route`.
 - **Stock rule**: lines deduct only from the **rep's van warehouse** (`rep_resources.van_warehouse_id`); `warehouse` is not accepted from the client. For each product, `sum(qty in base unit) ≤ inventory_balances.quantity` (row locked `FOR UPDATE`), else `insufficient_van_stock` (whole document rejected). On accept the van balance is decremented and a `stock_movements` row is written (`type='sale'`, `reference_type='mobile_sales_invoice'`).
 - **Credit rule** (same as desktop `SalesMutationsDao.createSalesInvoice`): when the remaining amount `total − paid > 0.01` and `credit_limit > 0`, the server checks `customer.balance (materialized) + remaining ≤ credit_limit`, else `credit_limit_exceeded`. `credit_limit = 0` means **no limit** (desktop shows «بلا حد»). The desktop's manager override (`overrideCreditLimit`) has no mobile equivalent in I-1 (I-2: remote approval request). The device performs the same check against its last-synced balance + its pending outbox, so the rep sees the block offline; the server re-checks on push (the server result wins).
-- **Prices/tax**: lines carry the price the device used; the server recomputes `tax = effectiveItemTaxRate(...)` and totals with the same rounding (2 dp lines, 4 dp integrity payload). A mismatch > 0.01 → `totals_mismatch`. Price-override permission per rep is I-2.
+- **Prices/tax**: lines carry the price the device used; the server recomputes `tax = effectiveItemTaxRate(...)` and totals with the same rounding (2 dp lines, 4 dp integrity payload). A mismatch > 0.01 → `totals_mismatch`. Price rule and override permission: §7.1.
 - **Number**: §3.
 - **Collections**: amount > 0; book rule §3.2; reduces customer balance.
+- **Returns** (I-2): against lines of an accepted invoice of a customer on the rep's route; quantity ≤ sold − previously returned (`return_qty_exceeds_sold`); valued pro-rata from the original line; goods back into the van only; settlement per desktop `SalesReturnRefundSplit` (offset the unpaid part, refund the rest in cash from the custody safe).
+- **Visits** (I-2): `visited` or `no_sale` + reason code (`closed`, `owner_absent`, `has_stock`, `no_cash`, `refused`, `other`), customer on route, route sequence stored.
 - **Integrity**: on accept the server signs the invoice with the company's integrity secret (`v2:` HMAC-SHA256 over the desktop payload format) and stores `integrity_hash`. Desktop verification of cloud-signed docs requires the shared secret (I-3: secret provisioned per company in the cloud, desktop fetches it once over the authenticated channel), or the desktop re-signs after posting (`resignSalesInvoice`) — **I-3 decision point**; default: desktop re-signs on posting and keeps the cloud hash as `cloud_integrity_hash` for audit.
+
+### 7.1 Pricing (I-2)
+
+Same code on both sides (`server/lib/src/domain/{tax,pricing}.dart`, copied to `mobile/lib/domain/pricing.dart`), pinned by the shared fixture `docs/mobile/fixtures/pricing_parity.json` that both test suites run:
+- **Effective item tax**: exempt → 0; item rate > 0 → item rate; else the company default.
+- **Totals** (desktop `FinancialUtils.calculateInvoiceTotals`): per line gross = r(qty × price), discount clamped, amount = r(gross − discount); tax-exclusive: tax = r(amount × rate); tax-inclusive (`companies.prices_include_tax`): net = r(amount / (1 + rate)), tax = r(amount − net). Document tax = r(Σ line tax), total = r(Σ net + tax). Rounding half away from zero to `decimal_places`.
+- **Unit price** (enforced at the gate unless `employees.can_override_price`): customer `price_level='wholesale'` and product `wholesale_price > 0` → wholesale price; else active price lists in date range, default first then by order, and in the first list with a tier `min_quantity ≤ qty` the highest such tier; else `sale_price`. Rejection `price_not_allowed` with the expected price and its source.
 
 ## 8. Accounting parity
 
@@ -162,11 +171,11 @@ Gap documented: server-side posting (cloud-only companies without a desktop) nee
 
 - TLS only in production (terminated by a reverse proxy, e.g. Caddy/nginx with Let's Encrypt; the API listens on the internal network). HSTS.
 - Device tokens: random 256-bit, stored hashed; session tokens 12 h; rotation every 30 days; immediate revocation per device.
-- Rate limits: pairing 5/IP/10 min (implemented), login 10/device/10 min, push 60/device/min (I-2).
+- Rate limits: pairing 5/IP/10 min, login 10/device/10 min, push 60/device/min (all implemented; in-memory per API instance).
 - Every write is audited: `audit_log(company_id, device_id, employee_id, action, entity, global_id, ip, at, detail)`.
 - PIN hashes PBKDF2 (≥ 100k iterations); admin key for test only — production admin flows go through desktop users (I-3).
 - Postgres: separate app role without superuser; parameterized queries only (no SQL string interpolation, unlike the LAN `_sql` helper).
-- On device: local DB in app-private storage; I-2 adds SQLCipher (`sqflite_sqlcipher`) with the key in Android Keystore; wipe on revocation.
+- On device: local DB in app-private storage, encrypted with SQLCipher (`sqflite_sqlcipher`) using a random 256-bit key kept in `flutter_secure_storage` (Android Keystore); wipe on revocation.
 - Backups: daily `pg_dump` + WAL archiving (production), restore drill.
 
 ## 12. Deployment
@@ -187,30 +196,31 @@ Gap documented: server-side posting (cloud-only companies without a desktop) nee
 
 | Phase | Scope | Acceptance criteria |
 |---|---|---|
-| **I-1** (this) | Architecture; cloud API skeleton (health, pairing, login, bootstrap, push sales+collections with validations, pull delta, WhatsApp outbox + mock); docker test stack; mobile skeleton (pair/login, today's route, customer card, new sale, collection, sync status; local DB + outbox) | Server tests green (pairing, scoping, idempotency, stock/credit/book-range rejections, pull delta, WhatsApp enqueue); `docker compose up` → `/health` 200; mobile `flutter test` green; `flutter build apk --debug` succeeds |
-| **I-2** | Mobile ↔ cloud wired end-to-end (HTTP client, sync engine, backoff, conflict UI), barcode camera scan, sales returns, visits, token rotation, rate limits, SQLCipher on device, price lists | Rep completes a full offline day on a device, comes online, all docs accepted exactly once (kill-app-mid-push test); revoked device is wiped |
+| **I-1** (done) | Architecture; cloud API skeleton (health, pairing, login, bootstrap, push sales+collections with validations, pull delta, WhatsApp outbox + mock); docker test stack; mobile skeleton (pair/login, today's route, customer card, new sale, collection, sync status; local DB + outbox) | Server tests green (pairing, scoping, idempotency, stock/credit/book-range rejections, pull delta, WhatsApp enqueue); `docker compose up` → `/health` 200; mobile `flutter test` green; `flutter build apk --debug` succeeds |
+| **I-2** (done, §14) | Mobile ↔ cloud wired end-to-end (HTTP client, sync engine, backoff, conflict UI), barcode camera scan, sales returns, visits, token rotation, rate limits, SQLCipher on device, price lists | Rep completes a full offline day on a device, comes online, all docs accepted exactly once (kill-app-mid-push test); revoked device is wiped |
 | **I-3** | Desktop ↔ cloud sync: desktop pushes master data (products, customers, routes, books, stock) and pulls accepted field docs, posting them via the existing orchestrator; admin pairing from desktop UI | A field invoice appears on desktop, posts identical GL/stock/balance as a desktop invoice with same inputs (golden comparison test); balances flow back to the van |
 | **I-4** | Bluetooth ESC/POS printing 58/80 (raster Arabic), barcode/QR; shared `picpos_domain` package extraction | Printed sample on 58 and 80 mm devices matches checklist; parity tests run against shared package |
 | **I-5** | WhatsApp real provider (Meta Cloud API), templates, webhooks, delivery status, balance statements | Sandbox number receives AR/EN templates; failures retry and dead-letter |
 | **I-6** | Production deployment (owner's host/domain/TLS/backups), monitoring, optional server-side posting for cloud-only companies | Checklist §12 complete; restore drill passes |
 
-## 14. I-1 implementation status
+## 14. Implementation status (I-1 + I-2)
 
 The exact implemented-vs-stubbed list is in `server/README.md` and `mobile/README.md`. Summary:
 
 **Implemented:**
-- The I-1 server endpoints, with Postgres persistence and validations.
-- The WhatsApp outbox with the mock provider. The Meta provider exists as a stub that stays off unless configured.
-- Server tests against Postgres.
-- The docker test stack and its smoke script.
-- The mobile app: local SQLite and outbox, an HTTP client and a sync engine at login and on demand, offline rules, and the I-1 screens.
-- A live contract test from the mobile client to the docker API.
+- The I-1 server endpoints, with Postgres persistence and validations; the WhatsApp outbox with the mock provider (the Meta provider is a stub that stays off unless configured).
+- I-2 server: sales returns and visits push (idempotent by `globalId`, rep scope, van warehouse only, return quantity ≤ sold − returned), device token rotation and revocation, login/push rate limits, audit rows, price lists, wholesale level, rep price-override permission and tax-inclusive pricing (§7.1), returnable invoices in pull.
+- Server tests against Postgres (71), the docker test stack and its smoke script (now also return, over-return rejection, visits and token rotation).
+- Mobile: encrypted local DB (SQLCipher, Keystore-held key) and outbox; HTTP client and sync engine with background scheduling, backoff and connectivity awareness; token rotation and wipe on revocation; the I-1 screens plus sales returns, visits (planned / visited / no sale + reason in route order), camera barcode scanning beside the keyboard-wedge path, price lists and tax-inclusive pricing with the shared parity fixture; AR/EN.
+- A live contract test from the mobile client to the docker API (sale, collection, return, visits).
+
+**Acceptance criteria (§13, I-2) — evidence and limits:**
+- "All docs accepted exactly once": covered by idempotent push (server tests), the lost-response retry test and the pull-reconciliation test on mobile, and the live contract test. A full offline day on a physical device was **not** run.
+- "Revoked device is wiped": server revocation test + mobile wipe test; not exercised on a device.
 
 **Stubbed or gaps:**
 - Desktop posting of cloud documents (I-3).
-- Push for returns and visits (I-2).
-- The token-rotation endpoint and the login/push rate limits (I-2).
-- Automatic background sync and camera scanning on mobile (I-2).
+- Sync for a closed app (OS-scheduled work) and GPS capture for visits.
+- Header discounts and remote price-override approval.
 - Printing: the interface exists, nothing more (I-4).
 - Sending real WhatsApp messages through Meta (I-5).
-- The pricing model is tax-exclusive with line discounts only (tax-inclusive is I-2).

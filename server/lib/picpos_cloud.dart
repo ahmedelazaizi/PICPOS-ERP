@@ -7,17 +7,20 @@ import 'src/db/database.dart';
 import 'src/http/app.dart';
 import 'src/security.dart';
 import 'src/service/auth_service.dart';
+import 'src/service/rate_limiter.dart';
 import 'src/service/sync_service.dart';
 import 'src/whatsapp/whatsapp.dart';
 
 export 'src/db/database.dart';
 export 'src/domain/integrity.dart';
+export 'src/domain/pricing.dart';
 export 'src/domain/tax.dart';
 export 'src/http/app.dart';
 export 'src/seed.dart';
 export 'src/security.dart';
 export 'src/service/auth_service.dart';
 export 'src/service/errors.dart';
+export 'src/service/rate_limiter.dart';
 export 'src/service/sync_service.dart';
 export 'src/whatsapp/whatsapp.dart';
 
@@ -58,15 +61,18 @@ class CloudServices {
     required String adminKey,
     WhatsAppProvider? provider,
     int pullOverlapMs = 2000,
+    RateLimiter? loginLimiter,
+    RateLimiter? pushLimiter,
   }) async {
     await db.migrate();
     final outbox = WhatsAppOutbox(db, provider ?? MockWhatsAppProvider());
     final app = CloudApp(
       db: db,
-      auth: AuthService(db, SessionTokens(tokenSecret)),
+      auth: AuthService(db, SessionTokens(tokenSecret), loginLimiter: loginLimiter),
       sync: SyncService(db, pullOverlapMs: pullOverlapMs),
       outbox: outbox,
       adminKey: adminKey,
+      pushLimiter: pushLimiter,
     );
     return CloudServices._(db, app, outbox);
   }

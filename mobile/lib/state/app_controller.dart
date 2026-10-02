@@ -19,6 +19,18 @@ class AppFailure implements Exception {
   String toString() => 'AppFailure($code, $detail)';
 }
 
+/// Today's visit state of a route customer.
+enum VisitState { planned, visited, noSale }
+
+/// A sales return computed on the device (same math as the server gate).
+class ReturnPreview {
+  ReturnPreview(this.lines, this.total, this.tax, this.arOffset, this.cashRefund);
+
+  /// productGlobalId → (qty, amounts).
+  final Map<String, ({double quantity, ReturnLineAmounts amounts})> lines;
+  final double total, tax, arOffset, cashRefund;
+}
+
 /// App state + offline business rules. Rules here mirror the server gate so
 /// the rep sees a block offline; the server re-checks on push and wins.
 class AppController extends ChangeNotifier {
@@ -30,6 +42,10 @@ class AppController extends ChangeNotifier {
   final DateTime Function() _clock;
   static const _uuid = Uuid();
 
+  /// Device token rotation period (ARCHITECTURE-I §4).
+  static const tokenRotationPeriod = Duration(days: 30);
+  static const defaultNoSaleReasons = ['closed', 'owner_absent', 'has_stock', 'no_cash', 'refused', 'other'];
+
   DeviceCredentials? creds;
   String? session;
   bool loggedIn = false;
@@ -38,8 +54,27 @@ class AppController extends ChangeNotifier {
   DateTime? lastSync;
   String repName = '';
   double companyTaxRate = 0;
+  bool pricesIncludeTax = false;
+  int decimals = 2;
+  bool canOverridePrice = false;
+  List<String> noSaleReasons = defaultNoSaleReasons;
+
+  /// Set by the background sync scheduler (shown on the sync tab).
+  bool online = true;
+  DateTime? nextAutoSync;
+
+  /// Called after a document is queued (the scheduler pushes it soon).
+  VoidCallback? onOutboxChanged;
 
   bool get isPaired => creds != null;
+
+  void setAutoSyncStatus(bool isOnline, DateTime? next) {
+    online = isOnline;
+    nextAutoSync = next;
+    notifyListeners();
+  }
+
+  double _r(double v) => roundDp(v, decimals);
 
   Future<void> init() async {
     final raw = await store.getKv('creds');
@@ -51,8 +86,24 @@ class AppController extends ChangeNotifier {
     final ls = await store.getKv('lastSync');
     lastSync = ls == null ? null : DateTime.fromMillisecondsSinceEpoch(int.parse(ls));
     repName = await store.getKv('repName') ?? '';
-    companyTaxRate = double.tryParse(await store.getKv('companyTaxRate') ?? '') ?? 0;
+    final company = await store.getKv('company');
+    if (company != null) _applyCompany((jsonDecode(company) as Map).cast<String, Object?>());
+    final emp = await store.getKv('employee');
+    if (emp != null) _applyEmployee((jsonDecode(emp) as Map).cast<String, Object?>());
+    final reasons = await store.getKv('noSaleReasons');
+    if (reasons != null) noSaleReasons = (jsonDecode(reasons) as List).cast<String>();
     notifyListeners();
+  }
+
+  void _applyCompany(Map<String, Object?> m) {
+    companyTaxRate = (m['defaultTaxRate'] as num?)?.toDouble() ?? 0;
+    pricesIncludeTax = m['pricesIncludeTax'] == true;
+    decimals = (m['decimalPlaces'] as int?) ?? 2;
+  }
+
+  void _applyEmployee(Map<String, Object?> m) {
+    repName = '${m['name'] ?? ''}';
+    canOverridePrice = m['canOverridePrice'] == true;
   }
 
   // ───────────── pairing & login ─────────────
@@ -61,9 +112,14 @@ class AppController extends ChangeNotifier {
     final url = baseUrl.trim().replaceAll(RegExp(r'/+$'), '');
     final deviceId = _uuid.v4();
     final r = await api.pair(url, code.trim().toUpperCase(), deviceId, 'Android van');
-    creds = DeviceCredentials(baseUrl: url, deviceId: deviceId, deviceToken: r.deviceToken);
-    await store.setKv('creds', jsonEncode({'baseUrl': url, 'deviceId': deviceId, 'deviceToken': r.deviceToken}));
+    await _saveCreds(DeviceCredentials(baseUrl: url, deviceId: deviceId, deviceToken: r.deviceToken));
     notifyListeners();
+  }
+
+  Future<void> _saveCreds(DeviceCredentials c) async {
+    creds = c;
+    await store.setKv('creds', jsonEncode({'baseUrl': c.baseUrl, 'deviceId': c.deviceId, 'deviceToken': c.deviceToken}));
+    await store.setKv('tokenRotatedAt', '${_clock().millisecondsSinceEpoch}');
   }
 
   static String _pinHash(String pin, String salt) {
@@ -83,11 +139,7 @@ class AppController extends ChangeNotifier {
       final salt = base64.encode(List<int>.generate(16, (_) => Random.secure().nextInt(256)));
       await store.setKv('pin', '$salt:${_pinHash(pin, salt)}');
     } on CloudApiException catch (e) {
-      if (e.code == 'device_revoked') {
-        await store.clear();
-        creds = null;
-        notifyListeners();
-      }
+      if (e.code == 'device_revoked') await wipe();
       throw AppFailure(e.code == 'invalid_pin' ? 'invalidPin' : 'error', e.code);
     } catch (_) {
       final saved = await store.getKv('pin');
@@ -101,33 +153,92 @@ class AppController extends ChangeNotifier {
     if (session != null) await syncNow();
   }
 
+  /// Back to the PIN screen (e.g. to get a fresh server session).
+  void signOut() {
+    session = null;
+    loggedIn = false;
+    notifyListeners();
+  }
+
+  /// Device revoked: local data is erased (ARCHITECTURE-I §4.5).
+  Future<void> wipe() async {
+    await store.clear();
+    creds = null;
+    session = null;
+    loggedIn = false;
+    lastSync = null;
+    notifyListeners();
+  }
+
   // ───────────── sync ─────────────
 
-  Future<void> syncNow() async {
+  /// Push the outbox, then pull. Returns true when the server was reached and
+  /// everything was exchanged (the scheduler backs off on false).
+  Future<bool> syncNow() async {
     final c = creds;
     final s = session;
-    if (c == null || s == null || syncing) return;
+    if (c == null || syncing) return false;
+    if (s == null) {
+      lastSyncError = 'sessionRequired';
+      notifyListeners();
+      return false;
+    }
     syncing = true;
     lastSyncError = null;
     notifyListeners();
     try {
-      final pending = (await store.outbox()).where((e) => e.status == OutboxStatus.pending).toList();
+      final cc = await _maybeRotateToken(c);
+      final pending = await pendingDocs();
       for (var i = 0; i < pending.length; i += 50) {
         final batch = pending.sublist(i, min(i + 50, pending.length));
-        final results = await api.push(c, s, [for (final e in batch) e.payload]);
+        final results = await api.push(cc, s, [for (final e in batch) _wire(e.payload)]);
         await applyPushResults(batch, results);
       }
       final since = int.tryParse(await store.getKv('watermark') ?? '');
-      final payload = since == null ? await api.bootstrap(c, s) : await api.pull(c, s, since);
+      final payload = since == null ? await api.bootstrap(cc, s) : await api.pull(cc, s, since);
       await applyServerPayload(payload);
       lastSync = _clock();
       await store.setKv('lastSync', '${lastSync!.millisecondsSinceEpoch}');
+      return true;
+    } on CloudApiException catch (e) {
+      if (e.code == 'device_revoked') {
+        await wipe();
+      } else if (e.code == 'invalid_session' || e.code == 'session_device_mismatch') {
+        session = null;
+        lastSyncError = 'sessionRequired';
+      } else {
+        lastSyncError = e.code;
+      }
+      return false;
     } catch (e) {
       lastSyncError = '$e';
+      return false;
     } finally {
       syncing = false;
       notifyListeners();
     }
+  }
+
+  /// Keys starting with `_` are device-local bookkeeping, never sent.
+  static Map<String, Object?> _wire(Map<String, Object?> p) => {
+        for (final e in p.entries)
+          if (!e.key.startsWith('_'))
+            e.key: e.value is List
+                ? [
+                    for (final x in e.value as List)
+                      x is Map ? {for (final f in x.entries) if (!'${f.key}'.startsWith('_')) f.key: f.value} : x,
+                  ]
+                : e.value,
+      };
+
+  Future<DeviceCredentials> _maybeRotateToken(DeviceCredentials c) async {
+    final at = int.tryParse(await store.getKv('tokenRotatedAt') ?? '');
+    final now = _clock();
+    if (at != null && now.difference(DateTime.fromMillisecondsSinceEpoch(at)) < tokenRotationPeriod) return c;
+    final token = await api.rotateToken(c);
+    final next = DeviceCredentials(baseUrl: c.baseUrl, deviceId: c.deviceId, deviceToken: token);
+    await _saveCreds(next);
+    return next;
   }
 
   Future<void> applyPushResults(List<OutboxEntry> batch, List<Map<String, dynamic>> results) async {
@@ -153,12 +264,19 @@ class AppController extends ChangeNotifier {
     List<Map<String, Object?>> list(String k) =>
         [for (final x in (p[k] as List? ?? const [])) (x as Map).cast<String, Object?>()];
     if (p['employee'] is Map) {
-      repName = '${(p['employee'] as Map)['name']}';
+      final m = (p['employee'] as Map).cast<String, Object?>();
+      _applyEmployee(m);
+      await store.setKv('employee', jsonEncode(m));
       await store.setKv('repName', repName);
     }
     if (p['company'] is Map) {
-      companyTaxRate = ((p['company'] as Map)['defaultTaxRate'] as num?)?.toDouble() ?? 0;
-      await store.setKv('companyTaxRate', '$companyTaxRate');
+      final m = (p['company'] as Map).cast<String, Object?>();
+      _applyCompany(m);
+      await store.setKv('company', jsonEncode(m));
+    }
+    if (p['noSaleReasons'] is List) {
+      noSaleReasons = (p['noSaleReasons'] as List).cast<String>();
+      await store.setKv('noSaleReasons', jsonEncode(noSaleReasons));
     }
     await store.upsert(Kinds.customers, list('customers'));
     if (p['customerScope'] is List) {
@@ -170,6 +288,11 @@ class AppController extends ChangeNotifier {
     if (p['voucherBookScope'] is List) {
       await store.retainOnly(Kinds.voucherBooks, (p['voucherBookScope'] as List).cast<String>().toSet());
     }
+    await store.upsert(Kinds.priceLists, list('priceLists'));
+    if (p['priceListScope'] is List) {
+      await store.retainOnly(Kinds.priceLists, (p['priceListScope'] as List).cast<String>().toSet());
+    }
+    await store.upsert(Kinds.invoices, list('invoices'));
     // Keep the local next number when it is ahead (numbers used offline).
     final leases = <Map<String, Object?>>[];
     for (final l in list('leases')) {
@@ -178,6 +301,17 @@ class AppController extends ChangeNotifier {
       leases.add({...l, 'nextNumber': max(localNext, l['nextNumber'] as int)});
     }
     await store.upsert(Kinds.leases, leases);
+    // A push whose response was lost (app killed mid-push): the server
+    // already holds the document, so the local copy is accepted too.
+    final known = {for (final d in list('documents')) d['globalId']};
+    if (known.isNotEmpty) {
+      for (final e in await pendingDocs()) {
+        if (known.contains(e.globalId)) {
+          e.status = OutboxStatus.accepted;
+          await store.updateOutbox(e);
+        }
+      }
+    }
     if (p['serverTime'] is int) await store.setKv('watermark', '${p['serverTime']}');
     notifyListeners();
   }
@@ -195,14 +329,17 @@ class AppController extends ChangeNotifier {
 
   Future<List<Map<String, Object?>>> products() async => store.all(Kinds.products);
 
+  Future<Map<String, Object?>?> product(String globalId) => store.get(Kinds.products, globalId);
+
   Future<double> availableStock(String productGlobalId) async {
     final s = await store.get(Kinds.vanStock, productGlobalId);
     var q = ((s?['quantity'] as num?) ?? 0).toDouble();
     for (final e in await pendingDocs()) {
-      if (e.kind != 'sales_invoice') continue;
+      if (e.kind != 'sales_invoice' && e.kind != 'sales_return') continue;
+      final sign = e.kind == 'sales_invoice' ? -1 : 1;
       for (final l in (e.payload['lines'] as List)) {
         final m = l as Map;
-        if (m['productGlobalId'] == productGlobalId) q -= (m['quantity'] as num).toDouble();
+        if (m['productGlobalId'] == productGlobalId) q += sign * (m['quantity'] as num).toDouble();
       }
     }
     return q;
@@ -216,22 +353,44 @@ class AppController extends ChangeNotifier {
       if (e.payload['customerGlobalId'] != customerGlobalId) continue;
       if (e.kind == 'sales_invoice') b += (e.payload['_remaining'] as num).toDouble();
       if (e.kind == 'collection') b -= (e.payload['amount'] as num).toDouble();
+      if (e.kind == 'sales_return') b -= (e.payload['_arOffset'] as num).toDouble();
     }
-    return round2(b);
+    return _r(b);
   }
 
-  Future<bool> visitedToday(String customerGlobalId) async {
+  bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+
+  /// Planned → visited (any document or a «visited» record today) or no sale
+  /// (a no-sale visit and nothing sold/collected).
+  Future<(VisitState, String?)> visitState(String customerGlobalId) async {
     final now = _clock();
-    return (await store.outbox()).any((e) =>
-        e.payload['customerGlobalId'] == customerGlobalId &&
-        e.createdAt.year == now.year &&
-        e.createdAt.month == now.month &&
-        e.createdAt.day == now.day);
+    var state = VisitState.planned;
+    String? reason;
+    for (final e in await store.outbox()) {
+      if (e.status == OutboxStatus.rejected ||
+          e.payload['customerGlobalId'] != customerGlobalId ||
+          !_sameDay(e.createdAt, now)) {
+        continue;
+      }
+      if (e.kind == 'visit' && e.payload['outcome'] == 'no_sale') {
+        if (state == VisitState.planned) {
+          state = VisitState.noSale;
+          reason = e.payload['noSaleReason'] as String?;
+        }
+      } else {
+        return (VisitState.visited, null);
+      }
+    }
+    return (state, reason);
   }
+
+  Future<bool> visitedToday(String customerGlobalId) async =>
+      (await visitState(customerGlobalId)).$1 != VisitState.planned;
 
   Future<Map<String, Object?>?> productByBarcode(String code) async {
+    final c = code.trim();
     for (final p in await products()) {
-      if (p['barcode'] == code.trim()) return p;
+      if (p['barcode'] == c) return p;
     }
     return null;
   }
@@ -241,7 +400,46 @@ class AppController extends ChangeNotifier {
       exempt: product['taxExempt'] == true,
       companyDefault: companyTaxRate);
 
+  /// Price for this customer and quantity — the same resolution the server
+  /// enforces (price level, price-list tiers, sale price).
+  Future<ResolvedPrice> unitPriceFor(Map<String, Object?> product, String customerGlobalId, double quantity) async {
+    final customer = await store.get(Kinds.customers, customerGlobalId);
+    final pg = product['globalId'];
+    final entries = <PriceListEntry>[
+      for (final l in await store.all(Kinds.priceLists))
+        for (final i in (l['items'] as List? ?? const []))
+          if ((i as Map)['productGlobalId'] == pg)
+            PriceListEntry(
+              listGlobalId: l['globalId'] as String,
+              isDefault: l['isDefault'] == true,
+              isActive: l['isActive'] == true,
+              startDate: l['startDate'] as String?,
+              endDate: l['endDate'] as String?,
+              listOrder: (l['order'] as int?) ?? 0,
+              price: (i['price'] as num).toDouble(),
+              minQuantity: ((i['minQuantity'] as num?) ?? 0).toDouble(),
+            ),
+    ];
+    return resolveUnitPrice(
+      salePrice: ((product['salePrice'] as num?) ?? 0).toDouble(),
+      wholesalePrice: (product['wholesalePrice'] as num?)?.toDouble(),
+      priceLevel: customer?['priceLevel'] as String?,
+      quantity: quantity,
+      today: _clock(),
+      entries: entries,
+    );
+  }
+
+  DocTotals totalsOf(Iterable<CartLine> lines) =>
+      cartTotals(lines, pricesIncludeTax: pricesIncludeTax, decimals: decimals);
+
   // ───────────── documents ─────────────
+
+  Future<void> _queue(OutboxEntry e) async {
+    await store.addOutbox(e);
+    notifyListeners();
+    onOutboxChanged?.call();
+  }
 
   Future<OutboxEntry> createSale({
     required String customerGlobalId,
@@ -256,9 +454,17 @@ class AppController extends ChangeNotifier {
     for (final e in qty.entries) {
       if (await availableStock(e.key) + 1e-9 < e.value) throw AppFailure('insufficientStock', e.key);
     }
-    final totals = computeTotals(lines);
+    if (!canOverridePrice) {
+      for (final l in lines) {
+        final p = await product(l.productGlobalId);
+        if (p == null) throw AppFailure('error', l.productGlobalId);
+        final expected = await unitPriceFor(p, customerGlobalId, l.quantity);
+        if ((expected.price - l.unitPrice).abs() > 0.00005) throw AppFailure('priceNotAllowed', l.name);
+      }
+    }
+    final totals = totalsOf(lines);
     final paidClamped = paid.clamp(0, totals.total).toDouble();
-    final remaining = round2(totals.total - paidClamped);
+    final remaining = _r(totals.total - paidClamped);
     final customer = await store.get(Kinds.customers, customerGlobalId);
     if (exceedsCreditLimit(
         balance: await effectiveBalance(customerGlobalId),
@@ -266,7 +472,7 @@ class AppController extends ChangeNotifier {
         remaining: remaining)) {
       throw AppFailure('creditExceeded');
     }
-    final number = await _takeInvoiceNumber();
+    final number = await _takeNumber('sales_invoice');
     final gid = _uuid.v4();
     final entry = OutboxEntry(
       globalId: gid,
@@ -284,17 +490,16 @@ class AppController extends ChangeNotifier {
         ],
         'paid': paidClamped,
         'total': totals.total,
-        '_remaining': remaining, // local only; ignored by the server
+        '_remaining': remaining,
       },
     );
-    await store.addOutbox(entry);
-    notifyListeners();
+    await _queue(entry);
     return entry;
   }
 
-  Future<String> _takeInvoiceNumber() async {
+  Future<String> _takeNumber(String docType) async {
     final leases = (await store.all(Kinds.leases))
-        .where((l) => l['docType'] == 'sales_invoice' && l['status'] == 'active')
+        .where((l) => l['docType'] == docType && l['status'] == 'active')
         .toList()
       ..sort((a, b) => (a['rangeFrom'] as int).compareTo(b['rangeFrom'] as int));
     for (final l in leases) {
@@ -308,6 +513,159 @@ class AppController extends ChangeNotifier {
     }
     throw AppFailure('noNumbers');
   }
+
+  // ── returns ──
+
+  /// Server-known invoices of [customerGlobalId] that still have something
+  /// returnable (pending returns included), newest first.
+  Future<List<Map<String, Object?>>> returnableInvoices(String customerGlobalId) async {
+    final out = <Map<String, Object?>>[];
+    for (final inv in await store.all(Kinds.invoices)) {
+      if (inv['customerGlobalId'] != customerGlobalId) continue;
+      final sold = await soldProducts(inv['globalId'] as String);
+      if (sold.values.any((p) => p.returnableQty > 1e-9)) out.add(inv);
+    }
+    out.sort((a, b) => '${b['date']}'.compareTo('${a['date']}'));
+    return out;
+  }
+
+  Future<List<OutboxEntry>> _pendingReturns(String invoiceGlobalId) async => [
+        for (final e in await pendingDocs())
+          if (e.kind == 'sales_return' && e.payload['originalInvoiceGlobalId'] == invoiceGlobalId) e,
+      ];
+
+  /// productGlobalId → sold and already returned (server + pending returns).
+  Future<Map<String, SoldProduct>> soldProducts(String invoiceGlobalId) async {
+    final inv = await store.get(Kinds.invoices, invoiceGlobalId);
+    if (inv == null) return {};
+    final pend = <String, (double, double, double)>{};
+    for (final e in await _pendingReturns(invoiceGlobalId)) {
+      for (final l in e.payload['lines'] as List) {
+        final m = l as Map;
+        final p = pend[m['productGlobalId']] ?? (0, 0, 0);
+        pend[m['productGlobalId'] as String] = (
+          p.$1 + (m['quantity'] as num).toDouble(),
+          p.$2 + (m['_total'] as num).toDouble(),
+          p.$3 + (m['_tax'] as num).toDouble(),
+        );
+      }
+    }
+    double d(Object? v) => ((v as num?) ?? 0).toDouble();
+    return {
+      for (final l in (inv['lines'] as List).cast<Map>())
+        l['productGlobalId'] as String: SoldProduct(
+          soldQty: d(l['quantity']),
+          soldTotal: d(l['total']),
+          soldTax: d(l['tax']),
+          returnedQty: d(l['returnedQuantity']) + (pend[l['productGlobalId']]?.$1 ?? 0),
+          returnedTotal: d(l['returnedTotal']) + (pend[l['productGlobalId']]?.$2 ?? 0),
+          returnedTax: d(l['returnedTax']) + (pend[l['productGlobalId']]?.$3 ?? 0),
+        ),
+    };
+  }
+
+  /// Amounts and settlement of a return of [quantities] against an invoice;
+  /// throws `returnQtyExceeds` like the server's `return_qty_exceeds_sold`.
+  Future<ReturnPreview> previewReturn(String invoiceGlobalId, Map<String, double> quantities) async {
+    final inv = await store.get(Kinds.invoices, invoiceGlobalId);
+    if (inv == null) throw AppFailure('noInvoice');
+    final sold = await soldProducts(invoiceGlobalId);
+    final lines = <String, ({double quantity, ReturnLineAmounts amounts})>{};
+    for (final e in quantities.entries) {
+      if (e.value <= 0) continue;
+      final sp = sold[e.key];
+      final a = sp == null ? null : returnLineAmounts(sp, e.value, decimals: decimals);
+      if (a == null) throw AppFailure('returnQtyExceeds', e.key);
+      lines[e.key] = (quantity: e.value, amounts: a);
+    }
+    final total = _r(lines.values.fold(0.0, (t, l) => t + l.amounts.total));
+    final tax = _r(lines.values.fold(0.0, (t, l) => t + l.amounts.tax));
+    var prevAr = ((inv['returnArOffset'] as num?) ?? 0).toDouble();
+    for (final e in await _pendingReturns(invoiceGlobalId)) {
+      prevAr += (e.payload['_arOffset'] as num).toDouble();
+    }
+    final split = returnSettlement(
+      invoiceTotal: (inv['total'] as num).toDouble(),
+      invoicePaid: (inv['paid'] as num).toDouble(),
+      previousArOffset: prevAr,
+      returnTotal: total,
+      decimals: decimals,
+    );
+    return ReturnPreview(lines, total, tax, split.arOffset, split.cashRefund);
+  }
+
+  Future<OutboxEntry> createReturn({
+    required String invoiceGlobalId,
+    required Map<String, double> quantities,
+    String? reason,
+  }) async {
+    final preview = await previewReturn(invoiceGlobalId, quantities);
+    if (preview.lines.isEmpty) throw AppFailure('emptyReturn');
+    final inv = (await store.get(Kinds.invoices, invoiceGlobalId))!;
+    final number = await _takeNumber('sales_return');
+    final gid = _uuid.v4();
+    final entry = OutboxEntry(
+      globalId: gid,
+      kind: 'sales_return',
+      createdAt: _clock(),
+      payload: {
+        'kind': 'sales_return',
+        'globalId': gid,
+        'number': number,
+        'date': _clock().toUtc().toIso8601String(),
+        'originalInvoiceGlobalId': invoiceGlobalId,
+        'customerGlobalId': inv['customerGlobalId'],
+        'lines': [
+          for (final e in preview.lines.entries)
+            {
+              'productGlobalId': e.key,
+              'quantity': e.value.quantity,
+              '_total': e.value.amounts.total,
+              '_tax': e.value.amounts.tax,
+            },
+        ],
+        'total': preview.total,
+        'cashRefund': preview.cashRefund,
+        'reason': ?reason,
+        '_arOffset': preview.arOffset,
+      },
+    );
+    await _queue(entry);
+    return entry;
+  }
+
+  // ── visits ──
+
+  Future<OutboxEntry> createVisit({
+    required String customerGlobalId,
+    required String outcome,
+    String? noSaleReason,
+    String? note,
+  }) async {
+    if (outcome != 'visited' && outcome != 'no_sale') throw AppFailure('error', outcome);
+    if (outcome == 'no_sale' && (noSaleReason == null || !noSaleReasons.contains(noSaleReason))) {
+      throw AppFailure('reasonRequired');
+    }
+    final gid = _uuid.v4();
+    final entry = OutboxEntry(
+      globalId: gid,
+      kind: 'visit',
+      createdAt: _clock(),
+      payload: {
+        'kind': 'visit',
+        'globalId': gid,
+        'customerGlobalId': customerGlobalId,
+        'date': _clock().toUtc().toIso8601String(),
+        'outcome': outcome,
+        if (outcome == 'no_sale') 'noSaleReason': noSaleReason,
+        if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      },
+    );
+    await _queue(entry);
+    return entry;
+  }
+
+  // ── collections ──
 
   Future<List<Map<String, Object?>>> voucherBooks() async =>
       (await store.all(Kinds.voucherBooks)).where((b) => b['status'] == 'active').toList();
@@ -358,8 +716,7 @@ class AppController extends ChangeNotifier {
         'date': _clock().toUtc().toIso8601String(),
       },
     );
-    await store.addOutbox(entry);
-    notifyListeners();
+    await _queue(entry);
     return entry;
   }
 }

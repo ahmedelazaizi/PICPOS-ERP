@@ -1,6 +1,10 @@
-/// Ported verbatim from `lib/core/tax/effective_item_tax_rate.dart` (ural_erp).
-/// Keep in sync until the shared `picpos_domain` package exists (I-4);
-/// `test/domain_test.dart` pins the behaviour.
+/// Tax and document totals. `effectiveItemTaxRate` is ported verbatim from
+/// `lib/core/tax/effective_item_tax_rate.dart` (ural_erp); `computeTotals`
+/// follows desktop `FinancialUtils.calculateInvoiceTotals`
+/// (lib/core/utils/financial_utils.dart) for line discounts and both pricing
+/// modes. Keep in sync with `mobile/lib/domain/sale_math.dart` until the
+/// shared `picpos_domain` package exists (I-4); both packages run the same
+/// fixture `docs/mobile/fixtures/pricing_parity.json`.
 library;
 
 double effectiveItemTaxRate({
@@ -12,7 +16,18 @@ double effectiveItemTaxRate({
   return rate > 0 ? rate : companyDefault;
 }
 
-double round2(double v) => (v * 100).roundToDouble() / 100;
+/// Desktop `FinancialUtils.round`: normalise float noise, then round half away
+/// from zero to [decimals] places.
+double roundDp(double v, [int decimals = 2]) {
+  var f = 1.0;
+  for (var i = 0; i < decimals; i++) {
+    f *= 10;
+  }
+  final n = double.parse(v.toStringAsFixed(10));
+  return (n * f).round() / f;
+}
+
+double round2(double v) => roundDp(v, 2);
 
 class LineInput {
   LineInput({
@@ -28,38 +43,66 @@ class LineInput {
 }
 
 class LineTotals {
-  LineTotals(this.net, this.tax);
-  final double net;
-  final double tax;
-  double get total => round2(net + tax);
-}
-
-class DocTotals {
-  DocTotals(this.lines, this.subtotal, this.discount, this.tax, this.total);
-  final List<LineTotals> lines;
-  final double subtotal;
+  LineTotals(this.gross, this.discount, this.net, this.tax, this.total);
+  final double gross;
   final double discount;
+
+  /// Line amount excluding tax, after the line discount.
+  final double net;
   final double tax;
   final double total;
 }
 
-/// I-1 pricing model: tax-exclusive unit prices, per-line discount amount,
-/// tax per line on (qty * price - discount), 2-dp rounding per line.
-/// Tax-inclusive companies and header discounts are an I-2 item.
-DocTotals computeTotals(List<LineInput> lines) {
+class DocTotals {
+  DocTotals(this.lines, this.subtotal, this.discount, this.net, this.tax, this.total);
+  final List<LineTotals> lines;
+
+  /// Σ qty × price as entered (tax-inclusive when the company prices include tax).
+  final double subtotal;
+  final double discount;
+
+  /// Σ line net excluding tax.
+  final double net;
+  final double tax;
+  final double total;
+}
+
+/// Per line: gross = r(qty × price); discount clamped to [0, gross];
+/// amount = r(gross − discount).
+/// - tax-exclusive: net = amount, tax = r(net × rate / 100)
+/// - tax-inclusive: net = r(amount / (1 + rate / 100)), tax = r(amount − net)
+/// - rate ≤ 0: tax = 0
+/// Document: tax = r(Σ line tax), total = r(Σ net + tax).
+/// Header discounts are not used by the mobile flow.
+DocTotals computeTotals(
+  List<LineInput> lines, {
+  bool pricesIncludeTax = false,
+  int decimals = 2,
+}) {
+  double r(double v) => roundDp(v, decimals);
   final out = <LineTotals>[];
-  var sub = 0.0, disc = 0.0, tax = 0.0;
+  var sub = 0.0, disc = 0.0, net = 0.0, tax = 0.0;
   for (final l in lines) {
-    final gross = round2(l.quantity * l.unitPrice);
-    final net = round2(gross - l.discount);
-    final t = round2(net * l.taxRate / 100);
-    out.add(LineTotals(net, t));
+    final gross = r(l.quantity * l.unitPrice);
+    final d = r(l.discount.clamp(0, gross < 0 ? 0 : gross).toDouble());
+    final amount = r(gross - d);
+    double lineNet, lineTax;
+    if (l.taxRate <= 0) {
+      lineNet = amount;
+      lineTax = 0;
+    } else if (pricesIncludeTax) {
+      lineNet = r(amount / (1 + l.taxRate / 100));
+      lineTax = r(amount - lineNet);
+    } else {
+      lineNet = amount;
+      lineTax = r(amount * l.taxRate / 100);
+    }
+    out.add(LineTotals(gross, d, lineNet, lineTax, r(lineNet + lineTax)));
     sub += gross;
-    disc += l.discount;
-    tax += t;
+    disc += d;
+    net += lineNet;
+    tax += lineTax;
   }
-  sub = round2(sub);
-  disc = round2(disc);
-  tax = round2(tax);
-  return DocTotals(out, sub, disc, tax, round2(sub - disc + tax));
+  tax = r(tax);
+  return DocTotals(out, r(sub), r(disc), r(net), tax, r(net + tax));
 }

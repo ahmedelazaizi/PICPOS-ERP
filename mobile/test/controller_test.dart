@@ -1,4 +1,4 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:picpos_van/data/local_store.dart';
 import 'package:picpos_van/domain/sale_math.dart';
 import 'package:picpos_van/state/app_controller.dart';
@@ -11,7 +11,7 @@ void main() {
   test('totals use the shared tax rule (exempt = 0)', () {
     expect(effectiveItemTaxRate(rate: 16, exempt: true, companyDefault: 16), 0);
     expect(effectiveItemTaxRate(rate: 0, exempt: false, companyDefault: 16), 16);
-    final t = computeTotals([water(2), CartLine(productGlobalId: 'p2', name: 'b', unitPrice: 1, taxRate: 0, quantity: 3)]);
+    final t = cartTotals([water(2), CartLine(productGlobalId: 'p2', name: 'b', unitPrice: 1, taxRate: 0, quantity: 3)]);
     expect((t.subtotal, t.tax, t.total), (8.0, 0.8, 8.8));
   });
 
