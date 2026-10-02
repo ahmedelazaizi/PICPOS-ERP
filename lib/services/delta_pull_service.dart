@@ -204,6 +204,8 @@ class DeltaPullService {
     'route_customers',         // → sales_routes, parties
     'route_rep_history',       // → sales_routes, employees
     'rep_resources',           // → employees, warehouses, safes
+    // v189 — مسوّداتُ المرتجعات (J2): بعد فواتير البيع والشراء والأطراف.
+    'return_drafts',           // → sales/purchase_invoices, parties
 
     // ── Tier 7: السجلُّ الرقابيُّ والتشغيلُ العابرُ للأجهزة (v173 / المرحلة ٤) ──
     //
@@ -318,6 +320,8 @@ class DeltaPullService {
     // v185 — نموذجُ التوزيع: عملاءُ المسار ومندوبُه وعهدتُه بياناتُ عمل.
     'distribution_areas', 'route_customers', 'route_rep_history',
     'rep_resources',
+    // v189 — مسوّداتُ المرتجعات (J2): بياناتُ عمل.
+    'return_drafts',
 
     // v173 / المرحلة ٤ — بياناتُ عملٍ لا تُسلَّم لمستدعٍ بلا هويّة: أرصدةُ
     // الولاء وحركاتُه، وأوراقُ الجرد وطلباتُ الصرف، والمطابقةُ البنكيّة
@@ -415,6 +419,8 @@ class DeltaPullService {
     // v185 — نموذجُ التوزيع: لا استراتيجيّةَ لها في `fullSync`.
     'distribution_areas', 'route_customers', 'route_rep_history',
     'rep_resources',
+    // v189 — مسوّداتُ المرتجعات (J2): لا استراتيجيّةَ لها في `fullSync`.
+    'return_drafts',
 
     // ── البند ٦‑٤ (2026-08-31) — ستّةٌ كانت **مبذورةً بلا تنزيل** ────────
     //

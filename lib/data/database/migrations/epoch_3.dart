@@ -3629,5 +3629,18 @@ extension Epoch3Migrations on AppDatabase {
     if (from < 187) {
       await _safeMigrate('v187 cloud sync documents', ensureCloudSyncSchema);
     }
+
+    // v188 — purchase_invoices.purchase_account_id: the invoice's chosen
+    // «حساب المشتريات» (raw column; NULL ⇒ mapped 'inventory' default).
+    if (from < 188) {
+      await _safeMigrate('v188 purchase_invoices.purchase_account_id',
+          ensurePurchaseInvoicePurchaseAccountSchema);
+    }
+
+    // v189 — return_drafts (raw, J2): sales/purchase return drafts — saved
+    // before «مراجعة واعتماد» posts them through the existing return path.
+    if (from < 189) {
+      await _safeMigrate('v189 return drafts', ensureReturnDraftsSchema);
+    }
   }
 }

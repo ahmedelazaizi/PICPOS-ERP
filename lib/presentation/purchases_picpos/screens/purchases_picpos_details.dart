@@ -15,6 +15,13 @@ mixin _PurchasesPicposDetails on ConsumerState<PurchasesPicposScreen> {
     final controller = ref.read(purchaseInvoicesControllerProvider.notifier);
     final items = await controller.getInvoiceItems(invoice.id!);
     final supplier = await controller.getSupplierById(invoice.partyId!);
+    // J1b — «حساب المشتريات» المخزَّن؛ `null` ⇒ الحسابُ المربوطُ (لا يُعرَض).
+    final db = ref.read(databaseProvider);
+    final purchaseAccountId =
+        await db.getPurchaseInvoicePurchaseAccountId(invoice.id!);
+    final purchaseAccount = purchaseAccountId == null
+        ? null
+        : await db.getAccountById(purchaseAccountId);
 
     if (!mounted) return;
 
@@ -38,6 +45,11 @@ mixin _PurchasesPicposDetails on ConsumerState<PurchasesPicposScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   detailRow(tr('المورد'), supplier?.name ?? tr('غير محدد')),
+                  if (purchaseAccount != null)
+                    detailRow(
+                      tr('حساب المشتريات'),
+                      '${purchaseAccount.code} — ${trData(purchaseAccount.name)}',
+                    ),
                   detailRow(
                     tr('التاريخ'),
                     invoice.invoiceDate.toString().substring(0, 10),

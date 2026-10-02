@@ -61,21 +61,29 @@ void main() {
     );
     expect(header.contains('PicPosDocPageHeader('), isTrue,
         reason: 'الترويسةُ ما زالت مبنيّةً يدوياً — واللبِنةُ وُحِّدت لهذا');
-    // C2: الشارةُ يعرضها التصميمُ الجديد فعادت — لكنّ «مسودة» تبقى وعداً
-    // بحفظٍ مؤقّتٍ لا يقع، فنصُّها «جديد».
-    expect(header.contains("statusLabel: tr('جديد')"), isTrue,
-        reason: 'شارةُ الحالة غائبةٌ أو تقول غيرَ «جديد»');
-    expect(header.contains("tr('مسودة')"), isFalse,
-        reason: 'وسمُ «مسودة» على شاشةٍ بلا دورةِ مسوّدة — وعدٌ بحفظٍ لا يقع');
-    // ⚠️ والرقمُ «يُولَّد تلقائياً» نصّاً — لا تخمينٌ ولا توليدٌ هنا.
-    expect(header.contains("number: tr('يُولَّد تلقائياً')"), isTrue,
+    // C2 ثمّ J2 (قرارُ المالك): «مسودة» صارت حالةً حقيقيّةً (`return_drafts`)
+    // — فالشارةُ «جديد» قبل الحفظ و«مسودة» **متى وُجدت مسوّدةٌ محفوظةٌ فقط**،
+    // لا وعداً بحفظٍ لا يقع.
+    expect(header.contains("tr('جديد')"), isTrue,
+        reason: 'شارةُ الحالة غائبةٌ أو لا تقول «جديد» قبل الحفظ');
+    expect(
+        RegExp(r"_draftId != null \? tr\('مسودة'\) : tr\('جديد'\)")
+            .hasMatch(header),
+        isTrue,
+        reason: '«مسودة» بلا مسوّدةٍ محفوظة — وعدٌ بحفظٍ لا يقع');
+    // ⚠️ والرقمُ «يُولَّد تلقائياً» نصّاً — لا تخمينٌ ولا توليدٌ هنا؛
+    // والمسوّدةُ تُعرَّف بمعرّفها (`D-`) لا برقمٍ من التسلسل.
+    expect(header.contains("tr('يُولَّد تلقائياً')"), isTrue,
         reason: 'رقمُ المرتجع يُولَّد في المعاملة — فأيُّ رقمٍ هنا مُخمَّن');
     expect(header.contains('generateInvoiceNumber'), isFalse);
     expect(header.contains("'PRET-"), isFalse,
         reason: 'رقمٌ مُركَّبٌ باليد في الترويسة — مُخمَّنٌ لا محالة');
   });
 
-  test('وفعلٌ واحدٌ لا فعلان — لا دورةَ مسوّدة', () {
+  test('J2: «حفظ مسودة» زرٌّ خلفَه دورةُ حياة، و«اعتماد» بالمعالج القائم',
+      () {
+    // قرارُ المالك (J2) نسخ «خطوةً واحدة»: المسوّدةُ صارت حالةً محفوظة. فيبقى
+    // روحُ الحارس — **لا زرَّ بلا معالجٍ قائمٍ خلفَه** — ويُقاس على المعالج.
     final footer = _body(
       _code(_detailsPath),
       'Widget _buildReturnFooter(',
@@ -83,23 +91,24 @@ void main() {
     );
     expect(footer.contains('PicPosReturnActionBar('), isTrue,
         reason: 'شريطُ الأفعال ما زال مبنيّاً يدوياً');
-    expect(footer.contains('draft'), isFalse,
-        reason: 'زرُّ مسوّدةٍ لا دورةَ حياةٍ خلفَه — قرارُ المالك خطوةٌ واحدة');
-    expect(footer.contains('حفظ مسودة'), isFalse,
-        reason: 'التصميمُ الجديدُ يعرض «حفظ مسودة» — ولا منطقَ خلفَه');
+    expect(footer.contains("secondaryLabel: tr('حفظ مسودة')"), isTrue,
+        reason: 'قرارُ المالك (J2): «حفظ مسودة» في شريط الأفعال');
+    expect(footer.contains('_screen.saveDraft()'), isTrue,
+        reason: 'زرُّ مسوّدةٍ لا ينادي حفظَ المسوّدة — وعدٌ بحفظٍ لا يقع');
     expect(footer.contains('onPrimary:'), isTrue,
         reason: 'لا فعلَ مرحِّلاً أصلاً');
-    expect(footer.contains('processReturn'), isTrue,
-        reason: 'الفعلُ المرحِّلُ لا ينادي المعالجَ القائم');
-    // ⚠️ واللبِنةُ نفسُها لا تقبل فعلَ مسوّدة — فلا يُضاف من بابٍ آخر.
-    final kit = _code('lib/presentation/picpos_shell/picpos_return_form_kit.dart');
-    final bar = _body(
-      kit,
-      'class PicPosReturnActionBar ',
-      '\n}',
-    );
-    expect(bar.toLowerCase().contains('draft'), isFalse,
-        reason: 'شريطُ أفعال المرتجع صار يقبل مسوّدة — ولا دورةَ لها');
+    expect(footer.contains('approveReturn'), isTrue,
+        reason: '«مراجعة واعتماد» لا يمرّ بدورة المسوّدة');
+    expect(footer.contains('canApprove'), isTrue,
+        reason: '«مراجعة واعتماد» بلا صلاحيته المستقلّة');
+
+    // والحفظُ مسوّدةٌ حقيقيّة، والاعتمادُ ينادي المعالجَ القائمَ نفسَه.
+    final drafts = _code('lib/presentation/purchase_returns_picpos/screens/'
+        'purchase_returns_picpos_drafts.dart');
+    expect(drafts.contains('returnDraftsRepositoryProvider'), isTrue);
+    expect(drafts.contains('processReturn(beforePost:'), isTrue,
+        reason: 'الاعتمادُ يجب أن يمرّ بالمعالج القائم (J1: الوردية)');
+    expect(drafts.contains('PermissionCodes.purchasesReturnApprove'), isTrue);
   });
 
   test('والإجماليّاتُ ثلاثةٌ — والضريبةُ ليست خفيّة', () {

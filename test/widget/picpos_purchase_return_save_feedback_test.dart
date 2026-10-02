@@ -171,6 +171,9 @@ Future<ProviderContainer> _pump(WidgetTester tester, _Repo repo) async {
       databaseProvider.overrideWith(
           (ref) => throw UnsupportedError('no database in this test')),
       authProvider.overrideWith(_SignedInAuth.new),
+      // J2 — «مراجعة واعتماد» صار صلاحيةً مستقلّة.
+      currentUserPermissionsProvider.overrideWith(
+          (ref) async => const ['purchases_return_approve']),
       warehouseNameMapProvider
           .overrideWith((ref) => const {1: 'المخزن الرئيسي'}),
       partyNamesMapProvider.overrideWith((ref, ids) async => const {7: 'نقدي'}),

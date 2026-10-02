@@ -17,12 +17,13 @@
 //    بقصد (`onChanged: null` — المسارُ لا يبيع البديلَ: لا قيدَ ولا خروجَ
 //    مخزون)، ولا نداءَ لـ`toggleExchangeMode` في المستودع كلّه، فما تحت
 //    المفتاح لا يُرسَم أبداً. والقرارُ: لا يُعرَض إلا فعلٌ له معالجٌ قائم.
-// ⚠️ **ولا «حفظ مسودة»**: لا دورةَ مسوّدةٍ للمرتجع.
+// ⚠️ **J2 (قرارُ المالك) — «حفظ مسودة» عاد**: دورةُ المسوّدة في
+// `sales_returns_picpos_drafts.dart`؛ و«مراجعة واعتماد» محكومٌ بصلاحية
+// `sales_return_approve` ويمرّ بالمعالج القائم نفسِه.
 part of 'sales_returns_picpos_screen.dart';
 
 mixin _SalesReturnsPicposForm on ConsumerState<SalesReturnsPicposScreen> {
   // Provided by _SalesReturnsPicposLogic / the State at composition time.
-  Future<void> processReturn();
   TextEditingController get returnReasonController;
 
   _SalesReturnsPicposScreenState get _screen =>
@@ -30,6 +31,7 @@ mixin _SalesReturnsPicposForm on ConsumerState<SalesReturnsPicposScreen> {
 
   Widget buildReturnForm(SalesReturnState state, SalesReturnNotifier notifier) {
     final invoice = state.selectedInvoice;
+    final canApprove = _screen.canApproveReturn;
     return PicPosReturnFormLayout(
       header: _buildHeaderCard(state, notifier),
       lines: _buildLinesCard(state, notifier),
@@ -37,9 +39,15 @@ mixin _SalesReturnsPicposForm on ConsumerState<SalesReturnsPicposScreen> {
       details: _buildDetails(state),
       actionBar: PicPosReturnActionBar(
         primaryLabel: tr('مراجعة واعتماد'),
-        busy: state.isProcessing,
-        // نفسُ المعالج القائم — وهو يتحقّق من الكمّيّات ويعرض حوارَ التأكيد.
-        onPrimary: invoice == null ? null : processReturn,
+        busy: state.isProcessing || _screen._savingDraft,
+        hint: invoice != null && !canApprove
+            ? tr('لا تملك صلاحية الاعتماد — احفظها مسودة')
+            : null,
+        // المعالجُ القائمُ نفسُه بعد حفظ المسوّدة — يتحقّق من الكمّيّات
+        // ويعرض حوارَ التأكيد.
+        onPrimary: invoice == null || !canApprove ? null : _screen.approveReturn,
+        secondaryLabel: tr('حفظ مسودة'),
+        onSecondary: invoice == null ? null : () => _screen.saveDraft(),
         onBack: Navigator.of(context).canPop()
             ? () => Navigator.of(context).maybePop()
             : null,
@@ -70,11 +78,17 @@ mixin _SalesReturnsPicposForm on ConsumerState<SalesReturnsPicposScreen> {
           PicPosDocPageHeader(
             icon: PhosphorIconsBold.arrowUUpLeft,
             title: tr('مرتجع مبيعات'),
-            // رقمُ المرتجع (SRET-) يُولَّد داخلَ معاملة الحفظ — فلا رقمَ
-            // مُخمَّناً هنا.
-            number: tr('يُولَّد تلقائياً'),
-            // «جديد» لا «مسودة»: لا دورةَ مسوّدةٍ للمرتجع.
-            statusLabel: tr('جديد'),
+            // رقمُ المرتجع (SRET-) يُولَّد داخلَ معاملة الترحيل — فلا رقمَ
+            // مُخمَّناً هنا؛ والمسوّدةُ تُعرَّف بمعرّفها (J2).
+            number: _screen._draftId != null
+                ? 'D-${_screen._draftId}'
+                : tr('يُولَّد تلقائياً'),
+            // «جديد» قبل الحفظ، و«مسودة» بعده (J2).
+            statusLabel:
+                _screen._draftId != null ? tr('مسودة') : tr('جديد'),
+            statusColor: _screen._draftId != null
+                ? AppColors.warning
+                : AppColors.info,
           ),
           const SizedBox(height: 14),
           PicPosFormGrid(

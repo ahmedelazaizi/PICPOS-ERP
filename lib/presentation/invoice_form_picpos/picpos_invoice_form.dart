@@ -167,6 +167,10 @@ class PicPosInvoiceForm extends StatefulWidget {
     this.revenueAccounts = const [],
     this.defaultRevenueAccountId,
     this.onRevenueAccountChanged,
+    this.purchaseAccounts = const [],
+    this.defaultPurchaseAccountId,
+    this.initialPurchaseAccountId,
+    this.onPurchaseAccountChanged,
   })  :
         // 🔴 **فعلُ المسوّدة للمبيعات وحدَها** — قرارُ المالك 2026-09-19.
         //
@@ -276,6 +280,20 @@ class PicPosInvoiceForm extends StatefulWidget {
   /// مشتركٌ بين ثلاثة منادين واختباراتهم، والمشترياتُ لا شأنَ لها بالإيراد.
   final ValueChanged<int?>? onRevenueAccountChanged;
 
+  /// J1b — الحساباتُ التفصيليّة النشطة الصالحةُ لمدين المشتريات (مصروف/أصل)،
+  /// لحقل «حساب المشتريات». فارغةٌ ⇒ لا حقل (المبيعات، أو منادٍ لا يعرفها).
+  final List<PicPosNamedOption> purchaseAccounts;
+
+  /// الحسابُ المربوطُ الذي يدين له قيدُ المشتريات اليوم — الاختيارُ الافتراضيّ
+  /// حين لا يحمل المستندُ حساباً مخزَّناً.
+  final int? defaultPurchaseAccountId;
+
+  /// الحسابُ المخزَّن على الفاتورة المفتوحة للتحرير (`null` ⇒ الافتراضيّ).
+  final int? initialPurchaseAccountId;
+
+  /// يُنادى قبل [onSave] مباشرةً بالحساب المختار (`null` = الافتراضيّ).
+  final ValueChanged<int?>? onPurchaseAccountChanged;
+
   bool get isEdit => initial != null;
 
   @override
@@ -300,6 +318,9 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
 
   /// C2 — «حساب المبيعات» المختار؛ يبدأ بالافتراضيّ المربوط.
   int? _revenueAccountId;
+
+  /// J1b — «حساب المشتريات» المختار؛ يبدأ بالمخزَّن على الفاتورة ثم بالافتراضيّ.
+  int? _purchaseAccountId;
 
   /// «تفاصيل إضافية» مطويّةٌ ابتداءً — كما في التصميم.
   bool _detailsOpen = false;
@@ -327,6 +348,8 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
         (widget.warehouses.length == 1 ? widget.warehouses.first.id : null);
     _costCenterId = widget.initialCostCenterId;
     _revenueAccountId = widget.defaultRevenueAccountId;
+    _purchaseAccountId =
+        widget.initialPurchaseAccountId ?? widget.defaultPurchaseAccountId;
 
     // ═══ التحرير: تُملأ الحقولُ كلُّها دفعةً ═══
     //
@@ -509,6 +532,15 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
         widget.onRevenueAccountChanged?.call(
           _revenueAccountId != widget.defaultRevenueAccountId
               ? _revenueAccountId
+              : null,
+        );
+      }
+      // J1b — نفسُ حكم المبيعات: الافتراضيُّ يُسلَّم `null` فتبقى الفاتورةُ تتبع
+      // الربطَ. وفي التحرير يُسلَّم الاختيارُ دائماً (`null` = العودةُ للافتراضيّ).
+      if (!widget.kind.isSales) {
+        widget.onPurchaseAccountChanged?.call(
+          _purchaseAccountId != widget.defaultPurchaseAccountId
+              ? _purchaseAccountId
               : null,
         );
       }
@@ -855,6 +887,28 @@ class _PicPosDocBar extends StatelessWidget {
             options: w.revenueAccounts,
             selected: state._revenueAccountId,
             onPick: (id) => state.setState(() => state._revenueAccountId = id),
+          ),
+        ),
+      // J1b — «حساب المشتريات»: اختيارٌ من حسابات المصروف/الأصل التفصيليّة
+      // النشطة، وافتراضُه الحسابُ المربوطُ الذي يدين له قيدُ المشتريات اليوم.
+      if (!w.kind.isSales && w.purchaseAccounts.isNotEmpty)
+        _field(
+          context,
+          key: const Key('picpos_purchase_account_field'),
+          icon: PhosphorIconsBold.shoppingBag,
+          label: tr('حساب المشتريات'),
+          value: w.purchaseAccounts
+                  .where((x) => x.id == state._purchaseAccountId)
+                  .firstOrNull
+                  ?.name ??
+              tr('الحساب الافتراضي'),
+          trailing: PhosphorIconsBold.caretDown,
+          onTap: () => _pick(
+            context,
+            title: tr('حساب المشتريات'),
+            options: w.purchaseAccounts,
+            selected: state._purchaseAccountId,
+            onPick: (id) => state.setState(() => state._purchaseAccountId = id),
           ),
         ),
     ];

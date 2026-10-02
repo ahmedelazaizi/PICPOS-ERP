@@ -133,8 +133,13 @@ void main() {
     }
   }
 
-  test('fresh database exposes schema version 183 for FX, manufacturing, LAN pairing, product tax-exempt and sales revenue-account columns', () async {
-    expect(db.schemaVersion, 183);
+  test('fresh database exposes schema version 188 for FX, manufacturing, LAN pairing, product tax-exempt, sales revenue-account and purchase-account columns', () async {
+    // v188 added purchase_invoices.purchase_account_id; later versions keep it.
+    expect(db.schemaVersion, greaterThanOrEqualTo(188));
+    final purchaseColumns = await db.customSelect(
+      'PRAGMA table_info(purchase_invoices)',
+    ).get();
+    expect(purchaseColumns.any((row) => row.data['name'] == 'purchase_account_id'), isTrue);
     final invoiceColumns = await db.customSelect(
       'PRAGMA table_info(sales_invoices)',
     ).get();

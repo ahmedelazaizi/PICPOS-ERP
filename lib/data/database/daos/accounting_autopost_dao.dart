@@ -1008,9 +1008,12 @@ extension AccountingAutopostDao on AppDatabase {
     final warehouse = await (select(warehouses)..where((w) => w.id.equals(purchase.warehouseId))).getSingleOrNull();
     final branchId = warehouse?.branchId;
 
-    final inventoryAccount = await accountingDao.getAccountByCode(
-      await accountingDao.getMappedAccountCode('inventory', AccountingDao.accountPurposes['inventory']!),
-    );
+    // J1b: the invoice's own «حساب المشتريات» wins over the mapped inventory
+    // default; NULL (or an invalid stored account) keeps the mapping.
+    final inventoryAccount = await resolvePurchaseAccountOverride(purchase.id) ??
+        await accountingDao.getAccountByCode(
+          await accountingDao.getMappedAccountCode('inventory', AccountingDao.accountPurposes['inventory']!),
+        );
     final inputVatAccount = await accountingDao.getAccountByCode(
       await accountingDao.getMappedAccountCode('input_vat', AccountingDao.accountPurposes['input_vat']!),
     );
@@ -1886,9 +1889,13 @@ extension AccountingAutopostDao on AppDatabase {
       originalPurchase.supplierId,
       payableControlAccount,
     );
-    final inventoryAccount = await accountingDao.getAccountByCode(
-      await accountingDao.getMappedAccountCode('inventory', AccountingDao.accountPurposes['inventory']!),
-    );
+    // J1b: a return credits the SAME «حساب المشتريات» its original invoice
+    // debited; NULL (or invalid) ⇒ the mapped inventory account.
+    final inventoryAccount =
+        await resolvePurchaseAccountOverride(originalPurchase.id) ??
+            await accountingDao.getAccountByCode(
+              await accountingDao.getMappedAccountCode('inventory', AccountingDao.accountPurposes['inventory']!),
+            );
     final cashAccount = await accountingDao.getAccountByCode(
       await accountingDao.getMappedAccountCode('cash', AccountingDao.accountPurposes['cash']!),
     );

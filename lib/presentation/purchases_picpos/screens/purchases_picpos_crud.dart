@@ -243,6 +243,15 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
           // الفاتورةُ تعمل بلا ربط — ولا يُحجَب إنشاؤها لأجل قائمةٍ إضافيّة.
         }
       }
+      // J1b — «حساب المشتريات»: حساباتُ المصروف/الأصل التفصيليّة النشطة،
+      // وافتراضُه الحسابُ المربوطُ الذي يدين له القيدُ اليوم، والمخزَّنُ على
+      // الفاتورة عند التحرير.
+      final accountChoices = await loadPurchaseAccountChoices(
+        ref.read(databaseProvider),
+        editingInvoiceId: editing?.id,
+      );
+      // يُسلَّم من النموذج قبل `onSave` مباشرةً (`null` = الافتراضيّ).
+      int? chosenPurchaseAccountId;
       if (!mounted) return;
 
     showGeneralDialog(
@@ -253,6 +262,10 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
       pageBuilder: (dialogContext, anim1, anim2) => Scaffold(
         body: PicPosInvoiceForm(
           kind: PicPosInvoiceKind.purchase,
+          purchaseAccounts: accountChoices.options,
+          defaultPurchaseAccountId: accountChoices.defaultAccountId,
+          initialPurchaseAccountId: accountChoices.storedAccountId,
+          onPurchaseAccountChanged: (id) => chosenPurchaseAccountId = id,
           parties: [
             for (final s in suppliers)
               PicPosPartyOption(
@@ -368,6 +381,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
               // 🔴 يصل المحرّكَ فيستهلك الأمرَ في **نفس معاملة الفاتورة**.
               // ولو سقط هنا لبقي الأمرُ مفتوحاً بعد أن دخلت بضاعتُه.
               sourceOrderId: sourceOrderId,
+              purchaseAccountId: chosenPurchaseAccountId,
             );
             if (dialogContext.mounted) Navigator.pop(dialogContext);
           },
@@ -436,6 +450,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
     int? editInvoiceId,
     int? safeId,
     bool printAfterSave = false,
+    int? purchaseAccountId,
   }) async {
     // ترشيحُ المنتقي يحرس **المعروض**، وهذا يحرس **المحفوظ**: المخزنُ يُحسَم
     // من نفسِ المصدرِ الذي عرضه المنتقي، فلا يُختم على الفاتورةِ مخزنٌ خارجَ
@@ -498,6 +513,10 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
           // ح-1: the edit branch dropped the discount the same form collects,
           // so re-saving a discounted invoice restored its gross total.
           discount: discount,
+          // J1b: the form always reports the choice on edit (`null` = back to
+          // the mapped default), so the stored account follows what was shown.
+          changePurchaseAccount: true,
+          purchaseAccountId: purchaseAccountId,
         ));
       } else {
         // Create new invoice — returns the new invoice ID so we can auto-print.
@@ -518,6 +537,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
           // ح-1: was collected by the form and silently dropped here.
           discount: discount,
           sourceOrderId: sourceOrderId,
+          purchaseAccountId: purchaseAccountId,
         ));
       }
 

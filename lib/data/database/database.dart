@@ -22,6 +22,7 @@ import '../../domain/models/asset_movement_types.dart';
 import '../../domain/models/journal_balance.dart';
 import '../../domain/models/document_record.dart';
 import '../../domain/models/voucher_book.dart';
+import '../../domain/models/return_draft.dart';
 import '../../domain/models/distribution_model.dart';
 import '../../domain/models/purchase_line_discount.dart';
 import '../../domain/models/cheque_book_plan.dart';
@@ -152,6 +153,8 @@ part 'voucher_books_schema.dart';
 part 'distribution_model_schema.dart';
 part 'cheque_drawer_schema.dart';
 part 'cloud_sync_schema.dart';
+part 'purchase_invoice_purchase_account_schema.dart';
+part 'return_drafts_schema.dart';
 part 'daos/distribution_rep_ops_dao.dart';
 part 'daos/voucher_account_transfer_dao.dart';
 part 'daos/fixed_assets_dao_ext.dart';
@@ -1184,7 +1187,7 @@ class AppDatabase extends _$AppDatabase {
   //
   // Schema v177: sale reposts after an authorized edit may legitimately
   // produce multiple auto-posted JEs for one invoice reference.
-  int get schemaVersion => 187;
+  int get schemaVersion => 189;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.
@@ -1558,6 +1561,9 @@ class AppDatabase extends _$AppDatabase {
     // v185 — نموذجُ التوزيع (المرحلة و).
     'distribution_areas', 'route_customers', 'route_rep_history',
     'rep_resources',
+
+    // v189 — مسوّداتُ المرتجعات (J2).
+    'return_drafts',
   ];
 
   /// مكشوفةٌ لحارسٍ يثبّت أنّ كلَّ جدولٍ يُسحَب يحمل مُشغِّلَ الختم على
@@ -2311,6 +2317,8 @@ class AppDatabase extends _$AppDatabase {
       // v185 — نموذجُ التوزيع (المرحلة و).
       'distribution_areas', 'route_customers', 'route_rep_history',
       'rep_resources',
+      // v189 — مسوّداتُ المرتجعات (J2).
+      'return_drafts',
     };
     for (final pgTable in pgTables) {
       if (!driftTableNames.contains(pgTable) &&
@@ -2475,6 +2483,8 @@ class AppDatabase extends _$AppDatabase {
         await ensureDistributionModelSchema();
         await ensureChequeDrawerSchema();
         await ensureCloudSyncSchema();
+        await ensurePurchaseInvoicePurchaseAccountSchema();
+        await ensureReturnDraftsSchema();
         // seedInitialData + syncDefaultAccounts moved to beforeOpen
         // (after defensive v110 column additions)
       },

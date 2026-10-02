@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/shimmer_loading.dart';
 
 import '../../../data/providers/providers.dart';
 import '../../../services/invoice_generator.dart';
@@ -28,6 +27,9 @@ import '../../../data/providers/manufacturing_providers.dart'
     show warehouseNameMapProvider;
 import '../../../domain/models/picpos_return_view.dart';
 import '../../../domain/models/sales_return_refund_split.dart';
+import '../../../domain/models/return_draft.dart';
+import '../../../data/providers/return_records_providers.dart';
+import '../../shared_widgets/return_draft_support.dart';
 
 // ── Part files (منسوخة حرفياً من lib/presentation/screens/sales_returns/ —
 // الشاشة الأصل `part of _SalesReturnsScreenState` خاصة فما ينفعش تتعمل import،
@@ -35,6 +37,9 @@ import '../../../domain/models/sales_return_refund_split.dart';
 part 'sales_returns_picpos_logic.dart';
 // الاستمارةُ المعاد تصميمُها (C2) — حلّت محلَّ لوح التفاصيل المنسوخ.
 part 'sales_returns_picpos_form.dart';
+// J2 — دورةُ المسوّدة، وأفعالُ صفوف السجلّ (طباعةٌ وإلغاء) بنفس المعالجات.
+part 'sales_returns_picpos_drafts.dart';
+part 'sales_returns_picpos_record_actions.dart';
 
 /// شاشة مرتجع المبيعات بهوية PicPos. تُختار بالعلامة في app_main_screen
 /// (`Brand.isPicPos`). تعيد استخدام نفس `salesReturnProvider` (وتوابعه
@@ -53,10 +58,29 @@ part 'sales_returns_picpos_form.dart';
 /// ⚠️ **المرحلة C2 (البند ٣):** الشكلُ صار استمارةً واحدةً على تصميم المالك
 /// (`sales_returns_picpos_form.dart`)، وقائمةُ الفواتير بترشيحها وعدّاداتها
 /// انتقلت إلى منتقي «رقم الفاتورة الأصليّة». والإجراءاتُ أعلاه كما هي.
+///
+/// ⚠️ **J2 (قرارُ المالك):** المدخلُ الجانبيُّ صار سجلَّ المرتجعات
+/// (`SalesReturnRecordsPicPosScreen`)، وهذه الاستمارةُ تُدفَع منه صفحةً:
+/// «جديد» بلا مسوّدة، و«تعديل»/«اعتماد» بـ[draftId]. وفيها «حفظ مسودة».
 class SalesReturnsPicposScreen extends ConsumerStatefulWidget {
   final SalesInvoiceData? initialInvoice;
 
-  const SalesReturnsPicposScreen({super.key, this.initialInvoice});
+  /// J2 — مسوّدةٌ محفوظةٌ تُفتَح للتعديل.
+  final int? draftId;
+
+  /// J2 — بعد فتح [draftId] يبدأ «مراجعة واعتماد» مباشرةً (فعلُ صفّ السجلّ).
+  final bool approveOnOpen;
+
+  /// J2 — بعد الاعتماد تُغلَق الصفحةُ عائدةً إلى السجلّ بالصفّ الجديد.
+  final bool popOnDone;
+
+  const SalesReturnsPicposScreen({
+    super.key,
+    this.initialInvoice,
+    this.draftId,
+    this.approveOnOpen = false,
+    this.popOnDone = false,
+  });
 
   @override
   ConsumerState<SalesReturnsPicposScreen> createState() =>
@@ -65,7 +89,10 @@ class SalesReturnsPicposScreen extends ConsumerStatefulWidget {
 
 class _SalesReturnsPicposScreenState
     extends ConsumerState<SalesReturnsPicposScreen>
-    with _SalesReturnsPicposLogic, _SalesReturnsPicposForm {
+    with
+        _SalesReturnsPicposLogic<SalesReturnsPicposScreen>,
+        _SalesReturnsPicposForm,
+        _SalesReturnsPicposDrafts {
   final _invoiceSearchController = TextEditingController();
   final _returnReasonController = TextEditingController();
   String _selectedReasonCategory = ''; // B4: Return reason categorization
@@ -74,9 +101,20 @@ class _SalesReturnsPicposScreenState
   TextEditingController get returnReasonController => _returnReasonController;
 
   @override
+  String get selectedReasonCategory => _selectedReasonCategory;
+
+  @override
+  set selectedReasonCategory(String value) => _selectedReasonCategory = value;
+
+  @override
   void initState() {
     super.initState();
-    if (widget.initialInvoice != null) {
+    if (widget.draftId != null) {
+      Future.microtask(() async {
+        await ref.read(salesReturnProvider.notifier).loadInvoices();
+        await openDraftOnStart();
+      });
+    } else if (widget.initialInvoice != null) {
       Future.microtask(
         () => ref
             .read(salesReturnProvider.notifier)
@@ -134,17 +172,16 @@ class _SalesReturnsPicposScreenState
       }
     });
 
+    // J2 — هذه استمارةُ الإنشاء/التعديل تُدفَع من سجلّ المرتجعات، فلا زرَّ
+    // «سجل المرتجعات» فيها ولا عنوانَ يقول «تسجيل ومتابعة» (عينُ التباس
+    // توأم المشتريات في بلاغ 2026-09-22). والسجلُّ نفسُه بابُ الطباعة
+    // والإلغاء بأفعال صفوفه.
     return PicPosScreenScaffold(
-      title: tr('مرتجع المبيعات'),
-      subtitle: tr('تسجيل ومتابعة مرتجعات البيع'),
+      title: _draftId != null
+          ? tr('مسودة مرتجع مبيعات')
+          : tr('مرتجع مبيعات جديد'),
+      subtitle: tr('اختر فاتورةَ البيع ثمّ حدّد ما يُردُّ منها'),
       icon: PhosphorIconsBold.arrowUUpLeft,
-      headerActions: [
-        OutlinedButton.icon(
-          onPressed: () => showReturnsHistoryDialog(),
-          icon: const Icon(PhosphorIconsBold.clockCounterClockwise, size: 16),
-          label:  Text(tr('سجل المرتجعات')),
-        ),
-      ],
       body: _buildBody(state, notifier),
     );
   }

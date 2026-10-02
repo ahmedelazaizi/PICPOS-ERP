@@ -38,6 +38,9 @@ import '../../picpos_shell/picpos_returns_panel.dart';
 import '../../../data/providers/manufacturing_providers.dart'
     show warehouseNameMapProvider;
 import '../../../domain/models/picpos_return_view.dart';
+import '../../../domain/models/return_draft.dart';
+import '../../../data/providers/return_records_providers.dart';
+import '../../shared_widgets/return_draft_support.dart';
 
 // ── Part files (منسوخة حرفياً من lib/presentation/screens/purchase_returns/ —
 // الشاشة الأصل `part of` خاص فما ينفعش تتعمل import، فبتنتقل بنسخ حرفي هنا؛
@@ -45,6 +48,9 @@ import '../../../domain/models/picpos_return_view.dart';
 part 'purchase_returns_picpos_logic.dart';
 // الاستمارةُ المعاد تصميمُها (C2) — حلّت محلَّ لوح التفاصيل المنسوخ.
 part 'purchase_returns_picpos_form.dart';
+// J2 — دورةُ المسوّدة، وأفعالُ صفوف السجلّ (طباعةٌ وعرضٌ وتعديل).
+part 'purchase_returns_picpos_drafts.dart';
+part 'purchase_returns_picpos_record_actions.dart';
 
 /// شاشة مرتجع المشتريات بهوية PicPos. تُختار بالعلامة في app_main_screen
 /// (`Brand.isPicPos`). تعيد استخدام نفس `purchaseReturnProvider` (وتوابعه
@@ -65,8 +71,25 @@ part 'purchase_returns_picpos_form.dart';
 /// (`purchase_returns_picpos_form.dart`)، وقائمةُ الفواتير بفلاترها
 /// وعدّاداتها انتقلت إلى منتقي «رقم الفاتورة الأصليّة». والإجراءاتُ أعلاه
 /// كما هي.
+///
+/// ⚠️ **J2 (قرارُ المالك):** «حفظ مسودة» و«مراجعة واعتماد» بصلاحيةٍ مستقلّة،
+/// وحوارُ «طباعة أو تعديل مرتجعٍ سابق» صار أفعالَ صفوفٍ في سجلّ المردودات.
 class PurchaseReturnsPicposScreen extends ConsumerStatefulWidget {
-  const PurchaseReturnsPicposScreen({super.key});
+  const PurchaseReturnsPicposScreen({
+    super.key,
+    this.draftId,
+    this.approveOnOpen = false,
+    this.popOnDone = false,
+  });
+
+  /// J2 — مسوّدةٌ محفوظةٌ تُفتَح للتعديل.
+  final int? draftId;
+
+  /// J2 — بعد فتح [draftId] يبدأ «مراجعة واعتماد» مباشرةً (فعلُ صفّ السجلّ).
+  final bool approveOnOpen;
+
+  /// J2 — بعد الاعتماد تُغلَق الصفحةُ عائدةً إلى السجلّ بالصفّ الجديد.
+  final bool popOnDone;
 
   @override
   ConsumerState<PurchaseReturnsPicposScreen> createState() =>
@@ -75,7 +98,10 @@ class PurchaseReturnsPicposScreen extends ConsumerStatefulWidget {
 
 class _PurchaseReturnsPicposScreenState
     extends ConsumerState<PurchaseReturnsPicposScreen>
-    with _PurchaseReturnsPicposLogic, _PurchaseReturnsPicposForm {
+    with
+        _PurchaseReturnsPicposLogic<PurchaseReturnsPicposScreen>,
+        _PurchaseReturnsPicposForm,
+        _PurchaseReturnsPicposDrafts {
   final _searchController = TextEditingController();
   // حقلا السبب المحلّيّان حُذفا: السببُ يعيش في `PurchaseReturnState`
   // ويصل صفَّ المستند. حالةٌ محلّيّةٌ لا تغادر الودجت هي ما جعل
@@ -84,9 +110,10 @@ class _PurchaseReturnsPicposScreenState
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => ref.read(purchaseReturnProvider.notifier).loadInvoices(),
-    );
+    Future.microtask(() async {
+      await ref.read(purchaseReturnProvider.notifier).loadInvoices();
+      if (widget.draftId != null) await openDraftOnStart();
+    });
   }
 
   @override
@@ -142,23 +169,17 @@ class _PurchaseReturnsPicposScreenState
     // ومتابعة» وزرّاً اسمُه «سجل المرتجعات». ثلاثُ إشاراتٍ تقول «هذا سجلٌّ
     // ثانٍ» بينما هي استمارةُ الإنشاء.
     //
-    // ⚠️ **والعلاجُ تسميةٌ لا حذف** (خ‑٩٫٧: لا يُمَسُّ منطقُ استمارةٍ قائمة).
-    //    وزرُّ السجلّ **لا يُسحَب**: حوارُه يحمل ثلاثةَ مساراتٍ حيّةٍ لا
-    //    يوجد لها بابٌ آخر — إعادةُ الطباعة (`purchases_return_print`) وعرضُ
-    //    الأصناف المرتجعة و**تعديلُ مرتجعٍ مُرحَّل** (ميزة ٠١٥،
-    //    `purchases_return_edit`). فسحبُه يُسقطها، وإبقاؤه باسمه القديم
-    //    يُبقي الالتباس. فسُمّي بما يفعله.
+    // ⚠️ **J2 (قرارُ المالك): زرُّ «طباعة أو تعديل مرتجعٍ سابق» سُحب.**
+    //    مساراتُ حوارِه الثلاثة — إعادةُ الطباعة (`purchases_return_print`)
+    //    وعرضُ الأصناف وتعديلُ المرتجع المرحَّل (`purchases_return_edit`) —
+    //    صارت أفعالَ صفوفٍ في السجلّ تنادي المعالجاتِ نفسَها
+    //    (`PurchaseReturnRecordActionsState`)، فلا مسارَ سقط.
     return PicPosScreenScaffold(
-      title: tr('مرتجع مشتريات جديد'),
+      title: _draftId != null
+          ? tr('مسودة مرتجع مشتريات')
+          : tr('مرتجع مشتريات جديد'),
       subtitle: tr('اختر فاتورةَ الشراء ثمّ حدّد ما يُردُّ منها'),
       icon: PhosphorIconsBold.arrowUUpLeft,
-      headerActions: [
-        OutlinedButton.icon(
-          onPressed: showReturnsHistoryDialog,
-          icon: const Icon(PhosphorIconsBold.printer, size: 16),
-          label:  Text(tr('طباعة أو تعديل مرتجعٍ سابق')),
-        ),
-      ],
       body: _buildBody(state, notifier),
     );
   }

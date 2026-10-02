@@ -12,8 +12,8 @@
 //   • a return qty above «available» is rejected (error shown, the provider
 //     keeps its previous value) exactly as the old +/− stepper capped it;
 //   • «مراجعة واعتماد» reaches the SAME handler (`processReturn` → its
-//     confirmation dialog), «طريقة التسوية» is a read-only field, and there
-//     is no draft button.
+//     confirmation dialog), «طريقة التسوية» is a read-only field, and (J2)
+//     a «حفظ مسودة» button sits beside it.
 import 'dart:convert';
 import 'dart:io';
 
@@ -231,6 +231,9 @@ Future<ProviderContainer> _pump(
         warehouseNameMapProvider.overrideWith((ref) => const {1: 'Main Store'}),
         partyNamesMapProvider
             .overrideWith((ref, ids) async => const {7: 'Al Noor Supplies'}),
+        // J2 — «مراجعة واعتماد» صار صلاحيةً مستقلّة (`*_return_approve`).
+        currentUserPermissionsProvider.overrideWith((ref) async =>
+            const ['sales_return_approve', 'purchases_return_approve']),
       ],
       child: MaterialApp(
         theme: brightness == Brightness.dark
@@ -339,10 +342,13 @@ void main() {
                     of: method, matching: find.byType(DropdownButton<String>)),
                 findsNothing);
 
-            // Action bar: approve + no draft.
+            // Action bar: approve + «حفظ مسودة» (J2 — owner reversed the C2
+            // «no draft» decision: drafts now have a real lifecycle).
             expect(find.byKey(const Key('picpos_return_approve')),
                 findsOneWidget);
-            expect(find.text(tr('حفظ مسودة')), findsNothing);
+            expect(find.byKey(const Key('picpos_return_save_draft')),
+                findsOneWidget);
+            expect(find.text(tr('حفظ مسودة')), findsOneWidget);
 
             if (english) {
               expect(_visibleArabic(tester), isEmpty,

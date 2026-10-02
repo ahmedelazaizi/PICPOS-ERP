@@ -418,6 +418,41 @@ class SalesReturnNotifier extends Notifier<SalesReturnState> {
   }
 
   void clearError() => state = state.copyWith(clearError: true);
+
+  /// J2 — استمارةٌ جديدةٌ تبدأ فارغة: المزوّدُ عامٌّ يعيش بعد إغلاق صفحتها.
+  void resetForm() {
+    state = state.copyWith(
+      clearSelected: true,
+      clearError: true,
+      isFullReturn: false,
+      isDamaged: false,
+      isProcessing: false,
+    );
+  }
+
+  /// J2 — يفتح مسوّدةً محفوظة: الفاتورةُ الأصل ثمّ كمّيّاتُها وأوضاعُها.
+  /// `false` = تعذّر اختيارُ الفاتورة (أُرجعت كاملةً بعد الحفظ مثلاً).
+  Future<bool> loadDraft({
+    required SalesInvoiceData invoice,
+    required Map<int, double> quantities,
+    required bool isFullReturn,
+    required bool isDamaged,
+  }) async {
+    resetForm();
+    await selectInvoice(invoice);
+    if (state.selectedInvoice?.id != invoice.id) return false;
+    if (isFullReturn) {
+      toggleFullReturn(true);
+    } else {
+      for (final e in quantities.entries) {
+        if (state.invoiceItems.any((i) => i.id == e.key)) {
+          updateReturnQuantity(e.key, e.value);
+        }
+      }
+    }
+    toggleDamagedMode(isDamaged);
+    return true;
+  }
 }
 
 final salesReturnProvider =

@@ -10,21 +10,26 @@ part of 'purchase_returns_picpos_screen.dart';
 // PURCHASE RETURN LOGIC — Process, History, Print
 // ═══════════════════════════════════════════════════════════════════════════
 
-mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> {
+// J2: القيدُ عامٌّ (`ConsumerState<W>`) كي يركّبه سجلُّ المردودات أيضاً
+// (`PurchaseReturnRecordActionsState`) لإعادة الطباعة والعرض والتعديل.
+mixin _PurchaseReturnsPicposLogic<W extends ConsumerStatefulWidget>
+    on ConsumerState<W> {
 
   /// الحفظُ جارٍ — خطؤه يُعرَض في حواره، فلا يكرّره مستمعُ الشاشة.
   bool _savingReturn = false;
 
-  Future<void> processReturn() async {
+  /// [beforePost] (J2) يقع بعد التأكيد وموافقة المدير وقبل الترحيل — فيه
+  /// تُحفَظ المسوّدة؛ `false` منه يوقف الترحيل. والنتيجةُ `true` متى رُحِّل.
+  Future<bool> processReturn({Future<bool> Function()? beforePost}) async {
     final state = ref.read(purchaseReturnProvider);
     final notifier = ref.read(purchaseReturnProvider.notifier);
 
-    if (state.selectedInvoice == null) return;
+    if (state.selectedInvoice == null) return false;
 
     final hasReturns = state.returnQuantities.values.any((q) => q > 0);
     if (!hasReturns) {
       AppToast.show(context, tr('يرجى تحديد كميات المرتجع'), type: ToastType.info);
-      return;
+      return false;
     }
 
     // Capture print data BEFORE state is cleared by processReturn()
@@ -72,7 +77,7 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true) return false;
 
     // B5: Manager approval for high-value returns
     try {
@@ -83,13 +88,14 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
           context,
           actionName: tr('اعتماد مرتجع مشتريات بقيمة {p0}', {'p0': returnTotal.toStringAsFixed(AppConstants.decimalPlaces)}),
         );
-        if (!approved) return;
+        if (!approved) return false;
       }
     } catch (_) {
       // Settings not available — proceed without threshold check
     }
 
-    if (!mounted) return;
+    if (beforePost != null && !await beforePost()) return false;
+    if (!mounted) return false;
     // 🔴 بلاغُ المالك: الإخفاقُ كان صامتاً — راجع رأس `purchase_return_save.dart`.
     // والعلَمُ يُسكت مستمعَ الأخطاء العامّ في الشاشة: الحفظُ يعرض خطأه بنفسه.
     _savingReturn = true;
@@ -162,6 +168,7 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
         ),
       );
     }
+    return success;
   }
 
   /// طباعة فاتورة مرتجع المشتريات A4
@@ -312,143 +319,11 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
     }
   }
 
-  void showReturnsHistoryDialog() {
-    final repository = ref.read(returnsRepositoryProvider);
-    // Use a 1-year lookback so recently processed returns always appear.
-    // (History queries by invoice_date, not return_date — wide range prevents misses.)
-    final historyFrom = DateTime.now().subtract(const Duration(days: 365));
-    final historyTo = DateTime.now();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title:  Row(
-            children: [
-              const Icon(PhosphorIconsBold.clockCounterClockwise, color: AppColors.info),
-              const SizedBox(width: 8),
-              Text(tr('سجل مرتجعات المشتريات')),
-            ],
-          ),
-          content: SizedBox(
-            width: 600,
-            height: 450,
-            child: FutureBuilder<List<PurchaseInvoiceData>>(
-              future: repository.getPurchaseReturnHistory(
-                fromDate: historyFrom,
-                toDate: historyTo,
-              ),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final history = snapshot.data ?? [];
-
-                if (history.isEmpty) {
-                  return  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(PhosphorIconsBold.receipt, size: 48, color: AppColors.textMuted),
-                        const SizedBox(height: 16),
-                        Text(tr('لا توجد مرتجعات في آخر 30 يوم'), style: const TextStyle(color: AppColors.textMuted)),
-                      ],
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  itemCount: history.length,
-                  itemBuilder: (context, index) {
-                    final invoice = history[index];
-                    final db = ref.read(databaseProvider);
-                    return Card(
-                      child: ListTile(
-                        leading: const CircleAvatar(
-                          backgroundColor: AppColors.error,
-                          child: Icon(PhosphorIconsBold.arrowUUpLeft, size: 18, color: Colors.white),
-                        ),
-                        title: Text(tr('فاتورة مشتريات #{p0}', {'p0': invoice.invoiceNumber})),
-                        // Spec 002 Round 7: show the actual returned amount,
-                        // not the original invoice's total. The original was
-                        // misleading — a partial return for 100 د.أ on a
-                        // 5000 د.أ invoice displayed as 5000.
-                        subtitle: FutureBuilder<double>(
-                          future: db.getPurchaseReturnTotal(invoice.id),
-                          builder: (context, snap) {
-                            final returnTotal = snap.data ?? 0.0;
-                            final dateStr =
-                                '${invoice.invoiceDate.day}/${invoice.invoiceDate.month}/${invoice.invoiceDate.year}';
-                            final retStr = returnTotal.toStringAsFixed(AppConstants.decimalPlaces);
-                            final invStr = invoice.total.toStringAsFixed(AppConstants.decimalPlaces);
-                            final cur = AppConstants.currencySymbolAr;
-                            return Text(
-                              tr('التاريخ: {dateStr} • قيمة المرتجع: {retStr} {cur} (الفاتورة الأصلية: {invStr} {p0})', {'dateStr': dateStr, 'retStr': retStr, 'cur': cur, 'invStr': invStr, 'p0': invoice.invoiceNumber}),
-                            );
-                          },
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // purchases_return_print — نفس حارس فورك UralCash
-                            // (`screens/purchase_returns/return_logic.dart`).
-                            PermissionGuard(
-                              permission: PermissionCodes.purchasesReturnPrint,
-                              allowManagerOverride: true,
-                              actionName: tr('طباعة مرتجع مشتريات'),
-                              onGranted: () =>
-                                  _reprintHistoricalReturn(invoice),
-                              child: IconButton(
-                                tooltip: tr('طباعة فاتورة المرتجع'),
-                                icon: const Icon(
-                                  PhosphorIconsBold.printer,
-                                  color: AppColors.success,
-                                ),
-                                onPressed: () =>
-                                    _reprintHistoricalReturn(invoice),
-                              ),
-                            ),
-                            IconButton(
-                              tooltip: tr('عرض تفاصيل الأصناف المرتجعة'),
-                              icon: const Icon(PhosphorIconsBold.eye, color: AppColors.primary),
-                              onPressed: () => _showReturnDetails(invoice),
-                            ),
-                            // Feature 015 — edit a posted return. Hidden for
-                            // users without `purchases_return_edit` permission;
-                            // period-lock is enforced by _editPurchaseReturn
-                            // (UI affordance + server-side gate).
-                            PermissionGuard(
-                              permission: PermissionCodes.purchasesReturnEdit,
-                              child: IconButton(
-                                tooltip: tr('تعديل المرتجع'),
-                                icon: const Icon(
-                                  PhosphorIconsBold.pencilSimple,
-                                  color: AppColors.warning,
-                                ),
-                                onPressed: () => _editPurchaseReturn(invoice),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child:  Text(tr('إغلاق')),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // J2 — حوارُ «طباعة أو تعديل مرتجعٍ سابق» حُذف: إعادةُ الطباعة
+  // (`purchases_return_print`) وعرضُ الأصناف وتعديلُ المرتجع المرحَّل
+  // (`purchases_return_edit`، ميزة ٠١٥) صارت أفعالَ صفوفٍ في سجلّ المردودات
+  // (`purchase_return_records_picpos_screen.dart`) تنادي المعالجاتِ نفسَها
+  // أدناه بنفس الحرّاس.
 
   Future<void> _showReturnDetails(PurchaseInvoiceData invoice) async {
     // ISS-06: Acceptable — one-shot read in button callback, provider exists

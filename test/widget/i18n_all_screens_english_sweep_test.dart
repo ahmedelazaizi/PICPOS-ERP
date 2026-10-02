@@ -482,7 +482,14 @@ void main() {
     await openScreen(AppScreen.importPurchases);
     await scanButtonSurface('import purchase', find.byKey(const Key('import_new_invoice')));
     await openScreen(AppScreen.salesReturns);
-    await scanButtonSurface('sales return history dialog', find.text(tr('سجل المرتجعات')));
+    // J2: في PicPos المدخلُ سجلُّ المرتجعات و«جديد» يفتح الاستمارة (حوارُ
+    // «سجل المرتجعات» حُذف)؛ وذراعُ UralCash على حوارها كما هو.
+    await scanButtonSurface(
+      Brand.isPicPos ? 'new sales return' : 'sales return history dialog',
+      Brand.isPicPos
+          ? find.byKey(const Key('return_records_new'))
+          : find.text(tr('سجل المرتجعات')),
+    );
     await openScreen(AppScreen.pos);
     await scanButtonSurface('sales return form', find.text(tr('مرتجع سريع')));
     await openScreen(AppScreen.purchaseReturns);

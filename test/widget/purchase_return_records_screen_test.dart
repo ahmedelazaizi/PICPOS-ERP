@@ -27,7 +27,9 @@ import '../helpers/attachments_test_overrides.dart';
 
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/data/providers/document_record_providers.dart';
+import 'package:ural_erp/data/providers/return_records_providers.dart';
 import 'package:ural_erp/domain/models/document_record.dart';
+import 'package:ural_erp/domain/models/return_draft.dart';
 import 'package:ural_erp/presentation/picpos_shell/picpos_attachments_panel.dart';
 import 'package:ural_erp/presentation/purchase_returns_picpos/screens/purchase_return_records_picpos_screen.dart';
 
@@ -80,6 +82,9 @@ Future<void> _pump(
           seen?.filter = filter;
           return Stream.value(rows);
         }),
+        // J2 — المسوّداتُ والملغاةُ وأرقامُ السندات: لا شيءَ منها هنا.
+        purchaseReturnRecordExtrasProvider.overrideWith(
+            (ref, w) async => const PurchaseReturnRecordExtras()),
         // ⚠️ **إلزاميّ**: حوارُ المستند يحمل `PicPosAttachmentsPanel`،
         //    واللوحُ يصل `databaseProvider` فتُفتَح قاعدةٌ حقيقيّةٌ ولا
         //    يستقرّ `pumpAndSettle`. راجع رأسَ `attachments_test_overrides`.
@@ -167,7 +172,10 @@ void main() {
     await _pump(tester,
         rows: [_rec(id: 1, total: 120, tax: 20, reason: 'تالف')]);
 
+    // J2: الصفُّ يُختار، و«عرض» في شريط أفعاله يفتح المستند.
     await tester.tap(find.text('PI-30'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('return_row_view')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('return_document_view')), findsOneWidget,
@@ -214,11 +222,12 @@ void main() {
       final src = File(
               'lib/presentation/purchase_returns_picpos/screens/purchase_return_records_picpos_screen.dart')
           .readAsStringSync();
-      expect(src, contains('Navigator.of(context).push('),
+      // J2: `push<ReturnFormResult>(` — الصفحةُ تعيد الصفَّ المعتمَد ليُختار.
+      expect(src, matches(RegExp(r'Navigator\.of\(context\)\.push[<(]')),
           reason: '🔴 لم يعد يدفع — راجع أعلاه');
       expect(src, isNot(contains('pushReplacement')),
           reason: '🔴 استُبدل السجلُّ بشاشة الإنشاء ⇒ «رجوع» ميّت');
-      expect(src, contains('PurchaseReturnsPicposScreen()'),
+      expect(src, contains('PurchaseReturnsPicposScreen('),
           reason: 'زرُّ «جديد» لا يفتح شاشةَ الإنشاء القائمة');
     });
 
@@ -248,10 +257,31 @@ void main() {
           reason: '🔴 زرٌّ اسمُه «سجل المرتجعات» داخلَ الاستمارة يُنتج '
               'سجلَّين ظاهرَين لمستندٍ واحد');
 
-      // ⚠️ **ولا يُسحَب الزرُّ**: حوارُه البابُ الوحيدُ لثلاثة مساراتٍ حيّة.
-      expect(code, contains('showReturnsHistoryDialog'),
-          reason: '🔴 سُحب الزرُّ ⇒ سقطت إعادةُ الطباعة وعرضُ الأصناف '
-              'و**تعديلُ مرتجعٍ مُرحَّل** (ميزة ٠١٥) بلا بابٍ بديل');
+      // ⚠️ **J2 (قرارُ المالك): الزرُّ سُحب لصالح أفعال صفوف السجلّ** —
+      //    فالمساراتُ الثلاثةُ الحيّةُ التي كان حوارُه بابَها الوحيد يجب أن
+      //    تبقى حيّةً من السجلّ، بنفس المعالجات ونفس الحرّاس.
+      expect(code, isNot(contains('showReturnsHistoryDialog')),
+          reason: 'قرارُ المالك: الحوارُ استُبدل بأفعال الصفوف');
+      final records = File(
+              'lib/presentation/purchase_returns_picpos/screens/purchase_return_records_picpos_screen.dart')
+          .readAsStringSync();
+      for (final route in const [
+        'reprintPostedReturn',
+        'showPostedReturnItems',
+        'editPostedReturn',
+        'PermissionCodes.purchasesReturnPrint',
+        'PermissionCodes.purchasesReturnEdit',
+      ]) {
+        expect(records, contains(route),
+            reason: '🔴 سقط مسارٌ كان في الحوار بلا بابٍ بديل: $route');
+      }
+      final actions = File(
+              'lib/presentation/purchase_returns_picpos/screens/purchase_returns_picpos_record_actions.dart')
+          .readAsStringSync();
+      expect(actions, contains('_reprintHistoricalReturn(invoice)'));
+      expect(actions, contains('_showReturnDetails(invoice)'));
+      expect(actions, contains('_editPurchaseReturn(invoice)'),
+          reason: 'أفعالُ الصفّ تنادي المعالجاتِ القائمة لا نسخاً منها');
     });
 
     test('ذراعُ PicPos تبني السجلَّ', () {

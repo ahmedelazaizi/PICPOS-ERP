@@ -118,6 +118,8 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           currencyId: params.currencyId,
           exchangeRate: params.exchangeRate,
           importDetails: params.importDetails,
+          // J1b: the server posts the authoritative JE — same debit account.
+          purchaseAccountId: params.purchaseAccountId,
         ),
         tag: 'PURCHASE-SYNC',
       );
@@ -161,6 +163,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
         currencyId: params.currencyId,
         exchangeRate: params.exchangeRate,
         importDetails: params.importDetails,
+        purchaseAccountId: params.purchaseAccountId,
       );
     }
 
@@ -206,6 +209,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
         currencyId: params.currencyId,
         exchangeRate: params.exchangeRate,
         importDetails: params.importDetails,
+        purchaseAccountId: params.purchaseAccountId,
       );
     });
   }
@@ -277,6 +281,8 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
         // ح-1: without this the edit rewrote the total GROSS and re-created
         // the phantom payable the create path was fixed to avoid.
         discount: params.discount,
+        changePurchaseAccount: params.changePurchaseAccount,
+        purchaseAccountId: params.purchaseAccountId,
       );
     });
   }

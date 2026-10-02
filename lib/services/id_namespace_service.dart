@@ -107,6 +107,8 @@ class IdNamespaceService {
     // v185 — نموذجُ التوزيع (المرحلة و).
     'distribution_areas', 'route_customers', 'route_rep_history',
     'rep_resources',
+    // v189 — مسوّداتُ المرتجعات (J2).
+    'return_drafts',
 
     // ── v173 / المرحلة ٤ — السجلُّ الرقابيُّ والتشغيلُ العابر ──
     'loyalty_programs', 'delivery_companies', 'couriers',

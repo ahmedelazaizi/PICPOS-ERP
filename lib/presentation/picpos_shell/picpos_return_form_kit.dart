@@ -964,9 +964,9 @@ class _PicPosCollapsibleCardState extends State<PicPosCollapsibleCard> {
 
 /// شريطُ الأفعال الثابتُ أسفلَ الشاشة — بشكل شريط استمارة الفاتورة.
 ///
-/// ⚠️ **بلا «حفظ مسودة» بالبناء**: لا دورةَ مسوّدةٍ للمرتجع في المحرّك
-/// (ترحيلٌ بخطوةٍ واحدة — قرارُ المالك). فالشريطُ لا يقبل فعلَ مسوّدةٍ أصلاً،
-/// ولا يُعرَض إلا ما له معالجٌ قائم.
+/// ⚠️ **J2 (قرارُ المالك):** «حفظ مسودة» صار له دورةُ حياة (`return_drafts`)
+/// فعاد زرّاً ثانوياً — يُعرَض متى مُرِّر [secondaryLabel]، ولا يُعرَض إلا ما
+/// له معالجٌ قائم.
 class PicPosReturnActionBar extends StatelessWidget {
   const PicPosReturnActionBar({
     super.key,
@@ -975,12 +975,18 @@ class PicPosReturnActionBar extends StatelessWidget {
     this.onBack,
     this.busy = false,
     this.hint,
+    this.secondaryLabel,
+    this.onSecondary,
   });
 
   final String primaryLabel;
 
   /// الفعلُ المرحِّل — `null` يعطّله ولا يخفيه.
   final VoidCallback? onPrimary;
+
+  /// «حفظ مسودة» — يُعرَض متى مُرِّر نصُّه، و`null` [onSecondary] يعطّله.
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
 
   /// «رجوع» — يُخفى متى لم يكن خلفَ الشاشة ما يُرجَع إليه.
   final VoidCallback? onBack;
@@ -1043,6 +1049,27 @@ class PicPosReturnActionBar extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (secondaryLabel != null)
+                    OutlinedButton.icon(
+                      key: const Key('picpos_return_save_draft'),
+                      onPressed: busy ? null : onSecondary,
+                      icon: const Icon(PhosphorIconsBold.floppyDisk, size: 15),
+                      label: Text(
+                        secondaryLabel!,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 44),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        side: BorderSide(color: theme.dividerColor),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                      ),
+                    ),
                   if (hint != null)
                     Text(
                       hint!,

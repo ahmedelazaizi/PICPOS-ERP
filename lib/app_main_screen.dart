@@ -119,7 +119,7 @@ import 'presentation/cycle_count_picpos/screens/cycle_count_picpos_screen.dart';
 import 'presentation/screens/report_builder_screen.dart';
 import 'presentation/report_builder_picpos/screens/report_builder_picpos_screen.dart';
 import 'presentation/screens/sales_returns_screen.dart';
-import 'presentation/sales_returns_picpos/screens/sales_returns_picpos_screen.dart';
+import 'presentation/sales_returns_picpos/screens/sales_return_records_picpos_screen.dart';
 import 'presentation/screens/purchase_returns_screen.dart';
 import 'presentation/purchase_returns_picpos/screens/purchase_return_records_picpos_screen.dart';
 import 'presentation/screens/shift_close_screen.dart';
@@ -1075,10 +1075,13 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         label: tr('اعداد وتصميم التقارير'),
         icon: PhosphorIconsBold.chartBar,
       ),
+      // مرتجعُ المبيعات — **السجلُّ في PicPos وحدَها** (J2، قرارُ المالك):
+      // بدلُ حوار «سجل مرتجعات المبيعات»، و«جديد» يدفع الاستمارةَ صفحةً.
+      // وذراعُ UralCash لا تتبدّل.
       ScreenConfig(
         appScreen: AppScreen.salesReturns,
         builder: (_) => Brand.isPicPos
-            ? const SalesReturnsPicposScreen()
+            ? const SalesReturnRecordsPicPosScreen()
             : const SalesReturnsScreen(),
         label: tr('مرتجع المبيعات'),
         icon: PhosphorIconsBold.arrowUUpLeft,

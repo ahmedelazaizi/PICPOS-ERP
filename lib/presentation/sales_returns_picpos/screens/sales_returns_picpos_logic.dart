@@ -46,18 +46,23 @@ Widget buildSalesReturnPrintButtonGuarded({required VoidCallback onPrint}) {
   );
 }
 
-mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
+// J2: القيدُ عامٌّ (`ConsumerState<W>`) كي يركّبه سجلُّ المرتجعات أيضاً
+// (`SalesReturnRecordActionsState`) لإعادة الطباعة والإلغاء من صفوفه.
+mixin _SalesReturnsPicposLogic<W extends ConsumerStatefulWidget>
+    on ConsumerState<W> {
   // Abstract — provided by main State class
   TextEditingController get returnReasonController;
 
   bool _savingReturn = false;
 
-  Future<void> processReturn() async {
-    if (_savingReturn) return;
+  /// [beforePost] (J2) يقع بعد التأكيد وموافقة المدير وقبل الترحيل — فيه
+  /// تُحفَظ المسوّدة؛ `false` منه يوقف الترحيل. والنتيجةُ `true` متى رُحِّل.
+  Future<bool> processReturn({Future<bool> Function()? beforePost}) async {
+    if (_savingReturn) return false;
     final state = ref.read(salesReturnProvider);
     final notifier = ref.read(salesReturnProvider.notifier);
 
-    if (state.selectedInvoice == null) return;
+    if (state.selectedInvoice == null) return false;
 
     final hasReturns = state.returnQuantities.values.any((q) => q > 0);
     if (!hasReturns) {
@@ -66,7 +71,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
         tr('يرجى تحديد كمية للإرجاع'),
         type: ToastType.warning,
       );
-      return;
+      return false;
     }
 
     final confirmed = await showDialog<bool>(
@@ -114,7 +119,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true) return false;
 
     final reason = returnReasonController.text.trim();
     final returnTotal = notifier.calculateReturnTotal();
@@ -129,11 +134,14 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
           context,
           actionName: tr('اعتماد مرتجع بقيمة {p0}', {'p0': returnTotal.toStringAsFixed(AppConstants.decimalPlaces)}),
         );
-        if (!approved) return;
+        if (!approved) return false;
       }
     } catch (_) {
       // Settings not available — proceed without threshold check
     }
+
+    if (beforePost != null && !await beforePost()) return false;
+    if (!mounted) return false;
 
     // Capture print data BEFORE processReturn() clears state
     final capturedInvoice = state.selectedInvoice;
@@ -144,7 +152,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
     setState(() => _savingReturn = true);
     bool success = false;
     try {
-      if (!mounted) return;
+      if (!mounted) return false;
       // ح‑١ (مواصفة 2026-08-18) — نسخةُ المنطقِ واحدةٌ في
       // `runWithOpenShiftPrompt`، والتوأمُ في `screens/sales_returns` يستدعي
       // نفسَه. لا تنسخ هنا (مصيدةُ النسخ §٥.٥).
@@ -163,7 +171,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
             type: ToastType.warning,
           );
         }
-        return;
+        return false;
       }
     } finally {
       if (mounted) setState(() => _savingReturn = false);
@@ -242,6 +250,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
       returnReasonController.clear();
       await ref.read(salesReturnProvider.notifier).loadInvoices();
     }
+    return success;
   }
 
   Future<void> _printReturnReceipt({
@@ -313,287 +322,22 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
     }
   }
 
-  /// «سجل المرتجعات» — mirrors the purchase-returns history dialog.
-  ///
-  /// Feeds off [IReturnsRepository.getSalesReturnHistoryEntries], NOT
-  /// `getSalesReturnHistory`. The latter matches only `sale_type='return'`
-  /// invoice rows, and THIS screen's own standalone path never writes one —
-  /// it flips the ORIGINAL invoice to 'returned'/'partial_return' and records
-  /// the refund in `safe_transactions`, exactly like the purchases side. So
-  /// the old query left this dialog permanently empty on a standalone/server
-  /// install while «سجل مرتجعات المشتريات» listed everything. The entry list
-  /// normalises both storage shapes and carries the ACTUAL refunded amount
-  /// (not the original invoice's total) plus the original row that
-  /// cancel/reprint must act on.
-  void showReturnsHistoryDialog() {
-    final repository = ref.read(returnsRepositoryProvider);
-    // قرارُ المالك 2026-08-16: بلا سقفٍ زمنيّ — الارتجاعُ جائزٌ بعد فترةٍ
-    // وليس في نفس اليوم. وكان السقفُ ٣٦٥ يوماً فيُخفي فاتورةً أقدمَ من سنة.
-    final historyFrom = DateTime(2000);
-    final historyTo = DateTime.now();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => Directionality(
-          textDirection: TextDirection.rtl,
-          child: AlertDialog(
-            title:  Row(
-              children: [
-                const Icon(
-                  PhosphorIconsBold.clockCounterClockwise,
-                  color: AppColors.info,
-                ),
-                const SizedBox(width: 8),
-                Text(tr('سجل مرتجعات المبيعات')),
-              ],
-            ),
-            content: SizedBox(
-              width: 600,
-              height: 450,
-              child: FutureBuilder<List<SalesReturnHistoryEntry>>(
-                future: repository.getSalesReturnHistoryEntries(
-                  fromDate: historyFrom,
-                  toDate: historyTo,
-                ),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: ShimmerLoading.list(itemCount: 6),
-                    );
-                  }
-
-                  final entries = snapshot.data ?? [];
-
-                  if (entries.isEmpty) {
-                    return  Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            PhosphorIconsBold.arrowUDownLeft,
-                            size: 48,
-                            color: AppColors.textMuted,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            tr('لا توجد مرتجعات خلال آخر سنة'),
-                            style: const TextStyle(color: AppColors.textMuted),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    itemCount: entries.length,
-                    itemBuilder: (context, index) {
-                      final entry = entries[index];
-                      // The row to act on for cancel/reprint is always the
-                      // ORIGINAL invoice (see SalesReturnHistoryEntry docs);
-                      // fall back to the displayed row when unresolvable.
-                      final invoice = entry.originalInvoice ?? entry.invoice;
-                      final isFullReturn = entry.isFullReturn;
-
-                      return Card(
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: isFullReturn
-                                ? AppColors.error.withValues(alpha: 0.1)
-                                : AppColors.warning.withValues(alpha: 0.1),
-                            child: Icon(
-                              isFullReturn
-                                  ? PhosphorIconsBold.arrowUDownLeft
-                                  : PhosphorIconsBold.arrowsClockwise,
-                              size: 18,
-                              color: isFullReturn
-                                  ? AppColors.error
-                                  : AppColors.warning,
-                            ),
-                          ),
-                          title: Text(tr('فاتورة #{p0}', {'p0': entry.originalInvoiceNumber})),
-                          // Show the ACTUAL returned amount next to the
-                          // original's total — same shape as the purchase
-                          // returns history, where showing the original total
-                          // alone made a 100 د.أ return on a 5000 د.أ invoice
-                          // read as 5000.
-                          subtitle: FutureBuilder<String?>(
-                            future: invoice.customerId != null
-                                ? ref
-                                    .read(partiesRepositoryProvider)
-                                    .getPartyById(invoice.customerId!)
-                                    .then((p) => p?.name)
-                                : Future.value(null),
-                            builder: (ctx, partySnap) {
-                              final customerName =
-                                  partySnap.data ?? tr('عميل نقدي');
-                              final d = entry.invoice.invoiceDate;
-                              final ret = entry.returnAmount.toStringAsFixed(
-                                  AppConstants.decimalPlaces);
-                              final orig = entry.originalInvoiceTotal
-                                  .toStringAsFixed(
-                                      AppConstants.decimalPlaces);
-                              final cur = AppConstants.currencySymbolAr;
-                              return Text(
-                                tr('{customerName} • {p0}/{p1}/{p2} • قيمة المرتجع: {ret} {cur} (الفاتورة الأصلية: {orig} {p3})', {'customerName': customerName, 'p0': d.day, 'p1': d.month, 'p2': d.year, 'ret': ret, 'cur': cur, 'orig': orig, 'p3': entry.invoice.invoiceNumber}),
-                              );
-                            },
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isFullReturn
-                                      ? AppColors.error.withValues(alpha: 0.1)
-                                      : AppColors.warning.withValues(
-                                          alpha: 0.1,
-                                        ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  isFullReturn ? tr('مرتجع كامل') : tr('مرتجع جزئي'),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: isFullReturn
-                                        ? AppColors.error
-                                        : AppColors.warning,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              IconButton(
-                                icon: const Icon(
-                                  PhosphorIconsBold.eye,
-                                  color: AppColors.primary,
-                                  size: 18,
-                                ),
-                                tooltip: tr('عرض أصناف المرتجع'),
-                                onPressed: () async {
-                                  // ISS-06: Acceptable — one-shot read in button callback
-                                  final db = ref.read(databaseProvider);
-                                  // Keyed on the ORIGINAL id: that is what
-                                  // stock_movements.reference_id holds.
-                                  final items = await db
-                                      .getSalesReturnItemDetails(
-                                          entry.originalInvoiceId);
-                                  if (!ctx.mounted) return;
-                                  showDialog(
-                                    context: ctx,
-                                    builder: (itemCtx) => Directionality(
-                                      textDirection: TextDirection.rtl,
-                                      child: AlertDialog(
-                                        title: Row(
-                                          children: [
-                                            const Icon(
-                                              PhosphorIconsBold.package,
-                                              color: AppColors.primary,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              tr('أصناف المرتجع - {p0}', {'p0': entry.originalInvoiceNumber}),
-                                            ),
-                                          ],
-                                        ),
-                                        content: SizedBox(
-                                          width: 460,
-                                          height: 320,
-                                          child: items.isEmpty
-                                            ?  Center(child: Text(tr('لا توجد بيانات مرتجع')))
-                                            : ListView.builder(
-                                            itemCount: items.length,
-                                            itemBuilder: (_, i) {
-                                              final item = items[i];
-                                              final name = (item['product_name'] as String?) ?? tr('صنف #{p0}', {'p0': item['product_id']});
-                                              final qty = (item['returned_qty'] as num?)?.toDouble() ?? 0;
-                                              final total = (item['total_amount'] as num?)?.toDouble() ?? 0;
-                                              return ListTile(
-                                                dense: true,
-                                                leading: const Icon(
-                                                  PhosphorIconsBold.package,
-                                                  size: 18,
-                                                ),
-                                                title: Text(
-                                                  name,
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                subtitle: Text(
-                                                  tr('الكمية المرتجعة: {p0}', {'p0': qty.toStringAsFixed(AppConstants.decimalPlaces)}),
-                                                ),
-                                                trailing: Text(
-                                                  '${total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(itemCtx),
-                                            child:  Text(tr('إغلاق')),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              const SizedBox(width: 4),
-                              buildSalesReturnDeleteButtonGuarded(
-                                onCancel: () => _confirmAndCancelReturn(
-                                  ctx,
-                                  entry,
-                                  invoice,
-                                ),
-                              ),
-                              buildSalesReturnPrintButtonGuarded(
-                                onPrint: () => _printReturnReceipt(
-                                  invoiceNumber: entry.originalInvoiceNumber,
-                                  returnTotal: entry.returnAmount,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child:  Text(tr('إغلاق')),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // J2 — حوارُ «سجل مرتجعات المبيعات» حُذف: حلّت محلَّه شاشةُ السجلّ
+  // (`sales_return_records_picpos_screen.dart`) بأفعال صفوفها — عرضٌ
+  // وطباعةٌ وإلغاءٌ بنفس الحرّاس (`buildSalesReturn*ButtonGuarded`) ونفس
+  // المعالجات أدناه.
 
   bool _cancellingReturn = false;
 
   /// ديالوج تأكيد «إلغاء المرتجع» ثم التنفيذ — اتنقلت من جوه `onPressed`
   /// عشان الحارس (`onGranted`) والزرار ينادوا نفس الكود بالظبط.
-  Future<void> _confirmAndCancelReturn(
-    BuildContext ctx,
-    SalesReturnHistoryEntry entry,
-    SalesInvoiceData invoice,
-  ) async {
+  /// `true` = أُلغي فعلاً (J2: السجلُّ يختم مسوّداته «ملغى» ويُحدِّث).
+  Future<bool> _confirmAndCancelReturn(
+    BuildContext ctx, {
+    required String originalInvoiceNumber,
+    required double returnAmount,
+    required SalesInvoiceData invoice,
+  }) async {
     final confirmed = await showDialog<bool>(
       context: ctx,
       builder: (confirmCtx) => Directionality(
@@ -610,10 +354,10 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(tr('فاتورة: {p0}', {'p0': entry.originalInvoiceNumber})),
+              Text(tr('فاتورة: {p0}', {'p0': originalInvoiceNumber})),
               const SizedBox(height: 8),
               Text(
-                tr('المبلغ: {p0} {p1}', {'p0': entry.returnAmount.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolAr}),
+                tr('المبلغ: {p0} {p1}', {'p0': returnAmount.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolAr}),
               ),
               const SizedBox(height: 16),
               Container(
@@ -659,16 +403,13 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
     );
 
     if (confirmed == true && ctx.mounted) {
-      await _cancelReturn(invoice);
-      if (ctx.mounted) {
-        Navigator.pop(ctx);
-        showReturnsHistoryDialog();
-      }
+      return _cancelReturn(invoice);
     }
+    return false;
   }
 
-  Future<void> _cancelReturn(SalesInvoiceData invoice) async {
-    if (_cancellingReturn) return;
+  Future<bool> _cancelReturn(SalesInvoiceData invoice) async {
+    if (_cancellingReturn) return false;
     setState(() => _cancellingReturn = true);
     try {
       final repository = ref.read(returnsRepositoryProvider);
@@ -688,10 +429,12 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
         );
         setState(() {});
       }
+      return true;
     } catch (e, stack) {
       if (mounted) {
         AppErrorHandler.handle(context, e, stack);
       }
+      return false;
     } finally {
       if (mounted) setState(() => _cancellingReturn = false);
     }

@@ -275,6 +275,9 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         currencyId: parseIntNullable(data['currencyId']),
         exchangeRate: parseDoubleNullable(data['exchangeRate']),
         importDetails: importDetails,
+        // J1b (v188): the client's chosen «حساب المشتريات»; absent ⇒ NULL ⇒
+        // mapped default (older clients unchanged).
+        purchaseAccountId: parseIntNullable(data['purchaseAccountId']),
       );
       broadcast('purchases');
       broadcast('products');
@@ -1440,6 +1443,9 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         // invoice edited from any client came back gross. Absent key = null =
         // keep the stored discount rather than wiping it.
         discount: parseDoubleNullable(data['discount']),
+        // J1b (v188): key present ⇒ the edit set/cleared the chosen account.
+        changePurchaseAccount: data.containsKey('purchaseAccountId'),
+        purchaseAccountId: parseIntNullable(data['purchaseAccountId']),
       );
       broadcast('purchases');
       broadcast('products');

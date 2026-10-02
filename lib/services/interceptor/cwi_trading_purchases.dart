@@ -126,6 +126,7 @@ class _CwiTradingPurchases {
     int? currencyId,
     double? exchangeRate,
     ImportDocumentFields? importDetails,
+    int? purchaseAccountId,
   }) async {
     if (!SyncInterceptor.isClientMode) return false;
     debugPrint('[ClientInterceptor] Routing purchase to server');
@@ -157,6 +158,8 @@ class _CwiTradingPurchases {
       //    فاتورةُ الدولار على أنّها محلّيّةٌ ولا أثرَ يقول إنّها لم تكن.
       'currencyId': ?currencyId,
       'exchangeRate': ?exchangeRate,
+      // J1b (v188): the server's JE must debit the invoice's chosen account.
+      'purchaseAccountId': ?purchaseAccountId,
     };
     if (importDetails != null) {
       // ⚠️ **ورقمُ وكيلِ التخليص لا يسافر — معرِّفُه العالميُّ يسافر.**

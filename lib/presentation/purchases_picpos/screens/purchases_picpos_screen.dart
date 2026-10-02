@@ -34,6 +34,7 @@ import '../../picpos_shell/picpos_totals_bar.dart';
 // نمطُ ديالوجات PicPos — الغلافُ وحوارُ التأكيد المشتركان.
 import '../../picpos_shell/picpos_dialog.dart';
 import '../../picpos_shell/picpos_attachments_panel.dart';
+import 'purchases_picpos_account_choices.dart';
 
 // ── Part files (mixin-based extraction — faithful copy of the UralCash
 // `part of` mixins; see purchases_picpos_crud.dart / purchases_picpos_details.dart

@@ -117,6 +117,10 @@ class CreatePurchaseInvoiceParams {
   /// ويُكتَب في معاملةِ الفاتورة نفسِها.
   final ImportDocumentFields? importDetails;
 
+  /// J1b (v188) — the invoice's chosen «حساب المشتريات». `null` (every legacy
+  /// caller, the default choice in the form) ⇒ the mapped inventory account.
+  final int? purchaseAccountId;
+
   const CreatePurchaseInvoiceParams({
     required this.supplierId,
     required this.warehouseId,
@@ -135,6 +139,7 @@ class CreatePurchaseInvoiceParams {
     this.currencyId,
     this.exchangeRate,
     this.importDetails,
+    this.purchaseAccountId,
   });
 }
 
@@ -214,6 +219,12 @@ class UpdatePurchaseInvoiceParams {
   /// silently wipe one.
   final double? discount;
 
+  /// J1b (v188) — when [changePurchaseAccount] is true the invoice's
+  /// «حساب المشتريات» becomes [purchaseAccountId] (`null` ⇒ back to the mapped
+  /// default) before the repost. False ⇒ the stored value is untouched.
+  final bool changePurchaseAccount;
+  final int? purchaseAccountId;
+
   const UpdatePurchaseInvoiceParams({
     required this.invoiceId,
     this.supplierId,
@@ -226,6 +237,8 @@ class UpdatePurchaseInvoiceParams {
     this.costCenterId,
     this.userId,
     this.discount,
+    this.changePurchaseAccount = false,
+    this.purchaseAccountId,
   });
 }
 

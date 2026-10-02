@@ -362,6 +362,34 @@ class PurchaseReturnNotifier extends Notifier<PurchaseReturnState> {
   }
 
   void clearError() => state = state.copyWith(clearError: true);
+
+  /// J2 — استمارةٌ جديدةٌ تبدأ فارغة: المزوّدُ عامٌّ يعيش بعد إغلاق صفحتها.
+  void resetForm() {
+    state = state.copyWith(
+      clearSelected: true,
+      clearError: true,
+      isProcessing: false,
+    );
+  }
+
+  /// J2 — يفتح مسوّدةً محفوظة: الفاتورةُ الأصل ثمّ سببُها وكمّيّاتُها
+  /// (مقصوصةً عند المتاح اليوم — `updateReturnQuantity`).
+  Future<bool> loadDraft({
+    required PurchaseInvoiceData invoice,
+    required Map<int, double> quantities,
+    String? reason,
+  }) async {
+    resetForm();
+    await selectInvoice(invoice);
+    if (state.selectedInvoice?.id != invoice.id) return false;
+    updateReturnReason(reason);
+    for (final e in quantities.entries) {
+      if (state.invoiceItems.any((i) => i.item.id == e.key)) {
+        updateReturnQuantity(e.key, e.value);
+      }
+    }
+    return true;
+  }
 }
 
 final purchaseReturnProvider = NotifierProvider<PurchaseReturnNotifier, PurchaseReturnState>(() {

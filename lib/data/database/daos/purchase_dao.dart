@@ -716,6 +716,9 @@ extension PurchaseDao on AppDatabase {
     // وسمُ الاستيراد — يُكتَب **داخلَ هذه المعاملة**. راجع
     // [ImportPurchasesDao._writeImportPurchaseDetails].
     ImportDocumentFields? importDetails,
+    // J1b (v188) — the invoice's chosen «حساب المشتريات»; `null` ⇒ the mapped
+    // 'inventory' default. Written before the JE below reads it.
+    int? purchaseAccountId,
   }) async {
     // 🔴 **الزوجُ يُفحَص قبل المعاملة.** عملةٌ بلا سعرٍ تُقرأ لاحقاً على
     //    أنّها ١، فتُقيَّد ألفُ دولارٍ على المورّد بألفِ وحدةٍ محلّيّة —
@@ -962,7 +965,9 @@ extension PurchaseDao on AppDatabase {
       if (importDetails != null) {
         await _writeImportPurchaseDetails(invoiceId, importDetails);
       }
-
+      if (purchaseAccountId != null) {
+        await setPurchaseInvoicePurchaseAccountId(invoiceId, purchaseAccountId);
+      }
 
       for (var lineAt = 0; lineAt < items.length; lineAt++) {
         final item = items[lineAt];
@@ -1129,7 +1134,12 @@ extension PurchaseDao on AppDatabase {
       final invCode = await accountingDao.getMappedAccountCode(
         'inventory', AccountingDao.accountPurposes['inventory']!,
       );
-      final invAcc = await accountingDao.getAccountByCode(invCode);
+      // J1b: the invoice's own «حساب المشتريات» wins over the mapped default
+      // (and then takes the raw-material share too — one chosen debit account);
+      // NULL / invalid ⇒ the mapping, byte-identical to before.
+      final purchaseOverride = await resolvePurchaseAccountOverride(invoiceId);
+      final invAcc =
+          purchaseOverride ?? await accountingDao.getAccountByCode(invCode);
       if (invAcc == null) {
         throw StateError(
           'تعذّر تسجيل فاتورة المشتريات #$invoiceNumber: حساب المخزون '
@@ -1153,7 +1163,7 @@ extension PurchaseDao on AppDatabase {
               for (final at in rawMaterialLineIndexes) lineNets[at],
             ].fold<double>(0, (a, v) => a + v))
           : 0.0;
-      final rawAcc = rawShare > 0
+      final rawAcc = rawShare > 0 && purchaseOverride == null
           ? await accountingDao.getAccountByCode(
               await accountingDao.getMappedAccountCode('raw_materials',
                   AccountingDao.accountPurposes['raw_materials']!))
@@ -1405,6 +1415,8 @@ extension PurchaseDao on AppDatabase {
     int? currencyId,
     double? exchangeRate,
     ImportDocumentFields? importDetails,
+    // J1b (v188) — the mirrored invoice's «حساب المشتريات» (raw column).
+    int? purchaseAccountId,
   }) async {
     final badRate = validateExchangeRate(
       currencyId: currencyId,
@@ -1497,6 +1509,9 @@ extension PurchaseDao on AppDatabase {
       // نفسُ حكمِ مسار الإنشاء: الوسمُ في المعاملة لا بعدَها.
       if (importDetails != null) {
         await _writeImportPurchaseDetails(invoiceId, importDetails);
+      }
+      if (purchaseAccountId != null) {
+        await setPurchaseInvoicePurchaseAccountId(invoiceId, purchaseAccountId);
       }
 
       for (final item in items) {
@@ -1689,6 +1704,11 @@ extension PurchaseDao on AppDatabase {
     // ح-1 exists to prevent, on EVERY edit. Null = keep whatever the header
     // already holds (so callers that don't collect a discount can't wipe one).
     double? discount,
+    // J1b (v188): when true the invoice's «حساب المشتريات» becomes
+    // [purchaseAccountId] (`null` ⇒ back to the mapped default) BEFORE the
+    // repost, so the new JE debits it. False ⇒ the stored value is untouched.
+    bool changePurchaseAccount = false,
+    int? purchaseAccountId,
   }) async {
     return transaction(() async {
       // Get original invoice
@@ -2086,6 +2106,9 @@ extension PurchaseDao on AppDatabase {
       // re-posts through autoPostCashSale/autoPostCreditSale after deleting the
       // old sale JE. Balanced-by-construction; createJournalEntry hard-fails an
       // imbalance so a broken COA rolls the whole edit back (R3, fail-loud).
+      if (changePurchaseAccount) {
+        await setPurchaseInvoicePurchaseAccountId(invoiceId, purchaseAccountId);
+      }
       final repostInvoice = await getPurchaseInvoiceById(invoiceId);
       if (repostInvoice != null && repostInvoice.total > 0) {
         await autoPostPurchase(

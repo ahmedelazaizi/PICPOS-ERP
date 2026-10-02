@@ -100,6 +100,8 @@ const _rawSqlProvenAtRuntime = <String, String>{
   'route_customers': 'test/unit/distribution_model_phase_f_test.dart',
   'route_rep_history': 'test/unit/distribution_model_phase_f_test.dart',
   'rep_resources': 'test/unit/distribution_model_phase_f_test.dart',
+  // v189 — مسوّداتُ المرتجعات (J2).
+  'return_drafts': 'test/integration/return_drafts_lifecycle_j2_test.dart',
 };
 
 /// جداولُ ليست في `pullTables` وتُرقَّم مع ذلك — الطرفُ الآخرُ من العقد.

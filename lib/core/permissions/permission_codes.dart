@@ -387,6 +387,9 @@ class PermissionCodes {
   /// طباعة مرتجع مشتريات
   static const String purchasesReturnPrint = 'purchases_return_print';
 
+  /// J2 — مراجعة واعتماد مرتجع مشتريات (ترحيلُ المسودة: مخزونٌ وقيدٌ وخزينة).
+  static const String purchasesReturnApprove = 'purchases_return_approve';
+
   /// عرض أوامر الشراء
   static const String purchaseOrdersView = 'purchase_orders_view';
 
@@ -426,6 +429,9 @@ class PermissionCodes {
 
   /// طباعة فواتير المرتجعات
   static const String salesReturnPrint = 'sales_return_print';
+
+  /// J2 — مراجعة واعتماد مرتجع مبيعات (ترحيلُ المسودة: مخزونٌ وقيدٌ وخزينة).
+  static const String salesReturnApprove = 'sales_return_approve';
 
   /// عرض طلبات البيع
   static const String salesOrdersView = 'sales_orders_view';
@@ -1329,6 +1335,11 @@ class PermissionCodes {
       'category': 'purchases',
     },
     {
+      'code': purchasesReturnApprove,
+      'name': tr('مراجعة واعتماد مرتجع مشتريات'),
+      'category': 'purchases',
+    },
+    {
       'code': purchaseOrdersView,
       'name': tr('عرض أوامر الشراء'),
       'category': 'purchases',
@@ -1368,6 +1379,11 @@ class PermissionCodes {
     {
       'code': salesReturnPrint,
       'name': tr('طباعة فواتير المرتجعات'),
+      'category': 'sales',
+    },
+    {
+      'code': salesReturnApprove,
+      'name': tr('مراجعة واعتماد مرتجع مبيعات'),
       'category': 'sales',
     },
     {'code': salesOrdersView, 'name': tr('عرض طلبات البيع'), 'category': 'sales'},

@@ -76,6 +76,12 @@ class PurchaseSyncStrategy extends SyncStrategy {
               supplierId: Value(resolvedSupplierId), // heal stale server id
               updatedAt: Value(DateTime.tryParse(purchaseMap['updatedAt']?.toString() ?? '') ?? DateTime.now()),
             ));
+        // J1b (v188) — raw column outside the companion; an older server that
+        // omits the key leaves the local value untouched.
+        if (purchaseMap.containsKey('purchaseAccountId')) {
+          await db.setPurchaseInvoicePurchaseAccountId(
+              serverId, parseIntNullable(purchaseMap['purchaseAccountId']));
+        }
         await db.resignPurchaseInvoice(serverId);
         debugPrint('[Sync] Updated existing purchase #$serverId');
         return;
@@ -124,6 +130,11 @@ class PurchaseSyncStrategy extends SyncStrategy {
               createdAt: Value(DateTime.tryParse(purchaseMap['createdAt']?.toString() ?? '') ?? DateTime.now()),
             ),
           );
+      // J1b (v188) — raw column outside the companion.
+      final purchaseAccountId = parseIntNullable(purchaseMap['purchaseAccountId']);
+      if (purchaseAccountId != null) {
+        await db.setPurchaseInvoicePurchaseAccountId(serverId, purchaseAccountId);
+      }
 
       // Insert purchase items AND materialize stock
       final items = purchaseMap['items'] as List? ?? [];

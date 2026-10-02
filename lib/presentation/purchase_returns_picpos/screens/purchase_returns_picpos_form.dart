@@ -24,10 +24,11 @@
 // • **«طريقة التسوية» حقلٌ مقروءٌ لا قائمة**: المحرّكُ يقسم آليّاً.
 part of 'purchase_returns_picpos_screen.dart';
 
+// ⚠️ **J2 (قرارُ المالك) نسخ قرارَي «لا مسودة» و«جديد لا مسودة» أعلاه:**
+//    «حفظ مسودة» عاد بدورة حياةٍ حقيقيّة (`purchase_returns_picpos_drafts.dart`)،
+//    وشارةُ الحالة «مسودة» بعد الحفظ ورقمُها `D-<id>`. والرقمُ الرسميُّ
+//    (PRET-) ما يزال يُولَّد في معاملة الترحيل.
 mixin _PurchaseReturnsPicposForm on ConsumerState<PurchaseReturnsPicposScreen> {
-  // Provided by _PurchaseReturnsPicposLogic at composition time.
-  Future<void> processReturn();
-
   _PurchaseReturnsPicposScreenState get _screen =>
       this as _PurchaseReturnsPicposScreenState;
 
@@ -244,8 +245,14 @@ mixin _PurchaseReturnsPicposForm on ConsumerState<PurchaseReturnsPicposScreen> {
           PicPosDocPageHeader(
             icon: PhosphorIconsBold.arrowUUpLeft,
             title: tr('مردود مشتريات'),
-            number: tr('يُولَّد تلقائياً'),
-            statusLabel: tr('جديد'),
+            number: _screen._draftId != null
+                ? 'D-${_screen._draftId}'
+                : tr('يُولَّد تلقائياً'),
+            statusLabel:
+                _screen._draftId != null ? tr('مسودة') : tr('جديد'),
+            statusColor: _screen._draftId != null
+                ? AppColors.warning
+                : AppColors.info,
           ),
           const SizedBox(height: 14),
           PicPosFormGrid(
@@ -443,17 +450,27 @@ mixin _PurchaseReturnsPicposForm on ConsumerState<PurchaseReturnsPicposScreen> {
     PurchaseReturnNotifier notifier,
   ) {
     final total = notifier.calculateReturnTotal();
+    final canApprove = _screen.canApproveReturn;
     final String? hint = state.selectedInvoice == null
         ? null
         : state.returnReason == null
             ? tr('اختر سبب المردود أولاً')
-            : (total <= 0 ? tr('حدّد كميات المرتجع') : null);
+            : (total <= 0
+                ? tr('حدّد كميات المرتجع')
+                : (!canApprove
+                    ? tr('لا تملك صلاحية الاعتماد — احفظها مسودة')
+                    : null));
     return PicPosReturnActionBar(
       primaryLabel: tr('مراجعة واعتماد'),
-      busy: state.isProcessing,
+      busy: state.isProcessing || _screen._savingDraft,
       hint: hint,
-      onPrimary: (total > 0 && state.returnReason != null)
-          ? processReturn
+      // J2: المعالجُ القائمُ نفسُه بعد حفظ المسوّدة، بصلاحية الاعتماد.
+      onPrimary: (total > 0 && state.returnReason != null && canApprove)
+          ? _screen.approveReturn
+          : null,
+      secondaryLabel: tr('حفظ مسودة'),
+      onSecondary: (state.selectedInvoice != null && total > 0)
+          ? () => _screen.saveDraft()
           : null,
       // الشاشةُ تُدفَع من سجلّ المردودات — «رجوع» يعيد إليه.
       onBack: Navigator.of(context).canPop()

@@ -36,6 +36,8 @@ extension DatabaseStartup on AppDatabase {
     await ensureDistributionModelSchema();
     await ensureChequeDrawerSchema();
     await ensureCloudSyncSchema();
+    await ensurePurchaseInvoicePurchaseAccountSchema();
+    await ensureReturnDraftsSchema();
 
     // Phase 2b: Database integrity — ensure critical PK/UNIQUE constraints
     // exist on PG installs whose schema was created by an older or crashed
@@ -1339,6 +1341,14 @@ extension DatabaseStartup on AppDatabase {
         await backfillJournalApprovalPermissionOnce();
       } catch (e) {
         debugPrint('[Startup] journal approval backfill failed: $e');
+      }
+
+      // J2 — «مراجعة واعتماد» المرتجع صار صلاحيةً مستقلّة: كلُّ دورٍ كان
+      // ينشئ مرتجعاً (يفتح شاشتَه أو يملك كودَ إنشائه) يُمنَحها مرّةً واحدة.
+      try {
+        await backfillReturnApprovePermissionsOnce();
+      } catch (e) {
+        debugPrint('[Startup] return approve backfill failed: $e');
       }
 
       // Spec 084b — self-heal startup grant.

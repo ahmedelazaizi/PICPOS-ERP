@@ -40,6 +40,21 @@ class I18nCatalog {
 
   static Set<String> get missingKeys => Set<String>.unmodifiable(_missingKeys);
 
+  /// قيمُ الفهرس الإنجليزيّة — لجعل `tr` متساويَ القوى (J2).
+  static Set<String>? _englishValues;
+  static Map<String, String>? _englishValuesOf;
+
+  /// هل [text] ترجمةٌ إنجليزيّةٌ قائمة؟ لبنةٌ مثل `PicPosPageHeader` تمرّر
+  /// عنوانَها في `tr` احتياطاً لمن يمرّره عربيّاً خاماً، ومَن ترجمه قبلها
+  /// يصلها إنجليزيّاً — فيُعاد كما هو بلا بلاغ «مفتاحٍ ناقص» كاذب.
+  static bool _isEnglishValue(String text) {
+    if (!identical(_englishValuesOf, _english)) {
+      _englishValues = _english.values.toSet();
+      _englishValuesOf = _english;
+    }
+    return _englishValues!.contains(text);
+  }
+
   static String translate(String arabic, [Map<String, Object?>? args]) {
     final isEnglish = activeLocale.languageCode == 'en';
     var template = arabic;
@@ -47,6 +62,8 @@ class I18nCatalog {
       final translated = _english[arabic];
       if (translated != null && translated.isNotEmpty) {
         template = translated;
+      } else if (_isEnglishValue(arabic)) {
+        // مترجَمٌ سلفاً (‏`tr(tr(x))`): يبقى كما هو.
       } else if (kDebugMode && _missingKeys.add(arabic)) {
         debugPrint('[i18n] Missing English catalog entry: $arabic');
       }

@@ -1318,6 +1318,9 @@ class ApiHandler {
           'status': inv.status,
           'notes': inv.notes,
           'costCenterId': inv.costCenterId,
+          // J1b (v188) — raw column; the client's JE/return must use the same.
+          'purchaseAccountId':
+              await _db.getPurchaseInvoicePurchaseAccountId(inv.id),
           'createdAt': inv.createdAt.toIso8601String(),
           'items': items
               .map((i) => {
@@ -2788,6 +2791,7 @@ class ApiHandler {
     // v185 — نموذجُ التوزيع (المرحلة و).
     'distribution_areas', 'route_customers', 'route_rep_history',
     'rep_resources',
+    'return_drafts', // v189 — J2
     // Tier 7 — v173 / المرحلة ٤: السجلُّ الرقابيُّ والتشغيلُ العابر.
     // تقابل الكتلةَ نفسَها في [DeltaPullService.pullTables]. و
     // `e_invoice_configs` ليست هنا عمداً (تحمل `client_secret`).
@@ -2937,6 +2941,7 @@ class ApiHandler {
     // v185 — نموذجُ التوزيع. تقابل `branchScopedPullTables` حرفاً.
     'distribution_areas', 'route_customers', 'route_rep_history',
     'rep_resources',
+    'return_drafts', // v189 — J2
 
     // v173 / المرحلة ٤ — بياناتُ عملٍ لا تُسلَّم لمستدعٍ بلا هويّة. تقابل
     // الكتلةَ نفسَها في `DeltaPullService.branchScopedPullTables` حرفاً.
