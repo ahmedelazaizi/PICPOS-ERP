@@ -1,3 +1,4 @@
+import 'package:picpos_rules/picpos_rules.dart' show normalizeBarcode;
 import 'package:postgres/postgres.dart';
 import 'package:uuid/uuid.dart';
 
@@ -460,10 +461,26 @@ class _Upsert {
   Future<void> company(Map<String, Object?> m) async {
     await q('''
       UPDATE companies SET name = COALESCE(@n, name), tax_number = @tn, currency = COALESCE(@cur, currency),
-        default_tax_rate = @tr, prices_include_tax = @pit, decimal_places = @dp
+        default_tax_rate = @tr, prices_include_tax = @pit, decimal_places = @dp,
+        name_en = CASE WHEN CAST(@hasNe AS BOOLEAN) THEN CAST(@ne AS TEXT) ELSE name_en END,
+        commercial_register = CASE WHEN CAST(@hasCr AS BOOLEAN) THEN CAST(@cr AS TEXT) ELSE commercial_register END,
+        address = CASE WHEN CAST(@hasAd AS BOOLEAN) THEN CAST(@ad AS TEXT) ELSE address END,
+        phone = CASE WHEN CAST(@hasPh AS BOOLEAN) THEN CAST(@ph AS TEXT) ELSE phone END,
+        einvoice_enabled = CASE WHEN CAST(@hasEi AS BOOLEAN) THEN CAST(@ei AS BOOLEAN) ELSE einvoice_enabled END
       WHERE id=@c''', {
       'n': _str(m['name']),
       'tn': _str(m['taxNumber']),
+      // Printed identity (I-4): only overwritten when the desktop sends the key.
+      'hasNe': m.containsKey('nameEn'),
+      'ne': _str(m['nameEn']),
+      'hasCr': m.containsKey('commercialRegister'),
+      'cr': _str(m['commercialRegister']),
+      'hasAd': m.containsKey('address'),
+      'ad': _str(m['address']),
+      'hasPh': m.containsKey('phone'),
+      'ph': _str(m['phone']),
+      'hasEi': m.containsKey('eInvoiceEnabled'),
+      'ei': _b(m['eInvoiceEnabled']),
       'cur': _str(m['currency']),
       'tr': _n(m['defaultTaxRate']),
       'pit': _b(m['pricesIncludeTax']),
@@ -569,7 +586,7 @@ class _Upsert {
       WHERE products.company_id = EXCLUDED.company_id RETURNING id''', {
       'n': name,
       'ne': _str(m['nameEn']),
-      'bc': _str(m['barcode']),
+      'bc': _str(m['barcode'] is String ? normalizeBarcode(m['barcode'] as String) : null),
       'u': _str(m['unitName']),
       'sp': _n(m['salePrice']),
       'wp': m['wholesalePrice'] is num && (m['wholesalePrice'] as num) > 0 ? _n(m['wholesalePrice']) : null,

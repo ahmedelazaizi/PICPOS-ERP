@@ -185,6 +185,44 @@ void main() {
       expect((boot['priceLists'] as List).map((l) => l['globalId']), contains(list));
     });
 
+    test('I-4: printed company identity reaches the van (bootstrap and pull); '
+        'omitted keys keep their value; pushed barcodes are normalized', () async {
+      final dev = await h.repDevice(Demo.rep1Gid, Demo.rep1Pin);
+      final (st, b) = await h.call('POST', '/desktop/master', headers: desk, body: {
+        'company': {
+          'name': 'شركة الوادي',
+          'nameEn': 'Al Wadi Co.',
+          'taxNumber': '123456',
+          'commercialRegister': '9988',
+          'address': 'عمّان',
+          'phone': '0790000000',
+          'eInvoiceEnabled': false,
+          'defaultTaxRate': 16,
+        },
+        'products': [
+          {'globalId': Demo.prodWaterGid, 'name': 'ماء', 'barcode': ']E06251234567890\r\n', 'salePrice': 2.5, 'taxRate': 16},
+        ],
+      });
+      expect(st, 200, reason: '$b');
+      final (_, boot) = await h.call('GET', '/mobile/bootstrap', headers: dev.headers);
+      expect(boot['company'], containsPair('nameEn', 'Al Wadi Co.'));
+      expect(boot['company'], containsPair('commercialRegister', '9988'));
+      expect(boot['company'], containsPair('address', 'عمّان'));
+      expect(boot['company'], containsPair('phone', '0790000000'));
+      expect(boot['company'], containsPair('eInvoiceEnabled', false));
+      final water = (boot['products'] as List).firstWhere((p) => p['globalId'] == Demo.prodWaterGid);
+      expect(water['barcode'], '6251234567890');
+
+      // A desktop that does not send the identity keys leaves them alone.
+      await h.call('POST', '/desktop/master', headers: desk, body: {
+        'company': {'name': 'شركة الوادي', 'taxNumber': '123456', 'defaultTaxRate': 16},
+      });
+      final (ps, pull) = await h.call('GET', '/mobile/sync/pull?since=${boot['serverTime']}', headers: dev.headers);
+      expect(ps, 200, reason: '$pull');
+      expect(pull['company'], containsPair('commercialRegister', '9988'));
+      expect(pull['company'], containsPair('nameEn', 'Al Wadi Co.'));
+    });
+
     test('unknown references are skipped and reported, not half-applied', () async {
       final (st, b) = await h.call('POST', '/desktop/master', headers: desk, body: {
         'routeCustomers': [

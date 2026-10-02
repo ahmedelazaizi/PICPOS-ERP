@@ -22,6 +22,8 @@ services:
     build:
       context: ../server
       dockerfile: Dockerfile
+      additional_contexts:
+        picpos_rules: ../packages/picpos_rules
     depends_on:
       postgres:
         condition: service_healthy

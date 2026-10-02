@@ -491,4 +491,14 @@ CREATE TRIGGER distribution_areas_touch BEFORE INSERT OR UPDATE ON distribution_
 CREATE INDEX sales_invoices_unposted_idx ON sales_invoices(company_id) WHERE posted_on_desktop_at IS NULL;
 CREATE INDEX sales_returns_unposted_idx ON sales_returns(company_id) WHERE posted_on_desktop_at IS NULL;
 '''),
+  // I-4: printed company identity (desktop settings company_name_en,
+  // company_cr_number, address, phone) and the e-invoicing flag that decides
+  // the receipt QR (fiscal gateway QR vs non-fiscal payload).
+  Migration(4, 'i4_print_identity', '''
+ALTER TABLE companies ADD COLUMN name_en TEXT;
+ALTER TABLE companies ADD COLUMN commercial_register TEXT;
+ALTER TABLE companies ADD COLUMN address TEXT;
+ALTER TABLE companies ADD COLUMN phone TEXT;
+ALTER TABLE companies ADD COLUMN einvoice_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+'''),
 ];

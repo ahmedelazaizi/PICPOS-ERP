@@ -66,6 +66,16 @@ class AppController extends ChangeNotifier {
   /// Called after a document is queued (the scheduler pushes it soon).
   VoidCallback? onOutboxChanged;
 
+  /// Called synchronously after a document is saved (print-on-save, I-4).
+  /// Listeners must not block: the sale is already stored when this runs.
+  void Function(OutboxEntry entry)? onDocumentSaved;
+
+  /// Last-synced company settings (pricing and printed identity, I-4).
+  Map<String, Object?> company = const {};
+
+  /// Route globalId → name (bootstrap), printed on receipts.
+  Map<String, String> routeNames = const {};
+
   bool get isPaired => creds != null;
 
   void setAutoSyncStatus(bool isOnline, DateTime? next) {
@@ -88,6 +98,8 @@ class AppController extends ChangeNotifier {
     repName = await store.getKv('repName') ?? '';
     final company = await store.getKv('company');
     if (company != null) _applyCompany((jsonDecode(company) as Map).cast<String, Object?>());
+    final routes = await store.getKv('routes');
+    if (routes != null) routeNames = (jsonDecode(routes) as Map).cast<String, String>();
     final emp = await store.getKv('employee');
     if (emp != null) _applyEmployee((jsonDecode(emp) as Map).cast<String, Object?>());
     final reasons = await store.getKv('noSaleReasons');
@@ -96,6 +108,7 @@ class AppController extends ChangeNotifier {
   }
 
   void _applyCompany(Map<String, Object?> m) {
+    company = Map.unmodifiable(m);
     companyTaxRate = (m['defaultTaxRate'] as num?)?.toDouble() ?? 0;
     pricesIncludeTax = m['pricesIncludeTax'] == true;
     decimals = (m['decimalPlaces'] as int?) ?? 2;
@@ -251,6 +264,8 @@ class AppController extends ChangeNotifier {
       if (st == 'accepted' || st == 'duplicate') {
         e.status = OutboxStatus.accepted;
         e.error = null;
+        // Cloud signature, printed (short form) on reprints.
+        if (r['integrityHash'] is String) e.payload['_integrityHash'] = r['integrityHash'];
       } else {
         e.status = OutboxStatus.rejected;
         e.error = '${r['code']}';
@@ -273,6 +288,13 @@ class AppController extends ChangeNotifier {
       final m = (p['company'] as Map).cast<String, Object?>();
       _applyCompany(m);
       await store.setKv('company', jsonEncode(m));
+    }
+    if (p['routes'] is List) {
+      routeNames = {
+        for (final r in list('routes'))
+          if (r['globalId'] is String) r['globalId'] as String: '${r['name'] ?? ''}',
+      };
+      await store.setKv('routes', jsonEncode(routeNames));
     }
     if (p['noSaleReasons'] is List) {
       noSaleReasons = (p['noSaleReasons'] as List).cast<String>();
@@ -388,7 +410,7 @@ class AppController extends ChangeNotifier {
       (await visitState(customerGlobalId)).$1 != VisitState.planned;
 
   Future<Map<String, Object?>?> productByBarcode(String code) async {
-    final c = code.trim();
+    final c = normalizeBarcode(code);
     for (final p in await products()) {
       if (p['barcode'] == c) return p;
     }
@@ -439,7 +461,17 @@ class AppController extends ChangeNotifier {
     await store.addOutbox(e);
     notifyListeners();
     onOutboxChanged?.call();
+    try {
+      onDocumentSaved?.call(e);
+    } catch (err) {
+      // Printing (or any listener) must never fail a saved document.
+      debugPrint('onDocumentSaved: $err');
+    }
   }
+
+  /// Name of a stored entity (customer / product), for receipts.
+  Future<String> nameOf(String kind, Object? globalId) async =>
+      globalId is String ? '${(await store.get(kind, globalId))?['name'] ?? ''}' : '';
 
   Future<OutboxEntry> createSale({
     required String customerGlobalId,
@@ -472,6 +504,7 @@ class AppController extends ChangeNotifier {
         remaining: remaining)) {
       throw AppFailure('creditExceeded');
     }
+    final balanceBefore = await effectiveBalance(customerGlobalId);
     final number = await _takeNumber('sales_invoice');
     final gid = _uuid.v4();
     final entry = OutboxEntry(
@@ -485,12 +518,22 @@ class AppController extends ChangeNotifier {
         'date': _clock().toUtc().toIso8601String(),
         'customerGlobalId': customerGlobalId,
         'lines': [
-          for (final l in lines)
-            {'productGlobalId': l.productGlobalId, 'quantity': l.quantity, 'unitPrice': l.unitPrice},
+          for (var i = 0; i < lines.length; i++)
+            {
+              'productGlobalId': lines[i].productGlobalId,
+              'quantity': lines[i].quantity,
+              'unitPrice': lines[i].unitPrice,
+              // Device-local (stripped before push): receipt lines.
+              '_name': lines[i].name,
+              '_total': totals.lines[i].total,
+            },
         ],
         'paid': paidClamped,
         'total': totals.total,
         '_remaining': remaining,
+        '_net': totals.net,
+        '_tax': totals.tax,
+        '_balanceAfter': _r(balanceBefore + remaining),
       },
     );
     await _queue(entry);
@@ -628,6 +671,9 @@ class AppController extends ChangeNotifier {
         'cashRefund': preview.cashRefund,
         'reason': ?reason,
         '_arOffset': preview.arOffset,
+        '_tax': preview.tax,
+        '_originalNumber': inv['number'],
+        '_balanceAfter': _r(await effectiveBalance(inv['customerGlobalId'] as String) - preview.arOffset),
       },
     );
     await _queue(entry);
@@ -714,6 +760,8 @@ class AppController extends ChangeNotifier {
         'bookGlobalId': book['globalId'],
         'bookNumber': leaf,
         'date': _clock().toUtc().toIso8601String(),
+        '_bookPrefix': book['prefix'],
+        '_balanceAfter': _r(await effectiveBalance(customerGlobalId) - amount),
       },
     );
     await _queue(entry);

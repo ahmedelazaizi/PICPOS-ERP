@@ -11,10 +11,10 @@ import 'src/service/rate_limiter.dart';
 import 'src/service/sync_service.dart';
 import 'src/whatsapp/whatsapp.dart';
 
+// Shared rules (tax, pricing, sale math, integrity, barcode): one package
+// used by the server and the mobile app (packages/picpos_rules).
+export 'package:picpos_rules/picpos_rules.dart';
 export 'src/db/database.dart';
-export 'src/domain/integrity.dart';
-export 'src/domain/pricing.dart';
-export 'src/domain/tax.dart';
 export 'src/http/app.dart';
 export 'src/seed.dart';
 export 'src/security.dart';

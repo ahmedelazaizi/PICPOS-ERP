@@ -1,0 +1,17 @@
+name: picpos_rules
+description: >-
+  PicPos shared business rules (pure Dart, no Flutter): tax, pricing, sale
+  math, invoice integrity signing, barcode normalization, printed company
+  identity and receipt QR. Used by server/ (picpos_cloud) and mobile/
+  (picpos_van) via path dependency. See docs/mobile/ARCHITECTURE-I.md §1.1.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  crypto: ^3.0.6
+
+dev_dependencies:
+  test: ^1.29.0

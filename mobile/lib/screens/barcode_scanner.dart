@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:picpos_rules/picpos_rules.dart' show normalizeBarcode;
 
 import '../l10n/strings.dart';
 
+// `normalizeBarcode` (wedge suffixes, control chars, AIM prefixes) is the
+// shared rule in packages/picpos_rules — the cloud applies it to the product
+// barcodes the desktop pushes, so scanned and stored codes compare equal.
+export 'package:picpos_rules/picpos_rules.dart' show normalizeBarcode;
+
 /// Opens the camera and returns the first barcode read, or null.
 typedef CameraScan = Future<String?> Function(BuildContext context);
-
-/// Cleans what a scanner delivered: keyboard-wedge (HID) scanners may add a
-/// CR/LF/TAB suffix or an AIM/GS1 symbology prefix (`]C1`, `]E0`, …) and
-/// group separators; camera reads may carry whitespace.
-String normalizeBarcode(String raw) {
-  var s = raw.replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '').trim();
-  if (RegExp(r'^\][A-Za-z][0-9A-Za-z]').hasMatch(s)) s = s.substring(3);
-  return s;
-}
 
 Future<String?> openCameraScanner(BuildContext context) =>
     Navigator.of(context).push<String>(MaterialPageRoute(builder: (_) => const CameraScanPage()));

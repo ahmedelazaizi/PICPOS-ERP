@@ -3,15 +3,20 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'l10n/strings.dart';
 import 'screens/common.dart';
+import 'printing/print_service.dart';
 import 'screens/pairing_screen.dart';
+import 'screens/print_screen.dart';
 import 'screens/route_screen.dart';
 import 'screens/sync_screen.dart';
 import 'state/app_controller.dart';
 import 'theme/brand_theme.dart';
 
 class PicposVanApp extends StatefulWidget {
-  const PicposVanApp({super.key, required this.controller, this.initialLocale = const Locale('ar')});
+  const PicposVanApp({super.key, required this.controller, this.printService, this.initialLocale = const Locale('ar')});
   final AppController controller;
+
+  /// Receipt printing (I-4); null hides the printing entry (tests).
+  final PrintService? printService;
   final Locale initialLocale;
   @override
   State<PicposVanApp> createState() => _PicposVanAppState();
@@ -19,12 +24,28 @@ class PicposVanApp extends StatefulWidget {
 
 class _PicposVanAppState extends State<PicposVanApp> {
   late Locale _locale = widget.initialLocale;
+  final _messenger = GlobalKey<ScaffoldMessengerState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Print results arrive after the sale screen has closed: show them on
+    // the app-level messenger. A failed print never undoes the sale.
+    widget.printService?.onOutcome = (o) {
+      final ctx = _messenger.currentContext;
+      if (ctx == null) return;
+      _messenger.currentState?.showSnackBar(SnackBar(content: Text(printOutcomeText(S.of(ctx), o))));
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AppScope(
+    final ps = widget.printService;
+    ps?.locale = _locale.languageCode;
+    final app = AppScope(
       controller: widget.controller,
       child: MaterialApp(
+        scaffoldMessengerKey: _messenger,
         onGenerateTitle: (context) => S.of(context).t('appTitle'),
         debugShowCheckedModeBanner: false,
         locale: _locale,
@@ -46,6 +67,7 @@ class _PicposVanAppState extends State<PicposVanApp> {
         ),
       ),
     );
+    return ps == null ? app : PrintScope(service: ps, child: app);
   }
 }
 
@@ -70,6 +92,18 @@ class _HomeShellState extends State<HomeShell> {
         title: Text(titles[_index]),
         actions: [
           TextButton(onPressed: widget.onToggleLocale, child: Text(s.t('language'))),
+          if (PrintScope.maybeOf(context) case final ps?)
+            IconButton(
+              key: const Key('openPrinting'),
+              tooltip: s.t('printing'),
+              icon: Badge(
+                isLabelVisible: ps.queue.isNotEmpty,
+                label: Text('${ps.queue.length}'),
+                child: const Icon(Icons.print_outlined),
+              ),
+              onPressed: () =>
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrintCenterScreen())),
+            ),
           IconButton(
             tooltip: s.t('syncNow'),
             onPressed: c.syncing ? null : c.syncNow,

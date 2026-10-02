@@ -2,13 +2,12 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 
-/// Server-side invoice signing using the SAME payload format as the desktop
+/// Invoice signing with the SAME payload format as the desktop
 /// `InvoiceIntegrityService._salesPayload` (lib/services/invoice_integrity_service.dart):
 /// `number|ISO date|total|subtotal|discount|tax|paid|customer??0|user|paymentMethod`,
 /// amounts with 4 decimals, HMAC-SHA256, `v2:` prefix.
 ///
-/// The secret is per company (`companies.integrity_secret`). Whether the desktop
-/// shares this secret or re-signs on posting is an I-3 decision (ARCHITECTURE-I §7).
+/// The secret is per company (`companies.integrity_secret` in the cloud).
 String salesIntegrityPayload({
   required String number,
   required DateTime date,
@@ -36,3 +35,12 @@ String salesIntegrityPayload({
 
 String signV2(String secret, String payload) =>
     'v2:${Hmac(sha256, utf8.encode(secret)).convert(utf8.encode(payload))}';
+
+/// Short form of a `v2:` hash printed on receipts (first 12 hex digits,
+/// grouped by 4): enough to compare a paper copy with the stored hash.
+String integrityShortHash(String? hash) {
+  if (hash == null) return '';
+  final hex = hash.startsWith('v2:') ? hash.substring(3) : hash;
+  if (hex.length < 12) return hex;
+  return '${hex.substring(0, 4)}-${hex.substring(4, 8)}-${hex.substring(8, 12)}';
+}

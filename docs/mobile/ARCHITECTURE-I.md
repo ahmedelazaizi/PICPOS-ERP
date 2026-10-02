@@ -1,6 +1,6 @@
 # Phase I — Cloud server + Android cash-van app (Architecture)
 
-> Status: **I-1, I-2 and I-3 implemented** (see §14 for what is real vs stubbed).
+> Status: **I-1, I-2, I-3 and I-4 implemented** (see §14 for what is real vs stubbed; I-4 printing not yet verified on physical printers).
 > Owner decisions (final): central cloud server (PostgreSQL + HTTPS API, desktop also syncs to it) — Docker **test** server for now; Android cash-van app, offline-first; per-device number ranges; **server authoritative**; only the rep deducts from **his van** stock; credit limit is checked against the **last-synced** balance; WhatsApp Business API automatic messages — **test mode (mock provider)** until Meta approval.
 
 ---
@@ -49,7 +49,7 @@ What **is** reused (by contract, verified by parity tests):
 | Voucher-book leaf rules (inside `[range_from, range_to]`, not used, not cancelled, book `active`, holder = rep) | `voucher_books_schema.dart::validateVoucherBookLeaf` | same rules in push validation |
 | Distribution model (area → route → customers with sequence + effective dates; `rep_resources.van_warehouse_id/custody_safe_id`) | `distribution_model_schema.dart` (v185) | same table/column names in Postgres |
 
-Follow-up (I-4): extract the pure parts (`effective_item_tax_rate`, integrity payload, totals/rounding, voucher-book rules) into one shared pure-Dart package (e.g. `packages/picpos_domain`) that **both** `ural_erp` and `server/` depend on, so parity is by construction rather than by test. Not done in I-1 because `lib/` is being edited concurrently and was out of scope.
+Done in I-4 for server and mobile: the pure rules (tax rate, totals/rounding, pricing, returns math, credit rule, payment method, integrity payload/signing, barcode normalization, printed company identity, receipt QR) live in **`packages/picpos_rules`** (pure Dart), a path dependency of `server/` and `mobile/`; their copies were deleted. Follow-up: make `ural_erp` (desktop `lib/`) depend on it too — out of scope for I-4. Voucher-book leaf rules are still SQL in the server.
 
 ### 1.2 Decision: cloud schema
 
@@ -141,7 +141,7 @@ Pull: `GET /mobile/sync/pull?since=<ms>` returns per-entity changed rows since t
 
 ### 7.1 Pricing (I-2)
 
-Same code on both sides (`server/lib/src/domain/{tax,pricing}.dart`, copied to `mobile/lib/domain/pricing.dart`), pinned by the shared fixture `docs/mobile/fixtures/pricing_parity.json` that both test suites run:
+One implementation for both sides since I-4 (`packages/picpos_rules`, `tax.dart` + `pricing.dart`), pinned by the shared fixture `docs/mobile/fixtures/pricing_parity.json` run by the package tests:
 - **Effective item tax**: exempt → 0; item rate > 0 → item rate; else the company default.
 - **Totals** (desktop `FinancialUtils.calculateInvoiceTotals`): per line gross = r(qty × price), discount clamped, amount = r(gross − discount); tax-exclusive: tax = r(amount × rate); tax-inclusive (`companies.prices_include_tax`): net = r(amount / (1 + rate)), tax = r(amount − net). Document tax = r(Σ line tax), total = r(Σ net + tax). Rounding half away from zero to `decimal_places`.
 - **Unit price** (enforced at the gate unless `employees.can_override_price`): customer `price_level='wholesale'` and product `wholesale_price > 0` → wholesale price; else active price lists in date range, default first then by order, and in the first list with a tier `min_quantity ≤ qty` the highest such tier; else `sale_price`. Rejection `price_not_allowed` with the expected price and its source.
@@ -165,7 +165,7 @@ Gap documented: server-side posting (cloud-only companies without a desktop) nee
 - Bluetooth Classic SPP ESC/POS printers, 58 mm (32 chars / 384 dots) and 80 mm (48 chars / 576 dots). Arabic is rendered as a **raster image** (Noto Naskh Arabic, per DESIGN.md print font) because most ESC/POS code pages lack proper Arabic shaping; then `GS v 0`.
 - Content: company header, tax number, invoice number, date, rep/route, customer, lines, totals, paid/remaining/new balance, integrity short hash.
 - **QR**: JoFotara/ETA-compatible payload when the company is e-invoicing; otherwise a verification URL `https://<cloud>/v/<global_id>` (I-5). **Barcode**: CODE128 of the invoice number.
-- Interface `ReceiptPrinter { Future<void> printInvoice(...) }` exists as a stub in `mobile/lib/printing/`.
+- Implemented in I-4 (`mobile/lib/printing/`, §14): plugin `print_bluetooth_thermal` (Classic SPP, paired devices), receipt model → Flutter canvas raster (bundled Noto Naskh Arabic) → `GS v 0` in bands of ≤ 256 rows. Identity lines follow the desktop rules (`companyHeaderLines` in `picpos_rules`; data from cloud migration 4). QR follows the desktop decision: non-fiscal payload (invoice, date, total, company + document `globalId`) with «ليس إيصالاً ضريبيّاً»; an e-invoicing company prints **no** QR until a gateway QR exists (the device has none; the `/v/<global_id>` URL is not built). Printing never blocks a sale: failures go to a persisted retry queue.
 
 ## 11. Security
 
@@ -199,11 +199,11 @@ Gap documented: server-side posting (cloud-only companies without a desktop) nee
 | **I-1** (done) | Architecture; cloud API skeleton (health, pairing, login, bootstrap, push sales+collections with validations, pull delta, WhatsApp outbox + mock); docker test stack; mobile skeleton (pair/login, today's route, customer card, new sale, collection, sync status; local DB + outbox) | Server tests green (pairing, scoping, idempotency, stock/credit/book-range rejections, pull delta, WhatsApp enqueue); `docker compose up` → `/health` 200; mobile `flutter test` green; `flutter build apk --debug` succeeds |
 | **I-2** (done, §14) | Mobile ↔ cloud wired end-to-end (HTTP client, sync engine, backoff, conflict UI), barcode camera scan, sales returns, visits, token rotation, rate limits, SQLCipher on device, price lists | Rep completes a full offline day on a device, comes online, all docs accepted exactly once (kill-app-mid-push test); revoked device is wiped |
 | **I-3** (done, §14) | Desktop ↔ cloud sync: desktop pushes master data (products, customers, routes, books, stock) and pulls accepted field docs, posting them via the existing orchestrator; admin pairing from desktop UI | A field invoice appears on desktop, posts identical GL/stock/balance as a desktop invoice with same inputs (golden comparison test); balances flow back to the van |
-| **I-4** | Bluetooth ESC/POS printing 58/80 (raster Arabic), barcode/QR; shared `picpos_domain` package extraction | Printed sample on 58 and 80 mm devices matches checklist; parity tests run against shared package |
+| **I-4** (done, §14) | Bluetooth ESC/POS printing 58/80 (raster Arabic), barcode/QR; shared `picpos_rules` package extraction | Printed sample on 58 and 80 mm devices matches checklist; parity tests run against shared package |
 | **I-5** | WhatsApp real provider (Meta Cloud API), templates, webhooks, delivery status, balance statements | Sandbox number receives AR/EN templates; failures retry and dead-letter |
 | **I-6** | Production deployment (owner's host/domain/TLS/backups), monitoring, optional server-side posting for cloud-only companies | Checklist §12 complete; restore drill passes |
 
-## 14. Implementation status (I-1 + I-2 + I-3)
+## 14. Implementation status (I-1 + I-2 + I-3 + I-4)
 
 The exact implemented-vs-stubbed list is in `server/README.md` and `mobile/README.md`. Summary:
 
@@ -234,5 +234,18 @@ The exact implemented-vs-stubbed list is in `server/README.md` and `mobile/READM
 **Stubbed or gaps:**
 - Sync for a closed app (OS-scheduled work) and GPS capture for visits.
 - Header discounts and remote price-override approval.
-- Printing: the interface exists, nothing more (I-4).
 - Sending real WhatsApp messages through Meta (I-5).
+- Printing was not run on physical 58/80 mm printers (see I-4 limits below).
+
+**I-4 (printing + shared rules) — implemented:**
+- `packages/picpos_rules` (pure Dart, `crypto` only): tax, rounding, totals, pricing, returns math, `exceedsCreditLimit`, `salesPaymentMethod`, integrity payload / `signV2` / short hash, `normalizeBarcode`, company identity lines (desktop `company_identity.dart` + thermal header rule), receipt QR decision + JoFotara TLV. Tests: the parity fixture plus rules tests (51). `server/` and `mobile/` depend on it by path; the server copies (`domain/tax.dart`, `pricing.dart`, `integrity.dart`), the mobile copy (`domain/pricing.dart`, local `normalizeBarcode`) and both duplicated parity tests were removed. The server now uses the shared credit and payment-method rules and normalizes desktop-pushed barcodes.
+- Docker: the server image takes the package through the named build context `picpos_rules` (`server/Dockerfile`). **`docker/docker-compose.yml` still needs** `additional_contexts: { picpos_rules: ../packages/picpos_rules }` under `services.api.build` (outside the I-4 edit scope); until then build the image with `docker build --build-context picpos_rules=packages/picpos_rules -t picpos-cloud-test-api server` and start with `docker compose up -d --no-build`.
+- Cloud: migration 4 adds `companies.name_en`, `commercial_register`, `address`, `phone`, `einvoice_enabled`; `/desktop/master` accepts them (overwritten only when sent); bootstrap **and every pull** return the company profile.
+- Mobile: printing screen (printer icon in the app bar) — paired-device list, remembered default printer, paper width 58/80, print-on-save, test page, retry queue, reprint from saved documents; receipts for sales invoice, sales return and collection with identity, number, date, customer, rep, route, lines, totals, paid/remaining/payment method, new balance, CODE128 of the number, QR per the desktop decision, the cloud signature short hash after acceptance; AR/EN receipt labels. Tests: receipt model/composer, raster encoding (header, 384/576 dots, banding, real rasterization at both widths), print service with a fake printer (queue/retry, persistence, a hanging printer never blocks the sale).
+
+**Acceptance criteria (§13, I-4) — evidence and limits:**
+- "Parity tests run against shared package": `dart test` in `packages/picpos_rules` runs the fixture; server and mobile compile against the same package.
+- "Printed sample on 58 and 80 mm devices matches checklist": **not run** — no printer/device in this environment. Rendering is verified by tests at both dot widths; the checklist run on real printers is still open.
+- Limits: Classic Bluetooth (SPP) only, pairing in Android settings; no BLE printers. The desktop exporter does not send `nameEn` / `commercialRegister` / `address` / `phone` / `eInvoiceEnabled` yet (`CloudMasterExporter._company`, desktop `lib/` was out of scope), so until that follow-up the van prints the Arabic name and tax number only. A fiscal JoFotara/ETA QR on a field invoice needs the gateway QR to flow desktop → cloud → device (not implemented). Desktop adoption of `picpos_rules` is a follow-up.
+
+**Next:** I-5 (WhatsApp Meta Cloud API provider, templates, webhooks, delivery status, balance statements) and I-6 (production deployment, monitoring, optional server-side posting).

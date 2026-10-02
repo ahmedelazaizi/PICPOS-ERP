@@ -368,9 +368,28 @@ class CloudMasterExporter {
 
   Future<Map<String, Object?>> _company() async {
     final name = await db.getSettingValue('company_name');
+    String? read(String? v) {
+      final t = v?.trim();
+      return (t == null || t.isEmpty) ? null : t;
+    }
+
+    // Company info screen saves the tax number as `company_tax_id`; the legacy
+    // `tax_number` key is the fallback.
+    final taxNumber = read(await db.getSettingValue('company_tax_id')) ??
+        read(await db.getSettingValue('tax_number'));
+    final eInvoice =
+        await db.getSettingValue('show_jofotara_einvoice') == 'true' ||
+            await db.getSettingValue('show_eta_einvoice') == 'true';
     return {
       if (name != null && name.trim().isNotEmpty) 'name': name.trim(),
-      'taxNumber': await db.getSettingValue('tax_number'),
+      'taxNumber': taxNumber,
+      // Printed identity for van receipts (I-4).
+      'nameEn': read(await db.getSettingValue('company_name_en')),
+      'commercialRegister':
+          read(await db.getSettingValue('company_cr_number')),
+      'address': read(await db.getSettingValue('company_address')),
+      'phone': read(await db.getSettingValue('company_phone')),
+      'eInvoiceEnabled': eInvoice,
       'defaultTaxRate':
           double.tryParse(await db.getSettingValue('tax_rate') ?? '') ?? 0,
       'pricesIncludeTax':

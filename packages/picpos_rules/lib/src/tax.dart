@@ -1,10 +1,8 @@
-/// Tax and document totals. `effectiveItemTaxRate` is ported verbatim from
+/// Tax and document totals. `effectiveItemTaxRate` is the desktop rule
 /// `lib/core/tax/effective_item_tax_rate.dart` (ural_erp); `computeTotals`
 /// follows desktop `FinancialUtils.calculateInvoiceTotals`
 /// (lib/core/utils/financial_utils.dart) for line discounts and both pricing
-/// modes. Keep in sync with `mobile/lib/domain/sale_math.dart` until the
-/// shared `picpos_domain` package exists (I-4); both packages run the same
-/// fixture `docs/mobile/fixtures/pricing_parity.json`.
+/// modes.
 library;
 
 double effectiveItemTaxRate({

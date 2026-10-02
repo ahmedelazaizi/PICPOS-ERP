@@ -1,5 +1,5 @@
 {
-  "_doc": "Shared parity fixture (Phase I-2). Loaded by server/test/pricing_parity_test.dart and mobile/test/pricing_parity_test.dart. Rules: docs/mobile/ARCHITECTURE-I.md §7.1. Values computed by hand from the desktop rules (FinancialUtils.calculateInvoiceTotals, effectiveItemTaxRate, CartController.resolveProductPrice, MultiCurrencyPricelistDao.resolveProductPrice, calculateReturnRefundTotal, SalesReturnRefundSplit).",
+  "_doc": "Shared parity fixture (Phase I-2). Loaded by packages/picpos_rules/test/pricing_parity_test.dart (I-4: the shared rules package used by server/ and mobile/). Rules: docs/mobile/ARCHITECTURE-I.md §7.1. Values computed by hand from the desktop rules (FinancialUtils.calculateInvoiceTotals, effectiveItemTaxRate, CartController.resolveProductPrice, MultiCurrencyPricelistDao.resolveProductPrice, calculateReturnRefundTotal, SalesReturnRefundSplit).",
   "taxRate": [
     {"rate": 16, "exempt": true, "companyDefault": 16, "expect": 0},
     {"rate": 8, "exempt": false, "companyDefault": 16, "expect": 8},

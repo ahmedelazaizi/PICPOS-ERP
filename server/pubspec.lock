@@ -217,6 +217,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.9.1"
+  picpos_rules:
+    dependency: "direct main"
+    description:
+      path: "../packages/picpos_rules"
+      relative: true
+    source: path
+    version: "1.0.0"
   pool:
     dependency: transitive
     description:

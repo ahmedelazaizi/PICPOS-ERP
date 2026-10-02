@@ -1,12 +1,10 @@
 import 'dart:convert';
 
+import 'package:picpos_rules/picpos_rules.dart';
 import 'package:postgres/postgres.dart';
 import 'package:uuid/uuid.dart';
 
 import '../db/database.dart';
-import '../domain/integrity.dart';
-import '../domain/pricing.dart';
-import '../domain/tax.dart';
 import 'errors.dart';
 
 const _uuid = Uuid();
@@ -107,11 +105,7 @@ class SyncService {
   Future<Map<String, Object?>> bootstrap(DeviceContext d) async {
     final delta = await pull(d, since: 0);
     final profile = await db.tx((s) async {
-      final company = (await db.q(s, '''
-              SELECT name, tax_number, currency, default_tax_rate, prices_include_tax, decimal_places
-              FROM companies WHERE id=@c''', {'c': d.companyId}))
-          .first
-          .toColumnMap();
+      final company = await _companyProfile(s, d.companyId);
       final emp = (await db.q(s, 'SELECT global_id, name, can_override_price FROM employees WHERE id=@e',
               {'e': d.employeeId}))
           .first
@@ -128,14 +122,7 @@ class SyncService {
           {'c': d.companyId, 'e': d.employeeId});
       final r = res.isEmpty ? null : res.first.toColumnMap();
       return {
-        'company': {
-          'name': company['name'],
-          'taxNumber': company['tax_number'],
-          'currency': company['currency'],
-          'defaultTaxRate': num0(company['default_tax_rate']),
-          'pricesIncludeTax': company['prices_include_tax'] == true,
-          'decimalPlaces': company['decimal_places'],
-        },
+        'company': company,
         'employee': {
           'globalId': emp['global_id'],
           'name': emp['name'],
@@ -151,6 +138,30 @@ class SyncService {
       };
     });
     return {...profile, ...delta};
+  }
+
+  /// Company settings the device needs (pricing + printed identity, I-4).
+  /// Sent on bootstrap and on every pull, so identity edits reach the van.
+  Future<Map<String, Object?>> _companyProfile(Session s, int companyId) async {
+    final company = (await db.q(s, '''
+      SELECT name, tax_number, currency, default_tax_rate, prices_include_tax, decimal_places,
+             name_en, commercial_register, address, phone, einvoice_enabled
+      FROM companies WHERE id=@c''', {'c': companyId}))
+        .first
+        .toColumnMap();
+    return {
+      'name': company['name'],
+      'taxNumber': company['tax_number'],
+      'currency': company['currency'],
+      'defaultTaxRate': num0(company['default_tax_rate']),
+      'pricesIncludeTax': company['prices_include_tax'] == true,
+      'decimalPlaces': company['decimal_places'],
+      'nameEn': company['name_en'],
+      'commercialRegister': company['commercial_register'],
+      'address': company['address'],
+      'phone': company['phone'],
+      'eInvoiceEnabled': company['einvoice_enabled'] == true,
+    };
   }
 
   static const _scopedCustomersSql = '''
@@ -251,6 +262,7 @@ class SyncService {
 
       return {
         'serverTime': now - pullOverlapMs,
+        'company': await _companyProfile(s, d.companyId),
         'customers': customers,
         'customerScope': [for (final r in allCustomers) r.toColumnMap()['global_id']],
         'products': [
@@ -639,7 +651,7 @@ class SyncService {
     // 5. Credit limit (desktop parity: limit 0 = no limit; remaining > 0.01).
     final balance = num0(cust['balance']);
     final limit = num0(cust['credit_limit']);
-    if (remaining > 0.01 && limit > 0 && balance + remaining > limit) {
+    if (exceedsCreditLimit(balance: balance, creditLimit: limit, remaining: remaining)) {
       throw DocRejected('credit_limit_exceeded', null,
           {'balance': balance, 'creditLimit': limit, 'remaining': remaining});
     }
@@ -658,7 +670,7 @@ class SyncService {
     }
 
     // 7. Persist.
-    final paymentMethod = remaining <= 0.01 ? 'cash' : (paid > 0 ? 'mixed' : 'credit');
+    final paymentMethod = salesPaymentMethod(paid: paid, remaining: remaining);
     final hash = signV2(
         company.secret,
         salesIntegrityPayload(

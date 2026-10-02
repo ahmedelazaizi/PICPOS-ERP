@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:picpos_cloud/picpos_cloud.dart';
+import 'package:picpos_rules/picpos_rules.dart';
 import 'package:test/test.dart';
 
-/// Same fixture as mobile/test/pricing_parity_test.dart.
+/// The shared parity fixture (docs/mobile/fixtures/pricing_parity.json). The
+/// server and the mobile app both compute with this package.
 final Map<String, dynamic> fixture = jsonDecode(
-        File('../docs/mobile/fixtures/pricing_parity.json').readAsStringSync())
+        File('../../docs/mobile/fixtures/pricing_parity.json').readAsStringSync())
     as Map<String, dynamic>;
 
 double d(Object? v) => (v as num).toDouble();

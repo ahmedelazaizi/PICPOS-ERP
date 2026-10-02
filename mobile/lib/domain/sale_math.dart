@@ -1,11 +1,11 @@
-/// Cart helpers on top of the shared pricing rules (`pricing.dart`, same
-/// code and fixture as the cloud), so the device shows the totals the server
-/// will accept.
+/// Cart helpers on top of the shared rules package `picpos_rules` (the same
+/// code the cloud gate runs — tax, totals, pricing, credit limit), so the
+/// device shows the totals the server will accept.
 library;
 
-import 'pricing.dart';
+import 'package:picpos_rules/picpos_rules.dart';
 
-export 'pricing.dart';
+export 'package:picpos_rules/picpos_rules.dart';
 
 class CartLine {
   CartLine({
@@ -28,7 +28,3 @@ class CartLine {
 
 DocTotals cartTotals(Iterable<CartLine> lines, {bool pricesIncludeTax = false, int decimals = 2}) =>
     computeTotals([for (final l in lines) l.toInput()], pricesIncludeTax: pricesIncludeTax, decimals: decimals);
-
-/// Desktop parity: limit 0 = no limit; only a remaining amount > 0.01 counts.
-bool exceedsCreditLimit({required double balance, required double creditLimit, required double remaining}) =>
-    remaining > 0.01 && creditLimit > 0 && balance + remaining > creditLimit;
