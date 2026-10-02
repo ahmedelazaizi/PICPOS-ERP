@@ -1,6 +1,6 @@
 # Phase I — Cloud server + Android cash-van app (Architecture)
 
-> Status: **I-1 skeleton and I-2 implemented** (see §14 for what is real vs stubbed).
+> Status: **I-1, I-2 and I-3 implemented** (see §14 for what is real vs stubbed).
 > Owner decisions (final): central cloud server (PostgreSQL + HTTPS API, desktop also syncs to it) — Docker **test** server for now; Android cash-van app, offline-first; per-device number ranges; **server authoritative**; only the rep deducts from **his van** stock; credit limit is checked against the **last-synced** balance; WhatsApp Business API automatic messages — **test mode (mock provider)** until Meta approval.
 
 ---
@@ -198,12 +198,12 @@ Gap documented: server-side posting (cloud-only companies without a desktop) nee
 |---|---|---|
 | **I-1** (done) | Architecture; cloud API skeleton (health, pairing, login, bootstrap, push sales+collections with validations, pull delta, WhatsApp outbox + mock); docker test stack; mobile skeleton (pair/login, today's route, customer card, new sale, collection, sync status; local DB + outbox) | Server tests green (pairing, scoping, idempotency, stock/credit/book-range rejections, pull delta, WhatsApp enqueue); `docker compose up` → `/health` 200; mobile `flutter test` green; `flutter build apk --debug` succeeds |
 | **I-2** (done, §14) | Mobile ↔ cloud wired end-to-end (HTTP client, sync engine, backoff, conflict UI), barcode camera scan, sales returns, visits, token rotation, rate limits, SQLCipher on device, price lists | Rep completes a full offline day on a device, comes online, all docs accepted exactly once (kill-app-mid-push test); revoked device is wiped |
-| **I-3** | Desktop ↔ cloud sync: desktop pushes master data (products, customers, routes, books, stock) and pulls accepted field docs, posting them via the existing orchestrator; admin pairing from desktop UI | A field invoice appears on desktop, posts identical GL/stock/balance as a desktop invoice with same inputs (golden comparison test); balances flow back to the van |
+| **I-3** (done, §14) | Desktop ↔ cloud sync: desktop pushes master data (products, customers, routes, books, stock) and pulls accepted field docs, posting them via the existing orchestrator; admin pairing from desktop UI | A field invoice appears on desktop, posts identical GL/stock/balance as a desktop invoice with same inputs (golden comparison test); balances flow back to the van |
 | **I-4** | Bluetooth ESC/POS printing 58/80 (raster Arabic), barcode/QR; shared `picpos_domain` package extraction | Printed sample on 58 and 80 mm devices matches checklist; parity tests run against shared package |
 | **I-5** | WhatsApp real provider (Meta Cloud API), templates, webhooks, delivery status, balance statements | Sandbox number receives AR/EN templates; failures retry and dead-letter |
 | **I-6** | Production deployment (owner's host/domain/TLS/backups), monitoring, optional server-side posting for cloud-only companies | Checklist §12 complete; restore drill passes |
 
-## 14. Implementation status (I-1 + I-2)
+## 14. Implementation status (I-1 + I-2 + I-3)
 
 The exact implemented-vs-stubbed list is in `server/README.md` and `mobile/README.md`. Summary:
 
@@ -218,8 +218,20 @@ The exact implemented-vs-stubbed list is in `server/README.md` and `mobile/READM
 - "All docs accepted exactly once": covered by idempotent push (server tests), the lost-response retry test and the pull-reconciliation test on mobile, and the live contract test. A full offline day on a physical device was **not** run.
 - "Revoked device is wiped": server revocation test + mobile wipe test; not exercised on a device.
 
+**I-3 (desktop ↔ cloud) — implemented:**
+- Cloud (`server/lib/src/service/desktop_service.dart`, migration 3): desktop link credential (`X-Desktop-Link` + bearer secret, SHA-256 stored, revocable), `/desktop/ping`, `/desktop/master` (idempotent upsert by `globalId`, desktop wins, unknown references skipped and reported), `/desktop/documents/pending`, `/desktop/documents/ack` (`posted` final, `failed` keeps the doc pending with the reason), `/desktop/pairing-codes` (rep PIN + code from the desktop). Served balances and van stock = desktop value + accepted field docs not yet posted (§2).
+- Desktop (`lib/services/cloud_sync/`): `CloudDocumentPoster` posts each field document through the existing paths — sales invoice via `SalesTransactionOrchestrator.completeSalesTransaction` (van warehouse, cash into the rep's custody safe, field date, explicit rep/route stamp, cloud `globalId` kept on the invoice, cloud number in `platform_order_number`, desktop numbering and `resignSalesInvoice`), return via `ReturnsRepositoryImpl.processSalesReturn` (cash refund from the custody safe), collection via `createReceiptVoucher` + `assignVoucherBookLeaf` (`customer_payment`), visit via `route_visits` (`completed` / `skipped` + reason). A total that differs from the desktop computation by > 0.01 is refused. Two narrow additions make field documents possible on those paths: `SaleRequest.globalId/invoiceDate/repEmployeeId/routeId/cashOutsideDrawer` and `processSalesReturn(refundSafeId:, onReturnVoucher:)` — the drawer-shift guard is skipped only for cash that sits in a rep's custody safe.
+- Idempotency and conflicts: raw table `cloud_sync_documents` (schema v187); a posted document is re-acknowledged, never re-posted; a refused one is a conflict with its reason (visible in Settings › Integrations › Company cloud link, retry per document) and stays pending on the cloud.
+- `CloudMasterExporter`: products and price lists incremental by `last_modified_at` (full push daily or on demand); the reps' scope (employees, rep resources, van warehouses, custody safes, areas, routes, route customers with balance and credit limit, held receipt books with cancelled leaves, van stock) on every run. Posting and ack happen before the master push.
+- Scheduler (`CloudSyncScheduler`, interval from settings, never on a LAN client) + "sync now" / full push / test connection; link secret in secure storage; admin-only settings entry.
+- Tests: `server/test/i3_test.dart` (6), `test/integration/cloud_sync_i3_test.dart` — golden comparison (trial balance, invoice and lines, integrity hash, rep/route stamp, safe movements, stock, customer balance, voucher-book leaf) between field documents posted from the cloud and the same documents entered on the desktop, lost-ack idempotency, conflicts and retry, master push content; with `CLOUD_URL` the same flow runs live against the docker API (desktop push → mobile bootstrap → mobile push → desktop posts). Docker smoke covers the desktop link and ack.
+
+**Acceptance criteria (§13, I-3) — evidence and limits:**
+- "Field invoice posts identical GL/stock/balance as a desktop invoice": golden comparison above (fake cloud and live docker API). Returns and collections are compared the same way.
+- "Balances flow back to the van": the live test reads the posted balance from the mobile bootstrap.
+- Limits: the field invoice is dated with the device date (a closed period makes it a conflict); returns use the posting date, like a desktop return. Field returns' AR-offset memo row uses the posting user's refund safe, as on desktop. Issuing the desktop credential still uses the test-stack admin key. Integrity (§7 decision point): the desktop re-signs on posting; the cloud's own hash stays in the cloud (not copied to a desktop `cloud_integrity_hash` column). Not exercised on a physical device.
+
 **Stubbed or gaps:**
-- Desktop posting of cloud documents (I-3).
 - Sync for a closed app (OS-scheduled work) and GPS capture for visits.
 - Header discounts and remote price-override approval.
 - Printing: the interface exists, nothing more (I-4).

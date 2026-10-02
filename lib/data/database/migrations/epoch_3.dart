@@ -3623,5 +3623,11 @@ extension Epoch3Migrations on AppDatabase {
     if (from < 186) {
       await _safeMigrate('v186 cheque drawer', ensureChequeDrawerSchema);
     }
+
+    // v187 — cloud_sync_documents (raw, I-3): cloud field documents posted
+    // on this desktop or held as conflicts.
+    if (from < 187) {
+      await _safeMigrate('v187 cloud sync documents', ensureCloudSyncSchema);
+    }
   }
 }

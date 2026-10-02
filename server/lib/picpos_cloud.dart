@@ -19,6 +19,7 @@ export 'src/http/app.dart';
 export 'src/seed.dart';
 export 'src/security.dart';
 export 'src/service/auth_service.dart';
+export 'src/service/desktop_service.dart';
 export 'src/service/errors.dart';
 export 'src/service/rate_limiter.dart';
 export 'src/service/sync_service.dart';

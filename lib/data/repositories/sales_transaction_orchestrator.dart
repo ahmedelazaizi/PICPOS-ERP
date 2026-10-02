@@ -7,6 +7,7 @@ import '../../core/tax/effective_item_tax_rate.dart';
 import '../../domain/entities/cart_item_entity.dart';
 import '../../domain/entities/sync_dtos.dart';
 import '../../domain/models/sales_return_refund_split.dart';
+import '../../domain/models/distribution_model.dart' show RepStamp;
 import '../../domain/models/quick_sale_policy.dart';
 import '../../domain/repositories/sales_repository.dart';
 import '../../core/logging/diagnostic_logger.dart';
@@ -139,12 +140,17 @@ class SalesTransactionOrchestrator {
     List<({double beforeTax, double tax, double rate})>? netLines,
     // C2 (v183) — invoice-level «حساب المبيعات»; `null` ⇒ mapped default.
     int? revenueAccountId,
+    // I-3 — cloud field document identity (see [SaleRequest.globalId]).
+    String? globalId,
+    DateTime? invoiceDate,
+    RepStamp? repStamp,
+    bool cashOutsideDrawer = false,
   }) async {
     // Spec 002 (B1): mint the globalId here so the local insert and the
     // post-commit fire-and-forget push share the same identity. Without
     // this, non-POS invoices created on a cashier-mode client never reach
     // the server until an admin manually triggers pushLocalSalesToServer.
-    final saleGlobalId = UuidV7.generate();
+    final saleGlobalId = globalId ?? UuidV7.generate();
     // Spec 007 / FR-005: gate the server push on the broadened
     // `SyncInterceptor.isClientMode` (true for client OR mirror) so mirror
     // admins' invoices reach HQ. The legacy `NetworkService.isClient` was
@@ -178,7 +184,9 @@ class SalesTransactionOrchestrator {
       cashAmount: cashAmount,
       bankAmount: bankAmount,
     );
-    if (drawerCash > 0 && await _db.resolveOpenShiftForDrawer(userId) == null) {
+    if (!cashOutsideDrawer &&
+        drawerCash > 0 &&
+        await _db.resolveOpenShiftForDrawer(userId) == null) {
       throw ShiftRequiredException(cashAmount: drawerCash);
     }
 
@@ -291,6 +299,8 @@ class SalesTransactionOrchestrator {
         allowNegativeStock:
             stockPolicy == StockShortagePolicy.allowNegative,
         revenueAccountId: revenueAccountId,
+        invoiceDate: invoiceDate,
+        repStamp: repStamp,
       );
 
       // Fetch the generated invoice record
@@ -883,7 +893,9 @@ class SalesTransactionOrchestrator {
       cashAmount: effectiveCash,
       bankAmount: effectiveBank,
     );
-    if (drawerCash > 0 && await _db.resolveOpenShiftForDrawer(request.userId) == null) {
+    if (!request.cashOutsideDrawer &&
+        drawerCash > 0 &&
+        await _db.resolveOpenShiftForDrawer(request.userId) == null) {
       throw ShiftRequiredException(cashAmount: drawerCash);
     }
 
@@ -1225,6 +1237,14 @@ class SalesTransactionOrchestrator {
           adhocCustomerPhone: request.adhocCustomerPhone,
           adhocCustomerNote: request.adhocCustomerNote,
           revenueAccountId: request.revenueAccountId,
+          globalId: request.globalId,
+          invoiceDate: request.invoiceDate,
+          repStamp: request.repEmployeeId == null && request.routeId == null
+              ? null
+              : RepStamp(
+                  repEmployeeId: request.repEmployeeId,
+                  routeId: request.routeId),
+          cashOutsideDrawer: request.cashOutsideDrawer,
         );
       }
 

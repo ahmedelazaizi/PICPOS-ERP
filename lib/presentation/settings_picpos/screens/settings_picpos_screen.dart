@@ -166,6 +166,7 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../widgets/settings_blocks.dart';
+import '../widgets/cloud_link_settings_block.dart';
 import '../widgets/settings_count.dart';
 import '../widgets/settings_nav_rail.dart';
 import '../widgets/settings_section_pane.dart';
@@ -961,6 +962,12 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                   tint: AppColors.success,
                   child: const WhatsAppSettingsCard(),
                 ),
+              ),
+              // I-3 — ربطُ الشركة بالسحابة (تطبيقُ المندوب): للمدير وحدَه،
+              // والكتلةُ تُخفي نفسَها عن غيره.
+              const SettingsBlockSpan(
+                span: 12,
+                child: CloudLinkSettingsBlock(),
               ),
               if (features.deliveryEnabled)
                 SettingsBlockSpan(

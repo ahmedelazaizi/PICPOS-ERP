@@ -132,6 +132,7 @@ import 'data/database/connection_io.dart' show testPostgresConnection;
 import 'services/client_write_interceptor.dart';
 import 'services/delta_pull_service.dart';
 import 'services/offline_fallback_sync_service.dart';
+import 'services/cloud_sync/cloud_link_controller.dart';
 import 'services/network_service.dart';
 import 'core/logging/diagnostic_logger.dart';
 import 'presentation/pos/widgets/pos_opening_balance_dialog.dart';
@@ -204,6 +205,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         final db = ref.read(databaseProvider);
         OfflineFallbackSyncService.instance.startAutoSync(db);
       }
+      // I-3 — desktop ↔ cloud link scheduler (no-op until configured; never
+      // on a LAN client).
+      unawaited(ref.read(cloudLinkControllerProvider).startScheduler());
     });
   }
 

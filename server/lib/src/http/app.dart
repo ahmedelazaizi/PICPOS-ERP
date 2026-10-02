@@ -7,6 +7,7 @@ import 'package:shelf_router/shelf_router.dart';
 import '../db/database.dart';
 import '../security.dart';
 import '../service/auth_service.dart';
+import '../service/desktop_service.dart';
 import '../service/errors.dart';
 import '../service/rate_limiter.dart';
 import '../service/sync_service.dart';
@@ -22,12 +23,17 @@ class CloudApp {
     required this.sync,
     required this.outbox,
     required this.adminKey,
+    DesktopService? desktop,
     RateLimiter? pushLimiter,
-  }) : pushLimiter = pushLimiter ?? RateLimiter(max: 60, window: const Duration(minutes: 1));
+  })  : desktop = desktop ?? DesktopService(db),
+        pushLimiter = pushLimiter ?? RateLimiter(max: 60, window: const Duration(minutes: 1));
 
   final CloudDatabase db;
   final AuthService auth;
   final SyncService sync;
+
+  /// Desktop link: master-data upsert, pending field documents, ack (I-3).
+  final DesktopService desktop;
   final WhatsAppOutbox outbox;
 
   /// Test-stack admin key (production admin flows come from desktop, I-3).
@@ -123,6 +129,43 @@ class CloudApp {
       return _json(200, {'results': await sync.push(d, docs)});
     });
 
+    // ── desktop link (I-3) ──
+    r.post('/admin/desktop-links', (Request req) async {
+      _requireAdmin(req);
+      final b = await _body(req);
+      return _json(201, await desktop.issueLink('${b['companyGlobalId']}', name: b['name'] as String?));
+    });
+    r.post('/admin/desktop-links/<linkId>/revoke', (Request req, String linkId) async {
+      _requireAdmin(req);
+      await desktop.revokeLink(linkId);
+      return _json(200, {'revoked': linkId});
+    });
+    r.get('/desktop/ping', (Request req) async => _json(200, await desktop.ping(await _desktop(req))));
+    r.post('/desktop/master', (Request req) async {
+      final d = await _desktop(req);
+      return _json(200, await desktop.upsertMaster(d, await _body(req)));
+    });
+    r.get('/desktop/documents/pending', (Request req) async {
+      final d = await _desktop(req);
+      final limit = int.tryParse(req.url.queryParameters['limit'] ?? '100') ?? 100;
+      return _json(200, await desktop.pendingDocuments(d, limit: limit));
+    });
+    r.post('/desktop/documents/ack', (Request req) async {
+      final d = await _desktop(req);
+      final results = (await _body(req))['results'];
+      if (results is! List || results.length > 500) throw ApiError(400, 'results_required_max_500');
+      return _json(200, {'results': await desktop.ack(d, results)});
+    });
+    r.post('/desktop/pairing-codes', (Request req) async {
+      final d = await _desktop(req);
+      final b = await _body(req);
+      final emp = '${b['employeeGlobalId']}';
+      final pin = b['pin'];
+      if (pin is String && pin.isNotEmpty) await desktop.setRepPin(d, emp, pin);
+      final res = await auth.issuePairingCode(companyId: d.companyId, employeeGlobalId: emp);
+      return _json(201, {'code': res.code, 'expiresAt': res.expiresAt});
+    });
+
     r.all('/<ignored|.*>', (Request req) => _json(404, {'error': 'not_found'}));
     return r;
   }
@@ -138,6 +181,12 @@ class CloudApp {
     final authz = req.headers['authorization'] ?? '';
     final bearer = authz.startsWith('Bearer ') ? authz.substring(7).trim() : null;
     return auth.authenticateDevice(bearer, req.headers['x-device-id'], ip: _ip(req));
+  }
+
+  Future<DesktopContext> _desktop(Request req) {
+    final authz = req.headers['authorization'] ?? '';
+    final bearer = authz.startsWith('Bearer ') ? authz.substring(7).trim() : null;
+    return desktop.authenticate(bearer, req.headers['x-desktop-link'], ip: _ip(req));
   }
 
   Future<DeviceContext> _session(Request req) async {

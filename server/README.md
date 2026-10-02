@@ -25,6 +25,22 @@ A pure Dart server (`shelf` + `postgres`) with no Flutter dependency. The design
 
 The device headers are `Authorization: Bearer <deviceToken>` and `X-Device-Id`. The session header is `X-Session-Token`.
 
+### Desktop link (I-3)
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/admin/desktop-links` | `X-Admin-Key` | `{companyGlobalId, name}` → `{linkId, linkSecret}` (secret shown once; only its SHA-256 is stored) |
+| POST | `/admin/desktop-links/<linkId>/revoke` | `X-Admin-Key` | revoke the desktop credential |
+| GET | `/desktop/ping` | desktop | test connection: company + pending counts per kind |
+| POST | `/desktop/master` | desktop | master-data upsert by `globalId` (desktop wins): `company`, `employees`, `warehouses`, `safes`, `parties` (balance = desktop ledger), `products`, `priceLists` (with full `items`), `distributionAreas`, `salesRoutes`, `routeCustomers`, `repResources`, `voucherBooks` (+ `cancelledNumbers`; `nextNumber` never moves back), `vanStock`; references as `*GlobalId`; unknown references are skipped and reported → `{applied, skipped}` |
+| GET | `/desktop/documents/pending?limit=` | desktop | accepted field documents not yet posted on desktop (invoices, returns, collections, visits) with lines and every reference as a global id, oldest first |
+| POST | `/desktop/documents/ack` | desktop | `{results:[{kind, globalId, status:"posted", desktopId, desktopNumber} \| {…, status:"failed", reason}]}`; `posted` is final (a re-ack keeps the first number), `failed` keeps the document pending with `lastDesktopError` |
+| POST | `/desktop/pairing-codes` | desktop | `{employeeGlobalId, pin?}` → pairing code for a rep (sets the rep's app PIN when given) |
+
+Desktop headers: `Authorization: Bearer <linkSecret>` and `X-Desktop-Link: <linkId>`.
+
+Served customer balances and van stock are materialized as the desktop value plus the accepted field documents the desktop has not posted yet (invoice remaining, collections, return offsets; sold/returned quantities), so the desktop must ack before it pushes balances (it does).
+
 ### Push documents
 
 ```jsonc
@@ -69,10 +85,12 @@ A rejected document leaves no trace, so the device can retry the same `globalId`
   - Rate limits: login 10 per device per 10 min, push 60 per device per minute (in-memory sliding window, per API instance), 429 with `Retry-After`.
   - Audit rows: pairing, login, failed login, token rotation, revocation, every accepted and rejected push (device, employee, IP).
 
+- I-3 (`test/i3_test.dart`): desktop link credential (issue, authenticate, revoke), master-data upsert visible in the mobile bootstrap, desktop pairing with PIN, pending feed, ack posted/failed, materialized balances and van stock.
+
 **Stubbed or gaps:**
-- **Journal entries are not posted in the cloud.** Desktop pulls the accepted documents and posts them with the existing posting engine (I-3), which gives the same accounting by construction (§8 of the architecture).
+- **Journal entries are not posted in the cloud.** The desktop pulls the accepted documents and posts them with the existing posting engine (I-3, `lib/services/cloud_sync/`), which gives the same accounting by construction (§8 of the architecture).
 - Header discounts and remote approval of price overrides are not modelled (the device sends no header discount; overrides are a rep permission).
 - Rate-limit counters live in memory: with several API instances behind a load balancer they are per instance (move to Postgres/Redis in I-6).
 - **`MetaCloudWhatsAppProvider`:** builds the Graph API payload but does not send (I-5). There are no delivery webhooks yet.
-- **Admin endpoints:** these use a static `ADMIN_KEY` (test stack only). Admin flows move to desktop in I-3.
+- **Admin endpoints:** these use a static `ADMIN_KEY` (test stack only). The desktop link can issue rep pairing codes; issuing the desktop credential itself still uses the admin key.
 - **Database access:** single pool, no multi-region, no read replicas.

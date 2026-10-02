@@ -446,4 +446,49 @@ CREATE TRIGGER price_list_items_touch BEFORE INSERT OR UPDATE ON price_list_item
 CREATE TRIGGER sales_returns_touch BEFORE INSERT OR UPDATE ON sales_returns FOR EACH ROW EXECUTE FUNCTION touch_row();
 CREATE TRIGGER customer_visits_touch BEFORE INSERT OR UPDATE ON customer_visits FOR EACH ROW EXECUTE FUNCTION touch_row();
 '''),
+  // I-3: desktop link (credential), desktop posting marks, desktop-ledger
+  // values the materialized balances/stock are derived from, areas.
+  Migration(3, 'i3_desktop_link', '''
+CREATE TABLE desktop_links (
+  id SERIAL PRIMARY KEY,
+  company_id INT NOT NULL REFERENCES companies(id),
+  link_id TEXT NOT NULL UNIQUE,
+  name TEXT,
+  key_hash TEXT NOT NULL,
+  created_at BIGINT NOT NULL,
+  last_seen_at BIGINT,
+  last_seen_ip TEXT,
+  revoked_at BIGINT
+);
+
+ALTER TABLE sales_invoices ADD COLUMN desktop_id TEXT;
+ALTER TABLE sales_invoices ADD COLUMN desktop_number TEXT;
+ALTER TABLE sales_invoices ADD COLUMN desktop_error TEXT;
+ALTER TABLE sales_returns ADD COLUMN desktop_id TEXT;
+ALTER TABLE sales_returns ADD COLUMN desktop_number TEXT;
+ALTER TABLE sales_returns ADD COLUMN desktop_error TEXT;
+ALTER TABLE safe_transactions ADD COLUMN posted_on_desktop_at BIGINT;
+ALTER TABLE safe_transactions ADD COLUMN desktop_id TEXT;
+ALTER TABLE safe_transactions ADD COLUMN desktop_number TEXT;
+ALTER TABLE safe_transactions ADD COLUMN desktop_error TEXT;
+ALTER TABLE customer_visits ADD COLUMN posted_on_desktop_at BIGINT;
+ALTER TABLE customer_visits ADD COLUMN desktop_id TEXT;
+ALTER TABLE customer_visits ADD COLUMN desktop_error TEXT;
+
+-- Last value pushed by the desktop ledger; the served value adds the
+-- accepted field documents the desktop has not posted yet (§2).
+ALTER TABLE parties ADD COLUMN desktop_balance NUMERIC(18,4);
+ALTER TABLE inventory_balances ADD COLUMN desktop_quantity NUMERIC(18,4);
+
+CREATE TABLE distribution_areas (
+  id SERIAL PRIMARY KEY,
+  company_id INT NOT NULL REFERENCES companies(id),
+  name TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  $_sync
+);
+CREATE TRIGGER distribution_areas_touch BEFORE INSERT OR UPDATE ON distribution_areas FOR EACH ROW EXECUTE FUNCTION touch_row();
+CREATE INDEX sales_invoices_unposted_idx ON sales_invoices(company_id) WHERE posted_on_desktop_at IS NULL;
+CREATE INDEX sales_returns_unposted_idx ON sales_returns(company_id) WHERE posted_on_desktop_at IS NULL;
+'''),
 ];

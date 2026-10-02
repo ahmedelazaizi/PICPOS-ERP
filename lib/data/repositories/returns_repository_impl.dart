@@ -137,6 +137,12 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
     required String userName,
     bool isFullReturn = false,
     bool isDamaged = false,
+    // I-3 — a van rep's return accepted by the cloud: the cash refund was
+    // paid from the rep's custody safe [refundSafeId], not from a drawer at
+    // this device (so no shift applies). [onReturnVoucher] receives the
+    // SRET number this return was posted under.
+    int? refundSafeId,
+    void Function(String returnVoucherNumber)? onReturnVoucher,
   }) async {
     final invoiceItems = await _db.getSalesInvoiceItems(invoice.id);
     
@@ -179,7 +185,9 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
     // السريع في `sales_transaction_orchestrator`.
     final guardSplit = _refundSplitFor(invoice, totalReturn);
     final openShift = await _db.resolveOpenShiftForDrawer(userId);
-    if (guardSplit.requiresOpenShift && openShift == null) {
+    if (refundSafeId == null &&
+        guardSplit.requiresOpenShift &&
+        openShift == null) {
       throw ShiftRequiredException(cashAmount: guardSplit.cashRefund);
     }
     // فرعُ الورديّةِ المفتوحة = الفرعُ القائمُ بالمرتجع فعلاً. و`null` مقبولٌ
@@ -508,7 +516,9 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
         // المستخدم لا إلى العامّة. والحارسُ أعلاه ضمن ورديّةً مفتوحةً قبل هذه
         // النقطة (‏`ShiftRequiredException`)، فلا مسارَ «بلا ورديّة» هنا.
         {
-          final cashSafe = await _db.resolveRefundSafe(userId: userId);
+          final cashSafe = refundSafeId != null
+              ? await _db.getSafeById(refundSafeId)
+              : await _db.resolveRefundSafe(userId: userId);
           if (cashSafe == null) {
             throw Exception(
               'لا توجد خزنة نقدية صالحة لصرف المرتجع. اضبط الخزائن من '
@@ -621,6 +631,7 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       // v185 — مستندُ المرتجع (صفوفُ SRET) يُختَم بالمندوب والمسار.
       await _db.stampSafeTransactionsByVoucher(
           returnVoucherNumber, invoice.customerId);
+      onReturnVoucher?.call(returnVoucherNumber);
 
       // Feature 009 / T031 (Issue 6 / Cluster 021): if the original sale used
       // BOM auto-deplete, reverse the raw-material consumption at the FROZEN

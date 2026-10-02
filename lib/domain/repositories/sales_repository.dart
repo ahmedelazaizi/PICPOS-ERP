@@ -338,6 +338,19 @@ class SaleRequest {
   /// quick sale, every legacy caller) ⇒ the mapped `'sales'` account.
   final int? revenueAccountId;
 
+  /// I-3 (cloud field documents) — a sale made by a van rep and accepted by
+  /// the cloud is posted through this same path with its own identity:
+  /// [globalId] (the cloud document id), [invoiceDate] (the field date),
+  /// the rep/route stamp ([repEmployeeId]/[routeId]), and
+  /// [cashOutsideDrawer]: the cash is in the rep's custody safe
+  /// ([cashSafeId]), not in a drawer at this device, so no shift applies.
+  /// All default to the desktop behaviour.
+  final String? globalId;
+  final DateTime? invoiceDate;
+  final int? repEmployeeId;
+  final int? routeId;
+  final bool cashOutsideDrawer;
+
   const SaleRequest({
     required this.items,
     this.customerId,
@@ -371,6 +384,11 @@ class SaleRequest {
     this.branchId,
     this.platformOrderNumber,
     this.revenueAccountId,
+    this.globalId,
+    this.invoiceDate,
+    this.repEmployeeId,
+    this.routeId,
+    this.cashOutsideDrawer = false,
   });
 }
 
