@@ -4,123 +4,85 @@ extension _SetupWizardBranchExt on _SetupWizardScreenState {
   // ═══════════════════════════════════════════════════════════════════════
   // STEP 2: Branch & Warehouse
   // ═══════════════════════════════════════════════════════════════════════
+  //
+  // بندُ المالك ٦: «الفرع والمخزن». مبدّلُ نمط التشغيل انتقل إلى خطوة
+  // الترحيب (‏هو الذي يقرّر بقيّةَ المسار)، وبقي هنا ما يتبعه: اسمُ الفرع
+  // ورمزُه وعنوانُه والمخزنُ للمستقلّ والسيرفر، والاتّصالُ للعميل، والمصافحةُ
+  // للمرآة.
   Widget _buildBranchStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-         Text(
-          tr('وضع التشغيل والفرع'),
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-         Text(
-          tr('حدد وضع التشغيل: مستقل، سيرفر، عميل، أو مرآة (لاب توب المدير).'),
-          style: const TextStyle(color: AppColors.textMuted),
-        ),
-        const SizedBox(height: 24),
-        // Network mode selector
-        Row(
-          children: [
-            _buildModeChip(
-                NetworkMode.standalone, tr('مستقل'), PhosphorIconsBold.desktop),
-            const SizedBox(width: 12),
-            _buildModeChip(
-                NetworkMode.server, tr('سيرفر'), PhosphorIconsBold.hardDrives),
-            const SizedBox(width: 12),
-            _buildModeChip(
-                NetworkMode.client, tr('عميل'), PhosphorIconsBold.monitor),
-            const SizedBox(width: 12),
-            _buildModeChip(
-                NetworkMode.mirror, tr('مرآة'), PhosphorIconsBold.crown),
-          ],
-        ),
-        const SizedBox(height: 24),
         // Conditional content based on mode
         if (_networkMode == NetworkMode.client)
           _buildClientSetupSection()
         else if (_networkMode == NetworkMode.mirror)
           _buildMirrorSetupSection()
         else ...[
-          _buildTextField(
-            controller: _branchNameController,
-            label: tr('اسم الفرع'),
-            hint: tr('الفرع الرئيسي'),
-            icon: PhosphorIconsBold.buildings,
-            isRequired: true,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 3,
+                child: _buildTextField(
+                  key: const Key('setup_branch_name'),
+                  controller: _branchNameController,
+                  label: tr('اسم الفرع'),
+                  hint: tr('الفرع الرئيسي'),
+                  icon: PhosphorIconsBold.buildings,
+                  isRequired: true,
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  key: const Key('setup_branch_code'),
+                  controller: _branchCodeController,
+                  label: tr('رمز الفرع'),
+                  hint: 'MAIN',
+                  icon: PhosphorIconsBold.hash,
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 6),
+          Text(
+            tr('رمز الفرع بادئةٌ لأرقام فواتيره — حتى ١٠ أحرف.'),
+            style: TextStyle(fontSize: 12, color: _mutedInk(context)),
+          ),
+          const SizedBox(height: 12),
           _buildTextField(
+            key: const Key('setup_branch_address'),
+            controller: _branchAddressController,
+            label: tr('عنوان الفرع'),
+            icon: PhosphorIconsBold.mapPin,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            key: const Key('setup_warehouse_name'),
             controller: _warehouseNameController,
             label: tr('اسم المخزن'),
             hint: tr('المخزن الرئيسي'),
             icon: PhosphorIconsBold.warehouse,
             isRequired: true,
+            onChanged: (_) => setState(() {}),
           ),
         ],
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.info.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.info.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            children: [
-              const Icon(PhosphorIconsBold.info, color: AppColors.info, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  _networkMode == NetworkMode.client
-                      ? tr('في وضع العميل: أنشئ الفروع على السيرفر، ثم اتصل وزامن واختر الفرع المعين لهذا الجهاز.')
-                      : _networkMode == NetworkMode.mirror
-                          ? tr('في وضع المرآة: لاب توب المدير يعمل كأنه HQ-Server — صلاحيات كاملة على كل الفروع والكتابات تذهب للسيرفر مباشرة.')
-                          : tr('يمكنك إضافة فروع ومخازن إضافية من شاشة "الفروع والمخازن" بعد إتمام الإعداد.'),
-                  style: const TextStyle(color: AppColors.info, fontSize: 13),
-                ),
-              ),
-            ],
-          ),
+        const SizedBox(height: 18),
+        _inlineNote(
+          context,
+          icon: PhosphorIconsBold.info,
+          tone: AppColors.info,
+          title: tr('فروعٌ ومخازنُ إضافية'),
+          body: _networkMode == NetworkMode.client
+              ? tr('في وضع العميل: أنشئ الفروع على السيرفر، ثم اتصل وزامن واختر الفرع المعين لهذا الجهاز.')
+              : _networkMode == NetworkMode.mirror
+                  ? tr('في وضع المرآة: لاب توب المدير يعمل كأنه HQ-Server — صلاحيات كاملة على كل الفروع والكتابات تذهب للسيرفر مباشرة.')
+                  : tr('يمكنك إضافة فروع ومخازن إضافية من شاشة "الفروع والمخازن" بعد إتمام الإعداد.'),
         ),
       ],
-    );
-  }
-
-  Widget _buildModeChip(NetworkMode mode, String label, IconData icon) {
-    final isSelected = _networkMode == mode;
-    return Expanded(
-      child: InkWell(
-        onTap: () => setState(() => _networkMode = mode),
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.primary.withValues(alpha: 0.1)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? AppColors.primary : AppColors.border,
-              width: isSelected ? 2 : 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(icon,
-                  color: isSelected ? AppColors.primary : AppColors.textMuted,
-                  size: 28),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? AppColors.primary : null,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 

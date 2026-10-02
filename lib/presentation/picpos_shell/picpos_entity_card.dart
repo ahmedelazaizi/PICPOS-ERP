@@ -297,8 +297,11 @@ class PicPosEntityCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 5),
+                // «الملف الكامل» تقدّمٌ لا رجوع ⇒ `arrow_forward_rounded`
+                // (‏يحمل `matchTextDirection`): ← في RTL و→ في LTR، نحو نهاية
+                // السطر. و`arrow_back_rounded` كان يُرسَم → في RTL فيقرأ «رجوع».
                 Icon(
-                  Icons.arrow_back_rounded,
+                  Icons.arrow_forward_rounded,
                   size: 13,
                   color: context.picposBrandInk,
                 ),

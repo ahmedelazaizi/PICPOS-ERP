@@ -218,8 +218,11 @@ class _ChartOfAccountsPicPosScreenState
                       .length;
 
                   return PicPosScreenScaffold(
-                    title: tr('دليل الحسابات'),
-                    subtitle: tr('IFRS / IAS 1 — شجرةُ الحسابات المحاسبية'),
+                    // الترويسةُ (`PicPosPageHeader`) تترجم العنوانَ بنفسها —
+                    // فـ`tr()` هنا كانت ترجمةً مزدوجة تبحث عن «Chart of
+                    // Accounts» في الكتالوج فتسجّل نقصاً.
+                    title: 'دليل الحسابات',
+                    subtitle: 'IFRS / IAS 1 — شجرةُ الحسابات المحاسبية',
                     icon: PhosphorIconsBold.treeStructure,
                     headerSearch: TextField(
                       key: const Key('coa_search'),

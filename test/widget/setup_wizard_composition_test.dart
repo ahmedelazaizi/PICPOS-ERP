@@ -21,15 +21,25 @@
 //
 // 🔴 **ونوعُ النشاط بطاقاتٌ لا قائمةٌ منسدلة**، **والعملةُ رقاقات** — وهما
 //    ما طلبه التصميمُ صراحةً.
+//
+// ═══ بندُ المالك ٦ (المرحلة ح) — الهيكلُ الجديد ═══
+//
+// المسارُ يبدأ الآن بالترحيب واللغة (‏تسعُ خطواتٍ في المستقلّ)، ونوعُ النشاط
+// صار رقاقاتٍ تحت بطاقات «ملفّ النشاط» في خطوة الشركة، والعملةُ انتقلت إلى
+// خطوتها مع الضريبة. فالفحوصُ هنا تتبع كلَّ قطعةٍ إلى موضعها الجديد — بنفس
+// ما كانت تحرسه (‏الوصفُ ظاهر · العملةُ رقاقات · تحذيرُ «قرار نهائي» · نقاطٌ
+// بعدد الخطوات · لا أبيضَ في تدرّج الداكن).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/domain/models/setup_step_order.dart';
 import 'package:ural_erp/presentation/screens/setup_wizard_screen.dart';
 
 Future<void> _pump(
   WidgetTester tester,
   double width, {
   Brightness brightness = Brightness.light,
+  int? step,
 }) async {
   tester.view.physicalSize = Size(width, 1000);
   tester.view.devicePixelRatio = 1.0;
@@ -39,7 +49,7 @@ Future<void> _pump(
     ProviderScope(
       child: MaterialApp(
         theme: ThemeData(brightness: brightness),
-        home: const SetupWizardScreen(),
+        home: SetupWizardScreen(initialStep: step),
       ),
     ),
   );
@@ -63,16 +73,17 @@ void main() {
 
         expect(find.textContaining('مرحباً بك في'), findsOneWidget);
         expect(find.text('دعنا نُعد نظامك في دقائق معدودة'), findsOneWidget);
-        // ثمانِ خطواتٍ في المستقلّ — وهو النمطُ الابتدائيّ.
+        // تسعُ خطواتٍ في المستقلّ — وهو النمطُ الابتدائيّ (‏البند ٦).
         //
         // ⚠️ **موضعان لا موضعٌ واحد** عن قصد: العدّادُ في شريط التقدّم أعلى
         //    الشاشة، وشارةٌ في ترويسة الخطوة نفسِها. فالفحصُ `findsNWidgets(2)`
         //    لا `findsOneWidget` — وسقوطُه إلى واحدٍ يعني أنّ أحدَهما سقط.
-        expect(find.text('الخطوة 1 من 8'), findsNWidgets(2));
+        expect(find.text('الخطوة 1 من 9'), findsNWidgets(2));
 
-        // 🔴 و«ملف النشاط» في العمود الجانبيّ **غيرُ** «نوع النشاط» في
-        //    الجسم — كانا باسمٍ واحدٍ فبدا للمستخدم أنّه يجيب سؤالاً مكرّراً.
-        expect(find.text('ملف النشاط'), findsOneWidget);
+        // الخطوةُ الأولى الترحيبُ واللغة — العمودُ يبدأ بها.
+        expect(find.text('الترحيب واللغة'), findsOneWidget);
+        expect(find.text('العربية'), findsOneWidget);
+        expect(find.text('English'), findsOneWidget);
 
         expect(tester.takeException(), isNull);
         await _teardown(tester);
@@ -93,8 +104,9 @@ void main() {
         await _teardown(tester);
       });
 
-      testWidgets('نوعُ النشاط ستُّ بطاقاتٍ لا قائمةٌ منسدلة', (tester) async {
-        await _pump(tester, width);
+      testWidgets('نوعُ النشاط ستُّ رقاقاتٍ تحت بطاقاتِ ملفّ النشاط الموصوفة',
+          (tester) async {
+        await _pump(tester, width, step: SetupStepIds.company);
 
         expect(find.text('نوع النشاط'), findsOneWidget);
         for (final t in const [
@@ -105,14 +117,13 @@ void main() {
           'خدمات',
           'أخرى',
         ]) {
-          expect(find.text(t), findsOneWidget, reason: 'البطاقةُ «$t» غائبة');
+          expect(find.text(t), findsOneWidget, reason: 'الرقاقةُ «$t» غائبة');
         }
 
-        // والوصفُ الذي تُخفيه القائمةُ المنسدلةُ ظاهرٌ على البطاقة.
-        expect(
-          find.text('سوبر ماركت وبقالة — بيعٌ بالباركود والميزان'),
-          findsOneWidget,
-        );
+        // 🔴 و«ملف النشاط» (‏الشاشات) **غيرُ** «نوع النشاط» (‏الوسم) — والوصفُ
+        //    الذي يفرّق ملفّاتِه ظاهرٌ على البطاقة لا خلفَ قائمةٍ منسدلة.
+        expect(find.text('ملف النشاط التجاري'), findsWidgets);
+        expect(find.text('موحّد — كل الميزات'), findsOneWidget);
 
         expect(tester.takeException(), isNull);
         await _teardown(tester);
@@ -120,9 +131,15 @@ void main() {
 
       testWidgets('والعملةُ ستُّ رقاقاتٍ ومعها تحذيرُ «قرار نهائي»',
           (tester) async {
-        await _pump(tester, width);
+        await _pump(tester, width, step: SetupStepIds.currencyTax);
 
-        expect(find.byType(ChoiceChip), findsNWidgets(6));
+        expect(
+          find.byWidgetPredicate((w) =>
+              w is ChoiceChip &&
+              (w.key is ValueKey<String>) &&
+              (w.key! as ValueKey<String>).value.startsWith('setup_currency_')),
+          findsNWidgets(6),
+        );
         expect(find.text('جنيه مصري (EGP)'), findsOneWidget);
         expect(find.text('دولار أمريكي (USD)'), findsOneWidget);
 
@@ -133,18 +150,24 @@ void main() {
         await _teardown(tester);
       });
 
-      testWidgets('واختيارُ نشاطٍ آخرَ يبدّل البطاقةَ المعلَّمة',
+      testWidgets('واختيارُ نشاطٍ آخرَ يبدّل الرقاقةَ المعلَّمة',
           (tester) async {
-        await _pump(tester, width);
+        await _pump(tester, width, step: SetupStepIds.company);
 
+        // الرقاقاتُ تحت بطاقات الملفّ — قد تقع خارجَ الإطار على ١٢٨٠×١٠٠٠.
+        await tester.ensureVisible(find.text('تصنيع'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('تصنيع'));
         await tester.pumpAndSettle();
+        final chip = tester.widget<ChoiceChip>(
+            find.byKey(const Key('setup_business_type_manufacturing')));
+        expect(chip.selected, isTrue);
 
         expect(tester.takeException(), isNull);
         await _teardown(tester);
       });
 
-      testWidgets('نقاطُ الترقيم في التذييل — ثمانٍ بعدد الخطوات',
+      testWidgets('نقاطُ الترقيم في التذييل — تسعٌ بعدد الخطوات',
           (tester) async {
         await _pump(tester, width);
         // النقاطُ حاويةٌ بارتفاع ٨ — وعددُها عددُ خطوات المسار.
@@ -152,7 +175,7 @@ void main() {
             w is Container &&
             w.constraints?.maxHeight == 8 &&
             w.constraints?.minHeight == 8);
-        expect(dots, findsNWidgets(8));
+        expect(dots, findsNWidgets(9));
         expect(tester.takeException(), isNull);
         await _teardown(tester);
       });

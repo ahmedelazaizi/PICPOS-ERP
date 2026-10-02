@@ -94,8 +94,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
   }
 
-  // في RTL «رجوع» سهمٌ إلى اليمين — نفسُ عقد `PicPosPageHeader`.
-  final backButton = find.widgetWithIcon(IconButton, Icons.arrow_forward);
+  // في RTL «رجوع» سهمٌ إلى اليمين — نفسُ عقد `PicPosPageHeader`:
+  // `arrow_back` بـ`matchTextDirection` يُرسَم → في RTL و← في LTR.
+  final backButton = find.widgetWithIcon(IconButton, Icons.arrow_back);
 
   testWidgets('مدفوعةً ⇒ زرُّ الرجوع ظاهر', (tester) async {
     final err = await open(tester, pushed: true, size: const Size(1920, 1080));

@@ -631,136 +631,50 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
   // saves the choice to settings.business_profile and the app's feature
   // providers read it on next boot.
   // ═══════════════════════════════════════════════════════════════════════
-  Widget _buildBusinessProfileStep() {
+  //
+  // بندُ المالك ٦: لم يعد خطوةً مستقلّة — صار قسماً في «الشركة والنشاط»،
+  // بطاقاتٍ في شبكةٍ بوصفٍ قصيرٍ لما يفعّله كلُّ ملفّ. والاختيارُ يمرّ بـ
+  // `_selectProfile` ليضبط افتراضاتِ نوع النشاط والتسعير معه.
+  Widget _buildBusinessProfileSection() {
     final metas = BusinessProfileCatalog.all();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-         Text(
-          tr('ملف النشاط التجارى'),
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-         Text(
-          tr('يحدد هذا الاختيار الشاشات والميزات الظاهرة للمستخدم. يمكن تعديله لاحقًا من "أدوات المطوّر" فقط (محمية بكلمة مرور مطوّر منفصلة).'),
-          style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-        ),
-        const SizedBox(height: 16),
-        ...metas.map((m) {
-          final isSelected = m.profile == _selectedProfile;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onTap: () => setState(() => _selectedProfile = m.profile),
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primary.withValues(alpha: 0.08)
-                      : Colors.transparent,
-                  border: Border.all(
-                    color: isSelected
-                        ? AppColors.primary
-                        : AppColors.border,
-                    width: isSelected ? 2 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          isSelected
-                              ? PhosphorIconsBold.checkCircle
-                              : PhosphorIconsBold.circle,
-                          color: isSelected
-                              ? AppColors.primary
-                              : AppColors.textMuted,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          m.arabicName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(start: 30),
-                      child: Text(
-                        m.arabicDescription,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ),
-                    if (isSelected && m.enabledByDefault.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsetsDirectional.only(start: 30),
-                        child: Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: [
-                            for (final k in m.enabledByDefault.take(8))
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.success
-                                      .withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  k.settingKey.split('.').last,
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: AppColors.success,
-                                  ),
-                                ),
-                              ),
-                            if (m.enabledByDefault.length > 8)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.textMuted
-                                      .withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '+${m.enabledByDefault.length - 8}',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: AppColors.textMuted,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
+    return LayoutBuilder(
+      builder: (context, c) {
+        final cols = c.maxWidth < 640 ? 2 : (c.maxWidth < 980 ? 3 : 4);
+        const gap = 10.0;
+        final w = (c.maxWidth - gap * (cols - 1)) / cols;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final m in metas)
+              SizedBox(
+                width: w,
+                child: _choiceCard(
+                  key: Key('setup_profile_${m.profile.name}'),
+                  icon: _profileIcon(m.profile),
+                  title: m.arabicName,
+                  subtitle: m.arabicDescription,
+                  selected: m.profile == _selectedProfile,
+                  onTap: () => _selectProfile(m.profile),
                 ),
               ),
-            ),
-          );
-        }),
-      ],
+          ],
+        );
+      },
     );
   }
+
+  IconData _profileIcon(BusinessProfile p) => switch (p) {
+        BusinessProfile.restaurant => PhosphorIconsBold.forkKnife,
+        BusinessProfile.cafe => PhosphorIconsBold.coffee,
+        BusinessProfile.supermarket ||
+        BusinessProfile.supermarketPro ||
+        BusinessProfile.supermarketPlus =>
+          PhosphorIconsBold.shoppingCart,
+        BusinessProfile.commercial => PhosphorIconsBold.truck,
+        BusinessProfile.unified => PhosphorIconsBold.squaresFour,
+        BusinessProfile.lite => PhosphorIconsBold.storefront,
+      };
 
   // ═══════════════════════════════════════════════════════════════════════
   // STEP 7: Developer password (Phase B)
@@ -770,21 +684,21 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
   // feature overrides post-install. Recovery: CLI `--reset-dev-password`
   // or env `URAL_RESET_DEV_PASSWORD=1`.
   // ═══════════════════════════════════════════════════════════════════════
-  Widget _buildDeveloperPasswordStep() {
+  //
+  // بندُ المالك ٦: قسمٌ في خطوة «المستخدمون» (‏الأمان) لا خطوةٌ مستقلّة.
+  Widget _buildDeveloperPasswordSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-         Text(
-          tr('كلمة مرور المطوّر'),
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
+        _stepFieldLabel(tr('كلمة مرور المطوّر')),
+        const SizedBox(height: 4),
          Text(
           tr('كلمة مرور منفصلة عن الأدمن — تتحكم فى تغيير ملف النشاط ونمط التشغيل والميزات بعد التثبيت. لا يُفترض مشاركتها مع العميل. لو نسيتها، استخدم التشغيل مع --reset-dev-password.'),
-          style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 12.5, color: _mutedInk(context)),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
         TextField(
+          key: const Key('setup_dev_password'),
           controller: _developerPasswordController,
           obscureText: !_developerPasswordVisible,
           onChanged: (_) => setState(() {}),
@@ -804,8 +718,9 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         TextField(
+          key: const Key('setup_dev_password_confirm'),
           controller: _developerPasswordConfirmController,
           obscureText: !_developerPasswordVisible,
           onChanged: (_) => setState(() {}),
@@ -860,25 +775,13 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
   /// Controls whether the "Next" button is enabled on the current step.
   /// Normally true; blocked on PG config step until connection test passes,
   /// and on provisioning step until it completes successfully.
-  bool _canAdvance() {
-    if (_currentStep == 5) return _pgConnectionOk;
-    if (_currentStep == 6) return _provisioningDone;
-    // Step 7 — developer password: require a non-empty password of at
-    // least 4 chars AND a matching confirmation. The confirmation is
-    // what guarantees the developer typed exactly what they meant.
-    if (_currentStep == 7) {
-      final pwd = _developerPasswordController.text.trim();
-      final cnf = _developerPasswordConfirmController.text.trim();
-      return pwd.length >= 4 && pwd == cnf;
-    }
-    // Step 1 (network/branch) — for mirror mode, block until the
-    // foundational handshake against HQ-Server has succeeded. For other
-    // modes the step is purely informational and stays unconditionally
-    // enabled.
-    if (_currentStep == 1 && _networkMode == NetworkMode.mirror) {
-      return MirrorState.instance.isConfigured;
-    }
-    // Step 8 — business profile: always valid (defaults to unified).
-    return true;
-  }
+  //
+  // بندُ المالك ٦: القواعدُ نفسُها (‏PostgreSQL · التهيئة · كلمة المطوّر ≥٤
+  // ومطابقة · مصافحةُ المرآة) انتقلت إلى `_isStepValid` في
+  // `setup_wizard_flow.dart` مع الحقول الإلزاميّة الجديدة، لأنّ العمودَ
+  // الجانبيَّ وروابطَ المراجعة تحتاجها لكلّ خطوةٍ لا للحاليّة وحدَها:
+  //   • Step 7 — developer password: non-empty ≥4 chars AND a matching
+  //     confirmation (what guarantees the developer typed what they meant);
+  //   • Step 1 (network/branch) — mirror blocks until the HQ handshake.
+  bool _canAdvance() => _isStepValid(_currentStep);
 }

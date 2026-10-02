@@ -20,6 +20,21 @@
 // وإعادةَ التنسيق وحدَها**.
 //
 // 🔴 فأيُّ تعديلٍ هنا يحتاج قرارَ مالكٍ جديداً — لا مراجعةَ كود.
+//
+// ═══ ✅ وقد صدر القرارُ الجديد: بندُ المالك ٦ (المرحلة ح) ═══
+//
+// طلب المالكُ صراحةً **إعادةَ هيكلة** المعالج لا تنسيقَه وحدَه: ترحيبٌ ولغة
+// ← الشركةُ والنشاط ← العملةُ والضريبة ← الفرعُ والمخزن ← الصناديقُ والبنوك
+// ← دليلُ الحسابات ← المستخدمون ← المراجعةُ والبدء. فالمسارُ أدناه ينفّذه،
+// وما كان خطوةً مستقلّةً صار قسماً في خطوته المنطقيّة بلا أن يسقط منه شيء:
+//
+//   • «نمطُ التشغيل» و«نمطُ الإدخال» (‏إعدادا جهاز) → خطوةُ الترحيب؛
+//   • «ملفُّ النشاط» (‏`BusinessProfile`) → خطوةُ الشركة والنشاط؛
+//   • «كلمةُ مرور المطوّر» → خطوةُ المستخدمين (‏قسمُ الأمان)؛
+//   • «المنتجاتُ الأولى» → خطوةٌ اختياريّةٌ قبل المراجعة (‏المستقلّ والمرآة).
+//
+// وتبقى قيودُ الأنماط التي شرحها القرارُ القديم: العميلُ بلا منتجاتٍ ولا
+// PostgreSQL، والخادمُ بلا منتجاتٍ ويُنهي تهيئةَ قاعدته قبل المراجعة.
 library;
 
 /// أنماطُ التشغيل — مرآةُ `NetworkMode` بلا استيراد `services/`.
@@ -45,7 +60,31 @@ class SetupStepIds {
   static const int developerPassword = 7;
   static const int businessProfile = 8;
   static const int touchMode = 9;
+
+  // ── بندُ المالك ٦ — خطواتُ المسار الجديد ──
+  //
+  // ⚠️ `businessProfile` (٨) و`touchMode` (٩) و`developerPassword` (٧) **لم
+  //    تعد خطواتٍ في المسار**: صارت أقساماً داخلَ `company` و`welcome`
+  //    و`users`. والأرقامُ تبقى معرَّفةً لأنّ سجلَّ الخطوات يحفظ نصوصَها، ولا
+  //    يُعاد استعمالُها لخطوةٍ أخرى (‏تبديلُ الرقم يعرض عنوانَ خطوةٍ فوق
+  //    جسمِ أخرى بلا أن ينهار شيء).
+  static const int welcome = 10;
+  static const int currencyTax = 11;
+  static const int cashBanks = 12;
+  static const int chartOfAccounts = 13;
+  static const int review = 14;
 }
+
+/// خطواتٌ يُتجاوَز عنها بلا إدخال — «التالي» عليها يعني «تخطٍّ».
+///
+/// ⚠️ **الصناديقُ ودليلُ الحسابات اختياريّان لأنّ لهما افتراضيّاً مزروعاً**:
+/// القاعدةُ تُزرَع بصناديقَ ثلاثةٍ وشجرةِ حساباتٍ كاملةٍ عند أوّل فتح، فتخطّيهما
+/// يُبقي ما زُرع كما هو — وهو عينُ سلوك المعالج القديم الذي لم يسألهما.
+const Set<int> kOptionalSetupSteps = {
+  SetupStepIds.products,
+  SetupStepIds.cashBanks,
+  SetupStepIds.chartOfAccounts,
+};
 
 /// خطواتُ النمط بترتيبها.
 ///
@@ -58,39 +97,66 @@ class SetupStepIds {
 ///
 /// و«نمطُ الإدخال» (٩) في **نفس الموضع** في الأنماط كلِّها — بعد اختيار
 /// الشبكة وقبل أوّل خطوةِ بيانٍ ثقيلة (‏Feature 031 · research D13).
+///
+/// ═══ المسارُ الجديد (‏بندُ المالك ٦) ═══
+///
+/// الأربعُ الأولى واحدةٌ في كلّ نمط: ترحيبٌ ← شركةٌ ← عملةٌ وضريبة ← فرع.
+/// والمراجعةُ آخرُ كلّ مسار — هي وحدَها تشغّل الإعداد.
+///
+/// • **المستقلّ** (٩): المسارُ الكامل — ومعه الصناديقُ ودليلُ الحسابات
+///   لأنّه وحدَه يملك قاعدتَه المحلّيّة المزروعة.
+/// • **المرآة** (٨): كالمستقلّ بلا الصناديق — الكتابةُ فيها تذهب للسيرفر،
+///   فإعادةُ تسمية صناديقِ HQ من جهاز المدير ليست من الإعداد الأوّل.
+///   ودليلُ الحسابات **معاينةٌ** لا كتابةَ فيها فيبقى.
+/// • **العميل** (٦): بلا صناديقَ ولا دليلٍ ولا منتجاتٍ ولا PostgreSQL —
+///   يأخذها كلَّها من الخادم بالمزامنة. و«المستخدمون» فيه عمداً (‏كاشيرٌ
+///   محلّيّ) كما قرّر المالكُ في 2026-08-28.
+/// • **الخادم** (٨): PostgreSQL ثمّ التهيئةُ قبل المراجعة — والصناديقُ
+///   والدليلُ تزرعهما التهيئةُ في قاعدة الخادم لا هنا.
 List<int> setupStepOrderFor(SetupDeploymentMode mode) {
   switch (mode) {
     case SetupDeploymentMode.client:
       return const [
+        SetupStepIds.welcome,
         SetupStepIds.company,
-        SetupStepIds.businessProfile,
-        SetupStepIds.developerPassword,
+        SetupStepIds.currencyTax,
         SetupStepIds.branchAndMode,
-        SetupStepIds.touchMode,
         SetupStepIds.users,
-        SetupStepIds.tax,
+        SetupStepIds.review,
       ];
     case SetupDeploymentMode.server:
       return const [
+        SetupStepIds.welcome,
         SetupStepIds.company,
-        SetupStepIds.businessProfile,
-        SetupStepIds.developerPassword,
+        SetupStepIds.currencyTax,
         SetupStepIds.branchAndMode,
-        SetupStepIds.touchMode,
+        SetupStepIds.users,
         SetupStepIds.postgres,
         SetupStepIds.provisioning,
+        SetupStepIds.review,
       ];
-    case SetupDeploymentMode.standalone:
     case SetupDeploymentMode.mirror:
       return const [
+        SetupStepIds.welcome,
         SetupStepIds.company,
-        SetupStepIds.businessProfile,
-        SetupStepIds.developerPassword,
+        SetupStepIds.currencyTax,
         SetupStepIds.branchAndMode,
-        SetupStepIds.touchMode,
-        SetupStepIds.products,
+        SetupStepIds.chartOfAccounts,
         SetupStepIds.users,
-        SetupStepIds.tax,
+        SetupStepIds.products,
+        SetupStepIds.review,
+      ];
+    case SetupDeploymentMode.standalone:
+      return const [
+        SetupStepIds.welcome,
+        SetupStepIds.company,
+        SetupStepIds.currencyTax,
+        SetupStepIds.branchAndMode,
+        SetupStepIds.cashBanks,
+        SetupStepIds.chartOfAccounts,
+        SetupStepIds.users,
+        SetupStepIds.products,
+        SetupStepIds.review,
       ];
   }
 }

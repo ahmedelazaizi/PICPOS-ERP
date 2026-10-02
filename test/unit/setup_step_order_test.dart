@@ -9,75 +9,83 @@
 // تنصيبه. وحين تبدأ إعادةُ تنسيقٍ بصريّةٌ فوق ذلك بلا شبكةِ أمان، تُنقَل
 // كتلةٌ فتُزاح خطوةٌ ولا شيءَ يقول — ويظهر النقصُ بعد أيّامٍ في تنصيبِ عميل.
 //
-// ═══ ⚠️ والأرقامُ هنا **قرارُ مالكٍ مثبَّت** (‏2026-08-28) ═══
+// ═══ ⚠️ والأرقامُ هنا **قرارُ مالكٍ مثبَّت** ═══
 //
-// تصميمُ `PicPos Setup Wizard.dc.html` يخالفها في الأنماط الأربعة: يحذف
-// «المستخدمين» من العميل، ويضيف «المنتجات» و«المستخدمين» للخادم، ويُنزل
-// المرآةَ إلى خمس خطوات. وسُئل المالكُ صراحةً فاختار **إبقاءَ المسار الحاليّ
-// وإعادةَ التنسيق وحدَها**.
+// كان القرارُ (‏2026-08-28) إبقاءَ المسار القديم وإعادةَ التنسيق وحدَها. ثمّ
+// صدر **بندُ المالك ٦** (‏المرحلة ح) صريحاً بإعادة الهيكلة: ترحيبٌ ولغة ←
+// الشركةُ والنشاط ← العملةُ والضريبة ← الفرع ← الصناديق ← الدليل ← المستخدمون
+// ← المراجعة. فالأرقامُ أدناه تنفّذ البندَ ٦ — وما كان خطوةً مستقلّةً صار
+// قسماً (‏لا شيءَ سقط: يحرس ذلك `setup_finish_runner_parity_test.dart`).
 //
-// 🔴 فسقوطُ فحصٍ هنا ليس عطباً في الكود بالضرورة — قد يكون تنفيذاً للتصميم
+// وتبقى من القرار القديم قيودُه على الأنماط: العميلُ **مع** المستخدمين وبلا
+// منتجاتٍ ولا PostgreSQL، والخادمُ بلا منتجات.
+//
+// 🔴 فسقوطُ فحصٍ هنا ليس عطباً في الكود بالضرورة — قد يكون تعديلاً للمسار
 //    بلا قرارِ مالكٍ جديد. راجع القرارَ قبل تعديل الرقم.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/domain/models/setup_step_order.dart';
 
 void main() {
   group('ترتيبُ الخطوات لكلّ نمط', () {
-    test('المستقل ثمانٍ بالترتيب الحاليّ', () {
+    test('المستقلّ تسعٌ بترتيب البند ٦', () {
       expect(
         setupStepOrderFor(SetupDeploymentMode.standalone),
-        [0, 8, 7, 1, 9, 2, 3, 4],
+        [10, 0, 11, 1, 12, 13, 3, 2, 14],
       );
     });
 
-    test('المرآةُ تشارك المستقلَّ حرفاً', () {
-      // المرآةُ تُنهي اقترانَها داخلَ الخطوة ١، فلا تحتاج خطوةً زائدة.
+    test('المرآةُ كالمستقلّ بلا الصناديق', () {
+      // الكتابةُ في المرآة تذهب للسيرفر — فلا تُسمّى صناديقُ HQ من هنا.
+      final mirror = setupStepOrderFor(SetupDeploymentMode.mirror);
+      expect(mirror, [10, 0, 11, 1, 13, 3, 2, 14]);
       expect(
-        setupStepOrderFor(SetupDeploymentMode.mirror),
-        setupStepOrderFor(SetupDeploymentMode.standalone),
+        mirror,
+        setupStepOrderFor(SetupDeploymentMode.standalone)
+            .where((s) => s != SetupStepIds.cashBanks)
+            .toList(),
       );
     });
 
-    test('العميلُ سبعٌ — بلا منتجاتٍ و**مع** المستخدمين', () {
+    test('العميلُ ستٌّ — بلا منتجاتٍ و**مع** المستخدمين', () {
       final order = setupStepOrderFor(SetupDeploymentMode.client);
-      expect(order, [0, 8, 7, 1, 9, 3, 4]);
+      expect(order, [10, 0, 11, 1, 3, 14]);
 
       // 🔴 التصميمُ يحذف «المستخدمين» من العميل — والعميلُ يحتاج كاشيراً
       //    محلّيّاً. القرارُ: تبقى.
       expect(order, contains(SetupStepIds.users));
-      // ولا منتجاتٍ ولا PostgreSQL — يأخذهما من الخادم بالمزامنة.
+      // ولا منتجاتٍ ولا PostgreSQL ولا صناديقَ ولا دليل — يأخذها من الخادم.
       expect(order, isNot(contains(SetupStepIds.products)));
       expect(order, isNot(contains(SetupStepIds.postgres)));
+      expect(order, isNot(contains(SetupStepIds.cashBanks)));
+      expect(order, isNot(contains(SetupStepIds.chartOfAccounts)));
     });
 
-    test('الخادمُ سبعٌ — بلا منتجاتٍ ولا مستخدمين', () {
+    test('الخادمُ ثمانٍ — PostgreSQL ثمّ التهيئةُ قبل المراجعة، بلا منتجات', () {
       final order = setupStepOrderFor(SetupDeploymentMode.server);
-      expect(order, [0, 8, 7, 1, 9, 5, 6]);
-
-      // 🔴 التصميمُ يضيفهما — والخادمُ يزرع المديرَ ويتوقّع إنشاءَهم بعد
-      //    الإعداد، والمنتجاتُ تُستورَد لا تُكتَب هنا. القرارُ: تبقى محذوفة.
-      expect(order, isNot(contains(SetupStepIds.users)));
+      expect(order, [10, 0, 11, 1, 3, 5, 6, 14]);
       expect(order, isNot(contains(SetupStepIds.products)));
-
-      expect(order, contains(SetupStepIds.postgres));
-      expect(order, contains(SetupStepIds.provisioning));
+      expect(order.indexOf(SetupStepIds.postgres),
+          lessThan(order.indexOf(SetupStepIds.provisioning)));
     });
 
-    test('«نمطُ الإدخال» في نفس الموضع في الأنماط كلِّها', () {
-      // Feature 031 · research D13 — بعد اختيار الشبكة وقبل أوّل خطوةِ
-      // بيانٍ ثقيلة، ليراه المشغّلُ على أيّ شكلِ نشر.
+    test('الأربعُ الأولى واحدةٌ في كلّ نمط — ترحيبٌ ثمّ شركةٌ ثمّ عملةٌ ثمّ فرع', () {
       for (final m in SetupDeploymentMode.values) {
-        final order = setupStepOrderFor(m);
-        expect(order.indexOf(SetupStepIds.touchMode), 4, reason: '$m');
-        expect(order[3], SetupStepIds.branchAndMode, reason: '$m');
+        expect(setupStepOrderFor(m).take(4).toList(), [10, 0, 11, 1],
+            reason: '$m');
       }
     });
 
-    test('الأربعةُ الأولى واحدةٌ في كلّ نمط', () {
-      // الشركةُ ثمّ النشاطُ ثمّ كلمةُ المطوّر ثمّ الشبكة — يُختاران قبل أيّ
-      // عملٍ ثقيلٍ لأنّ تبديلَهما بعد الإعداد يحتاج كلمةَ المطوّر.
+    test('المراجعةُ آخرُ كلّ مسار — وهي وحدَها تشغّل الإعداد', () {
       for (final m in SetupDeploymentMode.values) {
-        expect(setupStepOrderFor(m).take(4).toList(), [0, 8, 7, 1],
+        expect(setupStepOrderFor(m).last, SetupStepIds.review, reason: '$m');
+      }
+    });
+
+    test('المستخدمون (‏ومعهم كلمةُ المطوّر) في كلّ نمط', () {
+      // كلمةُ المطوّر كانت خطوةً في كلّ نمط؛ صارت قسماً في «المستخدمين»،
+      // فسقوطُ «المستخدمين» من نمطٍ يُسقطها معه.
+      for (final m in SetupDeploymentMode.values) {
+        expect(setupStepOrderFor(m), contains(SetupStepIds.users),
             reason: '$m');
       }
     });
@@ -89,13 +97,26 @@ void main() {
       }
     });
 
-    test('🔴 ولا خطوةَ «مراجعة» — التصميمُ يطلبها ولم تُبنَ', () {
-      // `review` في التصميم شاشةُ ملخّصٍ لكلّ ما أُدخل. بناءٌ لا تنسيق،
-      // وإدراجُها في السجلّ بلا جسمٍ يبنيها يعطي خطوةً فارغة. وقرارُ المالك
-      // (‏2026-08-28) أنّها خارجَ هذه الدفعة.
+    test('الخطواتُ المستوعَبة (٤ و٧ و٨ و٩) لم تعد في أيّ مسار', () {
       for (final m in SetupDeploymentMode.values) {
-        expect(setupStepOrderFor(m).every((s) => s <= 9), isTrue, reason: '$m');
+        final order = setupStepOrderFor(m);
+        for (final gone in [
+          SetupStepIds.tax,
+          SetupStepIds.developerPassword,
+          SetupStepIds.businessProfile,
+          SetupStepIds.touchMode,
+        ]) {
+          expect(order, isNot(contains(gone)), reason: '$m: $gone');
+        }
       }
+    });
+
+    test('الاختياريّةُ ثلاث — ولها كلِّها افتراضيٌّ أو لا كتابةَ فيها', () {
+      expect(kOptionalSetupSteps, {
+        SetupStepIds.products,
+        SetupStepIds.cashBanks,
+        SetupStepIds.chartOfAccounts,
+      });
     });
   });
 
@@ -130,9 +151,9 @@ void main() {
     });
 
     test('🔴 خطوةٌ خارجَ المسار لا تقفز إلى أوّله', () {
-      // تبديلُ نمط التشغيل في الخطوة ١ يبدّل المسارَ تحت المستخدم، فتصير
-      // خطوةٌ كان يقف عليها خارجَه. و`indexOf` تُرجع `-1`، و`-1 + 1 == 0`
-      // يقفز به إلى **أوّل** المسار بلا سبب.
+      // تبديلُ نمط التشغيل يبدّل المسارَ تحت المستخدم، فتصير خطوةٌ كان يقف
+      // عليها خارجَه. و`indexOf` تُرجع `-1`، و`-1 + 1 == 0` يقفز به إلى
+      // **أوّل** المسار بلا سبب.
       final client = setupStepOrderFor(SetupDeploymentMode.client);
       expect(client, isNot(contains(SetupStepIds.products)));
 
@@ -146,17 +167,17 @@ void main() {
   group('نسبةُ التقدّم', () {
     final order = setupStepOrderFor(SetupDeploymentMode.standalone);
 
-    test('أوّلُ خطوةٍ صفرٌ لا ١/٨', () {
+    test('أوّلُ خطوةٍ صفرٌ لا ١/٩', () {
       // 🔴 شريطٌ يبدأ ممتلئاً جزئيّاً قبل أن يُكتَب حرفٌ يَعِد بما لم يقع.
       expect(setupProgress(order, order.first), 0);
     });
 
-    test('وآخرُ خطوةٍ ٧/٨ لا ١ — فالمسارُ لم يكتمل بعد', () {
-      expect(setupProgress(order, order.last), closeTo(7 / 8, 1e-9));
+    test('وآخرُ خطوةٍ ٨/٩ لا ١ — فالمسارُ لم يكتمل بعد', () {
+      expect(setupProgress(order, order.last), closeTo(8 / 9, 1e-9));
     });
 
-    test('والخطوةُ الخامسةُ ٤/٨ بالضبط', () {
-      expect(setupProgress(order, order[4]), closeTo(0.5, 1e-9));
+    test('والخطوةُ الرابعةُ ٣/٩ بالضبط', () {
+      expect(setupProgress(order, order[3]), closeTo(3 / 9, 1e-9));
     });
 
     test('وخطوةٌ خارجَ المسار صفرٌ لا سالب', () {

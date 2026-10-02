@@ -116,22 +116,6 @@
           "#ECEFF4"
         ]
       },
-      "field-slate": {
-        "role": "neutral",
-        "displayName": "Slate Wash",
-        "canonical": "#F8FAFC",
-        "oklch": "oklch(98.4% 0.003 247.9)",
-        "tonalRamp": [
-          "#0A0B0D",
-          "#242527",
-          "#414244",
-          "#606163",
-          "#818284",
-          "#A3A5A7",
-          "#C7C9CB",
-          "#EDEFF1"
-        ]
-      },
       "hairline": {
         "role": "neutral",
         "displayName": "Theme Hairline",
@@ -146,22 +130,6 @@
           "#9FA5B0",
           "#C3CAD4",
           "#E8EFFA"
-        ]
-      },
-      "border-slate": {
-        "role": "neutral",
-        "displayName": "Slate Hairline",
-        "canonical": "#E2E8F0",
-        "oklch": "oklch(92.9% 0.013 255.5)",
-        "tonalRamp": [
-          "#080B10",
-          "#21252B",
-          "#3E4249",
-          "#5D6268",
-          "#7D838A",
-          "#A0A6AD",
-          "#C4CAD1",
-          "#E9EFF7"
         ]
       },
       "ink": {
@@ -606,7 +574,7 @@
       "refersTo": "data-table",
       "description": "PicPosDataTable: hairline card (radius 17) with a block header, a field-tinted column-title row, hairline rows and a selected-row tint.",
       "html": "<div class=\"ds-table\" dir=\"rtl\"><div class=\"ds-table-head\"><i class=\"ds-accent\"></i><b>آخر الفواتير</b></div><div class=\"ds-row ds-cols\"><span>الرقم</span><span>العميل</span><span class=\"ds-end\">المبلغ</span></div><div class=\"ds-row\"><span>INV-1042</span><span>سوبرماركت النور</span><span class=\"ds-end ds-num\">1,250.00</span></div><div class=\"ds-row ds-selected\"><span>INV-1043</span><span>مطعم الياسمين</span><span class=\"ds-end ds-num\">384.50</span></div><div class=\"ds-row ds-total\"><span>الإجمالي</span><span></span><span class=\"ds-end ds-num\">1,634.50</span></div></div>",
-      "css": ".ds-table { font-family: Cairo, 'Segoe UI', sans-serif; width: 460px; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 17px; overflow: hidden; } .ds-table-head { display: flex; align-items: center; gap: 11px; padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14.5px; font-weight: 800; } .ds-accent { width: 3.5px; height: 15px; border-radius: 3px; background: #0250D3; } .ds-row { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 12px; padding: 11px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 700; color: #000; cursor: default; } .ds-row:not(.ds-cols):not(.ds-total):hover { background: rgba(2,80,211,0.04); } .ds-cols { background: #F8FAFC; font-size: 11.5px; font-weight: 800; color: #6B7280; } .ds-selected { background: rgba(2,80,211,0.06); } .ds-total { background: #F8FAFC; border-bottom: none; font-size: 13.5px; font-weight: 800; } .ds-end { text-align: end; } .ds-num { font-variant-numeric: tabular-nums; }"
+      "css": ".ds-table { font-family: Cairo, 'Segoe UI', sans-serif; width: 460px; background: #FFFFFF; border: 1px solid #DCE3EE; border-radius: 17px; overflow: hidden; } .ds-table-head { display: flex; align-items: center; gap: 11px; padding: 14px 18px; border-bottom: 1px solid #DCE3EE; font-size: 14.5px; font-weight: 800; } .ds-accent { width: 3.5px; height: 15px; border-radius: 3px; background: #0250D3; } .ds-row { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 12px; padding: 11px 18px; border-bottom: 1px solid #DCE3EE; font-size: 13px; font-weight: 700; color: #000; cursor: default; } .ds-row:not(.ds-cols):not(.ds-total):hover { background: rgba(2,80,211,0.04); } .ds-cols { background: #F4F7FC; font-size: 11.5px; font-weight: 800; color: #6B7280; } .ds-selected { background: rgba(2,80,211,0.06); } .ds-total { background: #F4F7FC; border-bottom: none; font-size: 13.5px; font-weight: 800; } .ds-end { text-align: end; } .ds-num { font-variant-numeric: tabular-nums; }"
     },
     {
       "name": "Status Pill",
@@ -622,7 +590,7 @@
       "refersTo": "data-table-filter-chip",
       "description": "Table header filter chip with count; selected state is a blue 8% tint with a blue border.",
       "html": "<div class=\"ds-chips\" dir=\"rtl\"><button class=\"ds-chip ds-chip-on\">الكل <b>24</b></button><button class=\"ds-chip\">مسودات <b>3</b></button></div>",
-      "css": ".ds-chips { font-family: Cairo, 'Segoe UI', sans-serif; display: flex; gap: 7px; } .ds-chip { font-family: Cairo, 'Segoe UI', sans-serif; height: 32px; padding: 0 12px; border-radius: 9px; border: 1px solid #E2E8F0; background: #F8FAFC; color: #000; font-size: 11.5px; font-weight: 700; cursor: pointer; } .ds-chip b { margin-inline-start: 6px; font-size: 10.5px; font-weight: 800; opacity: 0.75; } .ds-chip:hover { border-color: #0250D3; } .ds-chip:focus-visible { outline: 2px solid #0250D3; outline-offset: 1px; } .ds-chip-on { background: rgba(2,80,211,0.08); border-color: #0250D3; color: #0250D3; }"
+      "css": ".ds-chips { font-family: Cairo, 'Segoe UI', sans-serif; display: flex; gap: 7px; } .ds-chip { font-family: Cairo, 'Segoe UI', sans-serif; height: 32px; padding: 0 12px; border-radius: 9px; border: 1px solid #DCE3EE; background: #F4F7FC; color: #000; font-size: 11.5px; font-weight: 700; cursor: pointer; } .ds-chip b { margin-inline-start: 6px; font-size: 10.5px; font-weight: 800; opacity: 0.75; } .ds-chip:hover { border-color: #0250D3; } .ds-chip:focus-visible { outline: 2px solid #0250D3; outline-offset: 1px; } .ds-chip-on { background: rgba(2,80,211,0.08); border-color: #0250D3; color: #0250D3; }"
     },
     {
       "name": "Hub KPI Card",
@@ -630,7 +598,7 @@
       "refersTo": "kpi-card",
       "description": "Flat KPI card with a 3px start-side tone stripe, tabular 25/800 value and trend delta.",
       "html": "<div class=\"ds-kpi\" dir=\"rtl\"><div class=\"ds-kpi-label\">مبيعات اليوم</div><div class=\"ds-kpi-value\">12,480.00</div><div class=\"ds-kpi-delta\">▲ 8.2% <span>عن أمس</span></div></div>",
-      "css": ".ds-kpi { font-family: Cairo, 'Segoe UI', sans-serif; width: 220px; padding: 14px 16px; background: #FFFFFF; border: 1px solid #E2E8F0; border-inline-start: 3px solid #0250D3; border-radius: 14px; } .ds-kpi-label { font-size: 11.5px; font-weight: 700; color: #6B7280; } .ds-kpi-value { margin-top: 8px; font-size: 25px; font-weight: 800; line-height: 1.1; color: #000; font-variant-numeric: tabular-nums; } .ds-kpi-delta { margin-top: 6px; font-size: 11.5px; font-weight: 800; color: #22C55E; } .ds-kpi-delta span { font-size: 10.5px; font-weight: 600; color: #6B7280; }"
+      "css": ".ds-kpi { font-family: Cairo, 'Segoe UI', sans-serif; width: 220px; padding: 14px 16px; background: #FFFFFF; border: 1px solid #DCE3EE; border-inline-start: 3px solid #0250D3; border-radius: 14px; } .ds-kpi-label { font-size: 11.5px; font-weight: 700; color: #6B7280; } .ds-kpi-value { margin-top: 8px; font-size: 25px; font-weight: 800; line-height: 1.1; color: #000; font-variant-numeric: tabular-nums; } .ds-kpi-delta { margin-top: 6px; font-size: 11.5px; font-weight: 800; color: #22C55E; } .ds-kpi-delta span { font-size: 10.5px; font-weight: 600; color: #6B7280; }"
     },
     {
       "name": "Report Tabs",
@@ -638,7 +606,7 @@
       "refersTo": "report-tab-active",
       "description": "Horizontal report tabs: 50px tall, 2.5px brand underline and brand ink on the active tab, muted otherwise.",
       "html": "<nav class=\"ds-tabs\" dir=\"rtl\"><a class=\"ds-tab ds-tab-on\" href=\"#\">الملخص</a><a class=\"ds-tab\" href=\"#\">المبيعات</a><a class=\"ds-tab\" href=\"#\">المخزون</a></nav>",
-      "css": ".ds-tabs { font-family: Cairo, 'Segoe UI', sans-serif; display: flex; gap: 2px; padding: 0 26px; background: #FFFFFF; border-bottom: 1px solid #E2E8F0; } .ds-tab { display: inline-flex; align-items: center; height: 50px; padding: 0 16px; font-size: 13px; font-weight: 700; color: #6B7280; text-decoration: none; border-bottom: 2.5px solid transparent; } .ds-tab:hover { color: #0250D3; } .ds-tab:focus-visible { outline: 2px solid #0250D3; outline-offset: -2px; } .ds-tab-on { color: #0250D3; font-weight: 800; border-bottom-color: #0250D3; }"
+      "css": ".ds-tabs { font-family: Cairo, 'Segoe UI', sans-serif; display: flex; gap: 2px; padding: 0 26px; background: #FFFFFF; border-bottom: 1px solid #DCE3EE; } .ds-tab { display: inline-flex; align-items: center; height: 50px; padding: 0 16px; font-size: 13px; font-weight: 700; color: #6B7280; text-decoration: none; border-bottom: 2.5px solid transparent; } .ds-tab:hover { color: #0250D3; } .ds-tab:focus-visible { outline: 2px solid #0250D3; outline-offset: -2px; } .ds-tab-on { color: #0250D3; font-weight: 800; border-bottom-color: #0250D3; }"
     }
   ],
   "narrative": {

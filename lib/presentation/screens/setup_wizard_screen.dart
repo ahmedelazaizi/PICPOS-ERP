@@ -2,11 +2,11 @@ import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'setup_wizard/setup_step_meta.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:drift/drift.dart' show Value;
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // `app_config.dart` يعيد تصدير `business_profile.dart` — فمفيش استيراد
@@ -15,15 +15,11 @@ import '../../core/config/app_config.dart';
 import '../../core/config/business_profile_meta.dart';
 import '../../domain/models/setup_step_order.dart';
 import '../../core/config/business_profile_provider.dart';
-import '../../core/config/feature_key.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/database/connection_io.dart'
     show openPostgresConnection, testPostgresConnection;
 import '../../data/database/pg_config.dart';
-import '../../core/config/runtime_config_snapshot.dart';
 import '../../data/providers/providers.dart';
-import '../../services/audit_log.dart';
-import '../../services/developer_auth_service.dart';
 import '../../services/network_service.dart';
 import '../../services/mirror_pairing_service.dart';
 import '../../services/mirror_state.dart';
@@ -36,6 +32,14 @@ import '../../services/deployment/commit_result.dart';
 import '../../app_main_screen.dart';
 import '../touch_keyboard/providers/touch_mode_provider.dart';
 import '../../core/config/brand.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey, KeyDownEvent;
+import '../../core/constants/app_constants.dart' show CurrencyInfo;
+import '../../core/i18n/locale_provider.dart';
+import '../../services/license_service.dart';
+import '../picpos_shell/picpos_surface.dart';
+import 'setup_wizard/setup_finish_runner.dart';
+import 'setup_wizard/setup_persistence_riverpod.dart';
 
 part 'setup_wizard/step_company_info.dart';
 part 'setup_wizard/step_branch.dart';
@@ -44,6 +48,13 @@ part 'setup_wizard/step_users.dart';
 part 'setup_wizard/step_settings.dart';
 part 'setup_wizard/step_provisioning.dart';
 part 'setup_wizard/step_touch_mode.dart';
+// ── بندُ المالك ٦ — الهيكلُ الجديد (‏واجهةٌ جديدةٌ في ملفّاتٍ جديدة) ──
+part 'setup_wizard/step_welcome.dart';
+part 'setup_wizard/step_currency_tax.dart';
+part 'setup_wizard/step_cash_banks.dart';
+part 'setup_wizard/step_chart_preview.dart';
+part 'setup_wizard/step_review.dart';
+part 'setup_wizard/setup_wizard_flow.dart';
 
 /// لونُ النصّ الخافت **من الثيم** لا مثبَّتاً.
 ///
@@ -102,14 +113,32 @@ Widget _inlineNote(
 /// First-Run Setup Wizard — shown once after first login
 /// Guides the user through essential setup steps.
 class SetupWizardScreen extends ConsumerStatefulWidget {
-  const SetupWizardScreen({super.key});
+  const SetupWizardScreen({
+    super.key,
+    @visibleForTesting this.initialStep,
+    @visibleForTesting this.initialMode,
+  });
+
+  /// للاختبار: يبدأ المعالجُ على خطوةٍ بعينها (‏`SetupStepIds`) لتُقاس وحدَها.
+  final int? initialStep;
+
+  /// للاختبار: نمطُ تشغيلٍ ابتدائيٌّ غيرُ المستقلّ.
+  final NetworkMode? initialMode;
 
   @override
   ConsumerState<SetupWizardScreen> createState() => _SetupWizardScreenState();
 }
 
 class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
-  int _currentStep = 0;
+  // بندُ المالك ٦: المسارُ يبدأ بالترحيب واللغة — `SetupStepIds.welcome`.
+  int _currentStep = SetupStepIds.welcome;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialMode != null) _networkMode = widget.initialMode!;
+    if (widget.initialStep != null) _currentStep = widget.initialStep!;
+  }
 
   // Step 1: Company Info
   final _companyNameController = TextEditingController();
@@ -117,6 +146,53 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   final _companyAddressController = TextEditingController();
   String _businessType = 'retail';
   String _currency = 'EGP';
+
+  // ── بندُ المالك ٦: هويّةُ الشركة الكاملة ──
+  final _companyNameEnController = TextEditingController();
+  final _taxNumberController = TextEditingController();
+  final _commercialRegisterController = TextEditingController();
+  Uint8List? _logo;
+
+  /// اختارها المستخدمُ بيده ⇒ لا يبدّلها افتراضيُّ ملفّ النشاط بعد ذلك.
+  bool _businessTypeTouched = false;
+
+  // ── العملة والضريبة ──
+  bool _pricesIncludeTax = true;
+  bool _pricesIncludeTaxTouched = false;
+  bool _taxRateTouched = false;
+  SetupEInvoiceCountry _eInvoiceCountry = SetupEInvoiceCountry.egypt;
+  bool _eInvoiceTouched = false;
+
+  // ── الفرع ──
+  final _branchCodeController = TextEditingController();
+  final _branchAddressController = TextEditingController();
+
+  // ── الصناديق والبنوك — تُملأ من الصفوف المزروعة عند أوّل زيارة ──
+  final _cashBoxNameController = TextEditingController();
+  final _bankSafeNameController = TextEditingController();
+  final _bankNameController = TextEditingController();
+  final _bankAccountController = TextEditingController();
+  final _cliqSafeNameController = TextEditingController();
+  Future<void>? _safesLoad;
+
+  /// القيمُ المزروعةُ كما قُرئت — «تخطٍّ» يعيد الحقولَ إليها.
+  final Map<TextEditingController, String> _safeOriginals = {};
+
+  // ── معاينةُ دليل الحسابات — قراءةٌ واحدةٌ مذكَّرة ──
+  Future<List<Account>>? _accountsLoad;
+
+  // ── كلمة مرور المدير ──
+  final _adminPasswordController = TextEditingController();
+  final _adminPasswordConfirmController = TextEditingController();
+  bool _adminPasswordVisible = false;
+
+  // ── المراجعة والتشغيل ──
+  final SetupFinishRunner _runner = SetupFinishRunner();
+  SetupRunStage? _runStage;
+  SetupRunResult? _runResult;
+
+  /// دخل الخطوةَ من رابط «تعديل» في المراجعة ⇒ زرٌّ يعود إليها مباشرة.
+  bool _returnToReview = false;
 
   // Phase-B: runtime-selected business profile (new). Backed by the
   // `BusinessProfileCatalog` so the UI and the persisted `business_profile`
@@ -281,14 +357,32 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     _pgPasswordController.dispose();
     _developerPasswordController.dispose();
     _developerPasswordConfirmController.dispose();
+    _companyNameEnController.dispose();
+    _taxNumberController.dispose();
+    _commercialRegisterController.dispose();
+    _branchCodeController.dispose();
+    _branchAddressController.dispose();
+    _cashBoxNameController.dispose();
+    _bankSafeNameController.dispose();
+    _bankNameController.dispose();
+    _bankAccountController.dispose();
+    _cliqSafeNameController.dispose();
+    _adminPasswordController.dispose();
+    _adminPasswordConfirmController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // بندُ المالك ٦: الاتجاهُ من لغة الواجهة لا مثبَّتاً RTL — اختيارُ
+    // «English» في خطوة الترحيب يقلب المعالجَ كلَّه LTR فوراً.
+    final isEnglish = I18nCatalog.activeLocale.languageCode == 'en';
     return Directionality(
-      textDirection: ui.TextDirection.rtl,
-      child: Scaffold(
+      textDirection: isEnglish ? ui.TextDirection.ltr : ui.TextDirection.rtl,
+      // Enter = التالي (‏لوحةُ المفاتيح أوّلاً) — راجع `_onWizardKey`.
+      child: Focus(
+        onKeyEvent: _onWizardKey,
+        child: Scaffold(
         // 🔴 **عطبُ التباين الذي بلّغ عنه المالك.** كان اللونُ الأوسطُ
         //    `Colors.white` مثبَّتاً، فيرسم شريطاً أبيضَ عبر وسط الشاشة في
         //    الوضع الداكن — والعنوانُ الفرعيُّ `AppColors.textMuted` عليه
@@ -316,20 +410,22 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           child: Column(
             children: [
               // Header
+              // ⚠️ حشوةٌ رأسيّةٌ ١٦ لا ٢٤: على ١٣٦٦×٧٦٨ كلُّ بكسلٍ رأسيٍّ هنا
+              //    يُقتطع من جسم الخطوة (‏بندُ المالك ٦ — بلا فيضٍ على ٧٦٨).
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
                         PhosphorIconsBold.rocketLaunch,
                         color: Colors.white,
-                        size: 28,
+                        size: 24,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -349,7 +445,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                               ? tr('مرحباً بك في {p0}', {'p0': Brand.name})
                               : tr('مرحباً بك في URAL-ERP'),
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 21,
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).textTheme.titleLarge?.color,
                           ),
@@ -392,9 +488,16 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                     //    يُضاء شيءٌ أمامه في العمود. والبناءُ من المصدر يجعل
                     //    ذلك مستحيلاً: ما يُزار يظهر.
                     Container(
-                      width: 300,
-                      color: Theme.of(context).cardColor,
-                      padding: const EdgeInsets.all(20),
+                      width: 272,
+                      // ⚠️ حدٌّ رفيعٌ يفصل العمودَ عن الجسم (‏DESIGN.md: أسطحٌ
+                      //    مسطّحةٌ بخطوطٍ رفيعة) بلا ظلّ.
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        border: BorderDirectional(
+                          end: BorderSide(color: Theme.of(context).dividerColor),
+                        ),
+                      ),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         children: [
                           Expanded(
@@ -416,12 +519,12 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                     // Content
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsetsDirectional.fromSTEB(30, 26, 30, 24),
+                        padding: const EdgeInsetsDirectional.fromSTEB(28, 18, 28, 16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             _buildStepHeader(),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 16),
                             Expanded(
                               // جسمُ الخطوة على اليمين ولوحةُ الشرح على اليسار،
                               // كما في التصميم. وتنهار اللوحةُ تحت ١٤٠٠px بدل
@@ -451,20 +554,28 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                                 },
                               ),
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 14),
                             // Navigation buttons
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 if (_activeStepIndex > 0)
                                   OutlinedButton.icon(
-                                    onPressed: () => setState(() => _currentStep = _prevStep),
-                                    icon: const Icon(PhosphorIconsBold.arrowRight),
+                                    key: const Key('setup_back'),
+                                    onPressed: _runStage != null
+                                        ? null
+                                        : () => setState(() {
+                                              _returnToReview = false;
+                                              _currentStep = _prevStep;
+                                            }),
+                                    // `arrow_back` بـ`matchTextDirection` — → في
+                                    // RTL و← في LTR، كما في `PicPosPageHeader`.
+                                    icon: const Icon(Icons.arrow_back, size: 18),
                                     label:  Text(tr('السابق')),
                                     style: OutlinedButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 32,
-                                        vertical: 16,
+                                        horizontal: 26,
+                                        vertical: 14,
                                       ),
                                     ),
                                   )
@@ -486,23 +597,44 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                                         : _buildStepDots(),
                                   ),
                                 ),
+                                // تخطّي الخطوة الاختياريّة — بجوار «التالي».
+                                if (!_isLastStep &&
+                                    kOptionalSetupSteps.contains(_currentStep) &&
+                                    !_returnToReview)
+                                  Padding(
+                                    padding:
+                                        const EdgeInsetsDirectional.only(end: 10),
+                                    child: TextButton(
+                                      key: const Key('setup_skip_step'),
+                                      onPressed: _skipOptionalStep,
+                                      child: Text(tr('تخطي هذه الخطوة')),
+                                    ),
+                                  ),
                                 !_isLastStep
                                     ? ElevatedButton.icon(
-                                        onPressed: _canAdvance()
-                                            ? () => setState(() => _currentStep = _nextStep)
-                                            : null,
-                                        icon: const Icon(PhosphorIconsBold.arrowLeft),
-                                        label:  Text(tr('التالي')),
+                                        key: const Key('setup_next'),
+                                        onPressed: _canAdvance() ? _goNext : null,
+                                        // `arrow_forward` ← في RTL و→ في LTR.
+                                        icon: Icon(
+                                          _returnToReview
+                                              ? PhosphorIconsBold.listChecks
+                                              : Icons.arrow_forward,
+                                          size: 18,
+                                        ),
+                                        label: Text(_returnToReview
+                                            ? tr('العودة إلى المراجعة')
+                                            : tr('التالي')),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppColors.primary,
                                           foregroundColor: Colors.white,
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 32,
-                                            vertical: 16,
+                                            horizontal: 28,
+                                            vertical: 14,
                                           ),
                                         ),
                                       )
                                     : ElevatedButton.icon(
+                                        key: const Key('setup_finish'),
                                         onPressed: _isSaving ? null : _finishSetup,
                                         icon: _isSaving
                                             ? const SizedBox(
@@ -513,14 +645,19 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                                                   color: Colors.white,
                                                 ),
                                               )
-                                            : const Icon(PhosphorIconsBold.checkCircle),
-                                        label:  Text(tr('إنهاء الإعداد والبدء')),
+                                            : Icon(_runResult?.ok == false
+                                                ? PhosphorIconsBold.arrowsClockwise
+                                                : PhosphorIconsBold.checkCircle),
+                                        // فشلت محاولةٌ ⇒ الزرُّ نفسُه «إعادة من البداية».
+                                        label: Text(_runResult?.ok == false
+                                            ? tr('إعادة المحاولة من البداية')
+                                            : tr('إنهاء الإعداد والبدء')),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppColors.success,
                                           foregroundColor: Colors.white,
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 32,
-                                            vertical: 16,
+                                            horizontal: 28,
+                                            vertical: 14,
                                           ),
                                         ),
                                       ),
@@ -536,6 +673,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -617,6 +755,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   /// ⚠️ **الوصفُ ليس زخرفة**: هو ما يفرّق «تجزئة» عن «جملة وتوزيع» لمن
   /// يُنصّب أوّلَ مرّة، والقائمةُ المنسدلةُ تُخفيه خلفَ نقرة.
   Widget _choiceCard({
+    Key? key,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -625,6 +764,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   }) {
     final theme = Theme.of(context);
     return InkWell(
+      key: key,
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
@@ -648,7 +788,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                 Icon(
                   icon,
                   size: 18,
-                  color: selected ? AppColors.primary : _mutedInk(context),
+                  color: selected ? _brandInk(context) : _mutedInk(context),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -657,15 +797,15 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
-                      color: selected ? AppColors.primary : null,
+                      color: selected ? _brandInk(context) : null,
                     ),
                   ),
                 ),
                 if (selected)
-                  const Icon(
+                  Icon(
                     PhosphorIconsBold.checkCircle,
                     size: 16,
-                    color: AppColors.primary,
+                    color: _brandInk(context),
                   ),
               ],
             ),
@@ -751,9 +891,10 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
             children: [
               Text(meta.title, style: text.headlineSmall),
               const SizedBox(height: 2),
+              // لونُ الثيم لا `AppColors.textMuted` — ذاك يذوب في الداكن.
               Text(
                 meta.sub,
-                style: text.bodySmall?.copyWith(color: AppColors.textMuted),
+                style: text.bodySmall?.copyWith(color: _mutedInk(context)),
               ),
             ],
           ),
@@ -918,7 +1059,9 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: InkWell(
-        onTap: () => setState(() => _currentStep = meta.index),
+        // ⚠️ القفزُ عبر `_jumpTo` لا تعيينٌ مباشر: الأمامُ مقفولٌ حتّى تصحَّ
+        //    كلُّ خطوةٍ قبله — وإلّا وصل المستخدمُ إلى المراجعة باسمِ شركةٍ فارغ.
+        onTap: _runStage != null ? null : () => _jumpTo(meta.index),
         borderRadius: BorderRadius.circular(13),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
@@ -951,7 +1094,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                         ? AppColors.success
                         : isActive
                             ? AppColors.primary
-                            : AppColors.textMuted.withValues(alpha: 0.35),
+                            : Theme.of(context).dividerColor,
                     width: 1.5,
                   ),
                 ),
@@ -964,7 +1107,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                           fontSize: 12.5,
                           fontWeight: FontWeight.w800,
                           color:
-                              isActive ? Colors.white : AppColors.textMuted,
+                              isActive ? Colors.white : _mutedInk(context),
                         ),
                       ),
               ),
@@ -981,7 +1124,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                       style: text.labelLarge?.copyWith(
                         fontWeight:
                             isActive ? FontWeight.w800 : FontWeight.w600,
-                        color: isActive ? AppColors.primary : null,
+                        color: isActive ? _brandInk(context) : null,
                       ),
                     ),
                     Text(
@@ -989,7 +1132,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: text.labelSmall
-                          ?.copyWith(color: AppColors.textMuted),
+                          ?.copyWith(color: _mutedInk(context)),
                     ),
                   ],
                 ),
@@ -998,7 +1141,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
               Icon(
                 meta.icon,
                 size: 17,
-                color: isActive ? AppColors.primary : AppColors.textMuted,
+                color: isActive ? _brandInk(context) : _mutedInk(context),
               ),
             ],
           ),
@@ -1007,28 +1150,39 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     );
   }
 
+  /// جسمُ الخطوة الحاليّة.
+  ///
+  /// ⚠️ ٤ و٧ و٨ و٩ لم تعد في أيّ مسار (‏بندُ المالك ٦) — أجسامُها صارت أقساماً
+  /// في الترحيب والشركة والمستخدمين والعملة. وتبقى هنا موجَّهةً إلى الخطوة
+  /// التي استوعبتها، فلا تُرسَم صفحةٌ فارغةٌ لو وصلها أحدٌ برقمها القديم.
   Widget _buildCurrentStep() {
     switch (_currentStep) {
-      case 0:
+      case SetupStepIds.welcome:
+      case SetupStepIds.touchMode:
+        return _buildWelcomeStep();
+      case SetupStepIds.company:
+      case SetupStepIds.businessProfile:
         return _buildCompanyInfoStep();
-      case 1:
+      case SetupStepIds.currencyTax:
+      case SetupStepIds.tax:
+        return _buildCurrencyTaxStep();
+      case SetupStepIds.branchAndMode:
         return _buildBranchStep();
-      case 2:
-        return _buildProductsStep();
-      case 3:
+      case SetupStepIds.cashBanks:
+        return _buildCashBanksStep();
+      case SetupStepIds.chartOfAccounts:
+        return _buildChartPreviewStep();
+      case SetupStepIds.users:
+      case SetupStepIds.developerPassword:
         return _buildUsersStep();
-      case 4:
-        return _buildSettingsStep();
-      case 5:
+      case SetupStepIds.products:
+        return _buildProductsStep();
+      case SetupStepIds.postgres:
         return _buildPgConfigStep();
-      case 6:
+      case SetupStepIds.provisioning:
         return _buildProvisioningStep();
-      case 7:
-        return _buildDeveloperPasswordStep();
-      case 8:
-        return _buildBusinessProfileStep();
-      case 9:
-        return _buildTouchModeStep();
+      case SetupStepIds.review:
+        return _buildReviewStep();
       default:
         return const SizedBox();
     }
@@ -1308,6 +1462,15 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         .where((u) => u['password'] == password)
         .map((u) => u['username'] as String)
         .firstOrNull;
+    // وكلمةُ المدير الجديدة من نفس الدفعة (‏بندُ المالك ٦) — نفسُ المنع.
+    if (_asksAdminPassword && password == _adminPasswordController.text) {
+      AppToast.show(
+        context,
+        tr('كلمةُ المرور هذه مستعملةٌ سلفاً للمستخدم "{duplicateOf}". اختر كلمةً مختلفة — كلمتان متطابقتان تمنعان أحدَ صاحبَيهما من الدخول.', {'duplicateOf': 'admin'}),
+        type: ToastType.error,
+      );
+      return;
+    }
     if (duplicateOf != null) {
       AppToast.show(
         context,
@@ -1392,410 +1555,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       );
     }
   }
-
-  Future<void> _finishSetup() async {
-    setState(() => _isSaving = true);
-    // Non-fatal warnings collected along the way; surfaced to the user as
-    // ONE consolidated toast at the end instead of vanishing into
-    // `debugPrint` (owner decision 2026-08-17 — a silent `try/catch` here
-    // is exactly what let the reported bug hide as long as it did).
-    final warnings = <String>[];
-    try {
-      final settingsRepo = ref.read(settingsRepositoryProvider);
-      // Spec B3 hardening: `business_profile`, `deployment_mode` and the
-      // developer password are written through THIS SAME live
-      // `SettingsRepositoryCached` instance — the one
-      // `settingsRepositoryCachedProvider` also hands to every Dev Tools
-      // provider — instead of the plain uncached repo followed by a
-      // later cache patch-up. Correct by construction: there is no
-      // window where the DB has the new value and the live cache still
-      // has the old one for these three keys specifically.
-      // `rehydrateRuntimeConfigCache` below remains a safety net for
-      // every other key this function still writes through `settingsRepo`.
-      final cache = ref.read(settingsRepositoryCachedProvider);
-      final branchRepo = ref.read(branchRepositoryProvider);
-      final productRepo = ref.read(productRepositoryProvider);
-
-      // Phase B: mark setup as in-progress so a crash between here and
-      // the final `setup_completed=true` leaves a breadcrumb for the
-      // resume-on-crash UX.
-      await settingsRepo.saveSetting('setup_in_progress', 'true');
-
-      // Phase B: persist the runtime business profile choice so the
-      // feature-flag providers load it at boot. Written through `cache`
-      // — see comment above.
-      await cache.save('business_profile', _selectedProfile.name);
-
-      // Phase B: seed the developer password through the SAME live
-      // cache (previously a throwaway `SettingsRepositoryCached(db)` —
-      // the DB write landed correctly, but that instance was never the
-      // one wired to any provider; it only happened to "work" because
-      // the old hot-fix re-preloaded these two keys from the DB
-      // afterwards).
-      try {
-        final devAuth = DeveloperAuthService(cache);
-        await devAuth.setPassword(_developerPasswordController.text.trim());
-      } catch (e, st) {
-        debugPrint('[SetupWizard] developer password save failed: $e\n$st');
-        warnings.add(tr('لم يُحفَظ كلمة مرور المطوّر'));
-      }
-
-      // Save company info
-      final companyName = _companyNameController.text.trim();
-      if (companyName.isNotEmpty) {
-        await settingsRepo.saveSetting('company_name', companyName);
-      }
-      if (_companyPhoneController.text.trim().isNotEmpty) {
-        await settingsRepo.saveSetting(
-          'company_phone',
-          _companyPhoneController.text.trim(),
-        );
-      }
-      if (_companyAddressController.text.trim().isNotEmpty) {
-        await settingsRepo.saveSetting(
-          'company_address',
-          _companyAddressController.text.trim(),
-        );
-      }
-      await settingsRepo.saveSetting('business_type', _businessType);
-
-      // Save currency
-      await ref.read(systemCurrencyProvider.notifier).setCurrency(_currency);
-
-      // Create branch & warehouse.
-      // BUG 5a fix: seedInitialData() already inserted a flagged
-      // isSystemDefault branch/warehouse before the wizard ever runs
-      // (standalone/server mode). Blind-creating here used to mint a
-      // second, unflagged row right next to it — branches.name has no
-      // UNIQUE constraint, so nothing caught it. Reuse the seeded row
-      // instead (rename it if the operator typed something different)
-      // and only fall back to createBranch when no seeded row exists —
-      // client mode, where seeding is skipped and ClientFirstSyncService
-      // reconciles the branch on first sync (R8).
-      final branchName = _branchNameController.text.trim();
-      int? branchId;
-      if (branchName.isNotEmpty) {
-        try {
-          final existingBranches = await branchRepo.getAllBranches();
-          final seededBranch = existingBranches
-                  .where((b) => b.isSystemDefault)
-                  .firstOrNull ??
-              existingBranches
-                  .where((b) => b.name.trim() == branchName)
-                  .firstOrNull;
-          if (seededBranch != null) {
-            branchId = seededBranch.id;
-            if (seededBranch.name.trim() != branchName) {
-              await branchRepo.updateBranch(seededBranch.copyWith(
-                name: branchName,
-                lastModifiedAt: Value(DateTime.now()),
-              ));
-            }
-          } else {
-            branchId = await branchRepo.createBranch(name: branchName);
-          }
-        } catch (_) {
-          final existing = await branchRepo.getAllBranches();
-          branchId = existing
-              .where((b) => b.name.trim() == branchName)
-              .map((b) => b.id)
-              .firstOrNull;
-        } // May already exist
-      }
-
-      final warehouseName = _warehouseNameController.text.trim();
-      int? warehouseId;
-      if (warehouseName.isNotEmpty && branchId != null) {
-        try {
-          final existingWarehouses =
-              await branchRepo.getWarehousesByBranch(branchId);
-          final seededWarehouse = existingWarehouses
-                  .where((w) => w.isSystemDefault)
-                  .firstOrNull ??
-              existingWarehouses
-                  .where((w) => w.name.trim() == warehouseName)
-                  .firstOrNull;
-          if (seededWarehouse != null) {
-            warehouseId = seededWarehouse.id;
-            if (seededWarehouse.name.trim() != warehouseName) {
-              await branchRepo.updateWarehouse(seededWarehouse.copyWith(
-                name: warehouseName,
-                lastModifiedAt: Value(DateTime.now()),
-              ));
-            }
-          } else {
-            warehouseId = await branchRepo.createWarehouseForBranch(
-              name: warehouseName,
-              branchId: branchId,
-              isDefault: true,
-            );
-          }
-        } catch (_) {
-          final existing = await branchRepo.getWarehousesByBranch(branchId);
-          warehouseId = existing
-              .where((w) => w.name.trim() == warehouseName)
-              .map((w) => w.id)
-              .firstOrNull;
-        } // May already exist
-      }
-      if (branchId != null && warehouseId != null) {
-        await settingsRepo.saveSetting(
-          'pos_default_warehouse_branch_$branchId',
-          warehouseId.toString(),
-        );
-        await settingsRepo.saveSetting(
-          'pos_default_warehouse_id',
-          warehouseId.toString(),
-        );
-      }
-
-      // Create sample products
-      for (int i = 0; i < _sampleProducts.length; i++) {
-        final p = _sampleProducts[i];
-        try {
-          final code = 'SETUP-${DateTime.now().millisecondsSinceEpoch}-$i';
-          await productRepo.insertProduct(
-            ProductsCompanion.insert(
-              code: code,
-              name: p['name']!,
-              salePrice: Value(double.tryParse(p['price'] ?? '0') ?? 0),
-              costPrice: Value(double.tryParse(p['cost'] ?? '0') ?? 0),
-            ),
-          );
-        } catch (_) {}
-      }
-
-      // Create wizard users
-      if (_wizardUsers.isNotEmpty) {
-        final authRepo = ref.read(authRepositoryProvider);
-        // ⚠️ كان هذا `catch` يكتفي بـ`debugPrint`: فمستخدمٌ يفشل إنشاؤه يسقط
-        // من الدفعة **صامتاً** والمشغّلُ يمضي ظانّاً أن الكلَّ أُنشئ — ثم
-        // يكتشف الغيابَ يومَ يحاول ذلك الموظّفُ الدخول. والصمتُ هنا ينقض
-        // «رسالةً صريحة» في §١ من أصله.
-        final failed = <String>[];
-        for (final u in _wizardUsers) {
-          try {
-            await authRepo.createUser(
-              username: u['username'] as String,
-              password: u['password'] as String,
-              displayName: u['displayName'] as String,
-              roleId: u['roleId'] as int?,
-              forcePasswordChange: true,
-            );
-          } catch (e) {
-            debugPrint('[SetupWizard] Error creating user ${u['username']}: $e');
-            failed.add('${u['username']}: $e');
-          }
-        }
-        if (failed.isNotEmpty && mounted) {
-          AppToast.show(
-            context,
-            tr('تعذّر إنشاءُ {p0} مستخدم:\n{p1}', {'p0': failed.length, 'p1': failed.join('\n')}),
-            type: ToastType.error,
-          );
-        }
-      }
-
-      // Save tax settings (both global key and POS-specific key)
-      await settingsRepo.saveSetting('tax_enabled', _enableTax ? 'true' : 'false');
-      await settingsRepo.saveSetting('tax_rate', _taxRate.toString());
-      // POS reads tax as decimal (e.g. 0.14 for 14%), so convert percentage → decimal
-      final taxDecimal = _enableTax ? (_taxRate / 100.0) : 0.0;
-      await settingsRepo.saveSetting('pos_default_tax_rate', taxDecimal.toString());
-
-      // ─── Spec 125 (US1): atomic deployment-mode commit ───────────────
-      // Replaces the previous mix of saveSetting('network_mode')+resetToStandalone
-      // +setMode+per-mode adhoc blocks. The committer:
-      //   • for standalone — calls setMode(standalone) which writes
-      //     network_mode AND clears stale network state.
-      //   • for client/mirror — skips pair+sync because _connectAndSync /
-      //     _pairMirror already ran in earlier wizard steps (committer
-      //     gates on isFirstSyncPending). Still calls setMode + starts
-      //     heartbeat (mirror) + writes owned settings (standalone/server
-      //     flags + last_committed_mode) atomically.
-      //   • on any failure — CommitFailed surfaces with an Arabic reason
-      //     and the wizard stays on the current step.
-      final db = ref.read(databaseProvider);
-      final committer = DeploymentModeCommitter(db: db);
-      final contract = committer.buildContract(
-        target: _networkMode,
-        serverPort: int.tryParse(_serverPortController.text) ?? 8080,
-        serverHost: NetworkService.instance.serverAddress,
-      );
-      final commitResult = await committer.commit(contract: contract);
-      if (commitResult is CommitFailed) {
-        // BUG 5 + BUG 7 + BUG 1 (Spec 125): no partial DB state. Stay on
-        // the current step so the user can retry or back out.
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(commitResult.reasonAr),
-              backgroundColor: AppColors.error,
-              duration: const Duration(seconds: 6),
-            ),
-          );
-        }
-        setState(() => _isSaving = false);
-        return;
-      }
-      // CommitOk — proceed to finalise wizard (setup_completed flag below).
-
-      // Spec B3 hardening: `deployment_mode` (the `DeploymentMode` enum
-      // key `DeploymentModeNotifier`/Dev Tools read) is a SEPARATE
-      // setting from `network_mode` (`NetworkMode` enum, owned by
-      // NetworkService/the committer above). Verified by text search —
-      // nothing in the wizard or the committer ever wrote it, in either
-      // the cached or uncached repo. Every wizard completion therefore
-      // left Dev Tools' mode selector reading the compile-time default
-      // (`standalone`) no matter which mode was actually picked. The
-      // explicit switch (rather than `.name`) keeps this exhaustive
-      // against future enum drift between the two mode types.
-      await cache.save(
-        'deployment_mode',
-        switch (_networkMode) {
-          NetworkMode.standalone => DeploymentMode.standalone,
-          NetworkMode.server => DeploymentMode.server,
-          NetworkMode.client => DeploymentMode.client,
-          NetworkMode.mirror => DeploymentMode.mirror,
-        }.key,
-      );
-
-      if (_networkMode == NetworkMode.client && _selectedBranchId != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('client_branch_id', _selectedBranchId!);
-        final clientWarehouseId =
-            await _resolveDefaultWarehouseForBranch(_selectedBranchId!);
-        if (clientWarehouseId != null) {
-          await settingsRepo.saveSetting(
-            'pos_default_warehouse_branch_$_selectedBranchId',
-            clientWarehouseId.toString(),
-          );
-          await settingsRepo.saveSetting(
-            'pos_default_warehouse_id',
-            clientWarehouseId.toString(),
-          );
-        }
-
-        // Auto-generate document numbering prefixes based on the selected branch's short code
-        Branche? selectedBranch;
-        for (final b in _syncedBranches) {
-          if (b.id == _selectedBranchId) {
-            selectedBranch = b;
-            break;
-          }
-        }
-
-        if (selectedBranch != null && selectedBranch.code != null && selectedBranch.code!.trim().isNotEmpty) {
-          final branchCode = selectedBranch.code!.trim();
-          await settingsRepo.saveSetting('invoice_code_prefix', '$branchCode-POS');
-          await settingsRepo.saveSetting('prefix_sales_pos', '$branchCode-POS');
-          await settingsRepo.saveSetting('prefix_sales_manual', '$branchCode-SINV');
-          await settingsRepo.saveSetting('prefix_sales_return', '$branchCode-SRET');
-          await settingsRepo.saveSetting('prefix_purchase', '$branchCode-PINV');
-          await settingsRepo.saveSetting('prefix_purchase_return', '$branchCode-PRET');
-          await settingsRepo.saveSetting('prefix_receipt_voucher', '$branchCode-RCPT');
-          await settingsRepo.saveSetting('prefix_payment_voucher', '$branchCode-PMT');
-          await settingsRepo.saveSetting('prefix_quotation', '$branchCode-QUOT');
-        }
-
-        // Spec 001: master-data wipe now happens earlier inside
-        // _connectAndSync() via ClientFirstSyncService — see that method
-        // for the new contract (wipe-then-pull, gated by
-        // client_first_sync_completed). Nothing to do here.
-      }
-
-      // Mirror mode finalisation — handled by DeploymentModeCommitter above.
-      // The committer guarantees setMode(mirror) + first-sync wipe (if pending)
-      // + heartbeat start + atomic settings write. If MirrorState wasn't
-      // configured (user skipped _pairMirror), commit() returned CommitFailed
-      // and we already early-returned above with an Arabic snackbar.
-
-      // Auto-create fiscal year for the current calendar year — only in
-      // standalone/server mode. In client mode the server is the source of
-      // truth and its fiscal year already arrived via sync (per Spec 001).
-      if (_networkMode != NetworkMode.client) {
-        try {
-          final accountingRepo = ref.read(accountingRepositoryProvider);
-          final now = DateTime.now();
-          final fyStart = DateTime(now.year, 1, 1);
-          final fyEnd = DateTime(now.year, 12, 31);
-          final fyId = await accountingRepo.createFiscalYear(
-            name: '${now.year}',
-            startDate: fyStart,
-            endDate: fyEnd,
-          );
-          await accountingRepo.generatePeriodsForYear(fyId, fyStart, fyEnd);
-        } catch (_) {
-          // Fiscal year may already exist — silently continue
-        }
-      }
-
-      // Mark setup as completed and clear the in-progress breadcrumb.
-      await settingsRepo.saveSetting('setup_completed', 'true');
-      await settingsRepo.saveSetting('setup_in_progress', '');
-
-      // Phase B: audit trail entry so the developer can confirm which
-      // profile + mode the install was configured with.
-      await AuditLog.record(
-        'setup_completed',
-        level: AuditLevel.critical,
-        payload: {
-          'profile': _selectedProfile.name,
-          'mode': _networkMode.name,
-          'business_type': _businessType,
-        },
-      );
-
-      // Shared with `_skipSetup()` — see
-      // `ConfigService.rehydrateRuntimeConfigCache` doc (Spec B3). Most
-      // of the keys it re-preloads were already written correctly above
-      // via `cache` directly; this remains the safety net for the rest
-      // (`setup_completed`/`setup_in_progress`/feature overrides/hash),
-      // plus the notifier-rebuild step that a raw cache write alone
-      // cannot trigger.
-      if (!await ref
-          .read(configServiceProvider)
-          .rehydrateRuntimeConfigCache(exitPath: 'finish')) {
-        warnings.add(tr('تعذّر تحديث ذاكرة الإعدادات المؤقتة'));
-      }
-
-      if (mounted) {
-        if (warnings.isEmpty) {
-          AppToast.show(
-            context,
-            tr('تم إعداد النظام بنجاح! مرحباً بك 🎉'),
-            type: ToastType.success,
-          );
-        } else {
-          // Visible, not swallowed — the whole point of this hardening
-          // pass. The DB writes above already committed; only the live
-          // cache/refresh step is in question, so we still proceed into
-          // the app rather than trap the user on the wizard.
-          AppToast.show(
-            context,
-            tr('اكتمل الإعداد، لكن مع تحذيرات: {p0}. يُفضَّل إعادة تشغيل التطبيق.', {'p0': warnings.join(tr('، '))}),
-            type: ToastType.warning,
-          );
-        }
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MainScreen()),
-          (r) => false,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        AppToast.show(context, tr('خطأ في الحفظ: {e}', {'e': e}), type: ToastType.error);
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
-  }
-
-  Future<int?> _resolveDefaultWarehouseForBranch(int branchId) async {
-    final branchRepo = ref.read(branchRepositoryProvider);
-    final warehouses = await branchRepo.getWarehousesByBranch(branchId);
-    if (warehouses.isEmpty) return null;
-    return warehouses.where((w) => w.isDefault).map((w) => w.id).firstOrNull ??
-        warehouses.first.id;
-  }
+  // ⚠️ _finishSetup انتقل إلى setup_wizard/setup_wizard_flow.dart، وكتاباتُه
+  //    كلُّها إلى SetupFinishRunner (‏setup_finish_runner.dart) بالترتيب
+  //    نفسِه — ويحرس التكافؤَ 	est/unit/setup_finish_runner_parity_test.dart.
 }

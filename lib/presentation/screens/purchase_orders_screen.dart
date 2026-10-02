@@ -150,10 +150,14 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
           // في شاشةٍ لا مخرجَ منها إلّا مفتاحُ لوحةِ المفاتيح.
           //
           // وفي RTL «رجوع» سهمٌ إلى اليمين (→) مطابقةً لبقيّة الشاشات.
+          //
+          // ⚠️ `arrow_back` لا `arrow_forward` — نفسُ علاج `PicPosPageHeader`:
+          // كلاهما يحمل `matchTextDirection`، فـ`arrow_back` يُرسَم → في RTL
+          // و← في LTR (نحو بداية السطر). و`arrow_forward` كان يُرسَم ← في RTL.
           if (Navigator.canPop(context)) ...[
             IconButton(
               onPressed: () => Navigator.maybePop(context),
-              icon: const Icon(Icons.arrow_forward),
+              icon: const Icon(Icons.arrow_back),
               color: Colors.white,
               tooltip: tr('رجوع'),
               style: IconButton.styleFrom(

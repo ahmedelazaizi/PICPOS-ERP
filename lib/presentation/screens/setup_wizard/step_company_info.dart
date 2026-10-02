@@ -61,110 +61,186 @@ extension _SetupWizardCompanyInfoExt on _SetupWizardScreenState {
   // ═══════════════════════════════════════════════════════════════════════
   // STEP 1: Company Info
   // ═══════════════════════════════════════════════════════════════════════
+  //
+  // بندُ المالك ٦: «الشركة والنشاط» — الهويّةُ كاملةً (‏اسمان · ضريبيّ · سجلّ
+  // تجاريّ · هاتف · عنوان · شعار) ثمّ ملفُّ النشاط الذي يقرّر الشاشات، ثمّ
+  // تصنيفُ النشاط الوصفيّ. والعملةُ انتقلت إلى خطوتها مع الضريبة.
   Widget _buildCompanyInfoStep() {
+    final isClient = _networkMode == NetworkMode.client;
+    Widget pair(Widget a, Widget b) => Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: a),
+            const SizedBox(width: 12),
+            Expanded(child: b),
+          ],
+        );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-         Text(
-          tr('معلومات الشركة'),
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        if (isClient) ...[
+          _inlineNote(
+            context,
+            icon: PhosphorIconsBold.info,
+            tone: AppColors.info,
+            title: tr('بيانات الشركة من السيرفر'),
+            body: tr('في وضع العميل تصل بيانات الشركة بالمزامنة — الحقول هنا اختيارية.'),
+          ),
+          const SizedBox(height: 14),
+        ],
+        pair(
+          _buildTextField(
+            key: const Key('setup_company_name'),
+            controller: _companyNameController,
+            label: tr('اسم الشركة / المحل'),
+            hint: tr('مثال: سوبر ماركت النيل'),
+            icon: PhosphorIconsBold.storefront,
+            isRequired: !isClient,
+            onChanged: (_) => setState(() {}),
+          ),
+          _buildTextField(
+            key: const Key('setup_company_name_en'),
+            controller: _companyNameEnController,
+            label: tr('الاسم بالإنجليزية'),
+            hint: 'Nile Supermarket',
+            icon: PhosphorIconsBold.textAa,
+          ),
+        ),
+        const SizedBox(height: 12),
+        pair(
+          _buildTextField(
+            key: const Key('setup_tax_number'),
+            controller: _taxNumberController,
+            label: tr('الرقم الضريبي'),
+            icon: PhosphorIconsBold.receipt,
+          ),
+          _buildTextField(
+            key: const Key('setup_cr_number'),
+            controller: _commercialRegisterController,
+            label: tr('السجل التجاري'),
+            icon: PhosphorIconsBold.identificationCard,
+          ),
+        ),
+        const SizedBox(height: 12),
+        pair(
+          _buildTextField(
+            controller: _companyPhoneController,
+            label: tr('رقم الهاتف'),
+            hint: '01xxxxxxxxx',
+            icon: PhosphorIconsBold.phone,
+          ),
+          _buildTextField(
+            controller: _companyAddressController,
+            label: tr('العنوان'),
+            hint: tr('القاهرة، مصر'),
+            icon: PhosphorIconsBold.mapPin,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildLogoPicker(),
+        const SizedBox(height: 20),
+
+        // ── ملفّ النشاط — يقرّر الشاشات ──
+        _stepFieldLabel(tr('ملف النشاط التجاري')),
+        const SizedBox(height: 4),
+        Text(
+          tr('يحدد هذا الاختيار الشاشات والميزات الظاهرة للمستخدم. يمكن تعديله لاحقًا من "أدوات المطوّر" فقط (محمية بكلمة مرور مطوّر منفصلة).'),
+          style: TextStyle(fontSize: 12, color: _mutedInk(context)),
         ),
         const SizedBox(height: 8),
-        Text(
-          tr('أدخل بيانات شركتك الأساسية — ستظهر في الفواتير والتقارير.'),
-          style: TextStyle(color: _mutedInk(context)),
-        ),
-        const SizedBox(height: 32),
-        _buildTextField(
-          controller: _companyNameController,
-          label: tr('اسم الشركة / المحل'),
-          hint: tr('مثال: سوبر ماركت النيل'),
-          icon: PhosphorIconsBold.storefront,
-          isRequired: true,
-        ),
+        _buildBusinessProfileSection(),
         const SizedBox(height: 20),
-        _buildTextField(
-          controller: _companyPhoneController,
-          label: tr('رقم الهاتف'),
-          hint: '01xxxxxxxxx',
-          icon: PhosphorIconsBold.phone,
-        ),
-        const SizedBox(height: 20),
-        _buildTextField(
-          controller: _companyAddressController,
-          label: tr('العنوان'),
-          hint: tr('القاهرة، مصر'),
-          icon: PhosphorIconsBold.mapPin,
-        ),
-        const SizedBox(height: 28),
 
-        // ── نوع النشاط — بطاقاتٌ لا قائمةٌ منسدلة ────────────────────────
+        // ── نوع النشاط — وسمٌ وصفيٌّ يتبع الملفَّ افتراضيّاً ────────────
         //
-        // التصميمُ يجعلها ستَّ بطاقاتٍ داخلَ هذه الخطوة. والقائمةُ المنسدلةُ
-        // تُخفي الوصفَ الذي يفرّق بينها خلفَ نقرة — والفرقُ بين «تجزئة»
-        // و«جملة وتوزيع» ليس بديهيّاً لمن يُنصّب أوّلَ مرّة.
+        // كان ستَّ بطاقاتٍ بوصفٍ لكلٍّ منها. وبعد أن صار «ملفُّ النشاط»
+        // بجوارها ببطاقاتٍ موصوفة، صارت بطاقاتٌ ثانيةٌ بأوصافٍ تكراراً يُربك
+        // («هل أجبتُ هذا السؤال؟») — فهي رقاقاتٌ تتبع الملفَّ افتراضيّاً،
+        // والوصفُ تلميحٌ عند المرور.
         _stepFieldLabel(tr('نوع النشاط')),
-        const SizedBox(height: 10),
-        LayoutBuilder(
-          builder: (context, c) {
-            // ⚠️ عمودان تحت ٧٢٠px: ثلاثةٌ تسحق البطاقةَ إلى عرضٍ يلتفّ فيه
-            //    السطرُ الوصفيُّ حرفاً حرفاً.
-            final cols = c.maxWidth < 720 ? 2 : 3;
-            const gap = 12.0;
-            final w = (c.maxWidth - gap * (cols - 1)) / cols;
-            return Wrap(
-              spacing: gap,
-              runSpacing: gap,
-              children: [
-                for (final (id, title, sub, icon) in _businessTypeCards)
-                  SizedBox(
-                    width: w,
-                    child: _choiceCard(
-                      icon: icon,
-                      title: title,
-                      subtitle: sub,
-                      selected: _businessType == id,
-                      onTap: () => setState(() => _businessType = id),
-                    ),
-                  ),
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: 28),
-
-        // ── العملة — رقاقاتٌ وتحذيرٌ ─────────────────────────────────────
-        _stepFieldLabel(tr('العملة')),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: [
-            for (final (code, name) in _currencyChips)
-              ChoiceChip(
-                selected: _currency == code,
-                onSelected: (_) => setState(() => _currency = code),
-                label: Text('$name ($code)'),
-                labelStyle: TextStyle(
-                  fontSize: 13,
-                  fontWeight:
-                      _currency == code ? FontWeight.w800 : FontWeight.w500,
+            for (final (id, title, sub, icon) in _businessTypeCards)
+              Tooltip(
+                message: sub,
+                child: ChoiceChip(
+                  key: Key('setup_business_type_$id'),
+                  avatar: Icon(icon, size: 15),
+                  selected: _businessType == id,
+                  onSelected: (_) => setState(() {
+                    _businessType = id;
+                    _businessTypeTouched = true;
+                  }),
+                  label: Text(title),
                 ),
               ),
           ],
         ),
-        const SizedBox(height: 12),
-        // ⚠️ **تحذيرٌ لا زينة.** العملةُ تدخل كلَّ فاتورةٍ وكلَّ قيدٍ
-        //    محاسبيّ، ولا يوجد في النظام تحويلُ أرصدةٍ بأثرٍ رجعيّ. فتبديلُها
-        //    بعد أوّل فاتورةٍ يترك دفتراً بعملتَين لا يُفرَّق بينهما.
-        _inlineNote(
-          context,
-          icon: PhosphorIconsBold.warningCircle,
-          tone: AppColors.error,
-          title: tr('العملة قرار نهائي'),
-          body: tr('تدخل كلَّ فاتورةٍ وكلَّ قيدٍ محاسبيّ، ولا تحويلَ بأثرٍ رجعيّ. تبديلُها بعد أوّل فاتورةٍ يترك دفتراً بعملتَين.'),
-        ),
       ],
+    );
+  }
+
+  /// الشعارُ — يُطبَع في ترويسة الفاتورة (`company_logo`).
+  Widget _buildLogoPicker() {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.dividerColor),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: _logo != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.memory(_logo!, fit: BoxFit.cover),
+                  )
+                : Icon(PhosphorIconsBold.image, color: _brandInk(context)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  tr('شعار الشركة'),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                Text(
+                  _logo != null
+                      ? tr('تم اختيار الشعار')
+                      : tr('اختياري — يظهر في ترويسة الفواتير المطبوعة'),
+                  style: TextStyle(fontSize: 12, color: _mutedInk(context)),
+                ),
+              ],
+            ),
+          ),
+          if (_logo != null)
+            TextButton(
+              onPressed: () => setState(() => _logo = null),
+              child: Text(tr('إزالة')),
+            ),
+          OutlinedButton.icon(
+            key: const Key('setup_pick_logo'),
+            onPressed: _pickLogo,
+            icon: const Icon(PhosphorIconsBold.upload, size: 16),
+            label: Text(tr('اختيار صورة')),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1059,12 +1059,10 @@ class PicPosReturnActionBar extends StatelessWidget {
                 OutlinedButton.icon(
                   key: const Key('picpos_return_back'),
                   onPressed: busy ? null : onBack,
-                  icon: Icon(
-                    Directionality.of(context) == ui.TextDirection.rtl
-                        ? PhosphorIconsBold.caretRight
-                        : PhosphorIconsBold.caretLeft,
-                    size: 15,
-                  ),
+                  // نفسُ علاج `PicPosPageHeader`: `arrow_back` يحمل
+                  // `matchTextDirection` فينقلب مع الاتجاه وحدَه (→ في RTL
+                  // و← في LTR) بلا فرعٍ يدويٍّ على `Directionality`.
+                  icon: const Icon(Icons.arrow_back, size: 15),
                   label: Text(
                     tr('رجوع'),
                     style: const TextStyle(

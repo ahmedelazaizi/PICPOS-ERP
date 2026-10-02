@@ -3,84 +3,11 @@ part of '../setup_wizard_screen.dart';
 extension _SetupWizardSettingsExt on _SetupWizardScreenState {
   // ═══════════════════════════════════════════════════════════════════════
   // STEP 4: Tax & Settings
+  //
+  // بندُ المالك ٦: انتقل إلى «العملة والضريبة» (`step_currency_tax.dart`):
+  // تفعيلُ الضريبة ونسبتُها (‏من قائمةٍ مسموحة) وشمولُ الأسعار وبلدُ الفوترة.
+  // وبطاقةُ «أنت جاهز للبدء!» صارت خطوةَ «المراجعة والبدء» كاملة.
   // ═══════════════════════════════════════════════════════════════════════
-  Widget _buildSettingsStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-         Text(
-          tr('الضرائب والإعدادات'),
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-         Text(
-          tr('حدد إعدادات الضريبة. يمكنك تغييرها لاحقاً من الإعدادات.'),
-          style: const TextStyle(color: AppColors.textMuted),
-        ),
-        const SizedBox(height: 32),
-        SwitchListTile(
-          title:  Text(tr('تفعيل ضريبة القيمة المضافة')),
-          subtitle:  Text(tr('إضافة الضريبة تلقائياً على الفواتير')),
-          value: _enableTax,
-          activeThumbColor: AppColors.primary,
-          onChanged: (v) => setState(() => _enableTax = v),
-        ),
-        if (_enableTax) ...[
-          const SizedBox(height: 16),
-          SizedBox(
-            width: 200,
-            child: _buildTextField(
-              controller: TextEditingController(text: _taxRate.toString()),
-              label: tr('نسبة الضريبة %'),
-              hint: '14',
-              icon: PhosphorIconsBold.percent,
-              isNumber: true,
-              onChanged: (v) {
-                final rate = double.tryParse(v);
-                if (rate != null) _taxRate = rate;
-              },
-            ),
-          ),
-        ],
-        const SizedBox(height: 32),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: AppColors.success.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.success.withValues(alpha: 0.2)),
-          ),
-          child:  Row(
-            children: [
-              const Icon(PhosphorIconsBold.checkCircle,
-                  color: AppColors.success, size: 32),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tr('أنت جاهز للبدء!'),
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.success,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      tr('اضغط "إنهاء الإعداد" لحفظ بياناتك والانتقال للنظام.'),
-                      style: const TextStyle(color: AppColors.textMuted),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 
   // ═══════════════════════════════════════════════════════════════════════
   // HELPERS
@@ -95,8 +22,10 @@ extension _SetupWizardSettingsExt on _SetupWizardScreenState {
     bool isNumber = false,
     bool isPassword = false,
     ValueChanged<String>? onChanged,
+    Key? key,
   }) {
     return TextField(
+      key: key,
       controller: controller,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       obscureText: isPassword,

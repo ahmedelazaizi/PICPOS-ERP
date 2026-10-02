@@ -4,44 +4,144 @@ extension _SetupWizardUsersExt on _SetupWizardScreenState {
   // ═══════════════════════════════════════════════════════════════════════
   // STEP 3: Users
   // ═══════════════════════════════════════════════════════════════════════
+  //
+  // بندُ المالك ٦: «المستخدمون والأمان» — كلمةُ مرور المدير (‏إلزاميّةٌ في
+  // المستقلّ، بتلميح قوّة) وكلمةُ مرور المطوّر (‏كانت خطوةً مستقلّة) ثمّ
+  // مستخدمون إضافيّون اختياريّون. والخادمُ يبقى بلا مستخدمين (‏قرارُ 2026-08-28)
+  // فيرى قسمَ الأمان وحدَه.
   Widget _buildUsersStep() {
+    final isServer = _networkMode == NetworkMode.server;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_asksAdminPassword) ...[
+          _buildAdminPasswordSection(),
+          const SizedBox(height: 18),
+        ],
+        _buildDeveloperPasswordSection(),
+        if (!isServer) ...[
+          const SizedBox(height: 22),
+          _stepFieldLabel(tr('مستخدمون إضافيون (اختياري)')),
+          const SizedBox(height: 4),
+          Text(
+            tr('أضف مستخدمي النظام وحدد أدوارهم (يمكنك التخطي والإضافة لاحقاً)'),
+            style: TextStyle(color: _mutedInk(context), fontSize: 12.5),
+          ),
+          const SizedBox(height: 10),
+          _buildExtraUsersSection(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildAdminPasswordSection() {
+    final pwd = _adminPasswordController.text;
+    final strength = _passwordStrength(pwd);
+    final (label, tone) = switch (strength) {
+      0 => (tr('ضعيفة — {p0} أحرف على الأقل', {'p0': _kAdminPasswordMin}), AppColors.error),
+      1 => (tr('مقبولة'), AppColors.warning),
+      2 => (tr('جيدة'), AppColors.info),
+      _ => (tr('قوية'), AppColors.success),
+    };
+    final confirm = _adminPasswordConfirmController.text;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _stepFieldLabel(tr('كلمة مرور المدير (admin)')),
+        const SizedBox(height: 4),
+        Text(
+          tr('تحلّ محلّ كلمة المرور الافتراضية لحساب المدير. أرقامٌ وحروفٌ معاً أقوى.'),
+          style: TextStyle(fontSize: 12.5, color: _mutedInk(context)),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: TextField(
+                key: const Key('setup_admin_password'),
+                controller: _adminPasswordController,
+                obscureText: !_adminPasswordVisible,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  labelText: tr('كلمة المرور *'),
+                  prefixIcon: const Icon(PhosphorIconsBold.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(_adminPasswordVisible
+                        ? PhosphorIconsBold.eyeSlash
+                        : PhosphorIconsBold.eye),
+                    onPressed: () => setState(
+                        () => _adminPasswordVisible = !_adminPasswordVisible),
+                  ),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                key: const Key('setup_admin_password_confirm'),
+                controller: _adminPasswordConfirmController,
+                obscureText: !_adminPasswordVisible,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  labelText: tr('تأكيد كلمة المرور *'),
+                  prefixIcon: const Icon(PhosphorIconsBold.lockKey),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  errorText: confirm.isNotEmpty && confirm != pwd
+                      ? tr('كلمة المرور غير متطابقة')
+                      : null,
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (pwd.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              for (var i = 0; i < 3; i++)
+                Expanded(
+                  child: Container(
+                    height: 4,
+                    margin: const EdgeInsetsDirectional.only(end: 4),
+                    decoration: BoxDecoration(
+                      color: i < strength
+                          ? tone
+                          : Theme.of(context).dividerColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 8),
+              Text(
+                pwd == 'admin' ? tr('لا تستعمل كلمة المرور الافتراضية') : label,
+                key: const Key('setup_admin_strength'),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: pwd == 'admin' ? AppColors.error : tone,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildExtraUsersSection() {
     final rolesAsync = ref.watch(allRolesProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(PhosphorIconsBold.users, color: AppColors.primary),
-            ),
-            const SizedBox(width: 12),
-             Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tr('إنشاء المستخدمين'),
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  tr('أضف مستخدمي النظام وحدد أدوارهم (يمكنك التخطي والإضافة لاحقاً)'),
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-
         // Add user form
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: Theme.of(context).dividerColor),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(

@@ -13,103 +13,38 @@
 part of '../setup_wizard_screen.dart';
 
 extension _TouchModeStep on _SetupWizardScreenState {
-  Widget _buildTouchModeStep() {
-    return Column(
+  // بندُ المالك ٦: قسمٌ في خطوة الترحيب (‏إعدادُ جهازٍ بجوار اللغة ونمط
+  // التشغيل) لا خطوةٌ مستقلّة. البطاقتان نفسُهما بنصوصهما، على `_choiceCard`
+  // التابعة للثيم بدل `AppColors.border`/`textMuted` المثبَّتَين للفاتح.
+  //
+  // «اختر نوع الجهاز… الإعداد محلي على هذا الجهاز فقط ولا ينتشر إلى أجهزة
+  // أخرى في المزامنة» — يقولها الآن وصفُ القسم في الترحيب.
+  Widget _buildTouchModeSection() {
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-         Text(
-          tr('نمط الإدخال'),
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        Expanded(
+          child: _choiceCard(
+            key: const Key('setup_touch_off'),
+            icon: PhosphorIconsBold.keyboard,
+            title: tr('جهاز عادي (لوحة مفاتيح)'),
+            subtitle: tr('كمبيوتر مكتبي أو لاب توب مع لوحة مفاتيح فعلية. لن تظهر أي لوحة مفاتيح على الشاشة.'),
+            selected: !_touchMode,
+            onTap: () => _onTouchModePicked(false),
+          ),
         ),
-        const SizedBox(height: 8),
-         Text(
-          tr('اختر نوع الجهاز الذي يعمل عليه النظام. يمكن تغيير هذا الخيار لاحقًا من شاشة الإعدادات. الإعداد محلي على هذا الجهاز فقط ولا ينتشر إلى أجهزة أخرى في المزامنة.'),
-          style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-        ),
-        const SizedBox(height: 24),
-        _touchModeCard(
-          selected: !_touchMode,
-          icon: PhosphorIconsBold.keyboard,
-          title: tr('جهاز عادي (لوحة مفاتيح)'),
-          description: tr('كمبيوتر مكتبي أو لاب توب مع لوحة مفاتيح فعلية. لن تظهر أي لوحة مفاتيح على الشاشة.'),
-          onTap: () => _onTouchModePicked(false),
-        ),
-        const SizedBox(height: 12),
-        _touchModeCard(
-          selected: _touchMode,
-          icon: PhosphorIconsBold.handTap,
-          title: tr('جهاز لمسي / POS'),
-          description: tr('جهاز نقاط بيع أو شاشة لمس أو كاشير all-in-one. تظهر لوحة مفاتيح عربية / إنجليزية / رقمية على الشاشة عند لمس أي حقل إدخال.'),
-          onTap: () => _onTouchModePicked(true),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _choiceCard(
+            key: const Key('setup_touch_on'),
+            icon: PhosphorIconsBold.handTap,
+            title: tr('جهاز لمسي / POS'),
+            subtitle: tr('جهاز نقاط بيع أو شاشة لمس أو كاشير all-in-one. تظهر لوحة مفاتيح عربية / إنجليزية / رقمية على الشاشة عند لمس أي حقل إدخال.'),
+            selected: _touchMode,
+            onTap: () => _onTouchModePicked(true),
+          ),
         ),
       ],
-    );
-  }
-
-  Widget _touchModeCard({
-    required bool selected,
-    required IconData icon,
-    required String title,
-    required String description,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.primary.withValues(alpha: 0.08)
-              : Colors.transparent,
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border,
-            width: selected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              selected
-                  ? PhosphorIconsBold.checkCircle
-                  : PhosphorIconsBold.circle,
-              color: selected ? AppColors.primary : AppColors.textMuted,
-              size: 22,
-            ),
-            const SizedBox(width: 12),
-            Icon(
-              icon,
-              size: 32,
-              color: selected ? AppColors.primary : AppColors.textSecondary,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    description,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
