@@ -67,6 +67,9 @@ class SalesReturnState {
     DateTime? toDate,
     String? error,
     bool clearSelected = false,
+    // `error: null` وحده يعني «لا تغيير»، فكان `clearError()` لا يمسح شيئاً:
+    // رفضٌ ثانٍ بنفس النصّ لا يُطلق مستمعَ الشاشة فيمرّ صامتاً.
+    bool clearError = false,
   }) {
     return SalesReturnState(
       invoices: invoices ?? this.invoices,
@@ -95,7 +98,7 @@ class SalesReturnState {
       isProcessing: isProcessing ?? this.isProcessing,
       fromDate: fromDate ?? this.fromDate,
       toDate: toDate ?? this.toDate,
-      error: error ?? this.error,
+      error: clearError ? null : (error ?? this.error),
     );
   }
 }
@@ -414,7 +417,7 @@ class SalesReturnNotifier extends Notifier<SalesReturnState> {
     }
   }
 
-  void clearError() => state = state.copyWith(error: null);
+  void clearError() => state = state.copyWith(clearError: true);
 }
 
 final salesReturnProvider =

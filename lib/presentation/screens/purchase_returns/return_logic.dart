@@ -80,7 +80,10 @@ mixin _PurchaseReturnLogicMixin on ConsumerState<PurchaseReturnsScreen> {
       // Settings not available — proceed without threshold check
     }
 
-    final success = await notifier.processReturn();
+    if (!mounted) return;
+    // 🔴 الإخفاقُ كان صامتاً — راجع رأس `purchase_return_save.dart`.
+    final success =
+        await savePurchaseReturnWithFeedback(context: context, ref: ref);
 
     if (success && mounted) {
       // Show success dialog with print option

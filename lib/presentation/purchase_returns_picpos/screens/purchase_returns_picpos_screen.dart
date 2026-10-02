@@ -27,6 +27,7 @@ import '../../../domain/repositories/purchases_repository.dart' show PurchaseRet
 import '../../../services/invoice_generator.dart';
 
 import '../../providers/purchase_return_provider.dart';
+import '../../shared_widgets/purchase_return_save.dart';
 import '../../widgets/permission_guard.dart'; // B5: Manager approval
 import '../../widgets/common/common.dart';
 
@@ -124,6 +125,14 @@ class _PurchaseReturnsPicposScreenState
   Widget build(BuildContext context) {
     final state = ref.watch(purchaseReturnProvider);
     final notifier = ref.read(purchaseReturnProvider.notifier);
+
+    // أخطاءُ التحميل واختيار الفاتورة كانت تُكتب في `error` ولا يقرؤها أحد —
+    // نظيرُ مستمع توأم المبيعات. وخطأُ الحفظ يعرضه حوارُه (`_savingReturn`).
+    ref.listen(purchaseReturnProvider.select((s) => s.error), (_, next) {
+      if (next == null || _savingReturn) return;
+      AppToast.show(context, next, type: ToastType.error);
+      notifier.clearError();
+    });
 
     // ═══ 🔴 بلاغٌ ميدانيٌّ 2026-09-22 ═══
     //

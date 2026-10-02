@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/errors/app_exceptions.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/models/purchase_return_settlement.dart';
 import '../../domain/repositories/purchases_repository.dart';
@@ -66,6 +67,9 @@ class PurchaseReturnState {
     // «لا تغيير» لا «امسح».
     bool clearSupplier = false,
     bool clearProduct = false,
+    // `error: null` وحده يعني «لا تغيير»، فكان `clearError()` لا يمسح شيئاً:
+    // الخطأُ يبقى عالقاً، ورفضٌ ثانٍ بنفس النصّ لا يُطلق مستمعاً فيمرّ صامتاً.
+    bool clearError = false,
   }) {
     return PurchaseReturnState(
       invoices: invoices ?? this.invoices,
@@ -76,7 +80,7 @@ class PurchaseReturnState {
       isProcessing: isProcessing ?? this.isProcessing,
       fromDate: fromDate ?? this.fromDate,
       toDate: toDate ?? this.toDate,
-      error: error ?? this.error,
+      error: clearError ? null : (error ?? this.error),
       supplierId: clearSupplier ? null : (supplierId ?? this.supplierId),
       productId: clearProduct ? null : (productId ?? this.productId),
       invoiceQuery: invoiceQuery ?? this.invoiceQuery,
@@ -294,7 +298,7 @@ class PurchaseReturnNotifier extends Notifier<PurchaseReturnState> {
   Future<bool> processReturn() async {
 
     if (state.selectedInvoice == null) return false;
-    state = state.copyWith(isProcessing: true);
+    state = state.copyWith(isProcessing: true, clearError: true);
 
     try {
       final purchasesRepo = ref.read(purchasesRepositoryProvider);
@@ -334,13 +338,30 @@ class PurchaseReturnNotifier extends Notifier<PurchaseReturnState> {
       state = state.copyWith(isProcessing: false, clearSelected: true);
       await loadInvoices();
       return true;
+    } on ShiftRequiredException {
+      // 🔴 بلاغُ المالك (مرتجع «استرداد نقدي» يُغلق الحوارَ ولا يحدث شيء):
+      // المرتجعُ النقديُّ يُدخِل مالاً الدرجَ فيستلزم ورديّةً مفتوحة، والمستودعُ
+      // يرمي هذا النوع. وابتلاعُه هنا نصّاً في `error` — والشاشةُ لا تقرأه —
+      // كان هو الصمتَ بعينه. فيُرمى للواجهة لتعرض فتحَ ورديّةٍ ثمّ تعيد
+      // المحاولة، كما يفعل توأمُ المبيعات (`sales_return_provider`).
+      state = state.copyWith(isProcessing: false);
+      rethrow;
     } catch (e) {
-      state = state.copyWith(isProcessing: false, error: e.toString());
+      state = state.copyWith(isProcessing: false, error: _describe(e));
       return false;
     }
   }
 
-  void clearError() => state = state.copyWith(error: null);
+  /// نصُّ الخطأ للمستخدم — بلا بادئة `Exception: ` / `Bad state: ` التقنيّة.
+  static String _describe(Object e) {
+    final raw = e.toString();
+    for (final prefix in const ['Exception: ', 'Bad state: ']) {
+      if (raw.startsWith(prefix)) return raw.substring(prefix.length);
+    }
+    return raw;
+  }
+
+  void clearError() => state = state.copyWith(clearError: true);
 }
 
 final purchaseReturnProvider = NotifierProvider<PurchaseReturnNotifier, PurchaseReturnState>(() {

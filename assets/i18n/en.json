@@ -4451,6 +4451,7 @@
   "تعذّر حفظ المتابعة: {e}": "Could not save the follow-up: {e}",
   "تعذّر حفظ المرتجع — راجع الكمياتِ المحدَّدة": "Could not save the return — review the selected quantities",
   "تعذّر حفظ المطالبة: {e}": "Could not save the claim: {e}",
+  "تعذّر حفظ مرتجع المشتريات": "Could not save the purchase return",
   "تعذّر ربط المجموعة بالأصناف": "Could not link the group to items",
   "تعذّر طباعة السلفة: {e}": "Could not print the advance: {e}",
   "تعذّر عرض هذا الجزء من الشاشة": "Could not display this part of the screen",

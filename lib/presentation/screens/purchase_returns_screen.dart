@@ -12,6 +12,7 @@ import '../../data/providers/providers.dart';
 import '../../domain/repositories/purchases_repository.dart' show PurchaseReturnItem;
 import '../../services/invoice_generator.dart';
 import '../providers/purchase_return_provider.dart';
+import '../shared_widgets/purchase_return_save.dart';
 import '../widgets/permission_guard.dart'; // B5: Manager approval
 import '../widgets/common/common.dart';
 

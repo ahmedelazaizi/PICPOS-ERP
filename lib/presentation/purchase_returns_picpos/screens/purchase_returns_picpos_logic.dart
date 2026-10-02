@@ -12,6 +12,9 @@ part of 'purchase_returns_picpos_screen.dart';
 
 mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> {
 
+  /// الحفظُ جارٍ — خطؤه يُعرَض في حواره، فلا يكرّره مستمعُ الشاشة.
+  bool _savingReturn = false;
+
   Future<void> processReturn() async {
     final state = ref.read(purchaseReturnProvider);
     final notifier = ref.read(purchaseReturnProvider.notifier);
@@ -86,7 +89,17 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
       // Settings not available — proceed without threshold check
     }
 
-    final success = await notifier.processReturn();
+    if (!mounted) return;
+    // 🔴 بلاغُ المالك: الإخفاقُ كان صامتاً — راجع رأس `purchase_return_save.dart`.
+    // والعلَمُ يُسكت مستمعَ الأخطاء العامّ في الشاشة: الحفظُ يعرض خطأه بنفسه.
+    _savingReturn = true;
+    final bool success;
+    try {
+      success =
+          await savePurchaseReturnWithFeedback(context: context, ref: ref);
+    } finally {
+      _savingReturn = false;
+    }
 
     if (success && mounted) {
       // Show success dialog with print option
