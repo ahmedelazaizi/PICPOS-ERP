@@ -1,0 +1,17 @@
+name: picpos_cloud
+description: PicPos cloud API (Phase I) — pure Dart, shelf + PostgreSQL. No Flutter dependency.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  crypto: ^3.0.6
+  postgres: ^3.5.9
+  shelf: ^1.4.2
+  shelf_router: ^1.1.4
+  uuid: ^4.5.2
+
+dev_dependencies:
+  test: ^1.29.0

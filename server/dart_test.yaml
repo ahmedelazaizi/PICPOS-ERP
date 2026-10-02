@@ -1,0 +1,4 @@
+tags:
+  postgres:
+    timeout: 2x
+

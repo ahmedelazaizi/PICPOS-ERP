@@ -1,0 +1,48 @@
+# PicPos cloud — TEST stack (Phase I-1). Not for production (see docs/mobile/ARCHITECTURE-I.md §12).
+name: picpos-cloud-test
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: picpos_cloud
+      POSTGRES_USER: picpos
+      POSTGRES_PASSWORD: picpos_test_only
+    ports:
+      - "55432:5432"   # host port for server tests (dart test) and psql
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U picpos -d picpos_cloud"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: picpos_cloud
+      DB_USER: picpos
+      DB_PASSWORD: picpos_test_only
+      PORT: "8080"
+      TOKEN_SECRET: test-only-token-secret-change-me-0123456789
+      ADMIN_KEY: test-admin-key
+      SEED_DEMO: "true"
+      WHATSAPP_PROVIDER: mock
+    ports:
+      - "18080:8080"   # host 8080 is used by the PicPos desktop LAN server
+    healthcheck:
+      test: ["CMD", "/app/healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

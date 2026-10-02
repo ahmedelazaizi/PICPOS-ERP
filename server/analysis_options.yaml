@@ -1,0 +1,10 @@
+# Standalone package: do not inherit the Flutter app's root analysis options.
+analyzer:
+  language:
+    strict-casts: false
+linter:
+  rules:
+    - avoid_print
+    - cancel_subscriptions
+    - close_sinks
+    - unawaited_futures
