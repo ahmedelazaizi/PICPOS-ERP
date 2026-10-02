@@ -6,6 +6,10 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../picpos_shell/picpos_screen_scaffold.dart';
 import 'chart_of_accounts_detail_panel.dart';
+import 'chart_of_accounts_insight.dart';
+import 'chart_of_accounts_overview.dart';
+import 'chart_of_accounts_search.dart';
+import 'general_ledger_picpos_screen.dart';
 import '../../services/network_service.dart';
 import '../picpos_shell/picpos_kpi_row.dart';
 import '../picpos_shell/picpos_toolbar.dart';
@@ -75,30 +79,100 @@ class _ChartOfAccountsPicPosScreenState
     super.dispose();
   }
 
-  /// الحسابُ المعروضُ في اللوح الجانبيّ — أو `null` فلا لوحَ.
+  /// الحسابُ المختارُ في اللوح — أو `null` فاللوحُ على حالته الفارغة.
+  ///
+  /// ⚠️ **اللوحُ لا يختفي** (البند ١٩، المرحلة G): الشجرةُ والتفاصيلُ ظاهرتان
+  /// معاً، و`null` يرسم إرشاداً لا فراغاً.
   int? _panelAccountId;
 
   /// وضعُ الإنشاء: اللوحُ مفتوحٌ على حسابٍ جديدٍ تحت هذا الأب (أو جذرٍ).
   bool _creating = false;
   int? _createParentId;
 
+  /// التحريرُ داخلَ اللوح — نموذجُ `AccountDetailPanel` بدل العرض.
+  bool _editing = false;
+
+  /// الاختيارُ قبل «إضافة» — يعود إليه «رجوع» من نموذج الإنشاء.
+  int? _beforeCreateId;
+
+  /// آخرُ قائمةٍ حيّة — يقرؤها البحثُ في `onChanged` خارجَ `build`.
+  List<Account> _latestAccounts = const [];
+
+  /// رصيدُ المختار وحركاتُه — مخبّأٌ بمعرّفه كي لا يُعاد الطلبُ مع كلّ بناء.
+  Future<AccountInsight>? _insight;
+  int? _insightId;
+
   void _openPanelFor(int accountId) => setState(() {
         _creating = false;
         _createParentId = null;
+        _editing = false;
         _panelAccountId = accountId;
       });
 
   void _startCreate({int? parentId}) => setState(() {
+        _beforeCreateId = _creating ? _beforeCreateId : _panelAccountId;
         _creating = true;
+        _editing = false;
         _createParentId = parentId;
         _panelAccountId = null;
+      });
+
+  /// «رجوع» من النموذج: من التحرير إلى العرض، ومن الإنشاء إلى ما كان مختاراً.
+  void _closeForm() => setState(() {
+        if (_creating) {
+          _creating = false;
+          _createParentId = null;
+          _panelAccountId = _beforeCreateId;
+          _beforeCreateId = null;
+        }
+        _editing = false;
       });
 
   void _closePanel() => setState(() {
         _creating = false;
         _createParentId = null;
+        _editing = false;
         _panelAccountId = null;
       });
+
+  Future<AccountInsight> _insightFor(IAccountingRepository repo, int id) {
+    if (_insightId != id || _insight == null) {
+      _insightId = id;
+      _insight = loadAccountInsight(
+        repo: repo,
+        accountId: id,
+        // ⚠️ نطاقُ الفروع الأمنيُّ نفسُه الذي يمرّره دفترُ الأستاذ.
+        allowedBranches: () async {
+          final scope = await ref.read(branchScopeProvider.future);
+          return scope.hasFullAccess ? null : scope.allowedBranchIds;
+        },
+      );
+    }
+    return _insight!;
+  }
+
+  /// البحثُ: يرشّح الشجرةَ، ويوسّع إلى المطابق، ويختار أقربَه في اللوح.
+  ///
+  /// ⚠️ **لا يختار فوق نموذجٍ مفتوح**: تبديلُ الحساب أثناء التحرير أو
+  /// الإنشاء يُسقط ما كُتب بصمت.
+  void _onSearch(String value) {
+    setState(() {
+      _searchQuery = value;
+      if (value.trim().isEmpty) return;
+      final result = coaSearch(_searchRows(_latestAccounts), value);
+      _expandedAccounts.addAll(result.ancestorIds);
+      for (final a in _latestAccounts) {
+        if (result.matchIds.contains(a.id)) _expandedTypes.add(a.accountType);
+      }
+      final best = result.bestMatchId;
+      if (best != null && !_editing && !_creating) _panelAccountId = best;
+    });
+  }
+
+  static List<CoaSearchRow> _searchRows(List<Account> accounts) => [
+        for (final a in accounts)
+          (id: a.id, parentId: a.parentId, code: a.code, name: a.name),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -110,15 +184,22 @@ class _ChartOfAccountsPicPosScreenState
                 stream: repo.watchAllAccounts(),
                 builder: (context, snapshot) {
                   final allAccounts = snapshot.data ?? const <Account>[];
+                  _latestAccounts = allAccounts;
                   // Spec 135 BUG-E — roll-up computed over the UNFILTERED list
                   // so each parent's subtotal includes children hidden by the
                   // search/tax filter below.
                   final rollup = _rollupFor(allAccounts);
-                  final filtered0 = _searchQuery.isEmpty
+                  // المطابقُ **وأسلافُه** — فيُرسَم الحسابُ في موضعه من
+                  // الشجرة لا جذراً بلا سياق (`chart_of_accounts_search`).
+                  final visible = _searchQuery.trim().isEmpty
+                      ? null
+                      : coaSearch(_searchRows(allAccounts), _searchQuery)
+                          .visibleIds;
+                  final filtered0 = visible == null
                       ? allAccounts
-                      : allAccounts.where((a) =>
-                          a.name.contains(_searchQuery) ||
-                          a.code.contains(_searchQuery)).toList();
+                      : allAccounts
+                          .where((a) => visible.contains(a.id))
+                          .toList();
                   final filtered = _showTaxAccountsOnly
                       ? filtered0.where((a) =>
                           a.name.contains('ضري') ||
@@ -141,8 +222,10 @@ class _ChartOfAccountsPicPosScreenState
                     subtitle: tr('IFRS / IAS 1 — شجرةُ الحسابات المحاسبية'),
                     icon: PhosphorIconsBold.treeStructure,
                     headerSearch: TextField(
+                      key: const Key('coa_search'),
                       controller: _searchController,
-                      onChanged: (v) => setState(() => _searchQuery = v),
+                      onChanged: _onSearch,
+                      onSubmitted: _onSearch,
                       decoration: InputDecoration(
                         isDense: true,
                         hintText: tr('بحث بالرمز أو الاسم...'),
@@ -221,40 +304,40 @@ class _ChartOfAccountsPicPosScreenState
                         // ⚠️ **لوحان بـ`flex` لا بعرضٍ ثابت**: لوحٌ بعرضٍ
                         //    ثابتٍ بجوار شجرةٍ يفيض عند العروض الصغيرة
                         //    ويُبتِر الشجرةَ — والشجرةُ هي ما يُحرَّر منه.
-                        : Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: ListView(
-                                  padding: EdgeInsets.zero,
-                                  children:
-                                      kAccountTypeConfig.entries.map((entry) {
-                                    final type = entry.key;
-                                    final info = entry.value;
-                                    final typeAccounts = filtered
-                                        .where((a) => a.accountType == type)
-                                        .toList();
-                                    return _buildAccountGroup(
-                                        context,
-                                        repo,
-                                        type,
-                                        info,
-                                        typeAccounts,
-                                        allAccounts,
-                                        rollup);
-                                  }).toList(),
-                                ),
-                              ),
-                              if (_creating || _panelAccountId != null) ...[
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  flex: 2,
-                                  child: _buildDetailPanel(repo, allAccounts),
-                                ),
+                        //
+                        // 🔴 **والاثنان ظاهران دائماً** (البند ١٩، المرحلة G):
+                        //    الشجرةُ ٤٠٪ واللوحُ ٦٠٪ جنباً إلى جنب، وتحت
+                        //    ٧٦٠ بكسلاً يُكدَّسان رأسيّاً بدل أن ينضغطا.
+                        : LayoutBuilder(builder: (context, c) {
+                            final tree = ListView(
+                              key: const Key('coa_tree'),
+                              padding: EdgeInsets.zero,
+                              children:
+                                  kAccountTypeConfig.entries.map((entry) {
+                                final type = entry.key;
+                                final info = entry.value;
+                                final typeAccounts = filtered
+                                    .where((a) => a.accountType == type)
+                                    .toList();
+                                return _buildAccountGroup(context, repo, type,
+                                    info, typeAccounts, allAccounts, rollup);
+                              }).toList(),
+                            );
+                            final panel = _buildDetailPanel(repo, allAccounts);
+                            final wide = c.maxWidth >= 760;
+                            return Flex(
+                              direction:
+                                  wide ? Axis.horizontal : Axis.vertical,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(flex: wide ? 4 : 5, child: tree),
+                                SizedBox(
+                                    width: wide ? 12 : 0,
+                                    height: wide ? 0 : 12),
+                                Expanded(flex: wide ? 6 : 5, child: panel),
                               ],
-                            ],
-                          ),
+                            );
+                          }),
                   );
                 },
       ),
@@ -275,13 +358,50 @@ class _ChartOfAccountsPicPosScreenState
         : allAccounts.where((a) => a.id == _panelAccountId).firstOrNull;
 
     // ⚠️ الاختيارُ يُقرأ من القائمة الحيّة: حسابٌ حُذف أو أُخفي يترك لوحاً
-    //    يعمل على ما لا يُرى.
+    //    يعمل على ما لا يُرى — فيعود اللوحُ إلى حالته الفارغة.
     if (!_creating && current == null) {
-      return const SizedBox.shrink();
+      return const CoaEmptyPanel();
     }
 
     AccountParentOption opt(Account a) =>
         (id: a.id, code: a.code, name: a.name, accountType: a.accountType);
+
+    AccountPanelValue value(Account a) => AccountPanelValue(
+          id: a.id,
+          code: a.code,
+          name: a.name,
+          accountType: a.accountType,
+          accountNature: a.accountNature,
+          isActive: a.isActive,
+          isSystem: a.isSystem,
+          isHiddenFromEntries: a.isHiddenFromEntries,
+          parentId: a.parentId,
+        );
+
+    // العرضُ — والتحريرُ زرٌّ فيه يفتح النموذجَ في المكان نفسِه.
+    if (!_creating && !_editing && current != null) {
+      final byId = {for (final a in allAccounts) a.id: a};
+      final path = <AccountParentOption>[];
+      final seen = <int>{current.id};
+      var p = current.parentId;
+      // `seen` حارسُ حلقةٍ على بياناتٍ تالفة.
+      while (p != null && seen.add(p) && byId[p] != null) {
+        path.insert(0, opt(byId[p]!));
+        p = byId[p]!.parentId;
+      }
+      return AccountOverviewPanel(
+        key: ValueKey('coa_overview_${current.id}'),
+        account: value(current),
+        path: path,
+        childCount: allAccounts.where((a) => a.parentId == current.id).length,
+        insight: _insightFor(repo, current.id),
+        onEdit: () => setState(() => _editing = true),
+        onAddChild: () => _handleAccountAction(current, 'sub'),
+        onOpenLedger: (insight) => _openGeneralLedger(current, insight),
+        onClose: _closePanel,
+        onSelectAncestor: _openPanelFor,
+      );
+    }
 
     final parentId = _creating ? _createParentId : current?.parentId;
     final parent =
@@ -289,22 +409,10 @@ class _ChartOfAccountsPicPosScreenState
 
     return AccountDetailPanel(
       key: ValueKey('coa_panel_${_creating ? 'new_$_createParentId' : current!.id}'),
-      account: current == null
-          ? null
-          : AccountPanelValue(
-              id: current.id,
-              code: current.code,
-              name: current.name,
-              accountType: current.accountType,
-              accountNature: current.accountNature,
-              isActive: current.isActive,
-              isSystem: current.isSystem,
-              isHiddenFromEntries: current.isHiddenFromEntries,
-              parentId: current.parentId,
-            ),
+      account: current == null ? null : value(current),
       parent: parent,
       allAccounts: [for (final a in allAccounts) opt(a)],
-      onClose: _closePanel,
+      onClose: _closeForm,
       onOpenLedger:
           current == null ? null : () => showAccountLedger(context, repo, current),
       onSave: ({
@@ -318,6 +426,21 @@ class _ChartOfAccountsPicPosScreenState
       }) async {
         try {
           if (current == null) {
+            // نفسُ حارس حوار الإنشاء (`showAddAccountDialog`، Feature 005
+            // Phase 8): اسمٌ نشطٌ مكرَّرٌ تحت الأب نفسِه يصنع صفَّين لكيانٍ
+            // واحد. يُقرأ من القائمة الحيّة بدل استعلام القاعدة من العرض.
+            final dup = allAccounts
+                .where((a) =>
+                    a.isActive && a.parentId == parentId && a.name == name)
+                .firstOrNull;
+            if (dup != null) {
+              AppToast.show(
+                context,
+                tr('يوجد حساب باسم "{trimmedName}" تحت نفس الأب (الكود {p0}). لتجنّب التكرار، أنشئ الصندوق من شاشة "إدارة الصناديق" وسيتم ربط الحساب تلقائياً.', {'trimmedName': name, 'p0': dup.code}),
+                type: ToastType.error,
+              );
+              return;
+            }
             final id = await repo.createAccount(
               code: code,
               name: name,
@@ -344,6 +467,8 @@ class _ChartOfAccountsPicPosScreenState
             NetworkService.instance.broadcastChange('accounts');
             if (!mounted) return;
             AppToast.show(context, tr('تم تحديث الحساب'));
+            // يعود اللوحُ إلى العرض: المستخدمُ يرى ما حفظ.
+            setState(() => _editing = false);
           }
         } catch (e) {
           if (mounted) {
@@ -351,6 +476,21 @@ class _ChartOfAccountsPicPosScreenState
           }
         }
       },
+    );
+  }
+
+  /// دفترُ الأستاذ مرشَّحاً على الحساب — وبمدى السنة التي قرأ اللوحُ
+  /// أرصدتَها، كي يطابق الدفترُ ما رآه المستخدمُ للتوّ.
+  void _openGeneralLedger(Account account, AccountInsight? insight) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => GeneralLedgerPicPosScreen(
+          initialAccountId: account.id,
+          initialAccountLabel: '${account.code} - ${trData(account.name)}',
+          initialFrom: insight?.from,
+          initialTo: insight?.to,
+        ),
+      ),
     );
   }
 
@@ -540,13 +680,10 @@ class _ChartOfAccountsPicPosScreenState
                   repo: repo,
                   rollup: rollup,
                   expandedAccounts: _expandedAccounts,
-                  onToggle: () => setState(() {
-                    if (_expandedAccounts.contains(account.id)) {
-                      _expandedAccounts.remove(account.id);
-                    } else {
-                      _expandedAccounts.add(account.id);
-                    }
-                  }),
+                  selectedAccountId: _creating ? null : _panelAccountId,
+                  // نقرةُ الأب تطويه/تبسطه **وتختاره** — الأبُ حسابٌ له
+                  // رصيدٌ وحركاتٌ تُعرَض كذلك.
+                  onToggle: () => _handleAccountAction(account, '_toggle'),
                   onAction: _handleAccountAction,
                 )),
           ],
@@ -569,6 +706,10 @@ class _ChartOfAccountsPicPosScreenState
           } else {
             _expandedAccounts.add(account.id);
           }
+          _creating = false;
+          _createParentId = null;
+          _editing = false;
+          _panelAccountId = account.id;
         });
       // ⚠️ **الحواراتُ لم تعد تُفتَح من هنا** — قرارُ المالك: لوحٌ جانبيٌّ
       //    يحلّ محلَّها تماماً. و`coa_dialogs` تبقى كما هي لفرع UralCash.
@@ -580,7 +721,9 @@ class _ChartOfAccountsPicPosScreenState
         // يبقى في قائمة الصفّ فلا يضيع فعلٌ.
         _openPanelFor(account.id);
       case 'edit':
+        // التحريرُ داخلَ اللوح مباشرةً — لا حوار.
         _openPanelFor(account.id);
+        setState(() => _editing = true);
       case 'delete':
         confirmDeleteAccount(context, repo, account);
       case 'toggle_hide':

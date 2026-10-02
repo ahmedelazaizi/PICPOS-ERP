@@ -41,6 +41,8 @@ class PicPosStatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = accent ?? AppColors.primary;
     final change = changePercent;
+    // خافتٌ يتبع الوضع — `AppColors.textMuted` الثابتُ يذوب في البطاقة الداكنة.
+    final muted = context.picposMuted;
 
     return Container(
       padding: const EdgeInsets.all(Spacing.md),
@@ -71,10 +73,7 @@ class PicPosStatTile extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textMuted,
-                  ),
+                  style: TextStyle(fontSize: 11, color: muted),
                 ),
               ),
             ],
@@ -118,10 +117,7 @@ class PicPosStatTile extends StatelessWidget {
                       caption!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppColors.textMuted,
-                      ),
+                      style: TextStyle(fontSize: 10, color: muted),
                     ),
                   ),
                 ],
@@ -133,7 +129,7 @@ class PicPosStatTile extends StatelessWidget {
               caption!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 10, color: muted),
             ),
           ],
         ],

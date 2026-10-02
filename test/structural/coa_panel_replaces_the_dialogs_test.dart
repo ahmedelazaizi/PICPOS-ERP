@@ -29,6 +29,12 @@ const _screen =
     'lib/presentation/accounting_picpos/chart_of_accounts_picpos_screen.dart';
 const _panel =
     'lib/presentation/accounting_picpos/chart_of_accounts_detail_panel.dart';
+const _insight =
+    'lib/presentation/accounting_picpos/chart_of_accounts_insight.dart';
+const _overview =
+    'lib/presentation/accounting_picpos/chart_of_accounts_overview.dart';
+const _search =
+    'lib/presentation/accounting_picpos/chart_of_accounts_search.dart';
 const _legacy = 'lib/presentation/screens/chart_of_accounts_screen.dart';
 const _dialogs = 'lib/presentation/screens/coa/coa_dialogs.dart';
 const _daoWrites = 'lib/data/database/daos/accounting_dao_writes.dart';
@@ -78,6 +84,40 @@ void main() {
         reason: 'ملفُّ عرضٍ جديدٌ يستورد القاعدةَ — يكسر حارسَ الاستيراد');
     expect(panel.contains('class AccountPanelValue'), isTrue,
         reason: 'اللوحُ يأخذ صفَّ drift مباشرةً بدل قيمٍ خالصة');
+  });
+
+  // ═══ المرحلة G (البند ١٩): رئيسيٌّ/تفصيليٌّ ظاهران معاً ═══
+  test('🔴 اللوحُ لا يختفي: حالةٌ فارغةٌ مرشدةٌ وعرضٌ قبل التحرير', () {
+    final body = _code(_screen);
+    final at = body.indexOf('Widget _buildDetailPanel(');
+    expect(at, greaterThan(0), reason: 'بانيةُ اللوح اختفت');
+    final fn = body.substring(at, body.indexOf('return AccountDetailPanel(', at));
+    expect(fn.contains('return const CoaEmptyPanel()'), isTrue,
+        reason: 'اللوحُ يختفي حين لا اختيار — والقرارُ أن يبقى ظاهراً مرشداً');
+    expect(fn.contains('SizedBox.shrink()'), isFalse,
+        reason: 'لوحٌ فارغٌ صامتٌ يُقرأ عطلاً');
+    expect(fn.contains('AccountOverviewPanel('), isTrue,
+        reason: 'الاختيارُ لا يعرض الحسابَ — يقفز إلى النموذج');
+  });
+
+  test('🔴 ورصيدُ اللوح يمرّ بنطاق الفروع الأمنيّ — كدفتر الأستاذ', () {
+    final screen = _code(_screen);
+    expect(screen.contains('branchScopeProvider.future'), isTrue,
+        reason: 'اللوحُ يقرأ الحركاتِ بلا نطاق الفروع');
+    final insight = _code(_insight);
+    expect(insight.contains('allowedBranchIds: await allowedBranches()'), isTrue,
+        reason: 'النطاقُ يُقرأ ولا يُمرَّر إلى `getAccountLedger`');
+    for (final f in [_insight, _overview, _search]) {
+      expect(_code(f).contains('data/database'), isFalse,
+          reason: '$f ملفُّ عرضٍ جديدٌ يستورد القاعدة');
+    }
+  });
+
+  test('ودفترُ الأستاذ من اللوح يُفتَح مرشَّحاً على الحساب', () {
+    final screen = _code(_screen);
+    expect(screen.contains('GeneralLedgerPicPosScreen('), isTrue);
+    expect(screen.contains('initialAccountId: account.id'), isTrue,
+        reason: 'الرابطُ يفتح الدفترَ بلا حساب — والمستخدمُ يعيد الاختيار');
   });
 
   test('🔴 والحقولُ المشتقّةُ تُقرأ من الوحدة الخالصة لا تُكتَب بيد', () {

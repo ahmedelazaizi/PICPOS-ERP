@@ -113,10 +113,13 @@ void main() {
   }
 
   group('🔴 اللوحُ يحلّ محلَّ الحوارات', () {
-    testWidgets('لا لوحَ قبل اختيارِ شيء', (tester) async {
+    // ⚠️ المرحلة G (البند ١٩): اللوحُ صار **ظاهراً دائماً** بجوار الشجرة،
+    //    وقبل الاختيار يرسم حالةً فارغةً مرشدة — لا نموذجاً ولا تفاصيل.
+    testWidgets('قبل اختيارِ شيء: حالةٌ فارغةٌ لا نموذج', (tester) async {
       await pump(tester, 1500);
       expect(find.text('تفاصيل الحساب'), findsNothing);
       expect(find.text('حساب جديد'), findsNothing);
+      expect(find.byKey(const Key('coa_empty_panel')), findsOneWidget);
       await teardown(tester);
     });
 
@@ -173,6 +176,10 @@ void main() {
       await tester.tap(find.text('الصندوق الرئيسي').first);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
+      // المرحلة G: الاختيارُ يعرض، و«تعديل» يفتح النموذجَ في اللوح نفسِه.
+      await tester.tap(find.byKey(const Key('coa_overview_edit')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
 
       expect(find.textContaining('حسابُ نظام'), findsOneWidget,
           reason: '🔴 الحوارُ القديمُ كان يُعطّل الحقلَ **بلا كلمة**، فيرى '
@@ -216,6 +223,9 @@ void main() {
       await tester.tap(find.text('رجوع'));
       await tester.pump();
       await tester.tap(find.text('المبيعات').first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      await tester.tap(find.byKey(const Key('coa_overview_edit')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
 

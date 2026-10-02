@@ -72,6 +72,15 @@ class PicPosTheme {
   /// عن الكارت الأبيض اللي جوّاه من غير ما يحتاج إطار.
   static const Color _fieldFill = Color(0xFFF4F7FC);
 
+  /// الرمزان الفاتحان مكشوفَين لمُلحق `picposHairline` / `picposField`.
+  ///
+  /// ⚠️ كان المُلحقُ يقرأ `AppColors.border` (#E2E8F0) و`AppColors.surface`
+  /// (#F8FAFC) فتحمل الشاشةُ الواحدةُ حدَّين وتعبئتَين: ما يأخذ من الثيم وما
+  /// يأخذ من المُلحق. والثيمُ هو المرجع، فيُكشَف رمزُه ولا يُكرَّر.
+  /// و`AppColors` لا تُمسّ: UralCash يقرؤها.
+  static const Color lightHairline = _hairline;
+  static const Color lightFieldFill = _fieldFill;
+
   /// نسخ داكنة — الوضع الليلي بيستخدم كحلي مزرقّ مش رمادي محايد، عشان
   /// العلامة تفضل حاضرة في الوضعين.
   static const Color _canvasDark = Color(0xFF0A1220);
@@ -99,6 +108,10 @@ class PicPosTheme {
         surface: Colors.white,
       ),
       scaffoldBackgroundColor: _canvas,
+      // ⚠️ بلا هذا السطر يحسب Material `dividerColor` من `outline` (#6F797B):
+      //    حدٌّ ثالثٌ أغمقُ بكثيرٍ تقرؤه حدودُ الحوارات وأزرارُها. والحدُّ
+      //    الشعريُّ واحدٌ في الثيم كلِّه.
+      dividerColor: _hairline,
       textTheme: text,
 
       // شريط علوي فاتح بنص داكن — أوضح فرق silhouette عن UralCash (اللي
@@ -424,6 +437,7 @@ class PicPosTheme {
         surface: _cardDark,
       ),
       scaffoldBackgroundColor: _canvasDark,
+      dividerColor: _hairlineDark,
       textTheme: text,
 
       appBarTheme: AppBarTheme(

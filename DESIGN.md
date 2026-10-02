@@ -9,9 +9,7 @@ colors:
   canvas: "#F2F5FA"
   card: "#FFFFFF"
   field-fill: "#F4F7FC"
-  field-slate: "#F8FAFC"
   hairline: "#DCE3EE"
-  border-slate: "#E2E8F0"
   ink: "#000000"
   ink-secondary: "#374151"
   ink-muted: "#6B7280"
@@ -200,12 +198,12 @@ components:
     rounded: "{rounded.block}"
     padding: "11px 18px"
   data-table-column-header:
-    backgroundColor: "{colors.field-slate}"
+    backgroundColor: "{colors.field-fill}"
     textColor: "{colors.ink-muted}"
     typography: "{typography.table-meta}"
     padding: "11px 18px"
   data-table-filter-chip:
-    backgroundColor: "{colors.field-slate}"
+    backgroundColor: "{colors.field-fill}"
     textColor: "{colors.ink}"
     rounded: "{rounded.chip}"
     padding: "0 12px"
@@ -217,7 +215,7 @@ components:
     padding: "0 12px"
     height: "32px"
   filter-pill:
-    backgroundColor: "{colors.field-slate}"
+    backgroundColor: "{colors.field-fill}"
     textColor: "{colors.ink}"
     rounded: "{rounded.control-lg}"
     padding: "0 13px"
@@ -329,10 +327,9 @@ A cool, blue-tinted neutral system carrying a single logo-derived brand blue, wi
 ### Neutral (light)
 - **Morning Paper Canvas** (`canvas`): scaffold background. It's derived from the brand blue so white cards appear to "float" without shadows.
 - **Card White** (`card`): cards, page header, data tables, dialogs, popup menus, app bar.
-- **Field Wash** (`field-fill`): theme input fill, chip background and dialog footer/field fill. A pale blue that sets a writable area apart from the white card around it without a frame.
-- **Slate Wash** (`field-slate`): light value of `context.picposField` (`AppColors.surface`). Used for table column-title rows, totals rows, filter chips and pills, and the read-only form cells in shell widgets.
-- **Theme Hairline** (`hairline`): borders and dividers that come from the theme (cards, dividers, dialogs, outlined-button side at 1.5 px, chips, tab divider).
-- **Slate Hairline** (`border-slate`): light value of `context.picposHairline` (`AppColors.border`), used by every `picpos_shell` widget border.
+- **Field Wash** (`field-fill`): theme input fill, chip background and dialog footer/field fill, and the light value of `context.picposField` (`PicPosTheme.lightFieldFill`). Shell widgets use it for table column-title rows, totals rows, filter chips and pills, and read-only form cells. A pale blue that sets a writable area apart from the white card around it without a frame.
+- **Theme Hairline** (`hairline`): every light border and divider: the theme's `dividerColor` and `dividerTheme`, cards, dialogs, outlined-button side at 1.5 px, chips, tab divider, and the light value of `context.picposHairline` (`PicPosTheme.lightHairline`) used by every `picpos_shell` widget border.
+- *(Retired: `field-slate` #F8FAFC and `border-slate` #E2E8F0. They were `AppColors.surface` / `AppColors.border`, which still exist for the sibling brand but no longer feed the PicPos getters.)*
 - **Ink** (`ink`): light-mode primary text, deliberately pure black for maximum readability.
 - **Ink Secondary** (`ink-secondary`): `bodySmall`, labels and input labels, dialog body text.
 - **Ink Muted** (`ink-muted`): light-mode `picposMuted`. Used for hints, column titles, sub-lines and unselected tabs.
@@ -514,9 +511,11 @@ Danger confirms require typing a word, and list "will be deleted" in red and "wi
 - **Don't** make Cairo the base font of printed or PDF documents. Use Noto Naskh Arabic.
 
 ### Known drift (observed, not yet rules)
-- Two light hairlines (`hairline` #DCE3EE from the theme vs `border-slate` #E2E8F0 from `picposHairline`) and two light field fills (`field-fill` #F4F7FC vs `field-slate` #F8FAFC) coexist.
-- Some shell widgets use fixed light-mode `AppColors.textMuted` / `textSecondary`. These are `PicPosStatTile`, `PicPosSectionHeader`, `PicPosEmptyState`, `PicPosFormActionBar` and `PicPosTotalsBar`.
 - `AppColors.primary` is used for foreground icons where `picposBrandInk` would be dark-aware.
 - `picposMuted` is duplicated as a free function in `picpos_kpi_row.dart` and `picpos_dialog.dart`.
-- Several shell defaults are untranslated Arabic literals (e.g. `'رجوع'`, `'إلغاء'`, `'تأكيد'`, `'تطبيق'` in the dialog and form action bar).
-- `PicPosPageHeader` (`arrow_forward`) and `PicPosFormActionBar` (`chevron_right`) use fixed back icons that don't flip in LTR.
+
+### Resolved drift
+- **One hairline, one field fill.** `picposHairline` and `picposField` now resolve to the theme's own light tokens (`hairline` #DCE3EE, `field-fill` #F4F7FC) through `PicPosTheme.lightHairline` / `lightFieldFill`. `picposDialogField` uses the same fill. The PicPos theme also sets `dividerColor` to the hairline (before, Material derived a darker `outline` grey). Dark values are unchanged, and the sibling brand's `AppColors.border` / `surface` were not touched. Guarded by `test/widget/picpos_shell_known_drift_test.dart`.
+- **Fixed light-grey text.** `PicPosStatTile`, `PicPosSectionHeader`, `PicPosEmptyState`, `PicPosFormActionBar` and `PicPosTotalsBar` take their muted and secondary text from `picposMuted` (and `white70` for secondary text in dark). Dark contrast is ≥ 4.5 on `card-dark`.
+- **Untranslated shell defaults.** Default labels («رجوع», «إلغاء», «تأكيد», «تطبيق», «الملف الكامل», «سيُحذف», «سيبقى كما هو») are now `null` defaults resolved with `tr()` at render time, so English shows Back / Cancel / Confirm / Apply.
+- **Back arrows.** `PicPosPageHeader` uses `Icons.arrow_back` and `PicPosFormActionBar` uses `Icons.chevron_left`. Both carry `matchTextDirection`, so they point to the line start in both directions: → in RTL and ← in LTR. The old `arrow_forward` / `chevron_right` pointed to the line end in both directions.

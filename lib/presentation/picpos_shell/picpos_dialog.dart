@@ -29,7 +29,9 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../core/i18n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/picpos_theme.dart';
 import 'picpos_panel_groups.dart';
 
 /// لونُ النصِّ الخافت — `--muted` في الوضعين.
@@ -43,7 +45,7 @@ Color picposDialogField(BuildContext context) =>
     Theme.of(context).inputDecorationTheme.fillColor ??
     (Theme.of(context).brightness == Brightness.dark
         ? const Color(0xFF18243A)
-        : const Color(0xFFF4F7FC));
+        : PicPosTheme.lightFieldFill);
 
 /// رقاقةُ حالةٍ في ترويسة الحوار — `bench.chips` في ملفّ التصميم.
 ///
@@ -99,7 +101,7 @@ class PicPosDialog extends StatelessWidget {
     this.width = 760,
     this.primaryAction,
     this.secondaryActions = const [],
-    this.cancelLabel = 'إلغاء',
+    this.cancelLabel,
     this.onCancel,
     this.scrollable = true,
     this.indexLabels = const [],
@@ -122,7 +124,9 @@ class PicPosDialog extends StatelessWidget {
   final List<Widget> body;
   final PicPosDialogAction? primaryAction;
   final List<PicPosDialogAction> secondaryActions;
-  final String cancelLabel;
+  /// `null` ⇒ «إلغاء» مترجَمةً عبر `tr()` وقتَ الرسم — لا قيمةٌ افتراضيّةٌ
+  /// عربيّةٌ ثابتةٌ تظهر كما هي في الواجهة الإنجليزيّة.
+  final String? cancelLabel;
 
   /// `null` ⇒ لا زرَّ إلغاء. والافتراضُ إغلاقُ الحوار.
   final VoidCallback? onCancel;
@@ -385,7 +389,7 @@ class PicPosDialog extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  cancelLabel,
+                  cancelLabel ?? tr('إلغاء'),
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
@@ -449,7 +453,7 @@ class PicPosDialog extends StatelessWidget {
                 ),
               ),
               child: Text(
-                cancelLabel,
+                cancelLabel ?? tr('إلغاء'),
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
@@ -544,8 +548,8 @@ Future<bool> showPicPosConfirm(
   required IconData icon,
   required String title,
   required String message,
-  String confirmLabel = 'تأكيد',
-  String cancelLabel = 'إلغاء',
+  String? confirmLabel,
+  String? cancelLabel,
   String? subtitle,
   Color accent = AppColors.primary,
 
@@ -575,7 +579,7 @@ Future<bool> showPicPosConfirm(
       onCancel: () => Navigator.pop(ctx, false),
       cancelLabel: cancelLabel,
       primaryAction: PicPosDialogAction(
-        label: confirmLabel,
+        label: confirmLabel ?? tr('تأكيد'),
         icon: danger ? PhosphorIconsBold.trash : PhosphorIconsBold.check,
         color: color,
         onPressed: () => Navigator.pop(ctx, true),

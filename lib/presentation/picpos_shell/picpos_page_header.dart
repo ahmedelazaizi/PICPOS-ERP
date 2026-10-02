@@ -42,10 +42,15 @@ class PicPosPageHeader extends StatelessWidget {
           // شاشة فرعية بـ Navigator.push). شاشات الشريط الجانبي أعلى المكدّس
           // (canPop=false) فما بيظهرش عندها — التنقّل بينها بالشريط. في RTL
           // «رجوع» سهم لليمين (→) مطابقةً لباقي الشاشات.
+          //
+          // ⚠️ `arrow_back` لا `arrow_forward`: الاثنان يحملان
+          // `matchTextDirection` فينعكسان وحدَهما في RTL. فـ`arrow_back`
+          // يُرسَم → في RTL و← في LTR (نحو بداية السطر)، بينما
+          // `arrow_forward` القديمُ كان يُرسَم ← في RTL و→ في LTR.
           if (Navigator.canPop(context)) ...[
             IconButton(
               onPressed: () => Navigator.maybePop(context),
-              icon: const Icon(Icons.arrow_forward),
+              icon: const Icon(Icons.arrow_back),
               color: AppColors.primary,
               tooltip: tr('رجوع'),
               style: IconButton.styleFrom(

@@ -55,8 +55,10 @@ Future<bool> showPicPosDangerConfirm(
   /// ⚠️ العنوانان قابلان للتبديل لأنّ الأثرَ ليس حذفاً دائماً: حذفُ
   /// المستخدم في هذا النظام **تعطيلٌ وقفل**، والاستعادةُ **تسلسلُ خطوات**.
   /// وعنوانٌ يقول «سيُحذف» فوق أثرٍ لا يحذف كذبةٌ في أخطرِ موضع.
-  String willDeleteLabel = 'سيُحذف',
-  String willRemainLabel = 'سيبقى كما هو',
+  ///
+  /// `null` ⇒ «سيُحذف» / «سيبقى كما هو» مترجَمتَين عبر `tr()`.
+  String? willDeleteLabel,
+  String? willRemainLabel,
   String? typedWord,
   String? subtitle,
   List<PicPosDangerMeta> metaRows = const [],
@@ -80,8 +82,8 @@ Future<bool> showPicPosDangerConfirm(
       actionLabel: actionLabel,
       typedWord: typedWord,
       willDelete: willDelete,
-      willDeleteLabel: willDeleteLabel,
-      willRemainLabel: willRemainLabel,
+      willDeleteLabel: willDeleteLabel ?? tr('سيُحذف'),
+      willRemainLabel: willRemainLabel ?? tr('سيبقى كما هو'),
       willRemain: willRemain,
       metaRows: metaRows,
       tone: tone,

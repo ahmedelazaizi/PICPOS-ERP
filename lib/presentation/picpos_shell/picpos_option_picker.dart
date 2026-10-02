@@ -61,7 +61,7 @@ Future<T?> showPicPosOptionPicker<T>({
   required T selected,
   String? subtitle,
   IconData icon = PhosphorIconsBold.listChecks,
-  String applyLabel = 'تطبيق',
+  String? applyLabel,
   double width = 560,
 }) {
   return showDialog<T>(
@@ -72,7 +72,8 @@ Future<T?> showPicPosOptionPicker<T>({
       icon: icon,
       options: options,
       selected: selected,
-      applyLabel: applyLabel,
+      // `null` ⇒ «تطبيق» مترجَمةً وقتَ الفتح لا قيمةً عربيّةً ثابتة.
+      applyLabel: applyLabel ?? tr('تطبيق'),
       width: width,
     ),
   );

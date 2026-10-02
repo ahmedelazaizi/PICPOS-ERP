@@ -56,9 +56,9 @@ class PicPosSectionHeader extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtitle!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                     ),
                   ],

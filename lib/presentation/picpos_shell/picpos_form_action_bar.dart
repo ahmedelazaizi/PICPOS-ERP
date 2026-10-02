@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import 'picpos_surface.dart';
 
 /// شريطُ أفعالٍ سفليٌّ لشاشات المستندات.
 ///
@@ -20,7 +22,7 @@ class PicPosFormActionBar extends StatelessWidget {
   const PicPosFormActionBar({
     super.key,
     this.onBack,
-    this.backLabel = 'رجوع',
+    this.backLabel,
     this.draft,
     this.primary,
     this.hint,
@@ -29,7 +31,8 @@ class PicPosFormActionBar extends StatelessWidget {
   });
 
   final VoidCallback? onBack;
-  final String backLabel;
+  /// `null` ⇒ «رجوع» مترجَمةً عبر `tr()` وقتَ الرسم.
+  final String? backLabel;
 
   /// «حفظ مسودة» — يُخفى بتمرير `null` لشاشةٍ بلا دورةِ مسوّدة.
   final PicPosFormAction? draft;
@@ -51,13 +54,14 @@ class PicPosFormActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final muted = context.picposMuted;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
           top: BorderSide(
-            color: AppColors.textMuted.withValues(alpha: 0.18),
+            color: muted.withValues(alpha: 0.18),
           ),
         ),
       ),
@@ -70,8 +74,12 @@ class PicPosFormActionBar extends StatelessWidget {
           if (onBack != null)
             OutlinedButton.icon(
               onPressed: busy ? null : onBack,
-              icon: const Icon(Icons.chevron_right, size: 18),
-              label: Text(backLabel),
+              // ⚠️ `chevron_left` لا `chevron_right`: أيقوناتُ Material هذه
+              // تحمل `matchTextDirection` فتنعكس وحدَها في RTL. فـ«يسارٌ»
+              // يُرسَم «‹» في LTR و«›» في RTL — أي نحو بداية السطر دائماً.
+              // و`chevron_right` القديمةُ كانت تشير إلى النهاية في الاتجاهين.
+              icon: const Icon(Icons.chevron_left, size: 18),
+              label: Text(backLabel ?? tr('رجوع')),
             )
           else
             const SizedBox.shrink(),
@@ -83,10 +91,7 @@ class PicPosFormActionBar extends StatelessWidget {
               if (hint != null)
                 Text(
                   hint!,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                  ),
+                  style: TextStyle(fontSize: 12, color: muted),
                 ),
               ...extras,
               if (draft case final d?)

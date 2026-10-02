@@ -10,6 +10,7 @@
 // بنفس الشرط، لا بعَلَمٍ منفصلٍ قد ينحرف عنه.
 import 'package:flutter/material.dart';
 
+import '../../core/i18n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import 'picpos_surface.dart';
 
@@ -46,7 +47,7 @@ class PicPosEntityCard extends StatelessWidget {
     this.stats = const [],
     this.chips = const [],
     this.onOpen,
-    this.openLabel = 'الملف الكامل',
+    this.openLabel,
   });
 
   final String title;
@@ -65,7 +66,9 @@ class PicPosEntityCard extends StatelessWidget {
 
   /// حين يُعطى: البطاقةُ قابلةٌ للنقر ويظهر سطرُ «الملف الكامل».
   final VoidCallback? onOpen;
-  final String openLabel;
+
+  /// `null` ⇒ «الملف الكامل» مترجَمةً عبر `tr()` وقتَ الرسم.
+  final String? openLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -286,7 +289,7 @@ class PicPosEntityCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  openLabel,
+                  openLabel ?? tr('الملف الكامل'),
                   style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w800,

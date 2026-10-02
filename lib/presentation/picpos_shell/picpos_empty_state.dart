@@ -27,6 +27,11 @@ class PicPosEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ألوانٌ تتبع الوضع: `textSecondary`/`textMuted` الثابتان رماديّان داكنان
+    // يختفيان على بطاقة الوضع الداكن.
+    final muted = context.picposMuted;
+    final secondary =
+        context.picposIsDark ? Colors.white70 : AppColors.textSecondary;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(
@@ -43,16 +48,16 @@ class PicPosEmptyState extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: context.picposHairline),
               ),
-              child: Icon(icon, size: 30, color: AppColors.textMuted),
+              child: Icon(icon, size: 30, color: muted),
             ),
             const SizedBox(height: Spacing.lg),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
+                color: secondary,
               ),
             ),
             if (hint != null) ...[
@@ -60,10 +65,7 @@ class PicPosEmptyState extends StatelessWidget {
               Text(
                 hint!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textMuted,
-                ),
+                style: TextStyle(fontSize: 12, color: muted),
               ),
             ],
             if (action != null) ...[

@@ -34,7 +34,26 @@ import '../picpos_shell/picpos_surface.dart';
 /// إلى الاستعلام كـ`allowedBranchIds`، ومَن نطاقُه كاملٌ يمرّ بلا أثر.
 /// إسقاطُه يفتح حركاتِ فروعٍ لا يملكها المستخدم.
 class GeneralLedgerPicPosScreen extends ConsumerStatefulWidget {
-  const GeneralLedgerPicPosScreen({super.key});
+  const GeneralLedgerPicPosScreen({
+    super.key,
+    this.initialAccountId,
+    this.initialAccountLabel,
+    this.initialFrom,
+    this.initialTo,
+  });
+
+  /// يُفتَح الدفترُ مرشَّحاً على هذا الحساب ويُحمَّل فوراً — رابطُ «عرض في
+  /// دفتر الأستاذ» من لوح دليل الحسابات. `null` ⇒ السلوكُ المعتاد (يختار
+  /// المستخدمُ الحساب).
+  final int? initialAccountId;
+
+  /// «الرمز - الاسم» كما يُعرض على زرّ منتقي الحساب.
+  final String? initialAccountLabel;
+
+  /// مدى التاريخ الابتدائيّ — السنةُ الماليّةُ التي قرأ اللوحُ أرصدتَها، كي
+  /// يطابق الدفترُ ما رآه المستخدمُ هناك.
+  final DateTime? initialFrom;
+  final DateTime? initialTo;
 
   @override
   ConsumerState<GeneralLedgerPicPosScreen> createState() =>
@@ -57,6 +76,21 @@ class _GeneralLedgerPicPosScreenState
 
   final _fmt = NumberFormat('#,##0.00', 'ar_EG');
   final _dateFmt = DateFormat('yyyy/MM/dd');
+
+  @override
+  void initState() {
+    super.initState();
+    final id = widget.initialAccountId;
+    if (id == null) return;
+    _accountId = id;
+    _accountName = widget.initialAccountLabel;
+    _fromDate = widget.initialFrom ?? _fromDate;
+    _toDate = widget.initialTo ?? _toDate;
+    // بعد الإطار الأوّل: `_load` يقرأ `ref` ويستدعي `setState`.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _load(ref.read(accountingRepositoryProvider));
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

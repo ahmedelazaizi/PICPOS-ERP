@@ -26,6 +26,10 @@ class CoaTreeNode extends StatelessWidget {
   // of its whole subtree, not just its own (usually zero) balance.
   final CoaRollup rollup;
 
+  /// الحسابُ المختارُ في لوح PicPos — صفُّه يُصبَغ بلون العلامة (α 0.06).
+  /// `null` (الافتراض، وفرعُ UralCash) ⇒ لا تمييز.
+  final int? selectedAccountId;
+
   const CoaTreeNode({
     super.key,
     required this.account,
@@ -37,6 +41,7 @@ class CoaTreeNode extends StatelessWidget {
     required this.onToggle,
     required this.onAction,
     required this.rollup,
+    this.selectedAccountId,
   });
 
   @override
@@ -52,16 +57,19 @@ class CoaTreeNode extends StatelessWidget {
               ? onToggle
               : () => onAction(account, 'ledger'),
           child: Container(
-            padding: EdgeInsets.only(
-              right: 20.0 + (depth * 28),
-              left: 12,
+            // اتجاهيٌّ: مطابقٌ حرفاً في RTL، والإزاحةُ في LTR على اليسار.
+            padding: EdgeInsetsDirectional.only(
+              start: 20.0 + (depth * 28),
+              end: 12,
               top: 8,
               bottom: 8,
             ),
             decoration: BoxDecoration(
-              color: depth > 0
-                  ? typeInfo.color.withValues(alpha: 0.02 * depth)
-                  : null,
+              color: selectedAccountId == account.id
+                  ? AppColors.primary.withValues(alpha: 0.06)
+                  : depth > 0
+                      ? typeInfo.color.withValues(alpha: 0.02 * depth)
+                      : null,
               border: Border(
                 bottom: BorderSide(
                   color: AppColors.border.withValues(alpha: 0.3),
@@ -260,6 +268,7 @@ class CoaTreeNode extends StatelessWidget {
                 onToggle: () => onAction(child, '_toggle'),
                 onAction: onAction,
                 rollup: rollup,
+                selectedAccountId: selectedAccountId,
               )),
       ],
     );

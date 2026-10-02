@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import 'picpos_surface.dart';
 
 /// شريطُ إجماليّاتٍ نحيفٌ — سطرٌ واحدٌ بدل صفِّ بطاقات.
 ///
@@ -82,10 +83,7 @@ class _TotalCell extends StatelessWidget {
       children: [
         Text(
           total.label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.textMuted,
-          ),
+          style: TextStyle(fontSize: 12, color: context.picposMuted),
         ),
         const SizedBox(width: 8),
         Text(

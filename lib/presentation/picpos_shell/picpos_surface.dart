@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/picpos_theme.dart';
 
 /// ألوانُ أسطح PicPos تابعةً للوضع (فاتح/غامق).
 ///
@@ -21,12 +22,15 @@ extension PicPosSurface on BuildContext {
       picposIsDark ? AppColors.cardDark : AppColors.card;
 
   /// الخلفيّةُ الخافتةُ داخلَ البطاقة (الحقول والصفوف) — `--field`.
+  ///
+  /// القيمةُ الفاتحةُ هي تعبئةُ حقول الثيم نفسُها (`PicPosTheme.lightFieldFill`)
+  /// لا `AppColors.surface` — كي لا تحمل الشاشةُ تعبئتَين متقاربتين.
   Color get picposField =>
-      picposIsDark ? const Color(0xFF18243A) : AppColors.surface;
+      picposIsDark ? const Color(0xFF18243A) : PicPosTheme.lightFieldFill;
 
-  /// خطُّ الفصل — `--hairline`.
+  /// خطُّ الفصل — `--hairline`. والفاتحُ هو حدُّ الثيم (`dividerColor`).
   Color get picposHairline =>
-      picposIsDark ? AppColors.borderDark : AppColors.border;
+      picposIsDark ? AppColors.borderDark : PicPosTheme.lightHairline;
 
   /// النصُّ الأساسيّ.
   Color get picposText =>

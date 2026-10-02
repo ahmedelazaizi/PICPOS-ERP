@@ -182,7 +182,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
       decoration: BoxDecoration(
         color: context.picposCard,
         border: Border.all(color: context.picposHairline),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -198,7 +198,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                       ? PhosphorIconsBold.plusCircle
                       : PhosphorIconsBold.identificationCard,
                   size: 16,
-                  color: AppColors.primary,
+                  color: context.picposBrandInk,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -225,7 +225,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                     child: Text(
                       tr('حسابُ نظام — رمزُه ثابتٌ ولا يُحذَف. يقرؤه المحرّكُ بالرمز في الترحيل الآليّ، وتغييرُه يقطع الترحيل.'),
                       style: text.labelSmall
-                          ?.copyWith(color: AppColors.textSecondary),
+                          ?.copyWith(color: context.picposText),
                     ),
                   ),
                 ],
@@ -300,7 +300,12 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                             DropdownMenuItem(
                                 value: e.key, child: Text(e.value.label)),
                         ],
-                        onChanged: (v) => setState(() => _type = v ?? _type),
+                        // ⚠️ مقفولٌ تحت أب — نفسُ قاعدة حوار الإنشاء
+                        //    (`onChanged: isSubAccount ? null : …`): الفرعيُّ
+                        //    من نوعٍ غيرِ نوع أبيه يكسر كلَّ تجميعٍ هرميّ.
+                        onChanged: _parentId != null
+                            ? null
+                            : (v) => setState(() => _type = v ?? _type),
                       ),
                     ),
                   // مشتقٌّ لا مختار — راجع ترويسةَ الملفّ.
@@ -351,7 +356,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                             ?.copyWith(fontWeight: FontWeight.w700)),
                     subtitle: Text(tr('لن يظهر عند إنشاء قيدٍ يدويّ'),
                         style: text.labelSmall
-                            ?.copyWith(color: AppColors.textMuted)),
+                            ?.copyWith(color: context.picposMuted)),
                     value: _hidden,
                     onChanged: (v) => setState(() => _hidden = v),
                   ),
@@ -404,7 +409,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
                 style: Theme.of(context)
                     .textTheme
                     .labelSmall
-                    ?.copyWith(color: AppColors.textMuted)),
+                    ?.copyWith(color: context.picposMuted)),
             const SizedBox(height: 5),
             child,
           ],
@@ -432,7 +437,7 @@ class _AccountDetailPanelState extends State<AccountDetailPanel> {
               style: Theme.of(context)
                   .textTheme
                   .labelSmall
-                  ?.copyWith(color: AppColors.textMuted)),
+                  ?.copyWith(color: context.picposMuted)),
         ],
       );
 }
