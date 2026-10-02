@@ -22,6 +22,7 @@ import '../../domain/models/asset_movement_types.dart';
 import '../../domain/models/journal_balance.dart';
 import '../../domain/models/document_record.dart';
 import '../../domain/models/voucher_book.dart';
+import '../../domain/models/distribution_model.dart';
 import '../../domain/models/purchase_line_discount.dart';
 import '../../domain/models/cheque_book_plan.dart';
 import '../../domain/models/asset_disposal_plan.dart';
@@ -148,6 +149,8 @@ part 'lan_pairing_schema.dart';
 part 'product_tax_exempt_schema.dart';
 part 'sales_invoice_revenue_account_schema.dart';
 part 'voucher_books_schema.dart';
+part 'distribution_model_schema.dart';
+part 'daos/distribution_rep_ops_dao.dart';
 part 'daos/voucher_account_transfer_dao.dart';
 part 'daos/fixed_assets_dao_ext.dart';
 part 'daos/e_invoicing_dao.dart';
@@ -1179,7 +1182,7 @@ class AppDatabase extends _$AppDatabase {
   //
   // Schema v177: sale reposts after an authorized edit may legitimately
   // produce multiple auto-posted JEs for one invoice reference.
-  int get schemaVersion => 184;
+  int get schemaVersion => 185;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.
@@ -1549,6 +1552,10 @@ class AppDatabase extends _$AppDatabase {
 
     // v184 — دفاترُ السندات (المرحلة هـ / E3).
     'voucher_books', 'voucher_book_leaves_cancelled',
+
+    // v185 — نموذجُ التوزيع (المرحلة و).
+    'distribution_areas', 'route_customers', 'route_rep_history',
+    'rep_resources',
   ];
 
   /// مكشوفةٌ لحارسٍ يثبّت أنّ كلَّ جدولٍ يُسحَب يحمل مُشغِّلَ الختم على
@@ -2299,6 +2306,9 @@ class AppDatabase extends _$AppDatabase {
        'butchery_order_lines',
       // v184 — دفاترُ السندات (المرحلة هـ / E3).
       'voucher_books', 'voucher_book_leaves_cancelled',
+      // v185 — نموذجُ التوزيع (المرحلة و).
+      'distribution_areas', 'route_customers', 'route_rep_history',
+      'rep_resources',
     };
     for (final pgTable in pgTables) {
       if (!driftTableNames.contains(pgTable) &&
@@ -2460,6 +2470,7 @@ class AppDatabase extends _$AppDatabase {
         await ensureProductTaxExemptSchema();
         await ensureSalesInvoiceRevenueAccountSchema();
         await ensureVoucherBooksSchema();
+        await ensureDistributionModelSchema();
         // seedInitialData + syncDefaultAccounts moved to beforeOpen
         // (after defensive v110 column additions)
       },

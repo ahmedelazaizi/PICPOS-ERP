@@ -15,6 +15,7 @@ import '../../core/logging/diagnostic_logger.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../data/database/database.dart';
 import '../../domain/models/exchange_sync_payload.dart';
+import '../../domain/models/distribution_model.dart';
 import 'api_user_context.dart';
 import '../stock_shortage_policy_service.dart';
 import 'api_handler_base.dart';
@@ -318,6 +319,11 @@ class ApiSalesHandler extends ApiHandlerBase {
           // C2 (v183) — the client's chosen «حساب المبيعات»; absent ⇒ NULL ⇒
           // mapped default (older clients unchanged).
           revenueAccountId: parseIntNullable(data['revenueAccountId']),
+          // v185 — the client's rep/route stamp; absent ⇒ resolved here.
+          repStamp: RepStamp(
+            repEmployeeId: parseIntNullable(data['repEmployeeId']),
+            routeId: parseIntNullable(data['routeId']),
+          ),
         );
 
         // Feature 009 / T020 — server-side auto-deplete (R4 / Constitution III).

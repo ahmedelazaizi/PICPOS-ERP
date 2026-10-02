@@ -80,6 +80,11 @@ extension SalesMutationsDao on AppDatabase {
     /// `'sales'` account, exactly as before. Written inside the insert
     /// transaction, before any JE (Phase 8 or the caller's) reads it.
     int? revenueAccountId,
+
+    /// v185 — the rep + route the sale/return is stamped with. `null` ⇒
+    /// resolved from [customerId]'s current route (walk-in ⇒ unstamped).
+    /// A server writing a client's sale passes the client's stamp.
+    RepStamp? repStamp,
   }) async {
     final invoiceId = await transaction(() async {
       // Use client-provided date or current server time
@@ -287,6 +292,9 @@ extension SalesMutationsDao on AppDatabase {
       if (revenueAccountId != null) {
         await setSalesInvoiceRevenueAccountId(invoiceId, revenueAccountId);
       }
+      // v185 — المندوبُ والمسارُ يُختَمان لحظةَ الإنشاء.
+      await stampDocumentRep('sales_invoices', invoiceId, customerId,
+          explicit: repStamp);
       // Insert items and update stock
       for (final item in items) {
         // PIR Phase 0: Auto-populate costPrice from product's current WAC

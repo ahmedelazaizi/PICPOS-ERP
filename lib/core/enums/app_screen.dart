@@ -113,7 +113,10 @@ enum AppScreen {
 
   /// قائمتا PicPos المنفصلتان لنفس جدول الأطراف.
   customers(76),
-  suppliers(77);
+  suppliers(77),
+
+  /// يجب أن تطابق `ScreenId.repDistribution`.
+  repDistribution(78);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;

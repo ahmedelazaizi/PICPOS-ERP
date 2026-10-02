@@ -465,6 +465,15 @@ class ScreenRegistry {
         ],
       ];
 
+  /// المرحلة و — «إدارة المناديب والتوزيع» تتبع «التوزيع» في كلّ نطاقٍ
+  /// يحمله (التجاريّ والموحَّد)، فلا تظهر لنشاطٍ لا توزيعَ فيه.
+  static List<ScreenId> withPicposRepDistribution(List<ScreenId> screens) => [
+        for (final screen in screens) ...[
+          screen,
+          if (screen == ScreenId.distribution) ScreenId.repDistribution,
+        ],
+      ];
+
   /// [features] اختياريٌّ عن قصد: تركُه `null` يعطي **بالضبط** ما كان
   /// يعطيه التوقيعُ القديم، فلا يتغيّر سلوكُ أيّ منادٍ لم يُحدَّث.
   static List<ScreenId> forProfile(
@@ -473,9 +482,9 @@ class ScreenRegistry {
   }) {
     final base = _baseForProfile(profile, features: features);
     if (!Brand.isPicPos) return base;
-    return withPicposPartyScreens(
+    return withPicposRepDistribution(withPicposPartyScreens(
       withPicposQuotations(withoutPicposRetired(base)),
-    );
+    ));
   }
 
   static List<ScreenId> _baseForProfile(

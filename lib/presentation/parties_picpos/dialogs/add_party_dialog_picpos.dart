@@ -422,7 +422,7 @@ void _showPartyDialogPicpos(
               TextField(
                 controller: addressController,
                 decoration: InputDecoration(
-                  labelText: tr('العنوان / المنطقة'),
+                  labelText: tr('العنوان'),
                   prefixIcon: const Icon(PhosphorIconsBold.mapPin),
                 ),
               ),

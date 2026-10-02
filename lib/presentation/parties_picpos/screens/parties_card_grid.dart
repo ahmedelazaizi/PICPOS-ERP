@@ -30,7 +30,11 @@ class PartyCardActions {
     required this.onVoucher,
     required this.onDelete,
     required this.onWhatsApp,
+    this.onAssignRoute,
   });
+
+  /// المرحلة و — إسنادُ العميل إلى مسار. `null` = بلا صلاحيّة إدارة التوزيع.
+  final void Function(PicPosPartyCard)? onAssignRoute;
 
   final void Function(PicPosPartyCard) onStatement;
   final void Function(PicPosPartyCard) onEdit;
@@ -48,10 +52,14 @@ class PartyCard extends StatelessWidget {
     super.key,
     required this.party,
     required this.actions,
+    this.showRoute = false,
   });
 
   final PicPosPartyCard party;
   final PartyCardActions actions;
+
+  /// صفُّ «المسار · المنطقة · المندوب» — قائمةُ العملاء وحدَها.
+  final bool showRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +80,10 @@ class PartyCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _header(context, tint, tintBg, muted),
+          if (showRoute) ...[
+            const SizedBox(height: 8),
+            PartyRouteRow(party: party, onAssign: actions.onAssignRoute),
+          ],
           const SizedBox(height: 11),
           _balanceRow(context, muted),
           if (party.isOverLimit) ...[
@@ -381,10 +393,14 @@ class PartiesCardGrid extends StatelessWidget {
     super.key,
     required this.parties,
     required this.actions,
+    this.showRoute = false,
   });
 
   final List<PicPosPartyCard> parties;
   final PartyCardActions actions;
+
+  /// قائمةُ العملاء تعرض مسارَ كلِّ عميلٍ ومنطقتَه ومندوبَه.
+  final bool showRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -412,13 +428,14 @@ class PartiesCardGrid extends StatelessWidget {
             crossAxisCount: columns,
             crossAxisSpacing: 11,
             mainAxisSpacing: 11,
-            mainAxisExtent: 168,
+            mainAxisExtent: showRoute ? 212 : 168,
           ),
           itemCount: parties.length,
           itemBuilder: (context, i) => PartyCard(
             key: ValueKey(parties[i].id),
             party: parties[i],
             actions: actions,
+            showRoute: showRoute,
           ),
         );
       },

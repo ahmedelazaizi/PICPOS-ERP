@@ -62,6 +62,7 @@ import '../../party_statement_picpos/screens/party_statement_picpos_screen.dart'
 import '../../screens/purchase_orders_screen.dart';
 import '../../screens/report_builder_screen.dart';
 import 'ar_aging_report_picpos_screen.dart';
+import 'rep_reports_picpos_screen.dart';
 import '../../screens/reports/category_profit_report_screen.dart';
 import '../../screens/reports/consumption_report_screen.dart';
 import '../../screens/reports/delivery_report_screen.dart';
@@ -1943,6 +1944,7 @@ Map<String, String> get _kCatGroup => {
   'purchases': tr('المخزون والشراء'),
   'customers': tr('العملاء والموردون'),
   'suppliers': tr('العملاء والموردون'),
+  'reps': tr('العملاء والموردون'),
   'cashbox': tr('المال والضرائب'),
   'taxes': tr('المال والضرائب'),
   'users': tr('المتابعة والتحليل'),
@@ -1968,6 +1970,7 @@ Map<String, String> get _kCatDesc => {
   'purchases': tr('المشتريات بفلاتر كاملة ومتابعة أوامر الشراء المفتوحة'),
   'customers': tr('كشوف الحساب، تقادم الذمم، سلوك الشراء، وتسوية الذمم مع الأستاذ العام'),
   'suppliers': tr('كشوف حساب الموردين وحجم التعامل'),
+  'reps': tr('مبيعات المناديب وتحصيلاتهم من المستندات المختومة، وتغطية المسارات، ومخزون السيارات'),
   'cashbox': tr('حركة الخزينة، الورديات وعجز النقدية، التوصيل، والمصروفات التشغيلية'),
   'taxes': tr('الضريبة المحصلة والمدفوعة وصافي الالتزام وحالة الفاتورة الإلكترونية'),
   'users': tr('نشاط المستخدمين وسجل الدخول ومصفوفة الصلاحيات لكل دور'),
@@ -2388,6 +2391,25 @@ List<PicposReportCategory> buildPicposReportCatalog({
           PicposReportShortcut('c_debt', tr('العملاء المديونين'), 'cust_aging'),
           PicposReportShortcut('c_top', tr('حسب حجم المبيعات'), 'cust_behavior'),
         ],
+      ),
+      // المرحلة و — تقاريرُ المناديب: من الختم لا من المسار الحاليّ.
+      PicposReportCategory(
+        id: 'reps',
+        title: tr('تقارير المناديب'),
+        icon: PhosphorIconsBold.truck,
+        color: const Color(0xFF0D9488),
+        mainReports: [
+          for (final kind in RepReportKind.values)
+            PicposReportEntry(
+              id: kind.id,
+              title: kind.title,
+              subtitle: kind.subtitle,
+              permission: PermissionCodes.distributionView,
+              action: () =>
+                  actions.open(() => RepReportsPicposScreen(kind: kind)),
+            ),
+        ],
+        shortcuts: const [],
       ),
       PicposReportCategory(
         id: 'suppliers',

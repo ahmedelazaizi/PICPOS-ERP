@@ -946,6 +946,8 @@ class SalesTransactionOrchestrator {
             ));
           }
 
+      // v185 — the rep + route this device stamps; the server keeps it.
+      final repStamp = await _db.resolveRepStamp(request.customerId);
       final syncRequest = {
         'globalId': saleGlobalId,
         'invoiceNumber': localInvoiceNumber,
@@ -987,6 +989,8 @@ class SalesTransactionOrchestrator {
         'deliveryStatus': request.deliveryStatus,
         // C2: the server's JE must credit the invoice's chosen account.
         'revenueAccountId': ?request.revenueAccountId,
+        'repEmployeeId': ?repStamp.repEmployeeId,
+        'routeId': ?repStamp.routeId,
       };
 
       // IMPORTANT: Do NOT await — local save must never block on network latency.
@@ -1170,6 +1174,8 @@ class SalesTransactionOrchestrator {
           await _db.setSalesInvoiceRevenueAccountId(
               localInvoiceId, request.revenueAccountId);
         }
+        await _db.stampDocumentRep(
+            'sales_invoices', localInvoiceId, request.customerId);
         return localInvoiceId;
         }); // 066: end client-mode atomic txn
       } else {

@@ -57,7 +57,16 @@ class PicPosPartyCard {
     this.isCustomer = false,
     this.isSupplier = false,
     this.isDeliveryCompany = false,
+    this.routeName,
+    this.areaName,
+    this.repName,
   });
+
+  /// المرحلة و — مسارُ العميل الحاليّ ومنطقتُه ومندوبُه **المشتقّ** من
+  /// المسار (لا يُخزَّن على الطرف). `null` = ليس على مسار.
+  final String? routeName;
+  final String? areaName;
+  final String? repName;
 
   final int id;
   final String name;

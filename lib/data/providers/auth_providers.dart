@@ -692,6 +692,8 @@ final kAllNavItemDefs = [
   const NavItemDef(icon: PhosphorIconsBold.calendarCheck, label: 'الحجوزات', permission: 'tables_view', index: 61, group: 'sales'),
   const NavItemDef(icon: PhosphorIconsBold.tag, label: 'العروض', permission: 'offers_view', index: 2, group: 'sales'),
   const NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مرتجع المبيعات', permission: 'sales_return_view', index: 44, group: 'sales'),
+  // المرحلة و — PicPos وحدَها (‏[kPicPosOnlyNavIndexes]).
+  const NavItemDef(icon: PhosphorIconsBold.truck, label: 'إدارة المناديب والتوزيع', permission: 'distribution_view', index: 78, group: 'sales'),
 
   // ═══════════════════════════════════════════
   // 🍽️ ادارة المطاعم — طلبُ المالك 2026-09-12
@@ -914,7 +916,7 @@ const kPicPosRetiredNavIndexes = <int>{
   42, // الجرد الدوري (‏= `fieldAudit`، اسمان لفهرسٍ واحد)
 };
 
-const kPicPosOnlyNavIndexes = <int>{75, 76, 77};
+const kPicPosOnlyNavIndexes = <int>{75, 76, 77, 78};
 // E4 — `70` (دفتر الشيكات) صار تبويباً داخل «إدارة الشيكات» في PicPos.
 const kPicPosReplacedNavIndexes = <int>{6, 70};
 
@@ -1056,6 +1058,7 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.eInvoice: 'einvoice_view',
   ScreenId.loyalty: 'loyalty_view',
   ScreenId.distribution: 'distribution_view',
+  ScreenId.repDistribution: 'distribution_view',
   ScreenId.manufacturing: 'manufacturing_view',
   ScreenId.operationalExpenses: 'settings_view',
   ScreenId.chartOfAccounts: 'settings_view',

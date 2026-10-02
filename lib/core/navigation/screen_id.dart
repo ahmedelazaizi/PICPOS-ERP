@@ -218,7 +218,11 @@ enum ScreenId {
 
   /// قائمتا PicPos المنفصلتان لنفس جدول الأطراف وصلاحيّته القائمة.
   customers(76),
-  suppliers(77);
+  suppliers(77),
+
+  /// «إدارة المناديب والتوزيع» — PicPos (المرحلة و): المناطق والمسارات
+  /// وعملاؤها والمناديب وعهدتهم. صلاحيّتُه `distribution_view` القائمة.
+  repDistribution(78);
 
   const ScreenId(this.navigationIndex);
   final int navigationIndex;

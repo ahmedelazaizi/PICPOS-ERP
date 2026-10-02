@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import '../database.dart';
+import '../../../domain/models/distribution_model.dart';
 
 /// Extensions for Distribution & Sales Representatives system
 extension DistributionExtensions on AppDatabase {
@@ -209,9 +210,21 @@ extension DistributionExtensions on AppDatabase {
   // COLLECTIONS
   // ═══════════════════════════════════════════════════════════════════════
 
-  /// Record a collection
-  Future<int> createCollection(SalesRepCollectionsCompanion collection) {
-    return into(salesRepCollections).insert(collection);
+  /// Record a collection. v185 — stamped with the collecting rep and the
+  /// customer's current route at creation time.
+  Future<int> createCollection(SalesRepCollectionsCompanion collection) async {
+    final id = await into(salesRepCollections).insert(collection);
+    final customerId =
+        collection.customerId.present ? collection.customerId.value : null;
+    final resolved = await resolveRepStamp(customerId);
+    await stampDocumentRep('sales_rep_collections', id, customerId,
+        explicit: RepStamp(
+          repEmployeeId: collection.salesRepId.present
+              ? collection.salesRepId.value
+              : resolved.repEmployeeId,
+          routeId: resolved.routeId,
+        ));
+    return id;
   }
 
   /// Watch collections for a sales rep in date range

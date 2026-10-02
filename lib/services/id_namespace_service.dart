@@ -104,6 +104,9 @@ class IdNamespaceService {
     'booking_resources', 'booking_services', 'bookings', 'booking_reminders',
     'sales_routes', 'route_visits', 'sales_rep_targets',
     'sales_rep_collections',
+    // v185 — نموذجُ التوزيع (المرحلة و).
+    'distribution_areas', 'route_customers', 'route_rep_history',
+    'rep_resources',
 
     // ── v173 / المرحلة ٤ — السجلُّ الرقابيُّ والتشغيلُ العابر ──
     'loyalty_programs', 'delivery_companies', 'couriers',

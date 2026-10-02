@@ -321,6 +321,14 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
               ),
               items: const [],
             );
+            final cached = await (_db.select(_db.salesInvoices)
+                  ..where((s) => s.globalId.equals(returnGlobalId))
+                  ..limit(1))
+                .getSingleOrNull();
+            if (cached != null) {
+              await _db.stampDocumentRep(
+                  'sales_invoices', cached.id, invoice.customerId);
+            }
           }
         } catch (e) {
           debugPrint('[SALES-RETURN] local return-row cache failed (non-fatal): $e');
@@ -609,6 +617,10 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
           );
         }
       }
+
+      // v185 — مستندُ المرتجع (صفوفُ SRET) يُختَم بالمندوب والمسار.
+      await _db.stampSafeTransactionsByVoucher(
+          returnVoucherNumber, invoice.customerId);
 
       // Feature 009 / T031 (Issue 6 / Cluster 021): if the original sale used
       // BOM auto-deplete, reverse the raw-material consumption at the FROZEN

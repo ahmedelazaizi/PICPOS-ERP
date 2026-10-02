@@ -168,6 +168,8 @@ class SyncRepositoryImpl implements ISyncRepository {
           'saleType': inv.saleType,
           'invoiceDate': inv.invoiceDate.toIso8601String(),
           'revenueAccountId': ?revenueAccountId,
+          // v185 — the stamped rep/route travel with the sale.
+          ...(await _db.repStampJson('sales_invoices', inv.id)),
           'items': items.map((i) => <String, dynamic>{
             'productId': i.productId,
             'quantity': i.quantity,

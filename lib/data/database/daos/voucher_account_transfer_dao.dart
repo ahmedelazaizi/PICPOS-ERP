@@ -172,6 +172,10 @@ extension VoucherAccountTransferDao on AppDatabase {
       if (partyId != null) {
         await adjustPartyBalance(partyId, -(amount + discount));
       }
+      // v185 — سندُ القبض يُختَم بمندوب العميل ومساره.
+      if (isReceipt) {
+        await stampDocumentRep('safe_transactions', txnId, partyId);
+      }
 
       final discountCode = isReceipt ? '5205' : '4202';
       final discountAccount = discount > 0

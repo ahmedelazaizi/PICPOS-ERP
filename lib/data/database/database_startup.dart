@@ -33,6 +33,7 @@ extension DatabaseStartup on AppDatabase {
     await ensureProductTaxExemptSchema();
     await ensureSalesInvoiceRevenueAccountSchema();
     await ensureVoucherBooksSchema();
+    await ensureDistributionModelSchema();
 
     // Phase 2b: Database integrity — ensure critical PK/UNIQUE constraints
     // exist on PG installs whose schema was created by an older or crashed

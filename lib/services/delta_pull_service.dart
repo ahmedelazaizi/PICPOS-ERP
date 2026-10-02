@@ -186,7 +186,9 @@ class DeltaPullService {
     'category_station_mappings', // → categories, kitchen_stations
     'booking_services',        // → products, branches
     'booking_resources',       // → employees, branches
-    'sales_routes',            // → employees
+    // v185 — المنطقةُ قبل المسار: `sales_routes.area_id` تشير إليها.
+    'distribution_areas',      // → branches
+    'sales_routes',            // → employees, distribution_areas
     'table_orders',            // → restaurant_tables, users
     'bookings',                // → parties, booking_services, booking_resources, sales_invoices
     'work_orders',             // → table_orders, sales_invoices, users
@@ -198,6 +200,10 @@ class DeltaPullService {
     'route_visits',            // → sales_routes, parties, employees
     'sales_rep_targets',       // → employees
     'sales_rep_collections',   // → employees, parties
+    // v185 — نموذجُ التوزيع (المرحلة و): أبناءُ المسار والمندوب.
+    'route_customers',         // → sales_routes, parties
+    'route_rep_history',       // → sales_routes, employees
+    'rep_resources',           // → employees, warehouses, safes
 
     // ── Tier 7: السجلُّ الرقابيُّ والتشغيلُ العابرُ للأجهزة (v173 / المرحلة ٤) ──
     //
@@ -309,6 +315,9 @@ class DeltaPullService {
     'bookings', 'booking_reminders',
     'sales_routes', 'route_visits', 'sales_rep_targets',
     'sales_rep_collections',
+    // v185 — نموذجُ التوزيع: عملاءُ المسار ومندوبُه وعهدتُه بياناتُ عمل.
+    'distribution_areas', 'route_customers', 'route_rep_history',
+    'rep_resources',
 
     // v173 / المرحلة ٤ — بياناتُ عملٍ لا تُسلَّم لمستدعٍ بلا هويّة: أرصدةُ
     // الولاء وحركاتُه، وأوراقُ الجرد وطلباتُ الصرف، والمطابقةُ البنكيّة
@@ -403,6 +412,9 @@ class DeltaPullService {
     'booking_resources', 'booking_services', 'bookings', 'booking_reminders',
     'sales_routes', 'route_visits', 'sales_rep_targets',
     'sales_rep_collections',
+    // v185 — نموذجُ التوزيع: لا استراتيجيّةَ لها في `fullSync`.
+    'distribution_areas', 'route_customers', 'route_rep_history',
+    'rep_resources',
 
     // ── البند ٦‑٤ (2026-08-31) — ستّةٌ كانت **مبذورةً بلا تنزيل** ────────
     //

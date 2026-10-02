@@ -95,6 +95,11 @@ const _rawSqlProvenAtRuntime = <String, String>{
       'test/unit/voucher_books_and_coa_vouchers_phase_e_test.dart',
   'voucher_book_leaves_cancelled':
       'test/unit/voucher_books_and_coa_vouchers_phase_e_test.dart',
+  // v185 — نموذجُ التوزيع (المرحلة و).
+  'distribution_areas': 'test/unit/distribution_model_phase_f_test.dart',
+  'route_customers': 'test/unit/distribution_model_phase_f_test.dart',
+  'route_rep_history': 'test/unit/distribution_model_phase_f_test.dart',
+  'rep_resources': 'test/unit/distribution_model_phase_f_test.dart',
 };
 
 /// جداولُ ليست في `pullTables` وتُرقَّم مع ذلك — الطرفُ الآخرُ من العقد.

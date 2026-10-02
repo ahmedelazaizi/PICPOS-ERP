@@ -315,7 +315,9 @@ extension TreasuryVoucherDao on AppDatabase {
           debugPrint('[TREASURY-SYNC] Receipt voucher sync failed: $e');
         }
       }
-
+      if (transactionId > 0) {
+        await stampDocumentRep('safe_transactions', transactionId, partyId);
+      }
       return transactionId;
     });
   }

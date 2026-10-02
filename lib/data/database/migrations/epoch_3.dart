@@ -3609,5 +3609,13 @@ extension Epoch3Migrations on AppDatabase {
     if (from < 184) {
       await _safeMigrate('v184 voucher books', ensureVoucherBooksSchema);
     }
+
+    // v185 — distribution model (phase F): distribution_areas,
+    // route_customers, route_rep_history, rep_resources; raw columns
+    // sales_routes.area_id/visit_days and rep_employee_id/route_id stamps.
+    if (from < 185) {
+      await _safeMigrate(
+          'v185 distribution model', ensureDistributionModelSchema);
+    }
   }
 }

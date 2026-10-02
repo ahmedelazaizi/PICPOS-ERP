@@ -43,6 +43,7 @@ import 'presentation/screens/sales_invoices_screen.dart';
 import 'presentation/sales_invoices_picpos/screens/sales_invoices_picpos_screen.dart';
 import 'presentation/screens/unified_parties_screen.dart';
 import 'presentation/parties_picpos/screens/parties_picpos_screen.dart';
+import 'presentation/distribution_picpos/screens/rep_distribution_picpos_screen.dart';
 import 'presentation/screens/inventory/inventory_screen.dart';
 import 'presentation/inventory_picpos/screens/inventory_picpos_screen.dart';
 import 'presentation/screens/purchase_invoices_screen.dart';
@@ -709,6 +710,12 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         appScreen: AppScreen.suppliers,
         builder: (_) => const PartiesPicposScreen.suppliers(),
         label: tr('الموردون'),
+        icon: PhosphorIconsBold.truck,
+      ),
+      ScreenConfig(
+        appScreen: AppScreen.repDistribution,
+        builder: (_) => const RepDistributionPicPosScreen(),
+        label: tr('إدارة المناديب والتوزيع'),
         icon: PhosphorIconsBold.truck,
       ),
       ScreenConfig(

@@ -1053,6 +1053,7 @@ class ApiHandler {
           // C2 (v183) — raw column; the client's JE/return must use the same.
           'revenueAccountId':
               await _db.getSalesInvoiceRevenueAccountId(inv.id),
+          ...(await _db.repStampJson('sales_invoices', inv.id)), // v185
           'items': itemsJson,
         });
       }
@@ -2775,6 +2776,9 @@ class ApiHandler {
     'booking_resources', 'booking_services', 'bookings', 'booking_reminders',
     'sales_routes', 'route_visits', 'sales_rep_targets',
     'sales_rep_collections',
+    // v185 — نموذجُ التوزيع (المرحلة و).
+    'distribution_areas', 'route_customers', 'route_rep_history',
+    'rep_resources',
     // Tier 7 — v173 / المرحلة ٤: السجلُّ الرقابيُّ والتشغيلُ العابر.
     // تقابل الكتلةَ نفسَها في [DeltaPullService.pullTables]. و
     // `e_invoice_configs` ليست هنا عمداً (تحمل `client_secret`).
@@ -2921,6 +2925,9 @@ class ApiHandler {
     'bookings', 'booking_reminders',
     'sales_routes', 'route_visits', 'sales_rep_targets',
     'sales_rep_collections',
+    // v185 — نموذجُ التوزيع. تقابل `branchScopedPullTables` حرفاً.
+    'distribution_areas', 'route_customers', 'route_rep_history',
+    'rep_resources',
 
     // v173 / المرحلة ٤ — بياناتُ عملٍ لا تُسلَّم لمستدعٍ بلا هويّة. تقابل
     // الكتلةَ نفسَها في `DeltaPullService.branchScopedPullTables` حرفاً.

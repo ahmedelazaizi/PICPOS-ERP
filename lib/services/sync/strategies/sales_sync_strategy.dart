@@ -155,6 +155,8 @@ class SalesSyncStrategy extends SyncStrategy {
             await db.setSalesInvoiceRevenueAccountId(
                 serverId, parseIntNullable(saleMap['revenueAccountId']));
           }
+          // v185 — the rep/route stamp (never overwrites a local stamp).
+          await db.applyRepStampJson('sales_invoices', serverId, saleMap);
           return;
         }
 
@@ -242,6 +244,8 @@ class SalesSyncStrategy extends SyncStrategy {
         if (revenueAccountId != null) {
           await db.setSalesInvoiceRevenueAccountId(serverId, revenueAccountId);
         }
+        // v185 — the rep/route stamp rides the sale payload.
+        await db.applyRepStampJson('sales_invoices', serverId, saleMap);
 
         final items = saleMap['items'] as List? ?? [];
         for (final item in items) {

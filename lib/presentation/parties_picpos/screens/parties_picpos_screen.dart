@@ -50,6 +50,12 @@ import '../../picpos_shell/picpos_kpi_row.dart';
 import '../../shared_widgets/whatsapp_send_dialog.dart';
 import '../../../domain/models/whatsapp_message.dart';
 import '../../../core/utils/number_utils.dart';
+import '../../../core/permissions/permission_codes.dart';
+import '../../../domain/models/distribution_model.dart';
+import '../../distribution_picpos/distribution_picpos_providers.dart';
+import '../../distribution_picpos/screens/dm_routes_tab.dart'
+    show showDmAssignCustomerDialog;
+import 'party_route_row.dart';
 
 part 'parties_summary_cards.dart';
 part 'parties_filter_bar.dart';
@@ -123,7 +129,11 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
   /// هنا — وهنا وحدَه — يلتقي `Party` بـ[PicPosPartyCard]. الملفّاتُ الثلاثةُ
   /// الأخرى (البطاقات · الشريط · الشبكة) لا تعرف القاعدةَ إطلاقاً، فتُختبَر
   /// بلا فتحِ قاعدةٍ ولا حقنِ مزوِّد.
-  PicPosPartyCard _toCard(Party p) => PicPosPartyCard(
+  PicPosPartyCard _toCard(Party p, [CustomerRouteInfo? route]) =>
+      PicPosPartyCard(
+        routeName: route?.routeName,
+        areaName: route?.areaName,
+        repName: route?.repName,
         id: p.id,
         name: p.name,
         balance: p.balance,
@@ -223,7 +233,18 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
   }
 
   Widget _buildLoaded(List<Party> rows) {
-    final cards = rows.map(_toCard).toList();
+    // المرحلة و — قائمةُ العملاء تعرض المسارَ والمنطقةَ والمندوبَ المشتقّ.
+    final showRoute = widget.scope == PicPosPartyFilter.customer;
+    final routes = showRoute
+        ? ref.watch(dmCustomerRouteInfoProvider).value ??
+            const <int, CustomerRouteInfo>{}
+        : const <int, CustomerRouteInfo>{};
+    final canAssign = showRoute &&
+        (ref
+                .watch(hasPermissionProvider(PermissionCodes.distributionManage))
+                .value ??
+            false);
+    final cards = [for (final p in rows) _toCard(p, routes[p.id])];
     final scoped = widget.scope == PicPosPartyFilter.all
         ? cards
         : cards.where((card) => card.matches(widget.scope, '')).toList();
@@ -243,6 +264,9 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
       onVoucher: (c) => _openVoucher(lookup(c)),
       onDelete: (c) => _openDelete(lookup(c)),
       onWhatsApp: (c) => _openWhatsApp(lookup(c)),
+      onAssignRoute: canAssign
+          ? (c) => showDmAssignCustomerDialog(context, ref, customerId: c.id)
+          : null,
     );
 
     return Column(
@@ -264,7 +288,8 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
         const SizedBox(height: 12),
         Expanded(
           child: PicPosContentCard(
-            child: PartiesCardGrid(parties: filtered, actions: actions),
+            child: PartiesCardGrid(
+                parties: filtered, actions: actions, showRoute: showRoute),
           ),
         ),
       ],

@@ -3326,7 +3326,7 @@ class ApiDataHandler extends ApiHandlerBase {
               ..where((s) => s.id.equals(resolvedSafeId))
               ..limit(1))
             .getSingle();
-        await db.into(db.safeTransactions).insert(
+        final stId = await db.into(db.safeTransactions).insert(
           SafeTransactionsCompanion.insert(
             voucherNumber: voucherNumber,
             safeId: resolvedSafeId,
@@ -3353,6 +3353,10 @@ class ApiDataHandler extends ApiHandlerBase {
                 : const Value.absent(),
           ),
         );
+        // v185 — a receipt from a customer carries its rep + route.
+        if (transactionType == 'receipt') {
+          await db.stampDocumentRep('safe_transactions', stId, resolvedStPartyId);
+        }
         return updated.balance;
       });
 
