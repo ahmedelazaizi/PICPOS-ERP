@@ -29,11 +29,10 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/providers.dart';
-import '../../screens/commercial_papers/create_paper_action.dart';
 import '../../screens/commercial_papers/deposit_papers_action.dart';
 import '../../screens/commercial_papers/paper_status_actions.dart';
+import '../../treasury_picpos/screens/cheque_books_picpos_screen.dart';
 import '../../widgets/permission_guard.dart';
-import 'cheques_picpos_create_dialog.dart';
 import 'cheques_picpos_deposit_dialog.dart';
 import 'cheques_picpos_endorse_dialog.dart';
 import '../../picpos_shell/picpos_data_table.dart';
@@ -55,6 +54,7 @@ List<String> get _tabNotes => [
   tr('الاستحقاق يُحسب من dueDate لا من تاريخ الإصدار'),
   tr('الارتجاع يعيد الذمة ويسجّل مصروف عمولة'),
   tr('كل انتقال حالة يُسجَّل بمن نفّذه — لا يُحذف'),
+  tr('الشيك الصادر يُسحب رقمه من الدفتر في سند الصرف — لا حركة مالية هنا'),
 ];
 
 /// الحالاتُ كما يكتبها الكودُ — لا كما يسمّيها التصميم.
@@ -118,7 +118,8 @@ class ChequesPicposScreen extends ConsumerStatefulWidget {
 
 class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(length: 5, vsync: this);
+  // E4 — التبويبُ السادس «دفتر الشيكات» (نُقل من شاشته المستقلّة).
+  late final TabController _tabs = TabController(length: 6, vsync: this);
   final _searchCtrl = TextEditingController();
   String _query = '';
   final Map<int, int> _chip = {};
@@ -170,37 +171,16 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
   /// ⚠️ الاتّجاهُ الابتدائيُّ يتبع **التبويبةَ المفتوحة**: مَن يقف على
   /// «الصادرة» يريد صادرةً غالباً. والتبويباتُ الثلاثُ الأخرى ليست
   /// اتّجاهاً، فتُقرأ واردة.
-  Future<void> _createPaper(List<Party> parties) async {
-    final safes = await ref.read(treasuryRepositoryProvider).getSafesList();
-    if (!mounted) return;
-    final banks =
-        safes.where((s) => s.safeType == 'bank' && s.isActive).toList();
-
-    final form = await showChequePicposCreateDialog(
-      context,
-      direction: _tabs.index == 1 ? 'issued' : 'received',
-      parties: parties,
-      bankSafes: banks,
-    );
-    if (form == null || !mounted) return;
-
-    try {
-      // ⚠️ الدالّةُ **مشتركةٌ** مع الشاشة القديمة: سَكُّ `globalId` مرّةً ثمّ
-      //    كتابتان به. نسختان تنحرفان بأوّل تعديل — راجع تعليقَها.
-      await createCommercialPaper(
-        repo: ref.read(commercialPapersRepositoryProvider),
-        // ⚠️ من **النموذج** لا من التبويبة: الحوارُ يسمح بتبديل الاتّجاه.
-        direction: form['direction'] as String,
-        form: form,
-      );
-      if (!mounted) return;
-      ref.invalidate(_papersProvider);
-      _snack(tr('أُنشئت الورقة'));
-    } catch (e) {
-      if (!mounted) return;
-      _snack(tr('تعذّر الإنشاء: {e}', {'e': e}));
-    }
-  }
+  ///
+  /// ═══ E4 (قرارُ المالك، الخيار ب) — أُزيل الإنشاءُ من هذه الشاشة ═══
+  ///
+  /// «إدارة الشيكات» صارت **استعلاماً** للإنشاء: الشيكُ يُنشأ من سند
+  /// القبض/الصرف بطريقة «شيكات» وحدَه (رقمُه وبنكُه واستحقاقُه وساحبُه،
+  /// والصادرُ من دفتر الشيكات). وما كان هنا:
+  ///   ⚠️ الدالّةُ **مشتركةٌ** مع الشاشة القديمة: سَكُّ `globalId` مرّةً ثمّ
+  ///      كتابتان به. نسختان تنحرفان بأوّل تعديل — راجع تعليقَها.
+  ///   ⚠️ من **النموذج** لا من التبويبة: الحوارُ يسمح بتبديل الاتّجاه.
+  /// وإجراءاتُ الحالة (إيداع · تحصيل · ارتجاع · تجيير · إعادة) باقيةٌ هنا.
 
   void _snack(String message) {
     ScaffoldMessenger.of(context)
@@ -296,14 +276,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
             label:  Text(tr('إيداع دفعة شيكات')),
           ),
         ),
-        PermissionGuard(
-          permission: PermissionCodes.commercialPapersManage,
-          child: FilledButton.icon(
-            onPressed: () => _createPaper(parties),
-            icon: const Icon(PhosphorIconsBold.plus, size: 15),
-            label:  Text(tr('ورقة جديدة')),
-          ),
-        ),
+        // E4 — لا زرَّ «ورقة جديدة»: الإنشاءُ من سندَي القبض والصرف وحدَهما.
       ],
       headerSearch: TextField(
         controller: _searchCtrl,
@@ -353,6 +326,11 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
               (
                 label: tr('سجل الحالات'),
                 icon: PhosphorIconsBold.clockCounterClockwise,
+                badge: null
+              ),
+              (
+                label: tr('دفتر الشيكات'),
+                icon: PhosphorIconsBold.checkSquareOffset,
                 badge: null
               ),
             ],
@@ -405,6 +383,8 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
           _scroll(_dueTab(context, papers, parties)),
           _scroll(_bouncedTab(context, bounced, parties)),
           _scroll(_historyTab(context, papers, parties)),
+          // E4 — شاشةُ الدفتر كما هي (صلاحيّتُها ومنطقُها)، ولا حركةَ مال فيها.
+          const ChequeBooksPicposScreen(key: Key('cheques_cheque_book_tab')),
         ],
       ),
     );

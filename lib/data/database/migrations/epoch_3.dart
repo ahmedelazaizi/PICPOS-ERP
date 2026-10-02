@@ -3603,5 +3603,11 @@ extension Epoch3Migrations on AppDatabase {
       await _safeMigrate('v183 sales_invoices.revenue_account_id',
           ensureSalesInvoiceRevenueAccountSchema);
     }
+
+    // v184 — voucher_books + voucher_book_leaves_cancelled, and
+    // safe_transactions.book_id/book_number/treasury_account_id (raw).
+    if (from < 184) {
+      await _safeMigrate('v184 voucher books', ensureVoucherBooksSchema);
+    }
   }
 }

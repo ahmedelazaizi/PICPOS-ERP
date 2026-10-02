@@ -41,6 +41,7 @@ import '../../picpos_shell/picpos_surface.dart';
 import '../../widgets/permission_guard.dart';
 import 'payment_voucher_picpos_screen.dart';
 import 'receipt_voucher_picpos_screen.dart';
+import 'voucher_books_panel.dart';
 
 /// تنسيقُ المال — خاناتُه من [AppConstants.decimalPlaces] لا مكتوبةً:
 /// العملةُ الافتراضيّةُ هنا بثلاث خانات، وتثبيتُ اثنتَين يُخفي فلساً.
@@ -70,6 +71,9 @@ class _VoucherRecordsPicPosScreenState
   ///    يقع على الورقة التجاريّة)، فخلطُه بالنقد في نظرةٍ واحدةٍ يجعل
   ///    المجموعَ المرئيَّ أكبرَ ممّا دخل الخزنة فعلاً.
   int _kindChip = 0;
+
+  /// E3 — تبويبُ «دفاتر السندات».
+  bool _booksTab = false;
 
   @override
   void initState() {
@@ -116,6 +120,11 @@ class _VoucherRecordsPicPosScreenState
             ? PhosphorIconsBold.arrowCircleDown
             : PhosphorIconsBold.arrowCircleUp,
         headerActions: [
+          // E3 — «دفاتر السندات» تبويبٌ داخل السجلّ.
+          VoucherRecordsTabSwitch(
+            booksTab: _booksTab,
+            onChanged: (v) => setState(() => _booksTab = v),
+          ),
           FilledButton.icon(
             key: const Key('voucher_records_new'),
             onPressed: _openForm,
@@ -123,8 +132,10 @@ class _VoucherRecordsPicPosScreenState
             label:  Text(tr('جديد')),
           ),
         ],
-        toolbar: _filters(context),
-        body: async.hasError
+        toolbar: _booksTab ? null : _filters(context),
+        body: _booksTab
+            ? VoucherBooksPanel(type: widget.direction.txnType)
+            : async.hasError
             ? PicPosEmptyState(
                 icon: PhosphorIconsBold.warning,
                 title: tr('تعذّرت قراءةُ السجلّ'),

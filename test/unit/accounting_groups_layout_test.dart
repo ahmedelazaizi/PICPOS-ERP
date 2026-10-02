@@ -64,48 +64,74 @@ void main() {
     });
   });
 
+  // ═══ المرحلة هـ / E1 (قرارُ المالك) ═══
+  //
+  // «المالية والمحاسبة» انقسمت رأسَين: «الإدارة المالية» (‏`accounting`) =
+  // سند قبض · سند صرف · إدارة الشيكات · الخزينة · إغلاق الوردية؛
+  // و«إدارة الحسابات» (‏`accounts`) = كلُّ شاشات المحاسبة الباقية، ومنها ما
+  // كان تحت «اليومية العامة» — فرأسُ `journal` دُمج ولم يبقَ.
   group('١ · الرأسان', () {
-    test('«الحسابات» رأسُ مجموعةٍ — لا مدخلَ شاشة', () {
+    test('«إدارة الحسابات» رأسُ مجموعةٍ — لا مدخلَ شاشة', () {
       final meta = kNavGroupDefs.firstWhere((g) => g.key == 'accounts',
           orElse: () => throw StateError('لا مجموعةَ باسم accounts'));
-      expect(meta.label, 'الحسابات');
+      expect(meta.label, 'إدارة الحسابات');
 
-      // 🔴 ولا مدخلَ بتسميةِ «الحسابات» في القائمة: الرأسُ تعريفٌ، والمدخلُ
+      // 🔴 ولا مدخلَ بتسميةِ الرأس في القائمة: الرأسُ تعريفٌ، والمدخلُ
       //    ينتقل إلى شاشة. ووجودُهما معاً يعطي رأساً واسماً مكرَّراً تحته.
-      final asItem =
-          kAllNavItemDefs.where((i) => i.label == 'الحسابات').toList();
-      expect(asItem, isEmpty,
-          reason: '«الحسابات» ما زالت مدخلَ شاشةٍ — الحاويةُ لم تُحذَف');
+      for (final label in const ['الحسابات', 'إدارة الحسابات']) {
+        expect(kAllNavItemDefs.where((i) => i.label == label), isEmpty,
+            reason: '«$label» مدخلُ شاشةٍ — والرأسُ لا ينتقل');
+      }
     });
 
-    test('و«اليومية العامة» رأسٌ جديد', () {
-      final meta = kNavGroupDefs.firstWhere((g) => g.key == 'journal',
-          orElse: () => throw StateError('لا مجموعةَ باسم journal'));
-      expect(meta.label, 'اليومية العامة');
+    test('و«الإدارة المالية» رأسُ السندات والخزينة', () {
+      final meta = kNavGroupDefs.firstWhere((g) => g.key == 'accounting');
+      expect(meta.label, 'الإدارة المالية');
     });
 
-    test('وترتيبُهما: المالية والمحاسبة ثمّ الحسابات ثمّ اليومية', () {
+    test('و«اليومية العامة» دُمجت — لا رأسَ ولا مدخلَ يشير إليها', () {
+      expect(kNavGroupDefs.where((g) => g.key == 'journal'), isEmpty);
+      expect(_indexesOf('journal'), isEmpty);
+    });
+
+    test('وترتيبُهما: الإدارة المالية ثمّ إدارة الحسابات', () {
       final order = _groupOrder();
       expect(order.indexOf('accounts'), order.indexOf('accounting') + 1);
-      expect(order.indexOf('journal'), order.indexOf('accounts') + 1);
     });
   });
 
   group('٢ · محتوى المجموعتَين', () {
-    test('🔴 «الحسابات» أربعُ شاشاتٍ بعينها وبترتيبها', () {
+    test('🔴 «الإدارة المالية» خمسٌ بعينها وبترتيبها (+ دفتر الشيكات لـUralCash)',
+        () {
+      expect(_indexesOf('accounting'), [
+        ScreenId.receiptVoucher.navigationIndex,
+        ScreenId.paymentVoucher.navigationIndex,
+        ScreenId.commercialPapers.navigationIndex,
+        ScreenId.chequeBooks.navigationIndex,
+        ScreenId.treasury.navigationIndex,
+        ScreenId.shiftClose.navigationIndex,
+      ]);
+      // في PicPos صار دفترُ الشيكات تبويباً داخل «إدارة الشيكات».
+      expect(kPicPosReplacedNavIndexes,
+          contains(ScreenId.chequeBooks.navigationIndex));
+    });
+
+    test('🔴 «إدارة الحسابات» كلُّ شاشات المحاسبة الباقية وبترتيبها', () {
       expect(_indexesOf('accounts'), [
         ScreenId.chartOfAccounts.navigationIndex,
         ScreenId.costCenters.navigationIndex,
         ScreenId.generalLedger.navigationIndex,
         ScreenId.trialBalance.navigationIndex,
-      ]);
-    });
-
-    test('🔴 و«اليومية العامة» ثلاثٌ بعينها وبترتيبها', () {
-      expect(_indexesOf('journal'), [
         ScreenId.journalEntries.navigationIndex,
         ScreenId.journalTemplates.navigationIndex,
         ScreenId.bankReconciliation.navigationIndex,
+        ScreenId.journalVoucher.navigationIndex,
+        ScreenId.assetCategories.navigationIndex,
+        ScreenId.assetLocations.navigationIndex,
+        ScreenId.fixedAssets.navigationIndex,
+        ScreenId.eInvoice.navigationIndex,
+        ScreenId.fiscalYear.navigationIndex,
+        ScreenId.operationalExpenses.navigationIndex,
       ]);
     });
   });

@@ -159,6 +159,7 @@ class _FakeTreasuryRepo implements ITreasuryRepository {
     int? currencyId,
     double? paymentRate,
     double? foreignAmount,
+    int? linkedAccountId,
   }) async {
     vouchers.add({'paperNumber': paperNumber, 'amount': amount});
     return 77;

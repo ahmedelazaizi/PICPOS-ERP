@@ -141,7 +141,8 @@ void main() {
       expect(item, hasLength(1),
           reason: 'بلا مدخلٍ هنا لا يراها المستخدمُ مهما صحّ الباقي');
       expect(item.single.label, 'سند قيد');
-      expect(item.single.group, 'accounting');
+      // E1 — «سند قيد» قيدٌ محاسبيٌّ لا حركةُ خزينة: تحت «إدارة الحسابات».
+      expect(item.single.group, 'accounts');
       expect(item.single.permission, screenPermissionMap[id],
           reason: 'صلاحيّةٌ في القائمة تخالف الخريطةَ تُظهر مدخلاً يفتح '
               'شاشةً ممنوعة');

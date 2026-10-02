@@ -1914,7 +1914,9 @@ extension TreasuryDao on AppDatabase {
     ]);
 
     // 🔴 النقديُّ بنوعه، وسندُ الشيك بنوعه الثالث **وبادئةِ رقمه**.
-    final isCash = safeTransactions.transactionType.equals(direction.txnType);
+    // E2 — سندُ التحويل المحاسبيّ بنوعه المستقلّ (لا حركةَ خزنة).
+    final isCash = safeTransactions.transactionType
+        .isIn([direction.txnType, direction.transferTxnType]);
     final isCheque =
         safeTransactions.transactionType.equals(kChequeVoucherTxnType) &
             safeTransactions.voucherNumber.like('${direction.chequePrefix}%');
@@ -1964,6 +1966,8 @@ extension TreasuryDao on AppDatabase {
                 discount: t.discount,
                 category: t.category,
                 isCheque: t.transactionType == kChequeVoucherTxnType,
+                isAccountTransfer:
+                    t.transactionType == direction.transferTxnType,
                 safeId: t.safeId,
                 safeName: row.readTableOrNull(safes)?.name,
                 partyId: t.partyId,

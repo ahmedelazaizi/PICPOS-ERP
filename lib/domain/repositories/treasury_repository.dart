@@ -152,6 +152,29 @@ abstract class ITreasuryRepository {
     int? currencyId,
     double? paymentRate,
     double? foreignAmount,
+    // E2 — beneficiary picked from the chart of accounts (non-party).
+    int? linkedAccountId,
+  });
+
+  /// E2 — سندُ قبضٍ/صرفٍ **تحويليٌّ**: طرفُ الخزينة حسابٌ من الدليل ليس
+  /// خزنة. قيدٌ بلا حركةِ خزنة، وصفٌّ مستنديٌّ بنوع `transfer_*`.
+  Future<int> createAccountTransferVoucher({
+    required bool isReceipt,
+    required double amount,
+    required int treasuryAccountId,
+    required String category,
+    double discount = 0,
+    int? beneficiaryAccountId,
+    int? partyId,
+    String? description,
+    int? userId,
+    int? costCenterId,
+    int? documentSafeId,
+    String? globalId,
+    int? operatingBranchId,
+    int? currencyId,
+    double? paymentRate,
+    double? foreignAmount,
   });
 
   /// Close safe daily (اقفال يومي)

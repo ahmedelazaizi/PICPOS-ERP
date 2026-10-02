@@ -2737,6 +2737,7 @@ class ApiHandler {
     'sales_orders', 'purchase_orders', 'quotations', 'payments',
     'journal_entries', 'safe_transactions', 'commercial_papers',
     'stock_movements',
+    'voucher_books', 'voucher_book_leaves_cancelled', // v184
     // Tier 4 — transactional items
     'sales_invoice_items', 'purchase_invoice_items', 'held_order_items',
     'sales_order_items', 'purchase_order_items', 'quotation_items',
@@ -2879,6 +2880,7 @@ class ApiHandler {
     'sales_invoices', 'purchase_invoices', 'held_orders', 'sales_orders',
     'purchase_orders', 'quotations', 'payments', 'journal_entries',
     'safe_transactions', 'commercial_papers', 'stock_movements', 'shifts',
+    'voucher_books', 'voucher_book_leaves_cancelled', // v184
     // `activity_logs` أُسقط مع إخراجه من المزامنة (قرارُ مالك 2026-08-31):
     // مدخلٌ في قائمةِ منعٍ لجدولٍ لا يُسمَح بسحبه أصلاً يوهم بحمايةٍ قائمة.
     'sales_invoice_items', 'purchase_invoice_items',

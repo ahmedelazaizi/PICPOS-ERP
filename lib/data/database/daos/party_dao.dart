@@ -1816,17 +1816,23 @@ extension PartyDao on AppDatabase {
 
       double debit = 0;
       double credit = 0;
+      // E2 — سندُ التحويل المحاسبيّ يُقرأ في الكشف كنظيره النقديّ.
+      final txType = switch (t.transactionType) {
+        'transfer_receipt' => 'receipt',
+        'transfer_payment' => 'payment',
+        final other => other,
+      };
 
       if (party.isCustomer) {
-        if (t.transactionType == 'receipt') {
+        if (txType == 'receipt') {
           credit = t.amount;
-        } else if (t.transactionType == 'payment') {
+        } else if (txType == 'payment') {
           credit = t.amount;
         }
       } else if (party.isSupplier) {
-        if (t.transactionType == 'payment') {
+        if (txType == 'payment') {
           debit = t.amount;
-        } else if (t.transactionType == 'receipt') {
+        } else if (txType == 'receipt') {
           debit = t.amount;
         }
       }
@@ -1834,9 +1840,9 @@ extension PartyDao on AppDatabase {
       entries.add(
         PartyStatementEntry(
           date: t.createdAt,
-          description: t.description ?? (t.transactionType == 'receipt' ? 'سند قبض' : t.transactionType == 'memo' ? 'تسوية رصيد' : 'سند صرف'),
+          description: t.description ?? (txType == 'receipt' ? 'سند قبض' : t.transactionType == 'memo' ? 'تسوية رصيد' : 'سند صرف'),
           invoiceNumber: t.voucherNumber,
-          entryType: t.transactionType,
+          entryType: txType,
           debit: debit,
           credit: credit,
           balance: 0.0,
@@ -1857,9 +1863,9 @@ extension PartyDao on AppDatabase {
       if (t.discount > 0) {
         double discountDebit = 0;
         double discountCredit = 0;
-        if (party.isSupplier && t.transactionType == 'payment') {
+        if (party.isSupplier && txType == 'payment') {
           discountDebit = t.discount;
-        } else if (party.isCustomer && t.transactionType == 'receipt') {
+        } else if (party.isCustomer && txType == 'receipt') {
           discountCredit = t.discount;
         }
         if (discountDebit > 0 || discountCredit > 0) {
@@ -2031,11 +2037,11 @@ extension PartyDao on AppDatabase {
       // customer's AR by (amount + discount), so the opening balance must too
       // — matching the discount statement line emitted in the window above.
       final pastReceipts = await customSelect(
-        "SELECT COALESCE(SUM(t.amount + COALESCE(t.discount, 0)), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'receipt' AND t.created_at < ? $branchOfJoinedSafe",
+        "SELECT COALESCE(SUM(t.amount + COALESCE(t.discount, 0)), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type IN ('receipt', 'transfer_receipt') AND t.created_at < ? $branchOfJoinedSafe",
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
       final pastPayments = await customSelect(
-        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'payment' AND t.created_at < ? $branchOfJoinedSafe",
+        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type IN ('payment', 'transfer_payment') AND t.created_at < ? $branchOfJoinedSafe",
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
 
@@ -2074,11 +2080,11 @@ extension PartyDao on AppDatabase {
         // the supplier by (amount + discount), so the opening balance must too
         // — matching the discount statement line emitted in the window above.
         final pastPayments = await customSelect(
-          "SELECT COALESCE(SUM(t.amount + COALESCE(t.discount, 0)), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'payment' AND t.created_at < ? $branchOfJoinedSafe",
+          "SELECT COALESCE(SUM(t.amount + COALESCE(t.discount, 0)), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type IN ('payment', 'transfer_payment') AND t.created_at < ? $branchOfJoinedSafe",
           variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
         ).getSingle();
         final pastReceipts = await customSelect(
-          "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'receipt' AND t.created_at < ? $branchOfJoinedSafe",
+          "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type IN ('receipt', 'transfer_receipt') AND t.created_at < ? $branchOfJoinedSafe",
           variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
         ).getSingle();
         // Supplier balance = purchases − payments − cash receipts from supplier − balance adjustments from returns

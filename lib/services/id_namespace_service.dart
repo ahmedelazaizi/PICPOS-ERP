@@ -84,6 +84,8 @@ class IdNamespaceService {
     // وقوعِ التصادم، وثمنُه إعادةُ ترقيمٍ تُتابِع كلَّ مفتاحٍ يشير للصفّ
     // داخلَ معاملة. والأرضيّةُ تمنع التصادمَ أصلاً.
     'activity_logs',
+    // v184 — دفاترُ السندات: `safe_transactions.book_id` تشير إليه.
+    'voucher_books', 'voucher_book_leaves_cancelled',
     'asset_categories', 'op_expense_categories', 'bill_of_materials',
     'fixed_assets', 'manufacturing_orders', 'bom_components',
      'butchery_templates', 'butchery_template_lines', 'butchery_orders', 'butchery_order_lines',

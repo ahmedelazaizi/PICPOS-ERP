@@ -185,7 +185,8 @@ void main() {
         expect(item, hasLength(1),
             reason: 'بلا مدخلٍ هنا لا يراها المستخدمُ مهما صحّ الباقي');
         expect(item.single.label, e.label);
-        expect(item.single.group, 'accounting');
+        // E1 — شاشاتُ الأصول تحت «إدارة الحسابات» (‏`accounts`).
+        expect(item.single.group, 'accounts');
         expect(item.single.permission, screenPermissionMap[id],
             reason: 'صلاحيّةٌ في القائمة تخالف الخريطةَ تُظهر مدخلاً يفتح '
                 'شاشةً ممنوعة');
@@ -203,21 +204,32 @@ void main() {
       //    `journalEntriesScreenLabel` أوّلَه، ونُقلت «اليومية العامة» إلى
       //    رأسِ مجموعةٍ خاصٍّ بها بأمر المالك. والترتيبُ النسبيُّ للستّة
       //    الباقية **كما طلبه المالكُ حرفاً** — النقلُ أزاح ولم يُرتّب.
-      expect(accounting.take(6).toList(), [
+      //
+      // E1 (قرارُ المالك): «الإدارة المالية» صارت السنداتِ والشيكاتِ
+      // والخزينةَ والوردية وحدَها، وانتقل «سند قيد» والأصولُ إلى «إدارة
+      // الحسابات» — والترتيبُ النسبيُّ للمنقولة بقي كما طلبه المالك.
+      expect(accounting.take(3).toList(), [
         'سند قبض',
         'سند صرف',
         chequesScreenLabel,
+      ]);
+      expect(accounting, isNot(contains('سند قيد')));
+
+      final accounts = [
+        for (final n in kAllNavItemDefs)
+          if (n.group == 'accounts') n.label,
+      ];
+      final at = accounts.indexOf('سند قيد');
+      expect(at, greaterThanOrEqualTo(0));
+      expect(accounts.sublist(at, at + 3), [
         'سند قيد',
         'فئات الأصول',
         'التوزيع والمواقع',
       ]);
 
-      // و«اليومية العامة» صدرُ مجموعتها الجديدة.
-      final journal = [
-        for (final n in kAllNavItemDefs)
-          if (n.group == 'journal') n.label,
-      ];
-      expect(journal.first, journalEntriesScreenLabel);
+      // و«اليومية العامة» صدرُ ما دُمج منها في «إدارة الحسابات».
+      expect(accounts, contains(journalEntriesScreenLabel));
+      expect(accounts.indexOf(journalEntriesScreenLabel), lessThan(at));
     });
   });
 }

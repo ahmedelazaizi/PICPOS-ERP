@@ -293,6 +293,7 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
     int? currencyId,
     double? paymentRate,
     double? foreignAmount,
+    int? linkedAccountId,
   }) async {
     await _accountingService.ensureOpenFiscalPeriod(DateTime.now());
 
@@ -337,6 +338,7 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
         skipSafeTransaction: isCheckPayment,
         // سندُ الشيك — نظيرُ ما في [createReceiptVoucher].
         chequeVoucherSafeId: isCheckPayment ? resolvedSafeId : null,
+        linkedAccountId: linkedAccountId,
         operatingBranchId: operatingBranchId, // Spec 135 BUG-C
         currencyId: currencyId,
         paymentRate: paymentRate,
@@ -350,6 +352,53 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
 
       return transactionId;
     });
+  }
+
+  @override
+  Future<int> createAccountTransferVoucher({
+    required bool isReceipt,
+    required double amount,
+    required int treasuryAccountId,
+    required String category,
+    double discount = 0,
+    int? beneficiaryAccountId,
+    int? partyId,
+    String? description,
+    int? userId,
+    int? costCenterId,
+    int? documentSafeId,
+    String? globalId,
+    int? operatingBranchId,
+    int? currencyId,
+    double? paymentRate,
+    double? foreignAmount,
+  }) async {
+    await _accountingService.ensureOpenFiscalPeriod(DateTime.now());
+    // نفسُ صلاحيّة السند اليدويّ — التحويلُ سندٌ يدويٌّ دائماً.
+    await _requireManualVoucherPermission(
+      receipt: isReceipt,
+      manualEntry: true,
+      userId: userId,
+    );
+    // ⚠️ لا حارسَ ورديّة: لا نقدَ يتحرّك على درج.
+    return db.createAccountTransferVoucher(
+      isReceipt: isReceipt,
+      amount: amount,
+      treasuryAccountId: treasuryAccountId,
+      category: category,
+      discount: discount,
+      beneficiaryAccountId: beneficiaryAccountId,
+      partyId: partyId,
+      description: description,
+      userId: userId,
+      costCenterId: costCenterId,
+      documentSafeId: documentSafeId,
+      globalId: globalId,
+      operatingBranchId: operatingBranchId,
+      currencyId: currencyId,
+      paymentRate: paymentRate,
+      foreignAmount: foreignAmount,
+    );
   }
 
   @override

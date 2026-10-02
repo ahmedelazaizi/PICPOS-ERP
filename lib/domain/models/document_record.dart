@@ -37,7 +37,20 @@ enum VoucherDirection {
   final String labelAr;
 
   String get displayLabel => tr(labelAr);
+
+  /// قيمةُ `transaction_type` لسند **التحويل المحاسبيّ** — طرفُ الخزينة فيه
+  /// حسابٌ ليس خزنةً، فلا حركةَ خزنة (المرحلة هـ / E2).
+  String get transferTxnType => this == VoucherDirection.receipt
+      ? kAccountTransferReceiptTxnType
+      : kAccountTransferPaymentTxnType;
 }
+
+/// سندُ قبضٍ تحويليٌّ: القيدُ على حسابٍ غيرِ خزنة، والصفُّ مستندٌ لا يحرّك
+/// رصيدَ أيِّ خزنة. ويُعامَل في كشف الطرف معاملةَ `receipt`.
+const String kAccountTransferReceiptTxnType = 'transfer_receipt';
+
+/// نظيرُ [kAccountTransferReceiptTxnType] لسند الصرف.
+const String kAccountTransferPaymentTxnType = 'transfer_payment';
 
 /// نوعُ صفِّ سند الشيك في `safe_transactions` — مستندٌ بلا أثرٍ ماليّ.
 ///
@@ -61,7 +74,15 @@ class VoucherRecord {
     this.partyId,
     this.partyName,
     this.description,
+    this.isAccountTransfer = false,
+    this.bookNumber,
   });
+
+  /// سندُ تحويلٍ محاسبيّ — لا حركةَ خزنة (راجع [kAccountTransferReceiptTxnType]).
+  final bool isAccountTransfer;
+
+  /// رقمُ الورقة في دفتر السندات حين يُسحَب من دفتر — وإلّا `null`.
+  final int? bookNumber;
 
   final int id;
   final String voucherNumber;

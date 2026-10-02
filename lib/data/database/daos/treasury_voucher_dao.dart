@@ -346,6 +346,7 @@ extension TreasuryVoucherDao on AppDatabase {
 
     /// خزنةُ **سندِ الشيك** — راجع [createReceiptVoucher].
     int? chequeVoucherSafeId,
+    int? linkedAccountId, // E2: COA beneficiary
 
     // Spec 135 BUG-C — operator's working branch (see createReceiptVoucher).
     // Prefer it for the JE branch; fall back to targetSafe.branchId.
@@ -451,6 +452,7 @@ extension TreasuryVoucherDao on AppDatabase {
             costCenterId: effectiveCostCenterId,
             branchId: operatingBranchId ?? targetSafe.branchId, // Spec 135 BUG-C
             safeId: targetSafe.id,
+            linkedAccountId: linkedAccountId,
             partyId: partyId, // Issue 4 (Feature 022): party AP sub-account
             safeTransactionGlobalId: effectiveGlobalId,
           );

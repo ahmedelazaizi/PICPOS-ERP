@@ -37,6 +37,7 @@ import '../../../services/client_write_interceptor.dart';
 import '../../widgets/permission_guard.dart';
 import 'cheque_books_picpos_screen.dart' show chequeBooksListProvider;
 import 'receipt_voucher_picpos_screen.dart' show voucherOpenInvoicesProvider;
+import '../voucher_sources.dart';
 import 'voucher_form_picpos.dart';
 
 final _costCentersProvider = FutureProvider.autoDispose<List<CostCenter>>(
@@ -76,14 +77,22 @@ class _PaymentVoucherPicposScreenState
                     (partyId: _partyId!, supplier: true)))
                 .value ??
             const <VoucherInvoiceOption>[];
+    // E2/E3 — راجع نظيرَه في شاشة القبض.
+    final accounts = ref.watch(voucherAccountOptionsProvider).value ??
+        const <VoucherAccountOption>[];
+    final books = ref.watch(voucherBookOptionsProvider('payment')).value;
 
     return PermissionGuard(
       // ⚠️ راجع نظيرَه في شاشة القبض: `treasury_payments_create` غيرُ
       //    ممنوحٍ لأيّ دور، فربطُ الشاشة به يسحبها من الجميع.
       permission: PermissionCodes.treasuryView,
       child: PicPosVoucherForm(
-        key: ValueKey(_formEpoch),
+        key: ValueKey(
+            '$_formEpoch-${accounts.isNotEmpty}-${books != null}'),
         kind: PicPosVoucherKind.payment,
+        accounts: accounts,
+        voucherBooks: books?.books ?? const [],
+        initialBookId: books?.defaultId,
         parties: [
           for (final p in parties)
             if (p.isSupplier)
@@ -141,6 +150,24 @@ class _PaymentVoucherPicposScreenState
     try {
       final amount = v.grossAmount;
 
+      // E3 — ورقةُ دفتر السندات تُفحَص قبل أيّ كتابة (وقبل سحب الشيكات).
+      final db = ref.read(databaseProvider);
+      await preValidateVoucherBookLeaf(db, v);
+      final docSafeId = v.safeId ??
+          ref.read(scopedSafesProvider).value?.firstOrNull?.id;
+      final isTransfer = v.method != 'check' &&
+          v.safeId == null &&
+          v.treasuryAccountId != null;
+      // E2 — التحويلُ والمستفيدُ من الدليل مساران محلّيّان: نقطةُ الخادم
+      //    للصرف لا تحمل حساباً مختاراً.
+      if ((isTransfer || v.beneficiaryAccountId != null) &&
+          voucherRunsOnClient) {
+        _toast(tr('سند التحويل المحاسبي يُنشأ على جهاز الخادم.'),
+            ToastType.error);
+        return;
+      }
+      final category = v.partyId == null ? 'other' : 'supplier_payment';
+
       // 🔴 **السحبُ أوّلاً وفي معاملةٍ واحدة.** الأرقامُ التي عاينها النموذجُ
       //    قد تكون بطُلت — جهازٌ آخرُ سحب قبله — فالحكمُ لما تُرجعه
       //    `allocateChequeNumbers` لا لما عُرض.
@@ -162,24 +189,44 @@ class _PaymentVoucherPicposScreenState
       // ⚠️ **الخزنةُ تُسقَط للشيك** (`safeId: null`): الشيكُ لا يدخل درجاً،
       //    والقيدُ يملكه ترحيلُ الأوراق التجارية. وتمريرُها كان يُخرج
       //    نقديّةً مرّتين.
-      final intercepted = await ClientWriteInterceptor.createExpense(
-        amount: amount,
-        category: 'supplier_payment',
-        description: description,
-        partyId: v.partyId,
-        safeId: v.method == 'check' ? null : v.safeId,
-        branchId: operatingBranchId,
-        costCenterId: v.costCenterId,
-        paperType: v.method == 'check' ? 'cheque' : null,
-      );
+      final intercepted = isTransfer
+          ? null
+          : await ClientWriteInterceptor.createExpense(
+              amount: amount,
+              category: category,
+              description: description,
+              partyId: v.partyId,
+              safeId: v.method == 'check' ? null : v.safeId,
+              branchId: operatingBranchId,
+              costCenterId: v.costCenterId,
+              paperType: v.method == 'check' ? 'cheque' : null,
+            );
 
       int voucherRowId = 0;
-      if (intercepted == null) {
+      if (isTransfer) {
+        voucherRowId = await ref
+            .read(treasuryRepositoryProvider)
+            .createAccountTransferVoucher(
+              isReceipt: false,
+              amount: amount,
+              discount: v.discount,
+              treasuryAccountId: v.treasuryAccountId!,
+              beneficiaryAccountId: v.beneficiaryAccountId,
+              partyId: v.partyId,
+              category: category,
+              description: description,
+              userId: ref.read(authProvider).user?.id,
+              costCenterId: v.costCenterId,
+              documentSafeId: docSafeId,
+              operatingBranchId: operatingBranchId,
+            );
+      } else if (intercepted == null) {
         voucherRowId =
             await ref.read(treasuryRepositoryProvider).createPaymentVoucher(
                   amount: amount,
                   discount: v.discount,
-                  category: 'supplier_payment',
+                  category: category,
+                  linkedAccountId: v.beneficiaryAccountId,
                   safeId: v.method == 'check' ? null : v.safeId,
 userId: ref.read(authProvider).user?.id,
                    manualEntry: true,
@@ -198,11 +245,16 @@ userId: ref.read(authProvider).user?.id,
                 );
       }
 
+      // E3 — ختمُ ورقة الدفتر على صفّ السند وتقديمُ الدفتر.
+      await stampVoucherBookLeaf(db, v, voucherRowId);
+      if (v.bookId != null) ref.invalidate(voucherBookOptionsProvider);
+
       if (v.method == 'check') {
         await _createCheques(v, voucherRowId, numbers);
       }
 
-      await _recordAllocations(v, amount, interceptedByServer: intercepted != null);
+      await _recordAllocations(v, amount, docSafeId,
+          interceptedByServer: intercepted != null);
 
       final user = ref.read(authProvider).user;
       await ref.read(activityLogRepositoryProvider).logActivity(
@@ -314,7 +366,8 @@ userId: ref.read(authProvider).user?.id,
 
   Future<void> _recordAllocations(
     VoucherSubmission v,
-    double amount, {
+    double amount,
+    int? docSafeId, {
     required bool interceptedByServer,
   }) async {
     if (v.allocations.isEmpty) return;
@@ -330,7 +383,7 @@ userId: ref.read(authProvider).user?.id,
           paymentDate: v.date,
           amount: amount,
           paymentMethod: v.method,
-          safeId: v.safeId!,
+          safeId: (docSafeId ?? v.safeId)!,
           paymentType: 'payment',
           partyId: v.partyId,
           userId: ref.read(authProvider).user?.id,

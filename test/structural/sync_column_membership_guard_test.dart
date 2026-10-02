@@ -90,6 +90,11 @@ const _rawSqlProvenAtRuntime = <String, String>{
   'butchery_template_lines': 'test/unit/manufacturing_phase17_test.dart',
   'butchery_orders': 'test/unit/manufacturing_phase17_test.dart',
   'butchery_order_lines': 'test/unit/manufacturing_phase17_test.dart',
+  // v184 — دفاترُ السندات (المرحلة هـ / E3).
+  'voucher_books':
+      'test/unit/voucher_books_and_coa_vouchers_phase_e_test.dart',
+  'voucher_book_leaves_cancelled':
+      'test/unit/voucher_books_and_coa_vouchers_phase_e_test.dart',
 };
 
 /// جداولُ ليست في `pullTables` وتُرقَّم مع ذلك — الطرفُ الآخرُ من العقد.

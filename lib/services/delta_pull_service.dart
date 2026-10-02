@@ -106,6 +106,9 @@ class DeltaPullService {
     'journal_entries',      // → accounts
     'safe_transactions',    // → safes
     'commercial_papers',    // → parties
+    // v184 — دفاترُ السندات (المرحلة هـ / E3). الدفترُ قبل أوراقه الملغاة.
+    'voucher_books',                  // → branches
+    'voucher_book_leaves_cancelled',  // → voucher_books
     'stock_movements',      // → products, warehouses
 
     // ── Tier 4: transactional items ──
@@ -259,6 +262,8 @@ class DeltaPullService {
     'purchase_orders', 'quotations', 'payments', 'journal_entries',
     'safe_transactions', 'commercial_papers', 'stock_movements', 'shifts',
     'sales_invoice_items', 'purchase_invoice_items',
+    // v184 — دفاترُ السندات: عهدةُ موظّفٍ وأرقامُ مستنداتٍ ماليّة.
+    'voucher_books', 'voucher_book_leaves_cancelled',
     // v174 / المرحلة ٨ — **بياناتُ عملٍ لا مرجعيّة**: البيانُ
     // الجمركيُّ وبوليصةُ الشحن والاعتمادُ المستنديُّ أوراقُ صفقةٍ
     // لا تُسلَّم لمستدعٍ بلا هويّةٍ متحقَّقة — وهي فرعٌ من فاتورةٍ
@@ -375,6 +380,9 @@ class DeltaPullService {
     // البذر — وكلُّ مجموعةٍ عُرِّفت قبلها **لا تصل الجهازَ أبداً** بلا خطأٍ
     // ولا سجلّ. أمسكه `delta_only_watermark_guard` عند التوصيل.
     'modifier_groups', 'modifier_items', 'product_modifier_groups',
+
+    // v184 — دفاترُ السندات: لا استراتيجيّةَ لها في `fullSync`.
+    'voucher_books', 'voucher_book_leaves_cancelled',
 
     'asset_categories', 'op_expense_categories', 'bill_of_materials',
     'fixed_assets', 'manufacturing_orders', 'bom_components',

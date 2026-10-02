@@ -42,6 +42,7 @@ import '../../../data/providers/providers.dart';
 import '../../../services/cheque_receipt_preflight.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../../widgets/permission_guard.dart';
+import '../voucher_sources.dart';
 import 'voucher_form_picpos.dart';
 
 /// مراكزُ التكلفة النشطة — إلزاميّةٌ حين تكون معرَّفة.
@@ -103,6 +104,11 @@ class _ReceiptVoucherPicposScreenState
                     (partyId: _partyId!, supplier: false)))
                 .value ??
             const <VoucherInvoiceOption>[];
+    // E2/E3 — الدليلُ ودفاترُ السندات. والمفتاحُ يتبع تحميلَهما: الاستمارةُ
+    // تقرأ الافتراضيَّ في `initState` فتُبنى ثانيةً حين يصلان.
+    final accounts = ref.watch(voucherAccountOptionsProvider).value ??
+        const <VoucherAccountOption>[];
+    final books = ref.watch(voucherBookOptionsProvider('receipt')).value;
 
     return PermissionGuard(
       // ⚠️ **`treasury_view` لا `treasury_receipts_create`.** الكودُ
@@ -112,8 +118,12 @@ class _ReceiptVoucherPicposScreenState
       //    وحدَه، فالتوصيلُ يُبقي **مَن يُنشئ سنداً** كما هو.
       permission: PermissionCodes.treasuryView,
       child: PicPosVoucherForm(
-        key: ValueKey(_formEpoch),
+        key: ValueKey(
+            '$_formEpoch-${accounts.isNotEmpty}-${books != null}'),
         kind: PicPosVoucherKind.receipt,
+        accounts: accounts,
+        voucherBooks: books?.books ?? const [],
+        initialBookId: books?.defaultId,
         parties: [
           for (final p in parties)
             if (p.isCustomer)
@@ -169,6 +179,31 @@ class _ReceiptVoucherPicposScreenState
         }
       }
 
+      // E3 — ورقةُ الدفتر تُفحَص قبل أيّ كتابة: خارجَ المدى أو مكرّرةً أو ملغاة.
+      final db = ref.read(databaseProvider);
+      try {
+        await preValidateVoucherBookLeaf(db, v);
+      } catch (e) {
+        _toast('$e', ToastType.error);
+        return;
+      }
+      // خزنةُ المستند: المختارةُ، وإلّا أوّلُ خزنةٍ في النطاق (للشيك والتحويل).
+      final docSafeId = v.safeId ??
+          ref.read(scopedSafesProvider).value?.firstOrNull?.id;
+      final isTransfer = v.method != 'check' &&
+          v.safeId == null &&
+          v.treasuryAccountId != null;
+      if (isTransfer && voucherRunsOnClient) {
+        _toast(tr('سند التحويل المحاسبي يُنشأ على جهاز الخادم.'),
+            ToastType.error);
+        return;
+      }
+      if (docSafeId == null) {
+        _toast(tr('اختر الخزينة.'), ToastType.error);
+        return;
+      }
+      final category = v.partyId == null ? 'other' : 'customer_payment';
+
       final treasuryRepo = ref.read(treasuryRepositoryProvider);
       final voucherNumber = 'REC${DateTime.now().year}'
           '${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
@@ -183,28 +218,48 @@ class _ReceiptVoucherPicposScreenState
       // Spec 135 BUG-C — فرعُ المشغِّل لا فرعُ الخزنة.
       final operatingBranchId = ref.read(activeBranchIdProvider).value;
 
-      final intercepted = await ClientWriteInterceptor.createReceipt(
-        amount: netAmount,
-        category: 'customer_payment',
-        description: description,
-        partyId: v.partyId,
-        safeId: v.safeId!,
-        branchId: operatingBranchId,
-        costCenterId: v.costCenterId,
-        linkedAccountId: null,
-        globalId: sharedGlobalId,
-        paperType: v.method == 'check' ? 'cheque' : null,
-      );
+      // E2 — التحويلُ المحاسبيُّ مسارٌ محلّيٌّ وحدَه (رُفض في وضع العميل أعلاه).
+      final intercepted = isTransfer
+          ? null
+          : await ClientWriteInterceptor.createReceipt(
+              amount: netAmount,
+              category: category,
+              description: description,
+              partyId: v.partyId,
+              safeId: docSafeId,
+              branchId: operatingBranchId,
+              costCenterId: v.costCenterId,
+              linkedAccountId: v.beneficiaryAccountId,
+              globalId: sharedGlobalId,
+              paperType: v.method == 'check' ? 'cheque' : null,
+            );
 
       // ⚠️ يبقى صفراً في وضع العميل: الكتابةُ على الخادم والصفُّ يصل
       //    بالمزامنة. وصفرٌ يعني «لا سندَ محلّيّاً» لا خطأً.
       int voucherRowId = 0;
-      if (intercepted == null) {
+      if (isTransfer) {
+        voucherRowId = await treasuryRepo.createAccountTransferVoucher(
+          isReceipt: true,
+          amount: netAmount,
+          discount: totalDiscount,
+          treasuryAccountId: v.treasuryAccountId!,
+          beneficiaryAccountId: v.beneficiaryAccountId,
+          partyId: v.partyId,
+          category: category,
+          description: description,
+          userId: ref.read(authProvider).user?.id,
+          costCenterId: v.costCenterId,
+          documentSafeId: docSafeId,
+          globalId: sharedGlobalId,
+          operatingBranchId: operatingBranchId,
+        );
+      } else if (intercepted == null) {
         voucherRowId = await treasuryRepo.createReceiptVoucher(
           amount: netAmount,
           discount: totalDiscount,
-          category: 'customer_payment',
-          safeId: v.safeId!,
+          category: category,
+          linkedAccountId: v.beneficiaryAccountId,
+          safeId: docSafeId,
 userId: ref.read(authProvider).user?.id,
            manualEntry: true,
           partyId: v.partyId,
@@ -221,12 +276,16 @@ userId: ref.read(authProvider).user?.id,
         );
       }
 
+      // E3 — ختمُ ورقة الدفتر على صفّ السند وتقديمُ الدفتر.
+      await stampVoucherBookLeaf(db, v, voucherRowId);
+      if (v.bookId != null) ref.invalidate(voucherBookOptionsProvider);
+
       if (v.method == 'check') {
         await _createCheques(v, voucherNumber, voucherRowId);
       }
 
       await _recordAllocations(v, voucherNumber, netAmount, voucherRowId,
-          interceptedByServer: intercepted != null);
+          docSafeId, interceptedByServer: intercepted != null);
 
       final user = ref.read(authProvider).user;
       await ref.read(activityLogRepositoryProvider).logActivity(
@@ -277,7 +336,11 @@ userId: ref.read(authProvider).user?.id,
       final dueDate =
           c.dueDate ?? DateTime.now().add(const Duration(days: 30));
       final bank = c.bank.isEmpty ? null : c.bank;
-      final notes = tr('ترحيل تلقائي من سند قبض {voucherNumber}', {'voucherNumber': voucherNumber});
+      var notes = tr('ترحيل تلقائي من سند قبض {voucherNumber}', {'voucherNumber': voucherNumber});
+      // E4 — الساحبُ لا عمودَ له في `commercial_papers`، فيُحفَظ في الملاحظة.
+      if (c.drawer.isNotEmpty) {
+        notes += tr(' | الساحب: {p0}', {'p0': c.drawer});
+      }
 
       // الكتابةُ المزدوجة (R4): الخادمُ ثمّ المحلّيّ بنفس المعرّف، وإلّا
       // بقي الشيكُ محلّيّاً ولم يره جهازٌ آخر.
@@ -328,7 +391,8 @@ userId: ref.read(authProvider).user?.id,
     VoucherSubmission v,
     String voucherNumber,
     double netAmount,
-    int voucherRowId, {
+    int voucherRowId,
+    int docSafeId, {
     required bool interceptedByServer,
   }) async {
     if (v.allocations.isEmpty) return;
@@ -345,7 +409,7 @@ userId: ref.read(authProvider).user?.id,
           paymentDate: v.date,
           amount: netAmount,
           paymentMethod: v.method,
-          safeId: v.safeId!,
+          safeId: docSafeId,
           paymentType: 'receipt',
           partyId: v.partyId,
           userId: ref.read(authProvider).user?.id,

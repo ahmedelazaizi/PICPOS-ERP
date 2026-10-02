@@ -127,6 +127,7 @@ class _CountingTreasuryRepo implements ITreasuryRepository {
     int? currencyId,
     double? paymentRate,
     double? foreignAmount,
+    int? linkedAccountId,
   }) async {
     payments.add(amount);
     return payments.length;

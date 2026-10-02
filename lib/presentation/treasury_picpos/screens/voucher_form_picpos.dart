@@ -67,6 +67,10 @@ import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../../picpos_shell/picpos_totals_bar.dart';
 import '../../widgets/compact_date_picker.dart';
+import '../widgets/voucher_form_parts.dart';
+
+export '../widgets/voucher_form_parts.dart'
+    show VoucherAccountOption, VoucherBookOption;
 
 final _money = NumberFormat('#,##0.00');
 final _dateFmt = DateFormat('dd-MM-yyyy');
@@ -141,6 +145,8 @@ class VoucherChequeDraft {
   final numberCtrl = TextEditingController();
   final bankCtrl = TextEditingController();
   final amountCtrl = TextEditingController();
+  /// E4 — الساحب (للشيك الوارد).
+  final drawerCtrl = TextEditingController();
   DateTime? dueDate;
 
   double get amount => double.tryParse(amountCtrl.text.trim()) ?? 0;
@@ -149,6 +155,7 @@ class VoucherChequeDraft {
     numberCtrl.dispose();
     bankCtrl.dispose();
     amountCtrl.dispose();
+    drawerCtrl.dispose();
   }
 }
 
@@ -164,7 +171,7 @@ typedef VoucherSubmission = ({
   double discount,
   double commissionPercent,
   String notes,
-  List<({String number, String bank, DateTime? dueDate, double amount})> cheques,
+  List<({String number, String bank, DateTime? dueDate, double amount, String drawer})> cheques,
   bool depositImmediately,
   List<({String invoiceType, int invoiceId, double amount})> allocations,
 
@@ -174,6 +181,16 @@ typedef VoucherSubmission = ({
   ///    المضيفُ يسحبها بـ`allocateChequeNumbers` داخلَ معاملةٍ ويستعمل ما
   ///    تُرجعه هي. وجهازٌ آخرُ قد يكون سحب في اللحظة نفسِها.
   int? chequeBookId,
+
+  /// E2 — المستفيدُ من دليل الحسابات حين لا يكون حسابَ طرف.
+  int? beneficiaryAccountId,
+
+  /// E2 — حسابُ الخزينة من الدليل؛ و[safeId] `null` معه = تحويلٌ محاسبيّ.
+  int? treasuryAccountId,
+
+  /// E3 — دفترُ السندات ورقمُ الورقة.
+  int? bookId,
+  int? bookNumber,
 });
 
 /// يُنهي سنداً **حُفظ بنجاح**: يُغلق الاستمارةَ إن كانت مدفوعةً، وإلّا
@@ -216,7 +233,17 @@ class PicPosVoucherForm extends StatefulWidget {
     this.onPartyPicked,
     this.initialPartyId,
     this.busy = false,
+    this.accounts = const [],
+    this.voucherBooks = const [],
+    this.initialBookId,
   });
+
+  /// E2 — حين يُمرَّر: المستفيدُ والخزينةُ يُختاران من دليل الحسابات.
+  final List<VoucherAccountOption> accounts;
+
+  /// E3 — دفاترُ السندات السارية لهذا النوع، و[initialBookId] دفترُ المستخدم.
+  final List<VoucherBookOption> voucherBooks;
+  final int? initialBookId;
 
   final PicPosVoucherKind kind;
   final List<VoucherPartyOption> parties;
@@ -273,6 +300,25 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
   /// المخصَّصُ لكلّ فاتورة — بمفتاح `نوع#رقم`.
   final Map<String, TextEditingController> _allocCtrls = {};
 
+  // ── E2 — طرفا السند من دليل الحسابات ──
+  int? _beneficiaryAccountId;
+  int? _treasuryAccountId;
+
+  // ── E3 — دفترُ السندات ──
+  int? _bookId;
+  final _bookNumberCtrl = TextEditingController();
+
+  bool get _useAccounts => widget.accounts.isNotEmpty;
+
+  /// طرفُ الخزينة حسابٌ ليس خزنة ⇒ تحويلٌ محاسبيٌّ بلا حركة خزنة.
+  bool get _isTransfer =>
+      _useAccounts && !_isCheque && _treasuryAccountId != null && _safeId == null;
+
+  VoucherBookOption? get _pickedVoucherBook =>
+      widget.voucherBooks.where((b) => b.id == _bookId).firstOrNull;
+
+  int? get _bookNumber => int.tryParse(_bookNumberCtrl.text.trim());
+
   @override
   void initState() {
     super.initState();
@@ -280,10 +326,24 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
     final def = widget.safes.where((s) => s.type == 'cash').firstOrNull ??
         widget.safes.firstOrNull;
     _safeId = def?.id;
+    if (_useAccounts && _safeId != null) {
+      _treasuryAccountId =
+          widget.accounts.where((a) => a.safeId == _safeId).firstOrNull?.id;
+    }
+    _pickBook(widget.voucherBooks.any((b) => b.id == widget.initialBookId)
+        ? widget.initialBookId
+        : null);
+  }
+
+  void _pickBook(int? id) {
+    _bookId = id;
+    final suggested = _pickedVoucherBook?.suggested;
+    _bookNumberCtrl.text = suggested?.toString() ?? '';
   }
 
   @override
   void dispose() {
+    _bookNumberCtrl.dispose();
     _amountCtrl.dispose();
     _discountCtrl.dispose();
     _commissionCtrl.dispose();
@@ -338,8 +398,25 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
   ///
   /// ⚠️ **يُعرَض ولا يُبتلَع**: زرٌّ معطَّلٌ بلا سببٍ ظاهرٍ يُقرأ «معطوب».
   String? get blockReason {
-    if (_partyId == null) return tr('اختر {p0}.', {'p0': widget.kind.partyLabel});
-    if (_safeId == null) return tr('اختر الخزينة.');
+    if (_partyId == null && _beneficiaryAccountId == null) {
+      return tr('اختر {p0}.', {'p0': widget.kind.partyLabel});
+    }
+    if (_safeId == null && _treasuryAccountId == null) {
+      return tr('اختر الخزينة.');
+    }
+    // الشيكُ ورقةٌ على طرفٍ بعينه — حسابٌ عامٌّ لا يحمل شيكاً.
+    if (_isCheque && _partyId == null) {
+      return tr('الشيكات تتطلّب حساب عميل أو مورّد.');
+    }
+    final vb = _pickedVoucherBook;
+    if (vb != null) {
+      final n = _bookNumber;
+      if (n == null) return tr('اكتب رقم ورقة الدفتر.');
+      if (n < vb.rangeFrom || n > vb.rangeTo) {
+        return tr('رقم الورقة خارج مدى الدفتر ({p0}–{p1}).',
+            {'p0': vb.rangeFrom, 'p1': vb.rangeTo});
+      }
+    }
     // ⚠️ مراكزُ التكلفة حين تكون معرَّفةً **إلزاميّة**: بدونها يسقط القيدُ
     //    على «عام» ويُقرأ في تقارير المراكز على غير موضعه.
     if (widget.costCenters.isNotEmpty && _costCenterId == null) {
@@ -407,6 +484,21 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // E2 — رأسُ المستند على نمط الفاتورة: العنوانُ والرقمُ
+                  // وشارةُ الحالة، وشارةُ «تحويل محاسبي» حين لا خزنة.
+                  VoucherDocHeader(
+                    title: widget.kind.title,
+                    icon: widget.kind.icon,
+                    accent: widget.kind.accent,
+                    numberText: _pickedVoucherBook == null
+                        ? '—'
+                        : tr('ورقة الدفتر: {p0}', {
+                            'p0': '${_pickedVoucherBook!.prefix ?? ''}'
+                                '${_bookNumberCtrl.text.trim()}'
+                          }),
+                    isTransfer: _isTransfer,
+                  ),
+                  const SizedBox(height: 12),
                   _headerCard(),
                   const SizedBox(height: 12),
                   if (_isCheque) _chequesCard() else _cashCard(),
@@ -471,11 +563,22 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
               spacing: 10,
               runSpacing: 10,
               children: [
-                SizedBox(width: 220, child: _partyField()),
+                SizedBox(
+                    width: _useAccounts ? 300 : 220, child: _partyField()),
                 SizedBox(width: 190, child: _dateField()),
                 SizedBox(width: 200, child: _costCenterField()),
               ],
             ),
+            if (widget.voucherBooks.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              VoucherBookSection(
+                books: widget.voucherBooks,
+                bookId: _bookId,
+                numberCtrl: _bookNumberCtrl,
+                onBookChanged: (v) => setState(() => _pickBook(v)),
+                onNumberChanged: () => setState(() {}),
+              ),
+            ],
             const SizedBox(height: 12),
             _methodSegments(),
             const SizedBox(height: 10),
@@ -493,7 +596,29 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
         ),
       );
 
-  Widget _partyField() => DropdownButtonFormField<int>(
+  Widget _partyField() => _useAccounts
+      ? VoucherAccountField(
+          key: const Key('voucher_party'),
+          label: widget.kind.partyLabel,
+          accounts: widget.accounts,
+          selectedId: _beneficiaryAccountId,
+          helper: _partyId != null
+              ? tr('حساب طرف — يُحدَّث رصيده وكشفه')
+              : null,
+          onChanged: (a) {
+            setState(() {
+              _beneficiaryAccountId = a.id;
+              _partyId = a.partyId;
+              for (final c in _allocCtrls.values) {
+                c.clear();
+              }
+            });
+            widget.onPartyPicked?.call(a.partyId);
+          },
+        )
+      : _partyDropdown();
+
+  Widget _partyDropdown() => DropdownButtonFormField<int>(
         key: const Key('voucher_party'),
         initialValue: _partyId,
         isExpanded: true,
@@ -600,7 +725,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
               spacing: 10,
               runSpacing: 10,
               children: [
-                SizedBox(width: 230, child: _safeField()),
+                SizedBox(width: _useAccounts ? 300 : 230, child: _safeField()),
                 SizedBox(
                   width: 170,
                   child: TextField(
@@ -654,7 +779,23 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
         ),
       );
 
-  Widget _safeField() => DropdownButtonFormField<int>(
+  Widget _safeField() => _useAccounts
+      ? VoucherAccountField(
+          key: const Key('voucher_safe'),
+          label: tr('الخزينة / الحساب'),
+          accounts: widget.accounts,
+          selectedId: _treasuryAccountId,
+          helper: _isTransfer
+              ? tr('ليس حساب خزنة — قيد تحويل بلا حركة خزنة')
+              : null,
+          onChanged: (a) => setState(() {
+            _treasuryAccountId = a.id;
+            _safeId = a.safeId;
+          }),
+        )
+      : _safeDropdown();
+
+  Widget _safeDropdown() => DropdownButtonFormField<int>(
         key: const Key('voucher_safe'),
         initialValue: _safeId,
         isExpanded: true,
@@ -697,7 +838,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
               ],
             ),
             const SizedBox(height: 6),
-            SizedBox(width: 230, child: _safeField()),
+            SizedBox(width: _useAccounts ? 300 : 230, child: _safeField()),
             if (widget.chequeBooks.isNotEmpty) ...[
               const SizedBox(height: 8),
               _chequeBookField(),
@@ -853,6 +994,20 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                   ),
                 ),
               ),
+              // E4 — الساحبُ للشيك الوارد؛ والصادرُ ساحبُه نحن.
+              if (widget.kind.isReceipt)
+                SizedBox(
+                  width: 170,
+                  child: TextField(
+                    key: Key('voucher_cheque_drawer_$i'),
+                    controller: c.drawerCtrl,
+                    decoration: InputDecoration(
+                      labelText: tr('الساحب'),
+                      isDense: true,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
               SizedBox(
                 width: 170,
                 child: InkWell(
@@ -1046,11 +1201,16 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
               bank: _cheques[i].bankCtrl.text.trim(),
               dueDate: _cheques[i].dueDate,
               amount: _cheques[i].amount,
+              drawer: _cheques[i].drawerCtrl.text.trim(),
             ),
       ],
       depositImmediately: _isCheque && _depositImmediately,
       allocations: allocations,
       chequeBookId: _isCheque ? _chequeBookId : null,
+      beneficiaryAccountId: _partyId == null ? _beneficiaryAccountId : null,
+      treasuryAccountId: _useAccounts ? _treasuryAccountId : null,
+      bookId: _pickedVoucherBook?.id,
+      bookNumber: _pickedVoucherBook == null ? null : _bookNumber,
     ));
   }
 }
