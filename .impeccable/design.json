@@ -1,0 +1,718 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-02T05:57:51+00:00",
+  "title": "Design System: PicPos",
+  "extensions": {
+    "colorMeta": {
+      "brand-blue": {
+        "role": "primary",
+        "displayName": "Logo Blue",
+        "canonical": "#0250D3",
+        "oklch": "oklch(48.3% 0.212 261.4)",
+        "tonalRamp": [
+          "#000826",
+          "#021F59",
+          "#063994",
+          "#0753D6",
+          "#3179FE",
+          "#74A4FB",
+          "#AECAFC",
+          "#E6EFFE"
+        ]
+      },
+      "brand-navy": {
+        "role": "primary",
+        "displayName": "Ledger Navy",
+        "canonical": "#012258",
+        "oklch": "oklch(26.9% 0.105 259.6)",
+        "tonalRamp": [
+          "#000923",
+          "#002157",
+          "#1D4079",
+          "#3C619C",
+          "#5C83C1",
+          "#7EA6E7",
+          "#ABCBFD",
+          "#E6EFFE"
+        ]
+      },
+      "brand-sky": {
+        "role": "primary",
+        "displayName": "Signal Sky",
+        "canonical": "#4A80E8",
+        "oklch": "oklch(61.5% 0.168 262.0)",
+        "tonalRamp": [
+          "#000728",
+          "#021E5C",
+          "#043799",
+          "#275ABE",
+          "#487DE5",
+          "#76A4F9",
+          "#ADCAFF",
+          "#E6EFFF"
+        ]
+      },
+      "brand-ink-dark": {
+        "role": "primary",
+        "displayName": "Night Ink Blue",
+        "canonical": "#7DA6F5",
+        "oklch": "oklch(72.8% 0.124 262.8)",
+        "tonalRamp": [
+          "#00062A",
+          "#011C60",
+          "#1C3D83",
+          "#3A5EA7",
+          "#5A80CC",
+          "#7BA4F3",
+          "#AECAFE",
+          "#E6EFFF"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Morning Paper Canvas",
+        "canonical": "#F2F5FA",
+        "oklch": "oklch(96.9% 0.007 260.7)",
+        "tonalRamp": [
+          "#090B0E",
+          "#232529",
+          "#404246",
+          "#5F6166",
+          "#808287",
+          "#A2A5AA",
+          "#C6C9CE",
+          "#ECEFF4"
+        ]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Card White",
+        "canonical": "#FFFFFF",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "field-fill": {
+        "role": "neutral",
+        "displayName": "Field Wash",
+        "canonical": "#F4F7FC",
+        "oklch": "oklch(97.5% 0.007 260.7)",
+        "tonalRamp": [
+          "#090B0E",
+          "#232529",
+          "#404246",
+          "#5F6166",
+          "#808287",
+          "#A2A5AA",
+          "#C6C9CE",
+          "#ECEFF4"
+        ]
+      },
+      "field-slate": {
+        "role": "neutral",
+        "displayName": "Slate Wash",
+        "canonical": "#F8FAFC",
+        "oklch": "oklch(98.4% 0.003 247.9)",
+        "tonalRamp": [
+          "#0A0B0D",
+          "#242527",
+          "#414244",
+          "#606163",
+          "#818284",
+          "#A3A5A7",
+          "#C7C9CB",
+          "#EDEFF1"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Theme Hairline",
+        "canonical": "#DCE3EE",
+        "oklch": "oklch(91.4% 0.017 259.4)",
+        "tonalRamp": [
+          "#070B12",
+          "#20252D",
+          "#3D424B",
+          "#5C626B",
+          "#7C838D",
+          "#9FA5B0",
+          "#C3CAD4",
+          "#E8EFFA"
+        ]
+      },
+      "border-slate": {
+        "role": "neutral",
+        "displayName": "Slate Hairline",
+        "canonical": "#E2E8F0",
+        "oklch": "oklch(92.9% 0.013 255.5)",
+        "tonalRamp": [
+          "#080B10",
+          "#21252B",
+          "#3E4249",
+          "#5D6268",
+          "#7D838A",
+          "#A0A6AD",
+          "#C4CAD1",
+          "#E9EFF7"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#000000",
+        "oklch": "oklch(0.0% 0.000 0.0)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "ink-secondary": {
+        "role": "neutral",
+        "displayName": "Ink Secondary",
+        "canonical": "#374151",
+        "oklch": "oklch(37.3% 0.031 259.7)",
+        "tonalRamp": [
+          "#040B18",
+          "#1C2534",
+          "#384253",
+          "#576273",
+          "#788395",
+          "#9AA6B9",
+          "#BECADE",
+          "#E6EFFE"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Ink Muted",
+        "canonical": "#6B7280",
+        "oklch": "oklch(55.1% 0.023 264.4)",
+        "tonalRamp": [
+          "#070B15",
+          "#1F2531",
+          "#3C424F",
+          "#5B616F",
+          "#7B8291",
+          "#9EA5B4",
+          "#C2C9D9",
+          "#E7EFFF"
+        ]
+      },
+      "canvas-dark": {
+        "role": "neutral",
+        "displayName": "Midnight Canvas",
+        "canonical": "#0A1220",
+        "oklch": "oklch(18.2% 0.031 261.1)",
+        "tonalRamp": [
+          "#050B18",
+          "#1C2534",
+          "#394253",
+          "#576274",
+          "#788396",
+          "#9AA6B9",
+          "#BECADE",
+          "#E6EFFF"
+        ]
+      },
+      "card-dark": {
+        "role": "neutral",
+        "displayName": "Navy Card",
+        "canonical": "#121C2E",
+        "oklch": "oklch(22.7% 0.038 261.6)",
+        "tonalRamp": [
+          "#040B1B",
+          "#1B2538",
+          "#374257",
+          "#556277",
+          "#76839A",
+          "#98A6BE",
+          "#BCCAE3",
+          "#E6EFFE"
+        ]
+      },
+      "field-fill-dark": {
+        "role": "neutral",
+        "displayName": "Deep Field",
+        "canonical": "#18243A",
+        "oklch": "oklch(26.1% 0.045 261.9)",
+        "tonalRamp": [
+          "#030A1E",
+          "#19253B",
+          "#35425A",
+          "#53627B",
+          "#74839E",
+          "#96A6C2",
+          "#B9CAE7",
+          "#E6EFFF"
+        ]
+      },
+      "hairline-dark": {
+        "role": "neutral",
+        "displayName": "Navy Hairline",
+        "canonical": "#243247",
+        "oklch": "oklch(31.5% 0.042 258.3)",
+        "tonalRamp": [
+          "#020B1D",
+          "#18253A",
+          "#344359",
+          "#53627A",
+          "#73839C",
+          "#95A6C0",
+          "#B9CBE5",
+          "#E5EFFF"
+        ]
+      },
+      "ink-dark": {
+        "role": "neutral",
+        "displayName": "White Ink",
+        "canonical": "#FFFFFF",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "ink-muted-dark": {
+        "role": "neutral",
+        "displayName": "Mist Muted",
+        "canonical": "#94A3B8",
+        "oklch": "oklch(71.1% 0.035 256.8)",
+        "tonalRamp": [
+          "#030B1A",
+          "#1A2636",
+          "#364355",
+          "#556275",
+          "#758498",
+          "#97A6BB",
+          "#BBCBE0",
+          "#E5EFFE"
+        ]
+      },
+      "sidebar-slate": {
+        "role": "secondary",
+        "displayName": "Slate Rail",
+        "canonical": "#1E293B",
+        "oklch": "oklch(27.9% 0.037 260.0)",
+        "tonalRamp": [
+          "#030B1A",
+          "#1A2537",
+          "#374256",
+          "#556277",
+          "#768399",
+          "#98A6BD",
+          "#BBCAE2",
+          "#E6EFFE"
+        ]
+      },
+      "success": {
+        "role": "status",
+        "displayName": "Posted Green",
+        "canonical": "#22C55E",
+        "oklch": "oklch(72.3% 0.192 149.6)",
+        "tonalRamp": [
+          "#001003",
+          "#032E11",
+          "#095022",
+          "#0A7534",
+          "#0C9C47",
+          "#21C55E",
+          "#57EB81",
+          "#C9FED2"
+        ]
+      },
+      "success-deep": {
+        "role": "status",
+        "displayName": "Posted Green (dark mode)",
+        "canonical": "#16A34A",
+        "oklch": "oklch(62.7% 0.170 149.2)",
+        "tonalRamp": [
+          "#001003",
+          "#022E10",
+          "#065021",
+          "#047532",
+          "#029D44",
+          "#44C167",
+          "#6DE78A",
+          "#C9FFD1"
+        ]
+      },
+      "warning": {
+        "role": "status",
+        "displayName": "Draft Amber",
+        "canonical": "#F59E0B",
+        "oklch": "oklch(76.9% 0.165 70.1)",
+        "tonalRamp": [
+          "#140800",
+          "#361F01",
+          "#5C3903",
+          "#875500",
+          "#B1731A",
+          "#E19110",
+          "#FCBB6B",
+          "#FFEBD5"
+        ]
+      },
+      "warning-deep": {
+        "role": "status",
+        "displayName": "Draft Amber (dark mode)",
+        "canonical": "#D97706",
+        "oklch": "oklch(66.6% 0.157 58.3)",
+        "tonalRamp": [
+          "#160700",
+          "#3A1C01",
+          "#643403",
+          "#8E4F11",
+          "#BD6A19",
+          "#EC882A",
+          "#FFB780",
+          "#FFEADB"
+        ]
+      },
+      "error": {
+        "role": "status",
+        "displayName": "Void Red",
+        "canonical": "#EF4444",
+        "oklch": "oklch(63.7% 0.208 25.3)",
+        "tonalRamp": [
+          "#1F0001",
+          "#4B0408",
+          "#7D0C14",
+          "#B60F1E",
+          "#E4393B",
+          "#FC756D",
+          "#FDB4AC",
+          "#FEE9E6"
+        ]
+      },
+      "error-deep": {
+        "role": "status",
+        "displayName": "Void Red (dark mode)",
+        "canonical": "#DC2626",
+        "oklch": "oklch(57.7% 0.215 27.3)",
+        "tonalRamp": [
+          "#1F0000",
+          "#4C0204",
+          "#7F060B",
+          "#B80211",
+          "#E73430",
+          "#FF7367",
+          "#FFB3A9",
+          "#FFE9E6"
+        ]
+      },
+      "switch-track-off": {
+        "role": "neutral",
+        "displayName": "Switch Track Off",
+        "canonical": "#C7D2E1",
+        "oklch": "oklch(86.0% 0.024 256.1)",
+        "tonalRamp": [
+          "#050B15",
+          "#1D2631",
+          "#3A434F",
+          "#58626F",
+          "#798391",
+          "#9BA6B4",
+          "#BFCAD9",
+          "#E4F0FF"
+        ]
+      },
+      "checkbox-outline": {
+        "role": "neutral",
+        "displayName": "Checkbox Outline",
+        "canonical": "#B6C2D4",
+        "oklch": "oklch(81.0% 0.029 258.4)",
+        "tonalRamp": [
+          "#050B17",
+          "#1C2533",
+          "#394351",
+          "#576272",
+          "#788394",
+          "#9AA6B7",
+          "#BECADC",
+          "#E5EFFE"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display-large": {
+        "displayName": "Display Large",
+        "purpose": "Rare large titles / hero figures."
+      },
+      "headline-small": {
+        "displayName": "Headline Small",
+        "purpose": "Page-header and dialog titles (17/700)."
+      },
+      "title-medium": {
+        "displayName": "Title Medium",
+        "purpose": "Section headers."
+      },
+      "body-medium": {
+        "displayName": "Body Medium",
+        "purpose": "Default reading text in tables, lists and cards."
+      },
+      "body-small": {
+        "displayName": "Body Small",
+        "purpose": "Subtitles and secondary text (muted)."
+      },
+      "label-small": {
+        "displayName": "Label Small",
+        "purpose": "Chips, tooltips, small labels."
+      },
+      "kpi-value": {
+        "displayName": "Kpi Value",
+        "purpose": "Large tabular KPI numbers."
+      },
+      "block-title": {
+        "displayName": "Block Title",
+        "purpose": "Table / block header titles."
+      },
+      "table-cell": {
+        "displayName": "Table Cell",
+        "purpose": "Data-table cell text (tabular)."
+      },
+      "table-meta": {
+        "displayName": "Table Meta",
+        "purpose": "Column titles and chip labels."
+      },
+      "print-body": {
+        "displayName": "Print Body",
+        "purpose": "Base font for printed / PDF documents."
+      }
+    },
+    "shadows": [
+      {
+        "name": "none",
+        "value": "none",
+        "purpose": "Default for every PicPos surface: elevation 0, separation by 1px hairline."
+      },
+      {
+        "name": "sidebar-edge",
+        "value": "-1px 0 6px rgba(0,0,0,0.15)",
+        "purpose": "Only shadow in the chrome: shared side navigation edge (app_shell.dart)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "nav-standard",
+        "value": "200ms (Flutter default curve)",
+        "purpose": "Sidebar width, nav hover/selection and caret rotation."
+      },
+      {
+        "name": "report-nav",
+        "value": "260ms cubic-bezier(0.215, 0.61, 0.355, 1) /* Curves.easeOutCubic */",
+        "purpose": "Report category navigation expand."
+      },
+      {
+        "name": "report-nav-fast",
+        "value": "180ms",
+        "purpose": "Report category nav item state."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "dialog-row-stack",
+        "value": "520px"
+      },
+      {
+        "name": "form-grid-3col",
+        "value": "640px"
+      },
+      {
+        "name": "kpi-row-4col",
+        "value": "720px"
+      },
+      {
+        "name": "table-min-width",
+        "value": "760px"
+      },
+      {
+        "name": "document-form-wide",
+        "value": "960px"
+      },
+      {
+        "name": "form-grid-4col",
+        "value": "1000px"
+      },
+      {
+        "name": "min-supported-window",
+        "value": "1366px x 768px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Single primary action (ElevatedButton theme): flat brand blue, 10px radius, no elevation.",
+      "html": "<button class=\"ds-btn-primary\" dir=\"rtl\">حفظ</button>",
+      "css": ".ds-btn-primary { font-family: Cairo, 'Segoe UI', sans-serif; background: #0250D3; color: #FFFFFF; font-size: 14px; font-weight: 700; min-width: 76px; min-height: 42px; padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer; transition: background 0.15s; } .ds-btn-primary:hover { background: #0249C0; } .ds-btn-primary:focus-visible { outline: 2px solid #012258; outline-offset: 2px; } .ds-btn-primary:active { background: #012258; }"
+    },
+    {
+      "name": "Outlined Button",
+      "kind": "button",
+      "refersTo": "button-outlined",
+      "description": "Secondary action: transparent with a 1.5px hairline side and navy label.",
+      "html": "<button class=\"ds-btn-outlined\" dir=\"rtl\">رجوع</button>",
+      "css": ".ds-btn-outlined { font-family: Cairo, 'Segoe UI', sans-serif; background: transparent; color: #012258; font-size: 14px; font-weight: 600; min-width: 76px; min-height: 42px; padding: 10px 20px; border: 1.5px solid #DCE3EE; border-radius: 10px; cursor: pointer; transition: background 0.15s; } .ds-btn-outlined:hover { background: rgba(2,80,211,0.06); } .ds-btn-outlined:focus-visible { outline: 2px solid #0250D3; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Button",
+      "kind": "button",
+      "refersTo": "button-text",
+      "description": "Tertiary action such as Cancel or Preview.",
+      "html": "<button class=\"ds-btn-text\" dir=\"rtl\">إلغاء</button>",
+      "css": ".ds-btn-text { font-family: Cairo, 'Segoe UI', sans-serif; background: transparent; color: #0250D3; font-size: 13px; font-weight: 700; min-width: 56px; min-height: 38px; padding: 6px 14px; border: none; border-radius: 8px; cursor: pointer; } .ds-btn-text:hover { background: rgba(2,80,211,0.08); } .ds-btn-text:focus-visible { outline: 2px solid #0250D3; outline-offset: 1px; }"
+    },
+    {
+      "name": "Filled Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Borderless filled field; draws a 2px brand-blue frame only on focus.",
+      "html": "<label class=\"ds-field\" dir=\"rtl\"><span class=\"ds-field-label\">اسم العميل</span><input class=\"ds-input\" placeholder=\"ابحث…\"></label>",
+      "css": ".ds-field { font-family: Cairo, 'Segoe UI', sans-serif; display: flex; flex-direction: column; gap: 5px; width: 280px; } .ds-field-label { font-size: 13px; color: #374151; } .ds-input { font-family: Cairo, 'Segoe UI', sans-serif; background: #F4F7FC; color: #000; font-size: 14px; font-weight: 600; padding: 13px 14px; border: 2px solid transparent; border-radius: 10px; outline: none; } .ds-input::placeholder { color: #6B7280; font-size: 13px; } .ds-input:focus-visible, .ds-input:focus { border-color: #0250D3; }"
+    },
+    {
+      "name": "Page Header",
+      "kind": "custom",
+      "refersTo": "page-header",
+      "description": "Light screen header with an icon badge and the 2.5px brand stripe underneath.",
+      "html": "<header class=\"ds-page-header\" dir=\"rtl\"><span class=\"ds-ph-badge\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 3h16v18l-3-2-3 2-2-2-2 2-3-2-3 2z\"/><path d=\"M8 8h8M8 12h8\"/></svg></span><span class=\"ds-ph-text\"><strong>فواتير المبيعات</strong><small>كل الفواتير المعتمدة والمسودات</small></span></header>",
+      "css": ".ds-page-header { font-family: Cairo, 'Segoe UI', sans-serif; display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: #FFFFFF; border-bottom: 2.5px solid #0250D3; } .ds-ph-badge { display: inline-flex; padding: 9px; border-radius: 12px; background: rgba(2,80,211,0.10); color: #0250D3; } .ds-ph-text { display: flex; flex-direction: column; } .ds-ph-text strong { font-size: 17px; font-weight: 700; color: #000; } .ds-ph-text small { font-size: 13px; font-weight: 600; color: #374151; }"
+    },
+    {
+      "name": "Data Table Block",
+      "kind": "card",
+      "refersTo": "data-table",
+      "description": "PicPosDataTable: hairline card (radius 17) with a block header, a field-tinted column-title row, hairline rows and a selected-row tint.",
+      "html": "<div class=\"ds-table\" dir=\"rtl\"><div class=\"ds-table-head\"><i class=\"ds-accent\"></i><b>آخر الفواتير</b></div><div class=\"ds-row ds-cols\"><span>الرقم</span><span>العميل</span><span class=\"ds-end\">المبلغ</span></div><div class=\"ds-row\"><span>INV-1042</span><span>سوبرماركت النور</span><span class=\"ds-end ds-num\">1,250.00</span></div><div class=\"ds-row ds-selected\"><span>INV-1043</span><span>مطعم الياسمين</span><span class=\"ds-end ds-num\">384.50</span></div><div class=\"ds-row ds-total\"><span>الإجمالي</span><span></span><span class=\"ds-end ds-num\">1,634.50</span></div></div>",
+      "css": ".ds-table { font-family: Cairo, 'Segoe UI', sans-serif; width: 460px; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 17px; overflow: hidden; } .ds-table-head { display: flex; align-items: center; gap: 11px; padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14.5px; font-weight: 800; } .ds-accent { width: 3.5px; height: 15px; border-radius: 3px; background: #0250D3; } .ds-row { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 12px; padding: 11px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; font-weight: 700; color: #000; cursor: default; } .ds-row:not(.ds-cols):not(.ds-total):hover { background: rgba(2,80,211,0.04); } .ds-cols { background: #F8FAFC; font-size: 11.5px; font-weight: 800; color: #6B7280; } .ds-selected { background: rgba(2,80,211,0.06); } .ds-total { background: #F8FAFC; border-bottom: none; font-size: 13.5px; font-weight: 800; } .ds-end { text-align: end; } .ds-num { font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "refersTo": "status-pill",
+      "description": "Document status: tone at 12% fill, 30% border, dot + label. Draft amber, posted green, cancelled red.",
+      "html": "<div class=\"ds-pills\" dir=\"rtl\"><span class=\"ds-pill ds-draft\"><i></i>مسودة</span><span class=\"ds-pill ds-posted\"><i></i>معتمد</span><span class=\"ds-pill ds-void\"><i></i>ملغى</span></div>",
+      "css": ".ds-pills { font-family: Cairo, 'Segoe UI', sans-serif; display: flex; gap: 8px; } .ds-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid; } .ds-pill i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; } .ds-draft { color: #F59E0B; background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.30); } .ds-posted { color: #22C55E; background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.30); } .ds-void { color: #EF4444; background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.30); }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "data-table-filter-chip",
+      "description": "Table header filter chip with count; selected state is a blue 8% tint with a blue border.",
+      "html": "<div class=\"ds-chips\" dir=\"rtl\"><button class=\"ds-chip ds-chip-on\">الكل <b>24</b></button><button class=\"ds-chip\">مسودات <b>3</b></button></div>",
+      "css": ".ds-chips { font-family: Cairo, 'Segoe UI', sans-serif; display: flex; gap: 7px; } .ds-chip { font-family: Cairo, 'Segoe UI', sans-serif; height: 32px; padding: 0 12px; border-radius: 9px; border: 1px solid #E2E8F0; background: #F8FAFC; color: #000; font-size: 11.5px; font-weight: 700; cursor: pointer; } .ds-chip b { margin-inline-start: 6px; font-size: 10.5px; font-weight: 800; opacity: 0.75; } .ds-chip:hover { border-color: #0250D3; } .ds-chip:focus-visible { outline: 2px solid #0250D3; outline-offset: 1px; } .ds-chip-on { background: rgba(2,80,211,0.08); border-color: #0250D3; color: #0250D3; }"
+    },
+    {
+      "name": "Hub KPI Card",
+      "kind": "card",
+      "refersTo": "kpi-card",
+      "description": "Flat KPI card with a 3px start-side tone stripe, tabular 25/800 value and trend delta.",
+      "html": "<div class=\"ds-kpi\" dir=\"rtl\"><div class=\"ds-kpi-label\">مبيعات اليوم</div><div class=\"ds-kpi-value\">12,480.00</div><div class=\"ds-kpi-delta\">▲ 8.2% <span>عن أمس</span></div></div>",
+      "css": ".ds-kpi { font-family: Cairo, 'Segoe UI', sans-serif; width: 220px; padding: 14px 16px; background: #FFFFFF; border: 1px solid #E2E8F0; border-inline-start: 3px solid #0250D3; border-radius: 14px; } .ds-kpi-label { font-size: 11.5px; font-weight: 700; color: #6B7280; } .ds-kpi-value { margin-top: 8px; font-size: 25px; font-weight: 800; line-height: 1.1; color: #000; font-variant-numeric: tabular-nums; } .ds-kpi-delta { margin-top: 6px; font-size: 11.5px; font-weight: 800; color: #22C55E; } .ds-kpi-delta span { font-size: 10.5px; font-weight: 600; color: #6B7280; }"
+    },
+    {
+      "name": "Report Tabs",
+      "kind": "nav",
+      "refersTo": "report-tab-active",
+      "description": "Horizontal report tabs: 50px tall, 2.5px brand underline and brand ink on the active tab, muted otherwise.",
+      "html": "<nav class=\"ds-tabs\" dir=\"rtl\"><a class=\"ds-tab ds-tab-on\" href=\"#\">الملخص</a><a class=\"ds-tab\" href=\"#\">المبيعات</a><a class=\"ds-tab\" href=\"#\">المخزون</a></nav>",
+      "css": ".ds-tabs { font-family: Cairo, 'Segoe UI', sans-serif; display: flex; gap: 2px; padding: 0 26px; background: #FFFFFF; border-bottom: 1px solid #E2E8F0; } .ds-tab { display: inline-flex; align-items: center; height: 50px; padding: 0 16px; font-size: 13px; font-weight: 700; color: #6B7280; text-decoration: none; border-bottom: 2.5px solid transparent; } .ds-tab:hover { color: #0250D3; } .ds-tab:focus-visible { outline: 2px solid #0250D3; outline-offset: -2px; } .ds-tab-on { color: #0250D3; font-weight: 800; border-bottom-color: #0250D3; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Ledger Desk",
+    "overview": "PicPos is a working surface for cashiers and accountants who spend the whole day in it, so it is built to read as calm, flat and exact rather than decorative. The theme file states the intent itself: PicPos is deliberately the visual inverse of its sibling brand. It is flat, uses hairline borders, has corners of 12–16 px, casts **no shadows**, has a light top bar with a brand-blue bottom stripe, sets type one step larger (13–15 px), and uses filled, borderless fields. Every surface is a white (or deep-navy) card resting on a cool blue-grey canvas, separated by a 1 px hairline instead of a drop shadow. The comment in `picpos_theme.dart` gives the reason: a shadow on a cashier's screen all day reads as noise.\n\nDensity is high but legible. Tables are the bulk of the product, so rows are tall enough to hit with a mouse or a finger (44–54 px), numbers always use tabular figures, and Arabic body text gets generous line height (1.6–1.65) so diacritics and dots don't collide. The only saturated colour is the brand blue from the logo (`brand-blue`). It marks the single primary action, the active tab, the focused field, the selected row and the 2.5 px stripe under every page header.\n\nThe system is Arabic-first and bidirectional. Every screen frame sets `Directionality` from the user's language (`en` gives LTR, otherwise RTL), and spacing, alignment and accent borders are directional, so the same layout mirrors cleanly. Light and dark modes are both first-class. Dark mode is a **blue-navy** world (`canvas-dark`, `card-dark`), not neutral grey, so the brand stays present in both.",
+    "keyCharacteristics": [
+      "Flat surfaces with zero elevation; separation comes from 1 px hairlines and tonal steps (canvas → card → field).",
+      "One brand blue on a cool blue-grey neutral ramp; semantic green/amber/red appear only as status.",
+      "Cairo for all UI, with two theme weights (700 for headings and labels, 600 for body); shell widgets add 800 for numbers and titles.",
+      "Rounded but not soft: 10 px controls, 14 px cards, 17–18 px blocks and dialogs, pills for status.",
+      "Filled, borderless inputs that draw a 2 px blue frame only on focus.",
+      "Directional by construction: `EdgeInsetsDirectional`, `AlignmentDirectional`, `BorderDirectional`."
+    ],
+    "rules": [
+      {
+        "name": "The One Blue Rule",
+        "body": "The brand blue is the only saturated hue that is not a status. It marks *the* primary action, focus, selection and the page-header stripe. Tint it with alpha (0.04–0.14) for selected and soft states instead of introducing new blues.",
+        "section": "colors"
+      },
+      {
+        "name": "The Six Getters Rule",
+        "body": "Inside PicPos screens, surfaces and text come from `context.picposCard`, `picposField`, `picposHairline`, `picposText`, `picposMuted` and `picposBrandInk` (defined in `picpos_surface.dart`), or from the Theme (`cardColor`, `dividerColor`, `colorScheme`). Never use a light constant that stays light in dark mode.",
+        "section": "colors"
+      },
+      {
+        "name": "The Navy-Not-Grey Rule",
+        "body": "Dark mode is built on blue-navy (`canvas-dark` / `card-dark` / `field-fill-dark` / `hairline-dark`), never neutral grey, so the brand survives the mode switch.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two-Weights Rule",
+        "body": "The theme uses exactly two weights: 700 for headings and labels, 600 for body. All three on 700 erases hierarchy, and 400 reads faint next to bold headings. *(Drift: shell widgets add 800 for figures and titles; treat 800 as the \"figure\" weight and keep body text at 600.)*",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "Every amount, quantity, count and date range uses `FontFeature.tabularFigures()` so columns of numbers align.",
+        "section": "typography"
+      },
+      {
+        "name": "The Naskh-for-Paper Rule",
+        "body": "Printed and PDF documents use Noto Naskh Arabic as the base font. Never make Cairo the print base: it lacks 16 Arabic presentation forms (see `base_generator.dart`).",
+        "section": "typography"
+      },
+      {
+        "name": "The Hairline-Not-Shadow Rule",
+        "body": "Separate surfaces with a 1 px hairline (`picposHairline` / theme `dividerColor`) and a tonal step. If you are reaching for a shadow, use a border.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Stripe Rule",
+        "body": "Brand presence at the top of a screen is a 2.5 px `brand-blue` bottom border on a light (or navy) header. It is never a saturated filled bar.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** take every surface and text colour from `context.picposCard` / `picposField` / `picposHairline` / `picposText` / `picposMuted` / `picposBrandInk` or the Theme (`cardColor`, `dividerColor`, `colorScheme`). `test/structural/dark_mode_surface_tokens_test.dart` enforces this across the PicPos screen folders.",
+      "**Do** branch any unavoidable literal on `isDark ?` / `Brightness.dark` on the same line, or annotate it with a `// dark-ok: <reason>` marker. These are the only escapes `dark_mode_guard_test.dart` accepts.",
+      "**Do** keep text contrast at ≥ 3.0 against its background in dark mode (`dark_mode_smoke_test.dart`), and ≥ 4.5 for POS card labels and values (`picpos_pos_dark_mode_test.dart`).",
+      "**Do** use directional geometry (`EdgeInsetsDirectional`, `AlignmentDirectional`, `BorderDirectional`, `Positioned.directional`) and flip back/forward carets by `TextDirection`, as the invoice and return action bars do.",
+      "**Do** route every user-visible string through `tr()` and every user-entered or seeded data name through `trData()`. Every `tr` key must exist in `assets/i18n/en.json` (`i18n_coverage_test.dart`).",
+      "**Do** verify new screens at `Size(1366, 768)` with no overflow. Prefer `Wrap` for header, toolbar and action groups, and give tables a minimum width with horizontal scroll.",
+      "**Do** use `FontFeature.tabularFigures()` for every number, and Cairo through the theme for all UI text.",
+      "**Do** keep elevation at 0 and separate with hairlines. Express selection and hover as brand-blue alpha tints (0.06–0.14).",
+      "**Do** keep the brand blue `#0250D3` / navy `#012258` exactly as defined; `brand_picpos_test.dart` pins them."
+    ],
+    "donts": [
+      "**Don't** paint surfaces with `Colors.white`, `Color(0xFFFFFFFF)`, `Colors.grey.shade50/100/200`, or any hex whose channels are all ≥ `0xD8` (`dark_mode_guard_test.dart`).",
+      "**Don't** use `AppColors.card` / `surface` / `border` / `background` / `posCard` / `posBackground`, or the hexes `#F4F7FC`, `#F8F9FA`, `#F8FAFC`, `#E2E8F0`, as literals in scoped PicPos screens. They stay light in dark mode (`dark_mode_surface_tokens_test.dart`). Use the theme or the `picpos*` getters, which resolve them per mode.",
+      "**Don't** colour text with `Colors.black` / `black87` / `black54` or a dark hex (every channel ≤ `0x80`) inside a `TextStyle`. It disappears on `card-dark`.",
+      "**Don't** add `BoxShadow`s or non-zero elevation to PicPos surfaces, and don't fill the top bar with saturated brand colour. Use the 2.5 px stripe.",
+      "**Don't** introduce any trace of the sibling brand. Its teal (`#2B737F`, `#134657`, `#469CA5`, `#1E4A5A`) is forbidden in PicPos colour slots (`brand_picpos_test.dart`).",
+      "**Don't** build regexes or descriptions from translated text (`RegExp(tr(...))`, `description: tr(...)`), per `i18n_runtime_safety_test.dart`.",
+      "**Don't** make Cairo the base font of printed or PDF documents. Use Noto Naskh Arabic."
+    ]
+  }
+}
