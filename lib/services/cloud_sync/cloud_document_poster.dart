@@ -12,6 +12,7 @@ import '../../domain/models/return_refund_calculator.dart';
 import '../../domain/models/voucher_book.dart';
 import '../../domain/repositories/sales_repository.dart';
 import '../accounting_service.dart';
+import 'cloud_customer_poster.dart';
 
 /// A cloud field document the desktop refused; [code] is stable (shown and
 /// sent to the cloud as the failure reason), [detail] is for the operator.
@@ -72,6 +73,7 @@ class CloudDocumentPoster {
       'sales_return' => _postReturn(doc),
       'collection' => _postCollection(doc),
       'visit' => _postVisit(doc),
+      'customer' => postCloudCustomer(db, doc),
       _ => throw CloudPostingException('unsupported_kind', '$kind'),
     };
   }
@@ -94,6 +96,9 @@ class CloudDocumentPoster {
   }
 
   static double _num(Object? v) => v is num ? v.toDouble() : 0.0;
+
+  static String? _text(Object? v) =>
+      v is String && v.trim().isNotEmpty ? v.trim() : null;
 
   static DateTime? _date(Object? v) =>
       v is String ? DateTime.tryParse(v)?.toLocal() : null;
@@ -176,6 +181,9 @@ class CloudDocumentPoster {
         repEmployeeId: repId,
         routeId: routeId,
         cashOutsideDrawer: true,
+        // J3 — the one-time name typed on a cash-customer van sale.
+        adhocCustomerName: _text(doc['customerName']),
+        adhocCustomerPhone: _text(doc['customerPhone']),
       ));
       if (result is! SaleSuccess) {
         throw CloudPostingException(

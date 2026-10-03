@@ -40,6 +40,10 @@ void main() {
     await db
         .update(db.safes)
         .write(const SafesCompanion(linkedAccountId: Value(null)));
+    // وكذلك الأطرافُ النظاميّة (J3: «عميل نقدي»/«مورد نقدي») لها حساباتٌ فرعيّة.
+    await db
+        .update(db.parties)
+        .write(const PartiesCompanion(accountId: Value(null)));
     await db.customStatement('DELETE FROM journal_entry_lines');
     await db.customStatement('DELETE FROM account_mappings');
     await db.customStatement('DELETE FROM accounts');

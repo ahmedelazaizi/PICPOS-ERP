@@ -177,8 +177,13 @@ extension PartiesDao on AppDatabase {
     bool? isCustomer,
     bool? isSupplier,
     double? creditLimit,
-  }) {
-    return (update(parties)..where((p) => p.id.equals(id))).write(
+  }) async {
+    // J3 — a system cash party keeps its role flags.
+    if (await systemRoleOfParty(id) != null) {
+      isCustomer = null;
+      isSupplier = null;
+    }
+    await (update(parties)..where((p) => p.id.equals(id))).write(
       PartiesCompanion(
         name: name != null ? Value(name) : const Value.absent(),
         phone: phone != null ? Value(phone) : const Value.absent(),
@@ -215,6 +220,7 @@ extension PartiesDao on AppDatabase {
   /// `party_dao.deleteParty` path which also enforces the
   /// transaction-history guard.
   Future<void> deleteParty(int id) async {
+    await assertPartyDeletable(id);
     final hasTransactions = await partyHasTransactions(id);
     if (hasTransactions) {
       throw Exception(

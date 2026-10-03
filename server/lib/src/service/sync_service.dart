@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../db/database.dart';
 import 'errors.dart';
+import 'field_customers.dart';
 
 const _uuid = Uuid();
 
@@ -164,17 +165,32 @@ class SyncService {
     };
   }
 
+  /// The rep's customers today — wrapped as `sc` so callers filter with
+  /// `AND sc.<col>`. J3: the company's system cash customer is on EVERY
+  /// route (route columns NULL, sequence 0), an explicit exception to the
+  /// one-route-per-customer rule. `field_cash_only`: created in the field
+  /// («حفظ كعميل دائم») and still without a credit limit ⇒ cash only.
   static const _scopedCustomersSql = '''
-    SELECT p.id, p.global_id, p.name, p.phone, p.balance, p.credit_limit, p.price_level,
-           p.whatsapp_opt_in, rc.sequence, r.global_id AS route_global_id, r.id AS route_id,
-           GREATEST(p.last_modified_at, rc.last_modified_at, r.last_modified_at) AS lm
-    FROM route_customers rc
-    JOIN sales_routes r ON r.id = rc.route_id
-    JOIN parties p ON p.id = rc.customer_id
-    WHERE r.company_id = @c AND r.sales_rep_id = @e AND r.is_active
-      AND r.deleted_at IS NULL AND rc.deleted_at IS NULL AND p.deleted_at IS NULL
-      AND rc.effective_from <= CURRENT_DATE
-      AND (rc.effective_to IS NULL OR rc.effective_to >= CURRENT_DATE)''';
+    SELECT * FROM (
+      SELECT p.id, p.global_id, p.name, p.phone, p.address, p.balance, p.credit_limit, p.price_level,
+             p.whatsapp_opt_in, p.system_role, rc.sequence, r.global_id AS route_global_id, r.id AS route_id,
+             (p.credit_limit = 0 AND EXISTS (SELECT 1 FROM field_customers fc WHERE fc.party_id = p.id))
+               AS field_cash_only,
+             GREATEST(p.last_modified_at, rc.last_modified_at, r.last_modified_at) AS lm
+      FROM route_customers rc
+      JOIN sales_routes r ON r.id = rc.route_id
+      JOIN parties p ON p.id = rc.customer_id
+      WHERE r.company_id = @c AND r.sales_rep_id = @e AND r.is_active
+        AND r.deleted_at IS NULL AND rc.deleted_at IS NULL AND p.deleted_at IS NULL
+        AND p.system_role IS DISTINCT FROM 'cash_customer'
+        AND rc.effective_from <= CURRENT_DATE
+        AND (rc.effective_to IS NULL OR rc.effective_to >= CURRENT_DATE)
+      UNION ALL
+      SELECT p.id, p.global_id, p.name, p.phone, p.address, p.balance, p.credit_limit, p.price_level,
+             p.whatsapp_opt_in, p.system_role, 0, NULL, NULL, FALSE, p.last_modified_at
+      FROM parties p
+      WHERE p.company_id = @c AND p.system_role = 'cash_customer' AND p.deleted_at IS NULL
+    ) sc WHERE TRUE''';
 
   Future<({int? van, int? safe})> _repResources(Session s, int employeeId) async {
     final r = await db.q(s,
@@ -192,7 +208,8 @@ class SyncService {
       final now = (await db.q(s, 'SELECT now_ms()')).first[0] as int;
       final ce = {'c': d.companyId, 'e': d.employeeId};
 
-      final allCustomers = await db.q(s, '$_scopedCustomersSql ORDER BY r.id, rc.sequence', ce);
+      final allCustomers =
+          await db.q(s, '$_scopedCustomersSql ORDER BY sc.route_id NULLS FIRST, sc.sequence', ce);
       final customers = [
         for (final row in allCustomers)
           if ((row.toColumnMap()['lm'] as int) > since) _customerJson(row.toColumnMap()),
@@ -258,6 +275,8 @@ class SyncService {
         UNION ALL SELECT global_id, 'sales_return', return_number, status FROM sales_returns
           WHERE device_pk=@d AND last_modified_at > @s
         UNION ALL SELECT global_id, 'visit', outcome, 'accepted' FROM customer_visits
+          WHERE device_pk=@d AND last_modified_at > @s
+        UNION ALL SELECT global_id, 'customer', NULL, 'accepted' FROM field_customers
           WHERE device_pk=@d AND last_modified_at > @s''', {'d': d.devicePk, 's': since});
 
       return {
@@ -357,6 +376,7 @@ class SyncService {
       FROM sales_invoices si JOIN parties p ON p.id = si.customer_id
       WHERE si.company_id=@c AND si.status='accepted' AND si.last_modified_at > @s AND si.created_at >= @from
         AND si.customer_id IN (SELECT q.id FROM ($_scopedCustomersSql) q)
+        AND (p.system_role IS DISTINCT FROM 'cash_customer' OR si.rep_employee_id = @e)
       ORDER BY si.id''', {
       'c': d.companyId,
       'e': d.employeeId,
@@ -429,6 +449,11 @@ class SyncService {
         'whatsappOptIn': m['whatsapp_opt_in'],
         'sequence': m['sequence'],
         'routeGlobalId': m['route_global_id'],
+        'address': m['address'],
+        // J3 — the system cash customer (every route) and a field-created
+        // customer without a credit limit sell cash only.
+        'systemRole': m['system_role'],
+        'cashOnly': m['system_role'] == 'cash_customer' || m['field_cash_only'] == true,
       };
 
   // ───────────────────────────── push ─────────────────────────────
@@ -514,6 +539,8 @@ class SyncService {
         result = await _acceptReturn(s, d, gid, doc);
       case 'visit':
         result = await _acceptVisit(s, d, gid, doc);
+      case 'customer':
+        result = await acceptFieldCustomer(db, s, d, gid, doc);
       default:
         throw DocRejected('unsupported_kind', 'kind "$kind" is not accepted');
     }
@@ -528,9 +555,10 @@ class SyncService {
     return result;
   }
 
-  Future<Map<String, dynamic>> _customerOnRoute(Session s, DeviceContext d, Object? customerGid) async {
+  Future<Map<String, dynamic>> _customerOnRoute(Session s, DeviceContext d, Object? customerGid,
+      {Object? routeGlobalId}) async {
     if (customerGid is! String) throw DocRejected('invalid_customer');
-    final rows = await db.q(s, '$_scopedCustomersSql AND p.global_id=@g LIMIT 1',
+    final rows = await db.q(s, '$_scopedCustomersSql AND sc.global_id=@g LIMIT 1',
         {'c': d.companyId, 'e': d.employeeId, 'g': customerGid});
     if (rows.isEmpty) throw DocRejected('customer_not_on_route');
     final scoped = rows.first.toColumnMap();
@@ -539,7 +567,31 @@ class SyncService {
         'SELECT id, balance, credit_limit, whatsapp_phone, whatsapp_opt_in, name, price_level, global_id '
         'FROM parties WHERE id=@id FOR UPDATE',
         {'id': scoped['id']});
-    return {...locked.first.toColumnMap(), 'route_id': scoped['route_id'], 'sequence': scoped['sequence']};
+    final isCash = scoped['system_role'] == 'cash_customer';
+    return {
+      ...locked.first.toColumnMap(),
+      // J3 — the cash customer has no route of its own: its documents are
+      // stamped with the rep's route (the one the device names, else the
+      // rep's first active route) so reports group them per rep/route.
+      'route_id': isCash ? await _repRouteId(s, d, routeGlobalId) : scoped['route_id'],
+      'sequence': scoped['sequence'],
+      'cash_only': isCash || scoped['field_cash_only'] == true,
+      'is_cash_customer': isCash,
+    };
+  }
+
+  Future<int?> _repRouteId(Session s, DeviceContext d, Object? routeGlobalId) async {
+    final rows = await db.q(s, '''
+      SELECT id FROM sales_routes WHERE company_id=@c AND sales_rep_id=@e AND is_active AND deleted_at IS NULL
+      ORDER BY (global_id = @g) DESC, id LIMIT 1''',
+        {'c': d.companyId, 'e': d.employeeId, 'g': routeGlobalId is String ? routeGlobalId : ''});
+    return rows.isEmpty ? null : rows.first[0] as int;
+  }
+
+  static String? _text(Object? v, int max) {
+    if (v is! String || v.trim().isEmpty) return null;
+    final t = v.trim();
+    return t.length > max ? t.substring(0, max) : t;
   }
 
   double _num(Object? v, String field) {
@@ -579,8 +631,9 @@ class SyncService {
         {'c': d.companyId, 'n': number});
     if (dup.isNotEmpty) throw DocRejected('number_already_used', number);
 
-    // 2. Customer must be on the rep's route today.
-    final cust = await _customerOnRoute(s, d, doc['customerGlobalId']);
+    // 2. Customer must be on the rep's route today (the cash customer is on
+    //    every route).
+    final cust = await _customerOnRoute(s, d, doc['customerGlobalId'], routeGlobalId: doc['routeGlobalId']);
 
     // 3. Van warehouse (stock rule: only the rep's van).
     final rr = await _repResources(s, d.employeeId);
@@ -655,6 +708,13 @@ class SyncService {
       throw DocRejected('credit_limit_exceeded', null,
           {'balance': balance, 'creditLimit': limit, 'remaining': remaining});
     }
+    // J3 — cash customer / field-created customer without a limit: cash only.
+    if (violatesCashOnly(cashOnly: cust['cash_only'] == true, remaining: remaining)) {
+      throw DocRejected('cash_only_customer', null, {'remaining': remaining});
+    }
+    // J3 — the one-time name/phone is kept only on a cash-customer sale.
+    final adhocName = cust['is_cash_customer'] == true ? _text(doc['customerName'], 120) : null;
+    final adhocPhone = cust['is_cash_customer'] == true ? _text(doc['customerPhone'], 40) : null;
 
     // 6. Van stock (row locks), then deduct.
     for (final e in qtyByProduct.entries) {
@@ -688,9 +748,13 @@ class SyncService {
     final inv = await db.q(s, '''
       INSERT INTO sales_invoices (company_id, global_id, invoice_number, customer_id, warehouse_id, safe_id,
         rep_employee_id, route_id, device_pk, invoice_date, subtotal, discount, tax, total, paid,
-        payment_method, integrity_hash, origin_client_id, prices_include_tax, created_at)
-      VALUES (@c, @g, @n, @cu, @w, @sf, @e, @r, @d, @dt, @sub, @disc, @tax, @tot, @paid, @pm, @h, @o, @pit, now_ms())
+        payment_method, integrity_hash, origin_client_id, prices_include_tax, adhoc_customer_name,
+        adhoc_customer_phone, created_at)
+      VALUES (@c, @g, @n, @cu, @w, @sf, @e, @r, @d, @dt, @sub, @disc, @tax, @tot, @paid, @pm, @h, @o, @pit,
+        @an, @ap, now_ms())
       RETURNING id''', {
+      'an': adhocName,
+      'ap': adhocPhone,
       'c': d.companyId,
       'g': gid,
       'n': number,

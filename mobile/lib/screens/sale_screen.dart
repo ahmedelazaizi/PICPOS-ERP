@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../data/local_store.dart';
 import '../domain/sale_math.dart';
 import '../l10n/strings.dart';
+import '../state/app_controller.dart';
 import 'barcode_scanner.dart';
+import 'cash_customer_widgets.dart';
 import 'common.dart';
 
 /// New sale: barcode entry (hardware/keyboard-wedge scanners type into the
@@ -23,13 +26,60 @@ class _SaleScreenState extends State<SaleScreen> {
   bool _credit = false;
   bool _busy = false;
 
+  /// J3 — the sale's customer; «حفظ كعميل دائم» switches it to the new one.
+  late String _customerGid = widget.customerGlobalId;
+  Map<String, Object?>? _customer;
+  final _oneTimeName = TextEditingController();
+  final _oneTimePhone = TextEditingController();
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_customer == null) _loadCustomer();
+  }
+
+  @override
+  void dispose() {
+    _oneTimeName.dispose();
+    _oneTimePhone.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadCustomer() async {
+    final c = await AppScope.of(context).store.get(Kinds.customers, _customerGid);
+    if (!mounted) return;
+    setState(() {
+      _customer = c ?? const {};
+      if (isCashOnlyCustomer(_customer)) _credit = false;
+    });
+  }
+
+  Future<void> _saveAsPermanent() async {
+    final s = S.of(context);
+    final input = await showPermanentCustomerSheet(context, name: _oneTimeName.text, phone: _oneTimePhone.text);
+    if (input == null || !mounted) return;
+    try {
+      final gid = await AppScope.of(context)
+          .createFieldCustomer(name: input.name, phone: input.phone, address: input.address);
+      if (!mounted) return;
+      _customerGid = gid;
+      _oneTimeName.clear();
+      _oneTimePhone.clear();
+      _customer = null;
+      await _loadCustomer();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.t('permanentSaved'))));
+    } catch (e) {
+      if (mounted) showFailure(context, e);
+    }
+  }
+
   DocTotals get _totals => AppScope.of(context).totalsOf(_cart);
 
   Future<void> _add(Map<String, Object?> p) async {
     final existing = _cart.where((l) => l.productGlobalId == p['globalId']).firstOrNull;
     if (existing != null) return _setQty(existing, existing.quantity + 1);
     final c = AppScope.of(context);
-    final price = await c.unitPriceFor(p, widget.customerGlobalId, 1);
+    final price = await c.unitPriceFor(p, _customerGid, 1);
     if (!mounted) return;
     setState(() {
       _cart.add(CartLine(
@@ -53,7 +103,7 @@ class _SaleScreenState extends State<SaleScreen> {
       return;
     }
     final p = await c.product(l.productGlobalId);
-    final price = p == null ? null : await c.unitPriceFor(p, widget.customerGlobalId, q);
+    final price = p == null ? null : await c.unitPriceFor(p, _customerGid, q);
     if (!mounted) return;
     setState(() {
       l.quantity = q;
@@ -106,8 +156,13 @@ class _SaleScreenState extends State<SaleScreen> {
     final s = S.of(context);
     try {
       final paid = _credit ? (double.tryParse(_paid.text) ?? 0) : _totals.total;
-      final e = await AppScope.of(context)
-          .createSale(customerGlobalId: widget.customerGlobalId, lines: _cart, paid: paid);
+      final e = await AppScope.of(context).createSale(
+        customerGlobalId: _customerGid,
+        lines: _cart,
+        paid: paid,
+        customerName: _oneTimeName.text,
+        customerPhone: _oneTimePhone.text,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${s.t('saved')} — ${e.payload['number']}')));
       Navigator.of(context).pop();
@@ -197,7 +252,19 @@ class _SaleScreenState extends State<SaleScreen> {
                     InfoRow(s.t('subtotal'), money(t.net)),
                     InfoRow(s.t('tax'), money(t.tax)),
                     InfoRow(s.t('total'), money(t.total)),
+                    if (isCashCustomer(_customer)) ...[
+                      const SizedBox(height: 8),
+                      CashCustomerFields(
+                        name: _oneTimeName,
+                        phone: _oneTimePhone,
+                        onChanged: () => setState(() {}),
+                        onSaveAsPermanent: _oneTimeName.text.trim().isEmpty ? null : _saveAsPermanent,
+                      ),
+                    ],
+                    if (_customer?['_pending'] == true)
+                      Text(s.t('pendingCustomer'), style: Theme.of(context).textTheme.bodySmall),
                     const SizedBox(height: 8),
+                    if (!isCashOnlyCustomer(_customer))
                     SegmentedButton<bool>(
                       segments: [
                         ButtonSegment(value: false, label: Text(s.t('cash')), icon: const Icon(Icons.payments)),

@@ -1049,8 +1049,11 @@ extension PartyDao on AppDatabase {
   }
 
   /// Update a party
-  Future<bool> updateParty(Party party) {
-    return update(parties).replace(party);
+  Future<bool> updateParty(Party party) async {
+    // J3 — طرفٌ نظاميٌّ يبقى نشطاً وفي دوره؛ الاسمُ وحدَه (وما شابهه) يُعدَّل.
+    final role = await systemRoleOfParty(party.id);
+    return update(parties)
+        .replace(role == null ? party : lockSystemPartyFields(party, role));
   }
 
   /// Check if party has any transaction history
@@ -1396,6 +1399,8 @@ extension PartyDao on AppDatabase {
 
   /// Soft delete a party (with transaction history check)
   Future<void> deleteParty(int partyId) async {
+    // J3 — «عميل نقدي» / «مورد نقدي» نظاميّان لا يُحذفان.
+    await assertPartyDeletable(partyId);
     // Check for transaction history before allowing deletion
     final hasTransactions = await partyHasTransactions(partyId);
     if (hasTransactions) {
@@ -2859,6 +2864,8 @@ extension PartyGroupDao on AppDatabase {
 
       for (final g in groups) {
         for (final dup in g.duplicates) {
+          // J3 — the system cash party is never retired as a duplicate.
+          if (await systemRoleOfParty(dup.id) != null) continue;
           if (dup.attachedTxnRefs > 0) {
             skipped.add(SkippedPartyDedupRecord(
               dupId: dup.id,

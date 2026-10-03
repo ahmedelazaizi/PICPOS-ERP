@@ -376,6 +376,8 @@ Future<void> _clearDatabase(AppDatabase db) async {
   await db.delete(db.accountingPeriods).go();
   await db.delete(db.fiscalYears).go();
   await db.delete(db.accountMappings).go();
+  // J3 — the seeded system parties («عميل نقدي»/«مورد نقدي») point at accounts.
+  await db.update(db.parties).write(const PartiesCompanion(accountId: Value(null)));
   await db.delete(db.accounts).go();
   await db.delete(db.settings).go();
 }

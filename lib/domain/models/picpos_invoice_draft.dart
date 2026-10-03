@@ -67,10 +67,15 @@ class PicPosPartyOption {
     required this.name,
     this.meta = '',
     this.paymentTermsDays,
+    this.isCashParty = false,
   });
 
   final int id;
   final String name;
+
+  /// J3 — الطرفُ النظاميُّ «عميل نقدي»: تظهر له حقولُ اسم العميل لمرّةٍ
+  /// واحدة و«حفظ كعميل دائم».
+  final bool isCashParty;
 
   /// مهلةُ السداد المتّفقة بالأيّام — مصدرُ «تاريخ الاستحقاق» المعروض.
   ///

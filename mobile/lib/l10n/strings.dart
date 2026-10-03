@@ -140,6 +140,23 @@ class S {
     'prn_writeFailed': ('انقطع الاتصال أثناء الطباعة', 'Connection lost while printing'),
     'prn_timeout': ('انتهت مهلة الطابعة', 'Printer timed out'),
     'prn_renderFailed': ('تعذّر تجهيز الإيصال', 'Could not prepare the receipt'),
+    // J3 — cash customer / one-time name / save as permanent customer
+    'cashCustomer': ('عميل نقدي', 'Cash customer'),
+    'everyRoute': ('متاح على كل المسارات', 'Available on every route'),
+    'oneTimeName': ('اسم العميل (اختياري)', 'Customer name (optional)'),
+    'oneTimePhone': ('الهاتف (اختياري)', 'Phone (optional)'),
+    'address': ('العنوان (اختياري)', 'Address (optional)'),
+    'customerName': ('اسم العميل', 'Customer name'),
+    'saveAsPermanent': ('حفظ كعميل دائم', 'Save as permanent customer'),
+    'permanentHint': ('يُضاف إلى نهاية خط اليوم، ونقدي فقط حتى تحدد الإدارة حداً ائتمانياً.',
+        "Added to the end of today's route; cash only until management sets a credit limit."),
+    'permanentSaved': ('تم حفظ العميل — الفاتورة الآن باسمه', 'Customer saved — the sale is now in their name'),
+    'pendingCustomer': ('عميل جديد بانتظار الاعتماد', 'New customer pending approval'),
+    'cashOnly': ('هذا العميل نقدي فقط — يجب تحصيل كامل المبلغ', 'Cash-only customer — collect the full amount'),
+    'nameRequired': ('اسم العميل مطلوب', 'Customer name is required'),
+    'noRoute': ('لا يوجد خط مسند لك', 'No route assigned to you'),
+    'kind_customer': ('عميل جديد', 'New customer'),
+    'cancel': ('إلغاء', 'Cancel'),
   };
 
   String t(String key) {

@@ -55,9 +55,10 @@ void main() {
     test('direct hit: a server id that exists locally is kept as-is', () async {
       final s = _TestStrategy(db);
       await db.into(db.parties).insert(
-            PartiesCompanion.insert(name: 'Direct', id: const Value(5)),
+            // (id 50, not 5: the seed now holds the J3 system parties too.)
+            PartiesCompanion.insert(name: 'Direct', id: const Value(50)),
           );
-      expect(await s.resolveLocalPartyId(5), 5);
+      expect(await s.resolveLocalPartyId(50), 50);
     });
 
     test('mapping hit: server id remaps to the local party id', () async {

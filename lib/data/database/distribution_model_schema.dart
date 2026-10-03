@@ -71,7 +71,8 @@ extension DistributionModelSchema on AppDatabase {
 
   /// Inserts [values] into [table] with fresh sync columns; returns the id.
   Future<int> _dmInsert(String table, Map<String, Object?> values) async {
-    final gid = UuidV7.generate();
+    // A caller-supplied `global_id` (a cloud-created row) is kept as is.
+    final gid = values['global_id'] as String? ?? UuidV7.generate();
     final now = _dmNow();
     // NULLs are left to the column default: an untyped NULL parameter is
     // rejected by PostgreSQL for an INTEGER column.
@@ -340,8 +341,15 @@ extension DistributionModelSchema on AppDatabase {
     required int routeId,
     int? sequence,
     DateTime? at,
+    String? globalId,
   }) {
     return transaction(() async {
+      // J3 — العميلُ النقديُّ متاحٌ على كلّ المسارات والمناطق (استثناءٌ صريحٌ
+      // من قاعدة «مسارٌ واحدٌ للعميل»): لا يدخل `route_customers` أبداً.
+      if (await isCashCustomer(customerId)) {
+        throw DistributionException(
+            'العميل النقدي متاح على كل المسارات — لا يُسنَد إلى مسار.');
+      }
       final route = await (select(salesRoutes)
             ..where((r) => r.id.equals(routeId)))
           .getSingleOrNull();
@@ -361,6 +369,7 @@ extension DistributionModelSchema on AppDatabase {
         'customer_id': customerId,
         'sequence': seq,
         'effective_from': now,
+        'global_id': ?globalId,
       });
     });
   }

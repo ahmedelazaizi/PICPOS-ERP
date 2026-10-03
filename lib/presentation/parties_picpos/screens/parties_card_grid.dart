@@ -129,15 +129,25 @@ class PartyCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                party.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: theme.textTheme.bodyLarge?.color,
-                ),
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      party.displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                  ),
+                  if (party.isSystem) ...[
+                    const SizedBox(width: 6),
+                    const SystemPartyBadge(),
+                  ],
+                ],
               ),
               Text(
                 party.subtitle,
@@ -337,6 +347,8 @@ class PartyCard extends StatelessWidget {
                   ],
                 ),
               ),
+              // J3 — الطرفُ النظاميُّ لا يُحذف: لا يُعرَض فعلٌ سيُرفَض.
+              if (!party.isSystem)
               PopupMenuItem(
                 value: 'delete',
                 child: Row(

@@ -29,6 +29,20 @@ String _read(String path) {
 
 int _count(String src, String needle) => src.split(needle).length - 1;
 
+/// The argument list of the (single) call opening at [opening], by
+/// parenthesis depth — so a check looks at THAT call, not the whole file.
+String _call(String src, String opening) {
+  final at = src.indexOf(opening);
+  expect(at, greaterThanOrEqualTo(0), reason: 'النداءُ غائب: $opening');
+  expect(src.indexOf(opening, at + 1), -1, reason: 'النداءُ مكرَّر: $opening');
+  var depth = 0;
+  for (var i = at + opening.length - 1; i < src.length; i++) {
+    if (src[i] == '(') depth++;
+    if (src[i] == ')' && --depth == 0) return src.substring(at, i + 1);
+  }
+  fail('نداءٌ بلا قوسِ إغلاق: $opening');
+}
+
 void main() {
   const dialog =
       'lib/presentation/parties_picpos/dialogs/add_party_dialog_picpos.dart';
@@ -46,8 +60,23 @@ void main() {
 
     expect(src, contains('paymentTermsController'));
     // مسارُ الخادم (ClientWriteInterceptor) ومسارُ المستودع — كلاهما.
-    expect(_count(src, 'paymentTermsDays: paymentTermsDays'), 1,
+    //
+    // ⚠️ المرحلة د (8fa280e3، بطلب المالك) أضافت **التعديلَ** إلى هذا الحوار،
+    // فصار للنصّ `paymentTermsDays: paymentTermsDays` موضعٌ ثانٍ مشروع: نسخةُ
+    // الطرف المحلّيّة (`party.copyWith`) للسقوط حين لا يكتب الخادم. فالعدُّ
+    // الأعمى على الملفّ كلّه كان يقول «٢» ولا خللَ في السلسلة. والمقيسُ الآن
+    // كلُّ مسارٍ في موضعه، مرّةً واحدةً لكلٍّ منها:
+    final create = _call(src, 'ClientWriteInterceptor.createParty(');
+    expect(_count(create, 'paymentTermsDays: paymentTermsDays'), 1,
         reason: 'مسارُ وضع العميل لا يمرّر المهلة');
+    final update = _call(src, 'ClientWriteInterceptor.updateParty(');
+    expect(_count(update, "'paymentTermsDays': paymentTermsDays"), 1,
+        reason: 'تعديلُ الطرف لا يرسل المهلةَ إلى الخادم');
+    final localCopy = _call(src, 'party.copyWith(');
+    expect(_count(localCopy, 'paymentTermsDays: paymentTermsDays'), 1,
+        reason: 'سقوطُ التعديل المحلّيّ يمحو المهلة');
+    expect(_count(src, 'paymentTermsDays: paymentTermsDays'), 2,
+        reason: 'موضعٌ ثالثٌ للمهلة لا يعرفه هذا الحارس — راجِعه');
     expect(_count(src, 'paymentTermsDays: Value(paymentTermsDays)'), 1,
         reason: 'مسارُ المستودع لا يكتب المهلة');
   });

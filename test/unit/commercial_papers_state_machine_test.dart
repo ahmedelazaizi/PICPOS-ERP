@@ -202,8 +202,9 @@ Future<void> _clearDatabase(AppDatabase db) async {
   await db
       .update(db.safes)
       .write(const SafesCompanion(linkedAccountId: Value(null)));
-  await db.delete(db.accounts).go();
+  // J3 — الأطرافُ (والنظاميّةُ منها مبذورة) مشدودةٌ إلى حساباتها: قبلَ الدليل.
   await db.delete(db.parties).go();
+  await db.delete(db.accounts).go();
 }
 
 Future<void> _seedAccounts(AppDatabase db) async {

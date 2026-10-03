@@ -23,6 +23,9 @@ class PartyRouteRow extends StatelessWidget {
     final theme = Theme.of(context);
     final muted = theme.textTheme.bodySmall?.color ?? AppColors.textMuted;
     final onRoute = party.routeName != null;
+    // J3 — العميلُ النقديُّ متاحٌ على كلّ المسارات (استثناءُ قاعدة المسار
+    // الواحد) فلا يُسنَد إلى مسارٍ بعينه.
+    final everyRoute = party.isCashCustomer;
 
     Widget cell(String label, String? value) => Expanded(
           child: Column(
@@ -56,7 +59,15 @@ class PartyRouteRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          if (onRoute) ...[
+          if (everyRoute)
+            Expanded(
+              child: Text(
+                tr('متاح على كل المسارات والمناطق'),
+                style: TextStyle(
+                    fontSize: 11, fontWeight: FontWeight.w700, color: muted),
+              ),
+            )
+          else if (onRoute) ...[
             cell(tr('المسار'), party.routeName),
             cell(tr('المنطقة'), party.areaName),
             cell(tr('المندوب'), party.repName),
@@ -68,7 +79,7 @@ class PartyRouteRow extends StatelessWidget {
                     fontSize: 11, fontWeight: FontWeight.w700, color: muted),
               ),
             ),
-          if (onAssign != null)
+          if (onAssign != null && !everyRoute)
             SizedBox(
               width: 26,
               height: 26,

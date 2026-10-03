@@ -10228,5 +10228,16 @@
   "تعارضات المزامنة السحابية": "Cloud sync conflicts",
   "المحاولات: {n}": "Attempts: {n}",
   "ستُعاد المحاولة في المزامنة القادمة": "Will retry on the next sync",
-  "تم الحفظ": "Saved"
+  "تم الحفظ": "Saved",
+  "مورد نقدي": "Cash Supplier",
+  "نظامي": "System",
+  "طرف نظامي — لا يُحذف": "System party — cannot be deleted",
+  "متاح على كل المسارات والمناطق": "Available on every route and area",
+  "العميل النقدي متاح على كل المسارات — لا يُسنَد إلى مسار.": "The cash customer is available on every route — it is not assigned to a route.",
+  "حفظ كعميل دائم": "Save as permanent customer",
+  "يُطبع الاسم على الفاتورة بدل «عميل نقدي»": "The name is printed on the invoice instead of “Cash Customer”",
+  "مسار المندوب والمنطقة": "Rep route and area",
+  "بدون مسار": "No route",
+  "يُضاف العميل إلى نهاية تسلسل المسار، وحد ائتمانه صفر (نقدي) حتى تضبطه الإدارة.": "The customer is added to the end of the route sequence, with a zero credit limit (cash only) until management sets one.",
+  "تم إنشاء العميل الدائم «{p0}»": "Permanent customer “{p0}” created"
 }

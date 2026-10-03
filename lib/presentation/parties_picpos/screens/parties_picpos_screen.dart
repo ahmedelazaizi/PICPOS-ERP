@@ -56,6 +56,7 @@ import '../../distribution_picpos/distribution_picpos_providers.dart';
 import '../../distribution_picpos/screens/dm_routes_tab.dart'
     show showDmAssignCustomerDialog;
 import 'party_route_row.dart';
+import '../system_party_badge.dart';
 
 part 'parties_summary_cards.dart';
 part 'parties_filter_bar.dart';
@@ -129,8 +130,10 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
   /// هنا — وهنا وحدَه — يلتقي `Party` بـ[PicPosPartyCard]. الملفّاتُ الثلاثةُ
   /// الأخرى (البطاقات · الشريط · الشبكة) لا تعرف القاعدةَ إطلاقاً، فتُختبَر
   /// بلا فتحِ قاعدةٍ ولا حقنِ مزوِّد.
-  PicPosPartyCard _toCard(Party p, [CustomerRouteInfo? route]) =>
+  PicPosPartyCard _toCard(Party p,
+          [CustomerRouteInfo? route, String? systemRole]) =>
       PicPosPartyCard(
+        systemRole: systemRole,
         routeName: route?.routeName,
         areaName: route?.areaName,
         repName: route?.repName,
@@ -244,7 +247,12 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
                 .watch(hasPermissionProvider(PermissionCodes.distributionManage))
                 .value ??
             false);
-    final cards = [for (final p in rows) _toCard(p, routes[p.id])];
+    // J3 — شارةُ «نظامي» لـ«عميل نقدي» و«مورد نقدي».
+    final systemRoles = ref.watch(systemPartyRolesProvider).value ??
+        const <int, String>{};
+    final cards = [
+      for (final p in rows) _toCard(p, routes[p.id], systemRoles[p.id]),
+    ];
     final scoped = widget.scope == PicPosPartyFilter.all
         ? cards
         : cards.where((card) => card.matches(widget.scope, '')).toList();

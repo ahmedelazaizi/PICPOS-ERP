@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/local_store.dart';
 import '../l10n/strings.dart';
+import '../state/app_controller.dart';
 import 'collection_screen.dart';
 import 'common.dart';
 import 'return_screen.dart';
@@ -81,7 +82,8 @@ class CustomerScreen extends StatelessWidget {
                         )),
                       ),
                       const SizedBox(height: 16),
-                      VisitActions(customerGlobalId: customerGlobalId),
+                      // J3 — the cash customer is no route stop: no visit record.
+                      if (!isCashCustomer(customer)) VisitActions(customerGlobalId: customerGlobalId),
                     ],
                   ),
                 ),

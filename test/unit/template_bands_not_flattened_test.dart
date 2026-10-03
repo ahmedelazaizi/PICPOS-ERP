@@ -204,7 +204,16 @@ void main() {
       );
 
       // ⚠️ الأعدادُ من ملفِّ التصميم `PicPos Template Editor.dc.html`.
-      expect(_band(doc, BandId.header).elements, hasLength(6));
+      // ⚠️ **سبعةٌ لا ستّة في الرأس — انحرافٌ مقصود (قرارُ المالك، 7ae3e0ca)**:
+      // اسمُ الشركة بالإنجليزيّ (`company_name_en`) يُطبع سطراً ثانياً تحت
+      // الاسم العربيّ، وأُضيف **داخلَ نطاق الرأس** (`band: 'header'`) لا مسطَّحاً
+      // في «البيانات» — فالنطاقاتُ سليمةٌ والرأسُ يحمل سطراً زائداً، وارتفاعُه
+      // باقٍ ٣٤مم (يُثبّته الاختبارُ التالي). ورقمُ السجلّ في A4 يقع على سطر
+      // الرقم الضريبيّ نفسِه فلا عنصرَ له.
+      expect(_band(doc, BandId.header).elements, hasLength(7));
+      expect(
+          _band(doc, BandId.header).elements.map((e) => e.contentKey),
+          contains('company_name_en'));
       expect(_band(doc, BandId.info).elements, hasLength(4));
       expect(_band(doc, BandId.party).elements, hasLength(4));
       expect(_band(doc, BandId.details).elements, hasLength(1));

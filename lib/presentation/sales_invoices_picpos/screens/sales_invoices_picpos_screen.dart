@@ -55,6 +55,9 @@ import '../../../domain/models/picpos_invoice_draft.dart';
 import '../../shared_widgets/whatsapp_send_dialog.dart';
 import '../../../domain/models/whatsapp_message.dart';
 import '../../picpos_shell/picpos_attachments_panel.dart';
+// J3 — «عميل نقدي»: الاسمُ لمرّةٍ واحدة و«حفظ كعميل دائم».
+import '../../../domain/models/distribution_model.dart';
+import 'permanent_customer_dialog.dart';
 
 // ── Part files (منسوخة حرفياً من lib/presentation/screens/widgets/sales_invoices/
 // — الشاشة الأصل `part of _SalesInvoicesScreenState` خاصة فما ينفعش تتعمل
@@ -65,6 +68,7 @@ part 'sales_filter_bar.dart';
 part 'sales_invoice_dialogs.dart';
 part 'sales_invoice_save_edit.dart';
 part 'sales_batch_action_bar.dart';
+part 'sales_invoice_cash_customer.dart';
 
 /// شاشة فواتير البيع بهوية PicPos. تُختار بالعلامة في app_main_screen
 /// (`Brand.isPicPos`). تعيد استخدام نفس `salesInvoicesControllerProvider` /

@@ -138,6 +138,9 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
     int? costCenterId,
     // C2 — «حساب المبيعات» المختار؛ `null` ⇒ الحسابُ المربوط كما كان.
     int? revenueAccountId,
+    // J3 — اسمُ/هاتفُ العميل لمرّةٍ واحدة على «عميل نقدي» (يُطبَع بدلَه).
+    String? adhocCustomerName,
+    String? adhocCustomerPhone,
   }) async {
     if (invoiceItems.isEmpty) {
       AppToast.show(
@@ -262,6 +265,8 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
         discountPercent: invoiceDiscountPercent,
         costCenterId: costCenterId,
         revenueAccountId: isReturnMode ? null : revenueAccountId,
+        adhocCustomerName: adhocCustomerName,
+        adhocCustomerPhone: adhocCustomerPhone,
       );
 
       final useCase = container.read(completeSaleUseCaseProvider);

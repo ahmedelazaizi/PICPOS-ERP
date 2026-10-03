@@ -61,7 +61,11 @@ void main() {
       final first = await sync.runOnce();
       expect(first.ok, isTrue, reason: first.error);
       final m = cloud.lastMaster!;
-      final party = (m['parties'] as List).single as Map;
+      // J3 — the system cash customer rides every push (every route).
+      final cash = (m['parties'] as List).cast<Map>().where((p) => p['systemRole'] != null);
+      expect(cash.single['systemRole'], 'cash_customer');
+      final party =
+          (m['parties'] as List).cast<Map>().where((p) => p['systemRole'] == null).single;
       expect(party['name'], 'Cust A');
       expect(party['balance'], 0.0);
       expect(party['creditLimit'], 500.0);
@@ -173,7 +177,8 @@ void main() {
 
       // 6. Balances and van stock flow back up after posting.
       final m2 = cloud.lastMaster!;
-      final p2 = (m2['parties'] as List).single as Map;
+      final p2 =
+          (m2['parties'] as List).cast<Map>().where((p) => p['systemRole'] == null).single;
       expect(p2['balance'], closeTo(12.6 - 5 - 2.9 - 3, 1e-9));
       expect(_stock(m2, ids.water), 47.0);
       expect(_stock(m2, ids.bread), 19.0);

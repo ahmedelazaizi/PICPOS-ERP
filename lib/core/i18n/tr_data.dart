@@ -270,6 +270,9 @@ const _seededDefaultNames = <String>{
   'اشيائي',
   'دينار أردني',
   'جنيه مصري',
+  // J3 — الأطرافُ النظاميّة (`parties.system_role`).
+  'عميل نقدي',
+  'مورد نقدي',
 };
 
 final _seededFiscalYearName = RegExp(r'^السنة المالية ([0-9٠-٩]+)$');

@@ -43,6 +43,10 @@ class _PicPosInvoiceLayout extends StatelessWidget {
                     const SizedBox(height: 12),
                     _PicPosDocBar(state: state),
                     const SizedBox(height: 12),
+                    if (state._showOneTimeCustomer) ...[
+                      _PicPosOneTimeCustomerBar(state: state),
+                      const SizedBox(height: 12),
+                    ],
                     if (state._canLinkPurchaseOrder) ...[
                       _PicPosOrderLinkBar(state: state),
                       const SizedBox(height: 12),

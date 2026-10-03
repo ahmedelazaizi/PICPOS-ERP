@@ -157,6 +157,10 @@ class CloudMasterExporter {
     final customerIds = {
       for (final rc in routeCustomers) (rc['customer_id'] as num).toInt(),
     };
+    // J3 — the system cash customer is on EVERY route: always pushed, with
+    // its role, so the cloud serves it to every rep.
+    final cashCustomerId = await db.systemPartyId(kSystemRoleCashCustomer);
+    if (cashCustomerId != null) customerIds.add(cashCustomerId);
     final partyGid = <int, String>{};
     final partiesJson = <Map<String, Object?>>[];
     if (customerIds.isNotEmpty) {
@@ -174,6 +178,7 @@ class CloudMasterExporter {
           'priceLevel': p.priceLevel == 'default' ? null : p.priceLevel,
           'isCustomer': p.isCustomer,
           'deleted': p.deletedAt != null || !p.isActive,
+          'systemRole': p.id == cashCustomerId ? kSystemRoleCashCustomer : null,
         });
       }
     }

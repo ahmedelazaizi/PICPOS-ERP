@@ -20,8 +20,10 @@ class ReceiptComposer {
 
   Future<ReceiptParty> _party(Map<String, Object?> p) async {
     final customer = await c.store.get(Kinds.customers, '${p['customerGlobalId']}');
+    // J3 — a cash-customer sale prints its one-time name instead.
+    final oneTime = p['customerName'];
     return ReceiptParty(
-      customerName: '${customer?['name'] ?? ''}',
+      customerName: oneTime is String && oneTime.trim().isNotEmpty ? oneTime.trim() : '${customer?['name'] ?? ''}',
       repName: c.repName,
       routeName: c.routeNames[customer?['routeGlobalId']],
     );

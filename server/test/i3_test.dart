@@ -53,7 +53,7 @@ void main() {
       final (st, b) = await h.call('GET', '/desktop/ping', headers: desk);
       expect(st, 200);
       expect(b['company']['globalId'], Demo.companyGid);
-      expect(b['pending'], {'sales_invoice': 0, 'sales_return': 0, 'collection': 0, 'visit': 0});
+      expect(b['pending'], {'sales_invoice': 0, 'sales_return': 0, 'collection': 0, 'visit': 0, 'customer': 0});
       expect((await h.call('POST', '/admin/desktop-links/${desk['x-desktop-link']}/revoke',
               headers: {'x-admin-key': Harness.adminKey}))
           .$1, 200);
@@ -331,7 +331,8 @@ void main() {
       });
       expect(await balance(Demo.cust2Gid), closeTo(3.7, 1e-9));
       final (_, ping) = await h.call('GET', '/desktop/ping', headers: desk);
-      expect(ping['pending'], {'sales_invoice': 0, 'sales_return': 1, 'collection': 1, 'visit': 1});
+      expect(ping['pending'],
+          {'sales_invoice': 0, 'sales_return': 1, 'collection': 1, 'visit': 1, 'customer': 0});
     });
 
     test('van stock pushed by the desktop subtracts unposted field sales', () async {

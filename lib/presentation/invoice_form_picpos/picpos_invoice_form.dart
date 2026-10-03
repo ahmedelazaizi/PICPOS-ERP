@@ -54,6 +54,7 @@ import '../../domain/models/picpos_invoice_draft.dart';
 part 'picpos_invoice_layout.dart';
 part 'picpos_invoice_lines.dart';
 part 'picpos_invoice_money.dart';
+part 'picpos_invoice_one_time_customer.dart';
 
 /// عقدُ الحفظ — يُترجمه المستدعي إلى `onSave` القائم بلا تغييرٍ في المسار.
 typedef PicPosInvoiceSaveCallback = Future<void> Function({
@@ -171,6 +172,8 @@ class PicPosInvoiceForm extends StatefulWidget {
     this.defaultPurchaseAccountId,
     this.initialPurchaseAccountId,
     this.onPurchaseAccountChanged,
+    this.onOneTimeCustomerChanged,
+    this.onSaveAsPermanentCustomer,
   })  :
         // 🔴 **فعلُ المسوّدة للمبيعات وحدَها** — قرارُ المالك 2026-09-19.
         //
@@ -294,6 +297,15 @@ class PicPosInvoiceForm extends StatefulWidget {
   /// يُنادى قبل [onSave] مباشرةً بالحساب المختار (`null` = الافتراضيّ).
   final ValueChanged<int?>? onPurchaseAccountChanged;
 
+  /// J3 — اسمُ العميل لمرّةٍ واحدة (+ الهاتف) حين يكون الطرفُ «عميل نقدي».
+  /// يُنادى قبل [onSave] مباشرةً (`null` في الحقلين لأيّ طرفٍ آخر). `null` ⇒
+  /// لا حقول.
+  final PicPosOneTimeCustomerCallback? onOneTimeCustomerChanged;
+
+  /// J3 — «حفظ كعميل دائم»: يُنشئ المنادي عميلاً حقيقيّاً ويُرجعه، فتنتقل
+  /// الفاتورةُ إليه قبل الحفظ. `null` ⇒ لا زرّ.
+  final PicPosSavePermanentCustomer? onSaveAsPermanentCustomer;
+
   bool get isEdit => initial != null;
 
   @override
@@ -310,6 +322,12 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
   final _searchFocus = FocusNode();
 
   int? _partyId;
+
+  /// J3 — اسمُ/هاتفُ العميل لمرّةٍ واحدة على «عميل نقدي»، والعملاءُ الذين
+  /// أُنشئوا من هذه الشاشة بـ«حفظ كعميل دائم» (ليسوا في [widget.parties]).
+  String _oneTimeName = '';
+  String _oneTimePhone = '';
+  final _createdParties = <PicPosPartyOption>[];
 
   /// أمرُ الشراء المربوط — يُمرَّر إلى الحفظ فيُستهلَك في نفس المعاملة.
   int? _sourceOrderId;
@@ -428,7 +446,8 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
 
   /// الطرفُ المختار — أو `null`.
   PicPosPartyOption? get _party =>
-      widget.parties.where((p) => p.id == _partyId).firstOrNull;
+      widget.parties.where((p) => p.id == _partyId).firstOrNull ??
+      _createdParties.where((p) => p.id == _partyId).firstOrNull;
 
   /// المخزنُ المختار — مصدرُ «الفرع» المعروض.
   PicPosWarehouseOption? get _selectedWarehouse =>
@@ -544,6 +563,7 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
               : null,
         );
       }
+      _publishOneTimeCustomer();
       await widget.onSave(
         partyId: _partyId,
         supplierInvoiceNumber: _supplierInvoiceController.text.trim(),
@@ -584,6 +604,7 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
     final t = _totals;
     setState(() => _saving = true);
     try {
+      _publishOneTimeCustomer();
       await cb(
         partyId: _partyId,
         date: _date,
@@ -762,7 +783,7 @@ class _PicPosDocBar extends StatelessWidget {
     final theme = Theme.of(context);
     final muted = _fMuted(context);
     final w = state.widget;
-    final party = w.parties.where((p) => p.id == state._partyId).firstOrNull;
+    final party = state._party;
 
     final fields = <Widget>[
       _field(
@@ -1160,7 +1181,7 @@ class _PicPosDocBar extends StatelessWidget {
       builder: (ctx) => _SearchPickerDialog(
         title: tr('اختر {p0}', {'p0': w.kind.partyLabel}),
         items: [
-          for (final p in w.parties)
+          for (final p in [...w.parties, ...state._createdParties])
             (id: p.id, title: p.name, subtitle: p.meta),
         ],
       ),

@@ -38,6 +38,7 @@ extension DatabaseStartup on AppDatabase {
     await ensureCloudSyncSchema();
     await ensurePurchaseInvoicePurchaseAccountSchema();
     await ensureReturnDraftsSchema();
+    await ensureSystemPartiesSchema();
 
     // Phase 2b: Database integrity — ensure critical PK/UNIQUE constraints
     // exist on PG installs whose schema was created by an older or crashed
@@ -1439,6 +1440,11 @@ extension DatabaseStartup on AppDatabase {
       } catch (e) {
         debugPrint('[Startup] linkUnlinkedSafesToSubAccountsOnce: $e');
       }
+
+      // J3 — «عميل نقدي» و«مورد نقدي» طرفان نظاميّان يُبذَران (أو يُتبنّى
+      // القائمُ منهما) في كلّ إقلاع. بعد بذر الدليل قصداً: الطرفُ يُربَط بحسابٍ
+      // فرعيٍّ تحت 1121/2111. وفي وضع العميل يصلان من الخادم بالسحب.
+      await ensureSystemCashParties();
     }
   }
 

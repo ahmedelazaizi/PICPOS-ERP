@@ -9,6 +9,8 @@ import '../data/cloud_api.dart';
 import '../data/local_store.dart';
 import '../domain/sale_math.dart';
 
+part 'field_customers.dart';
+
 class AppFailure implements Exception {
   AppFailure(this.code, [this.detail]);
 
@@ -201,7 +203,12 @@ class AppController extends ChangeNotifier {
     notifyListeners();
     try {
       final cc = await _maybeRotateToken(c);
-      final pending = await pendingDocs();
+      // J3 — a field-created customer is pushed before the sales made to it.
+      final queued = await pendingDocs();
+      final pending = [
+        ...queued.where((e) => e.kind == kFieldCustomerKind),
+        ...queued.where((e) => e.kind != kFieldCustomerKind),
+      ];
       for (var i = 0; i < pending.length; i += 50) {
         final batch = pending.sublist(i, min(i + 50, pending.length));
         final results = await api.push(cc, s, [for (final e in batch) _wire(e.payload)]);
@@ -302,7 +309,13 @@ class AppController extends ChangeNotifier {
     }
     await store.upsert(Kinds.customers, list('customers'));
     if (p['customerScope'] is List) {
-      await store.retainOnly(Kinds.customers, (p['customerScope'] as List).cast<String>().toSet());
+      // J3 — a customer created offline stays until the server has it.
+      final pendingCustomers = {
+        for (final e in await pendingDocs())
+          if (e.kind == kFieldCustomerKind) e.globalId,
+      };
+      await store.retainOnly(
+          Kinds.customers, {...(p['customerScope'] as List).cast<String>(), ...pendingCustomers});
     }
     await store.upsert(Kinds.products, list('products'));
     await store.upsert(Kinds.vanStock, list('vanStock'), idField: 'productGlobalId');
@@ -473,10 +486,14 @@ class AppController extends ChangeNotifier {
   Future<String> nameOf(String kind, Object? globalId) async =>
       globalId is String ? '${(await store.get(kind, globalId))?['name'] ?? ''}' : '';
 
+  /// [customerName]/[customerPhone]: J3 one-time name on a cash-customer sale
+  /// (kept only for the system cash customer, printed instead of its name).
   Future<OutboxEntry> createSale({
     required String customerGlobalId,
     required List<CartLine> lines,
     required double paid,
+    String? customerName,
+    String? customerPhone,
   }) async {
     if (lines.isEmpty) throw AppFailure('emptyCart');
     final qty = <String, double>{};
@@ -504,6 +521,12 @@ class AppController extends ChangeNotifier {
         remaining: remaining)) {
       throw AppFailure('creditExceeded');
     }
+    if (violatesCashOnly(cashOnly: isCashOnlyCustomer(customer), remaining: remaining)) {
+      throw AppFailure('cashOnly');
+    }
+    final oneTime = isCashCustomer(customer)
+        ? (name: _clean(customerName), phone: _clean(customerPhone))
+        : (name: null, phone: null);
     final balanceBefore = await effectiveBalance(customerGlobalId);
     final number = await _takeNumber('sales_invoice');
     final gid = _uuid.v4();
@@ -517,6 +540,8 @@ class AppController extends ChangeNotifier {
         'number': number,
         'date': _clock().toUtc().toIso8601String(),
         'customerGlobalId': customerGlobalId,
+        'customerName': ?oneTime.name,
+        'customerPhone': ?oneTime.phone,
         'lines': [
           for (var i = 0; i < lines.length; i++)
             {

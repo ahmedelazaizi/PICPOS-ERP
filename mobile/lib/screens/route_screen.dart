@@ -43,16 +43,18 @@ class RouteScreen extends StatelessWidget {
           separatorBuilder: (_, _) => const SizedBox(height: 8),
           itemBuilder: (context, i) {
             final r = rows[i];
+            // J3 — the system cash customer is on every route: no stop, no visit.
+            final cash = isCashCustomer(r.customer);
             return Card(
               child: ListTile(
                 minTileHeight: 64,
                 leading: CircleAvatar(
                   backgroundColor: r.visited ? cs.primaryContainer : cs.surfaceContainerHighest,
-                  child: Text('${r.customer['sequence'] ?? i + 1}'),
+                  child: cash ? const Icon(Icons.storefront) : Text('${r.customer['sequence'] ?? i + 1}'),
                 ),
-                title: Text('${r.customer['name']}'),
-                subtitle: Text('${s.t('balance')}: ${money(r.balance)}'),
-                trailing: VisitChip(r.visit.$1, r.visit.$2),
+                title: Text(cash ? s.t('cashCustomer') : '${r.customer['name']}'),
+                subtitle: Text(cash ? s.t('everyRoute') : '${s.t('balance')}: ${money(r.balance)}'),
+                trailing: cash ? null : VisitChip(r.visit.$1, r.visit.$2),
                 onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
                   builder: (_) => CustomerScreen(customerGlobalId: r.customer['globalId'] as String),
                 )),

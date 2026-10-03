@@ -60,7 +60,20 @@ class PicPosPartyCard {
     this.routeName,
     this.areaName,
     this.repName,
+    this.systemRole,
   });
+
+  /// J3 — `parties.system_role`: «عميل نقدي» / «مورد نقدي» النظاميّان
+  /// (`null` لكلّ طرفٍ عاديّ). يُعرض بشارة «نظامي» ولا يُحذف.
+  final String? systemRole;
+
+  bool get isSystem => systemRole != null;
+
+  /// العميلُ النقديُّ متاحٌ على كلّ المسارات — لا يُسنَد إلى مسار.
+  bool get isCashCustomer => systemRole == 'cash_customer';
+
+  /// الاسمُ المعروض — الاسمُ المبذورُ يظهر بالإنجليزيّة ما لم يُعدَّل.
+  String get displayName => trData(name);
 
   /// المرحلة و — مسارُ العميل الحاليّ ومنطقتُه ومندوبُه **المشتقّ** من
   /// المسار (لا يُخزَّن على الطرف). `null` = ليس على مسار.
@@ -163,6 +176,7 @@ class PicPosPartyCard {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return true;
     return name.toLowerCase().contains(q) ||
+        (isSystem && displayName.toLowerCase().contains(q)) ||
         (phone?.toLowerCase().contains(q) ?? false);
   }
 }

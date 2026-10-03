@@ -175,6 +175,8 @@ Future<void> _clearDatabase(AppDatabase db) async {
   await db
       .update(db.safes)
       .write(const SafesCompanion(linkedAccountId: Value(null)));
+  // J3 — والأطرافُ النظاميّة («عميل نقدي»/«مورد نقدي») مشدودةٌ كذلك.
+  await db.update(db.parties).write(const PartiesCompanion(accountId: Value(null)));
   await db.delete(db.accounts).go();
   await db.delete(db.settings).go();
 }

@@ -663,6 +663,18 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
         cleanNotes = remainingParts.isNotEmpty ? remainingParts.join(' | ') : null;
       }
 
+      // J3 — «عميل نقدي» باسمٍ لمرّةٍ واحدة: الاسمُ (والهاتف) المخزَّن على
+      // الفاتورة يُطبَع **بدل** اسم الطرف النظاميّ.
+      if (adhocName != null &&
+          adhocName.trim().isNotEmpty &&
+          await db.isCashCustomer(invoice.customerId)) {
+        customerName = adhocName.trim();
+        customerPhone = (adhocPhone != null && adhocPhone.trim().isNotEmpty)
+            ? adhocPhone.trim()
+            : null;
+        customerAddress = null;
+      }
+
       return SalesPrintData(
         invoiceNumber: invoice.invoiceNumber,
         date: invoice.invoiceDate,

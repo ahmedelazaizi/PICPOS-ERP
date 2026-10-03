@@ -3642,5 +3642,12 @@ extension Epoch3Migrations on AppDatabase {
     if (from < 189) {
       await _safeMigrate('v189 return drafts', ensureReturnDraftsSchema);
     }
+
+    // v190 — parties.system_role (raw, J3): the system cash customer / cash
+    // supplier; seeded or adopted on startup by ensureSystemCashParties.
+    if (from < 190) {
+      await _safeMigrate(
+          'v190 parties.system_role', ensureSystemPartiesSchema);
+    }
   }
 }

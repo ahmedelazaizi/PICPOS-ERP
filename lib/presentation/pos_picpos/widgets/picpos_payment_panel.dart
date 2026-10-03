@@ -40,6 +40,7 @@ import '../../pos/providers/cart_controller.dart';
 import '../providers/pos_exchange_mode_provider.dart';
 import '../providers/pos_return_mode_provider.dart';
 import 'picpos_cart_permissions.dart';
+import 'picpos_one_time_customer.dart';
 import 'picpos_pos_text.dart';
 
 /// `--field` من التصميم تابعاً للوضع.
@@ -210,6 +211,8 @@ class _CustomerRow extends ConsumerWidget {
                       : PicPosText.l(context, 13 * scale),
                 ),
               ),
+              // J3 — اسمُ العميل لمرّةٍ واحدة على «عميل نقدي».
+              const PicPosOneTimeCustomerButton(),
               const Icon(PhosphorIconsBold.caretLeft,
                   size: 13, color: AppColors.textMuted),
             ],

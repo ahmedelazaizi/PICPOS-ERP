@@ -588,6 +588,8 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
         await ref.read(databaseProvider).getActiveRevenueDetailAccounts();
     final defaultRevenueAccount =
         await ref.read(databaseProvider).getLeafAccountByPurpose('sales');
+    // J3 — «عميل نقدي» النظاميّ ومساراتُ المناديب لـ«حفظ كعميل دائم».
+    final cashCtx = await _loadCashCustomerContext();
 
     List<WarehouseData> filteredWarehouses = activeWarehouses;
     if (SyncInterceptor.isClientMode) {
@@ -704,6 +706,8 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                 exemptProductIds: exemptProductIds,
                 revenueAccounts: revenueAccounts,
                 defaultRevenueAccountId: defaultRevenueAccount?.id,
+                cashCustomerId: cashCtx.cashCustomerId,
+                routes: cashCtx.routes,
               ),
       ),
     );
@@ -734,10 +738,23 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
     Set<int> exemptProductIds = const <int>{},
     List<Account> revenueAccounts = const [],
     int? defaultRevenueAccountId,
+    int? cashCustomerId,
+    List<DistributionRoute> routes = const [],
   }) {
     // C2 — يُسلَّم من النموذج قبل `onSave` مباشرةً (`null` = الافتراضيّ).
     int? revenueAccountId;
+    // J3 — اسمُ العميل لمرّةٍ واحدة على «عميل نقدي» (يُسلَّم قبل `onSave`).
+    ({String? name, String? phone}) oneTime = (name: null, phone: null);
     return PicPosInvoiceForm(
+      onOneTimeCustomerChanged:
+          cashCustomerId == null ? null : (c) => oneTime = c,
+      onSaveAsPermanentCustomer: cashCustomerId == null
+          ? null
+          : (formContext, {required name, phone}) => _createPermanentCustomer(
+              formContext,
+              name: name,
+              phone: phone,
+              routes: routes),
       kind: PicPosInvoiceKind.sales,
       revenueAccounts: [
         for (final a in revenueAccounts)
@@ -749,7 +766,8 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
         for (final c in customers)
           PicPosPartyOption(
             id: c.id,
-            name: c.name,
+            name: c.id == cashCustomerId ? trData(c.name) : c.name,
+            isCashParty: c.id == cashCustomerId,
             meta: c.phone ?? '',
             // مصدرُ «تاريخ الاستحقاق» المعروض. وبدونه تقول الشاشةُ
             // «بلا مهلة متفقة» لعميلٍ له مهلةٌ فعلاً — والمحرّكُ
@@ -833,6 +851,8 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
           warehouseId: warehouseId,
           costCenterId: costCenterId,
           revenueAccountId: revenueAccountId,
+          adhocCustomerName: oneTime.name,
+          adhocCustomerPhone: oneTime.phone,
         );
       },
       // 🔴 **معاينةُ A4 قبل الحفظ** — قرارُ المالك على تصميم `12.02.29`.
@@ -856,7 +876,9 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
             customers.where((c) => c.id == partyId).firstOrNull;
         final ok = await ref.read(printingServiceProvider).previewSalesInvoiceA4(
               date: date,
-              customerName: customer?.name,
+              customerName: partyId == cashCustomerId && oneTime.name != null
+                  ? oneTime.name
+                  : customer?.name,
               items: [
                 for (final it in items)
                   print_models.InvoiceItem(

@@ -155,6 +155,7 @@ part 'cheque_drawer_schema.dart';
 part 'cloud_sync_schema.dart';
 part 'purchase_invoice_purchase_account_schema.dart';
 part 'return_drafts_schema.dart';
+part 'system_parties_schema.dart';
 part 'daos/distribution_rep_ops_dao.dart';
 part 'daos/voucher_account_transfer_dao.dart';
 part 'daos/fixed_assets_dao_ext.dart';
@@ -1187,7 +1188,7 @@ class AppDatabase extends _$AppDatabase {
   //
   // Schema v177: sale reposts after an authorized edit may legitimately
   // produce multiple auto-posted JEs for one invoice reference.
-  int get schemaVersion => 189;
+  int get schemaVersion => 190;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.
@@ -2485,6 +2486,7 @@ class AppDatabase extends _$AppDatabase {
         await ensureCloudSyncSchema();
         await ensurePurchaseInvoicePurchaseAccountSchema();
         await ensureReturnDraftsSchema();
+        await ensureSystemPartiesSchema();
         // seedInitialData + syncDefaultAccounts moved to beforeOpen
         // (after defensive v110 column additions)
       },

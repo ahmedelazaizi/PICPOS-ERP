@@ -501,4 +501,33 @@ ALTER TABLE companies ADD COLUMN address TEXT;
 ALTER TABLE companies ADD COLUMN phone TEXT;
 ALTER TABLE companies ADD COLUMN einvoice_enabled BOOLEAN NOT NULL DEFAULT FALSE;
 '''),
+  // J3: the system cash customer (desktop `parties.system_role`, served to
+  // every rep), the one-time customer name/phone of a cash-customer sale
+  // (desktop `sales_invoices.adhoc_customer_*`), and customers created in the
+  // field («حفظ كعميل دائم») waiting for the desktop to post them.
+  Migration(5, 'j3_cash_customer_field_customers', '''
+ALTER TABLE parties ADD COLUMN system_role TEXT;
+ALTER TABLE parties ADD COLUMN address TEXT;
+CREATE UNIQUE INDEX parties_system_role_uq ON parties(company_id, system_role)
+  WHERE system_role IS NOT NULL;
+ALTER TABLE sales_invoices ADD COLUMN adhoc_customer_name TEXT;
+ALTER TABLE sales_invoices ADD COLUMN adhoc_customer_phone TEXT;
+
+CREATE TABLE field_customers (
+  id SERIAL PRIMARY KEY,
+  company_id INT NOT NULL REFERENCES companies(id),
+  party_id INT NOT NULL UNIQUE REFERENCES parties(id),
+  route_customer_id INT REFERENCES route_customers(id),
+  rep_employee_id INT NOT NULL REFERENCES employees(id),
+  device_pk INT NOT NULL REFERENCES devices(id),
+  posted_on_desktop_at BIGINT,
+  desktop_id TEXT,
+  desktop_number TEXT,
+  desktop_error TEXT,
+  created_at BIGINT NOT NULL,
+  $_sync
+);
+CREATE TRIGGER field_customers_touch BEFORE INSERT OR UPDATE ON field_customers FOR EACH ROW EXECUTE FUNCTION touch_row();
+CREATE INDEX field_customers_unposted_idx ON field_customers(company_id) WHERE posted_on_desktop_at IS NULL;
+'''),
 ];

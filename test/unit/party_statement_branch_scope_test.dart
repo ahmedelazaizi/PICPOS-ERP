@@ -57,7 +57,8 @@ void main() {
   // ده أنشأها بنفسه — لا على أعداد مطلقة تتغيّر مع أي تعديل في البذر.
   Set<String> mine(List<Party> rows) => rows
       .map((p) => p.name)
-      .where((n) => n.startsWith('عميل '))
+      // (J3 — «عميل نقدي» النظاميّ مبذورٌ عامّاً ويطابق البادئة؛ ليس منها.)
+      .where((n) => n.startsWith('عميل ') && n != kCashCustomerDefaultName)
       .toSet();
 
   test('null = وصول كامل — كل الأطراف', () async {

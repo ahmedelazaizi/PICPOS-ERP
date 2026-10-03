@@ -96,6 +96,8 @@ class DesktopService {
           "AND category='customer_collection' AND posted_on_desktop_at IS NULL"),
       'visit': await n(
           'SELECT COUNT(*)::INT FROM customer_visits WHERE company_id=@c AND posted_on_desktop_at IS NULL'),
+      'customer': await n(
+          'SELECT COUNT(*)::INT FROM field_customers WHERE company_id=@c AND posted_on_desktop_at IS NULL'),
     };
   }
 
@@ -168,7 +170,8 @@ class DesktopService {
       SELECT si.id, si.global_id, si.invoice_number, si.invoice_date, si.created_at, p.global_id AS cg,
              e.global_id AS eg, r.global_id AS rg, w.global_id AS wg, sf.global_id AS sg, si.subtotal,
              si.discount, si.tax, si.total, si.paid, si.payment_method, si.prices_include_tax,
-             si.integrity_hash, si.origin_client_id, si.desktop_error
+             si.integrity_hash, si.origin_client_id, si.desktop_error, si.adhoc_customer_name,
+             si.adhoc_customer_phone
       FROM sales_invoices si
       JOIN parties p ON p.id = si.customer_id
       JOIN employees e ON e.id = si.rep_employee_id
@@ -190,6 +193,9 @@ class DesktopService {
         'date': m['invoice_date'],
         'createdAt': m['created_at'],
         'customerGlobalId': m['cg'],
+        // J3 — one-time name/phone of a cash-customer sale (printed instead).
+        if (m['adhoc_customer_name'] != null) 'customerName': m['adhoc_customer_name'],
+        if (m['adhoc_customer_phone'] != null) 'customerPhone': m['adhoc_customer_phone'],
         'repEmployeeGlobalId': m['eg'],
         'routeGlobalId': m['rg'],
         'warehouseGlobalId': m['wg'],
@@ -331,8 +337,38 @@ class DesktopService {
       });
     }
 
-    // Creation order across kinds; an invoice sorts before its returns.
-    const rank = {'sales_invoice': 0, 'collection': 1, 'sales_return': 2, 'visit': 3};
+    // J3 — customers created in the field («حفظ كعميل دائم»): posted before
+    // the documents that reference them.
+    final customers = await db.query('''
+      SELECT fc.global_id, fc.created_at, p.name, p.phone, p.address, e.global_id AS eg,
+             r.global_id AS rg, rc.global_id AS rcg, rc.sequence, fc.desktop_error
+      FROM field_customers fc
+      JOIN parties p ON p.id = fc.party_id
+      JOIN employees e ON e.id = fc.rep_employee_id
+      LEFT JOIN route_customers rc ON rc.id = fc.route_customer_id
+      LEFT JOIN sales_routes r ON r.id = rc.route_id
+      WHERE fc.company_id=@c AND fc.posted_on_desktop_at IS NULL
+      ORDER BY fc.created_at, fc.id LIMIT @l''', c);
+    for (final row in customers) {
+      final m = row.toColumnMap();
+      docs.add({
+        'kind': 'customer',
+        'globalId': m['global_id'],
+        'createdAt': m['created_at'],
+        'name': m['name'],
+        'phone': m['phone'],
+        'address': m['address'],
+        'repEmployeeGlobalId': m['eg'],
+        'routeGlobalId': m['rg'],
+        'routeCustomerGlobalId': m['rcg'],
+        'sequence': m['sequence'],
+        'lastDesktopError': m['desktop_error'],
+      });
+    }
+
+    // Creation order across kinds; an invoice sorts before its returns, a
+    // field customer before anything sold to it.
+    const rank = {'customer': -1, 'sales_invoice': 0, 'collection': 1, 'sales_return': 2, 'visit': 3};
     docs.sort((a, b) {
       final t = (a['createdAt'] as int).compareTo(b['createdAt'] as int);
       return t != 0 ? t : rank[a['kind']]!.compareTo(rank[b['kind']]!);
@@ -345,6 +381,7 @@ class DesktopService {
     'sales_return': ('sales_returns', ''),
     'collection': ('safe_transactions', " AND category='customer_collection'"),
     'visit': ('customer_visits', ''),
+    'customer': ('field_customers', ''),
   };
 
   /// Records the desktop outcome per document. `posted` is final (a second
@@ -539,15 +576,23 @@ class _Upsert {
     if (g == null) return;
     final name = _str(m['name']);
     if (name == null) return _skip('parties', g, 'name_required');
+    // J3 — the system cash customer: one row per company holds the role.
+    final systemRole = _str(m['systemRole']);
+    if (systemRole != null) {
+      await q('UPDATE parties SET system_role = NULL WHERE company_id=@c AND system_role=@sr AND global_id<>@g',
+          {'sr': systemRole, 'g': g});
+    }
     final id = await _write('parties', g, '''
       INSERT INTO parties (company_id, global_id, name, phone, whatsapp_phone, whatsapp_opt_in, credit_limit,
-        price_level, is_customer, desktop_balance, balance, deleted_at)
-      VALUES (@c, @g, @n, @ph, @wa, @opt, @cl, @pl, @isc, @bal, @bal, @del)
+        price_level, is_customer, desktop_balance, balance, deleted_at, system_role)
+      VALUES (@c, @g, @n, @ph, @wa, @opt, @cl, @pl, @isc, @bal, @bal, @del, @sr)
       ON CONFLICT (global_id) DO UPDATE SET name=EXCLUDED.name, phone=EXCLUDED.phone,
         whatsapp_phone=EXCLUDED.whatsapp_phone, whatsapp_opt_in=EXCLUDED.whatsapp_opt_in,
         credit_limit=EXCLUDED.credit_limit, price_level=EXCLUDED.price_level, is_customer=EXCLUDED.is_customer,
-        desktop_balance=EXCLUDED.desktop_balance, deleted_at=EXCLUDED.deleted_at
+        desktop_balance=EXCLUDED.desktop_balance, deleted_at=EXCLUDED.deleted_at,
+        system_role=EXCLUDED.system_role
       WHERE parties.company_id = EXCLUDED.company_id RETURNING id''', {
+      'sr': systemRole,
       'n': name,
       'ph': _str(m['phone']),
       'wa': _str(m['whatsappPhone']),

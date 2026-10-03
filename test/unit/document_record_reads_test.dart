@@ -377,7 +377,9 @@ void main() {
 
   // ═══════════════════════════════════════════════════════════════════
   group('سجلُّ مردودات المشتريات', () {
-    Future<int> seedSupplier({int id = 4, String name = 'مورد الشمال'}) async {
+    // (ids 40/50: the seed now holds the J3 system parties after the
+    // delivery parties, so 4 and 5 are taken.)
+    Future<int> seedSupplier({int id = 40, String name = 'مورد الشمال'}) async {
       await db.into(db.parties).insert(
             PartiesCompanion.insert(
               name: name,
@@ -391,7 +393,7 @@ void main() {
     Future<int> seedInvoice({
       int id = 30,
       String number = 'PI-30',
-      int supplierId = 4,
+      int supplierId = 40,
       DateTime? at,
     }) async {
       await db.into(db.purchaseInvoices).insert(
@@ -409,7 +411,7 @@ void main() {
     Future<int> seedReturn({
       required DateTime at,
       int invoiceId = 30,
-      int supplierId = 4,
+      int supplierId = 40,
       double total = 50,
       double tax = 5,
       String refundMethod = 'credit',
@@ -542,11 +544,11 @@ void main() {
     });
 
     test('والبحثُ يمسك رقمَ الفاتورة واسمَ المورّد', () async {
-      await seedSupplier(id: 5, name: 'مورد الشرق');
-      await seedInvoice(id: 32, number: 'PI-XYZ', supplierId: 5);
+      await seedSupplier(id: 50, name: 'مورد الشرق');
+      await seedInvoice(id: 32, number: 'PI-XYZ', supplierId: 50);
       await seedReturn(at: DateTime(2026, 5, 10), total: 7);
       await seedReturn(
-          invoiceId: 32, supplierId: 5, at: DateTime(2026, 5, 11), total: 8);
+          invoiceId: 32, supplierId: 50, at: DateTime(2026, 5, 11), total: 8);
 
       expect(
           (await db.watchPurchaseReturnRecords(search: 'XYZ').first)
