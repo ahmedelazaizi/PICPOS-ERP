@@ -1,0 +1,45 @@
+name: picpos_ui
+description: >-
+  PicPos mobile UI kit for mobile_admin (PicPos إدارة) and mobile_pos (PicPos
+  كاشير): DESIGN.md tokens, Material 3 theme (light/dark), bundled Cairo and
+  Noto Naskh Arabic fonts, adaptive scaffold, core widgets and a small AR/EN
+  string-table helper. Lifted from mobile/lib/theme (picpos_van keeps its own
+  copy). See docs/mobile/ARCHITECTURE-M.md ADR-M1.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  # Use as `fontFamily: PicPosFonts.ui` (= 'packages/picpos_ui/Cairo').
+  fonts:
+    - family: Cairo
+      fonts:
+        - asset: fonts/Cairo-Regular.ttf
+          weight: 400
+        - asset: fonts/Cairo-SemiBold.ttf
+          weight: 600
+        - asset: fonts/Cairo-Bold.ttf
+          weight: 700
+        - asset: fonts/Cairo-ExtraBold.ttf
+          weight: 800
+    # Print font (receipts/PDF): DESIGN.md "Naskh-for-Paper Rule".
+    - family: NotoNaskhArabic
+      fonts:
+        - asset: fonts/NotoNaskhArabic-Regular.ttf
+          weight: 400
+        - asset: fonts/NotoNaskhArabic-Bold.ttf
+          weight: 700

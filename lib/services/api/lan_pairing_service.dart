@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
+import 'package:drift/drift.dart' show Variable;
 import 'package:flutter/foundation.dart';
 
 import '../../data/database/database.dart';
@@ -234,7 +235,8 @@ class LanPairingService {
       return;
     }
     await _db.customStatement(
-      "UPDATE lan_paired_devices SET revoked = 1 WHERE device_id = '${_sql(deviceId)}'",
+      'UPDATE lan_paired_devices SET revoked = 1 WHERE device_id = ?',
+      [deviceId],
     );
   }
 
@@ -284,7 +286,8 @@ class LanPairingService {
     if (_db == null) return _memoryDevices[deviceId];
     final rows = await _db.customSelect(
       'SELECT device_id, name, paired_at, last_seen_at, last_seen_ip, revoked, legacy_seen '
-      "FROM lan_paired_devices WHERE device_id = '${_sql(deviceId)}' LIMIT 1",
+      'FROM lan_paired_devices WHERE device_id = ? LIMIT 1',
+      variables: [Variable.withString(deviceId)],
     ).get();
     if (rows.isEmpty) return null;
     final data = rows.single.data;
@@ -321,19 +324,20 @@ class LanPairingService {
       _memoryDevices[deviceId] = row;
       return;
     }
-    final values = "name = '${_sql(name)}', paired_at = ${pairedAt ?? 'NULL'}, "
-        'last_seen_at = $lastSeenAt, last_seen_ip = \'${_sql(ip)}\', '
-        'revoked = ${revoked ? 1 : 0}, legacy_seen = ${legacySeen ? 1 : 0}';
+    final fields = [name, pairedAt, lastSeenAt, ip, revoked ? 1 : 0, legacySeen ? 1 : 0];
     await _db.customStatement(
-      "UPDATE lan_paired_devices SET $values WHERE device_id = '${_sql(deviceId)}'",
+      'UPDATE lan_paired_devices SET name = ?, paired_at = ?, '
+      'last_seen_at = ?, last_seen_ip = ?, revoked = ?, legacy_seen = ? '
+      'WHERE device_id = ?',
+      [...fields, deviceId],
     );
     final found = await _findDevice(deviceId);
     if (found == null) {
       await _db.customStatement(
-        "INSERT INTO lan_paired_devices "
+        'INSERT INTO lan_paired_devices '
         '(device_id, name, paired_at, last_seen_at, last_seen_ip, revoked, legacy_seen) '
-        "VALUES ('${_sql(deviceId)}', '${_sql(name)}', ${pairedAt ?? 'NULL'}, "
-        "$lastSeenAt, '${_sql(ip)}', ${revoked ? 1 : 0}, ${legacySeen ? 1 : 0})",
+        'VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [deviceId, ...fields],
       );
     }
   }
@@ -343,8 +347,6 @@ class LanPairingService {
       throw StateError('LanPairingService.initialize must run on the server first');
     }
   }
-
-  static String _sql(String value) => value.replaceAll("'", "''");
 
   static DateTime? _asDate(Object? value) {
     final millis = value is int ? value : int.tryParse('$value');

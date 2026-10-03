@@ -1,0 +1,10 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+linter:
+  rules:
+    - avoid_print
+    - unawaited_futures
+    - prefer_const_constructors

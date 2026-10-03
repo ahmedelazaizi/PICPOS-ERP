@@ -203,3 +203,11 @@ tools/postgresql-*-windows-x64.exe
 # جهاز واحد بس، ومحدش يقدر يراجع تغيير في هوية منتج بيتباع لعميل.
 !build_release.bat
 !build_picpos.bat
+
+# ── Mobile signing & Firebase secrets (ARCHITECTURE-M §4.3) ─────────────────
+# Upload keystores live OUTSIDE the repo (e.g. D:\PICPOS-KEYS); key.properties
+# points at them. tool/check_no_secrets.ps1 fails if any of these is tracked.
+*.jks
+*.keystore
+key.properties
+google-services.json

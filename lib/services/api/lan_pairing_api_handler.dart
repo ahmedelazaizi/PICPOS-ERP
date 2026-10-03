@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:shelf/shelf.dart';
 
@@ -54,13 +55,8 @@ class LanPairingApiHandler {
         headers: {'content-type': 'application/json'},
       );
 
-  static String _clientIp(Request request) {
-    final forwarded = request.headers['x-forwarded-for'];
-    if (forwarded != null && forwarded.isNotEmpty) {
-      return forwarded.split(',').first.trim();
-    }
-    return request.headers['x-real-ip'] ??
-        request.headers['host']?.split(':').first ??
-        'unknown';
-  }
+  static String _clientIp(Request request) =>
+      (request.context['shelf.io.connection_info'] as HttpConnectionInfo?)
+          ?.remoteAddress.address ??
+      'unknown';
 }

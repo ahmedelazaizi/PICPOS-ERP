@@ -97,4 +97,30 @@ void main() {
     await db.saveRepResources(employeeId: x);
     expect((await db.getRepResources(x))!.vanWarehouseId, isNull);
   });
+
+  test('v194 field expense categories seed and remain editable on PG', () async {
+    expect(await columnsOf('field_expense_categories'), containsAll(const [
+      'id', 'name', 'account_code', 'global_id', 'last_modified_at',
+      'deleted_at', 'origin_client_id', 'row_version',
+    ]));
+    expect(await columnsOf('route_visits'),
+        containsAll(const ['latitude', 'longitude', 'field_geo']));
+    for (final table in ['sales_invoices', 'safe_transactions']) {
+      expect(await columnsOf(table), contains('field_geo'), reason: table);
+    }
+
+    final seeded = await db.listFieldExpenseCategories();
+    expect(seeded, hasLength(6));
+    expect(seeded.map((category) => category.nameEn),
+        containsAll(const ['Fuel', 'Parking', 'Other']));
+    final id = await db.saveFieldExpenseCategory(
+        name: 'اختبار', accountCode: '614');
+    await db.saveFieldExpenseCategory(
+        id: id, name: 'اختبار معدل', accountCode: '617', isActive: false);
+    final saved = (await db.listFieldExpenseCategories())
+        .singleWhere((category) => category.id == id);
+    expect((saved.name, saved.accountCode, saved.isActive),
+        ('اختبار معدل', '617', false));
+    expect(saved.globalId, isNotNull);
+  });
 }

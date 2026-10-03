@@ -83,9 +83,11 @@ extension DistributionModelSchema on AppDatabase {
       'last_modified_at': now,
     };
     final cols = row.keys.toList();
+    final sql = 'INSERT INTO $table (${cols.join(', ')}) '
+        'VALUES (${List.filled(cols.length, '?').join(', ')})';
+    // onCreate bypasses the PG interceptor, so translate before customInsert.
     await customInsert(
-      'INSERT INTO $table (${cols.join(', ')}) '
-      'VALUES (${List.filled(cols.length, '?').join(', ')})',
+      _isPostgres ? PgCompatSql.fixSql(sql) : sql,
       variables: [for (final c in cols) _dmVar(row[c])],
     );
     final inserted = await customSelect(

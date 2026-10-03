@@ -1,0 +1,20 @@
+name: picpos_api_client
+description: >-
+  PicPos mobile API client (pure Dart, no Flutter): canonical JSON, Ed25519
+  snapshot/result verification, auth header builder, error mapping, URL
+  policy and the LAN-first / cloud-fallback transport selector, plus the
+  contract interfaces of the cloud /manage/* and desktop LAN /api/m1/* APIs.
+  Used by mobile_admin (picpos_admin) and mobile_pos (picpos_pos). See
+  docs/mobile/ARCHITECTURE-M.md ADR-M2/M3 and §2.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  cryptography: ^2.9.0
+  http: ^1.6.0
+
+dev_dependencies:
+  test: ^1.29.0

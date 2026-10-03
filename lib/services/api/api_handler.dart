@@ -3155,12 +3155,11 @@ class ApiHandler {
 
       final whereClause =
           conditions.isEmpty ? '' : 'WHERE ${conditions.join(' AND ')} ';
+      vars.add(Variable.withInt(limit + 1));
       final sql = 'SELECT * FROM $table $whereClause'
-          'ORDER BY COALESCE(last_modified_at, 0) ASC, id ASC '
-          'LIMIT ${limit + 1}';
+          'ORDER BY COALESCE(last_modified_at, 0) ASC, id ASC LIMIT ?';
 
-      // Fetch limit+1 to detect "there is another page" without a COUNT(*)
-      // round-trip, then trim back to the page size.
+      // Fetch one extra row to detect another page without COUNT(*).
       final fetched = await _db.customSelect(sql, variables: vars).get();
       final bool hasMore = fetched.length > limit;
       final rows = hasMore ? fetched.sublist(0, limit) : fetched;

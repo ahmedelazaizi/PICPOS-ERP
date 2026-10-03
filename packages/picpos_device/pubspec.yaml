@@ -1,0 +1,34 @@
+name: picpos_device
+description: >-
+  PicPos on-device foundations for mobile_pos (PicPos كاشير) and mobile_admin
+  (PicPos إدارة): SQLCipher store with a Keystore-held key, idempotent
+  outbox + backoff, connectivity, ESC/POS raster printing over Bluetooth and
+  network (TCP 9100) with a persisted retry queue, cash-drawer kick, and
+  scanner input normalization. Adapted copies of mobile/lib/{data,sync,
+  printing} (picpos_van keeps its own). See docs/mobile/ARCHITECTURE-M.md
+  ADR-M1/M5.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  barcode: ^2.2.9
+  connectivity_plus: ^7.3.2
+  flutter_secure_storage: ^11.2.0
+  path: ^1.9.1
+  picpos_rules:
+    path: ../picpos_rules
+  print_bluetooth_thermal: ^1.2.1
+  sqflite_sqlcipher: ^3.4.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  picpos_ui:
+    path: ../picpos_ui
