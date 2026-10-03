@@ -188,6 +188,8 @@ void main() {
             'job',
             'pay',
             'documents',
+            'attendance',
+            'leave',
             'history',
             'roles',
           ]) {
@@ -248,8 +250,9 @@ void main() {
   group('لوحةُ الدور في النظام', () {
     testWidgets('ربطُ مستخدمٍ قائمٍ من الواجهة', (tester) async {
       await seed(tester);
+      // J4 part 2 inserted «الحضور» and «الإجازات» ⇒ the roles tab is 7.
       await pump(tester,
-          HrEmployeeFileScreen(employeeId: unlinkedId, initialTab: 5));
+          HrEmployeeFileScreen(employeeId: unlinkedId, initialTab: 7));
       expect(find.byKey(const Key('ef_create_user')), findsOneWidget);
       expect(find.byKey(const Key('ef_rep_pairing')), findsNothing,
           reason: 'no rep tag ⇒ no rep panel');
@@ -268,7 +271,7 @@ void main() {
     testWidgets('وسمُ «مندوب مبيعات» يُظهر لوحةَ المندوب', (tester) async {
       await seed(tester);
       await pump(tester,
-          HrEmployeeFileScreen(employeeId: unlinkedId, initialTab: 5));
+          HrEmployeeFileScreen(employeeId: unlinkedId, initialTab: 7));
       await tester.tap(find.byKey(const Key('ef_tag_rep')));
       await settle(tester);
       await tester.pump(const Duration(seconds: 3));

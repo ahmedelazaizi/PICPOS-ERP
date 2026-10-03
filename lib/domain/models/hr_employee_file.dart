@@ -72,6 +72,11 @@ abstract final class HrEventType {
   static const termination = 'termination';
   static const userLink = 'user_link';
   static const roleChange = 'role_change';
+
+  // J4 (الجزء ٢).
+  static const shiftChange = 'shift_change';
+  static const attendanceEdit = 'attendance_edit';
+  static const leave = 'leave';
 }
 
 /// وسومُ الأدوار في النظام — تُقترَح بها صلاحيّةُ المستخدم وموارده.

@@ -108,6 +108,14 @@ const _rawSqlProvenAtRuntime = <String, String>{
   'employee_allowances': 'test/integration/hr_employee_file_j4_test.dart',
   'employee_documents': 'test/integration/hr_employee_file_j4_test.dart',
   'employee_history': 'test/integration/hr_employee_file_j4_test.dart',
+  // v192 — الورديّاتُ والحضورُ والإجازات (J4 الجزء ٢).
+  'hr_shifts': 'test/integration/hr_attendance_leave_j4_test.dart',
+  'hr_shift_assignments': 'test/integration/hr_attendance_leave_j4_test.dart',
+  'hr_public_holidays': 'test/integration/hr_attendance_leave_j4_test.dart',
+  'hr_leave_types': 'test/integration/hr_attendance_leave_j4_test.dart',
+  'hr_leave_requests': 'test/integration/hr_attendance_leave_j4_test.dart',
+  'hr_leave_entitlements': 'test/integration/hr_attendance_leave_j4_test.dart',
+  'hr_attendance_days': 'test/integration/hr_attendance_leave_j4_test.dart',
 };
 
 /// جداولُ ليست في `pullTables` وتُرقَّم مع ذلك — الطرفُ الآخرُ من العقد.

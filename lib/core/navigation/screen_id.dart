@@ -228,7 +228,18 @@ enum ScreenId {
   hrEmployees(79),
 
   /// J4 — «الأقسام والمسميات» والهيكلُ التنظيميّ (PicPos). `hr_view`.
-  hrOrganization(80);
+  hrOrganization(80),
+
+  /// J4 (الجزء ٢) — «الحضور والانصراف»: اللوحةُ اليوميّة والكشفُ الشهريّ
+  /// والعطلاتُ الرسميّة (PicPos). `hr_attendance_view`.
+  hrAttendance(81),
+
+  /// J4 (الجزء ٢) — «الإجازات»: الطلباتُ والأرصدةُ والأنواع (PicPos).
+  /// `hr_leave_request`.
+  hrLeave(82),
+
+  /// J4 (الجزء ٢) — «الورديات» وإسنادُها (PicPos). `hr_shifts_manage`.
+  hrShifts(83);
 
   const ScreenId(this.navigationIndex);
   final int navigationIndex;

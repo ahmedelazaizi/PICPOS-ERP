@@ -5,7 +5,10 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/i18n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../domain/models/hr_attendance.dart';
 import '../../domain/models/hr_employee_file.dart';
+import '../../domain/models/hr_leave.dart';
+import 'hr_attendance_labels.dart';
 
 String hrStatusLabel(String status) => switch (status) {
       EmployeeStatus.active => tr('نشط'),
@@ -52,6 +55,9 @@ String hrEventLabel(String type) => switch (type) {
       HrEventType.termination => tr('إنهاء الخدمة'),
       HrEventType.userLink => tr('ربط مستخدم النظام'),
       HrEventType.roleChange => tr('تغيير الأدوار'),
+      HrEventType.shiftChange => tr('إسناد وردية'),
+      HrEventType.attendanceEdit => tr('تعديل الحضور'),
+      HrEventType.leave => tr('إجازة'),
       _ => type,
     };
 
@@ -63,6 +69,9 @@ IconData hrEventIcon(String type) => switch (type) {
       HrEventType.termination => PhosphorIconsBold.userMinus,
       HrEventType.userLink => PhosphorIconsBold.key,
       HrEventType.roleChange => PhosphorIconsBold.tag,
+      HrEventType.shiftChange => PhosphorIconsBold.clockClockwise,
+      HrEventType.attendanceEdit => PhosphorIconsBold.fingerprint,
+      HrEventType.leave => PhosphorIconsBold.airplaneTilt,
       _ => PhosphorIconsBold.clockCounterClockwise,
     };
 
@@ -75,6 +84,22 @@ String hrEventValue(String type, String? value) {
   if (type == HrEventType.roleChange) {
     return HrRoleTag.decode(value).map(hrRoleTagLabel).join('، ');
   }
+  // J4 (الجزء ٢) — الإجازةُ: النوعُ (اسمٌ مخزَّن) ثمّ حالةُ الطلب.
+  if (type == HrEventType.leave) {
+    return LeaveRequestStatus.values.contains(value)
+        ? leaveRequestStatusLabel(value)
+        : leaveTypeNameLabel(value);
+  }
+  // تعديلُ الحضور: «09:00 → 17:00 · absent» — العلامةُ رمزٌ يُترجَم.
+  if (type == HrEventType.attendanceEdit) {
+    return value
+        .split(' · ')
+        .map((p) => AttendanceStatus.values.contains(p)
+            ? attendanceStatusLabel(p)
+            : p)
+        .join(' · ');
+  }
+  if (type == HrEventType.shiftChange) return trData(value);
   return value;
 }
 

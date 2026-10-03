@@ -46,6 +46,9 @@ import 'presentation/parties_picpos/screens/parties_picpos_screen.dart';
 import 'presentation/distribution_picpos/screens/rep_distribution_picpos_screen.dart';
 import 'presentation/hr_picpos/screens/hr_employees_picpos_screen.dart';
 import 'presentation/hr_picpos/screens/hr_organization_picpos_screen.dart';
+import 'presentation/hr_picpos/screens/hr_attendance_picpos_screen.dart';
+import 'presentation/hr_picpos/screens/hr_leave_picpos_screen.dart';
+import 'presentation/hr_picpos/screens/hr_shifts_picpos_screen.dart';
 import 'presentation/screens/inventory/inventory_screen.dart';
 import 'presentation/inventory_picpos/screens/inventory_picpos_screen.dart';
 import 'presentation/screens/purchase_invoices_screen.dart';
@@ -839,6 +842,37 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         label: tr('الأقسام والمسميات الوظيفية'),
         icon: PhosphorIconsBold.treeStructure,
       ),
+      // J4 (الجزء ٢، PicPos) — الحضورُ والإجازاتُ والورديّات.
+      ScreenConfig(
+        appScreen: AppScreen.hrAttendance,
+        builder: (_) => SecurityScreenGate(
+          settingKey: 'hr_access_password',
+          title: tr('شؤون الموظفين'),
+          child: const HrAttendancePicPosScreen(),
+        ),
+        label: tr('الحضور والانصراف'),
+        icon: PhosphorIconsBold.fingerprint,
+      ),
+      ScreenConfig(
+        appScreen: AppScreen.hrLeave,
+        builder: (_) => SecurityScreenGate(
+          settingKey: 'hr_access_password',
+          title: tr('شؤون الموظفين'),
+          child: const HrLeavePicPosScreen(),
+        ),
+        label: tr('الإجازات'),
+        icon: PhosphorIconsBold.airplaneTilt,
+      ),
+      ScreenConfig(
+        appScreen: AppScreen.hrShifts,
+        builder: (_) => SecurityScreenGate(
+          settingKey: 'hr_access_password',
+          title: tr('شؤون الموظفين'),
+          child: const HrShiftsPicPosScreen(),
+        ),
+        label: tr('الورديات'),
+        icon: PhosphorIconsBold.clockClockwise,
+      ),
       ScreenConfig(
         appScreen: AppScreen.salesInvoices,
         builder: (_) => Brand.isPicPos
@@ -1279,6 +1313,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       AppScreen.hr, // Employees / HR — managed centrally on the server
       AppScreen.hrEmployees, // J4 — same rule for the PicPos employee file
       AppScreen.hrOrganization,
+      AppScreen.hrAttendance, // J4 part 2
+      AppScreen.hrLeave,
+      AppScreen.hrShifts,
     };
     return allScreens.where((s) {
       if (!allowedIndices.contains(s.index)) return false;

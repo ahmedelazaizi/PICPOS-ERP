@@ -120,7 +120,13 @@ enum AppScreen {
 
   /// يجب أن تطابق `ScreenId.hrEmployees` / `ScreenId.hrOrganization`.
   hrEmployees(79),
-  hrOrganization(80);
+  hrOrganization(80),
+
+  /// J4 (الجزء ٢) — يجب أن تطابق `ScreenId.hrAttendance` / `hrLeave` /
+  /// `hrShifts`.
+  hrAttendance(81),
+  hrLeave(82),
+  hrShifts(83);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;

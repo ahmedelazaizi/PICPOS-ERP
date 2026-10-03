@@ -40,6 +40,7 @@ extension DatabaseStartup on AppDatabase {
     await ensureReturnDraftsSchema();
     await ensureSystemPartiesSchema();
     await ensureHrCoreSchema();
+    await ensureHrAttendanceSchema();
 
     // Phase 2b: Database integrity — ensure critical PK/UNIQUE constraints
     // exist on PG installs whose schema was created by an older or crashed
@@ -1353,6 +1354,14 @@ extension DatabaseStartup on AppDatabase {
         debugPrint('[Startup] return approve backfill failed: $e');
       }
 
+      // J4 (v192) — صلاحيّاتُ الحضور والإجازات والورديّات تُمنَح مرّةً لأدوار
+      // الموارد البشريّة القائمة (‏`hr_view` ⇒ العرض، `hr_manage` ⇒ الباقي).
+      try {
+        await backfillHrAttendancePermissionsOnce();
+      } catch (e) {
+        debugPrint('[Startup] hr attendance permission backfill failed: $e');
+      }
+
       // Spec 084b — self-heal startup grant.
       //
       // Matrix updates (Spec 077/078/084 onward) only land for existing
@@ -1454,6 +1463,15 @@ extension DatabaseStartup on AppDatabase {
         await backfillHrCoreData();
       } catch (e) {
         debugPrint('[Startup] backfillHrCoreData: $e');
+      }
+
+      // J4 (v192) — أنواعُ الإجازات الأربعة، ونسخُ حضور الشاشة القديمة
+      // وإجازاتها وأرصدتها وعطلاتها المؤرَّخة إلى الجداول الجديدة. متساوي
+      // القوى (معرّفاتٌ عامّةٌ حتميّة)، فيلتقط ما تكتبه الشاشةُ القديمة لاحقاً.
+      try {
+        await migrateLegacyHrAttendance();
+      } catch (e) {
+        debugPrint('[Startup] migrateLegacyHrAttendance: $e');
       }
     }
   }

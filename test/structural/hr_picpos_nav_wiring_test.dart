@@ -58,6 +58,9 @@ void main() {
           ScreenId.loyalty,
           ScreenId.hrEmployees,
           ScreenId.hrOrganization,
+          ScreenId.hrAttendance,
+          ScreenId.hrLeave,
+          ScreenId.hrShifts,
           ScreenId.hr,
           ScreenId.treasury,
         ]);
@@ -79,7 +82,7 @@ void main() {
         for (final i in kAllNavItemDefs)
           if (i.group == 'hr') i.index,
       ];
-      expect(hrItems, [79, 80, 16]);
+      expect(hrItems, [79, 80, 81, 82, 83, 16]);
     } else {
       for (final id in screens.keys) {
         expect(navItemVisibleForBrand(id.navigationIndex), isFalse);

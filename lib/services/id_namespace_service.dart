@@ -112,6 +112,10 @@ class IdNamespaceService {
     // v191 — ملفُّ الموظف (J4).
     'hr_departments', 'hr_job_titles', 'employee_allowances',
     'employee_documents', 'employee_history',
+    // v192 — الحضورُ والإجازاتُ والورديّات (J4 الجزء ٢).
+    'hr_shifts', 'hr_shift_assignments', 'hr_public_holidays',
+    'hr_leave_types', 'hr_leave_requests', 'hr_leave_entitlements',
+    'hr_attendance_days',
 
     // ── v173 / المرحلة ٤ — السجلُّ الرقابيُّ والتشغيلُ العابر ──
     'loyalty_programs', 'delivery_companies', 'couriers',

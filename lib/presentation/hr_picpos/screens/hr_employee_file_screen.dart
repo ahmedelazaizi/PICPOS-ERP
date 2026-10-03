@@ -17,8 +17,10 @@ import '../../picpos_shell/picpos_surface.dart';
 import '../hr_labels.dart';
 import '../hr_picpos_providers.dart';
 import '../widgets/hr_form_kit.dart';
+import 'ef_attendance_tab.dart';
 import 'ef_documents_tab.dart';
 import 'ef_history_tab.dart';
+import 'ef_leave_tab.dart';
 import 'ef_job_tab.dart';
 import 'ef_pay_tab.dart';
 import 'ef_personal_tab.dart';
@@ -44,7 +46,7 @@ class HrEmployeeFileScreen extends ConsumerStatefulWidget {
 class _HrEmployeeFileScreenState extends ConsumerState<HrEmployeeFileScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs =
-      TabController(length: 6, vsync: this, initialIndex: widget.initialTab);
+      TabController(length: 8, vsync: this, initialIndex: widget.initialTab);
   late int? _id = widget.employeeId;
   EmployeeFileForm? _form;
   bool _saving = false;
@@ -112,15 +114,18 @@ class _HrEmployeeFileScreenState extends ConsumerState<HrEmployeeFileScreen>
         ref.watch(hasPermissionProvider(PermissionCodes.hrManage)).value ??
             false;
     final source = form?.source;
+    // كودُ الموظف ومسمّاه وقسمُه بيانات — تُترجَم أجزاءً (‏`trData`) وتُعرض
+    // سطراً فوق التبويبات، لا عنواناً فرعيّاً يمرّره الرأسُ كاملاً في `tr`.
+    final meta = source == null
+        ? null
+        : [
+            source.code,
+            if (source.jobTitleName != null) trData(source.jobTitleName),
+            if (source.departmentName != null) trData(source.departmentName),
+          ].whereType<String>().join(' · ');
     return PicPosScreenScaffold(
       title: source == null ? tr('موظف جديد') : source.name,
-      subtitle: source == null
-          ? tr('ملف الموظف')
-          : [
-              source.code,
-              source.jobTitleName,
-              source.departmentName,
-            ].whereType<String>().join(' · '),
+      subtitle: source == null ? tr('ملف الموظف') : null,
       icon: PhosphorIconsBold.identificationCard,
       headerActions: [
         if (source != null) ...[
@@ -147,26 +152,48 @@ class _HrEmployeeFileScreenState extends ConsumerState<HrEmployeeFileScreen>
           color: context.picposCard,
           border: Border(bottom: BorderSide(color: context.picposHairline)),
         ),
-        child: TabBar(
-          controller: _tabs,
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          labelColor: Theme.of(context).colorScheme.primary,
-          unselectedLabelColor: context.picposMuted,
-          tabs: [
-            for (final (key, icon, label) in [
-              ('personal', PhosphorIconsBold.user, tr('البيانات الشخصية')),
-              ('job', PhosphorIconsBold.briefcase, tr('البيانات الوظيفية')),
-              ('pay', PhosphorIconsBold.money, tr('العقد والأجر')),
-              ('documents', PhosphorIconsBold.files, tr('المستندات')),
-              ('history', PhosphorIconsBold.clockCounterClockwise, tr('السجل')),
-              ('roles', PhosphorIconsBold.key, tr('الدور في النظام')),
-            ])
-              Tab(
-                key: Key('ef_tab_$key'),
-                icon: Icon(icon, size: 18),
-                text: label,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (meta != null && meta.isNotEmpty)
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 0),
+                child: Text(
+                  meta,
+                  key: const Key('ef_meta'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: context.picposMuted),
+                ),
               ),
+            TabBar(
+              controller: _tabs,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              labelColor: Theme.of(context).colorScheme.primary,
+              unselectedLabelColor: context.picposMuted,
+              tabs: [
+                for (final (key, icon, label) in [
+                  ('personal', PhosphorIconsBold.user, tr('البيانات الشخصية')),
+                  ('job', PhosphorIconsBold.briefcase, tr('البيانات الوظيفية')),
+                  ('pay', PhosphorIconsBold.money, tr('العقد والأجر')),
+                  ('documents', PhosphorIconsBold.files, tr('المستندات')),
+                  ('attendance', PhosphorIconsBold.fingerprint, tr('الحضور')),
+                  ('leave', PhosphorIconsBold.airplaneTilt, tr('الإجازات')),
+                  ('history', PhosphorIconsBold.clockCounterClockwise,
+                      tr('السجل')),
+                  ('roles', PhosphorIconsBold.key, tr('الدور في النظام')),
+                ])
+                  Tab(
+                    key: Key('ef_tab_$key'),
+                    icon: Icon(icon, size: 18),
+                    text: label,
+                  ),
+              ],
+            ),
           ],
         ),
       ),
@@ -179,6 +206,8 @@ class _HrEmployeeFileScreenState extends ConsumerState<HrEmployeeFileScreen>
                 EfJobTab(form: form),
                 EfPayTab(form: form),
                 EfDocumentsTab(employeeId: _id),
+                EfAttendanceTab(employeeId: _id, name: source?.name ?? ''),
+                EfLeaveTab(employeeId: _id),
                 EfHistoryTab(employeeId: _id),
                 EfRolesTab(employeeId: _id),
               ],

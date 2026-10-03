@@ -214,6 +214,14 @@ class DeltaPullService {
     'employee_allowances',     // → employees
     'employee_documents',      // → employees
     'employee_history',        // → employees
+    // v192 — الورديّاتُ والحضورُ والإجازات (J4 الجزء ٢): الآباءُ أوّلاً.
+    'hr_shifts',
+    'hr_shift_assignments',    // → employees, hr_shifts
+    'hr_public_holidays',
+    'hr_leave_types',
+    'hr_leave_requests',       // → employees, hr_leave_types
+    'hr_leave_entitlements',   // → employees, hr_leave_types
+    'hr_attendance_days',      // → employees
 
     // ── Tier 7: السجلُّ الرقابيُّ والتشغيلُ العابرُ للأجهزة (v173 / المرحلة ٤) ──
     //
@@ -334,6 +342,10 @@ class DeltaPullService {
     // بلا هويّة، كأبيها `employees`.
     'hr_departments', 'hr_job_titles', 'employee_allowances',
     'employee_documents', 'employee_history',
+    // v192 — الحضورُ والإجازاتُ والورديّات (J4 الجزء ٢): بياناتُ موظفين.
+    'hr_shifts', 'hr_shift_assignments', 'hr_public_holidays',
+    'hr_leave_types', 'hr_leave_requests', 'hr_leave_entitlements',
+    'hr_attendance_days',
 
     // v173 / المرحلة ٤ — بياناتُ عملٍ لا تُسلَّم لمستدعٍ بلا هويّة: أرصدةُ
     // الولاء وحركاتُه، وأوراقُ الجرد وطلباتُ الصرف، والمطابقةُ البنكيّة
@@ -436,6 +448,10 @@ class DeltaPullService {
     // v191 — ملفُّ الموظف (J4): لا استراتيجيّةَ لها في `fullSync`.
     'hr_departments', 'hr_job_titles', 'employee_allowances',
     'employee_documents', 'employee_history',
+    // v192 — الحضورُ والإجازات (J4 الجزء ٢): لا استراتيجيّةَ لها في `fullSync`.
+    'hr_shifts', 'hr_shift_assignments', 'hr_public_holidays',
+    'hr_leave_types', 'hr_leave_requests', 'hr_leave_entitlements',
+    'hr_attendance_days',
 
     // ── البند ٦‑٤ (2026-08-31) — ستّةٌ كانت **مبذورةً بلا تنزيل** ────────
     //

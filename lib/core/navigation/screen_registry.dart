@@ -478,12 +478,16 @@ class ScreenRegistry {
 
   /// J4 — «سجل الموظفين» و«الأقسام والمسميات» تسبقان شاشةَ الموارد البشريّة
   /// القديمة (الحضور والرواتب) في كلّ نطاقٍ يحملها، فتتبعان `hrEnabled`
-  /// وصلاحيّتَها. UralCash لا يمرّ من هنا.
+  /// وصلاحيّتَها. UralCash لا يمرّ من هنا. والجزءُ ٢ يضيف «الحضور
+  /// والانصراف» و«الإجازات» و«الورديات» بعدهما.
   static List<ScreenId> withPicposHr(List<ScreenId> screens) => [
         for (final screen in screens) ...[
           if (screen == ScreenId.hr) ...[
             ScreenId.hrEmployees,
             ScreenId.hrOrganization,
+            ScreenId.hrAttendance,
+            ScreenId.hrLeave,
+            ScreenId.hrShifts,
           ],
           screen,
         ],

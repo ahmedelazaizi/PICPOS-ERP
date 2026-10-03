@@ -25,6 +25,9 @@ import '../../domain/models/voucher_book.dart';
 import '../../domain/models/return_draft.dart';
 import '../../domain/models/distribution_model.dart';
 import '../../domain/models/hr_employee_file.dart';
+import '../../domain/models/hr_attendance.dart';
+import '../../domain/models/hr_attendance_import.dart';
+import '../../domain/models/hr_leave.dart';
 import '../../domain/models/purchase_line_discount.dart';
 import '../../domain/models/cheque_book_plan.dart';
 import '../../domain/models/asset_disposal_plan.dart';
@@ -160,6 +163,9 @@ part 'system_parties_schema.dart';
 part 'hr_core_schema.dart';
 part 'daos/hr_employee_file_dao.dart';
 part 'daos/hr_role_link_dao.dart';
+part 'hr_attendance_schema.dart';
+part 'daos/hr_attendance_dao.dart';
+part 'daos/hr_leave_dao.dart';
 part 'daos/distribution_rep_ops_dao.dart';
 part 'daos/voucher_account_transfer_dao.dart';
 part 'daos/fixed_assets_dao_ext.dart';
@@ -1192,7 +1198,7 @@ class AppDatabase extends _$AppDatabase {
   //
   // Schema v177: sale reposts after an authorized edit may legitimately
   // produce multiple auto-posted JEs for one invoice reference.
-  int get schemaVersion => 191;
+  int get schemaVersion => 192;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.
@@ -1573,6 +1579,11 @@ class AppDatabase extends _$AppDatabase {
     // v191 — ملفُّ الموظف (J4).
     'hr_departments', 'hr_job_titles', 'employee_allowances',
     'employee_documents', 'employee_history',
+
+    // v192 — الورديّاتُ والحضورُ والإجازات (J4 الجزء ٢).
+    'hr_shifts', 'hr_shift_assignments', 'hr_public_holidays',
+    'hr_leave_types', 'hr_leave_requests', 'hr_leave_entitlements',
+    'hr_attendance_days',
   ];
 
   /// مكشوفةٌ لحارسٍ يثبّت أنّ كلَّ جدولٍ يُسحَب يحمل مُشغِّلَ الختم على
@@ -2331,6 +2342,10 @@ class AppDatabase extends _$AppDatabase {
       // v191 — ملفُّ الموظف (J4).
       'hr_departments', 'hr_job_titles', 'employee_allowances',
       'employee_documents', 'employee_history',
+      // v192 — الورديّاتُ والحضورُ والإجازات (J4 الجزء ٢).
+      'hr_shifts', 'hr_shift_assignments', 'hr_public_holidays',
+      'hr_leave_types', 'hr_leave_requests', 'hr_leave_entitlements',
+      'hr_attendance_days',
     };
     for (final pgTable in pgTables) {
       if (!driftTableNames.contains(pgTable) &&
@@ -2499,6 +2514,7 @@ class AppDatabase extends _$AppDatabase {
         await ensureReturnDraftsSchema();
         await ensureSystemPartiesSchema();
         await ensureHrCoreSchema();
+        await ensureHrAttendanceSchema();
         // seedInitialData + syncDefaultAccounts moved to beforeOpen
         // (after defensive v110 column additions)
       },

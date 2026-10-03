@@ -3658,5 +3658,14 @@ extension Epoch3Migrations on AppDatabase {
     if (from < 191) {
       await _safeMigrate('v191 employee file', ensureHrCoreSchema);
     }
+
+    // v192 — shifts, attendance, holidays and leave (raw, J4 part 2):
+    // hr_shifts / hr_shift_assignments / hr_attendance_days /
+    // hr_public_holidays / hr_leave_types / hr_leave_entitlements /
+    // hr_leave_requests. The legacy attendance / leave / balance rows are
+    // copied by migrateLegacyHrAttendance on the next non-client startup.
+    if (from < 192) {
+      await _safeMigrate('v192 attendance & leave', ensureHrAttendanceSchema);
+    }
   }
 }

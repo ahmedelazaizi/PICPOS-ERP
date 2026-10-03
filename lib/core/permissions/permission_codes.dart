@@ -568,6 +568,21 @@ class PermissionCodes {
   /// إصدار مسيرات الرواتب والمكافآت
   static const String hrPayrollProcess = 'hr_payroll_process';
 
+  /// J4 (الجزء ٢) — عرض الحضور والورديات والعطلات
+  static const String hrAttendanceView = 'hr_attendance_view';
+
+  /// J4 — إدخال الحضور وتصحيحه يدوياً واستيراد البصمة والعطلات
+  static const String hrAttendanceEdit = 'hr_attendance_edit';
+
+  /// J4 — تقديم طلبات الإجازة
+  static const String hrLeaveRequest = 'hr_leave_request';
+
+  /// J4 — اعتماد طلبات الإجازة ورفضها لأي موظف وإدارة أنواعها وأرصدتها
+  static const String hrLeaveApprove = 'hr_leave_approve';
+
+  /// J4 — تعريف الورديات وإسنادها
+  static const String hrShiftsManage = 'hr_shifts_manage';
+
   // ═══════════════════════════════════════════════════════════════════════════
   // REPORTS PERMISSIONS (التقارير)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1462,6 +1477,11 @@ class PermissionCodes {
     {'code': hrManage, 'name': tr('إدارة بيانات الموظفين'), 'category': 'hr'},
     {'code': hrAdvanceRecord, 'name': tr('تسجيل السلف'), 'category': 'hr'},
     {'code': hrPayrollProcess, 'name': tr('إصدار مسيرات الرواتب'), 'category': 'hr'},
+    {'code': hrAttendanceView, 'name': tr('عرض الحضور والورديات'), 'category': 'hr'},
+    {'code': hrAttendanceEdit, 'name': tr('إدخال الحضور وتصحيحه'), 'category': 'hr'},
+    {'code': hrLeaveRequest, 'name': tr('تقديم طلبات الإجازة'), 'category': 'hr'},
+    {'code': hrLeaveApprove, 'name': tr('اعتماد طلبات الإجازة'), 'category': 'hr'},
+    {'code': hrShiftsManage, 'name': tr('إدارة الورديات'), 'category': 'hr'},
 
     // ── Reports ──
     {'code': reportsView, 'name': tr('عرض التقارير'), 'category': 'reports'},

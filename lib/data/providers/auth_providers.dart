@@ -862,6 +862,10 @@ final _kNavItemDefsShared = [
   // (‏[_picposHrNavLayout]) حتى يحلّ محلَّه الجزآن ٢ و٣.
   const NavItemDef(icon: PhosphorIconsBold.identificationCard, label: 'سجل الموظفين', permission: 'hr_view', index: 79, section: 'الموارد البشرية', group: 'hr'),
   const NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'الأقسام والمسميات الوظيفية', permission: 'hr_view', index: 80, group: 'hr'),
+  // J4 (الجزء ٢) — الحضورُ والإجازاتُ والورديّات (PicPos وحدَها).
+  const NavItemDef(icon: PhosphorIconsBold.fingerprint, label: 'الحضور والانصراف', permission: 'hr_attendance_view', index: 81, group: 'hr'),
+  const NavItemDef(icon: PhosphorIconsBold.airplaneTilt, label: 'الإجازات', permission: 'hr_leave_request', index: 82, group: 'hr'),
+  const NavItemDef(icon: PhosphorIconsBold.clockClockwise, label: 'الورديات', permission: 'hr_shifts_manage', index: 83, group: 'hr'),
   const NavItemDef(icon: PhosphorIconsBold.users, label: 'الموظفين', permission: 'hr_view', index: 16, section: 'الموارد البشرية', group: 'hr'),
 
   // ═══════════════════════════════════════════
@@ -1025,7 +1029,7 @@ const kPicPosRetiredNavIndexes = <int>{
   42, // الجرد الدوري (‏= `fieldAudit`، اسمان لفهرسٍ واحد)
 };
 
-const kPicPosOnlyNavIndexes = <int>{75, 76, 77, 78, 79, 80};
+const kPicPosOnlyNavIndexes = <int>{75, 76, 77, 78, 79, 80, 81, 82, 83};
 // E4 — `70` (دفتر الشيكات) صار تبويباً داخل «إدارة الشيكات» في PicPos.
 // E-fix ٤ب — `24` (التوزيع القديمة) حلّت محلَّها `78` في PicPos.
 const kPicPosReplacedNavIndexes = <int>{6, 24, 70};
@@ -1171,6 +1175,9 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.repDistribution: 'distribution_view',
   ScreenId.hrEmployees: 'hr_view',
   ScreenId.hrOrganization: 'hr_view',
+  ScreenId.hrAttendance: 'hr_attendance_view',
+  ScreenId.hrLeave: 'hr_leave_request',
+  ScreenId.hrShifts: 'hr_shifts_manage',
   ScreenId.manufacturing: 'manufacturing_view',
   ScreenId.operationalExpenses: 'settings_view',
   ScreenId.chartOfAccounts: 'settings_view',
