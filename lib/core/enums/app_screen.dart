@@ -116,7 +116,11 @@ enum AppScreen {
   suppliers(77),
 
   /// يجب أن تطابق `ScreenId.repDistribution`.
-  repDistribution(78);
+  repDistribution(78),
+
+  /// يجب أن تطابق `ScreenId.hrEmployees` / `ScreenId.hrOrganization`.
+  hrEmployees(79),
+  hrOrganization(80);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;

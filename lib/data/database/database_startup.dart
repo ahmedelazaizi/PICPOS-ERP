@@ -39,6 +39,7 @@ extension DatabaseStartup on AppDatabase {
     await ensurePurchaseInvoicePurchaseAccountSchema();
     await ensureReturnDraftsSchema();
     await ensureSystemPartiesSchema();
+    await ensureHrCoreSchema();
 
     // Phase 2b: Database integrity — ensure critical PK/UNIQUE constraints
     // exist on PG installs whose schema was created by an older or crashed
@@ -1445,6 +1446,15 @@ extension DatabaseStartup on AppDatabase {
       // القائمُ منهما) في كلّ إقلاع. بعد بذر الدليل قصداً: الطرفُ يُربَط بحسابٍ
       // فرعيٍّ تحت 1121/2111. وفي وضع العميل يصلان من الخادم بالسحب.
       await ensureSystemCashParties();
+
+      // J4 (v191) — الموظفون القائمون يأخذون كوداً ومسمّى وظيفيّاً من دورهم
+      // القديم وحالةً وحدثَ تعيين. يملأ الفارغَ وحدَه، وفي وضع العميل تصل
+      // من الخادم بالسحب.
+      try {
+        await backfillHrCoreData();
+      } catch (e) {
+        debugPrint('[Startup] backfillHrCoreData: $e');
+      }
     }
   }
 

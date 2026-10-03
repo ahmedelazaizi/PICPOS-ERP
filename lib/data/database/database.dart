@@ -24,6 +24,7 @@ import '../../domain/models/document_record.dart';
 import '../../domain/models/voucher_book.dart';
 import '../../domain/models/return_draft.dart';
 import '../../domain/models/distribution_model.dart';
+import '../../domain/models/hr_employee_file.dart';
 import '../../domain/models/purchase_line_discount.dart';
 import '../../domain/models/cheque_book_plan.dart';
 import '../../domain/models/asset_disposal_plan.dart';
@@ -156,6 +157,9 @@ part 'cloud_sync_schema.dart';
 part 'purchase_invoice_purchase_account_schema.dart';
 part 'return_drafts_schema.dart';
 part 'system_parties_schema.dart';
+part 'hr_core_schema.dart';
+part 'daos/hr_employee_file_dao.dart';
+part 'daos/hr_role_link_dao.dart';
 part 'daos/distribution_rep_ops_dao.dart';
 part 'daos/voucher_account_transfer_dao.dart';
 part 'daos/fixed_assets_dao_ext.dart';
@@ -1188,7 +1192,7 @@ class AppDatabase extends _$AppDatabase {
   //
   // Schema v177: sale reposts after an authorized edit may legitimately
   // produce multiple auto-posted JEs for one invoice reference.
-  int get schemaVersion => 190;
+  int get schemaVersion => 191;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.
@@ -1565,6 +1569,10 @@ class AppDatabase extends _$AppDatabase {
 
     // v189 — مسوّداتُ المرتجعات (J2).
     'return_drafts',
+
+    // v191 — ملفُّ الموظف (J4).
+    'hr_departments', 'hr_job_titles', 'employee_allowances',
+    'employee_documents', 'employee_history',
   ];
 
   /// مكشوفةٌ لحارسٍ يثبّت أنّ كلَّ جدولٍ يُسحَب يحمل مُشغِّلَ الختم على
@@ -2320,6 +2328,9 @@ class AppDatabase extends _$AppDatabase {
       'rep_resources',
       // v189 — مسوّداتُ المرتجعات (J2).
       'return_drafts',
+      // v191 — ملفُّ الموظف (J4).
+      'hr_departments', 'hr_job_titles', 'employee_allowances',
+      'employee_documents', 'employee_history',
     };
     for (final pgTable in pgTables) {
       if (!driftTableNames.contains(pgTable) &&
@@ -2487,6 +2498,7 @@ class AppDatabase extends _$AppDatabase {
         await ensurePurchaseInvoicePurchaseAccountSchema();
         await ensureReturnDraftsSchema();
         await ensureSystemPartiesSchema();
+        await ensureHrCoreSchema();
         // seedInitialData + syncDefaultAccounts moved to beforeOpen
         // (after defensive v110 column additions)
       },

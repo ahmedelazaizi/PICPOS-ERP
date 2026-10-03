@@ -173,6 +173,22 @@ class CloudLinkController {
   }
 
   Future<void> retry(String globalId) => _db.requestCloudSyncRetry(globalId);
+
+  /// J4 — issues a rep-app pairing code for the employee [employeeGlobalId]
+  /// over the configured link (`POST /desktop/pairing-codes`). `null` when
+  /// the link is not enabled/complete — the caller points to its settings.
+  Future<Map<String, dynamic>?> issueRepPairingCode(String employeeGlobalId,
+      {String? pin}) async {
+    final config = await store.load();
+    if (!config.enabled || !config.credentials.isComplete) return null;
+    final api = CloudLinkApi(config.credentials,
+        timeout: const Duration(seconds: 15));
+    try {
+      return await api.pairingCode(employeeGlobalId, pin: pin);
+    } finally {
+      api.close();
+    }
+  }
 }
 
 final cloudLinkControllerProvider = Provider<CloudLinkController>((ref) =>

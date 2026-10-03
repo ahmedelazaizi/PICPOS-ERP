@@ -222,7 +222,13 @@ enum ScreenId {
 
   /// «إدارة المناديب والتوزيع» — PicPos (المرحلة و): المناطق والمسارات
   /// وعملاؤها والمناديب وعهدتهم. صلاحيّتُه `distribution_view` القائمة.
-  repDistribution(78);
+  repDistribution(78),
+
+  /// J4 — «سجل الموظفين» وملفُّ الموظف (PicPos). صلاحيّتُه `hr_view`.
+  hrEmployees(79),
+
+  /// J4 — «الأقسام والمسميات» والهيكلُ التنظيميّ (PicPos). `hr_view`.
+  hrOrganization(80);
 
   const ScreenId(this.navigationIndex);
   final int navigationIndex;

@@ -295,6 +295,8 @@ extension SalesMutationsDao on AppDatabase {
       // v185 — المندوبُ والمسارُ يُختَمان لحظةَ الإنشاء.
       await stampDocumentRep('sales_invoices', invoiceId, customerId,
           explicit: repStamp);
+      // J4 — بيعُ «عميل نقدي» بلا مسار: المندوبُ من ربط المستخدم بموظفه.
+      await stampSalesInvoiceRepFromUser(invoiceId, customerId, userId);
       // Insert items and update stock
       for (final item in items) {
         // PIR Phase 0: Auto-populate costPrice from product's current WAC

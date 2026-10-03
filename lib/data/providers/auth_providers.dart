@@ -748,8 +748,27 @@ List<NavItemDef> _uralCashFinanceNavLayout(List<NavItemDef> shared) {
 /// ⚠️ E-fix ٣ — القائمةُ أدناه تخطيطُ PicPos (فصلُ المرحلة هـ)، وUralCash
 /// يراها بتخطيط المالية القديم ([_uralCashFinanceNavLayout]).
 final kAllNavItemDefs = Brand.isPicPos
-    ? _kNavItemDefsShared
+    ? _picposHrNavLayout(_kNavItemDefsShared)
     : _uralCashFinanceNavLayout(_kNavItemDefsShared);
+
+/// J4 — في PicPos تصير الشاشةُ القديمة (‏`16`) «الحضور والرواتب» تحت
+/// «سجل الموظفين»، فلا يظهر مدخلان باسم «الموظفين». UralCash لا يمرّ من هنا.
+List<NavItemDef> _picposHrNavLayout(List<NavItemDef> shared) => [
+      for (final i in shared)
+        if (i.index == 16)
+          NavItemDef(
+            icon: PhosphorIconsBold.calendarCheck,
+            label: kPicPosLegacyHrLabel,
+            permission: i.permission,
+            index: i.index,
+            group: i.group,
+          )
+        else
+          i,
+    ];
+
+/// تسميةُ شاشة الموارد البشريّة القديمة في PicPos (J4).
+const kPicPosLegacyHrLabel = 'الحضور والرواتب';
 
 final _kNavItemDefsShared = [
   // ═══════════════════════════════════════════
@@ -838,6 +857,11 @@ final _kNavItemDefsShared = [
   // ═══════════════════════════════════════════
   // 🧑‍💼 الموارد البشرية — طلبُ المالك 2026-09-12
   // ═══════════════════════════════════════════
+  // J4 — PicPos وحدَها (‏[kPicPosOnlyNavIndexes]): سجلُّ الموظفين وملفُّهم،
+  // والأقسامُ والمسمّياتُ والهيكل. وفي PicPos يُسمّى `16` «الحضور والرواتب»
+  // (‏[_picposHrNavLayout]) حتى يحلّ محلَّه الجزآن ٢ و٣.
+  const NavItemDef(icon: PhosphorIconsBold.identificationCard, label: 'سجل الموظفين', permission: 'hr_view', index: 79, section: 'الموارد البشرية', group: 'hr'),
+  const NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'الأقسام والمسميات الوظيفية', permission: 'hr_view', index: 80, group: 'hr'),
   const NavItemDef(icon: PhosphorIconsBold.users, label: 'الموظفين', permission: 'hr_view', index: 16, section: 'الموارد البشرية', group: 'hr'),
 
   // ═══════════════════════════════════════════
@@ -1001,7 +1025,7 @@ const kPicPosRetiredNavIndexes = <int>{
   42, // الجرد الدوري (‏= `fieldAudit`، اسمان لفهرسٍ واحد)
 };
 
-const kPicPosOnlyNavIndexes = <int>{75, 76, 77, 78};
+const kPicPosOnlyNavIndexes = <int>{75, 76, 77, 78, 79, 80};
 // E4 — `70` (دفتر الشيكات) صار تبويباً داخل «إدارة الشيكات» في PicPos.
 // E-fix ٤ب — `24` (التوزيع القديمة) حلّت محلَّها `78` في PicPos.
 const kPicPosReplacedNavIndexes = <int>{6, 24, 70};
@@ -1145,6 +1169,8 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.loyalty: 'loyalty_view',
   ScreenId.distribution: 'distribution_view',
   ScreenId.repDistribution: 'distribution_view',
+  ScreenId.hrEmployees: 'hr_view',
+  ScreenId.hrOrganization: 'hr_view',
   ScreenId.manufacturing: 'manufacturing_view',
   ScreenId.operationalExpenses: 'settings_view',
   ScreenId.chartOfAccounts: 'settings_view',

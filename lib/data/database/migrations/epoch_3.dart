@@ -3649,5 +3649,14 @@ extension Epoch3Migrations on AppDatabase {
       await _safeMigrate(
           'v190 parties.system_role', ensureSystemPartiesSchema);
     }
+
+    // v191 — employee file (raw, J4): employees personal/job/contract/pay
+    // columns + user link, and hr_departments / hr_job_titles /
+    // employee_allowances / employee_documents / employee_history. Existing
+    // rows are back-filled (code, job title, status) by backfillHrCoreData
+    // on the next non-client startup.
+    if (from < 191) {
+      await _safeMigrate('v191 employee file', ensureHrCoreSchema);
+    }
   }
 }

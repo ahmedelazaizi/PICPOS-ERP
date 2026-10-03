@@ -21,11 +21,15 @@ Future<PermanentCustomerInput?> showPermanentCustomerDialog(
   required String name,
   String? phone,
   required List<DistributionRoute> routes,
+  int? preferredRouteId,
 }) {
   return showDialog<PermanentCustomerInput>(
     context: context,
-    builder: (_) =>
-        _PermanentCustomerDialog(name: name, phone: phone, routes: routes),
+    builder: (_) => _PermanentCustomerDialog(
+        name: name,
+        phone: phone,
+        routes: routes,
+        preferredRouteId: preferredRouteId),
   );
 }
 
@@ -34,10 +38,15 @@ class _PermanentCustomerDialog extends StatefulWidget {
     required this.name,
     required this.phone,
     required this.routes,
+    this.preferredRouteId,
   });
   final String name;
   final String? phone;
   final List<DistributionRoute> routes;
+
+  /// J4 — مسارُ المندوب الحاليّ (من ربط المستخدم بموظفه) يُختار مسبقاً،
+  /// ويبقى المنتقي لمن ليس مندوباً أو لمن يريد غيره.
+  final int? preferredRouteId;
 
   @override
   State<_PermanentCustomerDialog> createState() =>
@@ -48,8 +57,10 @@ class _PermanentCustomerDialogState extends State<_PermanentCustomerDialog> {
   late final _name = TextEditingController(text: widget.name);
   late final _phone = TextEditingController(text: widget.phone ?? '');
   final _address = TextEditingController();
-  late int? _routeId =
-      widget.routes.length == 1 ? widget.routes.single.id : null;
+  late int? _routeId = widget.routes
+          .any((r) => r.id == widget.preferredRouteId)
+      ? widget.preferredRouteId
+      : (widget.routes.length == 1 ? widget.routes.single.id : null);
 
   @override
   void dispose() {

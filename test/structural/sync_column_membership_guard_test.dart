@@ -102,6 +102,12 @@ const _rawSqlProvenAtRuntime = <String, String>{
   'rep_resources': 'test/unit/distribution_model_phase_f_test.dart',
   // v189 — مسوّداتُ المرتجعات (J2).
   'return_drafts': 'test/integration/return_drafts_lifecycle_j2_test.dart',
+  // v191 — ملفُّ الموظف (J4).
+  'hr_departments': 'test/integration/hr_employee_file_j4_test.dart',
+  'hr_job_titles': 'test/integration/hr_employee_file_j4_test.dart',
+  'employee_allowances': 'test/integration/hr_employee_file_j4_test.dart',
+  'employee_documents': 'test/integration/hr_employee_file_j4_test.dart',
+  'employee_history': 'test/integration/hr_employee_file_j4_test.dart',
 };
 
 /// جداولُ ليست في `pullTables` وتُرقَّم مع ذلك — الطرفُ الآخرُ من العقد.

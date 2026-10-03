@@ -109,6 +109,9 @@ class IdNamespaceService {
     'rep_resources',
     // v189 — مسوّداتُ المرتجعات (J2).
     'return_drafts',
+    // v191 — ملفُّ الموظف (J4).
+    'hr_departments', 'hr_job_titles', 'employee_allowances',
+    'employee_documents', 'employee_history',
 
     // ── v173 / المرحلة ٤ — السجلُّ الرقابيُّ والتشغيلُ العابر ──
     'loyalty_programs', 'delivery_companies', 'couriers',

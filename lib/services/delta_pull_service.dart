@@ -206,6 +206,14 @@ class DeltaPullService {
     'rep_resources',           // → employees, warehouses, safes
     // v189 — مسوّداتُ المرتجعات (J2): بعد فواتير البيع والشراء والأطراف.
     'return_drafts',           // → sales/purchase_invoices, parties
+    // v191 — ملفُّ الموظف (J4). القسمُ والمسمّى بلا مفاتيحَ خارجيّة
+    // (‏`employees.department_id/job_title_id` أعمدةٌ خامّةٌ بلا قيد)،
+    // والبدلاتُ والمستنداتُ والسجلُّ أبناءُ `employees` بعدها.
+    'hr_departments',
+    'hr_job_titles',
+    'employee_allowances',     // → employees
+    'employee_documents',      // → employees
+    'employee_history',        // → employees
 
     // ── Tier 7: السجلُّ الرقابيُّ والتشغيلُ العابرُ للأجهزة (v173 / المرحلة ٤) ──
     //
@@ -322,6 +330,10 @@ class DeltaPullService {
     'rep_resources',
     // v189 — مسوّداتُ المرتجعات (J2): بياناتُ عمل.
     'return_drafts',
+    // v191 — ملفُّ الموظف (J4): رواتبُ وبدلاتٌ ومستنداتٌ شخصيّة — لا تُسلَّم
+    // بلا هويّة، كأبيها `employees`.
+    'hr_departments', 'hr_job_titles', 'employee_allowances',
+    'employee_documents', 'employee_history',
 
     // v173 / المرحلة ٤ — بياناتُ عملٍ لا تُسلَّم لمستدعٍ بلا هويّة: أرصدةُ
     // الولاء وحركاتُه، وأوراقُ الجرد وطلباتُ الصرف، والمطابقةُ البنكيّة
@@ -421,6 +433,9 @@ class DeltaPullService {
     'rep_resources',
     // v189 — مسوّداتُ المرتجعات (J2): لا استراتيجيّةَ لها في `fullSync`.
     'return_drafts',
+    // v191 — ملفُّ الموظف (J4): لا استراتيجيّةَ لها في `fullSync`.
+    'hr_departments', 'hr_job_titles', 'employee_allowances',
+    'employee_documents', 'employee_history',
 
     // ── البند ٦‑٤ (2026-08-31) — ستّةٌ كانت **مبذورةً بلا تنزيل** ────────
     //

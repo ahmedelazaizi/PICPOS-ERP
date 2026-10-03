@@ -476,6 +476,19 @@ class ScreenRegistry {
           screen == ScreenId.distribution ? ScreenId.repDistribution : screen,
       ];
 
+  /// J4 — «سجل الموظفين» و«الأقسام والمسميات» تسبقان شاشةَ الموارد البشريّة
+  /// القديمة (الحضور والرواتب) في كلّ نطاقٍ يحملها، فتتبعان `hrEnabled`
+  /// وصلاحيّتَها. UralCash لا يمرّ من هنا.
+  static List<ScreenId> withPicposHr(List<ScreenId> screens) => [
+        for (final screen in screens) ...[
+          if (screen == ScreenId.hr) ...[
+            ScreenId.hrEmployees,
+            ScreenId.hrOrganization,
+          ],
+          screen,
+        ],
+      ];
+
   /// [features] اختياريٌّ عن قصد: تركُه `null` يعطي **بالضبط** ما كان
   /// يعطيه التوقيعُ القديم، فلا يتغيّر سلوكُ أيّ منادٍ لم يُحدَّث.
   static List<ScreenId> forProfile(
@@ -484,9 +497,9 @@ class ScreenRegistry {
   }) {
     final base = _baseForProfile(profile, features: features);
     if (!Brand.isPicPos) return base;
-    return withPicposRepDistribution(withPicposPartyScreens(
+    return withPicposHr(withPicposRepDistribution(withPicposPartyScreens(
       withPicposQuotations(withoutPicposRetired(base)),
-    ));
+    )));
   }
 
   static List<ScreenId> _baseForProfile(

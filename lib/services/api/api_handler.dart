@@ -2792,6 +2792,8 @@ class ApiHandler {
     'distribution_areas', 'route_customers', 'route_rep_history',
     'rep_resources',
     'return_drafts', // v189 — J2
+    'hr_departments', 'hr_job_titles', 'employee_allowances', // v191 — J4
+    'employee_documents', 'employee_history',
     // Tier 7 — v173 / المرحلة ٤: السجلُّ الرقابيُّ والتشغيلُ العابر.
     // تقابل الكتلةَ نفسَها في [DeltaPullService.pullTables]. و
     // `e_invoice_configs` ليست هنا عمداً (تحمل `client_secret`).
@@ -2942,6 +2944,8 @@ class ApiHandler {
     'distribution_areas', 'route_customers', 'route_rep_history',
     'rep_resources',
     'return_drafts', // v189 — J2
+    'hr_departments', 'hr_job_titles', 'employee_allowances', // v191 — J4
+    'employee_documents', 'employee_history',
 
     // v173 / المرحلة ٤ — بياناتُ عملٍ لا تُسلَّم لمستدعٍ بلا هويّة. تقابل
     // الكتلةَ نفسَها في `DeltaPullService.branchScopedPullTables` حرفاً.

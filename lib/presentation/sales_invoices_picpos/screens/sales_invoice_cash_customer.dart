@@ -29,11 +29,24 @@ extension SalesInvoiceCashCustomerExt on _SalesInvoicesPicposScreenState {
     String? phone,
     required List<DistributionRoute> routes,
   }) async {
+    final container = ProviderScope.containerOf(context, listen: false);
+    final db = container.read(databaseProvider);
+    // J4 — المندوبُ الحاليّ من ربط المستخدم المسجَّل بموظفه؛ وإلّا فالمنتقي.
+    int? preferredRouteId;
+    try {
+      preferredRouteId = (await db
+              .currentRepForUser(container.read(authProvider).user?.id))
+          ?.preferredRouteId;
+    } catch (_) {
+      preferredRouteId = null;
+    }
+    if (!context.mounted) return null;
     final input = await showPermanentCustomerDialog(context,
-        name: name, phone: phone, routes: routes);
+        name: name,
+        phone: phone,
+        routes: routes,
+        preferredRouteId: preferredRouteId);
     if (input == null || !context.mounted) return null;
-    final db = ProviderScope.containerOf(context, listen: false)
-        .read(databaseProvider);
     try {
       final id = await db.createPermanentCustomerFromCashSale(
         name: input.name,
