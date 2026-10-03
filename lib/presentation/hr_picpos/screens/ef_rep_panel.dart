@@ -249,13 +249,88 @@ class _EfRepPanelState extends ConsumerState<EfRepPanel> {
             style: TextStyle(fontSize: 12.5, color: context.picposMuted)),
       );
 
+  Future<String?> _pairingPin(BuildContext context) async {
+    final formKey = GlobalKey<FormState>();
+    String pin = '';
+    bool keepCurrent = false;
+    return showDialog<String>(
+        context: context,
+        builder: (ctx) => StatefulBuilder(
+          builder: (ctx, setDialogState) => PicPosDialog(
+            icon: PhosphorIconsBold.deviceMobile,
+            title: tr('إصدار رمز اقتران'),
+            width: 520,
+            onCancel: () => Navigator.pop(ctx),
+            primaryAction: PicPosDialogAction(
+              label: tr('إصدار رمز اقتران'),
+              onPressed: () {
+                if (keepCurrent || formKey.currentState!.validate()) {
+                  Navigator.pop(ctx, keepCurrent ? '' : pin);
+                }
+              },
+            ),
+            body: [
+              Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      key: const Key('ef_rep_pin'),
+                      onChanged: (value) => pin = value,
+                      obscureText: true,
+                      enabled: !keepCurrent,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: InputDecoration(labelText: tr('الرمز السري للمندوب')),
+                      validator: (value) => value == null ||
+                              !RegExp(r'^\d{4,8}$').hasMatch(value)
+                          ? tr('الرمز السري يجب أن يتكون من 4 إلى 8 أرقام')
+                          : null,
+                    ),
+                    TextFormField(
+                      key: const Key('ef_rep_pin_confirmation'),
+                      obscureText: true,
+                      enabled: !keepCurrent,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: InputDecoration(labelText: tr('تأكيد الرمز')),
+                      validator: (value) => value != pin
+                          ? tr('الرمزان غير متطابقين')
+                          : null,
+                    ),
+                    CheckboxListTile(
+                      key: const Key('ef_rep_keep_pin'),
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(tr('الإبقاء على الرمز الحالي')),
+                      value: keepCurrent,
+                      onChanged: (value) => setDialogState(() {
+                        keepCurrent = value ?? false;
+                        if (keepCurrent) {
+                          pin = '';
+                          formKey.currentState!.reset();
+                        }
+                      }),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+    );
+  }
+
   /// رمزُ اقترانٍ لتطبيق المندوب عبر الربط السحابيّ القائم (I-3).
   Future<void> _pairingCode(BuildContext context) async {
     final gid = widget.profile.globalId;
     if (gid == null) return;
+    final selectedPin = await _pairingPin(context);
+    if (selectedPin == null || !context.mounted) return;
+    final keepCurrent = selectedPin.isEmpty;
     try {
-      final res =
-          await ref.read(cloudLinkControllerProvider).issueRepPairingCode(gid);
+      final res = await ref.read(cloudLinkControllerProvider).issueRepPairingCode(
+          gid, pin: keepCurrent ? null : selectedPin);
       if (!context.mounted) return;
       if (res == null) {
         AppToast.show(context,
@@ -289,6 +364,11 @@ class _EfRepPanelState extends ConsumerState<EfRepPanel> {
                     fontWeight: FontWeight.w800,
                     letterSpacing: 4,
                     fontFeatures: [FontFeature.tabularFigures()])),
+            Text(
+                tr(keepCurrent ? 'لم يتغيّر الرمز السري' : 'الرمز السري: تم ضبطه'),
+                textAlign: TextAlign.center),
+            Text(tr('رمز الاقتران صالح لمدة 10 دقائق ويُستخدم مرة واحدة.'),
+                textAlign: TextAlign.center),
             Text(
                 tr('أدخل الرمز في تطبيق المندوب على الموبايل لربطه بهذا الموظف.'),
                 textAlign: TextAlign.center),

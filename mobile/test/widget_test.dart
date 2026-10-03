@@ -94,5 +94,41 @@ void main() {
     await tester.tap(find.byKey(const Key('syncNow')));
     await tester.pumpAndSettle();
     expect(api.pushed, isEmpty, reason: 'nothing pending → no push');
+    expect(find.text('تمت المزامنة — لا جديد للإرسال، وتم تحديث البيانات من السيرفر'), findsOneWidget);
+    expect(find.text('مستندات لم تُرسل بعد'), findsOneWidget);
+    expect(find.text('إجمالي المقبول من هذا الجهاز'), findsOneWidget);
+    expect(find.text('إجمالي المرفوض'), findsOneWidget);
+  });
+
+  testWidgets('manual sync reports accepted and rejected documents', (tester) async {
+    final (c, _) = await readyController();
+    await c.store.addOutbox(OutboxEntry(
+      globalId: 'accepted-sale', kind: 'visit', createdAt: DateTime(2026, 5, 1),
+      payload: {'globalId': 'accepted-sale', 'kind': 'visit', 'customerGlobalId': 'c2'},
+    ));
+    await c.store.addOutbox(OutboxEntry(
+      globalId: 'rejected-visit', kind: 'visit', createdAt: DateTime(2026, 5, 1),
+      payload: {'globalId': 'rejected-visit', 'kind': 'visit', 'customerGlobalId': 'reject-me'},
+    ));
+    await tester.pumpWidget(PicposVanApp(controller: c));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('المزامنة').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('syncNow')));
+    await tester.pumpAndSettle();
+    expect(find.text('تم إرسال 2 مستند — المقبول: 1، المرفوض: 1'), findsOneWidget);
+  });
+
+  testWidgets('manual sync failure shows the Arabic connection reason', (tester) async {
+    final (c, api) = await readyController();
+    api.offline = true;
+    await tester.pumpWidget(PicposVanApp(controller: c));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('المزامنة').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('syncNow')));
+    await tester.pumpAndSettle();
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.text('تعذّر الاتصال بالخادم'), findsWidgets);
   });
 }

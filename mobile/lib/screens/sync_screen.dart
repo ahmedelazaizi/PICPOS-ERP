@@ -8,6 +8,41 @@ import 'common.dart';
 class SyncScreen extends StatelessWidget {
   const SyncScreen({super.key});
 
+  Future<void> _sync(BuildContext context, AppController controller) async {
+    final pending = await controller.pendingDocs();
+    final synced = await controller.syncNow();
+    if (!context.mounted) return;
+    final s = S.of(context);
+    String message;
+    if (!synced) {
+      final error = controller.lastSyncError;
+      final reason = error == 'sessionRequired'
+          ? s.t('sessionRequired')
+          : !controller.isPaired
+              ? s.t('deviceRevoked')
+              : error == 'rate_limited' || error == 'too_many_attempts'
+                  ? s.t('syncRateLimited')
+                  : error == null || error.contains('SocketException') || error.contains('TimeoutException')
+                      ? s.t('error')
+                      : '${s.t('syncFailed')} ($error)';
+      message = reason;
+    } else if (pending.isEmpty) {
+      message = s.t('syncEmpty');
+    } else {
+      final statuses = {for (final entry in await controller.store.outbox()) entry.globalId: entry.status};
+      if (!context.mounted) return;
+      final accepted = pending.where((entry) => statuses[entry.globalId] == OutboxStatus.accepted).length;
+      final rejected = pending.where((entry) => statuses[entry.globalId] == OutboxStatus.rejected).length;
+      message = s.t('syncSent')
+          .replaceAll('{count}', '${pending.length}')
+          .replaceAll('{accepted}', '$accepted')
+          .replaceAll('{rejected}', '$rejected');
+    }
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
@@ -51,7 +86,7 @@ class SyncScreen extends StatelessWidget {
                           ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
                           : const Icon(Icons.sync),
                       label: Text(s.t('syncNow')),
-                      onPressed: c.syncing ? null : c.syncNow,
+                      onPressed: c.syncing ? null : () => _sync(context, c),
                     ),
                   ],
                 ),
