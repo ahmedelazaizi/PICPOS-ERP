@@ -189,6 +189,70 @@ class CloudLinkController {
       api.close();
     }
   }
+
+  /// Settings › Linked devices — rep-app devices paired on the cloud for this
+  /// company. `null` when the link is not enabled/complete.
+  Future<List<CloudRepDeviceView>?> listRepDevices() async {
+    final config = await store.load();
+    if (!config.enabled || !config.credentials.isComplete) return null;
+    final api = CloudLinkApi(config.credentials,
+        timeout: const Duration(seconds: 15));
+    try {
+      return [
+        for (final d in await api.devices()) CloudRepDeviceView.fromJson(d),
+      ];
+    } finally {
+      api.close();
+    }
+  }
+
+  /// Revokes a rep-app device on the cloud (the app is signed out and wipes
+  /// its local data). Throws when the link is not configured.
+  Future<void> revokeRepDevice(String deviceId) async {
+    final config = await store.load();
+    if (!config.enabled || !config.credentials.isComplete) {
+      throw CloudLinkException(0, 'link_not_configured');
+    }
+    final api = CloudLinkApi(config.credentials,
+        timeout: const Duration(seconds: 15));
+    try {
+      await api.revokeDevice(deviceId);
+    } finally {
+      api.close();
+    }
+  }
+}
+
+/// A rep-app device as listed by `GET /desktop/devices`.
+class CloudRepDeviceView {
+  const CloudRepDeviceView({
+    required this.deviceId,
+    this.deviceName,
+    this.employeeName,
+    this.pairedAt,
+    this.lastSeenAt,
+    required this.revoked,
+  });
+
+  factory CloudRepDeviceView.fromJson(Map<String, dynamic> j) {
+    DateTime? at(Object? v) =>
+        v is num ? DateTime.fromMillisecondsSinceEpoch(v.toInt()) : null;
+    return CloudRepDeviceView(
+      deviceId: '${j['deviceId'] ?? ''}',
+      deviceName: j['deviceName'] as String?,
+      employeeName: j['employeeName'] as String?,
+      pairedAt: at(j['pairedAt']),
+      lastSeenAt: at(j['lastSeenAt']),
+      revoked: j['revoked'] == true,
+    );
+  }
+
+  final String deviceId;
+  final String? deviceName;
+  final String? employeeName;
+  final DateTime? pairedAt;
+  final DateTime? lastSeenAt;
+  final bool revoked;
 }
 
 final cloudLinkControllerProvider = Provider<CloudLinkController>((ref) =>

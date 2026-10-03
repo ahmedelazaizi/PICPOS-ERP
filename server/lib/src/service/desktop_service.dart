@@ -117,6 +117,29 @@ class DesktopService {
     return {'employeeGlobalId': employeeGlobalId, 'pinSet': true};
   }
 
+  /// Rep-app devices paired on this company (Settings › Linked devices on the
+  /// desktop). Active devices first, most recently seen first.
+  Future<List<Map<String, Object?>>> listDevices(DesktopContext d) async {
+    final rows = await db.query('''
+      SELECT dv.device_id, dv.name, e.global_id, e.name, dv.paired_at, dv.last_seen_at, dv.revoked_at
+      FROM devices dv JOIN employees e ON e.id = dv.employee_id
+      WHERE dv.company_id=@c
+      ORDER BY (dv.revoked_at IS NOT NULL), dv.last_seen_at DESC NULLS LAST, dv.id DESC''', {'c': d.companyId});
+    return [
+      for (final r in rows)
+        {
+          'deviceId': r[0],
+          'deviceName': r[1],
+          'employeeGlobalId': r[2],
+          'employeeName': r[3],
+          'pairedAt': r[4],
+          'lastSeenAt': r[5],
+          'revokedAt': r[6],
+          'revoked': r[6] != null,
+        },
+    ];
+  }
+
   // ───────────────────────────── master data ─────────────────────────────
 
   /// Applies one master-data batch in one transaction. Rows whose references

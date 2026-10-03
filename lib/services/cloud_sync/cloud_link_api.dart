@@ -116,5 +116,18 @@ class CloudLinkApi {
         if (pin != null && pin.isNotEmpty) 'pin': pin,
       });
 
+  /// Rep-app devices paired on this company (`GET /desktop/devices`).
+  Future<List<Map<String, dynamic>>> devices() async {
+    final b = await _send('GET', '/desktop/devices');
+    return [
+      for (final d in (b['devices'] as List? ?? const []))
+        if (d is Map) d.cast<String, dynamic>(),
+    ];
+  }
+
+  /// Revokes one rep-app device of this company.
+  Future<void> revokeDevice(String deviceId) => _send(
+      'POST', '/desktop/devices/${Uri.encodeComponent(deviceId)}/revoke');
+
   void close() => _client.close();
 }

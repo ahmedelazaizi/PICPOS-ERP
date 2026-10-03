@@ -149,10 +149,18 @@ class AuthService {
   /// Revokes the device: all its calls get 401 `device_revoked` (the app wipes
   /// its local data) and its number leases are revoked (unused numbers become
   /// audited gaps, never re-issued).
-  Future<void> revokeDevice(String deviceId, {String ip = 'unknown', String? reason}) async {
+  ///
+  /// [companyId] scopes the revoke to one company (desktop link callers): a
+  /// device of another company is reported as `unknown_device`.
+  Future<void> revokeDevice(String deviceId, {String ip = 'unknown', String? reason, int? companyId}) async {
     final rows = await db.query('''
         UPDATE devices SET revoked_at=@n, previous_token_hash=NULL WHERE device_id=@d
-        RETURNING id, company_id, employee_id''', {'n': _now, 'd': deviceId});
+        ${companyId == null ? '' : 'AND company_id=@c'}
+        RETURNING id, company_id, employee_id''', {
+      'n': _now,
+      'd': deviceId,
+      if (companyId != null) 'c': companyId,
+    });
     if (rows.isEmpty) throw ApiError(404, 'unknown_device');
     await db.query(
         "UPDATE device_number_leases SET status='revoked' WHERE status IN ('active','exhausted') AND device_pk=@d",

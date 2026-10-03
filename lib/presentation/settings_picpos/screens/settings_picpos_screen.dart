@@ -116,6 +116,7 @@ import '../../widgets/permission_guard.dart';
 // دفعة ١٠ — تايلات الإعدادات المحروسة، مشتركة بين البراندين.
 import '../../widgets/settings/settings_permission_tiles.dart';
 import '../widgets/table_bill_qr_launcher_row.dart';
+import 'linked_devices_section.dart';
 import '../../widgets/settings/backup_restore_widget.dart';
 import '../../widgets/settings/company_info_widget.dart';
 import '../../users_picpos/screens/users_management_picpos_screen.dart';
@@ -736,6 +737,20 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
             ],
           ),
           const SizedBox(height: 16),
+        ],
+      ),
+      // ═══ ٤-أ. الأجهزة المرتبطة — المحتوى في `linked_devices_section.dart` ═══
+      _SettingsSection(
+        id: linkedDevicesSectionId,
+        title: linkedDevicesSectionTitle(),
+        icon: PhosphorIconsBold.devices,
+        group: tr('الأمان'),
+        desc: linkedDevicesSectionDesc(),
+        keywords: linkedDevicesSectionKeywords(),
+        children: () => [
+          LinkedDevicesSection(
+            onOpenNetworkMode: () => _showNetworkModeDialog(context),
+          ),
         ],
       ),
       // ═══ ٤-ب. حماية الأقسام — قسمٌ مستقلٌّ على التصميم الجديد ═══
@@ -2253,18 +2268,7 @@ class _AdvancedTiles extends ConsumerWidget {
           dot: isServer ? AppColors.success : AppColors.primary,
           // ‏`_NetworkModeSettings` لوحةٌ كانت داخلَ `ExpansionTile`، فتُفتَح
           // هنا في حوارٍ بدل أن تُبنى نسخةٌ ثانيةٌ من منطقها.
-          onTap: () => showDialog<void>(
-            context: context,
-            builder: (ctx) => Dialog(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
-                child: const SingleChildScrollView(
-                  padding: EdgeInsets.all(16),
-                  child: _NetworkModeSettings(),
-                ),
-              ),
-            ),
-          ),
+          onTap: () => _showNetworkModeDialog(context),
         ),
         SettingsTile(
           icon: PhosphorIconsBold.shield,
@@ -2328,3 +2332,18 @@ class _AdvancedTiles extends ConsumerWidget {
     );
   }
 }
+
+/// حوارُ وضع الشبكة — يفتحه مربّعُ «الربط بين الفروع والسيرفر» وقسمُ
+/// «الأجهزة المرتبطة» معاً (لوحةٌ واحدة لا نسختان).
+Future<void> _showNetworkModeDialog(BuildContext context) => showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 720),
+          child: const SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: _NetworkModeSettings(),
+          ),
+        ),
+      ),
+    );

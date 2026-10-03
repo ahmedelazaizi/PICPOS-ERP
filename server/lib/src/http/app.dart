@@ -172,6 +172,15 @@ class CloudApp {
       final res = await auth.issuePairingCode(companyId: d.companyId, employeeGlobalId: emp);
       return _json(201, {'code': res.code, 'expiresAt': res.expiresAt});
     });
+    r.get('/desktop/devices', (Request req) async {
+      final d = await _desktop(req);
+      return _json(200, {'devices': await desktop.listDevices(d)});
+    });
+    r.post('/desktop/devices/<deviceId>/revoke', (Request req, String deviceId) async {
+      final d = await _desktop(req);
+      await auth.revokeDevice(deviceId, ip: d.ip, reason: 'desktop:${d.linkId}', companyId: d.companyId);
+      return _json(200, {'revoked': deviceId});
+    });
 
     r.all('/<ignored|.*>', (Request req) => _json(404, {'error': 'not_found'}));
     return r;
