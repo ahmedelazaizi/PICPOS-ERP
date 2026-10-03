@@ -222,6 +222,16 @@ class DeltaPullService {
     'hr_leave_requests',       // → employees, hr_leave_types
     'hr_leave_entitlements',   // → employees, hr_leave_types
     'hr_attendance_days',      // → employees
+    // v193 — الرواتبُ والسلفُ والعمولات (J4 الجزء ٣): الآباءُ أوّلاً.
+    'hr_payroll_settings',
+    'hr_salary_components',
+    'hr_commission_plans',
+    'hr_employee_advances',    // → employees
+    'hr_advance_repayments',   // → hr_employee_advances
+    'hr_payroll_adjustments',  // → employees
+    'hr_payroll_runs',
+    'hr_payroll_lines',        // → hr_payroll_runs, employees
+    'hr_payroll_items',        // → hr_payroll_lines
 
     // ── Tier 7: السجلُّ الرقابيُّ والتشغيلُ العابرُ للأجهزة (v173 / المرحلة ٤) ──
     //
@@ -346,6 +356,10 @@ class DeltaPullService {
     'hr_shifts', 'hr_shift_assignments', 'hr_public_holidays',
     'hr_leave_types', 'hr_leave_requests', 'hr_leave_entitlements',
     'hr_attendance_days',
+    // v193 — الرواتبُ والسلفُ والعمولات (J4 الجزء ٣): بياناتُ موظفين.
+    'hr_payroll_settings', 'hr_salary_components', 'hr_commission_plans',
+    'hr_employee_advances', 'hr_advance_repayments', 'hr_payroll_adjustments',
+    'hr_payroll_runs', 'hr_payroll_lines', 'hr_payroll_items',
 
     // v173 / المرحلة ٤ — بياناتُ عملٍ لا تُسلَّم لمستدعٍ بلا هويّة: أرصدةُ
     // الولاء وحركاتُه، وأوراقُ الجرد وطلباتُ الصرف، والمطابقةُ البنكيّة
@@ -452,6 +466,10 @@ class DeltaPullService {
     'hr_shifts', 'hr_shift_assignments', 'hr_public_holidays',
     'hr_leave_types', 'hr_leave_requests', 'hr_leave_entitlements',
     'hr_attendance_days',
+    // v193 — الرواتبُ والعمولات (J4 الجزء ٣): لا استراتيجيّةَ لها في `fullSync`.
+    'hr_payroll_settings', 'hr_salary_components', 'hr_commission_plans',
+    'hr_employee_advances', 'hr_advance_repayments', 'hr_payroll_adjustments',
+    'hr_payroll_runs', 'hr_payroll_lines', 'hr_payroll_items',
 
     // ── البند ٦‑٤ (2026-08-31) — ستّةٌ كانت **مبذورةً بلا تنزيل** ────────
     //

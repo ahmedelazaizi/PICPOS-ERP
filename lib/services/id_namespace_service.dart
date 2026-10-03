@@ -116,6 +116,10 @@ class IdNamespaceService {
     'hr_shifts', 'hr_shift_assignments', 'hr_public_holidays',
     'hr_leave_types', 'hr_leave_requests', 'hr_leave_entitlements',
     'hr_attendance_days',
+    // v193 — الرواتبُ والسلفُ والعمولات (J4 الجزء ٣).
+    'hr_payroll_settings', 'hr_salary_components', 'hr_commission_plans',
+    'hr_employee_advances', 'hr_advance_repayments', 'hr_payroll_adjustments',
+    'hr_payroll_runs', 'hr_payroll_lines', 'hr_payroll_items',
 
     // ── v173 / المرحلة ٤ — السجلُّ الرقابيُّ والتشغيلُ العابر ──
     'loyalty_programs', 'delivery_companies', 'couriers',

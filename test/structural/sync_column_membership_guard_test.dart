@@ -116,6 +116,16 @@ const _rawSqlProvenAtRuntime = <String, String>{
   'hr_leave_requests': 'test/integration/hr_attendance_leave_j4_test.dart',
   'hr_leave_entitlements': 'test/integration/hr_attendance_leave_j4_test.dart',
   'hr_attendance_days': 'test/integration/hr_attendance_leave_j4_test.dart',
+  // v193 — الرواتبُ والسلفُ والعمولات (J4 الجزء ٣).
+  'hr_payroll_settings': 'test/integration/hr_payroll_j4_test.dart',
+  'hr_salary_components': 'test/integration/hr_payroll_j4_test.dart',
+  'hr_commission_plans': 'test/integration/hr_payroll_j4_test.dart',
+  'hr_employee_advances': 'test/integration/hr_payroll_j4_test.dart',
+  'hr_advance_repayments': 'test/integration/hr_payroll_j4_test.dart',
+  'hr_payroll_adjustments': 'test/integration/hr_payroll_j4_test.dart',
+  'hr_payroll_runs': 'test/integration/hr_payroll_j4_test.dart',
+  'hr_payroll_lines': 'test/integration/hr_payroll_j4_test.dart',
+  'hr_payroll_items': 'test/integration/hr_payroll_j4_test.dart',
 };
 
 /// جداولُ ليست في `pullTables` وتُرقَّم مع ذلك — الطرفُ الآخرُ من العقد.

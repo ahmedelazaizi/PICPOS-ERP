@@ -126,7 +126,13 @@ enum AppScreen {
   /// `hrShifts`.
   hrAttendance(81),
   hrLeave(82),
-  hrShifts(83);
+  hrShifts(83),
+
+  /// J4 (الجزء ٣) — يجب أن تطابق `ScreenId.hrPayroll` / `hrAdvances` /
+  /// `hrCommissions`.
+  hrPayroll(84),
+  hrAdvances(85),
+  hrCommissions(86);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;

@@ -28,6 +28,8 @@ import '../../domain/models/hr_employee_file.dart';
 import '../../domain/models/hr_attendance.dart';
 import '../../domain/models/hr_attendance_import.dart';
 import '../../domain/models/hr_leave.dart';
+import '../../domain/models/hr_payroll.dart';
+import '../../domain/models/hr_payroll_engine.dart';
 import '../../domain/models/purchase_line_discount.dart';
 import '../../domain/models/cheque_book_plan.dart';
 import '../../domain/models/asset_disposal_plan.dart';
@@ -166,6 +168,11 @@ part 'daos/hr_role_link_dao.dart';
 part 'hr_attendance_schema.dart';
 part 'daos/hr_attendance_dao.dart';
 part 'daos/hr_leave_dao.dart';
+part 'hr_payroll_schema.dart';
+part 'daos/hr_payroll_dao.dart';
+part 'daos/hr_payroll_posting_dao.dart';
+part 'daos/hr_advances_dao.dart';
+part 'daos/hr_commission_dao.dart';
 part 'daos/distribution_rep_ops_dao.dart';
 part 'daos/voucher_account_transfer_dao.dart';
 part 'daos/fixed_assets_dao_ext.dart';
@@ -1198,7 +1205,7 @@ class AppDatabase extends _$AppDatabase {
   //
   // Schema v177: sale reposts after an authorized edit may legitimately
   // produce multiple auto-posted JEs for one invoice reference.
-  int get schemaVersion => 192;
+  int get schemaVersion => 193;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.
@@ -1584,6 +1591,11 @@ class AppDatabase extends _$AppDatabase {
     'hr_shifts', 'hr_shift_assignments', 'hr_public_holidays',
     'hr_leave_types', 'hr_leave_requests', 'hr_leave_entitlements',
     'hr_attendance_days',
+
+    // v193 — الرواتبُ والسلفُ والعمولات (J4 الجزء ٣).
+    'hr_payroll_settings', 'hr_salary_components', 'hr_commission_plans',
+    'hr_employee_advances', 'hr_advance_repayments', 'hr_payroll_adjustments',
+    'hr_payroll_runs', 'hr_payroll_lines', 'hr_payroll_items',
   ];
 
   /// مكشوفةٌ لحارسٍ يثبّت أنّ كلَّ جدولٍ يُسحَب يحمل مُشغِّلَ الختم على
@@ -2346,6 +2358,10 @@ class AppDatabase extends _$AppDatabase {
       'hr_shifts', 'hr_shift_assignments', 'hr_public_holidays',
       'hr_leave_types', 'hr_leave_requests', 'hr_leave_entitlements',
       'hr_attendance_days',
+      // v193 — الرواتبُ والسلفُ والعمولات (J4 الجزء ٣).
+      'hr_payroll_settings', 'hr_salary_components', 'hr_commission_plans',
+      'hr_employee_advances', 'hr_advance_repayments', 'hr_payroll_adjustments',
+      'hr_payroll_runs', 'hr_payroll_lines', 'hr_payroll_items',
     };
     for (final pgTable in pgTables) {
       if (!driftTableNames.contains(pgTable) &&
@@ -2515,6 +2531,7 @@ class AppDatabase extends _$AppDatabase {
         await ensureSystemPartiesSchema();
         await ensureHrCoreSchema();
         await ensureHrAttendanceSchema();
+        await ensureHrPayrollSchema();
         // seedInitialData + syncDefaultAccounts moved to beforeOpen
         // (after defensive v110 column additions)
       },

@@ -3667,5 +3667,15 @@ extension Epoch3Migrations on AppDatabase {
     if (from < 192) {
       await _safeMigrate('v192 attendance & leave', ensureHrAttendanceSchema);
     }
+
+    // v193 — payroll, advances, adjustments and rep commissions (raw, J4
+    // part 3): hr_payroll_settings / hr_salary_components /
+    // hr_commission_plans / hr_employee_advances / hr_advance_repayments /
+    // hr_payroll_adjustments / hr_payroll_runs / hr_payroll_lines /
+    // hr_payroll_items. The legacy salary_payments / employee_transactions
+    // rows are copied by migrateLegacyPayroll on the next non-client startup.
+    if (from < 193) {
+      await _safeMigrate('v193 payroll', ensureHrPayrollSchema);
+    }
   }
 }

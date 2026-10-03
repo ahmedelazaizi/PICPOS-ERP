@@ -2797,6 +2797,9 @@ class ApiHandler {
     'hr_shifts', 'hr_shift_assignments', 'hr_public_holidays', // v192
     'hr_leave_types', 'hr_leave_requests', 'hr_leave_entitlements',
     'hr_attendance_days',
+    'hr_payroll_settings', 'hr_salary_components', 'hr_commission_plans', // v193
+    'hr_employee_advances', 'hr_advance_repayments', 'hr_payroll_adjustments',
+    'hr_payroll_runs', 'hr_payroll_lines', 'hr_payroll_items',
     // Tier 7 — v173 / المرحلة ٤: السجلُّ الرقابيُّ والتشغيلُ العابر.
     // تقابل الكتلةَ نفسَها في [DeltaPullService.pullTables]. و
     // `e_invoice_configs` ليست هنا عمداً (تحمل `client_secret`).
@@ -2952,6 +2955,9 @@ class ApiHandler {
     'hr_shifts', 'hr_shift_assignments', 'hr_public_holidays', // v192
     'hr_leave_types', 'hr_leave_requests', 'hr_leave_entitlements',
     'hr_attendance_days',
+    'hr_payroll_settings', 'hr_salary_components', 'hr_commission_plans', // v193
+    'hr_employee_advances', 'hr_advance_repayments', 'hr_payroll_adjustments',
+    'hr_payroll_runs', 'hr_payroll_lines', 'hr_payroll_items',
 
     // v173 / المرحلة ٤ — بياناتُ عملٍ لا تُسلَّم لمستدعٍ بلا هويّة. تقابل
     // الكتلةَ نفسَها في `DeltaPullService.branchScopedPullTables` حرفاً.

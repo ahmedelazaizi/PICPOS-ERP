@@ -583,6 +583,24 @@ class PermissionCodes {
   /// J4 — تعريف الورديات وإسنادها
   static const String hrShiftsManage = 'hr_shifts_manage';
 
+  /// J4 (الجزء ٣) — عرض المسيرات والقسائم والسلف والعمولات
+  static const String hrPayrollView = 'hr_payroll_view';
+
+  /// J4 — إنشاء المسير واحتسابه وتسويته ومراجعته وإعدادات الرواتب
+  static const String hrPayrollEdit = 'hr_payroll_edit';
+
+  /// J4 — اعتماد المسير والمكافآت والجزاءات
+  static const String hrPayrollApprove = 'hr_payroll_approve';
+
+  /// J4 — ترحيل المسير بقيده وصرفه وعكسه
+  static const String hrPayrollPost = 'hr_payroll_post';
+
+  /// J4 — صرف السلف والقروض وتسديدها
+  static const String hrAdvancesManage = 'hr_advances_manage';
+
+  /// J4 — خطط عمولات المندوبين
+  static const String hrCommissionsManage = 'hr_commissions_manage';
+
   // ═══════════════════════════════════════════════════════════════════════════
   // REPORTS PERMISSIONS (التقارير)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1482,6 +1500,12 @@ class PermissionCodes {
     {'code': hrLeaveRequest, 'name': tr('تقديم طلبات الإجازة'), 'category': 'hr'},
     {'code': hrLeaveApprove, 'name': tr('اعتماد طلبات الإجازة'), 'category': 'hr'},
     {'code': hrShiftsManage, 'name': tr('إدارة الورديات'), 'category': 'hr'},
+    {'code': hrPayrollView, 'name': tr('عرض الرواتب'), 'category': 'hr'},
+    {'code': hrPayrollEdit, 'name': tr('إعداد المسيرات وتسويتها'), 'category': 'hr'},
+    {'code': hrPayrollApprove, 'name': tr('اعتماد المسيرات'), 'category': 'hr'},
+    {'code': hrPayrollPost, 'name': tr('ترحيل المسيرات وصرفها وعكسها'), 'category': 'hr'},
+    {'code': hrAdvancesManage, 'name': tr('إدارة السلف والقروض'), 'category': 'hr'},
+    {'code': hrCommissionsManage, 'name': tr('إدارة خطط العمولات'), 'category': 'hr'},
 
     // ── Reports ──
     {'code': reportsView, 'name': tr('عرض التقارير'), 'category': 'reports'},

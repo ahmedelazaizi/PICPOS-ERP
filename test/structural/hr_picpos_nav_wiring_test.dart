@@ -50,7 +50,8 @@ void main() {
     expect(hr.label, 'الموارد البشرية');
   });
 
-  test('النطاقُ: تسبقان شاشةَ الموارد البشريّة القديمة حيث تكون', () {
+  test('النطاقُ: تحلّ محلَّ شاشة الموارد البشريّة القديمة حيث تكون', () {
+    // J4 (الجزء ٣) — الرواتبُ نُقلت إلى المسيّرات، فلا تبقى `hr` في PicPos.
     expect(
         ScreenRegistry.withPicposHr(
             [ScreenId.loyalty, ScreenId.hr, ScreenId.treasury]),
@@ -61,15 +62,17 @@ void main() {
           ScreenId.hrAttendance,
           ScreenId.hrLeave,
           ScreenId.hrShifts,
-          ScreenId.hr,
+          ScreenId.hrPayroll,
+          ScreenId.hrAdvances,
+          ScreenId.hrCommissions,
           ScreenId.treasury,
         ]);
     expect(ScreenRegistry.withPicposHr([ScreenId.pos]), [ScreenId.pos],
         reason: 'a scope without HR (hrEnabled off) gets no HR screen');
   });
 
-  test('PicPos تُظهرها و«الموظفين» القديمة صارت «الحضور والرواتب»؛ '
-      'وUralCash كما كان', () {
+  test('PicPos تُظهرها وتُخفي «الحضور والرواتب» القديمة؛ وUralCash كما كان',
+      () {
     final legacy = kAllNavItemDefs.singleWhere((i) => i.index == 16);
     if (Brand.isPicPos) {
       for (final id in screens.keys) {
@@ -82,7 +85,11 @@ void main() {
         for (final i in kAllNavItemDefs)
           if (i.group == 'hr') i.index,
       ];
-      expect(hrItems, [79, 80, 81, 82, 83, 16]);
+      expect(hrItems, [79, 80, 81, 82, 83, 84, 85, 86, 16]);
+      // J4 (الجزء ٣) — المدخلُ والنطاقُ كلاهما بلا الشاشة القديمة.
+      expect(navItemVisibleForBrand(16), isFalse);
+      expect(ScreenRegistry.forProfile(BusinessProfile.unified),
+          isNot(contains(ScreenId.hr)));
     } else {
       for (final id in screens.keys) {
         expect(navItemVisibleForBrand(id.navigationIndex), isFalse);

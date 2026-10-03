@@ -41,6 +41,7 @@ extension DatabaseStartup on AppDatabase {
     await ensureSystemPartiesSchema();
     await ensureHrCoreSchema();
     await ensureHrAttendanceSchema();
+    await ensureHrPayrollSchema();
 
     // Phase 2b: Database integrity — ensure critical PK/UNIQUE constraints
     // exist on PG installs whose schema was created by an older or crashed
@@ -1362,6 +1363,15 @@ extension DatabaseStartup on AppDatabase {
         debugPrint('[Startup] hr attendance permission backfill failed: $e');
       }
 
+      // J4 (v193) — صلاحيّاتُ الرواتب والسلف والعمولات تُمنَح مرّةً
+      // (‏`hr_manage` ⇒ العرض، `hr_payroll_process` ⇒ المسيّر، `hr_advance_record`
+      // ⇒ السلف).
+      try {
+        await backfillHrPayrollPermissionsOnce();
+      } catch (e) {
+        debugPrint('[Startup] hr payroll permission backfill failed: $e');
+      }
+
       // Spec 084b — self-heal startup grant.
       //
       // Matrix updates (Spec 077/078/084 onward) only land for existing
@@ -1472,6 +1482,14 @@ extension DatabaseStartup on AppDatabase {
         await migrateLegacyHrAttendance();
       } catch (e) {
         debugPrint('[Startup] migrateLegacyHrAttendance: $e');
+      }
+
+      // J4 (v193) — رواتبُ الشاشة القديمة وسلفُها وخصوماتُها تاريخاً للقراءة
+      // في الجداول الجديدة (متساوي القوى).
+      try {
+        await migrateLegacyPayroll();
+      } catch (e) {
+        debugPrint('[Startup] migrateLegacyPayroll: $e');
       }
     }
   }

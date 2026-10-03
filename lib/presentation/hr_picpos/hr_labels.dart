@@ -58,6 +58,8 @@ String hrEventLabel(String type) => switch (type) {
       HrEventType.shiftChange => tr('إسناد وردية'),
       HrEventType.attendanceEdit => tr('تعديل الحضور'),
       HrEventType.leave => tr('إجازة'),
+      HrEventType.payroll => tr('تسوية راتب'),
+      HrEventType.advance => tr('سلفة'),
       _ => type,
     };
 
@@ -72,6 +74,8 @@ IconData hrEventIcon(String type) => switch (type) {
       HrEventType.shiftChange => PhosphorIconsBold.clockClockwise,
       HrEventType.attendanceEdit => PhosphorIconsBold.fingerprint,
       HrEventType.leave => PhosphorIconsBold.airplaneTilt,
+      HrEventType.payroll => PhosphorIconsBold.receipt,
+      HrEventType.advance => PhosphorIconsBold.handCoins,
       _ => PhosphorIconsBold.clockCounterClockwise,
     };
 

@@ -239,7 +239,19 @@ enum ScreenId {
   hrLeave(82),
 
   /// J4 (الجزء ٢) — «الورديات» وإسنادُها (PicPos). `hr_shifts_manage`.
-  hrShifts(83);
+  hrShifts(83),
+
+  /// J4 (الجزء ٣) — «الرواتب»: المسيّراتُ والقسائمُ وإعداداتُ الرواتب
+  /// (PicPos). `hr_payroll_view`.
+  hrPayroll(84),
+
+  /// J4 (الجزء ٣) — «السلف والجزاءات»: السلفُ والقروضُ والمكافآتُ والجزاءات
+  /// (PicPos). `hr_payroll_view`.
+  hrAdvances(85),
+
+  /// J4 (الجزء ٣) — «عمولات المندوبين»: الخططُ والكشوف (PicPos).
+  /// `hr_payroll_view`.
+  hrCommissions(86);
 
   const ScreenId(this.navigationIndex);
   final int navigationIndex;

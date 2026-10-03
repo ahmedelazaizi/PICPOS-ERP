@@ -49,6 +49,9 @@ import 'presentation/hr_picpos/screens/hr_organization_picpos_screen.dart';
 import 'presentation/hr_picpos/screens/hr_attendance_picpos_screen.dart';
 import 'presentation/hr_picpos/screens/hr_leave_picpos_screen.dart';
 import 'presentation/hr_picpos/screens/hr_shifts_picpos_screen.dart';
+import 'presentation/hr_picpos/screens/hr_payroll_picpos_screen.dart';
+import 'presentation/hr_picpos/screens/hr_advances_picpos_screen.dart';
+import 'presentation/hr_picpos/screens/hr_commissions_picpos_screen.dart';
 import 'presentation/screens/inventory/inventory_screen.dart';
 import 'presentation/inventory_picpos/screens/inventory_picpos_screen.dart';
 import 'presentation/screens/purchase_invoices_screen.dart';
@@ -873,6 +876,37 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         label: tr('الورديات'),
         icon: PhosphorIconsBold.clockClockwise,
       ),
+      // J4 (الجزء ٣، PicPos) — الرواتبُ والسلفُ والعمولات.
+      ScreenConfig(
+        appScreen: AppScreen.hrPayroll,
+        builder: (_) => SecurityScreenGate(
+          settingKey: 'hr_access_password',
+          title: tr('شؤون الموظفين'),
+          child: const HrPayrollPicPosScreen(),
+        ),
+        label: tr('الرواتب'),
+        icon: PhosphorIconsBold.money,
+      ),
+      ScreenConfig(
+        appScreen: AppScreen.hrAdvances,
+        builder: (_) => SecurityScreenGate(
+          settingKey: 'hr_access_password',
+          title: tr('شؤون الموظفين'),
+          child: const HrAdvancesPicPosScreen(),
+        ),
+        label: tr('السلف والجزاءات'),
+        icon: PhosphorIconsBold.handCoins,
+      ),
+      ScreenConfig(
+        appScreen: AppScreen.hrCommissions,
+        builder: (_) => SecurityScreenGate(
+          settingKey: 'hr_access_password',
+          title: tr('شؤون الموظفين'),
+          child: const HrCommissionsPicPosScreen(),
+        ),
+        label: tr('عمولات المندوبين'),
+        icon: PhosphorIconsBold.percent,
+      ),
       ScreenConfig(
         appScreen: AppScreen.salesInvoices,
         builder: (_) => Brand.isPicPos
@@ -1316,6 +1350,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       AppScreen.hrAttendance, // J4 part 2
       AppScreen.hrLeave,
       AppScreen.hrShifts,
+      AppScreen.hrPayroll, // J4 part 3
+      AppScreen.hrAdvances,
+      AppScreen.hrCommissions,
     };
     return allScreens.where((s) {
       if (!allowedIndices.contains(s.index)) return false;

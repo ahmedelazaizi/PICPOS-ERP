@@ -866,6 +866,11 @@ final _kNavItemDefsShared = [
   const NavItemDef(icon: PhosphorIconsBold.fingerprint, label: 'الحضور والانصراف', permission: 'hr_attendance_view', index: 81, group: 'hr'),
   const NavItemDef(icon: PhosphorIconsBold.airplaneTilt, label: 'الإجازات', permission: 'hr_leave_request', index: 82, group: 'hr'),
   const NavItemDef(icon: PhosphorIconsBold.clockClockwise, label: 'الورديات', permission: 'hr_shifts_manage', index: 83, group: 'hr'),
+  // J4 (الجزء ٣) — الرواتبُ والسلفُ والعمولات (PicPos وحدَها)، وتحلّ محلَّ
+  // «الحضور والرواتب» (‏`16`، [kPicPosReplacedNavIndexes]).
+  const NavItemDef(icon: PhosphorIconsBold.money, label: 'الرواتب', permission: 'hr_payroll_view', index: 84, group: 'hr'),
+  const NavItemDef(icon: PhosphorIconsBold.handCoins, label: 'السلف والجزاءات', permission: 'hr_payroll_view', index: 85, group: 'hr'),
+  const NavItemDef(icon: PhosphorIconsBold.percent, label: 'عمولات المندوبين', permission: 'hr_payroll_view', index: 86, group: 'hr'),
   const NavItemDef(icon: PhosphorIconsBold.users, label: 'الموظفين', permission: 'hr_view', index: 16, section: 'الموارد البشرية', group: 'hr'),
 
   // ═══════════════════════════════════════════
@@ -1029,10 +1034,13 @@ const kPicPosRetiredNavIndexes = <int>{
   42, // الجرد الدوري (‏= `fieldAudit`، اسمان لفهرسٍ واحد)
 };
 
-const kPicPosOnlyNavIndexes = <int>{75, 76, 77, 78, 79, 80, 81, 82, 83};
+const kPicPosOnlyNavIndexes = <int>{
+  75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86,
+};
 // E4 — `70` (دفتر الشيكات) صار تبويباً داخل «إدارة الشيكات» في PicPos.
 // E-fix ٤ب — `24` (التوزيع القديمة) حلّت محلَّها `78` في PicPos.
-const kPicPosReplacedNavIndexes = <int>{6, 24, 70};
+// J4 (الجزء ٣) — `16` (الحضور والرواتب) حلّت محلَّها `81`…`86` في PicPos.
+const kPicPosReplacedNavIndexes = <int>{6, 16, 24, 70};
 
 /// هل يظهر مدخلُ القائمة صاحبُ [index] لهذه العلامة؟
 ///
@@ -1178,6 +1186,9 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.hrAttendance: 'hr_attendance_view',
   ScreenId.hrLeave: 'hr_leave_request',
   ScreenId.hrShifts: 'hr_shifts_manage',
+  ScreenId.hrPayroll: 'hr_payroll_view',
+  ScreenId.hrAdvances: 'hr_payroll_view',
+  ScreenId.hrCommissions: 'hr_payroll_view',
   ScreenId.manufacturing: 'manufacturing_view',
   ScreenId.operationalExpenses: 'settings_view',
   ScreenId.chartOfAccounts: 'settings_view',

@@ -480,17 +480,23 @@ class ScreenRegistry {
   /// القديمة (الحضور والرواتب) في كلّ نطاقٍ يحملها، فتتبعان `hrEnabled`
   /// وصلاحيّتَها. UralCash لا يمرّ من هنا. والجزءُ ٢ يضيف «الحضور
   /// والانصراف» و«الإجازات» و«الورديات» بعدهما.
+  ///
+  /// J4 (الجزء ٣) — و«الرواتب» و«السلف والجزاءات» و«عمولات المندوبين»
+  /// **تحلّ محلَّ** الشاشة القديمة نفسِها: تاريخُ رواتبها نُقل إلى المسيّرات
+  /// (‏`migrateLegacyPayroll`)، فلا يبقى `ScreenId.hr` في نطاق PicPos.
   static List<ScreenId> withPicposHr(List<ScreenId> screens) => [
-        for (final screen in screens) ...[
+        for (final screen in screens)
           if (screen == ScreenId.hr) ...[
             ScreenId.hrEmployees,
             ScreenId.hrOrganization,
             ScreenId.hrAttendance,
             ScreenId.hrLeave,
             ScreenId.hrShifts,
-          ],
-          screen,
-        ],
+            ScreenId.hrPayroll,
+            ScreenId.hrAdvances,
+            ScreenId.hrCommissions,
+          ] else
+            screen,
       ];
 
   /// [features] اختياريٌّ عن قصد: تركُه `null` يعطي **بالضبط** ما كان

@@ -77,6 +77,10 @@ abstract final class HrEventType {
   static const shiftChange = 'shift_change';
   static const attendanceEdit = 'attendance_edit';
   static const leave = 'leave';
+
+  // J4 (الجزء ٣) — تسويةُ قسيمةٍ أو مكافأةٌ/جزاءٌ معتمد، وصرفُ سلفة.
+  static const payroll = 'payroll';
+  static const advance = 'advance';
 }
 
 /// وسومُ الأدوار في النظام — تُقترَح بها صلاحيّةُ المستخدم وموارده.

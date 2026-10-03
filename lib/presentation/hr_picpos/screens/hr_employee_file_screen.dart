@@ -21,6 +21,7 @@ import 'ef_attendance_tab.dart';
 import 'ef_documents_tab.dart';
 import 'ef_history_tab.dart';
 import 'ef_leave_tab.dart';
+import 'ef_payroll_tab.dart';
 import 'ef_job_tab.dart';
 import 'ef_pay_tab.dart';
 import 'ef_personal_tab.dart';
@@ -46,7 +47,7 @@ class HrEmployeeFileScreen extends ConsumerStatefulWidget {
 class _HrEmployeeFileScreenState extends ConsumerState<HrEmployeeFileScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs =
-      TabController(length: 8, vsync: this, initialIndex: widget.initialTab);
+      TabController(length: 9, vsync: this, initialIndex: widget.initialTab);
   late int? _id = widget.employeeId;
   EmployeeFileForm? _form;
   bool _saving = false;
@@ -186,6 +187,8 @@ class _HrEmployeeFileScreenState extends ConsumerState<HrEmployeeFileScreen>
                   ('history', PhosphorIconsBold.clockCounterClockwise,
                       tr('السجل')),
                   ('roles', PhosphorIconsBold.key, tr('الدور في النظام')),
+                  // J4 (الجزء ٣) — آخرَ التبويبات كي لا تتغيّر فهارسُ ما قبله.
+                  ('payroll', PhosphorIconsBold.receipt, tr('الرواتب')),
                 ])
                   Tab(
                     key: Key('ef_tab_$key'),
@@ -210,6 +213,7 @@ class _HrEmployeeFileScreenState extends ConsumerState<HrEmployeeFileScreen>
                 EfLeaveTab(employeeId: _id),
                 EfHistoryTab(employeeId: _id),
                 EfRolesTab(employeeId: _id),
+                EfPayrollTab(employeeId: _id),
               ],
             ),
     );
