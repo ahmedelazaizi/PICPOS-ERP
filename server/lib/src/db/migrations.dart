@@ -530,4 +530,43 @@ CREATE TABLE field_customers (
 CREATE TRIGGER field_customers_touch BEFORE INSERT OR UPDATE ON field_customers FOR EACH ROW EXECUTE FUNCTION touch_row();
 CREATE INDEX field_customers_unposted_idx ON field_customers(company_id) WHERE posted_on_desktop_at IS NULL;
 '''),
+  // K: rep expense (payment) vouchers paid from the custody safe (desktop
+  // expense categories, payment voucher books, last desktop custody balance
+  // + over-custody policy), the receipt photo, and the field GPS stamp
+  // (`field_geo`, JSON text) on every field document.
+  Migration(6, 'k_expenses_geo', '''
+CREATE TABLE expense_categories (
+  id SERIAL PRIMARY KEY,
+  company_id INT NOT NULL REFERENCES companies(id),
+  name TEXT NOT NULL,
+  name_en TEXT,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  $_sync
+);
+CREATE TRIGGER expense_categories_touch BEFORE INSERT OR UPDATE ON expense_categories FOR EACH ROW EXECUTE FUNCTION touch_row();
+
+ALTER TABLE companies ADD COLUMN expense_over_custody TEXT NOT NULL DEFAULT 'flag';
+ALTER TABLE safes ADD COLUMN desktop_balance NUMERIC(18,4);
+
+ALTER TABLE safe_transactions ADD COLUMN expense_category_id INT REFERENCES expense_categories(id);
+ALTER TABLE safe_transactions ADD COLUMN note TEXT;
+ALTER TABLE safe_transactions ADD COLUMN doc_date TEXT;
+ALTER TABLE safe_transactions ADD COLUMN over_custody BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE safe_transactions ADD COLUMN field_geo TEXT;
+ALTER TABLE sales_invoices ADD COLUMN field_geo TEXT;
+ALTER TABLE sales_returns ADD COLUMN field_geo TEXT;
+ALTER TABLE customer_visits ADD COLUMN field_geo TEXT;
+CREATE INDEX safe_tx_unposted_idx ON safe_transactions(company_id, category) WHERE posted_on_desktop_at IS NULL;
+
+CREATE TABLE field_attachments (
+  id SERIAL PRIMARY KEY,
+  company_id INT NOT NULL REFERENCES companies(id),
+  document_global_id TEXT NOT NULL UNIQUE,
+  mime TEXT NOT NULL,
+  size_bytes INT NOT NULL,
+  data BYTEA NOT NULL,
+  created_at BIGINT NOT NULL
+);
+'''),
 ];

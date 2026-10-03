@@ -9,6 +9,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/auth_providers.dart';
 import '../../../services/cloud_sync/cloud_link_controller.dart';
 import '../widgets/cloud_link_settings_block.dart';
+import 'field_expense_categories_screen.dart';
 
 /// Company cloud link (I-3): credentials, test connection, sync now, status
 /// and the cloud sync conflicts list with retry. Admin-only (the entry row
@@ -123,6 +124,7 @@ class _CloudLinkSettingsScreenState
         'sales_return' => tr('مرتجع مبيعات'),
         'collection' => tr('سند قبض'),
         'visit' => tr('زيارة عميل'),
+        'expense' => tr('سند صرف مصروف مندوب'),
         _ => kind,
       };
 
@@ -174,6 +176,10 @@ class _CloudLinkSettingsScreenState
             TextButton(
                 onPressed: _busy ? null : () => _sync(full: true),
                 child: Text(tr('دفع كامل للبيانات'))),
+            OutlinedButton(
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                    builder: (_) => const FieldExpenseCategoriesScreen())),
+                child: Text(tr('فئات مصروفات المندوب'))),
           ]),
           if (_busy) const Padding(
             padding: EdgeInsets.only(top: 12),

@@ -193,6 +193,8 @@ extension DistributionRepOpsDao on AppDatabase {
     final invoiceStamps = await _repStamps('sales_invoices');
     final txnStamps = await _repStamps('safe_transactions');
     final collectionStamps = await _repStamps('sales_rep_collections');
+    final invoiceGeo = await fieldGeoMapsUrls('sales_invoices');
+    final txnGeo = await fieldGeoMapsUrls('safe_transactions');
     final partyNames = {
       for (final p in await select(parties).get()) p.id: p.name,
     };
@@ -234,6 +236,7 @@ extension DistributionRepOpsDao on AppDatabase {
         repEmployeeId: s!.repEmployeeId,
         customerName: partyNames[inv.customerId],
         routeName: routeNames[s.routeId],
+        mapsUrl: invoiceGeo[inv.id],
       ));
     }
 
@@ -256,6 +259,7 @@ extension DistributionRepOpsDao on AppDatabase {
         repEmployeeId: s!.repEmployeeId,
         customerName: partyNames[t.partyId],
         routeName: routeNames[s.routeId],
+        mapsUrl: txnGeo[t.id],
       ));
     }
 

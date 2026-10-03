@@ -13,6 +13,7 @@ import '../../domain/models/voucher_book.dart';
 import '../../domain/repositories/sales_repository.dart';
 import '../accounting_service.dart';
 import 'cloud_customer_poster.dart';
+import 'cloud_expense_poster.dart';
 
 /// A cloud field document the desktop refused; [code] is stable (shown and
 /// sent to the cloud as the failure reason), [detail] is for the operator.
@@ -66,16 +67,21 @@ class CloudDocumentPoster {
   /// Totals may differ by at most this (same 2-dp rounding on both sides).
   static const tolerance = 0.01;
 
-  Future<CloudPostedRef> post(Map<String, dynamic> doc) {
+  Future<CloudPostedRef> post(Map<String, dynamic> doc) async {
     final kind = doc['kind'];
-    return switch (kind) {
+    final ref = await switch (kind) {
       'sales_invoice' => _postInvoice(doc),
       'sales_return' => _postReturn(doc),
       'collection' => _postCollection(doc),
       'visit' => _postVisit(doc),
       'customer' => postCloudCustomer(db, doc),
+      // K-1: rep expense → payment voucher from the custody safe.
+      'expense' => postCloudExpense(db, doc, postingUserId: postingUserId),
       _ => throw CloudPostingException('unsupported_kind', '$kind'),
     };
+    // K-3: the van GPS stamp rides the desktop row (never fails posting).
+    await stampCloudFieldGeo(db, doc);
+    return ref;
   }
 
   // ───────────────────────────── lookups ─────────────────────────────

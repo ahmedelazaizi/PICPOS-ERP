@@ -68,6 +68,29 @@ $vp = Invoke-RestMethod -Method Post "$Base/mobile/sync/push" -Headers $h -Conte
 "visits: $(($vp.results | ForEach-Object status) -join ',')"
 if (($vp.results | Where-Object status -ne 'accepted').Count) { throw 'visit rejected' }
 
+# K-1: rep expense from the custody (payment-book leaf, receipt photo, GPS), replayed once,
+# then the same leaf again under another globalId (book rule)
+$pbook = $boot.paymentBooks | Select-Object -First 1
+if (-not $pbook) { throw 'no payment book in bootstrap' }
+"expense setup: categories=$($boot.expenseCategories.Count) book=$($pbook.prefix)$($pbook.nextNumber) custody=$($boot.custodyBalance) policy=$($boot.expenseOverCustody)"
+$jpeg = [Convert]::ToBase64String([byte[]](0xFF, 0xD8, 1, 2, 3, 0xFF, 0xD9))
+$exp = @{
+  kind = 'expense'; globalId = [guid]::NewGuid().ToString(); date = (Get-Date).ToUniversalTime().ToString('o')
+  categoryGlobalId = $boot.expenseCategories[0].globalId; amount = 3.5; note = 'smoke fuel'
+  bookGlobalId = $pbook.globalId; bookNumber = [int]$pbook.nextNumber
+  photo = @{ mime = 'image/jpeg'; data = $jpeg }
+  geo = @{ lat = 31.95; lng = 35.91; accuracy = 8; at = (Get-Date).ToUniversalTime().ToString('o') }
+}
+$ep = Invoke-RestMethod -Method Post "$Base/mobile/sync/push" -Headers $h -ContentType 'application/json' `
+    -Body (@{ documents = @($exp, $exp) } | ConvertTo-Json -Depth 6)
+"expense: $($ep.results[0].status) $($ep.results[0].number) overCustody=$($ep.results[0].overCustody) custody=$($ep.results[0].custodyBalance); replay: $($ep.results[1].status)"
+if ($ep.results[0].status -ne 'accepted' -or $ep.results[1].status -ne 'duplicate') { throw "expense not accepted once: $($ep.results | ConvertTo-Json -Compress)" }
+$exp2 = $exp.Clone(); $exp2.globalId = [guid]::NewGuid().ToString(); $exp2.Remove('photo')
+$eu = Invoke-RestMethod -Method Post "$Base/mobile/sync/push" -Headers $h -ContentType 'application/json' `
+    -Body (@{ documents = @($exp2) } | ConvertTo-Json -Depth 6)
+"expense same leaf: $($eu.results[0].status) $($eu.results[0].code)"
+if ($eu.results[0].code -ne 'book_leaf_used') { throw 'used payment leaf not rejected' }
+
 # I-2: device token rotation (new token authenticates)
 $rot = Invoke-RestMethod -Method Post "$Base/mobile/token/rotate" -Headers $h
 $h['Authorization'] = "Bearer $($rot.deviceToken)"
@@ -88,6 +111,19 @@ if ($ack.results[0].status -ne 'posted') { throw 'desktop ack failed' }
 $ping2 = Invoke-RestMethod "$Base/desktop/ping" -Headers $dh
 if ($ping2.pending.sales_invoice -ne $ping.pending.sales_invoice - 1) { throw 'posted invoice still pending' }
 "desktop pending after ack: invoices=$($ping2.pending.sales_invoice)"
+
+# K-1: the expense reaches the desktop feed with its GPS and photo, then is acknowledged
+$pend = Invoke-RestMethod "$Base/desktop/documents/pending?limit=500" -Headers $dh
+$pexp = $pend.documents | Where-Object { $_.kind -eq 'expense' -and $_.globalId -eq $exp.globalId }
+if (-not $pexp) { throw 'expense not in the desktop feed' }
+"desktop expense: $($pexp.number) amount=$($pexp.amount) category=$($pexp.categoryName) geo=$($pexp.geo.status) photo=$($pexp.hasPhoto)"
+if ($pexp.geo.status -ne 'ok' -or -not $pexp.hasPhoto) { throw 'expense geo/photo missing' }
+$att = Invoke-RestMethod "$Base/desktop/documents/attachment?globalId=$($exp.globalId)" -Headers $dh
+if ($att.data -ne $jpeg) { throw 'expense photo differs' }
+$eack = Invoke-RestMethod -Method Post "$Base/desktop/documents/ack" -Headers $dh -ContentType 'application/json' `
+    -Body (@{ results = @(@{ kind = 'expense'; globalId = $exp.globalId; status = 'posted'; desktopId = '2'; desktopNumber = 'SMOKE-PV' }) } | ConvertTo-Json -Depth 5)
+"desktop expense ack: $($eack.results[0].status)"
+if ($eack.results[0].status -ne 'posted') { throw 'expense ack failed' }
 
 $null = Invoke-RestMethod -Method Post "$Base/admin/whatsapp/process" -Headers @{ 'x-admin-key' = $AdminKey }
 $out = Invoke-RestMethod "$Base/admin/whatsapp/outbox" -Headers @{ 'x-admin-key' = $AdminKey }

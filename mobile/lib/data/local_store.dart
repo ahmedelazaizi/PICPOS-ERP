@@ -11,6 +11,10 @@ abstract class Kinds {
 
   /// Recent accepted invoices with per-product sold/returned amounts (returns).
   static const invoices = 'invoices';
+
+  /// K-1: desktop expense categories and the rep's PAYMENT voucher books.
+  static const expenseCategories = 'expense_categories';
+  static const paymentBooks = 'payment_books';
 }
 
 enum OutboxStatus { pending, accepted, rejected }

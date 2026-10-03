@@ -134,9 +134,18 @@ class _VisitsTabState extends State<_VisitsTab> {
                                               tr('عميل #{p0}', {'p0': v.customerId}),
                                         ),
                                       ),
-                                      subtitle: Text(
-                                        '${_statusLabel(v.status)}'
-                                        '${v.orderAmount > 0 ? " • ${v.orderAmount.toStringAsFixed(0)} ${AppConstants.currencySymbol}" : ""}',
+                                      subtitle: Wrap(
+                                        crossAxisAlignment: WrapCrossAlignment.center,
+                                        children: [
+                                          Text(
+                                            '${_statusLabel(v.status)}'
+                                            '${v.orderAmount > 0 ? " • ${v.orderAmount.toStringAsFixed(0)} ${AppConstants.currencySymbol}" : ""}',
+                                          ),
+                                          // K-3: the van GPS of this visit.
+                                          FieldGeoLink.future(widget.ref
+                                              .read(databaseProvider)
+                                              .routeVisitMapsUrl(v.id)),
+                                        ],
                                       ),
                                       trailing: PopupMenuButton<String>(
                                         tooltip: tr('تغيير الحالة'),

@@ -21,6 +21,8 @@ export 'src/security.dart';
 export 'src/service/auth_service.dart';
 export 'src/service/desktop_service.dart';
 export 'src/service/errors.dart';
+export 'src/service/field_expenses.dart' show kMaxExpensePhotoBytes, kOverCustodyPolicies;
+export 'src/service/field_geo.dart' show kGeoStatuses;
 export 'src/service/rate_limiter.dart';
 export 'src/service/sync_service.dart';
 export 'src/whatsapp/whatsapp.dart';

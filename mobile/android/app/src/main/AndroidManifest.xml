@@ -1,5 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- K-3: GPS stamp on visits and documents (foreground only, asked with a rationale). -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- K-2: WorkManager background sync needs the network state. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- usesCleartextTraffic: TEST stack only (http://<pc>:18080). Remove for production (HTTPS only). -->
     <application
         android:label="PicPos Van"

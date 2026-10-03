@@ -3677,5 +3677,13 @@ extension Epoch3Migrations on AppDatabase {
     if (from < 193) {
       await _safeMigrate('v193 payroll', ensureHrPayrollSchema);
     }
+
+    // v194 — rep field expense categories (raw field_expense_categories,
+    // seeded with the owner's defaults) and the van GPS stamp
+    // (route_visits.latitude/longitude/field_geo, sales_invoices.field_geo,
+    // safe_transactions.field_geo).
+    if (from < 194) {
+      await _safeMigrate('v194 field expenses + geo', ensureFieldExpenseSchema);
+    }
   }
 }

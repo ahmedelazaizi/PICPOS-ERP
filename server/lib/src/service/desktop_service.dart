@@ -5,6 +5,8 @@ import 'package:uuid/uuid.dart';
 import '../db/database.dart';
 import '../security.dart';
 import 'errors.dart';
+import 'field_expense_documents.dart';
+import 'field_geo.dart';
 
 const _uuid = Uuid();
 
@@ -98,6 +100,8 @@ class DesktopService {
           'SELECT COUNT(*)::INT FROM customer_visits WHERE company_id=@c AND posted_on_desktop_at IS NULL'),
       'customer': await n(
           'SELECT COUNT(*)::INT FROM field_customers WHERE company_id=@c AND posted_on_desktop_at IS NULL'),
+      'expense': await n("SELECT COUNT(*)::INT FROM safe_transactions WHERE company_id=@c "
+          "AND category='rep_expense' AND posted_on_desktop_at IS NULL"),
     };
   }
 
@@ -137,6 +141,7 @@ class DesktopService {
         ('repResources', ctx.repResource),
         ('voucherBooks', ctx.voucherBook),
         ('vanStock', ctx.vanStock),
+        ('expenseCategories', ctx.expenseCategory),
       ]) {
         final rows = body[key];
         if (rows == null) continue;
@@ -171,7 +176,7 @@ class DesktopService {
              e.global_id AS eg, r.global_id AS rg, w.global_id AS wg, sf.global_id AS sg, si.subtotal,
              si.discount, si.tax, si.total, si.paid, si.payment_method, si.prices_include_tax,
              si.integrity_hash, si.origin_client_id, si.desktop_error, si.adhoc_customer_name,
-             si.adhoc_customer_phone
+             si.adhoc_customer_phone, si.field_geo
       FROM sales_invoices si
       JOIN parties p ON p.id = si.customer_id
       JOIN employees e ON e.id = si.rep_employee_id
@@ -209,6 +214,7 @@ class DesktopService {
         'pricesIncludeTax': m['prices_include_tax'] == true,
         'integrityHash': m['integrity_hash'],
         'deviceId': m['origin_client_id'],
+        'geo': decodeFieldGeo(m['field_geo']),
         'lastDesktopError': m['desktop_error'],
         'lines': [
           for (final l in lines)
@@ -228,7 +234,8 @@ class DesktopService {
     final returns = await db.query('''
       SELECT sr.id, sr.global_id, sr.return_number, sr.return_date, sr.created_at, si.global_id AS ig,
              p.global_id AS cg, e.global_id AS eg, r.global_id AS rg, w.global_id AS wg, sf.global_id AS sg,
-             sr.subtotal, sr.tax, sr.total, sr.ar_offset, sr.cash_refund, sr.reason, sr.desktop_error
+             sr.subtotal, sr.tax, sr.total, sr.ar_offset, sr.cash_refund, sr.reason, sr.desktop_error,
+             sr.field_geo
       FROM sales_returns sr
       JOIN sales_invoices si ON si.id = sr.original_invoice_id
       JOIN parties p ON p.id = sr.customer_id
@@ -262,6 +269,7 @@ class DesktopService {
         'arOffset': num0(m['ar_offset']),
         'cashRefund': num0(m['cash_refund']),
         'reason': m['reason'],
+        'geo': decodeFieldGeo(m['field_geo']),
         'lastDesktopError': m['desktop_error'],
         'lines': [
           for (final l in lines)
@@ -279,7 +287,7 @@ class DesktopService {
     final collections = await db.query('''
       SELECT st.global_id, st.voucher_number, st.created_at, p.global_id AS cg, e.global_id AS eg,
              r.global_id AS rg, sf.global_id AS sg, st.amount, b.global_id AS bg, st.book_number,
-             st.desktop_error
+             st.desktop_error, st.field_geo
       FROM safe_transactions st
       JOIN parties p ON p.id = st.party_id
       JOIN employees e ON e.id = st.rep_employee_id
@@ -303,14 +311,17 @@ class DesktopService {
         'amount': num0(m['amount']),
         'bookGlobalId': m['bg'],
         'bookNumber': m['book_number'],
+        'geo': decodeFieldGeo(m['field_geo']),
         'lastDesktopError': m['desktop_error'],
       });
     }
 
+    docs.addAll(await pendingExpenseDocuments(db, d.companyId, lim));
+
     final visits = await db.query('''
       SELECT v.global_id, v.visit_date, v.created_at, p.global_id AS cg, e.global_id AS eg,
              r.global_id AS rg, v.outcome, v.no_sale_reason, v.note, v.latitude, v.longitude, v.sequence,
-             v.desktop_error
+             v.desktop_error, v.field_geo
       FROM customer_visits v
       JOIN parties p ON p.id = v.customer_id
       JOIN employees e ON e.id = v.rep_employee_id
@@ -333,6 +344,7 @@ class DesktopService {
         'latitude': m['latitude'],
         'longitude': m['longitude'],
         'sequence': m['sequence'],
+        'geo': decodeFieldGeo(m['field_geo']),
         'lastDesktopError': m['desktop_error'],
       });
     }
@@ -368,7 +380,7 @@ class DesktopService {
 
     // Creation order across kinds; an invoice sorts before its returns, a
     // field customer before anything sold to it.
-    const rank = {'customer': -1, 'sales_invoice': 0, 'collection': 1, 'sales_return': 2, 'visit': 3};
+    const rank = {'customer': -1, 'sales_invoice': 0, 'collection': 1, 'sales_return': 2, 'expense': 3, 'visit': 4};
     docs.sort((a, b) {
       final t = (a['createdAt'] as int).compareTo(b['createdAt'] as int);
       return t != 0 ? t : rank[a['kind']]!.compareTo(rank[b['kind']]!);
@@ -382,6 +394,7 @@ class DesktopService {
     'collection': ('safe_transactions', " AND category='customer_collection'"),
     'visit': ('customer_visits', ''),
     'customer': ('field_customers', ''),
+    'expense': ('safe_transactions', " AND category='rep_expense'"),
   };
 
   /// Records the desktop outcome per document. `posted` is final (a second
@@ -503,8 +516,11 @@ class _Upsert {
         commercial_register = CASE WHEN CAST(@hasCr AS BOOLEAN) THEN CAST(@cr AS TEXT) ELSE commercial_register END,
         address = CASE WHEN CAST(@hasAd AS BOOLEAN) THEN CAST(@ad AS TEXT) ELSE address END,
         phone = CASE WHEN CAST(@hasPh AS BOOLEAN) THEN CAST(@ph AS TEXT) ELSE phone END,
-        einvoice_enabled = CASE WHEN CAST(@hasEi AS BOOLEAN) THEN CAST(@ei AS BOOLEAN) ELSE einvoice_enabled END
+        einvoice_enabled = CASE WHEN CAST(@hasEi AS BOOLEAN) THEN CAST(@ei AS BOOLEAN) ELSE einvoice_enabled END,
+        expense_over_custody = COALESCE(CAST(@eoc AS TEXT), expense_over_custody)
       WHERE id=@c''', {
+      // K-1: 'flag' (default) or 'reject' an expense beyond the custody balance.
+      'eoc': m['expenseOverCustody'] == 'reject' || m['expenseOverCustody'] == 'flag' ? m['expenseOverCustody'] : null,
       'n': _str(m['name']),
       'tn': _str(m['taxNumber']),
       // Printed identity (I-4): only overwritten when the desktop sends the key.
@@ -560,11 +576,36 @@ class _Upsert {
   Future<void> safe(Map<String, Object?> m) async {
     final g = _gid('safes', m);
     if (g == null) return;
+    // K-1: `balance` = the desktop ledger balance of the safe (custody check);
+    // kept when the desktop does not send it.
     await _write('safes', g, '''
-      INSERT INTO safes (company_id, global_id, name, deleted_at) VALUES (@c, @g, @n, @del)
-      ON CONFLICT (global_id) DO UPDATE SET name=EXCLUDED.name, deleted_at=EXCLUDED.deleted_at
+      INSERT INTO safes (company_id, global_id, name, deleted_at, desktop_balance) VALUES (@c, @g, @n, @del, @bal)
+      ON CONFLICT (global_id) DO UPDATE SET name=EXCLUDED.name, deleted_at=EXCLUDED.deleted_at,
+        desktop_balance=COALESCE(EXCLUDED.desktop_balance, safes.desktop_balance)
       WHERE safes.company_id = EXCLUDED.company_id RETURNING id''', {
       'n': _str(m['name']) ?? '-',
+      'del': m['deleted'] == true ? DateTime.now().millisecondsSinceEpoch : null,
+      'bal': m['balance'] is num ? (m['balance'] as num).toDouble() : null,
+    });
+  }
+
+  /// K-1: rep expense category (desktop list mapped to expense accounts; the
+  /// account itself stays on the desktop).
+  Future<void> expenseCategory(Map<String, Object?> m) async {
+    final g = _gid('expenseCategories', m);
+    if (g == null) return;
+    final name = _str(m['name']);
+    if (name == null) return _skip('expenseCategories', g, 'name_required');
+    await _write('expenseCategories', g, '''
+      INSERT INTO expense_categories (company_id, global_id, name, name_en, sort_order, is_active, deleted_at)
+      VALUES (@c, @g, @n, @ne, @so, @a, @del)
+      ON CONFLICT (global_id) DO UPDATE SET name=EXCLUDED.name, name_en=EXCLUDED.name_en,
+        sort_order=EXCLUDED.sort_order, is_active=EXCLUDED.is_active, deleted_at=EXCLUDED.deleted_at
+      WHERE expense_categories.company_id = EXCLUDED.company_id RETURNING id''', {
+      'n': name,
+      'ne': _str(m['nameEn']),
+      'so': m['sortOrder'] is int ? m['sortOrder'] : 0,
+      'a': _b(m['isActive'], true),
       'del': m['deleted'] == true ? DateTime.now().millisecondsSinceEpoch : null,
     });
   }

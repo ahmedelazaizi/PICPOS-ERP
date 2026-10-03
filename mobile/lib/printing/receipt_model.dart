@@ -220,6 +220,13 @@ class ReceiptLabels {
   String get receiver => _t('المستلم', 'Receiver');
   String get deliverer => _t('المسلم', 'Deliverer');
   String get reprint => _t('نسخة مكررة', 'REPRINT');
+  // K-1: rep expense (payment) voucher.
+  String get expenseTitle => _t('سند صرف', 'Payment Voucher');
+  String get expenseCategory => _t('بند المصروف', 'Expense');
+  String get note => _t('البيان', 'Note');
+  String get paidFromCustody => _t('صُرف من عهدة', 'Paid from custody of');
+  String get custodyAfter => _t('رصيد العهدة بعد الصرف', 'Custody after');
+  String get overCustody => _t('تجاوز العهدة', 'Custody exceeded');
 }
 
 String _fmtDate(DateTime d) {
@@ -384,6 +391,41 @@ class ReceiptBuilder {
         const ReceiptDivider(),
         ReceiptRow(l.amount, '${money(amount)} ${company.currency}'.trim(), bold: true, large: true),
         if (newBalance != null) ReceiptRow(l.newBalance, money(newBalance)),
+        const ReceiptDivider(),
+        ReceiptBarcode(number),
+        if (reprint) ReceiptText(l.reprint, size: ReceiptTextSize.small, bold: true),
+        ReceiptRow(l.receiver, '..........'),
+        ReceiptRow(l.deliverer, '..........'),
+        const ReceiptFeed(3),
+      ]);
+
+  /// K-1: rep expense paid from his custody (desktop thermal payment voucher
+  /// layout: title, number, date, payee/category, amount, signatures).
+  Receipt expense({
+    required String number,
+    required DateTime date,
+    required String repName,
+    String? routeName,
+    required String category,
+    required double amount,
+    String? note,
+    double? custodyAfter,
+    bool overCustody = false,
+    bool reprint = false,
+  }) =>
+      Receipt(kind: 'expense', number: number, locale: locale, blocks: [
+        ...header(),
+        ReceiptText(l.expenseTitle, bold: true, size: ReceiptTextSize.large),
+        ReceiptRow(l.voucherNumber, ltrIsolate(number)),
+        ReceiptRow(l.date, ltrIsolate(_fmtDate(date))),
+        ReceiptRow(l.paidFromCustody, repName),
+        if ((routeName ?? '').isNotEmpty) ReceiptRow(l.route, routeName!),
+        const ReceiptDivider(),
+        ReceiptRow(l.expenseCategory, category),
+        if ((note ?? '').isNotEmpty) ReceiptRow(l.note, note!),
+        ReceiptRow(l.amount, '${money(amount)} ${company.currency}'.trim(), bold: true, large: true),
+        if (custodyAfter != null) ReceiptRow(l.custodyAfter, money(custodyAfter)),
+        if (overCustody) ReceiptText(l.overCustody, bold: true),
         const ReceiptDivider(),
         ReceiptBarcode(number),
         if (reprint) ReceiptText(l.reprint, size: ReceiptTextSize.small, bold: true),

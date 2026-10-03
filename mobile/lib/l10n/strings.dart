@@ -157,6 +157,38 @@ class S {
     'noRoute': ('لا يوجد خط مسند لك', 'No route assigned to you'),
     'kind_customer': ('عميل جديد', 'New customer'),
     'cancel': ('إلغاء', 'Cancel'),
+    // K-1 — rep expenses from the custody
+    'expense': ('مصروف من العهدة', 'Expense from custody'),
+    'kind_expense': ('سند صرف', 'Payment voucher'),
+    'expenseCategory': ('بند المصروف', 'Expense category'),
+    'note': ('البيان (اختياري)', 'Note (optional)'),
+    'paymentBook': ('دفتر سندات الصرف', 'Payment voucher book'),
+    'noPaymentBook': ('لا يوجد دفتر سندات صرف مسلّم لك', 'No payment voucher book assigned to you'),
+    'noExpenseCategories': ('لا توجد بنود مصروفات. زامن أولاً.', 'No expense categories. Sync first.'),
+    'categoryRequired': ('اختر بند المصروف', 'Choose an expense category'),
+    'custodyBalance': ('رصيد العهدة', 'Custody balance'),
+    'custodyUnknown': ('رصيد العهدة غير معروف بعد', 'Custody balance not known yet'),
+    'overCustody': ('تجاوز العهدة', 'Custody exceeded'),
+    'overCustodyWarn': ('المبلغ يتجاوز رصيد العهدة — سيُحفظ ويُعلَّم «تجاوز العهدة»',
+        'The amount exceeds the custody balance — it will be saved and flagged «custody exceeded»'),
+    'custodyExceeded': ('المبلغ يتجاوز رصيد العهدة ولا تسمح الإدارة بذلك', 'The amount exceeds the custody balance and the company does not allow it'),
+    'receiptPhoto': ('صورة الإيصال', 'Receipt photo'),
+    'takePhoto': ('التقاط صورة', 'Take photo'),
+    'removePhoto': ('حذف الصورة', 'Remove photo'),
+    'photoTooLarge': ('الصورة أكبر من 1 ميغابايت', 'The photo is larger than 1 MB'),
+    'amountRequired': ('أدخل مبلغاً أكبر من صفر', 'Enter an amount above zero'),
+    // K-3 — GPS
+    'locationTitle': ('الموقع الجغرافي', 'Location'),
+    'locationRationale': (
+      'يسجّل التطبيق موقعك عند الزيارات والفواتير والتحصيل والمصروفات لإثبات الزيارة للإدارة. لا يُتتبَّع موقعك في غير ذلك. إن رفضت، تُحفظ المستندات بدون موقع.',
+      'The app records your location on visits, sales, collections and expenses so management can confirm the visit. It is not tracked otherwise. If you decline, documents are saved without a location.'
+    ),
+    'allow': ('سماح', 'Allow'),
+    'notNow': ('ليس الآن', 'Not now'),
+    'geo_ok': ('مع الموقع', 'With location'),
+    'geo_denied': ('بدون موقع (لا إذن)', 'No location (permission denied)'),
+    'geo_timeout': ('بدون موقع (لم يُحدَّد في الوقت)', 'No location (no fix in time)'),
+    'geo_unavailable': ('بدون موقع (الخدمة مغلقة)', 'No location (location off)'),
   };
 
   String t(String key) {

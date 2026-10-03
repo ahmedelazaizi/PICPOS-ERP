@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
@@ -8,8 +9,10 @@ import 'package:uuid/uuid.dart';
 import '../data/cloud_api.dart';
 import '../data/local_store.dart';
 import '../domain/sale_math.dart';
+import '../geo/geo_capture.dart';
 
 part 'field_customers.dart';
+part 'field_expenses.dart';
 
 class AppFailure implements Exception {
   AppFailure(this.code, [this.detail]);
@@ -36,12 +39,30 @@ class ReturnPreview {
 /// App state + offline business rules. Rules here mirror the server gate so
 /// the rep sees a block offline; the server re-checks on push and wins.
 class AppController extends ChangeNotifier {
-  AppController({required this.store, required this.api, DateTime Function()? clock})
-      : _clock = clock ?? DateTime.now;
+  AppController({
+    required this.store,
+    required this.api,
+    DateTime Function()? clock,
+    this.geo,
+    Future<List<int>?> Function(String path)? readPhoto,
+  })  : _clock = clock ?? DateTime.now,
+        readPhoto = readPhoto ?? _readFile;
 
   final LocalStore store;
   final CloudApi api;
   final DateTime Function() _clock;
+
+  /// K-3: GPS stamp of documents and visits (null = no location support,
+  /// e.g. unit tests: payloads then carry no `geo`).
+  GeoCapture? geo;
+
+  /// K-1: reads a stored receipt photo when its expense is pushed.
+  final Future<List<int>?> Function(String path) readPhoto;
+
+  static Future<List<int>?> _readFile(String path) async {
+    final f = File(path);
+    return await f.exists() ? f.readAsBytes() : null;
+  }
   static const _uuid = Uuid();
 
   /// Device token rotation period (ARCHITECTURE-I §4).
@@ -106,7 +127,16 @@ class AppController extends ChangeNotifier {
     if (emp != null) _applyEmployee((jsonDecode(emp) as Map).cast<String, Object?>());
     final reasons = await store.getKv('noSaleReasons');
     if (reasons != null) noSaleReasons = (jsonDecode(reasons) as List).cast<String>();
+    // K-2: the last server session (kept in the encrypted DB) lets the
+    // background worker push/pull while it is valid; the UI still asks for
+    // the PIN (loggedIn stays false).
+    session = await store.getKv('session');
     notifyListeners();
+  }
+
+  Future<void> _setSession(String? s) async {
+    session = s;
+    await store.setKv('session', s);
   }
 
   void _applyCompany(Map<String, Object?> m) {
@@ -150,7 +180,7 @@ class AppController extends ChangeNotifier {
   Future<void> login(String pin) async {
     final c = creds!;
     try {
-      session = await api.login(c, pin);
+      await _setSession(await api.login(c, pin));
       final salt = base64.encode(List<int>.generate(16, (_) => Random.secure().nextInt(256)));
       await store.setKv('pin', '$salt:${_pinHash(pin, salt)}');
     } on CloudApiException catch (e) {
@@ -170,7 +200,7 @@ class AppController extends ChangeNotifier {
 
   /// Back to the PIN screen (e.g. to get a fresh server session).
   void signOut() {
-    session = null;
+    _setSession(null);
     loggedIn = false;
     notifyListeners();
   }
@@ -209,11 +239,27 @@ class AppController extends ChangeNotifier {
         ...queued.where((e) => e.kind == kFieldCustomerKind),
         ...queued.where((e) => e.kind != kFieldCustomerKind),
       ];
-      for (var i = 0; i < pending.length; i += 50) {
-        final batch = pending.sublist(i, min(i + 50, pending.length));
-        final results = await api.push(cc, s, [for (final e in batch) _wire(e.payload)]);
-        await applyPushResults(batch, results);
+      // ≤ 50 documents and ≈ 3 MB per request (K-1 receipt photos ride along).
+      var batch = <OutboxEntry>[];
+      var wire = <Map<String, Object?>>[];
+      var bytes = 0;
+      Future<void> flush() async {
+        if (batch.isEmpty) return;
+        await applyPushResults(batch, await api.push(cc, s, wire));
+        batch = [];
+        wire = [];
+        bytes = 0;
       }
+
+      for (final e in pending) {
+        final w = await _wireDocument(e);
+        final size = jsonEncode(w).length;
+        if (batch.length == 50 || (batch.isNotEmpty && bytes + size > kMaxPushBytes)) await flush();
+        batch.add(e);
+        wire.add(w);
+        bytes += size;
+      }
+      await flush();
       final since = int.tryParse(await store.getKv('watermark') ?? '');
       final payload = since == null ? await api.bootstrap(cc, s) : await api.pull(cc, s, since);
       await applyServerPayload(payload);
@@ -224,7 +270,7 @@ class AppController extends ChangeNotifier {
       if (e.code == 'device_revoked') {
         await wipe();
       } else if (e.code == 'invalid_session' || e.code == 'session_device_mismatch') {
-        session = null;
+        await _setSession(null);
         lastSyncError = 'sessionRequired';
       } else {
         lastSyncError = e.code;
@@ -238,6 +284,9 @@ class AppController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Upper bound of one push request body (photos make documents large).
+  static const kMaxPushBytes = 3 * 1024 * 1024;
 
   /// Keys starting with `_` are device-local bookkeeping, never sent.
   static Map<String, Object?> _wire(Map<String, Object?> p) => {
@@ -338,6 +387,7 @@ class AppController extends ChangeNotifier {
     await store.upsert(Kinds.leases, leases);
     // A push whose response was lost (app killed mid-push): the server
     // already holds the document, so the local copy is accepted too.
+    await _applyExpensePayload(p);
     final known = {for (final d in list('documents')) d['globalId']};
     if (known.isNotEmpty) {
       for (final e in await pendingDocs()) {
@@ -528,6 +578,7 @@ class AppController extends ChangeNotifier {
         ? (name: _clean(customerName), phone: _clean(customerPhone))
         : (name: null, phone: null);
     final balanceBefore = await effectiveBalance(customerGlobalId);
+    final geoStamp = await _geoStamp();
     final number = await _takeNumber('sales_invoice');
     final gid = _uuid.v4();
     final entry = OutboxEntry(
@@ -555,6 +606,7 @@ class AppController extends ChangeNotifier {
         ],
         'paid': paidClamped,
         'total': totals.total,
+        'geo': ?geoStamp,
         '_remaining': remaining,
         '_net': totals.net,
         '_tax': totals.tax,
@@ -670,6 +722,7 @@ class AppController extends ChangeNotifier {
     final preview = await previewReturn(invoiceGlobalId, quantities);
     if (preview.lines.isEmpty) throw AppFailure('emptyReturn');
     final inv = (await store.get(Kinds.invoices, invoiceGlobalId))!;
+    final geoStamp = await _geoStamp();
     final number = await _takeNumber('sales_return');
     final gid = _uuid.v4();
     final entry = OutboxEntry(
@@ -695,6 +748,7 @@ class AppController extends ChangeNotifier {
         'total': preview.total,
         'cashRefund': preview.cashRefund,
         'reason': ?reason,
+        'geo': ?geoStamp,
         '_arOffset': preview.arOffset,
         '_tax': preview.tax,
         '_originalNumber': inv['number'],
@@ -717,6 +771,8 @@ class AppController extends ChangeNotifier {
     if (outcome == 'no_sale' && (noSaleReason == null || !noSaleReasons.contains(noSaleReason))) {
       throw AppFailure('reasonRequired');
     }
+    final geoStamp = await _geoStamp();
+    final fix = geoStamp?['status'] == 'ok';
     final gid = _uuid.v4();
     final entry = OutboxEntry(
       globalId: gid,
@@ -730,6 +786,10 @@ class AppController extends ChangeNotifier {
         'outcome': outcome,
         if (outcome == 'no_sale') 'noSaleReason': noSaleReason,
         if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+        // K-3: visit GPS (legacy lat/lng columns + the full stamp).
+        if (fix) 'latitude': geoStamp!['lat'],
+        if (fix) 'longitude': geoStamp!['lng'],
+        'geo': ?geoStamp,
       },
     );
     await _queue(entry);
@@ -745,7 +805,9 @@ class AppController extends ChangeNotifier {
         ...((book['usedNumbers'] as List?) ?? const []).cast<int>(),
         ...((book['cancelledNumbers'] as List?) ?? const []).cast<int>(),
         for (final e in await store.outbox())
-          if (e.kind == 'collection' && e.status != OutboxStatus.rejected && e.payload['bookGlobalId'] == book['globalId'])
+          if ((e.kind == 'collection' || e.kind == kExpenseKind) &&
+              e.status != OutboxStatus.rejected &&
+              e.payload['bookGlobalId'] == book['globalId'])
             e.payload['bookNumber'] as int,
       };
 
@@ -772,6 +834,7 @@ class AppController extends ChangeNotifier {
     if (leaf < (book['rangeFrom'] as int) || leaf > (book['rangeTo'] as int) || (await _usedLeaves(book)).contains(leaf)) {
       throw AppFailure('leafInvalid');
     }
+    final geoStamp = await _geoStamp();
     final gid = _uuid.v4();
     final entry = OutboxEntry(
       globalId: gid,
@@ -785,6 +848,7 @@ class AppController extends ChangeNotifier {
         'bookGlobalId': book['globalId'],
         'bookNumber': leaf,
         'date': _clock().toUtc().toIso8601String(),
+        'geo': ?geoStamp,
         '_bookPrefix': book['prefix'],
         '_balanceAfter': _r(await effectiveBalance(customerGlobalId) - amount),
       },

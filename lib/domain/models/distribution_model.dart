@@ -198,8 +198,12 @@ class RepTransactionRow {
     this.customerName,
     this.routeName,
     this.paid = 0,
+    this.mapsUrl,
   });
   final DateTime date;
+
+  /// K-3: Google Maps link of the van GPS stamp («الموقع»), when captured.
+  final String? mapsUrl;
 
   /// `invoice` | `return` | `receipt` | `collection` | `handover`.
   final String kind;

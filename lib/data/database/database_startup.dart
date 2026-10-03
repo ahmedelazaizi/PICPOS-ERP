@@ -42,6 +42,7 @@ extension DatabaseStartup on AppDatabase {
     await ensureHrCoreSchema();
     await ensureHrAttendanceSchema();
     await ensureHrPayrollSchema();
+    await ensureFieldExpenseSchema(seed: false);
 
     // Phase 2b: Database integrity — ensure critical PK/UNIQUE constraints
     // exist on PG installs whose schema was created by an older or crashed

@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/i18n/tr.dart';
 import '../../../core/theme/app_colors.dart';
@@ -45,6 +46,14 @@ enum RepReportKind {
         coverage => tr('عملاء كل مسار وآخر زيارة وآخر فاتورة والأرصدة'),
         vanStock => tr('أرصدة الأصناف في مخزن سيارة كل مندوب'),
       };
+}
+
+/// K-3 — a «الموقع» cell: a Google Maps link (exported as the URL).
+class _MapLink {
+  const _MapLink(this.url);
+  final String url;
+  @override
+  String toString() => url;
 }
 
 /// جدولٌ واحدٌ يُعرَض ويُصدَّر **من نفس الصفوف**.
@@ -154,6 +163,7 @@ class _RepReportsPicposScreenState
           tr('المبلغ'),
           tr('المدفوع'),
           tr('المتبقي'),
+          tr('الموقع'),
         ], [
           for (final r in rows)
             [
@@ -166,6 +176,8 @@ class _RepReportsPicposScreenState
               r.amount,
               r.paid,
               r.remaining,
+              // K-3: van GPS stamp → Google Maps (the URL in the Excel export).
+              if (r.mapsUrl case final url?) _MapLink(url) else '—',
             ],
         ]);
       case RepReportKind.coverage:
@@ -349,7 +361,15 @@ class _RepReportsPicposScreenState
                 rows: [
                   for (final r in table.rows)
                     PicPosTableRow(cells: [
-                      for (final v in r) PicPosTextCell(_cell(v)),
+                      for (final v in r)
+                        if (v is _MapLink)
+                          PicPosButtonCell(tr('الموقع'),
+                              icon: PhosphorIconsBold.mapPin,
+                              tint: AppColors.primary,
+                              onPressed: () => launchUrl(Uri.parse(v.url),
+                                  mode: LaunchMode.externalApplication))
+                        else
+                          PicPosTextCell(_cell(v)),
                     ]),
                 ],
               ),

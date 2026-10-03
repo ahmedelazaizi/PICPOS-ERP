@@ -4,6 +4,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/strings.dart';
 import 'screens/common.dart';
 import 'printing/print_service.dart';
+import 'screens/expense_screen.dart';
+import 'screens/location_permission.dart';
 import 'screens/pairing_screen.dart';
 import 'screens/print_screen.dart';
 import 'screens/route_screen.dart';
@@ -83,6 +85,15 @@ class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
   @override
+  void initState() {
+    super.initState();
+    // K-3: the route is open — the moment to ask for location (rationale first).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) askLocationIfNeeded(context, AppScope.of(context));
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final s = S.of(context);
     final c = AppScope.of(context);
@@ -92,6 +103,12 @@ class _HomeShellState extends State<HomeShell> {
         title: Text(titles[_index]),
         actions: [
           TextButton(onPressed: widget.onToggleLocale, child: Text(s.t('language'))),
+          IconButton(
+            key: const Key('openExpense'),
+            tooltip: s.t('expense'),
+            icon: const Icon(Icons.receipt_long_outlined),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ExpenseScreen())),
+          ),
           if (PrintScope.maybeOf(context) case final ps?)
             IconButton(
               key: const Key('openPrinting'),

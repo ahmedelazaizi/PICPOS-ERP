@@ -8,7 +8,7 @@ import '../state/app_controller.dart';
 import 'receipt_model.dart';
 
 /// Kinds that have a receipt.
-const kPrintableKinds = {'sales_invoice', 'sales_return', 'collection'};
+const kPrintableKinds = {'sales_invoice', 'sales_return', 'collection', kExpenseKind};
 
 double _d(Object? v) => ((v as num?) ?? 0).toDouble();
 
@@ -102,6 +102,20 @@ class ReceiptComposer {
           party: await _party(p),
           amount: _d(p['amount']),
           newBalance: p['_balanceAfter'] is num ? _d(p['_balanceAfter']) : null,
+          reprint: reprint,
+        );
+      case kExpenseKind:
+        final en = locale == 'en' && p['_categoryNameEn'] is String;
+        return b.expense(
+          number: '${p['_bookPrefix'] ?? ''}${p['bookNumber']}',
+          date: _date(e),
+          repName: c.repName,
+          routeName: c.routeNames[p['routeGlobalId']],
+          category: '${en ? p['_categoryNameEn'] : p['_categoryName'] ?? ''}',
+          amount: _d(p['amount']),
+          note: p['note'] as String?,
+          custodyAfter: p['_custodyAfter'] is num ? _d(p['_custodyAfter']) : null,
+          overCustody: p['_overCustody'] == true,
           reprint: reprint,
         );
     }

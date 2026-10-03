@@ -20,6 +20,12 @@ class Demo {
   static const book1Gid = '00000000-0000-4000-8000-0000000000d1'; // rep1, 1001..1050
   static const book2Gid = '00000000-0000-4000-8000-0000000000d2'; // rep2, 2001..2050
   static const priceListGid = '00000000-0000-4000-8000-0000000000e1'; // default list: bread ≥ 10 → 0.90
+  static const payBook1Gid = '00000000-0000-4000-8000-0000000000d3'; // rep1 payment book, 5001..5050
+  static const expFuelGid = '00000000-0000-4000-8000-00000000ef01'; // expense category «وقود»
+  static const expPortersGid = '00000000-0000-4000-8000-00000000ef02'; // «تنزيل/عتالة»
+
+  /// Desktop custody balance seeded for rep1 (expense over-custody check).
+  static const rep1CustodyBalance = 100.0;
 }
 
 /// Seeds one demo company with two reps, two routes, three customers, two
@@ -30,6 +36,39 @@ Future<void> seedDemo(CloudDatabase db, {int pinIterations = 120000}) async {
   final exists = await db.query('SELECT 1 FROM companies WHERE global_id=@g', {'g': Demo.companyGid});
   if (exists.isEmpty) await _seedI1(db, pinIterations);
   await _seedI2(db);
+  await _seedK(db);
+}
+
+/// K-1: expense categories, a payment voucher book for rep1 and rep1's last
+/// desktop custody balance.
+Future<void> _seedK(CloudDatabase db) async {
+  final has = await db.query('SELECT 1 FROM voucher_books WHERE global_id=@g', {'g': Demo.payBook1Gid});
+  if (has.isNotEmpty) return;
+  await db.tx((s) async {
+    final c = (await db.q(s, 'SELECT id FROM companies WHERE global_id=@g', {'g': Demo.companyGid})).first[0];
+    final rep1 = (await db.q(s, 'SELECT id FROM employees WHERE global_id=@g', {'g': Demo.rep1Gid})).first[0];
+    var order = 0;
+    for (final (gid, name, en) in [
+      (Demo.expFuelGid, 'وقود', 'Fuel'),
+      (Demo.expPortersGid, 'تنزيل/عتالة', 'Unloading / porters'),
+      (_uuid.v4(), 'مواقف', 'Parking'),
+      (_uuid.v4(), 'صيانة', 'Maintenance'),
+      (_uuid.v4(), 'وجبات', 'Meals'),
+      (_uuid.v4(), 'أخرى', 'Other'),
+    ]) {
+      await db.q(s, '''
+        INSERT INTO expense_categories (company_id, global_id, name, name_en, sort_order)
+        VALUES (@c, @g, @n, @ne, @o)''', {'c': c, 'g': gid, 'n': name, 'ne': en, 'o': order++});
+    }
+    await db.q(s, '''
+      INSERT INTO voucher_books (company_id, global_id, book_type, prefix, label, range_from, range_to, next_number,
+        holder_employee_id)
+      VALUES (@c, @g, 'payment', 'P-', 'دفتر صرف', 5001, 5050, 5001, @e)''', {'c': c, 'g': Demo.payBook1Gid, 'e': rep1});
+    await db.q(s, '''
+      UPDATE safes SET desktop_balance = @b
+      WHERE id = (SELECT custody_safe_id FROM rep_resources WHERE employee_id=@e)''',
+        {'b': Demo.rep1CustodyBalance, 'e': rep1});
+  });
 }
 
 Future<void> _seedI2(CloudDatabase db) async {

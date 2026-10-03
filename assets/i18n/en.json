@@ -10830,5 +10830,15 @@
   "إجمالي الخصومات": "Total deductions",
   "التأمينات": "Insurance",
   "المكافآت": "Bonuses",
-  "السلف": "Advances"
+  "السلف": "Advances",
+  "سند صرف مصروف مندوب": "Rep expense voucher",
+  "فئات مصروفات المندوب": "Rep expense categories",
+  "تعديل فئة المصروف": "Edit expense category",
+  "حساب المصروف": "Expense account",
+  "الاسم والحساب مطلوبان": "Name and account are required",
+  "تظهر هذه الفئات في تطبيق المندوب، ويُرحَّل سند الصرف من عهدته على حساب الفئة": "These categories appear in the rep app; the payment voucher is posted from the rep's custody to the category's account",
+  "مصروف يتجاوز رصيد العهدة": "Expense above the custody balance",
+  "يُقبل ويُعلَّم «تجاوز العهدة»": "Accept and flag «custody exceeded»",
+  "يُرفض": "Reject",
+  "لا فئات بعد": "No categories yet"
 }

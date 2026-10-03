@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/uuid_v7.dart';
 import '../../data/database/database.dart';
+import 'cloud_expense_categories_export.dart';
 
 /// Builds the master-data batch the desktop pushes to the cloud
 /// (`POST /desktop/master`, I-3). References travel as global ids; rows
@@ -86,7 +87,8 @@ class CloudMasterExporter {
         .map((r) => r.data)
         .toList();
     final books = (await db.customSelect(
-      "SELECT * FROM voucher_books WHERE deleted_at IS NULL AND book_type = 'receipt' "
+      // K-1: payment books too (rep expense vouchers from the custody safe).
+      "SELECT * FROM voucher_books WHERE deleted_at IS NULL AND book_type IN ('receipt', 'payment') "
       'AND holder_employee_id IS NOT NULL ORDER BY id',
     ).get())
         .map((r) => r.data)
@@ -149,7 +151,8 @@ class CloudMasterExporter {
           in await (db.select(db.safes)..where((s) => s.id.isIn(safeIds))).get()) {
         final g = await _ensureGid('safes', s.id, s.globalId);
         safeGid[s.id] = g;
-        safesJson.add({'globalId': g, 'name': s.name});
+        // K-1: the ledger balance feeds the cloud's over-custody check.
+        safesJson.add({'globalId': g, 'name': s.name, 'balance': s.balance});
       }
     }
 
@@ -362,6 +365,7 @@ class CloudMasterExporter {
       'repResources': repResJson,
       'voucherBooks': booksJson,
       'vanStock': vanStockJson,
+      'expenseCategories': await cloudExpenseCategoriesJson(db),
     };
   }
 
@@ -400,6 +404,10 @@ class CloudMasterExporter {
       'pricesIncludeTax':
           await db.getSettingValue('prices_include_tax') == 'true',
       'decimalPlaces': AppConstants.decimalPlaces,
+      'expenseOverCustody':
+          await db.getSettingValue(kCloudExpenseOverCustodySetting) == 'reject'
+              ? 'reject'
+              : 'flag',
     };
   }
 }

@@ -9,6 +9,7 @@ import '../security.dart';
 import '../service/auth_service.dart';
 import '../service/desktop_service.dart';
 import '../service/errors.dart';
+import '../service/field_expense_documents.dart';
 import '../service/rate_limiter.dart';
 import '../service/sync_service.dart';
 import '../whatsapp/whatsapp.dart';
@@ -149,6 +150,12 @@ class CloudApp {
       final d = await _desktop(req);
       final limit = int.tryParse(req.url.queryParameters['limit'] ?? '100') ?? 100;
       return _json(200, await desktop.pendingDocuments(d, limit: limit));
+    });
+    r.get('/desktop/documents/attachment', (Request req) async {
+      final d = await _desktop(req);
+      final gid = req.url.queryParameters['globalId'];
+      if (gid == null || gid.isEmpty) throw ApiError(400, 'global_id_required');
+      return _json(200, await fieldAttachment(db, d.companyId, gid));
     });
     r.post('/desktop/documents/ack', (Request req) async {
       final d = await _desktop(req);

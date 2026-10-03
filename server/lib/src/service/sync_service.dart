@@ -7,6 +7,8 @@ import 'package:uuid/uuid.dart';
 import '../db/database.dart';
 import 'errors.dart';
 import 'field_customers.dart';
+import 'field_expenses.dart';
+import 'field_geo.dart';
 
 const _uuid = Uuid();
 
@@ -272,6 +274,8 @@ class SyncService {
           WHERE device_pk=@d AND last_modified_at > @s
         UNION ALL SELECT global_id, 'collection', voucher_number, 'accepted' FROM safe_transactions
           WHERE device_pk=@d AND category='customer_collection' AND last_modified_at > @s
+        UNION ALL SELECT global_id, 'expense', voucher_number, 'accepted' FROM safe_transactions
+          WHERE device_pk=@d AND category='rep_expense' AND last_modified_at > @s
         UNION ALL SELECT global_id, 'sales_return', return_number, status FROM sales_returns
           WHERE device_pk=@d AND last_modified_at > @s
         UNION ALL SELECT global_id, 'visit', outcome, 'accepted' FROM customer_visits
@@ -279,7 +283,10 @@ class SyncService {
         UNION ALL SELECT global_id, 'customer', NULL, 'accepted' FROM field_customers
           WHERE device_pk=@d AND last_modified_at > @s''', {'d': d.devicePk, 's': since});
 
+      final expenseExtras = await expensePullExtras(db, s, d, since);
+
       return {
+        ...expenseExtras,
         'serverTime': now - pullOverlapMs,
         'company': await _companyProfile(s, d.companyId),
         'customers': customers,
@@ -529,6 +536,8 @@ class SyncService {
     final replay = await _replay(s, d, gid);
     if (replay != null) return replay;
     final kind = doc['kind'];
+    // K-3: the GPS stamp is validated before the document is applied.
+    final geo = parseFieldGeo(doc);
     final Map<String, Object?> result;
     switch (kind) {
       case 'sales_invoice':
@@ -541,9 +550,12 @@ class SyncService {
         result = await _acceptVisit(s, d, gid, doc);
       case 'customer':
         result = await acceptFieldCustomer(db, s, d, gid, doc);
+      case 'expense':
+        result = await acceptExpense(db, s, d, gid, doc);
       default:
         throw DocRejected('unsupported_kind', 'kind "$kind" is not accepted');
     }
+    if (geo != null) await storeFieldGeo(db, s, d.companyId, kind, gid, geo);
     await db.q(s, '''
       INSERT INTO sync_idempotency (company_id, global_id, kind, device_pk, result, created_at)
       VALUES (@c, @g, @k, @d, @r, now_ms())''',
@@ -1078,32 +1090,11 @@ class SyncService {
     final cust = await _customerOnRoute(s, d, doc['customerGlobalId']);
     final amount = _num(doc['amount'], 'amount');
     if (amount <= 0) throw DocRejected('invalid_amount');
-    final bookGid = doc['bookGlobalId'];
-    final leaf = doc['bookNumber'];
-    if (bookGid is! String || leaf is! int) throw DocRejected('book_number_required');
-    final books = await db.q(s, '''
-      SELECT id, prefix, range_from, range_to, next_number, status, holder_employee_id
-      FROM voucher_books WHERE company_id=@c AND global_id=@g AND book_type='receipt'
-        AND deleted_at IS NULL FOR UPDATE''', {'c': d.companyId, 'g': bookGid});
-    if (books.isEmpty) throw DocRejected('book_not_found');
-    final b = books.first.toColumnMap();
-    if (b['status'] != 'active') throw DocRejected('book_not_active');
-    if (b['holder_employee_id'] != d.employeeId) throw DocRejected('book_not_held_by_rep');
-    final from = b['range_from'] as int, to = b['range_to'] as int;
-    if (leaf < from || leaf > to) throw DocRejected('book_number_out_of_range', '$leaf');
-    final cancelled = (await db.q(s,
-            'SELECT number FROM voucher_book_leaves_cancelled WHERE book_id=@b', {'b': b['id']}))
-        .map((r) => r[0] as int)
-        .toSet();
-    if (cancelled.contains(leaf)) throw DocRejected('book_leaf_cancelled', '$leaf');
-    final used = (await db.q(s,
-            'SELECT book_number FROM safe_transactions WHERE book_id=@b', {'b': b['id']}))
-        .map((r) => r[0] as int)
-        .toSet();
-    if (used.contains(leaf)) throw DocRejected('book_leaf_used', '$leaf');
+    // Book rule §3.2 (also advances next_number like desktop `_advanceVoucherBook`).
+    final claimed = await claimBookLeaf(db, s, d, doc['bookGlobalId'], doc['bookNumber'], bookType: 'receipt');
 
     final rr = await _repResources(s, d.employeeId);
-    final voucherNumber = '${b['prefix'] ?? ''}$leaf';
+    final voucherNumber = claimed.voucherNumber;
     await db.q(s, '''
       INSERT INTO safe_transactions (company_id, global_id, voucher_number, safe_id, transaction_type,
         category, amount, party_id, employee_id, rep_employee_id, route_id, book_id, book_number,
@@ -1118,27 +1109,12 @@ class SyncService {
       'p': cust['id'],
       'e': d.employeeId,
       'r': cust['route_id'],
-      'b': b['id'],
-      'n': leaf,
+      'b': claimed.bookId,
+      'n': claimed.leaf,
       'd': d.devicePk,
       'o': d.deviceId,
     });
     await db.q(s, 'UPDATE parties SET balance = balance - @a WHERE id=@id', {'a': amount, 'id': cust['id']});
-
-    // Advance next_number like desktop `_advanceVoucherBook`.
-    used.add(leaf);
-    int? next;
-    for (var i = b['next_number'] as int; i <= to && next == null; i++) {
-      if (i >= from && !used.contains(i) && !cancelled.contains(i)) next = i;
-    }
-    for (var i = from; i <= to && next == null; i++) {
-      if (!used.contains(i) && !cancelled.contains(i)) next = i;
-    }
-    await db.q(s, 'UPDATE voucher_books SET next_number=@n, status=@st WHERE id=@id', {
-      'n': next ?? to + 1,
-      'st': next == null ? 'closed' : 'active',
-      'id': b['id'],
-    });
 
     final newBalance = round2(num0(cust['balance']) - amount);
     await _enqueueWhatsApp(s, d, cust, gid, 'payment_received', [
