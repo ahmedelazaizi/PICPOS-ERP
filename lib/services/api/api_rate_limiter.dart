@@ -171,6 +171,12 @@ class ApiRateLimiter {
     // Spec 151 (P1-8): session issuance is a credential endpoint — throttle it
     // (same budget as verify-admin) to blunt password/card brute-force.
     const MapEntry('/api/auth/session', RateLimitClass.read),
+    // الويب (م3-4/م3-5): دخولٌ بالاعتماد + تذكرة + قناة قراءة. ⚠️ /webdb
+    // **لا** يبدأ بـ/ws فلا يشمله إعفاءُ _exemptPrefixes — يُصنَّف صراحةً
+    // (طلبُ ترقيةٍ واحدٌ لكلّ اتصال؛ الاتصالُ نفسه لا يُحتسب بعد ذلك).
+    const MapEntry('/api/web/session', RateLimitClass.read),
+    const MapEntry('/api/web/ws-ticket', RateLimitClass.read),
+    const MapEntry('/webdb', RateLimitClass.read),
     const MapEntry('/api/backup', RateLimitClass.otherWrite),
     // حسابُ الطاولة على هاتف الزبون (2026-09-12) — **مصنَّفٌ صراحةً على
     // الفئة الافتراضيّة (١٢٠/دقيقة) لا على `read` (٦٠٠)**.

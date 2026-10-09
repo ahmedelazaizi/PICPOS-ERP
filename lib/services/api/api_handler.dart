@@ -36,6 +36,8 @@ import 'api_party_handler.dart';
 import 'api_product_handler.dart';
 import 'api_purchase_handler.dart';
 import 'api_auth_handler.dart';
+import 'api_web_session_handler.dart';
+import '../web_read/web_read_channel_host.dart';
 import 'api_terminals_handler.dart';
 import 'api_voucher_handler.dart';
 import 'api_html_templates.dart';
@@ -66,6 +68,9 @@ class ApiHandler {
   late final ApiProductHandler _products;
   late final ApiPurchaseHandler _purchases;
   late final ApiAuthHandler _auth;
+  // الويب: لا يرث ApiHandlerBase (كي لا يُسجَّل _registeredInstance).
+  late final ApiWebSessionHandler _webSession;
+  late final WebReadChannelHost _webRead;
   late final ApiTerminalsHandler _terminals;
   late final ApiVoucherHandler _vouchers;
 
@@ -76,6 +81,8 @@ class ApiHandler {
     _products = ApiProductHandler(_db, _wsClients);
     _purchases = ApiPurchaseHandler(_db, _wsClients);
     _auth = ApiAuthHandler(_db, _wsClients);
+    _webSession = ApiWebSessionHandler(_db);
+    _webRead = WebReadChannelHost(_db);
     _terminals = ApiTerminalsHandler(_db, _wsClients);
     _vouchers = ApiVoucherHandler(_db, _wsClients);
   }
@@ -329,6 +336,11 @@ class ApiHandler {
     // Spec 151 (P1-8): issue a signed per-user session token after a credential
     // check — replaces the forgeable X-User-Id header as the identity source.
     router.post('/api/auth/session', _auth.issueSession);
+    // الويب (م3-4/م3-5): دخول بالاعتماد → رمز جلسة 12 ساعة؛ تذكرة لمرة واحدة؛
+    // ثم قناة drift للقراءة. ⚠️ /webdb لا يبدأ بـ/ws (انظر الإعفاءات).
+    router.post('/api/web/session', _webSession.login);
+    router.post('/api/web/ws-ticket', _webSession.issueTicket);
+    router.get('/webdb', _webRead.handle);
     // Heartbeat
     router.post('/api/sync/heartbeat', _heartbeat);
     // Delta pull — generic watermark-based sync endpoint (P3.1)

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' show Random;
 import 'package:crypto/crypto.dart';
 
 /// Signed per-user session tokens for the embedded LAN server (Spec 151 / P1-8).
@@ -87,6 +88,9 @@ class ApiSessionToken {
     try {
       final map = jsonDecode(utf8.decode(base64Url.decode(payloadB64)))
           as Map<String, dynamic>;
+      // رمزُ الويب (`aud:'web'`) لا يصلح رمزَ جلسة جهاز — يُتحقَّق منه عبر
+      // [verifyWeb] فقط. الرموزُ القائمة بلا `aud` فسلوكُها لم يتغيّر.
+      if (map.containsKey('aud')) return null;
       final uid = map['uid'];
       final exp = map['exp'];
       if (uid is! int || uid <= 0 || exp is! int) return null;
@@ -98,6 +102,81 @@ class ApiSessionToken {
     }
   }
 
+  // ───────────────────────────── جلسات الويب ─────────────────────────────
+  //
+  // رمزٌ منفصل (ud:'web') لمتصفّح الويب: مدّته 12 ساعة، ويحمل معرّف جلسة
+  // sid عشوائياً يمكن إلغاؤه (تسجيل خروج/تعطيل) قبل انتهاء المدّة. الإلغاءُ
+  // في ذاكرة العملية فقط (إعادة تشغيل المضيف تُفرغ القائمة، والرمز يبقى
+  // صالحاً حتى exp) — القناة تفحص المستخدم دورياً فتُغلق عند التعطيل.
+
+  /// الجمهور الذي يحمله رمز الويب.
+  static const String webAudience = 'web';
+
+  static const Duration _webTtl = Duration(hours: 12);
+
+  /// مدّة جلسة الويب بالميلي ثانية.
+  static int get webTtlMs => _webTtl.inMilliseconds;
+
+  static final Set<String> _revokedSids = <String>{};
+
+  /// أيقِف الجلسة [sid]: كلُّ رمزٍ بها يفشل في [verifyWeb] من الآن.
+  static void revokeSid(String sid) => _revokedSids.add(sid);
+
+  /// هل أُلغيت الجلسة [sid]؟
+  static bool isSidRevoked(String sid) => _revokedSids.contains(sid);
+
+  /// Test hook — تفريغ قائمة الإلغاء.
+  static void clearRevokedForTesting() => _revokedSids.clear();
+
+  /// رمزُ جلسة ويب للمستخدم [userId]؛ [sid] يُولَّد عشوائياً إن لم يُمرَّر.
+  static String mintWeb(int userId, {String? sid, int? nowMs}) {
+    if (_signingKey == null) {
+      throw StateError('ApiSessionToken.mintWeb before deriveKey');
+    }
+    final now = nowMs ?? DateTime.now().millisecondsSinceEpoch;
+    final payload = base64Url.encode(utf8.encode(jsonEncode({
+      'uid': userId,
+      'exp': now + _webTtl.inMilliseconds,
+      'aud': webAudience,
+      'sid': sid ?? _newSid(),
+    })));
+    return '$payload.${_sign(payload)}';
+  }
+
+  /// يتحقّق من رمز ويب؛ null عند أيّ فشل (توقيع/انتهاء/aud/sid ملغى/تالف).
+  static WebSessionClaims? verifyWeb(String? token, {int? nowMs}) {
+    if (token == null || _signingKey == null) return null;
+    final dot = token.indexOf('.');
+    if (dot <= 0 || dot == token.length - 1) return null;
+    final payloadB64 = token.substring(0, dot);
+    if (!_constantTimeEquals(token.substring(dot + 1), _sign(payloadB64))) {
+      return null;
+    }
+    try {
+      final map = jsonDecode(utf8.decode(base64Url.decode(payloadB64)))
+          as Map<String, dynamic>;
+      final uid = map['uid'];
+      final exp = map['exp'];
+      final sid = map['sid'];
+      if (map['aud'] != webAudience) return null;
+      if (uid is! int || uid <= 0 || exp is! int) return null;
+      if (sid is! String || sid.isEmpty || _revokedSids.contains(sid)) {
+        return null;
+      }
+      final now = nowMs ?? DateTime.now().millisecondsSinceEpoch;
+      if (now >= exp) return null;
+      return WebSessionClaims(userId: uid, sid: sid, expiresAtMs: exp);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static String _newSid() {
+    final rnd = Random.secure();
+    return base64Url
+        .encode(List<int>.generate(18, (_) => rnd.nextInt(256)))
+        .replaceAll('=', '');
+  }
   /// Length-independent constant-time compare (both are fixed-length base64url
   /// SHA-256 macs anyway, but keep the timing side-channel closed regardless).
   static bool _constantTimeEquals(String a, String b) {
@@ -108,4 +187,17 @@ class ApiSessionToken {
     }
     return diff == 0;
   }
+}
+
+/// مطالبات رمز جلسة ويب بعد التحقّق.
+class WebSessionClaims {
+  const WebSessionClaims({
+    required this.userId,
+    required this.sid,
+    required this.expiresAtMs,
+  });
+
+  final int userId;
+  final String sid;
+  final int expiresAtMs;
 }

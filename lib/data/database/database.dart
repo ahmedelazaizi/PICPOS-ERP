@@ -968,6 +968,9 @@ class AppDatabase extends _$AppDatabase {
   /// Whether this database is backed by PostgreSQL (affects migration behavior)
   final bool _isPostgres;
 
+  /// صحيحٌ فقط لـ[AppDatabase.forWebRemote]: لا ترحيلات ولا عمل عند الفتح.
+  bool _skipMigrations = false;
+
   /// Singleton instance for the default SQLite connection
   static AppDatabase? _instance;
 
@@ -990,6 +993,21 @@ class AppDatabase extends _$AppDatabase {
   /// NOT a singleton — each PostgreSQL config gets its own instance.
   AppDatabase.withExecutor(super.executor, {bool isPostgres = false})
       : _isPostgres = isPostgres;
+
+  /// عميل الويب (م3-6): قاعدةٌ فوق اتصال drift remote إلى مضيف الديسكتوب
+  /// (قراءةٌ فقط، lib/web/web_remote_connection.dart).
+  ///
+  /// **تتخطّى الترحيلات وكلَّ ما يعمل عند الفتح** (onCreate/onUpgrade/
+  /// eforeOpen بما فيها PRAGMA وبذرة البيانات): المضيف هو صاحب المخطّط،
+  /// واعتراضُ سياسة القراءة يرفض أصلاً كلَّ PRAGMA/كتابة، فتشغيلُها على
+  /// العميل إمّا يفشل وإمّا — لو وصل — يعبث بقاعدة المضيف. [isPostgres]
+  /// يُضبط من استجابة الخادم عند الدخول ليتّفق توليدُ SQL مع محرّك المضيف.
+  /// ليست singleton.
+  AppDatabase.forWebRemote(DatabaseConnection connection,
+      {required bool isPostgres})
+      : _isPostgres = isPostgres,
+        _skipMigrations = true,
+        super(connection);
 
   /// Opens an in-memory database for widget / integration tests.
   /// NOT a singleton — each test gets its own isolated database.
@@ -2497,6 +2515,13 @@ class AppDatabase extends _$AppDatabase {
   /// ISS-08: Migration logic delegated to database_migrations.dart
   @override
   MigrationStrategy get migration {
+    if (_skipMigrations) {
+      return MigrationStrategy(
+        onCreate: (_) async {},
+        onUpgrade: (_, __, ___) async {},
+        beforeOpen: (_) async {},
+      );
+    }
     return MigrationStrategy(
       onCreate: (Migrator m) async {
         // PostgreSQL: create strftime() compatibility function BEFORE createAll

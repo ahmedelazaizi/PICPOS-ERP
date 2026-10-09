@@ -4,6 +4,7 @@ import 'package:shelf/shelf.dart';
 
 import 'api_session_token.dart';
 import 'api_user_context.dart';
+import 'api_web_session_handler.dart';
 import 'lan_pairing_api_handler.dart';
 import 'lan_pairing_service.dart';
 
@@ -19,6 +20,7 @@ import 'lan_pairing_service.dart';
 /// 4. Middleware validates the paired device, or the legacy token in-window
 ///
 /// **Exempt paths:** `/api/health`, `/cfd`, `/menu`, `/ws`
+/// (and the web paths `/api/web/*` / `/webdb`, authenticated by web session/ticket)
 class ApiAuthMiddleware {
   ApiAuthMiddleware._();
 
@@ -47,6 +49,12 @@ class ApiAuthMiddleware {
     '/ws',
     '/api/table-bill',
   ];
+
+  /// مسارات /api/* (غير /api/web/*) التي تقبل **رمز جلسة ويب** في
+  /// X-Session-Token بدل bearer الجهاز (م3-7: الكتابة عبر HTTP تُسجَّل هنا).
+  /// فارغةٌ افتراضياً: لا يصل متصفّحُ الويب إلا إلى /api/web/* و/webdb.
+  /// صلاحيات المستخدم تبقى مفحوصةً في كلّ معالج عبر ApiUserCtx.
+  static List<String> webSessionPrefixes = <String>[];
 
   /// Generate and store the API token from a machine-specific seed.
   ///
@@ -100,6 +108,41 @@ class ApiAuthMiddleware {
         final path = '/${request.url.path}';
         if (path == '/api/pair' && request.method == 'POST') {
           return LanPairingApiHandler.pair(request);
+        }
+        // ── الويب: /api/web/* و/webdb (القناة؛ لا تبدأ بـ/ws فلا يشملها
+        // الإعفاء بالبادئة أدناه). فحصُ Origin أولاً، ثم رمزُ جلسة الويب.
+        final isWebPath = path == '/webdb' || path.startsWith('/api/web/');
+        if (isWebPath && !WebOriginPolicy.isAllowed(request)) {
+          return _json(403, 'Origin not allowed');
+        }
+        if (path == '/webdb' || path == '/api/web/session') {
+          // /webdb تتحقق من التذكرة بنفسها؛ /api/web/session يدخل بالاعتماد.
+          return innerHandler(request);
+        }
+        if (path.startsWith('/api/web/') && path != '/api/web/session') {
+          final claims = ApiSessionToken.verifyWeb(
+            request.headers[ApiSessionToken.headerName],
+          );
+          if (claims == null) return _json(401, 'Invalid or expired web session');
+          return innerHandler(request.change(context: {
+            ApiUserCtx.userIdKey: claims.userId,
+            ApiWebCtx.claimsKey: claims,
+          }));
+        }
+        if (path.startsWith('/api/') &&
+            !request.headers.containsKey('authorization') &&
+            webSessionPrefixes.any(path.startsWith)) {
+          if (!WebOriginPolicy.isAllowed(request)) {
+            return _json(403, 'Origin not allowed');
+          }
+          final claims = ApiSessionToken.verifyWeb(
+            request.headers[ApiSessionToken.headerName],
+          );
+          if (claims == null) return _json(401, 'Invalid or expired web session');
+          return innerHandler(request.change(context: {
+            ApiUserCtx.userIdKey: claims.userId,
+            ApiWebCtx.claimsKey: claims,
+          }));
         }
         for (final prefix in _exemptPrefixes) {
           if (path.startsWith(prefix) || path == prefix) return innerHandler(request);
