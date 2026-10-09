@@ -7,9 +7,12 @@
 // أجهزة (POS/ميزان/طباعة حرارية/shelf). منطق الأعمال يُوصَّل في مراحل لاحقة
 // (drift/remote للقراءة + HTTP API للكتابة).
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'web/web_dashboard_preview.dart';
 
 void main() {
-  runApp(const PicPosWebApp());
+  runApp(const ProviderScope(child: PicPosWebApp()));
 }
 
 class PicPosWebApp extends StatelessWidget {
@@ -119,6 +122,11 @@ class _ServerLoginPageState extends State<_ServerLoginPage> {
                   ),
                   const SizedBox(height: 16),
                   FilledButton(onPressed: _submit, child: const Text('دخول')),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: () => openWebDashboardPreview(context),
+                    child: const Text('Dashboard preview'),
+                  ),
                   if (_notice != null) ...[
                     const SizedBox(height: 12),
                     Text(_notice!,

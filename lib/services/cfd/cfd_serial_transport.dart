@@ -4,7 +4,7 @@
 
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:serial_port_win32/serial_port_win32.dart';
+import '../serial_port_compat.dart';
 import '../../core/constants/app_constants.dart';
 import 'cfd_transport.dart';
 

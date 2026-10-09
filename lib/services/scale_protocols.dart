@@ -13,9 +13,10 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
-import 'package:serial_port_win32/serial_port_win32.dart';
+import 'serial_port_compat.dart';
 import '../core/constants/app_constants.dart';
-import 'aclas_sdk_ffi.dart';
+import 'aclas_sdk_ffi.dart'
+    if (dart.library.js_interop) 'aclas_sdk_web.dart';
 import 'label_scale_service.dart';
 import 'scale_transport.dart';
 import 'scale_upload_logger.dart';

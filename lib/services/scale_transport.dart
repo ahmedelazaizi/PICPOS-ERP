@@ -7,7 +7,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:serial_port_win32/serial_port_win32.dart';
+import 'serial_port_compat.dart';
 import 'label_scale_service.dart';
 
 /// Low-level transport for scale communication.

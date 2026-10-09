@@ -16,13 +16,14 @@ import 'dart:io';
 import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:ftpconnect/ftpconnect.dart';
-import 'package:serial_port_win32/serial_port_win32.dart';
+import 'serial_port_compat.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/database/database.dart';
 import 'scale_transport.dart';
 import 'scale_protocols.dart';
 import 'scale_upload_logger.dart';
-import 'aclas_sdk_ffi.dart';
+import 'aclas_sdk_ffi.dart'
+    if (dart.library.js_interop) 'aclas_sdk_web.dart';
 
 // ═══════════════════════════════════════════════════════════════
 // AclasSDK Isolate Helpers (top-level — required by Isolate.run)
