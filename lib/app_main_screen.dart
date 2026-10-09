@@ -136,7 +136,7 @@ import 'presentation/screens/sync/sync_conflicts_screen.dart';
 import 'presentation/screens/audit/audit_dashboard_screen.dart';
 import 'main_desktop.dart' if (dart.library.html) 'main_web.dart' as platform;
 import 'data/database/pg_config.dart';
-import 'data/database/connection_io.dart' show testPostgresConnection;
+import 'data/database/connection.dart' show testPostgresConnection;
 import 'services/client_write_interceptor.dart';
 import 'services/delta_pull_service.dart';
 import 'services/offline_fallback_sync_service.dart';

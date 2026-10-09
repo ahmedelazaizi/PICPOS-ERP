@@ -1,12 +1,12 @@
 {
-    "name": "ural_erp",
-    "short_name": "ural_erp",
+    "name": "PicPos",
+    "short_name": "PicPos",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#F2F5FA",
+    "theme_color": "#0250D3",
+    "description": "PicPos Web — الحسابات والفواتير والمخزون والتقارير | Accounting, invoicing, inventory and reporting",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

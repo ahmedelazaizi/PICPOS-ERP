@@ -50,7 +50,7 @@ import 'services/sync/sync_worker.dart';
 // Conditional import for desktop-only features
 import 'main_desktop.dart' if (dart.library.html) 'main_web.dart' as platform;
 import 'data/database/pg_config.dart';
-import 'data/database/connection_io.dart' show openPostgresConnection, testPostgresConnection;
+import 'data/database/connection.dart' show openPostgresConnection, testPostgresConnection;
 import 'services/invoice_integrity_service.dart';
 import 'data/database/extensions/branch_dedup_extension.dart';
 import 'data/database/extensions/return_memo_dedup_extension.dart';

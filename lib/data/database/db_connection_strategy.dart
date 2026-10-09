@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'database.dart';
 import 'pg_config.dart';
-import 'connection_io.dart' show openPostgresConnection, testPostgresConnection;
+import 'connection.dart' show openPostgresConnection, testPostgresConnection;
 
 /// Result of [DbConnectionStrategy.open].
 ///

@@ -4,7 +4,7 @@ import '../database/database.dart';
 // بـ prefix عن قصد: الملف ده فيه دوال بنفس أسماء دوال connection_io
 // (`getBackupStats` مثلاً)، والاستدعاء غير المُسمّى بيحلّ لدالة الكلاس نفسها
 // مش لدالة الملف — وde كان بيعمل استدعاء لا نهائي.
-import '../database/connection_io.dart' as conn;
+import '../database/connection.dart' as conn;
 import '../database/wal_checkpoint.dart';
 import '../../domain/repositories/settings_repository.dart';
 import 'base_repository.dart';

@@ -21,7 +21,7 @@ import 'services/cheque_receipt_drift_audit_service.dart';
 import 'data/database/database.dart';
 import 'data/database/pg_config.dart';
 
-import 'data/database/connection_io.dart' show testPostgresConnection;
+import 'data/database/connection.dart' show testPostgresConnection;
 import 'services/offline_fallback_sync_service.dart';
 
 /// Initialize desktop-specific features

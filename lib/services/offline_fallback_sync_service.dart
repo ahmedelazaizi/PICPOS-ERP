@@ -5,7 +5,7 @@ import '../data/database/database.dart';
 import '../data/database/pg_config.dart';
 import 'sync/strategies/setting_sync_strategy.dart'
     show isDeviceLocalSettingKey;
-import '../data/database/connection_io.dart'
+import '../data/database/connection.dart'
     show openPostgresConnection, testPostgresConnection;
 
 /// Progress state for the offline→PostgreSQL sync process.

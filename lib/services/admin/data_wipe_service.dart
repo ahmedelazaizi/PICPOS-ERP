@@ -30,7 +30,7 @@
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/foundation.dart';
 
-import '../../data/database/connection_io.dart' show createDatabaseBackup;
+import '../../data/database/connection.dart' show createDatabaseBackup;
 import '../../data/database/database.dart';
 import '../../data/database/sync_interceptor.dart';
 import '../../data/database/wal_checkpoint.dart';

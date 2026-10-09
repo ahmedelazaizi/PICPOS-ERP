@@ -5,7 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/database/pg_config.dart';
-import '../../../data/database/connection_io.dart' show testPostgresConnection;
+import '../../../data/database/connection.dart' show testPostgresConnection;
 import '../../../data/providers/providers.dart';
 import '../../../services/network_service.dart';
 import '../../../core/config/brand.dart';

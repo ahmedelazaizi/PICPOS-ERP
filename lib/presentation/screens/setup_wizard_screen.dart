@@ -16,7 +16,7 @@ import '../../core/config/business_profile_meta.dart';
 import '../../domain/models/setup_step_order.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/theme/app_colors.dart';
-import '../../data/database/connection_io.dart'
+import '../../data/database/connection.dart'
     show openPostgresConnection, testPostgresConnection;
 import '../../data/database/pg_config.dart';
 import '../../data/providers/providers.dart';
