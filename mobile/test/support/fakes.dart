@@ -76,6 +76,7 @@ class FakeCloudApi implements CloudApi {
 
   @override
   Future<({String deviceToken, String employeeGlobalId})> pair(String baseUrl, String code, String deviceId, String deviceName) async {
+    _gate();
     if (code != 'ABCDEFGH') throw CloudApiException(401, 'invalid_code');
     return (deviceToken: token, employeeGlobalId: 'rep-1');
   }

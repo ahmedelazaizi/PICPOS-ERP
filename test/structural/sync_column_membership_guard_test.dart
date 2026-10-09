@@ -100,6 +100,8 @@ const _rawSqlProvenAtRuntime = <String, String>{
   'route_customers': 'test/unit/distribution_model_phase_f_test.dart',
   'route_rep_history': 'test/unit/distribution_model_phase_f_test.dart',
   'rep_resources': 'test/unit/distribution_model_phase_f_test.dart',
+  'warehouse_locations': 'test/integration/mc1_bins_fefo_test.dart',
+  'location_stock': 'test/integration/mc1_bins_fefo_test.dart',
   // v189 — مسوّداتُ المرتجعات (J2).
   'return_drafts': 'test/integration/return_drafts_lifecycle_j2_test.dart',
   // v191 — ملفُّ الموظف (J4).

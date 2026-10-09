@@ -25,8 +25,8 @@
         tools:replace="android:maxSdkVersion" />
 
     <!-- HTTPS only: cleartext is refused by the platform stack (see
-         res/xml/network_security_config.xml; the debug variant allows the
-         emulator host and loopback). Dart's HttpClient does not read these
+         res/xml/network_security_config.xml; the debug variant allows
+         cleartext for LAN testing). Dart's HttpClient does not read these
          settings, so picpos_api_client's UrlPolicy enforces the same rule. -->
     <application
         android:label="@string/app_name"

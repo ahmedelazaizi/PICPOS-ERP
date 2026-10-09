@@ -3685,5 +3685,10 @@ extension Epoch3Migrations on AppDatabase {
     if (from < 194) {
       await _safeMigrate('v194 field expenses + geo', ensureFieldExpenseSchema);
     }
+
+    // v195 — bin projection and historical DEFAULT-bin backfill.
+    if (from < 195) {
+      await _safeMigrate('v195 warehouse locations', ensureWarehouseLocationsSchema);
+    }
   }
 }

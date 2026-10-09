@@ -12,6 +12,9 @@ import '../../services/client_write_interceptor.dart';
 import '../widgets/dialogs/app_confirm_dialog.dart';
 import 'widgets/dialogs/branch_edit_dialog.dart';
 import 'widgets/dialogs/warehouse_edit_dialog.dart';
+import 'warehouse_locations_screen.dart';
+import '../widgets/permission_guard.dart';
+import '../../core/permissions/permission_codes.dart';
 import 'widgets/dialogs/quick_cost_center_dialog.dart';
 
 part 'branch_management_dialogs.dart';
@@ -378,7 +381,15 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
               ],
             ),
             isThreeLine: warehouse.branchId != null && warehouse.costCenterId != null,
-            trailing: const Icon(Icons.more_vert),
+            trailing: PermissionGuard(permission: PermissionCodes.warehousesView,
+              child: IconButton(tooltip: tr('مواقع التخزين'),
+                icon: const Icon(Icons.location_on_outlined),
+                onPressed: () => Navigator.push(context, MaterialPageRoute<void>(
+                  builder: (_) => WarehouseLocationsScreen(
+                    warehouseId: warehouse.id, warehouseName: warehouse.name),
+                )),
+              ),
+            ),
             onTap: () => showWarehouseActionsDialog(warehouse),
           ),
         );

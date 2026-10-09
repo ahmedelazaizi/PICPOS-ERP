@@ -75,6 +75,9 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
             // سطرٌ معفىً يبقى معفىً: الحبّةُ تتبع المبلغَ المخزَّن لا النسبة.
             taxEnabled: rows[i].item.taxAmount > 0,
             unitName: rows[i].item.unitName ?? tr('قطعة'),
+            trackExpiry: rows[i].product.trackExpiry,
+            batchNumber: rows[i].item.batchNumber,
+            expiryDate: rows[i].item.expiryDate,
           ),
       ],
     );
@@ -289,6 +292,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
                 taxRate: p.taxRate,
                 taxExempt: exemptProductIds.contains(p.id),
                 barcode: p.barcode ?? '',
+                trackExpiry: p.trackExpiry,
               ),
           ],
           warehouses: [
@@ -335,6 +339,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
                     quantity: it.quantity,
                     unitPrice: it.unitCost,
                     discount: it.discount,
+                    trackExpiry: byId[it.productId]!.trackExpiry,
                     taxRate: it.taxRate,
                     // الضريبةُ مشعلةٌ متى حمل السطرُ مبلغاً فعليّاً — وسطرٌ
                     // معفىً في الأمر يبقى معفىً في الفاتورة.
@@ -487,6 +492,8 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
         taxRate: (item['taxRate'] as num?)?.toDouble() ?? 0,
         taxAmount: (item['taxAmount'] as num?)?.toDouble() ?? 0,
         unitName: item['selectedUnitName'] as String?,
+        batchNumber: item['batchNumber'] as String?,
+        expiryDate: item['expiryDate'] as DateTime?,
         // خصمُ الصنف — يكتبه عمودُ «الخصم» في النموذج
         // (`PicPosInvoiceLine.toSaveMap`). وغيابُ المفتاح يعني نمطاً لا
         // يدعمه، فصفرٌ هو الصواب لا خطأ.

@@ -2791,6 +2791,7 @@ class ApiHandler {
     // v185 — نموذجُ التوزيع (المرحلة و).
     'distribution_areas', 'route_customers', 'route_rep_history',
     'rep_resources',
+    'warehouse_locations', 'location_stock',
     'return_drafts', // v189 — J2
     'hr_departments', 'hr_job_titles', 'employee_allowances', // v191 — J4
     'employee_documents', 'employee_history',
@@ -2949,6 +2950,7 @@ class ApiHandler {
     // v185 — نموذجُ التوزيع. تقابل `branchScopedPullTables` حرفاً.
     'distribution_areas', 'route_customers', 'route_rep_history',
     'rep_resources',
+    'warehouse_locations', 'location_stock',
     'return_drafts', // v189 — J2
     'hr_departments', 'hr_job_titles', 'employee_allowances', // v191 — J4
     'employee_documents', 'employee_history',

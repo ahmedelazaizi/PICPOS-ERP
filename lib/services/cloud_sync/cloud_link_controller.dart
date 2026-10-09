@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers/providers.dart';
 import '../accounting_service.dart';
+import '../admin_snapshots/admin_signing_key.dart';
+import '../admin_snapshots/admin_user_mirror.dart';
 import '../secure_storage_service.dart';
 import 'cloud_link_api.dart';
 import 'cloud_sync_service.dart';
@@ -173,6 +175,67 @@ class CloudLinkController {
   }
 
   Future<void> retry(String globalId) => _db.requestCloudSyncRetry(globalId);
+
+  Future<List<({String globalId, String name})>> adminUsers() async => [
+        for (final entry in await _db.getAllUsersWithRoles())
+          if ((entry.user.globalId ?? '').isNotEmpty)
+            (globalId: entry.user.globalId!, name: entry.user.displayName),
+      ];
+
+  Future<void> setAdminMobilePassword(String userGlobalId, String password) async {
+    await AdminUserMirror(_db).setMobilePassword(userGlobalId, password);
+    await syncNow();
+  }
+
+  Future<void> disableAdminMobile(String userGlobalId) async {
+    await AdminUserMirror(_db).disableMobile(userGlobalId);
+    await syncNow();
+  }
+
+  Future<Map<String, dynamic>> issueAdminPairingCode(String userGlobalId) async {
+    final config = await store.load();
+    if (!config.enabled || !config.credentials.isComplete) {
+      throw CloudLinkException(0, 'link_not_configured');
+    }
+    final api = CloudLinkApi(config.credentials);
+    try {
+      final signer = await AdminSigningKey(store).load();
+      await api.pushAdminSigningKey(await signer.publicKeyBase64());
+      await AdminUserMirror(_db).push(api);
+      final code = await api.adminPairingCode(userGlobalId);
+      return {
+        ...code,
+        'cloudUrl': config.credentials.baseUrl,
+        'desktopSigningKey': await signer.publicKeyBase64(),
+      };
+    } finally {
+      api.close();
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> listAdminDevices() async {
+    final config = await store.load();
+    if (!config.enabled || !config.credentials.isComplete) return [];
+    final api = CloudLinkApi(config.credentials);
+    try {
+      return await api.adminDevices();
+    } finally {
+      api.close();
+    }
+  }
+
+  Future<void> revokeAdminDevice(String deviceId) async {
+    final config = await store.load();
+    if (!config.enabled || !config.credentials.isComplete) {
+      throw CloudLinkException(0, 'link_not_configured');
+    }
+    final api = CloudLinkApi(config.credentials);
+    try {
+      await api.revokeAdminDevice(deviceId);
+    } finally {
+      api.close();
+    }
+  }
 
   /// J4 — issues a rep-app pairing code for the employee [employeeGlobalId]
   /// over the configured link (`POST /desktop/pairing-codes`). `null` when

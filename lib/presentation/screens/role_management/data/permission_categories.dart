@@ -74,6 +74,7 @@ Map<String, PermissionCategory> get permissionCategories => {
     color: AppColors.info,
     permissions: {
       'dashboard_access': tr('الوصول للوحة التحكم'),
+      'mobile_admin_access': tr('الوصول لتطبيق الإدارة'),
       'dashboard_sales_today': tr('عرض مبيعات اليوم'),
       'dashboard_sales_total': tr('عرض إجمالي المبيعات'),
       'dashboard_profit': tr('عرض الأرباح'),

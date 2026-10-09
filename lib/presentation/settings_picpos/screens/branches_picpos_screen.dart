@@ -48,6 +48,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/providers.dart';
 import '../../picpos_shell/picpos_body_handle.dart';
 import '../../picpos_shell/picpos_data_table.dart';
@@ -58,6 +59,8 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../../screens/widgets/dialogs/branch_edit_dialog.dart';
 import '../../screens/widgets/dialogs/warehouse_edit_dialog.dart';
+import '../../screens/warehouse_locations_screen.dart';
+import '../../widgets/permission_guard.dart';
 import '../../screens/pos_terminals_screen.dart' show PosTerminalsBody;
 import '../../screens/settings/work_holidays_screen.dart'
     show WorkHolidaysBody;
@@ -446,6 +449,7 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
             PicPosTableColumn(tr('الفرع المرتبط'), flex: 1.4),
             PicPosTableColumn(tr('النوع'), flex: 1.2),
             PicPosTableColumn(tr('الحالة'), flex: 1.1),
+            PicPosTableColumn(tr('مواقع التخزين'), flex: 1.5),
             PicPosTableColumn(tr('إجراء'), flex: 1.1),
           ],
           chips: [
@@ -482,6 +486,12 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
                     w.isActive ? AppColors.success : AppColors.textMuted,
                   ),
                   PicPosButtonCell(
+                    tr('مواقع التخزين'),
+                    icon: PhosphorIconsBold.mapPin,
+                    tint: AppColors.primary,
+                    onPressed: () => _openWarehouseLocations(w),
+                  ),
+                  PicPosButtonCell(
                     tr('تعديل'),
                     icon: PhosphorIconsBold.pencilSimple,
                     tint: AppColors.primary,
@@ -492,6 +502,21 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
           ],
         ),
       ],
+    );
+  }
+
+  Future<void> _openWarehouseLocations(Warehouse warehouse) async {
+    if (!await ensurePermission(ref, context, PermissionCodes.warehousesView,
+        actionName: tr('مواقع التخزين'))) return;
+    if (!mounted) return;
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WarehouseLocationsScreen(
+          warehouseId: warehouse.id,
+          warehouseName: warehouse.name,
+        ),
+      ),
     );
   }
 

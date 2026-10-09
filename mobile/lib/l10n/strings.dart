@@ -73,6 +73,11 @@ class S {
     'quantity': ('الكمية', 'Qty'),
     'language': ('English', 'العربية'),
     'invalidPin': ('الرمز السري غير صحيح', 'Incorrect PIN'),
+    'invalidPairingCode': ('رمز الربط غير صحيح أو مخصّص لتطبيق آخر', 'Invalid pairing code, or it belongs to another app'),
+    'pairingCodeExpired': ('انتهت صلاحية رمز الربط — اطلب رمزاً جديداً', 'Pairing code expired, ask for a new one'),
+    'pairingTooManyAttempts': ('محاولات كثيرة، انتظر قليلاً ثم أعد المحاولة', 'Too many attempts, wait and retry'),
+    'invalidPairingRequest': ('تحقّق من الرمز (٨ خانات) وعنوان الخادم', 'Check the 8-character code and server address'),
+    'pairingRejected': ('رفض الخادم طلب الربط', 'Server rejected the pairing request'),
     'error': ('تعذّر الاتصال بالخادم', 'Could not reach the server'),
     // I-2
     'cameraScan': ('مسح بالكاميرا', 'Scan with camera'),

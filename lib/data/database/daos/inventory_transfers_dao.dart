@@ -129,6 +129,10 @@ extension InventoryTransfersDao on AppDatabase {
           ),
         );
 
+        if (await getSettingValue('warehouse_bins_enabled') == 'true') {
+          await syncDefaultBinStock(productId, fromWarehouseId);
+        }
+
         // 3. Stock Out from Source
         await adjustStock(
           productId: productId,
@@ -158,6 +162,12 @@ extension InventoryTransfersDao on AppDatabase {
           notes:
               'Transfer In from Warehouse #$fromWarehouseId (Bond #$bondNumber)',
           unitCost: sourceUnitCost,
+        );
+        await carryTransferLots(
+          productId: productId,
+          fromWarehouseId: fromWarehouseId,
+          toWarehouseId: toWarehouseId,
+          quantity: qty,
         );
 
         totalTransferValue += qty * sourceUnitCost;

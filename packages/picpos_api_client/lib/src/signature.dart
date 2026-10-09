@@ -49,9 +49,31 @@ class PayloadVerifier {
   }
 }
 
-/// Signs like the desktop does. Used by tests and the desktop harness
-/// (the production signer lives in the desktop app, M-1).
+/// Signs like the desktop does. Used by tests and the desktop harness.
 Future<String> signPayloadForTest(Object? payload, SimpleKeyPair keyPair) async {
   final s = await Ed25519().sign(canonicalJsonBytes(payload), keyPair: keyPair);
   return '$_prefix${base64.encode(s.bytes)}';
+}
+
+/// The desktop's signer (M-1): an Ed25519 key pair restored from its 32-byte
+/// seed (kept in the desktop's secure storage; only the public key leaves).
+class PayloadSigner {
+  PayloadSigner._(this._keyPair);
+
+  /// Restores the key pair from a 32-byte private seed.
+  static Future<PayloadSigner> fromSeed(List<int> seed) async {
+    if (seed.length != 32) throw const FormatException('Ed25519 seed must be 32 bytes');
+    return PayloadSigner._(await Ed25519().newKeyPairFromSeed(seed));
+  }
+
+  /// A fresh random 32-byte seed (store it, never send it anywhere).
+  static List<int> newSeed() => SecretKeyData.random(length: 32).bytes;
+
+  final SimpleKeyPair _keyPair;
+
+  /// Raw 32-byte public key, base64 (what the cloud and the phone pin).
+  Future<String> publicKeyBase64() async => base64.encode((await _keyPair.extractPublicKey()).bytes);
+
+  /// `ed25519:<base64>` over [canonicalJsonBytes] of [payload].
+  Future<String> sign(Object? payload) => signPayloadForTest(payload, _keyPair);
 }

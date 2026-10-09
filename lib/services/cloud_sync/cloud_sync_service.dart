@@ -7,6 +7,9 @@ import 'package:http/http.dart' as http;
 import '../../data/database/database.dart';
 import '../../data/database/sync_interceptor.dart';
 import '../accounting_service.dart';
+import '../admin_snapshots/admin_signing_key.dart';
+import '../admin_snapshots/admin_snapshot_builder.dart';
+import '../admin_snapshots/admin_user_mirror.dart';
 import 'cloud_document_poster.dart';
 import 'cloud_link_api.dart';
 import 'cloud_master_exporter.dart';
@@ -103,6 +106,7 @@ class CloudSyncRunResult {
   int masterRows = 0;
   List<Map<String, dynamic>> masterSkipped = const [];
   String? error;
+  String? adminError;
 
   bool get ok => error == null;
 
@@ -114,6 +118,7 @@ class CloudSyncRunResult {
         'masterRows': masterRows,
         'masterSkipped': masterSkipped.length,
         if (error != null) 'error': error,
+        if (adminError != null) 'adminError': adminError,
       };
 }
 
@@ -128,6 +133,7 @@ class CloudSyncService {
     required this.api,
     required AccountingService accounting,
     required int postingUserId,
+    this.adminKeyStore,
     this.fullPushEvery = const Duration(hours: 24),
   })  : poster = CloudDocumentPoster(db, accounting, postingUserId: postingUserId),
         exporter = CloudMasterExporter(db);
@@ -136,6 +142,7 @@ class CloudSyncService {
   final CloudLinkApi api;
   final CloudDocumentPoster poster;
   final CloudMasterExporter exporter;
+  final CloudLinkConfigStore? adminKeyStore;
   final Duration fullPushEvery;
 
   Future<CloudSyncRunResult> runOnce({bool fullPush = false}) async {
@@ -148,6 +155,15 @@ class CloudSyncService {
     } catch (e) {
       r.error = '$e';
     }
+    if (r.ok) {
+      try {
+        await _pushAdmin();
+      } on CloudLinkException catch (e) {
+        r.adminError = '${e.code}${e.message == null ? '' : ': ${e.message}'}';
+      } on Exception catch (e) {
+        r.adminError = '$e';
+      }
+    }
     await db.saveSettings({
       if (r.ok)
         CloudLinkKeys.lastSyncAt: '${DateTime.now().millisecondsSinceEpoch}',
@@ -155,6 +171,19 @@ class CloudSyncService {
       CloudLinkKeys.lastSummary: jsonEncode(r.toJson()),
     });
     return r;
+  }
+
+  Future<void> _pushAdmin() async {
+    final keyStore = adminKeyStore;
+    if (keyStore == null) return;
+    final signer = await AdminSigningKey(keyStore).load();
+    await api.pushAdminSigningKey(await signer.publicKeyBase64());
+    await AdminUserMirror(db).push(api);
+    final snapshots =
+        await AdminSnapshotBuilder(db, signer).buildAll(DateTime.now().toUtc());
+    for (var start = 0; start < snapshots.length; start += 200) {
+      await api.pushAdminSnapshots(snapshots.skip(start).take(200).toList());
+    }
   }
 
   Future<void> _pullAndPost(CloudSyncRunResult r) async {
@@ -309,6 +338,7 @@ class CloudSyncScheduler {
         api: CloudLinkApi(config.credentials, client: client),
         accounting: accounting,
         postingUserId: config.postingUserId!,
+        adminKeyStore: store,
       ).runOnce(fullPush: fullPush);
       lastRun.value = result;
       return result;

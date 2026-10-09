@@ -22,6 +22,7 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/database/sync_interceptor.dart';
 import 'package:ural_erp/data/mappers/product_mapper.dart';
@@ -38,6 +39,7 @@ import 'package:ural_erp/domain/repositories/sales_repository.dart';
 import 'package:ural_erp/domain/repositories/settings_repository.dart';
 import 'package:ural_erp/domain/repositories/treasury_repository.dart';
 import 'package:ural_erp/services/accounting_service.dart';
+import 'package:ural_erp/services/cloud_sync/cloud_document_poster.dart';
 import 'package:ural_erp/services/cloud_sync/cloud_link_api.dart';
 import 'package:ural_erp/services/cloud_sync/cloud_sync_service.dart';
 import 'package:ural_erp/services/invoice_integrity_service.dart';
@@ -193,6 +195,71 @@ void main() {
     });
   });
 
+  group('tax-inclusive van sale regression', () {
+    setUp(() => AppConstants.setCurrency('EGP'));
+    tearDown(() => AppConstants.setCurrency('JOD'));
+
+    for (final paid in [40.0, 0.0]) {
+      test('inclusive ${paid == 0 ? 'credit' : 'cash'} sale keeps tax inside 40', () async {
+        final fixture = await _Fx.seed();
+        addTearDown(fixture.db.close);
+        await fixture.db.setSetting('prices_include_tax', 'true');
+        if (paid > 0) await fixture.db.openShift(fixture.userId, 0);
+        final invoice = await _postTaxSale(fixture, paid: paid, inclusive: true);
+        await _expectTaxSale(fixture, invoice, total: 40, tax: 5.52,
+            revenue: 34.48, paid: paid);
+      });
+    }
+
+    test('inclusive line and invoice discounts with delivery reconcile', () async {
+      final fixture = await _Fx.seed();
+      addTearDown(fixture.db.close);
+      await fixture.db.setSetting('prices_include_tax', 'true');
+      final invoice = await _postTaxSale(fixture, paid: 0, inclusive: true,
+          lineDiscountPercent: 10, invoiceDiscountPercent: 10, deliveryFee: 2);
+      await _expectTaxSale(fixture, invoice, total: 34.40, tax: 4.47,
+          revenue: 27.93, paid: 0, deliveryFee: 2, discount: 7.60);
+    });
+
+    test('exclusive prices retain tax-on-top total', () async {
+      final fixture = await _Fx.seed();
+      addTearDown(fixture.db.close);
+      final invoice = await _postTaxSale(fixture, paid: 0, inclusive: false);
+      await _expectTaxSale(fixture, invoice, total: 46.40, tax: 6.40,
+          revenue: 40, paid: 0);
+    });
+
+    test('cloud van tax-inclusive invoice posts without totals_mismatch', () async {
+      final fixture = await _Fx.seed();
+      addTearDown(fixture.db.close);
+      await fixture.db.setSetting('prices_include_tax', 'true');
+      final master = _FakeCloud();
+      final sync = fixture.service(master.client);
+      expect((await sync.runOnce()).ok, isTrue);
+      final scope = master.lastMaster!;
+      Object? gid(String table, [String? name]) =>
+          (scope[table] as List).cast<Map>().firstWhere(
+              (row) => name == null || row['name'] == name)['globalId'];
+      final ids = _Ids(gid('parties', 'Cust A'), gid('employees'),
+          gid('salesRoutes'), gid('warehouses', 'Van A'), gid('safes', 'Custody A'),
+          gid('voucherBooks'), gid('products', 'Water'), gid('products', 'Bread'));
+      final doc = ids.sale('VS-100003')
+        ..['subtotal'] = 40.0
+        ..['tax'] = 5.52
+        ..['total'] = 40.0
+        ..['lines'] = [
+          {'productGlobalId': ids.water, 'quantity': 8, 'unitPrice': 5.0,
+            'discount': 0, 'taxRate': 16, 'taxAmount': 5.52, 'total': 40.0},
+        ];
+      final posted = await CloudDocumentPoster(fixture.db, fixture.accounting,
+          postingUserId: fixture.userId).post(doc);
+      final invoice = await (fixture.db.select(fixture.db.salesInvoices)
+            ..where((s) => s.id.equals(int.parse(posted.desktopRef)))).getSingle();
+      await _expectTaxSale(fixture, invoice, total: 40, tax: 5.52,
+          revenue: 34.48, paid: 0);
+    });
+  });
+
   group('live cloud (CLOUD_URL)', () {
     final url = Platform.environment['CLOUD_URL'];
     test('desktop push → mobile bootstrap → mobile push → desktop posts', () async {
@@ -297,6 +364,78 @@ void main() {
       await _expectSameBooks(a, b);
     }, skip: url == null ? 'set CLOUD_URL (docker test stack) to run' : false);
   });
+}
+
+Future<SalesInvoiceData> _postTaxSale(_Fx fixture, {
+  required double paid,
+  required bool inclusive,
+  double lineDiscountPercent = 0,
+  double invoiceDiscountPercent = 0,
+  double deliveryFee = 0,
+}) async {
+  final sale = await SalesTransactionOrchestrator(fixture.db, fixture.accounting)
+      .completeSalesTransaction(SaleRequest(
+    items: [CartItemEntity(productId: fixture.waterId, productName: 'Water',
+        productCode: 'W-1', quantity: 8, unitPrice: 5, taxRate: 16,
+        discountPercent: lineDiscountPercent)],
+    customerId: fixture.customerId,
+    warehouseId: fixture.vanId,
+    userId: fixture.userId,
+    paymentMethod: paid > 0 ? 'cash' : 'credit',
+    paidAmount: paid,
+    cashAmount: paid > 0 ? paid : null,
+    cashSafeId: paid > 0 ? fixture.safeId : null,
+    discountPercent: invoiceDiscountPercent,
+    deliveryFee: deliveryFee,
+    taxPercent: 16,
+    pricesIncludeTax: inclusive,
+  ));
+  expect(sale.isSuccess, isTrue, reason: sale.errorMessage);
+  return (fixture.db.select(fixture.db.salesInvoices)
+        ..where((s) => s.id.equals(sale.invoiceId!))).getSingle();
+}
+
+Future<void> _expectTaxSale(_Fx fixture, SalesInvoiceData invoice, {
+  required double total,
+  required double tax,
+  required double revenue,
+  required double paid,
+  double deliveryFee = 0,
+  double discount = 0,
+}) async {
+  expect(invoice.total, total);
+  expect(invoice.tax, tax);
+  expect(invoice.discount, closeTo(discount, 0.001));
+  expect(invoice.subtotal - invoice.discount + invoice.tax + deliveryFee,
+      closeTo(total, 0.001));
+  expect(invoice.paid, paid);
+  expect(invoice.status, paid == total ? 'completed' : 'pending');
+  final lines = await fixture.db.getSalesInvoiceItems(invoice.id);
+  expect(lines, hasLength(1));
+  expect(lines.single.total + deliveryFee, closeTo(total, 0.001));
+  expect(lines.single.taxAmount, tax);
+  expect((await fixture.db.getPartyById(fixture.customerId))!.balance,
+      closeTo(total - paid, 0.001));
+  final receipts = await (fixture.db.select(fixture.db.safeTransactions)
+        ..where((t) => t.referenceType.equals('sales_invoice') &
+            t.referenceId.equals(invoice.id))).get();
+  expect(receipts.fold<double>(0, (sum, receipt) => sum + receipt.amount), paid);
+  final entry = await (fixture.db.select(fixture.db.journalEntries)
+        ..where((j) => j.referenceType.equals('sales_invoice') &
+            j.referenceId.equals(invoice.id))).getSingle();
+  final journalLines = await (fixture.db.select(fixture.db.journalEntryLines)
+        ..where((line) => line.entryId.equals(entry.id))).get();
+  final accounts = {for (final account in await fixture.db.select(fixture.db.accounts).get())
+    account.id: account.code};
+  double debit(String code) => journalLines.where((line) => accounts[line.accountId] == code)
+      .fold<double>(0, (sum, line) => sum + line.debit);
+  double credit(String code) => journalLines.where((line) => accounts[line.accountId] == code)
+      .fold<double>(0, (sum, line) => sum + line.credit);
+  expect(journalLines.fold<double>(0, (sum, line) => sum + line.debit),
+      closeTo(journalLines.fold<double>(0, (sum, line) => sum + line.credit), 0.001));
+  expect(credit('4121'), revenue);
+  expect(credit('2121'), tax);
+  expect(paid > 0 ? debit('1111') : debit('1121'), total);
 }
 
 Map<dynamic, dynamic> _map(Object? o) => o as Map;

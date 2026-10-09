@@ -12,6 +12,7 @@ import '../../picpos_shell/picpos_surface.dart';
 List<String> get kSettingsGroupOrder => <String>[
   tr('التشغيل'),
   tr('الأمان'),
+  tr('الربط'),
   tr('المال والبيانات'),
   tr('الامتدادات'),
 ];

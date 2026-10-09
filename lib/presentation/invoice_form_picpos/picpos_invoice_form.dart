@@ -502,6 +502,7 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
           // الكاشير بينما يحفظها المُنسِّق).
           taxEnabled: rate > 0,
           unitName: p.unitName,
+          trackExpiry: !widget.kind.isSales && p.trackExpiry,
         ));
       }
       _quickQty = 1;
@@ -531,6 +532,9 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
     if (_lines.isEmpty) return tr('أضف صنفاً واحداً على الأقل');
     if (_supplierInvoiceMissing) {
       return tr('أدخل رقم فاتورة المورد قبل الحفظ — مطلوب للمطابقة الضريبية');
+    }
+    if (!widget.kind.isSales && _lines.any((l) => l.missingPurchaseLot)) {
+      return tr('رقم الدفعة وتاريخ الصلاحية مطلوبان للأصناف المتتبعة للصلاحية');
     }
     return null;
   }

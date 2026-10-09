@@ -1,8 +1,9 @@
-"""Launcher-icon sources for mobile_admin (PicPos إدارة) and mobile_pos (PicPos كاشير).
+"""Launcher-icon sources for mobile_admin (PicPos إدارة), mobile_pos (PicPos كاشير),
+and mobile (PicPos Van).
 
 ARCHITECTURE-M §4.3 "Icons": adaptive icon = assets/brand/picpos/logo.png mark
 inside the 66 dp safe zone on a white background, a brand-blue (#0250D3)
-badge (M-A: chart glyph, M-B: receipt glyph) and an Android 13 monochrome
+badge (M-A: chart glyph, M-B: receipt glyph, van: truck glyph) and an Android 13 monochrome
 layer. Writes, per app, assets/icon/{foreground,monochrome,legacy}.png; then
 run `dart run flutter_launcher_icons` in the app folder.
 
@@ -56,6 +57,17 @@ def receipt_glyph(d: ImageDraw.ImageDraw, cx: int, cy: int, fill, hole) -> None:
         d.rounded_rectangle((left + 12, y, left + 12 + w, y + 8), radius=4, fill=hole)
 
 
+def van_glyph(d: ImageDraw.ImageDraw, cx: int, cy: int, fill, hole) -> None:
+    d.rectangle((cx - 55, cy - 36, cx + 12, cy + 16), fill=fill)
+    d.polygon(((cx + 12, cy - 18), (cx + 34, cy - 18),
+               (cx + 52, cy + 2), (cx + 52, cy + 16), (cx + 12, cy + 16)), fill=fill)
+    d.polygon(((cx + 20, cy - 11), (cx + 31, cy - 11),
+               (cx + 41, cy + 1), (cx + 20, cy + 1)), fill=hole)
+    for wheel_x in (cx - 33, cx + 34):
+        d.ellipse((wheel_x - 12, cy + 12, wheel_x + 12, cy + 36), fill=fill)
+        d.ellipse((wheel_x - 4, cy + 20, wheel_x + 4, cy + 28), fill=hole)
+
+
 def compose(glyph: str, mono: bool) -> Image.Image:
     canvas = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
     logo = logo_rgba()
@@ -73,8 +85,10 @@ def compose(glyph: str, mono: bool) -> Image.Image:
     glyph_fill = (0, 0, 0, 0) if mono else WHITE
     if glyph == "chart":
         chart_glyph(d, cx, cy, glyph_fill)
-    else:
+    elif glyph == "receipt":
         receipt_glyph(d, cx, cy, glyph_fill, (0, 0, 0, 0) if mono else BLUE)
+    else:
+        van_glyph(d, cx, cy, glyph_fill, (0, 0, 0, 0) if mono else BLUE)
     return canvas
 
 
@@ -86,7 +100,7 @@ def legacy(fg: Image.Image) -> Image.Image:
 
 
 def main() -> None:
-    for app, glyph in (("mobile_admin", "chart"), ("mobile_pos", "receipt")):
+    for app, glyph in (("mobile_admin", "chart"), ("mobile_pos", "receipt"), ("mobile", "van")):
         out = ROOT / app / "assets" / "icon"
         out.mkdir(parents=True, exist_ok=True)
         fg = compose(glyph, mono=False)

@@ -6,6 +6,7 @@ import 'package:shelf_router/shelf_router.dart';
 
 import '../db/database.dart';
 import '../security.dart';
+import '../service/admin_service.dart';
 import '../service/auth_service.dart';
 import '../service/desktop_service.dart';
 import '../service/errors.dart';
@@ -13,6 +14,7 @@ import '../service/field_expense_documents.dart';
 import '../service/rate_limiter.dart';
 import '../service/sync_service.dart';
 import '../whatsapp/whatsapp.dart';
+import 'admin_routes.dart';
 
 /// HTTP surface of the cloud API (I-1 + I-2). Header conventions follow the desktop
 /// LAN API: `Authorization: Bearer <device token>`, `X-Device-Id`,
@@ -26,6 +28,7 @@ class CloudApp {
     required this.adminKey,
     DesktopService? desktop,
     RateLimiter? pushLimiter,
+    this.admin,
   })  : desktop = desktop ?? DesktopService(db),
         pushLimiter = pushLimiter ?? RateLimiter(max: 60, window: const Duration(minutes: 1));
 
@@ -36,6 +39,9 @@ class CloudApp {
   /// Desktop link: master-data upsert, pending field documents, ack (I-3).
   final DesktopService desktop;
   final WhatsAppOutbox outbox;
+
+  /// «PicPos إدارة» (ARCHITECTURE-M M-1); null = `/manage/*` not mounted.
+  final AdminService? admin;
 
   /// Test-stack admin key (production admin flows come from desktop, I-3).
   final String adminKey;
@@ -181,6 +187,10 @@ class CloudApp {
       await auth.revokeDevice(deviceId, ip: d.ip, reason: 'desktop:${d.linkId}', companyId: d.companyId);
       return _json(200, {'revoked': deviceId});
     });
+
+    // ── «PicPos إدارة» (M-1) ──
+    final adminService = admin;
+    if (adminService != null) mountAdminRoutes(r, admin: adminService, desktop: _desktop);
 
     r.all('/<ignored|.*>', (Request req) => _json(404, {'error': 'not_found'}));
     return r;

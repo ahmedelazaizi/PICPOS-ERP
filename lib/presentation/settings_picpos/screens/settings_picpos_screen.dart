@@ -167,7 +167,6 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../widgets/settings_blocks.dart';
-import '../widgets/cloud_link_settings_block.dart';
 import '../widgets/settings_count.dart';
 import '../widgets/settings_nav_rail.dart';
 import '../widgets/settings_section_pane.dart';
@@ -526,7 +525,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                   title: tr('الشاشات المتقدمة'),
                   subtitle: tr('قاعدة البيانات، الربط، وأدوات الصيانة'),
                   tint: AppColors.textMuted,
-                  child: const _AdvancedTiles(),
+                  child: _AdvancedTiles(onOpenConnections: () => setState(() => _selectedSectionId = linkedDevicesSectionId)),
                 ),
               ),
               // ⚠️ لوحةُ الدفع اليدويِّ بلوكٌ لا مربّع: لها حالةُ تشغيلٍ
@@ -739,12 +738,12 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
           const SizedBox(height: 16),
         ],
       ),
-      // ═══ ٤-أ. الأجهزة المرتبطة — المحتوى في `linked_devices_section.dart` ═══
+      // ═══ ٤-أ. ربط التطبيقات والأجهزة — المحتوى في `linked_devices_section.dart` ═══
       _SettingsSection(
         id: linkedDevicesSectionId,
         title: linkedDevicesSectionTitle(),
         icon: PhosphorIconsBold.devices,
-        group: tr('الأمان'),
+        group: tr('الربط'),
         desc: linkedDevicesSectionDesc(),
         keywords: linkedDevicesSectionKeywords(),
         children: () => [
@@ -977,12 +976,6 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                   tint: AppColors.success,
                   child: const WhatsAppSettingsCard(),
                 ),
-              ),
-              // I-3 — ربطُ الشركة بالسحابة (تطبيقُ المندوب): للمدير وحدَه،
-              // والكتلةُ تُخفي نفسَها عن غيره.
-              const SettingsBlockSpan(
-                span: 12,
-                child: CloudLinkSettingsBlock(),
               ),
               if (features.deliveryEnabled)
                 SettingsBlockSpan(
@@ -2235,7 +2228,9 @@ class _DeviceTiles extends ConsumerWidget {
 }
 
 class _AdvancedTiles extends ConsumerWidget {
-  const _AdvancedTiles();
+  const _AdvancedTiles({required this.onOpenConnections});
+
+  final VoidCallback onOpenConnections;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -2266,9 +2261,7 @@ class _AdvancedTiles extends ConsumerWidget {
           },
           tint: AppColors.primary,
           dot: isServer ? AppColors.success : AppColors.primary,
-          // ‏`_NetworkModeSettings` لوحةٌ كانت داخلَ `ExpansionTile`، فتُفتَح
-          // هنا في حوارٍ بدل أن تُبنى نسخةٌ ثانيةٌ من منطقها.
-          onTap: () => _showNetworkModeDialog(context),
+          onTap: onOpenConnections,
         ),
         SettingsTile(
           icon: PhosphorIconsBold.shield,
@@ -2333,8 +2326,7 @@ class _AdvancedTiles extends ConsumerWidget {
   }
 }
 
-/// حوارُ وضع الشبكة — يفتحه مربّعُ «الربط بين الفروع والسيرفر» وقسمُ
-/// «الأجهزة المرتبطة» معاً (لوحةٌ واحدة لا نسختان).
+/// حوارُ وضع الشبكة — يُفتح من قسم «ربط التطبيقات والأجهزة» وحده.
 Future<void> _showNetworkModeDialog(BuildContext context) => showDialog<void>(
       context: context,
       builder: (ctx) => Dialog(

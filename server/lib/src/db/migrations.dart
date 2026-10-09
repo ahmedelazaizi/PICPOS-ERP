@@ -569,4 +569,68 @@ CREATE TABLE field_attachments (
   created_at BIGINT NOT NULL
 );
 '''),
+  // M-1 (ARCHITECTURE-M §2.1, read-only part): «PicPos إدارة» users mirrored
+  // from the desktop (mobile PBKDF2 hash only, never the desktop Argon2 hash),
+  // admin devices, signed desktop snapshots, the desktop's Ed25519 public key
+  // and admin pairing codes. Relay queue and notification tables follow in
+  // the M-2/M-4 migrations.
+  Migration(7, 'm1_admin_snapshots', '''
+ALTER TABLE desktop_links ADD COLUMN signing_public_key TEXT;
+ALTER TABLE desktop_links ADD COLUMN signing_key_set_at BIGINT;
+
+ALTER TABLE pairing_codes ALTER COLUMN employee_id DROP NOT NULL;
+ALTER TABLE pairing_codes ADD COLUMN kind TEXT NOT NULL DEFAULT 'rep';
+ALTER TABLE pairing_codes ADD COLUMN user_global_id TEXT;
+
+CREATE TABLE admin_users (
+  id SERIAL PRIMARY KEY,
+  company_id INT NOT NULL REFERENCES companies(id),
+  global_id TEXT NOT NULL,
+  username TEXT NOT NULL,
+  display_name TEXT,
+  locale TEXT,
+  mobile_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  password_hash TEXT,
+  permissions JSONB NOT NULL DEFAULT '[]',
+  branch_scope JSONB NOT NULL DEFAULT '[]',
+  require_2fa BOOLEAN NOT NULL DEFAULT FALSE,
+  totp_secret_enc TEXT,
+  failed_logins INT NOT NULL DEFAULT 0,
+  locked_until BIGINT,
+  version BIGINT NOT NULL DEFAULT 0,
+  updated_at BIGINT NOT NULL,
+  UNIQUE (company_id, global_id)
+);
+
+CREATE TABLE admin_devices (
+  id SERIAL PRIMARY KEY,
+  company_id INT NOT NULL REFERENCES companies(id),
+  device_id TEXT NOT NULL UNIQUE,
+  name TEXT,
+  user_id INT NOT NULL REFERENCES admin_users(id),
+  token_hash TEXT NOT NULL,
+  previous_token_hash TEXT,
+  token_rotated_at BIGINT,
+  fcm_token TEXT,
+  platform TEXT,
+  app_version TEXT,
+  paired_at BIGINT NOT NULL,
+  last_seen_at BIGINT,
+  last_seen_ip TEXT,
+  revoked_at BIGINT
+);
+CREATE INDEX admin_devices_user_idx ON admin_devices(user_id);
+
+CREATE TABLE snapshots (
+  company_id INT NOT NULL REFERENCES companies(id),
+  kind TEXT NOT NULL,
+  scope TEXT NOT NULL,
+  as_of_day TEXT NOT NULL,
+  as_of BIGINT NOT NULL,
+  payload TEXT NOT NULL,
+  signature TEXT NOT NULL,
+  received_at BIGINT NOT NULL,
+  PRIMARY KEY (company_id, kind, scope, as_of_day)
+);
+'''),
 ];

@@ -461,7 +461,9 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
         )).toList(),
         pricesIncludeTax: pricesIncludeTax,
       );
-      subtotal = totals.subtotal;
+      subtotal = pricesIncludeTax
+          ? FinancialUtils.round(totals.subtotal - totals.totalTax)
+          : totals.subtotal;
       tax = totals.totalTax;
       for (var i = 0; i < invoiceItems.length; i++) {
         final item = invoiceItems[i];

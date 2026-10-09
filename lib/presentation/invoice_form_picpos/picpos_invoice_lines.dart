@@ -589,8 +589,9 @@ class _LineRow extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: theme.dividerColor)),
       ),
-      child: Row(
+      child: Column(
         children: [
+          Row(children: [
           // ── الترتيب ─────────────────────────────────────────────────
           Expanded(
             flex: _kIdxW,
@@ -891,6 +892,46 @@ class _LineRow extends StatelessWidget {
               ),
             ),
           ),
+          ]),
+          if (state.widget.kind == PicPosInvoiceKind.purchase && line.trackExpiry)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 38, top: 8, end: 42),
+              child: Row(children: [
+                Expanded(
+                  child: TextFormField(
+                    key: ValueKey('batch_${line.productId}'),
+                    initialValue: line.batchNumber ?? '',
+                    decoration: InputDecoration(
+                      isDense: true,
+                      labelText: tr('رقم الدفعة'),
+                    ),
+                    onChanged: (value) => state._updateLine(
+                      index, state._lines[index].copyWith(batchNumber: value)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: line.expiryDate ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        state._updateLine(index,
+                            state._lines[index].copyWith(expiryDate: picked));
+                      }
+                    },
+                    icon: const Icon(PhosphorIconsBold.calendarBlank, size: 16),
+                    label: Text(line.expiryDate == null
+                        ? tr('تاريخ الصلاحية')
+                        : '${tr('تاريخ الصلاحية')}: ${line.expiryDate!.toIso8601String().substring(0, 10)}'),
+                  ),
+                ),
+              ]),
+            ),
         ],
       ),
     );

@@ -682,8 +682,12 @@ class SalesTransactionOrchestrator {
       deliveryFee: request.deliveryFee,
       pricesIncludeTax: request.pricesIncludeTax,
     );
-    final subtotal = totals.subtotal;
     final totalTax = totals.totalTax;
+    // Inclusive line prices already contain VAT; exclude the extracted tax
+    // from the display subtotal so subtotal - discount + tax + delivery balances.
+    final subtotal = request.pricesIncludeTax
+        ? FinancialUtils.round(totals.subtotal - totalTax)
+        : totals.subtotal;
     final totalDiscountValue = totals.totalDiscount;
     final perLineTax = totals.lineTaxes;
     final perLineBeforeTax = totals.lineNets;
@@ -714,8 +718,7 @@ class SalesTransactionOrchestrator {
     }
 
     final finalDiscount = totalDiscountValue;
-    final finalTotal = FinancialUtils.round(
-        subtotal - finalDiscount + totalTax + request.deliveryFee);
+    final finalTotal = totals.grandTotal;
 
     // 2a. Cluster 035 / Issue 3 — business rule: sales to a delivery-company
     // party are ALWAYS credit/آجل, regardless of what the cashier typed in the

@@ -112,6 +112,7 @@ class PicPosProductOption {
     this.taxExempt = false,
     this.unitName = 'قطعة',
     this.barcode = '',
+    this.trackExpiry = false,
   });
 
   final int id;
@@ -130,6 +131,7 @@ class PicPosProductOption {
   final bool taxExempt;
   final String unitName;
   final String barcode;
+  final bool trackExpiry;
 
   /// السعرُ المناسبُ للنمط — بيعاً أو شراءً.
   double priceFor(PicPosInvoiceKind kind) =>
@@ -255,6 +257,9 @@ class PicPosInvoiceLine {
     this.taxEnabled = false,
     this.unitName = 'قطعة',
     this.discount = 0,
+    this.trackExpiry = false,
+    this.batchNumber,
+    this.expiryDate,
   });
 
   final int productId;
@@ -277,6 +282,14 @@ class PicPosInvoiceLine {
   ///
   /// ‏[appliedDiscount] هو ما يُحسَب ويُحفَظ؛ وهذا ما كتبه المستخدمُ خاماً.
   final double discount;
+  final bool trackExpiry;
+  final String? batchNumber;
+  final DateTime? expiryDate;
+
+  /// Purchase invoices must identify the lot before stock is posted.
+  bool get missingPurchaseLot =>
+      trackExpiry &&
+      ((batchNumber?.trim().isEmpty ?? true) || expiryDate == null);
 
   /// إجماليُّ السطر **قبل** الضريبة و**قبل** الخصم — نفسُ اصطلاح النموذجَين
   /// القائمَين (`lineTotal` عندهما لا يشمل الضريبة). وهو «المجموع» في شريط
@@ -320,6 +333,8 @@ class PicPosInvoiceLine {
     bool? taxEnabled,
     String? unitName,
     double? discount,
+    String? batchNumber,
+    DateTime? expiryDate,
   }) =>
       PicPosInvoiceLine(
         productId: productId,
@@ -331,6 +346,9 @@ class PicPosInvoiceLine {
         taxEnabled: taxEnabled ?? this.taxEnabled,
         unitName: unitName ?? this.unitName,
         discount: discount ?? this.discount,
+        trackExpiry: trackExpiry,
+        batchNumber: batchNumber ?? this.batchNumber,
+        expiryDate: expiryDate ?? this.expiryDate,
       );
 
   /// الشكلُ الذي يفهمه مسارُ الحفظ القائم — **بمفاتيحَ مختلفةٍ بين النمطَين**.
@@ -355,6 +373,8 @@ class PicPosInvoiceLine {
       base['unitCost'] = unitPrice;
       base['taxEnabled'] = taxEnabled;
       base['selectedUnitName'] = unitName;
+      base['batchNumber'] = batchNumber;
+      base['expiryDate'] = expiryDate;
     }
     // 🔴 **نفسُ البوّابة التي يقرؤها العمود.** المفتاحُ لا يُكتَب لنمطٍ
     // لا يقرؤه مسارُ حفظه — فلا يبقى في الخريطة رقمٌ يظنُّ قارئُه أنّه وصل.

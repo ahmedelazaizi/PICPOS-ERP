@@ -10,6 +10,8 @@ library;
 abstract final class ManageRoutes {
   static const pair = '/manage/pair';
   static const login = '/manage/login';
+  static const logout = '/manage/logout';
+  static const unpair = '/manage/unpair';
   static const stepUp = '/manage/step-up';
   static const tokenRotate = '/manage/token/rotate';
   static const pushToken = '/manage/push-token';

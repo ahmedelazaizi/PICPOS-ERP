@@ -1,6 +1,8 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:picpos_van/data/local_store.dart';
 import 'package:picpos_van/domain/sale_math.dart';
+import 'package:picpos_van/l10n/strings.dart';
 import 'package:picpos_van/state/app_controller.dart';
 
 import 'support/fakes.dart';
@@ -8,6 +10,37 @@ import 'support/fakes.dart';
 CartLine water(double q) => CartLine(productGlobalId: 'p1', name: 'water', unitPrice: 2.5, taxRate: 16, quantity: q);
 
 void main() {
+  test('admin-app code and other server pairing rejections show specific AR/EN messages', () async {
+    const cases = [
+      ('invalid_code', 'invalidPairingCode', 'رمز الربط غير صحيح أو مخصّص لتطبيق آخر', 'Invalid pairing code, or it belongs to another app'),
+      ('code_expired', 'pairingCodeExpired', 'انتهت صلاحية رمز الربط — اطلب رمزاً جديداً', 'Pairing code expired, ask for a new one'),
+      ('too_many_attempts', 'pairingTooManyAttempts', 'محاولات كثيرة، انتظر قليلاً ثم أعد المحاولة', 'Too many attempts, wait and retry'),
+      ('invalid_request', 'invalidPairingRequest', 'تحقّق من الرمز (٨ خانات) وعنوان الخادم', 'Check the 8-character code and server address'),
+      ('other_server_error', 'pairingRejected', 'رفض الخادم طلب الربط', 'Server rejected the pairing request'),
+    ];
+    for (final (serverCode, key, arabic, english) in cases) {
+      final api = FakeCloudApi()..failWith = serverCode;
+      final controller = AppController(store: MemoryLocalStore(), api: api);
+      await expectLater(
+        controller.pair('http://test', 'ABCDEFGH'),
+        throwsA(isA<AppFailure>()
+            .having((failure) => failure.code, 'code', key)
+            .having((failure) => failure.detail, 'detail', serverCode)),
+      );
+      expect(S(const Locale('ar')).t(key), arabic);
+      expect(S(const Locale('en')).t(key), english);
+      expect(controller.creds, isNull);
+    }
+  });
+
+  test('unreachable server retains the connection error during pairing', () async {
+    final api = FakeCloudApi()..offline = true;
+    final controller = AppController(store: MemoryLocalStore(), api: api);
+    await expectLater(controller.pair('http://test', 'ABCDEFGH'), throwsA(isNot(isA<AppFailure>())));
+    expect(S(const Locale('ar')).t('error'), 'تعذّر الاتصال بالخادم');
+    expect(controller.creds, isNull);
+  });
+
   test('totals use the shared tax rule (exempt = 0)', () {
     expect(effectiveItemTaxRate(rate: 16, exempt: true, companyDefault: 16), 0);
     expect(effectiveItemTaxRate(rate: 0, exempt: false, companyDefault: 16), 16);

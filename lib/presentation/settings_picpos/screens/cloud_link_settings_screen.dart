@@ -2,13 +2,13 @@ import 'package:ural_erp/core/i18n/tr.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/auth_providers.dart';
 import '../../../services/cloud_sync/cloud_link_controller.dart';
 import '../widgets/cloud_link_settings_block.dart';
+import 'cloud_sync_conflicts_screen.dart';
 import 'field_expense_categories_screen.dart';
 
 /// Company cloud link (I-3): credentials, test connection, sync now, status
@@ -119,15 +119,6 @@ class _CloudLinkSettingsScreenState
         }
       });
 
-  static String _kindLabel(String kind) => switch (kind) {
-        'sales_invoice' => tr('فاتورة مبيعات'),
-        'sales_return' => tr('مرتجع مبيعات'),
-        'collection' => tr('سند قبض'),
-        'visit' => tr('زيارة عميل'),
-        'expense' => tr('سند صرف مصروف مندوب'),
-        _ => kind,
-      };
-
   @override
   Widget build(BuildContext context) {
     final v = _view;
@@ -200,32 +191,20 @@ class _CloudLinkSettingsScreenState
               ),
           ],
           const Divider(height: 32),
-          Text(tr('تعارضات المزامنة السحابية'),
-              style: Theme.of(context).textTheme.titleMedium),
           if (v == null || v.conflicts.isEmpty)
             ListTile(dense: true, title: Text(tr('لا توجد تعارضات')))
           else
-            for (final c in v.conflicts)
-              ListTile(
-                title: Text('${_kindLabel(c.kind)} ${c.cloudNumber ?? ''}'),
-                subtitle: Text([
-                  c.reason ?? '',
-                  tr('المحاولات: {n}', {'n': c.attempts}),
-                  if (c.updatedAt != null)
-                    DateFormat('yyyy-MM-dd HH:mm').format(c.updatedAt!),
-                ].join(' · ')),
-                trailing: c.retryRequested
-                    ? Text(tr('ستُعاد المحاولة في المزامنة القادمة'))
-                    : TextButton(
-                        onPressed: _busy
-                            ? null
-                            : () => _run(() async {
-                                  await _ctrl.retry(c.globalId);
-                                  await _ctrl.syncNow();
-                                }),
-                        child: Text(tr('إعادة المحاولة')),
-                      ),
-              ),
+            ListTile(
+              title: Text(tr('تعارضات المزامنة: {n} — عرض',
+                  {'n': v.conflicts.length})),
+              trailing: const Icon(Icons.chevron_left),
+              onTap: () async {
+                await Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => CloudSyncConflictsScreen(conflicts: v.conflicts),
+                ));
+                if (mounted) await _reload();
+              },
+            ),
         ],
       ),
     );

@@ -44,6 +44,9 @@ dependencies:
   intl: ^0.20.2
   crypto: ^3.0.7
   cryptography: ^2.7.0          # Argon2id for password hashing (Week 8)
+  picpos_api_client:
+    path: packages/picpos_api_client
+  qr_flutter: ^4.1.0
   pdf: ^3.11.3
   printing: ^5.14.2
   phosphor_flutter: ^2.1.0

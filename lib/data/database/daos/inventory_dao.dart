@@ -223,6 +223,13 @@ extension InventoryDao on AppDatabase {
       final warehouseBlendCost =
           (quantity > 0 && unitCost != null) ? unitCost : product.costPrice;
 
+      // Snapshot the bin projection before changing the warehouse authority.
+      // Otherwise newly recorded lots can make DEFAULT appear negative on issue.
+      final binsEnabled = await getSettingValue('warehouse_bins_enabled') == 'true';
+      if (binsEnabled && quantity < 0) {
+        await syncDefaultBinStock(productId, warehouseId);
+      }
+
       // Update warehouse-specific balance FIRST (throws if atomic check fails)
       await _updateWarehouseBalance(
         productId: productId,
@@ -298,13 +305,21 @@ extension InventoryDao on AppDatabase {
 
       if (isSaleDeduction) {
         // Consume from oldest batches (FIFO)
-        await consumeBatchesForIssue(
+        final deductions = await consumeBatchesForIssue(
           productId: productId,
           quantity: quantity.abs(),
-          // Was available in this scope all along and simply not passed —
-          // which is why a sale in one branch ate another branch's lot.
           warehouseId: warehouseId,
         );
+        // A single movement identifies a lot only if the entire issue used
+        // that one lot; multi-lot issues retain null rather than false provenance.
+        if (deductions.length == 1 &&
+            (deductions.single['quantity'] as num).toDouble() >= quantity.abs() - 0.000001) {
+          await customUpdate(
+            'UPDATE stock_movements SET batch_id = ? WHERE global_id = ?',
+            variables: [Variable<int>(deductions.single['batchId'] as int),
+              Variable<String>(eventGid)],
+          );
+        }
       } else if (isReturnAddition) {
         // Restore stock to most recent batch
         await restoreBatchForReturn(
@@ -312,6 +327,24 @@ extension InventoryDao on AppDatabase {
           warehouseId: warehouseId,
           quantity: quantity,
           notes: notes,
+        );
+      }
+
+      if (!binsEnabled || movementType != 'transfer_out') {
+        await syncDefaultBinStock(productId, warehouseId);
+      }
+      final defaultBin = await customSelect(
+        'SELECT id FROM warehouse_locations WHERE warehouse_id = ? '
+        'AND is_default = 1 LIMIT 1',
+        variables: [Variable<int>(warehouseId)],
+      ).getSingleOrNull();
+      // Bin-aware issues may span locations. Do not claim DEFAULT provenance
+      // for a movement that aggregates multiple physical bin deductions.
+      if (defaultBin != null && !(binsEnabled && isSaleDeduction)) {
+        await customUpdate(
+          'UPDATE stock_movements SET location_id = ? WHERE global_id = ?',
+          variables: [Variable<int>((defaultBin.data['id'] as num).toInt()),
+            Variable<String>(eventGid)],
         );
       }
 
@@ -960,8 +993,12 @@ extension InventoryDao on AppDatabase {
   }
 
   /// Insert a warehouse
-  Future<int> insertWarehouse(WarehousesCompanion warehouse) {
-    return into(warehouses).insert(warehouse);
+  Future<int> insertWarehouse(WarehousesCompanion warehouse) async {
+    return transaction(() async {
+      final id = await into(warehouses).insert(warehouse);
+      await createDefaultWarehouseLocation(id);
+      return id;
+    });
   }
 
   /// Update a warehouse

@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:ural_erp/core/theme/app_theme.dart';
 import 'package:ural_erp/data/providers/providers.dart';
@@ -20,6 +21,7 @@ import 'package:ural_erp/presentation/hr_picpos/hr_picpos_providers.dart';
 import 'package:ural_erp/presentation/settings_picpos/screens/linked_devices_section.dart';
 import 'package:ural_erp/presentation/settings_picpos/screens/settings_picpos_screen.dart';
 import 'package:ural_erp/presentation/settings_picpos/widgets/settings_nav_rail.dart';
+import 'package:ural_erp/presentation/settings_picpos/widgets/cloud_link_settings_block.dart';
 import 'package:ural_erp/services/api/lan_paired_devices_provider.dart';
 import 'package:ural_erp/services/api/lan_pairing_service.dart';
 import 'package:ural_erp/services/cloud_sync/cloud_link_controller.dart';
@@ -71,6 +73,12 @@ class _FakeCloud implements CloudLinkController {
     issued.add(employeeGlobalId);
     return {'code': 'ABCDEFGH'};
   }
+
+  @override
+  Future<List<({String globalId, String name})>> adminUsers() async => [];
+
+  @override
+  Future<List<Map<String, dynamic>>> listAdminDevices() async => [];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -181,7 +189,7 @@ void main() {
       Scaffold(
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: LinkedDevicesSection(onOpenNetworkMode: () {}),
+          child: LinkedDevicesSection(onOpenNetworkMode: () async {}),
         ),
       ),
       overrides: overrides(admin: admin),
@@ -231,19 +239,41 @@ void main() {
     Finder navText(String text) =>
         find.descendant(of: find.byType(SettingsNavRail), matching: find.text(text));
 
-    testWidgets('section sits in the security group right after users',
+    testWidgets('connections section sits between users and guards',
         (tester) async {
       await pumpScreen(tester);
-      final users = tester.getTopLeft(navText('المستخدمون والأمان'));
-      final devices = tester.getTopLeft(navText('الأجهزة المرتبطة'));
-      final guards = tester.getTopLeft(navText('حماية الأقسام'));
-      expect(devices.dy, greaterThan(users.dy));
-      expect(devices.dy, lessThan(guards.dy));
-
-      await tester.tap(navText('الأجهزة المرتبطة'));
+      await tester.scrollUntilVisible(navText('ربط التطبيقات والأجهزة'), 150,
+          scrollable: find.descendant(
+              of: find.byType(SettingsNavRail), matching: find.byType(Scrollable)).first);
+      expect(find.text('الربط'), findsWidgets);
+      await tester.tap(navText('ربط التطبيقات والأجهزة'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.byType(LinkedDevicesSection), findsOneWidget);
+      await disposeScreen(tester);
+    }, timeout: const Timeout(Duration(minutes: 3)));
+
+    testWidgets('network shortcut selects connections without opening controls',
+        (tester) async {
+      await pumpScreen(tester);
+      await tester.ensureVisible(find.text('الربط بين الفروع والسيرفر'));
+      await tester.tap(find.text('الربط بين الفروع والسيرفر'));
+      await tester.pump();
+      expect(find.byType(LinkedDevicesSection), findsOneWidget);
+      await disposeScreen(tester);
+    }, timeout: const Timeout(Duration(minutes: 3)));
+
+    testWidgets('integrations has no cloud link settings block', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      await pumpScreen(tester);
+      final search = find.descendant(
+          of: find.byType(SettingsNavRail), matching: find.byType(TextField));
+      await tester.enterText(search, 'واتساب');
+      await tester.pump();
+      await tester.tap(find.descendant(of: find.byType(ListTile),
+          matching: find.text('التكاملات والخدمات')));
+      await tester.pump();
+      expect(find.byType(CloudLinkSettingsBlock), findsNothing);
       await disposeScreen(tester);
     }, timeout: const Timeout(Duration(minutes: 3)));
 
@@ -258,6 +288,7 @@ void main() {
         'موبايل',
         'تابلت',
         'مندوب',
+        'سيرفر',
         'كاشير',
         'سحابة',
       ]) {
@@ -265,7 +296,7 @@ void main() {
         await tester.pump();
         expect(
             find.descendant(
-                of: find.byType(ListTile), matching: find.text('الأجهزة المرتبطة')),
+                of: find.byType(ListTile), matching: find.text('ربط التطبيقات والأجهزة')),
             findsOneWidget,
             reason: 'search «$word»');
       }
@@ -310,8 +341,10 @@ void main() {
       (tester) async {
     await pumpSection(tester);
     expect(find.text('مفعّل'), findsOneWidget);
-    expect(find.text('https://cloud.example.test'), findsOneWidget);
-    expect(find.text('مُرحَّلة: 7 · تعارضات: 0'), findsOneWidget);
+    expect(find.textContaining('link-1 · آخر مزامنة:'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('ld_rep_devices')));
+    await tester.tap(find.byKey(const Key('ld_rep_devices')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('ld_cloud_phone-1')), findsOneWidget);
     expect(find.text('مندوب ١ · Galaxy A54'), findsOneWidget);
     final issue = tester.widget<FilledButton>(find.byKey(const Key('ld_rep_issue')));
@@ -351,11 +384,10 @@ void main() {
     cloud = _FakeCloud(enabled: false);
     await pumpSection(tester);
     expect(find.text('غير مفعّل'), findsOneWidget);
-    expect(find.text('فعّل الربط السحابي لإدارة هواتف المناديب'), findsOneWidget);
-    expect(find.byKey(const Key('ld_cloud_sync')), findsNothing);
+    expect(find.text('الاتصال غير مهيأ — افتح الإعدادات'), findsWidgets);
     final issue = tester.widget<FilledButton>(find.byKey(const Key('ld_rep_issue')));
     expect(issue.onPressed, isNull);
-    expect(find.byKey(const Key('ld_cloud_settings')), findsOneWidget);
+    expect(find.text('إعدادات الربط السحابي'), findsOneWidget);
   });
 
   testWidgets('non-admin sees a read-only notice only', (tester) async {
@@ -365,12 +397,11 @@ void main() {
     expect(find.byKey(const Key('ld_rep_issue')), findsNothing);
   });
 
-  testWidgets('coming-soon card has no actions', (tester) async {
+  testWidgets('cashier and warehouse apps show coming-soon status', (tester) async {
     await pumpSection(tester);
-    final card = find.byKey(const Key('ld_coming_soon'));
-    expect(card, findsOneWidget);
-    expect(find.descendant(of: card, matching: find.byType(ButtonStyleButton)),
-        findsNothing);
+    expect(find.text('PicPos كاشير'), findsOneWidget);
+    expect(find.text('PicPos مخازن'), findsOneWidget);
+    expect(find.text('قريباً'), findsNWidgets(2));
   });
 
   for (final locale in const [Locale('ar'), Locale('en')]) {
@@ -382,7 +413,7 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(find.byType(LinkedDevicesSection), findsOneWidget);
         if (locale.languageCode == 'en') {
-          expect(find.text('Local network devices (cashier/branches)'),
+          expect(find.text('Local network'),
               findsOneWidget);
           expect(find.text('Unlink'), findsWidgets);
         }

@@ -156,7 +156,19 @@ class AppController extends ChangeNotifier {
   Future<void> pair(String baseUrl, String code) async {
     final url = baseUrl.trim().replaceAll(RegExp(r'/+$'), '');
     final deviceId = _uuid.v4();
-    final r = await api.pair(url, code.trim().toUpperCase(), deviceId, 'Android van');
+    late final ({String deviceToken, String employeeGlobalId}) r;
+    try {
+      r = await api.pair(url, code.trim().toUpperCase(), deviceId, 'Android van');
+    } on CloudApiException catch (e) {
+      final key = switch (e.code) {
+        'invalid_code' => 'invalidPairingCode',
+        'code_expired' => 'pairingCodeExpired',
+        'too_many_attempts' => 'pairingTooManyAttempts',
+        'invalid_request' => 'invalidPairingRequest',
+        _ => 'pairingRejected',
+      };
+      throw AppFailure(key, e.code);
+    }
     await _saveCreds(DeviceCredentials(baseUrl: url, deviceId: deviceId, deviceToken: r.deviceToken));
     notifyListeners();
   }

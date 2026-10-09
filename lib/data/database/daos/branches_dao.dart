@@ -279,15 +279,12 @@ extension BranchesDao on AppDatabase {
     required int branchId,
     bool isDefault = false,
   }) async {
-    return into(warehouses).insert(
-      WarehousesCompanion.insert(
-        name: name,
-        branchId: Value(branchId),
-        isDefault: Value(isDefault),
-        // UUID-First (Phase 1): stable cross-install identity for sync.
-        globalId: Value(UuidV7.generate()),
-      ),
-    );
+    return insertWarehouse(WarehousesCompanion.insert(
+      name: name,
+      branchId: Value(branchId),
+      isDefault: Value(isDefault),
+      globalId: Value(UuidV7.generate()),
+    ));
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

@@ -213,6 +213,9 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
           'taxEnabled': iwv.item.taxRate > 0,
           'lineTotal': iwv.item.total,
           'selectedUnitName': iwv.item.unitName,
+          'trackExpiry': iwv.product.trackExpiry,
+          'batchNumber': iwv.item.batchNumber,
+          'expiryDate': iwv.item.expiryDate,
         }).toList();
       });
     }
@@ -266,6 +269,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
           'taxEnabled': taxRate > 0,
           'lineTotal': subtotal,
           'selectedUnitName': tr('قطعة'),
+          'trackExpiry': product.trackExpiry,
         });
       });
     }
@@ -665,6 +669,14 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
     // one (PINV-N) when the field is left blank.
     if (_selectedSupplierId == null || _items.isEmpty) {
       AppToast.show(context, tr('يرجى إكمال البيانات الأساسية وإضافة صنف واحد على الأقل'), type: ToastType.error);
+      return;
+    }
+
+    if (!widget.isReturn && _items.any((line) => line['trackExpiry'] == true &&
+        ((line['batchNumber'] as String?)?.trim().isNotEmpty != true ||
+            line['expiryDate'] == null))) {
+      AppToast.show(context, tr('رقم الدفعة وتاريخ الصلاحية مطلوبان للأصناف المتتبعة للصلاحية'),
+          type: ToastType.error);
       return;
     }
 

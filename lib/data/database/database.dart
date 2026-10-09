@@ -174,6 +174,11 @@ part 'daos/hr_payroll_posting_dao.dart';
 part 'daos/hr_advances_dao.dart';
 part 'daos/hr_commission_dao.dart';
 part 'field_expense_schema.dart';
+part 'warehouse_locations_schema.dart';
+part 'daos/bin_stock_ledger.dart';
+part 'daos/fefo_allocator.dart';
+part 'daos/bin_transfer_lots.dart';
+part 'daos/warehouse_locations_ops.dart';
 part 'daos/distribution_rep_ops_dao.dart';
 part 'daos/voucher_account_transfer_dao.dart';
 part 'daos/fixed_assets_dao_ext.dart';
@@ -1206,7 +1211,7 @@ class AppDatabase extends _$AppDatabase {
   //
   // Schema v177: sale reposts after an authorized edit may legitimately
   // produce multiple auto-posted JEs for one invoice reference.
-  int get schemaVersion => 194;
+  int get schemaVersion => 195;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.
@@ -1580,6 +1585,7 @@ class AppDatabase extends _$AppDatabase {
     // v185 — نموذجُ التوزيع (المرحلة و).
     'distribution_areas', 'route_customers', 'route_rep_history',
     'rep_resources',
+    'warehouse_locations', 'location_stock',
 
     // v189 — مسوّداتُ المرتجعات (J2).
     'return_drafts',
@@ -2350,6 +2356,7 @@ class AppDatabase extends _$AppDatabase {
       // v185 — نموذجُ التوزيع (المرحلة و).
       'distribution_areas', 'route_customers', 'route_rep_history',
       'rep_resources',
+      'warehouse_locations', 'location_stock',
       // v189 — مسوّداتُ المرتجعات (J2).
       'return_drafts',
       // v191 — ملفُّ الموظف (J4).
@@ -2534,6 +2541,7 @@ class AppDatabase extends _$AppDatabase {
         await ensureHrAttendanceSchema();
         await ensureHrPayrollSchema();
         await ensureFieldExpenseSchema();
+        await ensureWarehouseLocationsSchema(backfill: false);
         // seedInitialData + syncDefaultAccounts moved to beforeOpen
         // (after defensive v110 column additions)
       },

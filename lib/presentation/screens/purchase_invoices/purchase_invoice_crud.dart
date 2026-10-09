@@ -174,6 +174,8 @@ mixin _PurchaseInvoiceCrudMixin on ConsumerState<PurchaseInvoicesScreen> {
         taxRate: (item['taxRate'] as num?)?.toDouble() ?? 0,
         taxAmount: (item['taxAmount'] as num?)?.toDouble() ?? 0,
         unitName: item['selectedUnitName'] as String?,
+        batchNumber: item['batchNumber'] as String?,
+        expiryDate: item['expiryDate'] as DateTime?,
       )).toList();
 
       final auth = ref.read(authProvider);

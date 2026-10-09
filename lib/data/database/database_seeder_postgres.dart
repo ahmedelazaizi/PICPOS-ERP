@@ -379,6 +379,7 @@ extension DatabaseSeederPostgres on AppDatabase {
     const accountantPerms = [
       'reports_view', 'reports_export', 'treasury_view', 'customers_view',
       'suppliers_view', 'sales_view', 'purchases_view', 'dashboard_access',
+      'mobile_admin_access',
     ];
     const advancedCashierPerms = [
       'pos_access', 'pos_discount', 'pos_return', 'pos_payment_cash',

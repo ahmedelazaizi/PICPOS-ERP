@@ -143,9 +143,15 @@ extension InventoryBatchDao on AppDatabase {
     // value sit unused in the caller's scope for this long.
     required int warehouseId,
   }) async {
-    final batches =
-        await getBatchesForIssue(productId, warehouseId: warehouseId);
-    if (batches.isEmpty) return [];
+    final batches = await allocatableLots(
+      productId: productId, warehouseId: warehouseId,
+    );
+    await requireValidLotCoverage(
+      productId: productId, warehouseId: warehouseId,
+      quantity: quantity, lots: batches,
+    );
+    final binsEnabled = await getSettingValue('warehouse_bins_enabled') == 'true';
+    if (batches.isEmpty && !binsEnabled) return [];
 
     double remaining = quantity;
     final deductions = <Map<String, dynamic>>[];
@@ -155,6 +161,9 @@ extension InventoryBatchDao on AppDatabase {
 
       final deduct = remaining > batch.quantity ? batch.quantity : remaining;
       final newQty = batch.quantity - deduct;
+      if (binsEnabled) {
+        await deductIssuedBinStock(productId, warehouseId, batch.id, deduct);
+      }
 
       await (update(productBatches)..where((b) => b.id.equals(batch.id))).write(
         ProductBatchesCompanion(
@@ -174,6 +183,9 @@ extension InventoryBatchDao on AppDatabase {
       remaining -= deduct;
     }
 
+    if (binsEnabled && remaining > 0.000001) {
+      await deductIssuedBinStock(productId, warehouseId, null, remaining);
+    }
     return deductions;
   }
 

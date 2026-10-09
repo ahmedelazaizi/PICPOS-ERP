@@ -202,6 +202,9 @@ class PermissionCodes {
   /// الوصول للوحة التحكم
   static const String dashboardAccess = 'dashboard_access';
 
+  /// الوصول لتطبيق الإدارة السحابي بعد تفعيله للمستخدم
+  static const String mobileAdminAccess = 'mobile_admin_access';
+
   /// عرض مبيعات اليوم
   static const String dashboardSalesToday = 'dashboard_sales_today';
 
@@ -1201,6 +1204,11 @@ class PermissionCodes {
     {
       'code': dashboardAccess,
       'name': tr('الوصول للوحة التحكم'),
+      'category': 'dashboard',
+    },
+    {
+      'code': mobileAdminAccess,
+      'name': tr('الوصول لتطبيق الإدارة'),
       'category': 'dashboard',
     },
     {

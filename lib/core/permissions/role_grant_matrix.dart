@@ -59,6 +59,7 @@ class RoleGrantMatrix {
       // بيتمنح لكل دور تشغيلي عشان الترقية ما تسحبش الشاشة من حد — السحب
       // قرار المدير، مش أثر جانبي للإصلاح.
       'dashboard_access',
+      'mobile_admin_access',
       // Task 6a — نفس منطق سبب٠٨٦ فوق: الأكواد الستة دي مش في أي قايمة
       // أدوار ثابتة في السيدر (`assets_view`/`distribution_view`/
       // `einvoice_view`/`manufacturing_view` مالهاش دور غير مدير النظام
@@ -190,6 +191,7 @@ class RoleGrantMatrix {
       // تبويباً داخل فواتير البيع (‏`sales_view`) — المنحةُ تُبقي الوصولَ.
       'quotes_view',
       'dashboard_access',
+      'mobile_admin_access',
       'dashboard_alerts',
       // دفعة ٩ — `sales_amounts_view` بيحجب مبالغ قائمة فواتير البيع، وأي
       // دور معاه `sales_view` كان بيشوفها النهارده. الطباعة بتجاوز مدير
@@ -208,6 +210,7 @@ class RoleGrantMatrix {
       'purchases_create',
       'categories_view',
       'dashboard_access',
+      'mobile_admin_access',
       'dashboard_alerts',
       // دفعة ٨ — الأعمدة والأقسام دي كانت مكشوفة لأي دور يفتح شاشة الأصناف
       // (أكواد بلا إنفاذ). بعد ما اتحطّ عليها حرّاس، الدور ده لازم ياخدها
@@ -244,6 +247,7 @@ class RoleGrantMatrix {
       'quotes_view',
       'purchases_view',
       'dashboard_access',
+      'mobile_admin_access',
       'dashboard_alerts',
       // Task 3d — عنصر قائمة «التحليلات» كان على reports_view العام
       // بينما screenPermissionMap يربط الشاشة بـ analytics_view. هذا
@@ -280,6 +284,7 @@ class RoleGrantMatrix {
       'quotes_view',
       'purchases_view',
       'dashboard_access',
+      'mobile_admin_access',
       'dashboard_alerts',
       // FM-only extras (Spec 077 Batch 0.5)
       'commercial_papers_manage',
@@ -314,6 +319,7 @@ class RoleGrantMatrix {
       // تبويباً داخل فواتير البيع (‏`sales_view`) — المنحةُ تُبقي الوصولَ.
       'quotes_view',
       'dashboard_access',
+      'mobile_admin_access',
       'dashboard_alerts',
       // دفعة ٩ — نفس منحة الكاشير العادي.
       'sales_amounts_view',
@@ -362,6 +368,7 @@ class RoleGrantMatrix {
       'purchases_create',
       'settings_view',
       'dashboard_access',
+      'mobile_admin_access',
       'dashboard_alerts',
       // Task 3d — نفس منطق analytics_view (محاسب فوق): الدور ده عنده
       // reports_view فكان بيشوف رابط «التحليلات» قبل ما نربطه بكوده
@@ -402,6 +409,7 @@ class RoleGrantMatrix {
       'inventory_view',
       'analytics_view',
       'dashboard_access',
+      'mobile_admin_access',
       'dashboard_alerts',
       // Task 3d — عنصر قائمة «الفروع» كان على settings_view العام
       // بينما screenPermissionMap يربط الشاشة بـ branches_manage. هذا
@@ -426,6 +434,7 @@ class RoleGrantMatrix {
       // تبويباً داخل فواتير البيع (‏`sales_view`) — المنحةُ تُبقي الوصولَ.
       'quotes_view',
       'dashboard_access',
+      'mobile_admin_access',
       'dashboard_alerts',
       // Task 3d — نفس منطق analytics_view فوق (محاسب).
       'analytics_view',

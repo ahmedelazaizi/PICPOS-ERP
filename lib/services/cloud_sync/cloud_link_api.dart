@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../core/constants/app_constants.dart';
+
 /// The desktop's credential on the cloud API (I-3): a link id + secret issued
 /// for the company (only the secret's SHA-256 is stored server-side).
 class CloudLinkCredentials {
@@ -106,6 +108,39 @@ class CloudLinkApi {
       for (final r in (b['results'] as List? ?? const []))
         if (r is Map) r.cast<String, dynamic>(),
     ];
+  }
+
+  /// Registers the desktop's pinned Ed25519 public key for admin snapshots.
+  Future<void> pushAdminSigningKey(String publicKey) async {
+    await _send('POST', '/desktop/link/signing-key',
+        body: {'publicKey': publicKey, 'decimals': AppConstants.decimalPlaces});
+  }
+
+  /// Mirrors every desktop user, including disabled users for revocation.
+  Future<Map<String, dynamic>> pushAdminUsers(
+          List<Map<String, Object?>> users) =>
+      _send('POST', '/desktop/users', body: {'users': users});
+
+  /// Publishes signed read-only admin snapshots.
+  Future<Map<String, dynamic>> pushAdminSnapshots(
+          List<Map<String, Object?>> items) =>
+      _send('POST', '/desktop/snapshots', body: {'items': items});
+
+  Future<Map<String, dynamic>> adminPairingCode(String userGlobalId) =>
+      _send('POST', '/desktop/admin-pairing-codes',
+          body: {'userGlobalId': userGlobalId});
+
+  Future<List<Map<String, dynamic>>> adminDevices() async {
+    final response = await _send('GET', '/desktop/admin-devices');
+    return [
+      for (final device in response['devices'] as List? ?? const [])
+        if (device is Map) device.cast<String, dynamic>(),
+    ];
+  }
+
+  Future<void> revokeAdminDevice(String deviceId) async {
+    await _send('POST',
+        '/desktop/admin-devices/${Uri.encodeComponent(deviceId)}/revoke');
   }
 
   /// Issues a rep pairing code (and sets the rep's app PIN when given).

@@ -62,6 +62,7 @@ class Harness {
     ));
     lastHeaders = res.headers;
     final text = await res.readAsString();
+    if (text.isEmpty) return (res.statusCode, <String, dynamic>{}); // 204
     return (res.statusCode, (jsonDecode(text) as Map).cast<String, dynamic>());
   }
 

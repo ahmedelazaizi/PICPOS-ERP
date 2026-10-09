@@ -6,6 +6,7 @@ import 'dart:io';
 import 'src/db/database.dart';
 import 'src/http/app.dart';
 import 'src/security.dart';
+import 'src/service/admin_service.dart';
 import 'src/service/auth_service.dart';
 import 'src/service/rate_limiter.dart';
 import 'src/service/sync_service.dart';
@@ -18,6 +19,7 @@ export 'src/db/database.dart';
 export 'src/http/app.dart';
 export 'src/seed.dart';
 export 'src/security.dart';
+export 'src/service/admin_service.dart';
 export 'src/service/auth_service.dart';
 export 'src/service/desktop_service.dart';
 export 'src/service/errors.dart';
@@ -66,6 +68,7 @@ class CloudServices {
     int pullOverlapMs = 2000,
     RateLimiter? loginLimiter,
     RateLimiter? pushLimiter,
+    RateLimiter? adminLoginLimiter,
   }) async {
     await db.migrate();
     final outbox = WhatsAppOutbox(db, provider ?? MockWhatsAppProvider());
@@ -76,6 +79,8 @@ class CloudServices {
       outbox: outbox,
       adminKey: adminKey,
       pushLimiter: pushLimiter,
+      // Distinct HMAC key: rep and admin session tokens are not interchangeable.
+      admin: AdminService(db, SessionTokens('$tokenSecret|manage'), loginLimiter: adminLoginLimiter),
     );
     return CloudServices._(db, app, outbox);
   }

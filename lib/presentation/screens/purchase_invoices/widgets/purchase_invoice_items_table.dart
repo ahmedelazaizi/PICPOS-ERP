@@ -57,6 +57,8 @@ class PurchaseInvoiceItemsTable extends ConsumerWidget {
             DataColumn(label: Text(tr('الضريبة %'))),
             DataColumn(label: Text(tr('قيمة الضريبة'))),
             DataColumn(label: Text(tr('الإجمالي'))),
+            DataColumn(label: Text(tr('رقم الدفعة'))),
+            DataColumn(label: Text(tr('تاريخ الصلاحية'))),
             const DataColumn(label: Text('')),
           ],
           rows: items.asMap().entries.map((entry) {
@@ -224,6 +226,29 @@ class PurchaseInvoiceItemsTable extends ConsumerWidget {
                 ),
                 DataCell(Text(taxAmount.toStringAsFixed(AppConstants.decimalPlaces))),
                 DataCell(Text('${lineTotal.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}')),
+                DataCell(item['trackExpiry'] == true
+                    ? SizedBox(width: 130, child: TextFormField(
+                        key: ValueKey('batch_${item['productId']}'),
+                        initialValue: item['batchNumber'] as String? ?? '',
+                        decoration: InputDecoration(isDense: true, labelText: tr('رقم الدفعة')),
+                        onChanged: (text) => onItemChanged(index, {...item, 'batchNumber': text}),
+                      ))
+                    : const SizedBox.shrink()),
+                DataCell(item['trackExpiry'] == true
+                    ? TextButton.icon(
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: context, initialDate: item['expiryDate'] as DateTime? ?? DateTime.now(),
+                            firstDate: DateTime(2000), lastDate: DateTime(2100),
+                          );
+                          if (picked != null) onItemChanged(index, {...item, 'expiryDate': picked});
+                        },
+                        icon: const Icon(Icons.event),
+                        label: Text(item['expiryDate'] == null
+                            ? tr('اختر تاريخاً')
+                            : (item['expiryDate'] as DateTime).toIso8601String().substring(0, 10)),
+                      )
+                    : const SizedBox.shrink()),
                 DataCell(
                   IconButton(
                     icon: const Icon(PhosphorIconsBold.trash, color: AppColors.error, size: 18),

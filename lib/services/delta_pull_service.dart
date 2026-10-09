@@ -76,6 +76,7 @@ class DeltaPullService {
     'cheque_books',         // → accounts
     'branches',             // → regions, cost_centers
     'warehouses',           // → branches
+    'warehouse_locations',  // → warehouses
     'price_lists',          // → currencies
     'users',                // → roles
     'shifts',
@@ -110,6 +111,7 @@ class DeltaPullService {
     'voucher_books',                  // → branches
     'voucher_book_leaves_cancelled',  // → voucher_books
     'stock_movements',      // → products, warehouses
+    'location_stock',       // → products, warehouses, warehouse_locations
 
     // ── Tier 4: transactional items ──
     'sales_invoice_items',     // → sales_invoices, products
@@ -346,6 +348,7 @@ class DeltaPullService {
     // v185 — نموذجُ التوزيع: عملاءُ المسار ومندوبُه وعهدتُه بياناتُ عمل.
     'distribution_areas', 'route_customers', 'route_rep_history',
     'rep_resources',
+    'warehouse_locations', 'location_stock',
     // v189 — مسوّداتُ المرتجعات (J2): بياناتُ عمل.
     'return_drafts',
     // v191 — ملفُّ الموظف (J4): رواتبُ وبدلاتٌ ومستنداتٌ شخصيّة — لا تُسلَّم
@@ -457,6 +460,7 @@ class DeltaPullService {
     // v185 — نموذجُ التوزيع: لا استراتيجيّةَ لها في `fullSync`.
     'distribution_areas', 'route_customers', 'route_rep_history',
     'rep_resources',
+    'warehouse_locations', 'location_stock',
     // v189 — مسوّداتُ المرتجعات (J2): لا استراتيجيّةَ لها في `fullSync`.
     'return_drafts',
     // v191 — ملفُّ الموظف (J4): لا استراتيجيّةَ لها في `fullSync`.

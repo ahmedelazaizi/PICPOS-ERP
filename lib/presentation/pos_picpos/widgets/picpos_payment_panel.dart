@@ -109,6 +109,8 @@ class PicPosPaymentPanel extends ConsumerWidget {
     final scale = ref.watch(posBottomPanelScaleProvider).value ?? 1.0;
     final btnHeight = ref.watch(posButtonHeightProvider).value ?? 32.0;
     final btnFont = ref.watch(posButtonFontSizeProvider).value ?? 12.0;
+    final showCustomer = ref.watch(showAddCustomerInPOSProvider).value ?? true;
+    final showOrderType = ref.watch(showOrderTypeInPOSProvider).value ?? true;
 
     return Container(
       decoration: BoxDecoration(
@@ -124,12 +126,18 @@ class PicPosPaymentPanel extends ConsumerWidget {
           // كامل، وهما أقل حاجة الكاشير بيلمسها في اللوحة.
           Row(
             children: [
-              Expanded(
-                flex: 3,
-                child: _CustomerRow(
-                    onPickCustomer: onPickCustomer, scale: scale),
-              ),
-              _OrderTypeRow(cart: cart, controller: controller, scale: scale),
+              if (showCustomer)
+                Expanded(
+                  flex: 3,
+                  child: _CustomerRow(
+                      onPickCustomer: onPickCustomer, scale: scale),
+                ),
+              if (showOrderType)
+                Expanded(
+                  flex: 2,
+                  child: _OrderTypeRow(
+                      cart: cart, controller: controller, scale: scale),
+                ),
             ],
           ),
           _TotalsBlock(

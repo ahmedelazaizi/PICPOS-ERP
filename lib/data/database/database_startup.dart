@@ -43,6 +43,7 @@ extension DatabaseStartup on AppDatabase {
     await ensureHrAttendanceSchema();
     await ensureHrPayrollSchema();
     await ensureFieldExpenseSchema(seed: false);
+    await ensureWarehouseLocationsSchema(backfill: false);
 
     // Phase 2b: Database integrity — ensure critical PK/UNIQUE constraints
     // exist on PG installs whose schema was created by an older or crashed
@@ -101,6 +102,9 @@ extension DatabaseStartup on AppDatabase {
     // helper is idempotent — and it fills in only what's missing.
     if (_isPostgres) {
       await _verifyAndHealPostgresBaseline();
+    }
+    if (details.wasCreated || _isPostgres) {
+      await backfillWarehouseLocations();
     }
 
     // Phase 4: Permissions + default accounts sync — MOVED to synchronous

@@ -1021,6 +1021,11 @@ extension PurchaseDao on AppDatabase {
 
         // Update product stock and WAC cost (#PIR Phase 0)
         final product = await getProductById(productId);
+        if (product != null && product.trackExpiry &&
+            ((item.batchNumber.value?.trim().isNotEmpty ?? false) == false ||
+                item.expiryDate.value == null)) {
+          throw StateError('رقم الدفعة وتاريخ الصلاحية مطلوبان للصنف ${product.name}.');
+        }
         if (product != null && product.trackInventory) {
            final stockBeforeReceipt = product.currentStock;
            final costBeforeReceipt = product.costPrice;
@@ -1076,6 +1081,7 @@ extension PurchaseDao on AppDatabase {
               purchaseInvoiceId: Value(invoiceId),
             ),
           );
+          await syncDefaultBinStock(productId, warehouseId);
         }
       }
 
@@ -2021,6 +2027,11 @@ extension PurchaseDao on AppDatabase {
 
         // Update product stock (add new quantity)
         final product = newProductMap[productId];
+        if (product != null && product.trackExpiry &&
+            ((item.batchNumber.value?.trim().isNotEmpty ?? false) == false ||
+                item.expiryDate.value == null)) {
+          throw StateError('رقم الدفعة وتاريخ الصلاحية مطلوبان للصنف ${product.name}.');
+        }
         if (product != null && product.trackInventory) {
           // 1. Update WAC Cost with new values
           await updateProductWAC(
@@ -2063,6 +2074,7 @@ extension PurchaseDao on AppDatabase {
               purchaseInvoiceId: Value(invoiceId),
             ),
           );
+          await syncDefaultBinStock(productId, warehouseId);
         }
       }
 
