@@ -141,7 +141,9 @@ jobs:
           for file in "${!THRESHOLDS[@]}"; do
             threshold="${THRESHOLDS[$file]}"
             if [ -f "$file" ]; then
-              size=$(stat -c%s "$file")
+              # Count bytes with LF endings: the Windows runner checks files out
+              # as CRLF, but the thresholds are measured on the LF blobs in git.
+              size=$(tr -d '\r' < "$file" | wc -c | tr -d ' ')
               if [ "$size" -gt "$threshold" ]; then
                 echo "❌ GOD-FILE: $file  (${size} bytes > threshold ${threshold})"
                 FAILED=1
