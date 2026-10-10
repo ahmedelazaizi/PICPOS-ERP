@@ -24,9 +24,11 @@ env:
   FLUTTER_VERSION: '3.41.x'   # Pin to the version used in development (3.41.2 stable, Dart 3.11)
 
 # Jobs (all independent => run in parallel, except where `needs` is stated):
-#   secrets | gitleaks | root | packages_and_mobile | server | web
-#   e2e            <- secrets, root, packages_and_mobile, server
-#   build-windows  <- secrets, root, packages_and_mobile, server, e2e, web  (main / v*.*.* only)
+#   secrets | gitleaks | root_static | root_tests (4 shards) | packages_and_mobile | server | web
+#   coverage_gate  <- root_tests (merges shard coverage, ≥ 18 % gate)
+#   e2e            <- secrets, packages_and_mobile, server   (does NOT wait for the root suite)
+#   build-windows  <- secrets, root_static, root_tests, coverage_gate, packages_and_mobile,
+#                     server, web, e2e                                      (main / v*.*.* only)
 #   release        <- build-windows                                         (v*.*.* only)
 jobs:
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -72,15 +74,12 @@ jobs:
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}   # only needed for org repos
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# (ب) Root app — analyze, God-File gates, tests + coverage gate
+# (ب) Root app — static checks (fast) + sharded tests + merged coverage gate
 # ═══════════════════════════════════════════════════════════════════════════════
-  root:
-    name: 🔍 Root (analyze + test)
-    # Windows desktop app — run the suite on the SAME platform it targets and is
-    # developed/verified on. Several integration/timing tests are Windows-tuned
-    # (and the golden images are Windows-generated).
+  root_static:
+    name: 🔍 Root (analyze + God-File gates)
     runs-on: windows-latest
-    timeout-minutes: 120
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4
@@ -154,13 +153,45 @@ jobs:
           done
           [ "$FAILED" -eq 0 ] || exit 1
 
-      # ── Full test suite + coverage (single instrumented pass) ──────────────
-      # ONE run: it is BOTH the pass/fail gate and the coverage source.
+  # ── Full test suite, split into parallel shards ───────────────────────────
+  # The single-job run took ~1h55m on the runner and hit the job timeout, so
+  # the suite is split with `flutter test --total-shards/--shard-index`
+  # (package:test shards by test file/suite, so every file runs exactly once).
+  # Each shard is BOTH a pass/fail gate and a coverage source; the
+  # `coverage_gate` job merges the per-shard lcov files.
+  root_tests:
+    name: 🧪 Root tests (shard ${{ matrix.shard }}/4)
+    # Windows desktop app — run the suite on the SAME platform it targets and is
+    # developed/verified on. Several integration/timing tests are Windows-tuned
+    # (and the golden images are Windows-generated).
+    runs-on: windows-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    env:
+      TOTAL_SHARDS: '4'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
       # test/e2e/ is excluded here: it spawns the cloud server and needs
       # Postgres, which Windows runners cannot host (no service containers);
       # it runs in the `e2e` job on ubuntu instead. test/integration_pg/ files
       # are tagged `pg` and skipped by dart_test.yaml.
-      - name: Run full test suite with coverage
+      # --reporter=github keeps the log small (groups + failures only) instead
+      # of printing every test line as `expanded` did (>73k lines).
+      - name: Run test shard with coverage
         shell: bash
         run: |
           targets=()
@@ -173,7 +204,91 @@ jobs:
             fi
           done
           echo "Test targets: ${targets[*]}"
-          flutter test --coverage --reporter=expanded "${targets[@]}"
+          flutter test --coverage --reporter=github \
+            --total-shards="$TOTAL_SHARDS" --shard-index=$(( ${{ matrix.shard }} - 1 )) \
+            "${targets[@]}"
+
+      - name: Upload shard coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-shard-${{ matrix.shard }}
+          path: coverage/lcov.info
+          if-no-files-found: ignore
+          retention-days: 30
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# (ب2) Coverage gate — merge the shard lcov files and enforce the floor
+# ═══════════════════════════════════════════════════════════════════════════════
+  coverage_gate:
+    name: 📊 Coverage gate (merged)
+    needs: [root_tests]
+    if: ${{ !cancelled() && needs.root_tests.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Download shard coverage
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-shard-*
+          path: shard-coverage
+
+      - name: Install lcov
+        run: sudo apt-get update && sudo apt-get install -y lcov
+
+      # Merge with lcov; if lcov rejects the (Windows-path) files, fall back to
+      # a plain merge that keeps, per (file, line), the max hit count.
+      - name: Merge coverage
+        shell: bash
+        run: |
+          set -u
+          mapfile -t files < <(find shard-coverage -name lcov.info | sort)
+          echo "Shard files: ${files[*]:-<none>}"
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "::error::No shard lcov.info files were downloaded"
+            exit 1
+          fi
+          args=()
+          for f in "${files[@]}"; do args+=(-a "$f"); done
+          if lcov "${args[@]}" -o merged.info \
+               --ignore-errors inconsistent,unsupported,format,corrupt,empty,unused \
+               >lcov_merge.log 2>&1 && [ -s merged.info ]; then
+            echo "Merged with lcov"
+          else
+            echo "::warning::lcov merge failed — falling back to python merge"
+            tail -n 20 lcov_merge.log || true
+            python3 - "${files[@]}" <<'PY'
+          import sys
+          from collections import OrderedDict
+          data = OrderedDict()  # file -> {line: hits}
+          for path in sys.argv[1:]:
+              cur = None
+              with open(path, encoding="utf-8", errors="replace") as fh:
+                  for raw in fh:
+                      line = raw.strip()
+                      if line.startswith("SF:"):
+                          cur = data.setdefault(line[3:], {})
+                      elif line.startswith("DA:") and cur is not None:
+                          parts = line[3:].split(",")
+                          try:
+                              ln, hits = int(parts[0]), int(parts[1])
+                          except (ValueError, IndexError):
+                              continue
+                          cur[ln] = max(cur.get(ln, 0), hits)
+                      elif line == "end_of_record":
+                          cur = None
+          with open("merged.info", "w", encoding="utf-8") as out:
+              for sf, lines in data.items():
+                  out.write("SF:%s\n" % sf)
+                  for ln in sorted(lines):
+                      out.write("DA:%d,%d\n" % (ln, lines[ln]))
+                  hit = sum(1 for h in lines.values() if h > 0)
+                  out.write("LF:%d\nLH:%d\nend_of_record\n" % (len(lines), hit))
+          PY
+            echo "Merged with python"
+          fi
+          ls -l merged.info
 
       # Regression FLOOR, not an aspiration. Measured line coverage is ~21%
       # (the denominator includes the generated database.g.dart + all UI
@@ -183,12 +298,12 @@ jobs:
       - name: Coverage hard gate (≥ 18 %)
         shell: bash
         run: |
-          if [ ! -f coverage/lcov.info ]; then
-            echo "::error::No coverage/lcov.info found — did flutter test --coverage run?"
+          if [ ! -f merged.info ]; then
+            echo "::error::No merged.info found — coverage merge did not run"
             exit 1
           fi
-          TOTAL=$(grep -c "^DA:" coverage/lcov.info 2>/dev/null || echo "0")
-          HIT=$(grep "^DA:" coverage/lcov.info | grep -v ",0$" | wc -l || echo "0")
+          TOTAL=$(grep -c "^DA:" merged.info 2>/dev/null || echo "0")
+          HIT=$(grep "^DA:" merged.info | grep -v ",0$" | wc -l || echo "0")
           if [ "$TOTAL" -gt 0 ]; then
             PCT=$(( HIT * 100 / TOTAL ))
             echo "Coverage: ${PCT}%  (${HIT} / ${TOTAL} lines)"
@@ -200,12 +315,12 @@ jobs:
             echo "::warning::Could not determine coverage (0 DA lines found)"
           fi
 
-      - name: Upload coverage artifact
+      - name: Upload merged coverage artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-${{ github.run_number }}
-          path: coverage/lcov.info
+          path: merged.info
           if-no-files-found: ignore
           retention-days: 30
 
@@ -325,11 +440,11 @@ jobs:
 # tool/run_e2e.ps1 is NOT used: it hard-codes Windows `\` paths (broken for
 # pwsh on Linux) and a Docker-compose Postgres. The same suites are invoked
 # directly with the identical commands it uses (see docs/testing/E2E.md).
-# `web` suite is skipped here: it needs no Postgres and already runs in `root`.
+# `web` suite is skipped here: it needs no Postgres and already runs in `root_tests`.
 # ═══════════════════════════════════════════════════════════════════════════════
   e2e:
     name: 🔗 E2E (Linux + Postgres)
-    needs: [secrets, root, packages_and_mobile, server]
+    needs: [secrets, packages_and_mobile, server]
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -465,7 +580,7 @@ jobs:
 # ═══════════════════════════════════════════════════════════════════════════════
   build-windows:
     name: 🏗️ Build Windows
-    needs: [secrets, root, packages_and_mobile, server, e2e, web]
+    needs: [secrets, root_static, root_tests, coverage_gate, packages_and_mobile, server, web, e2e]
     runs-on: windows-latest
     # `flutter build windows --release` cold-compiles the C++ runner + Dart AOT
     # on a free runner; headroom so the release-gating build isn't cut short.
@@ -489,7 +604,7 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Codegen is NOT run in CI (see `root` job): database.g.dart is committed.
+      # Codegen is NOT run in CI (see `root_static` job): database.g.dart is committed.
 
       # ── Version stamp ──────────────────────────────────────────────────────
       # Artifact name format: PicPos-ERP-<semver>+<short-sha>-windows
