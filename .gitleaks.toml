@@ -1,0 +1,15 @@
+# Gitleaks config — extends the default ruleset.
+# The only allowlisted items are test fixtures that are NOT real secrets.
+title = "PicPos ERP gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake test fixtures (not real credentials)"
+paths = [
+  # 'e2e-secret-0123456789-0123456789-abcdef' — a dummy HMAC secret for the in-process E2E server.
+  '''server/test/e2e/support/e2e_server\.dart''',
+  # 'picpos_pos.db_key.v1' — a storage key *name* used with an in-memory secret store.
+  '''packages/picpos_device/test/device_test\.dart''',
+]
