@@ -34,6 +34,12 @@ const _items = <SettingsNavRailItem>[
       group: 'الأمان',
       desc: 'الحسابات · الأدوار · الصلاحيات'),
   SettingsNavRailItem(
+      id: 'cloud',
+      title: 'الربط السحابي',
+      icon: PhosphorIconsBold.cloud,
+      group: 'الربط',
+      desc: 'السحابة · الأجهزة المقترنة'),
+  SettingsNavRailItem(
       id: 'data',
       title: 'إدارة البيانات',
       icon: PhosphorIconsBold.database,
@@ -111,7 +117,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('والمجموعاتُ الأربعُ عناوينُها ظاهرةٌ عند عرض $w',
+    testWidgets('والمجموعاتُ الخمسُ عناوينُها ظاهرةٌ عند عرض $w',
         (tester) async {
       await pump(tester, width);
       for (final group in kSettingsGroupOrder) {
@@ -131,7 +137,8 @@ void main() {
     double yOf(String label) => tester.getTopLeft(find.text(label)).dy;
 
     expect(yOf('التشغيل'), lessThan(yOf('الأمان')));
-    expect(yOf('الأمان'), lessThan(yOf('المال والبيانات')));
+    expect(yOf('الأمان'), lessThan(yOf('الربط')));
+    expect(yOf('الربط'), lessThan(yOf('المال والبيانات')));
     expect(yOf('المال والبيانات'), lessThan(yOf('الامتدادات')));
   });
 
