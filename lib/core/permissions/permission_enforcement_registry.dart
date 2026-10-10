@@ -114,9 +114,10 @@ class PermissionEnforcementRegistry {
     // — يجب حذفُها من هذه القائمة وتسجيلُ إنفاذٍ حقيقيٍّ لكلٍّ منها مع انتقالِ
     // شاشتِه للإنتاج (كلّ مهمّة تحضّر الإنفاذَ قبل الدمج). إذا مرّت سنة كاملة
     // بلا تقدّم، فأعِد النظرَ في الأولويات.
-    'bookings_view',
-    'bookings_add',
-    'bookings_edit',
+    // ⚠️ `bookings_view/add/edit/reports` خرجت من هنا: صارت مُشار إليها في
+    //    `WebTableRule` (`web_table_policy.dart` → `_bookings`) الذي يحرس
+    //    قراءةَ جداول الحجوزات على قناة الويب. (حراسةٌ على مستوى الجدول؛
+    //    إنفاذُ الأزرار بالشاشة نفسِها لا يزال مؤجَّلاً مع شاشاتها.)
     'bookings_cancel',
     'bookings_status',
     'bookings_assign',
@@ -127,7 +128,6 @@ class PermissionEnforcementRegistry {
     //    والعشرةُ الباقيةُ على حالها حتّى تصل شاشاتُها.
     'bookings_services_manage',
     'bookings_resources_manage',
-    'bookings_reports',
     'bookings_settings',
   };
 

@@ -63,10 +63,16 @@ void main() {
       expect(syncIdx, isNot(-1),
           reason: 'Could not locate the server-mode syncAllPermissions '
               'call — structure changed; update this guard.');
-      // 1500 chars covers the syncAllPermissions try block + comment +
-      // self-heal try block comfortably.
-      final scope = src.substring(
-          syncIdx, (syncIdx + 1500).clamp(0, src.length));
+      // A fixed char window is brittle: J2/J4 added several `backfill…Once`
+      // blocks between syncAllPermissions and the self-heal, pushing it
+      // >2500 chars away. The server-only (`else`) branch ends where the next
+      // `if (isClient) {` (accounts seeding) begins, so bound the scope by
+      // that structural marker instead of a magic number.
+      final branchEnd = src.indexOf('if (isClient) {', syncIdx);
+      expect(branchEnd, isNot(-1),
+          reason: 'Could not locate the end of the !isClient branch — '
+              'structure changed; update this guard.');
+      final scope = src.substring(syncIdx, branchEnd);
       expect(scope, contains('grantMissingDefaults'),
           reason: 'Self-heal must run only when isClient is false; '
               'a client running this would corrupt the server-authoritative '

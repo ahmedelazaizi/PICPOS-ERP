@@ -631,20 +631,38 @@ void main() {
        final libraryEntry = File('lib/services/client_write_interceptor.dart').readAsStringSync();
       final source = File(relPath).readAsStringSync();
 
-      // The drain call must appear in BOTH internal helpers. Use
-      // allMatches and assert >= 2 occurrences inside the success
-      // branches.
-      final hits =
+      // The drain call was consolidated into one helper,
+      // `_refreshAfterWrite()` (which also skips the web client, where there
+      // is no local cache/outbox). So: (1) the drain must live in that helper
+      // exactly once, and (2) the helper must be invoked right after the
+      // serverCall succeeds in BOTH _tryOrQueue and _tryOrQueueVoid.
+      final drainHits =
           'OfflineSyncWorker.instance.drainOutbox'.allMatches(source).length;
       expect(
-        hits,
+        drainHits,
+        greaterThanOrEqualTo(1),
+        reason:
+            '$relPath must call OfflineSyncWorker.instance.drainOutbox '
+            '(inside _refreshAfterWrite). Found $drainHits occurrences. '
+            'See Feature 011 / Issue 10.',
+      );
+      expect(
+        RegExp(r'static void _refreshAfterWrite\(\)[^}]*drainOutbox\(force: true\)')
+            .hasMatch(source),
+        isTrue,
+        reason: '_refreshAfterWrite must drain the outbox with force: true.',
+      );
+      final successCalls = RegExp(
+        r'await serverCall\(idempotencyKey\);\s*_refreshAfterWrite\(\);',
+      ).allMatches(source).length;
+      expect(
+        successCalls,
         greaterThanOrEqualTo(2),
         reason:
-            '$relPath must call OfflineSyncWorker.instance.drainOutbox in '
-            'BOTH _tryOrQueue and _tryOrQueueVoid success paths so any '
-            'pre-existing outbox items drain immediately after the server '
-            'becomes reachable. Found $hits occurrences (expected >= 2). '
-            'See Feature 011 / Issue 10.',
+            '$relPath must call _refreshAfterWrite() right after serverCall '
+            'succeeds in BOTH _tryOrQueue and _tryOrQueueVoid so pending '
+            'outbox items drain once the server is reachable. Found '
+            '$successCalls (expected >= 2). See Feature 011 / Issue 10.',
       );
 
       // The import must be present too.

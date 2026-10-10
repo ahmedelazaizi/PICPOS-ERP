@@ -319,6 +319,9 @@ void main() {
 
     testWidgets('بلا مخازنَ أصلاً — الزرُّ يرفض بدل أن يخترع مخزناً',
         (tester) async {
+      // v195 — مواقعُ المخزن (bins) أبناءٌ له؛ تُمسح أولاً وإلا سقط الحذفُ بـ787.
+      await db.customStatement('DELETE FROM location_stock');
+      await db.customStatement('DELETE FROM warehouse_locations');
       await db.delete(db.warehouses).go();
 
       await pumpForm(tester);

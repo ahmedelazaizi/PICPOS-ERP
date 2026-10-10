@@ -161,6 +161,11 @@ Future<void> _clearDatabase(AppDatabase db) async {
   await db.delete(db.stockMovements).go();
   await db.delete(db.inventoryBalances).go();
   await db.delete(db.products).go();
+  // v195 — المواقعُ (`warehouse_locations`) ومخزونُها (`location_stock`) جدولان
+  // خام تابعان للمخزن؛ الـbackfill يزرع «DEFAULT bin» لكلّ مخزنٍ عند الفتح،
+  // فمسحُ `warehouses` قبل أبنائه يسقط بـ`FOREIGN KEY constraint failed (787)`.
+  await db.customStatement('DELETE FROM location_stock');
+  await db.customStatement('DELETE FROM warehouse_locations');
   await db.delete(db.warehouses).go();
   await db.delete(db.accountingPeriods).go();
   await db.delete(db.fiscalYears).go();
