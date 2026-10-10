@@ -61,7 +61,10 @@ import '../../screens/widgets/dialogs/branch_edit_dialog.dart';
 import '../../screens/widgets/dialogs/warehouse_edit_dialog.dart';
 import '../../screens/warehouse_locations_screen.dart';
 import '../../widgets/permission_guard.dart';
-import '../../screens/pos_terminals_screen.dart' show PosTerminalsBody;
+// الويب: بديل بلا إدارة أجهزة POS (م3-9)؛ الديسكتوب يبقى على الجسم الأصلي.
+import '../../screens/pos_terminals_screen.dart'
+    if (dart.library.js_interop) '../widgets/terminals_body_web.dart'
+    show PosTerminalsBody;
 import '../../screens/settings/work_holidays_screen.dart'
     show WorkHolidaysBody;
 

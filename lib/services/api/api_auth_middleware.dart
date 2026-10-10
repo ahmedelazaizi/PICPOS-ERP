@@ -61,7 +61,8 @@ class ApiAuthMiddleware {
   /// POS (`/api/shifts`, `/api/sales/held`…)، الطاولات/المطبخ (`/api/table-*`)،
   /// الإقران/الأجهزة (`/api/pair`, `/api/pos-terminals`, `/api/auth`)،
   /// النسخ الاحتياطي، المزامنة، التصنيع (مؤجّل) والحجوزات.
-  /// البادئة تطابق بـ`startsWith` فـ`/api/sales` تشمل `/api/sales/return` إلخ.
+  /// البادئة تطابق بـ`startsWith` فـ`/api/sales` تشمل `/api/sales/return` إلخ؛
+  /// ويُستثنى منها [webWriteDeniedPrefixes] (مسارات POS داخل `/api/sales`).
   static const List<String> webWritePrefixes = <String>[
     '/api/accounts',
     '/api/account-mappings',
@@ -111,10 +112,23 @@ class ApiAuthMiddleware {
     '/api/warehouses',
   ];
 
+  /// مسارات تحت [webWritePrefixes] لا يقبلها رمزُ الويب أبداً: طلبات POS
+  /// المعلّقة (`/api/sales/held` و`/api/sales/held-items`). تُفحص قبل المطابقة.
+  static const List<String> webWriteDeniedPrefixes = <String>[
+    '/api/sales/held',
+  ];
+
+  static bool _isWebSessionPath(String path) =>
+      webSessionPrefixes.any(path.startsWith) &&
+      !webWriteDeniedPrefixes.any(path.startsWith);
+
   /// يفتح [webWritePrefixes] لرمز جلسة الويب. يستدعيه المضيف عند تفعيل
   /// وضع الويب (م3-9)؛ يبقى الافتراضي فارغاً.
   static void enableWebSessionWrites() =>
       webSessionPrefixes = List<String>.of(webWritePrefixes);
+
+  /// يُغلق مسارات الكتابة لرمز الويب (الافتراضي؛ عند تعطيل الوصول من المتصفح).
+  static void disableWebSessionWrites() => webSessionPrefixes = <String>[];
 
   /// Generate and store the API token from a machine-specific seed.
   ///
@@ -191,7 +205,7 @@ class ApiAuthMiddleware {
         }
         if (path.startsWith('/api/') &&
             !request.headers.containsKey('authorization') &&
-            webSessionPrefixes.any(path.startsWith)) {
+            _isWebSessionPath(path)) {
           if (!WebOriginPolicy.isAllowed(request)) {
             return _json(403, 'Origin not allowed');
           }

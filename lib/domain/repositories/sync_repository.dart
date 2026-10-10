@@ -54,6 +54,16 @@ abstract class ISyncRepository {
   });
   String? validateTlsConfig();
 
+  // م3-9: الوصول من المتصفّح (نسخة الويب) — مطفأ افتراضياً.
+  bool get webAccessEnabled;
+  List<String> get webAllowedOrigins;
+  String? get webStaticDir;
+  Future<void> configureWebAccess({
+    required bool enabled,
+    Iterable<String> allowedOrigins = const [],
+    String? staticDir,
+  });
+
   // Outbox management
   Stream<List<db.SyncOutboxItem>> watchPendingItems();
   Future<void> retryItem(int id);

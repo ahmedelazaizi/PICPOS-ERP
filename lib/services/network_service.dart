@@ -7,10 +7,13 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart';
-import 'api/api_handler.dart';
+// الويب: بديل بلا معالجات السيرفر (م3-9) — انظر api_handler_web_stub.dart.
+import 'api/api_handler.dart'
+    if (dart.library.js_interop) 'api/api_handler_web_stub.dart';
 import 'e_invoicing/e_invoice_submission_worker.dart';
 import 'api/api_auth_middleware.dart';
 import 'api/api_session_token.dart';
+import 'api/api_web_session_handler.dart' show WebOriginPolicy;
 import 'api/lan_pairing_api_handler.dart';
 import 'api/lan_pairing_service.dart';
 import 'api/lan_pairing_client.dart';
@@ -83,6 +86,91 @@ class NetworkService {
   static const _prefTlsKeyPassword = 'network_tls_key_password';
   /// هل الخادمُ **البعيد** يعمل بـTLS — علَمُ العميل لا الخادم.
   static const _prefRemoteTls = 'network_remote_tls';
+
+  // م3-9: الوصول من المتصفّح (مطفأ افتراضياً). يُفعَّل على السيرفر فقط.
+  static const _prefWebEnabled = 'network_web_access_enabled';
+  static const _prefWebOrigins = 'network_web_allowed_origins';
+  static const _prefWebDir = 'network_web_static_dir';
+  bool _webAccessEnabled = false;
+  List<String> _webAllowedOrigins = const [];
+  String? _webStaticDir;
+
+  /// هل يخدم السيرفر نسخة الويب (ملفات ثابتة + كتابات الجلسة + قناة /webdb)؟
+  bool get webAccessEnabled => _webAccessEnabled;
+
+  /// أصول إضافية مسموحة (الافتراضي فارغ = نفس الأصل فقط).
+  List<String> get webAllowedOrigins => List.unmodifiable(_webAllowedOrigins);
+
+  /// مجلد بناء الويب المضبوط (null = البحث الافتراضي في [resolveWebStaticDir]).
+  String? get webStaticDir => _webStaticDir;
+
+  /// المجلد الفعلي للملفات الثابتة: المضبوط، وإلا web/ بجوار التنفيذي، وإلا
+  /// build/web تحت المجلد الحالي. null إن لم يوجد index.html.
+  String? resolveWebStaticDir() {
+    final candidates = <String>[
+      if (_webStaticDir != null && _webStaticDir!.trim().isNotEmpty)
+        _webStaticDir!.trim(),
+      '${File(Platform.resolvedExecutable).parent.path}/web',
+      'build/web',
+    ];
+    for (final d in candidates) {
+      if (File('$d/index.html').existsSync()) return d;
+    }
+    return null;
+  }
+
+  /// يضبط الوصول من المتصفّح ويحفظه (يسري عند بدء السيرفر التالي).
+  Future<void> configureWebAccess({
+    required bool enabled,
+    Iterable<String> allowedOrigins = const [],
+    String? staticDir,
+  }) async {
+    _webAccessEnabled = enabled;
+    _webAllowedOrigins = [
+      for (final o in allowedOrigins)
+        if (o.trim().isNotEmpty) o.trim(),
+    ];
+    _webStaticDir = (staticDir == null || staticDir.trim().isEmpty)
+        ? null
+        : staticDir.trim();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefWebEnabled, _webAccessEnabled);
+    await prefs.setStringList(_prefWebOrigins, _webAllowedOrigins);
+    if (_webStaticDir == null) {
+      await prefs.remove(_prefWebDir);
+    } else {
+      await prefs.setString(_prefWebDir, _webStaticDir!);
+    }
+  }
+
+  /// يطبّق إعداد الويب على حالة الخادم الساكنة (يُستدعى من [startServer]).
+  void _applyWebAccess() {
+    if (_webAccessEnabled) {
+      ApiAuthMiddleware.enableWebSessionWrites();
+      WebOriginPolicy.configure(_webAllowedOrigins);
+    } else {
+      ApiAuthMiddleware.disableWebSessionWrites();
+      WebOriginPolicy.configure(const []);
+    }
+  }
+
+  @visibleForTesting
+  void applyWebAccessForTests() => _applyWebAccess();
+
+  @visibleForTesting
+  Middleware get webGateMiddlewareForTests => _webGateMiddleware();
+
+  /// بوّابة: عند تعطيل الوصول من المتصفّح يُرفض /api/web/* و/webdb (404).
+  Middleware _webGateMiddleware() {
+    return (Handler inner) => (Request request) {
+          final path = '/${request.url.path}';
+          if (!_webAccessEnabled &&
+              (path == '/webdb' || path.startsWith('/api/web/'))) {
+            return Response.notFound('Web access disabled');
+          }
+          return inner(request);
+        };
+  }
 
   // Getters
   NetworkMode get mode => _mode;
@@ -163,6 +251,9 @@ class NetworkService {
     _tlsKeyPath = prefs.getString(_prefTlsKeyPath);
     _tlsKeyPassword = prefs.getString(_prefTlsKeyPassword);
     _remoteServerIsTls = prefs.getBool(_prefRemoteTls) ?? false;
+    _webAccessEnabled = prefs.getBool(_prefWebEnabled) ?? false;
+    _webAllowedOrigins = prefs.getStringList(_prefWebOrigins) ?? const [];
+    _webStaticDir = prefs.getString(_prefWebDir);
 
     // ⚠️ تحميلُ البصمة المثبَّتة **هنا** لا عند أوّلِ فحصِ اتّصالٍ فقط.
     // `TlsTrust` تقبل أيَّ شهادةٍ لمضيفٍ لا بصمةَ له في الذاكرة — فلو
@@ -660,7 +751,11 @@ class NetworkService {
       _lanPairing = pairing;
       ApiAuthMiddleware.setPairingService(pairing);
       LanPairingApiHandler.setService(pairing);
-      final apiHandler = ApiHandler(db);
+      _applyWebAccess();
+      final apiHandler = ApiHandler(
+        db,
+        webStaticDir: _webAccessEnabled ? resolveWebStaticDir() : null,
+      );
       _apiHandler = apiHandler;
       final router = apiHandler.buildRouter();
 
@@ -680,6 +775,7 @@ class NetworkService {
 
       final handler = const Pipeline()
           .addMiddleware(_corsMiddleware())
+          .addMiddleware(_webGateMiddleware())
           .addMiddleware(ApiRateLimiter.createMiddleware())  // Week-10: rate limit before auth
           .addMiddleware(ApiAuthMiddleware.createMiddleware())
           .addMiddleware(_logMiddleware())

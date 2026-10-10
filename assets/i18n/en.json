@@ -10977,5 +10977,22 @@
   "إعدادات الربط السحابي": "Cloud link settings",
   "تعذّر جلب هواتف المناديب من السحابة: {e}": "Could not load rep phones from the cloud: {e}",
   "لا هواتف مناديب مقترنة بعد": "No paired rep phones yet",
-  "لا مناديب نشطون — حدّد وسم «مندوب» في ملف الموظف من شؤون الموظفين.": "No active reps — set the «Rep» tag in the employee file under HR."
+  "لا مناديب نشطون — حدّد وسم «مندوب» في ملف الموظف من شؤون الموظفين.": "No active reps — set the «Rep» tag in the employee file under HR.",
+  "تم حفظ إعدادات الويب — أعد تشغيل السيرفر لتطبيقها": "Web settings saved — restart the server to apply them",
+  "يقدّم السيرفر نسخة الويب ويقبل كتابات جلسة المتصفح. مطفأ افتراضياً.": "The server serves the web version and accepts browser-session writes. Off by default.",
+  "الأصول المسموحة (Origins) — فارغ = نفس الأصل فقط": "Allowed origins — empty = same origin only",
+  "مجلد ملفات الويب (build/web)": "Web files folder (build/web)",
+  "لم يُعثر على index.html في المجلد المحدد": "index.html was not found in the selected folder",
+  "حفظ إعدادات الويب": "Save web settings",
+  "تفعيل الوصول من المتصفح": "Enable browser access",
+  "إدارة نقاط البيع متاحة من تطبيق سطح المكتب": "POS terminal management is available from the desktop app",
+  "إضافة المستخدمين وإسناد الأدوار والفروع": "Add users and assign roles and branches",
+  "التنبيهات": "Alerts",
+  "تحويل العميل النقدي": "Cash customer conversion",
+  "عرض وتعديل صلاحيات الأدوار": "View and edit role permissions",
+  "فتح الوردية غير متاح من نسخة الويب. افتح وردية من تطبيق الكاشير ثم أعد المحاولة.": "Opening a shift is not available in the web version. Open a shift from the cashier app, then try again.",
+  "مجموعات العملاء": "Customer groups",
+  "مصفوفة الصلاحيات": "Permissions matrix",
+  "مواقع المخزن": "Warehouse locations",
+  "هذه العملية غير مدعومة في نسخة الويب بعد — استخدم تطبيق سطح المكتب.": "This operation is not supported in the web version yet — use the desktop app."
 }

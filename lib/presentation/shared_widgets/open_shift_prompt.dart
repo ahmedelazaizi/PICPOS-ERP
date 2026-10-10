@@ -24,7 +24,9 @@ import '../../data/providers/repository_providers.dart';
 import '../../services/client_write_interceptor.dart';
 import '../../data/providers/auth_providers.dart';
 import '../../data/providers/branch_scope_provider.dart';
-import '../pos/widgets/pos_opening_balance_dialog.dart';
+// الويب: بديل بلا وردية POS (م3-9)؛ الديسكتوب يبقى على الحوار الأصلي.
+import '../pos/widgets/pos_opening_balance_dialog.dart'
+    if (dart.library.js_interop) 'shift_unavailable_dialog_web.dart';
 
 /// نتيجةُ محاولةِ المرتجع بعد معالجةِ «لا ورديّة».
 enum ShiftPromptOutcome {

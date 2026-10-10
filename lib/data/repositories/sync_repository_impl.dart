@@ -245,6 +245,27 @@ class SyncRepositoryImpl implements ISyncRepository {
   String? validateTlsConfig() => _ns.validateTlsConfig();
 
   @override
+  bool get webAccessEnabled => _ns.webAccessEnabled;
+
+  @override
+  List<String> get webAllowedOrigins => _ns.webAllowedOrigins;
+
+  @override
+  String? get webStaticDir => _ns.webStaticDir;
+
+  @override
+  Future<void> configureWebAccess({
+    required bool enabled,
+    Iterable<String> allowedOrigins = const [],
+    String? staticDir,
+  }) =>
+      _ns.configureWebAccess(
+        enabled: enabled,
+        allowedOrigins: allowedOrigins,
+        staticDir: staticDir,
+      );
+
+  @override
   Stream<List<db.SyncOutboxItem>> watchPendingItems() {
     return (_db.select(_db.syncOutbox)
           ..where((t) => t.status.equals('synced').not())

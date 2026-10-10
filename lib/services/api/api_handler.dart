@@ -37,6 +37,7 @@ import 'api_product_handler.dart';
 import 'api_purchase_handler.dart';
 import 'api_auth_handler.dart';
 import 'api_web_session_handler.dart';
+import 'web_static_handler.dart';
 import '../web_read/web_read_channel_host.dart';
 import 'api_terminals_handler.dart';
 import 'api_voucher_handler.dart';
@@ -74,7 +75,10 @@ class ApiHandler {
   late final ApiTerminalsHandler _terminals;
   late final ApiVoucherHandler _vouchers;
 
-  ApiHandler(this._db) {
+  /// م3-9: مجلد بناء الويب لتقديمه من نفس الأصل (null = لا تقديم).
+  final String? _webStaticDir;
+
+  ApiHandler(this._db, {String? webStaticDir}) : _webStaticDir = webStaticDir {
     _sales = ApiSalesHandler(_db, _wsClients);
     _data = ApiDataHandler(_db, _wsClients);
     _parties = ApiPartyHandler(_db, _wsClients);
@@ -374,6 +378,20 @@ class ApiHandler {
     router.get('/api/table-requests', _listGuestOrderRequests);
     router.post('/api/table-requests/<id>/approve', _approveGuestOrderRequest);
     router.post('/api/table-requests/<id>/reject', _rejectGuestOrderRequest);
+
+    // م3-9: ملفات الويب الثابتة (index.html fallback) — قبل الـcatch-all.
+    final staticDir = _webStaticDir;
+    if (staticDir != null && WebStaticHandler.hasBuild(staticDir)) {
+      final statics = WebStaticHandler(staticDir);
+      router.get('/<path|.*>', (Request r, String _) {
+        final path = '/${r.url.path}';
+        // الـAPI والقنوات لا تسقط إلى index.html أبداً.
+        if (path.startsWith('/api/') || path == '/ws' || path == '/webdb') {
+          return _notFound(r);
+        }
+        return statics.call(r);
+      });
+    }
 
     // Catch-all for undefined routes
     router.all('/<ignored|.*>', _notFound);

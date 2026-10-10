@@ -9,28 +9,21 @@
 // ملفٌ في presentation باسم يبدأ بها. طبقة البيانات (جداول/DAOs المطبخ مثلاً)
 // مشتركة ولا تُحظر: هي مخطّط القاعدة نفسه.
 //
-// ── خطّ الأساس (دَيْنٌ قائم قبل م3-6) ─────────────────────────────────────
-// ثلاثة ملفاتٍ محظورةٍ تصلها السلسلةُ اليوم عبر تشابكٍ في طبقات أخرى، لا عبر
-// مسار الويب نفسه:
-//   * cart_controller / checkout_controller:
-//       dashboard_picpos_screen → business_profile_provider → network_service
-//       → api_handler → cfd_service → presentation/pos/providers/cart_controller
-//   * modifier_selection_dialog:
-//       sales_repository → domain/entities/cart_item_entity (يستورد
-//       SelectedModifier من حوار POS).
-// الاختبار يفشل إن وُصل أيُّ ملفٍّ محظورٍ **غيرِ** هذه، ويفشل كذلك إن لم يعد
-// أحدُها مُوصَلاً (فيُحذف من القائمة: الدينُ يتقلّص فقط).
+// ── خطّ الأساس: صفر (م3-9) ─────────────────────────────────────────────────
+// كان فيه ثلاثةُ ملفاتٍ محظورةٍ تصلها السلسلةُ عبر تشابكٍ في طبقات أخرى؛ قُطعت:
+//   * cart_controller / checkout_controller: `network_service` يستورد `api_handler`
+//     (← cfd_service ← cart_controller) باستيرادٍ شرطي: على الويب `api_handler_web_stub.dart`.
+//   * modifier_selection_dialog: `SelectedModifier`/`OptionQuantityLevel` انتقلا إلى
+//     `domain/entities/selected_modifier.dart` (والحوار يعيد تصديرهما).
+// الاختبار يفشل إن وُصل أيُّ ملفٍّ محظور. وإن احتاج دَيْنٌ جديدٌ أن يُسجَّل
+// فأضفه إلى [_knownLeaks] مع سببه — والاختبار الثالث يُجبر على حذفه حين يزول.
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
 const _entry = 'lib/main_web_entry.dart';
 
-const _knownLeaks = <String>{
-  'lib/presentation/pos/providers/cart_controller.dart',
-  'lib/presentation/pos/providers/checkout_controller.dart',
-  'lib/presentation/pos/widgets/modifier_selection_dialog.dart',
-};
+const _knownLeaks = <String>{};
 
 final _forbiddenName = RegExp(
   r'^(pos|kitchen|tables_picpos|scale_plu_picpos|shift_close_picpos|print_test_picpos)',
@@ -115,6 +108,16 @@ void main() {
     // أعمى عمّا تستورده شاشات الويب).
     expect(parent.keys, contains('lib/web/web_shell.dart'));
     expect(parent.keys, contains('lib/web/web_screen_registry.dart'));
+    // م3-9: الشاشات الخمس المفصولة عن POS ضمن الإغلاق (وبلا تسريب محظور أدناه).
+    for (final f in [
+      'lib/web/web_settings_screen.dart',
+      'lib/presentation/users_picpos/screens/users_management_picpos_screen.dart',
+      'lib/presentation/settings_picpos/screens/branches_picpos_screen.dart',
+      'lib/presentation/sales_returns_picpos/screens/sales_return_records_picpos_screen.dart',
+      'lib/presentation/purchase_returns_picpos/screens/purchase_return_records_picpos_screen.dart',
+    ]) {
+      expect(parent.keys, contains(f), reason: f);
+    }
     expect(
       parent.keys,
       contains(

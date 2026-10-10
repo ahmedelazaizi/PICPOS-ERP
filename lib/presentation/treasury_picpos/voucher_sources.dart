@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/i18n/tr.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/models/voucher_book.dart';
+import '../../web/web_write_guard.dart';
 import 'screens/voucher_form_picpos.dart';
 
 // جهازٌ عميل: السندُ كلُّه (ومنه التحويلُ المحاسبيُّ والمستفيدُ من الدليل
@@ -52,6 +53,11 @@ final voucherBookOptionsProvider = FutureProvider.autoDispose.family<
 Future<void> preValidateVoucherBookLeaf(
     AppDatabase db, VoucherSubmission v) async {
   if (v.bookId == null) return;
+  // م3-9: ختمُ ورقة الدفتر كتابةٌ مباشرة على AppDatabase غير مدعومة على الويب؛ نرفض
+  // **قبل** أي كتابة كي لا يُحفَظ السند ثم يفشل الختم.
+  if (WebWriteGuard.isWeb) {
+    throw VoucherBookException(WebWriteGuard.message(tr('دفاتر السندات')));
+  }
   if (v.bookNumber == null) {
     throw VoucherBookException('اكتب رقم ورقة الدفتر.');
   }

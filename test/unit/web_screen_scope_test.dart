@@ -51,18 +51,21 @@ void main() {
     expect(stray, isEmpty);
   });
 
-  test('الشاشات المشمولة بلا باني («قريبًا») هي المعروفة فقط', () {
+  test('لا شاشة مشمولة بلا باني («قريبًا») بعد م3-9', () {
     final soon = kWebScreenIds.where((s) => !kWebScreenBuilders.containsKey(s));
-    expect(
-      soon.toSet(),
-      {
-        ScreenId.salesReturns,
-        ScreenId.purchaseReturns,
-        ScreenId.settings,
-        ScreenId.branches,
-        ScreenId.users,
-      },
-    );
+    expect(soon.toSet(), isEmpty);
+  });
+
+  test('م3-9: الشاشات الخمس السابقة صارت مترجَمة', () {
+    for (final s in [
+      ScreenId.salesReturns,
+      ScreenId.purchaseReturns,
+      ScreenId.settings,
+      ScreenId.branches,
+      ScreenId.users,
+    ]) {
+      expect(kWebScreenBuilders.containsKey(s), isTrue, reason: '$s');
+    }
   });
 
   test('مدير النظام يرى كل مداخل النطاق، بلا POS ولا مؤجّل', () {

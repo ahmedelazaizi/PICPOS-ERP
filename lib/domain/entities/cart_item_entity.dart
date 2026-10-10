@@ -1,6 +1,6 @@
 import '../../core/tax/effective_item_tax_rate.dart';
 import '../../core/utils/number_utils.dart';
-import '../../presentation/pos/widgets/modifier_selection_dialog.dart';
+import 'selected_modifier.dart';
 
 /// Item type for exchange operations
 enum CartItemType {

@@ -11,6 +11,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/models/distribution_model.dart';
 import '../../picpos_shell/picpos_data_table.dart';
+import '../../../web/web_write_guard.dart';
 import '../distribution_picpos_providers.dart';
 
 /// هل يملك المستخدمُ إدارةَ التوزيع (إنشاءً وتعديلاً وإسناداً)؟
@@ -121,6 +122,7 @@ Future<void> showDmAreaDialog(BuildContext context, WidgetRef ref,
           if (area != null)
             TextButton(
               onPressed: () async {
+                if (!WebWriteGuard.allow(ctx, feature: tr('مناطق التوزيع'))) return;
                 try {
                   await ref
                       .read(databaseProvider)
@@ -141,6 +143,7 @@ Future<void> showDmAreaDialog(BuildContext context, WidgetRef ref,
           FilledButton(
             key: const Key('dm_area_save'),
             onPressed: () async {
+              if (!WebWriteGuard.allow(ctx, feature: tr('مناطق التوزيع'))) return;
               try {
                 await ref.read(databaseProvider).saveDistributionArea(
                       id: area?.id,

@@ -15,6 +15,7 @@ import '../../../data/providers/providers.dart';
 import '../../../domain/models/distribution_model.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_surface.dart';
+import '../../../web/web_write_guard.dart';
 import '../distribution_picpos_providers.dart';
 import 'dm_areas_tab.dart' show dmCanManage;
 
@@ -372,6 +373,7 @@ Future<void> showDmRouteDialog(BuildContext context, WidgetRef ref,
           FilledButton(
             key: const Key('dm_route_save'),
             onPressed: () async {
+              if (!WebWriteGuard.allow(ctx, feature: tr('مسارات التوزيع'))) return;
               try {
                 await ref.read(databaseProvider).saveDistributionRoute(
                       id: route?.id,
@@ -476,6 +478,7 @@ Future<void> showDmAssignCustomerDialog(BuildContext context, WidgetRef ref,
               onPressed: pickedCustomer == null || pickedRoute == null
                   ? null
                   : () async {
+                      if (!WebWriteGuard.allow(ctx, feature: tr('مسارات التوزيع'))) return;
                       try {
                         await ref.read(databaseProvider).assignCustomerToRoute(
                             customerId: pickedCustomer!,

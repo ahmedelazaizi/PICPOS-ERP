@@ -2,15 +2,16 @@
 // للويب بإعادة استخدام واجهات PicPos الموجودة.
 //
 // القاعدة: لا يدخل هنا استيرادُ شاشةٍ تسحب POS/مطبخ/طاولات/ميزان/وردية/طباعة
-// (يفرضه `test/structural/web_entry_scope_test.dart`). ما سقط لهذا السبب يبقى
-// **مشمولاً** في [kWebScreenIds] ويُعرض «قريبًا» (لا باني له هنا):
+// (يفرضه `test/structural/web_entry_scope_test.dart`). ما لا يُترجَم لهذا السبب
+// يبقى **مشمولاً** في [kWebScreenIds] ويُعرض «قريبًا» (لا باني له هنا).
 //
-//   * salesReturns / purchaseReturns — `shared_widgets/open_shift_prompt.dart`
-//     ← `pos/widgets/pos_opening_balance_dialog.dart` (حوار وردية POS).
-//   * settings — `widgets/settings/pos_settings_widget.dart` +
-//     `pos_picpos/widgets/picpos_payment_methods.dart` + `pos_terminals_screen`.
-//   * branches — `screens/pos_terminals_screen.dart`.
-//   * users — لا شاشةَ مستقلّةً أصلاً (تبويبٌ داخل الإعدادات).
+// م3-9: فُصلت اعتماديات POS بالاستيراد الشرطي (`dart.library.js_interop`):
+//   * salesReturns / purchaseReturns — حوار وردية POS ← بديلٌ يشرح أن الوردية
+//     من الكاشير (`shared_widgets/shift_unavailable_dialog_web.dart`).
+//   * branches — تبويب «نقاط البيع» ← بديلٌ نصّي (`terminals_body_web.dart`).
+//   * users — بعد قطع `network_service` عن `api_handler` ونقل `SelectedModifier`.
+//   * settings — شاشةُ الإعدادات الكاملة كلُّها إعداداتُ أجهزة POS/طباعة؛ تُترجَم
+//     نسخةٌ **مصغّرة** (`web_settings_screen.dart`: المستخدمون/الصلاحيات/الفروع).
 //
 // الشاشات تُبنى بنسخة PicPos دائماً (لا فوركَ علامةٍ): كثيرٌ منها بلا نظيرٍ في
 // UralCash (العملاء/الموردون/عروض الأسعار/السندات/المطابقة البنكية...).
@@ -52,7 +53,12 @@ import '../presentation/screens/fiscal_year_screen.dart';
 import '../presentation/screens/purchase_orders_screen.dart';
 import '../presentation/screens/region_management_screen.dart';
 import '../presentation/screens/sales_orders_screen.dart';
+import '../presentation/purchase_returns_picpos/screens/purchase_return_records_picpos_screen.dart';
+import '../presentation/sales_returns_picpos/screens/sales_return_records_picpos_screen.dart';
+import '../presentation/settings_picpos/screens/branches_picpos_screen.dart';
 import '../presentation/settings_picpos/screens/cheques_picpos_screen.dart';
+import '../presentation/users_picpos/screens/users_management_picpos_screen.dart';
+import 'web_settings_screen.dart';
 import '../presentation/stock_transfer_picpos/screens/stock_transfer_picpos_screen.dart';
 import '../presentation/treasury_picpos/screens/cheque_books_picpos_screen.dart';
 import '../presentation/treasury_picpos/screens/treasury_picpos_screen.dart';
@@ -69,11 +75,13 @@ final Map<ScreenId, WebScreenBuilder> kWebScreenBuilders = {
   ScreenId.dashboard: (go) => DashboardPicposScreen(onNavigate: go),
   // المبيعات
   ScreenId.salesInvoices: (_) => const SalesInvoicesPicposScreen(),
+  ScreenId.salesReturns: (_) => const SalesReturnRecordsPicPosScreen(),
   ScreenId.quotations: (_) => _quotations(),
   ScreenId.salesOrders: (_) => const SalesOrdersScreen(),
   ScreenId.offers: (_) => const OffersPicPosScreen(),
   // المشتريات
   ScreenId.purchases: (_) => const PurchasesPicposScreen(),
+  ScreenId.purchaseReturns: (_) => const PurchaseReturnRecordsPicPosScreen(),
   ScreenId.purchaseOrders: (_) => const PurchaseOrdersScreen(),
   ScreenId.importPurchases: (_) => const ImportPurchasesPicposScreen(),
   ScreenId.landedCost: (_) => const LandedCostPicposScreen(),
@@ -122,5 +130,8 @@ final Map<ScreenId, WebScreenBuilder> kWebScreenBuilders = {
   ScreenId.analytics: (_) => const AnalyticsPicposScreen(),
   // النظام
   ScreenId.activityLog: (_) => const ActivityLogPicposScreen(),
+  ScreenId.users: (_) => const UsersManagementPicposScreen(),
+  ScreenId.settings: (go) => WebSettingsScreen(onNavigate: go),
+  ScreenId.branches: (_) => const BranchesPicposScreen(),
   ScreenId.regions: (_) => const RegionManagementScreen(),
 };

@@ -57,6 +57,7 @@ import '../../../domain/models/whatsapp_message.dart';
 import '../../picpos_shell/picpos_attachments_panel.dart';
 // J3 — «عميل نقدي»: الاسمُ لمرّةٍ واحدة و«حفظ كعميل دائم».
 import '../../../domain/models/distribution_model.dart';
+import '../../../web/web_write_guard.dart';
 import 'permanent_customer_dialog.dart';
 
 // ── Part files (منسوخة حرفياً من lib/presentation/screens/widgets/sales_invoices/

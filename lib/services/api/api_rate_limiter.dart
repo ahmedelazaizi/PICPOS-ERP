@@ -315,6 +315,14 @@ class ApiRateLimiter {
           }
         }
 
+        // م3-9: ملفات الويب الثابتة (GET خارج /api و/webdb) عامّة وكثيرة العدد
+        // عند فتح الصفحة (js/wasm/خطوط)؛ لا تُحتسب كي لا تُحجب الصفحة نفسها.
+        if (request.method == 'GET' &&
+            !path.startsWith('/api/') &&
+            !path.startsWith('/webdb')) {
+          return innerHandler(request);
+        }
+
         final ip = _clientIp(request);
         final cls = _classify(path);
         final allowed = _checkAndIncrement(ip, cls);

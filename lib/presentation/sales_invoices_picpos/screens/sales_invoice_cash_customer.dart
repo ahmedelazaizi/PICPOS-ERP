@@ -47,6 +47,9 @@ extension SalesInvoiceCashCustomerExt on _SalesInvoicesPicposScreenState {
         routes: routes,
         preferredRouteId: preferredRouteId);
     if (input == null || !context.mounted) return null;
+    if (!WebWriteGuard.allow(context, feature: tr('تحويل العميل النقدي'))) {
+      return null;
+    }
     try {
       final id = await db.createPermanentCustomerFromCashSale(
         name: input.name,

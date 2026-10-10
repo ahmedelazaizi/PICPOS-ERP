@@ -20,6 +20,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/database/database.dart';
+import '../../../web/web_write_guard.dart';
 import 'providers/party_groups_controller.dart';
 
 class PartyGroupsTab extends ConsumerWidget {
@@ -66,6 +67,10 @@ class PartyGroupsTab extends ConsumerWidget {
                   onViewMembers: () =>
                       _showMembersDialog(context, ref, group: row.group),
                   onToggleActive: () async {
+                    if (!WebWriteGuard.allow(context,
+                        feature: tr('مجموعات العملاء'))) {
+                      return;
+                    }
                     final ok = await ref
                         .read(partyGroupsControllerProvider.notifier)
                         .setActive(row.group.id, !row.group.isActive);
@@ -506,10 +511,11 @@ class PartyGroupsTab extends ConsumerWidget {
                               color: AppColors.error,
                             ),
                             tooltip: tr('إزالة من المجموعة'),
-                            onPressed: () => ref
+                            onPressed: WebWriteGuard.wrap(context, () => ref
                                 .read(partyGroupsControllerProvider
                                     .notifier)
                                 .assignParty(p.id, null),
+                                feature: tr('مجموعات العملاء')),
                           ),
                         );
                       },

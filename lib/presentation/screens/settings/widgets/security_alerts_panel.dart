@@ -28,6 +28,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../widgets/notifications/providers/notification_provider.dart';
+import '../../../../web/web_write_guard.dart';
 import 'reset_password_dialog.dart';
 
 class SecurityAlertsPanel extends ConsumerWidget {
@@ -131,10 +132,11 @@ class _AlertCard extends ConsumerWidget {
                 OutlinedButton.icon(
                   icon: const Icon(PhosphorIconsBold.eyeSlash, size: 16),
                   label:  Text(tr('إخفاء')),
-                  onPressed: () =>
+                  onPressed: WebWriteGuard.wrap(context, () =>
                       ref.read(databaseProvider).markNotificationAsRead(
                             notification.id,
                           ),
+                      feature: tr('التنبيهات')),
                 ),
               ],
             ),

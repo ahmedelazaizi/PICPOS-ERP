@@ -4,6 +4,7 @@ import '../../core/i18n/tr.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../data/providers/providers.dart';
 import '../../services/invoice_generator.dart';
+import '../../web/web_write_guard.dart';
 import '../widgets/permission_guard.dart';
 
 class WarehouseLocationsScreen extends ConsumerStatefulWidget {
@@ -52,6 +53,8 @@ class _WarehouseLocationsScreenState extends ConsumerState<WarehouseLocationsScr
   }
 
   Future<void> change(Future<void> Function() action) async {
+    // م3-9: كتابات مباشرة على AppDatabase غير مدعومة عبر الويب.
+    if (!WebWriteGuard.allow(context, feature: tr('مواقع المخزن'))) return;
     if (!await ensurePermission(ref, context, PermissionCodes.warehousesManage,
         actionName: tr('إدارة مواقع التخزين'))) return;
     try {

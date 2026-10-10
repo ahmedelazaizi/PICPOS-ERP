@@ -394,6 +394,8 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
           ),
         const Divider(height: 24),
         _buildTlsPanel(),
+        const SizedBox(height: 12),
+        const WebAccessSettingsPanel(),
       ],
     );
   }

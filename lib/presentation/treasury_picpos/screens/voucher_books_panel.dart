@@ -14,6 +14,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/models/voucher_book.dart';
+import '../../../web/web_write_guard.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../voucher_sources.dart';
@@ -190,11 +191,13 @@ class VoucherBooksPanel extends ConsumerWidget {
 
   Future<void> _setStatus(
       BuildContext context, WidgetRef ref, VoucherBook b, String status) async {
+    if (!WebWriteGuard.allow(context, feature: tr('دفاتر السندات'))) return;
     await ref.read(databaseProvider).setVoucherBookStatus(b.id, status);
     _refresh(ref);
   }
 
   Future<void> _createBook(BuildContext context, WidgetRef ref) async {
+    if (!WebWriteGuard.allow(context, feature: tr('دفاتر السندات'))) return;
     final holders = ref.read(_holdersProvider).value ?? const [];
     final result = await showDialog<_NewBook>(
       context: context,
@@ -221,6 +224,7 @@ class VoucherBooksPanel extends ConsumerWidget {
 
   Future<void> _cancelLeaf(
       BuildContext context, WidgetRef ref, VoucherBook b) async {
+    if (!WebWriteGuard.allow(context, feature: tr('دفاتر السندات'))) return;
     final db = ref.read(databaseProvider);
     final suggested = await db.suggestNextVoucherBookNumber(b.id);
     if (!context.mounted) return;
