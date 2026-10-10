@@ -111,6 +111,15 @@ void main() {
       contains('lib/presentation/dashboard_picpos/screens/dashboard_picpos_screen.dart'),
     );
     expect(parent.keys, contains('lib/web/web_session.dart'));
+    // م3-8: غلاف التنقّل وسجلّ الشاشات المترجَمة ضمن الإغلاق (وإلا صار الحارس
+    // أعمى عمّا تستورده شاشات الويب).
+    expect(parent.keys, contains('lib/web/web_shell.dart'));
+    expect(parent.keys, contains('lib/web/web_screen_registry.dart'));
+    expect(
+      parent.keys,
+      contains(
+          'lib/presentation/accounting_picpos/journal_entries_picpos_screen.dart'),
+    );
   });
 
   test('مسار الويب لا يصل إلى شاشات POS/مطبخ/طاولات/ميزان/وردية/طباعة', () {

@@ -9,14 +9,32 @@
 //
 // م3-6: دخول حقيقي (POST /api/web/session) ثم قناة drift للقراءة
 // (/webdb) وتجاوز `databaseProvider` — انظر lib/web/.
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'web/web_dashboard_preview.dart';
+import 'services/write_router.dart' show MirrorOfflineException;
 import 'web/web_providers.dart';
 import 'web/web_session.dart';
+import 'web/web_shell.dart';
+
+/// يعرض رسائل أخطاء الكتابة عبر HTTP (م3-7) أياً كانت الشاشة.
+final GlobalKey<ScaffoldMessengerState> _messengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 void main() {
+  // فشل الكتابة (انقطاع الخادم أو رفضه) يرمي MirrorOfflineException بنصٍّ عربي:
+  // يُعرض في شريط تنبيه بدل أن يضيع كخطأ غير ملتقَط. لا شيء حُفظ (لا صندوق صادر).
+  PlatformDispatcher.instance.onError = (error, stack) {
+    if (error is MirrorOfflineException) {
+      _messengerKey.currentState
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.toString())));
+      return true;
+    }
+    return false;
+  };
   runApp(ProviderScope(
     overrides: webProviderOverrides,
     child: const PicPosWebApp(),
@@ -32,6 +50,7 @@ class PicPosWebApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'PicPos Web',
+      scaffoldMessengerKey: _messengerKey,
       debugShowCheckedModeBanner: false,
       locale: const Locale('ar'),
       supportedLocales: const [Locale('ar'), Locale('en')],
@@ -59,54 +78,7 @@ class _WebGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(webSessionProvider);
     if (session == null) return const _ServerLoginPage();
-    return _WebShell(session: session);
-  }
-}
-
-/// لوحة التحكم ببيانات حقيقية + شريط المستخدم + تنبيه انقطاع الاتصال.
-class _WebShell extends ConsumerWidget {
-  const _WebShell({required this.session});
-
-  final WebSession session;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final lost = ref.watch(webConnectionProvider);
-    final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('PicPos Web — ${session.displayName}'),
-        actions: [
-          TextButton.icon(
-            onPressed: () {
-              ref.invalidate(webConnectionProvider);
-              ref.read(webSessionProvider.notifier).signOut();
-            },
-            icon: const Icon(Icons.logout),
-            label: const Text('خروج'),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          if (lost != null)
-            MaterialBanner(
-              backgroundColor: theme.colorScheme.errorContainer,
-              content: Text(lost),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    ref.invalidate(webConnectionProvider);
-                    ref.read(webSessionProvider.notifier).signOut();
-                  },
-                  child: const Text('تسجيل الدخول'),
-                ),
-              ],
-            ),
-          const Expanded(child: WebDashboardPreview()),
-        ],
-      ),
-    );
+    return WebShell(session: session);
   }
 }
 

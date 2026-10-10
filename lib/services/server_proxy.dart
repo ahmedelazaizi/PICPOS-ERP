@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'tls_trust.dart';
+import '../web/web_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ural_erp/data/database/sync_interceptor.dart';
 import '../core/logging/diagnostic_logger.dart';
@@ -140,7 +141,9 @@ class ServerProxy {
     final sessionToken = userId != null ? _sessionTokens[userId] : null;
     return {
       'Content-Type': 'application/json',
-      if (_apiToken != null) 'Authorization': 'Bearer $_apiToken',
+      // الويب: لا bearer للجهاز أبداً — الهوية رمز الجلسة وحده.
+      if (_apiToken != null && WebSession.activeWebClient == null)
+        'Authorization': 'Bearer $_apiToken',
       if (deviceId != null && deviceId.isNotEmpty) 'X-Device-Id': deviceId,
       'X-Session-Token': ?sessionToken,
     };
@@ -149,7 +152,17 @@ class ServerProxy {
   /// Whether the app is in client mode
   static bool get isClientMode => NetworkService.instance.isClient;
 
-  String get _baseUrl => NetworkService.instance.buildServerUrl();
+  /// م3-7: على الويب العنوان من جلسة الويب (نفس أصل الصفحة افتراضياً).
+  String get _baseUrl =>
+      WebSession.activeWebClient?.baseUrl ??
+      NetworkService.instance.buildServerUrl();
+
+  /// م3-7: يسجّل رمز جلسة الويب (`aud:'web'`) للمستخدم [userId] ليُرسَل في
+  /// `X-Session-Token` على كل نداء. في الذاكرة فقط (كباقي الرموز).
+  void setSessionToken(int userId, String token) {
+    _sessionTokens[userId] = token;
+    _sessionMintedAt[userId] = DateTime.now();
+  }
 
   // ═══════════════════════════════════════════════════════════════
   // FIX 3.3: Status Code Classification

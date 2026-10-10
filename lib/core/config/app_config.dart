@@ -9,7 +9,10 @@
 /// defaults parsed from `APP_FLAVOR` are kept as the **initial** seed so
 /// the app stays bootable on a fresh DB before settings are populated.
 library;
-import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
+import 'package:flutter/foundation.dart'
+    show ValueListenable, ValueNotifier, kIsWeb;
+
+import '../../web/web_screen_scope.dart';
 
 import 'app_flavor.dart';
 import 'brand.dart';
@@ -188,8 +191,18 @@ class AppConfig {
   /// فتبقى شاشتا الطاولات والمطبخ خارجَ القائمة مهما أُشعلت (مقيسٌ
   /// 2026-08-14). و`featuresListenable` يُخطر الشجرةَ عند كلّ تغيّر، فالقائمةُ
   /// تُعاد قراءتُها بلا إعادة تشغيل.
-  static List<ScreenId> get allowedScreenIds =>
-      ScreenRegistry.forProfile(profile, features: features);
+  ///
+  /// م3-8: على الويب (`kIsWeb`) يُقطع الناتجُ مع [kWebScreenIds]، فيسري
+  /// الترشيحُ تلقائياً على `userNavItemsProvider`/`userAllowedScreensProvider`
+  /// دون المساس بسطح المكتب (الشرطُ ثابتُ ترجمةٍ: فرعُ الويب يُشجَّر خارجه).
+  static List<ScreenId> get allowedScreenIds {
+    final all = ScreenRegistry.forProfile(profile, features: features);
+    if (!kIsWeb) return all;
+    return [
+      for (final s in all)
+        if (kWebScreenIds.contains(s)) s,
+    ];
+  }
 
   /// Screens to show based on flavor (indices from main.dart)
   /// Backward-compatibility bridge until navigation fully migrates to [ScreenId].

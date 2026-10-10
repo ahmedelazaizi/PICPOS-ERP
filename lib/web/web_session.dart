@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:http/http.dart' as http;
 
 /// جلسة ويب مصادَق عليها.
@@ -69,6 +70,18 @@ class WebSession {
   }
 
   bool get isExpired => !DateTime.now().isBefore(expiresAt);
+
+  /// الجلسة النشطة حالياً (يضبطها `WebSessionNotifier`). مصدرٌ ساكن لطبقة
+  /// الخدمات (`WriteRouter` / `ServerProxy`) التي لا تصل إلى Riverpod.
+  static WebSession? active;
+
+  /// للاختبارات على VM: تعامَل الجلسة النشطة كأنها على متصفّح (`kIsWeb`).
+  @visibleForTesting
+  static bool treatAsWebForTesting = false;
+
+  /// الجلسة النشطة إن كنّا فعلاً عميل ويب (متصفّح)، وإلا null.
+  static WebSession? get activeWebClient =>
+      (kIsWeb || treatAsWebForTesting) ? active : null;
 }
 
 enum WebAuthFailure { invalidCredentials, locked, network, server, badInput }

@@ -48,9 +48,10 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/io_client.dart' as http_io;
 
 import 'secure_storage_service.dart';
+import 'tls_trust_client_io.dart'
+    if (dart.library.js_interop) 'tls_trust_client_web.dart';
 
 class TlsTrust {
   TlsTrust._();
@@ -199,7 +200,12 @@ class TlsTrust {
   ///
   /// وتبدُّلُ البصماتِ لا يحتاج إعادةَ بناء: الخطّافُ يقرأ [_pins] لحظةَ
   /// المصافحة لا لحظةَ الإنشاء.
-  static http.Client httpClient() => _shared ??= http_io.IOClient(ioClient());
+  ///
+  /// م3-7: على الويب يرجع `BrowserClient` (استيراد شرطي) بدل `IOClient`.
+  static http.Client httpClient() => _shared ??= createPlatformHttpClient(
+        (der, host, port) =>
+            acceptFingerprint(fingerprintOfDer(der), host, port),
+      );
 
   @visibleForTesting
   static void resetSharedClientForTest() {

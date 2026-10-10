@@ -167,6 +167,7 @@ class _CwiCommerce {
     // the safe txn for cheques (Spec 133). No balance/JE mutation here: the
     // server is the SoT and the next pull reconciles safe/party balances.
     if (db != null &&
+        !WriteRouter.isWebClient && // الويب: القاعدة بعيدة للقراءة فقط
         partyId != null &&
         safeId != null &&
         globalId != null &&
@@ -378,7 +379,8 @@ class _CwiCommerce {
     //
     // Without this, the just-created party is invisible on the client's
     // own screen until DeltaPull eventually backfills it.
-    if (db != null) {
+    // (الويب: لا كاش محلي — القراءة من القناة.)
+    if (db != null && !WriteRouter.isWebClient) {
       try {
         await db.into(db.parties).insertOnConflictUpdate(
           PartiesCompanion.insert(

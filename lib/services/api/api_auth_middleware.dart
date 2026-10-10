@@ -56,6 +56,66 @@ class ApiAuthMiddleware {
   /// صلاحيات المستخدم تبقى مفحوصةً في كلّ معالج عبر ApiUserCtx.
   static List<String> webSessionPrefixes = <String>[];
 
+  /// م3-7: مسارات الكتابة (وقراءاتها المرافقة) التي يفتحها المضيف لعميل الويب
+  /// عبر [enableWebSessionWrites]. تشمل شاشات نطاق الويب فقط؛ مستبعدٌ عمداً:
+  /// POS (`/api/shifts`, `/api/sales/held`…)، الطاولات/المطبخ (`/api/table-*`)،
+  /// الإقران/الأجهزة (`/api/pair`, `/api/pos-terminals`, `/api/auth`)،
+  /// النسخ الاحتياطي، المزامنة، التصنيع (مؤجّل) والحجوزات.
+  /// البادئة تطابق بـ`startsWith` فـ`/api/sales` تشمل `/api/sales/return` إلخ.
+  static const List<String> webWritePrefixes = <String>[
+    '/api/accounts',
+    '/api/account-mappings',
+    '/api/accounting-periods',
+    '/api/activity-logs',
+    '/api/attachments',
+    '/api/branches',
+    '/api/categories',
+    '/api/commercial-papers',
+    '/api/cost_centers',
+    '/api/document-sequences',
+    '/api/expenses',
+    '/api/fiscal-years',
+    '/api/fixed-assets',
+    '/api/inventory',
+    '/api/journals',
+    '/api/landed-costs',
+    '/api/offers',
+    '/api/op-expenses',
+    '/api/parties',
+    '/api/party-groups',
+    '/api/payments',
+    '/api/permissions',
+    '/api/price-list-items',
+    '/api/price-lists',
+    '/api/product-barcodes',
+    '/api/product-units',
+    '/api/products',
+    '/api/purchase-orders',
+    '/api/purchases',
+    '/api/quotations',
+    '/api/receipts',
+    '/api/regions',
+    '/api/role_permissions',
+    '/api/roles',
+    '/api/safes',
+    '/api/sales',
+    '/api/sales-orders',
+    '/api/settings',
+    '/api/stock-movements',
+    '/api/units',
+    '/api/user-branch-access',
+    '/api/user-region-access',
+    '/api/user-warehouse-access',
+    '/api/users',
+    '/api/vouchers',
+    '/api/warehouses',
+  ];
+
+  /// يفتح [webWritePrefixes] لرمز جلسة الويب. يستدعيه المضيف عند تفعيل
+  /// وضع الويب (م3-9)؛ يبقى الافتراضي فارغاً.
+  static void enableWebSessionWrites() =>
+      webSessionPrefixes = List<String>.of(webWritePrefixes);
+
   /// Generate and store the API token from a machine-specific seed.
   ///
   /// Called once at server startup. The token is derived from the machine's

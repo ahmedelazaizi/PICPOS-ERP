@@ -211,6 +211,14 @@ class _CwiCoreSupport {
     }
   }
 
+  /// بعد نجاح الكتابة: سحبٌ دلتا وتفريغ صندوق الصادر. الويب لا كاش محلياً ولا
+  /// صندوقاً (القراءة من قناة /webdb) فيُتخطّى.
+  static void _refreshAfterWrite() {
+    if (WriteRouter.isWebClient) return;
+    unawaited(DeltaPullService.instance.pullAll());
+    unawaited(OfflineSyncWorker.instance.drainOutbox(force: true));
+  }
+
   static bool _isNetworkException(Object error) =>
       error is SocketException ||
       error is TimeoutException ||
@@ -229,8 +237,7 @@ class _CwiCoreSupport {
     payload['idempotency_key'] = idempotencyKey;
     try {
       final result = await serverCall(idempotencyKey);
-      unawaited(DeltaPullService.instance.pullAll());
-      unawaited(OfflineSyncWorker.instance.drainOutbox(force: true));
+      _refreshAfterWrite();
       return result;
     } catch (error) {
       if (mirrorMode) {
@@ -318,8 +325,7 @@ class _CwiCoreSupport {
     payload['idempotency_key'] = idempotencyKey;
     try {
       await serverCall(idempotencyKey);
-      unawaited(DeltaPullService.instance.pullAll());
-      unawaited(OfflineSyncWorker.instance.drainOutbox(force: true));
+      _refreshAfterWrite();
       return true;
     } catch (error) {
       if (mirrorMode) {

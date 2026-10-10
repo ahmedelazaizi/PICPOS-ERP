@@ -1,3 +1,4 @@
+import '../web/web_session.dart';
 import 'mirror_state.dart';
 import 'network_service.dart';
 
@@ -66,8 +67,16 @@ class WriteRouter {
   /// wizard pairing has happened (server identity captured + at least
   /// one handshake recorded). Defensive against the intermediate state
   /// where the user picked mirror but never finished the wizard.
+  ///
+  /// م3-7: وعلى الويب (`kIsWeb`) تكون **دائماً** صحيحةً ما دامت جلسة ويب نشطة
+  /// — المتصفّح عميلٌ بلا كاش محلي ولا صندوق صادر، فتمرّ كلُّ كتابةٍ عبر HTTP
+  /// وفشلُ الاتصال يُرمى [MirrorOfflineException].
   static bool get isMirrorActive =>
-      NetworkService.instance.isMirror && MirrorState.instance.isConfigured;
+      isWebClient ||
+      (NetworkService.instance.isMirror && MirrorState.instance.isConfigured);
+
+  /// هل هذا متصفّح ويب بجلسة نشطة؟ (لا كاش محلي: يُتخطّى سحب الدلتا والصندوق.)
+  static bool get isWebClient => WebSession.activeWebClient != null;
 
   /// Stamps the mirror admin's HQ-side userId into [payload] so the
   /// server's `_resolveUserId` resolves writes to that user instead of

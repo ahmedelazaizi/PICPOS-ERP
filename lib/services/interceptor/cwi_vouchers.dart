@@ -81,8 +81,7 @@ class ClientVoucherInterceptor {
     try {
       final id = await ClientWriteInterceptor._proxy
           .submitVoucher(payload, idempotencyKey: key);
-      unawaited(DeltaPullService.instance.pullAll());
-      unawaited(OfflineSyncWorker.instance.drainOutbox(force: true));
+      _CwiCoreSupport._refreshAfterWrite();
       await _cacheCashReceipt(db, payload, partyId: partyId, safeId: safeId);
       return (serverId: id, queued: false);
     } catch (error) {
@@ -194,6 +193,8 @@ class ClientVoucherInterceptor {
     required int? safeId,
   }) async {
     final gid = payload['globalId'] as String;
+    // الويب: قاعدة القراءة بعيدة وللقراءة فقط — لا صفَّ كاش محلياً.
+    if (WriteRouter.isWebClient) return;
     if (payload['kind'] != 'receipt' ||
         payload['mode'] != 'standard' ||
         payload['paperType'] != null ||

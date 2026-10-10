@@ -7,7 +7,10 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/database/sync_interceptor.dart';
 import '../data/providers/providers.dart';
+import '../services/client_write_interceptor.dart';
+import '../services/server_proxy.dart';
 import 'web_remote_connection.dart';
 import 'web_session.dart';
 
@@ -16,8 +19,26 @@ class WebSessionNotifier extends Notifier<WebSession?> {
   @override
   WebSession? build() => null;
 
-  void signIn(WebSession s) => state = s;
-  void signOut() => state = null;
+  void signIn(WebSession s) {
+    // م3-7: عنوان الأساس ورمز الجلسة لطبقة الكتابة عبر HTTP (ServerProxy).
+    WebSession.active = s;
+    SyncInterceptor.currentUserId = s.userId;
+    SyncInterceptor.currentUserRole = s.roleName;
+    SyncInterceptor.currentUserIsSystemAdmin =
+        s.roleIsSystem && s.roleName == 'مدير النظام';
+    ServerProxy.instance.setSessionToken(s.userId, s.token);
+    state = s;
+  }
+
+  void signOut() {
+    final s = state;
+    WebSession.active = null;
+    if (s != null) ServerProxy.instance.invalidateSessionToken(s.userId);
+    SyncInterceptor.currentUserId = null;
+    SyncInterceptor.currentUserRole = null;
+    SyncInterceptor.currentUserIsSystemAdmin = null;
+    state = null;
+  }
 }
 
 final webSessionProvider =
@@ -53,8 +74,13 @@ final webDatabaseProvider = Provider<AppDatabase>((ref) {
       if (!disposed) notifier.closed(code, reason);
     }),
   );
+  // م3-7: الكتابة عبر HTTP — المعترِض في «وضع العميل» (WriteRouter.isMirrorActive
+  // صحيحة على الويب) وقاعدة القراءة البعيدة لاستعلامات البحث عن globalId.
+  ClientWriteInterceptor.setup();
+  ClientWriteInterceptor.initialize(db);
   ref.onDispose(() {
     disposed = true;
+    SyncInterceptor.instance = null;
     unawaited(db.close());
   });
   return db;
