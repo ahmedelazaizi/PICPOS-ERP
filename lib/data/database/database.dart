@@ -1003,11 +1003,9 @@ class AppDatabase extends _$AppDatabase {
   /// العميل إمّا يفشل وإمّا — لو وصل — يعبث بقاعدة المضيف. [isPostgres]
   /// يُضبط من استجابة الخادم عند الدخول ليتّفق توليدُ SQL مع محرّك المضيف.
   /// ليست singleton.
-  AppDatabase.forWebRemote(DatabaseConnection connection,
-      {required bool isPostgres})
+  AppDatabase.forWebRemote(super.connection, {required bool isPostgres})
       : _isPostgres = isPostgres,
-        _skipMigrations = true,
-        super(connection);
+        _skipMigrations = true;
 
   /// Opens an in-memory database for widget / integration tests.
   /// NOT a singleton — each test gets its own isolated database.
@@ -2518,7 +2516,7 @@ class AppDatabase extends _$AppDatabase {
     if (_skipMigrations) {
       return MigrationStrategy(
         onCreate: (_) async {},
-        onUpgrade: (_, __, ___) async {},
+        onUpgrade: (_, _, _) async {},
         beforeOpen: (_) async {},
       );
     }
