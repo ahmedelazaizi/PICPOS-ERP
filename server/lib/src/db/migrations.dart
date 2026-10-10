@@ -633,4 +633,18 @@ CREATE TABLE snapshots (
   PRIMARY KEY (company_id, kind, scope, as_of_day)
 );
 '''),
+
+  // Server-side logout of «PicPos إدارة»: session tokens are stateless HMAC, so
+  // a logged-out token is recorded here by its `jti` until it would expire
+  // anyway (expires_at, ms) and then pruned on the next write.
+  Migration(8, 'm1_admin_session_revocations', '''
+CREATE TABLE admin_session_revocations (
+  company_id INT NOT NULL REFERENCES companies(id),
+  jti TEXT NOT NULL,
+  revoked_at BIGINT NOT NULL,
+  expires_at BIGINT NOT NULL,
+  PRIMARY KEY (company_id, jti)
+);
+CREATE INDEX admin_session_revocations_exp_idx ON admin_session_revocations(expires_at);
+'''),
 ];

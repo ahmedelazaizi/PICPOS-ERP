@@ -397,7 +397,21 @@ class AdminService {
     });
   }
 
-  Future<void> logout(AdminContext a) => _audit(a.companyId, 'admin_logout', a.ip, a.deviceId);
+  /// Revokes the session [token] server-side (by its `jti`) and audits it.
+  /// Call after [requireSession]. Tokens without a `jti` (issued before this
+  /// claim existed) cannot be revoked individually and just expire (≤12h).
+  Future<void> logout(AdminContext a, String? token) async {
+    final claims = token == null ? null : sessions.verify(token);
+    final jti = claims?['jti'];
+    if (jti is String && jti.isNotEmpty) {
+      await db.query('DELETE FROM admin_session_revocations WHERE expires_at < @n', {'n': _now});
+      await db.query('''
+          INSERT INTO admin_session_revocations (company_id, jti, revoked_at, expires_at)
+          VALUES (@c, @j, @n, @x) ON CONFLICT DO NOTHING''',
+          {'c': a.companyId, 'j': jti, 'n': _now, 'x': claims!['exp']});
+    }
+    await _audit(a.companyId, 'admin_logout', a.ip, a.deviceId);
+  }
 
   Future<void> unpairDevice(AdminContext a) async {
     final rows = await db.query('''
@@ -476,6 +490,13 @@ class AdminService {
     if (claims == null) throw ApiError(401, 'invalid_session');
     if (claims['did'] != a.devicePk || claims['uid'] != a.userId || claims['cid'] != a.companyId) {
       throw ApiError(401, 'session_device_mismatch');
+    }
+    final jti = claims['jti'];
+    if (jti is String) {
+      final revoked = await db.query(
+          'SELECT 1 FROM admin_session_revocations WHERE company_id=@c AND jti=@j',
+          {'c': a.companyId, 'j': jti});
+      if (revoked.isNotEmpty) throw ApiError(401, 'session_revoked');
     }
     final user = await _user(a.userId);
     if (user == null || !user.canUseApp) throw ApiError(403, 'mobile_access_denied');

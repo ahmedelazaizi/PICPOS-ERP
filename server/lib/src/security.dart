@@ -78,6 +78,9 @@ class SessionTokens {
       'uid': employeeId,
       'did': devicePk,
       'cid': companyId,
+      // Unique session id so a server-side revocation list can target it.
+      // Tokens issued before this claim existed simply have no `jti`.
+      'jti': _newJti(),
       'exp': DateTime.now().add(ttl).millisecondsSinceEpoch,
     })));
     return '$body.${_sig(body)}';
@@ -96,6 +99,11 @@ class SessionTokens {
     } catch (_) {
       return null;
     }
+  }
+
+  static String _newJti() {
+    final r = Random.secure();
+    return [for (var i = 0; i < 16; i++) r.nextInt(256).toRadixString(16).padLeft(2, '0')].join();
   }
 
   String _sig(String body) =>

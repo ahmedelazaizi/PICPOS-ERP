@@ -259,9 +259,7 @@ void main() {
       expect((await cloud.call('POST', '/manage/logout', headers: h)).status, 204);
       final reuse = await cloud.call('GET', '/manage/snapshots', headers: h);
       expect(reuse.status, 401, reason: 'الرمز ما زال صالحًا بعد logout: $reuse');
-    }, skip: 'عيب إنتاج مكتشف (لم يُصلَح هنا): AdminService.logout يكتفي بسطر تدقيق، '
-        'والجلسة HMAC بلا حالة فتبقى صالحة حتى انتهاء 12 ساعة بعد الخروج (server/lib/src/service/admin_service.dart:400). '
-        'يلزم جدول/عمود إبطال جلسات (ترحيل DB) — قرار تصميم. أزل skip بعد الإصلاح.');
+    });
   });
 
   group('replay', () {

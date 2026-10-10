@@ -263,6 +263,57 @@ void main() {
     expect((body['devices'] as List).single, containsPair('revoked', false));
   });
 
+  test('logout revokes the session token server-side; other sessions and companies unaffected', () async {
+    await pushUsers([user(ownerGid, 'owner')]);
+    final (_, dhA, sessA) = await phone(ownerGid, 'owner');
+    // A second session of the same device stays valid.
+    var (status, body) = await h.call('POST', '/manage/login', headers: dhA, body: {'username': 'owner', 'password': password});
+    expect(status, 200, reason: '$body');
+    final sessA2 = {...dhA, 'x-session-token': body['sessionToken'] as String};
+
+    // Company B with its own desktop link, user, device and session.
+    await h.db.query(
+        "INSERT INTO companies (global_id, name, currency, default_tax_rate, integrity_secret) "
+        "VALUES ('company-b-gid', 'B', 'JOD', 0, 'x')");
+    final deskA = desk;
+    (status, body) = await h.call('POST', '/admin/desktop-links',
+        headers: {'x-admin-key': Harness.adminKey}, body: {'companyGlobalId': 'company-b-gid', 'name': 'B'});
+    expect(status, 201, reason: '$body');
+    desk = {'authorization': 'Bearer ${body['linkSecret']}', 'x-desktop-link': body['linkId'] as String};
+    (status, body) = await h.call('POST', '/desktop/link/signing-key', headers: desk, body: {'publicKey': pubKey, 'decimals': 3});
+    expect(status, 204, reason: '$body');
+    await pushUsers([user('b-owner', 'bowner')]);
+    final (_, _, sessB) = await phone('b-owner', 'bowner');
+    desk = deskA;
+
+    (status, body) = await h.call('GET', '/manage/snapshots', headers: sessA);
+    expect(status, 200, reason: '$body');
+    (status, body) = await h.call('POST', '/manage/logout', headers: sessA);
+    expect(status, 204, reason: '$body');
+
+    (status, body) = await h.call('GET', '/manage/snapshots', headers: sessA);
+    expect(status, 401);
+    expect(body['error'], 'session_revoked');
+    (status, body) = await h.call('POST', '/manage/logout', headers: sessA);
+    expect(status, 401);
+    for (final s in [sessA2, sessB]) {
+      (status, body) = await h.call('GET', '/manage/snapshots', headers: s);
+      expect(status, 200, reason: '$body');
+    }
+
+    // Revocations are company-scoped: a row of company B never blocks company A.
+    final rows = await h.db.query('SELECT company_id, jti FROM admin_session_revocations');
+    expect(rows, hasLength(1));
+    final jtiA = rows.first.toColumnMap()['jti'] as String;
+    final bId = (await h.db.query("SELECT id FROM companies WHERE global_id='company-b-gid'")).first[0] as int;
+    await h.db.query('DELETE FROM admin_session_revocations');
+    await h.db.query(
+        'INSERT INTO admin_session_revocations (company_id, jti, revoked_at, expires_at) VALUES (@c, @j, 1, 9999999999999)',
+        {'c': bId, 'j': jtiA});
+    (status, body) = await h.call('GET', '/manage/snapshots', headers: sessA);
+    expect(status, 200, reason: 'company B revocation must not affect A: $body');
+  });
+
   test('unpair is idempotent and rejects login and snapshots; desktop sees revoked', () async {
     await pushUsers([user(ownerGid, 'owner')]);
     final (_, deviceHeaders, sessionHeaders) = await phone(ownerGid, 'owner');

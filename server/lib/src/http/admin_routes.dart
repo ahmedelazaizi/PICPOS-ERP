@@ -74,8 +74,9 @@ void mountAdminRoutes(
   });
   r.post('/manage/logout', (Request req) async {
     final a = await device(req);
-    await admin.requireSession(a, req.headers['x-session-token']);
-    await admin.logout(a);
+    final token = req.headers['x-session-token'];
+    await admin.requireSession(a, token);
+    await admin.logout(a, token);
     return Response(204);
   });
   r.post('/manage/unpair', (Request req) async {
