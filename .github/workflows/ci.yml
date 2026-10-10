@@ -1,56 +1,85 @@
-name: URAL-ERP CI/CD
+name: PicPos ERP CI
 
 # ── Triggers ────────────────────────────────────────────────────────────────
+# Every branch push + every pull request run the full verification pipeline.
+# Version tags (v*.*.*) additionally run build-windows + release.
 on:
   push:
-    branches: [main, develop, master]
+    branches: ['**']
     tags: ['v*.*.*']
   pull_request:
-    branches: [main, develop, master]
 
+# One run per ref; a newer push cancels the older run (never cancel a tag run —
+# a half-finished release is worse than a slow one).
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+# Least privilege by default; only `release` (and gitleaks' PR read) widen it.
+permissions:
+  contents: read
 
 # ── Shared env ───────────────────────────────────────────────────────────────
 env:
-  FLUTTER_VERSION: '3.41.x'   # Pin to the version used in development (Dart 3.11)
-  DART_SDK_CONSTRAINT: '3.11.0'
+  FLUTTER_VERSION: '3.41.x'   # Pin to the version used in development (3.41.2 stable, Dart 3.11)
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# STAGE 0 — Secrets scan (runs first; cheapest fail-fast gate)
-# ═══════════════════════════════════════════════════════════════════════════════
+# Jobs (all independent => run in parallel, except where `needs` is stated):
+#   secrets | gitleaks | root | packages_and_mobile | server | web
+#   e2e            <- secrets, root, packages_and_mobile, server
+#   build-windows  <- secrets, root, packages_and_mobile, server, e2e, web  (main / v*.*.* only)
+#   release        <- build-windows                                         (v*.*.* only)
 jobs:
-  secrets-scan:
-    name: 🔒 Secrets Scan
+# ═══════════════════════════════════════════════════════════════════════════════
+# (أ) Secrets — our own tracked-secret-file check (no license needed)
+# ═══════════════════════════════════════════════════════════════════════════════
+  secrets:
+    name: 🔒 Secrets check
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Fails if *.jks / *.keystore / key.properties / google-services.json /
+      # Firebase service-account JSON is tracked, or the ignore rules for them
+      # are missing. (tool/check_no_secrets.ps1 is force-added despite *.ps1
+      # being git-ignored.)
+      - name: Run tool/check_no_secrets.ps1
+        shell: pwsh
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File tool/check_no_secrets.ps1
+
+  # Optional content scan. gitleaks-action@v2 needs GITLEAKS_LICENSE only for
+  # organisation-owned repos; for a personal repo it is free. It is advisory
+  # (never blocks the pipeline) so a missing license cannot turn CI red.
+  gitleaks:
+    name: 🔎 Gitleaks (advisory)
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
+    continue-on-error: true
+    permissions:
+      contents: read
+      pull-requests: read
 
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # full history so gitleaks can scan all commits on the PR
+          fetch-depth: 0   # full history so gitleaks can scan all commits
 
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}   # omit for public repos
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}   # only needed for org repos
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STAGE 1 — Analysis & Tests
+# (ب) Root app — analyze, God-File gates, tests + coverage gate
 # ═══════════════════════════════════════════════════════════════════════════════
-  verify:
-    name: 🔍 Verify & Test
+  root:
+    name: 🔍 Root (analyze + test)
     # Windows desktop app — run the suite on the SAME platform it targets and is
     # developed/verified on. Several integration/timing tests are Windows-tuned
-    # and are flaky on ubuntu; matching the platform keeps CI == local.
+    # (and the golden images are Windows-generated).
     runs-on: windows-latest
-    needs: secrets-scan
-    # Drift build_runner codegen on the full schema + the whole test suite are
-    # slow on a cold free runner. The suite now runs ONCE (single --coverage
-    # pass; see below), but coverage instrumentation over ~3k tests plus codegen
-    # still needs headroom on a free Windows runner. 120 > observed worst case.
     timeout-minutes: 120
 
     steps:
@@ -68,9 +97,8 @@ jobs:
       # Codegen is NOT run in CI. The only generated artifact,
       # lib/data/database/database.g.dart, is committed and kept current on any
       # schema change (regenerate + commit locally). build_runner cost ~49 min
-      # on the free runner — nearly half the verify budget — and also overran
-      # the build-windows/build-web timeouts. analyze/test/build compile fine
-      # from the committed part file.
+      # on the free runner. analyze/test/build compile fine from the committed
+      # part file.
 
       # ── Static analysis ────────────────────────────────────────────────────
       - name: Analyze code (strict)
@@ -124,23 +152,32 @@ jobs:
           done
           [ "$FAILED" -eq 0 ] || exit 1
 
-      # ── Full test suite + coverage (single pass) ───────────────────────────
-      # ONE instrumented run of the whole test/ tree: it is BOTH the pass/fail
-      # gate and the coverage source. Previously the suite ran ~twice — 7
-      # per-directory steps + 2 standalone "mandatory flow" file steps + a
-      # separate `flutter test --coverage` — each step also recompiling the test
-      # bundle. Even an all-green run then blew past the job timeout during the
-      # trailing coverage step (run #16). A single pass ~halves the work with
-      # zero coverage loss; a failure still names the exact failing file:test.
+      # ── Full test suite + coverage (single instrumented pass) ──────────────
+      # ONE run: it is BOTH the pass/fail gate and the coverage source.
+      # test/e2e/ is excluded here: it spawns the cloud server and needs
+      # Postgres, which Windows runners cannot host (no service containers);
+      # it runs in the `e2e` job on ubuntu instead. test/integration_pg/ files
+      # are tagged `pg` and skipped by dart_test.yaml.
       - name: Run full test suite with coverage
-        run: flutter test --coverage --reporter=expanded
+        shell: bash
+        run: |
+          targets=()
+          for p in test/*; do
+            [ "$p" = "test/e2e" ] && continue
+            if [ -d "$p" ]; then
+              [ -n "$(find "$p" -name '*_test.dart' -print -quit)" ] && targets+=("$p")
+            else
+              case "$p" in *_test.dart) targets+=("$p");; esac
+            fi
+          done
+          echo "Test targets: ${targets[*]}"
+          flutter test --coverage --reporter=expanded "${targets[@]}"
 
       # Regression FLOOR, not an aspiration. Measured line coverage is ~21%
       # (the denominator includes the generated database.g.dart + all UI
-      # screens). The old 35% target had never actually executed — every prior
-      # run cancelled/failed upstream — so it silently blocked green. 18% sits
-      # just below reality with headroom: it catches a coverage crater without
-      # failing on normal fluctuation. RATCHET IT UP as real coverage grows.
+      # screens). 18% sits just below reality with headroom: it catches a
+      # coverage crater without failing on normal fluctuation. RATCHET IT UP as
+      # real coverage grows.
       - name: Coverage hard gate (≥ 18 %)
         shell: bash
         run: |
@@ -167,23 +204,272 @@ jobs:
         with:
           name: coverage-${{ github.run_number }}
           path: coverage/lcov.info
+          if-no-files-found: ignore
           retention-days: 30
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STAGE 2 — Windows release build
-# Runs on main / master / develop pushes and on version tags.
+# (ج) Shared package + mobile apps — pub get / analyze / test (no signing keys)
+# mobile* depend on packages/* via `path:` deps; the whole repo is checked out,
+# so `pub get` resolves them in place. test/e2e is left to the `e2e` job.
+# Windows runner: mobile_admin / mobile_pos golden PNGs are Windows-generated
+# and platform-sensitive.
+# ═══════════════════════════════════════════════════════════════════════════════
+  packages_and_mobile:
+    name: 📦 ${{ matrix.dir }}
+    runs-on: windows-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dir: packages/picpos_api_client
+            tool: dart      # pure Dart package (no Flutter dependency)
+          - dir: mobile
+            tool: flutter
+          - dir: mobile_admin
+            tool: flutter
+          - dir: mobile_pos
+            tool: flutter
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ matrix.dir }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: ${{ matrix.tool }} pub get
+
+      - name: Analyze
+        run: ${{ matrix.tool }} analyze
+
+      - name: Test (excluding test/e2e)
+        run: |
+          targets=()
+          for p in test/*; do
+            [ "$p" = "test/e2e" ] && continue
+            if [ -d "$p" ]; then
+              [ -n "$(find "$p" -name '*_test.dart' -print -quit)" ] && targets+=("$p")
+            else
+              case "$p" in *_test.dart) targets+=("$p");; esac
+            fi
+          done
+          echo "Test targets: ${targets[*]}"
+          ${{ matrix.tool }} test "${targets[@]}"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# (د) Cloud server — Postgres service container + dart test -j 1
+# Service containers need a Linux runner. Host port 55432 matches the
+# harness/docker-compose defaults (server/test/support/harness.dart); the
+# TEST_DB_* values are still set explicitly to stay robust.
+# ═══════════════════════════════════════════════════════════════════════════════
+  server:
+    name: 🖥️ Server (dart analyze + test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: server
+    env:
+      TEST_DB_HOST: localhost
+      TEST_DB_PORT: '55432'
+      TEST_DB_NAME: picpos_cloud
+      TEST_DB_USER: picpos
+      TEST_DB_PASSWORD: picpos_test_only   # throwaway CI-only DB credential, same as docker/docker-compose.yml
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: picpos_cloud
+          POSTGRES_USER: picpos
+          POSTGRES_PASSWORD: picpos_test_only
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U picpos -d picpos_cloud"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Analyze
+        run: dart analyze
+
+      - name: Test (serial - tests share one Postgres)
+        run: dart test -j 1
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# (هـ) E2E — real cloud server (subprocess) + Postgres, driven from each client
+# tool/run_e2e.ps1 is NOT used: it hard-codes Windows `\` paths (broken for
+# pwsh on Linux) and a Docker-compose Postgres. The same suites are invoked
+# directly with the identical commands it uses (see docs/testing/E2E.md).
+# `web` suite is skipped here: it needs no Postgres and already runs in `root`.
+# ═══════════════════════════════════════════════════════════════════════════════
+  e2e:
+    name: 🔗 E2E (Linux + Postgres)
+    needs: [secrets, root, packages_and_mobile, server]
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      TEST_DB_HOST: localhost
+      TEST_DB_PORT: '55432'
+      TEST_DB_NAME: picpos_cloud
+      TEST_DB_USER: picpos
+      TEST_DB_PASSWORD: picpos_test_only   # throwaway CI-only DB credential
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: picpos_cloud
+          POSTGRES_USER: picpos
+          POSTGRES_PASSWORD: picpos_test_only
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U picpos -d picpos_cloud"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      # drift/sqlite3 in-memory databases used by the root e2e tests.
+      - name: Install libsqlite3
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+
+      # e2e_cloud.dart launches `dart run test/e2e/support/e2e_server.dart` in
+      # server/, so server deps must be resolved first.
+      - name: Install server dependencies
+        working-directory: server
+        run: dart pub get
+
+      - name: Run E2E suites
+        shell: bash
+        run: |
+          set -u
+          mkdir -p build/e2e_logs
+          declare -A RESULTS
+          ORDER=()
+
+          # name  dir  tool  [args...]  — flutter suites retry on the known
+          # startup-lock / native_assets copy races (same as run_e2e.ps1).
+          run_suite() {
+            local name="$1" dir="$2" tool="$3"; shift 3
+            local log="$GITHUB_WORKSPACE/build/e2e_logs/$name.log"
+            local attempts=1; [ "$tool" = "flutter" ] && attempts=3
+            local rc=1
+            ORDER+=("$name")
+            for a in $(seq 1 "$attempts"); do
+              echo "══════ [$name] $tool $* (attempt $a/$attempts) ══════"
+              ( cd "$dir" && "$tool" "$@" ) 2>&1 | tee "$log"
+              rc=${PIPESTATUS[0]}
+              [ "$rc" -eq 0 ] && break
+              if [ "$tool" = "flutter" ] && grep -qE 'PathExistsException|release the startup lock|Cannot copy file to|FileSystemException: Cannot' "$log"; then
+                echo "transient flutter conflict — retrying"; sleep $((15 * a))
+              else
+                break
+              fi
+            done
+            RESULTS[$name]=$rc
+          }
+
+          run_suite server       server                      dart    test -j 1 test/e2e
+          (cd packages/picpos_api_client && dart pub get)
+          run_suite packages     packages/picpos_api_client  dart    test test/e2e
+          run_suite mobile       mobile                      flutter test test/e2e
+          run_suite mobile_admin mobile_admin                flutter test test/e2e
+          run_suite mobile_pos   mobile_pos                  flutter test test/e2e
+          run_suite root         .                           flutter test test/e2e
+
+          echo; echo "══════ E2E summary ══════"
+          bad=0
+          for n in "${ORDER[@]}"; do
+            if [ "${RESULTS[$n]}" -eq 0 ]; then echo "PASS  $n"; else echo "FAIL  $n"; bad=1; fi
+          done
+          exit $bad
+
+      - name: Upload E2E logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-logs-${{ github.run_number }}
+          path: build/e2e_logs/
+          if-no-files-found: ignore
+          retention-days: 14
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# (و) Web — compile the root web entrypoint and publish build/web
+# ═══════════════════════════════════════════════════════════════════════════════
+  web:
+    name: 🌐 Build Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build web (release)
+        run: >-
+          flutter build web --release
+          --no-tree-shake-icons --no-wasm-dry-run
+          -t lib/main_web_entry.dart
+
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PicPos-ERP-web-${{ github.run_number }}
+          path: build/web
+          retention-days: 30
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# (ز) Windows release build — main branch and version tags only
 # ═══════════════════════════════════════════════════════════════════════════════
   build-windows:
     name: 🏗️ Build Windows
-    needs: verify
+    needs: [secrets, root, packages_and_mobile, server, e2e, web]
     runs-on: windows-latest
     # `flutter build windows --release` cold-compiles the C++ runner + Dart AOT
     # on a free runner; headroom so the release-gating build isn't cut short.
     timeout-minutes: 60
     if: |
-      github.ref == 'refs/heads/main'    ||
-      github.ref == 'refs/heads/master'  ||
-      github.ref == 'refs/heads/develop' ||
+      github.ref == 'refs/heads/main' ||
       startsWith(github.ref, 'refs/tags/v')
 
     outputs:
@@ -201,15 +487,10 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Codegen is NOT run in CI. The only generated artifact,
-      # lib/data/database/database.g.dart, is committed and kept current on any
-      # schema change (regenerate + commit locally). build_runner cost ~49 min
-      # on the free runner — nearly half the verify budget — and also overran
-      # the build-windows/build-web timeouts. analyze/test/build compile fine
-      # from the committed part file.
+      # Codegen is NOT run in CI (see `root` job): database.g.dart is committed.
 
       # ── Version stamp ──────────────────────────────────────────────────────
-      # Artifact name format: URAL-ERP-<semver>+<short-sha>
+      # Artifact name format: PicPos-ERP-<semver>+<short-sha>-windows
       - name: Compute build metadata
         id: meta
         shell: bash
@@ -219,8 +500,8 @@ jobs:
           FULL="${SEMVER}+${SHORT_SHA}"
           echo "semver=${SEMVER}"       >> "$GITHUB_OUTPUT"
           echo "full-version=${FULL}"   >> "$GITHUB_OUTPUT"
-          echo "artifact-name=URAL-ERP-${FULL}-windows" >> "$GITHUB_OUTPUT"
-          echo "Building: URAL-ERP ${FULL}"
+          echo "artifact-name=PicPos-ERP-${FULL}-windows" >> "$GITHUB_OUTPUT"
+          echo "Building: PicPos-ERP ${FULL}"
 
       - name: Build Windows release
         run: >-
@@ -246,14 +527,13 @@ jobs:
           retention-days: 30
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STAGE 3 — GitHub Release (version tags only: v*.*.*)
+# GitHub Release (version tags only: v*.*.*)
 # Creates a GitHub Release and attaches the Windows zip.
 #
-# There is deliberately NO web build job. The root app is a Windows/FFI desktop
-# target (Aclas SDK, serial_port_win32) that does not compile under dart2js
-# ("Only JS interop members may be 'external'"); the web deliverable lives in the
-# separate web_app/ project. The release attaches only the Windows artifact, so
-# a web build was never a release input — it was a spurious gate.
+# Web is now compiled by the root app's web entrypoint (lib/main_web_entry.dart,
+# see the `web` job) and its build/web output is uploaded as a CI artifact on
+# every run. The release itself still attaches only the Windows zip; the web
+# bundle is not a release input.
 # ═══════════════════════════════════════════════════════════════════════════════
   release:
     name: 🚀 Create Release
@@ -276,7 +556,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: "URAL-ERP ${{ github.ref_name }}"
+          name: "PicPos-ERP ${{ github.ref_name }}"
           files: release-assets/*.zip
           generate_release_notes: true
           draft: false

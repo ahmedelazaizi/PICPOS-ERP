@@ -17,6 +17,9 @@ const _definitionFiles = [
   'lib/core/permissions/role_grant_matrix.dart',
   'lib/core/permissions/permission_enforcement_registry.dart',
   'lib/presentation/screens/role_management/data/permission_categories.dart',
+  // جدول قراءة قناة الويب: يربط الجدول بالصلاحية التي تكفي لقراءته، وهذا
+  // ليس إنفاذًا لزرّ أو إجراء في شاشة، فلا يُحتسب الكود منفَّذًا بوروده فيه.
+  'lib/core/permissions/web_table_policy.dart',
 ];
 
 bool _isDefinitionFile(String path) {

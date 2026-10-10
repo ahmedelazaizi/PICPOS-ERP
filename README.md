@@ -1,664 +1,254 @@
-<![CDATA[<div align="center">
-
-# 🏪 UralCash ERP — نظام تخطيط موارد المؤسسات
-
-![Flutter](https://img.shields.io/badge/Flutter-3.38-02569B?style=for-the-badge&logo=flutter)
-![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?style=for-the-badge&logo=dart)
-![Platform](https://img.shields.io/badge/Windows%20%7C%20Web-Desktop-0078D6?style=for-the-badge&logo=windows)
-![Schema](https://img.shields.io/badge/Schema-v113-orange?style=for-the-badge)
-![Database](https://img.shields.io/badge/Database-SQLite%20%7C%20PostgreSQL-336791?style=for-the-badge)
-![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)
-
-**نظام ERP متكامل لسطح المكتب والويب — يدعم المطاعم والكافيهات والسوبرماركت وتجارة الجملة والتصنيع**
-
-يعمل بالكامل باللغة العربية (RTL) مع تشفير SQLCipher وصلاحيات دقيقة + محاسبة مزدوجة كاملة متوافقة مع IFRS
-
-</div>
-
----
-
-## 📑 فهرس المحتويات
-
-- [نظرة عامة](#-نظرة-عامة)
-- [إصدارات النظام (Flavors)](#-إصدارات-النظام-flavors)
-- [الوحدات والميزات](#-الوحدات-والميزات)
-- [التقنيات المستخدمة](#-التقنيات-المستخدمة)
-- [هيكل المشروع](#-هيكل-المشروع)
-- [التثبيت والتشغيل](#-التثبيت-والتشغيل)
-- [بناء النسخ](#-بناء-النسخ)
-- [قاعدة البيانات](#-قاعدة-البيانات)
-- [الأمان والصلاحيات](#-الأمان-والصلاحيات)
-- [سجل الإصدارات](#-سجل-الإصدارات)
-
----
-
-## 🌟 نظرة عامة
-
-**UralCash** هو نظام تخطيط موارد مؤسسات (ERP) متكامل مبني بـ Flutter لسطح المكتب (Windows) والويب، مصمم للسوق العربي. يغطي النظام دورة العمل الكاملة من نقطة البيع إلى القوائم المالية (ميزان مراجعة، قائمة دخل، ميزانية عمومية)، مع دعم التصنيع والمخزون المتعدد والفوترة الإلكترونية والأوراق التجارية والتسوية البنكية.
-
-### أبرز المميزات
-- 🖥️ **سطح مكتب + ويب** — يدعم Windows أصلي + نسخة ويب
-- 🔐 **قاعدة بيانات مشفرة** — SQLCipher (SQLite) + دعم PostgreSQL
-- 🏭 **5 إصدارات متخصصة** — مطاعم، كافيهات، سوبرماركت، تجاري، موحد
-- 📊 **40+ شاشة** — تغطي كل جوانب الأعمال
-- 🔒 **200+ صلاحية** — على مستوى الأزرار والإجراءات
-- 📱 **تكامل الأجهزة** — موازين تسعير، طابعات حرارية، أدراج نقدية
-- 🧾 **فوترة إلكترونية** — دعم ETA (مصر) و JOFOTARA (الأردن)
-- 📒 **محاسبة مزدوجة كاملة** — قيود تلقائية + سنوات مالية + مراكز تكلفة
-- 💳 **أوراق تجارية** — شيكات مستلمة ومصدرة + محفظة
-- 🏗️ **أصول ثابتة** — سجل أصول + إهلاك (قسط ثابت/متناقص/مجمع)
-- 🏦 **تسوية بنكية** — مطابقة كشوفات + استيراد CSV
-- 📋 **أوامر شراء وبيع** — دورة مستندية كاملة (عرض سعر → أمر → فاتورة)
-- ✅ **سياسات موافقة** — محرك اعتمادات متعدد المستويات
-- 📊 **موازنات تقديرية** — ميزانية مقارنة (فعلي vs مخطط)
-
----
-
-## 🏪 إصدارات النظام (Flavors)
-
-يدعم النظام 5 إصدارات متخصصة، كل إصدار يُفعّل الشاشات والميزات المناسبة لنوع النشاط:
-
-| الإصدار | الاستخدام | الميزات المتاحة |
-|---------|-----------|----------------|
-| **🍽️ Restaurant** | المطاعم | طاولات، مطبخ، توصيل، حجوزات |
-| **☕ Cafe** | الكافيهات | طاولات، مطبخ، توصيل |
-| **🛒 Supermarket** | السوبرماركت | ميزان تسعير، PLU، باركود، ولاء، عروض |
-| **🏢 Commercial** | تجارة الجملة | فروع، موارد بشرية، توزيع، تصنيع، مخازن |
-| **⭐ Unified** | الكل في واحد | جميع الميزات مُفعّلة (40+ شاشة) |
-
-### مصفوفة الميزات حسب الإصدار
-
-| الميزة | Restaurant | Cafe | Supermarket | Commercial | Unified |
-|--------|:---:|:---:|:---:|:---:|:---:|
-| نقطة البيع (POS) | ✅ | ✅ | ✅ | ❌ | ✅ |
-| فواتير مبيعات | ✅ | ✅ | ✅ | ✅ | ✅ |
-| إدارة الطاولات | ✅ | ✅ | ❌ | ❌ | ✅ |
-| المطبخ | ✅ | ✅ | ❌ | ❌ | ✅ |
-| العروض | ❌ | ❌ | ✅ | ❌ | ✅ |
-| ميزان التسعير | ❌ | ❌ | ✅ | ❌ | ✅ |
-| مدير PLU | ❌ | ❌ | ✅ | ❌ | ✅ |
-| نقاط الولاء | ❌ | ❌ | ✅ | ✅ | ✅ |
-| الفروع | ❌ | ❌ | ❌ | ✅ | ✅ |
-| الموارد البشرية | ❌ | ❌ | ❌ | ✅ | ✅ |
-| التوزيع | ❌ | ❌ | ❌ | ✅ | ✅ |
-| التصنيع | ❌ | ❌ | ❌ | ✅ | ✅ |
-| الفوترة الإلكترونية | ✅ | ✅ | ✅ | ✅ | ✅ |
-| المحاسبة الكاملة | ✅ | ✅ | ✅ | ✅ | ✅ |
-| الأوراق التجارية | ✅ | ✅ | ✅ | ✅ | ✅ |
-| الأصول الثابتة | ❌ | ❌ | ❌ | ✅ | ✅ |
-| التسوية البنكية | ❌ | ❌ | ❌ | ✅ | ✅ |
-
----
-
-## 📦 الوحدات والميزات
-
-### 💰 نقطة البيع (POS)
-- واجهة لمسية سريعة محسنة لشاشات اللمس
-- مسح الباركود بالكاميرا والماسح الضوئي
-- بيع بالوزن (تكامل مع الميزان)
-- خصومات (نسبية / ثابتة) مع سقف الخصم
-- تعليق الفاتورة واستدعائها
-- دفع متعدد (نقدي / بطاقة / كليك / آجل / مقسم)
-- طباعة إيصال حراري + A4
-- شاشة العميل (CFD) بث مباشر
-- **إغلاق فترة (Shift Close)** — عد النقدية + تقرير Z *(جديد)*
-- **إضافات ومعدّلات (Modifiers)** — مجموعات إضافات لكل صنف *(جديد)*
-
-### 🧾 فواتير المبيعات
-- إنشاء وتعديل وإلغاء الفواتير
-- ربط بالعميل مع حد ائتمان
-- خصومات على مستوى الصنف والفاتورة
-- حالات الدفع (مدفوعة / جزئية / آجلة)
-- تحويل عروض الأسعار لفواتير
-- مرتجعات مبيعات مع استرداد المخزون
-- **مصمم فواتير متقدم** — تخصيص كامل للهيدر والأعمدة والعناصر *(جديد)*
-- **أوامر بيع** — دورة كاملة: عرض سعر → أمر بيع → فاتورة *(جديد)*
-- **قوالب فواتير متعددة** — حفظ واسترجاع تصميمات مخصصة *(جديد)*
-
-### 📋 فواتير المشتريات
-- إدارة فواتير الشراء من الموردين
-- تحديث المخزون التلقائي عند الاعتماد
-- تتبع الدفعات والأرصدة
-- ربط بأرقام الدُفع (Batch) والصلاحية
-- **أوامر شراء** — تحويل أمر الشراء إلى فاتورة *(جديد)*
-- **استيراد فواتير من Excel** — استيراد ذكي لفواتير الشراء من ملفات Excel *(جديد)*
-- **مرتجعات مشتريات** — شاشة مستقلة مع قيد محاسبي عكسي *(جديد)*
-- **تكلفة الوصول (Landed Cost)** — توزيع تكاليف الاستيراد على الأصناف *(جديد)*
-
-### 📦 إدارة الأصناف
-- كود تلقائي + باركود + صورة
-- **تصنيف نوع الصنف**: عام / خامة / منتج تام / خدمة / مركب
-- **المخزن الافتراضي لكل صنف**
-- تصنيفات شجرية
-- وحدات بيع متعددة هرمية (كرتونة → علبة → قطعة)
-- أسعار متعددة (بيع / تكلفة / طلبات / كريم / أشيائي / جملة)
-- **تسعير حسب المخزن** — سعر مختلف لكل مخزن *(جديد)*
-- نسبة ضريبة مخصصة
-- تتبع الصلاحية (FEFO)
-- بيع بالوزن / بالحبة
-- السماح بالبيع بالسالب (قابل للتعطيل)
-- قفل الصنف (منع التعديل/البيع)
-- استيراد/تصدير Excel (21+ عمود)
-- **إدارة وحدات القياس** — شاشة مستقلة مع تحويلات هرمية *(جديد)*
-
-### 🏭 التصنيع
-- **قوائم المواد (BOM)** — تحديد مكونات المنتجات التامة
-- **أوامر الإنتاج** — إنشاء وتتبع أوامر التصنيع
-- حالات الأمر: مسودة → قيد التنفيذ → مكتمل
-- خصم الخامات وإضافة المنتج التام تلقائياً
-- ربط بالمخازن المتعددة
-- **تكاليف أوامر التصنيع** — تتبع المصروفات التشغيلية لكل أمر *(جديد)*
-
-### 🏬 إدارة المخزون
-- **أرصدة المخزون** — عرض لحظي لجميع الأصناف
-- **تحويل مخزني** — نقل بين المخازن مع حالات (صادر → في الطريق → وارد)
-- **مخازن متعددة** — تعريف مخازن بأنواعها لكل فرع
-- **سندات مخزنية** — إضافة وصرف *(جديد)*
-- **طلبات مخزنية** — طلبات بين الفروع *(جديد)*
-- **جرد دوري (Cycle Count)** — عد جزئي بالمنطقة/التصنيف *(جديد)*
-- **تدقيق المخزون (Stock Audit)** — جرد شامل مع تقرير الفروقات *(جديد)*
-- تتبع الصلاحية (FEFO)
-- تنبيهات الحد الأدنى
-- **منع المخزون السالب** — على مستوى المخزن بتبديل عام/فرعي *(جديد)*
-
-### 📒 المحاسبة *(قسم جديد بالكامل)*
-- **دليل حسابات (COA)** — شجرة حسابات هرمية عربية متوافقة مع المعايير المصرية
-- **قيود يومية (Journal Entries)** — يدوية وتلقائية مع مسودة واعتماد
-- **قيود تلقائية (Auto-Posting)** — 8+ أنواع معاملات تولّد قيود تلقائية:
-  - مبيعات نقدية / آجلة / مقسمة
-  - مشتريات / مرتجع مبيعات / مرتجع مشتريات
-  - سندات قبض وصرف / مصروفات تشغيلية
-- **دفتر الأستاذ العام (GL)** — عرض حركات كل حساب
-- **السنوات المالية** — إنشاء سنة مالية مع 12 فترة شهرية + إقفال
-- **الفترات المحاسبية** — قفل الفترة لمنع إدخالات بأثر رجعي
-- **مراكز التكلفة** — تحليل مصروفات على مستوى الأقسام
-- **ربط الحسابات (Account Mappings)** — تخصيص حسابات الترحيل التلقائي
-- **قوالب قيود** — قوالب جاهزة لقيود متكررة *(جديد)*
-- **القوائم المالية**:
-  - ميزان المراجعة
-  - قائمة الدخل
-  - الميزانية العمومية
-  - التدفقات النقدية
-  - تقرير الضريبة (مخرجات − مدخلات)
-
-### 💳 الأوراق التجارية *(قسم جديد بالكامل)*
-- **شيكات مستلمة** — تسجيل وتتبع شيكات العملاء
-- **شيكات مصدرة** — شيكات صادرة للموردين
-- **محفظة الشيكات** — إيداع، تحصيل، رفض، تظهير
-- **تقادم الذمم** — تقرير أعمار الديون *(جديد)*
-- تاريخ حالات كل شيك (مسلسل كامل)
-
-### 🏗️ الأصول الثابتة *(قسم جديد بالكامل)*
-- **سجل أصول** — تسجيل الأصول مع بيانات كاملة
-- **فئات أصول** — تصنيف مع معدلات إهلاك
-- **الإهلاك** — حساب تلقائي (قسط ثابت / متناقص / مجمع أرقام السنين)
-- قيود إهلاك دورية تلقائية
-
-### 🏦 التسوية البنكية *(قسم جديد بالكامل)*
-- **جلسات مطابقة** — مطابقة كشف البنك مع حركات النظام
-- **استيراد CSV** — استيراد كشف حساب من البنك
-- **مطابقة تلقائية وذكية** — اقتراح المطابقات
-
-### 💵 الخزينة
-- سندات قبض وصرف (مع اختيار الحساب)
-- خزنة نقدية + حسابات بنكية + صندوق كليك
-- تقارير الحركة اليومية
-- تسوية الأرصدة
-- **مصروفات تشغيلية** — فئات مصروفات مع قيد محاسبي تلقائي *(جديد)*
-- **مدفوعات مستقلة** — ربط الدفعات بفواتير متعددة *(جديد)*
-
-### 👥 العملاء والموردين
-- بيانات أساسية + عنوان + هاتف + رقم ضريبي
-- حد الائتمان وخصم ثابت
-- مستويات تسعير (default / talabat / careem / wholesale)
-- كشف حساب تفصيلي
-- استيراد/تصدير Excel
-- **شاشة موحدة** — عملاء وموردين في شاشة واحدة *(جديد)*
-
-### 📊 التقارير والتحليلات
-- **لوحة التحكم** — KPIs ومؤشرات لحظية
-- تقارير المبيعات (يومي / أسبوعي / شهري / سنوي)
-- تقارير المشتريات ومرتجعاتها
-- تقارير المخزون والأرباح
-- **تقارير ربح التصنيفات** *(جديد)*
-- **تقارير أعلى المنتجات مبيعاً** *(جديد)*
-- تقارير الموظفين والمناوبات
-- **تقارير التوصيل** *(جديد)*
-- **تقرير الضريبة** — مخرجات − مدخلات *(جديد)*
-- **القوائم المالية** — ميزان/دخل/ميزانية/تدفقات *(جديد)*
-- تحليلات بيانية تفاعلية (fl_chart)
-- تصدير التقارير لـ Excel
-- **منشئ تقارير مخصص (Report Builder)** *(جديد)*
-
-### 🍳 المطبخ
-- شاشة أوامر المطبخ في الوقت الحقيقي
-- ربط التصنيفات بطابعات المطبخ
-- حالات الأمر (جديد / قيد التحضير / جاهز)
-- **طباعة RTL حرارية صحيحة** — دعم ملاحظات ومعدّلات لكل صنف *(جديد)*
-
-### 🪑 الطاولات والحجوزات
-- خريطة الطاولات مع الحالات (متاحة / مشغولة / محجوزة)
-- نقل الطلبات بين الطاولات
-- دمج الطاولات
-- **أقسام المطعم** — تقسيم الطاولات إلى مناطق *(جديد)*
-
-### 📃 الفوترة الإلكترونية
-- **ETA** — هيئة الضرائب المصرية
-- **JOFOTARA** — الأردن
-- أكواد EGS و GPC
-- أنواع الضريبة (T1-T20) والفرعية (V009)
-
-### 🏷️ العروض والولاء
-- عروض ترويجية (خصم / هدية / حزمة)
-- نقاط ولاء مع مستويات عضوية
-- استبدال النقاط بخصومات
-
-### 🚛 التوزيع
-- إدارة شركات التوصيل
-- تتبع السائقين
-- حالات التوصيل (معلق / في الطريق / تم التسليم)
-- **خطوط سير** — مسارات التوزيع وزيارات المناديب *(جديد)*
-- **أهداف المناديب** — متابعة تحصيلات وأهداف كل مندوب *(جديد)*
-
-### ⚖️ ميزان التسعير
-- تكامل مع موازين NVK TMA
-- إدارة PLU مركزية
-- مزامنة الأصناف والأسعار
-- **تصدير PLU متعدد الموازين** *(جديد)*
-
-### 👔 الموارد البشرية
-- إدارة الموظفين والحضور
-- الهيكل التنظيمي
-- **كشوف المرتبات (Payroll)** — حساب وصرف الرواتب *(جديد)*
-- **سلف وخصومات الموظفين** *(جديد)*
-- **إدارة الإجازات** — أنواع إجازات + رصيد *(جديد)*
-- **العمل الإضافي** — تسجيل وحساب الأوفر تايم *(جديد)*
-- **تقييم الأداء** — أهداف + مراجعات دورية *(جديد)*
-- **عقود التوظيف** — إدارة عقود الموظفين *(جديد)*
-- **أجهزة البصمة** — سجل الأجهزة البيومترية *(جديد)*
-
-### 🏢 الفروع
-- إدارة فروع متعددة
-- تحويلات مخزنية بين الفروع
-- **صلاحيات على مستوى الفرع والمخزن** *(جديد)*
-
-### ✅ حوكمة المؤسسات *(قسم جديد بالكامل)*
-- **سياسات الموافقة (Approval Workflows)** — اعتمادات متعددة المستويات
-- **فصل المهام (SOD Matrix)** — مصفوفة فصل الصلاحيات مع تقارير المخالفات
-- **الموازنات التقديرية (Budgets)** — ميزانية مقارنة: فعلي vs مخطط
-- **إيرادات مؤجلة (Deferred Schedules)** — جدولة إيرادات/مصروفات مؤجلة
-- **الإشعارات** — نظام إشعارات داخلي *(جديد)*
-- **مفاتيح API** — إدارة مفاتيح التكامل الخارجي *(جديد)*
-
-### ⚙️ الإعدادات
-- إعدادات النظام العامة
-- **مصمم الفواتير المتقدم** — تصميم A4 + حراري بالسحب والإفلات
-- إدارة المستخدمين والصلاحيات
-- **إدارة الأدوار** — إنشاء أدوار مع تخصيص 200+ صلاحية *(جديد)*
-- النسخ الاحتياطي (تلقائي + يدوي)
-- الشاشة الرئيسية الافتراضية
-- **معالج الإعداد الأولي (Setup Wizard)** *(جديد)*
-
----
-
-## 🛠️ التقنيات المستخدمة
-
-| التقنية | الاستخدام | الإصدار |
-|---------|-----------|---------| 
-| **Flutter** | إطار العمل الرئيسي | 3.38+ |
-| **Dart** | لغة البرمجة | 3.x |
-| **Riverpod** | إدارة الحالة | 3.1.0 |
-| **Drift** | ORM لقاعدة البيانات | Latest |
-| **SQLite / SQLCipher** | قاعدة بيانات مشفرة (سطح المكتب) | - |
-| **PostgreSQL** | قاعدة بيانات للنسخة السحابية *(جديد)* | 15+ |
-| **pdf / printing** | إنشاء وطباعة الفواتير | - |
-| **fl_chart** | الرسوم البيانية | - |
-| **phosphor_flutter** | الأيقونات | - |
-| **excel** | استيراد/تصدير بيانات | - |
-| **file_picker** | اختيار الملفات | - |
-| **window_manager** | التحكم بنافذة Windows | - |
-| **supabase** | مزامنة سحابية للويب (راجع سياسات RLS قبل النشر) | - |
-
-> ⚠️ **أمان:** قبل النشر للإنتاج فعِّل Row Level Security على كل الجداول في Supabase. لا ترفع ملف `.env` أبداً؛ استخدم `.env.example` كقالب.
-
----
-
-## 🏗️ هيكل المشروع
-
-```
-lib/
-├── main.dart                    # نقطة الدخول الرئيسية
-├── main_desktop.dart            # منصة Windows
-├── app_main_screen.dart         # الشاشة الرئيسية مع التنقل
-│
-├── core/
-│   ├── config/
-│   │   └── app_config.dart      # إعدادات الـ Flavors وميزات كل إصدار
-│   ├── permissions/
-│   │   └── permission_codes.dart # 200+ كود صلاحية
-│   ├── theme/
-│   │   └── app_colors.dart      # نظام الألوان
-│   ├── utils/                   # أدوات (arabic_utils, sales_payment_calculator)
-│   └── widgets/                 # مكونات عامة (Toast, Dialogs)
-│
-├── data/
-│   ├── database/
-│   │   ├── database.dart        # Drift AppDatabase (Schema v113)
-│   │   ├── database_seeder.dart # بيانات أولية
-│   │   ├── database_seeder_accounts.dart  # شجرة الحسابات الافتراضية
-│   │   ├── database_seeder_permissions.dart # صلاحيات النظام
-│   │   ├── database_migrations.dart # منطق الهجرات
-│   │   ├── migrations/
-│   │   │   ├── epoch_1.dart     # هجرات v1-v65
-│   │   │   ├── epoch_2.dart     # هجرات v66-v93
-│   │   │   └── epoch_3.dart     # هجرات v94-v113
-│   │   ├── daos/                # 50+ Data Access Object
-│   │   │   ├── accounting_*.dart    # 6 ملفات محاسبة
-│   │   │   ├── commercial_papers_dao.dart
-│   │   │   ├── bank_reconciliation_dao.dart
-│   │   │   ├── fixed_assets_dao_ext.dart
-│   │   │   ├── budgeting_dao.dart
-│   │   │   ├── approval_workflow_dao.dart
-│   │   │   ├── sod_matrix_dao.dart
-│   │   │   ├── cycle_count_dao.dart
-│   │   │   ├── landed_cost_dao.dart
-│   │   │   └── ...
-│   │   └── tables/              # 30 ملف تعريف جداول
-│   │       ├── product_tables.dart
-│   │       ├── sales_purchase_tables.dart
-│   │       ├── inventory_tables.dart
-│   │       ├── accounting_tables.dart
-│   │       ├── commercial_finance_tables.dart
-│   │       ├── enterprise_tables.dart
-│   │       ├── manufacturing_assets_tables.dart
-│   │       └── ...
-│   ├── providers/               # Riverpod Providers
-│   ├── mappers/                 # Entity ↔ Data mappers
-│   └── services/
-│       ├── excel_service.dart   # استيراد/تصدير Excel
-│       └── client_write_interceptor.dart
-│
-├── domain/
-│   ├── entities/                # كيانات الأعمال
-│   ├── repositories/            # واجهات المستودعات
-│   └── usecases/                # حالات الاستخدام
-│
-├── presentation/
-│   ├── shell/
-│   │   └── app_shell.dart       # القائمة الجانبية الرئيسية
-│   ├── screens/                 # 40+ شاشة
-│   │   ├── products/
-│   │   ├── sales_invoices/
-│   │   ├── purchases/
-│   │   ├── inventory/
-│   │   ├── reports/             # 10+ تقرير متخصص
-│   │   ├── settings/
-│   │   └── ...
-│   └── widgets/
-│       └── dialogs/
-│
-└── services/
-    ├── license_service.dart     # تفعيل الترخيص
-    ├── security_service.dart    # تشفير كلمات المرور
-    ├── invoice_integrity_service.dart  # سلامة الفواتير
-    └── generators/              # مولدات الإيصالات
-```
-
----
-
-## 🚀 التثبيت والتشغيل
-
-### المتطلبات
-- **Flutter SDK** 3.38+
-- **Windows** 10/11 (64-bit) أو متصفح حديث (للويب)
-- **Visual Studio 2022** مع C++ Desktop Development workload
-
-### التشغيل في وضع التطوير
-
-```bash
-# 1. تثبيت التبعيات
-flutter pub get
-
-# 2. توليد كود قاعدة البيانات (Drift)
-dart run build_runner build --delete-conflicting-outputs
-
-# 3. تشغيل التطبيق (Windows)
-flutter run -d windows
-
-# 4. تشغيل نسخة الويب
-flutter run -d chrome
-```
-
-### بيانات الدخول الافتراضية
-
-| اسم المستخدم | كلمة المرور | الدور |
-|:---:|:---:|:---:|
-| `admin` | `admin` | مدير النظام |
-
-> ⚠️ **غيّر كلمة المرور الافتراضية فور تسجيل الدخول الأول!**
-
----
-
-## 🔨 بناء النسخ
-
-### بناء نسخة إنتاج
-
-```bash
-# بناء إصدار محدد
-flutter build windows --dart-define=APP_FLAVOR=restaurant
-flutter build windows --dart-define=APP_FLAVOR=cafe
-flutter build windows --dart-define=APP_FLAVOR=supermarket
-flutter build windows --dart-define=APP_FLAVOR=commercial
-
-# النسخة الموحدة (جميع الميزات)
-flutter build windows
-
-# بناء نسخة الويب
-flutter build web
-```
-
-### بناء نسخة تجريبية
-
-```bash
-# نسخة تجريبية (محدودة بـ 50 صنف/عميل/مورد)
-flutter build windows --dart-define=APP_FLAVOR=restaurant --dart-define=IS_DEMO=true
-```
-
-### هيكل مجلدات الإنتاج
-
-```
-Release/                    # نسخ الإنتاج الكاملة
-├── restaurant/
-├── cafe/
-├── supermarket/
-└── commercial/
-
-Release_Trial/              # نسخ تجريبية مع keygen
-├── restaurant/
-│   ├── UralCash.exe
-│   └── keygen.exe          # أداة تفعيل الترخيص
-├── cafe/
-├── supermarket/
-└── commercial/
-
-Release_Web/                # نسخة الويب
-└── web/
-```
-
----
-
-## 🗄️ قاعدة البيانات
-
-### المحرك
-- **SQLite** عبر **Drift ORM** مع تشفير **SQLCipher** (سطح المكتب)
-- **PostgreSQL** مع طبقة توافق كاملة (السحابي) *(جديد)*
-- **Schema Version**: `113`
-- **30 ملف تعريف جداول** | **50+ DAO** | **3 حقب هجرات (Epochs)**
-
-### الجداول الرئيسية
-
-| المجموعة | الجداول |
-|----------|---------|
-| **المنتجات** | products, product_barcodes, product_units, categories, units |
-| **المبيعات** | sales_invoices, sales_invoice_items, sales_returns, quotations, sales_orders, held_orders |
-| **المشتريات** | purchase_invoices, purchase_invoice_items, purchase_orders |
-| **المخزون** | warehouses, stock_movements, inventory_balances, inventory_bonds, stock_requisitions, warehouse_prices |
-| **التصنيع** | bills_of_material, bom_components, manufacturing_orders, mfg_order_costs |
-| **المحاسبة** | accounts, journal_entries, journal_entry_lines, cost_centers, fiscal_years, accounting_periods, account_mappings |
-| **الخزينة** | safes, safe_transactions, payments, payment_allocations, op_expenses |
-| **الأوراق التجارية** | commercial_papers, paper_status_history, currencies, exchange_rate_history |
-| **الأصول الثابتة** | fixed_assets, asset_categories, asset_depreciations |
-| **الأطراف** | parties (عملاء + موردين) |
-| **المطعم** | restaurant_tables, table_sections, table_orders, kitchen_stations, work_orders |
-| **الموارد البشرية** | employees, employee_attendance, salary_payments, employee_transactions, employee_leaves, overtime_records, performance_reviews, employee_contracts |
-| **التوزيع** | delivery_companies, couriers, sales_routes, route_visits, sales_rep_targets |
-| **المؤسسات** | budgets, deferred_schedules, approval_workflows, sod_conflicts, bank_reconciliations |
-| **التدقيق** | activity_logs, field_audit_logs |
-| **النظام** | users, roles, permissions, settings, document_sequences, notifications, api_keys |
-
-### دعم قواعد البيانات المزدوج *(جديد)*
-
-| المحرك | الاستخدام | الميزات |
-|--------|-----------|---------|
-| **SQLite + SQLCipher** | سطح المكتب (Standalone) | تشفير AES-256، أداء فائق محلياً |
-| **PostgreSQL** | سحابي / خادم | طبقة توافق (`strftime()` + `bool=int` cast)، مناسب للفروع المتعددة |
-
-### الهجرات (Migrations)
-النظام يدعم الترقية التلقائية من أي إصدار سابق إلى الإصدار الحالي (v113). تنقسم الهجرات إلى 3 حقب:
-- **Epoch 1** (v1–v65): البنية الأساسية + POS + مخزون + تصنيع
-- **Epoch 2** (v66–v93): محاسبة كاملة + أوراق تجارية + أصول + مؤسسات
-- **Epoch 3** (v94–v113): تحسينات الطباعة + مصمم الفواتير + تصحيحات
-
----
-
-## 🔒 الأمان والصلاحيات
-
-### التشفير
-- **كلمات المرور**: HMAC-SHA256 + Salt عشوائي
-- **قاعدة البيانات**: SQLCipher (AES-256)
-- **الترخيص**: ربط بالـ Hardware Fingerprint (CPU + Volume ID)
-- **سلاسل السلامة**: SHA-256 chain integrity للتدقيق *(جديد)*
-
-### نظام الصلاحيات (PBAC)
-صلاحيات دقيقة على مستوى الإجراءات (200+ كود):
-
-| المجموعة | أمثلة على الصلاحيات |
-|----------|---------------------|
-| نقطة البيع | `pos_access`, `pos_discount`, `pos_return` |
-| المبيعات | `sales_view`, `sales_create`, `sales_edit`, `sales_delete` |
-| المشتريات | `purchases_create`, `purchases_edit` |
-| المخزون | `inventory_view`, `inventory_transfer` |
-| الأصناف | `products_add`, `products_edit`, `products_delete` |
-| العملاء | `customers_view`, `customers_edit` |
-| الخزينة | `treasury_view`, `treasury_create` |
-| المحاسبة | `accounting_view`, `journal_create`, `fiscal_close` |
-| التقارير | `reports_view`, `audit_view` |
-| الإعدادات | `settings_view`, `users_manage`, `settings_scale` |
-
-### رفع الصلاحيات (Elevation)
-- الكاشير يمكنه طلب دخول مؤقت بصلاحيات المدير
-- بانر تحذيري يظهر في القائمة الجانبية أثناء وضع المدير
-- خروج تلقائي من وضع المدير بعد فترة
-
-### فصل المهام (SOD) *(جديد)*
-- مصفوفة فصل صلاحيات تلقائية
-- كشف المخالفات والتعارضات
-- تقارير SOD Violations
-
-### سجل العمليات (Audit Trail)
-- تسجيل شامل لكل عملية: إضافة، تعديل، حذف، طباعة، تصدير
-- **تدقيق على مستوى الحقل (Field-Level Audit)** — تسجيل القيمة القديمة والجديدة *(جديد)*
-- تسجيل فتح الشاشات والتنقل
-- تتبع المستخدم والوقت لكل عملية
-
----
-
-## 🖨️ الطباعة وتصميم الفواتير
-
-- **إيصال حراري** — 80mm مع شعار + تفاصيل + باركود + ملاحظات ومعدّلات
-- **فاتورة A4** — تصميم احترافي قابل للتخصيص
-- **مصمم الفواتير المتقدم** — تخصيص كامل بالسحب والإفلات:
-  - عناصر الهيدر (شعار، اسم الشركة، بيانات العميل)
-  - أعمدة الجدول (وحدة، باركود، ملاحظات، خصم)
-  - عناصر الفوتر
-  - قوالب متعددة محفوظة
-- **أوامر المطبخ** — طباعة تلقائية حسب تصنيف الصنف (RTL صحيح)
-
----
-
-## 📥 استيراد وتصدير البيانات
-
-### نماذج Excel المدعومة
-
-| النموذج | عدد الأعمدة | الوصف |
-|---------|:-----------:|-------|
-| **الأصناف** | 21+ | كود، اسم، باركود، أسعار، ضريبة، صلاحية، ميزان، نوع الصنف، المخزن |
-| **أصناف الميزان** | 5 | PLU، اسم، تصنيف، نوع بيع، سعر |
-| **العملاء** | 7 | اسم، هاتف، عنوان، خصم، تصنيف سعر، رصيد |
-| **الموردين** | 5 | اسم، هاتف، عنوان، رقم ضريبي، رصيد |
-| **فواتير المشتريات** | *(جديد)* | استيراد ذكي لفواتير شراء من Excel |
-
----
-
-## 📋 سجل الإصدارات
-
-### v3.0.0 — مارس 2026 (الحالي)
-- ✅ **محاسبة مزدوجة كاملة** — COA + GL + قيود تلقائية + سنوات مالية + مراكز تكلفة
-- ✅ **أوراق تجارية** — شيكات (مستلمة/مصدرة/محفظة) مع تقادم الذمم
-- ✅ **أصول ثابتة** — سجل + إهلاك (3 طرق) + قيود دورية
-- ✅ **تسوية بنكية** — مطابقة كشوفات + استيراد CSV
-- ✅ **أوامر شراء وبيع** — دورة مستندية كاملة
-- ✅ **عروض أسعار** — تحويل لأوامر ولفواتير
-- ✅ **مصروفات تشغيلية** — فئات + قيد تلقائي
-- ✅ **تكلفة الوصول (Landed Cost)** — توزيع تكاليف الاستيراد
-- ✅ **مدفوعات مستقلة** — ربط دفعات بفواتير متعددة
-- ✅ **حوكمة مؤسسات** — موافقات + SOD + موازنات + إيرادات مؤجلة
-- ✅ **PostgreSQL** — دعم كامل كقاعدة بيانات بديلة
-- ✅ **نسخة ويب** — بناء ونشر عبر Flutter Web
-- ✅ **مصمم فواتير متقدم** — تصميم بالسحب والإفلات مع قوالب
-- ✅ **استيراد فواتير شراء من Excel** — استيراد ذكي
-- ✅ **جرد دوري (Cycle Count)** — عد جزئي بالمنطقة
-- ✅ **تدقيق حقول (Field Audit)** — تسجيل القيمة القديمة والجديدة
-- ✅ **قوالب قيود يومية** — جاهزة للتكرار
-- ✅ **منشئ تقارير مخصص** — بناء تقارير بأي بيانات
-- ✅ **إضافات ومعدّلات (Modifiers)** — لأصناف المطبخ
-- ✅ **HR متقدم** — إجازات + عمل إضافي + تقييم أداء + عقود
-- ✅ **إشعارات داخلية + مفاتيح API**
-- ✅ Schema v113
-
-### v2.0.0 — فبراير 2026
-- ✅ **التصنيع** — قوائم مواد + أوامر إنتاج
-- ✅ **تصنيف الأصناف** — عام / خامة / منتج تام / خدمة
-- ✅ **المخزن الافتراضي** — تعيين مخزن لكل صنف
-- ✅ **القائمة الجانبية** — ترتيب احترافي بتصنيفات ERP
-- ✅ **نموذج Excel** — عمودان جديدان (نوع الصنف + المخزن)
-- ✅ **سجل عمليات شامل** — تسجيل كل إجراء بالنظام
-- ✅ **تحسينات واجهة المستخدم** — لوحة تحكم محدثة
-- ✅ Schema v65
-
-### v1.5.0 — يناير 2026
-- ✅ الفوترة الإلكترونية (ETA + JOFOTARA)
-- ✅ نقاط الولاء والتوزيع
-- ✅ تكامل ميزان NVK TMA
-- ✅ نظام الترخيص والتفعيل
-- ✅ 4 إصدارات (Flavors) + نسخ تجريبية
-
-### v1.0.0 — ديسمبر 2025
-- الإصدار الأول
-- نقطة بيع + مبيعات + مشتريات + مخزون
-- خزينة + تقارير + صلاحيات + طباعة
-
----
-
-## 📄 الرخصة
-
-هذا المشروع ملكية خاصة. جميع الحقوق محفوظة © 2025-2026
-
----
-
 <div align="center">
 
-**آخر تحديث:** 23 مارس 2026 | **Schema v113** | **Flutter 3.38** | **SQLite + PostgreSQL**
+# PicPos ERP
+
+**نظام ERP + نقطة بيع (POS) عربي أولًا — يعمل دون إنترنت، بمحاسبة قيد مزدوج حقيقية**
+
+![Platform](https://img.shields.io/badge/Desktop-Windows-0078D6?style=flat-square&logo=windows)
+![Mobile](https://img.shields.io/badge/Mobile-Android-3DDC84?style=flat-square&logo=android)
+![Flutter](https://img.shields.io/badge/Flutter-3.41.x-02569B?style=flat-square&logo=flutter)
+![Dart SDK](https://img.shields.io/badge/Dart-%5E3.10.4-0175C2?style=flat-square&logo=dart)
+![Schema](https://img.shields.io/badge/Drift%20schema-v195-orange?style=flat-square)
+![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)
 
 </div>
-]]>
+
+---
+
+## English summary
+
+**PicPos ERP** is an Arabic-first (RTL, with a full English UI chosen per user) ERP + POS for small and medium
+businesses in Jordan and Egypt: supermarkets, retail, wholesale, distribution, restaurants, cafés and light
+manufacturing. It covers the full cycle from the point of sale to the financial statements in one system, with
+double-entry accounting, an encrypted local database (SQLCipher) that works offline, and LAN sync.
+
+This monorepo contains:
+
+- the **Windows desktop app** (repo root, Flutter) — the primary product;
+- a **web mirror client** (`lib/main_web_entry.dart`) that reads from a server instance over WebSocket (drift remote) and writes through the HTTP API;
+- three **Android apps**: *PicPos Van* (field rep, `mobile/`), *PicPos Admin* (`mobile_admin/`), *PicPos Cashier* (`mobile_pos/`);
+- shared packages under `packages/` and a pure-Dart **cloud server** (`server/`, `shelf` + PostgreSQL).
+
+Quick start (Windows): `flutter pub get`, then
+`flutter run -d windows --dart-define=APP_BRAND=picpos --dart-define=APP_FLAVOR=unified`.
+Release build: `build_picpos.bat`. License: **Proprietary — all rights reserved.**
+
+---
+
+## نظرة عامة
+
+PicPos ERP نظام متكامل يغطي دورة العمل كاملة من نقطة البيع حتى القوائم المالية، ويستهدف المحلات والشركات
+الصغيرة والمتوسطة في الأردن ومصر (سوبرماركت، تجزئة، جملة، توزيع، مطاعم وكافيهات، وتصنيع خفيف). وفق
+[`PRODUCT.md`](PRODUCT.md):
+
+- **عربي أولًا:** واجهة RTL أصلية مع واجهة إنجليزية كاملة تُختار لكل مستخدم.
+- **محاسبة حقيقية:** قيد مزدوج متوافق مع IFRS — قيود تلقائية، سنوات مالية، مراكز تكلفة، فروق عملة وإعادة تقييم.
+- **يعمل دون إنترنت:** قاعدة بيانات محلية مشفّرة (SQLCipher) ومزامنة عبر الشبكة المحلية، وخادم سحابي للتطبيقات المحمولة.
+- **إصدارات حسب النشاط:** مطاعم، كافيهات، سوبرماركت، تجاري، وموحّد، لكل منها الشاشات والميزات المناسبة.
+- **الفوترة الإلكترونية:** متوافق مع JoFotara (الأردن) وETA (مصر).
+
+> الكود يدعم علامتين تجاريتين من نفس المحرك (`Brand.isPicPos`). المنتج الحالي **PicPos**، والعلامة الأقدم
+> **UralCash** ما زالت موجودة في الكود كعلامة بديلة (انظر [العلامة التجارية والإصدارات](#العلامة-التجارية-والإصدارات)).
+
+---
+
+## المكوّنات
+
+| المكوّن | المسار | الحالة (من الكود والوثائق) |
+|---|---|---|
+| **PicPos ERP — سطح المكتب** | الجذر `lib/` | تطبيق Flutter لويندوز؛ المنتج الأساسي. الإصدار الحالي `3.9.1+275` (`pubspec.yaml`). |
+| **تطبيق الويب (وضع المرآة)** | `lib/main_web_entry.dart`، `lib/web/` | نقطة دخول مستقلة للدورة المحاسبية والمخزنية دون POS/طباعة حرارية. القراءة عبر `/webdb` (drift remote)، والكتابة عبر HTTP API. التصميم في [`2026-09-01-saas-web-design.md`](docs/superpowers/specs/2026-09-01-saas-web-design.md)؛ الكتابات غير المدعومة بعد تُحجب برسالة عربية ([`2026-web-write-audit.md`](docs/superpowers/specs/2026-web-write-audit.md)). |
+| **PicPos Van** (المندوب) | [`mobile/`](mobile/README.md) | تطبيق Android (`picpos_van`، `0.1.0+1`) يعمل دون اتصال: اقتران، دخول بـ PIN، خط اليوم، بيع، مرتجع، تحصيل، سندات مصروف، زيارات، مزامنة وطباعة حرارية Bluetooth. |
+| **PicPos إدارة** (Admin) | [`mobile_admin/`](mobile_admin/README.md) | تطبيق Android للمالك/المدير المالي (`com.picpos.admin`، `0.1.0+1`). الموجود في الكود: قشرة التطبيق، الاقتران، لوحة المؤشرات، الموافقات، الإعدادات، فك الربط؛ وبعض الأقسام ما زالت صفحات مؤقتة (`placeholder_page.dart`) — المرحلة M-1 جارية. |
+| **PicPos كاشير** (Cashier) | [`mobile_pos/`](mobile_pos/README.md) | تطبيق Android لجهاز لوحي (`com.picpos.pos`، `0.1.0+1`). الحالة الفعلية **M-0**: هيكل وقشرة بلا شبكة وشاشة اقتران معطّلة؛ لا بيع فعليًا بعد ([`docs/testing/E2E.md`](docs/testing/E2E.md)). |
+| **`packages/picpos_rules`** | `packages/picpos_rules` | Dart خالص: قواعد الضريبة والإجماليات والتسعير والمرتجعات وحد الائتمان وتطبيع الباركود؛ يستخدمه السيرفر وتطبيقات الجوال. |
+| **`packages/picpos_api_client`** | `packages/picpos_api_client` | عميل API (Dart خالص): JSON القانوني، التحقق من توقيع Ed25519، منتقي النقل LAN/سحابة، وعقود `/manage/*` و`/api/m1/*`. |
+| **`packages/picpos_ui`** | `packages/picpos_ui` | واجهات الجوال المشتركة: رموز `DESIGN.md`، Material 3 فاتح/داكن، خطوط Cairo وNoto Naskh، وهيكل متجاوب. |
+| **`packages/picpos_device`** | `packages/picpos_device` | أساسيات الجهاز: مخزن SQLCipher بمفتاح في Keystore، صندوق صادر بإعادة محاولة، طباعة ESC/POS (Bluetooth وTCP 9100)، وإدخال الماسح. |
+| **السيرفر السحابي** | [`server/`](server/README.md) | `picpos_cloud`: خادم Dart خالص (`shelf` + `postgres`) بلا Flutter؛ مسارات `/mobile/*` و`/desktop/*` و`/manage/*` و`/admin/*`. |
+| **حزم أخرى** | `packages/{accounting,core,inventory,pos,shared_widgets,treasury}` | هياكل قديمة؛ `docs/mobile/ARCHITECTURE-M.md` (F12) يصفها بأنها غير مستخدمة. |
+
+> مجلد `web_app/` مشروع Flutter منفصل (README افتراضي، وSupabase)؛ لم أتحقق من أنه ما زال ضمن مسار التسليم.
+
+---
+
+## الميزات
+
+من [`PRODUCT.md`](PRODUCT.md) وقوائم الشاشات في وثائق التصميم:
+
+- **نقطة البيع:** بيع سريع، فتح/إغلاق الورديات، فواتير مبيعات ومشتريات ومرتجعاتها، طاولات ومطبخ، حجوزات.
+- **المحاسبة:** قيد مزدوج، سنوات مالية، مراكز تكلفة، أصول ثابتة، مصروفات تشغيلية، مطابقة بنكية، شيكات وأوراق تجارية.
+- **المخزون والمشتريات:** أصناف، تحويلات مخزنية، جرد دوري، تكاليف الاستيراد (Landed Cost)، موازين وPLU.
+- **الخزينة:** سندات قبض وصرف (مع دفاتر سندات ورقية لكل موظف)، شيكات، تسليم العهدة.
+- **التوزيع:** منطقة توزيع ← خط ← مندوب واحد وأيام زيارة وقائمة عملاء مرتّبة؛ تحميل وتفريغ سيارة المندوب.
+- **الأذونات:** صلاحيات تفصيلية على مستوى الزر والإجراء، وتجاوز المدير للعمليات الحساسة.
+- **الأجهزة:** طابعات حرارية 58/80 مم وA4/A5، وموازين، وقارئات باركود، وأدراج نقد.
+- **اللغات:** العربية والإنجليزية لكل مستخدم؛ مستندات الطباعة بلغة الشركة.
+- **الفوترة الإلكترونية:** JoFotara (الأردن) وETA (مصر).
+- **المزامنة:** شبكة محلية (خادم رئيسي وأجهزة عميلة باقتران برمز/QR) + خادم سحابي للتطبيقات المحمولة.
+
+---
+
+## العلامة التجارية والإصدارات
+
+- العلامة تُحدَّد وقت البناء بـ `--dart-define=APP_BRAND=<id>` (`lib/core/config/brand.dart`)، والمعرّفان المعروفان: `picpos` و`uralcash`.
+- **تنبيه:** القيمة الافتراضية عند غياب `APP_BRAND` هي `uralcash`؛ لذا مرّر `APP_BRAND=picpos` دائمًا عند تشغيل أو بناء منتج PicPos (`build_picpos.bat` يفعل ذلك).
+- UralCash علامة بديلة قديمة في الكود تُبنى عبر `build_release.bat`؛ ولا يُفترض أن تظهر في منتج PicPos (يفحص `build_picpos.bat` عزل العلامة قبل البناء).
+- الـ Flavors (`lib/core/config/app_flavor.dart`): `unified`، `restaurant`، `cafe`، `supermarket`، `supermarket_pro`، `supermarket_plus`، `commercial`. بناء `build_picpos.bat` يستخدم `APP_FLAVOR=unified`.
+- ملف النشاط (Business Profile) والميزات يُختاران وقت التشغيل ويُخزَّنان في قاعدة البيانات، دون ملف تنفيذي لكل نشاط (تعليق `build_release.bat`).
+
+---
+
+## التقنيات
+
+- **Flutter / Dart:** `environment.sdk: ^3.10.4` في `pubspec.yaml`؛ يثبّت CI قناة stable بإصدار `3.41.x`. (حزم الجوال والسيرفر تطلب `^3.8.0`.)
+- **قاعدة البيانات:** Drift فوق SQLite المشفّر (SQLCipher)، مع PostgreSQL اختياريًا. `schemaVersion` الحالي **195** (`lib/data/database/database.dart`).
+- **الحالة:** Riverpod.
+- **السيرفر:** Dart خالص، `shelf` و`postgres`، صورة Docker (AOT).
+- **الجوال:** Flutter على Android (Material 3)، SQLCipher، `flutter_secure_storage`، `mobile_scanner`.
+- **الخطوط:** Cairo للواجهة، Noto Naskh Arabic للطباعة (`DESIGN.md`).
+
+---
+
+## هيكل المشروع
+
+```
+PICPOS-ERP/
+├── lib/                     تطبيق سطح المكتب
+│   ├── core/config/         Brand وAppFlavor وسياسات الميزات
+│   ├── data/database/       Drift: database.dart وDAOs
+│   ├── main_web_entry.dart  نقطة دخول الويب (وضع المرآة)
+│   └── web/                 مزودات وجلسة وقشرة الويب
+├── windows/                 مشروع Windows (CMake / Runner)
+├── mobile/                  PicPos Van (picpos_van)
+├── mobile_admin/            PicPos إدارة (picpos_admin)
+├── mobile_pos/              PicPos كاشير (picpos_pos)
+├── packages/                picpos_rules · picpos_api_client · picpos_ui · picpos_device (+ هياكل قديمة)
+├── server/                  السيرفر السحابي picpos_cloud
+├── docker/                  docker-compose لحزمة الاختبار (PostgreSQL + API)
+├── installer/               إعداد المثبّت (Inno Setup: setup.iss)
+├── test/                    اختبارات الجذر (unit, widget, structural, integration, e2e …)
+├── tool/                    run_e2e.ps1 · check_no_secrets.ps1
+├── docs/                    الوثائق
+└── .github/workflows/       CI (ci.yml)
+```
+
+---
+
+## التثبيت والتشغيل
+
+**المتطلبات:** Windows، Flutter (stable؛ المثبّت في CI `3.41.x`)، Docker Desktop للسيرفر والاختبارات السحابية، وInno Setup 6 لبناء المثبّت.
+
+```powershell
+git clone https://github.com/ahmedelazaizi/PICPOS-ERP.git
+cd PICPOS-ERP
+flutter pub get
+```
+
+### تشغيل سطح المكتب
+
+```powershell
+flutter run -d windows --dart-define=APP_BRAND=picpos --dart-define=APP_FLAVOR=unified
+```
+
+### بناء Windows
+
+```powershell
+.\build_picpos.bat            # يفحص عزل العلامة ثم flutter build windows --release؛ المخرجات في FlavorBuilds\PicPos
+.\build_installer_picpos.bat  # يغلّف مخرجات PicPos في مثبّت (شغّل build_picpos.bat أولًا)
+```
+
+`build_picpos.bat` يحذف `build\windows` قبل البناء، ويضمن نسخ محرك SQLCipher بدل `sqlite3.dll` العادي (انظر تعليقات الملف).
+
+### بناء الويب
+
+```powershell
+flutter build web --release --no-tree-shake-icons --no-wasm-dry-run -t lib/main_web_entry.dart
+```
+
+الويب عميل مرآة يحتاج سيرفر PicPos مفعّلًا فيه «الوصول من المتصفح». يبني CI تطبيق الويب ويرفع `build/web` كـ artifact.
+
+### تطبيقات Android (APK)
+
+```powershell
+cd mobile;          flutter build apk --release   # PicPos Van   (ويوجد --debug في mobile/README.md)
+cd ..\mobile_admin; flutter build apk --release   # PicPos إدارة
+cd ..\mobile_pos;   flutter build apk --release   # PicPos كاشير
+```
+
+التوقيع من `android/key.properties` (خارج Git) وإلا يُستعمل مفتاح debug (حسب README التطبيقين). تفاصيل كل تطبيق في README الخاص به.
+
+### السيرفر السحابي وPostgreSQL (حزمة اختبار)
+
+```powershell
+cd docker
+docker compose up -d --build
+docker compose ps                        # الخدمتان postgres وapi
+curl.exe http://localhost:18080/health   # فحص الصحة
+powershell -NoProfile -ExecutionPolicy Bypass -File .\smoke.ps1   # اختبار دخاني طرف-لطرف
+docker compose down                      # إيقاف مع إبقاء البيانات
+```
+
+- `postgres` على المنفذ `55432`، و`api` على `18080` (المنفذ 8080 يستعمله خادم الشبكة المحلية للسطح).
+- الحزمة **للاختبار فقط**: كلمات المرور والمفاتيح الافتراضية موجودة عمدًا في `docker-compose.yml`. نشر الإنتاج بقائمة منفصلة (`docs/mobile/ARCHITECTURE-I.md` §12).
+- تشغيل محلي دون Docker: `cd server; dart run bin/server.dart` مع متغيرات البيئة في [`server/README.md`](server/README.md).
+- نشر الخادم المحلي وتأمينه: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+---
+
+## الاختبارات
+
+```powershell
+flutter test                                 # اختبارات الجذر
+flutter test test/structural                 # اختبارات البنية (حدود الاستيراد، نطاق الويب …)
+powershell -NoProfile -ExecutionPolicy Bypass -File tool/run_e2e.ps1   # E2E: سيرفر + عملاء + تطبيقات (يشغّل Postgres تلقائيًا)
+cd server; dart test -j 1                    # اختبارات السيرفر (تتابعية)
+```
+
+- `tool/run_e2e.ps1 -Only server,mobile` لمجموعات محددة؛ المجموعات: `server, packages, mobile, mobile_admin, mobile_pos, root, web`.
+- لا تشغّل أوامر `flutter` بالتوازي (قفل الإقلاع وتعارض `sqlite3.dll`).
+- اختبارات Postgres الاختيارية للجذر: `dart run scripts/run_pg_tests.dart` (انظر `test/integration_pg/README.md`).
+- دليل E2E الكامل: [`docs/testing/E2E.md`](docs/testing/E2E.md).
+
+---
+
+## الأمان
+
+- قاعدة البيانات المحلية مشفّرة بـ SQLCipher؛ وفي الجوال يُحفظ مفتاحها في Android Keystore.
+- أذونات تفصيلية على مستوى الإجراء، وتجاوز المدير للعمليات الحساسة، وتوقيع لقطات الإدارة بـ Ed25519.
+- حدود معدّل على الاقتران والدخول في السيرفر السحابي، وإبطال الأجهزة من المكتب.
+- **لا أسرار في الريبو:** مفاتيح التوقيع (`*.jks`، `key.properties`) و`google-services.json` وملف `.env` خارج Git؛ و`.env.example` قالب بقيم وهمية فقط.
+- فحص محلي: `powershell -File tool/check_no_secrets.ps1` — يفشل (exit 1) إذا تتبّع Git أي ملف سر توقيع/Firebase.
+- حزمة `docker/` للاختبار فقط ولا تُستعمل كما هي في الإنتاج.
+
+---
+
+## التكامل المستمر (CI)
+
+سير العمل في [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (**PicPos ERP CI**) يعمل عند كل push وpull_request: فحص أسرار (`tool/check_no_secrets.ps1` + Gitleaks استشاري) ← تحليل واختبارات الجذر مع بوابة تغطية ← حزم وتطبيقات الجوال (analyze + test) ← السيرفر مع Postgres 16 ← اختبارات E2E ← بناء الويب ← بناء Windows (على `main` والوسوم `v*.*.*` فقط) ← إصدار GitHub عند وسم `v*.*.*`.
+
+---
+
+## الوثائق
+
+| الوثيقة | المحتوى |
+|---|---|
+| [`PRODUCT.md`](PRODUCT.md) | المنتج والمستخدمون والتموضع |
+| [`DESIGN.md`](DESIGN.md) | نظام التصميم |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | خطة تفكيك الملفات الضخمة |
+| [`docs/mobile/ARCHITECTURE-I.md`](docs/mobile/ARCHITECTURE-I.md) | السيرفر السحابي وتطبيق المندوب |
+| [`docs/mobile/ARCHITECTURE-M.md`](docs/mobile/ARCHITECTURE-M.md) | تطبيقا الإدارة والكاشير |
+| [`docs/mobile/ARCHITECTURE-MC.md`](docs/mobile/ARCHITECTURE-MC.md) | تطبيق المخازن (خطة) |
+| [`docs/testing/E2E.md`](docs/testing/E2E.md) | اختبارات E2E |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | نشر الخادم المحلي وتأمينه |
+| [`2026-09-01-saas-web-design.md`](docs/superpowers/specs/2026-09-01-saas-web-design.md) | تصميم الويب SaaS |
+| [`2026-web-drift-remote-spike.md`](docs/superpowers/specs/2026-web-drift-remote-spike.md) | قياس drift remote |
+| [`2026-web-write-audit.md`](docs/superpowers/specs/2026-web-write-audit.md) | تدقيق الكتابات في الويب |
+| [`server/README.md`](server/README.md) · [`docker/README.md`](docker/README.md) | السيرفر وحزمة Docker |
+| [`mobile/README.md`](mobile/README.md) · [`mobile_admin/README.md`](mobile_admin/README.md) · [`mobile_pos/README.md`](mobile_pos/README.md) | تطبيقات الجوال |
+
+---
+
+## الترخيص
+
+**Proprietary — جميع الحقوق محفوظة.**
