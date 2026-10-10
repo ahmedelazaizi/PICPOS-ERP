@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
+import 'package:shelf_router/shelf_router.dart';
 
 class WebStaticHandler {
   WebStaticHandler(String rootDir) : _root = p.normalize(p.absolute(rootDir));
@@ -17,6 +18,20 @@ class WebStaticHandler {
   /// هل في [dir] بناءُ ويب صالح (`index.html`)؟
   static bool hasBuild(String? dir) =>
       dir != null && dir.trim().isNotEmpty && File(p.join(dir, 'index.html')).existsSync();
+
+  /// يركّب تقديم الملفات الثابتة على [router] (قبل الـcatch-all) إن وُجد بناء.
+  static void mount(Router router, String? dir, Handler notFound) {
+    if (dir == null || !hasBuild(dir)) return;
+    final statics = WebStaticHandler(dir);
+    router.get('/<path|.*>', (Request r, String _) {
+      final path = '/${r.url.path}';
+      // الـAPI والقنوات لا تسقط إلى index.html أبداً.
+      if (path.startsWith('/api/') || path == '/ws' || path == '/webdb') {
+        return notFound(r);
+      }
+      return statics.call(r);
+    });
+  }
 
   static const _types = <String, String>{
     '.html': 'text/html; charset=utf-8',

@@ -18,7 +18,6 @@ import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/logging/diagnostic_logger.dart';
-import '../../services/cfd_service.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:drift/drift.dart';
@@ -41,7 +40,7 @@ import 'web_static_handler.dart';
 import '../web_read/web_read_channel_host.dart';
 import 'api_terminals_handler.dart';
 import 'api_voucher_handler.dart';
-import 'api_html_templates.dart';
+import 'api_display_handler.dart';
 import 'table_bill_html.dart';
 import 'table_bill_token.dart';
 import '../guest_order_requests.dart';
@@ -74,6 +73,7 @@ class ApiHandler {
   late final WebReadChannelHost _webRead;
   late final ApiTerminalsHandler _terminals;
   late final ApiVoucherHandler _vouchers;
+  late final ApiDisplayHandler _display;
 
   /// م3-9: مجلد بناء الويب لتقديمه من نفس الأصل (null = لا تقديم).
   final String? _webStaticDir;
@@ -89,6 +89,7 @@ class ApiHandler {
     _webRead = WebReadChannelHost(_db);
     _terminals = ApiTerminalsHandler(_db, _wsClients);
     _vouchers = ApiVoucherHandler(_db, _wsClients);
+    _display = ApiDisplayHandler(_db);
   }
 
   /// Build the shelf Router with all API endpoints
@@ -136,7 +137,7 @@ class ApiHandler {
     router.get('/api/products/barcode', _getProductByBarcodeQuery); // Client-side barcode fallback
     router.get('/api/user-branch-access', _getUserBranchAccess);
     router.get('/api/user-warehouse-access', _getUserWarehouseAccess);
-    router.get('/api/offers', _getOffers);
+    router.get('/api/offers', _display.getOffers);
     router.get('/api/product-units', _getProductUnits);
     router.get('/api/document-sequences', _getDocumentSequences);
     router.get('/api/fiscal-years', _getFiscalYears);
@@ -358,12 +359,12 @@ class ApiHandler {
         }));
 
     // CFD Endpoints
-    router.get('/cfd', _getCfdDisplay);
-    router.get('/api/cfd/stream', _cfdStream);
+    router.get('/cfd', _display.getCfdDisplay);
+    router.get('/api/cfd/stream', _display.cfdStream);
 
     // Digital Menu Endpoints
-    router.get('/menu', _getMenuDisplay);
-    router.get('/api/menu', _getMenuData);
+    router.get('/menu', _display.getMenuDisplay);
+    router.get('/api/menu', _display.getMenuData);
 
     // حسابُ الطاولة على هاتف الزبون — البندُ الأوّل من فيتشرات المالك
     // 2026-09-12. ثلاثةُ مساراتٍ **بلا مصادقة** (الزبونُ ليس جهازاً مقترناً)
@@ -380,18 +381,8 @@ class ApiHandler {
     router.post('/api/table-requests/<id>/reject', _rejectGuestOrderRequest);
 
     // م3-9: ملفات الويب الثابتة (index.html fallback) — قبل الـcatch-all.
-    final staticDir = _webStaticDir;
-    if (staticDir != null && WebStaticHandler.hasBuild(staticDir)) {
-      final statics = WebStaticHandler(staticDir);
-      router.get('/<path|.*>', (Request r, String _) {
-        final path = '/${r.url.path}';
-        // الـAPI والقنوات لا تسقط إلى index.html أبداً.
-        if (path.startsWith('/api/') || path == '/ws' || path == '/webdb') {
-          return _notFound(r);
-        }
-        return statics.call(r);
-      });
-    }
+    WebStaticHandler.mount(router, _webStaticDir, _notFound);
+
 
     // Catch-all for undefined routes
     router.all('/<ignored|.*>', _notFound);
@@ -2033,45 +2024,6 @@ class ApiHandler {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // Digital Menu
-  // ═══════════════════════════════════════════════════════════════
-
-  Future<Response> _getMenuData(Request request) async {
-    try {
-      final categories = await _db.select(_db.categories).get();
-      final products = _db.select(_db.products)
-        ..where((u) => u.isActive.equals(true));
-      final productsList = await products.get();
-
-      return _json({
-        'categories': categories
-            .map((c) => {'id': c.id, 'name': c.name, 'icon': c.iconName})
-            .toList(),
-        'products': productsList
-            .map(
-              (p) => {
-                'id': p.id,
-                'name': p.name,
-                'price': p.salePrice,
-                'categoryId': p.categoryId,
-                'description': p.description,
-              },
-            )
-            .toList(),
-      });
-    } catch (e) {
-      return _error('Failed to fetch menu data: $e');
-    }
-  }
-
-  Future<Response> _getMenuDisplay(Request request) async {
-    return Response.ok(
-      _buildMenuHtml(),
-      headers: {'Content-Type': 'text/html; charset=utf-8'},
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════════
   // حسابُ الطاولة على هاتف الزبون — البندُ الأوّل (2026-09-12)
   // ═══════════════════════════════════════════════════════════════
   //
@@ -2469,29 +2421,6 @@ class ApiHandler {
       debugPrint('[TABLE-BILL] request failed: $e');
       return _json({'success': false, 'error': 'تعذّر الإرسال'});
     }
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // CFD Display & Stream
-  // ═══════════════════════════════════════════════════════════════
-
-  Future<Response> _cfdStream(Request request) async {
-    final stream = CfdService.instance.connect();
-    return Response.ok(
-      stream,
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    );
-  }
-
-  Future<Response> _getCfdDisplay(Request request) async {
-    return Response.ok(
-      _buildCfdHtml(),
-      headers: {'Content-Type': 'text/html; charset=utf-8'},
-    );
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -3792,13 +3721,6 @@ class ApiHandler {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // HTML Templates (extracted to api_html_templates.dart)
-  // ═══════════════════════════════════════════════════════════════
-
-  String _buildMenuHtml() => menuHtmlTemplate;
-  String _buildCfdHtml() => cfdHtmlTemplate;
-
   /// Public: Broadcast a data_changed event to connected WebSocket clients.
   /// Call this from server-side screens when entities are modified directly
   /// (e.g. branches, cost centers, accounts created via the server UI).
@@ -3813,55 +3735,5 @@ class ApiHandler {
   /// correctly reaches everyone with [branchId] left null.
   void broadcastChange(String table, {int? branchId}) {
     _data.broadcast(table, branchId: branchId);
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // Offers (GET) — serves all offers + items for client sync
-  // ═══════════════════════════════════════════════════════════════
-
-  Future<Response> _getOffers(Request request) async {
-    try {
-      final offers = await _db.select(_db.offers).get();
-      final items = await _db.select(_db.offerItems).get();
-
-      final offersJson = offers.map((o) => <String, dynamic>{
-        'id': o.id,
-        'name': o.name,
-        'barcode': o.barcode,
-        'offerPrice': o.offerPrice,
-        'startDate': o.startDate != null
-            ? o.startDate!.millisecondsSinceEpoch ~/ 1000
-            : null,
-        'endDate': o.endDate != null
-            ? o.endDate!.millisecondsSinceEpoch ~/ 1000
-            : null,
-        'isActive': o.isActive,
-        'offerType': o.offerType,
-        'discountValue': o.discountValue,
-        'buyQuantity': o.buyQuantity,
-        'getQuantity': o.getQuantity,
-        'minQuantity': o.minQuantity,
-        'maxUses': o.maxUses,
-        'currentUses': o.currentUses,
-        'timeStart': o.timeStart,
-        'timeEnd': o.timeEnd,
-        'categoryId': o.categoryId,
-      }).toList();
-
-      final itemsJson = items.map((i) => <String, dynamic>{
-        'id': i.id,
-        'offerId': i.offerId,
-        'productId': i.productId,
-        'quantity': i.quantity,
-      }).toList();
-
-      return _json({
-        'offers': offersJson,
-        'offerItems': itemsJson,
-        'count': offersJson.length,
-      });
-    } catch (e) {
-      return _error('Failed to fetch offers: $e');
-    }
   }
 }
