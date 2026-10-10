@@ -154,7 +154,11 @@ class UserSyncStrategy extends SyncStrategy {
           isActive: Value(parseBool(u['isActive'], true)),
           maxDiscountPercent: Value(parseDoubleNullable(u['maxDiscountPercent'])),
           discountLimitIsPercent: Value(parseBool(u['discountLimitIsPercent'], true)),
-          cardCode: Value(u['cardCode'] as String?),
+          // الخادم لا يُرسل cardCode إلا لعميل مصادَق (يُسقطه عن الاستجابات
+          // العامة): غيابُ الحقل لا يمسح البطاقة المحلية.
+          cardCode: u.containsKey('cardCode')
+              ? Value(u['cardCode'] as String?)
+              : const Value.absent(),
           forcePasswordChange: forceChange ? const Value(true) : const Value.absent(),
         ),
       );

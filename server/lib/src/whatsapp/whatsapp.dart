@@ -31,6 +31,10 @@ class SentMockMessage {
 /// TEST MODE provider: records messages in memory and logs them. Can be told
 /// to fail the next N sends to exercise retries.
 class MockWhatsAppProvider implements WhatsAppProvider {
+  /// [log] receives one line per send (default: stdout). Lines never contain
+  /// the phone number or the template params (customer PII / balances, S-12).
+  MockWhatsAppProvider({void Function(String line)? log}) : _log = log ?? stdout.writeln;
+  final void Function(String line) _log;
   final List<SentMockMessage> sent = [];
   int failNext = 0;
   int _seq = 0;
@@ -51,7 +55,7 @@ class MockWhatsAppProvider implements WhatsAppProvider {
     }
     final id = 'mock-${++_seq}';
     sent.add(SentMockMessage(toPhone, template, language, params, id));
-    stdout.writeln('[whatsapp:mock] $template/$language -> $toPhone $params ($id)');
+    _log('[whatsapp:mock] $template/$language params=${params.length} ($id)');
     return WhatsAppSendResult.ok(id);
   }
 }

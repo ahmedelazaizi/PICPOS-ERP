@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Release/profile: HTTPS only, system CAs only (M-1). Dart's HttpClient does
+     not consult this file; HttpCloudApi enforces UrlPolicy.release for Dart code.
+     The debug variant (src/debug/res/xml) re-allows cleartext for the LAN test stack. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

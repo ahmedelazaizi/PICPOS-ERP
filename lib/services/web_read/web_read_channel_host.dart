@@ -97,8 +97,12 @@ class WebReadChannelHost {
       onError: (Object _) {},
       cancelOnError: false,
     );
+    var closing = false;
     ws.stream.listen(
-      bridge.local.sink.add,
+      // بعد قرار الإغلاق (إبطال/تعطيل) لا يُمرَّر أيُّ استعلامٍ وارد.
+      (Object? m) {
+        if (!closing) bridge.local.sink.add(m);
+      },
       onError: (Object _) {},
       onDone: () => bridge.local.sink.close(),
     );
@@ -120,7 +124,6 @@ class WebReadChannelHost {
       _db.tableUpdates().listen((s) => push(s.map((u) => u.table))),
     ];
 
-    var closing = false;
     Future<void> end(String reason) async {
       if (closing) return;
       closing = true;

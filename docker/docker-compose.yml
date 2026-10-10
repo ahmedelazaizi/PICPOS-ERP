@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: picpos
       POSTGRES_PASSWORD: picpos_test_only
     ports:
-      - "55432:5432"   # host port for server tests (dart test) and psql
+      - "127.0.0.1:55432:5432"   # loopback only (S-13); host port for server tests (dart test) and psql
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -36,10 +36,11 @@ services:
       PORT: "8080"
       TOKEN_SECRET: test-only-token-secret-change-me-0123456789
       ADMIN_KEY: test-admin-key
+      ALLOW_WEAK_ADMIN_KEY: "1"   # TEST stack only: the key above is < 24 chars (S-5)
       SEED_DEMO: "true"
       WHATSAPP_PROVIDER: mock
     ports:
-      - "18080:8080"   # host 8080 is used by the PicPos desktop LAN server
+      - "127.0.0.1:18080:8080"   # host 8080 is used by the PicPos desktop LAN server
     healthcheck:
       test: ["CMD", "/app/healthcheck"]
       interval: 10s

@@ -24,6 +24,8 @@ dependencies:
   barcode: ^2.2.9
   picpos_rules:
     path: ../packages/picpos_rules
+  picpos_api_client:
+    path: ../packages/picpos_api_client
   workmanager: ^0.10.10
   geolocator: ^14.0.1
   image_picker: ^1.2.3

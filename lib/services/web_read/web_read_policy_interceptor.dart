@@ -45,11 +45,43 @@ DriftServer createWebReadDriftServer(
 }
 
 class WebReadPolicyInterceptor extends QueryInterceptor {
-  WebReadPolicyInterceptor({required Iterable<String> allowedTables})
-    : allowedTables = {for (final t in allowedTables) t.toLowerCase()};
+  WebReadPolicyInterceptor({
+    required Iterable<String> allowedTables,
+    this.maxRows = defaultMaxRows,
+    this.queryTimeout = defaultQueryTimeout,
+  }) : allowedTables = {for (final t in allowedTables) t.toLowerCase()};
 
   /// أسماء الجداول المسموح قراءتها (أحرف صغيرة).
   final Set<String> allowedTables;
+
+  /// السقف الأعلى لصفوف نتيجة استعلامٍ واحد؛ ما زاد عليه يُرفض.
+  static const int defaultMaxRows = 50000;
+  static const Duration defaultQueryTimeout = Duration(seconds: 30);
+  final int maxRows;
+  final Duration queryTimeout;
+
+  /// الجداول التي فيها عمودٌ حسّاس ([sensitiveColumns]) — مشتقّةٌ من تعريف
+  /// الجداول: `users` (password_hash/password_salt/pin/card_code)،
+  /// `api_keys` (key_hash)، `e_invoice_configs` (client_secret)،
+  /// `label_scales` (ftp_password). أيُّ استعلامٍ يلمس أحدها (أو يذكر عموداً
+  /// حسّاساً) يجب أن يكون SELECT بسيطاً واحداً: الإخفاء يقوم على اسم العمود
+  /// في النتيجة، فالاستعلام الفرعيّ/UNION/CTE يعيد تسميته فيفلت من الإخفاء.
+  static const Set<String> sensitiveTables = {
+    'users',
+    'api_keys',
+    'e_invoice_configs',
+    'label_scales',
+  };
+
+  /// كلماتٌ مرفوضة في الاستعلام الحسّاس بعد الكلمة الأولى (select).
+  static const Set<String> _compoundWords = {
+    'select',
+    'with',
+    'union',
+    'intersect',
+    'except',
+    'values',
+  };
 
   /// أعمدةٌ تُفرَّغ قيمتُها في أيّ نتيجة بغضّ النظر عن الجدول.
   static const Set<String> sensitiveColumns = {
@@ -169,7 +201,20 @@ class WebReadPolicyInterceptor extends QueryInterceptor {
     List<Object?> args,
   ) async {
     final check = _validate(statement);
-    final rows = await executor.runSelect(statement, args);
+    // مهلة: لا نُبقي القناة معلَّقة على استعلام ثقيل. (المهلة تحرّر القناة؛
+    // لا تُلغي التنفيذ داخل المحرّك نفسه.)
+    final rows = await executor
+        .runSelect(statement, args)
+        .timeout(
+          queryTimeout,
+          onTimeout: () => throw WebReadPolicyViolation('query timed out'),
+        );
+    // سقف الصفوف: نرفض (لا نقطع) كي لا تُعرض أرقامٌ ماليّةٌ ناقصة بصمت.
+    if (rows.length > maxRows) {
+      throw WebReadPolicyViolation(
+        'result exceeds $maxRows rows; narrow the query (WHERE/LIMIT)',
+      );
+    }
     return _mask(rows, touchesSettings: check.touchesSettings);
   }
 
@@ -188,6 +233,10 @@ class WebReadPolicyInterceptor extends QueryInterceptor {
       if (_forbiddenWords.contains(text) && (t.isWord || _isNameLike(text))) {
         throw WebReadPolicyViolation('forbidden token: $text');
       }
+      // WITH RECURSIVE قد لا ينتهي ويشلّ المنفِّذ المشترَك: ممنوع تماماً.
+      if (t.isWord && text == 'recursive') {
+        throw WebReadPolicyViolation('WITH RECURSIVE is not allowed');
+      }
       if (text.startsWith('pg_') ||
           text.startsWith('sqlite_') ||
           text.contains('information_schema')) {
@@ -204,6 +253,7 @@ class WebReadPolicyInterceptor extends QueryInterceptor {
       }
     }
 
+    _requireSimpleSelectIfSensitive(tokens, referenced);
     _checkSensitiveColumns(tokens);
     return _Check(touchesSettings: referenced.contains('settings'));
   }
@@ -304,6 +354,32 @@ class WebReadPolicyInterceptor extends QueryInterceptor {
     }
     if (expectTable) throw WebReadPolicyViolation('dangling FROM');
     return tables;
+  }
+
+  /// إن لمس الاستعلام جدولاً حسّاساً ([sensitiveTables]) أو ذكر عموداً
+  /// حسّاساً: يُشترط SELECT واحد بسيط — بلا استعلام فرعيّ ولا CTE ولا
+  /// UNION/INTERSECT/EXCEPT/VALUES. (الجداول غير الحسّاسة لا تتأثّر.)
+  void _requireSimpleSelectIfSensitive(
+    List<_Tok> t,
+    Set<String> referenced,
+  ) {
+    final touches =
+        referenced.any(sensitiveTables.contains) ||
+        t.any((k) => k.isName && sensitiveColumns.contains(k.text));
+    if (!touches) return;
+    if (!t.first.isWord || t.first.text != 'select') {
+      throw WebReadPolicyViolation(
+        'sensitive data requires a single plain SELECT',
+      );
+    }
+    for (var i = 1; i < t.length; i++) {
+      if (t[i].isWord && _compoundWords.contains(t[i].text)) {
+        throw WebReadPolicyViolation(
+          'subquery/compound/CTE not allowed with sensitive columns or '
+          'tables: ${t[i].text}',
+        );
+      }
+    }
   }
 
   /// الأعمدة الحسّاسة تظهر فقط في قائمة SELECT كما هي (أو بتسميةٍ تنتهي

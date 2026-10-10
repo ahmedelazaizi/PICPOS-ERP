@@ -10,6 +10,8 @@ import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
+import 'web_security_headers.dart';
+
 class WebStaticHandler {
   WebStaticHandler(String rootDir) : _root = p.normalize(p.absolute(rootDir));
 
@@ -87,6 +89,7 @@ class WebStaticHandler {
           ? 'no-cache'
           : 'public, max-age=3600',
       'x-content-type-options': 'nosniff',
+      ...WebSecurityHeaders.forFlutterWeb(),
     };
     if (request.method == 'HEAD') return Response.ok(null, headers: headers);
     return Response.ok(file.openRead(), headers: {

@@ -62,7 +62,16 @@ class AdminSession extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> pair(PairingOffer offer) async {
+  /// Manual pairing (no QR) receives the signing key from the cloud, which the
+  /// whole signature scheme is meant not to trust (M-5). [confirmKey] gets the
+  /// key's fingerprint and must return true only after the user compared it
+  /// with the one shown on the office computer; without it (or on false) the
+  /// pairing is undone and nothing is saved. A QR offer carries the key from
+  /// the desktop itself, so it needs no confirmation.
+  Future<void> pair(
+    PairingOffer offer, {
+    Future<bool> Function(String fingerprint)? confirmKey,
+  }) async {
     final api = _client(offer.cloudUrl);
     final random = Random.secure();
     final id = List.generate(
@@ -80,7 +89,20 @@ class AdminSession extends ChangeNotifier {
       throw const FormatException('desktop_signing_key_mismatch');
     }
     final key = offer.desktopSigningKey ?? paired.desktopSigningKey;
-    verifier = PayloadVerifier.fromBase64(key);
+    final candidate = PayloadVerifier.fromBase64(key); // also validates the encoding
+    if (offer.desktopSigningKey == null) {
+      final fingerprint = await signingKeyFingerprint(key);
+      final accepted = confirmKey != null && await confirmKey(fingerprint);
+      if (!accepted) {
+        try {
+          await api.unpair(); // do not leave a device paired to a key nobody vouched for
+        } on Object {
+          // best effort: the office computer can still revoke the device
+        }
+        throw const FormatException('signing_key_not_confirmed');
+      }
+    }
+    verifier = candidate;
     await secrets.write('admin.url', offer.cloudUrl.toString());
     await secrets.write('admin.deviceToken', paired.deviceToken);
     await secrets.write('admin.deviceId', paired.deviceId);

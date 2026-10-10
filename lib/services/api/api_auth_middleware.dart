@@ -7,6 +7,8 @@ import 'api_user_context.dart';
 import 'api_web_session_handler.dart';
 import 'lan_pairing_api_handler.dart';
 import 'lan_pairing_service.dart';
+import 'client_address.dart';
+import 'web_session_guard.dart';
 
 /// API Authentication middleware for the embedded multi-device server.
 ///
@@ -197,7 +199,9 @@ class ApiAuthMiddleware {
           final claims = ApiSessionToken.verifyWeb(
             request.headers[ApiSessionToken.headerName],
           );
-          if (claims == null) return _json(401, 'Invalid or expired web session');
+          if (claims == null || !await WebSessionGuard.isValid(claims)) {
+            return _json(401, 'Invalid or expired web session');
+          }
           return innerHandler(request.change(context: {
             ApiUserCtx.userIdKey: claims.userId,
             ApiWebCtx.claimsKey: claims,
@@ -212,7 +216,16 @@ class ApiAuthMiddleware {
           final claims = ApiSessionToken.verifyWeb(
             request.headers[ApiSessionToken.headerName],
           );
-          if (claims == null) return _json(401, 'Invalid or expired web session');
+          // المستخدم عُطِّل/قُفل/حُذف أو تغيّر دوره ⇒ الرمز مرفوض (كاش ≤ 10 ث).
+          if (claims == null || !await WebSessionGuard.isValid(claims)) {
+            return _json(401, 'Invalid or expired web session');
+          }
+          // قراءة GET/HEAD برمز ويب: بوابة صلاحية صريحة (قائمة سماح + سياسة
+          // الجداول نفسها كقناة /webdb) بدل فتحها لكلّ مستخدم نشط.
+          if (request.method == 'GET' || request.method == 'HEAD') {
+            final denied = await WebHttpReadGate.check(claims, path);
+            if (denied != null) return _json(403, denied);
+          }
           return innerHandler(request.change(context: {
             ApiUserCtx.userIdKey: claims.userId,
             ApiWebCtx.claimsKey: claims,
@@ -234,10 +247,8 @@ class ApiAuthMiddleware {
         final pairing = _pairingService;
         final deviceId = request.headers['x-device-id'] ?? '';
         final deviceName = request.headers['x-device-name'] ?? '';
-        final ip = request.headers['x-forwarded-for']?.split(',').first.trim() ??
-            request.headers['x-real-ip'] ??
-            request.headers['host']?.split(':').first ??
-            'unknown';
+        // عنوان الاتصال الفعلي (XFF/X-Real-IP/Host لا تُصدَّق من العميل).
+        final ip = ClientAddress.of(request);
 
         if (pairing != null &&
             await pairing.verifyDeviceToken(token: token, deviceId: deviceId)) {

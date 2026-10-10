@@ -107,8 +107,10 @@ class AuthService {
       throw ApiError(401, 'missing_device_token');
     }
     final rows = await db.query('''
-        SELECT id, company_id, employee_id, token_hash, revoked_at, previous_token_hash, token_rotated_at
-        FROM devices WHERE device_id=@d''', {'d': deviceId});
+        SELECT d.id, d.company_id, d.employee_id, d.token_hash, d.revoked_at, d.previous_token_hash,
+               d.token_rotated_at, e.is_active AS employee_active
+        FROM devices d JOIN employees e ON e.id = d.employee_id
+        WHERE d.device_id=@d''', {'d': deviceId});
     if (rows.isEmpty) throw ApiError(401, 'unknown_device');
     final r = rows.first.toColumnMap();
     final presented = sha256Hex(bearer);
@@ -119,6 +121,9 @@ class AuthService {
         _now - ((r['token_rotated_at'] as int?) ?? 0) <= rotationGrace.inMilliseconds;
     if (!current && !inGrace) throw ApiError(401, 'invalid_device_token');
     if (r['revoked_at'] != null) throw ApiError(401, 'device_revoked');
+    // S-1: re-checked on EVERY request (this query already runs per request), so
+    // disabling the employee on the desktop cuts live sessions immediately.
+    if (r['employee_active'] != true) throw ApiError(401, 'employee_inactive');
     await db.query('''
         UPDATE devices SET last_seen_at=@n, last_seen_ip=@ip,
           previous_token_hash = CASE WHEN @cur THEN NULL ELSE previous_token_hash END

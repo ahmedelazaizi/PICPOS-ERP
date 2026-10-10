@@ -82,6 +82,13 @@ abstract final class S {
     'revokeOnDesktop': ('تعذّر إلغاء الربط على الخادم. ألغِ الجهاز من جهاز المكتب عند عودة الاتصال.',
         'Could not revoke on the server. Revoke this device from the office computer when connected.'),
     'cancel': ('إلغاء', 'Cancel'),
+    'keyFingerprintTitle': ('تأكيد مفتاح التوقيع', 'Confirm the signing key'),
+    'keyFingerprintBody': (
+      'قارن هذه البصمة بالبصمة المعروضة في برنامج المكتب (ربط التطبيقات والأجهزة). إن اختلفت فلا تتابع.',
+      'Compare this fingerprint with the one shown in the office program (Link apps & devices). If they differ, do not continue.',
+    ),
+    'keyFingerprintMatches': ('البصمة مطابقة', 'It matches'),
+    'signing_key_not_confirmed': ('لم يُؤكَّد مفتاح التوقيع — أُلغي الربط', 'Signing key not confirmed — pairing cancelled'),
     'about': ('حول التطبيق', 'About'),
     'version': ('الإصدار {v}', 'Version {v}'),
     'pairTitle': ('ربط هذا الجوال', 'Pair this phone'),
@@ -155,7 +162,8 @@ abstract final class S {
     final t = of(context);
     final message = switch (code) {
       'invalid_credentials' || 'user_locked' || 'mobile_access_denied' ||
-      'invalid_code' || 'code_expired' || 'too_many_attempts' => t(code),
+      'invalid_code' || 'code_expired' || 'too_many_attempts' ||
+      'signing_key_not_confirmed' => t(code),
       _ => code,
     };
     if (retryAfter == null ||

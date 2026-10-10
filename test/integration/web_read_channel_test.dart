@@ -23,6 +23,7 @@ import 'package:ural_erp/services/api/api_auth_middleware.dart';
 import 'package:ural_erp/services/api/api_handler.dart';
 import 'package:ural_erp/services/api/api_session_token.dart';
 import 'package:ural_erp/services/api/api_web_session_handler.dart';
+import 'package:ural_erp/services/api/web_session_guard.dart';
 import 'package:ural_erp/services/web_read/drift_json_channel.dart';
 import 'package:ural_erp/services/web_read/web_read_channel_host.dart';
 import 'package:web_socket_channel/io.dart';
@@ -70,6 +71,7 @@ void main() {
     ApiAuthMiddleware.setToken('bearer-xyz');
     WebWsTicketStore.clear();
     WebOriginPolicy.configure(const []);
+    WebSessionGuard.configure(null);
 
     db = AppDatabase.forTesting();
     // دور بلا أي صلاحية: يقرأ الجداول المرجعية فقط (units) لا المبيعات.
@@ -94,6 +96,7 @@ void main() {
     ApiSessionToken.clearKey();
     ApiAuthMiddleware.clearToken();
     WebWsTicketStore.clear();
+    WebSessionGuard.configure(null);
     await db.close();
   });
 
@@ -134,6 +137,7 @@ void main() {
 
   /// خادم بدوريّة فحص قصيرة لاختبارات الإغلاق.
   Future<void> startFastCheck() {
+    WebSessionGuard.configure(db);
     final router = Router()
       ..post('/api/web/session', ApiWebSessionHandler(db).login)
       ..post('/api/web/ws-ticket', ApiWebSessionHandler(db).issueTicket)
@@ -258,5 +262,65 @@ void main() {
     ApiSessionToken.revokeSid(sid);
     await done.timeout(const Duration(seconds: 5));
     expect(ws.closeCode, kWebChannelSessionEnded);
+  });
+
+  group('إبطال جلسة الويب عبر HTTP (بند الأمن 1/ج)', () {
+    Future<int> ticketStatus(String token) async => (await http.post(
+          base.resolve('/api/web/ws-ticket'),
+          headers: {ApiSessionToken.headerName: token},
+        ))
+            .statusCode;
+
+    test('POST /api/web/logout يُبطل الرمز فوراً ولا تُصدَر له تذكرة', () async {
+      await startReal();
+      final token = await login();
+      expect(await ticketStatus(token), 200);
+
+      final out = await http.post(
+        base.resolve('/api/web/logout'),
+        headers: {ApiSessionToken.headerName: token},
+      );
+      expect(out.statusCode, 200, reason: out.body);
+      expect(ApiSessionToken.verifyWeb(token), isNull);
+      expect(await ticketStatus(token), 401);
+    });
+
+    test('logout بلا رمز ويب يُرفض 401', () async {
+      await startReal();
+      final r = await http.post(base.resolve('/api/web/logout'));
+      expect(r.statusCode, 401);
+    });
+
+    test('تعطيل المستخدم يُبطل الرمز على HTTP (دون انتظار انتهائه)', () async {
+      await startReal();
+      final token = await login();
+      expect(await ticketStatus(token), 200);
+      await (db.update(db.users)..where((u) => u.id.equals(userId)))
+          .write(const UsersCompanion(isActive: Value(false)));
+      WebSessionGuard.userChanged(userId); // ما يفعله putUser (يُسقط الكاش)
+      expect(await ticketStatus(token), 401);
+    });
+
+    test('تغيّر دور المستخدم بعد الإصدار يُبطل الرمز', () async {
+      await startReal();
+      final token = await login();
+      expect(await ticketStatus(token), 200);
+      await (db.update(db.users)..where((u) => u.id.equals(userId)))
+          .write(UsersCompanion(roleId: Value(otherRoleId)));
+      WebSessionGuard.userChanged(userId);
+      expect(await ticketStatus(token), 401);
+    });
+
+    test('revokeUser (تغيير كلمة المرور/التعطيل) يُبطل رموزه السابقة فقط',
+        () async {
+      await startReal();
+      final old = await login();
+      expect(await ticketStatus(old), 200);
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      WebSessionGuard.userChanged(userId, revokeSessions: true);
+      expect(await ticketStatus(old), 401);
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      expect(await ticketStatus(await login()), 200);
+    });
   });
 }

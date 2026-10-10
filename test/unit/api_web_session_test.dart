@@ -3,6 +3,7 @@
 // يعمل على SQLite في الذاكرة (مستخدمون بتجزئة Argon2id حقيقية).
 
 import 'dart:convert';
+import 'dart:io' show HttpConnectionInfo, InternetAddress;
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
@@ -12,6 +13,8 @@ import 'package:ural_erp/services/api/api_auth_middleware.dart';
 import 'package:ural_erp/services/api/api_session_token.dart';
 import 'package:ural_erp/services/api/api_user_context.dart';
 import 'package:ural_erp/services/api/api_web_session_handler.dart';
+import 'package:ural_erp/services/api/server_login_throttle.dart';
+import 'package:ural_erp/services/api/web_session_guard.dart';
 
 void main() {
   const hour = 3600 * 1000;
@@ -289,5 +292,132 @@ void main() {
       expect(WebWsTicketStore.consume(ticket)?.userId, 9);
       expect(WebWsTicketStore.consume(ticket), isNull);
     });
+
+    test('logout يُبطل sid الجلسة، وبلا جلسة 401', () async {
+      var r = await handler.logout(shelf.Request(
+          'POST', Uri.parse('http://localhost/api/web/logout')));
+      expect(r.statusCode, 401);
+
+      final token = ApiSessionToken.mintWeb(9);
+      final claims = ApiSessionToken.verifyWeb(token)!;
+      r = await handler.logout(shelf.Request(
+        'POST',
+        Uri.parse('http://localhost/api/web/logout'),
+        context: {ApiWebCtx.claimsKey: claims},
+      ));
+      expect(r.statusCode, 200);
+      expect(ApiSessionToken.verifyWeb(token), isNull);
+      expect(ApiSessionToken.isSidRevoked(claims.sid), isTrue);
+    });
+
+    test('revokeSid ينظّف المنتهي من قائمة الإبطال', () {
+      ApiSessionToken.revokeSid('old', expiresAtMs: 1000, nowMs: 0);
+      expect(ApiSessionToken.isSidRevoked('old'), isTrue);
+      ApiSessionToken.revokeSid('new', nowMs: 5000);
+      expect(ApiSessionToken.isSidRevoked('old'), isFalse);
+      expect(ApiSessionToken.isSidRevoked('new'), isTrue);
+    });
+
+    test('revokeUser يُبطل رموز المستخدم الصادرة قبل اللحظة فقط', () {
+      final before = ApiSessionToken.mintWeb(4, nowMs: 1000);
+      ApiSessionToken.revokeUser(4, nowMs: 2000);
+      final after = ApiSessionToken.mintWeb(4, nowMs: 3000);
+      expect(ApiSessionToken.verifyWeb(before, nowMs: 3500), isNull);
+      expect(ApiSessionToken.verifyWeb(after, nowMs: 3500), isNotNull);
+      // مستخدم آخر لا يتأثّر.
+      expect(
+          ApiSessionToken.verifyWeb(ApiSessionToken.mintWeb(5, nowMs: 1000),
+              nowMs: 3500),
+          isNotNull);
+    });
+
+    test('حظر الدخول مفتاحه اسم المستخدم + العنوان (لا قفل حساب من عنوان آخر)',
+        () async {
+      ServerLoginThrottle.reset();
+      addTearDown(ServerLoginThrottle.reset);
+      shelf.Request from(String ip, String pw) => shelf.Request(
+            'POST',
+            Uri.parse('http://localhost/api/web/session'),
+            body: jsonEncode({'username': 'webuser', 'password': pw}),
+            context: {'shelf.io.connection_info': _Conn(ip)},
+          );
+      for (var i = 0; i < ServerLoginThrottle.maxAttempts; i++) {
+        expect((await handler.login(from('10.1.1.1', 'bad'))).statusCode, 401);
+      }
+      // المهاجم نفسه مقفول حتى بكلمة صحيحة…
+      expect((await handler.login(from('10.1.1.1', 'pw-web-1'))).statusCode,
+          429);
+      // …والمستخدم الشرعي من عنوانه لا يُقفل بمحاولات المهاجم.
+      expect((await handler.login(from('10.2.2.2', 'pw-web-1'))).statusCode,
+          200);
+    });
+
+    test('الحارس: تعطيل المستخدم يُرفض بعد انتهاء الكاش (≤ 10 ث) أو بالإسقاط',
+        () async {
+      final user = await (db.select(db.users)
+            ..where((u) => u.username.equals('webuser')))
+          .getSingle();
+      final claims = ApiSessionToken.verifyWeb(ApiSessionToken.mintWeb(
+        user.id,
+        roleId: user.roleId,
+        bindRole: true,
+      ))!;
+      WebSessionGuard.configure(db);
+      addTearDown(() => WebSessionGuard.configure(null));
+
+      expect(await WebSessionGuard.isValid(claims, nowMs: 0), isTrue);
+      await (db.update(db.users)..where((u) => u.id.equals(user.id)))
+          .write(const UsersCompanion(isLocked: Value(true)));
+      // ضمن عمر الكاش: ما زال يُرى صالحاً.
+      expect(await WebSessionGuard.isValid(claims, nowMs: 5000), isTrue);
+      // بعد العمر: مرفوض.
+      expect(
+        await WebSessionGuard.isValid(claims,
+            nowMs: WebSessionGuard.cacheTtlMs + 1),
+        isFalse,
+      );
+      expect(WebSessionGuard.cacheTtlMs, lessThanOrEqualTo(15000));
+    });
+
+    test('الحارس: تغيّر الدور بعد الإصدار يُبطل الرمز', () async {
+      final user = await (db.select(db.users)
+            ..where((u) => u.username.equals('webuser')))
+          .getSingle();
+      final claims = ApiSessionToken.verifyWeb(ApiSessionToken.mintWeb(
+        user.id,
+        roleId: user.roleId,
+        bindRole: true,
+      ))!;
+      WebSessionGuard.configure(db);
+      addTearDown(() => WebSessionGuard.configure(null));
+      final other = await db.into(db.roles).insert(
+            RolesCompanion.insert(
+                name: 'آخر', isSystemRole: const Value(false)),
+          );
+      await (db.update(db.users)..where((u) => u.id.equals(user.id)))
+          .write(UsersCompanion(roleId: Value(other)));
+      expect(await WebSessionGuard.isValid(claims, nowMs: 0), isFalse);
+    });
+
+    test('الحارس: مستخدم محذوف/غير موجود يُرفض', () async {
+      WebSessionGuard.configure(db);
+      addTearDown(() => WebSessionGuard.configure(null));
+      final claims =
+          ApiSessionToken.verifyWeb(ApiSessionToken.mintWeb(99999))!;
+      expect(await WebSessionGuard.isValid(claims, nowMs: 0), isFalse);
+    });
   });
+}
+
+class _Conn implements HttpConnectionInfo {
+  _Conn(String ip) : remoteAddress = InternetAddress(ip);
+
+  @override
+  final InternetAddress remoteAddress;
+
+  @override
+  int get remotePort => 40000;
+
+  @override
+  int get localPort => 8080;
 }

@@ -7,6 +7,7 @@ import 'package:shelf_router/shelf_router.dart';
 import '../service/admin_service.dart';
 import '../service/desktop_service.dart';
 import '../service/errors.dart';
+import 'body_limit.dart';
 
 /// M-1 routes of «PicPos إدارة» (ARCHITECTURE-M §2.2/§2.3, read-only part):
 /// `/desktop/link/signing-key`, `/desktop/users`, `/desktop/snapshots`,
@@ -99,13 +100,7 @@ String _ip(Request req) {
   return info is HttpConnectionInfo ? info.remoteAddress.address : 'unknown';
 }
 
-Future<Map<String, Object?>> _body(Request req) async {
-  try {
-    final v = jsonDecode(await req.readAsString());
-    if (v is Map) return v.cast<String, Object?>();
-  } catch (_) {}
-  throw ApiError(400, 'invalid_json');
-}
+Future<Map<String, Object?>> _body(Request req) => readJsonObject(req);
 
 Response _json(int status, Object body) =>
     Response(status, body: jsonEncode(body), headers: {'content-type': 'application/json; charset=utf-8'});

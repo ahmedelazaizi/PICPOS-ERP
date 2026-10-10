@@ -187,24 +187,75 @@ class AppController extends ChangeNotifier {
     return base64.encode(h);
   }
 
+  // M-4: failed PINs are counted in the encrypted local store (survives app
+  // restarts / force-stop). After [pinFreeAttempts] misses the PIN screen locks
+  // for 30 s, doubling per further miss up to 15 min; success clears it.
+  static const _pinFailuresKey = 'pinFailures';
+  static const pinFreeAttempts = 5;
+  static const pinBaseLock = Duration(seconds: 30);
+  static const pinMaxLock = Duration(minutes: 15);
+
+  /// Lock duration after the [failures]-th consecutive miss (zero below the threshold).
+  static Duration pinLockFor(int failures) {
+    if (failures < pinFreeAttempts) return Duration.zero;
+    final exp = min(failures - pinFreeAttempts, 10); // 30 s * 2^10 already exceeds the cap
+    final d = pinBaseLock * (1 << exp);
+    return d > pinMaxLock ? pinMaxLock : d;
+  }
+
+  Future<(int failures, int lockedUntilMs)> _readPinFailures() async {
+    final raw = await store.getKv(_pinFailuresKey);
+    if (raw == null) return (0, 0);
+    try {
+      final m = jsonDecode(raw) as Map;
+      return ((m['n'] as num).toInt(), (m['until'] as num).toInt());
+    } catch (_) {
+      return (pinFreeAttempts, 0); // corrupted counter: do not hand out free attempts
+    }
+  }
+
+  Future<void> _throwIfPinLocked() async {
+    final (_, until) = await _readPinFailures();
+    final left = until - _clock().millisecondsSinceEpoch;
+    if (left > 0) throw AppFailure('pinLocked', '${(left / 1000).ceil()}');
+  }
+
+  Future<void> _recordPinFailure() async {
+    final (n, _) = await _readPinFailures();
+    final failures = n + 1;
+    final until = _clock().millisecondsSinceEpoch + pinLockFor(failures).inMilliseconds;
+    await store.setKv(_pinFailuresKey, jsonEncode({'n': failures, 'until': until}));
+  }
+
+  /// Seconds left before the next PIN attempt is allowed (0 = not locked).
+  Future<int> pinLockSecondsLeft() async {
+    final (_, until) = await _readPinFailures();
+    final left = until - _clock().millisecondsSinceEpoch;
+    return left > 0 ? (left / 1000).ceil() : 0;
+  }
+
   /// Online login when reachable; otherwise the PIN verified at the last
   /// online login opens the app offline (push still needs a server session).
   Future<void> login(String pin) async {
     final c = creds!;
+    await _throwIfPinLocked();
     try {
       await _setSession(await api.login(c, pin));
       final salt = base64.encode(List<int>.generate(16, (_) => Random.secure().nextInt(256)));
       await store.setKv('pin', '$salt:${_pinHash(pin, salt)}');
     } on CloudApiException catch (e) {
       if (e.code == 'device_revoked') await wipe();
+      if (e.code == 'invalid_pin') await _recordPinFailure();
       throw AppFailure(e.code == 'invalid_pin' ? 'invalidPin' : 'error', e.code);
     } catch (_) {
       final saved = await store.getKv('pin');
       final parts = saved?.split(':');
       if (parts == null || parts.length != 2 || _pinHash(pin, parts[0]) != parts[1]) {
+        await _recordPinFailure();
         throw AppFailure('invalidPin');
       }
     }
+    await store.setKv(_pinFailuresKey, null);
     loggedIn = true;
     notifyListeners();
     if (session != null) await syncNow();

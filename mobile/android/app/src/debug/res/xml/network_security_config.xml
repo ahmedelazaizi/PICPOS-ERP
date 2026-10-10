@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug only: cleartext to the TEST stack (http://10.0.2.2:18080 / http://<pc>:18080).
+     HttpCloudApi's UrlPolicy.development still restricts which HTTP hosts are allowed. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

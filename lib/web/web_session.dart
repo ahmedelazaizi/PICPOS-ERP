@@ -217,4 +217,19 @@ class WebAuthClient {
     }
     return (jsonDecode(r.body) as Map<String, dynamic>)['ticket'] as String;
   }
+
+  /// تسجيل خروج على الخادم: يُبطل sid الجلسة (`POST /api/web/logout`).
+  /// أفضل جهد: فشل الشبكة لا يمنع الخروج المحلي (الرمز يموت بانتهائه).
+  Future<void> logout(WebSession s) async {
+    try {
+      await _client
+          .post(
+            Uri.parse('${s.baseUrl}/api/web/logout'),
+            headers: {'x-session-token': s.token},
+          )
+          .timeout(_timeout);
+    } on Object {
+      // متجاهَل عمداً.
+    }
+  }
 }

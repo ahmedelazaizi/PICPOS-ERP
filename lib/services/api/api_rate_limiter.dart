@@ -31,6 +31,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:shelf/shelf.dart';
 
+import 'client_address.dart';
+
 /// Endpoint classification for rate limiting.
 ///
 /// Classify by INTENT (what the path is for in production), not by HTTP
@@ -176,6 +178,7 @@ class ApiRateLimiter {
     // (طلبُ ترقيةٍ واحدٌ لكلّ اتصال؛ الاتصالُ نفسه لا يُحتسب بعد ذلك).
     const MapEntry('/api/web/session', RateLimitClass.read),
     const MapEntry('/api/web/ws-ticket', RateLimitClass.read),
+    const MapEntry('/api/web/logout', RateLimitClass.read),
     const MapEntry('/webdb', RateLimitClass.read),
     const MapEntry('/api/backup', RateLimitClass.otherWrite),
     // حسابُ الطاولة على هاتف الزبون (2026-09-12) — **مصنَّفٌ صراحةً على
@@ -215,6 +218,7 @@ class ApiRateLimiter {
   /// Reset all buckets (useful for testing).
   static void reset() {
     _buckets.clear();
+    _sinceSweep = 0;
     _unmappedPathsLogged.clear();
   }
 
@@ -256,14 +260,26 @@ class ApiRateLimiter {
 
   // ─── Internal helpers ─────────────────────────────────────────────────
 
-  static String _clientIp(Request request) {
-    final xff = request.headers['x-forwarded-for'];
-    if (xff != null && xff.isNotEmpty) {
-      return xff.split(',').first.trim();
+  /// عنوان الاتصال الفعلي؛ ترويسات XFF/X-Real-IP/Host لا تُصدَّق إلا من وكيل
+  /// موثوق مضبوط صراحةً (انظر [ClientAddress.trustedProxies]).
+  static String _clientIp(Request request) => ClientAddress.of(request);
+
+  /// سقف عدد العناوين المتتبَّعة (حماية الذاكرة من تدفّق عناوين).
+  static const int maxTrackedIps = 10000;
+  static int _sinceSweep = 0;
+
+  /// يحذف السطول المنتهية؛ وإن بقي العدد فوق السقف يحذف الأقدم إدراجاً.
+  static void _prune(DateTime now) {
+    _buckets.removeWhere((_, classMap) {
+      classMap.removeWhere(
+        (_, b) => now.difference(b.windowStart) >= _window,
+      );
+      return classMap.isEmpty;
+    });
+    // يبقى مكانٌ لعنوان واحد جديد: الحجم لا يتجاوز السقف بعد الإدراج.
+    while (_buckets.length >= maxTrackedIps) {
+      _buckets.remove(_buckets.keys.first);
     }
-    final realIp = request.headers['x-real-ip'];
-    if (realIp != null && realIp.isNotEmpty) return realIp.trim();
-    return request.headers['host']?.split(':').first ?? 'unknown';
   }
 
   /// Classify [path] using the longest-prefix rule. Logs a one-shot
@@ -291,6 +307,10 @@ class ApiRateLimiter {
   /// this class. The window resets independently per class.
   static bool _checkAndIncrement(String ip, RateLimitClass cls) {
     final now = DateTime.now();
+    if (++_sinceSweep >= 256 || _buckets.length >= maxTrackedIps) {
+      _sinceSweep = 0;
+      _prune(now);
+    }
     final classMap = _buckets.putIfAbsent(ip, () => <RateLimitClass, _Bucket>{});
     final bucket = classMap.putIfAbsent(cls, _Bucket.new);
 

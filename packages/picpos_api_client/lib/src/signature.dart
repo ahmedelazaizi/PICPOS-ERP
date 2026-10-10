@@ -13,6 +13,19 @@ import 'canonical_json.dart';
 
 const _prefix = 'ed25519:';
 
+/// Human-comparable fingerprint of a signing public key (M-5): SHA-256 of the
+/// raw 32 key bytes, first 16 bytes as 8 groups of 4 upper-case hex digits
+/// (`A1B2 C3D4 ...`). Shown at pairing so the user can compare it with the one
+/// on the office computer before trusting a key delivered by the cloud.
+/// Throws [FormatException] when [publicKeyBase64] is not a 32-byte key.
+Future<String> signingKeyFingerprint(String publicKeyBase64) async {
+  final bytes = base64.decode(publicKeyBase64.trim());
+  if (bytes.length != 32) throw const FormatException('Ed25519 public key must be 32 bytes');
+  final digest = (await Sha256().hash(bytes)).bytes.take(16);
+  final hex = [for (final b in digest) b.toRadixString(16).padLeft(2, '0')].join().toUpperCase();
+  return [for (var i = 0; i < hex.length; i += 4) hex.substring(i, i + 4)].join(' ');
+}
+
 /// Verifies payloads against the pinned desktop signing key.
 class PayloadVerifier {
   PayloadVerifier._(this._key);

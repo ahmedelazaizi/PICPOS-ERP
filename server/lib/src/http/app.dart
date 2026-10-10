@@ -15,6 +15,7 @@ import '../service/rate_limiter.dart';
 import '../service/sync_service.dart';
 import '../whatsapp/whatsapp.dart';
 import 'admin_routes.dart';
+import 'body_limit.dart';
 
 /// HTTP surface of the cloud API (I-1 + I-2). Header conventions follow the desktop
 /// LAN API: `Authorization: Bearer <device token>`, `X-Device-Id`,
@@ -28,9 +29,11 @@ class CloudApp {
     required this.adminKey,
     DesktopService? desktop,
     RateLimiter? pushLimiter,
+    RateLimiter? adminKeyLimiter,
     this.admin,
   })  : desktop = desktop ?? DesktopService(db),
-        pushLimiter = pushLimiter ?? RateLimiter(max: 60, window: const Duration(minutes: 1));
+        pushLimiter = pushLimiter ?? RateLimiter(max: 60, window: const Duration(minutes: 1)),
+        adminKeyLimiter = adminKeyLimiter ?? RateLimiter(max: 10, window: const Duration(minutes: 10));
 
   final CloudDatabase db;
   final AuthService auth;
@@ -49,8 +52,12 @@ class CloudApp {
   /// 60 pushes per device per minute (ARCHITECTURE-I §11).
   final RateLimiter pushLimiter;
 
+  /// Failed `X-Admin-Key` guesses: 10 per address per 10 minutes (S-5).
+  final RateLimiter adminKeyLimiter;
+
   Handler get handler => const Pipeline()
       .addMiddleware(_errors())
+      .addMiddleware(bodyLimit()) // S-9: before auth / rate limits / body read
       .addHandler(_router().call);
 
   Router _router() {
@@ -197,8 +204,14 @@ class CloudApp {
   }
 
   void _requireAdmin(Request req) {
+    if (adminKey.isEmpty) throw ApiError(401, 'admin_key_required');
+    final ip = _ip(req);
+    // S-5: only FAILED guesses count; a valid key is never locked out by others'
+    // earlier successes, but a guesser is stopped after 10 misses / 10 min / IP.
+    adminKeyLimiter.check(ip);
     final k = req.headers['x-admin-key'];
-    if (adminKey.isEmpty || k == null || !constantTimeEquals(k, adminKey)) {
+    if (k == null || !constantTimeEquals(k, adminKey)) {
+      adminKeyLimiter.record(ip);
       throw ApiError(401, 'admin_key_required');
     }
   }
@@ -226,13 +239,7 @@ class CloudApp {
     return info is HttpConnectionInfo ? info.remoteAddress.address : 'unknown';
   }
 
-  static Future<Map<String, Object?>> _body(Request req) async {
-    try {
-      final v = jsonDecode(await req.readAsString());
-      if (v is Map) return v.cast<String, Object?>();
-    } catch (_) {}
-    throw ApiError(400, 'invalid_json');
-  }
+  static Future<Map<String, Object?>> _body(Request req) => readJsonObject(req);
 
   static Response _json(int status, Object body, [Map<String, String> extra = const {}]) => Response(status,
       body: jsonEncode(body), headers: {'content-type': 'application/json; charset=utf-8', ...extra});

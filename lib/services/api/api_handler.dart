@@ -37,6 +37,7 @@ import 'api_purchase_handler.dart';
 import 'api_auth_handler.dart';
 import 'api_web_session_handler.dart';
 import 'web_static_handler.dart';
+import 'web_session_guard.dart';
 import '../web_read/web_read_channel_host.dart';
 import 'api_terminals_handler.dart';
 import 'api_voucher_handler.dart';
@@ -86,6 +87,7 @@ class ApiHandler {
     _purchases = ApiPurchaseHandler(_db, _wsClients);
     _auth = ApiAuthHandler(_db, _wsClients);
     _webSession = ApiWebSessionHandler(_db);
+    WebSessionGuard.configure(_db);
     _webRead = WebReadChannelHost(_db);
     _terminals = ApiTerminalsHandler(_db, _wsClients);
     _vouchers = ApiVoucherHandler(_db, _wsClients);
@@ -345,6 +347,7 @@ class ApiHandler {
     // ثم قناة drift للقراءة. ⚠️ /webdb لا يبدأ بـ/ws (انظر الإعفاءات).
     router.post('/api/web/session', _webSession.login);
     router.post('/api/web/ws-ticket', _webSession.issueTicket);
+    router.post('/api/web/logout', _webSession.logout);
     router.get('/webdb', _webRead.handle);
     // Heartbeat
     router.post('/api/sync/heartbeat', _heartbeat);
@@ -1746,7 +1749,12 @@ class ApiHandler {
       // ثمّ تُغلَق فيعود المسارُ مغلقاً على من لا جلسةَ له.
       final pairingOpen = ApiAuthMiddleware.isPairingOpen;
       final hasIdentity = ApiUserCtx.userIdOf(request) != null;
-      final serveCredentials = pairingOpen || hasIdentity;
+      // رمزُ جلسة الويب لا يستحقّ الاعتمادات أبداً (WebSessionGuard).
+      final serveCredentials = WebSessionGuard.mayServeUserCredentials(
+        request,
+        pairingOpen: pairingOpen,
+        hasIdentity: hasIdentity,
+      );
 
       final branchId = await _extractBranchId(
         request,
@@ -1826,7 +1834,10 @@ class ApiHandler {
               'isActive': u.isActive,
               'maxDiscountPercent': u.maxDiscountPercent,
               'discountLimitIsPercent': u.discountLimitIsPercent,
-              'cardCode': u.cardCode,
+              // cardCode = اعتمادُ دخولٍ كاملٌ (POST /api/auth/session يقبله وحده)
+              // فيُعامَل كالهاش: لا يخرج إلا لعميل LAN مصادَق (مستهلكه الوحيد:
+              // UserSyncStrategy لدخول البطاقة دون اتصال)، ولا لرمز ويب أبداً.
+              if (serveCredentials) 'cardCode': u.cardCode,
               // Include hashed credentials so clients can authenticate
               // locally while offline. الهاش دلوقتي Argon2id (ذاكرة-صعب،
               // وملحه جوّه سلسلة الـPHC) — وده اللي بيخلّي إرساله على الشبكة
@@ -3182,8 +3193,11 @@ class ApiHandler {
       const credentialColumns = <String, Set<String>>{
         'users': {'password_hash', 'password_salt', 'card_code'},
       };
-      final serveCredentials = ApiUserCtx.userIdOf(request) != null ||
-          ApiAuthMiddleware.isPairingOpen;
+      final serveCredentials = WebSessionGuard.mayServeUserCredentials(
+        request,
+        pairingOpen: ApiAuthMiddleware.isPairingOpen,
+        hasIdentity: ApiUserCtx.userIdOf(request) != null,
+      );
       final denied = <String>{
         ...?alwaysDeniedColumns[table],
         if (!serveCredentials) ...?credentialColumns[table],

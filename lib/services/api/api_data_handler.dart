@@ -18,6 +18,7 @@ import '../cheque_receipt_jes.dart';
 import '../sync/strategies/setting_sync_strategy.dart'
     show isDeviceLocalSettingKey, isServerSecretSettingKey;
 import 'api_user_context.dart';
+import 'web_session_guard.dart';
 import '../../domain/entities/accounting_entities.dart';
 import 'api_handler_base.dart';
 import 'api_voucher_handler.dart' show resolveClientAccountId;
@@ -1957,6 +1958,12 @@ class ApiDataHandler extends ApiHandlerBase {
       );
       await (db.update(db.users)..where((u) => u.id.equals(userId)))
           .write(companion);
+      WebSessionGuard.userChanged(
+        userId,
+        revokeSessions: (data.containsKey('isActive') &&
+                parseBool(data['isActive']) == false) ||
+            (data.containsKey('isLocked') && parseBool(data['isLocked']) == true),
+      );
 
       if (data.containsKey('branchIds')) {
         final dynamic branchIdsList = data['branchIds'];
@@ -2025,6 +2032,7 @@ class ApiDataHandler extends ApiHandlerBase {
           isLocked: Value(true),
         ),
       );
+      WebSessionGuard.userChanged(userId, revokeSessions: true);
       broadcast('users');
       broadcastRecordDeleted('users', userId);
       return jsonResponse({'success': true, 'soft_deleted': userId});
@@ -2046,6 +2054,7 @@ class ApiDataHandler extends ApiHandlerBase {
         userId: int.parse(id),
         newPassword: data['password'] as String,
       );
+      WebSessionGuard.userChanged(int.parse(id), revokeSessions: true);
       broadcast('users');
       return jsonResponse({'success': true});
     } catch (e) {

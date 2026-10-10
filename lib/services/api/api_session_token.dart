@@ -117,19 +117,44 @@ class ApiSessionToken {
   /// مدّة جلسة الويب بالميلي ثانية.
   static int get webTtlMs => _webTtl.inMilliseconds;
 
-  static final Set<String> _revokedSids = <String>{};
+  /// sid → وقت انتهاء الرمز (للتنظيف: بعد الانتهاء لا حاجة لإبقائه).
+  static final Map<String, int> _revokedSids = <String, int>{};
+
+  /// userId → لحظة الإبطال: كلُّ رمزٍ أُصدر (iat) عندها أو قبلها يفشل.
+  static final Map<int, int> _userRevokedAtMs = <int, int>{};
 
   /// أيقِف الجلسة [sid]: كلُّ رمزٍ بها يفشل في [verifyWeb] من الآن.
-  static void revokeSid(String sid) => _revokedSids.add(sid);
+  /// [expiresAtMs] انتهاء الرمز (افتراضه الآن + مدّة الجلسة) لتنظيف القائمة.
+  static void revokeSid(String sid, {int? expiresAtMs, int? nowMs}) {
+    final now = nowMs ?? DateTime.now().millisecondsSinceEpoch;
+    _revokedSids.removeWhere((_, exp) => now >= exp);
+    _revokedSids[sid] = expiresAtMs ?? now + _webTtl.inMilliseconds;
+  }
 
   /// هل أُلغيت الجلسة [sid]؟
-  static bool isSidRevoked(String sid) => _revokedSids.contains(sid);
+  static bool isSidRevoked(String sid) => _revokedSids.containsKey(sid);
 
-  /// Test hook — تفريغ قائمة الإلغاء.
-  static void clearRevokedForTesting() => _revokedSids.clear();
+  /// يُبطل كلَّ جلسات ويب [userId] المُصدَرة حتى الآن (تعطيل/كلمة مرور).
+  static void revokeUser(int userId, {int? nowMs}) {
+    _userRevokedAtMs[userId] = nowMs ?? DateTime.now().millisecondsSinceEpoch;
+  }
+
+  /// Test hook — تفريغ قوائم الإلغاء.
+  static void clearRevokedForTesting() {
+    _revokedSids.clear();
+    _userRevokedAtMs.clear();
+  }
 
   /// رمزُ جلسة ويب للمستخدم [userId]؛ [sid] يُولَّد عشوائياً إن لم يُمرَّر.
-  static String mintWeb(int userId, {String? sid, int? nowMs}) {
+  /// [bindRole] يربط الرمز بـ[roleId] وقت الإصدار (null = بلا دور): تغيّر الدور
+  /// لاحقاً يُبطله في `WebSessionGuard`.
+  static String mintWeb(
+    int userId, {
+    String? sid,
+    int? nowMs,
+    int? roleId,
+    bool bindRole = false,
+  }) {
     if (_signingKey == null) {
       throw StateError('ApiSessionToken.mintWeb before deriveKey');
     }
@@ -137,8 +162,10 @@ class ApiSessionToken {
     final payload = base64Url.encode(utf8.encode(jsonEncode({
       'uid': userId,
       'exp': now + _webTtl.inMilliseconds,
+      'iat': now,
       'aud': webAudience,
       'sid': sid ?? _newSid(),
+      if (bindRole) 'rid': roleId ?? -1,
     })));
     return '$payload.${_sign(payload)}';
   }
@@ -160,12 +187,24 @@ class ApiSessionToken {
       final sid = map['sid'];
       if (map['aud'] != webAudience) return null;
       if (uid is! int || uid <= 0 || exp is! int) return null;
-      if (sid is! String || sid.isEmpty || _revokedSids.contains(sid)) {
+      if (sid is! String || sid.isEmpty || _revokedSids.containsKey(sid)) {
         return null;
       }
       final now = nowMs ?? DateTime.now().millisecondsSinceEpoch;
       if (now >= exp) return null;
-      return WebSessionClaims(userId: uid, sid: sid, expiresAtMs: exp);
+      final iatRaw = map['iat'];
+      final iat = iatRaw is int ? iatRaw : exp - _webTtl.inMilliseconds;
+      final userRevokedAt = _userRevokedAtMs[uid];
+      if (userRevokedAt != null && iat <= userRevokedAt) return null;
+      final rid = map['rid'];
+      return WebSessionClaims(
+        userId: uid,
+        sid: sid,
+        expiresAtMs: exp,
+        issuedAtMs: iat,
+        roleBound: rid is int,
+        roleId: rid is int && rid > 0 ? rid : null,
+      );
     } catch (_) {
       return null;
     }
@@ -195,9 +234,17 @@ class WebSessionClaims {
     required this.userId,
     required this.sid,
     required this.expiresAtMs,
+    this.issuedAtMs = 0,
+    this.roleBound = false,
+    this.roleId,
   });
 
   final int userId;
   final String sid;
   final int expiresAtMs;
+  final int issuedAtMs;
+
+  /// هل رُبط الرمز بدورٍ وقت الإصدار؟ ([roleId] قد يكون null = بلا دور.)
+  final bool roleBound;
+  final int? roleId;
 }

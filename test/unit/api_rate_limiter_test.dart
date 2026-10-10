@@ -13,19 +13,38 @@
 ///   • configure() changes limit and window for the shared state
 library;
 
+import 'dart:io' show HttpConnectionInfo, InternetAddress;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart';
 import 'package:ural_erp/services/api/api_rate_limiter.dart';
+import 'package:ural_erp/services/api/client_address.dart';
 
 /// A dummy handler that always returns 200 OK.
 Response _ok(Request _) => Response.ok('ok');
 
-/// Build a fake request for [path] with an optional [ip] header.
-Request _req(String path, {String ip = '10.0.0.1'}) {
+class _ConnInfo implements HttpConnectionInfo {
+  _ConnInfo(String ip) : remoteAddress = InternetAddress(ip);
+
+  @override
+  final InternetAddress remoteAddress;
+
+  @override
+  int get remotePort => 40000;
+
+  @override
+  int get localPort => 8080;
+}
+
+/// Build a fake request for [path] coming from the real connection [ip].
+/// [headers] carry client-controlled values (XFF etc.) the limiter must ignore.
+Request _req(String path,
+    {String ip = '10.0.0.1', Map<String, String> headers = const {}}) {
   return Request(
     'GET',
     Uri.parse('http://localhost$path'),
-    headers: {'x-forwarded-for': ip},
+    headers: headers,
+    context: {'shelf.io.connection_info': _ConnInfo(ip)},
   );
 }
 
@@ -247,6 +266,59 @@ void main() {
       expect(ApiRateLimiter.limitFor(RateLimitClass.telemetry), 999);
       // Other classes still hold whatever configure(limit:5) set them to.
       expect(ApiRateLimiter.limitFor(RateLimitClass.critical), 5);
+    });
+  });
+
+  // ── بند الأمن 1/د: عنوان الاتصال الفعلي لا ترويسات العميل ─────────────────
+  group('client address (spoof-resistant)', () {
+    tearDown(() => ClientAddress.configureTrustedProxies(const []));
+
+    test('XFF / X-Real-IP / Host المزوَّرة لا تُنتج سطلاً جديداً', () async {
+      final handler = ApiRateLimiter.createMiddleware()(_ok);
+      for (var i = 0; i < 5; i++) {
+        final r = await handler(_req('/api/products', ip: '10.0.0.9', headers: {
+          'x-forwarded-for': '1.1.1.$i',
+          'x-real-ip': '2.2.2.$i',
+          'host': 'forged$i.example',
+        }));
+        expect(r.statusCode, 200);
+      }
+      // السادس بقيمٍ مزوَّرة جديدة ما زال من نفس الاتصال ⇒ 429.
+      final blocked = await handler(_req('/api/products', ip: '10.0.0.9',
+          headers: {'x-forwarded-for': '9.9.9.9'}));
+      expect(blocked.statusCode, 429);
+      expect(ApiRateLimiter.trackedIps, 1);
+    });
+
+    test('وكيل موثوق مضبوط صراحةً: يُؤخذ عنوان العميل من XFF', () async {
+      ClientAddress.configureTrustedProxies(['10.0.0.2']);
+      final handler = ApiRateLimiter.createMiddleware()(_ok);
+      for (var i = 0; i < 5; i++) {
+        await handler(_req('/api/products',
+            ip: '10.0.0.2', headers: {'x-forwarded-for': '203.0.113.7'}));
+      }
+      final blocked = await handler(_req('/api/products',
+          ip: '10.0.0.2', headers: {'x-forwarded-for': '203.0.113.7'}));
+      expect(blocked.statusCode, 429);
+      // عميلٌ آخر خلف نفس الوكيل لا يتأثّر.
+      final other = await handler(_req('/api/products',
+          ip: '10.0.0.2', headers: {'x-forwarded-for': '203.0.113.8'}));
+      expect(other.statusCode, 200);
+    });
+
+    test('مع وكيلٍ موثوق: XFF المزوَّر من اتصال غير موثوق يُهمَل', () {
+      ClientAddress.configureTrustedProxies(['10.0.0.2']);
+      final r = _req('/x', ip: '10.0.0.77',
+          headers: {'x-forwarded-for': '1.2.3.4'});
+      expect(ClientAddress.of(r), '10.0.0.77');
+    });
+
+    test('تتبّع العناوين محدود بسقف ويُنظَّف', () async {
+      final handler = ApiRateLimiter.createMiddleware()(_ok);
+      for (var i = 0; i < ApiRateLimiter.maxTrackedIps + 300; i++) {
+        await handler(_req('/api/products', ip: '10.${i >> 16}.${(i >> 8) & 255}.${i & 255}'));
+      }
+      expect(ApiRateLimiter.trackedIps, lessThanOrEqualTo(ApiRateLimiter.maxTrackedIps));
     });
   });
 }

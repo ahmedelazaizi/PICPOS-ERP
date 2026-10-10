@@ -6,6 +6,14 @@ import 'package:shelf/shelf_io.dart' as io;
 
 Future<void> main() async {
   final cfg = CloudConfig(Platform.environment);
+  final adminKeyProblem = cfg.adminKeyProblem;
+  if (adminKeyProblem != null) {
+    stderr.writeln('[config] FATAL: $adminKeyProblem');
+    exit(78);
+  }
+  if (cfg.allowWeakAdminKey) {
+    stderr.writeln('[config] WARNING: ALLOW_WEAK_ADMIN_KEY=1 — weak admin keys accepted (TEST ONLY)');
+  }
   CloudDatabase? db;
   // Postgres may still be starting inside docker compose: retry for ~60 s.
   for (var i = 0; i < 30; i++) {

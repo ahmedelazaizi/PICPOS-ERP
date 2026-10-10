@@ -72,6 +72,7 @@ class S {
     'nothingPending': ('لا توجد مستندات معلّقة', 'Nothing pending'),
     'quantity': ('الكمية', 'Qty'),
     'language': ('English', 'العربية'),
+    'pinLocked': ('محاولات خاطئة كثيرة — الإدخال مقفل مؤقتاً، حاول لاحقاً', 'Too many wrong PINs — locked for a while, try again later'),
     'invalidPin': ('الرمز السري غير صحيح', 'Incorrect PIN'),
     'invalidPairingCode': ('رمز الربط غير صحيح أو مخصّص لتطبيق آخر', 'Invalid pairing code, or it belongs to another app'),
     'pairingCodeExpired': ('انتهت صلاحية رمز الربط — اطلب رمزاً جديداً', 'Pairing code expired, ask for a new one'),

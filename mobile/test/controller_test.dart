@@ -41,6 +41,72 @@ void main() {
     expect(controller.creds, isNull);
   });
 
+  group('M-4 PIN brute-force lockout', () {
+    Future<void> wrong(AppController c, {String code = 'invalidPin'}) => expectLater(
+        c.login('0000'), throwsA(isA<AppFailure>().having((f) => f.code, 'code', code)));
+
+    test('lock schedule: free below 5, then 30 s doubling, capped at 15 min', () {
+      expect(AppController.pinLockFor(4), Duration.zero);
+      expect(AppController.pinLockFor(5), const Duration(seconds: 30));
+      expect(AppController.pinLockFor(6), const Duration(seconds: 60));
+      expect(AppController.pinLockFor(9), const Duration(seconds: 480));
+      expect(AppController.pinLockFor(10), const Duration(minutes: 15));
+      expect(AppController.pinLockFor(500), const Duration(minutes: 15));
+    });
+
+    test('5 misses lock even the correct PIN; unlock after the delay; next lock doubles', () async {
+      var now = DateTime(2026, 5, 1, 10);
+      final (c, _) = await readyController(clock: () => now);
+      for (var i = 0; i < 4; i++) {
+        await wrong(c);
+      }
+      expect(await c.pinLockSecondsLeft(), 0);
+      await wrong(c); // 5th miss -> 30 s lock
+      expect(await c.pinLockSecondsLeft(), 30);
+      await expectLater(
+          c.login('1234'),
+          throwsA(isA<AppFailure>().having((f) => f.code, 'code', 'pinLocked').having((f) => f.detail, 'detail', '30')));
+      now = now.add(const Duration(seconds: 29));
+      await wrong(c, code: 'pinLocked');
+      now = now.add(const Duration(seconds: 2));
+      await wrong(c); // 6th miss -> 60 s
+      expect(await c.pinLockSecondsLeft(), 60);
+      now = now.add(const Duration(seconds: 61));
+      await c.login('1234'); // success clears the counter
+      expect(c.loggedIn, isTrue);
+      expect(await c.pinLockSecondsLeft(), 0);
+      for (var i = 0; i < 5; i++) {
+        await wrong(c);
+      }
+      expect(await c.pinLockSecondsLeft(), 30, reason: 'counter restarted after success');
+    });
+
+    test('the lock survives an app restart (new controller on the same store)', () async {
+      final now = DateTime(2026, 5, 1, 10);
+      final (c, api) = await readyController(clock: () => now);
+      for (var i = 0; i < 5; i++) {
+        await wrong(c);
+      }
+      final restarted = AppController(store: c.store, api: api, clock: () => now);
+      await restarted.init();
+      await expectLater(
+          restarted.login('1234'), throwsA(isA<AppFailure>().having((f) => f.code, 'code', 'pinLocked')));
+    });
+
+    test('offline PIN guesses are counted too (the weak path)', () async {
+      var now = DateTime(2026, 5, 1, 10);
+      final (c, api) = await readyController(clock: () => now);
+      api.offline = true;
+      for (var i = 0; i < 5; i++) {
+        await wrong(c);
+      }
+      await expectLater(c.login('1234'), throwsA(isA<AppFailure>().having((f) => f.code, 'code', 'pinLocked')));
+      now = now.add(const Duration(seconds: 31));
+      await c.login('1234'); // correct PIN opens the app offline
+      expect(c.loggedIn, isTrue);
+    });
+  });
+
   test('totals use the shared tax rule (exempt = 0)', () {
     expect(effectiveItemTaxRate(rate: 16, exempt: true, companyDefault: 16), 0);
     expect(effectiveItemTaxRate(rate: 0, exempt: false, companyDefault: 16), 16);

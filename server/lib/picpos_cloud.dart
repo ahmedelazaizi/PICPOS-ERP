@@ -51,6 +51,23 @@ class CloudConfig {
   }
 
   String get adminKey => env['ADMIN_KEY'] ?? '';
+
+  /// Minimum `ADMIN_KEY` length outside the explicit test escape hatch (S-5).
+  static const minAdminKeyLength = 24;
+
+  /// Test stacks only: `ALLOW_WEAK_ADMIN_KEY=1` accepts short admin keys.
+  bool get allowWeakAdminKey => env['ALLOW_WEAK_ADMIN_KEY'] == '1';
+
+  /// Startup error for an unacceptable `ADMIN_KEY`, or null when fine. An empty
+  /// key is allowed (it disables the `/admin/*` routes).
+  String? get adminKeyProblem {
+    final k = adminKey;
+    if (k.isEmpty || allowWeakAdminKey || k.length >= minAdminKeyLength) return null;
+    return 'ADMIN_KEY is too short (${k.length} chars): at least $minAdminKeyLength are required. '
+        'Generate one with e.g. `openssl rand -hex 32`, leave ADMIN_KEY empty to disable /admin/*, '
+        'or set ALLOW_WEAK_ADMIN_KEY=1 on a throw-away TEST stack only.';
+  }
+
   bool get seedDemo => env['SEED_DEMO'] == 'true';
 }
 
@@ -69,6 +86,7 @@ class CloudServices {
     RateLimiter? loginLimiter,
     RateLimiter? pushLimiter,
     RateLimiter? adminLoginLimiter,
+    RateLimiter? adminKeyLimiter,
   }) async {
     await db.migrate();
     final outbox = WhatsAppOutbox(db, provider ?? MockWhatsAppProvider());
@@ -79,6 +97,7 @@ class CloudServices {
       outbox: outbox,
       adminKey: adminKey,
       pushLimiter: pushLimiter,
+      adminKeyLimiter: adminKeyLimiter,
       // Distinct HMAC key: rep and admin session tokens are not interchangeable.
       admin: AdminService(db, SessionTokens('$tokenSecret|manage'), loginLimiter: adminLoginLimiter),
     );

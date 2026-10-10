@@ -32,6 +32,8 @@ class WebSessionNotifier extends Notifier<WebSession?> {
 
   void signOut() {
     final s = state;
+    // إبطال الجلسة في الخادم قبل مسح الرمز محلياً (أفضل جهد، لا ننتظره).
+    if (s != null) unawaited(WebAuthClient().logout(s));
     WebSession.active = null;
     if (s != null) ServerProxy.instance.invalidateSessionToken(s.userId);
     SyncInterceptor.currentUserId = null;

@@ -22,6 +22,7 @@ import 'package:shelf/shelf.dart';
 
 import '../../data/database/database.dart';
 import 'api_session_token.dart';
+import 'client_address.dart';
 import 'server_login_throttle.dart';
 
 /// مفاتيح سياق الطلب التي يضعها `ApiAuthMiddleware` لجلسة الويب.
@@ -151,9 +152,11 @@ class ApiWebSessionHandler {
 
   final AppDatabase _db;
 
-  // نفس صيغة مفتاح `ApiAuthHandler` فيتقاسمان حصّة المحاولات الفاشلة.
-  static String _userThrottleKey(String username) =>
-      'u:${username.toLowerCase()}';
+  // مفتاح مركّب (اسم مستخدم + عنوان الاتصال الفعلي): مجهولٌ على الشبكة لا
+  // يستطيع قفل حساب غيره (DoS) بمحاولات خاطئة من عنوانه هو، وكلّ عنوان
+  // يُحاسَب على محاولاته. (لا يتقاسم الحصّة مع مفتاح `u:` لمسار الأجهزة.)
+  static String _userThrottleKey(String username, String ip) =>
+      'w:${username.toLowerCase()}|$ip';
 
   /// `POST /api/web/session` — body: `{username, password}`.
   ///
@@ -177,7 +180,7 @@ class ApiWebSessionHandler {
         return _error('username+password required', 400);
       }
 
-      final key = _userThrottleKey(username);
+      final key = _userThrottleKey(username, ClientAddress.of(request));
       if (ServerLoginThrottle.isLockedOut(key)) {
         return _error('Too many attempts, try again later', 429);
       }
@@ -190,7 +193,11 @@ class ApiWebSessionHandler {
 
       final codes = await _db.getUserPermissionCodes(result.user.id);
       return _ok({
-        'token': ApiSessionToken.mintWeb(result.user.id),
+        'token': ApiSessionToken.mintWeb(
+          result.user.id,
+          roleId: result.user.roleId,
+          bindRole: true,
+        ),
         'userId': result.user.id,
         'username': result.user.username,
         'displayName': result.user.displayName,
@@ -220,6 +227,18 @@ class ApiWebSessionHandler {
       'ticket': WebWsTicketStore.issue(claims),
       'expiresInMs': WebWsTicketStore.ttl.inMilliseconds,
     });
+  }
+
+  /// `POST /api/web/logout` — يُبطل sid الجلسة الحالية (الرمز يفشل فوراً في
+  /// [ApiSessionToken.verifyWeb] وتُرفض تذاكره). الجلسة تُتحقَّق في
+  /// `ApiAuthMiddleware`؛ يرجع `{ok:true}`.
+  Future<Response> logout(Request request) async {
+    final claims = request.context[ApiWebCtx.claimsKey];
+    if (claims is! WebSessionClaims) {
+      return _error('Web session required', 401);
+    }
+    ApiSessionToken.revokeSid(claims.sid, expiresAtMs: claims.expiresAtMs);
+    return _ok({'ok': true});
   }
 
   Response _ok(Map<String, dynamic> body) => Response.ok(

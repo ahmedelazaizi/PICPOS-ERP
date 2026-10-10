@@ -1,4 +1,4 @@
-﻿import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 // ignore: experimental_member_use
 import 'package:drift/remote.dart';
@@ -312,6 +312,95 @@ void main() {
       await expectRejected('select value from settings');
       await expectRejected(
         'select substr(value,1,3) v from settings where key like \'%pass%\'',
+      );
+    });
+  });
+
+  group('تجاوز الإخفاء بالاستعلام الفرعي/UNION/CTE (W-1)', () {
+    test('استعلام فرعي/UNION/INTERSECT/EXCEPT على جدول حسّاس مرفوض', () async {
+      await expectRejected(
+        'select (select client_secret from e_invoice_configs limit 1) as x',
+      );
+      await expectRejected(
+        'select 1 as a union select client_secret from e_invoice_configs',
+      );
+      await expectRejected(
+        'select id from e_invoice_configs union all '
+        'select 1 from e_invoice_configs',
+      );
+      await expectRejected(
+        'select 1 intersect select client_secret from e_invoice_configs',
+      );
+      await expectRejected(
+        'select 1 except select client_secret from e_invoice_configs',
+      );
+      await expectRejected(
+        'select (select key_hash from api_keys limit 1) as k',
+      );
+      await expectRejected(
+        'select * from (select * from users) t',
+      );
+      await expectRejected(
+        'select id from users where id in (select id from users)',
+      );
+    });
+
+    test('CTE بقائمة أعمدة على جدول حسّاس (إعادة تسمية) مرفوض', () async {
+      await expectRejected(
+        'with t(a,b,c,d,e,f) as (select * from users) select a, b from t',
+      );
+    });
+
+    test('with recursive مرفوض حتى بلا جدول حسّاس', () async {
+      await expectRejected(
+        'with recursive r(n) as (select 1 union all select n+1 from r) '
+        'select n from r',
+      );
+      await expectRejected(
+        'with recursive r(n) as (select 1 union all select n+1 from r '
+        'limit 3) select n from r',
+      );
+    });
+
+    test('الاستعلام الفرعي/UNION/CTE على جداول غير حسّاسة ما زال مقبولاً',
+        () async {
+      expect(
+        await guarded.runSelect(
+          'select name from products where id in '
+          '(select id from sales_invoices)',
+          const [],
+        ),
+        hasLength(1),
+      );
+      expect(
+        await guarded.runSelect(
+          'select id from products union select id from sales_invoices',
+          const [],
+        ),
+        hasLength(2),
+      );
+    });
+
+    test('SELECT بسيط على الجدول الحسّاس يعمل ويُخفى كما كان', () async {
+      final rows = await guarded.runSelect(
+        'select id, username, pin from users where id = ?',
+        [1],
+      );
+      expect(rows.single['username'], 'ali');
+      expect(rows.single['pin'], '');
+    });
+
+    test('سقف الصفوف: النتيجة الأكبر من السقف تُرفض', () async {
+      final small = raw.interceptWith(
+        WebReadPolicyInterceptor(allowedTables: _allowed, maxRows: 1),
+      );
+      await expectLater(
+        small.runSelect('select * from products', const []),
+        throwsA(isA<WebReadPolicyViolation>()),
+      );
+      expect(
+        await small.runSelect('select * from products limit 1', const []),
+        hasLength(1),
       );
     });
   });

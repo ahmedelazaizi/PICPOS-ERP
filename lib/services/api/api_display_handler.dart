@@ -7,6 +7,7 @@ import 'package:shelf/shelf.dart';
 import '../../data/database/database.dart';
 import '../cfd_service.dart';
 import 'api_html_templates.dart';
+import 'web_security_headers.dart';
 
 class ApiDisplayHandler {
   ApiDisplayHandler(this._db);
@@ -58,7 +59,10 @@ class ApiDisplayHandler {
   Future<Response> getMenuDisplay(Request request) async {
     return Response.ok(
       menuHtmlTemplate,
-      headers: {'Content-Type': 'text/html; charset=utf-8'},
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        ...WebSecurityHeaders.forInlinePage(),
+      },
     );
   }
 
@@ -79,7 +83,10 @@ class ApiDisplayHandler {
   Future<Response> getCfdDisplay(Request request) async {
     return Response.ok(
       cfdHtmlTemplate,
-      headers: {'Content-Type': 'text/html; charset=utf-8'},
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        ...WebSecurityHeaders.forInlinePage(),
+      },
     );
   }
 

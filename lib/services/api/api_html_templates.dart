@@ -111,6 +111,12 @@ const String _menuHtmlTemplateRaw = r'''
         let allCategories = [];
         let activeCat = null;
 
+        // ترميز HTML لكل نصّ قادم من قاعدة البيانات قبل إدراجه في innerHTML.
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, ch => (
+                {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[ch]));
+        }
+
         async function init() {
             try {
                 const res = await fetch('/api/menu');
@@ -129,7 +135,7 @@ const String _menuHtmlTemplateRaw = r'''
             const el = document.getElementById('categories');
             let html = '<button class="cat-btn active" onclick="filterCat(null)">الكل</button>';
             allCategories.forEach(c => {
-                html += '<button class="cat-btn" onclick="filterCat(' + c.id + ')">' + c.name + '</button>';
+                html += '<button class="cat-btn" onclick="filterCat(' + Number(c.id) + ')">' + esc(c.name) + '</button>';
             });
             el.innerHTML = html;
         }
@@ -158,8 +164,8 @@ const String _menuHtmlTemplateRaw = r'''
 
             el.innerHTML = filtered.map(p =>
                 '<div class="product-card">' +
-                '<div class="product-name">' + p.name + '</div>' +
-                '<div class="product-desc">' + (p.description || '') + '</div>' +
+                '<div class="product-name">' + esc(p.name) + '</div>' +
+                '<div class="product-desc">' + esc(p.description || '') + '</div>' +
                 '<div class="product-price">' + Number(p.price).toFixed(2) + ' {{CURRENCY}}</div>' +
                 '</div>'
             ).join('');
@@ -322,6 +328,12 @@ const String _cfdHtmlTemplateRaw = r'''
         const cartEl = document.getElementById('cart');
         const statusEl = document.getElementById('status');
 
+        // ترميز HTML لكل نصّ قادم من الخادم قبل إدراجه في innerHTML.
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, ch => (
+                {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[ch]));
+        }
+
         function connect() {
             const es = new EventSource('/api/cfd/stream');
             es.onopen = () => {
@@ -358,8 +370,8 @@ const String _cfdHtmlTemplateRaw = r'''
             const lastIndex = data.items.length - 1;
             itemsEl.innerHTML = data.items.map((i, idx) =>
                 '<div class="item-row' + (idx === lastIndex ? ' last-item' : '') + '">' +
-                '<span class="item-name">' + i.name + '</span>' +
-                '<span class="item-qty">\u00d7' + i.qty + '</span>' +
+                '<span class="item-name">' + esc(i.name) + '</span>' +
+                '<span class="item-qty">\u00d7' + esc(i.qty) + '</span>' +
                 '<span class="item-price">' + Number(i.price || 0).toFixed(3) + '</span>' +
                 '<span class="item-total">' + Number(i.total).toFixed(3) + '</span>' +
                 '</div>'
@@ -370,7 +382,7 @@ const String _cfdHtmlTemplateRaw = r'''
 
             let totalsHtml = '';
             if (data.customer) {
-                totalsHtml += '<div class="total-row"><span>العميل</span><span>' + data.customer + '</span></div>';
+                totalsHtml += '<div class="total-row"><span>العميل</span><span>' + esc(data.customer) + '</span></div>';
             }
             if (data.subtotal !== undefined) {
                 totalsHtml += '<div class="total-row"><span>المجموع</span><span>' + Number(data.subtotal).toFixed(3) + '</span></div>';

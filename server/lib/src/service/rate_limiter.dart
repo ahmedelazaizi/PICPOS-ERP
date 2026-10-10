@@ -21,4 +21,24 @@ class RateLimiter {
     }
     list.add(now);
   }
+
+  /// Throws 429 when [key] already used [max] hits inside [window], without
+  /// recording a hit (pair with [record] to count only failures).
+  void check(String key, {String code = 'rate_limited'}) {
+    final list = _hits[key];
+    if (list == null) return;
+    final now = _clock();
+    list.removeWhere((t) => now.difference(t) >= window);
+    if (list.isEmpty) {
+      _hits.remove(key);
+      return;
+    }
+    if (list.length >= max) {
+      final retry = window - now.difference(list.first);
+      throw ApiError(429, code, null, retry.inSeconds < 1 ? 1 : retry.inSeconds);
+    }
+  }
+
+  /// Records one hit for [key] without checking.
+  void record(String key) => (_hits.putIfAbsent(key, () => [])).add(_clock());
 }

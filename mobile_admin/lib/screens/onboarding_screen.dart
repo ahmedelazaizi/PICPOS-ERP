@@ -44,6 +44,54 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  /// M-5: manual pairing gets its signing key from the cloud; show the key
+  /// fingerprint so the user can compare it with the office computer first.
+  Future<bool> _confirmKey(String fingerprint) async {
+    if (!mounted) return false;
+    final t = S.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        key: const Key('admin.keyConfirm'),
+        title: Text(t('keyFingerprintTitle')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t('keyFingerprintBody')),
+            const SizedBox(height: PicPosSpacing.md),
+            Directionality(
+              textDirection: TextDirection.ltr,
+              child: SelectableText(
+                fingerprint,
+                key: const Key('admin.keyFingerprint'),
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            key: const Key('admin.keyReject'),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(t('cancel')),
+          ),
+          FilledButton(
+            key: const Key('admin.keyAccept'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(t('keyFingerprintMatches')),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
+  }
+
   Future<void> _run(Future<void> Function() action) async {
     setState(() {
       _busy = true;
@@ -194,6 +242,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                       );
                                                 return widget.session.pair(
                                                   offer,
+                                                  confirmKey: _confirmKey,
                                                 );
                                               }),
                                         child: Text(t('pair')),
