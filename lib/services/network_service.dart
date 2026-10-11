@@ -19,6 +19,7 @@ import 'api/lan_pairing_service.dart';
 import 'api/lan_pairing_client.dart';
 import 'api/table_bill_token.dart';
 import 'api/api_rate_limiter.dart';
+import 'api/api_errors.dart';
 import 'deployment/reconcile_result.dart';
 import 'deployment/settings_keys.dart';
 import 'mirror_state.dart';
@@ -779,6 +780,7 @@ class NetworkService {
           .addMiddleware(ApiRateLimiter.createMiddleware())  // Week-10: rate limit before auth
           .addMiddleware(ApiAuthMiddleware.createMiddleware())
           .addMiddleware(_logMiddleware())
+          .addMiddleware(ApiErrors.middleware()) // 8.1: generic 500 + request id
           .addHandler(router.call);
 
       SecurityContext? securityContext;
@@ -814,6 +816,17 @@ class NetworkService {
       _serverCertFingerprint = securityContext != null && _tlsCertPath != null
           ? TlsTrust.fingerprintOfPemFile(_tlsCertPath!)
           : null;
+
+      // 5.1/5.2 decision: the listener stays on anyIPv4 even without TLS —
+      // LAN clients/mirrors need it and plain HTTP is the supported default,
+      // so binding loopback-only would break server mode. Warn loudly instead.
+      if (securityContext == null) {
+        final warn = 'Server listening on 0.0.0.0:$serverPort WITHOUT TLS — '
+            'API token / credentials cross the LAN in clear text. '
+            'Enable TLS in network settings or restrict to a trusted LAN.';
+        debugPrint('[NetworkService] ⚠️ SECURITY: $warn');
+        unawaited(DiagnosticLogger.log('SEC-WARN', warn));
+      }
 
       // Get the local IP for display (WiFi/Ethernet preferred)
       _serverAddress = await getLocalIpAddress();

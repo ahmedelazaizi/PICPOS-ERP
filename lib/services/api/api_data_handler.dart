@@ -6,6 +6,7 @@ import 'dart:io' show Directory, File, Platform;
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter/foundation.dart';
 import 'package:shelf/shelf.dart';
+import 'api_errors.dart';
 import 'package:drift/drift.dart';
 import '../../core/auth/bootstrap_admin.dart';
 import '../../core/logging/diagnostic_logger.dart';
@@ -284,7 +285,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] postExpense error: $e');
-      return errorResponse('Failed to record expense: $e');
+      return ApiErrors.fail(e, 'Failed to record expense');
     }
   }
 
@@ -304,7 +305,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcastRecordDeleted('safe_transactions', txId);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete expense: $e');
+      return ApiErrors.fail(e, 'Failed to delete expense');
     }
   }
 
@@ -486,8 +487,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e, st) {
       debugPrint('[API] postLandedCostApply failed: $e\n$st');
-      return jsonResponse({'success': false, 'error': e.toString()},
-          statusCode: 500);
+      return ApiErrors.failJson(e, st);
     }
   }
 
@@ -567,8 +567,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e, st) {
       debugPrint('[API] postFloorPlan failed: $e\n$st');
-      return jsonResponse({'success': false, 'error': e.toString()},
-          statusCode: 500);
+      return ApiErrors.failJson(e, st);
     }
   }
 
@@ -699,8 +698,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e, st) {
       debugPrint('[API] postFixedAsset failed: $e\n$st');
-      return jsonResponse({'success': false, 'error': e.toString()},
-          statusCode: 500);
+      return ApiErrors.failJson(e, st);
     }
   }
 
@@ -745,8 +743,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e, st) {
       debugPrint('[API] postAssetDepreciationRun failed: $e\n$st');
-      return jsonResponse({'success': false, 'error': e.toString()},
-          statusCode: 500);
+      return ApiErrors.failJson(e, st);
     }
   }
 
@@ -878,8 +875,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e, st) {
       debugPrint('[API] postOperationalExpense failed: $e\n$st');
-      return jsonResponse({'success': false, 'error': e.toString()},
-          statusCode: 500);
+      return ApiErrors.failJson(e, st);
     }
   }
 
@@ -973,8 +969,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e, st) {
       debugPrint('[API] postManufacturingAction failed: $e\n$st');
-      return jsonResponse({'success': false, 'error': e.toString()},
-          statusCode: 500);
+      return ApiErrors.failJson(e, st);
     }
   }
 
@@ -1056,8 +1051,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e, st) {
       debugPrint('[API] postBookingApplyDeposit failed: $e\n$st');
-      return jsonResponse({'success': false, 'error': e.toString()},
-          statusCode: 500);
+      return ApiErrors.failJson(e, st);
     }
   }
 
@@ -1206,7 +1200,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] postReceipt error: $e');
-      return errorResponse('Failed to record receipt: $e');
+      return ApiErrors.fail(e, 'Failed to record receipt');
     }
   }
 
@@ -1303,7 +1297,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] postOpenShift error: $e');
-      return errorResponse('Failed to open shift: $e');
+      return ApiErrors.fail(e, 'Failed to open shift');
     }
   }
 
@@ -1462,7 +1456,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] postCloseShift error: $e');
-      return errorResponse('Failed to close shift: $e');
+      return ApiErrors.fail(e, 'Failed to close shift');
     }
   }
 
@@ -1563,7 +1557,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] postStockAdjust error: $e');
-      return errorResponse('Failed to adjust stock: $e');
+      return ApiErrors.fail(e, 'Failed to adjust stock');
     }
   }
 
@@ -1604,7 +1598,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] postCloseSafe error: $e');
-      return errorResponse('Failed to close safe: $e');
+      return ApiErrors.fail(e, 'Failed to close safe');
     }
   }
 
@@ -1668,7 +1662,7 @@ class ApiDataHandler extends ApiHandlerBase {
       });
     } catch (e) {
       debugPrint('[API] postSettings error: $e');
-      return errorResponse('Failed to save settings: $e');
+      return ApiErrors.fail(e, 'Failed to save settings');
     }
   }
 
@@ -1737,7 +1731,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'id': id});
     } catch (e) {
       debugPrint('[API] postCategory error: $e');
-      return errorResponse('Failed to create category: $e');
+      return ApiErrors.fail(e, 'Failed to create category');
     }
   }
 
@@ -1781,7 +1775,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] putCategory error: $e');
-      return errorResponse('Failed to update category: $e');
+      return ApiErrors.fail(e, 'Failed to update category');
     }
   }
 
@@ -1823,7 +1817,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcastRecordDeleted('categories', catId);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete category: $e');
+      return ApiErrors.fail(e, 'Failed to delete category');
     }
   }
 
@@ -1882,7 +1876,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'id': id});
     } catch (e) {
       debugPrint('[API] postUser error: $e');
-      return errorResponse('Failed to create user: $e');
+      return ApiErrors.fail(e, 'Failed to create user');
     }
   }
 
@@ -1985,7 +1979,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] putUser error: $e');
-      return errorResponse('Failed to update user: $e');
+      return ApiErrors.fail(e, 'Failed to update user');
     }
   }
 
@@ -2038,7 +2032,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'soft_deleted': userId});
     } catch (e) {
       debugPrint('[API] deleteUser error: $e');
-      return errorResponse('Failed to delete user: $e');
+      return ApiErrors.fail(e, 'Failed to delete user');
     }
   }
 
@@ -2059,7 +2053,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] postUserPassword error: $e');
-      return errorResponse('Failed to update password: $e');
+      return ApiErrors.fail(e, 'Failed to update password');
     }
   }
 
@@ -2076,7 +2070,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] postUserPin error: $e');
-      return errorResponse('Failed to update PIN: $e');
+      return ApiErrors.fail(e, 'Failed to update PIN');
     }
   }
 
@@ -2120,7 +2114,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'id': id});
     } catch (e) {
       debugPrint('[API] postWarehouse error: $e');
-      return errorResponse('Failed to create warehouse: $e');
+      return ApiErrors.fail(e, 'Failed to create warehouse');
     }
   }
 
@@ -2168,7 +2162,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] putWarehouse error: $e');
-      return errorResponse('Failed to update warehouse: $e');
+      return ApiErrors.fail(e, 'Failed to update warehouse');
     }
   }
 
@@ -2184,7 +2178,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcastRecordDeleted('warehouses', whId);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete warehouse: $e');
+      return ApiErrors.fail(e, 'Failed to delete warehouse');
     }
   }
 
@@ -2226,7 +2220,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'id': id});
     } catch (e) {
       debugPrint('[API] postCostCenter error: $e');
-      return errorResponse('Failed to create cost center: $e');
+      return ApiErrors.fail(e, 'Failed to create cost center');
     }
   }
 
@@ -2254,7 +2248,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] putCostCenter error: $e');
-      return errorResponse('Failed to update cost center: $e');
+      return ApiErrors.fail(e, 'Failed to update cost center');
     }
   }
 
@@ -2270,7 +2264,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcastRecordDeleted('cost_centers', ccId);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete cost center: $e');
+      return ApiErrors.fail(e, 'Failed to delete cost center');
     }
   }
 
@@ -2320,7 +2314,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'id': id});
     } catch (e) {
       debugPrint('[API] postAccount error: $e');
-      return errorResponse('Failed to create account: $e');
+      return ApiErrors.fail(e, 'Failed to create account');
     }
   }
 
@@ -2348,7 +2342,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] putAccount error: $e');
-      return errorResponse('Failed to update account: $e');
+      return ApiErrors.fail(e, 'Failed to update account');
     }
   }
 
@@ -2364,7 +2358,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcastRecordDeleted('accounts', accountId);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete account: $e');
+      return ApiErrors.fail(e, 'Failed to delete account');
     }
   }
 
@@ -2399,7 +2393,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] postAccountMapping error: $e');
-      return errorResponse('Failed to set account mapping: $e');
+      return ApiErrors.fail(e, 'Failed to set account mapping');
     }
   }
 
@@ -2432,7 +2426,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcast('account_mappings');
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete account mapping: $e');
+      return ApiErrors.fail(e, 'Failed to delete account mapping');
     }
   }
 
@@ -2487,7 +2481,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'id': id});
     } catch (e) {
       debugPrint('[API] postSafe error: $e');
-      return errorResponse('Failed to create safe: $e');
+      return ApiErrors.fail(e, 'Failed to create safe');
     }
   }
 
@@ -2544,7 +2538,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] putSafe error: $e');
-      return errorResponse('Failed to update safe: $e');
+      return ApiErrors.fail(e, 'Failed to update safe');
     }
   }
 
@@ -2560,7 +2554,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcastRecordDeleted('safes', safeId);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete safe: $e');
+      return ApiErrors.fail(e, 'Failed to delete safe');
     }
   }
 
@@ -2688,7 +2682,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] postBranch error: $e');
-      return errorResponse('Failed to create branch: $e');
+      return ApiErrors.fail(e, 'Failed to create branch');
     }
   }
 
@@ -2731,7 +2725,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] putBranch error: $e');
-      return errorResponse('Failed to update branch: $e');
+      return ApiErrors.fail(e, 'Failed to update branch');
     }
   }
 
@@ -2774,7 +2768,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcastRecordDeleted('branches', branchId);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete branch: $e');
+      return ApiErrors.fail(e, 'Failed to delete branch');
     }
   }
 
@@ -2862,7 +2856,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'serverId': id});
     } catch (e) {
       debugPrint('[API] postCommercialPaper error: $e');
-      return errorResponse('Failed to create commercial paper: $e');
+      return ApiErrors.fail(e, 'Failed to create commercial paper');
     }
   }
 
@@ -2980,7 +2974,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] putCommercialPaperStatus error: $e');
-      return errorResponse('Failed to update paper status: $e');
+      return ApiErrors.fail(e, 'Failed to update paper status');
     }
   }
 
@@ -3002,7 +2996,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] postRenewPaper error: $e');
-      return errorResponse('Failed to renew paper: $e');
+      return ApiErrors.fail(e, 'Failed to renew paper');
     }
   }
 
@@ -3033,7 +3027,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] postPartialCollection error: $e');
-      return errorResponse('Failed to partially collect paper: $e');
+      return ApiErrors.fail(e, 'Failed to partially collect paper');
     }
   }
 
@@ -3061,7 +3055,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] postDepositForCollection error: $e');
-      return errorResponse('Failed to deposit paper for collection: $e');
+      return ApiErrors.fail(e, 'Failed to deposit paper for collection');
     }
   }
 
@@ -3090,7 +3084,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] postReissuePaper error: $e');
-      return errorResponse('Failed to reissue paper: $e');
+      return ApiErrors.fail(e, 'Failed to reissue paper');
     }
   }
 
@@ -3203,7 +3197,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse(responseBody);
     } catch (e) {
       debugPrint('[API] postJournalEntry error: $e');
-      return errorResponse('Failed to create journal entry: $e');
+      return ApiErrors.fail(e, 'Failed to create journal entry');
     }
   }
 
@@ -3379,7 +3373,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] postSafeTransaction error: $e');
-      return errorResponse('Failed to record safe transaction: $e');
+      return ApiErrors.fail(e, 'Failed to record safe transaction');
     }
   }
 
@@ -3498,7 +3492,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] postSafeTransfer error: $e');
-      return errorResponse('Failed to transfer between safes: $e');
+      return ApiErrors.fail(e, 'Failed to transfer between safes');
     }
   }
 
@@ -3523,7 +3517,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] postSetDefaultSafe error: $e');
-      return errorResponse('Failed to set default safe: $e');
+      return ApiErrors.fail(e, 'Failed to set default safe');
     }
   }
 
@@ -3620,7 +3614,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] postStockTransfer error: $e');
-      return errorResponse('Failed to process stock transfer: $e');
+      return ApiErrors.fail(e, 'Failed to process stock transfer');
     }
   }
 
@@ -3806,7 +3800,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'serverId': serverBondId});
     } catch (e) {
       debugPrint('[API] postInventoryBond error: $e');
-      return errorResponse('Failed to create inventory bond: $e');
+      return ApiErrors.fail(e, 'Failed to create inventory bond');
     }
   }
 
@@ -3832,7 +3826,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'id': id});
     } catch (e) {
       debugPrint('[API] postRegion error: $e');
-      return errorResponse('Failed to create region: $e');
+      return ApiErrors.fail(e, 'Failed to create region');
     }
   }
 
@@ -3862,7 +3856,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] putRegion error: $e');
-      return errorResponse('Failed to update region: $e');
+      return ApiErrors.fail(e, 'Failed to update region');
     }
   }
 
@@ -3879,7 +3873,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] deleteRegion error: $e');
-      return errorResponse('Failed to deactivate region: $e', statusCode: 400);
+      return ApiErrors.fail(e, 'Failed to deactivate region', statusCode: 400);
     }
   }
 
@@ -3898,7 +3892,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] postUserRegionAccess error: $e');
-      return errorResponse('Failed to set user region access: $e');
+      return ApiErrors.fail(e, 'Failed to set user region access');
     }
   }
 
@@ -3926,7 +3920,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'id': id, 'success': true});
     } catch (e) {
       debugPrint('[API] createRole error: $e');
-      return errorResponse('Failed to create role: $e');
+      return ApiErrors.fail(e, 'Failed to create role');
     }
   }
 
@@ -3990,7 +3984,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] setRolePermissions error: $e');
-      return errorResponse('Failed to set role permissions: $e');
+      return ApiErrors.fail(e, 'Failed to set role permissions');
     }
   }
 
@@ -4047,7 +4041,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'id': id, 'global_id': gid});
     } catch (e) {
       debugPrint('[API] postPartyGroup error: $e');
-      return errorResponse('Failed to create party group: $e');
+      return ApiErrors.fail(e, 'Failed to create party group');
     }
   }
 
@@ -4072,7 +4066,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcast('party_groups');
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to update party group: $e');
+      return ApiErrors.fail(e, 'Failed to update party group');
     }
   }
 
@@ -4088,7 +4082,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcastRecordDeleted('party_groups', gid);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete party group: $e');
+      return ApiErrors.fail(e, 'Failed to delete party group');
     }
   }
 
@@ -4172,7 +4166,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'id': orderId, 'global_id': gid});
     } catch (e) {
       debugPrint('[API] postPurchaseOrder error: $e');
-      return errorResponse('Failed to create purchase order: $e');
+      return ApiErrors.fail(e, 'Failed to create purchase order');
     }
   }
 
@@ -4189,7 +4183,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcast('purchase_orders');
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to update purchase order status: $e');
+      return ApiErrors.fail(e, 'Failed to update purchase order status');
     }
   }
 
@@ -4208,7 +4202,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcastRecordDeleted('purchase_orders', oid);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete purchase order: $e');
+      return ApiErrors.fail(e, 'Failed to delete purchase order');
     }
   }
 
@@ -4291,7 +4285,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'id': orderId, 'global_id': gid});
     } catch (e) {
       debugPrint('[API] postSalesOrder error: $e');
-      return errorResponse('Failed to create sales order: $e');
+      return ApiErrors.fail(e, 'Failed to create sales order');
     }
   }
 
@@ -4308,7 +4302,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcast('sales_orders');
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to update sales order status: $e');
+      return ApiErrors.fail(e, 'Failed to update sales order status');
     }
   }
 
@@ -4327,7 +4321,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcastRecordDeleted('sales_orders', oid);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete sales order: $e');
+      return ApiErrors.fail(e, 'Failed to delete sales order');
     }
   }
 
@@ -4420,7 +4414,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'id': quotationId, 'global_id': gid});
     } catch (e) {
       debugPrint('[API] postQuotation error: $e');
-      return errorResponse('Failed to create quotation: $e');
+      return ApiErrors.fail(e, 'Failed to create quotation');
     }
   }
 
@@ -4442,7 +4436,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcast('quotations');
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to update quotation status: $e');
+      return ApiErrors.fail(e, 'Failed to update quotation status');
     }
   }
 
@@ -4531,7 +4525,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'id': qid});
     } catch (e) {
       debugPrint('[API] putQuotation error: $e');
-      return errorResponse('Failed to update quotation: $e');
+      return ApiErrors.fail(e, 'Failed to update quotation');
     }
   }
 
@@ -4550,7 +4544,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcastRecordDeleted('quotations', qid);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete quotation: $e');
+      return ApiErrors.fail(e, 'Failed to delete quotation');
     }
   }
 
@@ -4598,7 +4592,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'id': id, 'global_id': gid});
     } catch (e) {
       debugPrint('[API] postPriceList error: $e');
-      return errorResponse('Failed to create price list: $e');
+      return ApiErrors.fail(e, 'Failed to create price list');
     }
   }
 
@@ -4618,7 +4612,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcast('price_lists');
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to update price list: $e');
+      return ApiErrors.fail(e, 'Failed to update price list');
     }
   }
 
@@ -4649,7 +4643,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcast('price_list_items');
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to set price list item: $e');
+      return ApiErrors.fail(e, 'Failed to set price list item');
     }
   }
 
@@ -4694,7 +4688,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'id': id, 'global_id': gid});
     } catch (e) {
       debugPrint('[API] postPrinter error: $e');
-      return errorResponse('Failed to create printer: $e');
+      return ApiErrors.fail(e, 'Failed to create printer');
     }
   }
 
@@ -4720,7 +4714,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcast('printers');
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to update printer: $e');
+      return ApiErrors.fail(e, 'Failed to update printer');
     }
   }
 
@@ -4736,7 +4730,7 @@ class ApiDataHandler extends ApiHandlerBase {
       broadcastRecordDeleted('printers', pid);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete printer: $e');
+      return ApiErrors.fail(e, 'Failed to delete printer');
     }
   }
 
@@ -4775,7 +4769,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'path': backupPath});
     } catch (e) {
       debugPrint('[API] postBackup error: $e');
-      return errorResponse('Failed to save backup: $e');
+      return ApiErrors.fail(e, 'Failed to save backup');
     }
   }
 
@@ -4847,7 +4841,7 @@ class ApiDataHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] pushActivityLog error: $e');
-      return errorResponse('Failed to store activity log: $e');
+      return ApiErrors.fail(e, 'Failed to store activity log');
     }
   }
 
@@ -5012,8 +5006,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e, st) {
       debugPrint('[API] postAttachment failed: $e\n$st');
-      return jsonResponse({'success': false, 'error': e.toString()},
-          statusCode: 500);
+      return ApiErrors.failJson(e, st);
     }
   }
 
@@ -5050,8 +5043,7 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e, st) {
       debugPrint('[API] postAttachmentDelete failed: $e\n$st');
-      return jsonResponse({'success': false, 'error': e.toString()},
-          statusCode: 500);
+      return ApiErrors.failJson(e, st);
     }
   }
 
@@ -5091,8 +5083,7 @@ class ApiDataHandler extends ApiHandlerBase {
       });
     } catch (e, st) {
       debugPrint('[API] getAttachmentBytes failed: $e\n$st');
-      return jsonResponse({'success': false, 'error': e.toString()},
-          statusCode: 500);
+      return ApiErrors.failJson(e, st);
     }
   }
 }

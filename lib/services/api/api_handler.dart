@@ -19,6 +19,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import 'package:shelf/shelf.dart';
+import 'api_errors.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:drift/drift.dart';
 import '../../data/database/database.dart';
@@ -484,7 +485,7 @@ class ApiHandler {
       return _json({'products': jsonList, 'count': jsonList.length});
     } catch (e) {
       debugPrint('[API] Error fetching products: $e');
-      return _error('Failed to fetch products: $e');
+      return ApiErrors.fail(e, 'Failed to fetch products');
     }
   }
 
@@ -502,7 +503,7 @@ class ApiHandler {
       return _json({'product_barcodes': jsonList, 'count': jsonList.length});
     } catch (e) {
       debugPrint('[API] Error fetching product barcodes: $e');
-      return _error('Failed to fetch product barcodes: $e');
+      return ApiErrors.fail(e, 'Failed to fetch product barcodes');
     }
   }
 
@@ -603,7 +604,7 @@ class ApiHandler {
       });
     } catch (e) {
       debugPrint('[API] Error in product barcode lookup: $e');
-      return _error('Failed to lookup barcode: $e');
+      return ApiErrors.fail(e, 'Failed to lookup barcode');
     }
   }
 
@@ -628,7 +629,7 @@ class ApiHandler {
       return _json({'user_branch_access': jsonList, 'count': jsonList.length});
     } catch (e) {
       debugPrint('[API] Error fetching user branch access: $e');
-      return _error('Failed to fetch user branch access: $e');
+      return ApiErrors.fail(e, 'Failed to fetch user branch access');
     }
   }
 
@@ -644,7 +645,7 @@ class ApiHandler {
       return _json({'user_warehouse_access': jsonList, 'count': jsonList.length});
     } catch (e) {
       debugPrint('[API] Error fetching user warehouse access: $e');
-      return _error('Failed to fetch user warehouse access: $e');
+      return ApiErrors.fail(e, 'Failed to fetch user warehouse access');
     }
   }
 
@@ -715,7 +716,7 @@ class ApiHandler {
         'since': sinceStr,
       });
     } catch (e) {
-      return _error('Failed to fetch updated products: $e');
+      return ApiErrors.fail(e, 'Failed to fetch updated products');
     }
   }
 
@@ -753,7 +754,7 @@ class ApiHandler {
 
       return _json({'categories': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch categories: $e');
+      return ApiErrors.fail(e, 'Failed to fetch categories');
     }
   }
 
@@ -770,7 +771,7 @@ class ApiHandler {
 
       return _json({'units': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch units: $e');
+      return ApiErrors.fail(e, 'Failed to fetch units');
     }
   }
 
@@ -796,7 +797,7 @@ class ApiHandler {
 
       return _json({'settings': settingsMap});
     } catch (e) {
-      return _error('Failed to fetch settings: $e');
+      return ApiErrors.fail(e, 'Failed to fetch settings');
     }
   }
 
@@ -820,7 +821,7 @@ class ApiHandler {
           .toList();
       return _json({'roles': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch roles: $e');
+      return ApiErrors.fail(e, 'Failed to fetch roles');
     }
   }
 
@@ -839,7 +840,7 @@ class ApiHandler {
           .toList();
       return _json({'permissions': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch permissions: $e');
+      return ApiErrors.fail(e, 'Failed to fetch permissions');
     }
   }
 
@@ -889,7 +890,7 @@ class ApiHandler {
           .toList();
       return _json({'role_permissions': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch role_permissions: $e');
+      return ApiErrors.fail(e, 'Failed to fetch role_permissions');
     }
   }
 
@@ -954,7 +955,7 @@ class ApiHandler {
           .toList();
       return _json({'safes': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch safes: $e');
+      return ApiErrors.fail(e, 'Failed to fetch safes');
     }
   }
 
@@ -1008,7 +1009,7 @@ class ApiHandler {
           .toList();
       return _json({'shifts': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch shifts: $e');
+      return ApiErrors.fail(e, 'Failed to fetch shifts');
     }
   }
 
@@ -1090,7 +1091,7 @@ class ApiHandler {
       return _json({'sales': jsonList, 'count': jsonList.length});
     } catch (e) {
       debugPrint('[API] _getSalesInvoices error: $e');
-      return _error('Failed to fetch sales: $e');
+      return ApiErrors.fail(e, 'Failed to fetch sales');
     }
   }
 
@@ -1129,7 +1130,7 @@ class ApiHandler {
       return _json({'held_orders': jsonList, 'count': jsonList.length});
     } catch (e) {
       debugPrint('[API] _getHeldOrders error: $e');
-      return _error('Failed to fetch held orders: $e');
+      return ApiErrors.fail(e, 'Failed to fetch held orders');
     }
   }
 
@@ -1160,7 +1161,7 @@ class ApiHandler {
       return _json({'held_order_items': jsonList, 'count': jsonList.length});
     } catch (e) {
       debugPrint('[API] _getHeldOrderItems error: $e');
-      return _error('Failed to fetch held order items: $e');
+      return ApiErrors.fail(e, 'Failed to fetch held order items');
     }
   }
 
@@ -1214,7 +1215,7 @@ class ApiHandler {
       return _json({'transactions': jsonList, 'count': jsonList.length});
     } catch (e) {
       debugPrint('[API] _getSafeTransactions error: $e');
-      return _error('Failed to fetch safe transactions: $e');
+      return ApiErrors.fail(e, 'Failed to fetch safe transactions');
     }
   }
 
@@ -1302,7 +1303,7 @@ class ApiHandler {
       return _json({'journals': jsonList, 'count': jsonList.length});
     } catch (e) {
       debugPrint('[API] _getJournalEntries error: $e');
-      return _error('Failed to fetch journal entries: $e');
+      return ApiErrors.fail(e, 'Failed to fetch journal entries');
     }
   }
 
@@ -1361,7 +1362,7 @@ class ApiHandler {
       return _json({'purchases': jsonList, 'count': jsonList.length});
     } catch (e) {
       debugPrint('[API] _getPurchaseInvoices error: $e');
-      return _error('Failed to fetch purchase invoices: $e');
+      return ApiErrors.fail(e, 'Failed to fetch purchase invoices');
     }
   }
 
@@ -1397,7 +1398,7 @@ class ApiHandler {
       return _json({'stock_movements': jsonList, 'count': jsonList.length});
     } catch (e) {
       debugPrint('[API] _getStockMovements error: $e');
-      return _error('Failed to fetch stock movements: $e');
+      return ApiErrors.fail(e, 'Failed to fetch stock movements');
     }
   }
 
@@ -1427,7 +1428,7 @@ class ApiHandler {
       return _json({'inventory_balances': jsonList, 'count': jsonList.length});
     } catch (e) {
       debugPrint('[API] _getInventoryBalances error: $e');
-      return _error('Failed to fetch inventory balances: $e');
+      return ApiErrors.fail(e, 'Failed to fetch inventory balances');
     }
   }
 
@@ -1499,7 +1500,7 @@ class ApiHandler {
       return _json({'commercial_papers': jsonList, 'count': jsonList.length});
     } catch (e) {
       debugPrint('[API] _getCommercialPapers error: $e');
-      return _error('Failed to fetch commercial papers: $e');
+      return ApiErrors.fail(e, 'Failed to fetch commercial papers');
     }
   }
 
@@ -1542,7 +1543,7 @@ class ApiHandler {
           .toList();
       return _json({'parties': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch parties: $e');
+      return ApiErrors.fail(e, 'Failed to fetch parties');
     }
   }
 
@@ -1578,7 +1579,7 @@ class ApiHandler {
           .toList();
       return _json({'branches': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch branches: $e');
+      return ApiErrors.fail(e, 'Failed to fetch branches');
     }
   }
 
@@ -1600,7 +1601,7 @@ class ApiHandler {
           .toList();
       return _json({'regions': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch regions: $e');
+      return ApiErrors.fail(e, 'Failed to fetch regions');
     }
   }
 
@@ -1616,7 +1617,7 @@ class ApiHandler {
       return _json({'user_region_access': jsonList, 'count': jsonList.length});
     } catch (e) {
       debugPrint('[API] Error fetching user region access: $e');
-      return _error('Failed to fetch user region access: $e');
+      return ApiErrors.fail(e, 'Failed to fetch user region access');
     }
   }
 
@@ -1658,7 +1659,7 @@ class ApiHandler {
           .toList();
       return _json({'cost_centers': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch cost centers: $e');
+      return ApiErrors.fail(e, 'Failed to fetch cost centers');
     }
   }
 
@@ -1685,7 +1686,7 @@ class ApiHandler {
           .toList();
       return _json({'accounts': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch accounts: $e');
+      return ApiErrors.fail(e, 'Failed to fetch accounts');
     }
   }
 
@@ -1714,7 +1715,7 @@ class ApiHandler {
           .toList();
       return _json({'warehouses': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch warehouses: $e');
+      return ApiErrors.fail(e, 'Failed to fetch warehouses');
     }
   }
 
@@ -1864,7 +1865,7 @@ class ApiHandler {
           .toList();
       return _json({'users': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch users: $e');
+      return ApiErrors.fail(e, 'Failed to fetch users');
     }
   }
 
@@ -1969,6 +1970,8 @@ class ApiHandler {
               roleId: const Value(1),
               isActive: const Value(true),
               isLocked: const Value(false),
+              // S-04: known password => must be rotated at first login.
+              forcePasswordChange: const Value(true),
               defaultScreen: const Value('pos'),
             ),
           );
@@ -2005,7 +2008,7 @@ class ApiHandler {
       }).toList();
       return _json({'account_mappings': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch account mappings: $e');
+      return ApiErrors.fail(e, 'Failed to fetch account mappings');
     }
   }
 
@@ -2030,7 +2033,7 @@ class ApiHandler {
         'clientId': clientId,
       });
     } catch (e) {
-      return _error('Heartbeat failed: $e');
+      return ApiErrors.fail(e, 'Heartbeat failed');
     }
   }
 
@@ -3275,7 +3278,7 @@ class ApiHandler {
       });
     } catch (e, st) {
       debugPrint('[API] /api/sync/pull failed: $e\n$st');
-      return _error('Failed to fetch delta: $e');
+      return ApiErrors.fail(e, 'Failed to fetch delta');
     }
   }
 
@@ -3330,7 +3333,7 @@ class ApiHandler {
 
       return _json({'product_units': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch product units: $e');
+      return ApiErrors.fail(e, 'Failed to fetch product units');
     }
   }
 
@@ -3351,7 +3354,7 @@ class ApiHandler {
       return _json(
           {'document_sequences': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch document sequences: $e');
+      return ApiErrors.fail(e, 'Failed to fetch document sequences');
     }
   }
 
@@ -3375,7 +3378,7 @@ class ApiHandler {
 
       return _json({'fiscal_years': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch fiscal years: $e');
+      return ApiErrors.fail(e, 'Failed to fetch fiscal years');
     }
   }
 
@@ -3419,7 +3422,7 @@ class ApiHandler {
       }).toList();
       return _json({'payments': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch payments: $e');
+      return ApiErrors.fail(e, 'Failed to fetch payments');
     }
   }
 
@@ -3456,7 +3459,7 @@ class ApiHandler {
       }).toList();
       return _json({'payment_allocations': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch payment allocations: $e');
+      return ApiErrors.fail(e, 'Failed to fetch payment allocations');
     }
   }
 
@@ -3501,7 +3504,7 @@ class ApiHandler {
           .toList();
       return _json({'party_follow_ups': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch party follow-ups: $e');
+      return ApiErrors.fail(e, 'Failed to fetch party follow-ups');
     }
   }
 
@@ -3531,7 +3534,7 @@ class ApiHandler {
           .toList();
       return _json({'supplier_claims': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch supplier claims: $e');
+      return ApiErrors.fail(e, 'Failed to fetch supplier claims');
     }
   }
 
@@ -3568,7 +3571,7 @@ class ApiHandler {
       }).toList();
       return _json({'product_batches': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch product batches: $e');
+      return ApiErrors.fail(e, 'Failed to fetch product batches');
     }
   }
 
@@ -3628,7 +3631,7 @@ class ApiHandler {
       }
       return _json({'sales_orders': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch sales orders: $e');
+      return ApiErrors.fail(e, 'Failed to fetch sales orders');
     }
   }
 
@@ -3687,7 +3690,7 @@ class ApiHandler {
       }
       return _json({'purchase_orders': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch purchase orders: $e');
+      return ApiErrors.fail(e, 'Failed to fetch purchase orders');
     }
   }
 
@@ -3715,7 +3718,7 @@ class ApiHandler {
       }).toList();
       return _json({'accounting_periods': jsonList, 'count': jsonList.length});
     } catch (e) {
-      return _error('Failed to fetch accounting periods: $e');
+      return ApiErrors.fail(e, 'Failed to fetch accounting periods');
     }
   }
 

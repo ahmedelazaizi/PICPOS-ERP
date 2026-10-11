@@ -1126,7 +1126,7 @@ foreach ($s in @('monexia','cashier_market','avalon')) {
 }
 ```
 **المقبول الوحيد:** الملاح الأربعة فقط (`UralCash-API-v1`, `UralCash-Session-v1`,
-`UralCash-ERP-Integrity-v1`, `UralCash_Secure_Salt_2026`) + المُعرّفات الداخلية المقبولة
+`UralCash-ERP-Integrity-v1`, `<REDACTED-SALT>`) + المُعرّفات الداخلية المقبولة
 (قسم ٥.٥ في HANDOFF: `ural_erp`, `URAL_RESET_*`, `ural_api_token`, ...) · **UTF-16 = ٠** ·
 **monexia/cashier_market/avalon = ٠** في الترميزين.
 

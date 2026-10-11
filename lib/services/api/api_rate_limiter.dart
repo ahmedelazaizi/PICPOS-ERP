@@ -32,6 +32,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shelf/shelf.dart';
 
 import 'client_address.dart';
+import 'path_prefix_match.dart';
 
 /// Endpoint classification for rate limiting.
 ///
@@ -329,10 +330,8 @@ class ApiRateLimiter {
       return (Request request) {
         final path = '/${request.url.path}';
 
-        for (final prefix in _exemptPrefixes) {
-          if (path.startsWith(prefix) || path == prefix) {
-            return innerHandler(request);
-          }
+        if (matchesAnyPathPrefix(path, _exemptPrefixes)) {
+          return innerHandler(request);
         }
 
         // م3-9: ملفات الويب الثابتة (GET خارج /api و/webdb) عامّة وكثيرة العدد

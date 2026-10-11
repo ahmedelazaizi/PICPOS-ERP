@@ -1165,6 +1165,9 @@ Future<void> _bootTimeAdminHeal(AppDatabase db) async {
   }
 }
 
+/// S-04 decision: the known 'admin' password is only ever (re)created with
+/// force_password_change=true, so it must be rotated at first login.
+///
 /// Reset the admin user to a known-good state (username='admin',
 /// password='admin'). Used by the `--reset-admin-password` /
 /// `URAL_RESET_ADMIN_PASSWORD=1` startup recovery path.
@@ -1221,15 +1224,15 @@ Future<void> _resetAdminPasswordToDefault(AppDatabase db) async {
     if (roleId == null) {
       await db.customStatement(
         "INSERT INTO users (username, password_hash, password_salt, display_name, "
-        "is_active, is_locked) "
-        "VALUES ('admin', ?, ?, 'مدير النظام', $boolTrue, $boolFalse)",
+        "is_active, is_locked, force_password_change) "
+        "VALUES ('admin', ?, ?, 'مدير النظام', $boolTrue, $boolFalse, $boolTrue)",
         [hash, salt],
       );
     } else {
       await db.customStatement(
         "INSERT INTO users (username, password_hash, password_salt, display_name, "
-        "role_id, is_active, is_locked) "
-        "VALUES ('admin', ?, ?, 'مدير النظام', ?, $boolTrue, $boolFalse)",
+        "role_id, is_active, is_locked, force_password_change) "
+        "VALUES ('admin', ?, ?, 'مدير النظام', ?, $boolTrue, $boolFalse, $boolTrue)",
         [hash, salt, roleId],
       );
     }
@@ -1239,14 +1242,16 @@ Future<void> _resetAdminPasswordToDefault(AppDatabase db) async {
     if (roleId == null) {
       await db.customStatement(
         "UPDATE users SET password_hash = ?, password_salt = ?, "
-        "is_active = $boolTrue, is_locked = $boolFalse "
+        "is_active = $boolTrue, is_locked = $boolFalse, "
+        "force_password_change = $boolTrue "
         "WHERE username = 'admin'",
         [hash, salt],
       );
     } else {
       await db.customStatement(
         "UPDATE users SET password_hash = ?, password_salt = ?, "
-        "is_active = $boolTrue, is_locked = $boolFalse, role_id = ? "
+        "is_active = $boolTrue, is_locked = $boolFalse, role_id = ?, "
+        "force_password_change = $boolTrue "
         "WHERE username = 'admin'",
         [hash, salt, roleId],
       );

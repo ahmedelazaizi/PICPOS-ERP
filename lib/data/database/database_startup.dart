@@ -1260,6 +1260,8 @@ extension DatabaseStartup on AppDatabase {
           passwordSalt: Value(salt),
           createdAt: Value(DateTime.now()),
           roleId: Value(adminRole?.id ?? 1),
+          // S-04: known password => must be rotated at first login.
+          forcePasswordChange: const Value(true),
           // UUID-First (Phase 1): stable cross-install identity for sync.
           globalId: Value(UuidV7.generate()),
         ),

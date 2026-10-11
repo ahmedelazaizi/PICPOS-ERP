@@ -10,6 +10,8 @@ import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:shelf/shelf.dart';
+import 'api_errors.dart';
+import 'ws_connection_guard.dart';
 import 'package:drift/drift.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/permissions/permission_codes.dart';
@@ -412,7 +414,7 @@ class ApiSalesHandler extends ApiHandlerBase {
       debugPrint('[API] postSale error: $e\n$st');
       await DiagnosticLogger.log('API-SALE',
           '❌ FAILED to persist client sale: $e');
-      return errorResponse('Failed to process sale: $e\nSTACK: ${st.toString().substring(0, (st.toString().length > 500 ? 500 : st.toString().length))}');
+      return ApiErrors.fail(e, 'Failed to process sale', st: st);
     }
   }
 
@@ -420,7 +422,10 @@ class ApiSalesHandler extends ApiHandlerBase {
   // WebSocket (real-time push to clients)
   // ═══════════════════════════════════════════════════════════════
 
-  FutureOr<Response> handleWebSocket(Request request) {
+  FutureOr<Response> handleWebSocket(Request request) async {
+    // 5.3: Origin + optional-token + connection caps (see WsConnectionGuard).
+    final denied = await WsConnectionGuard.check(request);
+    if (denied != null) return denied;
     // Spec 129 F1 — accept mode='mirror' + device_id query params alongside
     // the existing branch_id. Pre-129 clients send only branch_id and get
     // mode='client' by default (backward-compat: identical routing behaviour).
@@ -433,6 +438,7 @@ class ApiSalesHandler extends ApiHandlerBase {
 
     final handler = webSocketHandler((WebSocketChannel ws, String? protocol) {
       wsClients[ws] = info;
+      WsConnectionGuard.register(ws, request);
       debugPrint('[WS] $mode connected (branch=$branchId, device=${deviceId ?? "n/a"}, ${wsClients.length} total)');
       // FR-OBS-1 — every accepted WS lifecycle event logged with device_id.
       DiagnosticLogger.log(
@@ -449,6 +455,7 @@ class ApiSalesHandler extends ApiHandlerBase {
         (_) {},
         onDone: () {
           wsClients.remove(ws);
+          WsConnectionGuard.unregister(ws);
           debugPrint('[WS] $mode disconnected (${wsClients.length} remaining)');
           DiagnosticLogger.log(
             DiagnosticLogger.wsDisconnect,
@@ -457,6 +464,7 @@ class ApiSalesHandler extends ApiHandlerBase {
         },
         onError: (_) {
           wsClients.remove(ws);
+          WsConnectionGuard.unregister(ws);
           DiagnosticLogger.log(
             DiagnosticLogger.wsDisconnect,
             'mode=$mode device=${deviceId ?? "n/a"} reason=error',
@@ -684,7 +692,7 @@ class ApiSalesHandler extends ApiHandlerBase {
       );
     } catch (e) {
       debugPrint('[API] postSalesReturn error: $e');
-      return errorResponse('Failed to process return: $e');
+      return ApiErrors.fail(e, 'Failed to process return');
     }
   }
 
@@ -845,7 +853,7 @@ class ApiSalesHandler extends ApiHandlerBase {
       );
     } catch (e, st) {
       debugPrint('[API] postSalesExchange error: $e\n$st');
-      return errorResponse('Failed to process exchange: $e');
+      return ApiErrors.fail(e, 'Failed to process exchange');
     }
   }
 
@@ -1115,7 +1123,7 @@ class ApiSalesHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'serverId': id});
     } catch (e) {
       debugPrint('[API] postHeldOrder error: $e');
-      return errorResponse('Failed to hold order: $e');
+      return ApiErrors.fail(e, 'Failed to hold order');
     }
   }
 
@@ -1132,7 +1140,7 @@ class ApiSalesHandler extends ApiHandlerBase {
       broadcastRecordDeleted('held_orders', orderId);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete held order: $e');
+      return ApiErrors.fail(e, 'Failed to delete held order');
     }
   }
 
@@ -1155,7 +1163,7 @@ class ApiSalesHandler extends ApiHandlerBase {
       // as a server error and hides the real cause from the client.
       return errorResponse(e.message, statusCode: 403);
     } catch (e) {
-      return errorResponse('Failed to delete sales invoice: $e');
+      return ApiErrors.fail(e, 'Failed to delete sales invoice');
     }
   }
 
@@ -1296,7 +1304,7 @@ class ApiSalesHandler extends ApiHandlerBase {
       final stackLines = st.toString().split('\n').take(10).join(' | ');
       unawaited(DiagnosticLogger.log('API-SALE-VOID',
           '❌ error: $e\nstack: $stackLines'));
-      return errorResponse('Failed to void sale: $e\nServer stack:\n$st');
+      return ApiErrors.fail(e, 'Failed to void sale', st: st);
     }
   }
 
@@ -1407,7 +1415,7 @@ class ApiSalesHandler extends ApiHandlerBase {
       final stackLines = st.toString().split('\n').take(10).join(' | ');
       unawaited(DiagnosticLogger.log('API-SALE-PAYMENT',
           '❌ error: $e\nstack: $stackLines'));
-      return errorResponse('Failed to record sales collection: $e\nServer stack:\n$st');
+      return ApiErrors.fail(e, 'Failed to record sales collection', st: st);
     }
   }
 

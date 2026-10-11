@@ -27,6 +27,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart' as drift;
 import 'package:shelf/shelf.dart';
+import 'api_errors.dart';
 
 import '../../core/permissions/permission_codes.dart';
 import '../../data/database/database.dart';
@@ -124,7 +125,7 @@ class ApiVoucherHandler extends ApiHandlerBase {
         },
       );
     } catch (e) {
-      return errorResponse('Failed to record voucher: $e');
+      return ApiErrors.fail(e, 'Failed to record voucher');
     }
   }
 

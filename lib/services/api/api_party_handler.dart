@@ -7,6 +7,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shelf/shelf.dart';
+import 'api_errors.dart';
 import 'package:drift/drift.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../data/database/database.dart';
@@ -151,7 +152,7 @@ class ApiPartyHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'serverId': id});
     } catch (e) {
       debugPrint('[API] postParty error: $e');
-      return errorResponse('Failed to create party: $e');
+      return ApiErrors.fail(e, 'Failed to create party');
     }
   }
 
@@ -201,7 +202,7 @@ class ApiPartyHandler extends ApiHandlerBase {
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] putParty error: $e');
-      return errorResponse('Failed to update party: $e');
+      return ApiErrors.fail(e, 'Failed to update party');
     }
   }
 
@@ -229,7 +230,7 @@ class ApiPartyHandler extends ApiHandlerBase {
       broadcastRecordDeleted('parties', partyId);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete party: $e');
+      return ApiErrors.fail(e, 'Failed to delete party');
     }
   }
 }

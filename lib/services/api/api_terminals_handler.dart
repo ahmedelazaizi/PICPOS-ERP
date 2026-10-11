@@ -23,6 +23,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/foundation.dart';
 import 'package:shelf/shelf.dart';
+import 'api_errors.dart';
 
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/utils/uuid_v7.dart';
@@ -175,7 +176,7 @@ class ApiTerminalsHandler extends ApiHandlerBase {
         'API-POS-TERMINAL',
         '❌ registration error: $e',
       );
-      return errorResponse('Failed to register terminal: $e');
+      return ApiErrors.fail(e, 'Failed to register terminal');
     }
   }
 }

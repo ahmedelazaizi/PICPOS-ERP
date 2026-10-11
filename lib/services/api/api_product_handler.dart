@@ -7,6 +7,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shelf/shelf.dart';
+import 'api_errors.dart';
 import 'package:drift/drift.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../core/utils/uuid_v7.dart';
@@ -429,7 +430,7 @@ class ApiProductHandler extends ApiHandlerBase {
       return errorResponse('${e.message}', statusCode: 400);
     } catch (e) {
       debugPrint('[API] postProduct error: $e');
-      return errorResponse('Failed to create product: $e');
+      return ApiErrors.fail(e, 'Failed to create product');
     }
   }
 
@@ -603,7 +604,7 @@ class ApiProductHandler extends ApiHandlerBase {
       return errorResponse('${e.message}', statusCode: 400);
     } catch (e) {
       debugPrint('[API] putProduct error: $e');
-      return errorResponse('Failed to update product: $e');
+      return ApiErrors.fail(e, 'Failed to update product');
     }
   }
 
@@ -620,7 +621,7 @@ class ApiProductHandler extends ApiHandlerBase {
       broadcastRecordDeleted('products', productId);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete product: $e');
+      return ApiErrors.fail(e, 'Failed to delete product');
     }
   }
 
@@ -710,7 +711,7 @@ class ApiProductHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'serverId': id});
     } catch (e) {
       debugPrint('[API] postProductUnit error: $e');
-      return errorResponse('Failed to create product unit: $e');
+      return ApiErrors.fail(e, 'Failed to create product unit');
     }
   }
 
@@ -761,7 +762,7 @@ class ApiProductHandler extends ApiHandlerBase {
       broadcast('product_units');
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to update product unit: $e');
+      return ApiErrors.fail(e, 'Failed to update product unit');
     }
   }
 
@@ -778,7 +779,7 @@ class ApiProductHandler extends ApiHandlerBase {
       broadcastRecordDeleted('product_units', unitId);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete product unit: $e');
+      return ApiErrors.fail(e, 'Failed to delete product unit');
     }
   }
 
@@ -835,7 +836,7 @@ class ApiProductHandler extends ApiHandlerBase {
       broadcast('product_barcodes');
       return jsonResponse({'success': true, 'serverId': id});
     } catch (e) {
-      return errorResponse('Failed to create product barcode: $e');
+      return ApiErrors.fail(e, 'Failed to create product barcode');
     }
   }
 
@@ -852,7 +853,7 @@ class ApiProductHandler extends ApiHandlerBase {
       broadcastRecordDeleted('product_barcodes', barcodeId);
       return jsonResponse({'success': true});
     } catch (e) {
-      return errorResponse('Failed to delete product barcode: $e');
+      return ApiErrors.fail(e, 'Failed to delete product barcode');
     }
   }
 }

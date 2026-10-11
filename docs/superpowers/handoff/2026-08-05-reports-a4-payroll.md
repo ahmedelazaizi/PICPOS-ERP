@@ -230,7 +230,7 @@ scripts/gate.sh --pg
 * **`flutter test` بينهار عند التوازي** — `PathExistsException` على
   `sqlite3.dll`. `--concurrency=1` دايماً و**لا تشغّل عمليتين معاً**.
   (مشاريع تانية زي `D:\URAL-ERP` **ما بتتعارضش** — مجلدات بناء مختلفة.)
-* **PostgreSQL:** PG 18.4 على `127.0.0.1:5432`، كلمة السر `14590`.
+* **PostgreSQL:** PG 18.4 على `127.0.0.1:5432`، كلمة السر `<REDACTED>`.
   ⚠️ `bootPgTestSchema()` بينفّذ `DROP SCHEMA public CASCADE` —
   **قاعدة `picpos` فقط**؛ `uralcash` و`Avalon` على نفس الخادم وفيهم بيانات.
 * **مخرجات الأوامر الخلفية بتتقصّ** — لو البوابة قالت أحمر ومشوفتش السبب،

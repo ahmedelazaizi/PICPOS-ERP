@@ -13,6 +13,7 @@ import 'dart:io' show File, FileMode;
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shelf/shelf.dart';
+import 'api_errors.dart';
 import 'package:drift/drift.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/permissions/permission_codes.dart';
@@ -321,11 +322,11 @@ class ApiPurchaseHandler extends ApiHandlerBase {
       }
       debugPrint('[API] postPurchase error: $e\n$st');
       await _writeErrorLog('postPurchase', e, st);
-      return errorResponse('Failed to create purchase: $e');
+      return ApiErrors.fail(e, 'Failed to create purchase');
     } catch (e, st) {
       debugPrint('[API] postPurchase error: $e\n$st');
       await _writeErrorLog('postPurchase', e, st);
-      return errorResponse('Failed to create purchase: $e');
+      return ApiErrors.fail(e, 'Failed to create purchase');
     }
   }
 
@@ -648,8 +649,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
       final stackLines = st.toString().split('\n').take(10).join(' | ');
       unawaited(DiagnosticLogger.log('API-PURCHASE-RETURN',
           '❌ error: $e\nstack: $stackLines'));
-      return errorResponse(
-          'Failed to process purchase return: $e\nServer stack:\n$st');
+      return ApiErrors.fail(e, 'Failed to process purchase return', st: st);
     }
   }
 
@@ -1101,8 +1101,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
       final stackLines = st.toString().split('\n').take(10).join(' | ');
       unawaited(DiagnosticLogger.log('API-PURCHASE-RETURN-EDIT',
           '❌ error: $e\nstack: $stackLines'));
-      return errorResponse(
-          'Failed to process purchase return edit: $e\nServer stack:\n$st');
+      return ApiErrors.fail(e, 'Failed to process purchase return edit', st: st);
     }
   }
 
@@ -1241,7 +1240,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
       final stackLines = st.toString().split('\n').take(10).join(' | ');
       unawaited(DiagnosticLogger.log('API-PURCHASE-VOID',
           '❌ error: $e\nstack: $stackLines'));
-      return errorResponse('Failed to void purchase: $e\nServer stack:\n$st');
+      return ApiErrors.fail(e, 'Failed to void purchase', st: st);
     }
   }
 
@@ -1344,7 +1343,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
       final stackLines = st.toString().split('\n').take(10).join(' | ');
       unawaited(DiagnosticLogger.log('API-PURCHASE-PAYMENT',
           '❌ error: $e\nstack: $stackLines'));
-      return errorResponse('Failed to record purchase payment: $e\nServer stack:\n$st');
+      return ApiErrors.fail(e, 'Failed to record purchase payment', st: st);
     }
   }
 
@@ -1458,7 +1457,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
       return errorResponse(e.message, statusCode: 403);
     } catch (e) {
       debugPrint('[API] putPurchase error: $e');
-      return errorResponse('Failed to update purchase: $e');
+      return ApiErrors.fail(e, 'Failed to update purchase');
     }
   }
 
@@ -1482,7 +1481,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
       // when the caller lacks the critical-op permission.
       return errorResponse(e.message, statusCode: 403);
     } catch (e) {
-      return errorResponse('Failed to delete purchase: $e');
+      return ApiErrors.fail(e, 'Failed to delete purchase');
     }
   }
 }

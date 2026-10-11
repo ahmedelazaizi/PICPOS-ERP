@@ -24,6 +24,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shelf/shelf.dart';
+import 'api_errors.dart';
 import '../../data/database/database.dart';
 import '../security_service.dart';
 import 'api_handler_base.dart';
@@ -125,7 +126,7 @@ class ApiAuthHandler extends ApiHandlerBase {
       });
     } catch (e) {
       debugPrint('[API] verifyAdmin error: $e');
-      return errorResponse('Failed to verify admin: $e');
+      return ApiErrors.fail(e, 'Failed to verify admin');
     }
   }
 
@@ -207,7 +208,7 @@ class ApiAuthHandler extends ApiHandlerBase {
       });
     } catch (e) {
       debugPrint('[API] issueSession error: $e');
-      return errorResponse('Failed to issue session: $e');
+      return ApiErrors.fail(e, 'Failed to issue session');
     }
   }
 }

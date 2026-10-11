@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:shelf/shelf.dart';
+import 'api_errors.dart';
 
 import '../../data/database/database.dart';
 import '../cfd_service.dart';
@@ -17,12 +18,6 @@ class ApiDisplayHandler {
   Response _json(Map<String, dynamic> data) => Response(
         200,
         body: json.encode(data),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-  Response _error(String message) => Response(
-        500,
-        body: json.encode({'error': message}),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -52,7 +47,7 @@ class ApiDisplayHandler {
             .toList(),
       });
     } catch (e) {
-      return _error('Failed to fetch menu data: $e');
+      return ApiErrors.fail(e, 'Failed to fetch menu data');
     }
   }
 
@@ -134,7 +129,7 @@ class ApiDisplayHandler {
         'count': offersJson.length,
       });
     } catch (e) {
-      return _error('Failed to fetch offers: $e');
+      return ApiErrors.fail(e, 'Failed to fetch offers');
     }
   }
 }

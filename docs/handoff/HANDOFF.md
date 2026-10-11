@@ -109,7 +109,7 @@ $utf16 = [System.Text.Encoding]::Unicode.GetString($bytes)
 x1  UralCash-API-v1
 x1  UralCash-Session-v1
 x1  UralCash-ERP-Integrity-v1
-x1  UralCash_Secure_Salt_2026
+x1  <REDACTED-SALT>
 UTF-16 hits: 0
 ```
 

@@ -8,6 +8,7 @@ import 'api_web_session_handler.dart';
 import 'lan_pairing_api_handler.dart';
 import 'lan_pairing_service.dart';
 import 'client_address.dart';
+import 'path_prefix_match.dart';
 import 'web_session_guard.dart';
 
 /// API Authentication middleware for the embedded multi-device server.
@@ -148,6 +149,21 @@ class ApiAuthMiddleware {
     return _activeToken!;
   }
 
+  /// يتحقق من رمز حامل (جهاز مقترن أو الرمز القديم داخل نافذته) دون تسجيل
+  /// الجهاز؛ يُستعمل لقناة `/ws` التي لا تمرّ بالميدلوير.
+  static Future<bool> verifyCredential(String token, String deviceId) async {
+    if (_activeToken == null) return false;
+    final pairing = _pairingService;
+    if (pairing != null &&
+        await pairing.verifyDeviceToken(token: token, deviceId: deviceId)) {
+      return true;
+    }
+    if (token == _activeToken) {
+      return pairing == null || await pairing.legacyAllowed();
+    }
+    return false;
+  }
+
   /// Get the currently active token (for sharing with clients via health check).
   static String? get activeToken => _activeToken;
 
@@ -231,8 +247,8 @@ class ApiAuthMiddleware {
             ApiWebCtx.claimsKey: claims,
           }));
         }
-        for (final prefix in _exemptPrefixes) {
-          if (path.startsWith(prefix) || path == prefix) return innerHandler(request);
+        if (matchesAnyPathPrefix(path, _exemptPrefixes)) {
+          return innerHandler(request);
         }
         if (!path.startsWith('/api/')) return innerHandler(request);
         if (_activeToken == null) {
