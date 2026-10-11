@@ -6,7 +6,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../../core/config/app_config.dart';
 import '../../core/config/brand.dart';
+import '../../services/db_key_types.dart';
 import '../../services/security_service.dart';
+import '../../services/sqlcipher_engine.dart';
+import 'pending_restore.dart';
 import 'package:drift_postgres/drift_postgres.dart';
 import 'package:postgres/postgres.dart' as pg;
 import 'pg_config.dart';
@@ -36,10 +39,32 @@ QueryExecutor openConnection() {
     // أي استعادة متجدولة بتتطبّق **هنا** — قبل أول فتحة للملف. دي اللحظة
     // الوحيدة اللي مفيش فيها مقبض مفتوح على الداتابيز. اقرا التعليق فوق
     // `restoreDatabaseBackup`.
-    await _applyPendingRestore(file.path);
+    //
+    // E-01: انقطاعٌ سابق بعد النقل وقبل التأكيد ⇒ `.pre-restore` باقٍ يُحسَم
+    // أولًا (يُحذف إن فتحت القاعدةُ الحاليّة، وإلا يُعاد).
+    await PendingRestore.reconcileLeftover(file.path);
+    final restoreApplied = await _applyPendingRestore(file.path);
 
-    // Phase 2: Securely retrieve or generate machine-unique encryption key
-    final key = await SecurityService.getDatabaseEncryptionKey();
+    // Phase 2: Securely retrieve or generate machine-unique encryption key.
+    // `databaseExists`: «أوّلُ تشغيل» = غيابُ ملف القاعدة لا غيابُ المفتاح —
+    // لا يُولَّد مفتاحٌ احتياطيٌّ جديدٌ لقاعدةٍ موجودة (E-01 §0.7).
+    final key = await SecurityService.getDatabaseEncryptionKey(
+      databaseExists: await file.exists(),
+    );
+
+    if (restoreApplied) {
+      // الفتحُ الفعليّ بالمفتاح الذي سيُستعمل: ينجح ⇒ يُحذف `.pre-restore`،
+      // يفشل ⇒ تُعاد القاعدةُ السابقة بدل قاعدةٍ لا تُفتح.
+      try {
+        final opens = await const NativeSqlCipherEngine()
+            .canOpen(file, DbKey(DbKeyKind.legacyDerived, key));
+        await PendingRestore.finalize(file.path, opens: opens);
+      } catch (e) {
+        // محرّكٌ ليس SQLCipher: يتولّى الحارسُ أدناه الرفض؛ نترك
+        // `.pre-restore` ليُحسم في الإقلاع التالي.
+        debugPrint('[RESTORE] post-restore open check skipped: $e');
+      }
+    }
 
     // Defensive: SecurityService returns a SHA256 hex digest (64 chars,
     // [0-9a-f] only) — so interpolating it into the PRAGMA below is safe
@@ -471,28 +496,12 @@ const String _pendingRestoreSuffix = '.restore-pending';
 /// الترتيب مقصود: النسخ الأول، ومسح الملف المعلَّق **بعد** ما ينجح. لو
 /// التطبيق مات في النص، الملف المعلَّق لسه موجود والإقلاع اللي بعده بيعيد
 /// المحاولة — بدل ما نفضل بداتابيز نصّ منسوخة وبلا مصدر.
-Future<void> _applyPendingRestore(String dbPath) async {
-  try {
-    final pending = File('$dbPath$_pendingRestoreSuffix');
-    if (!await pending.exists()) return;
-
-    await pending.copy(dbPath);
-
-    // ملفات WAL/SHM بتاعة الداتابيز القديمة لازم تتشال مع الاستبدال: لو
-    // فضلوا جنب ملف جديد، أول فتحة بتحاول تعيد تطبيق معاملات بتاعة داتابيز
-    // **تانية** على ملف مش بتاعها — يا فساد يا بيانات قديمة بترجع فوق
-    // المستعادة.
-    for (final sidecar in ['$dbPath-wal', '$dbPath-shm']) {
-      final f = File(sidecar);
-      if (await f.exists()) await f.delete();
-    }
-
-    await pending.delete();
-    debugPrint('[RESTORE] pending restore applied from ${pending.path}');
-  } catch (e) {
-    debugPrint('[RESTORE] failed to apply pending restore: $e');
-  }
-}
+///
+/// E-01 §4.3: النسخة المعلَّقة بتتفحص (تتفتح بمفتاح معروف + quick_check) **قبل**
+/// ما نلمس الداتابيز الحيّة؛ والحيّة بتتنقل لـ `.pre-restore` بدل ما تتكتب
+/// فوقها. التفاصيل في `pending_restore.dart`. بيرجع `true` لو الاستعادة
+/// اتطبّقت (و`openConnection` بيحسم `.pre-restore` بعد الفتح الفعلي).
+Future<bool> _applyPendingRestore(String dbPath) => PendingRestore.apply(dbPath);
 
 /// بيجدول استعادة من نسخة احتياطية. **مش بيطبّقها فوراً** — بتتطبّق عند
 /// أول إقلاع بعد كده، عشان مفيش حد يكتب فوق داتابيز مفتوحة.
@@ -501,13 +510,12 @@ Future<void> _applyPendingRestore(String dbPath) async {
 /// هتخلص بعد إعادة التشغيل — مش إنها خلصت.
 Future<bool> restoreDatabaseBackup(String backupPath) async {
   try {
-    final backupFile = File(backupPath);
-    if (!await backupFile.exists()) return false;
-
     final dbPath = await getDatabasePath();
-    await backupFile.copy('$dbPath$_pendingRestoreSuffix');
-    debugPrint('[RESTORE] scheduled from $backupPath');
-    return true;
+    // E-01 §4.3: النسخة بتتفحص **قبل** الجدولة — نسخة ملهاش مفتاح معروف
+    // بتتقفل برفض واضح بدل ما تمحو الداتابيز الحيّة عند الإقلاع.
+    final scheduled = await PendingRestore.schedule(backupPath, dbPath);
+    if (scheduled) debugPrint('[RESTORE] scheduled from $backupPath');
+    return scheduled;
   } catch (e) {
     debugPrint('[BACKUP] restoreDatabaseBackup failed: $e');
     return false;

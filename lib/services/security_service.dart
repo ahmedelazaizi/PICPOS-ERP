@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:cryptography/cryptography.dart' as argon_lib;
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'db_key_names.dart';
+import 'legacy_device_seed.dart';
 
 /// Password validation result containing validity, errors, and strength score
 class PasswordValidationResult {
@@ -422,55 +422,32 @@ class SecurityService {
     return pin.length >= 4 && pin.length <= 6 && RegExp(r'^\d+$').hasMatch(pin);
   }
 
-  /// Generate or retrieve a device-specific encryption key for SQLCipher.
-  /// This provides a stable but machine-unique key for local database encryption.
+  /// مفتاحُ SQLCipher **القديم** (المشتقّ من الجهاز) — لا يُغيَّر ناتجُه حرفيًّا
+  /// لأنّ قواعد العملاء الحاليّة مشفّرةٌ به.
   ///
-  /// Strategy:
-  /// 1. Primary: derive key from device hardware ID + pepper.
-  /// 2. Fallback: use an existing key from OS secure storage.
-  /// The device derivation and pepper are intentionally unchanged because
-  /// existing customer databases depend on this exact SQLCipher key.
-  static Future<String> getDatabaseEncryptionKey() async {
-    try {
-      final deviceInfo = DeviceInfoPlugin();
-      String? uniqueId;
+  /// الاشتقاقُ نفسُه في [LegacyDeviceSeed.derive] (لا نسخةَ مكرّرة هنا).
+  /// عند غياب معرّف الجهاز يُقرأ المفتاحُ الاحتياطيّ من التخزين الآمن.
+  ///
+  /// ⚠️ [databaseExists]: «أوّلُ تشغيل» = غيابُ ملف القاعدة لا غيابُ المفتاح.
+  /// التخزينُ الآمن على ويندوز يُرجع `null` عند أيّ عطل، فتوليدُ مفتاحٍ جديد
+  /// عند `null` لقاعدةٍ موجودة كان يُتلف الوصولَ إليها. الافتراضُ `true`
+  /// (آمن): لا يُولَّد مفتاحٌ أبدًا إلا إذا أثبت المستدعي أنّ الملفَّ غير موجود.
+  static Future<String> getDatabaseEncryptionKey({
+    bool databaseExists = true,
+  }) async {
+    final derived = await LegacyDeviceSeed.derive();
+    if (derived != null) return derived;
 
-      if (Platform.isWindows) {
-        final windowsInfo = await deviceInfo.windowsInfo;
-        uniqueId = windowsInfo.deviceId;
-      } else if (Platform.isAndroid) {
-        final androidInfo = await deviceInfo.androidInfo;
-        uniqueId = androidInfo.id;
-      } else if (Platform.isIOS) {
-        final iosInfo = await deviceInfo.iosInfo;
-        uniqueId = iosInfo.identifierForVendor;
-      }
-
-      if (uniqueId != null && uniqueId.isNotEmpty) {
-        // Obfuscated pepper split into segments to hinder static analysis
-        final p1 = String.fromCharCodes([85, 114, 97, 108, 67, 97, 115, 104]); // Ural
-        final p2 = String.fromCharCodes([95, 83, 101, 99, 117, 114, 105, 116, 121]); // Security
-        final p3 = String.fromCharCodes([95, 80, 101, 112, 112, 101, 114, 95, 118, 50]); // Pepper_v2
-        final pepper = '$p1$p2$p3';
-        
-        final rawKey = '$uniqueId:$pepper';
-        return sha256.convert(utf8.encode(rawKey)).toString();
-      }
-
-      // Device ID unavailable — fall through to secure-storage fallback
-      return _getOrCreateSecureFallbackKey();
-    } catch (e) {
-      // Device info failed — use secure-storage fallback
-      return _getOrCreateSecureFallbackKey();
-    }
+    // Device ID unavailable (or device_info failed) — secure-storage fallback.
+    return _getOrCreateSecureFallbackKey(allowCreate: !databaseExists);
   }
 
-  /// Generates a random encryption key once and stores it in
-  /// flutter_secure_storage so it survives app restarts but is
-  /// never hardcoded in source code.
-  static const _fallbackKeyStorageKey = 'ural_db_fallback_enc_key';
+  /// المفتاحُ الاحتياطيّ القديم في flutter_secure_storage.
+  static const _fallbackKeyStorageKey = DbKeyNames.legacyFallback;
 
-  static Future<String> _getOrCreateSecureFallbackKey() async {
+  static Future<String> _getOrCreateSecureFallbackKey({
+    required bool allowCreate,
+  }) async {
     try {
       const storage = FlutterSecureStorage(
         aOptions: AndroidOptions(encryptedSharedPreferences: true),
@@ -482,6 +459,11 @@ class SecurityService {
       final existing = await storage.read(key: _fallbackKeyStorageKey);
       if (existing != null && existing.length >= 32) {
         return existing;
+      }
+
+      // `null`/قصيرٌ مع قاعدةٍ موجودة = المفتاحُ ضاع لا «أوّل تشغيل».
+      if (!allowCreate) {
+        throw const DatabaseKeyUnavailableException();
       }
 
       // Generate a cryptographically secure 64-char hex key

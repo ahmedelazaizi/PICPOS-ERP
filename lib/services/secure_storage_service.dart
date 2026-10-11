@@ -1,6 +1,8 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'db_key_names.dart';
+
 /// Service for handling sensitive data using hardware-backed secure storage.
 class SecureStorageService {
   final _storage = const FlutterSecureStorage(
@@ -23,9 +25,17 @@ class SecureStorageService {
     await _storage.delete(key: key);
   }
 
-  /// Clear all values from secure storage (use with caution)
+  /// Clear all values from secure storage (use with caution).
+  ///
+  /// ⚠️ **لا يمحو مفاتيح قاعدة البيانات** (`db_key_*` ورمز الاسترداد والمفتاح
+  /// الاحتياطيّ القديم): محوُها يفقد القاعدةَ المشفّرة نهائيًّا (E-01).
+  /// لذلك لا `deleteAll()` — نمرّ على المفاتيح ونحذف ما عدا المحميّ.
   Future<void> clearAll() async {
-    await _storage.deleteAll();
+    final all = await _storage.readAll();
+    for (final key in all.keys.toList()) {
+      if (DbKeyNames.isProtected(key)) continue;
+      await _storage.delete(key: key);
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════

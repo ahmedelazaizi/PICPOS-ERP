@@ -25,6 +25,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:ural_erp/data/database/connection_io.dart';
 import 'package:ural_erp/data/database/database.dart';
+import 'package:ural_erp/data/database/pending_restore.dart';
 import 'package:ural_erp/data/database/sync_interceptor.dart';
 import 'package:ural_erp/data/database/wal_checkpoint.dart';
 import 'package:ural_erp/services/admin/data_wipe_service.dart';
@@ -77,6 +78,11 @@ void main() {
     PathProviderPlatform.instance = _FakePathProvider(docsDir.path);
     plantDatabaseFile();
 
+    // E-01: الجدولة صارت تفحص النسخة (تُفتح بمفتاحٍ معروف) قبل قبولها، وهنا
+    // الملفاتُ حمولةٌ نصّيّةٌ وهميّة. هذا الملف يختبر ميكانيكا الجدولة؛ الفحصُ
+    // نفسُه مغطًّى في `test/unit/pending_restore_test.dart`.
+    PendingRestore.openerOverride = (f) async => f.existsSync();
+
     db = AppDatabase.forTesting();
 
     // ⚠️ `AppDatabase.forTesting()` بيسيب `PRAGMA foreign_keys` **مطفي**،
@@ -98,6 +104,7 @@ void main() {
 
   tearDown(() async {
     await db.close();
+    PendingRestore.openerOverride = null;
     SyncInterceptor.instance = null;
     if (docsDir.existsSync()) docsDir.deleteSync(recursive: true);
   });
