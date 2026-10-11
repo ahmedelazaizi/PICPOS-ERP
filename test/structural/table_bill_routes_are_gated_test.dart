@@ -17,8 +17,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_handler_source.dart';
 
-const _handlerPath = 'lib/services/api/api_handler.dart';
 const _authPath = 'lib/services/api/api_auth_middleware.dart';
 const _limiterPath = 'lib/services/api/api_rate_limiter.dart';
 
@@ -76,7 +76,7 @@ String _decl(String src, String anchor) {
 void main() {
   late String handler;
 
-  setUpAll(() => handler = File(_handlerPath).readAsStringSync());
+  setUpAll(() => handler = readApiHandlerSource());
 
   test('مرساةُ القراءة — المسارات الثلاثةُ مسجَّلةٌ فعلاً', () {
     // بلا هذه المرساة تقرأ الفحوصُ أدناه غياباً وتمرّ وهي عمياء.

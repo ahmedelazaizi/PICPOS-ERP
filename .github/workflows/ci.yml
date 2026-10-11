@@ -134,7 +134,9 @@ jobs:
           THRESHOLDS["lib/data/database/daos/treasury_voucher_dao.dart"]=39000
           THRESHOLDS["lib/services/api/api_data_handler.dart"]=7000
           THRESHOLDS["lib/data/database/daos/treasury_dao.dart"]=18500
-          THRESHOLDS["lib/services/api/api_handler.dart"]=191133
+          THRESHOLDS["lib/services/api/api_handler.dart"]=8200
+          THRESHOLDS["lib/data/database/database.dart"]=40500
+          THRESHOLDS["lib/services/scale_protocols.dart"]=9000
 
           FAILED=0
           for file in "${!THRESHOLDS[@]}"; do

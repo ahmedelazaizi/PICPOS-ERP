@@ -22,11 +22,12 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_handler_source.dart';
 
 /// جسمُ قائمةٍ من إعلانها إلى مُنهيها — **بالسطور لا بمطابقةِ نصٍّ حرفيّ**:
 /// التعليقاتُ العربيّةُ بين الأسطر تكسر أيَّ مرساةٍ حرفيّة.
 String _listBody(String path, String decl) {
-  final raw = File(path).readAsStringSync();
+  final raw = path == 'lib/services/api/api_handler.dart' ? readApiHandlerSource() : File(path).readAsStringSync();
   final lines = raw.split('\n');
   final starts = [for (var i = 0; i < lines.length; i++) if (lines[i].contains(decl)) i];
   expect(starts.length, 1,
@@ -198,7 +199,7 @@ void main() {
   test('والسببُ ما زال قائماً — الخادمُ يُسقط الـblob على السلك', () {
     // ⚠️ لو زال هذا يوماً، فقرارُ الفصل يُعاد النظرُ فيه بقرارٍ مكتوبٍ
     //    لا بإضافةِ سطرٍ إلى قائمة.
-    final api = File('lib/services/api/api_handler.dart').readAsStringSync();
+    final api = readApiHandlerSource();
     expect(api, contains('v is List<int>'),
         reason: 'مصفاةُ الـblob على السلك اختفت — أعِد قراءةَ §٨٫٢ قبل أن '
             'تُغيّر شيئاً في هذا الحارس.');

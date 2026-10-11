@@ -23,6 +23,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_handler_source.dart';
 import 'package:ural_erp/core/enums/app_screen.dart';
 import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/core/navigation/screen_registry.dart';
@@ -32,7 +33,10 @@ import 'package:ural_erp/services/delta_pull_service.dart';
 import 'package:ural_erp/services/id_namespace_service.dart';
 
 String _code(String path) => [
-      for (final line in File(path).readAsStringSync().split('\n'))
+      for (final line in (path == 'lib/services/api/api_handler.dart'
+              ? readApiHandlerSource()
+              : File(path).readAsStringSync())
+          .split('\n'))
         if (!line.trimLeft().startsWith('//')) line.replaceAll('\r', ''),
     ].join('\n');
 

@@ -20,11 +20,12 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_handler_source.dart';
 
 String _read(String path) {
   final f = File(path);
   expect(f.existsSync(), isTrue, reason: 'مسارٌ تبدّل: $path');
-  return f.readAsStringSync();
+  return path == 'lib/services/api/api_handler.dart' ? readApiHandlerSource() : f.readAsStringSync();
 }
 
 int _count(String src, String needle) => src.split(needle).length - 1;

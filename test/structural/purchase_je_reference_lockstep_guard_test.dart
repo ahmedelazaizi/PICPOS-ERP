@@ -23,6 +23,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/database_source.dart';
+
 const _listPath = 'lib/data/database/database.dart';
 
 String _code(String raw) => [
@@ -41,7 +43,7 @@ List<({String path, String code})> _libSources() => [
 
 void main() {
   test('مرساةٌ — القائمةُ موجودةٌ وتحمل الاسمَين معاً', () {
-    final src = File(_listPath).readAsStringSync();
+    final src = readSourceMerged(_listPath);
     final at = src.indexOf('const Set<String> kPurchaseJeReferenceTypes = {');
     expect(at, greaterThan(0), reason: 'القائمةُ اختفت — فلا لُحمةَ تُحرَس');
     final body = src.substring(at, src.indexOf('};', at));
@@ -56,7 +58,7 @@ void main() {
     // ⚠️ **يُشتقُّ ما يُكتَب من الشجرة لا من قائمةٍ أنسخُها وتشيخ.** كلُّ
     // `referenceType: '<x>'` يرافق `referenceId` فاتورةَ شراءٍ يجب أن يكون
     // عضواً — وإلّا كُتب نوعٌ لا يقرؤه أحد.
-    final src = File(_listPath).readAsStringSync();
+    final src = readSourceMerged(_listPath);
     final at = src.indexOf('const Set<String> kPurchaseJeReferenceTypes = {');
     final listed = RegExp(r"'([a-z_]+)'")
         .allMatches(src.substring(at, src.indexOf('};', at)))

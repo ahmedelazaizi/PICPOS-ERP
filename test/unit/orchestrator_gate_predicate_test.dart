@@ -18,6 +18,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_handler_source.dart';
 import '../helpers/api_data_handler_source.dart';
 
 void main() {
@@ -528,7 +529,7 @@ void main() {
       // the response excluded the admin entirely. The chain failure on the
       // client (rename to __dup_1_admin → role_permissions zero) followed.
       const relPath = 'lib/services/api/api_handler.dart';
-      final source = File(relPath).readAsStringSync();
+      final source = readApiHandlerSource();
 
       final methodStart = source.indexOf('Future<Response> _getUsers(');
       expect(
@@ -813,7 +814,7 @@ void main() {
       // has no branchId column and the PostgreSQL DDL never created
       // one. Branch-scoped clients couldn't sync those tables AT ALL.
       const apiPath = 'lib/services/api/api_handler.dart';
-      final api = File(apiPath).readAsStringSync();
+      final api = readApiHandlerSource();
 
       // The forbidden entries — these tables don't have branch_id.
       // Feature 029 corrective (2026-05-10) — added `held_orders`. Same

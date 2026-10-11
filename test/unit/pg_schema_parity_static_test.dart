@@ -26,12 +26,11 @@
 // wraps the parity pass body in `db.transaction(...)`, this test must
 // fail loud.
 
-import 'dart:io';
-
 import 'package:drift/drift.dart' show DriftSqlType, TableInfo;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/logging/diagnostic_logger.dart';
 import 'package:ural_erp/data/database/database.dart';
+import '../helpers/database_source.dart';
 
 void main() {
   group('Spec 130 — PG schema parity static invariants', () {
@@ -39,7 +38,7 @@ void main() {
 
     setUpAll(() {
       // Read the source file once. Tests below grep against it.
-      dbSrc = File('lib/data/database/database.dart').readAsStringSync();
+      dbSrc = readDatabaseSource();
     });
 
     test('Source file contains _ensurePostgresSchemaParity method',

@@ -31,6 +31,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_handler_source.dart';
 
 const _tables = <String>[
   'modifier_groups',
@@ -73,7 +74,9 @@ String _stripComments(String raw) {
 /// ⚠️ **بالموازنة لا بأوّلِ `}`**: قائمةٌ فيها تعليقٌ أو تعشيشٌ تنتهي مبكّراً
 ///    بالقصّ الساذج، فيُقرأ اسمٌ خارجَها غيابًا — أو داخلَها حضوراً كاذباً.
 String _listBody(String path, String anchor) {
-  final src = _stripComments(File(path).readAsStringSync());
+  final src = _stripComments(path == 'lib/services/api/api_handler.dart'
+      ? readApiHandlerSource()
+      : File(path).readAsStringSync());
   final at = src.indexOf(anchor);
   expect(at, greaterThan(0), reason: 'لم تعد المرساةُ موجودةً: $anchor');
   final open = src.indexOf(RegExp(r'[\[{]'), at);

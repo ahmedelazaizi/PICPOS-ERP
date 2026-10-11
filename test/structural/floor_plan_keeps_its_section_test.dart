@@ -15,6 +15,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_handler_source.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/services/api/api_handler.dart';
 import 'package:ural_erp/services/delta_pull_service.dart';
@@ -32,7 +33,7 @@ String _code(String raw) => [
 String _read(String path) {
   final f = File(path);
   expect(f.existsSync(), isTrue, reason: 'الملفُّ انتقل — حدِّث مسارَ الحارس: $path');
-  return _code(f.readAsStringSync());
+  return _code(path == 'lib/services/api/api_handler.dart' ? readApiHandlerSource() : f.readAsStringSync());
 }
 
 /// جسمُ دالّةٍ يبدأ من توقيعها إلى أوّلِ سطرٍ يُغلق عند نفس المسافة.

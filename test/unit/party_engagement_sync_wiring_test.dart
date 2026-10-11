@@ -12,6 +12,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_handler_source.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/services/sync/strategies/party_follow_up_sync_strategy.dart';
 import 'package:ural_erp/services/sync/strategies/supplier_claim_sync_strategy.dart';
@@ -106,7 +107,7 @@ void main() {
 
   group('التسجيلُ في المصدر', () {
     final syncSrc = File('lib/services/sync_service.dart').readAsStringSync();
-    final apiSrc = File('lib/services/api/api_handler.dart').readAsStringSync();
+    final apiSrc = readApiHandlerSource();
 
     test('المرساة — النمطُ يطابق استراتيجيّةً قائمة', () {
       // إن سقطت هذه فالنمطُ انكسر، والفحوصُ التاليةُ تمرّ خضراءَ بلا معنى.
