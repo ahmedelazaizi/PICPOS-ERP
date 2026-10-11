@@ -7,7 +7,8 @@
 - **لا يوجد توقيع Authenticode حاليًا** لـ`PicPos.exe` ولا للمثبّت (المالك لا يملك شهادة توقيع كود). لذلك قد يعرض ويندوز تحذير SmartScreen «ناشر غير معروف». هذا متوقع ولا يعني بالضرورة أن الملف معطوب.
 - **المثبّت لا يضيف أي شهادة** إلى مخازن الثقة (لا `Root` ولا `TrustedPublisher`) — أُزيلت خطوة `certutil -addstore` نهائيًا (B-01). القرار: إضافة جذر موثوق على أجهزة العملاء خطر أكبر من فائدتها؛ الحل الصحيح شهادة توقيع معتمدة (القسم ٤).
 - بدلًا من التوقيع نعتمد **بصمة SHA-256** تُنشر مع كل إصدار في `SHA256SUMS.txt`.
-- ما يُنزَّل أثناء التثبيت (VC++ وPostgreSQL) لا يُنفَّذ إلا بعد مطابقة SHA-256 مثبَّتة داخل `installer/setup.iss`؛ عند عدم التطابق يُحذف الملف ويتوقف التثبيت برسالة واضحة (B-03).
+- **VC++ Redistributable مضمَّن داخل المثبّت** (لا يُنزَّل من رابط «الأحدث»)، وبصمته SHA-256 ثابتة. يُستخرج عند الحاجة فقط (إن لم يكن مثبّتًا مسبقًا) ولا يُنفَّذ إلا بعد مطابقة البصمة داخل `installer/setup.iss`.
+- **PostgreSQL** يبقى منزَّلًا أثناء التثبيت من رابط بإصدار محدد (16.4-1) ولا يُنفَّذ إلا بعد مطابقة SHA-256؛ عند عدم التطابق يُحذف الملف ويتوقف التثبيت برسالة واضحة (B-03).
 
 ## ٢ · للناشر: توليد `SHA256SUMS.txt`
 
@@ -56,8 +57,20 @@ powershell -ExecutionPolicy Bypass -File tool\make_release_checksums.ps1 -Versio
 
 | المكوّن | المصدر | الحالة المثبَّتة |
 |---|---|---|
-| VC++ x64 | `https://aka.ms/vs/17/release/vc_redist.x64.exe` (رابط «الأحدث» لمايكروسوفت) | 14.44.35211.0، التوقيع Valid من Microsoft Corporation |
-| PostgreSQL | `https://get.enterprisedb.com/postgresql/postgresql-16.4-1-windows-x64.exe` | 16.4-1، التوقيع Valid من EnterpriseDB Corporation |
+| VC++ x64 | **مضمَّن** في المثبّت من `installer/prereqs/vc_redist.x64.exe` (مجلد مُتجاهَل في git، يجلبه `tool/fetch_prereqs.ps1`) | 14.44.35211.0 (25,635,768 بايت)، SHA-256 `cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b`، التوقيع Valid من Microsoft Corporation |
+| PostgreSQL | `https://get.enterprisedb.com/postgresql/postgresql-16.4-1-windows-x64.exe` (منزَّل) | 16.4-1، التوقيع Valid من EnterpriseDB Corporation |
 
-- رابط VC++ متحرّك: عندما تُصدر مايكروسوفت نسخة أحدث سيرفض المثبّت الملف برسالة عدم تطابق. الإجراء: نزّل الملف من الرابط، تأكد من `Get-AuthenticodeSignature` (Valid وناشره Microsoft Corporation)، احسب `Get-FileHash -Algorithm SHA256`، حدّث `VCRedistSha256` في `setup.iss` وأعد البناء.
+**VC++ مضمَّن وبصمته ثابتة.** `build_installer_picpos.bat` يستدعي `tool\fetch_prereqs.ps1` الذي يتحقق من SHA-256 المثبَّتة ومن توقيع Authenticode (Valid، ناشره `CN=Microsoft Corporation`)؛ وعند الفقد أو عدم التطابق يفشل البناء. وتتحقق `setup.iss` من البصمة مرة ثانية وقت التثبيت قبل التنفيذ. إن وُجد VC++ مثبّتًا مسبقًا على الجهاز لا يُستخرج ولا يُنفَّذ.
+
+> `tool/fetch_prereqs.ps1` مُتجاهَل بسبب `*.ps1` في `.gitignore` فيلزم `git add -f tool/fetch_prereqs.ps1`.
+
+خطوات تحديث ملف VC++ عند الحاجة (مثلًا نسخة أمنية أحدث):
+
+1. احذف `installer\prereqs\vc_redist.x64.exe` ونزّل النسخة المطلوبة من `https://aka.ms/vs/17/release/vc_redist.x64.exe` إلى المسار نفسه.
+2. تأكد من التوقيع: `Get-AuthenticodeSignature installer\prereqs\vc_redist.x64.exe` (الحالة `Valid` والناشر Microsoft Corporation).
+3. احسب البصمة: `Get-FileHash installer\prereqs\vc_redist.x64.exe -Algorithm SHA256`.
+4. ضع البصمة الجديدة في `VCRedistSha256` داخل `installer/setup.iss` وفي القيمة الافتراضية `$ExpectedSha256` داخل `tool/fetch_prereqs.ps1` (يجب أن تتطابقا)، وحدّث رقم الإصدار والحجم في التعليق والجدول أعلاه.
+5. شغّل `build_installer_picpos.bat` وتأكد من نجاح البناء، ثم ولّد `SHA256SUMS.txt` للمثبّت الجديد.
+
+ملاحظة: إن غيّرت مايكروسوفت الملف خلف رابط «الأحدث» فسيفشل الجلب التلقائي لمن لا يملك الملف المثبَّت محليًا؛ انسخ الملف المعتمد (ذي البصمة المثبّتة) يدويًا إلى `installer\prereqs\` أو نفّذ خطوات التحديث.
 - بصمة PostgreSQL محسوبة من التنزيل الرسمي مباشرةً ولم تُقارَن بقيمة منشورة من EDB؛ راجعها عند أي ترقية للإصدار (والإصدار 16.4 قديم ويستحق الترقية لاحقًا).

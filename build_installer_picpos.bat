@@ -38,7 +38,7 @@ if not exist %ISCC% (
 )
 
 REM --- 1) Verify the Release output belongs to PicPos --------------------
-echo [1/2] Checking build output...
+echo [1/3] Checking build output...
 if not exist "build\windows\x64\runner\Release\PicPos.exe" (
     echo FAILED: build\windows\x64\runner\Release\PicPos.exe is missing.
     echo Run build_picpos.bat first.
@@ -50,8 +50,21 @@ if exist "build\windows\x64\runner\Release\UralCash.exe" (
     exit /b 1
 )
 
-REM --- 2) Compile the installer -----------------------------------------
-echo [2/2] Compiling %ISS_FILE% for %BRAND_ID%...
+REM --- 2) Fetch + verify the embedded VC++ redist ------------------------
+echo [2/3] Preparing embedded VC++ redistributable...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0tool\fetch_prereqs.ps1"
+if errorlevel 1 (
+    echo FAILED: installer\prereqs\vc_redist.x64.exe is missing or does not match the pinned SHA-256 / Microsoft signature.
+    echo See docs\security\release-integrity.md ^(updating the VC++ redistributable^).
+    exit /b 1
+)
+if not exist "installer\prereqs\vc_redist.x64.exe" (
+    echo FAILED: installer\prereqs\vc_redist.x64.exe is missing.
+    exit /b 1
+)
+
+REM --- 3) Compile the installer -----------------------------------------
+echo [3/3] Compiling %ISS_FILE% for %BRAND_ID%...
 REM Optional signing of the installer + uninstaller (finding B-02). Enabled
 REM ONLY when PICPOS_SIGN_PFX or PICPOS_SIGN_THUMBPRINT is set; the secrets stay
 REM in the environment and are read by tool\sign_file.cmd, never put on this

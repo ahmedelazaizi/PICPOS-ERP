@@ -1,4 +1,4 @@
-﻿; ═══════════════════════════════════════════════════════════════════════════
+; ═══════════════════════════════════════════════════════════════════════════
 ;  Windows installer (Inno Setup 6) — one script, one installer per brand.
 ;  Installs the app, auto-installs the Visual C++ runtime if missing, and
 ;  optionally downloads/installs PostgreSQL (server machines only). Arabic
@@ -152,7 +152,11 @@
 ; PostgreSQL: version-pinned URL (16.4-1), 374,221,136 bytes, Authenticode
 ;   Valid, signer CN=EnterpriseDB Corporation. Hash computed from the official
 ;   download; NOT cross-checked against a checksum published by EDB.
-#define VCRedistUrl    "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+;   EMBEDDED since 2026-10: the exe is no longer downloaded by the installer. It
+;   is placed in installer\prereqs\ by tool\fetch_prereqs.ps1 (SHA-256 +
+;   Authenticode checked, git-ignored) and compiled into the setup; at install
+;   time it is extracted to {tmp} and its hash is checked again before running.
+#define VCRedistFile   "prereqs\vc_redist.x64.exe"
 #define VCRedistSha256 "cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b"
 #define PGUrl          "https://get.enterprisedb.com/postgresql/postgresql-16.4-1-windows-x64.exe"
 #define PGSha256       "f4bf0ac4b33471f18aad7d1d9cc52613003f3a3a612aae167366bf7f7840b2bc"
@@ -162,6 +166,9 @@
 ; that isn't in the package.
 #if !FileExists(AddBackslash(SourcePath) + ReleaseDir + "\" + ExeName)
   #error Release output for this brand is missing. Run the brand's build script first.
+#endif
+#if !FileExists(AddBackslash(SourcePath) + VCRedistFile)
+  #error installer\prereqs\vc_redist.x64.exe is missing. Run: powershell -ExecutionPolicy Bypass -File tool\fetch_prereqs.ps1
 #endif
 
 
@@ -237,6 +244,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#ReleaseDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion; Components: app
+; Embedded VC++ redist: not copied to the target; extracted to {tmp} on demand.
+Source: "{#VCRedistFile}"; DestName: "vc_redist.x64.exe"; Flags: dontcopy
 
 [Icons]
 Name: "{group}\{#ShortName}";                       Filename: "{app}\{#ExeName}"
@@ -355,38 +364,40 @@ begin
     NeedPG := WizardIsComponentSelected('pgsql');
     vcFile := ExpandConstant('{tmp}\vc_redist.x64.exe');
     pgFile := ExpandConstant('{tmp}\postgresql-x64.exe');
-    if NeedVC or NeedPG then
+    { VC++ is embedded: extract only when it is actually needed, verify the hash. }
+    if NeedVC then
     begin
       DeleteFile(vcFile);
+      ExtractTemporaryFile('vc_redist.x64.exe');
+      if not PrereqHashOk(vcFile, '{#VCRedistSha256}') then
+      begin
+        MsgBox('فشل التحقق من سلامة ملف Visual C++ المضمَّن في المثبّت (بصمة SHA-256 لا تطابق المتوقعة).' + #13#10 +
+          'حُذف الملف ولم يُنفَّذ، وأُوقف التثبيت حمايةً لجهازك.' + #13#10 +
+          'قد يكون ملف المثبّت تالفًا أو معدَّلًا؛ نزّل المثبّت من جديد من القناة الرسمية وتحقق من بصمته، أو أبلغ الدعم الفني.',
+          mbCriticalError, MB_OK);
+        Result := False;
+        Exit;
+      end;
+    end;
+    if NeedPG then
+    begin
       DeleteFile(pgFile);
       DownloadPage.Clear;
-      if NeedVC then
-        DownloadPage.Add('{#VCRedistUrl}', 'vc_redist.x64.exe', '');
-      if NeedPG then
-        DownloadPage.Add('{#PGUrl}', 'postgresql-x64.exe', '');
+      DownloadPage.Add('{#PGUrl}', 'postgresql-x64.exe', '');
       DownloadPage.Show;
       try
         try
           DownloadPage.Download;
         except
-          SuppressibleMsgBox('تعذّر تنزيل أحد المتطلبات:' + #13#10 +
+          SuppressibleMsgBox('تعذّر تنزيل مثبّت PostgreSQL:' + #13#10 +
             AddPeriod(GetExceptionMessage) + #13#10 +
-            'سيكمل التثبيت؛ ثبّت المتطلب الناقص يدوياً لاحقاً.',
+            'سيكمل التثبيت؛ ثبّت PostgreSQL يدوياً لاحقاً.',
             mbError, MB_OK, IDOK);
         end;
       finally
         DownloadPage.Hide;
       end;
-      if NeedVC and not PrereqHashOk(vcFile, '{#VCRedistSha256}') then
-      begin
-        MsgBox('فشل التحقق من سلامة ملف Visual C++ المنزَّل (بصمة SHA-256 لا تطابق المتوقعة).' + #13#10 +
-          'حُذف الملف ولم يُنفَّذ، وأُوقف التثبيت حمايةً لجهازك.' + #13#10 +
-          'قد يكون الملف تعرّض للتلاعب أو أن مايكروسوفت أصدرت نسخة أحدث؛ أبلغ الدعم الفني، أو ثبّت وقت تشغيل Visual C++ يدوياً ثم أعد المحاولة.',
-          mbCriticalError, MB_OK);
-        Result := False;
-        Exit;
-      end;
-      if NeedPG and not PrereqHashOk(pgFile, '{#PGSha256}') then
+      if not PrereqHashOk(pgFile, '{#PGSha256}') then
       begin
         MsgBox('فشل التحقق من سلامة مثبّت PostgreSQL المنزَّل (بصمة SHA-256 لا تطابق المتوقعة).' + #13#10 +
           'حُذف الملف ولم يُنفَّذ، وأُوقف التثبيت حمايةً لجهازك.' + #13#10 +
@@ -415,9 +426,8 @@ begin
       if FileExists(f) and PrereqHashOk(f, '{#VCRedistSha256}') then
         Exec(f, '/install /quiet /norestart', '', SW_SHOW, ewWaitUntilTerminated, rc)
       else
-        SuppressibleMsgBox('لم يُنزَّل وقت تشغيل Visual C++.' + #13#10 +
-          'إن لم يبدأ البرنامج، ثبّته من:' + #13#10 +
-          'https://aka.ms/vs/17/release/vc_redist.x64.exe',
+        SuppressibleMsgBox('تعذّر تثبيت وقت تشغيل Visual C++ المضمَّن.' + #13#10 +
+          'إن لم يبدأ البرنامج، ثبّته يدوياً من موقع مايكروسوفت (vc_redist.x64.exe).',
           mbInformation, MB_OK, IDOK);
     end;
     if NeedPG then

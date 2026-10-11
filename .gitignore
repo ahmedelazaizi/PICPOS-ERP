@@ -192,6 +192,8 @@ tools/picpos-activation/
 
 # Inno Setup compiled output + downloaded prereqs
 installer/output/
+# VC++ redist embedded into the installer; fetched by tool/fetch_prereqs.ps1
+installer/prereqs/
 
 # Bundled PostgreSQL installer (354MB) — ship via download+checksum, never in git
 tools/postgresql-*-windows-x64.exe
