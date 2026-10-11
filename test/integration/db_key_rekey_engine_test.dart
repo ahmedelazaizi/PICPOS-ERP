@@ -85,7 +85,9 @@ void main() {
 
     final key = (await mgr.resolveForOpen(f) as DbKeyReady).key;
     expect(key.kind, DbKeyKind.rawV2);
-    final head = f.openSync().readSync(16);
+    final raf = f.openSync();
+    final head = raf.readSync(16);
+    raf.closeSync();
     expect(String.fromCharCodes(head), isNot(startsWith('SQLite format 3')));
     final insp = await engine.inspect(f, key);
     expect(insp.userVersion, 7);

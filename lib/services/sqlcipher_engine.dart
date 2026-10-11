@@ -55,12 +55,20 @@ abstract class SqlCipherEngine {
   Future<void> exportTo(File src, DbKey srcKey, File dst, DbKey dstKey);
 }
 
+/// ⚠️ ثابتُ الإصلاح (ثبت على SQLCipher الحقيقيّ، docs/security/db-key-engine-
+/// validation.md): `NativeDatabase` يستعمل `DynamicVersionDelegate` لا
+/// `OnOpenVersionDelegate`، فيُنفّذ drift بعد `beforeOpen` الأمرَ
+/// `PRAGMA user_version = <schemaVersion>` متى اختلف عن المخزَّن. بـ`schemaVersion`
+/// ثابتٍ = 1 كان كلُّ `canOpen`/`inspect`/`exportTo` **يكتب 1 فوق user_version
+/// القاعدةِ الحقيقيّ (195 مثلًا)** فيُفسد الأصلَ والنسخةَ معًا ويخدع المقارنةَ.
+/// الحلّ: [version] يُقرأ من القاعدة نفسِها في `setup` (قبل أن يسأل drift)،
+/// فيكون المكتوبُ هو المقروءُ — لا تغيير.
 class _NoopUser extends QueryExecutorUser {
-  @override
-  int get schemaVersion => 1;
+  int version = 0;
 
-  // لا ترحيلَ ولا كتابةَ لـ user_version: NativeDatabase يستعمل
-  // OnOpenVersionDelegate فلا يُضبط الإصدارُ هنا أصلًا.
+  @override
+  int get schemaVersion => version;
+
   @override
   Future<void> beforeOpen(
       QueryExecutor executor, OpeningDetails details) async {}
@@ -72,6 +80,7 @@ class NativeSqlCipherEngine implements SqlCipherEngine {
   const NativeSqlCipherEngine();
 
   Future<NativeDatabase> _open(File f, DbKey key) async {
+    final user = _NoopUser();
     final exec = NativeDatabase(
       f,
       setup: (raw) {
@@ -81,10 +90,16 @@ class NativeSqlCipherEngine implements SqlCipherEngine {
             ? ''
             : (cipher.first.values.first?.toString().trim() ?? '');
         if (v.isEmpty) throw const NotSqlCipherException();
+        try {
+          // مفتاحٌ خطأ ⇒ يرمي هنا؛ نتجاهل ويفشل `SELECT` أدناه بالرسالة الصحيحة.
+          user.version =
+              (raw.select('PRAGMA user_version;').first.values.first as num)
+                  .toInt();
+        } catch (_) {}
       },
     );
     try {
-      await exec.ensureOpen(_NoopUser());
+      await exec.ensureOpen(user);
       // يفشل هنا بـ«file is not a database» عند المفتاح الخطأ.
       await exec.runSelect('SELECT count(*) FROM sqlite_master;', const []);
       return exec;
