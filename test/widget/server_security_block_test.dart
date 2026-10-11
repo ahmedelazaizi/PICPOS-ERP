@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/theme/app_theme.dart';
 import 'package:ural_erp/data/providers/auth_providers.dart';
 import 'package:ural_erp/presentation/settings_picpos/screens/linked_devices_section.dart';
+import 'package:ural_erp/presentation/settings_picpos/widgets/database_encryption_block.dart';
 import 'package:ural_erp/presentation/settings_picpos/widgets/server_security_block.dart';
 import 'package:ural_erp/services/api/lan_paired_devices_provider.dart';
 import 'package:ural_erp/services/api/lan_pairing_service.dart';
@@ -86,6 +87,7 @@ void main() {
         lanPairedDevicesServiceProvider.overrideWithValue(_FakeLan()),
         cloudLinkControllerProvider.overrideWithValue(_FakeCloud()),
         serverSecurityActionsProvider.overrideWithValue(calls.actions),
+        dbEncryptionSupportedProvider.overrideWithValue(false),
       ],
       child: MaterialApp(
         theme: AppTheme.lightTheme,

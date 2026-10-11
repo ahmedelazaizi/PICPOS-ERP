@@ -20,6 +20,7 @@ import 'package:ural_erp/domain/models/hr_employee_file.dart';
 import 'package:ural_erp/presentation/hr_picpos/hr_picpos_providers.dart';
 import 'package:ural_erp/presentation/settings_picpos/screens/linked_devices_section.dart';
 import 'package:ural_erp/presentation/settings_picpos/screens/settings_picpos_screen.dart';
+import 'package:ural_erp/presentation/settings_picpos/widgets/database_encryption_block.dart';
 import 'package:ural_erp/presentation/settings_picpos/widgets/server_security_block.dart';
 import 'package:ural_erp/presentation/settings_picpos/widgets/settings_nav_rail.dart';
 import 'package:ural_erp/presentation/settings_picpos/widgets/cloud_link_settings_block.dart';
@@ -182,6 +183,7 @@ void main() {
           disableLegacy: () async {},
           audit: (action, detail) async {},
         )),
+        dbEncryptionSupportedProvider.overrideWithValue(false),
       ];
 
   Future<void> pumpSection(

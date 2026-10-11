@@ -50,7 +50,10 @@ import 'services/sync/sync_worker.dart';
 // Conditional import for desktop-only features
 import 'main_desktop.dart' if (dart.library.html) 'main_web.dart' as platform;
 import 'data/database/pg_config.dart';
-import 'data/database/connection.dart' show openPostgresConnection, testPostgresConnection;
+import 'data/database/connection.dart'
+    show checkDatabaseKeyGate, createDbKeyBlockedActions, openPostgresConnection, testPostgresConnection;
+import 'presentation/db_key/db_key_blocked_screen.dart';
+import 'services/db_key_boot.dart' show DbKeyBlockedException;
 import 'services/invoice_integrity_service.dart';
 import 'data/database/extensions/branch_dedup_extension.dart';
 import 'data/database/extensions/return_memo_dedup_extension.dart';
@@ -264,6 +267,27 @@ void main() async {
     // fresh `AppDatabase()`. We pass this same instance to every
     // downstream component so SQLite never sees parallel handles on the
     // same file from this process.
+    // E-01 (المرحلة ب): بوّابةُ مفتاح القاعدة المحلية **قبل** أيّ قاعدة. قاعدةٌ
+    // مرحَّلةٌ بلا مفتاحٍ ⇒ شاشةُ حجبٍ صريحة (رمز استرداد / إعادة محاولة /
+    // رجوع لنسخة ما قبل الترحيل) ولا تُنشأ قاعدةٌ فارغةٌ أبدًا. خادمُ PG
+    // المتصلُ لا يفتح ملفًّا محليًّا فلا بوّابةَ له.
+    if (pgDb == null) {
+      try {
+        final blocked = await checkDatabaseKeyGate();
+        if (blocked is DbKeyBlockedException) {
+          debugPrint('[STARTUP] ❌ database key blocked: ${blocked.resolution}');
+          runApp(DbKeyBlockedApp(
+            resolution: blocked.resolution,
+            actions: createDbKeyBlockedActions(blocked),
+          ));
+          return;
+        }
+      } catch (e) {
+        // خللٌ غير متوقَّع في البوّابة: يُسجَّل ويتابع؛ `openConnection` يعيد
+        // الفحصَ نفسَه ويحجب إن لزم.
+        debugPrint('[STARTUP] ⚠️ database key gate failed (continuing): $e');
+      }
+    }
     try {
       sharedDb = pgDb ?? AppDatabase();
       await InvoiceIntegrityService.initialize(

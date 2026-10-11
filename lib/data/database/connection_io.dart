@@ -7,8 +7,11 @@ import 'package:path/path.dart' as p;
 import '../../core/config/app_config.dart';
 import '../../core/config/brand.dart';
 import '../../services/db_key_types.dart';
+import '../../services/db_backup_sidecars.dart';
+import '../../services/db_key_boot.dart';
 import '../../services/security_service.dart';
-import '../../services/sqlcipher_engine.dart';
+import '../../services/db_key_blocked_actions.dart';
+import 'db_key_startup.dart';
 import 'pending_restore.dart';
 import 'package:drift_postgres/drift_postgres.dart';
 import 'package:postgres/postgres.dart' as pg;
@@ -36,45 +39,23 @@ QueryExecutor openConnection() {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, getDatabaseFileName()));
 
-    // أي استعادة متجدولة بتتطبّق **هنا** — قبل أول فتحة للملف. دي اللحظة
-    // الوحيدة اللي مفيش فيها مقبض مفتوح على الداتابيز. اقرا التعليق فوق
-    // `restoreDatabaseBackup`.
+    // E-01 (المرحلة ب): مسارُ الإقلاع الموحَّد في `resolveDatabaseKey` —
+    // استعادةٌ معلَّقة ثم طلبُ ترحيلٍ مؤجَّل ثم تحديدُ المفتاح، كلُّها **قبل**
+    // أيّ مقبضٍ على الملف (اللحظةُ الوحيدة الآمنة؛ اقرأ التعليق فوق
+    // `restoreDatabaseBackup`). النتيجةُ مشتركةٌ مع بوّابة `main`.
     //
-    // E-01: انقطاعٌ سابق بعد النقل وقبل التأكيد ⇒ `.pre-restore` باقٍ يُحسَم
-    // أولًا (يُحذف إن فتحت القاعدةُ الحاليّة، وإلا يُعاد).
-    await PendingRestore.reconcileLeftover(file.path);
-    final restoreApplied = await _applyPendingRestore(file.path);
-
-    // Phase 2: Securely retrieve or generate machine-unique encryption key.
-    // `databaseExists`: «أوّلُ تشغيل» = غيابُ ملف القاعدة لا غيابُ المفتاح —
-    // لا يُولَّد مفتاحٌ احتياطيٌّ جديدٌ لقاعدةٍ موجودة (E-01 §0.7).
-    final key = await SecurityService.getDatabaseEncryptionKey(
-      databaseExists: await file.exists(),
-    );
-
-    if (restoreApplied) {
-      // الفتحُ الفعليّ بالمفتاح الذي سيُستعمل: ينجح ⇒ يُحذف `.pre-restore`،
-      // يفشل ⇒ تُعاد القاعدةُ السابقة بدل قاعدةٍ لا تُفتح.
-      try {
-        final opens = await const NativeSqlCipherEngine()
-            .canOpen(file, DbKey(DbKeyKind.legacyDerived, key));
-        await PendingRestore.finalize(file.path, opens: opens);
-      } catch (e) {
-        // محرّكٌ ليس SQLCipher: يتولّى الحارسُ أدناه الرفض؛ نترك
-        // `.pre-restore` ليُحسم في الإقلاع التالي.
-        debugPrint('[RESTORE] post-restore open check skipped: $e');
-      }
+    // قاعدةٌ لا مفتاحَ لها ⇒ **حجبٌ صريح** (شاشة استرداد) ولا تُنشأ قاعدةٌ
+    // فارغةٌ أبدًا. «أوّلُ تشغيل» = غيابُ ملف القاعدة لا غيابُ المفتاح.
+    final resolution = await resolveDatabaseKey(file);
+    if (resolution is! DbKeyReady) {
+      throw DbKeyBlockedException(resolution as DbKeyUnavailable, file.path);
     }
+    final key = resolution.key;
 
-    // Defensive: SecurityService returns a SHA256 hex digest (64 chars,
-    // [0-9a-f] only) — so interpolating it into the PRAGMA below is safe
-    // from injection. But the audit flagged it, and rotating the key
-    // derivation later (e.g. to argon2) would invalidate that assumption,
-    // so we assert the shape here. If this ever throws, the key
-    // derivation contract changed and someone must explicitly review
-    // whether to re-key existing installs vs. switch to the `x'...'`
-    // blob form (no string interpolation at all).
-    if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(key)) {
+    // حارسُ الشكل للمفتاح القديم (hex من 64 حرفًا): الخامُ الجديد يتحقّق من
+    // شكله في `DbKey.raw`، والقديمُ تُضاعَف فيه علامةُ الاقتباس أصلًا، لكنّ
+    // تغيُّر عقد الاشتقاق يجب أن يُراجَع صراحةً لا أن يمرّ بصمت.
+    if (key.kind.isLegacy && !isValidRawKeyHex(key.value)) {
       throw StateError(
         'SQLCipher key has unexpected shape '
         '(expected 64-char SHA256 hex). Key derivation contract changed?',
@@ -86,7 +67,7 @@ QueryExecutor openConnection() {
       setup: (database) {
         // Apply the SQLCipher encryption key. Key shape asserted above
         // so the single-quote interpolation can't be abused.
-        database.execute("PRAGMA key = '$key';");
+        database.execute('PRAGMA key = ${key.pragmaLiteral};');
 
         // ═══ إثباتُ أنّ التشفيرَ يعمل فعلاً — لا الاكتفاءُ بطلبه ═══════════
         //
@@ -447,6 +428,8 @@ Future<String?> createDatabaseBackup({
       try {
         await dbFile.copy(candidate);
         backupPath = candidate;
+        // T11: keyinfo مجاور للنسخة (نوع المفتاح + بصمته + غلاف الاسترداد).
+        await BackupSidecars.writeFor(dbFile, File(candidate));
       } on PathExistsException {
         // خسرنا السباق على الاسم ده — نجرّب اللي بعده.
         continue;
@@ -501,7 +484,6 @@ const String _pendingRestoreSuffix = '.restore-pending';
 /// ما نلمس الداتابيز الحيّة؛ والحيّة بتتنقل لـ `.pre-restore` بدل ما تتكتب
 /// فوقها. التفاصيل في `pending_restore.dart`. بيرجع `true` لو الاستعادة
 /// اتطبّقت (و`openConnection` بيحسم `.pre-restore` بعد الفتح الفعلي).
-Future<bool> _applyPendingRestore(String dbPath) => PendingRestore.apply(dbPath);
 
 /// بيجدول استعادة من نسخة احتياطية. **مش بيطبّقها فوراً** — بتتطبّق عند
 /// أول إقلاع بعد كده، عشان مفيش حد يكتب فوق داتابيز مفتوحة.
@@ -609,6 +591,7 @@ Future<void> _cleanOldBackups(String backupFolderPath) async {
     // Delete oldest backups
     for (var i = 0; i < files.length - 7; i++) {
       await files[i].delete();
+      await BackupSidecars.deleteFor(File(files[i].path));
     }
   } catch (e) {
     // Silently fail
@@ -647,6 +630,7 @@ Future<bool> exportBackupToPath(String destinationFolder) async {
     final destFile = File(p.join(destinationFolder, fileName));
 
     await latestBackup.copy(destFile.path);
+    await BackupSidecars.copyFor(latestBackup, destFile);
     return true;
   } catch (e) {
     return false;
@@ -678,3 +662,12 @@ Future<Map<String, dynamic>> getBackupStats() async {
     return {'count': 0, 'totalSize': 0, 'lastBackup': null};
   }
 }
+
+/// بوّابةُ الإقلاع في `main`: `null` = آمنٌ للمتابعة، وإلا [DbKeyBlockedException]
+/// (يُعرَض لها شاشةُ الحجب). تُنفَّذ قبل إنشاء `AppDatabase`.
+Future<Object?> checkDatabaseKeyGate() async =>
+    checkDatabaseKeyGateImpl(await getDatabasePath());
+
+/// إجراءاتُ شاشة الحجب الإنتاجيّة لهذا الاستثناء.
+DbKeyBlockedActions createDbKeyBlockedActions(DbKeyBlockedException e) =>
+    ProductionDbKeyBlockedActions(File(e.dbPath));

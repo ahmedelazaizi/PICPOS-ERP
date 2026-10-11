@@ -3,6 +3,7 @@ import 'package:drift/wasm.dart';
 
 import '../../core/config/app_config.dart';
 import '../../core/config/brand.dart';
+import '../../services/db_key_blocked_actions.dart';
 import 'pg_config.dart';
 
 /// اسم قاعدة البيانات على الويب.
@@ -83,3 +84,10 @@ Future<bool> exportBackupToPath(String destinationFolder) async => false;
 
 Future<Map<String, dynamic>> getBackupStats() async =>
     {'count': 0, 'totalSize': 0, 'lastBackup': null};
+
+/// الويب لا ملفَّ قاعدةٍ ولا مفتاحَ: لا بوّابة.
+Future<Object?> checkDatabaseKeyGate() async => null;
+
+/// لا تُستدعى على الويب (البوّابةُ تُرجع `null` دائمًا).
+DbKeyBlockedActions createDbKeyBlockedActions(Object e) =>
+    throw UnsupportedError('database key recovery is desktop-only');

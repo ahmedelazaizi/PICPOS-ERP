@@ -26,6 +26,7 @@ import '../../picpos_shell/picpos_dialog.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../../widgets/settings/lan_pairing_dialog.dart';
 import '../widgets/cloud_link_settings_block.dart';
+import '../widgets/database_encryption_block.dart';
 import '../widgets/server_security_block.dart';
 import '../widgets/settings_blocks.dart';
 
@@ -156,6 +157,7 @@ class _ConnectionsOverviewState extends ConsumerState<_ConnectionsOverview> {
           ]),
         )),
         const SettingsBlockSpan(span: 12, child: ServerSecurityBlock()),
+        const SettingsBlockSpan(span: 12, child: DatabaseEncryptionBlock()),
       ]);
     },
   );
