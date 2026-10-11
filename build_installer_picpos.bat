@@ -52,7 +52,15 @@ if exist "build\windows\x64\runner\Release\UralCash.exe" (
 
 REM --- 2) Compile the installer -----------------------------------------
 echo [2/2] Compiling %ISS_FILE% for %BRAND_ID%...
-%ISCC% /DBrandId=%BRAND_ID% %ISS_FILE%
+REM Optional signing of the installer + uninstaller (finding B-02). Enabled
+REM ONLY when PICPOS_SIGN_PFX or PICPOS_SIGN_THUMBPRINT is set; the secrets stay
+REM in the environment and are read by tool\sign_file.cmd, never put on this
+REM command line. Without them the installer is built unsigned.
+set SIGN_ARGS=
+if defined PICPOS_SIGN_PFX set SIGN_ARGS=/DSignInstaller=1 "/Spicpossign=$q%~dp0tool\sign_file.cmd$q $f"
+if defined PICPOS_SIGN_THUMBPRINT set SIGN_ARGS=/DSignInstaller=1 "/Spicpossign=$q%~dp0tool\sign_file.cmd$q $f"
+if not defined SIGN_ARGS echo unsigned build - PICPOS_SIGN_PFX / PICPOS_SIGN_THUMBPRINT not set.
+%ISCC% /DBrandId=%BRAND_ID% %SIGN_ARGS% %ISS_FILE%
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo INSTALLER BUILD FAILED!

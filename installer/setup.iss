@@ -1,8 +1,9 @@
 ﻿; ═══════════════════════════════════════════════════════════════════════════
 ;  Windows installer (Inno Setup 6) — one script, one installer per brand.
-;  Installs the app + publisher certificate, auto-installs the Visual C++
-;  runtime if missing, and optionally downloads/installs PostgreSQL (server
-;  machines only). Arabic RTL wizard.
+;  Installs the app, auto-installs the Visual C++ runtime if missing, and
+;  optionally downloads/installs PostgreSQL (server machines only). Arabic
+;  RTL wizard. Every downloaded prerequisite is SHA-256 verified before it is
+;  executed (see "Pinned prerequisites" below).
 ;
 ;  Build (PicPos — the live product):
 ;    ISCC.exe /DBrandId=picpos installer\setup.iss
@@ -18,9 +19,16 @@
 ;  over the other brand's Release output produces a MIXED package; the
 ;  [Files] guard below fails the compile if the expected exe is missing.
 ;
-;  The publisher certificate is OPTIONAL: if the .cer is absent the cert
-;  install/uninstall steps are compiled out entirely. PicPos has no signing
-;  certificate yet, and UralCash's cert is produced out-of-tree.
+;  CERTIFICATES (security finding B-01, decision 2026-10): this installer NEVER
+;  adds any certificate to the client machine's trust stores - not Root, not
+;  TrustedPublisher. Trusting a self-signed publisher cert as a Root CA lets
+;  whoever holds its private key mint trusted code (and possibly TLS certs) on
+;  every customer PC. The proper fix is a real Authenticode certificate.
+;
+;  SIGNING (B-02) is OPTIONAL and off by default. Pass /DSignInstaller=1 plus
+;  /Spicpossign="<command> $f" to ISCC to sign the installer and uninstaller;
+;  build_installer_picpos.bat does this only when PICPOS_SIGN_PFX or
+;  PICPOS_SIGN_THUMBPRINT is set. Without them the build is simply unsigned.
 ;
 ;  Everything brand-bound lives in the one block below. Nothing anywhere else
 ;  in this file may name a brand.
@@ -56,9 +64,7 @@
   #define Publisher    "Monexia"
   #define PublisherURL "https://uralcash.app"
   #define ExeName      "UralCash.exe"
-  #define CertName     "UralCash-PublicCert.cer"
-  ; Subject of the code-signing cert, as passed to `certutil -delstore`.
-  #define CertSubject  "UralCash Code Signing (Monexia)"
+
 
 #elif BrandId == "picpos"
 
@@ -79,8 +85,7 @@
   ; directive is omitted rather than pointed at UralCash's site.
   #define PublisherURL ""
   #define ExeName      "PicPos.exe"
-  #define CertName     "PicPos-PublicCert.cer"
-  #define CertSubject  "PicPos Code Signing (PicPos)"
+
 
 #else
   #error Unknown BrandId. Use /DBrandId=uralcash or /DBrandId=picpos.
@@ -106,7 +111,6 @@
 
 ; ── Brand-derived paths — no brand names below this line ─────────────────
 #define ReleaseDir    "..\build\windows\x64\runner\Release"
-#define CertFile      "..\build\windows\x64\runner\" + CertName
 #define IconFile      "..\windows\runner\resources\app_icon.ico"
 #define InfoFile      "info-ar-" + BrandId + ".txt"
 
@@ -130,9 +134,28 @@
   #define WizardLarge "assets\wizard-large-" + BrandId + ".bmp"
   #define WizardSmall "assets\wizard-small-" + BrandId + ".bmp"
 #endif
-#define VCRedistUrl   "https://aka.ms/vs/17/release/vc_redist.x64.exe"
-; Official EDB PostgreSQL x64 installer (best-effort; download is fault-tolerant)
-#define PGUrl         "https://get.enterprisedb.com/postgresql/postgresql-16.4-1-windows-x64.exe"
+
+; -- Pinned prerequisites (security finding B-03) ---------------------------
+; Nothing downloaded is executed unless its SHA-256 matches the value below;
+; a mismatch deletes the file and blocks the installation (see
+; NextButtonClick). A download that merely fails (offline) stays tolerated -
+; nothing is executed in that case.
+;
+; VC++ redist: aka.ms/vs/17/release/vc_redist.x64.exe is Microsoft's "latest"
+;   link, so the bytes change whenever Microsoft ships a new redist. Pinned
+;   2026-10 to 14.44.35211.0 (25,635,768 bytes), downloaded from the official
+;   URL, Authenticode status Valid, signer CN=Microsoft Corporation.
+;   WHEN MICROSOFT UPDATES IT the installer will refuse with the hash-mismatch
+;   message: re-download, check the signature, recompute with
+;   Get-FileHash -Algorithm SHA256, and update VCRedistSha256
+;   (see docs/security/release-integrity.md).
+; PostgreSQL: version-pinned URL (16.4-1), 374,221,136 bytes, Authenticode
+;   Valid, signer CN=EnterpriseDB Corporation. Hash computed from the official
+;   download; NOT cross-checked against a checksum published by EDB.
+#define VCRedistUrl    "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+#define VCRedistSha256 "cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b"
+#define PGUrl          "https://get.enterprisedb.com/postgresql/postgresql-16.4-1-windows-x64.exe"
+#define PGSha256       "f4bf0ac4b33471f18aad7d1d9cc52613003f3a3a612aae167366bf7f7840b2bc"
 
 ; Guard against packaging the wrong brand's build output. Without this the
 ; compile succeeds and ships an installer whose shortcuts point at an exe
@@ -141,10 +164,6 @@
   #error Release output for this brand is missing. Run the brand's build script first.
 #endif
 
-; The signing certificate is optional — see the header.
-#if FileExists(AddBackslash(SourcePath) + CertFile)
-  #define HaveCert
-#endif
 
 [Setup]
 AppId={#AppId}
@@ -161,6 +180,12 @@ OutputDir=output
 OutputBaseFilename={#ShortName}-Setup-{#AppVersion}
 Compression=lzma2/max
 SolidCompression=yes
+#ifdef SignInstaller
+; Defined on the ISCC command line (/Spicpossign=...) by build_installer_picpos.bat
+; only when a signing identity is configured through environment variables.
+SignTool=picpossign
+SignedUninstaller=yes
+#endif
 WizardStyle=modern
 WizardImageFile={#WizardLarge}
 WizardSmallImageFile={#WizardSmall}
@@ -186,7 +211,6 @@ Name: "arabic"; MessagesFile: "compiler:Languages\Arabic.isl"
 [CustomMessages]
 arabic.CompApp=نظام {#ShortName} (أساسي)
 arabic.CompPg=خادم PostgreSQL (للسيرفر/الفرع الرئيسي فقط — اختياري)
-arabic.InstallingCert=جارٍ تثبيت شهادة الناشر في الجهات الموثوقة...
 arabic.PreparingReqs=جارٍ تجهيز متطلبات النظام
 
 ; ── الجسرُ إلى معالج البدء ────────────────────────────────────────────────
@@ -213,9 +237,6 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#ReleaseDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion; Components: app
-#ifdef HaveCert
-Source: "{#CertFile}";     DestDir: "{app}"; Flags: ignoreversion;                                Components: app
-#endif
 
 [Icons]
 Name: "{group}\{#ShortName}";                       Filename: "{app}\{#ExeName}"
@@ -223,23 +244,9 @@ Name: "{group}\{cm:UninstallProgram,{#ShortName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#ShortName}";                 Filename: "{app}\{#ExeName}"; Tasks: desktopicon
 
 [Run]
-#ifdef HaveCert
-; Trust the publisher certificate so the signed exe stops warning "Unknown Publisher".
-Filename: "{sys}\certutil.exe"; Parameters: "-addstore -f Root ""{app}\{#CertName}"""; \
-  StatusMsg: "{cm:InstallingCert}"; Flags: runhidden waituntilterminated
-Filename: "{sys}\certutil.exe"; Parameters: "-addstore -f TrustedPublisher ""{app}\{#CertName}"""; \
-  StatusMsg: "{cm:InstallingCert}"; Flags: runhidden waituntilterminated
-#endif
+; No certificate is installed into any trust store (B-01) - see the header.
 ; Optional launch at the end.
 Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent
-
-#ifdef HaveCert
-[UninstallRun]
-Filename: "{sys}\certutil.exe"; Parameters: "-delstore Root ""{#CertSubject}"""; \
-  Flags: runhidden; RunOnceId: "DelCertRoot"
-Filename: "{sys}\certutil.exe"; Parameters: "-delstore TrustedPublisher ""{#CertSubject}"""; \
-  Flags: runhidden; RunOnceId: "DelCertPub"
-#endif
 
 [Code]
 
@@ -297,6 +304,19 @@ begin
     'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64', 'Installed', v) and (v >= 1);
 end;
 
+{ True when `F` is absent (nothing to execute) or its SHA-256 equals `Expected`.
+  On a mismatch the file is deleted so it can never be run by accident. }
+function PrereqHashOk(const F, Expected: String): Boolean;
+begin
+  Result := True;
+  if FileExists(F) then
+    if CompareText(GetSHA256OfFile(F), Expected) <> 0 then
+    begin
+      DeleteFile(F);
+      Result := False;
+    end;
+end;
+
 procedure InitializeWizard();
 begin
   DownloadPage := CreateDownloadPage(SetupMessage(msgWizardPreparing),
@@ -320,18 +340,25 @@ begin
   end;
 end;
 
-{ On the Ready page, download whatever prerequisites are needed. Fault-tolerant:
-  a failed download never blocks the install — the missing piece is handled (or
-  reported) at the post-install step. }
+{ On the Ready page, download whatever prerequisites are needed. A download that
+  FAILS (offline) never blocks the install - the missing piece is reported at
+  the post-install step. A download that arrives with the WRONG SHA-256 blocks
+  the install (B-03): the file is deleted and nothing is executed. }
 function NextButtonClick(CurPageID: Integer): Boolean;
+var
+  vcFile, pgFile: String;
 begin
   Result := True;
   if CurPageID = wpReady then
   begin
     NeedVC := not VCRedistInstalled();
     NeedPG := WizardIsComponentSelected('pgsql');
+    vcFile := ExpandConstant('{tmp}\vc_redist.x64.exe');
+    pgFile := ExpandConstant('{tmp}\postgresql-x64.exe');
     if NeedVC or NeedPG then
     begin
+      DeleteFile(vcFile);
+      DeleteFile(pgFile);
       DownloadPage.Clear;
       if NeedVC then
         DownloadPage.Add('{#VCRedistUrl}', 'vc_redist.x64.exe', '');
@@ -350,6 +377,24 @@ begin
       finally
         DownloadPage.Hide;
       end;
+      if NeedVC and not PrereqHashOk(vcFile, '{#VCRedistSha256}') then
+      begin
+        MsgBox('فشل التحقق من سلامة ملف Visual C++ المنزَّل (بصمة SHA-256 لا تطابق المتوقعة).' + #13#10 +
+          'حُذف الملف ولم يُنفَّذ، وأُوقف التثبيت حمايةً لجهازك.' + #13#10 +
+          'قد يكون الملف تعرّض للتلاعب أو أن مايكروسوفت أصدرت نسخة أحدث؛ أبلغ الدعم الفني، أو ثبّت وقت تشغيل Visual C++ يدوياً ثم أعد المحاولة.',
+          mbCriticalError, MB_OK);
+        Result := False;
+        Exit;
+      end;
+      if NeedPG and not PrereqHashOk(pgFile, '{#PGSha256}') then
+      begin
+        MsgBox('فشل التحقق من سلامة مثبّت PostgreSQL المنزَّل (بصمة SHA-256 لا تطابق المتوقعة).' + #13#10 +
+          'حُذف الملف ولم يُنفَّذ، وأُوقف التثبيت حمايةً لجهازك.' + #13#10 +
+          'أبلغ الدعم الفني، أو ألغِ اختيار مكوّن PostgreSQL وثبّته يدوياً من موقع EDB.',
+          mbCriticalError, MB_OK);
+        Result := False;
+        Exit;
+      end;
     end;
   end;
 end;
@@ -367,7 +412,7 @@ begin
     if NeedVC then
     begin
       f := ExpandConstant('{tmp}\vc_redist.x64.exe');
-      if FileExists(f) then
+      if FileExists(f) and PrereqHashOk(f, '{#VCRedistSha256}') then
         Exec(f, '/install /quiet /norestart', '', SW_SHOW, ewWaitUntilTerminated, rc)
       else
         SuppressibleMsgBox('لم يُنزَّل وقت تشغيل Visual C++.' + #13#10 +
@@ -378,7 +423,7 @@ begin
     if NeedPG then
     begin
       f := ExpandConstant('{tmp}\postgresql-x64.exe');
-      if FileExists(f) then
+      if FileExists(f) and PrereqHashOk(f, '{#PGSha256}') then
         Exec(f, '', '', SW_SHOW, ewWaitUntilTerminated, rc)
       else
         SuppressibleMsgBox('لم يُنزَّل مثبّت PostgreSQL.' + #13#10 +

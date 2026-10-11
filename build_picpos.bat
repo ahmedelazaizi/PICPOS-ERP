@@ -132,6 +132,18 @@ if %ERRORLEVEL% NEQ 0 (
 )
 echo        OK - shipped sqlite3.dll carries the SQLCipher engine.
 
+REM --- 5b) Optional Authenticode signing (finding B-02) -------------------
+REM Runs ONLY when PICPOS_SIGN_PFX (+ PICPOS_SIGN_PFX_PASSWORD) or
+REM PICPOS_SIGN_THUMBPRINT is set in the environment; otherwise tool\sign_file.cmd
+REM prints "unsigned build" and returns 0. Signing is done AFTER the SQLCipher
+REM overwrite above so the signed sqlite3.dll is the final one. No secret lives
+REM in the repo. See docs\security\release-integrity.md.
+echo [5b/6] Signing (optional)...
+call tool\sign_file.cmd "build\windows\x64\runner\Release\%BRAND_BINARY_NAME%.exe"
+if %ERRORLEVEL% NEQ 0 exit /b 1
+call tool\sign_file.cmd "%SHIPPED_DLL%"
+if %ERRORLEVEL% NEQ 0 exit /b 1
+
 REM --- 6) Separate output directory --------------------------------------
 echo [6/6] Copying to %OUT_DIR%...
 if exist "%OUT_DIR%" rmdir /S /Q "%OUT_DIR%"

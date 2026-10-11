@@ -72,6 +72,13 @@ if exist "build\windows\x64\runner\Release\PicPos.exe" (
     exit /b 1
 )
 
+REM Optional Authenticode signing (finding B-02): only when PICPOS_SIGN_PFX or
+REM PICPOS_SIGN_THUMBPRINT is set; otherwise prints "unsigned build" and goes on.
+call tool\sign_file.cmd "%EXE_PATH%"
+if %ERRORLEVEL% NEQ 0 exit /b 1
+call tool\sign_file.cmd "build\windows\x64\runner\Release\sqlite3.dll"
+if %ERRORLEVEL% NEQ 0 exit /b 1
+
 echo.
 echo SUCCESS! Build complete.
 echo Output: build\windows\x64\runner\Release\
