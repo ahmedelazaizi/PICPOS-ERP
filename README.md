@@ -235,7 +235,8 @@ cd server; dart test -j 1                    # اختبارات السيرفر (
 |---|---|
 | [`PRODUCT.md`](PRODUCT.md) | المنتج والمستخدمون والتموضع |
 | [`DESIGN.md`](DESIGN.md) | نظام التصميم |
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | خطة تفكيك الملفات الضخمة |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | ملخّص المعمارية وحالة تقسيم الملفات الضخمة |
+| [`docs/ARCHITECTURE-MAP.md`](docs/ARCHITECTURE-MAP.md) | خريطة دخول المطوّر الجديد: المجلدات، أنماط `part`، وصفات الإضافة، الاختبارات وCI، الأمن |
 | [`docs/mobile/ARCHITECTURE-I.md`](docs/mobile/ARCHITECTURE-I.md) | السيرفر السحابي وتطبيق المندوب |
 | [`docs/mobile/ARCHITECTURE-M.md`](docs/mobile/ARCHITECTURE-M.md) | تطبيقا الإدارة والكاشير |
 | [`docs/mobile/ARCHITECTURE-MC.md`](docs/mobile/ARCHITECTURE-MC.md) | تطبيق المخازن (خطة) |
