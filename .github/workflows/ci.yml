@@ -24,7 +24,7 @@ env:
   FLUTTER_VERSION: '3.41.x'   # Pin to the version used in development (3.41.2 stable, Dart 3.11)
 
 # Jobs (all independent => run in parallel, except where `needs` is stated):
-#   secrets | gitleaks | root_static | root_tests (4 shards) | packages_and_mobile | server | web
+#   secrets | gitleaks | root_static | root_tests (8 file-shards) | packages_and_mobile | server | web
 #   coverage_gate  <- root_tests (merges shard coverage, ≥ 18 % gate)
 #   e2e            <- secrets, packages_and_mobile, server   (does NOT wait for the root suite)
 #   build-windows  <- secrets, root_static, root_tests, coverage_gate, packages_and_mobile,
@@ -40,7 +40,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       # Fails if *.jks / *.keystore / key.properties / google-services.json /
       # Firebase service-account JSON is tracked, or the ignore rules for them
@@ -63,12 +63,12 @@ jobs:
       pull-requests: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0   # full history so gitleaks can scan all commits
 
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}   # only needed for org repos
@@ -82,9 +82,9 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -154,29 +154,33 @@ jobs:
           [ "$FAILED" -eq 0 ] || exit 1
 
   # ── Full test suite, split into parallel shards ───────────────────────────
-  # The single-job run took ~1h55m on the runner and hit the job timeout, so
-  # the suite is split with `flutter test --total-shards/--shard-index`
-  # (package:test shards by test file/suite, so every file runs exactly once).
-  # Each shard is BOTH a pass/fail gate and a coverage source; the
-  # `coverage_gate` job merges the per-shard lcov files.
+  # The single-job run took ~1h55m on the runner and hit the job timeout.
+  # `flutter test --total-shards/--shard-index` did NOT help: every shard still
+  # loads/compiles ALL ~1276 test files on a 2-core runner. So the suite is
+  # split BY FILE instead: each shard lists test/**/*_test.dart (minus
+  # test/e2e) in a fixed `sort` order, takes every 8th file (round-robin) and
+  # passes only those files to `flutter test`. Every file runs in exactly one
+  # shard. 8 shards => ~160 paths (~9 000 chars) per command line, far below the
+  # Windows 32 767-char limit. Each shard is BOTH a pass/fail gate and a
+  # coverage source; the `coverage_gate` job merges the per-shard lcov files.
   root_tests:
-    name: 🧪 Root tests (shard ${{ matrix.shard }}/4)
+    name: 🧪 Root tests (shard ${{ matrix.shard }}/8)
     # Windows desktop app — run the suite on the SAME platform it targets and is
     # developed/verified on. Several integration/timing tests are Windows-tuned
     # (and the golden images are Windows-generated).
     runs-on: windows-latest
-    timeout-minutes: 90
+    timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     env:
-      TOTAL_SHARDS: '4'
+      TOTAL_SHARDS: '8'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -191,26 +195,38 @@ jobs:
       # are tagged `pg` and skipped by dart_test.yaml.
       # --reporter=github keeps the log small (groups + failures only) instead
       # of printing every test line as `expanded` did (>73k lines).
+      # Deterministic file split: LC_ALL=C sort => identical order in all shards;
+      # file number i (0-based) belongs to shard (i % TOTAL_SHARDS) + 1.
+      - name: Select this shard's test files
+        shell: bash
+        run: |
+          set -euo pipefail
+          idx=$(( ${{ matrix.shard }} - 1 ))
+          find test -type f -name '*_test.dart' -not -path 'test/e2e/*' | LC_ALL=C sort > all_tests.txt
+          awk -v n="$TOTAL_SHARDS" -v s="$idx" '(NR-1) % n == s' all_tests.txt > shard_tests.txt
+          total=$(wc -l < all_tests.txt | tr -d ' ')
+          mine=$(wc -l < shard_tests.txt | tr -d ' ')
+          chars=$(wc -c < shard_tests.txt | tr -d ' ')
+          echo "Shard ${{ matrix.shard }}/${TOTAL_SHARDS}: ${mine} of ${total} test files (~${chars} chars of paths)"
+          if [ "$mine" -eq 0 ]; then
+            echo "::error::No test files assigned to this shard"
+            exit 1
+          fi
+          if [ "$chars" -gt 25000 ]; then
+            echo "::error::Shard path list (${chars} chars) risks the Windows command-line limit; raise the shard count"
+            exit 1
+          fi
+
       - name: Run test shard with coverage
         shell: bash
         run: |
-          targets=()
-          for p in test/*; do
-            [ "$p" = "test/e2e" ] && continue
-            if [ -d "$p" ]; then
-              [ -n "$(find "$p" -name '*_test.dart' -print -quit)" ] && targets+=("$p")
-            else
-              case "$p" in *_test.dart) targets+=("$p");; esac
-            fi
-          done
-          echo "Test targets: ${targets[*]}"
-          flutter test --coverage --reporter=github \
-            --total-shards="$TOTAL_SHARDS" --shard-index=$(( ${{ matrix.shard }} - 1 )) \
-            "${targets[@]}"
+          set -euo pipefail
+          mapfile -t files < <(tr -d '\r' < shard_tests.txt)
+          flutter test --coverage --reporter=github "${files[@]}"
 
       - name: Upload shard coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: coverage-shard-${{ matrix.shard }}
           path: coverage/lcov.info
@@ -229,7 +245,7 @@ jobs:
 
     steps:
       - name: Download shard coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: coverage-shard-*
           path: shard-coverage
@@ -317,7 +333,7 @@ jobs:
 
       - name: Upload merged coverage artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: coverage-${{ github.run_number }}
           path: merged.info
@@ -354,9 +370,9 @@ jobs:
         working-directory: ${{ matrix.dir }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -418,9 +434,9 @@ jobs:
           --health-retries 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -470,9 +486,9 @@ jobs:
           --health-retries 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -535,7 +551,7 @@ jobs:
 
       - name: Upload E2E logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: e2e-logs-${{ github.run_number }}
           path: build/e2e_logs/
@@ -551,9 +567,9 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -569,7 +585,7 @@ jobs:
           -t lib/main_web_entry.dart
 
       - name: Upload web artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: PicPos-ERP-web-${{ github.run_number }}
           path: build/web
@@ -593,9 +609,9 @@ jobs:
       artifact-name: ${{ steps.meta.outputs.artifact-name }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -637,7 +653,7 @@ jobs:
           Write-Host "Packaged: dist\${name}.zip"
 
       - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ steps.meta.outputs.artifact-name }}
           path: dist/*.zip
@@ -661,16 +677,16 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Download Windows artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: ${{ needs.build-windows.outputs.artifact-name }}
           path: release-assets/
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           tag_name: ${{ github.ref_name }}
           name: "PicPos-ERP ${{ github.ref_name }}"
