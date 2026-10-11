@@ -25,6 +25,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/permissions/permission_codes.dart';
 
+import '../helpers/epoch3_source.dart';
+
 String _stripComments(String src) => src
     .replaceAll(RegExp(r'/\*.*?\*/', dotAll: true), '')
     .split('\n')
@@ -87,7 +89,7 @@ void main() {
     // `insertOrIgnore` يعني أن قاعدةَ المالك ستُبقي 'pos' للأبد بلا هذه
     // الهجرة، فتظهر الصلاحيةُ في المكان الذي طلب إخراجَها منه.
     final src = _stripComments(
-      File('lib/data/database/migrations/epoch_3.dart').readAsStringSync(),
+      readEpoch3Source(),
     );
     final moves = RegExp(
       r"UPDATE permissions[\s\S]{0,200}?pos_shift_close",

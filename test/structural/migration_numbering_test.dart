@@ -27,6 +27,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/epoch3_source.dart';
+
 const List<String> _migrationFiles = <String>[
   'lib/data/database/migrations/epoch_1.dart',
   'lib/data/database/migrations/epoch_2.dart',
@@ -60,7 +62,7 @@ String _read(String path) {
   final file = File(path);
   expect(file.existsSync(), isTrue,
       reason: 'لا بدّ أن يعمل هذا الاختبارُ من جذر المستودع — لم أجد $path');
-  return file.readAsStringSync();
+  return path == kEpoch3MainPath ? readEpoch3Source() : file.readAsStringSync();
 }
 
 void main() {

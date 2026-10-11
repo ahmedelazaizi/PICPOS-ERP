@@ -245,6 +245,14 @@ part 'database_design_notes.dart';
 part 'migrations/epoch_1.dart';
 part 'migrations/epoch_2.dart';
 part 'migrations/epoch_3.dart';
+part 'migrations/epoch_3_v081_v093.dart';
+part 'migrations/epoch_3_v094_v118.dart';
+part 'migrations/epoch_3_v119_v133.dart';
+part 'migrations/epoch_3_v134_v147.dart';
+part 'migrations/epoch_3_v148_v156.dart';
+part 'migrations/epoch_3_v157_v166.dart';
+part 'migrations/epoch_3_v167_v173.dart';
+part 'migrations/epoch_3_v174_v195.dart';
 part 'models/projections.dart';
 
 // Table Definitions
