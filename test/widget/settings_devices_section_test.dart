@@ -20,6 +20,7 @@ import 'package:ural_erp/domain/models/hr_employee_file.dart';
 import 'package:ural_erp/presentation/hr_picpos/hr_picpos_providers.dart';
 import 'package:ural_erp/presentation/settings_picpos/screens/linked_devices_section.dart';
 import 'package:ural_erp/presentation/settings_picpos/screens/settings_picpos_screen.dart';
+import 'package:ural_erp/presentation/settings_picpos/widgets/server_security_block.dart';
 import 'package:ural_erp/presentation/settings_picpos/widgets/settings_nav_rail.dart';
 import 'package:ural_erp/presentation/settings_picpos/widgets/cloud_link_settings_block.dart';
 import 'package:ural_erp/services/api/lan_paired_devices_provider.dart';
@@ -175,6 +176,12 @@ void main() {
         lanPairedDevicesServiceProvider.overrideWithValue(lan),
         cloudLinkControllerProvider.overrideWithValue(cloud),
         hrProfilesProvider.overrideWith((ref) async => [_rep]),
+        serverSecurityActionsProvider.overrideWithValue(ServerSecurityActions(
+          rotateSessionSecret: () async {},
+          isLegacyAccepted: () async => true,
+          disableLegacy: () async {},
+          audit: (action, detail) async {},
+        )),
       ];
 
   Future<void> pumpSection(
