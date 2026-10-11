@@ -31,7 +31,7 @@ const _forkPath =
     'lib/presentation/pos_picpos/providers/picpos_search_controller.dart';
 const _originPath = 'lib/presentation/pos/providers/pos_search_controller.dart';
 const _opsPath =
-    'lib/presentation/pos_picpos/screens/picpos_pos_operations.dart';
+    'lib/presentation/pos_picpos/screens/picpos_pos_barcode_scan.dart';
 
 String _read(String path) {
   final f = File(path);

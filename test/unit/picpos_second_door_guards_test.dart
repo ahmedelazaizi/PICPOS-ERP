@@ -197,7 +197,7 @@ void main() {
   group('إعادةُ طباعة فاتورةٍ سابقة', () {
     test('`onReprint` يفحص `pos_print` قبل الطباعة', () {
       final src = _code(
-          'lib/presentation/pos_picpos/screens/picpos_pos_operations.dart');
+          'lib/presentation/pos_picpos/screens/picpos_pos_invoice_actions.dart');
       final body =
           windowFrom(src, 'Future<void> _showPreviousInvoices() async {');
       expect(at(body, 'PermissionCodes.posPrint'),

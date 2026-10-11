@@ -594,7 +594,7 @@ void main() {
     }
 
     test('سجلُّ السندات يرتّب بالتاريخ **ثمّ** بالمعرّف', () {
-      final body = bodyOf('lib/data/database/daos/treasury_dao.dart',
+      final body = bodyOf('lib/data/database/daos/treasury_transactions_dao.dart',
           'Stream<List<VoucherRecord>> watchVoucherRecords(');
       expect(body, contains('OrderingTerm.desc(safeTransactions.createdAt)'));
       expect(body, contains('OrderingTerm.desc(safeTransactions.id)'),

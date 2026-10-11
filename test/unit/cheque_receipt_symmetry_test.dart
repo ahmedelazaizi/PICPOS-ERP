@@ -16,6 +16,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_data_handler_source.dart';
 
 void main() {
   group('Cheque receipt symmetry guard (Spec 133 / FR-012)', () {
@@ -97,8 +98,7 @@ void main() {
     test(
       'api_data_handler.dart::postReceipt reads paperType and computes the skip flag',
       () {
-        final source = File('lib/services/api/api_data_handler.dart')
-            .readAsStringSync();
+        final source = readApiDataHandlerSource();
 
         expect(
           source,

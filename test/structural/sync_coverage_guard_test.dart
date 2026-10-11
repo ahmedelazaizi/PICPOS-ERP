@@ -47,6 +47,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_data_handler_source.dart';
 
 /// الجداولُ التي **لا تُزامَن اليوم** — خطُّ أساسٍ مجمَّدٌ 2026-08-26.
 ///
@@ -351,8 +352,8 @@ String _syncSurface() {
       buf.write(_stripComments(f.readAsStringSync()));
     }
   }
+  buf.write(_stripComments(readApiDataHandlerSource()));
   for (final p in const [
-    'lib/services/api/api_data_handler.dart',
     'lib/services/delta_pull_service.dart',
   ]) {
     final f = File(p);

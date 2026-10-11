@@ -17,6 +17,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_data_handler_source.dart';
 
 void main() {
   group('Spec 087 — partyId end-to-end on submitSafeTransaction', () {
@@ -67,7 +68,7 @@ void main() {
 
     test('postSafeTransaction resolves partyId and writes to companion', () {
       final src =
-          File('lib/services/api/api_data_handler.dart').readAsStringSync();
+          readApiDataHandlerSource();
       final start = src.indexOf('Future<Response> postSafeTransaction');
       expect(start, isNot(-1));
       // 10000 chars covers the handler body comfortably (the partyId

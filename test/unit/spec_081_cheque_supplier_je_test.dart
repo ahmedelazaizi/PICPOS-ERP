@@ -24,6 +24,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
+import '../helpers/api_data_handler_source.dart';
 
 void main() {
   group('Spec 081 — DAO: skipSafeTransaction also skips party balance (Defect C)', () {
@@ -163,8 +164,7 @@ void main() {
 
     test('api_data_handler.postExpense passes skipSafeTransaction for cheque '
         '(Defect B)', () {
-      final src = File('lib/services/api/api_data_handler.dart')
-          .readAsStringSync();
+      final src = readApiDataHandlerSource();
 
       final methodStart = src.indexOf('Future<Response> postExpense(');
       expect(methodStart, isNot(-1));

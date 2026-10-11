@@ -132,8 +132,8 @@ jobs:
           THRESHOLDS["lib/services/interceptor/cwi_trading_purchases.dart"]=17000
           THRESHOLDS["lib/services/interceptor/cwi_trading_sales.dart"]=13000
           THRESHOLDS["lib/data/database/daos/treasury_voucher_dao.dart"]=39000
-          THRESHOLDS["lib/services/api/api_data_handler.dart"]=240307
-          THRESHOLDS["lib/data/database/daos/treasury_dao.dart"]=171000
+          THRESHOLDS["lib/services/api/api_data_handler.dart"]=7000
+          THRESHOLDS["lib/data/database/daos/treasury_dao.dart"]=18500
           THRESHOLDS["lib/services/api/api_handler.dart"]=191133
 
           FAILED=0

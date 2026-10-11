@@ -52,7 +52,17 @@ const Map<String, int> _baselineDirectBroadcastCounts = <String, int>{
   // postUser, putUser, deleteUser, postWarehouse, putWarehouse,
   // putCostCenter, postCostCenter, putAccount, postAccount,
   // putRenewPaper, postEndorsePaper, putSafe, deleteSafe, etc.).
-  'lib/services/api/api_data_handler.dart': 86,
+  // api_data_handler.dart was split into part files (pure move); its 86
+  // legacy calls now live in these files (sum unchanged).
+  'lib/services/api/data/api_data_accounting.dart': 8,
+  'lib/services/api/data/api_data_commercial_papers.dart': 2,
+  'lib/services/api/data/api_data_documents.dart': 20,
+  'lib/services/api/data/api_data_expenses.dart': 3,
+  'lib/services/api/data/api_data_inventory.dart': 8,
+  'lib/services/api/data/api_data_org_structure.dart': 16,
+  'lib/services/api/data/api_data_system.dart': 11,
+  'lib/services/api/data/api_data_treasury.dart': 6,
+  'lib/services/api/data/api_data_users_roles.dart': 12,
   'lib/services/api/api_party_handler.dart': 4,
   'lib/services/api/api_product_handler.dart': 10,
   // Spec 136 (5f06b24): postPurchase broadcasts safe_transactions+

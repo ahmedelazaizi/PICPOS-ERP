@@ -27,7 +27,7 @@ void main() {
     late String src;
 
     setUpAll(() {
-      src = File('lib/data/database/daos/treasury_dao.dart').readAsStringSync();
+      src = File('lib/data/database/daos/treasury_shift_settlement_dao.dart').readAsStringSync();
     });
 
     test('safeSuffix is derived from primarySafe?.name and null-safe', () {

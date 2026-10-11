@@ -22,7 +22,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 const _startupPath = 'lib/data/database/database_startup.dart';
-const _treasuryPath = 'lib/data/database/daos/treasury_dao.dart';
+const _treasuryPath = 'lib/data/database/daos/treasury_safe_linking_dao.dart';
 
 /// سطرُ نداءٍ فعليّ لا ذكرٌ في تعليق.
 bool _isCall(String line, String name) {

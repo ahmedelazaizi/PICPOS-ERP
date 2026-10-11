@@ -18,6 +18,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_data_handler_source.dart';
 
 void main() {
   group('Orchestrator gate predicate (Spec 007 / SC-003)', () {
@@ -466,8 +467,8 @@ void main() {
       // one, then INSERTed blindly. Fix: name+isActive dedup as a
       // second tier, and always mint a server-side globalId so future
       // syncs can hit the first-tier dedup.
-      const relPath = 'lib/services/api/api_data_handler.dart';
-      final source = File(relPath).readAsStringSync();
+      const relPath = 'lib/services/api/api_data_handler.dart (+ data/ parts)';
+      final source = readApiDataHandlerSource();
 
       // Locate postBranch
       final methodStart = source.indexOf('Future<Response> postBranch(');
@@ -693,7 +694,7 @@ void main() {
       // Fix: _closeShiftSafes now skips a safe entirely if a
       // shift_closing transaction for THIS exact (shiftId, safeId) pair
       // already exists. Standalone mode is unaffected (no prior row).
-      const relPath = 'lib/data/database/daos/treasury_dao.dart';
+      const relPath = 'lib/data/database/daos/treasury_shift_close_safes_dao.dart';
       final source = File(relPath).readAsStringSync();
 
       // Anchor on the helper signature
@@ -740,7 +741,7 @@ void main() {
       // flowed into activeBranchIdProvider → activeWarehouseIdProvider →
       // the warehouse picked for the next sale → the branchId persisted on
       // the invoice → the server's branch-code prefix.
-      const relPath = 'lib/data/database/daos/treasury_dao.dart';
+      const relPath = 'lib/data/database/daos/treasury_safe_queries_dao.dart';
       final source = File(relPath).readAsStringSync();
 
       final methodStart = source.indexOf('Future<int?> getUserBranchId(');

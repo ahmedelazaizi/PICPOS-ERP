@@ -32,8 +32,10 @@ const _paths = <String, List<String>>{
   'lib/presentation/pos_picpos/widgets/picpos_cart_permissions.dart': [
     '_ensure',
   ],
-  'lib/presentation/pos_picpos/screens/picpos_pos_operations.dart': [
+  'lib/presentation/pos_picpos/screens/picpos_pos_cart_edit.dart': [
     '_ensureCartPermission',
+  ],
+  'lib/presentation/pos_picpos/screens/picpos_pos_checkout_support.dart': [
     '_userHasPermissionFresh',
   ],
 };
@@ -84,10 +86,12 @@ void main() {
         reason: 'الفحصُ يجب أن يقيّد المِلكَ في نفس الشرط، وإلّا مرّ المشروطُ',
       );
 
-      final ops = _stripComments(
-          _read('lib/presentation/pos_picpos/screens/picpos_pos_operations.dart'));
+      final cartEdit = _stripComments(
+          _read('lib/presentation/pos_picpos/screens/picpos_pos_cart_edit.dart'));
+      final ops = _stripComments(_read(
+          'lib/presentation/pos_picpos/screens/picpos_pos_checkout_support.dart'));
       expect(
-        ops,
+        cartEdit,
         contains('!PermissionCodes.isConditionalIn(perms, permission) && can(perms)'),
         reason: '`_ensureCartPermission` تفحص المِلكَ بلا تقييدٍ بالمشروط',
       );

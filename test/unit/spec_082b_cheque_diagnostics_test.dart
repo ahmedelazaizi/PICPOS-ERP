@@ -16,6 +16,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_data_handler_source.dart';
 
 void main() {
   group('Spec 082b — counter-account override diagnostics', () {
@@ -39,7 +40,7 @@ void main() {
 
     test('API handler emits CP-AUTOPOST-GLOBALID-MISS on resolve fail', () {
       final src =
-          File('lib/services/api/api_data_handler.dart').readAsStringSync();
+          readApiDataHandlerSource();
       expect(src, contains("'CP-AUTOPOST-GLOBALID-MISS'"),
           reason: 'New signal — surfaces the sync gap (client picked an '
               'account whose globalId does not exist on server). '
@@ -50,7 +51,7 @@ void main() {
 
     test('API handler emits CP-AUTOPOST-GLOBALID-REMAP on benign remap', () {
       final src =
-          File('lib/services/api/api_data_handler.dart').readAsStringSync();
+          readApiDataHandlerSource();
       expect(src, contains("'CP-AUTOPOST-GLOBALID-REMAP'"),
           reason: 'Benign trace — when client.id != server.id but '
               'globalId resolves correctly. Useful to confirm the happy '

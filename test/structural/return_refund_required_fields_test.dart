@@ -184,7 +184,7 @@ void main() {
       'ضابط: الملفّاتُ المتوقَّعةُ قُرئت وغيرُ فارغةٍ، وتحمل نداءاتٍ فعلية',
       () {
     final prodFile =
-        File('lib/presentation/pos_picpos/screens/picpos_pos_operations.dart');
+        File('lib/presentation/pos_picpos/screens/picpos_pos_return.dart');
     expect(prodFile.existsSync(), isTrue,
         reason: 'موضعُ الإنتاج الوحيد اليوم اختفى — حدّث هذا الحارس');
     final prodContent = prodFile.readAsStringSync();

@@ -25,13 +25,28 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-const _ops =
-    'lib/presentation/pos_picpos/screens/picpos_pos_operations.dart';
+// The cashier operations are split across these `part` files (one library);
+// the guard measures them together, as it did the single file before.
+const _opsDir = 'lib/presentation/pos_picpos/screens/';
+const _opsParts = <String>[
+  'picpos_pos_operations.dart',
+  'picpos_pos_product_entry.dart',
+  'picpos_pos_barcode_scan.dart',
+  'picpos_pos_cart_edit.dart',
+  'picpos_pos_checkout.dart',
+  'picpos_pos_checkout_support.dart',
+  'picpos_pos_invoice_actions.dart',
+  'picpos_pos_return.dart',
+  'picpos_pos_exchange.dart',
+  'picpos_pos_drawer.dart',
+];
 const _screen = 'lib/presentation/pos_picpos/screens/picpos_pos_screen.dart';
 const _perms =
     'lib/presentation/pos_picpos/widgets/picpos_cart_permissions.dart';
 const _closing = 'lib/presentation/shift_close_picpos/widgets/'
     'picpos_cashier_closing_dialog.dart';
+
+String _readOps() => _opsParts.map((n) => _read('$_opsDir$n')).join('\n');
 
 String _read(String p) {
   final f = File(p);
@@ -54,14 +69,14 @@ void main() {
     test('المرساة: المسارات ما زالت تقرأ السياسةَ أصلاً', () {
       // ⚠️ بلا هذه المرساةِ يمرُّ الحارسُ أخضرَ لو حُذف التوصيلُ كلُّه:
       // «صفرُ قراءاتٍ باردة» تتحقّق في ملفٍّ لا يقرأ السياسةَ إطلاقاً.
-      final total = _awaitedReads(_read(_ops)) + _coldReads(_read(_ops));
+      final total = _awaitedReads(_readOps()) + _coldReads(_readOps());
       expect(total, greaterThanOrEqualTo(8),
           reason: 'مسارُ الكاشير يجب أن يقرأ السياسةَ في مواضعَ عدّة — '
               'وُجد $total، فإمّا حُذف التوصيلُ وإمّا تغيّر اسمُ المزوِّد.');
     });
 
     test('مسارُ الكاشير لا يبني قراراً مالياً على قراءةٍ باردة', () {
-      final cold = _coldReads(_read(_ops));
+      final cold = _coldReads(_readOps());
       expect(
         cold,
         lessThanOrEqualTo(1),

@@ -18,6 +18,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_data_handler_source.dart';
 
 String _read(String p) => File(p).readAsStringSync();
 
@@ -42,7 +43,9 @@ void main() {
         'lib/data/repositories/attachments_repository_impl.dart',
         'lib/domain/models/attachment_policy.dart',
       ])
-        p: _code(_read(p)),
+        p: _code(p == 'lib/services/api/api_data_handler.dart'
+            ? readApiDataHandlerSource()
+            : _read(p)),
     };
   });
 

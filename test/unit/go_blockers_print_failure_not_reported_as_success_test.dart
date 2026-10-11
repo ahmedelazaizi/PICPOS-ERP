@@ -134,7 +134,7 @@ void main() {
 
     test('`_tryPrintReceipt` تبني قرارَها على القيمة لا على غياب الرمي', () {
       final src = read(
-          'lib/presentation/pos_picpos/screens/picpos_pos_operations.dart');
+          'lib/presentation/pos_picpos/screens/picpos_pos_checkout_support.dart');
       // مرساة: الدالّةُ المقصودةُ موجودةٌ في الملفّ المقروء.
       expect(src.contains('Future<bool> _tryPrintReceipt(int invoiceId)'),
           isTrue,

@@ -22,6 +22,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/api_data_handler_source.dart';
 
 const handlerFiles = <String>[
   'lib/services/api/api_sales_handler.dart',
@@ -106,7 +107,9 @@ void main() {
         final file = File(path);
         expect(file.existsSync(), isTrue,
             reason: 'Handler file is missing: $path');
-        final src = file.readAsStringSync();
+        final src = path == 'lib/services/api/api_data_handler.dart'
+            ? readApiDataHandlerSource()
+            : file.readAsStringSync();
         final handlers = _findHandlers(src, path);
         expect(handlers, isNotEmpty,
             reason: 'No Future<Response> handlers parsed from $path');
@@ -153,7 +156,9 @@ void main() {
         () {
       final allSrc = StringBuffer();
       for (final p in [...handlerFiles, ...exemptHostFiles]) {
-        allSrc.write(File(p).readAsStringSync());
+        allSrc.write(p == 'lib/services/api/api_data_handler.dart'
+            ? readApiDataHandlerSource()
+            : File(p).readAsStringSync());
         allSrc.write('\n');
       }
       final src = allSrc.toString();

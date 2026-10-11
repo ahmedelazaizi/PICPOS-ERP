@@ -80,6 +80,18 @@ import '../../../core/navigation/screen_id.dart';
 import '../../bookings_picpos/screens/bookings_picpos_screen.dart';
 
 part 'picpos_pos_operations.dart';
+part 'picpos_pos_decisions.dart';
+part 'picpos_pos_product_entry.dart';
+part 'picpos_pos_barcode_scan.dart';
+part 'picpos_pos_cart_edit.dart';
+part 'picpos_pos_checkout.dart';
+part 'picpos_pos_checkout_support.dart';
+part 'picpos_pos_invoice_actions.dart';
+part 'picpos_pos_return.dart';
+part 'picpos_pos_exchange.dart';
+part 'picpos_pos_drawer.dart';
+part 'picpos_pos_quick_return_invoice_picker_dialog.dart';
+part 'picpos_pos_quick_return_lines_editor_dialog.dart';
 
 /// PicPos point-of-sale screen.
 ///
