@@ -12,18 +12,19 @@ import 'api/api_handler.dart'
     if (dart.library.js_interop) 'api/api_handler_web_stub.dart';
 import 'e_invoicing/e_invoice_submission_worker.dart';
 import 'api/api_auth_middleware.dart';
-import 'api/api_session_token.dart';
+import 'api/server_secrets.dart';
+import 'api/session_key_watch.dart';
+import 'api/table_bill_legacy_acceptance.dart';
+import 'legacy_device_seed.dart';
 import 'api/api_web_session_handler.dart' show WebOriginPolicy;
 import 'api/lan_pairing_api_handler.dart';
 import 'api/lan_pairing_service.dart';
 import 'api/lan_pairing_client.dart';
-import 'api/table_bill_token.dart';
 import 'api/api_rate_limiter.dart';
 import 'api/api_errors.dart';
 import 'deployment/reconcile_result.dart';
 import 'deployment/settings_keys.dart';
 import 'mirror_state.dart';
-import 'security_service.dart';
 import 'tls_trust.dart';
 import 'server_proxy.dart';
 import 'sync/mirror_settings_keys.dart';
@@ -222,6 +223,13 @@ class NetworkService {
 
   // API handler reference for broadcasting
   ApiHandler? _apiHandler;
+  ServerSecrets? _serverSecrets;
+
+  /// أسرارُ الخادم المستقلّة (null حتى يبدأ الخادم). منها `rotate(kind)`.
+  ServerSecrets? get serverSecrets => _serverSecrets;
+
+  /// يراقب `sessionKeyId` القادم من `/api/health` (جهة العميل/المرآة).
+  final SessionKeyWatch _sessionKeyWatch = SessionKeyWatch();
   LanPairingService? _lanPairing;
 
   LanPairingService? get lanPairingService => _lanPairing;
@@ -746,6 +754,11 @@ class NetworkService {
     final serverPort = port ?? _serverPort;
 
     try {
+      // E-02 (المرحلة أ): أسرارُ الخادم عشوائيةٌ ومستقلّةٌ عن مفتاح القاعدة.
+      // فشلُ تخزينها يمنع بدءَ الخادم وحدَه (يُلتقط في catch أدناه).
+      final secrets = ServerSecrets();
+      await secrets.initialize();
+      _serverSecrets = secrets;
       final pairing = LanPairingService(db);
       await pairing.initialize();
       await pairing.initializeLegacyTransition();
@@ -760,19 +773,19 @@ class NetworkService {
       _apiHandler = apiHandler;
       final router = apiHandler.buildRouter();
 
-      // Generate API auth token from machine-unique encryption key
-      final machineSeed = await SecurityService.getDatabaseEncryptionKey();
-      ApiAuthMiddleware.generateToken(machineSeed);
-      // Spec 151 (P1-8): derive the server-only session-signing key from the
-      // SAME machine seed (distinct salt). Used to mint/verify per-user session
-      // tokens that replace the forgeable X-User-Id header.
-      ApiSessionToken.deriveKey(machineSeed);
-      // حسابُ الطاولة (2026-09-12): نفسُ البذرة بملحٍ ثالث. وبلا هذا السطر
-      // تُرفَض كلُّ رموز الطاولات — الفشلُ مغلقٌ عمداً — فيبدو الـQR المطبوعُ
-      // معطّلاً بلا سببٍ ظاهر. والملحُ ثابتٌ فالرموزُ المطبوعةُ تبقى صالحةً
-      // عبر إعادات التشغيل.
-      TableBillToken.deriveKey(machineSeed);
-      debugPrint('[NetworkService] API auth + session token keys generated');
+      // الـbearer القديمُ المشترك: يُحسب من LegacyDeviceSeed **داخل نافذة
+      // الانتقال فقط**. بعدها يبقى `_activeToken == null` والأجهزةُ المقترنة
+      // تعمل (markReady). ولا استدعاءَ هنا لأيّ دالةٍ تخصّ مفتاحَ القاعدة.
+      ApiAuthMiddleware.clearToken();
+      final legacySeed = await LegacyDeviceSeed.derive();
+      if (legacySeed != null && await pairing.legacyAllowed()) {
+        ApiAuthMiddleware.generateToken(legacySeed);
+      }
+      // ق-3 (أ): رموزُ الطاولات المطبوعةُ بالمفتاح المشتقّ القديم تُقبل للتحقّق
+      // فقط ما دام العلمُ `table_bill_legacy_accepted` غيرَ مُطفأ.
+      await TableBillLegacyAcceptance.apply(db, legacySeed);
+      ApiAuthMiddleware.markReady();
+      debugPrint('[NetworkService] API auth ready; independent server secrets loaded');
 
       final handler = const Pipeline()
           .addMiddleware(_corsMiddleware())
@@ -1066,6 +1079,11 @@ class NetworkService {
 
       if (response.statusCode == 200) {
         final data = json.decode(body) as Map<String, dynamic>;
+
+        // E-02: مفتاحُ جلسات الخادم تبدّل ⇒ الرموزُ المخزّنةُ ميّتة؛ أبطلها
+        // ليعيد `ensureSession` السكّ في هذه الدورة بدل 12 ساعة من القراءات الفارغة.
+        _sessionKeyWatch.observe(data['sessionKeyId'],
+            ServerProxy.instance.invalidateAllSessionTokens);
 
         // ── تثبيتُ بصمةِ الشهادة ────────────────────────────────────────
         //

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:shelf/shelf.dart';
 
 import 'api_session_token.dart';
@@ -152,7 +153,7 @@ class ApiAuthMiddleware {
   /// يتحقق من رمز حامل (جهاز مقترن أو الرمز القديم داخل نافذته) دون تسجيل
   /// الجهاز؛ يُستعمل لقناة `/ws` التي لا تمرّ بالميدلوير.
   static Future<bool> verifyCredential(String token, String deviceId) async {
-    if (_activeToken == null) return false;
+    if (!_isAccepting) return false;
     final pairing = _pairingService;
     if (pairing != null &&
         await pairing.verifyDeviceToken(token: token, deviceId: deviceId)) {
@@ -166,6 +167,22 @@ class ApiAuthMiddleware {
 
   /// Get the currently active token (for sharing with clients via health check).
   static String? get activeToken => _activeToken;
+
+  /// E-02 (§3.3): علمُ جاهزيةٍ مستقلٌّ عن الـbearer القديم. يُضبط في
+  /// `startServer` بعد تهيئة `ServerSecrets` و`LanPairingService`، فيُقبل
+  /// الجهازُ المقترنُ حتى حين لا يوجد `_activeToken` (انتهت نافذة الانتقال).
+  /// الفشلُ يبقى مغلقاً: بلا `markReady` ولا `_activeToken` ⇒ 403.
+  static bool _ready = false;
+
+  static void markReady() => _ready = true;
+
+  @visibleForTesting
+  static void clearReady() => _ready = false;
+
+  static bool get _isAccepting => _ready || _activeToken != null;
+
+  /// معرّفُ مفتاح الجلسات للإعلان في `/api/health` (ليس سرًّا).
+  static String? get sessionKeyId => ApiSessionToken.keyId;
 
   /// A-SEC-1: the API token is only exposed via `/api/health` while a device
   /// pairing window is open. Steady-state health omits it so a passive LAN peer
@@ -251,7 +268,7 @@ class ApiAuthMiddleware {
           return innerHandler(request);
         }
         if (!path.startsWith('/api/')) return innerHandler(request);
-        if (_activeToken == null) {
+        if (!_isAccepting) {
           return _json(403, 'Server not accepting API requests');
         }
 

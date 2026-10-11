@@ -2163,6 +2163,16 @@ class ServerProxy {
     _sessionMintedAt.remove(uid);
   }
 
+  /// Drop EVERY cached session token (all users) while KEEPING the credential
+  /// proofs, so the next [ensureSession] re-mints. Called when the server's
+  /// `sessionKeyId` (from `/api/health`) changes — its signing key rotated, so
+  /// all cached tokens are dead and GET reads would otherwise fail closed
+  /// (empty, no 401) until the 12h refresh. In-memory only → synchronous.
+  void invalidateAllSessionTokens() {
+    _sessionTokens.clear();
+    _sessionMintedAt.clear();
+  }
+
   /// Clear every cached session token AND credential proof. Called on logout /
   /// user-switch. In-memory only → synchronous.
   void clearSessions() {

@@ -412,6 +412,7 @@ class ApiHandler {
       // يخاطب الخادمَ في نداءاته التالية. وبدونه كان العميلُ يبني
       // `http://` صلباً فيعمى عن خادمٍ يعمل بـTLS.
       'tls': ns.isServerUsingTls,
+      'sessionKeyId': ?ApiAuthMiddleware.sessionKeyId, // ليس سرّاً
       // A-SEC-1: only hand the bearer token to callers during an operator-opened
       // device-pairing window — never in steady state.
       if (ApiAuthMiddleware.isPairingOpen)

@@ -176,7 +176,16 @@ void main() {
     // مطبوعٍ معطّلاً بلا سببٍ ظاهرٍ في أيّ سجلّ.
     final ns =
         File('lib/services/network_service.dart').readAsStringSync();
-    expect(ns.contains('TableBillToken.deriveKey(machineSeed)'), isTrue,
-        reason: 'المفتاحُ لا يُشتقّ — كلُّ الرموز المطبوعة ميّتة');
+    // E-02: المفتاحُ صار سرًّا عشوائيًّا مستقلًّا يُهيَّأ من ServerSecrets
+    // (يضبط TableBillToken.setSigningKey)، لا اشتقاقًا من بذرة الجهاز.
+    expect(ns.contains('ServerSecrets()'), isTrue,
+        reason: 'المفتاحُ لا يُهيَّأ — كلُّ الرموز المطبوعة ميّتة');
+    expect(ns.contains('await secrets.initialize()'), isTrue);
+    final secrets =
+        File('lib/services/api/server_secrets.dart').readAsStringSync();
+    expect(secrets.contains('TableBillToken.setSigningKey('), isTrue,
+        reason: 'ServerSecrets لا يضبط مفتاحَ الطاولات');
+    expect(ns.contains('getDatabaseEncryptionKey'), isFalse,
+        reason: 'startServer لا يمسّ مفتاح القاعدة (E-02)');
   });
 }

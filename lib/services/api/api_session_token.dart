@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math' show Random;
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 /// Signed per-user session tokens for the embedded LAN server (Spec 151 / P1-8).
 ///
@@ -41,14 +42,35 @@ class ApiSessionToken {
 
   /// Derive + store the server-only signing key. Called once at server start
   /// with the SAME `machineSeed` as [ApiAuthMiddleware.generateToken].
+  @visibleForTesting
   static void deriveKey(String machineSeed) {
     _signingKey = sha256.convert(utf8.encode('$machineSeed:$_salt')).bytes;
+  }
+
+  /// المرحلة أ (E-02): يضبط مفتاحَ التوقيع **العشوائيَّ المستقلَّ** من
+  /// `ServerSecrets` (لا اشتقاقَ من بذرة الجهاز/مفتاح القاعدة). هذا هو مسار
+  /// الإنتاج؛ [deriveKey] و[setKeyForTesting] للاختبارات فقط.
+  static void setSigningKey(List<int> key) {
+    if (key.length < 32) {
+      throw ArgumentError('session signing key must be >= 32 bytes');
+    }
+    _signingKey = List<int>.unmodifiable(key);
   }
 
   /// Whether the signing key has been derived (server is issuing sessions).
   static bool get isReady => _signingKey != null;
 
+  /// معرّفُ المفتاح الحاليّ (أول 8 hex من `HMAC(key,'kid')`) — ليس سرًّا؛
+  /// يُعلَن في `/api/health` ليعرف العملاءُ أنّ المفتاح تبدّل فيعيدوا السكّ.
+  static String? get keyId {
+    final key = _signingKey;
+    if (key == null) return null;
+    final mac = Hmac(sha256, key).convert(utf8.encode('kid')).toString();
+    return mac.substring(0, 8);
+  }
+
   /// Test hook — set a deterministic key without a machine seed.
+  @visibleForTesting
   static void setKeyForTesting(String key) =>
       _signingKey = sha256.convert(utf8.encode(key)).bytes;
 

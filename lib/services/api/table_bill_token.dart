@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 /// مفتاحُ تفعيل «رمزُ حساب الطاولة» في `settings`.
 ///
@@ -86,19 +87,55 @@ class TableBillToken {
 
   static bool get isReady => _signingKey != null;
 
-  /// يُنادى مرّةً عند إقلاع الخادم بنفس بذرةِ [ApiAuthMiddleware.generateToken].
+  /// اشتقاقٌ قديم من بذرة الجهاز. **للاختبارات فقط** الآن؛ الإنتاج يستعمل
+  /// [setSigningKey] بسرٍّ عشوائيٍّ مستقلّ من `ServerSecrets`.
+  @visibleForTesting
   static void deriveKey(String machineSeed) {
-    _signingKey = sha256.convert(utf8.encode('$machineSeed:$_salt')).bytes;
+    _signingKey = _legacyDerive(machineSeed);
   }
 
+  static List<int> _legacyDerive(String machineSeed) =>
+      sha256.convert(utf8.encode('$machineSeed:$_salt')).bytes;
+
+  /// مفتاحُ التوقيع العشوائيّ الجديد (يُصدَر ويُتحقَّق به).
+  static void setSigningKey(List<int> key) {
+    if (key.length < 32) {
+      throw ArgumentError('table-bill signing key must be >= 32 bytes');
+    }
+    _signingKey = List<int>.unmodifiable(key);
+  }
+
+  /// مفتاحٌ سابق (بعد `rotate`) — **للتحقّق من [verifyTable] فقط**، لا يُصدَر به.
+  static void setPreviousSigningKey(List<int>? key) {
+    _previousKey = key == null ? null : List<int>.unmodifiable(key);
+  }
+
+  /// ق-3 (أ): المفتاحُ المشتقّ القديم من بذرة الجهاز، **للتحقّق من رموز الطاولات
+  /// المطبوعة فقط** (حتى يُطفأ العلم `table_bill_legacy_accepted`). لا تُصدَر
+  /// به رموزٌ جديدة، ولا يصلح لـ[verifySession]/[verifySessionPin].
+  static void setLegacyVerifyKeyFromSeed(String? machineSeed) {
+    _legacyVerifyKey = machineSeed == null ? null : _legacyDerive(machineSeed);
+  }
+
+  static List<int>? _previousKey;
+  static List<int>? _legacyVerifyKey;
+
+  /// هل يُقبل المشتقّ القديم للتحقّق الآن؟
+  static bool get legacyVerifyActive => _legacyVerifyKey != null;
+
   /// مفتاحٌ حتميٌّ للاختبارات بلا بذرةِ جهاز.
+  @visibleForTesting
   static void setKeyForTesting(String key) =>
       _signingKey = sha256.convert(utf8.encode(key)).bytes;
 
-  static void clearKey() => _signingKey = null;
+  static void clearKey() {
+    _signingKey = null;
+    _previousKey = null;
+    _legacyVerifyKey = null;
+  }
 
-  static String _sign(String payload) =>
-      base64Url.encode(Hmac(sha256, _signingKey!).convert(utf8.encode(payload)).bytes);
+  static String _sign(String payload, [List<int>? key]) => base64Url.encode(
+      Hmac(sha256, key ?? _signingKey!).convert(utf8.encode(payload)).bytes);
 
   // ═══════════════════════════════════════════════════════════════
   // رمزُ الطاولة — المطبوع
@@ -122,10 +159,16 @@ class TableBillToken {
     final dot = token.indexOf('.');
     if (dot <= 0 || dot == token.length - 1) return null;
     final payload = token.substring(0, dot);
-    // التحقّقُ من التوقيع **قبل** الثقة بالحمولة.
-    if (!_constantTimeEquals(token.substring(dot + 1), _sign(payload))) {
-      return null;
+    // التحقّقُ من التوقيع **قبل** الثقة بالحمولة. المفتاحُ الحاليّ أولاً، ثم
+    // السابقُ (بعد التدوير) ثم المشتقُّ القديمُ (ق-3 أ) — للتحقّق فقط.
+    final sig = token.substring(dot + 1);
+    var valid = _constantTimeEquals(sig, _sign(payload));
+    for (final extra in [_previousKey, _legacyVerifyKey]) {
+      if (!valid && extra != null) {
+        valid = _constantTimeEquals(sig, _sign(payload, extra));
+      }
     }
+    if (!valid) return null;
     if (!payload.startsWith('t')) return null;
     final id = int.tryParse(payload.substring(1));
     // معرِّفاتُ drift تبدأ من ١؛ صفرٌ أو سالبٌ حمولةٌ ملفَّقة.
