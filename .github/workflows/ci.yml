@@ -24,7 +24,7 @@ env:
   FLUTTER_VERSION: '3.41.x'   # Pin to the version used in development (3.41.2 stable, Dart 3.11)
 
 # Jobs (all independent => run in parallel, except where `needs` is stated):
-#   secrets | gitleaks | root_static | root_tests (8 file-shards) | packages_and_mobile | server | web
+#   secrets | gitleaks | root_static | root_tests (12 file-shards) | packages_and_mobile | server | web
 #   coverage_gate  <- root_tests (merges shard coverage, ≥ 18 % gate)
 #   e2e            <- secrets, packages_and_mobile, server   (does NOT wait for the root suite)
 #   build-windows  <- secrets, root_static, root_tests, coverage_gate, packages_and_mobile,
@@ -162,11 +162,11 @@ jobs:
   # split BY FILE instead: each shard lists test/**/*_test.dart (minus
   # test/e2e) in a fixed `sort` order, takes every 8th file (round-robin) and
   # passes only those files to `flutter test`. Every file runs in exactly one
-  # shard. 8 shards => ~160 paths (~9 000 chars) per command line, far below the
-  # Windows 32 767-char limit. Each shard is BOTH a pass/fail gate and a
+  # shard. 12 shards => ~107 paths (~5 200 chars) per command line; flutter.bat is a cmd.exe batch file so the real limit is 8 191 chars (not the
+  # 32 767 of CreateProcess). Each shard is BOTH a pass/fail gate and a
   # coverage source; the `coverage_gate` job merges the per-shard lcov files.
   root_tests:
-    name: 🧪 Root tests (shard ${{ matrix.shard }}/8)
+    name: 🧪 Root tests (shard ${{ matrix.shard }}/12)
     # Windows desktop app — run the suite on the SAME platform it targets and is
     # developed/verified on. Several integration/timing tests are Windows-tuned
     # (and the golden images are Windows-generated).
@@ -175,9 +175,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     env:
-      TOTAL_SHARDS: '8'
+      TOTAL_SHARDS: '12'
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -214,8 +214,8 @@ jobs:
             echo "::error::No test files assigned to this shard"
             exit 1
           fi
-          if [ "$chars" -gt 25000 ]; then
-            echo "::error::Shard path list (${chars} chars) risks the Windows command-line limit; raise the shard count"
+          if [ "$chars" -gt 7500 ]; then
+            echo "::error::Shard path list (${chars} chars) risks the cmd.exe 8191-char batch-line limit (flutter.bat); raise the shard count"
             exit 1
           fi
 
