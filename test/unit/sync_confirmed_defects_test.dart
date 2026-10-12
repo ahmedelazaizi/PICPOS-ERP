@@ -15,6 +15,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 
 String stripComments(String src) {
   final out = StringBuffer();
@@ -43,7 +44,7 @@ String stripComments(String src) {
 String code(String path) {
   final f = File(path);
   expect(f.existsSync(), isTrue, reason: 'الملفُّ «$path» اختفى');
-  return stripComments(f.readAsStringSync());
+  return stripComments(readLibrarySource(path));
 }
 
 int at(String haystack, String needle) {

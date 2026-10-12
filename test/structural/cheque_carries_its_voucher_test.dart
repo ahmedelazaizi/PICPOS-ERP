@@ -16,10 +16,11 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/dao_source.dart';
 
 /// نصُّ الملفّ بلا أسطر التعليق وبلا `\r` — أغلبُ الملفّات هنا CRLF.
 String _code(String path) => [
-      for (final line in File(path).readAsStringSync().split('\n'))
+      for (final line in readDaoSourceMerged(path).split('\n'))
         if (!line.trimLeft().startsWith('//')) line.replaceAll('\r', ''),
     ].join('\n');
 

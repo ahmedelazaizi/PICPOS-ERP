@@ -24,6 +24,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 import 'package:shelf/shelf.dart';
 
 import 'package:ural_erp/data/database/sync_interceptor.dart';
@@ -114,7 +115,7 @@ void main() {
   group('ServerProxy stamps X-Session-Token, never X-User-Id (grep guard)', () {
     late String src;
     setUp(() {
-      src = File('lib/services/server_proxy.dart').readAsStringSync();
+      src = readLibrarySource('lib/services/server_proxy.dart');
     });
 
     test('no longer stamps the forgeable X-User-Id header', () {

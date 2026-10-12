@@ -49,6 +49,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import '../helpers/api_handler_source.dart';
+import '../helpers/library_source.dart';
 
 void main() {
   group('Sales void write-gate (Spec 151 / BLOCKER C-02)', () {
@@ -336,7 +337,7 @@ void main() {
     String read(String rel) {
       final f = File(rel);
       expect(f.existsSync(), isTrue, reason: 'expected $rel');
-      return rel == 'lib/services/api/api_handler.dart' ? readApiHandlerSource() : f.readAsStringSync();
+      return rel == 'lib/services/api/api_handler.dart' ? readApiHandlerSource() : readLibrarySource(rel);
     }
 
     test('DAO voidSalesInvoice accepts + threads globalId into the reversal JE',

@@ -22,6 +22,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 import 'package:ural_erp/core/utils/financial_utils.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/database/sync_interceptor.dart';
@@ -301,7 +302,7 @@ void main() {
     test('offline_sync_worker still keys the permanent classifier on both substrings',
         () {
       final worker =
-          File('lib/services/offline_sync_worker.dart').readAsStringSync();
+          readLibrarySource('lib/services/offline_sync_worker.dart');
       expect(worker.contains('خطأ في قيد اليومية'), isTrue);
       expect(worker.contains('لا يساوي الدائن'), isTrue,
           reason: 'the classifier the >cap throw depends on must keep matching these');

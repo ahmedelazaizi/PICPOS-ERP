@@ -23,6 +23,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 import 'package:ural_erp/data/database/database.dart';
 import '../helpers/api_data_handler_source.dart';
 
@@ -118,7 +119,7 @@ void main() {
   group('Spec 081 — wire format grep guards (Defects A + B)', () {
     test('ServerProxy.submitExpense includes paperType in POST body '
         '(Defect A)', () {
-      final src = File('lib/services/server_proxy.dart').readAsStringSync();
+      final src = readLibrarySource('lib/services/server_proxy.dart');
 
       // Locate the submitExpense method body — match its signature start to
       // the next blank-line break.

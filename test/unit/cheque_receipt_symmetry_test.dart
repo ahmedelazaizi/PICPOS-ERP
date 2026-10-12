@@ -16,6 +16,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 import '../helpers/api_data_handler_source.dart';
 
 void main() {
@@ -70,7 +71,7 @@ void main() {
       'server_proxy.dart::submitReceipt accepts paperType and sends it on the wire',
       () {
         final source =
-            File('lib/services/server_proxy.dart').readAsStringSync();
+            readLibrarySource('lib/services/server_proxy.dart');
 
         expect(
           source,

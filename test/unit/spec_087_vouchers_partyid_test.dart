@@ -17,6 +17,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 import '../helpers/api_data_handler_source.dart';
 
 void main() {
@@ -54,7 +55,7 @@ void main() {
     });
 
     test('server_proxy includes partyId in the POST body', () {
-      final src = File('lib/services/server_proxy.dart').readAsStringSync();
+      final src = readLibrarySource('lib/services/server_proxy.dart');
       final start = src.indexOf('Future<void> submitSafeTransaction');
       expect(start, isNot(-1));
       final block = src.substring(start, start + 2000);

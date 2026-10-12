@@ -19,6 +19,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 
 void main() {
   const relPath = 'lib/services/offline_sync_worker.dart';
@@ -27,7 +28,7 @@ void main() {
   setUpAll(() {
     final file = File(relPath);
     expect(file.existsSync(), isTrue, reason: 'expected worker at $relPath');
-    source = file.readAsStringSync();
+    source = readLibrarySource(relPath);
   });
 
   group('Offline outbox — unhandled-op silent-drop blocker', () {

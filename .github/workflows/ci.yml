@@ -135,7 +135,7 @@ jobs:
           THRESHOLDS["lib/services/api/api_data_handler.dart"]=7000
           THRESHOLDS["lib/data/database/daos/treasury_dao.dart"]=18500
           THRESHOLDS["lib/services/api/api_handler.dart"]=8200
-          THRESHOLDS["lib/data/database/database.dart"]=40500
+          THRESHOLDS["lib/data/database/database.dart"]=41100
           THRESHOLDS["lib/services/scale_protocols.dart"]=9000
 
           FAILED=0

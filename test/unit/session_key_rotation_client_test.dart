@@ -2,6 +2,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 import 'package:ural_erp/services/api/session_key_watch.dart';
 
 void main() {
@@ -10,7 +11,7 @@ void main() {
     final ns = File('lib/services/network_service.dart').readAsStringSync();
     expect(ns, contains("_sessionKeyWatch.observe(data['sessionKeyId']"));
     expect(ns, contains('ServerProxy.instance.invalidateAllSessionTokens'));
-    final proxy = File('lib/services/server_proxy.dart').readAsStringSync();
+    final proxy = readLibrarySource('lib/services/server_proxy.dart');
     expect(proxy, contains('void invalidateAllSessionTokens()'));
     // الإثباتات تبقى ليُعاد السكّ: الدالة لا تلمس _sessionProofs.
     final body = proxy.substring(proxy.indexOf('void invalidateAllSessionTokens()'));

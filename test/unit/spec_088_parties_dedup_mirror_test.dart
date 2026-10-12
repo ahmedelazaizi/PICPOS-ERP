@@ -34,6 +34,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/dao_source.dart';
 
 void main() {
   group('Spec 088 USR-3 — mirror parties dedup', () {
@@ -41,7 +42,7 @@ void main() {
             'lib/presentation/widgets/settings/branch_scope_admin_dialog.dart')
         .readAsStringSync();
     final daoSrc =
-        File('lib/data/database/daos/party_dao.dart').readAsStringSync();
+        readDaoSourceMerged('lib/data/database/daos/party_dao.dart');
 
     test('dialog imports SyncInterceptor', () {
       expect(

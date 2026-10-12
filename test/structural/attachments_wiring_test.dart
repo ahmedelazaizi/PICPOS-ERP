@@ -19,10 +19,11 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import '../helpers/api_handler_source.dart';
+import '../helpers/library_source.dart';
 import '../helpers/api_data_handler_source.dart';
 
 String _read(String p) =>
-    p == 'lib/services/api/api_handler.dart' ? readApiHandlerSource() : File(p).readAsStringSync();
+    p == 'lib/services/api/api_handler.dart' ? readApiHandlerSource() : readLibrarySource(p);
 
 /// نصٌّ بلا أسطر التعليق — فذكرُ الاسم في شرحٍ ليس توصيلاً.
 String _code(String raw) => [

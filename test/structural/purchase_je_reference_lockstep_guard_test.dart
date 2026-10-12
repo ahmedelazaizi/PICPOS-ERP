@@ -23,6 +23,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/dao_source.dart';
 import '../helpers/database_source.dart';
 
 const _listPath = 'lib/data/database/database.dart';
@@ -71,7 +72,7 @@ void main() {
       'lib/data/database/daos/accounting_autopost_dao.dart': 'purchase',
     };
     for (final MapEntry(key: path, value: type) in writers.entries) {
-      final code = _code(File(path).readAsStringSync());
+      final code = _code(readDaoSourceMerged(path));
       expect(code.contains("referenceType: '$type'"), isTrue,
           reason: 'الكاتبُ $path ما عاد يختم `$type` — '
               'راجع الخريطةَ هنا قبل أن تُصدّق الأخضر');
@@ -133,7 +134,7 @@ void main() {
 
   test('والقُرّاءُ الثلاثةُ يقرؤونها فعلاً', () {
     final dao = _code(
-      File('lib/data/database/daos/purchase_dao.dart').readAsStringSync(),
+      readDaoSourceMerged('lib/data/database/daos/purchase_dao.dart'),
     );
     final uses = RegExp('kPurchaseJeReferenceTypes').allMatches(dao).length;
     expect(uses, greaterThanOrEqualTo(3),

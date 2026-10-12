@@ -211,7 +211,8 @@ cd docker; docker compose up -d --build; curl.exe http://localhost:18080/health
 
 ## 7. قواعد المساهمة
 
-1. **حجم الملف:** الملفات **الجديدة ≤ 30KB**. (القاعدة مطلوبة من فريق المشروع؛ لا يفرضها اختبار أو CI — فقط عتبات God-File المحددة. يوجد اليوم ملفات قديمة كثيرة تتجاوزها: ≈186 ملف Dart غير مولَّد تتخطى 30KB.) لا تُضخِّم ملفًا قريبًا من عتبته.
+1. **حجم الملف:** الملفات **الجديدة ≤ 30KB**، وهذا الحد صار **مفروضًا** باختبار `test/structural/file_size_ratchet_test.dart` (يفشل لأي ملف جديد > 30KB في `lib/` ولأي نمو في الملفات الكبيرة المسجَّلة في `test/structural/file_size_baseline.txt`؛ المولَّدة مستثناة). لا تُضخِّم ملفًا قريبًا من عتبته.
+   بعد تقسيم ملف أو تصغيره نظّف الملف الأساسي بـ `dart run tool/update_file_size_baseline.dart` (لا يرفع أي حد؛ ولا يُستعمل `--init` إلا للبذر الأول).
 2. **التقسيم = نقل بحت** (§2.2) ثم تخفيض العتبة في `ci.yml`.
 3. **لا أسرار في الريبو:** شغّل `powershell -File tool/check_no_secrets.ps1` (يفشل إن تُتُبِّع `*.jks`/`key.properties`/`google-services.json`…)، وإعدادات Gitleaks في `.gitleaks.toml`. القوالب: `.env.example` بقيم وهمية. كلمات مرور docker للاختبار فقط.
 4. **العلامتان `picpos` و`uralcash`:** تُحدَّدان وقت البناء بـ`--dart-define=APP_BRAND` (`lib/core/config/brand.dart`؛ **الافتراضي `uralcash`**). المنتج الحالي PicPos؛ فرّع الواجهة بـ`Brand.isPicPos`، ولا تُظهر أسماء UralCash في منتج PicPos. `build_picpos.bat` ينفّذ `APP_BRAND=picpos APP_FLAVOR=unified`، و`build_release.bat` يخص UralCash. الـflavors: `lib/core/config/app_flavor.dart`.

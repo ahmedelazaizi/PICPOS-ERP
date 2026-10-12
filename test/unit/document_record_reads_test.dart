@@ -38,6 +38,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/domain/models/document_record.dart';
+import '../helpers/dao_source.dart';
 
 void main() {
   late AppDatabase db;
@@ -583,7 +584,7 @@ void main() {
     //    أنّنا **لا نتّكل على ترتيب المحرّك عند التعادل**: ساعةُ ويندوز
     //    ~١٥ms، وسندان في نفس الثانية واقعٌ لا فرض، وصفوفٌ تتقافز بين
     //    إعادتَي بناءٍ تُقرأ على أنّها بياناتٌ تتغيّر.
-    String readSource(String path) => File(path).readAsStringSync();
+    String readSource(String path) => readDaoSourceMerged(path);
 
     /// جسمُ دالّةٍ بعينها — فمطابقةٌ على الملفّ كلِّه تمرّ بترتيب جارتها.
     String bodyOf(String path, String signature) {

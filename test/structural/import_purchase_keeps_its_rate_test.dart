@@ -30,9 +30,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/services/delta_pull_service.dart';
 import 'package:ural_erp/services/id_namespace_service.dart';
+import '../helpers/dao_source.dart';
 
 String _code(String path) => [
-      for (final line in File(path).readAsStringSync().split('\n'))
+      for (final line in readDaoSourceMerged(path).split('\n'))
         if (!line.trimLeft().startsWith('//')) line.replaceAll('\r', ''),
     ].join('\n');
 

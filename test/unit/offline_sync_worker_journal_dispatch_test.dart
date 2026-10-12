@@ -26,6 +26,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 
 void main() {
   const relPath = 'lib/services/offline_sync_worker.dart';
@@ -40,7 +41,7 @@ void main() {
         isTrue,
         reason: 'expected worker source at $relPath',
       );
-      source = file.readAsStringSync();
+      source = readLibrarySource(relPath);
     });
 
     test('_replayOperation has a journal_entries case (the producer\'s table name)',

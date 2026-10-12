@@ -15,6 +15,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/dao_source.dart';
 
 void main() {
   group('Spec 084d — parties dedup', () {
@@ -22,7 +23,7 @@ void main() {
     late String uiSrc;
 
     setUpAll(() {
-      daoSrc = File('lib/data/database/daos/party_dao.dart').readAsStringSync();
+      daoSrc = readDaoSourceMerged('lib/data/database/daos/party_dao.dart');
       uiSrc = File(
               'lib/presentation/widgets/settings/branch_scope_admin_dialog.dart')
           .readAsStringSync();
