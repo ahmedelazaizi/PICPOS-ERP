@@ -173,12 +173,7 @@ extension SalesActionsDao on AppDatabase {
   /// journal_entries.globalId's UNIQUE index instead of surviving DeltaPull as
   /// two rows. Default null keeps standalone behaviour (createJournalEntry mints
   /// its own gid), mirroring voidPurchaseInvoice's {globalId} thread.
-  Future<void> voidSalesInvoice(
-    int invoiceId, {
-    String? reason,
-    int? deletedBy,
-    String? globalId,
-  }) async {
+  Future<void> voidSalesInvoice(int invoiceId, {String? reason, int? deletedBy, String? globalId}) async {
     await transaction(() async {
       // #Phase4: Check if invoice is locked
       final inv = await (select(
@@ -200,17 +195,13 @@ extension SalesActionsDao on AppDatabase {
         await permissionEnforcer.requireCriticalOp(
           userId: deletedBy,
           code: PermissionCodes.voidPaidInvoice,
-          arabicReason:
-              'لا يمكن إلغاء فاتورة مدفوعة بالكامل — '
+          arabicReason: 'لا يمكن إلغاء فاتورة مدفوعة بالكامل — '
               'يلزم صلاحية "إلغاء فاتورة مدفوعة".',
         );
       }
 
       // 0. Soft/Hard Period Closing Gating
-      await accountingDao.validateFinancialPeriod(
-        inv.invoiceDate,
-        operation: 'إلغاء فاتورة مبيعات',
-      );
+      await accountingDao.validateFinancialPeriod(inv.invoiceDate, operation: 'إلغاء فاتورة مبيعات');
 
       // Get invoice items to reverse stock
       final items = await getSalesInvoiceItems(invoiceId);
@@ -222,9 +213,7 @@ extension SalesActionsDao on AppDatabase {
         )..where((p) => p.id.equals(item.productId))).getSingleOrNull();
         if (product != null && product.trackInventory) {
           // UOM: apply quantityInBase conversion for base-unit accuracy
-          final voidQtyInBase = item.quantityInBase > 0
-              ? item.quantityInBase
-              : 1.0;
+          final voidQtyInBase = item.quantityInBase > 0 ? item.quantityInBase : 1.0;
           final restoreQty = item.quantity * voidQtyInBase;
           // Same asymmetry the sales-return path had: the reversing JE below
           // mirrors the original entry line-for-line, so it books the FROZEN
@@ -283,18 +272,16 @@ extension SalesActionsDao on AppDatabase {
       }
 
       // Reverse treasury transactions (adjust safe balances back)
-      final treasuryTxns =
-          await (select(safeTransactions)..where(
-                (t) =>
-                    t.referenceType.equals('sales_invoice') &
-                    t.referenceId.equals(invoiceId),
-              ))
-              .get();
+      final treasuryTxns = await (select(safeTransactions)..where(
+            (t) =>
+                t.referenceType.equals('sales_invoice') &
+                t.referenceId.equals(invoiceId),
+          )).get();
 
       for (final txn in treasuryTxns) {
-        final safe = await (select(
-          safes,
-        )..where((s) => s.id.equals(txn.safeId))).getSingleOrNull();
+        final safe = await (select(safes)
+              ..where((s) => s.id.equals(txn.safeId)))
+            .getSingleOrNull();
         if (safe != null) {
           final reverseAmount = txn.transactionType == 'receipt'
               ? -txn.amount
@@ -309,9 +296,7 @@ extension SalesActionsDao on AppDatabase {
             SafeTransactionsCompanion.insert(
               voucherNumber: voucherNumber,
               safeId: safe.id,
-              transactionType: txn.transactionType == 'receipt'
-                  ? 'payment'
-                  : 'receipt',
+              transactionType: txn.transactionType == 'receipt' ? 'payment' : 'receipt',
               category: 'void',
               amount: txn.amount,
               balanceAfter: newBalance,
@@ -366,36 +351,29 @@ extension SalesActionsDao on AppDatabase {
       // حتى لو البوابة عدّت.
       {
         // Get original auto-post JE and create a reversal
-        final originalJE =
-            await (select(journalEntries)
-                  ..where(
-                    (e) =>
-                        e.referenceType.isIn(const [
-                          'sale',
-                          'sales_invoice',
-                          'deferred_sale',
-                        ]) &
-                        e.referenceId.equals(inv.id) &
-                        e.isAutoPosted.equals(true),
-                  )
-                  ..limit(1))
-                .getSingleOrNull();
+        final originalJE = await (select(journalEntries)
+              ..where((e) =>
+                  e.referenceType.isIn(const [
+                    'sale',
+                    'sales_invoice',
+                    'deferred_sale',
+                  ]) &
+                  e.referenceId.equals(inv.id) &
+                  e.isAutoPosted.equals(true))
+              ..limit(1))
+            .getSingleOrNull();
 
         if (originalJE != null) {
-          final originalLines = await (select(
-            journalEntryLines,
-          )..where((l) => l.entryId.equals(originalJE.id))).get();
+          final originalLines = await (select(journalEntryLines)
+                ..where((l) => l.entryId.equals(originalJE.id)))
+              .get();
 
-          final reversalLines = originalLines
-              .map(
-                (line) => JournalLine(
-                  accountId: line.accountId,
-                  debit: line.credit, // Swap debit/credit
-                  credit: line.debit,
-                  description: 'عكس: ${line.description ?? ""}',
-                ),
-              )
-              .toList();
+          final reversalLines = originalLines.map((line) => JournalLine(
+                accountId: line.accountId,
+                debit: line.credit, // Swap debit/credit
+                credit: line.debit,
+                description: 'عكس: ${line.description ?? ""}',
+              )).toList();
 
           if (reversalLines.isNotEmpty) {
             // H-09 FIX: Get branchId from warehouse to ensure financial isolation
@@ -403,8 +381,7 @@ extension SalesActionsDao on AppDatabase {
             final branchId = warehouse?.branchId;
 
             await accountingDao.createJournalEntry(
-              description:
-                  'قيد عكسي — إلغاء فاتورة ${inv.invoiceNumber}${reason != null ? " ($reason)" : ""}',
+              description: 'قيد عكسي — إلغاء فاتورة ${inv.invoiceNumber}${reason != null ? " ($reason)" : ""}',
               date: DateTime.now(),
               lines: reversalLines,
               referenceType: 'sales_invoice_void',
@@ -426,9 +403,7 @@ extension SalesActionsDao on AppDatabase {
       await (update(salesInvoices)..where((i) => i.id.equals(invoiceId))).write(
         SalesInvoicesCompanion(
           status: const Value('voided'),
-          notes: Value(
-            '${inv.notes ?? ""}\n[ملغي] ${reason ?? "بدون سبب"} - ${DateTime.now().toIso8601String()}',
-          ),
+          notes: Value('${inv.notes ?? ""}\n[ملغي] ${reason ?? "بدون سبب"} - ${DateTime.now().toIso8601String()}'),
           isLocked: const Value(true), // Keep locked
           isDeleted: const Value(true),
           deletedAt: Value(DateTime.now()),
@@ -487,11 +462,7 @@ extension SalesActionsDao on AppDatabase {
 
   /// Legacy delete — redirects to void for backward compatibility
   Future<void> deleteSalesInvoice(int invoiceId, {int? deletedBy}) async {
-    await voidSalesInvoice(
-      invoiceId,
-      reason: 'حذف (تم تحويله إلى إلغاء)',
-      deletedBy: deletedBy,
-    );
+    await voidSalesInvoice(invoiceId, reason: 'حذف (تم تحويله إلى إلغاء)', deletedBy: deletedBy);
   }
 
   /// Get the total quantity already returned for a specific product on a specific invoice.
