@@ -1,4 +1,4 @@
-﻿// سيناريو (ج): مرتجع مبيعات (يعيد المخزون ويعكس القيد ويخفض الرصيد).
+// سيناريو (ج): مرتجع مبيعات (يعيد المخزون ويعكس القيد ويخفض الرصيد).
 // سيناريو (ط): إلغاء/عكس فاتورة مرحّلة (القيد المعاكس والمخزون يعودان).
 import 'package:flutter_test/flutter_test.dart';
 
@@ -73,7 +73,7 @@ void main() {
     });
   });
 
-  group('(ج) عيوب إنتاجية مكتشفة (موثّقة كاختبارات skip)', () {
+  group('(ج) مرتجع نقدي على حساب الخزينة الفعلي', () {
     test('المرتجع النقدي يُقيَّد على حساب الخزينة نفسها التي قُيِّد عليها البيع',
         () async {
       final r = await w.sell([w.line(product, 5, 100)]);
@@ -81,12 +81,20 @@ void main() {
       // الفعلي: البيع مدين 111-00001 بـ500، والمرتجع دائن 1111 بـ200 (الحساب
       // المعيَّن العام لا حساب الخزينة) ⇒ حساب الخزينة 500 بينما رصيدها 300.
       expect(await w.accountNet('111-00001'), closeTo(await w.safeBalance(), kEps));
-    },
-        skip: 'عيب إنتاجي: accounting_autopost_sales_return_dao.dart (≈136–209) يقيّد '
-            'ائتمان المرتجع النقدي على الحساب المعيَّن «cash» (1111) لا على حساب الخزينة '
-            'الفعلية كما يفعل البيع (Spec 136 ISS-13). الإجمالي 111 سليم لكن أرصدة '
-            'حسابات الخزائن في الأستاذ تنحرف عن safes.balance. الملف قيد التقسيم من '
-            'عامل آخر فلم يُعدَّل.');
+    });
+
+    test('انحدار: بعد المرتجع النقدي حساب الخزينة = رصيدها وإجمالي 111 كما هو', () async {
+      final r = await w.sell([w.line(product, 5, 100)]);
+      final total111Before = await w.accountNet('111');
+      await w.returnItems(r.invoiceId!, product, 2);
+      expect(await w.safeBalance(), closeTo(300, kEps));
+      expect(await w.accountNet('111-00001'), closeTo(300, kEps));
+      expect(await w.accountNet('1111'), closeTo(0, kEps),
+          reason: 'لا شيء على الحساب المعيَّن العام');
+      expect(await w.accountNet('111'), closeTo(total111Before - 200, kEps),
+          reason: 'الإجمالي يهبط بالمبلغ المردود فقط');
+      expect(await w.unbalancedEntries(), isEmpty);
+    });
   });
 
   group('(ط) إلغاء فاتورة مرحّلة', () {

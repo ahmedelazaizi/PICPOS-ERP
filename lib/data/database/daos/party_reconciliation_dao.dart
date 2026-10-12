@@ -2,6 +2,13 @@
 part of '../database.dart';
 
 extension PartyReconciliationDao on AppDatabase {
+  /// عامل إشارة رصيد الأستاذ لمطابقة بطاقة الطرف: المورد (التزام، حسابه تحت
+  /// الدائنين ورصيده الدائن موجب على البطاقة) يُقارَن بـ(دائن − مدين) أي −1،
+  /// والعميل (وكذا العميل/المورد الذي حسابه تحت الذمم المدينة) بـ(مدين − دائن).
+  String get _ledgerSign =>
+      '(CASE WHEN p.is_supplier = ${sqlBool(true)} AND p.is_customer = ${sqlBool(false)} '
+      'THEN -1.0 ELSE 1.0 END)';
+
   /// GAP-22: AR/AP Aging Report — overdue balances split by age buckets.
   /// [customersOnly] = true → customers (AR), false → suppliers (AP).
   /// [allowedBranchIds] بيحصر **أي أطراف تظهر** — نفس قاعدة
@@ -217,7 +224,7 @@ extension PartyReconciliationDao on AppDatabase {
         p.is_customer AS is_customer,
         p.is_supplier AS is_supplier,
         p.balance     AS card_balance,
-        COALESCE(SUM(live_jel.debit) - SUM(live_jel.credit), 0.0) AS gl_balance
+        COALESCE(SUM(live_jel.debit) - SUM(live_jel.credit), 0.0) * $_ledgerSign AS gl_balance
       FROM parties p
       LEFT JOIN (
         SELECT jel.account_id, jel.debit, jel.credit
@@ -230,8 +237,8 @@ extension PartyReconciliationDao on AppDatabase {
       WHERE p.account_id IS NOT NULL
         AND p.deleted_at IS NULL
       GROUP BY p.id, p.name, p.is_customer, p.is_supplier, p.balance
-      HAVING ABS(p.balance - COALESCE(SUM(live_jel.debit) - SUM(live_jel.credit), 0.0)) > ?
-      ORDER BY ABS(p.balance - COALESCE(SUM(live_jel.debit) - SUM(live_jel.credit), 0.0)) DESC
+      HAVING ABS(p.balance - COALESCE(SUM(live_jel.debit) - SUM(live_jel.credit), 0.0) * $_ledgerSign) > ?
+      ORDER BY ABS(p.balance - COALESCE(SUM(live_jel.debit) - SUM(live_jel.credit), 0.0) * $_ledgerSign) DESC
       ''',
       variables: [Variable<double>(tolerance)],
     ).get();
@@ -261,7 +268,7 @@ extension PartyReconciliationDao on AppDatabase {
     return transaction(() async {
       final rows = await customSelect(
         '''SELECT p.id, p.balance AS old_balance,
-          COALESCE(SUM(live_jel.debit) - SUM(live_jel.credit), 0.0) AS ledger_balance
+          COALESCE(SUM(live_jel.debit) - SUM(live_jel.credit), 0.0) * $_ledgerSign AS ledger_balance
           FROM parties p
           LEFT JOIN (
             SELECT jel.account_id, jel.debit, jel.credit

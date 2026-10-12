@@ -27,7 +27,7 @@ lib/data/database/daos/tables_dao.dart 33628
 lib/data/database/daos/treasury_reports_dao.dart 31028
 lib/data/database/daos/treasury_voucher_dao.dart 38847
 lib/data/database/daos/user_dao.dart 32683
-lib/data/database/database.dart 41282
+lib/data/database/database.dart 40837
 lib/data/database/database_seeder_permissions.dart 62492
 lib/data/database/database_seeder_postgres.dart 32662
 lib/data/database/database_startup.dart 90485

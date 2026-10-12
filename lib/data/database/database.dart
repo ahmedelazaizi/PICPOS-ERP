@@ -537,17 +537,8 @@ part 'tables/attachment_tables.dart';
     AttachmentBlobs,
   ],
 )
-/// MonixaERP ERP Core Database.
-///
-/// Drift-powered SQLite database with 41 schema versions, full-text search,
-/// and 16 DAO extensions covering products, sales, purchases, treasury,
-/// inventory, users, permissions, HR, delivery, kitchen, and audit logging.
-///
-/// Uses the SINGLETON PATTERN: `AppDatabase()` always returns the same instance.
-/// This prevents multiple SQLCipher connections that would each run their own
-/// `beforeOpen` seeder, leading to inconsistent data (e.g., password hash corruption).
-///
-/// `AppDatabase.forTesting()` opens an in-memory connection for tests (not singleton).
+/// ERP core database (Drift). Singleton: `AppDatabase()` returns one instance;
+/// `AppDatabase.forTesting()` is in-memory. Details: `database_design_notes.dart`.
 class AppDatabase extends _$AppDatabase {
   /// Whether this database is backed by PostgreSQL (affects migration behavior)
   final bool _isPostgres;

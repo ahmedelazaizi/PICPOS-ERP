@@ -1,4 +1,4 @@
-﻿// سيناريو (ك): ميزان المراجعة بعد دورة أعمال كاملة ومختلطة متوازن، وأرصدة التقارير
+// سيناريو (ك): ميزان المراجعة بعد دورة أعمال كاملة ومختلطة متوازن، وأرصدة التقارير
 // (ميزان المراجعة · دفتر الأستاذ · كشوف الأطراف · الخزائن · المخزون) متطابقة.
 //
 // الدورة: شراء آجل ← بيع نقدي ← بيع آجل ← قبض جزئي ← مرتجع مبيعات ← مرتجع مشتريات
@@ -152,11 +152,43 @@ void main() {
   test('getPartyBalanceMismatches لا يبلّغ عن مورد رصيده سليم (إشارة الدائن)', () async {
     final mm = await w.db.getPartyBalanceMismatches();
     expect(mm.where((m) => m.isSupplier), isEmpty);
-  },
-      skip: 'عيب إنتاجي (إبلاغ كاذب): party_reconciliation_dao.dart:getPartyBalanceMismatches '
-          'يقارن رصيد بطاقة المورد (+780 التزام) بـ«مدين − دائن» الخام للأستاذ (−780) دون '
-          'قلب الإشارة للموردين ⇒ كل مورد برصيد غير صفري يظهر كفرق (delta=1560). '
-          'الأرصدة نفسها سليمة (يتحقق منها الاختبار السابق). الملف قيد التقسيم من عامل آخر فلم يُعدَّل.');
+  });
+
+  test('مطابقة الموردين: مورد برصيد صفر لا يظهر، والفرق الحقيقي يظهر بقيمته', () async {
+    final idle = await w.addSupplier('مورد بلا حركة');
+    expect(await w.partyBalance(idle), closeTo(0, kEps));
+    expect((await w.db.getPartyBalanceMismatches()).where((m) => m.partyId == idle),
+        isEmpty);
+
+    // نعدّل بطاقة المورد يدويًا (+50) ⇒ فرق حقيقي = 50 لا 1610.
+    await w.db.adjustPartyBalance(supplier, 50);
+    final mm = (await w.db.getPartyBalanceMismatches())
+        .where((m) => m.partyId == supplier)
+        .single;
+    expect(mm.cardBalance, closeTo(830, kEps));
+    expect(mm.glBalance, closeTo(780, kEps), reason: 'دائن − دائن للمورد');
+    expect(mm.delta, closeTo(50, kEps));
+  });
+
+  test('مطابقة العملاء لم تتغيّر: فرق حقيقي في البطاقة يظهر كما كان', () async {
+    await w.db.adjustPartyBalance(customer, 40);
+    final mm = (await w.db.getPartyBalanceMismatches())
+        .where((m) => m.partyId == customer)
+        .single;
+    expect(mm.cardBalance, closeTo(290, kEps));
+    expect(mm.glBalance, closeTo(250, kEps));
+    expect(mm.delta, closeTo(40, kEps));
+  });
+
+  test('إصلاح أرصدة الأطراف من الأستاذ لا يقلب رصيد مورد سليم', () async {
+    await w.grant(PermissionCodes.accountingJournal);
+    await w.db.adjustPartyBalance(supplier, 50);
+    await w.db.recalculatePartyBalancesFromLedger(w.userId);
+    expect(await w.partyBalance(supplier), closeTo(780, kEps));
+    expect(await w.partyBalance(customer), closeTo(250, kEps));
+    expect(await w.db.getPartyBalanceMismatches(), isEmpty);
+  });
+
   test('النقدية: مجموع أرصدة الخزائن = حساب النقدية 111 في الأستاذ', () async {
     final s = await w.db
         .customSelect("select sum(balance) s from safes where safe_type = 'cash'")

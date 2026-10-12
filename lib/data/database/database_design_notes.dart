@@ -36,8 +36,19 @@ part of 'database.dart';
   // (قراءةٌ فقط، lib/web/web_remote_connection.dart).
   //
   // **تتخطّى الترحيلات وكلَّ ما يعمل عند الفتح** (onCreate/onUpgrade/
-  // eforeOpen بما فيها PRAGMA وبذرة البيانات): المضيف هو صاحب المخطّط،
+  // beforeOpen بما فيها PRAGMA وبذرة البيانات): المضيف هو صاحب المخطّط،
   // واعتراضُ سياسة القراءة يرفض أصلاً كلَّ PRAGMA/كتابة، فتشغيلُها على
   // العميل إمّا يفشل وإمّا — لو وصل — يعبث بقاعدة المضيف. [isPostgres]
   // يُضبط من استجابة الخادم عند الدخول ليتّفق توليدُ SQL مع محرّك المضيف.
   // ليست singleton.
+
+// ── AppDatabase class notes (moved from database.dart to keep it under its size gate) ──
+// Drift-powered SQLite database with full-text search and DAO extensions covering
+// products, sales, purchases, treasury, inventory, users, permissions, HR, delivery,
+// kitchen and audit logging.
+//
+// Uses the SINGLETON PATTERN: AppDatabase() always returns the same instance.
+// This prevents multiple SQLCipher connections that would each run their own
+// beforeOpen seeder, leading to inconsistent data (e.g., password hash corruption).
+//
+// AppDatabase.forTesting() opens an in-memory connection for tests (not singleton).

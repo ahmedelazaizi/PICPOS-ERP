@@ -12,4 +12,6 @@ paths = [
   '''server/test/e2e/support/e2e_server\.dart''',
   # 'picpos_pos.db_key.v1' — a storage key *name* used with an in-memory secret store.
   '''packages/picpos_device/test/device_test\.dart''',
+  # 'scenario-pw-1' — a dummy password for the in-memory business-scenario fixture users.
+  '''test/scenarios/scenario_world\.dart''',
 ]

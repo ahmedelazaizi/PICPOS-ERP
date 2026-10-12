@@ -57,6 +57,28 @@ extension AccountingAutopostSalesReturnDao on AppDatabase {
     return existing != null;
   }
 
+  /// حساب الخزينة المرتبط بخزنة النقدية التي صُرف منها هذا المرتجع بعينه
+  /// (صف `safe_transactions` نوعه payment بمستند [returnEventId])، أو `null`
+  /// حين لا يوجد صف/خزنة مرتبطة بحساب ⇒ يستعمل المستدعي الحساب المعيَّن.
+  Future<Account?> _resolveReturnCashSafeAccount(
+    int invoiceId,
+    String? returnEventId,
+  ) async {
+    if (returnEventId == null || returnEventId.isEmpty) return null;
+    final row = await (select(safeTransactions).join([
+      innerJoin(safes, safes.id.equalsExp(safeTransactions.safeId)),
+    ])
+          ..where(safeTransactions.referenceType.equals('sales_return') &
+              safeTransactions.referenceId.equals(invoiceId) &
+              safeTransactions.voucherNumber.equals(returnEventId) &
+              safeTransactions.transactionType.equals('payment') &
+              safes.safeType.equals('cash'))
+          ..limit(1))
+        .getSingleOrNull();
+    final linked = row?.readTable(safes).linkedAccountId;
+    return linked == null ? null : accountingDao.getAccountById(linked);
+  }
+
   /// Auto-post a sales return (مرتجعات مبيعات) — IFRS 15.B20
   /// Dr: Sales Returns (contra_revenue) | Cr: Cash/Bank/Receivables
   /// Dr: Inventory | Cr: COGS (reverse the cost entry)
@@ -133,9 +155,15 @@ extension AccountingAutopostSalesReturnDao on AppDatabase {
             await accountingDao.getAccountByCode(
               await accountingDao.getMappedAccountCode('sales_return', AccountingDao.accountPurposes['sales_return']!),
             );
-    final cashAccount = await accountingDao.getAccountByCode(
-      await accountingDao.getMappedAccountCode('cash', AccountingDao.accountPurposes['cash']!),
-    );
+    // الرد النقدي يُقيَّد على حساب الخزينة الفعلية التي خرج منها (كما يفعل البيع —
+    // Spec 136 ISS-13)؛ وإن لم توجد خزنة مرتبطة بحساب يبقى الحساب المعيَّن «cash».
+    final cashAccount = await _resolveReturnCashSafeAccount(
+          originalInvoice.id,
+          returnEventId,
+        ) ??
+        await accountingDao.getAccountByCode(
+          await accountingDao.getMappedAccountCode('cash', AccountingDao.accountPurposes['cash']!),
+        );
     final bankAccount = await accountingDao.getAccountByCode(
       await accountingDao.getMappedAccountCode('bank', AccountingDao.accountPurposes['bank']!),
     );
