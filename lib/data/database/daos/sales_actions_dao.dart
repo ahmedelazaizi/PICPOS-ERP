@@ -6,8 +6,161 @@
 
 part of '../database.dart';
 
+/// A read-only finding for a voided invoice that still has a live return.
+class VoidedAfterReturnReportRow {
+  const VoidedAfterReturnReportRow({
+    required this.invoiceId,
+    required this.invoiceNumber,
+    required this.invoiceDate,
+    required this.total,
+    required this.partyName,
+    required this.originalQuantity,
+    required this.returnedQuantity,
+    required this.returnedValue,
+    required this.imbalanceIndicators,
+  });
+
+  final int invoiceId;
+  final String invoiceNumber;
+  final DateTime invoiceDate;
+  final double total;
+  final String? partyName;
+  final double originalQuantity;
+  final double returnedQuantity;
+  final double? returnedValue;
+  final List<String> imbalanceIndicators;
+}
+
 /// Extension for specialized Sales Invoice actions (void, delete, etc.)
 extension SalesActionsDao on AppDatabase {
+  /// Finds historical voids whose return evidence is still active.
+  Future<List<VoidedAfterReturnReportRow>> voidedAfterReturnReport() async {
+    final voided =
+        await (select(salesInvoices)..where(
+              (invoice) =>
+                  invoice.status.equals('voided') &
+                  invoice.saleType.isNotIn(const ['return']),
+            ))
+            .get();
+    final report = <VoidedAfterReturnReportRow>[];
+    for (final invoice in voided) {
+      final linked = await _linkedReturnTotals(invoice);
+      final movements = await _returnMovementTotals(invoice.id);
+      if (!linked.hasEvidence && !movements.hasEvidence) continue;
+
+      final originalQuantity = (await getSalesInvoiceItems(
+        invoice.id,
+      )).fold<double>(0, (sum, item) => sum + item.quantity);
+      final returnedQuantity = linked.quantity > 0
+          ? linked.quantity
+          : movements.quantity;
+      final returnedValue = linked.value > 0 ? linked.value : movements.value;
+      final indicators = <String>[
+        'الإلغاء أعاد كامل كمية البيع فوق المرتجع السابق',
+      ];
+      if (returnedQuantity > originalQuantity + 0.005) {
+        indicators.add('كمية المرتجع أكبر من كمية البيع الأصلية');
+      }
+      if (returnedValue > invoice.total + 0.005) {
+        indicators.add('قيمة المرتجع أكبر من إجمالي الفاتورة');
+      }
+      report.add(
+        VoidedAfterReturnReportRow(
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          invoiceDate: invoice.invoiceDate,
+          total: invoice.total,
+          partyName: invoice.customerId == null
+              ? null
+              : (await getPartyById(invoice.customerId!))?.name,
+          originalQuantity: originalQuantity,
+          returnedQuantity: returnedQuantity,
+          returnedValue: returnedValue > 0 ? returnedValue : null,
+          imbalanceIndicators: indicators,
+        ),
+      );
+    }
+    return report;
+  }
+
+  Future<({double quantity, double value, bool hasEvidence})>
+  _linkedReturnTotals(SalesInvoiceData invoice) async {
+    const sql = '''
+      SELECT COALESCE(SUM(r.total), 0) AS return_value,
+             COALESCE((SELECT SUM(i.quantity) FROM sales_invoice_items i
+               WHERE i.invoice_id IN (
+                 SELECT r2.id FROM sales_invoices r2
+                 WHERE r2.sale_type = 'return' AND r2.is_deleted = 0
+                   AND (r2.notes = ? OR r2.notes LIKE ?
+                     OR (? != '' AND r2.notes LIKE ?)))), 0) AS return_quantity
+      FROM sales_invoices r
+      WHERE r.sale_type = 'return' AND r.is_deleted = 0
+        AND (r.notes = ? OR r.notes LIKE ?
+          OR (? != '' AND r.notes LIKE ?))''';
+    final note = localReturnLinkNote(invoice.id);
+    final gid = invoice.globalId ?? '';
+    final rows = await customSelect(
+      sql,
+      variables: [
+        Variable.withString(note),
+        Variable.withString('$note|%'),
+        Variable.withString(gid),
+        Variable.withString('%|gid:$gid%'),
+        Variable.withString(note),
+        Variable.withString('$note|%'),
+        Variable.withString(gid),
+        Variable.withString('%|gid:$gid%'),
+      ],
+      readsFrom: {salesInvoices, salesInvoiceItems},
+    ).getSingle();
+    final value = (rows.data['return_value'] as num).toDouble();
+    final quantity = (rows.data['return_quantity'] as num).toDouble();
+    return (
+      quantity: quantity,
+      value: value,
+      hasEvidence: value > 0 || quantity > 0,
+    );
+  }
+
+  Future<({double quantity, double value, bool hasEvidence})>
+  _returnMovementTotals(int invoiceId) async {
+    final movement = await customSelect(
+      '''
+      SELECT COALESCE(SUM(m.quantity), 0) AS return_quantity
+      FROM stock_movements m
+      WHERE m.movement_type = 'return'
+        AND m.reference_type = 'sales_return'
+        AND m.reference_id = ? AND m.deleted_at IS NULL
+        AND NOT EXISTS (SELECT 1 FROM stock_movements c
+          WHERE c.movement_type = 'return_cancel'
+            AND c.reference_type = 'return_cancel'
+            AND c.reference_id = m.reference_id
+            AND c.deleted_at IS NULL)''',
+      variables: [Variable.withInt(invoiceId)],
+      readsFrom: {stockMovements},
+    ).getSingle();
+    final safe = await customSelect(
+      '''
+      SELECT COALESCE(SUM(t.amount), 0) AS return_value
+      FROM safe_transactions t
+      WHERE t.reference_type = 'sales_return' AND t.reference_id = ?
+        AND t.category = 'sales_return' AND t.transaction_type = 'payment'
+        AND t.deleted_at IS NULL
+        AND NOT EXISTS (SELECT 1 FROM safe_transactions c
+          WHERE c.reference_type = 'return_cancel'
+            AND c.reference_id = t.reference_id
+            AND c.category = 'return_cancel' AND c.deleted_at IS NULL)''',
+      variables: [Variable.withInt(invoiceId)],
+      readsFrom: {safeTransactions},
+    ).getSingle();
+    final quantity = (movement.data['return_quantity'] as num).toDouble();
+    final value = (safe.data['return_value'] as num).toDouble();
+    return (
+      quantity: quantity,
+      value: value,
+      hasEvidence: quantity > 0 || value > 0,
+    );
+  }
 
   /// Void a sales invoice (ISS-05: void instead of hard delete)
   /// Preserves the invoice for audit trail, reverses stock and treasury.
@@ -20,7 +173,12 @@ extension SalesActionsDao on AppDatabase {
   /// journal_entries.globalId's UNIQUE index instead of surviving DeltaPull as
   /// two rows. Default null keeps standalone behaviour (createJournalEntry mints
   /// its own gid), mirroring voidPurchaseInvoice's {globalId} thread.
-  Future<void> voidSalesInvoice(int invoiceId, {String? reason, int? deletedBy, String? globalId}) async {
+  Future<void> voidSalesInvoice(
+    int invoiceId, {
+    String? reason,
+    int? deletedBy,
+    String? globalId,
+  }) async {
     await transaction(() async {
       // #Phase4: Check if invoice is locked
       final inv = await (select(
@@ -42,13 +200,17 @@ extension SalesActionsDao on AppDatabase {
         await permissionEnforcer.requireCriticalOp(
           userId: deletedBy,
           code: PermissionCodes.voidPaidInvoice,
-          arabicReason: 'لا يمكن إلغاء فاتورة مدفوعة بالكامل — '
+          arabicReason:
+              'لا يمكن إلغاء فاتورة مدفوعة بالكامل — '
               'يلزم صلاحية "إلغاء فاتورة مدفوعة".',
         );
       }
 
       // 0. Soft/Hard Period Closing Gating
-      await accountingDao.validateFinancialPeriod(inv.invoiceDate, operation: 'إلغاء فاتورة مبيعات');
+      await accountingDao.validateFinancialPeriod(
+        inv.invoiceDate,
+        operation: 'إلغاء فاتورة مبيعات',
+      );
 
       // Get invoice items to reverse stock
       final items = await getSalesInvoiceItems(invoiceId);
@@ -60,7 +222,9 @@ extension SalesActionsDao on AppDatabase {
         )..where((p) => p.id.equals(item.productId))).getSingleOrNull();
         if (product != null && product.trackInventory) {
           // UOM: apply quantityInBase conversion for base-unit accuracy
-          final voidQtyInBase = item.quantityInBase > 0 ? item.quantityInBase : 1.0;
+          final voidQtyInBase = item.quantityInBase > 0
+              ? item.quantityInBase
+              : 1.0;
           final restoreQty = item.quantity * voidQtyInBase;
           // Same asymmetry the sales-return path had: the reversing JE below
           // mirrors the original entry line-for-line, so it books the FROZEN
@@ -119,16 +283,18 @@ extension SalesActionsDao on AppDatabase {
       }
 
       // Reverse treasury transactions (adjust safe balances back)
-      final treasuryTxns = await (select(safeTransactions)..where(
-            (t) =>
-                t.referenceType.equals('sales_invoice') &
-                t.referenceId.equals(invoiceId),
-          )).get();
+      final treasuryTxns =
+          await (select(safeTransactions)..where(
+                (t) =>
+                    t.referenceType.equals('sales_invoice') &
+                    t.referenceId.equals(invoiceId),
+              ))
+              .get();
 
       for (final txn in treasuryTxns) {
-        final safe = await (select(safes)
-              ..where((s) => s.id.equals(txn.safeId)))
-            .getSingleOrNull();
+        final safe = await (select(
+          safes,
+        )..where((s) => s.id.equals(txn.safeId))).getSingleOrNull();
         if (safe != null) {
           final reverseAmount = txn.transactionType == 'receipt'
               ? -txn.amount
@@ -143,7 +309,9 @@ extension SalesActionsDao on AppDatabase {
             SafeTransactionsCompanion.insert(
               voucherNumber: voucherNumber,
               safeId: safe.id,
-              transactionType: txn.transactionType == 'receipt' ? 'payment' : 'receipt',
+              transactionType: txn.transactionType == 'receipt'
+                  ? 'payment'
+                  : 'receipt',
               category: 'void',
               amount: txn.amount,
               balanceAfter: newBalance,
@@ -198,29 +366,36 @@ extension SalesActionsDao on AppDatabase {
       // حتى لو البوابة عدّت.
       {
         // Get original auto-post JE and create a reversal
-        final originalJE = await (select(journalEntries)
-              ..where((e) =>
-                  e.referenceType.isIn(const [
-                    'sale',
-                    'sales_invoice',
-                    'deferred_sale',
-                  ]) &
-                  e.referenceId.equals(inv.id) &
-                  e.isAutoPosted.equals(true))
-              ..limit(1))
-            .getSingleOrNull();
+        final originalJE =
+            await (select(journalEntries)
+                  ..where(
+                    (e) =>
+                        e.referenceType.isIn(const [
+                          'sale',
+                          'sales_invoice',
+                          'deferred_sale',
+                        ]) &
+                        e.referenceId.equals(inv.id) &
+                        e.isAutoPosted.equals(true),
+                  )
+                  ..limit(1))
+                .getSingleOrNull();
 
         if (originalJE != null) {
-          final originalLines = await (select(journalEntryLines)
-                ..where((l) => l.entryId.equals(originalJE.id)))
-              .get();
+          final originalLines = await (select(
+            journalEntryLines,
+          )..where((l) => l.entryId.equals(originalJE.id))).get();
 
-          final reversalLines = originalLines.map((line) => JournalLine(
-                accountId: line.accountId,
-                debit: line.credit, // Swap debit/credit
-                credit: line.debit,
-                description: 'عكس: ${line.description ?? ""}',
-              )).toList();
+          final reversalLines = originalLines
+              .map(
+                (line) => JournalLine(
+                  accountId: line.accountId,
+                  debit: line.credit, // Swap debit/credit
+                  credit: line.debit,
+                  description: 'عكس: ${line.description ?? ""}',
+                ),
+              )
+              .toList();
 
           if (reversalLines.isNotEmpty) {
             // H-09 FIX: Get branchId from warehouse to ensure financial isolation
@@ -228,7 +403,8 @@ extension SalesActionsDao on AppDatabase {
             final branchId = warehouse?.branchId;
 
             await accountingDao.createJournalEntry(
-              description: 'قيد عكسي — إلغاء فاتورة ${inv.invoiceNumber}${reason != null ? " ($reason)" : ""}',
+              description:
+                  'قيد عكسي — إلغاء فاتورة ${inv.invoiceNumber}${reason != null ? " ($reason)" : ""}',
               date: DateTime.now(),
               lines: reversalLines,
               referenceType: 'sales_invoice_void',
@@ -250,7 +426,9 @@ extension SalesActionsDao on AppDatabase {
       await (update(salesInvoices)..where((i) => i.id.equals(invoiceId))).write(
         SalesInvoicesCompanion(
           status: const Value('voided'),
-          notes: Value('${inv.notes ?? ""}\n[ملغي] ${reason ?? "بدون سبب"} - ${DateTime.now().toIso8601String()}'),
+          notes: Value(
+            '${inv.notes ?? ""}\n[ملغي] ${reason ?? "بدون سبب"} - ${DateTime.now().toIso8601String()}',
+          ),
           isLocked: const Value(true), // Keep locked
           isDeleted: const Value(true),
           deletedAt: Value(DateTime.now()),
@@ -309,7 +487,11 @@ extension SalesActionsDao on AppDatabase {
 
   /// Legacy delete — redirects to void for backward compatibility
   Future<void> deleteSalesInvoice(int invoiceId, {int? deletedBy}) async {
-    await voidSalesInvoice(invoiceId, reason: 'حذف (تم تحويله إلى إلغاء)', deletedBy: deletedBy);
+    await voidSalesInvoice(
+      invoiceId,
+      reason: 'حذف (تم تحويله إلى إلغاء)',
+      deletedBy: deletedBy,
+    );
   }
 
   /// Get the total quantity already returned for a specific product on a specific invoice.
