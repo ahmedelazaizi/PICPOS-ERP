@@ -45,3 +45,23 @@ int? returnOriginalIdFromNote(String? notes) {
   if (bar >= 0) tail = tail.substring(0, bar);
   return int.tryParse(tail.trim());
 }
+
+/// رسالة رفض إلغاء مستند مرتجع (`saleType == 'return'`) بوصفه فاتورة.
+const kSalesVoidReturnDocMessage =
+    'هذا مستند مرتجع — استخدم «إلغاء المرتجع» من سجل مرتجعات المبيعات بدل إلغاء الفاتورة.';
+
+/// رسالة رفض إلغاء فاتورة لها مرتجع حيّ.
+const kSalesVoidHasReturnMessage =
+    'لا يمكن إلغاء فاتورة لها مرتجع. ألغِ المرتجع أولاً من «سجل مرتجعات المبيعات» ثم أعد المحاولة.';
+
+/// رفضُ إلغاءِ فاتورة بيع لأن لها مرتجعاً حيّاً (أو لأنها مستند مرتجع أصلاً).
+///
+/// استثناءُ أعمالٍ لا خطأُ بنية: يحمل الرسالةَ العربية وحدها في `toString()`
+/// (كـ`PermissionDeniedException`) فتعرضها `AppErrorHandler` كما هي، ويحوّله
+/// `ApiSalesHandler` إلى 409، ويصنّفه `OfflineSyncWorker` فشلاً دائماً.
+class SalesVoidBlockedException implements Exception {
+  const SalesVoidBlockedException(this.message);
+  final String message;
+  @override
+  String toString() => message;
+}

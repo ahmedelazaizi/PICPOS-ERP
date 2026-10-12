@@ -17,6 +17,7 @@ import '../../core/logging/diagnostic_logger.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../data/database/database.dart';
 import '../../domain/models/exchange_sync_payload.dart';
+import '../../domain/models/return_original_link.dart' show SalesVoidBlockedException;
 import '../../domain/models/distribution_model.dart';
 import 'api_user_context.dart';
 import '../stock_shortage_policy_service.dart';
@@ -1157,11 +1158,11 @@ class ApiSalesHandler extends ApiHandlerBase {
       broadcastRecordDeleted('sales_invoices', invoiceId);
       return jsonResponse({'success': true});
     } on PermissionDeniedException catch (e) {
-      // A permission denial is 403 Forbidden, not 500. The Spec 062
-      // paid-invoice void gate throws this when the caller lacks
-      // voidPaidInvoice; returning a 500 mislabels an authorization refusal
-      // as a server error and hides the real cause from the client.
+      // Permission denial (e.g. Spec 062 voidPaidInvoice gate) is 403, not 500.
       return errorResponse(e.message, statusCode: 403);
+    } on SalesVoidBlockedException catch (e) {
+      // Invoice has a live return (or is a return doc): 409, not 500.
+      return errorResponse(e.message, statusCode: 409);
     } catch (e) {
       return ApiErrors.fail(e, 'Failed to delete sales invoice');
     }
@@ -1256,13 +1257,9 @@ class ApiSalesHandler extends ApiHandlerBase {
           }
 
           // ── الفاعلُ من الجلسة لا من الجسم ────────────────────────────────
-          // `voidSalesInvoice` يجعل `deletedBy` **موضوعَ** فحصِ
-          // `voidPaidInvoice` (‏sales_actions_dao — من العمليّات الحرجة
-          // المستثناة عمداً من تجاوز المدير). فقراءةُ `data['userId']` كانت
-          // تجعل المستدعيَ يختار من تُفحَص صلاحيّتُه: كاشيرٌ يرسل رقمَ مديرٍ
-          // فيُبطل فاتورةً مدفوعةً كاملاً — ويُنسَب الإبطالُ لمن لم يلمسه.
-          // النمطُ منسوخٌ من `api_purchase_handler` (‏نداءُ `putPurchase`)
-          // وهو الموضعُ الوحيدُ الذي كان يفعلها صواباً.
+          // `deletedBy` موضوعُ فحصِ `voidPaidInvoice` (عمليّةٌ حرجة): قراءتُه من
+          // الجسم تتيح لكاشيرٍ انتحالَ مديرٍ وإبطالَ فاتورةٍ مدفوعة. النمطُ
+          // منسوخٌ من `api_purchase_handler` (`putPurchase`).
           final sessionUserId = ApiUserCtx.userIdOf(request);
           final rawUserId = parseIntNullable(data['userId']);
           if (rawUserId != null &&
@@ -1299,6 +1296,8 @@ class ApiSalesHandler extends ApiHandlerBase {
     } on PermissionDeniedException catch (e) {
       // Symmetric with deleteSalesInvoice: a permission denial is 403, not 500.
       return errorResponse(e.message, statusCode: 403);
+    } on SalesVoidBlockedException catch (e) {
+      return errorResponse(e.message, statusCode: 409); // له مرتجع حيّ
     } catch (e, st) {
       debugPrint('[API] postVoidSale error: $e\n$st');
       final stackLines = st.toString().split('\n').take(10).join(' | ');

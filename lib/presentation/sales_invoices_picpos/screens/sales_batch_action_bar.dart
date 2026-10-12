@@ -114,13 +114,30 @@ class _SalesBatchActionBarState extends ConsumerState<SalesBatchActionBar> {
                     }
                     setState(() => _saving = true);
                     try {
+                      // عيب (2): رفضُ فاتورةٍ (لها مرتجع/مستند مرتجع) لا يوقف
+                      // الباقي، ويُعرض سببُه العربي لكل فاتورة مرفوضة.
+                      final refused = <String>[];
+                      final selectedCount = selectedInvoices.length;
                       for (final invoiceId in selectedInvoices) {
                         final inv = allInvoices.firstWhere((element) => element.id == invoiceId);
-                        await controller.deleteInvoice(invoiceId, inv.invoiceNumber, inv.total);
+                        try {
+                          await controller.deleteInvoice(invoiceId, inv.invoiceNumber, inv.total);
+                        } catch (e, st) {
+                          debugPrint('⚠️ batch delete ${inv.invoiceNumber}: $e\n$st');
+                          final msg = e.toString().replaceFirst('Exception: ', '').trim();
+                          final arabic = e is Exception && RegExp(r'[\u0600-\u06FF]').hasMatch(msg);
+                          refused.add('${inv.invoiceNumber}: ${arabic ? msg : 'تعذّر الحذف'}');
+                        }
                       }
                       controller.clearSelection();
                       if (!context.mounted) return;
-                      AppToast.show(context, tr('تم حذف الفواتير المحددة بنجاح'), type: ToastType.success);
+                      if (refused.isEmpty) {
+                        AppToast.show(context, tr('تم حذف الفواتير المحددة بنجاح'), type: ToastType.success);
+                      } else {
+                        final shown = refused.take(3).join('\n');
+                        final more = refused.length > 3 ? '\n… +${refused.length - 3}' : '';
+                        AppToast.show(context, 'لم تُحذف ${refused.length} من $selectedCount فاتورة:\n$shown$more', type: ToastType.error);
+                      }
                     } finally {
                       if (mounted) setState(() => _saving = false);
                     }

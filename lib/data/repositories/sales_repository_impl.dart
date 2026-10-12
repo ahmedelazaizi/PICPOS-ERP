@@ -448,12 +448,9 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
   /// active invoice from HQ, orphaning the local reversal — permanent
   /// divergence between mirror/client and the server.
   ///
-  /// Committee-BLOCKED interim (Option A): routing the client void through
-  /// `ClientWriteInterceptor.deleteSalesInvoice(invoiceId)` shipped the LOCAL
-  /// autoincrement id, and the server's `DELETE /api/sales/<id>` resolves by raw
-  /// `int.parse(id)` with NO globalId. Client-created sales have local id ≠
-  /// server id, so a strict client voiding its own sale either no-ops on the
-  /// server (void lost) or voids a DIFFERENT innocent invoice at HQ.
+  /// (Routing via `deleteSalesInvoice(localId)` was rejected: the server's
+  /// `DELETE /api/sales/<id>` takes a raw id, and local id ≠ server id could
+  /// void a DIFFERENT invoice at HQ.)
   ///
   /// Fix (R9): the CALLER mints ONE deterministic void globalId and threads the
   /// SAME value into (1) the server submit `submitVoidSalesInvoice` — the server
@@ -483,6 +480,8 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
     if (invoice.status == 'voided') {
       throw Exception('الفاتورة ملغية بالفعل');
     }
+    // عيب (2): نفس فحص الـDAO قبل أي إرسال/كتابة محلية (وإلا بقي «ملغاة» محليًا).
+    if (isClientMode) await db.assertSalesInvoiceVoidable(invoice);
 
     // R9 — mint ONE deterministic globalId for this void's reversal JE, and
     // thread the SAME value into the server submit (client/mirror) or the local

@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart';
+import '../domain/models/return_original_link.dart'
+    show kSalesVoidHasReturnMessage, kSalesVoidReturnDocMessage;
 import 'delta_pull_service.dart';
 import 'network_service.dart';
 import 'pos_terminal_registration_service.dart';
@@ -35,8 +37,14 @@ const kDuplicateSupplierInvoiceNoCode = 'DUPLICATE_SUPPLIER_INVOICE_NO';
 /// key — folding that into success silently DISCARDS the operator's invoice and
 /// they are never told. Those must dead-letter so they surface in the
 /// sync-failures UI.
+///
+/// عيب (2): رفض إلغاء فاتورة لها مرتجع (409 من `/api/sales/void` و
+/// `DELETE /api/sales/<id>`) قرارٌ دائم — إعادة الإرسال تُرفض بالمثل، وبلا هذا
+/// السطر كان نص «409» يُطوى إلى «نجاح» فيضيع الرفض بصمت.
 bool isTerminalBusinessConflict(String error) =>
-    error.contains(kDuplicateSupplierInvoiceNoCode);
+    error.contains(kDuplicateSupplierInvoiceNoCode) ||
+    error.contains(kSalesVoidHasReturnMessage) ||
+    error.contains(kSalesVoidReturnDocMessage);
 
 Map<String, dynamic>? _serverPayloadFromConflict(String error) {
   final separator = error.indexOf('): ');

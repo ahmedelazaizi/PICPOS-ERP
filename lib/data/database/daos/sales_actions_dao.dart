@@ -30,6 +30,9 @@ extension SalesActionsDao on AppDatabase {
       if (inv.status == 'voided') {
         throw Exception('الفاتورة ملغية بالفعل');
       }
+      // عيب (2): لا إلغاء لمستند مرتجع ولا لفاتورة لها مرتجع حيّ — يرمي
+      // SalesVoidBlockedException قبل أي كتابة. فاتورة بلا مرتجع: بلا تغيير.
+      await assertSalesInvoiceVoidable(inv);
 
       // 062 (D1-004): voidPaidInvoice gate. A user voiding a fully-paid
       // invoice must hold the explicit "إلغاء فاتورة مدفوعة" permission,
@@ -255,6 +258,53 @@ extension SalesActionsDao on AppDatabase {
         ),
       );
     });
+  }
+
+  /// يرمي [SalesVoidBlockedException] إن لم يجز إلغاء [inv] (قراءة فقط).
+  ///
+  /// (أ) `saleType == 'return'`: حلقة المخزون في [voidSalesInvoice] تضيف الكمية
+  /// دائماً، فإلغاء مستند مرتجع يضاعف المخزون.
+  /// (ب) للأصل مرتجعٌ حيّ إن تحقق أيٌّ من:
+  ///  • حالته `partial_return`/`returned` (الأثر الموحّد للشكلين، ويعيدها
+  ///    `cancelSalesReturn` إلى `completed`)؛
+  ///  • وجود صف `sale_type='return'` غير محذوف مربوط به بنص `notes`
+  ///    (`localReturnLinkNote`): بالمعرّف العالمي أولاً ثم بالرقم لما قبل
+  ///    صيغة gid — لأن تعديل الفاتورة قد يعيد الحالة `completed` فلا تكفي وحدها.
+  /// ولا يُنظر في `safe_transactions` بنوع `sales_return`: `cancelSalesReturn`
+  /// لا يحذفها (يضيف `return_cancel`)، فكانت ستمنع الإلغاء إلى الأبد.
+  Future<void> assertSalesInvoiceVoidable(SalesInvoiceData inv) async {
+    if (inv.saleType == 'return') {
+      throw const SalesVoidBlockedException(kSalesVoidReturnDocMessage);
+    }
+    var hasReturn = inv.status == 'partial_return' || inv.status == 'returned';
+    if (!hasReturn) {
+      final gid = inv.globalId;
+      final rows = await customSelect(
+        "SELECT notes FROM sales_invoices WHERE sale_type = 'return' "
+        'AND is_deleted = 0 AND notes LIKE ? '
+        'AND (notes = ? OR notes LIKE ? OR notes LIKE ?)',
+        variables: [
+          Variable.withString('Return for invoice #%'),
+          Variable.withString(localReturnLinkNote(inv.id)),
+          Variable.withString('${localReturnLinkNote(inv.id)}|%'),
+          Variable.withString('%|gid:${gid ?? ''}%'),
+        ],
+        readsFrom: {salesInvoices},
+      ).get();
+      for (final r in rows) {
+        final note = r.data['notes'] as String?;
+        final noteGid = returnOriginalGidFromNote(note);
+        // الـgid حاسمٌ متى وُجد على الطرفين؛ والرقم احتياطٌ للصفوف الأقدم.
+        final byGid = noteGid != null && gid != null && gid.isNotEmpty;
+        if (byGid ? noteGid == gid : returnOriginalIdFromNote(note) == inv.id) {
+          hasReturn = true;
+          break;
+        }
+      }
+    }
+    if (hasReturn) {
+      throw const SalesVoidBlockedException(kSalesVoidHasReturnMessage);
+    }
   }
 
   /// Legacy delete — redirects to void for backward compatibility
