@@ -241,6 +241,14 @@ abstract class IAccountingRepository {
   /// Update status of an entity in a generic way (PIR Architecture)
   Future<void> updateEntityStatus(String table, int id, String status, {String column = 'status'});
 
+  /// Active return documents linked to an original invoice by gid, then id.
+  Future<List<SalesInvoiceData>> getLinkedSalesReturnDocuments(
+    SalesInvoiceData original,
+  );
+
+  /// Soft-void a return document after its effects have been reversed.
+  Future<void> voidSalesReturnDocument(int invoiceId, int deletedBy);
+
   // --- Deferred Schedules ---
   Future<int> processDueRecognitions();
   Future<List<dynamic>> getActiveSchedules();

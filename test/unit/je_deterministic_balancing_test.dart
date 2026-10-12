@@ -318,7 +318,7 @@ void main() {
       final writer = File('lib/data/database/daos/accounting_dao_writes.dart')
           .readAsStringSync();
       final factory =
-          File('lib/services/journal_entry_factory.dart').readAsStringSync();
+          readLibrarySource('lib/services/journal_entry_factory.dart');
 
       // Target the specific old-plug comparison shapes rather than a bare
       // '0.10' (which would false-trip on any unrelated literal) — L3.

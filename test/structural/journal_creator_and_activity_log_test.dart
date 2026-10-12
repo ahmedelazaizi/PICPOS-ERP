@@ -20,11 +20,11 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import '../helpers/database_source.dart';
+import '../helpers/library_source.dart';
 
 /// نصُّ الملفّ بلا أسطر التعليق وبلا `\r` — أغلبُ الملفّات هنا CRLF.
 String _code(String path) => [
-      for (final line in readSourceMerged(path).split('\n'))
+      for (final line in readLibrarySource(path).split('\n'))
         if (!line.trimLeft().startsWith('//')) line.replaceAll('\r', ''),
     ].join('\n');
 

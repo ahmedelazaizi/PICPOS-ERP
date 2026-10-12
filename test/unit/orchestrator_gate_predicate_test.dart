@@ -20,6 +20,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import '../helpers/api_handler_source.dart';
 import '../helpers/api_data_handler_source.dart';
+import '../helpers/library_source.dart';
 
 void main() {
   group('Orchestrator gate predicate (Spec 007 / SC-003)', () {
@@ -359,7 +360,7 @@ void main() {
     test('drift_accounting_repository.createJournalEntry resolves client_branch_id',
         () {
       const relPath = 'lib/data/repositories/drift_accounting_repository.dart';
-      final source = File(relPath).readAsStringSync();
+      final source = readLibrarySource(relPath);
 
       // Locate the createJournalEntry method body — anchor on the method
       // signature, then walk forward to the next blank-line + closing brace
