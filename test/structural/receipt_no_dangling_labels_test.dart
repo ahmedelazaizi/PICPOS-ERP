@@ -17,11 +17,12 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 
 const _servicePath = 'lib/services/templated_invoice_service.dart';
 
 void main() {
-  final src = File(_servicePath).readAsStringSync();
+  final src = readLibrarySource(_servicePath);
 
   test('ملفُّ الطابعة الحيّة موجود', () {
     // §٦-٥: كان في المشروع `template_based_printer.dart` لا يناديه شيء،

@@ -30,6 +30,14 @@ const Map<String, List<String>> kSplitDaoParts = <String, List<String>>{
     'lib/data/database/daos/party_dedup_dao.dart',
     'lib/data/database/daos/party_dedup_models.dart',
   ],
+  'lib/data/database/daos/accounting_autopost_dao.dart': <String>[
+    'lib/data/database/daos/accounting_autopost_dao.dart',
+    'lib/data/database/daos/accounting_autopost_cash_sale_dao.dart',
+    'lib/data/database/daos/accounting_autopost_documents_dao.dart',
+    'lib/data/database/daos/accounting_autopost_sales_return_dao.dart',
+    'lib/data/database/daos/accounting_autopost_purchase_return_dao.dart',
+    'lib/data/database/daos/accounting_autopost_delivery_repair_dao.dart',
+  ],
 };
 
 /// Like File(path).readAsStringSync(), but a path listed in [kSplitDaoParts]

@@ -15,6 +15,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 
 const _paletteFile =
     'lib/presentation/screens/invoice_designer/invoice_designer_ui.dart';
@@ -108,4 +109,4 @@ void main() {
 
 /// مصدرُ الرسم كلُّه في نصٍّ واحد.
 String _rendererSource() =>
-    [for (final f in _rendererFiles) File(f).readAsStringSync()].join('\n');
+    [for (final f in _rendererFiles) readLibrarySource(f)].join('\n');

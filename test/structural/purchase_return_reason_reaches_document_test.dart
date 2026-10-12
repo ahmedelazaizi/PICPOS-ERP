@@ -23,12 +23,14 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 
+import '../helpers/dao_source.dart';
+
 /// نصُّ الملفّ بلا أسطر التعليق، **وبلا `\r`**: الملفّاتُ هنا CRLF، فمرساةٌ
 /// متعدّدةُ الأسطر مكتوبةٌ بـ`\n` لا تطابق شيئاً — وصمتُ عدمِ المطابقة يمرّ
 /// أخضرَ في فحصٍ سلبيٍّ ويسقط في إيجابيّ. وقع فعلاً في أوّل تشغيلٍ لهذا
 /// الحارس.
 String _code(String path) => [
-      for (final line in File(path).readAsStringSync().split('\n'))
+      for (final line in readDaoSourceMerged(path).split('\n'))
         if (!line.trimLeft().startsWith('//')) line.replaceAll('\r', ''),
     ].join('\n');
 

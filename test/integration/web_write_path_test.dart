@@ -86,7 +86,28 @@ Future<void> _hostMain(_HostArgs args) async {
   await db.close();
 }
 
+/// إحماء: طلب GET /api/health قبل الاختبارات الحساسة يدفع تكلفة أول اتصال
+/// (JIT/فتح المقبس) على runner بطيء فلا تُحسب ضمن مهلة طلب الكتابة.
+Future<void> _warmUp(String baseUrl) async {
+  final client = HttpClient();
+  try {
+    final req = await client
+        .getUrl(Uri.parse('$baseUrl/api/health'))
+        .timeout(const Duration(seconds: 60));
+    final res = await req.close().timeout(const Duration(seconds: 60));
+    await res.drain<void>();
+  } finally {
+    client.close(force: true);
+  }
+}
+
 void main() {
+  // مهلة ServerProxy قابلة للحقن (الافتراضي 8s للإنتاج): نرفعها هنا لأن المضيف
+  // في Isolate على runner بطيء (TimeoutException after 8s على GitHub Actions).
+  final defaultTimeout = ServerProxy.requestTimeout;
+  setUpAll(() => ServerProxy.requestTimeout = const Duration(seconds: 60));
+  tearDownAll(() => ServerProxy.requestTimeout = defaultTimeout);
+
   late ReceivePort replies;
   late SendPort hostControl;
   late Isolate hostIsolate;
@@ -102,6 +123,7 @@ void main() {
     baseUrl = 'http://127.0.0.1:${msg[0]}';
     hostControl = msg[1] as SendPort;
     hostStopped = false;
+    await _warmUp(baseUrl);
   }
 
   void stopHost() {

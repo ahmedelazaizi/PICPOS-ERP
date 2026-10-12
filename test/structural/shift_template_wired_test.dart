@@ -19,6 +19,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 
 const _printPath = 'lib/services/printing/shift_closing_print.dart';
 const _servicePath = 'lib/services/templated_invoice_service.dart';
@@ -62,7 +63,7 @@ void main() {
           test('$token في ${path.split('/').last}', () {
             final file = File(path);
             expect(file.existsSync(), isTrue, reason: 'مسارُ $path تغيّر');
-            expect(file.readAsStringSync().contains(token), isTrue,
+            expect(readLibrarySource(path).contains(token), isTrue,
                 reason: '«$token» غائبٌ عن $why');
           });
         });
@@ -100,7 +101,7 @@ void main() {
   test('ضابط: الدالّةُ المقيسة موجودةٌ في الخدمة', () {
     final svc = File('lib/services/templated_invoice_service.dart');
     expect(svc.existsSync(), isTrue);
-    final src = svc.readAsStringSync();
+    final src = readLibrarySource(svc.path);
     expect(src.contains('resolveShiftValue'), isTrue,
         reason: 'الاسمُ تغيّر — حدّث الحارس، لا تحذفه');
   });

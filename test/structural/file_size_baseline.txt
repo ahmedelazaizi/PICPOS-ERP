@@ -3,7 +3,6 @@ lib/core/permissions/permission_codes.dart 93670
 lib/core/permissions/permission_enforcement_registry.dart 37915
 lib/core/theme/picpos_theme.dart 33947
 lib/data/database/connection_io.dart 32005
-lib/data/database/daos/accounting_autopost_dao.dart 116012
 lib/data/database/daos/accounting_dao_reads.dart 54929
 lib/data/database/daos/accounting_dao_writes.dart 88252
 lib/data/database/daos/accounting_reports_dao.dart 93070
@@ -28,7 +27,7 @@ lib/data/database/daos/tables_dao.dart 33628
 lib/data/database/daos/treasury_reports_dao.dart 31028
 lib/data/database/daos/treasury_voucher_dao.dart 38847
 lib/data/database/daos/user_dao.dart 32683
-lib/data/database/database.dart 41007
+lib/data/database/database.dart 41282
 lib/data/database/database_seeder_permissions.dart 62492
 lib/data/database/database_seeder_postgres.dart 32662
 lib/data/database/database_startup.dart 90485
@@ -171,11 +170,9 @@ lib/services/delta_pull_service.dart 83398
 lib/services/journal_entry_factory.dart 48535
 lib/services/label_scale_service.dart 55333
 lib/services/network_service.dart 55426
-lib/services/offline_sync_worker/offline_sync_worker_replay.dart 48968
 lib/services/printing/report_pdf_generator.dart 87280
 lib/services/printing/template_pdf_renderer.dart 35188
 lib/services/printing/thermal_receipt_generator.dart 50669
 lib/services/scale_service_io.dart 67781
 lib/services/sync_service.dart 38042
 lib/services/table_session_service.dart 46309
-lib/services/templated_invoice_service.dart 109862

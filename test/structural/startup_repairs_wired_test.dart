@@ -23,6 +23,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/dao_source.dart';
+
 const _startupPath = 'lib/data/database/database_startup.dart';
 
 /// سطرُ نداءٍ فعليّ لا ذكرٌ في تعليق.
@@ -129,7 +131,7 @@ void main() {
     // فيُقرأ أحمرَ لسببٍ زائف — أو يُحذف الحارسُ لأنه «خطأ».
     final dao = File('lib/data/database/daos/accounting_autopost_dao.dart');
     expect(dao.existsSync(), isTrue);
-    expect(dao.readAsStringSync().contains('repairAllMissingInvoiceJEs'), isTrue,
+    expect(readDaoSourceMerged(dao.path).contains('repairAllMissingInvoiceJEs'), isTrue,
         reason: 'الاسمُ تغيّر — حدّث الحارس، لا تحذفه');
   });
 }

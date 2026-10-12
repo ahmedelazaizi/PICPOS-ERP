@@ -14,6 +14,8 @@ import 'websocket_sync_client.dart';
 
 part 'offline_sync_worker/offline_sync_worker_drain.dart';
 part 'offline_sync_worker/offline_sync_worker_reconciliation.dart';
+part 'offline_sync_worker/offline_sync_worker_replay_admin.dart';
+part 'offline_sync_worker/offline_sync_worker_replay_finance.dart';
 part 'offline_sync_worker/offline_sync_worker_replay.dart';
 
 /// البند 5 (متطلبات العميل 2026-07-25) — رمز التعارض الذي يرسله الخادم حين

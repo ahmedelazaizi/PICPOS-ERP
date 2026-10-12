@@ -17,6 +17,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 import 'package:ural_erp/services/printing/template_resolver.dart';
 
 /// الملفّاتُ التي تنادي الطباعةَ بقالب.
@@ -190,7 +191,7 @@ void main() {
       // `printing_service` لا تمرّر `type`، فسياقُ `sales_receipt` يعتمد على
       // هذا الافتراضيّ. تغييرُه يبدّل قالبَ الكاشير صامتاً.
       final src =
-          File('lib/services/templated_invoice_service.dart').readAsStringSync();
+          readLibrarySource('lib/services/templated_invoice_service.dart');
       expect(src, contains("String type = 'thermal',"));
       expect(TemplateResolver.documentContexts['sales_receipt']!.type,
           'thermal');

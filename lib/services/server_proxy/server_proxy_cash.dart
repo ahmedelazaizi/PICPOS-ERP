@@ -250,7 +250,7 @@ extension ServerProxyCashWrites on ServerProxy {
     }
     final response = await TlsTrust.httpClient()
         .delete(url, headers: headers)
-        .timeout(const Duration(seconds: 8));
+        .timeout(ServerProxy.requestTimeout);
     if (!_isSuccessStatusCode(response.statusCode)) {
       throw Exception(
           'Server error (${response.statusCode}): ${response.body}');

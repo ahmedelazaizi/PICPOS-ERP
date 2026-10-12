@@ -27,6 +27,10 @@ class ServerProxy {
   ServerProxy._();
   static final ServerProxy instance = ServerProxy._();
 
+  /// Per-request HTTP timeout for write calls (fast-fail -> outbox). Production
+  /// default is 8 s; tests on slow runners may raise it (injectable, not a setting).
+  static Duration requestTimeout = const Duration(seconds: 8);
+
   /// PHASE-12 (S4): Secure storage for API token
   static const _storage = FlutterSecureStorage();
   static const _tokenKey = 'ural_api_token';
@@ -208,7 +212,7 @@ class ServerProxy {
         debugPrint('[ServerProxy] POST $endpoint (attempt $attempt/$maxAttempts)');
         final response = await TlsTrust.httpClient()
             .post(url, headers: headers, body: body)
-            .timeout(const Duration(seconds: 8)); // Fast-fail → outbox on slow network
+            .timeout(ServerProxy.requestTimeout); // Fast-fail → outbox on slow network
 
         // PHASE-3 FIX: Accept any 2xx status (200 OK, 201 Created, 204 No Content)
         if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -261,7 +265,7 @@ class ServerProxy {
           headers: headers,
           body: json.encode(data),
         )
-        .timeout(const Duration(seconds: 8)); // Fast-fail → outbox on slow network
+        .timeout(ServerProxy.requestTimeout); // Fast-fail → outbox on slow network
 
     // FIX 3.3: Use named helper — accepts 200, 201, 202, 204
     if (_isSuccessStatusCode(response.statusCode)) {
@@ -289,7 +293,7 @@ class ServerProxy {
           headers: headers,
           body: json.encode(data),
         )
-        .timeout(const Duration(seconds: 8));
+        .timeout(ServerProxy.requestTimeout);
 
     // FIX 3.3: Use named helper — accepts 200, 201, 202, 204
     if (_isSuccessStatusCode(response.statusCode)) {
@@ -310,7 +314,7 @@ class ServerProxy {
     
     final response = await TlsTrust.httpClient()
         .delete(url, headers: headers)
-        .timeout(const Duration(seconds: 8));
+        .timeout(ServerProxy.requestTimeout);
 
     // FIX 3.3: Use named helper
     if (_isSuccessStatusCode(response.statusCode)) {
@@ -547,7 +551,7 @@ class ServerProxy {
       final url = Uri.parse('$_baseUrl/api/auth/session');
       final response = await TlsTrust.httpClient()
           .post(url, headers: _authHeaders, body: json.encode(body))
-          .timeout(const Duration(seconds: 8));
+          .timeout(ServerProxy.requestTimeout);
       if (_isSuccessStatusCode(response.statusCode) &&
           response.body.isNotEmpty) {
         final data = json.decode(response.body) as Map<String, dynamic>;

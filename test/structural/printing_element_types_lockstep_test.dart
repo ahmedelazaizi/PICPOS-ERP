@@ -19,6 +19,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 import 'package:ural_erp/services/templated_invoice_service.dart';
 
 const _servicePath = 'lib/services/templated_invoice_service.dart';
@@ -55,7 +56,7 @@ void main() {
     expect(file.existsSync(), isTrue,
         reason: 'مرساة: مسارُ الخدمة صحيح — $_servicePath');
 
-    final cases = _casesInBuildElementContent(file.readAsStringSync());
+    final cases = _casesInBuildElementContent(readLibrarySource(_servicePath));
 
     // مرساةُ الاستخراج: نمطٌ منكسرٌ يعود بمجموعةٍ فارغةٍ فتبدو «لا فرق».
     expect(cases.length, greaterThan(20),
