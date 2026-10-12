@@ -37,7 +37,7 @@ lib/data/database/supabase_database.dart 49954
 lib/data/database/tables/sales_purchase_tables.dart 49450
 lib/data/providers/auth_providers.dart 84988
 lib/data/providers/providers.dart 30979
-lib/data/repositories/drift_accounting_repository.dart 37872
+lib/data/repositories/drift_accounting_repository.dart 36456
 lib/data/repositories/exchange_repository_impl.dart 34648
 lib/data/repositories/purchases_repository_impl.dart 64882
 lib/data/repositories/returns_repository_impl.dart 47048
@@ -167,7 +167,7 @@ lib/services/api/api_product_handler.dart 40404
 lib/services/api/api_purchase_handler.dart 72909
 lib/services/api/api_sales_handler.dart 77276
 lib/services/delta_pull_service.dart 83398
-lib/services/journal_entry_factory.dart 48535
+lib/services/journal_entry_factory.dart 40633
 lib/services/label_scale_service.dart 55333
 lib/services/network_service.dart 55426
 lib/services/printing/report_pdf_generator.dart 87280

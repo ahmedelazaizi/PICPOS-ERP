@@ -687,7 +687,7 @@ class DriftAccountingRepository implements IAccountingRepository {
         .get();
     return returns.where((returnInvoice) {
       final returnGid = returnOriginalGidFromNote(returnInvoice.notes);
-      final originalGid = returnOriginalGidFromNote(original.notes);
+      final originalGid = original.globalId;
       if (returnGid != null && originalGid != null) {
         return returnGid == originalGid;
       }
