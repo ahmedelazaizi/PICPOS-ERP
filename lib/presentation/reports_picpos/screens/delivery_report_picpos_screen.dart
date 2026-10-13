@@ -125,7 +125,7 @@ class _DeliveryReportPicposScreenState extends ConsumerState<DeliveryReportPicpo
       padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 4),
       child: PicPosContentCard(child: ListTile(
         leading: Icon(PhosphorIconsBold.receipt, color: context.picposBrandInk),
-        title: Row(children: [Expanded(child: Text(tr('الفاتورة: {p0}', {'p0': invoice.invoiceNumber}))), Text('${invoice.deliveryFee.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold))]),
+        title: Row(children: [Expanded(child: Text(tr('الفاتورة: {p0}', {'p0': invoice.invoiceNumber}))), Text('${invoice.deliveryFee.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}', style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.bold))]),
         subtitle: Text('${tr('التاريخ: {p0}', {'p0': DateFormat('yyyy-MM-dd HH:mm').format(invoice.invoiceDate)})}\n${tr('المندوب: {p0}', {'p0': courier?.name ?? tr('غير محدد')})}\n${tr('الشركة: {p0}', {'p0': company?.name ?? tr('بدون شركة')})}'),
         trailing: _status(invoice.deliveryStatus ?? 'pending'),
       )),
