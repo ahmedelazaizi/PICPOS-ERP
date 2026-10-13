@@ -45,6 +45,7 @@ class _SalesByClassificationReportState
   // Data for export (P2-03: typed)
   List<SalesByCategoryRow> _categoryData = [];
   List<SalesBySaleTypeRow> _saleTypeData = [];
+  bool _isLoading = true;
   int? _selectedRegionId; // Feature 017
   int? _selectedBranchId;
   int? _selectedWarehouseId;
@@ -97,6 +98,7 @@ class _SalesByClassificationReportState
   }
 
   Future<void> _loadData() async {
+    if (mounted) setState(() => _isLoading = true);
     // Spec 149 B12-5b (FIL-2): resolve the auth-level branch scope BEFORE
     // the report query runs, on every call. _loadData is invoked both from
     // initState's microtask and from the filter-bar onChanged callbacks, so
@@ -130,7 +132,7 @@ class _SalesByClassificationReportState
       warehouseIds: warehouseIds,
       allowedBranchIds: _allowedBranchIds,
     );
-    if (mounted) setState(() {});
+    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
@@ -430,15 +432,10 @@ class _SalesByClassificationReportState
   }
 
   Widget _buildCategoryReport() {
-    final repo = ref.watch(reportingRepositoryProvider);
     return FutureBuilder<List<SalesByCategoryRow>>(
-      future: repo.getSalesByCategory(
-        from: _dateRange.start,
-        to: _dateRange.end,
-        allowedBranchIds: _allowedBranchIds,
-      ),
+      future: _isLoading ? null : Future.value(_categoryData),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (_isLoading || snapshot.connectionState == ConnectionState.waiting) {
           return Padding(
             padding: const EdgeInsets.all(16),
             child: ShimmerLoading.list(itemCount: 6),
@@ -527,15 +524,11 @@ class _SalesByClassificationReportState
   }
 
   Widget _buildSaleTypeReport() {
-    final repo = ref.watch(reportingRepositoryProvider);
+    final repo = ref.read(reportingRepositoryProvider);
     return FutureBuilder<List<SalesBySaleTypeRow>>(
-      future: repo.getSalesBySaleType(
-        from: _dateRange.start,
-        to: _dateRange.end,
-        allowedBranchIds: _allowedBranchIds,
-      ),
+      future: _isLoading ? null : Future.value(_saleTypeData),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (_isLoading || snapshot.connectionState == ConnectionState.waiting) {
           return Padding(
             padding: const EdgeInsets.all(16),
             child: ShimmerLoading.list(itemCount: 6),

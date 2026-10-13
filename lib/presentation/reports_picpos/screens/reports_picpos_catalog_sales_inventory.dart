@@ -84,7 +84,7 @@ List<PicposReportCategory> buildPicposReportCatalog({
             title: tr('تقرير استهلاك الخامات'),
             subtitle: tr('استهلاك الخامات وربحية المنتجات (auto-deplete)'),
             permission: 'reports_category_profit',
-            action: () => actions.open(() => const ConsumptionReportScreen()),
+            action: () => actions.open(() => const ConsumptionReportPicposScreen()),
           ),
           PicposReportEntry(
             id: 'top_profitable',
@@ -188,19 +188,22 @@ List<PicposReportCategory> buildPicposReportCatalog({
             id: 'low_stock',
             title: tr('أصناف منخفضة المخزون'),
             subtitle: tr('قائمة الأصناف التي وصلت لحد الطلب'),
-            action: actions.showLowStock,
+            permission: PermissionCodes.reportsInventory,
+             action: () => actions.open(() => const LowStockReportPicposScreen()),
           ),
           PicposReportEntry(
             id: 'expired_products',
             title: tr('منتجات منتهية الصلاحية'),
             subtitle: tr('قائمة الأصناف التي انتهت صلاحيتها وتحتاج إعدام'),
-            action: actions.showExpired,
+            permission: PermissionCodes.reportsInventory,
+             action: () => actions.open(() => const ExpiredProductsReportPicposScreen()),
           ),
           PicposReportEntry(
             id: 'expiring_products',
             title: tr('منتجات قاربت على الانتهاء'),
             subtitle: tr('تنتهي صلاحيتها خلال الـ 30 يوماً القادمة'),
-            action: actions.showExpiring,
+            permission: PermissionCodes.reportsInventory,
+             action: () => actions.open(() => const NearExpiryReportPicposScreen()),
           ),
         ],
         shortcuts:  [
@@ -350,7 +353,7 @@ List<PicposReportCategory> buildPicposReportCatalog({
             id: 'cb_delivery',
             title: tr('تقرير عمليات التوصيل'),
             subtitle: tr('إحصائيات المناديب ورسوم شركات التوصيل'),
-            action: () => actions.open(() => const DeliveryReportScreen()),
+            action: () => actions.open(() => const DeliveryReportPicposScreen()),
           ),
           PicposReportEntry(
             id: 'cb_expenses',
@@ -443,7 +446,7 @@ List<PicposReportCategory> buildPicposReportCatalog({
             title: tr('تقرير ضريبة المبيعات'),
             subtitle: tr('الضرائب المحصلة والمدفوعة وصافي الالتزام'),
             permission: PermissionCodes.reportsTaxes,
-            action: () => actions.open(() => const TaxReportScreen()),
+            action: () => actions.open(() => const TaxReportPicposScreen()),
           ),
           PicposReportEntry(
             id: 'tx_vat_recon',

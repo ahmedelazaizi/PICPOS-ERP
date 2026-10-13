@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../picpos_shell/picpos_dialog.dart';
 import '../picpos_shell/picpos_screen_scaffold.dart';
 import '../picpos_shell/picpos_toolbar.dart';
+import 'financial_report_lazy_tab.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../screens/reports/report_export_guard.dart';
 import '../screens/coa/coa_dialogs.dart';
@@ -384,12 +385,18 @@ class _FinancialStatementsPicPosScreenState
             ),
           ],
         ),
-        // ⚠️ `TabBarView` يطلب ارتفاعاً محدَّداً، وجسمُ الغلاف يُمرَّر داخل
-        //    `Expanded` فيعطيه إيّاه. ولو لُفَّ في تمريرةٍ لطلب ارتفاعاً لا
-        //    نهائيّاً وانهار — وهو عطبُ الخزينة البيضاء نفسُه.
-        body: TabBarView(
-          controller: _tabController,
-          children: [for (final t in tabs) _tabBody(t.slot)],
+        body: AnimatedBuilder(
+          animation: _tabController,
+          builder: (context, _) => TabBarView(
+            controller: _tabController,
+            children: [
+              for (var i = 0; i < tabs.length; i++)
+                FinancialReportLazyTab(
+                  active: i == _tabController.index,
+                  builder: (_) => _tabBody(tabs[i].slot),
+                ),
+            ],
+          ),
         ),
       ),
     );
