@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 
 /// يُسقط أسطرَ التعليق (`//` و`///`) قبل الفحص.
 ///
@@ -22,9 +23,9 @@ String _code(String src) => src
 /// يعود `Navigator.push` إلى الشاشة المشتركة لتضيع الترويسةُ بلا أن ينهار
 /// شيء. واختبارُ الودجت يفتح الشاشةَ المقصودةَ فيمرّ وهو لا يرى سطرَ الدفع.
 void main() {
-  final hub = File(
+  final hub = readLibrarySource(
     'lib/presentation/settings_picpos/screens/settings_picpos_screen.dart',
-  ).readAsStringSync();
+  );
 
   group('الترويسةُ الموحّدة — سطرُ الدفع', () {
     /// المفتاحُ في `HEADS` ← الصنفُ الذي **يجب** أن يدفعه المركز.

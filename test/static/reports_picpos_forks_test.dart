@@ -20,6 +20,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/library_source.dart';
+
 /// نسخةٌ واحدة: مسارُ النسخة، ومسارُ الأصل، واسما الصنفَين.
 class _Fork {
   const _Fork(this.picpos, this.shared, this.picposClass, this.sharedClass);
@@ -79,7 +81,7 @@ void main() {
       });
 
       test('ومركزُ PicPos يفتح النسخةَ لا الأصل', () {
-        final hub = _code(picposHub);
+        final hub = readLibrarySource(picposHub);
         expect(hub.contains('${f.picposClass}()'), isTrue,
             reason: 'مركزُ PicPos لا يفتح النسخةَ — فالفوركُ ملفٌّ ميّت.');
         expect(RegExp(r'\b' + f.sharedClass + r'\(\)').hasMatch(hub), isFalse,

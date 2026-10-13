@@ -18,6 +18,7 @@
 // بلا رأسٍ يظهر تحت المفتاح الإنجليزيّ الخام بلا خطأٍ ولا تحذير.
 
 import 'dart:io';
+import '../helpers/library_source.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/config/brand.dart';
@@ -199,9 +200,8 @@ void main() {
       // 🔴 **بلا نزعِ التعليقات نجت طفرةُ إغلاق الباب**: الملفُّ
       //    يذكر `AccountMappingPicPosScreen` في شرحٍ في رأسِه، فمطابقةُ
       //    النصّ الخام تمرّ خضراءَ والبابُ مغلقٌ.
-      final settings = _stripComments(File(
-              'lib/presentation/settings_picpos/screens/settings_picpos_screen.dart')
-          .readAsStringSync());
+      final settings = _stripComments(readLibrarySource(
+          'lib/presentation/settings_picpos/screens/settings_picpos_screen.dart'));
       expect(settings, contains('AccountMappingPicPosScreen('),
           reason: 'سُحب من الشريط ولم يُوصَل في الإعدادات ⇒ شاشةٌ فقدت '
               'بابَها الوحيد');
@@ -233,9 +233,8 @@ void main() {
     //    المستخدم** لا عددُ الأسطر.
 
     test('بابُ التقارير موجودٌ وواحد', () {
-      final reports = File(
-              'lib/presentation/reports_picpos/screens/reports_picpos_screen.dart')
-          .readAsStringSync();
+      final reports = readLibrarySource(
+          'lib/presentation/reports_picpos/screens/reports_picpos_screen.dart');
       expect('FinancialStatementsPicPosScreen('.allMatches(reports).length, 1,
           reason: 'بابُ التقارير غاب أو تعدّد');
     });

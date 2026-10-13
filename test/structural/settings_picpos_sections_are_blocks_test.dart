@@ -27,6 +27,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 
 void main() {
   test('لا بطاقةَ ListTile في أقسام إعدادات PicPos', () {
@@ -35,7 +36,9 @@ void main() {
     );
     expect(file.existsSync(), isTrue, reason: 'يُشغَّل من جذر المستودع');
 
-    final lines = file.readAsLinesSync();
+    final lines = readLibrarySource(
+      'lib/presentation/settings_picpos/screens/settings_picpos_screen.dart',
+    ).split('\n');
     final offenders = <String>[];
 
     for (var i = 0; i < lines.length; i++) {

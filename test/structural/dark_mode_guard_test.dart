@@ -128,6 +128,8 @@ const _allowlistedFiles = <String, String>{
       'Production status/table controls use semantic surfaces.',
   'lib/presentation/settings_picpos/screens/settings_picpos_screen.dart':
       'Settings preview/action controls use semantic surfaces.',
+  'lib/presentation/settings_picpos/screens/settings_picpos_about.dart':
+      'Settings preview/action controls use semantic surfaces.',
 };
 
 final _lightLiteral = RegExp(

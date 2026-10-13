@@ -14,6 +14,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+
+import '../helpers/library_source.dart';
 import 'package:ural_erp/data/providers/reports_hub_kpi_provider.dart';
 
 void main() {
@@ -41,15 +43,17 @@ void main() {
   });
 
   group('مصدرُ الأرقام', () {
-    String code(String p) => File(p)
-        .readAsStringSync()
-        .split('\n')
-        .where((l) => !l.trimLeft().startsWith('//'))
-        .join('\n');
-
     const provider = 'lib/data/providers/reports_hub_kpi_provider.dart';
     const hub =
         'lib/presentation/reports_picpos/screens/reports_picpos_screen.dart';
+
+    String code(String p) => p == hub
+        ? readLibrarySource(p)
+        : File(p)
+            .readAsStringSync()
+            .split('\n')
+            .where((l) => !l.trimLeft().startsWith('//'))
+            .join('\n');
 
     test('المؤشّراتُ محصورةٌ بصلاحية الفروع داخلَ الاستعلام', () {
       final src = code(provider);

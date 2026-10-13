@@ -13,14 +13,14 @@
 // ⚠️ ولا يُفحَص بـ`contains` على الملفّ: المعرّفُ نفسُه يظهر مرّاتٍ (تعريفُ
 //    الفئة · مفتاحُ المجموعة · مفتاحُ الوصف)، فالمقارنةُ **بين مجموعتَي
 //    معرّفاتٍ مستخرَجتَين** لا بوجودِ نصّ.
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/library_source.dart';
+
 void main() {
-  final src = File(
+  final src = readLibrarySource(
     'lib/presentation/reports_picpos/screens/reports_picpos_screen.dart',
-  ).readAsStringSync();
+  );
 
   /// معرّفاتُ الفئات كما تُعرَّف فعلاً في `buildPicposReportCatalog`.
   ///

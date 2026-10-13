@@ -17,6 +17,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 
 void main() {
   const path =
@@ -35,7 +36,7 @@ void main() {
   setUpAll(() {
     final f = File(path);
     expect(f.existsSync(), isTrue, reason: 'حدِّث المسار: $path');
-    src = f.readAsStringSync();
+    src = readLibrarySource(path);
     code = src
         .split('\n')
         .where((l) => !l.trimLeft().startsWith('//'))

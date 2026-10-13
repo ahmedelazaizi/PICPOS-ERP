@@ -6,6 +6,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+
+import '../helpers/library_source.dart';
 import 'package:ural_erp/core/config/brand.dart';
 import 'package:ural_erp/core/config/business_profile.dart';
 import 'package:ural_erp/core/enums/app_screen.dart';
@@ -73,9 +75,8 @@ void main() {
   });
 
   test('تقاريرُ المناديب الأربعة في مركز تقارير PicPos بصلاحيّة', () {
-    final hub = File(
-            'lib/presentation/reports_picpos/screens/reports_picpos_screen.dart')
-        .readAsStringSync();
+    final hub = readLibrarySource(
+        'lib/presentation/reports_picpos/screens/reports_picpos_screen.dart');
     expect(hub, contains("id: 'reps'"));
     expect(hub, contains('RepReportKind.values'));
     expect(hub, contains('permission: PermissionCodes.distributionView'));

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/library_source.dart';
 import 'package:ural_erp/presentation/widgets/settings/company_info_widget.dart';
 
 /// يُسقط أسطرَ التعليق قبل الفحص — حارسُ نصٍّ يقرأ التعليقاتِ يقيس كلاماً لا
@@ -18,9 +19,9 @@ String _code(String src) => src
 /// `picpos: true` ليعود الحوارُ إلى `AlertDialog` بلا أن ينهار شيء. واختبارُ
 /// الودجت يفتح الحوارَ المقصودَ فيمرّ وهو لا يرى سطرَ الفتح.
 void main() {
-  final hub = _code(File(
+  final hub = _code(readLibrarySource(
     'lib/presentation/settings_picpos/screens/settings_picpos_screen.dart',
-  ).readAsStringSync());
+  ));
 
   group('الحواراتُ تُفتَح بغلاف PicPos', () {
     const openers = {

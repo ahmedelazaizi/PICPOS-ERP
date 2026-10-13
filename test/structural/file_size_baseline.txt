@@ -87,7 +87,6 @@ lib/presentation/purchases_picpos/screens/purchases_invoices_table.dart 43059
 lib/presentation/purchases_picpos/screens/purchases_picpos_crud.dart 30733
 lib/presentation/report_builder_picpos/screens/report_builder_picpos_screen.dart 39882
 lib/presentation/reports_picpos/screens/report_definitions_picpos.dart 51894
-lib/presentation/reports_picpos/screens/reports_picpos_screen.dart 112867
 lib/presentation/sales_invoices_picpos/screens/sales_invoice_dialogs.dart 42868
 lib/presentation/sales_invoices_picpos/screens/sales_invoice_save_edit.dart 52411
 lib/presentation/sales_invoices_picpos/screens/sales_invoices_table.dart 35236
@@ -145,7 +144,6 @@ lib/presentation/settings_picpos/screens/cfd_settings_card_picpos.dart 36750
 lib/presentation/settings_picpos/screens/cheques_picpos_screen.dart 51704
 lib/presentation/settings_picpos/screens/linked_devices_section.dart 36695
 lib/presentation/settings_picpos/screens/network_mode_settings_picpos.dart 32554
-lib/presentation/settings_picpos/screens/settings_picpos_screen.dart 105539
 lib/presentation/settings_picpos/widgets/permissions_matrix_picpos.dart 41370
 lib/presentation/shell/app_shell.dart 72267
 lib/presentation/shift_close_picpos/widgets/picpos_cashier_closing_dialog.dart 60663

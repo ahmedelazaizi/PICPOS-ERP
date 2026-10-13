@@ -24,6 +24,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/library_source.dart';
+
 /// ⚠️ **كان `nav_widgets.dart`.** أُخرِجَت الودجتُ إلى ملفٍّ عامٍّ لتصير
 /// قابلةَ اختبارِ الودجت، ومرساةُ «يقرأ الكتالوج» أمسكت النقلَ فوراً —
 /// ولولاها لقرأ الحارسُ ملفّاً لا يذكر الكتالوجَ فصار الفحصان الأوّلان
@@ -76,7 +78,7 @@ void main() {
 
   setUpAll(() {
     nav = File(_navPath).readAsStringSync();
-    screen = File(_screenPath).readAsStringSync();
+    screen = readLibrarySource(_screenPath);
   });
 
   test('الشريطُ يقرأ الكتالوجَ من مصدره ولا ينسخه', () {

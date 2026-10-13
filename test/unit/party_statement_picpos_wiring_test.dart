@@ -21,6 +21,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/library_source.dart';
+
 /// مواضعُ PicPos التي تفتح كشفَ الحساب — الخمسةُ المقيسةُ 2026-08-26.
 const _picposEntryPoints = <String, int>{
   // زرّا الترويسة («كشف حساب عميل»/«كشف حساب مورد») + فتحُ كشفِ طرفٍ بعينه.
@@ -71,7 +73,10 @@ void main() {
           missing.add('$path — الملفُّ غيرُ موجود');
           return;
         }
-        final src = f.readAsStringSync();
+        final src = path ==
+                'lib/presentation/reports_picpos/screens/reports_picpos_screen.dart'
+            ? readLibrarySource(path)
+            : f.readAsStringSync();
         final n = _countOf(src, picposCtor);
         total += n;
         if (n != expected) {

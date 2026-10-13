@@ -19,6 +19,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/library_source.dart';
+
 const _hub =
     'lib/presentation/reports_picpos/screens/reports_picpos_screen.dart';
 
@@ -30,7 +32,7 @@ void main() {
   setUpAll(() {
     final f = File(_hub);
     expect(f.existsSync(), isTrue, reason: 'مسارُ المركز تبدّل: $_hub');
-    src = f.readAsStringSync();
+    src = readLibrarySource(_hub);
   });
 
   test('مرساةُ القراءة — المركزُ مقروءٌ وفيه مداخلُ فعلاً', () {
