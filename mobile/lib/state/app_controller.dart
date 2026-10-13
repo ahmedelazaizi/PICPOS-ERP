@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -10,6 +9,7 @@ import '../data/cloud_api.dart';
 import '../data/local_store.dart';
 import '../domain/sale_math.dart';
 import '../geo/geo_capture.dart';
+import '../security/offline_pin_verifier.dart';
 
 part 'field_customers.dart';
 part 'field_expenses.dart';
@@ -179,14 +179,6 @@ class AppController extends ChangeNotifier {
     await store.setKv('tokenRotatedAt', '${_clock().millisecondsSinceEpoch}');
   }
 
-  static String _pinHash(String pin, String salt) {
-    List<int> h = utf8.encode('$salt:$pin');
-    for (var i = 0; i < 20000; i++) {
-      h = sha256.convert(h).bytes;
-    }
-    return base64.encode(h);
-  }
-
   // M-4: failed PINs are counted in the encrypted local store (survives app
   // restarts / force-stop). After [pinFreeAttempts] misses the PIN screen locks
   // for 30 s, doubling per further miss up to 15 min; success clears it.
@@ -241,19 +233,18 @@ class AppController extends ChangeNotifier {
     await _throwIfPinLocked();
     try {
       await _setSession(await api.login(c, pin));
-      final salt = base64.encode(List<int>.generate(16, (_) => Random.secure().nextInt(256)));
-      await store.setKv('pin', '$salt:${_pinHash(pin, salt)}');
+      await store.setKv('pin', OfflinePinVerifier.create(pin));
     } on CloudApiException catch (e) {
       if (e.code == 'device_revoked') await wipe();
       if (e.code == 'invalid_pin') await _recordPinFailure();
       throw AppFailure(e.code == 'invalid_pin' ? 'invalidPin' : 'error', e.code);
     } catch (_) {
-      final saved = await store.getKv('pin');
-      final parts = saved?.split(':');
-      if (parts == null || parts.length != 2 || _pinHash(pin, parts[0]) != parts[1]) {
+      final check = OfflinePinVerifier.verify(pin, await store.getKv('pin'));
+      if (!check.matches) {
         await _recordPinFailure();
         throw AppFailure('invalidPin');
       }
+      if (check.requiresUpgrade) await store.setKv('pin', OfflinePinVerifier.create(pin));
     }
     await store.setKv(_pinFailuresKey, null);
     loggedIn = true;
@@ -262,9 +253,10 @@ class AppController extends ChangeNotifier {
   }
 
   /// Back to the PIN screen (e.g. to get a fresh server session).
-  void signOut() {
-    _setSession(null);
+  Future<void> signOut() async {
     loggedIn = false;
+    notifyListeners();
+    await _setSession(null);
     notifyListeners();
   }
 
@@ -296,12 +288,7 @@ class AppController extends ChangeNotifier {
     notifyListeners();
     try {
       final cc = await _maybeRotateToken(c);
-      // J3 — a field-created customer is pushed before the sales made to it.
-      final queued = await pendingDocs();
-      final pending = [
-        ...queued.where((e) => e.kind == kFieldCustomerKind),
-        ...queued.where((e) => e.kind != kFieldCustomerKind),
-      ];
+      final pending = await pendingDocs();
       // ≤ 50 documents and ≈ 3 MB per request (K-1 receipt photos ride along).
       var batch = <OutboxEntry>[];
       var wire = <Map<String, Object?>>[];

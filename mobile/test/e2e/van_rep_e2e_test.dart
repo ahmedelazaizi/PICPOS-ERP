@@ -242,7 +242,7 @@ void main() {
 
   test('دخول بـ PIN بلا اتصال يعمل بالبصمة المحلية للـ PIN الأخير', () async {
     final (c, api) = await loggedInVan();
-    c.signOut();
+    await c.signOut();
     api.offline = true;
     await expectLater(c.login('9999'), throwsA(isA<AppFailure>()));
     await c.login(E2eCloud.rep1Pin);

@@ -204,7 +204,11 @@ void main() {
       await tester.enterText(find.byKey(const Key('admin.username')), 'uiuser');
       await tester.enterText(find.byKey(const Key('admin.password')), E2eDesktop.defaultPassword);
       await tester.tap(find.byKey(const Key('admin.login')));
-      await until(tester, find.text('51.000'));
+       await until(tester, find.byKey(const Key('admin.appPinSetup')));
+       await tester.enterText(find.byKey(const Key('admin.appPinSetup')), '1234');
+       await tester.enterText(find.byKey(const Key('admin.appPinConfirm')), '1234');
+       await tester.tap(find.byKey(const Key('admin.appPinSave')));
+       await until(tester, find.text('51.000'));
 
       // الموافقات (للعرض فقط): العنصر الموقَّع يظهر.
       await tester.tap(find.text('الموافقات').last);

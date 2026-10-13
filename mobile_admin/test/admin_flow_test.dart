@@ -94,6 +94,11 @@ void main() {
     await tester.pumpAndSettle();
     expect((transport.requests.firstWhere((request) => request.path == '/manage/login').body as Map)['password'], '12345678');
     expect(secrets.values['admin.sessionToken'], 'session-secret');
+    expect(find.byKey(const Key('admin.appPinSetup')), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('admin.appPinSetup')), '1234');
+    await tester.enterText(find.byKey(const Key('admin.appPinConfirm')), '1234');
+    await tester.tap(find.byKey(const Key('admin.appPinSave')));
+    await tester.pumpAndSettle();
     expect(find.text('51.000'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
   });
@@ -142,7 +147,7 @@ void main() {
       confirmKey: (_) async => true,
     );
     await session.login('owner', 'password');
-    await tester.pumpWidget(PicPosAdminApp(settings: PicPosAppSettings(), session: session));
+    await tester.pumpWidget(PicPosAdminApp(settings: PicPosAppSettings(), session: session, startInShell: true));
     await tester.pumpAndSettle();
     expect(find.text('لا توجد بيانات موثّقة بعد — يتم تحديثها من جهاز المكتب عند المزامنة'), findsWidgets);
     expect(find.text('الجهاز غير مربوط بعد'), findsNothing);
@@ -262,6 +267,11 @@ void main() {
     );
     await session.login('owner', 'password');
     await tester.pumpWidget(PicPosAdminApp(settings: PicPosAppSettings(), session: session));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('admin.appPinSetup')), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('admin.appPinSetup')), '1234');
+    await tester.enterText(find.byKey(const Key('admin.appPinConfirm')), '1234');
+    await tester.tap(find.byKey(const Key('admin.appPinSave')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('المزيد'));
     await tester.pumpAndSettle();

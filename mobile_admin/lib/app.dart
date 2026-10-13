@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:picpos_api_client/picpos_api_client.dart';
 import 'package:picpos_ui/picpos_ui.dart';
 import 'package:picpos_device/picpos_device.dart';
 
 import 'admin_session.dart';
+import 'app_lock.dart';
 import 'l10n/strings.dart';
 import 'screens/onboarding_screen.dart';
 import 'shell/admin_shell.dart';
@@ -70,6 +72,8 @@ class _RootState extends State<_Root> {
     try {
       await _session.restore();
       if (_session.loggedIn) await _session.refresh();
+    } on ApiError catch (error) {
+      if (mounted) setState(() => _restoreError = error.code);
     } on Exception catch (error) {
       if (mounted) setState(() => _restoreError = '$error');
     }
@@ -88,16 +92,21 @@ class _RootState extends State<_Root> {
 
   @override
   Widget build(BuildContext context) {
-    return (widget.startInShell && !_session.paired) || (_preview && !_session.paired) || _session.loggedIn
-        ? AdminShell(
-            session: _session,
-            initialIndex: widget.initialDestination,
-            onOpenPairing: () => setState(() => _preview = false),
-          )
-        : OnboardingScreen(
-            session: _session,
-            initialError: _restoreError,
-            onPreview: () => setState(() => _preview = true),
-          );
+    final shell = AdminShell(
+      session: _session,
+      initialIndex: widget.initialDestination,
+      onOpenPairing: () => setState(() => _preview = false),
+    );
+    if (widget.startInShell || (_preview && !_session.paired)) {
+      return shell;
+    }
+    if (_session.loggedIn) {
+      return AppLockGate(session: _session, child: shell);
+    }
+    return OnboardingScreen(
+      session: _session,
+      initialError: _restoreError,
+      onPreview: () => setState(() => _preview = true),
+    );
   }
 }

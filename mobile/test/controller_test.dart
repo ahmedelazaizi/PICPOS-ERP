@@ -1,13 +1,25 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:picpos_van/data/local_store.dart';
 import 'package:picpos_van/domain/sale_math.dart';
 import 'package:picpos_van/l10n/strings.dart';
+import 'package:picpos_van/security/offline_pin_verifier.dart';
 import 'package:picpos_van/state/app_controller.dart';
 
 import 'support/fakes.dart';
 
 CartLine water(double q) => CartLine(productGlobalId: 'p1', name: 'water', unitPrice: 2.5, taxRate: 16, quantity: q);
+
+String legacyPinVerifier(String pin, String salt) {
+  List<int> bytes = utf8.encode('$salt:$pin');
+  for (var i = 0; i < 20000; i++) {
+    bytes = sha256.convert(bytes).bytes;
+  }
+  return '$salt:${base64.encode(bytes)}';
+}
 
 void main() {
   test('admin-app code and other server pairing rejections show specific AR/EN messages', () async {
@@ -93,7 +105,7 @@ void main() {
           restarted.login('1234'), throwsA(isA<AppFailure>().having((f) => f.code, 'code', 'pinLocked')));
     });
 
-    test('offline PIN guesses are counted too (the weak path)', () async {
+    test('offline PIN guesses are counted too (the legacy-compatible path)', () async {
       var now = DateTime(2026, 5, 1, 10);
       final (c, api) = await readyController(clock: () => now);
       api.offline = true;
@@ -105,6 +117,61 @@ void main() {
       await c.login('1234'); // correct PIN opens the app offline
       expect(c.loggedIn, isTrue);
     });
+  });
+
+  test('offline PIN verifier follows standard PBKDF2-HMAC-SHA256 encoding', () {
+    const encoded = 'pbkdf2_sha256\$v1\$100000\$MDEyMzQ1Njc4OWFiY2RlZg\$p1GQp5LNWdbZyMOmOxHCdq1EmXK3iG4cLYGcKGBTNm8';
+    final check = OfflinePinVerifier.verify('password', encoded);
+    expect((check.matches, check.requiresUpgrade), (true, false));
+    expect(OfflinePinVerifier.verify('passw0rd', encoded).matches, isFalse);
+  });
+
+  test('new offline PIN verifier is versioned PBKDF2 and rejects a wrong PIN', () async {
+    final (c, api) = await readyController();
+    final stored = await c.store.getKv('pin');
+    expect(stored, startsWith('pbkdf2_sha256\$v1\$100000\$'));
+    expect(OfflinePinVerifier.verify('1234', stored).matches, isTrue);
+    expect(OfflinePinVerifier.verify('0000', stored).matches, isFalse);
+    api.offline = true;
+    await expectLater(c.login('0000'), throwsA(isA<AppFailure>().having((f) => f.code, 'code', 'invalidPin')));
+  });
+
+  test('successful legacy offline PIN login upgrades the verifier without keeping legacy format', () async {
+    final store = MemoryLocalStore();
+    final api = FakeCloudApi();
+    final c = AppController(store: store, api: api);
+    await c.init();
+    await c.pair('http://test', 'ABCDEFGH');
+    await store.setKv('pin', legacyPinVerifier('1234', 'legacy-salt'));
+    api.offline = true;
+
+    await c.login('1234');
+
+    final upgraded = await store.getKv('pin');
+    expect(upgraded, startsWith('pbkdf2_sha256\$v1\$100000\$'));
+    final check = OfflinePinVerifier.verify('1234', upgraded);
+    expect(check.matches, isTrue);
+    expect(check.requiresUpgrade, isFalse);
+  });
+
+  test('outbox sync preserves creation order across document kinds', () async {
+    final (c, api) = await readyController();
+    await c.store.addOutbox(OutboxEntry(
+      globalId: 'earlier-sale',
+      kind: 'sales_invoice',
+      createdAt: DateTime(2026, 5, 1, 10),
+      payload: {'globalId': 'earlier-sale', 'kind': 'sales_invoice'},
+    ));
+    await c.store.addOutbox(OutboxEntry(
+      globalId: 'later-customer',
+      kind: 'customer',
+      createdAt: DateTime(2026, 5, 1, 11),
+      payload: {'globalId': 'later-customer', 'kind': 'customer'},
+    ));
+
+    await c.syncNow();
+
+    expect(api.pushed.last.map((document) => document['kind']), ['sales_invoice', 'customer']);
   });
 
   test('totals use the shared tax rule (exempt = 0)', () {

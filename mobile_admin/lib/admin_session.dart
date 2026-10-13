@@ -23,8 +23,13 @@ class AdminSession extends ChangeNotifier {
   String? username;
   String? displayName;
   Uri? serverUrl;
+  static const localPinKey = 'admin.localPinVerifier';
+
+  bool? _localPinConfigured;
+
   bool get paired => client != null;
   bool get loggedIn => client?.credentials.sessionToken != null;
+  bool get localPinConfigured => _localPinConfigured == true;
 
   CloudManageClient _client(
     Uri url, [
@@ -58,8 +63,41 @@ class AdminSession extends ChangeNotifier {
     );
     username = await secrets.read('admin.username');
     displayName = await secrets.read('admin.displayName');
+    _localPinConfigured = await _hasStoredLocalPin();
     serverUrl = Uri.parse(url);
     notifyListeners();
+  }
+
+  Future<bool> _hasStoredLocalPin() async {
+    final verifier = await secrets.read(localPinKey);
+    return verifier != null && verifier.startsWith('pbkdf2\$');
+  }
+
+  Future<bool> hasLocalPin() async {
+    _localPinConfigured = await _hasStoredLocalPin();
+    return _localPinConfigured!;
+  }
+
+  Future<void> setLocalPin(String pin) async {
+    final normalized = _normalizePin(pin);
+    if (normalized == null) {
+      throw const FormatException('invalid_app_pin');
+    }
+    await secrets.write(localPinKey, await hashMobilePassword(normalized));
+    _localPinConfigured = true;
+    notifyListeners();
+  }
+
+  Future<bool> verifyLocalPin(String pin) async {
+    final normalized = _normalizePin(pin);
+    final stored = await secrets.read(localPinKey);
+    if (normalized == null || stored == null) return false;
+    return verifyMobilePassword(normalized, stored);
+  }
+
+  String? _normalizePin(String pin) {
+    final normalized = normalizeCredential(pin);
+    return RegExp(r'^\d{4,6}$').hasMatch(normalized) ? normalized : null;
   }
 
   /// Manual pairing (no QR) receives the signing key from the cloud, which the
@@ -86,16 +124,24 @@ class AdminSession extends ChangeNotifier {
     );
     if (offer.desktopSigningKey != null &&
         offer.desktopSigningKey != paired.desktopSigningKey) {
+      try {
+        await api.unpair();
+      } on Object {
+        // Best effort: the office computer can still revoke the device.
+      }
       throw const FormatException('desktop_signing_key_mismatch');
     }
     final key = offer.desktopSigningKey ?? paired.desktopSigningKey;
-    final candidate = PayloadVerifier.fromBase64(key); // also validates the encoding
+    final candidate = PayloadVerifier.fromBase64(
+      key,
+    ); // also validates the encoding
     if (offer.desktopSigningKey == null) {
       final fingerprint = await signingKeyFingerprint(key);
       final accepted = confirmKey != null && await confirmKey(fingerprint);
       if (!accepted) {
         try {
-          await api.unpair(); // do not leave a device paired to a key nobody vouched for
+          await api
+              .unpair(); // do not leave a device paired to a key nobody vouched for
         } on Object {
           // best effort: the office computer can still revoke the device
         }
@@ -120,8 +166,19 @@ class AdminSession extends ChangeNotifier {
 
   Future<void> login(String user, String password, {String? totp}) async {
     final api = client!;
+    final normalizedTotp = totp == null || totp.trim().isEmpty
+        ? null
+        : normalizeCredential(totp);
+    if (normalizedTotp != null &&
+        !RegExp(r'^\d{6}$').hasMatch(normalizedTotp)) {
+      throw const FormatException('invalid_totp');
+    }
     try {
-      final signedIn = await api.login(username: user, password: password, totp: totp);
+      final signedIn = await api.login(
+        username: user,
+        password: password,
+        totp: normalizedTotp,
+      );
       await secrets.write('admin.username', signedIn.user.username);
       await secrets.write('admin.displayName', signedIn.user.displayName);
       await secrets.write('admin.sessionToken', api.credentials.sessionToken!);
@@ -130,9 +187,22 @@ class AdminSession extends ChangeNotifier {
       notifyListeners();
       await refresh();
     } on ApiError catch (error) {
-      if (error.kind == ApiErrorKind.deviceRevoked) await wipe();
+      if (error.kind == ApiErrorKind.deviceRevoked) {
+        await wipe();
+      } else if (error.kind == ApiErrorKind.unauthorized) {
+        await clearSession();
+      }
       rethrow;
     }
+  }
+
+  /// Clears authenticated state while retaining the device pairing.
+  Future<void> clearSession() async {
+    final api = client;
+    if (api != null) api.credentials = api.credentials.signedOut();
+    snapshots = null;
+    await secrets.delete('admin.sessionToken');
+    notifyListeners();
   }
 
   Future<void> refresh() async {
@@ -141,7 +211,11 @@ class AdminSession extends ChangeNotifier {
       snapshots = await client!.verifiedSnapshots(verifier!);
       notifyListeners();
     } on ApiError catch (error) {
-      if (error.kind == ApiErrorKind.deviceRevoked) await wipe();
+      if (error.kind == ApiErrorKind.deviceRevoked) {
+        await wipe();
+      } else if (error.kind == ApiErrorKind.unauthorized) {
+        await clearSession();
+      }
       rethrow;
     }
   }
@@ -185,6 +259,7 @@ class AdminSession extends ChangeNotifier {
       'admin.username',
       'admin.displayName',
       'admin.sessionToken',
+      localPinKey,
     ]) {
       await secrets.delete(key);
     }
@@ -194,6 +269,7 @@ class AdminSession extends ChangeNotifier {
     username = null;
     displayName = null;
     serverUrl = null;
+    _localPinConfigured = false;
     notifyListeners();
   }
 }

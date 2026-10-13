@@ -187,7 +187,7 @@ void main() {
       expect(await c.syncNow(), isFalse);
       expect((c.session, c.lastSyncError), (null, 'sessionRequired'));
       expect(await c.syncNow(), isFalse);
-      c.signOut();
+      await c.signOut();
       expect(c.loggedIn, isFalse);
     });
 
@@ -197,7 +197,7 @@ void main() {
       final bg = BackgroundSync(c, s);
       await Future<void>.delayed(Duration.zero);
       expect(s.started, isTrue);
-      c.signOut();
+      await c.signOut();
       expect(s.started, isFalse);
       bg.dispose();
     });

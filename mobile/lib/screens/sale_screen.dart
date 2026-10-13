@@ -25,6 +25,7 @@ class _SaleScreenState extends State<SaleScreen> {
   final List<CartLine> _cart = [];
   bool _credit = false;
   bool _busy = false;
+  final _priceRevisions = <String, int>{};
 
   /// J3 — the sale's customer; «حفظ كعميل دائم» switches it to the new one.
   late String _customerGid = widget.customerGlobalId;
@@ -92,9 +93,12 @@ class _SaleScreenState extends State<SaleScreen> {
     });
   }
 
-  /// Quantity change re-resolves the price (price-list quantity tiers).
+  /// Quantity changes apply immediately; only the latest price lookup may win.
   Future<void> _setQty(CartLine l, double q) async {
     final c = AppScope.of(context);
+    final productId = l.productGlobalId;
+    final revision = (_priceRevisions[productId] ?? 0) + 1;
+    _priceRevisions[productId] = revision;
     if (q <= 0) {
       setState(() {
         _cart.remove(l);
@@ -102,11 +106,14 @@ class _SaleScreenState extends State<SaleScreen> {
       });
       return;
     }
-    final p = await c.product(l.productGlobalId);
-    final price = p == null ? null : await c.unitPriceFor(p, _customerGid, q);
-    if (!mounted) return;
     setState(() {
       l.quantity = q;
+      if (!_credit) _paid.text = money(_totals.total);
+    });
+    final p = await c.product(productId);
+    final price = p == null ? null : await c.unitPriceFor(p, _customerGid, q);
+    if (!mounted || _priceRevisions[productId] != revision || !_cart.contains(l)) return;
+    setState(() {
       if (price != null) l.unitPrice = price.price;
       if (!_credit) _paid.text = money(_totals.total);
     });

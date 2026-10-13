@@ -69,18 +69,30 @@ abstract final class S {
     'openPairing': ('فتح شاشة الربط', 'Open pairing screen'),
     'accountDevice': ('الحساب والجهاز', 'Account & device'),
     'boundUser': ('المستخدم', 'User'),
-    'boundToUser': ('هذا الجوال مربوط بالمستخدم {user}', 'This phone is paired to {user}'),
+    'boundToUser': (
+      'هذا الجوال مربوط بالمستخدم {user}',
+      'This phone is paired to {user}',
+    ),
     'unknownUser': ('مستخدم غير معروف', 'Unknown user'),
     'pairedStatus': ('الجهاز مربوط', 'Device paired'),
     'logout': ('تسجيل الخروج', 'Sign out'),
-    'logoutWarning': ('سيتم تسجيل خروجك مع بقاء الجهاز مربوطاً بهذا المستخدم.',
-        'You will be signed out; this phone will remain paired to this user.'),
-    'switchUserUnpair': ('تبديل المستخدم / فك ربط الجهاز', 'Switch user / unpair device'),
+    'logoutWarning': (
+      'سيتم تسجيل خروجك مع بقاء الجهاز مربوطاً بهذا المستخدم.',
+      'You will be signed out; this phone will remain paired to this user.',
+    ),
+    'switchUserUnpair': (
+      'تبديل المستخدم / فك ربط الجهاز',
+      'Switch user / unpair device',
+    ),
     'unpairDevice': ('فك ربط الجهاز', 'Unpair device'),
-    'unpairWarning': ('سيُحذف الربط من هذا الجوال. للدخول بمستخدم آخر، ستحتاج رمز ربط جديداً من جهاز المكتب: ربط التطبيقات والأجهزة ← تطبيق الإدارة ← ربط جوال.',
-        'Pairing will be removed from this phone. To use another account, get a new pairing code on the office computer: Link apps & devices → Admin app → Pair phone.'),
-    'revokeOnDesktop': ('تعذّر إلغاء الربط على الخادم. ألغِ الجهاز من جهاز المكتب عند عودة الاتصال.',
-        'Could not revoke on the server. Revoke this device from the office computer when connected.'),
+    'unpairWarning': (
+      'سيُحذف الربط من هذا الجوال. للدخول بمستخدم آخر، ستحتاج رمز ربط جديداً من جهاز المكتب: ربط التطبيقات والأجهزة ← تطبيق الإدارة ← ربط جوال.',
+      'Pairing will be removed from this phone. To use another account, get a new pairing code on the office computer: Link apps & devices → Admin app → Pair phone.',
+    ),
+    'revokeOnDesktop': (
+      'تعذّر إلغاء الربط على الخادم. ألغِ الجهاز من جهاز المكتب عند عودة الاتصال.',
+      'Could not revoke on the server. Revoke this device from the office computer when connected.',
+    ),
     'cancel': ('إلغاء', 'Cancel'),
     'keyFingerprintTitle': ('تأكيد مفتاح التوقيع', 'Confirm the signing key'),
     'keyFingerprintBody': (
@@ -88,7 +100,10 @@ abstract final class S {
       'Compare this fingerprint with the one shown in the office program (Link apps & devices). If they differ, do not continue.',
     ),
     'keyFingerprintMatches': ('البصمة مطابقة', 'It matches'),
-    'signing_key_not_confirmed': ('لم يُؤكَّد مفتاح التوقيع — أُلغي الربط', 'Signing key not confirmed — pairing cancelled'),
+    'signing_key_not_confirmed': (
+      'لم يُؤكَّد مفتاح التوقيع — أُلغي الربط',
+      'Signing key not confirmed — pairing cancelled',
+    ),
     'about': ('حول التطبيق', 'About'),
     'version': ('الإصدار {v}', 'Version {v}'),
     'pairTitle': ('ربط هذا الجوال', 'Pair this phone'),
@@ -125,6 +140,31 @@ abstract final class S {
     'signIn': ('تسجيل الدخول', 'Sign in'),
     'username': ('اسم المستخدم', 'Username'),
     'mobilePassword': ('كلمة مرور الجوال', 'Mobile password'),
+    'totpOptional': ('رمز التحقق (اختياري)', 'Authenticator code (optional)'),
+    'appPinSetupTitle': ('إعداد رمز قفل التطبيق', 'Set an app lock PIN'),
+    'appPinSetupBody': (
+      'أنشئ رمزاً محلياً من 4 إلى 6 أرقام لحماية التطبيق. لا يُحفظ إلا مُتحقّق الرمز في التخزين الآمن',
+      'Create a local 4–6 digit PIN to protect the app. Only its verifier is stored in secure storage.',
+    ),
+    'appPinLockedTitle': ('التطبيق مقفل', 'App locked'),
+    'appPinLockedBody': (
+      'أدخل رمز قفل التطبيق للمتابعة.',
+      'Enter your app lock PIN to continue.',
+    ),
+    'appPin': ('رمز قفل التطبيق', 'App PIN'),
+    'confirmAppPin': ('تأكيد رمز القفل', 'Confirm PIN'),
+    'saveAppPin': ('حفظ رمز القفل', 'Save PIN'),
+    'unlockApp': ('فتح التطبيق', 'Unlock app'),
+    'app_pin_mismatch': ('رمزا القفل غير متطابقين', 'PINs do not match'),
+    'incorrect_app_pin': ('رمز قفل التطبيق غير صحيح', 'Incorrect app PIN'),
+    'invalid_app_pin': (
+      'رمز القفل يجب أن يكون من 4 إلى 6 أرقام',
+      'PIN must contain 4–6 digits',
+    ),
+    'invalid_totp': (
+      'رمز التحقق يجب أن يكون 6 أرقام',
+      'Authenticator code must contain 6 digits',
+    ),
     'requestFailed': ('تعذّر إكمال الطلب', 'Request failed'),
     'invalid_credentials': (
       'اسم المستخدم أو كلمة مرور الجوال غير صحيحة',
@@ -144,7 +184,10 @@ abstract final class S {
       'محاولات كثيرة — انتظر ثم أعد المحاولة',
       'Too many attempts — wait and try again',
     ),
-    'retrySeconds': ('انتظر {seconds} ثانية ثم أعد المحاولة', 'Wait {seconds} seconds and try again'),
+    'retrySeconds': (
+      'انتظر {seconds} ثانية ثم أعد المحاولة',
+      'Wait {seconds} seconds and try again',
+    ),
     'refresh': ('تحديث', 'Refresh'),
     'asOf': ('آخر تحديث', 'As of'),
     'staleSnapshot': ('بيانات قديمة', 'Stale data'),
@@ -158,12 +201,24 @@ abstract final class S {
 
   static Tr of(BuildContext context) => Tr.of(context, table);
 
-  static String errorText(BuildContext context, String code, {Duration? retryAfter}) {
+  static String errorText(
+    BuildContext context,
+    String code, {
+    Duration? retryAfter,
+  }) {
     final t = of(context);
     final message = switch (code) {
-      'invalid_credentials' || 'user_locked' || 'mobile_access_denied' ||
-      'invalid_code' || 'code_expired' || 'too_many_attempts' ||
-      'signing_key_not_confirmed' => t(code),
+      'invalid_credentials' ||
+      'user_locked' ||
+      'mobile_access_denied' ||
+      'invalid_code' ||
+      'code_expired' ||
+      'too_many_attempts' ||
+      'signing_key_not_confirmed' ||
+      'invalid_totp' ||
+      'app_pin_mismatch' ||
+      'incorrect_app_pin' ||
+      'invalid_app_pin' => t(code),
       _ => code,
     };
     if (retryAfter == null ||

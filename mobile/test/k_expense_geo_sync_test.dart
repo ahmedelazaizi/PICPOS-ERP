@@ -324,9 +324,11 @@ void main() {
       await again.init();
       expect(again.session, 'session');
       expect(again.loggedIn, isFalse); // the UI still asks for the PIN
-      again.signOut();
-      await Future<void>.delayed(Duration.zero);
+      await again.signOut();
       expect(await store.getKv('session'), isNull);
+      final worker = AppController(store: store, api: api);
+      await worker.init();
+      expect(worker.session, isNull);
     });
 
     test('worker pushes pending documents then pulls, exactly once per document', () async {

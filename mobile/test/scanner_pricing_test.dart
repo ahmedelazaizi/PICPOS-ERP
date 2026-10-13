@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -20,6 +21,26 @@ class MapSecrets implements SecretStore {
   Future<void> write(String key, String value) async => m[key] = value;
   @override
   Future<void> delete(String key) async => m.remove(key);
+}
+
+class TierGateStore extends MemoryLocalStore {
+  Future<void>? tierReadGate;
+
+  @override
+  Future<List<Map<String, Object?>>> all(String kind) async {
+    if (kind == Kinds.priceLists) await tierReadGate;
+    return super.all(kind);
+  }
+}
+
+Future<(AppController, TierGateStore)> readyTierGateController() async {
+  final store = TierGateStore();
+  final api = FakeCloudApi();
+  final controller = AppController(store: store, api: api, clock: () => DateTime(2026, 5, 1, 10));
+  await controller.init();
+  await controller.pair('http://test', 'ABCDEFGH');
+  await controller.login('1234');
+  return (controller, store);
 }
 
 Future<void> openSale(WidgetTester tester, CameraScan camera) async {
@@ -89,6 +110,33 @@ void main() {
       await c.createSale(customerGlobalId: 'c2', lines: [line('p1', 2.0, 1)], paid: 0);
     });
 
+    testWidgets('rapid quantity taps keep every update while tier prices resolve', (tester) async {
+      final (c, store) = await readyTierGateController();
+      await tester.pumpWidget(PicposVanApp(controller: c));
+      await tester.pumpAndSettle();
+      tester.state<NavigatorState>(find.byType(Navigator)).push(MaterialPageRoute<void>(
+            builder: (_) => const SaleScreen(customerGlobalId: 'c2'),
+          ));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byKey(const Key('barcode')), '6251234567890');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('1 × 2.50'), findsOneWidget);
+
+      final gate = Completer<void>();
+      store.tierReadGate = gate.future;
+      final add = find.byIcon(Icons.add_circle_outline);
+      await tester.tap(add);
+      await tester.tap(add);
+      await tester.pump();
+      expect(find.textContaining('3 × 2.50'), findsOneWidget);
+
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(find.textContaining('3 × 2.50'), findsOneWidget);
+    });
+
     test('tax-inclusive company: tax extracted, total = price × qty (server example)', () async {
       final (c, _) = await readyController();
       await c.applyServerPayload({
@@ -106,13 +154,19 @@ void main() {
   });
 
   group('database key (Android Keystore via flutter_secure_storage)', () {
-    test('256-bit key created once, then reused; malformed value replaced', () async {
+    test('256-bit key is created once and reused without replacing malformed storage', () async {
       final secrets = MapSecrets();
       final k1 = await DatabaseKey(secrets, random: Random(1)).obtain();
       expect(k1, matches(RegExp(r'^[0-9a-f]{64}$')));
       expect(await DatabaseKey(secrets, random: Random(2)).obtain(), k1);
       secrets.m[DatabaseKey.storageKey] = 'short';
-      expect(await DatabaseKey(secrets, random: Random(3)).obtain(), isNot(anyOf('short', k1)));
+
+      await expectLater(
+        DatabaseKey(secrets, random: Random(3)).obtain(),
+        throwsA(isA<DatabaseKeyException>().having(
+            (error) => error.message, 'message', allOf(contains('64'), contains('hexadecimal'), contains('Refusing')))),
+      );
+      expect(secrets.m[DatabaseKey.storageKey], 'short');
     });
   });
 }

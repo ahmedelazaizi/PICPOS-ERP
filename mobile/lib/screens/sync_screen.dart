@@ -78,7 +78,13 @@ class SyncScreen extends StatelessWidget {
                             style: TextStyle(color: cs.error)),
                       ),
                     if (c.lastSyncError == 'sessionRequired')
-                      TextButton(key: const Key('signInAgain'), onPressed: c.signOut, child: Text(s.t('login'))),
+                      TextButton(
+                        key: const Key('signInAgain'),
+                        onPressed: () async {
+                          await c.signOut();
+                        },
+                        child: Text(s.t('login')),
+                      ),
                     const SizedBox(height: 12),
                     FilledButton.icon(
                       key: const Key('syncNow'),

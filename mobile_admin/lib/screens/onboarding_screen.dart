@@ -27,6 +27,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _offer = TextEditingController();
   final _username = TextEditingController();
   final _password = TextEditingController();
+  final _totp = TextEditingController();
   bool _busy = false;
   String? _error;
 
@@ -38,7 +39,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   void dispose() {
-    for (final controller in [_url, _code, _offer, _username, _password]) {
+    for (final controller in [
+      _url,
+      _code,
+      _offer,
+      _username,
+      _password,
+      _totp,
+    ]) {
       controller.dispose();
     }
     super.dispose();
@@ -92,6 +100,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return ok ?? false;
   }
 
+  Future<void> _login() async {
+    final totp = normalizeCredential(_totp.text);
+    if (totp.isNotEmpty && !RegExp(r'^\d{6}$').hasMatch(totp)) {
+      throw const FormatException('invalid_totp');
+    }
+    await widget.session.login(
+      _username.text.trim(),
+      _password.text,
+      totp: totp.isEmpty ? null : totp,
+    );
+  }
+
   Future<void> _run(Future<void> Function() action) async {
     setState(() {
       _busy = true;
@@ -103,7 +123,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (mounted) setState(() => _error = S.errorText(context, error.message));
     } on ApiError catch (error) {
       if (mounted) {
-        setState(() => _error = S.errorText(context, error.code, retryAfter: error.retryAfter));
+        setState(
+          () => _error = S.errorText(
+            context,
+            error.code,
+            retryAfter: error.retryAfter,
+          ),
+        );
       }
     } on Exception catch (error) {
       if (mounted) setState(() => _error = '$error');
@@ -143,14 +169,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 ? Column(
                                     children: [
                                       Text(
-                                        t('boundToUser', {'user': widget.session.displayName ?? widget.session.username ?? t('unknownUser')}),
+                                        t('boundToUser', {
+                                          'user':
+                                              widget.session.displayName ??
+                                              widget.session.username ??
+                                              t('unknownUser'),
+                                        }),
                                       ),
                                       TextField(
                                         key: const Key('admin.username'),
                                         controller: _username,
                                         textDirection: TextDirection.ltr,
-                                        keyboardType: TextInputType.visiblePassword,
-                                        textCapitalization: TextCapitalization.none,
+                                        keyboardType:
+                                            TextInputType.visiblePassword,
+                                        textCapitalization:
+                                            TextCapitalization.none,
                                         autocorrect: false,
                                         enableSuggestions: false,
                                         decoration: InputDecoration(
@@ -161,7 +194,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         key: const Key('admin.password'),
                                         controller: _password,
                                         obscureText: true,
-                                        keyboardType: TextInputType.visiblePassword,
+                                        keyboardType:
+                                            TextInputType.visiblePassword,
                                         textDirection: TextDirection.ltr,
                                         autocorrect: false,
                                         enableSuggestions: false,
@@ -169,22 +203,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                           labelText: t('mobilePassword'),
                                         ),
                                       ),
+                                      TextField(
+                                        key: const Key('admin.totp'),
+                                        controller: _totp,
+                                        keyboardType: TextInputType.number,
+                                        textDirection: TextDirection.ltr,
+                                        maxLength: 6,
+                                        decoration: InputDecoration(
+                                          labelText: t('totpOptional'),
+                                        ),
+                                      ),
+
                                       const SizedBox(height: PicPosSpacing.md),
                                       FilledButton(
                                         key: const Key('admin.login'),
                                         onPressed: _busy
                                             ? null
-                                            : () => _run(
-                                                () => widget.session.login(
-                                                  _username.text.trim(),
-                                                  _password.text,
-                                                ),
-                                              ),
+                                            : () => _run(_login),
                                         child: Text(t('signIn')),
                                       ),
                                       TextButton(
                                         key: const Key('admin.unpair'),
-                                        onPressed: _busy ? null : () => confirmUnpair(context, widget.session),
+                                        onPressed: _busy
+                                            ? null
+                                            : () => confirmUnpair(
+                                                context,
+                                                widget.session,
+                                              ),
                                         child: Text(t('unpairDevice')),
                                       ),
                                     ],
@@ -201,14 +246,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         autocorrect: false,
                                         decoration: InputDecoration(
                                           labelText: t('serverUrl'),
-                                          hintText: 'https://',
+                                          hintText: 'https:',
                                         ),
                                       ),
                                       TextField(
                                         key: const Key('admin.code'),
                                         controller: _code,
                                         textDirection: TextDirection.ltr,
-                                        textCapitalization: TextCapitalization.characters,
+                                        textCapitalization:
+                                            TextCapitalization.characters,
                                         autocorrect: false,
                                         decoration: InputDecoration(
                                           labelText: t('pairingCode'),
