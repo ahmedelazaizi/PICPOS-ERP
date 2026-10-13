@@ -11150,5 +11150,13 @@
   "في الفترة المختارة": "In the selected period",
   "لا توجد بيانات استهلاك في المدى المحدد": "No consumption data in the selected range",
   "لا توجد منتجات auto-deplete مبيعة في المدى المحدد": "No auto-deplete products sold in the selected range",
-  "مستحق الدفع": "Payable"
+  "مستحق الدفع": "Payable",
+  "الرمز / الباركود": "Code / barcode",
+  "الحد الأدنى: {p0} · نقص {p1}": "Minimum: {p0} · shortage {p1}",
+  "تسوية حساب شركة توصيل: {p0}\n{p1}": "Delivery company account settlement: {p0}\n{p1}",
+  "نسبة {p0}": "Rate {p0}",
+  "فاتورة مبيعات {p0}": "Sales invoice {p0}",
+  "فاتورة مشتريات {p0}": "Purchase invoice {p0}",
+  "التصدير غير متاح على هذا الجهاز": "Export is unavailable on this device",
+  "تعذّر تصدير التقرير": "Could not export report"
 }

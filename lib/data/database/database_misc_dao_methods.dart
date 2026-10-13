@@ -234,6 +234,22 @@ extension AppDatabaseMiscDaoMethods on AppDatabase {
     return map;
   }
 
+  /// Gets summed stock for several warehouses with one grouped SQL query.
+  Future<Map<int, double>> getWarehouseStockMapForWarehouses(
+      List<int> warehouseIds) async {
+    if (warehouseIds.isEmpty) return {};
+    final totalQuantity = inventoryBalances.quantity.sum();
+    final query = selectOnly(inventoryBalances)
+      ..addColumns([inventoryBalances.productId, totalQuantity])
+      ..where(inventoryBalances.warehouseId.isIn(warehouseIds))
+      ..groupBy([inventoryBalances.productId]);
+    final rows = await query.get();
+    return {
+      for (final row in rows)
+        row.read(inventoryBalances.productId)!: row.read(totalQuantity) ?? 0.0,
+    };
+  }
+
   /// Get journal entry lines with account info (code + name) for display.
   /// PostgreSQL-compatible: uses Drift selectOnly + join.
   Future<List<Map<String, dynamic>>> getJournalEntryLinesWithAccounts(int entryId) async {

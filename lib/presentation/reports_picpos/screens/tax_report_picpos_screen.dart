@@ -13,6 +13,8 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../../widgets/branch_warehouse_filter.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;
+import '../../screens/reports/report_export_guard.dart';
+import 'picpos_report_export.dart';
 
 /// Pure accounting rule shared by the report UI and its focused test.
 double salesTaxNet(double outputTax, double inputTax) => outputTax - inputTax;
@@ -77,8 +79,15 @@ class _TaxReportPicposScreenState extends ConsumerState<TaxReportPicposScreen> {
       subtitle: tr('الضرائب المحصلة والمدفوعة وصافي الالتزام'),
       icon: PhosphorIconsBold.percent,
       headerActions: [
+        buildReportExportAction(onExport: _exportToExcel),
         IconButton(tooltip: tr('تحديث'), icon: const Icon(PhosphorIconsBold.arrowClockwise), onPressed: _load),
-        IconButton(tooltip: tr('توضيح صافي الضريبة'), icon: const Icon(PhosphorIconsBold.info), onPressed: () => setState(() => _explanationOpen = !_explanationOpen)),
+        IconButton(
+          constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+          visualDensity: VisualDensity.compact,
+          tooltip: tr('توضيح صافي الضريبة'),
+          icon: const Icon(PhosphorIconsBold.info, size: 18),
+          onPressed: () => setState(() => _explanationOpen = !_explanationOpen),
+        ),
       ],
       subHeader: PicPosFilterStrip(children: [
         PicPosFilterPill(icon: PhosphorIconsBold.calendarBlank, label: '${_date(_from)} → ${_date(_to)}', tabular: true, onTap: _pickRange),
@@ -125,6 +134,48 @@ class _TaxReportPicposScreenState extends ConsumerState<TaxReportPicposScreen> {
   Widget _purchaseSection() => Padding(padding: const EdgeInsets.only(top: 12), child: PicPosContentCard(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Padding(padding: const EdgeInsets.all(14), child: Text(tr('تفاصيل ضريبة المشتريات (مدخلات)'), style: const TextStyle(fontWeight: FontWeight.bold))), if (_purchases.isEmpty) Padding(padding: const EdgeInsets.all(14), child: Text(tr('لا توجد بيانات'), style: TextStyle(color: context.picposMuted))) else SizedBox(height: _purchases.length * 62.0 + 4, child: ListView.builder(itemCount: _purchases.length, itemBuilder: (context, i) { final p = _purchases[i]; return ListTile(dense: true, leading: const Icon(PhosphorIconsBold.shoppingCart, color: AppColors.error), title: Text(p.invoice.invoiceNumber), subtitle: Text(p.supplierName ?? tr('غير محدد')), trailing: Text(_money(p.invoice.tax), style: const TextStyle(fontWeight: FontWeight.bold))); }))])));
 
   Widget _line(String label, String value, {bool bold = false}) => Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontWeight: bold ? FontWeight.bold : null, color: context.picposText)), Text(value, style: TextStyle(fontWeight: bold ? FontWeight.bold : null, color: context.picposText))]));
+  Future<void> _exportToExcel() async {
+    final data = _data;
+    if (data == null) {
+      await exportPicPosReport(
+        context: context,
+        ref: ref,
+        title: tr('تقرير ضريبة المبيعات'),
+        headers: [tr('البند'), tr('القيمة')],
+        rows: const [],
+        periodFrom: _from,
+        periodTo: _to,
+        branchId: _branchId,
+        scopedBranchIds: _allowedBranches,
+      );
+      return;
+    }
+    final rows = <List<dynamic>>[
+      [tr('إجمالي المبيعات (بدون الضريبة)'), _num(data['salesTotalExclTax'])],
+      [tr('ضريبة المخرجات'), _num(data['salesTax'])],
+      [tr('إجمالي المشتريات (بدون الضريبة)'), _num(data['purchaseTotalExclTax'])],
+      [tr('ضريبة المدخلات'), _num(data['purchaseTax'])],
+      [tr('صافي الضريبة'), _num(data['netTax'])],
+      for (final bucket in _rateBuckets)
+        [tr('نسبة {p0}', {'p0': _rate(_num(bucket['taxRate']))}), _num(bucket['taxAmount'])],
+      for (final invoice in _sales.where((sale) => sale.tax > 0))
+        [tr('فاتورة مبيعات {p0}', {'p0': invoice.invoiceNumber}), invoice.tax],
+      for (final purchase in _purchases)
+        [tr('فاتورة مشتريات {p0}', {'p0': purchase.invoice.invoiceNumber}), purchase.invoice.tax],
+    ];
+    await exportPicPosReport(
+      context: context,
+      ref: ref,
+      title: tr('تقرير ضريبة المبيعات'),
+      headers: [tr('البند'), tr('القيمة')],
+      rows: rows,
+      periodFrom: _from,
+      periodTo: _to,
+      branchId: _branchId,
+      scopedBranchIds: _allowedBranches,
+    );
+  }
+
   Future<void> _pickRange() async { final picked = await showDateRangePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 365)), initialDateRange: DateTimeRange(start: _from, end: _to)); if (picked != null) { setState(() { _from = DateRangeFilter.normalizeStart(picked.start); _to = DateRangeFilter.normalizeEnd(picked.end); }); _load(); } }
   double _num(Object? value) => value is num ? value.toDouble() : 0;
   String _money(double value) => '${value.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}';

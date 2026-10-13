@@ -9,11 +9,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:data_table_2/data_table_2.dart';
 import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'report_export_guard.dart';
 import 'report_scaffold.dart';
+import 'inventory_report_table_source.dart';
 
 import '../../../data/providers/providers.dart';
 import '../../widgets/report_components.dart';
@@ -31,11 +33,12 @@ class InventoryReportScreen extends ConsumerStatefulWidget {
 }
 
 class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
-  bool _isLoading = false;
+  bool _isLoading = true;
   InventoryAnalytics? _analytics;
   List<Product> _products = [];
   List<Product> _filteredProducts = [];
   List<Category> _categories = [];
+  Map<int, String> _categoryNameMap = {};
   int? _selectedCategoryId;
   int? _selectedRegionId;
   int? _selectedWarehouseId; // null = all warehouses
@@ -209,13 +212,8 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
       Map<int, double> warehouseStockMap = {};
       if (warehouseIds != null && warehouseIds.isNotEmpty) {
         final branchRepo = ref.read(branchRepositoryProvider);
-        for (final wId in warehouseIds) {
-          final map = await branchRepo.getWarehouseStockMap(wId);
-          for (final entry in map.entries) {
-            warehouseStockMap[entry.key] =
-                (warehouseStockMap[entry.key] ?? 0.0) + entry.value;
-          }
-        }
+        warehouseStockMap =
+            await branchRepo.getWarehouseStockMapForWarehouses(warehouseIds);
       }
 
       // Load base unit names for all products (reuse productRepo from above)
@@ -226,6 +224,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
         _products = products;
         _filteredProducts = products;
         _categories = categories;
+        _categoryNameMap = {for (final c in categories) c.id: c.name};
         _warehouseStockMap = warehouseStockMap;
         _unitMap = unitMap;
       });
@@ -420,8 +419,19 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
                         side: BorderSide(color: Theme.of(context).dividerColor),
                       ),
                       child: SizedBox(
-                        width: double.infinity,
-                        child: DataTable(
+                         height: 1200,
+                         child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SizedBox(
+                              width: 1050,
+                              child: PaginatedDataTable2(
+                        wrapInCard: false,
+                        showFirstLastButtons: true,
+                        rowsPerPage: 25,
+                        availableRowsPerPage: const [25, 50, 100],
+                        dataRowHeight: 44,
+                        headingRowHeight: 44,
+                        minWidth: 1050,
                           columns:  [
                             DataColumn(label: Text(tr('كود الصنف'))),
                             DataColumn(label: Text(tr('اسم الصنف'))),
@@ -433,67 +443,20 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
                             DataColumn(label: Text(tr('سعر البيع'))),
                             DataColumn(label: Text(tr('إجمالي البيع'))),
                           ],
-                          rows: _filteredProducts.map((p) {
-                            // Spec 151 Track-3: use the scoped stock map when a
-                            // warehouse set is in effect (user selection OR auth
-                            // cap); otherwise the global product stock.
-                            final stock = _stockScoped
-                                ? (_warehouseStockMap[p.id] ?? 0.0)
-                                : p.currentStock;
-                            final totalCost = p.costPrice * stock;
-                            final totalSale = p.salePrice * stock;
-                            final isLow = stock <= p.minStock;
-                            final category = _categories
-                                .where((c) => c.id == p.categoryId)
-                                .firstOrNull;
-                            final categoryName = category?.name ?? tr('غير مصنف');
-
-                            return DataRow(
-                              cells: [
-                                DataCell(Text(p.code)),
-                                DataCell(Text(p.name)),
-                                DataCell(
-                                  Text(
-                                    categoryName,
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
-                                    _unitMap[p.id] ?? tr('قطعة'),
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
-                                    stock.toString(),
-                                    style: TextStyle(
-                                      color: isLow ? AppColors.error : null,
-                                      fontWeight: isLow
-                                          ? FontWeight.bold
-                                          : null,
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(_currencyFormat.format(p.costPrice)),
-                                ),
-                                DataCell(
-                                  Text(_currencyFormat.format(totalCost)),
-                                ),
-                                DataCell(
-                                  Text(_currencyFormat.format(p.salePrice)),
-                                ),
-                                DataCell(
-                                  Text(_currencyFormat.format(totalSale)),
-                                ),
-                              ],
-                            );
-                          }).toList(),
-                        ),
+                           // Spec 151 Track-3: use the scoped stock map when a
+                           // warehouse set is in effect (user selection OR auth
+                           // cap); otherwise the global product stock.
+                           source: InventoryReportTableSource(
+                             products: _filteredProducts,
+                             categoryNames: _categoryNameMap,
+                             unitNames: _unitMap,
+                             stockMap: _warehouseStockMap,
+                             stockScoped: _stockScoped,
+                             currencyFormat: _currencyFormat,
+                           ),
+                         ),
+                              ),
+                            ),
                       ),
                     ),
                   ],

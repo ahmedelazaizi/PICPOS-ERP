@@ -72,6 +72,8 @@ abstract class IBranchRepository {
   Future<List<db.Warehouse>> getScopedWarehouses();
 
   Future<Map<int, double>> getWarehouseStockMap(int warehouseId);
+  Future<Map<int, double>> getWarehouseStockMapForWarehouses(
+      List<int> warehouseIds);
 
   /// Get cost center ID for the active branch
   Future<int?> getActiveBranchCostCenterId(int branchId);

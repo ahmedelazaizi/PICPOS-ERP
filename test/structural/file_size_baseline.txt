@@ -117,7 +117,6 @@ lib/presentation/screens/purchase_returns/return_logic.dart 33887
 lib/presentation/screens/purchases/purchase_invoices_controller.dart 32955
 lib/presentation/screens/reports/expenses_report_screen.dart 37256
 lib/presentation/screens/reports/financial_statements_screen.dart 76509
-lib/presentation/screens/reports/inventory_report_screen.dart 31614
 lib/presentation/screens/reports/purchases_report_screen.dart 33046
 lib/presentation/screens/reports/sales_by_classification_report.dart 38067
 lib/presentation/screens/reports/sales_report_screen.dart 63269

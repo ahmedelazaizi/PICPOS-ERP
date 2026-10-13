@@ -17,6 +17,8 @@ import '../../picpos_shell/picpos_surface.dart';
 import '../../widgets/branch_warehouse_filter.dart';
 import '../../widgets/permission_guard.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;
+import '../../screens/reports/report_export_guard.dart';
+import 'picpos_report_export.dart';
 
 /// PicPos fork of delivery operations; repository calls and permission gates are unchanged.
 class DeliveryReportPicposScreen extends ConsumerStatefulWidget {
@@ -62,6 +64,7 @@ class _DeliveryReportPicposScreenState extends ConsumerState<DeliveryReportPicpo
       subtitle: tr('إحصائيات المناديب ورسوم شركات التوصيل'),
       icon: PhosphorIconsBold.moped,
       headerActions: [
+        buildReportExportAction(onExport: _exportToExcel),
         IconButton(tooltip: tr('تحديث'), icon: const Icon(PhosphorIconsBold.arrowClockwise), onPressed: () => setState(() {})),
       ],
       subHeader: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -148,6 +151,44 @@ class _DeliveryReportPicposScreenState extends ConsumerState<DeliveryReportPicpo
           )));
         });
       },
+    );
+  }
+
+  Future<void> _exportToExcel() async {
+    final repo = ref.read(reportingRepositoryProvider);
+    final warehouseIds = _warehouseId == null ? (_branchWarehouses ?? _regionWarehouses) : [_warehouseId!];
+    final data = await repo.getDeliveryReport(
+      from: _from,
+      to: _to,
+      warehouseIds: warehouseIds,
+      allowedBranchIds: _allowedBranches,
+    );
+    if (!mounted) return;
+    await exportPicPosReport(
+      context: context,
+      ref: ref,
+      title: tr('تقرير عمليات التوصيل'),
+      headers: [tr('رقم الفاتورة'), tr('التاريخ'), tr('المندوب'), tr('الشركة'), tr('رسوم التوصيل'), tr('الحالة')],
+      rows: [
+        for (final item in data)
+          () {
+            final invoice = item['invoice'] as SalesInvoiceData;
+            final courier = item['courier'] as Courier?;
+            final company = item['company'] as DeliveryCompany?;
+            return [
+              invoice.invoiceNumber,
+              DateFormat('yyyy-MM-dd HH:mm').format(invoice.invoiceDate),
+              courier?.name ?? tr('غير محدد'),
+              company?.name ?? tr('بدون شركة'),
+              invoice.deliveryFee,
+              invoice.deliveryStatus ?? 'pending',
+            ];
+          }(),
+      ],
+      periodFrom: _from,
+      periodTo: _to,
+      branchId: _branchId,
+      scopedBranchIds: _allowedBranches,
     );
   }
 

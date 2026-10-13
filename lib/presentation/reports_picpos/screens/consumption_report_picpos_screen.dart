@@ -11,6 +11,8 @@ import '../../picpos_shell/picpos_filter_strip.dart';
 import '../../picpos_shell/picpos_hub_kpi.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_surface.dart';
+import '../../screens/reports/report_export_guard.dart';
+import 'picpos_report_export.dart';
 
 /// PicPos fork of the raw-material consumption report.
 /// Queries, scope resolution, and calculations intentionally match the legacy screen.
@@ -81,6 +83,36 @@ class _ConsumptionReportPicposScreenState
     }
   }
 
+  Future<void> _exportToExcel() async {
+    if (_tabs.index == 0) {
+      final rows = _consumption ?? const <ConsumptionReportRow>[];
+      await exportPicPosReport(
+        context: context,
+        ref: ref,
+        title: tr('تقرير استهلاك الخامات'),
+        headers: [tr('الخامة'), tr('الكمية المستهلكة'), tr('التكلفة'), tr('عدد الفواتير')],
+        rows: [for (final row in rows) [row.name, row.totalQty, row.totalCost, row.invoiceCount]],
+        periodFrom: _from,
+        periodTo: _to,
+        branchId: _branchId,
+        scopedBranchIds: _allowedBranchIds,
+      );
+      return;
+    }
+    final rows = _profitability ?? const <ProfitabilityReportRow>[];
+    await exportPicPosReport(
+      context: context,
+      ref: ref,
+      title: tr('ربحية المنتجات'),
+      headers: [tr('المنتج'), tr('الكمية المباعة'), tr('الإيراد'), tr('تكلفة الخامات'), tr('الربح'), tr('الفواتير')],
+      rows: [for (final row in rows) [row.name, row.qtySold, row.revenue, row.rawCost, row.margin, row.invoiceCount]],
+      periodFrom: _from,
+      periodTo: _to,
+      branchId: _branchId,
+      scopedBranchIds: _allowedBranchIds,
+    );
+  }
+
   Future<void> _pickRange() async {
     final picked = await showDateRangePicker(
       context: context,
@@ -101,6 +133,7 @@ class _ConsumptionReportPicposScreenState
       subtitle: tr('استهلاك الخامات وربحية المنتجات'),
       icon: PhosphorIconsBold.chartLine,
       headerActions: [
+        buildReportExportAction(onExport: _exportToExcel),
         IconButton(
           tooltip: tr('تحديث'),
           icon: const Icon(PhosphorIconsBold.arrowClockwise),

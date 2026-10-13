@@ -64,8 +64,9 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
 
   @override
   void dispose() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
     _searchController.dispose();
-    _removeOverlay();
     super.dispose();
   }
 

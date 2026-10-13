@@ -8,7 +8,9 @@ import '../../../domain/entities/product_entity.dart';
 import '../../picpos_shell/picpos_filter_strip.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_surface.dart';
+import '../../screens/reports/report_export_guard.dart';
 import 'inventory_alert_report_support.dart';
+import 'picpos_report_export.dart';
 
 final lowStockAlertProvider = FutureProvider.autoDispose<List<ProductEntity>>((ref) {
   return ref.watch(productRepositoryProvider).getLowStockProducts();
@@ -36,7 +38,10 @@ class _LowStockReportState extends ConsumerState<LowStockReportPicposScreen> {
       title: tr('أصناف منخفضة المخزون'),
       subtitle: tr('الأصناف تحت حد إعادة الطلب مع مقدار الاحتياج'),
       icon: PhosphorIconsBold.warning,
-      headerActions: [IconButton(onPressed: () => ref.invalidate(lowStockAlertProvider), icon: const Icon(PhosphorIconsBold.arrowClockwise), tooltip: tr('تحديث'))],
+      headerActions: [
+         buildReportExportAction(onExport: _exportToExcel),
+         IconButton(onPressed: () => ref.invalidate(lowStockAlertProvider), icon: const Icon(PhosphorIconsBold.arrowClockwise), tooltip: tr('تحديث')),
+       ],
       subHeader: PicPosFilterStrip(children: [
         SizedBox(width: 240, height: 40, child: TextField(decoration: InputDecoration(hintText: tr('بحث بالاسم أو الباركود'), prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16), filled: true, fillColor: context.picposField, border: OutlineInputBorder(borderRadius: BorderRadius.circular(11), borderSide: BorderSide(color: context.picposHairline))), onChanged: (value) => setState(() => _query = value.trim().toLowerCase()))),
         _choice(context, tr('كل المستودعات'), warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(w.name))).toList(), _warehouseId, (value) => setState(() => _warehouseId = value)),
@@ -50,6 +55,35 @@ class _LowStockReportState extends ConsumerState<LowStockReportPicposScreen> {
         if (rows.isEmpty) return inventoryAlertEmpty(tr('لا توجد أصناف منخفضة المخزون'));
         return ListView(children: [InventoryAlertKpis(rows: rows, mode: 'low'), InventoryAlertTable(rows: rows, mode: 'low')]);
       }),
+    );
+  }
+
+  Future<void> _exportToExcel() async {
+    final items = await ref.read(lowStockAlertProvider.future);
+    if (!mounted) return;
+    final filtered = items.where(_matches).toList()
+      ..sort((a, b) => _shortageFirst
+          ? (b.minStock - b.currentStock).compareTo(a.minStock - a.currentStock)
+          : a.name.compareTo(b.name));
+    await exportPicPosReport(
+      context: context,
+      ref: ref,
+      title: tr('أصناف منخفضة المخزون'),
+      headers: [tr('المنتج'), tr('الرمز / الباركود'), tr('الكمية'), tr('الحد / النقص'), tr('قيمة التكلفة')],
+      rows: [
+        for (final product in filtered)
+          [
+            product.name,
+            product.barcode ?? product.code,
+            product.currentStock,
+            tr('الحد الأدنى: {p0} · نقص {p1}', {
+              'p0': product.minStock.toStringAsFixed(2),
+              'p1': (product.minStock - product.currentStock).toStringAsFixed(2),
+            }),
+            product.currentStock * product.costPrice,
+          ],
+      ],
+      scopedBranchIds: null,
     );
   }
 

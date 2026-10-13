@@ -258,6 +258,11 @@ class BranchRepositoryImpl implements IBranchRepository {
   Future<Map<int, double>> getWarehouseStockMap(int warehouseId) => _db.getWarehouseStockMap(warehouseId);
 
   @override
+  Future<Map<int, double>> getWarehouseStockMapForWarehouses(
+          List<int> warehouseIds) =>
+      _db.getWarehouseStockMapForWarehouses(warehouseIds);
+
+  @override
   Future<int?> getActiveBranchCostCenterId(int branchId) async {
     final branch = await _db.getBranchById(branchId);
     return branch?.costCenterId;
