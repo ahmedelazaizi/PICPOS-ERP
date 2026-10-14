@@ -5,12 +5,9 @@
 // test/integration/cloud_sync_i3_test.dart دون تعديل ذلك الملف.)
 //
 // يُشغَّل: flutter test test/e2e من الجذر (يحتاج Docker Postgres على 55432 وdart في PATH).
-import 'dart:convert';
-import 'dart:io';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/database/sync_interceptor.dart';
 import 'package:ural_erp/data/mappers/product_mapper.dart';
@@ -27,10 +24,8 @@ import 'package:ural_erp/domain/repositories/sales_repository.dart';
 import 'package:ural_erp/domain/repositories/settings_repository.dart';
 import 'package:ural_erp/domain/repositories/treasury_repository.dart';
 import 'package:ural_erp/services/accounting_service.dart';
-import 'package:ural_erp/services/cloud_sync/cloud_document_poster.dart';
 import 'package:ural_erp/services/cloud_sync/cloud_link_api.dart';
 import 'package:ural_erp/services/cloud_sync/cloud_sync_service.dart';
-import 'package:ural_erp/services/invoice_integrity_service.dart';
 import 'package:uuid/uuid.dart';
 import 'support/e2e_cloud.dart';
 
@@ -94,7 +89,8 @@ void main() {
   }
 
   String lease(Map<String, dynamic> boot, String t) {
-    final x = (boot['leases'] as List).firstWhere((l) => l['docType'] == t);
+    final leases = (boot['leases'] as List).cast<Map<String, dynamic>>();
+    final x = leases.firstWhere((l) => l['docType'] == t);
     return '${x['prefix']}${x['nextNumber']}';
   }
 
