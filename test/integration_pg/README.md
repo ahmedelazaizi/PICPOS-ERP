@@ -23,11 +23,13 @@ The orchestrator:
 2. Spawns `postgres:16-alpine` on a free host port.
 3. Polls `pg_isready` (or a TCP probe) up to 30 seconds.
 4. Sets env `PG_TEST_DSN=postgres://postgres:postgres@localhost:<port>/postgres`.
-5. Runs `flutter test test/integration_pg/ --tags pg`.
+5. Runs `flutter test test/integration_pg/ --tags pg --run-skipped --concurrency=1`.
 6. Tears down the container in `try/finally` regardless of test outcome.
 
-Total wall-time target: under 90 seconds (SC-001) on a typical developer
-machine.
+The historical total wall-time goal is under 90 seconds (SC-001). It remains
+unmet: the latest full run passed 82 tests with exit code 0 in 1,664 seconds
+(about 27m44s). Serial concurrency (`--concurrency=1`) remains intentional
+because the fixture resets the shared `public` schema between test files.
 
 ## How a test file is wired
 
