@@ -107,8 +107,9 @@ void main() {
       final r = await h(shelf.Request('GET', Uri.parse('http://x/api/any')));
       expect(r.statusCode, 500);
       final body = await r.readAsString();
-      expect(jsonDecode(body)['error'], 'internal_error');
-      expect(jsonDecode(body)['request_id'], isNotEmpty);
+      final responseJson = jsonDecode(body) as Map<String, dynamic>;
+      expect(responseJson['error'], 'internal_error');
+      expect(responseJson['request_id'], isNotEmpty);
       expect(body, isNot(contains('secret')));
     });
   });
