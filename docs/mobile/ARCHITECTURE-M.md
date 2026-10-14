@@ -1,6 +1,6 @@
 # Phase M — «PicPos إدارة» (M-A) and «PicPos كاشير» (M-B) Android apps (Architecture)
 
-> Status: **plan only** (nothing in this document is implemented yet). Branch `go/full-remediation`.
+> Status: M-A cloud pairing, login, and signed snapshots are implemented and [covered by E2E tests](../testing/E2E.md); Reports (M-2), Operations (M-3), and Notifications (M-4) remain placeholders. `mobile_pos` remains an M-0 preview with no connected POS client or M-5/M-6 flows, while desktop POS pairing and branch-scoped terminal allocation are implemented. The rest describes the target architecture; see [M-0 notes](M-0-NOTES.md) and [§4.1](#41-phases).
 > Companion of `docs/mobile/ARCHITECTURE-I.md` (cloud server, rep app `picpos_van`, desktop↔cloud sync I-1..I-4 + K). Terms, header names and sync conventions defined there are reused here without repetition.
 >
 > **Owner decisions (final):** two NEW Android apps; the rep app `picpos_van` (`mobile/`) stays as is. Signed APKs first for owner review, Google Play later (AAB, signing, icons, privacy policy prepared; the owner publishes).
