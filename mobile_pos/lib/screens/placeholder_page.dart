@@ -19,7 +19,7 @@ class PlaceholderPage extends StatelessWidget {
         title: title,
         subtitle: subtitle,
         icon: icon,
-        actions: const [ConnectionChip(connection: PicPosConnection.offline)],
+        actions: [StatusPill(label: t('previewStatus'), tone: PicPosTone.warning, icon: Icons.visibility_outlined)],
       ),
       Expanded(child: EmptyState(icon: icon, title: t('comingTitle'), message: message)),
     ]);

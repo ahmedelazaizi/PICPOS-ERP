@@ -27,7 +27,7 @@ class SalePage extends StatelessWidget {
         title: t('navSale'),
         subtitle: t('saleSub'),
         icon: Icons.shopping_cart_outlined,
-        actions: const [ConnectionChip(connection: PicPosConnection.offline)],
+        actions: [StatusPill(label: t('previewStatus'), tone: PicPosTone.warning, icon: Icons.visibility_outlined)],
       ),
       Expanded(
         child: LayoutBuilder(builder: (context, c) {
@@ -71,9 +71,9 @@ class _CartPanel extends StatelessWidget {
     return PicPosBlock(
       title: t('cart'),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+        Text(t('cartEmpty'), style: tt.bodyMedium?.copyWith(color: context.picposMuted), textAlign: TextAlign.center),
+        SizedBox(height: compact ? PicPosSpacing.sm : PicPosSpacing.xl),
         if (!compact) ...[
-          Text(t('cartEmpty'), style: tt.bodyMedium?.copyWith(color: context.picposMuted), textAlign: TextAlign.center),
-          const SizedBox(height: PicPosSpacing.xl),
           row(t('subtotal'), '0.000'),
           row(t('tax'), '0.000'),
           const Divider(height: PicPosSpacing.lg),

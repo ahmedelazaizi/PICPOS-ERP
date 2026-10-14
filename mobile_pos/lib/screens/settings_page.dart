@@ -13,7 +13,12 @@ class SettingsPage extends StatelessWidget {
     final t = S.of(context);
     final tt = Theme.of(context).textTheme;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      PicPosPageHeader(title: t('navSettings'), subtitle: t('settingsSub'), icon: Icons.settings_outlined),
+      PicPosPageHeader(
+        title: t('navSettings'),
+        subtitle: t('settingsSub'),
+        icon: Icons.settings_outlined,
+        actions: [StatusPill(label: t('previewStatus'), tone: PicPosTone.warning, icon: Icons.visibility_outlined)],
+      ),
       Expanded(
         child: ListView(padding: const EdgeInsets.all(PicPosSpacing.lg), children: [
           Align(

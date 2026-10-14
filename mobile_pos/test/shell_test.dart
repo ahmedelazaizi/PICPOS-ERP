@@ -32,7 +32,11 @@ void main() {
               final ctx = tester.element(find.byType(PosShell));
               expect(Directionality.of(ctx), lang == 'ar' ? TextDirection.rtl : TextDirection.ltr);
               expect(Theme.of(ctx).brightness, mode == ThemeMode.dark ? Brightness.dark : Brightness.light);
+              expect(find.text(lang == 'ar' ? 'معاينة فقط' : 'Preview only'), findsOneWidget);
               if (size == kPhone) {
+                if (i == 0) {
+                  expect(find.text(lang == 'ar' ? 'السلة فارغة' : 'Cart is empty'), findsOneWidget);
+                }
                 expect(find.byType(NavigationBar), findsOneWidget);
                 expect(find.byType(NavigationDestination), findsNWidgets(5)); // no «More»
               } else {

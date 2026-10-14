@@ -1,7 +1,7 @@
 # picpos_pos — «PicPos كاشير» / PicPos Cashier
 
 Offline tablet POS Android app (`com.picpos.pos`), LAN client of the main desktop. Architecture:
-[`docs/mobile/ARCHITECTURE-M.md`](../docs/mobile/ARCHITECTURE-M.md); phase status:
+[`docs/mobile/ARCHITECTURE-M.md`](../docs/mobile/ARCHITECTURE-M.md); M-0 status:
 [`docs/mobile/M-0-NOTES.md`](../docs/mobile/M-0-NOTES.md).
 
 ```
