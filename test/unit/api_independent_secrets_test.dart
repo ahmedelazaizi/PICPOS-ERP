@@ -36,7 +36,10 @@ void main() {
       expect(ApiSessionToken.verify(legacyToken), 9);
 
       // بعد: ServerSecrets يضبط سرًّا عشوائياً مستقلاً.
-      await ServerSecrets(store: MemorySecretStore(), logger: _noLog).initialize();
+      await ServerSecrets(
+        store: MemorySecretStore(),
+        logger: _noLog,
+      ).initialize();
 
       expect(ApiSessionToken.verify(legacyToken), isNull);
       expect(ApiSessionToken.verifyWeb(legacyWeb), isNull);
@@ -44,8 +47,10 @@ void main() {
     });
 
     test('setSigningKey يرفض مفتاحاً قصيراً', () {
-      expect(() => ApiSessionToken.setSigningKey(List.filled(8, 1)),
-          throwsArgumentError);
+      expect(
+        () => ApiSessionToken.setSigningKey(List.filled(8, 1)),
+        throwsArgumentError,
+      );
     });
   });
 
@@ -60,7 +65,10 @@ void main() {
       TableBillToken.deriveKey('legacy-seed');
       final printed = TableBillToken.mintTable(12);
 
-      await ServerSecrets(store: MemorySecretStore(), logger: _noLog).initialize();
+      await ServerSecrets(
+        store: MemorySecretStore(),
+        logger: _noLog,
+      ).initialize();
       // الافتراضي (لا قيمة في settings) = مقبول.
       expect(await TableBillLegacyAcceptance.isEnabled(db), isTrue);
       await TableBillLegacyAcceptance.apply(db, 'legacy-seed');
@@ -73,14 +81,23 @@ void main() {
       // المشتق القديم لا يصلح لرمز الجلسة/الرقم (تحقق فقط من verifyTable).
       final openedAt = DateTime.utc(2026, 1, 1);
       TableBillToken.deriveKey('legacy-seed');
-      final legacySession =
-          TableBillToken.mintSession(orderId: 1, openedAt: openedAt);
-      await ServerSecrets(store: MemorySecretStore(), logger: _noLog).initialize();
+      final legacySession = TableBillToken.mintSession(
+        orderId: 1,
+        openedAt: openedAt,
+      );
+      await ServerSecrets(
+        store: MemorySecretStore(),
+        logger: _noLog,
+      ).initialize();
       await TableBillLegacyAcceptance.apply(db, 'legacy-seed');
       expect(
-          TableBillToken.verifySession(legacySession,
-              orderId: 1, openedAt: openedAt),
-          isFalse);
+        TableBillToken.verifySession(
+          legacySession,
+          orderId: 1,
+          openedAt: openedAt,
+        ),
+        isFalse,
+      );
 
       // إطفاء العلم.
       await TableBillLegacyAcceptance.disable(db);
@@ -96,88 +113,122 @@ void main() {
 
   group('الوسيط: الجهاز المقترن بلا bearer قديم', () {
     Future<Response> run(Request r) => Future.value(
-        ApiAuthMiddleware.createMiddleware()((req) async => Response.ok(
-            '${req.context['lanDeviceId']}'))(r));
+      ApiAuthMiddleware.createMiddleware()(
+        (req) async => Response.ok('${req.context['lanDeviceId']}'),
+      )(r),
+    );
 
     test('بلا markReady ولا توكن ⇒ 403 (فشل مغلق)', () async {
       final r = await run(Request('GET', Uri.parse('http://x/api/products')));
       expect(r.statusCode, 403);
     });
 
-    test('مقترن يعمل بعد markReady مع _activeToken == null؛ والقديم/المجهول مرفوض',
-        () async {
-      final pairing = LanPairingService.forTesting(
-        installSecret: 'per-install-secret-with-at-least-32-bytes',
-        makeCode: () => 'PAIR1234',
-      );
-      ApiAuthMiddleware.setPairingService(pairing);
-      pairing.issuePairingCode(serverHost: 'h', port: 1);
-      final paired = await pairing.pair(
-          code: 'PAIR1234', deviceId: 'dev-1', deviceName: 'T', ip: '10.0.0.2');
-      ApiAuthMiddleware.clearToken();
-      ApiAuthMiddleware.markReady();
-      expect(ApiAuthMiddleware.activeToken, isNull);
+    test(
+      'مقترن يعمل بعد markReady مع _activeToken == null؛ والقديم/المجهول مرفوض',
+      () async {
+        final pairing = LanPairingService.forTesting(
+          installSecret: 'per-install-secret-with-at-least-32-bytes',
+          makeCode: () => 'PAIR1234',
+        );
+        ApiAuthMiddleware.setPairingService(pairing);
+        pairing.issuePairingCode(serverHost: 'h', port: 1);
+        final paired = await pairing.pair(
+          const LanPairingRequest(
+            code: 'PAIR1234',
+            deviceId: 'dev-1',
+            deviceName: 'T',
+            ip: '10.0.0.2',
+          ),
+        );
+        ApiAuthMiddleware.clearToken();
+        ApiAuthMiddleware.markReady();
+        expect(ApiAuthMiddleware.activeToken, isNull);
 
-      final ok = await run(Request('GET', Uri.parse('http://x/api/products'),
-          headers: {
-            'authorization': 'Bearer ${paired.token}',
-            'x-device-id': 'dev-1',
-          }));
-      expect(ok.statusCode, 200);
-      expect(await ApiAuthMiddleware.verifyCredential(paired.token!, 'dev-1'),
-          isTrue);
+        final ok = await run(
+          Request(
+            'GET',
+            Uri.parse('http://x/api/products'),
+            headers: {
+              'authorization': 'Bearer ${paired.token}',
+              'x-device-id': 'dev-1',
+            },
+          ),
+        );
+        expect(ok.statusCode, 200);
+        expect(
+          await ApiAuthMiddleware.verifyCredential(paired.token!, 'dev-1'),
+          isTrue,
+        );
 
-      final bad = await run(Request('GET', Uri.parse('http://x/api/products'),
-          headers: {'authorization': 'Bearer nope', 'x-device-id': 'dev-1'}));
-      expect(bad.statusCode, 403);
-      final none = await run(Request('GET', Uri.parse('http://x/api/products')));
-      expect(none.statusCode, 401);
-    });
+        final bad = await run(
+          Request(
+            'GET',
+            Uri.parse('http://x/api/products'),
+            headers: {'authorization': 'Bearer nope', 'x-device-id': 'dev-1'},
+          ),
+        );
+        expect(bad.statusCode, 403);
+        final none = await run(
+          Request('GET', Uri.parse('http://x/api/products')),
+        );
+        expect(none.statusCode, 401);
+      },
+    );
   });
 
   group('sessionKeyId', () {
-    test('/api/health يعلن sessionKeyId (8 hex) ويتغيّر بتدوير الجلسات', () async {
-      final db = AppDatabase.forTesting();
-      addTearDown(db.close);
-      final secrets =
-          ServerSecrets(store: MemorySecretStore(), logger: _noLog);
-      await secrets.initialize();
-      final handler = ApiHandler(db).buildRouter();
+    test(
+      '/api/health يعلن sessionKeyId (8 hex) ويتغيّر بتدوير الجلسات',
+      () async {
+        final db = AppDatabase.forTesting();
+        addTearDown(db.close);
+        final secrets = ServerSecrets(
+          store: MemorySecretStore(),
+          logger: _noLog,
+        );
+        await secrets.initialize();
+        final handler = ApiHandler(db).buildRouter();
 
-      Future<String?> kid() async {
-        final res = await handler
-            .call(Request('GET', Uri.parse('http://localhost/api/health')));
-        final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
-        return body['sessionKeyId'] as String?;
-      }
+        Future<String?> kid() async {
+          final res = await handler.call(
+            Request('GET', Uri.parse('http://localhost/api/health')),
+          );
+          final body =
+              jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+          return body['sessionKeyId'] as String?;
+        }
 
-      final first = await kid();
-      expect(first, matches(RegExp(r'^[0-9a-f]{8}$')));
-      expect(first, ApiSessionToken.keyId);
-      await secrets.rotate(ServerSecretKind.session);
-      expect(await kid(), isNot(first));
-    });
+        final first = await kid();
+        expect(first, matches(RegExp(r'^[0-9a-f]{8}$')));
+        expect(first, ApiSessionToken.keyId);
+        await secrets.rotate(ServerSecretKind.session);
+        expect(await kid(), isNot(first));
+      },
+    );
 
     test('بلا مفتاح لا يُعلَن sessionKeyId', () async {
       final db = AppDatabase.forTesting();
       addTearDown(db.close);
-      final res = await ApiHandler(db)
-          .buildRouter()
-          .call(Request('GET', Uri.parse('http://localhost/api/health')));
+      final res = await ApiHandler(db).buildRouter().call(
+        Request('GET', Uri.parse('http://localhost/api/health')),
+      );
       final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
       expect(body.containsKey('sessionKeyId'), isFalse);
     });
 
-    test('SessionKeyWatch: أول معرّف لا يُبطل؛ تغيّره يُبطل مرة؛ الغياب يتجاهل', () {
-      final watch = SessionKeyWatch();
-      var calls = 0;
-      void inv() => calls++;
-      expect(watch.observe('aaaaaaaa', inv), isFalse);
-      expect(watch.observe('aaaaaaaa', inv), isFalse);
-      expect(watch.observe(null, inv), isFalse);
-      expect(watch.observe('bbbbbbbb', inv), isTrue);
-      expect(watch.observe('bbbbbbbb', inv), isFalse);
-      expect(calls, 1);
-    });
+    test(
+      'SessionKeyWatch: أول معرّف لا يُبطل؛ تغيّره يُبطل مرة؛ الغياب يتجاهل',
+      () {
+        final watch = SessionKeyWatch();
+        var calls = 0;
+        void inv() => calls++;
+        expect(watch.observe('aaaaaaaa', inv), isFalse);
+        expect(watch.observe('aaaaaaaa', inv), isFalse);
+        expect(watch.observe(null, inv), isFalse);
+        expect(watch.observe('bbbbbbbb', inv), isTrue);
+        expect(watch.observe('bbbbbbbb', inv), isFalse);
+        expect(calls, 1);
+      },
+    );
   });
 }
