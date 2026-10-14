@@ -20,8 +20,6 @@
 // والسلسلةُ **ستُّ حلقات**: شريطٌ في النموذج ← حالةٌ فيه ← نداءُ الحفظ ←
 // الشاشة ← معاملاتُ المستودع ← المحرّك. وكسرُ أيِّها يُنتج ذلك بالضبط.
 
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import '../helpers/dao_source.dart';
 

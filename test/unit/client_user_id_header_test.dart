@@ -21,8 +21,6 @@
 // The positive end-to-end path (real endpoint mint → verify) is covered by
 // test/integration/api_session_auth_test.dart.
 
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import '../helpers/library_source.dart';
 import 'package:shelf/shelf.dart';
