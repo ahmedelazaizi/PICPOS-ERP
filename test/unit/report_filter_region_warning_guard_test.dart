@@ -12,6 +12,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/library_source.dart';
+
 void main() {
   test('every report screen with _regionWarehouseIds fires FILTER-WARN', () {
     final reportsDir = Directory('lib/presentation/screens/reports');
@@ -22,7 +24,10 @@ void main() {
 
     for (final entity in reportsDir.listSync()) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
-      final src = entity.readAsStringSync();
+      // Part files are checked through their library entrypoint.
+      if (RegExp(r'^\s*part\s+of\b', multiLine: true)
+          .hasMatch(entity.readAsStringSync())) continue;
+      final src = readLibrarySource(entity.path);
       // Group A — screens that cache region → warehouse ids client-side.
       // These are the ones FR-003 covers; other patterns (e.g. pass
       // regionId directly to repo) are Group B and out of scope here.
@@ -70,7 +75,7 @@ void main() {
       final f = File(path);
       expect(f.existsSync(), isTrue,
           reason: 'Group B file moved or renamed: $path');
-      final src = f.readAsStringSync();
+      final src = readLibrarySource(path);
       final hasWarn = src.contains("'FILTER-WARN'") ||
           src.contains('// FILTER-WARN-OPTOUT:');
       if (!hasWarn) missing.add(path);

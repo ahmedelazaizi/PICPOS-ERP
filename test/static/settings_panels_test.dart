@@ -201,7 +201,9 @@ void main() {
                 'فيظهر زرُّ «${e.value}» داخلَ الجسم وزرٌّ آخرُ في تذييل '
                 '`PicPosDialog`.');
 
-        final button = src.indexOf('ElevatedButton(onPressed: _saveSettings');
+        final button = RegExp(
+          r'ElevatedButton\s*\(\s*onPressed:\s*_saveSettings',
+        ).firstMatch(src)?.start ?? -1;
         expect(button, greaterThan(-1),
             reason: 'زرُّ الحفظِ لم يُعثر عليه في ${e.key} — تغيّرت صياغتُه '
                 'فصار الحارسُ يقيس عدماً.');
