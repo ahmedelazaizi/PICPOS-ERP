@@ -141,7 +141,7 @@ void main() {
       await h.createLegacyDb();
       await KeyInfoFile.write(
         h.db,
-        KeyInfo(
+        const KeyInfo(
             kind: DbKeyKind.rawV2,
             fingerprint: 'deadbeefdeadbeef',
             createdAt: '2026-10-01'),
@@ -296,12 +296,12 @@ void main() {
       await h.createLegacyDb();
       await KeyInfoFile.write(
         h.db,
-        KeyInfo(
+        const KeyInfo(
           kind: DbKeyKind.rawV2,
           fingerprint: 'aabbccddeeff0011',
           createdAt: '2026-10-01',
-          recoveryEnvelope: const {'ct': 'x'},
-          migration: const KeyMigrationProgress(
+          recoveryEnvelope: {'ct': 'x'},
+          migration: KeyMigrationProgress(
               state: 'done', newFingerprint: 'f', oldKind: 'legacyDerived', startedAt: 's'),
         ),
       );

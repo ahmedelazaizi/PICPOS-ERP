@@ -141,8 +141,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(a.rollbacks, 0);
 
-    a.retryResult = DbKeyReady(
-        const DbKey(DbKeyKind.legacyDerived, 'cc'), DbKeySource.legacyDerived);
+    a.retryResult = const DbKeyReady(
+        DbKey(DbKeyKind.legacyDerived, 'cc'), DbKeySource.legacyDerived);
     await tester.tap(find.byKey(const Key('dbkey_rollback_btn')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('dbkey_rollback_yes')));

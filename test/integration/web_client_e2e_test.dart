@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
-import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/providers/dashboard_filter_provider.dart';
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/services/api/api_auth_middleware.dart';

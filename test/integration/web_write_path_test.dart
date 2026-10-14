@@ -20,7 +20,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
-import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/database/sync_interceptor.dart';
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/services/api/api_auth_middleware.dart';
@@ -204,7 +203,7 @@ void main() {
       final viaWeb = await webDb.customSelect(
           'select id, amount, safe_id from safe_transactions '
           'where global_id = ?',
-          variables: [Variable<String>(gid)]).get();
+          variables: [const Variable<String>(gid)]).get();
       expect(viaWeb, hasLength(1));
       expect(viaWeb.single.data['id'], serverId);
       expect(viaWeb.single.data['amount'], 125);

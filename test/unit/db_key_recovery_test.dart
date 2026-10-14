@@ -103,7 +103,7 @@ void main() {
       await PortableExport(h.engine).export(
           src: h.db, srcKey: h.legacyKey, out: out, password: pw);
 
-      final pk = const DbKey(DbKeyKind.passphrase, pw);
+      const pk = DbKey(DbKeyKind.passphrase, pw);
       expect(await h.engine.canOpen(out, pk), isTrue);
       expect(await h.engine.canOpen(out, h.legacyKey), isFalse);
       expect((await h.engine.inspect(out, pk)).userVersion, 9);
