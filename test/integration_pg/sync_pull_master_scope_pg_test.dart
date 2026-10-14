@@ -31,6 +31,8 @@ void main() {
   tearDownAll(() async => fx.tearDown());
 
   setUp(() async {
+    await fx.db.customStatement('DELETE FROM location_stock');
+    await fx.db.customStatement('DELETE FROM warehouse_locations');
     await fx.db.delete(fx.db.warehouses).go();
     await fx.db.delete(fx.db.safes).go();
     await fx.db.delete(fx.db.userBranchAccess).go();
