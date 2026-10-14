@@ -27,8 +27,8 @@ The orchestrator:
 6. Tears down the container in `try/finally` regardless of test outcome.
 
 The historical total wall-time goal is under 90 seconds (SC-001). It remains
-unmet: the latest full run passed 82 tests with exit code 0 in 1,664 seconds
-(about 27m44s). Serial concurrency (`--concurrency=1`) remains intentional
+unmet: the latest full run passed 83 tests with exit code 0 in 1,592 seconds
+(about 26m32s). Serial concurrency (`--concurrency=1`) remains intentional
 because the fixture resets the shared `public` schema between test files.
 
 ## How a test file is wired
