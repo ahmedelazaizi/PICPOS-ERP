@@ -194,6 +194,9 @@ const _unsyncedBaseline = <String>{
   'ApiKeys', 'Notifications',
   // ⚪ سجل أمني محلي للخادم، لا يُنقل إلى العملاء.
   'lan_paired_devices',
+  // ⚪ رموزُ فروع وأجهزة يخصّصها مرجعُ LAN المحلي؛ مزامنتُها قد تدمج هوياتٍ
+  //    محليةً مستقلةً أو تصطدم بتخصيصاتٍ محفوظةٍ حتى بعد إلغاء الربط.
+  'lan_branch_terminal_codes',
   // ⚪ دفترُ ترحيلِ مستنداتِ السحابة على الجهاز الرئيسيّ وحدَه (ط-٣): يمنع
   // ترحيلَ مستندِ مندوبٍ مرّتين؛ مستنداتُه المرحَّلةُ نفسُها تُزامَن بمساراتها.
   'cloud_sync_documents',
@@ -249,8 +252,14 @@ const _unsyncedBaseline = <String>{
 /// `lib/services/sync/` مثلاً) لعُدَّ **كلُّ** جدولٍ غيرَ مُزامَنٍ، ولمرّ
 /// الاختبارُ الأوّلُ أخضرَ ما دامت القائمةُ تشمله. فالمرساةُ تُسقطه بدل ذلك.
 const _knownSynced = <String>{
-  'SalesInvoices', 'Products', 'Parties', 'SafeTransactions',
-  'JournalEntries', 'Users', 'Warehouses', 'Branches',
+  'SalesInvoices',
+  'Products',
+  'Parties',
+  'SafeTransactions',
+  'JournalEntries',
+  'Users',
+  'Warehouses',
+  'Branches',
 };
 
 // ── الكشف ─────────────────────────────────────────────────────────────────
@@ -267,7 +276,8 @@ String _snake(String s) {
     final c = s[i];
     final isUpper = c.toUpperCase() == c && c.toLowerCase() != c;
     if (isUpper && i > 0) {
-      final prevUpper = s[i - 1].toUpperCase() == s[i - 1] &&
+      final prevUpper =
+          s[i - 1].toUpperCase() == s[i - 1] &&
           s[i - 1].toLowerCase() != s[i - 1];
       final nextLower = i + 1 < s.length && s[i + 1].toLowerCase() == s[i + 1];
       if (!prevUpper || nextLower) b.write('_');
@@ -283,7 +293,9 @@ List<String> _allTables() {
   for (final f in dir.listSync(recursive: true)) {
     if (f is! File || !f.path.endsWith('.dart')) continue;
     final src = f.readAsStringSync();
-    for (final m in RegExp(r'class\s+(\w+)\s+extends\s+Table\b').allMatches(src)) {
+    for (final m in RegExp(
+      r'class\s+(\w+)\s+extends\s+Table\b',
+    ).allMatches(src)) {
       out.add(m.group(1)!);
     }
   }
@@ -336,13 +348,16 @@ Set<String> _rawSqlOnlyTables(Set<String> driftClasses) {
 /// فيُنتج «غيرَ مغطّى» كاذباً في الاتّجاه المعاكس.
 String _stripComments(String src) {
   final noBlock = src.replaceAll(RegExp(r'/\*[\s\S]*?\*/'), ' ');
-  return noBlock.split('\n').map((line) {
-    var i = line.indexOf('//');
-    while (i > 0 && line[i - 1] == ':') {
-      i = line.indexOf('//', i + 2);
-    }
-    return i < 0 ? line : line.substring(0, i);
-  }).join('\n');
+  return noBlock
+      .split('\n')
+      .map((line) {
+        var i = line.indexOf('//');
+        while (i > 0 && line[i - 1] == ':') {
+          i = line.indexOf('//', i + 2);
+        }
+        return i < 0 ? line : line.substring(0, i);
+      })
+      .join('\n');
 }
 
 String _syncSurface() {
@@ -353,9 +368,7 @@ String _syncSurface() {
     }
   }
   buf.write(_stripComments(readApiDataHandlerSource()));
-  for (final p in const [
-    'lib/services/delta_pull_service.dart',
-  ]) {
+  for (final p in const ['lib/services/delta_pull_service.dart']) {
     final f = File(p);
     if (f.existsSync()) buf.write(_stripComments(f.readAsStringSync()));
   }
@@ -371,19 +384,25 @@ void main() {
 
   group('حراسةُ الحارس', () {
     test('الجداولُ تُقرأ فعلاً — وإلّا فالحارسُ يقيس فراغاً', () {
-      expect(tables.length, greaterThan(100),
-          reason: 'قُرئ ${tables.length} جدولاً فقط — مسارُ التعريفات تغيّر '
-              'غالباً، والحارسُ صار يقيس لا شيء.');
+      expect(
+        tables.length,
+        greaterThan(100),
+        reason:
+            'قُرئ ${tables.length} جدولاً فقط — مسارُ التعريفات تغيّر '
+            'غالباً، والحارسُ صار يقيس لا شيء.',
+      );
     });
 
     test('ذكرٌ في تعليقٍ ليس تغطيةً — على البلاغ نفسِه', () {
-      const commentOnly = '/// FK dependencies: sales_invoices, '
+      const commentOnly =
+          '/// FK dependencies: sales_invoices, '
           'bill_of_materials, products.\n'
           'const x = 1;';
       expect(
         _stripComments(commentOnly).contains('bill_of_materials'),
         isFalse,
-        reason: 'اسمٌ في تعليقٍ ما زال يُحسَب تغطيةً ⇒ الحارسُ يكذب في '
+        reason:
+            'اسمٌ في تعليقٍ ما زال يُحسَب تغطيةً ⇒ الحارسُ يكذب في '
             'الاتّجاه الخطر: يمرّ جدولٌ غيرُ مُزامَنٍ بلا قرار.',
       );
       expect(
@@ -410,9 +429,13 @@ void main() {
 
     test('وسطحُ المزامنة مقروءٌ — مرساةٌ موجبة', () {
       for (final t in _knownSynced) {
-        expect(isCovered(t), isTrue,
-            reason: 'الجدولُ «$t» يُزامَن يقيناً ولم يُكتشَف ⇒ الكشفُ '
-                'مكسور، وكلُّ حكمٍ بعده باطل.');
+        expect(
+          isCovered(t),
+          isTrue,
+          reason:
+              'الجدولُ «$t» يُزامَن يقيناً ولم يُكتشَف ⇒ الكشفُ '
+              'مكسور، وكلُّ حكمٍ بعده باطل.',
+        );
       }
     });
   });
@@ -425,7 +448,8 @@ void main() {
     expect(
       unregistered,
       isEmpty,
-      reason: 'هذه الجداولُ لا تصل الخادمَ ولا المرآة ولا سطرَ لها في خطّ '
+      reason:
+          'هذه الجداولُ لا تصل الخادمَ ولا المرآة ولا سطرَ لها في خطّ '
           'الأساس. فإمّا تُكتَب لها استراتيجيّةُ مزامنة، وإمّا يُضاف سطرُها '
           'في `_unsyncedBaseline` **بسببه** وتحت حكمِه (🔴 أو 🟡 أو ⚪).\n'
           'وجدولٌ يكتب فيه المستخدمُ ويقيّد قيداً يُزامَن ⇒ 🔴 دائماً: '
@@ -439,7 +463,8 @@ void main() {
     expect(
       stale,
       isEmpty,
-      reason: 'هذه الجداولُ صارت تصل طبقةَ المزامنة ⇒ اشطبْ أسطرَها من '
+      reason:
+          'هذه الجداولُ صارت تصل طبقةَ المزامنة ⇒ اشطبْ أسطرَها من '
           '`_unsyncedBaseline`. وبقاؤها يجعل القائمةَ تكذب، ويُخفي أنّ '
           'الفجوةَ تُسَدّ فعلاً.',
     );
@@ -449,8 +474,12 @@ void main() {
     final ghosts = _unsyncedBaseline.difference(tables.toSet()).toList()
       ..sort();
 
-    expect(ghosts, isEmpty,
-        reason: 'أسماءٌ في خطّ الأساس لا تقابلها جداولُ اليوم — حُذفت أو '
-            'أُعيدت تسميتُها. والسطرُ البائتُ يُنقص المدى صامتاً.');
+    expect(
+      ghosts,
+      isEmpty,
+      reason:
+          'أسماءٌ في خطّ الأساس لا تقابلها جداولُ اليوم — حُذفت أو '
+          'أُعيدت تسميتُها. والسطرُ البائتُ يُنقص المدى صامتاً.',
+    );
   });
 }
