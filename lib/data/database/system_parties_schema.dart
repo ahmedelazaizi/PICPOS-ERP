@@ -73,13 +73,15 @@ extension SystemPartiesSchema on AppDatabase {
   Future<void> ensureSystemPartiesSchema() async {
     if (_isPostgres) {
       await customStatement(
-          'ALTER TABLE parties ADD COLUMN IF NOT EXISTS system_role TEXT');
+        'ALTER TABLE parties ADD COLUMN IF NOT EXISTS system_role TEXT',
+      );
     } else {
       final columns = await customSelect('PRAGMA table_info(parties)').get();
       if (!columns.any((c) => c.data['name'] == 'system_role')) {
         try {
           await customStatement(
-              'ALTER TABLE parties ADD COLUMN system_role TEXT');
+            'ALTER TABLE parties ADD COLUMN system_role TEXT',
+          );
         } catch (error) {
           if (!isIdempotentMigrationError(error.toString())) rethrow;
         }
@@ -131,12 +133,12 @@ extension SystemPartiesSchema on AppDatabase {
   /// A system party's update keeps it active, undeleted and in its role —
   /// only the cosmetic fields (name, phone, address, …) follow the caller.
   Party lockSystemPartyFields(Party party, String role) => party.copyWith(
-        isActive: true,
-        deletedAt: const Value(null),
-        isCustomer: role == kSystemRoleCashCustomer,
-        isSupplier: role == kSystemRoleCashSupplier,
-        isDeliveryCompany: false,
-      );
+    isActive: true,
+    deletedAt: const Value(null),
+    isCustomer: role == kSystemRoleCashCustomer,
+    isSupplier: role == kSystemRoleCashSupplier,
+    isDeliveryCompany: false,
+  );
 
   /// Throws when [partyId] is a system party (delete / deactivate guard).
   Future<void> assertPartyDeletable(int partyId) async {
@@ -174,16 +176,18 @@ extension SystemPartiesSchema on AppDatabase {
       }
       String? clean(String? v) =>
           v == null || v.trim().isEmpty ? null : v.trim();
-      final id = await insertParty(PartiesCompanion(
-        name: Value(trimmed),
-        phone: Value(clean(phone)),
-        address: Value(clean(address)),
-        isCustomer: const Value(true),
-        isSupplier: const Value(false),
-        creditLimit: const Value(0),
-        balance: const Value(0),
-        globalId: globalId == null ? const Value.absent() : Value(globalId),
-      ));
+      final id = await insertParty(
+        PartiesCompanion(
+          name: Value(trimmed),
+          phone: Value(clean(phone)),
+          address: Value(clean(address)),
+          isCustomer: const Value(true),
+          isSupplier: const Value(false),
+          creditLimit: const Value(0),
+          balance: const Value(0),
+          globalId: globalId == null ? const Value.absent() : Value(globalId),
+        ),
+      );
       if (routeId != null) {
         await assignCustomerToRoute(
           customerId: id,
@@ -213,21 +217,28 @@ extension SystemPartiesSchema on AppDatabase {
       await _normalizeSystemParty(existing, spec);
       return;
     }
-    final adopted = await _cashPartyCandidate(spec) ??
+    final adopted =
+        await _cashPartyCandidate(spec) ??
         await _idOfGlobalId(_systemPartyGlobalId(spec.role));
-    final id = adopted ??
-        await insertParty(PartiesCompanion(
-          name: Value(spec.name),
-          code: Value(await isPartyCodeInUse(spec.code) ? null : spec.code),
-          isCustomer: Value(spec.isCustomer),
-          isSupplier: Value(!spec.isCustomer),
-          creditLimit: const Value(0),
-          balance: const Value(0),
-          isGlobal: const Value(true),
-          globalId: Value(_systemPartyGlobalId(spec.role)),
-        ));
+    final id =
+        adopted ??
+        await insertParty(
+          PartiesCompanion(
+            name: Value(spec.name),
+            code: Value(await isPartyCodeInUse(spec.code) ? null : spec.code),
+            isCustomer: Value(spec.isCustomer),
+            isSupplier: Value(!spec.isCustomer),
+            creditLimit: const Value(0),
+            balance: const Value(0),
+            isGlobal: const Value(true),
+            globalId: Value(_systemPartyGlobalId(spec.role)),
+          ),
+        );
+    final rolePlaceholder = _isPostgres ? r'$1' : '?';
+    final idPlaceholder = _isPostgres ? r'$2' : '?';
     await customUpdate(
-      'UPDATE parties SET system_role = ? WHERE id = ?',
+      'UPDATE parties SET system_role = $rolePlaceholder '
+      'WHERE id = $idPlaceholder',
       variables: [Variable<String>(spec.role), Variable<int>(id)],
       updates: {parties},
     );
@@ -237,27 +248,31 @@ extension SystemPartiesSchema on AppDatabase {
   /// Re-asserts the role flags of an existing system row (a sync or a manual
   /// edit may have deactivated it or flipped its type).
   Future<void> _normalizeSystemParty(int id, _SystemPartySpec spec) async {
-    await (update(parties)
-          ..where((p) =>
+    await (update(parties)..where(
+          (p) =>
               p.id.equals(id) &
               (p.isActive.equals(false) |
                   p.deletedAt.isNotNull() |
                   p.isCustomer.equals(!spec.isCustomer) |
-                  p.isSupplier.equals(spec.isCustomer))))
-        .write(PartiesCompanion(
-      isActive: const Value(true),
-      deletedAt: const Value(null),
-      isCustomer: Value(spec.isCustomer),
-      isSupplier: Value(!spec.isCustomer),
-    ));
+                  p.isSupplier.equals(spec.isCustomer)),
+        ))
+        .write(
+          PartiesCompanion(
+            isActive: const Value(true),
+            deletedAt: const Value(null),
+            isCustomer: Value(spec.isCustomer),
+            isSupplier: Value(!spec.isCustomer),
+          ),
+        );
   }
 
   String _systemPartyGlobalId(String role) =>
       UuidV7.deriveSeedGlobalId(table: 'parties', seedKey: 'system:$role');
 
   Future<int?> _idOfGlobalId(String gid) async {
-    final row = await (select(parties)..where((p) => p.globalId.equals(gid)))
-        .getSingleOrNull();
+    final row = await (select(
+      parties,
+    )..where((p) => p.globalId.equals(gid))).getSingleOrNull();
     return row?.id;
   }
 
@@ -271,18 +286,21 @@ extension SystemPartiesSchema on AppDatabase {
             ? p.isCustomer && !p.isSupplier
             : p.isSupplier && !p.isCustomer);
     if (spec.isCustomer) {
-      final configured =
-          int.tryParse(await getSettingValue('pos_default_customer_id') ?? '');
+      final configured = int.tryParse(
+        await getSettingValue('pos_default_customer_id') ?? '',
+      );
       if (configured != null) {
-        final p = await (select(parties)..where((x) => x.id.equals(configured)))
-            .getSingleOrNull();
+        final p = await (select(
+          parties,
+        )..where((x) => x.id.equals(configured))).getSingleOrNull();
         if (p != null && fits(p)) return p.id;
       }
     }
-    final rows = await (select(parties)
-          ..where((p) => p.name.isIn(spec.candidateNames))
-          ..orderBy([(p) => OrderingTerm.asc(p.id)]))
-        .get();
+    final rows =
+        await (select(parties)
+              ..where((p) => p.name.isIn(spec.candidateNames))
+              ..orderBy([(p) => OrderingTerm.asc(p.id)]))
+            .get();
     for (final name in spec.candidateNames) {
       for (final p in rows) {
         if (p.name == name && fits(p)) return p.id;

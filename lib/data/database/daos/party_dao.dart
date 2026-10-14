@@ -82,9 +82,9 @@ extension PartyDao on AppDatabase {
   /// databases (e.g. tests that build the schema without the seeder).
   Future<Map<String, int>> ensurePartyParentAccounts() async {
     Future<int> ensure(String code, String name, String type) async {
-      final existing = await (select(accounts)
-            ..where((a) => a.code.equals(code)))
-          .getSingleOrNull();
+      final existing = await (select(
+        accounts,
+      )..where((a) => a.code.equals(code))).getSingleOrNull();
       if (existing != null) return existing.id;
       // Parent missing — create a system account. isSystem=true protects
       // it from being accidentally deleted via the normal COA UI.
@@ -101,10 +101,12 @@ extension PartyDao on AppDatabase {
     }
 
     return {
-      _arParentCode:
-          await ensure(_arParentCode, 'ذمم عملاء محليون', 'asset'),
-      _apParentCode:
-          await ensure(_apParentCode, 'ذمم موردون محليون', 'liability'),
+      _arParentCode: await ensure(_arParentCode, 'ذمم عملاء محليون', 'asset'),
+      _apParentCode: await ensure(
+        _apParentCode,
+        'ذمم موردون محليون',
+        'liability',
+      ),
     };
   }
 
@@ -154,9 +156,9 @@ extension PartyDao on AppDatabase {
     // a LIKE query + Drift's max() so it works on both SQLite and the
     // PostgreSQL server backend.
     final codeLike = '$prefix-%';
-    final rows = await (select(parties)
-          ..where((p) => p.code.like(codeLike)))
-        .get();
+    final rows = await (select(
+      parties,
+    )..where((p) => p.code.like(codeLike))).get();
 
     int nextSeq = 1;
     for (final row in rows) {
@@ -243,8 +245,12 @@ extension PartyDao on AppDatabase {
       // behaviour left orphaned parties without accounts).
 
       final parentAccounts = await ensurePartyParentAccounts();
-      final isCustomer = party.isCustomer.present ? party.isCustomer.value : false;
-      final isSupplier = party.isSupplier.present ? party.isSupplier.value : false;
+      final isCustomer = party.isCustomer.present
+          ? party.isCustomer.value
+          : false;
+      final isSupplier = party.isSupplier.present
+          ? party.isSupplier.value
+          : false;
       final isDelivery = party.isDeliveryCompany.present
           ? party.isDeliveryCompany.value
           : false;
@@ -291,8 +297,8 @@ extension PartyDao on AppDatabase {
       // UUID-First (Phase 1): mint a global_id if the caller didn't supply
       // one, so every party has a stable cross-install identity from the
       // moment it's created.
-      final partyHasGid = party.globalId.present &&
-          (party.globalId.value?.isNotEmpty ?? false);
+      final partyHasGid =
+          party.globalId.present && (party.globalId.value?.isNotEmpty ?? false);
       final partyWithCode = party.copyWith(
         code: Value(partyCode),
         globalId: partyHasGid ? party.globalId : Value(UuidV7.generate()),
@@ -325,19 +331,21 @@ extension PartyDao on AppDatabase {
         int? numericSuffix = int.tryParse(suffix);
         if (numericSuffix != null) {
           for (var attempt = 0; attempt < 100; attempt++) {
-            final dupAcc = await (select(accounts)
-                  ..where((a) => a.code.equals(resolvedAccountCode)))
-                .getSingleOrNull();
+            final dupAcc =
+                await (select(accounts)
+                      ..where((a) => a.code.equals(resolvedAccountCode)))
+                    .getSingleOrNull();
             if (dupAcc == null) break;
             numericSuffix = numericSuffix! + 1;
-            resolvedAccountCode = '$parentCode-${numericSuffix.toString().padLeft(suffix.length, '0')}';
+            resolvedAccountCode =
+                '$parentCode-${numericSuffix.toString().padLeft(suffix.length, '0')}';
           }
         }
         // فحص نهائي — لو ما زال يوجد collision بعد 100 محاولة (نادر جداً)،
         // نرفع كمجال للنظر فيه.
-        final finalDup = await (select(accounts)
-              ..where((a) => a.code.equals(resolvedAccountCode)))
-            .getSingleOrNull();
+        final finalDup = await (select(
+          accounts,
+        )..where((a) => a.code.equals(resolvedAccountCode))).getSingleOrNull();
         if (finalDup != null) {
           throw Exception(
             'كود الحساب الفرعى "$resolvedAccountCode" مستخدم بالفعل — '
@@ -378,8 +386,9 @@ extension PartyDao on AppDatabase {
             ? (party.balance.value)
             : 0.0;
         if (openingBalance.abs() > 0.001) {
-          final retainedEarnings =
-              await accountingDao.getAccountByPurpose('retained_earnings');
+          final retainedEarnings = await accountingDao.getAccountByPurpose(
+            'retained_earnings',
+          );
           if (retainedEarnings == null) {
             debugPrint(
               '[PartyDao] ⚠️ opening balance JE skipped — '
@@ -389,32 +398,42 @@ extension PartyDao on AppDatabase {
           } else {
             final openingLines = <JournalLine>[];
             final absAmount = openingBalance.abs();
-            final desc = 'رصيد افتتاحى — $namePrefix: '
+            final desc =
+                'رصيد افتتاحى — $namePrefix: '
                 '${party.name.value} ($partyCode)';
-            final partySideDebits = (isCustomer && openingBalance > 0) ||
+            final partySideDebits =
+                (isCustomer && openingBalance > 0) ||
                 (!isCustomer && openingBalance < 0);
             if (partySideDebits) {
-              openingLines.add(JournalLine(
-                accountId: accId,
-                debit: absAmount,
-                description: desc,
-              ));
-              openingLines.add(JournalLine(
-                accountId: retainedEarnings.id,
-                credit: absAmount,
-                description: desc,
-              ));
+              openingLines.add(
+                JournalLine(
+                  accountId: accId,
+                  debit: absAmount,
+                  description: desc,
+                ),
+              );
+              openingLines.add(
+                JournalLine(
+                  accountId: retainedEarnings.id,
+                  credit: absAmount,
+                  description: desc,
+                ),
+              );
             } else {
-              openingLines.add(JournalLine(
-                accountId: retainedEarnings.id,
-                debit: absAmount,
-                description: desc,
-              ));
-              openingLines.add(JournalLine(
-                accountId: accId,
-                credit: absAmount,
-                description: desc,
-              ));
+              openingLines.add(
+                JournalLine(
+                  accountId: retainedEarnings.id,
+                  debit: absAmount,
+                  description: desc,
+                ),
+              );
+              openingLines.add(
+                JournalLine(
+                  accountId: accId,
+                  credit: absAmount,
+                  description: desc,
+                ),
+              );
             }
             await accountingDao.createJournalEntry(
               description: desc,
@@ -436,8 +455,9 @@ extension PartyDao on AppDatabase {
   Future<bool> updateParty(Party party) async {
     // J3 — طرفٌ نظاميٌّ يبقى نشطاً وفي دوره؛ الاسمُ وحدَه (وما شابهه) يُعدَّل.
     final role = await systemRoleOfParty(party.id);
-    return update(parties)
-        .replace(role == null ? party : lockSystemPartyFields(party, role));
+    return update(
+      parties,
+    ).replace(role == null ? party : lockSystemPartyFields(party, role));
   }
 
   /// Check if party has any transaction history
