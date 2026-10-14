@@ -2,6 +2,7 @@ import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:ural_erp/core/utils/number_utils.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'dart:ui' as ui;
@@ -43,10 +44,14 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
   int? _selectedRegionId;
   int? _selectedWarehouseId; // null = all warehouses
   int? _selectedBranchId;
-  Map<int, double> _warehouseStockMap = {}; // productId -> quantity (per-warehouse)
+  Map<int, double> _warehouseStockMap =
+      {}; // productId -> quantity (per-warehouse)
   Map<int, String> _unitMap = {}; // productId -> base unit name
   final _searchController = TextEditingController();
-  final _currencyFormat = NumberFormat.currency(symbol: '', decimalDigits: AppConstants.decimalPlaces);
+  final _currencyFormat = NumberFormat.currency(
+    symbol: '',
+    decimalDigits: AppConstants.decimalPlaces,
+  );
 
   // Spec 151 Track-3: the logged-in user's branch authorization scope — an
   // AUTH CAP distinct from the user-chosen warehouse/branch/region filter.
@@ -89,17 +94,27 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
-              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
-              duration: const Duration(seconds: 6),
-            ));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
+                ),
+                duration: const Duration(seconds: 6),
+              ),
+            );
           });
         }
       }
       _loadData();
       try {
         final user = ref.read(authProvider).user;
-        ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? tr('مجهول'), tr('تقرير المخزون'));
+        ref
+            .read(activityLoggerProvider)
+            .logReportView(
+              user?.id ?? 0,
+              user?.displayName ?? tr('مجهول'),
+              tr('تقرير المخزون'),
+            );
       } catch (_) {}
     });
     _searchController.addListener(_filterProducts);
@@ -126,7 +141,8 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
         // Full access with no user selection (_stockScoped == false) shows all.
         // A genuinely empty effective set (_scopeEmpty) fails closed → no rows,
         // never the whole global catalog.
-        final matchesWarehouse = !_stockScoped ||
+        final matchesWarehouse =
+            !_stockScoped ||
             (!_scopeEmpty &&
                 (_warehouseStockMap.isEmpty ||
                     _warehouseStockMap.containsKey(p.id)));
@@ -152,21 +168,28 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
       if (_selectedWarehouseId != null) {
         warehouseIds = [_selectedWarehouseId!];
       } else if (_selectedBranchId != null) {
-        final ids = await BranchWarehouseFilterBar.getBranchWarehouseIds(ref, _selectedBranchId!);
+        final ids = await BranchWarehouseFilterBar.getBranchWarehouseIds(
+          ref,
+          _selectedBranchId!,
+        );
         warehouseIds = ids.toList();
       } else if (_selectedRegionId != null) {
         final regionRepo = ref.read(regionRepositoryProvider);
-        warehouseIds = await regionRepo.getWarehouseIdsForRegion(_selectedRegionId!);
+        warehouseIds = await regionRepo.getWarehouseIdsForRegion(
+          _selectedRegionId!,
+        );
         // Spec 079b (B2): empty warehouse list under an active region means
         // region→branch→warehouse link is broken somewhere. Without this
         // diagnostic the operator sees an empty inventory table and can't
         // tell whether it's "no stock" or "filter resolved to nothing".
         if (warehouseIds.isEmpty) {
-          unawaited(DiagnosticLogger.log(
-            'FILTER-WARN',
-            'Region $_selectedRegionId selected on inventory report but '
-            'no warehouses linked. Check region→branch→warehouse mapping.',
-          ));
+          unawaited(
+            DiagnosticLogger.log(
+              'FILTER-WARN',
+              'Region $_selectedRegionId selected on inventory report but '
+                  'no warehouses linked. Check region→branch→warehouse mapping.',
+            ),
+          );
         }
       }
 
@@ -181,14 +204,16 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
       if (_allowedBranchIds != null) {
         final allowedWarehouseIds = <int>{};
         for (final bId in _allowedBranchIds!) {
-          allowedWarehouseIds
-              .addAll(await BranchWarehouseFilterBar.getBranchWarehouseIds(ref, bId));
+          allowedWarehouseIds.addAll(
+            await BranchWarehouseFilterBar.getBranchWarehouseIds(ref, bId),
+          );
         }
         if (warehouseIds == null) {
           warehouseIds = allowedWarehouseIds.toList();
         } else {
-          warehouseIds =
-              warehouseIds.where((w) => allowedWarehouseIds.contains(w)).toList();
+          warehouseIds = warehouseIds
+              .where((w) => allowedWarehouseIds.contains(w))
+              .toList();
         }
       }
 
@@ -212,8 +237,9 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
       Map<int, double> warehouseStockMap = {};
       if (warehouseIds != null && warehouseIds.isNotEmpty) {
         final branchRepo = ref.read(branchRepositoryProvider);
-        warehouseStockMap =
-            await branchRepo.getWarehouseStockMapForWarehouses(warehouseIds);
+        warehouseStockMap = await branchRepo.getWarehouseStockMapForWarehouses(
+          warehouseIds,
+        );
       }
 
       // Load base unit names for all products (reuse productRepo from above)
@@ -251,7 +277,11 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
       return Directionality(
         textDirection: ui.TextDirection.rtl,
         child: Scaffold(
-          body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
+          body: Center(
+            child: Text(
+              tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}),
+            ),
+          ),
         ),
       );
     }
@@ -264,204 +294,207 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
       subtitle: tr('أرصدةُ المخازن وقيمتُها بالتكلفة'),
       icon: PhosphorIconsBold.package,
       actions: [
-            IconButton(
-              onPressed: _loadData,
-              icon: const Icon(PhosphorIconsBold.arrowsClockwise),
-              tooltip: tr('تحديث البيانات'),
-            ),
-            buildReportExportAction(onExport: _exportToExcel),
-            IconButton(
-              onPressed: _printReport,
-              icon: const Icon(PhosphorIconsBold.printer),
-              tooltip: tr('طباعة/PDF'),
-            ),
-          ],
-        body: _isLoading
-            ? Padding(
-                padding: const EdgeInsets.all(16),
-                child: ShimmerLoading.list(itemCount: 6),
-              )
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (_analytics != null)
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ReportKpiCard(
-                              title: tr('قيمة المخزون (سعر التكلفة)'),
-                              value:
-                                  '${_currencyFormat.format(_analytics!.totalCostValue)} ${AppConstants.currencySymbolEn}',
-                              icon: PhosphorIconsBold.calculator,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: ReportKpiCard(
-                              title: tr('قيمة المخزون (سعر البيع)'),
-                              value:
-                                  '${_currencyFormat.format(_analytics!.totalSaleValue)} ${AppConstants.currencySymbolEn}',
-                              icon: PhosphorIconsBold.money,
-                              color: AppColors.success,
-                              subtitle:
-                                  tr('الربح المتوقع: {p0}', {'p0': _currencyFormat.format(_analytics!.potentialProfit)}),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: ReportKpiCard(
-                              title: tr('تنبيهات نقص الكمية'),
-                              value: _analytics!.lowStockCount.toString(),
-                              icon: PhosphorIconsBold.warningCircle,
-                              color: AppColors.error,
-                              subtitle:
-                                  tr('إجمالي الأصناف: {p0}', {'p0': NumberUtils.formatQuantity(_analytics!.itemsCount)}),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                    const SizedBox(height: 16),
-
-                    // ABC Analysis Row
-                    if (_products.isNotEmpty)
-                      _buildAbcAnalysis(),
-
-                    // Expiry Alerts
-                    if (_products.any((p) => p.trackExpiry))
-                      _buildExpiryAlerts(),
-
-                    const SizedBox(height: 24),
-
+        IconButton(
+          onPressed: _loadData,
+          icon: const Icon(PhosphorIconsBold.arrowsClockwise),
+          tooltip: tr('تحديث البيانات'),
+        ),
+        buildReportExportAction(onExport: _exportToExcel),
+        IconButton(
+          onPressed: _printReport,
+          icon: const Icon(PhosphorIconsBold.printer),
+          tooltip: tr('طباعة/PDF'),
+        ),
+      ],
+      body: _isLoading
+          ? Padding(
+              padding: const EdgeInsets.all(16),
+              child: ShimmerLoading.list(itemCount: 6),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_analytics != null)
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          tr('جرد الأصناف والقيم'),
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(
-                              context,
-                            ).textTheme.titleLarge?.color,
+                        Expanded(
+                          child: ReportKpiCard(
+                            title: tr('قيمة المخزون (سعر التكلفة)'),
+                            value:
+                                '${_currencyFormat.format(_analytics!.totalCostValue)} ${AppConstants.currencySymbolEn}',
+                            icon: PhosphorIconsBold.calculator,
+                            color: AppColors.primary,
                           ),
                         ),
-                        // Region + Branch + Warehouse Filter
-                        BranchWarehouseFilterBar(
-                          selectedRegionId: _selectedRegionId,
-                          onRegionChanged: (v) {
-                            setState(() {
-                              _selectedRegionId = v;
-                              _selectedBranchId = null;
-                              _selectedWarehouseId = null;
-                            });
-                            _loadData();
-                          },
-                          selectedBranchId: _selectedBranchId,
-                          selectedWarehouseId: _selectedWarehouseId,
-                          onBranchChanged: (v) {
-                            setState(() {
-                              _selectedBranchId = v;
-                              _selectedWarehouseId = null;
-                            });
-                            _loadData();
-                          },
-                          onWarehouseChanged: (v) {
-                            setState(() => _selectedWarehouseId = v);
-                            _loadData();
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 180,
-                          child: SearchableDropdown<Category>(
-                            items: _categories,
-                            value: _categories
-                                .where((c) => c.id == _selectedCategoryId)
-                                .firstOrNull,
-                            hint: tr('كل التصنيفات'),
-                            searchHint: tr('ابحث عن تصنيف...'),
-                            labelBuilder: (c) => c.name,
-                            onChanged: (c) {
-                              setState(() => _selectedCategoryId = c?.id);
-                              _filterProducts();
-                            },
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ReportKpiCard(
+                            title: tr('قيمة المخزون (سعر البيع)'),
+                            value:
+                                '${_currencyFormat.format(_analytics!.totalSaleValue)} ${AppConstants.currencySymbolEn}',
+                            icon: PhosphorIconsBold.money,
+                            color: AppColors.success,
+                            subtitle: tr('الربح المتوقع: {p0}', {
+                              'p0': _currencyFormat.format(
+                                _analytics!.potentialProfit,
+                              ),
+                            }),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        SizedBox(
-                          width: 250,
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              hintText: tr('ابحث عن صنف أو كود...'),
-                              prefixIcon: const Icon(
-                                PhosphorIconsBold.magnifyingGlass,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ReportKpiCard(
+                            title: tr('تنبيهات نقص الكمية'),
+                            value: _analytics!.lowStockCount.toString(),
+                            icon: PhosphorIconsBold.warningCircle,
+                            color: AppColors.error,
+                            subtitle: tr('إجمالي الأصناف: {p0}', {
+                              'p0': NumberUtils.formatQuantity(
+                                _analytics!.itemsCount,
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              isDense: true,
-                            ),
+                            }),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
 
-                    Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(color: Theme.of(context).dividerColor),
+                  const SizedBox(height: 16),
+
+                  // ABC Analysis Row
+                  if (_products.isNotEmpty) _buildAbcAnalysis(),
+
+                  // Expiry Alerts
+                  if (_products.any((p) => p.trackExpiry)) _buildExpiryAlerts(),
+
+                  const SizedBox(height: 24),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        tr('جرد الأصناف والقيم'),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).textTheme.titleLarge?.color,
+                        ),
                       ),
-                      child: SizedBox(
-                         height: 1200,
-                         child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: SizedBox(
-                              width: 1050,
-                              child: PaginatedDataTable2(
-                        wrapInCard: false,
-                        showFirstLastButtons: true,
-                        rowsPerPage: 25,
-                        availableRowsPerPage: const [25, 50, 100],
-                        dataRowHeight: 44,
-                        headingRowHeight: 44,
-                        minWidth: 1050,
-                          columns:  [
-                            DataColumn(label: Text(tr('كود الصنف'))),
-                            DataColumn(label: Text(tr('اسم الصنف'))),
-                            DataColumn(label: Text(tr('التصنيف'))),
-                            DataColumn(label: Text(tr('الوحدة'))),
-                            DataColumn(label: Text(tr('الكمية الحالية'))),
-                            DataColumn(label: Text(tr('سعر التكلفة'))),
-                            DataColumn(label: Text(tr('إجمالي التكلفة'))),
-                            DataColumn(label: Text(tr('سعر البيع'))),
-                            DataColumn(label: Text(tr('إجمالي البيع'))),
-                          ],
-                           // Spec 151 Track-3: use the scoped stock map when a
-                           // warehouse set is in effect (user selection OR auth
-                           // cap); otherwise the global product stock.
-                           source: InventoryReportTableSource(
-                             products: _filteredProducts,
-                             categoryNames: _categoryNameMap,
-                             unitNames: _unitMap,
-                             stockMap: _warehouseStockMap,
-                             stockScoped: _stockScoped,
-                             currencyFormat: _currencyFormat,
-                           ),
-                         ),
-                              ),
+                      // Region + Branch + Warehouse Filter
+                      BranchWarehouseFilterBar(
+                        selectedRegionId: _selectedRegionId,
+                        onRegionChanged: (v) {
+                          setState(() {
+                            _selectedRegionId = v;
+                            _selectedBranchId = null;
+                            _selectedWarehouseId = null;
+                          });
+                          _loadData();
+                        },
+                        selectedBranchId: _selectedBranchId,
+                        selectedWarehouseId: _selectedWarehouseId,
+                        onBranchChanged: (v) {
+                          setState(() {
+                            _selectedBranchId = v;
+                            _selectedWarehouseId = null;
+                          });
+                          _loadData();
+                        },
+                        onWarehouseChanged: (v) {
+                          setState(() => _selectedWarehouseId = v);
+                          _loadData();
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 180,
+                        child: SearchableDropdown<Category>(
+                          items: _categories,
+                          value: _categories
+                              .where((c) => c.id == _selectedCategoryId)
+                              .firstOrNull,
+                          hint: tr('كل التصنيفات'),
+                          searchHint: tr('ابحث عن تصنيف...'),
+                          labelBuilder: (c) => c.name,
+                          onChanged: (c) {
+                            setState(() => _selectedCategoryId = c?.id);
+                            _filterProducts();
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 250,
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: tr('ابحث عن صنف أو كود...'),
+                            prefixIcon: const Icon(
+                              PhosphorIconsBold.magnifyingGlass,
                             ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            isDense: true,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: Theme.of(context).dividerColor),
+                    ),
+                    child: SizedBox(
+                      height: 1200,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: SizedBox(
+                          width: 1050,
+                          child: PaginatedDataTable2(
+                            wrapInCard: false,
+                            showFirstLastButtons: true,
+                            rowsPerPage: 25,
+                            availableRowsPerPage: const [25, 50, 100],
+                            dataRowHeight: 44,
+                            headingRowHeight: 44,
+                            minWidth: 1050,
+                            columns: [
+                              DataColumn(label: Text(tr('كود الصنف'))),
+                              DataColumn(label: Text(tr('اسم الصنف'))),
+                              DataColumn(label: Text(tr('التصنيف'))),
+                              DataColumn(label: Text(tr('الوحدة'))),
+                              DataColumn(label: Text(tr('الكمية الحالية'))),
+                              DataColumn(label: Text(tr('سعر التكلفة'))),
+                              DataColumn(label: Text(tr('إجمالي التكلفة'))),
+                              DataColumn(label: Text(tr('سعر البيع'))),
+                              DataColumn(label: Text(tr('إجمالي البيع'))),
+                            ],
+                            // Spec 151 Track-3: use the scoped stock map when a
+                            // warehouse set is in effect (user selection OR auth
+                            // cap); otherwise the global product stock.
+                            source: InventoryReportTableSource(
+                              products: _filteredProducts,
+                              categoryNames: _categoryNameMap,
+                              unitNames: _unitMap,
+                              stockMap: _warehouseStockMap,
+                              stockScoped: _stockScoped,
+                              currencyFormat: _currencyFormat,
+                              secondaryTextColor: context.picposSecondary,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
     );
   }
 
@@ -473,11 +506,16 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
     // already scoped; this closes the leak directly beneath them.
     // Sort products by total value (cost * stock) descending
     final sorted = List<Product>.from(_products)
-      ..sort((a, b) => (b.costPrice * _scopedStock(b))
-          .compareTo(a.costPrice * _scopedStock(a)));
+      ..sort(
+        (a, b) => (b.costPrice * _scopedStock(b)).compareTo(
+          a.costPrice * _scopedStock(a),
+        ),
+      );
 
     final totalValue = sorted.fold<double>(
-        0, (s, p) => s + (p.costPrice * _scopedStock(p)));
+      0,
+      (s, p) => s + (p.costPrice * _scopedStock(p)),
+    );
 
     // Classify: A = top 80%, B = next 15%, C = rest
     double cumulative = 0;
@@ -526,7 +564,12 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
   }
 
   Widget _abcCard(
-      String grade, int count, double value, double total, Color color) {
+    String grade,
+    int count,
+    double value,
+    double total,
+    Color color,
+  ) {
     final pct = total > 0 ? (value / total * 100) : 0.0;
     return Expanded(
       child: Container(
@@ -549,23 +592,37 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   alignment: Alignment.center,
-                  child: Text(grade,
-                      style: GoogleFonts.cairo(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14)),
+                  child: Text(
+                    grade,
+                    style: GoogleFonts.cairo(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 8),
-                Text(tr('{count} صنف', {'count': count}),
-                    style: GoogleFonts.cairo(
-                        fontWeight: FontWeight.w700, fontSize: 13)),
+                Text(
+                  tr('{count} صنف', {'count': count}),
+                  style: GoogleFonts.cairo(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 6),
-            Text('${_currencyFormat.format(value)} ${AppConstants.currencySymbolEn}',
-                style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
-            Text(tr('{p0}% من إجمالي القيمة', {'p0': pct.toStringAsFixed(1)}),
-                style: GoogleFonts.cairo(fontSize: 10, color: color)),
+            Text(
+              '${_currencyFormat.format(value)} ${AppConstants.currencySymbolEn}',
+              style: GoogleFonts.cairo(
+                fontSize: 11,
+                color: context.picposMuted,
+              ),
+            ),
+            Text(
+              tr('{p0}% من إجمالي القيمة', {'p0': pct.toStringAsFixed(1)}),
+              style: GoogleFonts.cairo(fontSize: 10, color: color),
+            ),
           ],
         ),
       ),
@@ -593,15 +650,22 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              const Icon(PhosphorIconsBold.clock,
-                  color: Color(0xFFF59E0B), size: 22),
+              const Icon(
+                PhosphorIconsBold.clock,
+                color: Color(0xFFF59E0B),
+                size: 22,
+              ),
               const SizedBox(width: 10),
               Text(
-                tr('{p0} صنف يتم تتبع صلاحيته — راجع دفعات المنتج لمواعيد الانتهاء', {'p0': expiryTracked.length}),
+                tr(
+                  '{p0} صنف يتم تتبع صلاحيته — راجع دفعات المنتج لمواعيد الانتهاء',
+                  {'p0': expiryTracked.length},
+                ),
                 style: GoogleFonts.cairo(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF92400E)),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF92400E),
+                ),
               ),
             ],
           ),
@@ -615,8 +679,9 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
 
     final path = await service.exportReport(
       branchId: _selectedBranchId,
-      scopedBranchIds:
-          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+      scopedBranchIds: (await ref.read(
+        branchScopeProvider.future,
+      )).allowedBranchIds,
       title: tr('تقرير المخزون'),
       headers: [
         tr('كود الصنف'),
@@ -628,27 +693,23 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
         tr('سعر البيع'),
         tr('إجمالي البيع'),
       ],
-      rows: _filteredProducts
-          .map<List<dynamic>>(
-            (Product? p) {
-              // Spec 151 Track-3: match the on-screen scoped-stock logic so the
-              // export never leaks a foreign branch's stock for a restricted user.
-              final stock = (_stockScoped && p != null)
-                  ? (_warehouseStockMap[p.id] ?? 0.0)
-                  : (p?.currentStock ?? 0.0);
-              return [
-                p?.code ?? '-',
-                p?.name ?? '-',
-                _unitMap[p?.id ?? 0] ?? tr('قطعة'),
-                stock,
-                p?.costPrice ?? 0.0,
-                (p?.costPrice ?? 0.0) * stock,
-                p?.salePrice ?? 0.0,
-                (p?.salePrice ?? 0.0) * stock,
-              ];
-            },
-          )
-          .toList(),
+      rows: _filteredProducts.map<List<dynamic>>((Product? p) {
+        // Spec 151 Track-3: match the on-screen scoped-stock logic so the
+        // export never leaks a foreign branch's stock for a restricted user.
+        final stock = (_stockScoped && p != null)
+            ? (_warehouseStockMap[p.id] ?? 0.0)
+            : (p?.currentStock ?? 0.0);
+        return [
+          p?.code ?? '-',
+          p?.name ?? '-',
+          _unitMap[p?.id ?? 0] ?? tr('قطعة'),
+          stock,
+          p?.costPrice ?? 0.0,
+          (p?.costPrice ?? 0.0) * stock,
+          p?.salePrice ?? 0.0,
+          (p?.salePrice ?? 0.0) * stock,
+        ];
+      }).toList(),
     );
 
     if (path != null && mounted) {
@@ -662,7 +723,11 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
 
   Future<void> _printReport() async {
     if (_filteredProducts.isEmpty) {
-      AppToast.show(context, tr('لا توجد بيانات للطباعة'), type: ToastType.error);
+      AppToast.show(
+        context,
+        tr('لا توجد بيانات للطباعة'),
+        type: ToastType.error,
+      );
       return;
     }
 
@@ -673,13 +738,14 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
       // scoped copy. Full access (_stockScoped == false) prints global stock.
       final products = _stockScoped
           ? _filteredProducts
-              .map((p) => p.copyWith(currentStock: _scopedStock(p)))
-              .toList()
+                .map((p) => p.copyWith(currentStock: _scopedStock(p)))
+                .toList()
           : _filteredProducts;
       // GAP-15: اسم الشركة من إعدادات العميل مش قيمة مكتوبة بالإيد. كان
       // مثبَّت على `MONEXIA Market` — اسم علامة تالتة على رأس تقرير العميل.
-      final receiptSettings =
-          await ref.read(settingsRepositoryProvider).getReceiptSettings();
+      final receiptSettings = await ref
+          .read(settingsRepositoryProvider)
+          .getReceiptSettings();
 
       await InvoiceGenerator.printInventoryReport(
         products: products,
@@ -687,7 +753,11 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
       );
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);
+        AppToast.show(
+          context,
+          tr('خطأ في الطباعة: {e}', {'e': e}),
+          type: ToastType.error,
+        );
       }
     }
   }

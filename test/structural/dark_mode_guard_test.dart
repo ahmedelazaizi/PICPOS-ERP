@@ -143,12 +143,38 @@ final _surfaceWidget = RegExp(
   r'\b(?:Container|Card|Material|Dialog|DataTable|InputDecoration|BoxDecoration|DecoratedBox|ColoredBox)\b',
 );
 final _textStyleStart = RegExp(r'\b(?:TextStyle|GoogleFonts\.\w+)\s*\(');
+final _darkTextToken = RegExp(
+  r'Colors\.black(?:12|26|38|45|54|87)?\b|'
+  r'AppColors\.(?:textPrimary|textSecondary|textMuted)\b',
+);
+final _filterTableWidget = RegExp(
+  r'\b(?:DataTable|DataCell|DataRow|TableRow|DropdownButton|'
+  r'DropdownButtonFormField|FilterChip|InputDecoration|PicPosDataTable|'
+  r'PicPosFilterPill)\b',
+);
+
+const _filterTableTextRoots = <String>[
+  'lib/presentation/reports_picpos',
+  'lib/presentation/picpos_shell',
+  'lib/presentation/screens/reports/inventory_report_screen.dart',
+  'lib/presentation/screens/reports/inventory_report_table_source.dart',
+  'lib/presentation/screens/stock_movements_screen.dart',
+  'lib/presentation/inventory_picpos/widgets/stock_movements_table_picpos.dart',
+  'lib/presentation/widgets/searchable_dropdown.dart',
+];
 
 Iterable<File> _dartFilesUnder(String root) sync* {
-  final directory = Directory(root);
-  if (!directory.existsSync()) return;
-  for (final entity in directory.listSync(recursive: true)) {
-    if (entity is File && entity.path.endsWith('.dart')) yield entity;
+  final entity = FileSystemEntity.typeSync(root) == FileSystemEntityType.file
+      ? File(root)
+      : Directory(root);
+  if (entity is File) {
+    yield entity;
+    return;
+  }
+  if (entity is Directory && entity.existsSync()) {
+    for (final child in entity.listSync(recursive: true)) {
+      if (child is File && child.path.endsWith('.dart')) yield child;
+    }
   }
 }
 
@@ -187,12 +213,15 @@ bool _isSurfaceLiteral(List<String> lines, int index) {
   }
   if (_surfaceProperty.hasMatch(line)) return true;
   if (!line.contains('color:') || line.contains('border:')) return false;
-  final isDecoration = context.contains('BoxDecoration(') ||
-      RegExp(r'\b(?:Container|Card|Material|TableRow)\s*\([^\n]*color:')
-          .hasMatch(line);
+  final isDecoration =
+      context.contains('BoxDecoration(') ||
+      RegExp(
+        r'\b(?:Container|Card|Material|TableRow)\s*\([^\n]*color:',
+      ).hasMatch(line);
   if (!isDecoration || !_surfaceWidget.hasMatch(context)) return false;
-  return !RegExp(r'\b(?:TextStyle|Icon|CircularProgressIndicator|AlwaysStoppedAnimation)\b')
-      .hasMatch(context);
+  return !RegExp(
+    r'\b(?:TextStyle|Icon|CircularProgressIndicator|AlwaysStoppedAnimation)\b',
+  ).hasMatch(context);
 }
 
 bool _hasDarkTextLiteral(String line) {
@@ -218,6 +247,16 @@ bool _isDarkTextLiteral(List<String> lines, int index) {
       lines[index].contains('color:');
 }
 
+bool _isFilterTableDarkTextLiteral(List<String> lines, int index) {
+  final start = index > 14 ? index - 14 : 0;
+  final end = index + 6 < lines.length ? index + 6 : lines.length;
+  final context = lines.sublist(start, end).join('\n');
+  return _darkTextToken.hasMatch(lines[index]) &&
+      lines[index].contains('color:') &&
+      _textStyleStart.hasMatch(context) &&
+      _filterTableWidget.hasMatch(context);
+}
+
 void main() {
   test('presentation surfaces and text use theme-aware colors', () {
     final offenders = <String>[];
@@ -234,8 +273,8 @@ void main() {
         if (_hasMarker(lines, index)) continue;
         if (_allowlistedFiles.containsKey(relative)) continue;
 
-        final isSurface = _hasLightLiteral(line) &&
-            _isSurfaceLiteral(lines, index);
+        final isSurface =
+            _hasLightLiteral(line) && _isSurfaceLiteral(lines, index);
         final isDarkText =
             _hasDarkTextLiteral(line) && _isDarkTextLiteral(lines, index);
         if (isSurface || isDarkText) {
@@ -248,10 +287,35 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'Found $scannedSites unallowlisted dark-mode sites. Replace the '
+      reason:
+          'Found $scannedSites unallowlisted dark-mode sites. Replace the '
           'literal with a ColorScheme/picpos surface or text role. Intentional '
           'colored foregrounds need a documented file allowlist entry or a '
           'nearby `// dark-ok: <reason>` marker. Sites:\n'
+          '${offenders.join('\n')}',
+    );
+  });
+
+  test('affected filters and tables avoid literal dark text', () {
+    final offenders = <String>[];
+    for (final root in _filterTableTextRoots) {
+      for (final file in _dartFilesUnder(root)) {
+        final relative = _relativePath(file);
+        final lines = file.readAsLinesSync();
+        for (var index = 0; index < lines.length; index++) {
+          if (!_isFilterTableDarkTextLiteral(lines, index)) continue;
+          if (_hasMarker(lines, index)) continue;
+          offenders.add('$relative:${index + 1}');
+        }
+      }
+    }
+
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Filter/table text must use theme-aware text roles rather than '
+          'literal black ink or light-mode AppColors text tokens. Sites:\n'
           '${offenders.join('\n')}',
     );
   });
@@ -260,8 +324,11 @@ void main() {
     expect(_allowlistedFiles, isNotEmpty);
     for (final entry in _allowlistedFiles.entries) {
       expect(entry.key, startsWith('lib/presentation/'));
-      expect(File(entry.key).existsSync(), isTrue,
-          reason: 'Allowlist file disappeared: ${entry.key}');
+      expect(
+        File(entry.key).existsSync(),
+        isTrue,
+        reason: 'Allowlist file disappeared: ${entry.key}',
+      );
       expect(entry.value.trim(), isNotEmpty);
     }
   });

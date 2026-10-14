@@ -91,7 +91,12 @@ class PartiesRepositoryImpl implements IPartiesRepository {
     DateTime? fromDate,
     DateTime? toDate,
     int? branchId,
-  }) => _db.getPartyStatement(partyId, fromDate: fromDate, toDate: toDate, branchId: branchId);
+  }) => _db.getPartyStatement(
+    partyId,
+    fromDate: fromDate,
+    toDate: toDate,
+    branchId: branchId,
+  );
 
   @override
   Future<List<SafeTransactionData>> getPartyTransactions(int partyId) =>
@@ -108,45 +113,52 @@ class PartiesRepositoryImpl implements IPartiesRepository {
   @override
   Future<double> getCalculatedPartyBalance(int partyId) async {
     // Sales invoices increase customer balance (they owe us)
-    final salesResult = await _db.customSelect(
-      'SELECT COALESCE(SUM(total - paid), 0) as receivable '
-      'FROM sales_invoices '
-      'WHERE customer_id = ? AND status != ?',
-      variables: [Variable(partyId), const Variable('cancelled')],
-      readsFrom: {_db.salesInvoices},
-    ).getSingle();
+    final salesResult = await _db
+        .customSelect(
+          'SELECT COALESCE(SUM(total - paid), 0) as receivable '
+          'FROM sales_invoices '
+          'WHERE customer_id = ? AND status != ?',
+          variables: [Variable(partyId), const Variable('cancelled')],
+          readsFrom: {_db.salesInvoices},
+        )
+        .getSingle();
 
     // Purchase invoices increase supplier balance (we owe them)
-    final purchaseResult = await _db.customSelect(
-      'SELECT COALESCE(SUM(total - paid), 0) as payable '
-      'FROM purchase_invoices '
-      'WHERE supplier_id = ? AND status != ?',
-      variables: [Variable(partyId), const Variable('cancelled')],
-      readsFrom: {_db.purchaseInvoices},
-    ).getSingle();
+    final purchaseResult = await _db
+        .customSelect(
+          'SELECT COALESCE(SUM(total - paid), 0) as payable '
+          'FROM purchase_invoices '
+          'WHERE supplier_id = ? AND status != ?',
+          variables: [Variable(partyId), const Variable('cancelled')],
+          readsFrom: {_db.purchaseInvoices},
+        )
+        .getSingle();
 
     // Receipt vouchers reduce customer balance (they paid us)
-    final receiptsResult = await _db.customSelect(
-      'SELECT COALESCE(SUM(amount), 0) as total_receipts '
-      'FROM safe_transactions '
-      'WHERE party_id = ? AND transaction_type = ?',
-      variables: [Variable(partyId), const Variable('receipt')],
-      readsFrom: {_db.safeTransactions},
-    ).getSingle();
+    final receiptsResult = await _db
+        .customSelect(
+          'SELECT COALESCE(SUM(amount), 0) as total_receipts '
+          'FROM safe_transactions '
+          'WHERE party_id = ? AND transaction_type = ?',
+          variables: [Variable(partyId), const Variable('receipt')],
+          readsFrom: {_db.safeTransactions},
+        )
+        .getSingle();
 
     // Payment vouchers reduce supplier balance (we paid them)
-    final paymentsResult = await _db.customSelect(
-      'SELECT COALESCE(SUM(amount), 0) as total_payments '
-      'FROM safe_transactions '
-      'WHERE party_id = ? AND transaction_type = ?',
-      variables: [Variable(partyId), const Variable('payment')],
-      readsFrom: {_db.safeTransactions},
-    ).getSingle();
+    final paymentsResult = await _db
+        .customSelect(
+          'SELECT COALESCE(SUM(amount), 0) as total_payments '
+          'FROM safe_transactions '
+          'WHERE party_id = ? AND transaction_type = ?',
+          variables: [Variable(partyId), const Variable('payment')],
+          readsFrom: {_db.safeTransactions},
+        )
+        .getSingle();
 
     final receivable =
         (salesResult.data['receivable'] as num?)?.toDouble() ?? 0.0;
-    final payable =
-        (purchaseResult.data['payable'] as num?)?.toDouble() ?? 0.0;
+    final payable = (purchaseResult.data['payable'] as num?)?.toDouble() ?? 0.0;
     final receipts =
         (receiptsResult.data['total_receipts'] as num?)?.toDouble() ?? 0.0;
     final payments =
@@ -158,7 +170,7 @@ class PartiesRepositoryImpl implements IPartiesRepository {
 
   @override
   Future<List<domain_models.PartyBalanceMismatch>>
-      getPartyBalanceMismatches() async {
+  getPartyBalanceMismatches() async {
     final mismatches = await _db.getPartyBalanceMismatches();
     return mismatches
         .map(
@@ -209,11 +221,13 @@ class PartiesRepositoryImpl implements IPartiesRepository {
     required int partyId,
     required bool supplier,
     DateTime? asOf,
+    int? branchId,
   }) => _db.getPartyOpenInvoices(
-        partyId: partyId,
-        supplier: supplier,
-        asOf: asOf,
-      );
+    partyId: partyId,
+    supplier: supplier,
+    asOf: asOf,
+    branchId: branchId,
+  );
 
   @override
   Future<List<PartyPaymentMatchRow>> getPartyPaymentMatches({
@@ -227,11 +241,7 @@ class PartiesRepositoryImpl implements IPartiesRepository {
     required int supplierId,
     DateTime? from,
     DateTime? to,
-  }) => _db.getPurchaseOrderMatches(
-        supplierId: supplierId,
-        from: from,
-        to: to,
-      );
+  }) => _db.getPurchaseOrderMatches(supplierId: supplierId, from: from, to: to);
 
   @override
   Future<List<CommercialPaperData>> getPartyPapers(int partyId) =>
@@ -249,10 +259,10 @@ class PartiesRepositoryImpl implements IPartiesRepository {
     required bool supplier,
     int limit = 6,
   }) => _db.getPartySettlementRows(
-        partyId: partyId,
-        supplier: supplier,
-        limit: limit,
-      );
+    partyId: partyId,
+    supplier: supplier,
+    limit: limit,
+  );
 
   // ═══ متابعةُ التحصيل ومطالبةُ المورد — تمريرٌ خالص ═════════════════════
 
@@ -282,21 +292,21 @@ class PartiesRepositoryImpl implements IPartiesRepository {
     String? notes,
     int? createdBy,
   }) => _db.insertPartyFollowUp(
-        PartyFollowUpsCompanion.insert(
-          partyId: partyId,
-          contactedAt: contactedAt,
-          outcome: outcome,
-          amountDue: Value(amountDue),
-          invoiceId: Value(invoiceId),
-          invoiceNumber: Value(invoiceNumber),
-          promisedDate: Value(promisedDate),
-          promisedAmount: Value(promisedAmount),
-          contactPerson: Value(contactPerson),
-          nextActionAt: Value(nextActionAt),
-          notes: Value(notes),
-          createdBy: Value(createdBy),
-        ),
-      );
+    PartyFollowUpsCompanion.insert(
+      partyId: partyId,
+      contactedAt: contactedAt,
+      outcome: outcome,
+      amountDue: Value(amountDue),
+      invoiceId: Value(invoiceId),
+      invoiceNumber: Value(invoiceNumber),
+      promisedDate: Value(promisedDate),
+      promisedAmount: Value(promisedAmount),
+      contactPerson: Value(contactPerson),
+      nextActionAt: Value(nextActionAt),
+      notes: Value(notes),
+      createdBy: Value(createdBy),
+    ),
+  );
 
   @override
   Future<List<SupplierClaim>> getSupplierClaims(
@@ -321,19 +331,19 @@ class PartiesRepositoryImpl implements IPartiesRepository {
     String? notes,
     int? createdBy,
   }) => _db.insertSupplierClaim(
-        SupplierClaimsCompanion.insert(
-          supplierId: supplierId,
-          claimDate: claimDate,
-          settlementKind: settlementKind,
-          ledgerBalance: Value(ledgerBalance),
-          netAmount: Value(netAmount),
-          lineCount: Value(lineCount),
-          linesJson: Value(linesJson),
-          replyDueAt: Value(replyDueAt),
-          notes: Value(notes),
-          createdBy: Value(createdBy),
-        ),
-      );
+    SupplierClaimsCompanion.insert(
+      supplierId: supplierId,
+      claimDate: claimDate,
+      settlementKind: settlementKind,
+      ledgerBalance: Value(ledgerBalance),
+      netAmount: Value(netAmount),
+      lineCount: Value(lineCount),
+      linesJson: Value(linesJson),
+      replyDueAt: Value(replyDueAt),
+      notes: Value(notes),
+      createdBy: Value(createdBy),
+    ),
+  );
 
   @override
   Future<void> updateSupplierClaimStatus(int id, String status) =>

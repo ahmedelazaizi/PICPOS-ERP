@@ -24,6 +24,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/attachments_test_overrides.dart';
+import '../helpers/library_source.dart';
 
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/data/providers/document_record_providers.dart';
@@ -42,21 +43,20 @@ PurchaseReturnRecord _rec({
   String? supplier,
   String? reason,
   DateTime? at,
-}) =>
-    PurchaseReturnRecord(
-      id: id,
-      originalInvoiceId: 30,
-      returnDate: at ?? DateTime.now(),
-      subtotal: total - tax,
-      tax: tax,
-      total: total,
-      refundMethod: method,
-      isFullReturn: false,
-      originalInvoiceNumber: invoice ?? 'PI-30',
-      supplierId: 4,
-      supplierName: supplier ?? 'مورد الشمال',
-      reason: reason,
-    );
+}) => PurchaseReturnRecord(
+  id: id,
+  originalInvoiceId: 30,
+  returnDate: at ?? DateTime.now(),
+  subtotal: total - tax,
+  tax: tax,
+  total: total,
+  refundMethod: method,
+  isFullReturn: false,
+  originalInvoiceNumber: invoice ?? 'PI-30',
+  supplierId: 4,
+  supplierName: supplier ?? 'مورد الشمال',
+  reason: reason,
+);
 
 class _Seen {
   DocumentRecordFilter? filter;
@@ -84,13 +84,15 @@ Future<void> _pump(
         }),
         // J2 — المسوّداتُ والملغاةُ وأرقامُ السندات: لا شيءَ منها هنا.
         purchaseReturnRecordExtrasProvider.overrideWith(
-            (ref, w) async => const PurchaseReturnRecordExtras()),
+          (ref, w) async => const PurchaseReturnRecordExtras(),
+        ),
         // ⚠️ **إلزاميّ**: حوارُ المستند يحمل `PicPosAttachmentsPanel`،
         //    واللوحُ يصل `databaseProvider` فتُفتَح قاعدةٌ حقيقيّةٌ ولا
         //    يستقرّ `pumpAndSettle`. راجع رأسَ `attachments_test_overrides`.
         attachmentsRepositoryProvider.overrideWithValue(fakeAttachmentsRepo()),
-        currentUserPermissionsProvider
-            .overrideWith((ref) async => const ['purchases_return_view']),
+        currentUserPermissionsProvider.overrideWith(
+          (ref) async => const ['purchases_return_view'],
+        ),
       ],
       child: const MaterialApp(
         localizationsDelegates: [
@@ -106,53 +108,72 @@ Future<void> _pump(
 }
 
 void main() {
-  testWidgets('مرساةٌ — المدخلُ يفتح السجلَّ وفيه زرُّ «جديد»',
-      (tester) async {
+  testWidgets('مرساةٌ — المدخلُ يفتح السجلَّ وفيه زرُّ «جديد»', (tester) async {
     await _pump(tester, rows: [_rec(id: 1, total: 120, tax: 20)]);
 
-    expect(find.text('PI-30'), findsOneWidget,
-        reason: 'السجلُّ لم يُرسَم — أو المدخلُ ما زال يفتح شاشةَ الإنشاء');
+    expect(
+      find.text('PI-30'),
+      findsOneWidget,
+      reason: 'السجلُّ لم يُرسَم — أو المدخلُ ما زال يفتح شاشةَ الإنشاء',
+    );
     expect(find.byKey(const Key('return_records_new')), findsOneWidget);
   });
 
-  testWidgets('🔴 وثلاثةُ مردوداتٍ على فاتورةٍ ثلاثةُ صفوفٍ لا صفٌّ واحد',
-      (tester) async {
+  testWidgets('🔴 وثلاثةُ مردوداتٍ على فاتورةٍ ثلاثةُ صفوفٍ لا صفٌّ واحد', (
+    tester,
+  ) async {
     // 🔴 عينُ عطب الحوار القديم: الصفُّ فاتورةٌ لا مردود، فيُجمَع الثلاثةُ
     //    في سطرٍ واحدٍ ولا سبيلَ لفتح واحدٍ بعينه.
-    await _pump(tester, rows: [
-      _rec(id: 1, total: 10),
-      _rec(id: 2, total: 20),
-      _rec(id: 3, total: 30),
-    ]);
+    await _pump(
+      tester,
+      rows: [
+        _rec(id: 1, total: 10),
+        _rec(id: 2, total: 20),
+        _rec(id: 3, total: 30),
+      ],
+    );
 
-    expect(find.text('PI-30'), findsNWidgets(3),
-        reason: '🔴 المردوداتُ مطويّةٌ على فاتورتها — فلا واحدَ منها يُفتَح');
+    expect(
+      find.text('PI-30'),
+      findsNWidgets(3),
+      reason: '🔴 المردوداتُ مطويّةٌ على فاتورتها — فلا واحدَ منها يُفتَح',
+    );
   });
 
   testWidgets('🔴 وضريبةُ المدخلات المردودة مجموعةٌ على حدة', (tester) async {
-    await _pump(tester, rows: [
-      _rec(id: 1, total: 120, tax: 20),
-      _rec(id: 2, total: 60, tax: 10),
-    ]);
+    await _pump(
+      tester,
+      rows: [_rec(id: 1, total: 120, tax: 20), _rec(id: 2, total: 60, tax: 10)],
+    );
 
     final texts = tester
         .widgetList<Text>(find.byType(Text))
         .map((t) => t.data)
         .whereType<String>()
         .toList();
-    expect(texts.any((t) => t.startsWith('30')), isTrue,
-        reason: '🔴 لا مجموعَ للضريبة — والدوريّةُ الضريبيّةُ بلا رقمٍ '
-            'يُراجَع، وهي الحقلُ الذي وُجد الجدولُ لأجله');
-    expect(texts.any((t) => t.startsWith('180')), isTrue,
-        reason: 'مجموعُ الإجماليّ غاب');
+    expect(
+      texts.any((t) => t.startsWith('30')),
+      isTrue,
+      reason:
+          '🔴 لا مجموعَ للضريبة — والدوريّةُ الضريبيّةُ بلا رقمٍ '
+          'يُراجَع، وهي الحقلُ الذي وُجد الجدولُ لأجله',
+    );
+    expect(
+      texts.any((t) => t.startsWith('180')),
+      isTrue,
+      reason: 'مجموعُ الإجماليّ غاب',
+    );
   });
 
   testWidgets('🔴 ومدى «إلى اليوم» يشمل مردوداتِ اليوم', (tester) async {
     final seen = _Seen();
     await _pump(tester, rows: const [], seen: seen);
 
-    expect(seen.filter!.to!.hour, 23,
-        reason: '🔴 `to` عند أوّل اليوم ⇒ مردوداتُ اليوم تسقط من سجلّ اليوم');
+    expect(
+      seen.filter!.to!.hour,
+      23,
+      reason: '🔴 `to` عند أوّل اليوم ⇒ مردوداتُ اليوم تسقط من سجلّ اليوم',
+    );
     expect(seen.filter!.to!.minute, 59);
   });
 
@@ -161,16 +182,23 @@ void main() {
     await _pump(tester, rows: const [], seen: seen);
 
     await tester.enterText(
-        find.byKey(const Key('return_records_search')), 'الشمال');
+      find.byKey(const Key('return_records_search')),
+      'الشمال',
+    );
     await tester.pumpAndSettle();
 
-    expect(seen.filter!.search, 'الشمال',
-        reason: 'البحثُ يرشّح الصفحةَ المحمَّلةَ وحدَها ويُخفي ما وراءها');
+    expect(
+      seen.filter!.search,
+      'الشمال',
+      reason: 'البحثُ يرشّح الصفحةَ المحمَّلةَ وحدَها ويُخفي ما وراءها',
+    );
   });
 
   testWidgets('وفتحُ صفٍّ يعرض المستندَ للقراءة', (tester) async {
-    await _pump(tester,
-        rows: [_rec(id: 1, total: 120, tax: 20, reason: 'تالف')]);
+    await _pump(
+      tester,
+      rows: [_rec(id: 1, total: 120, tax: 20, reason: 'تالف')],
+    );
 
     // J2: الصفُّ يُختار، و«عرض» في شريط أفعاله يفتح المستند.
     await tester.tap(find.text('PI-30'));
@@ -178,15 +206,21 @@ void main() {
     await tester.tap(find.byKey(const Key('return_row_view')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('return_document_view')), findsOneWidget,
-        reason: 'فتحُ صفٍّ لا يعرض شيئاً — وهو نصفُ خ‑٩');
+    expect(
+      find.byKey(const Key('return_document_view')),
+      findsOneWidget,
+      reason: 'فتحُ صفٍّ لا يعرض شيئاً — وهو نصفُ خ‑٩',
+    );
     expect(find.text('تالف'), findsWidgets);
     expect(find.text('ضريبةُ المدخلات المردودة'), findsOneWidget);
 
     // 🔴 **ولوحُ المرفقات فيه** (خ‑١٠): إشعارُ الخصم ورقةُ **المردود** لا
     //    ورقةُ الفاتورة الأصل، ووضعُها على الأمّ يخلط مستندَين في ملفّ.
-    expect(find.byKey(const Key('attachments_panel')), findsOneWidget,
-        reason: '🔴 المردودُ يُعرَض بلا مرفقاته');
+    expect(
+      find.byKey(const Key('attachments_panel')),
+      findsOneWidget,
+      reason: '🔴 المردودُ يُعرَض بلا مرفقاته',
+    );
 
     // 🔴 **والمرساةُ المردودُ نفسُه لا فاتورتُه الأصل.** نجت طفرةٌ تُبدّلها
     //    (‏D4): كلُّ ما فوقَها يمرّ أخضرَ واللوحُ حاضرٌ — وهو يقرأ ويكتب
@@ -194,9 +228,13 @@ void main() {
     //    الأمّ يخلط مستندَين في ملفٍّ واحدٍ ويُظهر مرفقَ مردودٍ على مردودٍ
     //    آخرَ من نفس الفاتورة.
     final panel = tester.widget<PicPosAttachmentsPanel>(
-        find.byType(PicPosAttachmentsPanel));
-    expect(panel.entityId, 1,
-        reason: '🔴 اللوحُ مرسًى على غير المردود — راجع أعلاه');
+      find.byType(PicPosAttachmentsPanel),
+    );
+    expect(
+      panel.entityId,
+      1,
+      reason: '🔴 اللوحُ مرسًى على غير المردود — راجع أعلاه',
+    );
     expect(panel.entityType, 'purchase_return');
   });
 
@@ -220,15 +258,24 @@ void main() {
       //    drift — لا بفشلِ العقد. وتجاوزُ شجرةِ مزوّديها كلِّها لقياس سطرٍ
       //    واحدٍ كلفةٌ بلا عائد.
       final src = File(
-              'lib/presentation/purchase_returns_picpos/screens/purchase_return_records_picpos_screen.dart')
-          .readAsStringSync();
+        'lib/presentation/purchase_returns_picpos/screens/purchase_return_records_picpos_screen.dart',
+      ).readAsStringSync();
       // J2: `push<ReturnFormResult>(` — الصفحةُ تعيد الصفَّ المعتمَد ليُختار.
-      expect(src, matches(RegExp(r'Navigator\.of\(context\)\.push[<(]')),
-          reason: '🔴 لم يعد يدفع — راجع أعلاه');
-      expect(src, isNot(contains('pushReplacement')),
-          reason: '🔴 استُبدل السجلُّ بشاشة الإنشاء ⇒ «رجوع» ميّت');
-      expect(src, contains('PurchaseReturnsPicposScreen('),
-          reason: 'زرُّ «جديد» لا يفتح شاشةَ الإنشاء القائمة');
+      expect(
+        src,
+        matches(RegExp(r'Navigator\.of\(context\)\.push[<(]')),
+        reason: '🔴 لم يعد يدفع — راجع أعلاه',
+      );
+      expect(
+        src,
+        isNot(contains('pushReplacement')),
+        reason: '🔴 استُبدل السجلُّ بشاشة الإنشاء ⇒ «رجوع» ميّت',
+      );
+      expect(
+        src,
+        contains('PurchaseReturnsPicposScreen('),
+        reason: 'زرُّ «جديد» لا يفتح شاشةَ الإنشاء القائمة',
+      );
     });
 
     test('🔴 والاستمارةُ المدفوعةُ لا تنتحل هويّةَ السجلّ', () {
@@ -241,30 +288,44 @@ void main() {
       // ⚠️ **ويُقاس بنيويّاً**: الاستمارةُ تفتح قاعدةً حقيقيّةً عند
       //    `initState` (‏`loadInvoices`) فلا تُركَّب في اختبار ودجت.
       final form = File(
-              'lib/presentation/purchase_returns_picpos/screens/purchase_returns_picpos_screen.dart')
-          .readAsStringSync();
+        'lib/presentation/purchase_returns_picpos/screens/purchase_returns_picpos_screen.dart',
+      ).readAsStringSync();
       final code = [
         for (final line in form.split('\n'))
           if (!line.trimLeft().startsWith('//')) line,
       ].join('\n');
 
-      expect(code, isNot(contains("title: 'مرتجع المشتريات'")),
-          reason: '🔴 الاستمارةُ تحمل عنوانَ السجلّ نفسَه — فيظنُّ '
-              'المستخدمُ أنّ «جديد» أعاده إلى حيث كان');
-      expect(code, contains('جديد'),
-          reason: 'عنوانُ الاستمارة لا يقول إنّها إنشاء');
-      expect(code, isNot(contains("Text('سجل المرتجعات')")),
-          reason: '🔴 زرٌّ اسمُه «سجل المرتجعات» داخلَ الاستمارة يُنتج '
-              'سجلَّين ظاهرَين لمستندٍ واحد');
+      expect(
+        code,
+        isNot(contains("title: 'مرتجع المشتريات'")),
+        reason:
+            '🔴 الاستمارةُ تحمل عنوانَ السجلّ نفسَه — فيظنُّ '
+            'المستخدمُ أنّ «جديد» أعاده إلى حيث كان',
+      );
+      expect(
+        code,
+        contains('جديد'),
+        reason: 'عنوانُ الاستمارة لا يقول إنّها إنشاء',
+      );
+      expect(
+        code,
+        isNot(contains("Text('سجل المرتجعات')")),
+        reason:
+            '🔴 زرٌّ اسمُه «سجل المرتجعات» داخلَ الاستمارة يُنتج '
+            'سجلَّين ظاهرَين لمستندٍ واحد',
+      );
 
       // ⚠️ **J2 (قرارُ المالك): الزرُّ سُحب لصالح أفعال صفوف السجلّ** —
       //    فالمساراتُ الثلاثةُ الحيّةُ التي كان حوارُه بابَها الوحيد يجب أن
       //    تبقى حيّةً من السجلّ، بنفس المعالجات ونفس الحرّاس.
-      expect(code, isNot(contains('showReturnsHistoryDialog')),
-          reason: 'قرارُ المالك: الحوارُ استُبدل بأفعال الصفوف');
+      expect(
+        code,
+        isNot(contains('showReturnsHistoryDialog')),
+        reason: 'قرارُ المالك: الحوارُ استُبدل بأفعال الصفوف',
+      );
       final records = File(
-              'lib/presentation/purchase_returns_picpos/screens/purchase_return_records_picpos_screen.dart')
-          .readAsStringSync();
+        'lib/presentation/purchase_returns_picpos/screens/purchase_return_records_picpos_screen.dart',
+      ).readAsStringSync();
       for (final route in const [
         'reprintPostedReturn',
         'showPostedReturnItems',
@@ -272,30 +333,42 @@ void main() {
         'PermissionCodes.purchasesReturnPrint',
         'PermissionCodes.purchasesReturnEdit',
       ]) {
-        expect(records, contains(route),
-            reason: '🔴 سقط مسارٌ كان في الحوار بلا بابٍ بديل: $route');
+        expect(
+          records,
+          contains(route),
+          reason: '🔴 سقط مسارٌ كان في الحوار بلا بابٍ بديل: $route',
+        );
       }
       final actions = File(
-              'lib/presentation/purchase_returns_picpos/screens/purchase_returns_picpos_record_actions.dart')
-          .readAsStringSync();
+        'lib/presentation/purchase_returns_picpos/screens/purchase_returns_picpos_record_actions.dart',
+      ).readAsStringSync();
       expect(actions, contains('_reprintHistoricalReturn(invoice)'));
       expect(actions, contains('_showReturnDetails(invoice)'));
-      expect(actions, contains('_editPurchaseReturn(invoice)'),
-          reason: 'أفعالُ الصفّ تنادي المعالجاتِ القائمة لا نسخاً منها');
+      expect(
+        actions,
+        contains('_editPurchaseReturn(invoice)'),
+        reason: 'أفعالُ الصفّ تنادي المعالجاتِ القائمة لا نسخاً منها',
+      );
     });
 
     test('ذراعُ PicPos تبني السجلَّ', () {
-      final src = File('lib/app_main_screen.dart').readAsStringSync();
+      final src = readLibrarySource('lib/app_main_screen.dart');
       final at = src.indexOf('appScreen: AppScreen.purchaseReturns,');
       expect(at, greaterThan(0));
       final body = src.substring(at, src.indexOf('label:', at));
-      expect(body, contains('PurchaseReturnRecordsPicPosScreen()'),
-          reason: 'المدخلُ ما زال يفتح شاشةَ الإنشاء مباشرةً');
+      expect(
+        body,
+        contains('PurchaseReturnRecordsPicPosScreen()'),
+        reason: 'المدخلُ ما زال يفتح شاشةَ الإنشاء مباشرةً',
+      );
 
       // ⚠️ **وذراعُ UralCash لا تتبدّل** (ح‑٣): العملُ عليها موقوفٌ،
       //    والسجلُّ مبنيٌّ على قشرة PicPos.
-      expect(body, contains('PurchaseReturnsScreen()'),
-          reason: 'سقطت ذراعُ UralCash — وشاشتُها فقدت بابَها');
+      expect(
+        body,
+        contains('PurchaseReturnsScreen()'),
+        reason: 'سقطت ذراعُ UralCash — وشاشتُها فقدت بابَها',
+      );
       expect(body, contains('Brand.isPicPos'));
     });
   });

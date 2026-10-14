@@ -18,6 +18,7 @@ extension PartyProfileDao on AppDatabase {
     required int partyId,
     required bool supplier,
     DateTime? asOf,
+    int? branchId,
   }) async {
     final at = asOf ?? DateTime.now();
     final table = supplier ? 'purchase_invoices' : 'sales_invoices';
@@ -27,6 +28,13 @@ extension PartyProfileDao on AppDatabase {
     final returnFilter = supplier
         ? ''
         : " AND (inv.sale_type IS NULL OR inv.sale_type != 'return')";
+    final branchFilter = branchId == null
+        ? ''
+        : '''
+        AND inv.warehouse_id IN (
+          SELECT w.id FROM warehouses w
+          WHERE w.branch_id = ? OR w.branch_id IS NULL
+        )''';
 
     final rows = await customSelect(
       '''
@@ -38,27 +46,36 @@ extension PartyProfileDao on AppDatabase {
       FROM $table inv
       WHERE inv.$fk = ?
         AND inv.is_deleted = 0
-        AND inv.total > inv.paid$returnFilter
+        AND inv.total > inv.paid$returnFilter$branchFilter
       ORDER BY due_at ASC
       ''',
-      variables: [dateVar(at), Variable(partyId)],
-      readsFrom: {if (supplier) purchaseInvoices else salesInvoices},
+      variables: [
+        dateVar(at),
+        Variable(partyId),
+        if (branchId != null) Variable(branchId),
+      ],
+      readsFrom: {
+        if (supplier) purchaseInvoices else salesInvoices,
+        if (branchId != null) warehouses,
+      },
     ).get();
 
-    DateTime at2(QueryRow r, String key) =>
-        DateTime.fromMillisecondsSinceEpoch(
-            ((r.data[key] as num?)?.toInt() ?? 0) * 1000);
+    DateTime at2(QueryRow r, String key) => DateTime.fromMillisecondsSinceEpoch(
+      ((r.data[key] as num?)?.toInt() ?? 0) * 1000,
+    );
 
     return rows
-        .map((r) => PartyOpenInvoiceRow(
-              invoiceId: (r.data['id'] as num?)?.toInt() ?? 0,
-              invoiceNumber: r.data['invoice_number'] as String? ?? '',
-              invoiceDate: at2(r, 'invoice_date'),
-              dueDate: at2(r, 'due_at'),
-              total: (r.data['total'] as num?)?.toDouble() ?? 0,
-              paid: (r.data['paid'] as num?)?.toDouble() ?? 0,
-              daysLate: (r.data['days_late'] as num?)?.toInt() ?? 0,
-            ))
+        .map(
+          (r) => PartyOpenInvoiceRow(
+            invoiceId: (r.data['id'] as num?)?.toInt() ?? 0,
+            invoiceNumber: r.data['invoice_number'] as String? ?? '',
+            invoiceDate: at2(r, 'invoice_date'),
+            dueDate: at2(r, 'due_at'),
+            total: (r.data['total'] as num?)?.toDouble() ?? 0,
+            paid: (r.data['paid'] as num?)?.toDouble() ?? 0,
+            daysLate: (r.data['days_late'] as num?)?.toInt() ?? 0,
+          ),
+        )
         .toList();
   }
 
@@ -94,16 +111,19 @@ extension PartyProfileDao on AppDatabase {
     ).get();
 
     return rows
-        .map((r) => PartyPaymentMatchRow(
-              paymentId: (r.data['id'] as num?)?.toInt() ?? 0,
-              paymentNumber: r.data['payment_number'] as String? ?? '',
-              paymentDate: DateTime.fromMillisecondsSinceEpoch(
-                  ((r.data['payment_date'] as num?)?.toInt() ?? 0) * 1000),
-              amount: (r.data['amount'] as num?)?.toDouble() ?? 0,
-              allocated: (r.data['allocated'] as num?)?.toDouble() ?? 0,
-              method: r.data['payment_method'] as String? ?? '',
-              invoiceCount: (r.data['invoice_count'] as num?)?.toInt() ?? 0,
-            ))
+        .map(
+          (r) => PartyPaymentMatchRow(
+            paymentId: (r.data['id'] as num?)?.toInt() ?? 0,
+            paymentNumber: r.data['payment_number'] as String? ?? '',
+            paymentDate: DateTime.fromMillisecondsSinceEpoch(
+              ((r.data['payment_date'] as num?)?.toInt() ?? 0) * 1000,
+            ),
+            amount: (r.data['amount'] as num?)?.toDouble() ?? 0,
+            allocated: (r.data['allocated'] as num?)?.toDouble() ?? 0,
+            method: r.data['payment_method'] as String? ?? '',
+            invoiceCount: (r.data['invoice_count'] as num?)?.toInt() ?? 0,
+          ),
+        )
         .toList();
   }
 
@@ -157,17 +177,19 @@ extension PartyProfileDao on AppDatabase {
     }
 
     return rows
-        .map((r) => PoMatchRow(
-              orderId: (r.data['order_id'] as num?)?.toInt() ?? 0,
-              orderNumber: r.data['order_number'] as String? ?? '',
-              productName: r.data['product_name'] as String? ?? '',
-              ordered: (r.data['ordered'] as num?)?.toDouble() ?? 0,
-              received: (r.data['received'] as num?)?.toDouble() ?? 0,
-              invoiced: (r.data['invoiced'] as num?)?.toDouble() ?? 0,
-              orderDate: maybe(r, 'order_date') ?? DateTime(2020),
-              expectedDate: maybe(r, 'expected_date'),
-              receivedAt: maybe(r, 'received_at'),
-            ))
+        .map(
+          (r) => PoMatchRow(
+            orderId: (r.data['order_id'] as num?)?.toInt() ?? 0,
+            orderNumber: r.data['order_number'] as String? ?? '',
+            productName: r.data['product_name'] as String? ?? '',
+            ordered: (r.data['ordered'] as num?)?.toDouble() ?? 0,
+            received: (r.data['received'] as num?)?.toDouble() ?? 0,
+            invoiced: (r.data['invoiced'] as num?)?.toDouble() ?? 0,
+            orderDate: maybe(r, 'order_date') ?? DateTime(2020),
+            expectedDate: maybe(r, 'expected_date'),
+            receivedAt: maybe(r, 'received_at'),
+          ),
+        )
         .toList();
   }
 
@@ -309,7 +331,8 @@ extension PartyProfileDao on AppDatabase {
     ).get();
 
     DateTime at(QueryRow r, String key) => DateTime.fromMillisecondsSinceEpoch(
-        ((r.data[key] as num?)?.toInt() ?? 0) * 1000);
+      ((r.data[key] as num?)?.toInt() ?? 0) * 1000,
+    );
 
     return rows.map((r) {
       final lastPaid = (r.data['last_paid_at'] as num?)?.toInt();

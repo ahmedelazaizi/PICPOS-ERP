@@ -2,8 +2,42 @@ import 'package:ural_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/config/brand.dart';
 import '../../core/theme/app_colors.dart';
 import '../picpos_shell/picpos_surface.dart';
+
+Color _dropdownCard(BuildContext context) =>
+    Brand.isPicPos ? context.picposCard : Theme.of(context).cardColor;
+
+Color _dropdownField(BuildContext context) => Brand.isPicPos
+    ? context.picposField
+    : Theme.of(context).inputDecorationTheme.fillColor ??
+          Theme.of(context).cardColor;
+
+Color _dropdownHairline(BuildContext context) {
+  if (Brand.isPicPos) return context.picposHairline;
+  final theme = Theme.of(context);
+  return theme.inputDecorationTheme.enabledBorder?.borderSide.color ??
+      theme.dividerColor;
+}
+
+Color _dropdownText(BuildContext context) => Brand.isPicPos
+    ? context.picposText
+    : Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textPrimary;
+
+Color _dropdownMuted(BuildContext context) {
+  if (Brand.isPicPos) return context.picposMuted;
+  return Theme.of(context).brightness == Brightness.dark
+      ? Colors.white70
+      : AppColors.textMuted;
+}
+
+Color _dropdownSecondary(BuildContext context) {
+  if (Brand.isPicPos) return context.picposSecondary;
+  return Theme.of(context).brightness == Brightness.dark
+      ? Colors.white70
+      : AppColors.textSecondary;
+}
 
 /// A dropdown widget with search functionality for large lists
 class SearchableDropdown<T> extends StatefulWidget {
@@ -18,6 +52,7 @@ class SearchableDropdown<T> extends StatefulWidget {
   final bool enabled;
   final Widget Function(T)? itemBuilder;
   final bool showClearButton;
+
   /// Optional secondary search field (e.g. phone for parties, code for accounts)
   final String Function(T)? secondarySearchBuilder;
 
@@ -125,7 +160,9 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
     final spaceBelow = screenHeight - offset.dy - size.height - 8;
     final spaceAbove = offset.dy - 8;
     final showAbove = spaceBelow < 200 && spaceAbove > spaceBelow;
-    final maxHeight = showAbove ? spaceAbove.clamp(100, 300).toDouble() : spaceBelow.clamp(100, 300).toDouble();
+    final maxHeight = showAbove
+        ? spaceAbove.clamp(100, 300).toDouble()
+        : spaceBelow.clamp(100, 300).toDouble();
 
     return OverlayEntry(
       builder: (context) => Stack(
@@ -155,9 +192,11 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                   constraints: BoxConstraints(maxHeight: maxHeight),
                   decoration: BoxDecoration(
                     // خلفيّةُ القائمة المنسدلة — سطحٌ لا مقدّمة، فتتبع الوضعَ.
-                    color: context.picposCard,
+                    color: _dropdownCard(context),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -169,9 +208,17 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                           controller: _searchController,
                           autofocus: true,
                           decoration: InputDecoration(
-                            hintText: '${widget.searchHint} (${widget.items.length})',
-                            hintStyle: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted),
-                            prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.primary),
+                            hintText:
+                                '${widget.searchHint} (${widget.items.length})',
+                            hintStyle: GoogleFonts.cairo(
+                              fontSize: 12,
+                              color: _dropdownMuted(context),
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              size: 18,
+                              color: AppColors.primary,
+                            ),
                             isDense: true,
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
@@ -179,11 +226,15 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+                              borderSide: BorderSide(
+                                color: AppColors.primary.withValues(alpha: 0.3),
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: AppColors.primary),
+                              borderSide: const BorderSide(
+                                color: AppColors.primary,
+                              ),
                             ),
                           ),
                           style: GoogleFonts.cairo(fontSize: 13),
@@ -198,7 +249,10 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                                 padding: const EdgeInsets.all(16),
                                 child: Text(
                                   tr('لا توجد نتائج'),
-                                  style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 12),
+                                  style: GoogleFonts.cairo(
+                                    color: _dropdownMuted(context),
+                                    fontSize: 12,
+                                  ),
                                 ),
                               )
                             : ListView.builder(
@@ -217,11 +271,15 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: isSelected
-                                            ? AppColors.primary.withValues(alpha: 0.08)
+                                            ? AppColors.primary.withValues(
+                                                alpha: 0.08,
+                                              )
                                             : null,
                                         border: Border(
                                           bottom: BorderSide(
-                                            color: context.picposHairline.withValues(alpha: 0.5),
+                                            color: _dropdownHairline(
+                                              context,
+                                            ).withValues(alpha: 0.5),
                                             width: 0.5,
                                           ),
                                         ),
@@ -237,7 +295,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                                                   : FontWeight.w500,
                                               color: isSelected
                                                   ? AppColors.primary
-                                                  : AppColors.textPrimary,
+                                                  : _dropdownText(context),
                                             ),
                                           ),
                                     ),
@@ -272,7 +330,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
             style: GoogleFonts.cairo(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: _dropdownSecondary(context),
             ),
           ),
           const SizedBox(height: 6),
@@ -286,15 +344,17 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
               decoration: BoxDecoration(
                 border: Border.all(
                   color: !widget.enabled
-                      ? context.picposHairline.withValues(alpha: 0.5)
+                      ? _dropdownHairline(context).withValues(alpha: 0.5)
                       : _isOpen
-                          ? AppColors.primary
-                          : context.picposHairline,
+                      ? AppColors.primary
+                      : _dropdownHairline(context),
                 ),
                 borderRadius: BorderRadius.circular(8),
                 // أرضيّةُ الحقل — لا نصَّه: المفعَّلُ يأخذ سطحَ البطاقة
                 // والمعطَّلُ يأخذ السطحَ الخافت، وكلاهما يتبع الوضعَ.
-                color: widget.enabled ? context.picposCard : context.picposField,
+                color: widget.enabled
+                    ? _dropdownCard(context)
+                    : _dropdownField(context),
               ),
               child: Row(
                 children: [
@@ -304,8 +364,8 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                       style: GoogleFonts.cairo(
                         fontSize: 13,
                         color: widget.value != null
-                            ? AppColors.textPrimary
-                            : AppColors.textMuted,
+                            ? _dropdownText(context)
+                            : _dropdownMuted(context),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -315,13 +375,17 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                       onTap: () {
                         widget.onChanged(null);
                       },
-                      child: const Icon(Icons.close, size: 16, color: AppColors.textMuted),
+                      child: Icon(
+                        Icons.close,
+                        size: 16,
+                        color: _dropdownMuted(context),
+                      ),
                     ),
                     const SizedBox(width: 4),
                   ],
                   Icon(
                     _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                    color: AppColors.textSecondary,
+                    color: _dropdownSecondary(context),
                     size: 20,
                   ),
                 ],
@@ -374,11 +438,7 @@ class PartySearchableDropdown extends StatelessWidget {
       secondarySearchBuilder: (party) => party.phone ?? '',
       itemBuilder: (party) => Row(
         children: [
-          const Icon(
-            Icons.person_outline,
-            size: 16,
-            color: AppColors.textMuted,
-          ),
+          Icon(Icons.person_outline, size: 16, color: _dropdownMuted(context)),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -387,14 +447,17 @@ class PartySearchableDropdown extends StatelessWidget {
               children: [
                 Text(
                   party.name ?? tr('بدون اسم'),
-                  style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.cairo(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 if (party.phone != null && party.phone.isNotEmpty)
                   Text(
                     party.phone,
                     style: GoogleFonts.cairo(
                       fontSize: 11,
-                      color: AppColors.textMuted,
+                      color: _dropdownMuted(context),
                     ),
                   ),
               ],
@@ -466,7 +529,10 @@ class AccountSearchableDropdown extends StatelessWidget {
           Expanded(
             child: Text(
               a.name,
-              style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.w500),
+              style: GoogleFonts.cairo(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
               overflow: TextOverflow.ellipsis,
             ),
           ),

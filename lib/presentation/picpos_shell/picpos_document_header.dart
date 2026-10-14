@@ -2,6 +2,7 @@ import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import 'picpos_surface.dart';
 
 /// ترويسةُ مستند: عنوانٌ ورقمٌ ووسمُ حالة.
 ///
@@ -97,11 +98,13 @@ class PicPosDocumentHeader extends StatelessWidget {
                         if (number != null)
                           Text(
                             number!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              fontFeatures: [FontFeature.tabularFigures()],
-                              color: AppColors.textMuted,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                              color: context.picposMuted,
                             ),
                           ),
                         if (status case final s?) _StatusPill(status: s),
@@ -112,9 +115,9 @@ class PicPosDocumentHeader extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
                           note!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.textMuted,
+                            color: context.picposMuted,
                           ),
                         ),
                       ),
@@ -140,19 +143,13 @@ class PicPosDocStatus {
   const PicPosDocStatus(this.label, this.tone);
 
   /// مسودةٌ — لم تُرحَّل بعد.
-  PicPosDocStatus.draft()
-      : label = tr('مسودة'),
-        tone = AppColors.warning;
+  PicPosDocStatus.draft() : label = tr('مسودة'), tone = AppColors.warning;
 
   /// مرحَّلٌ ومعتمَد.
-  PicPosDocStatus.posted()
-      : label = tr('معتمد'),
-        tone = AppColors.success;
+  PicPosDocStatus.posted() : label = tr('معتمد'), tone = AppColors.success;
 
   /// ملغًى أو مرتجَع.
-  PicPosDocStatus.cancelled()
-      : label = tr('ملغى'),
-        tone = AppColors.error;
+  PicPosDocStatus.cancelled() : label = tr('ملغى'), tone = AppColors.error;
 
   final String label;
   final Color tone;

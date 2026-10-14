@@ -2,7 +2,6 @@ import 'picpos_surface.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/design_system/spacing.dart';
-import '../../core/theme/app_colors.dart';
 
 /// حالة «مفيش بيانات» موحّدة.
 ///
@@ -30,8 +29,7 @@ class PicPosEmptyState extends StatelessWidget {
     // ألوانٌ تتبع الوضع: `textSecondary`/`textMuted` الثابتان رماديّان داكنان
     // يختفيان على بطاقة الوضع الداكن.
     final muted = context.picposMuted;
-    final secondary =
-        context.picposIsDark ? Colors.white70 : AppColors.textSecondary;
+    final secondary = context.picposSecondary;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(

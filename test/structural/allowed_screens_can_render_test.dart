@@ -27,13 +27,16 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/library_source.dart';
+
 /// أعضاءُ enum بصيغة `name(index),` — الاسمُ إلى فهرسه.
 Map<String, int> _enumMembers(String path) {
   final src = File(path).readAsStringSync();
   return {
-    for (final m
-        in RegExp(r'^\s{2}([a-z][A-Za-z0-9_]*)\((\d+)\)', multiLine: true)
-            .allMatches(src))
+    for (final m in RegExp(
+      r'^\s{2}([a-z][A-Za-z0-9_]*)\((\d+)\)',
+      multiLine: true,
+    ).allMatches(src))
       m.group(1)!: int.parse(m.group(2)!),
   };
 }
@@ -42,8 +45,7 @@ Set<String> _enumNames(String path) => _enumMembers(path).keys.toSet();
 
 /// مفاتيحُ `screenPermissionMap` — `ScreenId.x: 'code',`.
 Set<String> _grantable() {
-  final src =
-      File('lib/data/providers/auth_providers.dart').readAsStringSync();
+  final src = File('lib/data/providers/auth_providers.dart').readAsStringSync();
   return {
     for (final m in RegExp(r"ScreenId\.([A-Za-z0-9_]+):\s*'").allMatches(src))
       m.group(1)!,
@@ -52,24 +54,29 @@ Set<String> _grantable() {
 
 /// أعضاءُ نطاقٍ بعينه في `ScreenRegistry`.
 Set<String> _scope(String name) {
-  final src =
-      File('lib/core/navigation/screen_registry.dart').readAsStringSync();
-  final m = RegExp('static const List<ScreenId> $name = \\[(.*?)\\n  \\];',
-          dotAll: true)
-      .firstMatch(src);
+  final src = File(
+    'lib/core/navigation/screen_registry.dart',
+  ).readAsStringSync();
+  final m = RegExp(
+    'static const List<ScreenId> $name = \\[(.*?)\\n  \\];',
+    dotAll: true,
+  ).firstMatch(src);
   if (m == null) return {};
   return {
-    for (final x in RegExp(r'ScreenId\.([A-Za-z0-9_]+)').allMatches(m.group(1)!))
+    for (final x in RegExp(
+      r'ScreenId\.([A-Za-z0-9_]+)',
+    ).allMatches(m.group(1)!))
       x.group(1)!,
   };
 }
 
 /// أسماءُ الشاشات التي لها `ScreenConfig` فعلاً.
 Set<String> _configured() {
-  final src = File('lib/app_main_screen.dart').readAsStringSync();
+  final src = readLibrarySource('lib/app_main_screen.dart');
   return {
-    for (final m
-        in RegExp(r'appScreen: AppScreen\.([A-Za-z0-9_]+),').allMatches(src))
+    for (final m in RegExp(
+      r'appScreen: AppScreen\.([A-Za-z0-9_]+),',
+    ).allMatches(src))
       m.group(1)!,
   };
 }
@@ -117,17 +124,19 @@ void main() {
   });
 
   test('🔴 كلُّ شاشةٍ تُمنَح وتدخل النطاقَ لها `AppScreen` تُبنى به', () {
-    final offenders = (grantable.intersection(unified))
-        .difference(appScreens)
-        .intersection(screenIds)
-        .toList()
-      ..sort();
+    final offenders = (grantable.intersection(
+      unified,
+    )).difference(appScreens).intersection(screenIds).toList()..sort();
 
-    expect(offenders, isEmpty,
-        reason: 'صلاحيّةٌ تُمنَح لشاشةٍ **لا شيءَ يبنيها**: المديرُ يمنحها '
-            'ويظنُّ أنّه أعطى باباً، والموظّفُ لا يجده.\n'
-            'والعلاجُ عضوٌ في `AppScreen` بنفس الفهرس و`ScreenConfig` له:\n'
-            '  ${offenders.join('\n  ')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'صلاحيّةٌ تُمنَح لشاشةٍ **لا شيءَ يبنيها**: المديرُ يمنحها '
+          'ويظنُّ أنّه أعطى باباً، والموظّفُ لا يجده.\n'
+          'والعلاجُ عضوٌ في `AppScreen` بنفس الفهرس و`ScreenConfig` له:\n'
+          '  ${offenders.join('\n  ')}',
+    );
   });
 
   test('🔴 ولها `ScreenConfig` يبنيها — لا عضوَ enum وحدَه', () {
@@ -135,23 +144,29 @@ void main() {
     //    الصلاحيّةُ تُمنَح ولا شيءَ يُرسَم. وقُيس يومَ كُتب هذا:
     //    ستّةٌ وخمسون شاشةً تُمنَح وتدخل النطاقَ — **وللستّ والخمسين
     //    إعداد**. فلا خطَّ أساسٍ هنا أيضاً.
-    final offenders = (grantable.intersection(unified))
-        .difference(configured)
-        .intersection(screenIds)
-        .toList()
-      ..sort();
+    final offenders = (grantable.intersection(
+      unified,
+    )).difference(configured).intersection(screenIds).toList()..sort();
 
-    expect(offenders, isEmpty,
-        reason: 'عضوٌ في `AppScreen` بلا `ScreenConfig` — الموجّهُ لا يجد '
-            'ما يبنيه فيرتدّ إلى شاشةٍ أخرى أو يقع:\n'
-            '  ${offenders.join('\n  ')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'عضوٌ في `AppScreen` بلا `ScreenConfig` — الموجّهُ لا يجد '
+          'ما يبنيه فيرتدّ إلى شاشةٍ أخرى أو يقع:\n'
+          '  ${offenders.join('\n  ')}',
+    );
   });
 
   test('وكلُّ `AppScreen` له `ScreenId` بنفس الاسم — لا توأمَ يتيم', () {
     final orphan = appScreens.difference(screenIds).toList()..sort();
-    expect(orphan, isEmpty,
-        reason: '`AppScreen` بلا `ScreenId` ⇒ شاشةٌ تُبنى ولا تُمنَح ولا '
-            'تدخل نطاقاً: ${orphan.join(' · ')}');
+    expect(
+      orphan,
+      isEmpty,
+      reason:
+          '`AppScreen` بلا `ScreenId` ⇒ شاشةٌ تُبنى ولا تُمنَح ولا '
+          'تدخل نطاقاً: ${orphan.join(' · ')}',
+    );
   });
 
   test('🔴 والتوأمان يحملان **نفسَ الفهرس** — لا اسماً فقط', () {
@@ -168,7 +183,10 @@ void main() {
           '${e.key}: ScreenId=${ids[e.key]} ≠ AppScreen=${e.value}',
     ]..sort();
 
-    expect(mismatched, isEmpty,
-        reason: 'توأمان بفهرسَين مختلفَين:\n  ${mismatched.join('\n  ')}');
+    expect(
+      mismatched,
+      isEmpty,
+      reason: 'توأمان بفهرسَين مختلفَين:\n  ${mismatched.join('\n  ')}',
+    );
   });
 }

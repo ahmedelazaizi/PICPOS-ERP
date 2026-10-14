@@ -17,13 +17,10 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
+import 'picpos_surface.dart';
 
 /// لونُ النصِّ الخافت — `--muted` في الوضعَين.
-Color picposMuted(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF94A3B8)
-        : AppColors.textMuted;
+Color picposMuted(BuildContext context) => context.picposMuted;
 
 /// عدّادٌ واحد — بياناتٌ خالصةٌ لا ودجت، فيُبنى الصفُّ من قائمةٍ منها.
 class PicPosKpi {

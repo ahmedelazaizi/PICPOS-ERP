@@ -27,9 +27,9 @@ import 'package:ural_erp/data/providers/auth_providers.dart';
 
 /// نصٌّ بلا أسطر التعليق — فذكرُ اسمٍ في شرحٍ ليس باباً يُفتَح.
 String _stripComments(String raw) => [
-      for (final line in raw.split('\n'))
-        if (!line.trimLeft().startsWith('//')) line,
-    ].join('\n');
+  for (final line in raw.split('\n'))
+    if (!line.trimLeft().startsWith('//')) line,
+].join('\n');
 
 NavItemDef? _itemAt(int index) {
   for (final i in kAllNavItemDefs) {
@@ -39,8 +39,10 @@ NavItemDef? _itemAt(int index) {
 }
 
 /// فهارسُ مجموعةٍ بترتيب ظهورها.
-List<int> _indexesOf(String group) =>
-    [for (final i in kAllNavItemDefs) if (i.group == group) i.index];
+List<int> _indexesOf(String group) => [
+  for (final i in kAllNavItemDefs)
+    if (i.group == group) i.index,
+];
 
 /// ترتيبُ الرؤوس كما يبنيه الشريط: أوّلُ ظهورٍ لكلّ مفتاح.
 List<String> _groupOrder() {
@@ -77,15 +79,20 @@ void main() {
   //    (`--dart-define=APP_BRAND=picpos`)، وUralCash يُقاس بمجموعة ١ب.
   group('١ · الرأسان', skip: !Brand.isPicPos, () {
     test('«إدارة الحسابات» رأسُ مجموعةٍ — لا مدخلَ شاشة', () {
-      final meta = kNavGroupDefs.firstWhere((g) => g.key == 'accounts',
-          orElse: () => throw StateError('لا مجموعةَ باسم accounts'));
+      final meta = kNavGroupDefs.firstWhere(
+        (g) => g.key == 'accounts',
+        orElse: () => throw StateError('لا مجموعةَ باسم accounts'),
+      );
       expect(meta.label, 'إدارة الحسابات');
 
       // 🔴 ولا مدخلَ بتسميةِ الرأس في القائمة: الرأسُ تعريفٌ، والمدخلُ
       //    ينتقل إلى شاشة. ووجودُهما معاً يعطي رأساً واسماً مكرَّراً تحته.
       for (final label in const ['الحسابات', 'إدارة الحسابات']) {
-        expect(kAllNavItemDefs.where((i) => i.label == label), isEmpty,
-            reason: '«$label» مدخلُ شاشةٍ — والرأسُ لا ينتقل');
+        expect(
+          kAllNavItemDefs.where((i) => i.label == label),
+          isEmpty,
+          reason: '«$label» مدخلُ شاشةٍ — والرأسُ لا ينتقل',
+        );
       }
     });
 
@@ -105,70 +112,83 @@ void main() {
     });
   });
 
-  group('١ب · UralCash — رؤوسُ ما قبل المرحلة هـ حرفاً بحرف', skip: Brand.isPicPos,
-      () {
-    test('الرؤوسُ الثلاثةُ بتسمياتها القديمة وبترتيبها', () {
-      String label(String key) =>
-          kNavGroupDefs.firstWhere((g) => g.key == key).label;
-      expect(label('accounting'), 'المالية والمحاسبة');
-      expect(label('accounts'), 'الحسابات');
-      expect(label('journal'), 'اليومية العامة');
-      final order = _groupOrder();
-      expect(order.indexOf('accounts'), order.indexOf('accounting') + 1);
-      expect(order.indexOf('journal'), order.indexOf('accounts') + 1);
-    });
+  group(
+    '١ب · UralCash — رؤوسُ ما قبل المرحلة هـ حرفاً بحرف',
+    skip: Brand.isPicPos,
+    () {
+      test('الرؤوسُ الثلاثةُ بتسمياتها القديمة وبترتيبها', () {
+        String label(String key) =>
+            kNavGroupDefs.firstWhere((g) => g.key == key).label;
+        expect(label('accounting'), 'المالية والمحاسبة');
+        expect(label('accounts'), 'الحسابات');
+        expect(label('journal'), 'اليومية العامة');
+        final order = _groupOrder();
+        expect(order.indexOf('accounts'), order.indexOf('accounting') + 1);
+        expect(order.indexOf('journal'), order.indexOf('accounts') + 1);
+      });
 
-    test('🔴 المداخلُ في مجموعاتها القديمة وبترتيبها وأقسامِها', () {
-      expect(_indexesOf('accounting'), [
-        ScreenId.receiptVoucher.navigationIndex,
-        ScreenId.paymentVoucher.navigationIndex,
-        ScreenId.commercialPapers.navigationIndex,
-        ScreenId.journalVoucher.navigationIndex,
-        ScreenId.assetCategories.navigationIndex,
-        ScreenId.assetLocations.navigationIndex,
-        ScreenId.chequeBooks.navigationIndex,
-        ScreenId.treasury.navigationIndex,
-        ScreenId.shiftClose.navigationIndex,
-        ScreenId.fixedAssets.navigationIndex,
-        ScreenId.eInvoice.navigationIndex,
-        ScreenId.fiscalYear.navigationIndex,
-        ScreenId.operationalExpenses.navigationIndex,
-      ]);
-      expect(_indexesOf('accounts'), [
-        ScreenId.chartOfAccounts.navigationIndex,
-        ScreenId.costCenters.navigationIndex,
-        ScreenId.generalLedger.navigationIndex,
-        ScreenId.trialBalance.navigationIndex,
-      ]);
-      expect(_indexesOf('journal'), [
-        ScreenId.journalEntries.navigationIndex,
-        ScreenId.journalTemplates.navigationIndex,
-        ScreenId.bankReconciliation.navigationIndex,
-      ]);
-      expect(_itemAt(ScreenId.receiptVoucher.navigationIndex)!.section,
-          'المالية والمحاسبة');
-      expect(_itemAt(ScreenId.chartOfAccounts.navigationIndex)!.section,
-          'الحسابات');
-      expect(_itemAt(ScreenId.journalEntries.navigationIndex)!.section,
-          'اليومية العامة');
-    });
-  });
+      test('🔴 المداخلُ في مجموعاتها القديمة وبترتيبها وأقسامِها', () {
+        expect(_indexesOf('accounting'), [
+          ScreenId.receiptVoucher.navigationIndex,
+          ScreenId.paymentVoucher.navigationIndex,
+          ScreenId.commercialPapers.navigationIndex,
+          ScreenId.journalVoucher.navigationIndex,
+          ScreenId.assetCategories.navigationIndex,
+          ScreenId.assetLocations.navigationIndex,
+          ScreenId.chequeBooks.navigationIndex,
+          ScreenId.treasury.navigationIndex,
+          ScreenId.shiftClose.navigationIndex,
+          ScreenId.fixedAssets.navigationIndex,
+          ScreenId.eInvoice.navigationIndex,
+          ScreenId.fiscalYear.navigationIndex,
+          ScreenId.operationalExpenses.navigationIndex,
+        ]);
+        expect(_indexesOf('accounts'), [
+          ScreenId.chartOfAccounts.navigationIndex,
+          ScreenId.costCenters.navigationIndex,
+          ScreenId.generalLedger.navigationIndex,
+          ScreenId.trialBalance.navigationIndex,
+        ]);
+        expect(_indexesOf('journal'), [
+          ScreenId.journalEntries.navigationIndex,
+          ScreenId.journalTemplates.navigationIndex,
+          ScreenId.bankReconciliation.navigationIndex,
+        ]);
+        expect(
+          _itemAt(ScreenId.receiptVoucher.navigationIndex)!.section,
+          'المالية والمحاسبة',
+        );
+        expect(
+          _itemAt(ScreenId.chartOfAccounts.navigationIndex)!.section,
+          'الحسابات',
+        );
+        expect(
+          _itemAt(ScreenId.journalEntries.navigationIndex)!.section,
+          'اليومية العامة',
+        );
+      });
+    },
+  );
 
   group('٢ · محتوى المجموعتَين', skip: !Brand.isPicPos, () {
-    test('🔴 «الإدارة المالية» خمسٌ بعينها وبترتيبها (+ دفتر الشيكات لـUralCash)',
-        () {
-      expect(_indexesOf('accounting'), [
-        ScreenId.receiptVoucher.navigationIndex,
-        ScreenId.paymentVoucher.navigationIndex,
-        ScreenId.commercialPapers.navigationIndex,
-        ScreenId.chequeBooks.navigationIndex,
-        ScreenId.treasury.navigationIndex,
-        ScreenId.shiftClose.navigationIndex,
-      ]);
-      // في PicPos صار دفترُ الشيكات تبويباً داخل «إدارة الشيكات».
-      expect(kPicPosReplacedNavIndexes,
-          contains(ScreenId.chequeBooks.navigationIndex));
-    });
+    test(
+      '🔴 «الإدارة المالية» خمسٌ بعينها وبترتيبها (+ دفتر الشيكات لـUralCash)',
+      () {
+        expect(_indexesOf('accounting'), [
+          ScreenId.receiptVoucher.navigationIndex,
+          ScreenId.paymentVoucher.navigationIndex,
+          ScreenId.commercialPapers.navigationIndex,
+          ScreenId.chequeBooks.navigationIndex,
+          ScreenId.treasury.navigationIndex,
+          ScreenId.shiftClose.navigationIndex,
+        ]);
+        // في PicPos صار دفترُ الشيكات تبويباً داخل «إدارة الشيكات».
+        expect(
+          kPicPosReplacedNavIndexes,
+          contains(ScreenId.chequeBooks.navigationIndex),
+        );
+      },
+    );
 
     test('🔴 «إدارة الحسابات» كلُّ شاشات المحاسبة الباقية وبترتيبها', () {
       expect(_indexesOf('accounts'), [
@@ -192,19 +212,29 @@ void main() {
 
   group('٣ · الخارجون من الشريط', () {
     test('«ربط الحسابات» لا مدخلَ له — انتقل إلى الإعدادات', () {
-      expect(_itemAt(ScreenId.accountMapping.navigationIndex), isNull,
-          reason: 'ما زال في الشريط، والقرارُ نقلُه إلى الإعدادات');
+      expect(
+        _itemAt(ScreenId.accountMapping.navigationIndex),
+        isNull,
+        reason: 'ما زال في الشريط، والقرارُ نقلُه إلى الإعدادات',
+      );
     });
 
     test('🔴 وهو موصولٌ في الإعدادات فعلاً — لا يُحذَف بلا بديل', () {
       // 🔴 **بلا نزعِ التعليقات نجت طفرةُ إغلاق الباب**: الملفُّ
       //    يذكر `AccountMappingPicPosScreen` في شرحٍ في رأسِه، فمطابقةُ
       //    النصّ الخام تمرّ خضراءَ والبابُ مغلقٌ.
-      final settings = _stripComments(readLibrarySource(
-          'lib/presentation/settings_picpos/screens/settings_picpos_screen.dart'));
-      expect(settings, contains('AccountMappingPicPosScreen('),
-          reason: 'سُحب من الشريط ولم يُوصَل في الإعدادات ⇒ شاشةٌ فقدت '
-              'بابَها الوحيد');
+      final settings = _stripComments(
+        readLibrarySource(
+          'lib/presentation/settings_picpos/screens/settings_picpos_screen.dart',
+        ),
+      );
+      expect(
+        settings,
+        contains('AccountMappingPicPosScreen('),
+        reason:
+            'سُحب من الشريط ولم يُوصَل في الإعدادات ⇒ شاشةٌ فقدت '
+            'بابَها الوحيد',
+      );
     });
 
     test('«القوائم المالية» لا مدخلَ لها — بابُها التقارير', () {
@@ -216,8 +246,11 @@ void main() {
     // ⚠️ **ويُقاس هنا لا في `brand_picpos_test` وحدَه**: ذاك مُخطّىً
     //    بالكامل بلا `--dart-define=APP_BRAND=picpos`، فطفرةٌ تُعيد
     //    ملءَ الطيّ **تنجو من السويّة كلِّها** — وقد نجت فعلاً.
-    expect(kPicPosFoldedIntoAccountingHub, isEmpty,
-        reason: 'عاد طيُّ الحاوية — والقرارُ شاشاتٌ مستقلّةٌ تحت رأسَين');
+    expect(
+      kPicPosFoldedIntoAccountingHub,
+      isEmpty,
+      reason: 'عاد طيُّ الحاوية — والقرارُ شاشاتٌ مستقلّةٌ تحت رأسَين',
+    );
   });
 
   group('٤ · القوائمُ الماليةُ بابُها التقارير', () {
@@ -234,19 +267,27 @@ void main() {
 
     test('بابُ التقارير موجودٌ وواحد', () {
       final reports = readLibrarySource(
-          'lib/presentation/reports_picpos/screens/reports_picpos_screen.dart');
-      expect('FinancialStatementsPicPosScreen('.allMatches(reports).length, 1,
-          reason: 'بابُ التقارير غاب أو تعدّد');
+        'lib/presentation/reports_picpos/screens/reports_picpos_screen.dart',
+      );
+      expect(
+        'FinancialStatementsPicPosScreen('.allMatches(reports).length,
+        1,
+        reason: 'بابُ التقارير غاب أو تعدّد',
+      );
     });
 
     test('🔴 وميزانُ المراجعة يُثبّت `view` — لا يفتح الشاشةَ عامّةً', () {
-      final main = File('lib/app_main_screen.dart').readAsStringSync();
+      final main = readLibrarySource('lib/app_main_screen.dart');
       final at = main.indexOf('appScreen: AppScreen.trialBalance,');
       expect(at, greaterThan(0), reason: 'لا إعدادَ لميزان المراجعة');
       final body = main.substring(at, main.indexOf('label:', at));
-      expect(body, contains('FinancialStatementsView.trialBalance'),
-          reason: 'الميزانُ يفتح الشاشةَ بلا `view` ⇒ يعرض قائمةَ الدخل '
-              'تحت اسم «ميزان المراجعة»');
+      expect(
+        body,
+        contains('FinancialStatementsView.trialBalance'),
+        reason:
+            'الميزانُ يفتح الشاشةَ بلا `view` ⇒ يعرض قائمةَ الدخل '
+            'تحت اسم «ميزان المراجعة»',
+      );
     });
   });
 
@@ -264,8 +305,12 @@ void main() {
         left.add(f.path.replaceAll(r'\', '/'));
       }
     }
-    expect(left, isEmpty,
-        reason: 'بقايا حاويةٍ محذوفةٍ تُقرأ غداً على أنّها الطريق:\n  '
-            '${left.join('\n  ')}');
+    expect(
+      left,
+      isEmpty,
+      reason:
+          'بقايا حاويةٍ محذوفةٍ تُقرأ غداً على أنّها الطريق:\n  '
+          '${left.join('\n  ')}',
+    );
   });
 }

@@ -23,13 +23,15 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/library_source.dart';
+
 const _configFile = 'lib/app_main_screen.dart';
 
 /// نصٌّ بلا أسطر التعليق — فذكرُ صنفٍ في شرحٍ ليس بناءً له.
 String _code(String raw) => [
-      for (final line in raw.split('\n'))
-        if (!line.trimLeft().startsWith('//')) line,
-    ].join('\n');
+  for (final line in raw.split('\n'))
+    if (!line.trimLeft().startsWith('//')) line,
+].join('\n');
 
 /// أصنافُ فوركِ PicPos المعرَّفةُ فعلاً في شجرة العرض.
 Set<String> _picposForks() {
@@ -84,7 +86,7 @@ void main() {
   late List<({String screen, String body})> configs;
 
   setUpAll(() {
-    code = _code(File(_configFile).readAsStringSync());
+    code = _code(readLibrarySource(_configFile));
     forks = _picposForks();
     configs = _configs(code);
   });
@@ -92,9 +94,13 @@ void main() {
   group('حراسةُ الحارس', () {
     test('الملفُّ قُرئ والكتلُ استُخرجت', () {
       expect(code.length, greaterThan(10000));
-      expect(configs.length, greaterThan(40),
-          reason: 'استُخرج ${configs.length} إعداداً فقط ⇒ الكاشفُ مكسور، '
-              'وكلُّ حكمٍ بعده باطل.');
+      expect(
+        configs.length,
+        greaterThan(40),
+        reason:
+            'استُخرج ${configs.length} إعداداً فقط ⇒ الكاشفُ مكسور، '
+            'وكلُّ حكمٍ بعده باطل.',
+      );
     });
 
     test('وأصنافُ الفورك قُرئت من الشجرة', () {
@@ -115,13 +121,16 @@ void main() {
 
     test('🔴 والجذعُ يُسقِط `Settings` — على البلاغ نفسِه', () {
       // الحالةُ التي أفلتت فعلاً.
-      expect(stemOfSharedScreen('AccountMappingSettingsScreen'),
-          'AccountMapping');
+      expect(
+        stemOfSharedScreen('AccountMappingSettingsScreen'),
+        'AccountMapping',
+      );
       expect(stemOfSharedScreen('GeneralLedgerScreen'), 'GeneralLedger');
     });
 
     test('ونزعُ التعليقات لا يبتلع كوداً — على البلاغ نفسِه', () {
-      const sample = '  // Brand.isPicPos مذكورٌ شرحاً\n'
+      const sample =
+          '  // Brand.isPicPos مذكورٌ شرحاً\n'
           '  builder: (_) => const XScreen(),';
       final stripped = _code(sample);
       expect(stripped.contains('Brand.isPicPos'), isFalse);
@@ -129,35 +138,41 @@ void main() {
     });
   });
 
-  test('🔴 كلُّ إعدادٍ يبني شاشةً مشتركةً لها فوركُ PicPos يحمل فرعَ العلامة',
-      () {
-    final offenders = <String>[];
+  test(
+    '🔴 كلُّ إعدادٍ يبني شاشةً مشتركةً لها فوركُ PicPos يحمل فرعَ العلامة',
+    () {
+      final offenders = <String>[];
 
-    for (final c in configs) {
-      // اسمُ الصنف المشترك المبنيّ في هذه الكتلة.
-      final shared = RegExp(r'\b([A-Z][A-Za-z0-9_]*Screen)\b')
-          .allMatches(c.body)
-          .map((m) => m.group(1)!)
-          .where((n) => !n.contains('PicPos') && !n.contains('Picpos'))
-          .toSet();
+      for (final c in configs) {
+        // اسمُ الصنف المشترك المبنيّ في هذه الكتلة.
+        final shared = RegExp(r'\b([A-Z][A-Za-z0-9_]*Screen)\b')
+            .allMatches(c.body)
+            .map((m) => m.group(1)!)
+            .where((n) => !n.contains('PicPos') && !n.contains('Picpos'))
+            .toSet();
 
-      for (final s in shared) {
-        // هل لهذا المشترك فوركٌ بنفس الجذع؟
-        final stem = stemOfSharedScreen(s);
-        final twin = forks.firstWhere(
-          (f) => f == '${stem}PicPosScreen' || f == '${stem}PicposScreen',
-          orElse: () => '',
-        );
-        if (twin.isEmpty) continue;
-        if (c.body.contains('Brand.isPicPos')) continue;
-        offenders.add('AppScreen.${c.screen} → يبني $s والفوركُ $twin موجود');
+        for (final s in shared) {
+          // هل لهذا المشترك فوركٌ بنفس الجذع؟
+          final stem = stemOfSharedScreen(s);
+          final twin = forks.firstWhere(
+            (f) => f == '${stem}PicPosScreen' || f == '${stem}PicposScreen',
+            orElse: () => '',
+          );
+          if (twin.isEmpty) continue;
+          if (c.body.contains('Brand.isPicPos')) continue;
+          offenders.add('AppScreen.${c.screen} → يبني $s والفوركُ $twin موجود');
+        }
       }
-    }
 
-    expect(offenders, isEmpty,
-        reason: 'مدخلٌ جانبيٌّ يفتح الشاشةَ **القديمة** بينما فوركُ PicPos '
+      expect(
+        offenders,
+        isEmpty,
+        reason:
+            'مدخلٌ جانبيٌّ يفتح الشاشةَ **القديمة** بينما فوركُ PicPos '
             'مبنيٌّ ويُفتَح من موضعٍ آخرَ وحدَه — فكلُّ ما أُعيد تصميمُه '
             'لا يراه من يدخل من الباب المعتاد:\n'
-            '  ${offenders.join('\n  ')}');
-  });
+            '  ${offenders.join('\n  ')}',
+      );
+    },
+  );
 }

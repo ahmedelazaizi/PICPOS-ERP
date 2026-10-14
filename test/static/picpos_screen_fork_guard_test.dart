@@ -1,5 +1,6 @@
-import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../helpers/library_source.dart';
 
 /// شاشاتٌ لها توأمٌ picpos ⇒ سطرُ بنائها لا بدّ أن يتفرّع بـ`Brand.isPicPos`.
 ///
@@ -11,14 +12,17 @@ import 'package:flutter_test/flutter_test.dart';
 /// جاء الحارسُ يمنعه. فالمقياسُ أن يُبنى التوأمان معاً على طرفَي `?:`.
 void main() {
   test('كلُّ شاشةٍ لها توأمُ picpos تتفرّع في app_main_screen', () {
-    final src = File('lib/app_main_screen.dart').readAsStringSync();
+    final src = readLibrarySource('lib/app_main_screen.dart');
     const twins = {
       'TablesPicposScreen': 'TablesScreen',
       'ProductsPicposScreen': 'ProductsScreen',
     };
     for (final entry in twins.entries) {
-      expect(src.contains(entry.key), isTrue,
-          reason: 'التوأمُ ${entry.key} غيرُ مذكورٍ في app_main_screen');
+      expect(
+        src.contains(entry.key),
+        isTrue,
+        reason: 'التوأمُ ${entry.key} غيرُ مذكورٍ في app_main_screen',
+      );
       final fork = RegExp(
         r'Brand\.isPicPos\s*\?\s*const\s+'
         '${entry.key}'
@@ -26,9 +30,13 @@ void main() {
         '${entry.value}'
         r'\(\)',
       );
-      expect(fork.hasMatch(src), isTrue,
-          reason: 'سطرُ بناء ${entry.value} لا يتفرّع إلى ${entry.key} '
-              'بـ`Brand.isPicPos`');
+      expect(
+        fork.hasMatch(src),
+        isTrue,
+        reason:
+            'سطرُ بناء ${entry.value} لا يتفرّع إلى ${entry.key} '
+            'بـ`Brand.isPicPos`',
+      );
     }
   });
 }

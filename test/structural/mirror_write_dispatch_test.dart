@@ -39,9 +39,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// not a user write. It is idempotent server-side (skips any product/warehouse
 /// that already has an opening_stock movement) and must never block app
 /// startup, so there is no local row for a failure to falsify.
-const Map<String, int> _exempt = {
-  'lib/main.dart': 1,
-};
+const Map<String, int> _exempt = {'lib/main.dart': 1};
 
 /// Remaining raw `unawaited(ClientWriteInterceptor.…)` submit sites, per file.
 /// A file absent from this map (and from [_exempt]) must contain zero.
@@ -51,8 +49,10 @@ const Map<String, int> _baseline = {
   // UI-layer paths; each writes locally first.
   'lib/presentation/widgets/dialogs/add_product_dialog.dart': 1,
   'lib/presentation/screens/shift_close_screen.dart': 1,
-  'lib/presentation/shift_close_picpos/screens/shift_close_picpos_screen.dart': 1,
-  'lib/app_main_screen.dart': 1,
+  'lib/presentation/shift_close_picpos/screens/shift_close_picpos_screen.dart':
+      1,
+  'lib/app_main_screen.dart': 0,
+  'lib/app_main_screen_shift.dart': 1,
 };
 
 void main() {
@@ -87,13 +87,21 @@ void main() {
       }
     });
 
-    expect(failures, isEmpty,
-        reason: 'New raw submit sites bypass the mirror contract. Route them '
-            'through ClientWriteInterceptor.dispatchWrite (and make sure the '
-            'submit runs BEFORE the local write, so mirror can abort cleanly).'
-            '\n${failures.join('\n')}');
-    expect(stale, isEmpty,
-        reason: 'Baseline is stale — a path was migrated but the number was '
-            'not lowered, so the guard has slack.\n${stale.join('\n')}');
+    expect(
+      failures,
+      isEmpty,
+      reason:
+          'New raw submit sites bypass the mirror contract. Route them '
+          'through ClientWriteInterceptor.dispatchWrite (and make sure the '
+          'submit runs BEFORE the local write, so mirror can abort cleanly).'
+          '\n${failures.join('\n')}',
+    );
+    expect(
+      stale,
+      isEmpty,
+      reason:
+          'Baseline is stale — a path was migrated but the number was '
+          'not lowered, so the guard has slack.\n${stale.join('\n')}',
+    );
   });
 }

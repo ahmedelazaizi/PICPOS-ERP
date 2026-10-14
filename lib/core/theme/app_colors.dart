@@ -23,12 +23,15 @@ class AppColors {
   AppColors._();
 
   // Primary Colors — per-brand
-  static const Color primary =
-      Brand.isPicPos ? Color(0xFF0250D3) : Color(0xFF2B737F);
-  static const Color primaryDark =
-      Brand.isPicPos ? Color(0xFF012258) : Color(0xFF134657);
-  static const Color primaryLight =
-      Brand.isPicPos ? Color(0xFF4A80E8) : Color(0xFF469CA5);
+  static const Color primary = Brand.isPicPos
+      ? Color(0xFF0250D3)
+      : Color(0xFF2B737F);
+  static const Color primaryDark = Brand.isPicPos
+      ? Color(0xFF012258)
+      : Color(0xFF134657);
+  static const Color primaryLight = Brand.isPicPos
+      ? Color(0xFF4A80E8)
+      : Color(0xFF469CA5);
 
   // Secondary Colors
   static const Color secondary = Color(0xFF1E293B); // Slate
@@ -44,8 +47,9 @@ class AppColors {
   static const Color errorLight = Color(0xFFFEE2E2);
   static const Color errorDark = Color(0xFFDC2626);
   // مشتق من لون العلامة الفاتح — بيتبدّل معاها.
-  static const Color info =
-      Brand.isPicPos ? Color(0xFF4A80E8) : Color(0xFF469CA5);
+  static const Color info = Brand.isPicPos
+      ? Color(0xFF4A80E8)
+      : Color(0xFF469CA5);
   static const Color booking = Color(
     0xFF8B5CF6,
   ); // Purple (Vibrant Purple for booking)
@@ -63,9 +67,11 @@ class AppColors {
 
   // Surface Colors
   static const Color surface = Color(0xFFF8FAFC); // Slate 50
-  static const Color surfaceDark =
-      Brand.isPicPos ? Color(0xFF012258) : Color(0xFF134657);
+  static const Color surfaceDark = Brand.isPicPos
+      ? Color(0xFF012258)
+      : Color(0xFF134657);
   static const Color card = Colors.white;
+
   /// ⚠️ **فرعُ PicPos يطابق `PicPosTheme._cardDark` عمداً.**
   ///
   /// كان `#0A2E63` وهو **لا يظهر في أيّ مكانٍ آخرَ من الشجرة**: ثيمُ PicPos
@@ -75,8 +81,9 @@ class AppColors {
   ///
   /// والقيمةُ الجديدةُ هي عينُ `--card` الداكنة في تصميم الإعدادات.
   /// وفرعُ UralCash لم يُمَسّ.
-  static const Color cardDark =
-      Brand.isPicPos ? Color(0xFF121C2E) : Color(0xFF1E4A5A);
+  static const Color cardDark = Brand.isPicPos
+      ? Color(0xFF121C2E)
+      : Color(0xFF1E4A5A);
 
   // Text Colors - Light Mode (All text should be BLACK for maximum readability)
   static const Color textPrimary = Color(
@@ -87,6 +94,8 @@ class AppColors {
   ); // Pure white for dark mode
   static const Color textSecondary = Color(0xFF374151); // Dark gray
   static const Color textMuted = Color(0xFF6B7280); // Medium gray
+  static const textSecondaryDark = Color(0xFFCBD5E1),
+      textMutedDark = Color(0xFFB8C4D6);
   static const Color textOnPrimary = Colors.white;
   static const Color textOnDark = Colors.white; // For text on dark backgrounds
 
@@ -97,6 +106,7 @@ class AppColors {
 
   // Border Colors
   static const Color border = Color(0xFFE2E8F0);
+
   /// ⚠️ **فرعُ PicPos يطابق `PicPosTheme._hairlineDark` عمداً.**
   ///
   /// كان `#0250D3` — وهو لونُ العلامةِ الأساسيُّ لا لونَ حدّ. وثيمُ PicPos
@@ -106,8 +116,9 @@ class AppColors {
   ///
   /// والقيمةُ الجديدةُ هي عينُ `--hairline` الداكنة في تصميم الإعدادات.
   /// وفرعُ UralCash لم يُمَسّ.
-  static const Color borderDark =
-      Brand.isPicPos ? Color(0xFF243247) : Color(0xFF2B737F);
+  static const Color borderDark = Brand.isPicPos
+      ? Color(0xFF243247)
+      : Color(0xFF2B737F);
 
   // Gradients - UralCash Brand
   static const LinearGradient primaryGradient = LinearGradient(

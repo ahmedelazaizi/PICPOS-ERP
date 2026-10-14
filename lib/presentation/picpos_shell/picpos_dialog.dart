@@ -33,12 +33,10 @@ import '../../core/i18n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/picpos_theme.dart';
 import 'picpos_panel_groups.dart';
+import 'picpos_surface.dart';
 
 /// لونُ النصِّ الخافت — `--muted` في الوضعين.
-Color picposDialogMuted(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF94A3B8)
-        : AppColors.textMuted;
+Color picposDialogMuted(BuildContext context) => context.picposMuted;
 
 /// لونُ الحقل — `--field` في الوضعين.
 Color picposDialogField(BuildContext context) =>
@@ -124,6 +122,7 @@ class PicPosDialog extends StatelessWidget {
   final List<Widget> body;
   final PicPosDialogAction? primaryAction;
   final List<PicPosDialogAction> secondaryActions;
+
   /// `null` ⇒ «إلغاء» مترجَمةً عبر `tr()` وقتَ الرسم — لا قيمةٌ افتراضيّةٌ
   /// عربيّةٌ ثابتةٌ تظهر كما هي في الواجهة الإنجليزيّة.
   final String? cancelLabel;
@@ -218,7 +217,9 @@ class PicPosDialog extends StatelessWidget {
   /// الارتفاعُ ارتفاعَ المحتوى مقصوصاً عند المتاح — فيقصر مع القصير ويتمرّر
   /// مع الطويل، والعمودُ ممتدٌّ بكامل الطول في الحالتين.
   Widget _bodyArea() {
-    final content = scrollable ? SingleChildScrollView(child: _body()) : _body();
+    final content = scrollable
+        ? SingleChildScrollView(child: _body())
+        : _body();
     // عمودٌ برقمٍ واحدٍ فهرسٌ لا يفهرس شيئاً — وشريطٌ بعرض ٦٤ يقتطع من عرض
     // الجسم بلا مقابل. ولوحاتُ التصميم كلُّها مجموعتان فأكثر.
     if (indexLabels.length < 2) return content;
@@ -244,18 +245,18 @@ class PicPosDialog extends StatelessWidget {
   }
 
   Widget _bodyColumn() => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (var i = 0; i < body.length; i++) ...[
-              if (i > 0) const SizedBox(height: 13),
-              body[i],
-            ],
-          ],
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < body.length; i++) ...[
+          if (i > 0) const SizedBox(height: 13),
+          body[i],
+        ],
+      ],
+    ),
+  );
 
   Widget _header(BuildContext context, Color muted) {
     final theme = Theme.of(context);
@@ -286,7 +287,9 @@ class PicPosDialog extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w800),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 if (subtitle != null)
                   Text(
@@ -645,11 +648,14 @@ class PicPosDialogField extends StatelessWidget {
               ),
             ),
             if (required)
-              const Text(' *',
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.error)),
+              const Text(
+                ' *',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.error,
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 5),
@@ -800,14 +806,11 @@ class PicPosDialogSummary extends StatelessWidget {
         children: [
           for (var i = 0; i < rows.length; i++)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
                 border: i == rows.length - 1
                     ? null
-                    : Border(
-                        bottom: BorderSide(color: theme.dividerColor),
-                      ),
+                    : Border(bottom: BorderSide(color: theme.dividerColor)),
               ),
               child: Row(
                 children: [
@@ -830,8 +833,7 @@ class PicPosDialogSummary extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w800,
-                      color: rows[i].color ??
-                          theme.textTheme.bodyLarge?.color,
+                      color: rows[i].color ?? theme.textTheme.bodyLarge?.color,
                       fontFeatures: const [ui.FontFeature.tabularFigures()],
                     ),
                   ),
@@ -885,10 +887,7 @@ class PicPosDialogRow extends StatelessWidget {
           children: [
             for (var i = 0; i < children.length; i++) ...[
               if (i > 0) SizedBox(width: gap),
-              Expanded(
-                flex: i < flex.length ? flex[i] : 1,
-                child: children[i],
-              ),
+              Expanded(flex: i < flex.length ? flex[i] : 1, child: children[i]),
             ],
           ],
         );

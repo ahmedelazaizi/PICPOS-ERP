@@ -26,9 +26,9 @@
 //    تبويباتٍ فصارت ثلاثة، و`_tabNotes` تُفهرَس بـ`_tabs.index` — فسطرٌ
 //    زائدٌ يُظهر شرحَ الفئات تحت الاستبعاد.
 
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
+
+import '../helpers/library_source.dart';
 import 'package:ural_erp/core/config/brand.dart';
 import 'package:ural_erp/core/enums/app_screen.dart';
 import 'package:ural_erp/core/navigation/screen_id.dart';
@@ -40,9 +40,9 @@ import 'package:ural_erp/data/providers/auth_providers.dart';
 /// ⚠️ **والتعليقُ يُسقَط قبل العدّ**: هذه الملفّاتُ تذكر أنماطَها في شرحها
 /// فوقَ تنفيذها حرفيّاً.
 String _code(String path) => [
-      for (final line in File(path).readAsStringSync().split('\n'))
-        if (!line.trimLeft().startsWith('//')) line.replaceAll('\r', ''),
-    ].join('\n');
+  for (final line in readLibrarySource(path).split('\n'))
+    if (!line.trimLeft().startsWith('//')) line.replaceAll('\r', ''),
+].join('\n');
 
 int _count(String haystack, String needle) {
   var n = 0;
@@ -66,12 +66,19 @@ const _writes = 'lib/data/database/daos/accounting_dao_writes.dart';
 void main() {
   test('🔴 لفئةِ الأصول كاتبٌ في PicPos — إنشاءً وتعديلاً', () {
     final code = _code(_cats);
-    expect(code.contains('createAssetCategory('), isTrue,
-        reason: '🔴 لا فئةَ تُنشأ في PicPos — و`createFixedAsset` تشترط '
-            '`categoryId`، فشاشةُ الأصول كلُّها لا تُستعمَل على تنصيبةٍ '
-            'جديدة');
-    expect(code.contains('updateAssetCategoryById('), isTrue,
-        reason: 'فئةٌ ناقصةُ الربط لا سبيلَ لإصلاحها');
+    expect(
+      code.contains('createAssetCategory('),
+      isTrue,
+      reason:
+          '🔴 لا فئةَ تُنشأ في PicPos — و`createFixedAsset` تشترط '
+          '`categoryId`، فشاشةُ الأصول كلُّها لا تُستعمَل على تنصيبةٍ '
+          'جديدة',
+    );
+    expect(
+      code.contains('updateAssetCategoryById('),
+      isTrue,
+      reason: 'فئةٌ ناقصةُ الربط لا سبيلَ لإصلاحها',
+    );
   });
 
   test('🔴 وحساباتُها تفصيليّةٌ نشطةٌ وحدَها', () {
@@ -83,53 +90,87 @@ void main() {
     final at = code.indexOf('bool isPostableAccount(');
     expect(at, greaterThan(0), reason: 'شرطُ صلاحيةِ الحساب اختفى');
     final body = code.substring(at, code.indexOf(';', at));
-    expect(body.contains("!= 'view'"), isTrue,
-        reason: '🔴 حسابٌ رئيسيٌّ في الفئة = فئةٌ لا يُسجَّل تحتها أصلٌ '
-            'أبداً — والمحرّكُ يرفض الترحيلَ عليه');
-    expect(body.contains('isActive'), isTrue,
-        reason: 'حسابٌ موقوفٌ يُختار اليومَ ويُرفَض غداً');
-    expect(code.contains('isPostableAccount(a.accountNature, a.isActive)'),
-        isTrue,
-        reason: 'الشرطُ معرَّفٌ ولا يُنادى — فالقائمةُ غيرُ مرشَّحة');
+    expect(
+      body.contains("!= 'view'"),
+      isTrue,
+      reason:
+          '🔴 حسابٌ رئيسيٌّ في الفئة = فئةٌ لا يُسجَّل تحتها أصلٌ '
+          'أبداً — والمحرّكُ يرفض الترحيلَ عليه',
+    );
+    expect(
+      body.contains('isActive'),
+      isTrue,
+      reason: 'حسابٌ موقوفٌ يُختار اليومَ ويُرفَض غداً',
+    );
+    expect(
+      code.contains('isPostableAccount(a.accountNature, a.isActive)'),
+      isTrue,
+      reason: 'الشرطُ معرَّفٌ ولا يُنادى — فالقائمةُ غيرُ مرشَّحة',
+    );
 
     // ومرساةٌ: المحرّكُ **يرفض** فعلاً، وإلّا صار الترشيحُ بلا معنى.
-    expect(_code(_writes).contains('حساب رئيسي'), isTrue,
-        reason: 'رفضُ الترحيل على الحساب الرئيسيِّ اختفى من المحرّك — '
-            'فالفحصُ أعلاه صار بلا سند');
+    expect(
+      _code(_writes).contains('حساب رئيسي'),
+      isTrue,
+      reason:
+          'رفضُ الترحيل على الحساب الرئيسيِّ اختفى من المحرّك — '
+          'فالفحصُ أعلاه صار بلا سند',
+    );
   });
 
   test('🔴 والعمرُ بالشهور بلا ×١٢ بيدها', () {
     for (final f in [_cats, _locs]) {
       final code = _code(f);
-      expect(code.contains('* 12'), isFalse,
-          reason: '🔴 حسابُ شهورٍ بيده في $f — والرقمُ يعود إلى حقل سنوات');
+      expect(
+        code.contains('* 12'),
+        isFalse,
+        reason: '🔴 حسابُ شهورٍ بيده في $f — والرقمُ يعود إلى حقل سنوات',
+      );
       expect(code.contains('/ 12'), isFalse, reason: 'قسمةٌ بيدها في $f');
     }
-    expect(_code(_cats).contains('usefulLifeYearsFromMonths('), isTrue,
-        reason: 'اللوحُ يعطي شهوراً والعمودُ سنوات — والتمريرُ كما هو يجعل '
-            '٣٠ شهراً ثلاثين سنة');
+    expect(
+      _code(_cats).contains('usefulLifeYearsFromMonths('),
+      isTrue,
+      reason:
+          'اللوحُ يعطي شهوراً والعمودُ سنوات — والتمريرُ كما هو يجعل '
+          '٣٠ شهراً ثلاثين سنة',
+    );
   });
 
   test('🔴 وإعادةُ التسمية تُخطَّط خالصةً وتُكتَب على كلّ أصل', () {
-    expect(_code(_plan).contains('AssetLocationRenamePlan planAssetLocationRename('),
-        isTrue);
+    expect(
+      _code(_plan).contains('AssetLocationRenamePlan planAssetLocationRename('),
+      isTrue,
+    );
     final code = _code(_locs);
-    expect(code.contains('planAssetLocationRename('), isTrue,
-        reason: 'الشاشةُ تخطّط بيدها — والخطّةُ الخالصةُ هي ما يُقاس');
+    expect(
+      code.contains('planAssetLocationRename('),
+      isTrue,
+      reason: 'الشاشةُ تخطّط بيدها — والخطّةُ الخالصةُ هي ما يُقاس',
+    );
     // 🔴 **حلقةٌ على `plan.assetIds` لا كتابةٌ واحدة**: الموقعُ صفُّ جدولٍ
     //    مشتقٌّ لا صفُّ قاعدة، فكتابةٌ واحدةٌ لا تنقل شيئاً.
-    expect(code.contains('for (final id in plan.assetIds)'), isTrue,
-        reason: '🔴 الموقعُ ليس صفّاً يُحدَّث — هو نصٌّ على كلّ أصل');
+    expect(
+      code.contains('for (final id in plan.assetIds)'),
+      isTrue,
+      reason: '🔴 الموقعُ ليس صفّاً يُحدَّث — هو نصٌّ على كلّ أصل',
+    );
     expect(code.contains('location: plan.target'), isTrue);
   });
 
   test('والتبويبتان خرجتا من شاشة الأصول ولم تبقيا في مكانَين', () {
     final code = _code(_screen);
-    expect(code.contains('_categoriesTab('), isFalse,
-        reason: 'جدولُ الفئات في موضعَين يفترقان عند أوّل تعديل');
+    expect(
+      code.contains('_categoriesTab('),
+      isFalse,
+      reason: 'جدولُ الفئات في موضعَين يفترقان عند أوّل تعديل',
+    );
     expect(code.contains('_distributionTab('), isFalse);
-    expect(code.contains('TabController(length: 3'), isTrue,
-        reason: 'عددُ التبويبات خالف ما يُبنى — و`TabBarView` ترمي');
+    expect(
+      code.contains('TabController(length: 3'),
+      isTrue,
+      reason: 'عددُ التبويبات خالف ما يُبنى — و`TabBarView` ترمي',
+    );
     // ⚠️ `_tabNotes` تُفهرَس بـ`_tabs.index` — وطولُها يجب أن يساويه.
     expect(_count(code, "    '"), greaterThan(0));
     final tabNotes = RegExp(
@@ -140,8 +181,11 @@ void main() {
       tabNotes!.start,
       code.indexOf('];', tabNotes.start),
     );
-    expect(_count(notes, "'),"), 3,
-        reason: 'سطرٌ زائدٌ يُظهر شرحَ تبويبةٍ خرجت تحت تبويبةٍ باقية');
+    expect(
+      _count(notes, "'),"),
+      3,
+      reason: 'سطرٌ زائدٌ يُظهر شرحَ تبويبةٍ خرجت تحت تبويبةٍ باقية',
+    );
   });
 
   group('والتوصيلُ ستّةُ مواضعَ لكلٍّ منهما', () {
@@ -149,12 +193,12 @@ void main() {
       ScreenId.assetCategories: (
         index: 65,
         label: 'فئات الأصول',
-        screen: AppScreen.assetCategories
+        screen: AppScreen.assetCategories,
       ),
       ScreenId.assetLocations: (
         index: 66,
         label: 'التوزيع والمواقع',
-        screen: AppScreen.assetLocations
+        screen: AppScreen.assetLocations,
       ),
     };
 
@@ -163,35 +207,60 @@ void main() {
         // ‏١) معرِّفُ الشاشة.
         expect(id.navigationIndex, e.index);
         // ‏٢) و`AppScreen` بنفس الرقم.
-        expect(e.screen.value, id.navigationIndex,
-            reason: 'الرقمان مصدرُ حقيقةٍ في نظامَين — وانحرافُهما يفتح '
-                'شاشةً غيرَ التي أذنت بها الصلاحية');
+        expect(
+          e.screen.value,
+          id.navigationIndex,
+          reason:
+              'الرقمان مصدرُ حقيقةٍ في نظامَين — وانحرافُهما يفتح '
+              'شاشةً غيرَ التي أذنت بها الصلاحية',
+        );
         // ‏٣) وصلاحيّةٌ في الخريطة — وهي صلاحيةُ شاشة الأصول نفسُها.
-        expect(screenPermissionMap[id], 'assets_view',
-            reason: 'كودٌ جديدٌ يترك كلَّ دورٍ قائمٍ بلا الشاشة حتى يُمنح '
-                'يدويّاً، ويمسّ سجلَّ التكافؤ');
+        expect(
+          screenPermissionMap[id],
+          'assets_view',
+          reason:
+              'كودٌ جديدٌ يترك كلَّ دورٍ قائمٍ بلا الشاشة حتى يُمنح '
+              'يدويّاً، ويمسّ سجلَّ التكافؤ',
+        );
         // ‏٤) والنطاقُ نطاقُ شاشة الأصول بالضبط.
-        expect(ScreenRegistry.unified, contains(id),
-            reason: 'الحلقةُ ترشّح بالنطاق **قبل** الصلاحية — فالنقصانُ '
-                'يُسقطها حتى عن مدير النظام');
-        expect(ScreenRegistry.lite.contains(id), isFalse,
-            reason: 'ملفٌّ بلا شاشةِ أصولٍ لا يحتاج فئاتِها');
+        expect(
+          ScreenRegistry.unified,
+          contains(id),
+          reason:
+              'الحلقةُ ترشّح بالنطاق **قبل** الصلاحية — فالنقصانُ '
+              'يُسقطها حتى عن مدير النظام',
+        );
+        expect(
+          ScreenRegistry.lite.contains(id),
+          isFalse,
+          reason: 'ملفٌّ بلا شاشةِ أصولٍ لا يحتاج فئاتِها',
+        );
         // ‏٥) و`ScreenConfig` تبنيها.
-        expect(_code('lib/app_main_screen.dart')
-            .contains('appScreen: AppScreen.${e.screen.name},'), isTrue,
-            reason: 'شاشةٌ بلا بانٍ تفتح فراغاً');
+        expect(
+          _code(
+            'lib/app_main_screen.dart',
+          ).contains('appScreen: AppScreen.${e.screen.name},'),
+          isTrue,
+          reason: 'شاشةٌ بلا بانٍ تفتح فراغاً',
+        );
         // ‏٦) ومدخلٌ في القائمة الجانبيّة — المصدرُ السادسُ المستقلّ.
-        final item =
-            kAllNavItemDefs.where((n) => n.index == e.index).toList();
-        expect(item, hasLength(1),
-            reason: 'بلا مدخلٍ هنا لا يراها المستخدمُ مهما صحّ الباقي');
+        final item = kAllNavItemDefs.where((n) => n.index == e.index).toList();
+        expect(
+          item,
+          hasLength(1),
+          reason: 'بلا مدخلٍ هنا لا يراها المستخدمُ مهما صحّ الباقي',
+        );
         expect(item.single.label, e.label);
         // E1 — شاشاتُ الأصول تحت «إدارة الحسابات» (‏`accounts`).
         // E-fix ٣ — في PicPos وحدَه؛ UralCash على «المالية والمحاسبة».
         expect(item.single.group, Brand.isPicPos ? 'accounts' : 'accounting');
-        expect(item.single.permission, screenPermissionMap[id],
-            reason: 'صلاحيّةٌ في القائمة تخالف الخريطةَ تُظهر مدخلاً يفتح '
-                'شاشةً ممنوعة');
+        expect(
+          item.single.permission,
+          screenPermissionMap[id],
+          reason:
+              'صلاحيّةٌ في القائمة تخالف الخريطةَ تُظهر مدخلاً يفتح '
+              'شاشةً ممنوعة',
+        );
       });
     });
 

@@ -20,13 +20,13 @@
 // الفرق مقروء من مسافة متر — وده المطلوب من منتج بعلامة مستقلة. لكنه مش
 // «مختلف عشان يبقى مختلف»: كل قرار له سبب تشغيلي مكتوب جنبه.
 // ═══════════════════════════════════════════════════════════════════════════
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import 'app_colors.dart';
+part 'picpos_theme_dark.dart';
 
 class PicPosTheme {
+  static const _s = AppColors.textSecondaryDark, _m = AppColors.textMutedDark;
   // ─── §٧ — وزنان اثنان لا أكثر ─────────────────────────────────────────────
   //
   // طلبُ المالك: «الخطُّ في النظام بالكامل يجب أن يكون غامقاً بولد ومتناسقاً
@@ -45,21 +45,17 @@ class PicPosTheme {
   // ⚠️ وحدُّ هذا التغيير مقيسٌ ومكتوب: كثيرٌ من الجداول تضبط `fontWeight` في
   // موضع الرسم فتتجاهل الثيمَ تماماً. فما لا يرث الثيمَ لا يتغيّر هنا، وهو
   // يحتاج مرورَ عينٍ على شاشتَي البيع والتقارير بعد البناء.
-
   /// وزنُ العناوين والتسميات.
   static const FontWeight headingWeight = FontWeight.w700;
 
   /// وزنُ المتن — أغلظُ من `w400` الافتراضيّ وأخفُّ من العنوان.
   static const FontWeight bodyWeight = FontWeight.w600;
-
   PicPosTheme._();
-
   // ── رموز التصميم (design tokens) ────────────────────────────────────────
   //
   // القيم دي محلية للثيم عن قصد — مش في `AppColors`. `AppColors` مستخدمة في
   // ~٤٩١ سياق `const`، وأي إضافة ليها مسؤولية دايمة؛ ودي درجات سطح مشتقة
   // بتخص الشكل بس، مالهاش أي معنى للمنتج.
-
   /// خلفية التطبيق — رمادي مزرقّ فاتح جداً، مشتق من الأزرق الأساسي عشان
   /// السطوح البيضا فوقه تبان «طافية» من غير ظلال.
   static const Color _canvas = Color(0xFFF2F5FA);
@@ -87,13 +83,10 @@ class PicPosTheme {
   static const Color _cardDark = Color(0xFF121C2E);
   static const Color _hairlineDark = Color(0xFF243247);
   static const Color _fieldFillDark = Color(0xFF18243A);
-
   static const double _radiusCard = 14;
   static const double _radiusControl = 10;
   static const double _radiusPill = 999;
-
   // ── الوضع الفاتح ────────────────────────────────────────────────────────
-
   static ThemeData get lightTheme {
     final text = _textTheme(Brightness.light);
     return ThemeData(
@@ -113,7 +106,6 @@ class PicPosTheme {
       //    الشعريُّ واحدٌ في الثيم كلِّه.
       dividerColor: _hairline,
       textTheme: text,
-
       // شريط علوي فاتح بنص داكن — أوضح فرق silhouette عن UralCash (اللي
       // شريطه مصمت بلون العلامة). الشريحة اللونية تحته بتدّي حضور للعلامة
       // من غير ما تاكل ٤٨ بكسل من الشاشة بلون مشبع.
@@ -135,7 +127,6 @@ class PicPosTheme {
           bottom: BorderSide(color: AppColors.primary, width: 2.5),
         ),
       ),
-
       // كروت مسطّحة بحد. `elevation: 0` مقصود — الفصل بييجي من الحد واللون.
       cardTheme: CardThemeData(
         color: Colors.white,
@@ -146,7 +137,6 @@ class PicPosTheme {
           side: const BorderSide(color: _hairline),
         ),
       ),
-
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -163,7 +153,6 @@ class PicPosTheme {
           ),
         ),
       ),
-
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primaryDark,
@@ -179,22 +168,18 @@ class PicPosTheme {
           ),
         ),
       ),
-
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
           minimumSize: const Size(56, 38),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: GoogleFonts.cairo(
             fontSize: 13,
             fontWeight: FontWeight.w700,
           ),
         ),
       ),
-
       // حقول مملوءة بلا حد ظاهر لحد التركيز. الحقل الفاضي بيبقى «مساحة»
       // مش «صندوق»، والتركيز بيرسم إطار أزرق سميك — الكاشير يشوف مكان
       // المؤشر من غير ما يدوّر.
@@ -202,8 +187,10 @@ class PicPosTheme {
         filled: true,
         fillColor: _fieldFill,
         isDense: true,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 13,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_radiusControl),
           borderSide: BorderSide.none,
@@ -225,10 +212,11 @@ class PicPosTheme {
           borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
         hintStyle: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 13),
-        labelStyle:
-            GoogleFonts.cairo(color: AppColors.textSecondary, fontSize: 13),
+        labelStyle: GoogleFonts.cairo(
+          color: AppColors.textSecondary,
+          fontSize: 13,
+        ),
       ),
-
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -315,8 +303,10 @@ class PicPosTheme {
         ),
         backgroundColor: _fieldFill,
         selectedColor: AppColors.primary.withValues(alpha: 0.14),
-        secondaryLabelStyle:
-            GoogleFonts.cairo(fontSize: 12, color: AppColors.primary),
+        secondaryLabelStyle: GoogleFonts.cairo(
+          fontSize: 12,
+          color: AppColors.primary,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         side: const BorderSide(color: _hairline),
         shape: const StadiumBorder(),
@@ -325,10 +315,14 @@ class PicPosTheme {
       tabBarTheme: TabBarThemeData(
         labelColor: AppColors.primary,
         unselectedLabelColor: AppColors.textMuted,
-        labelStyle:
-            GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700),
-        unselectedLabelStyle:
-            GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w500),
+        labelStyle: GoogleFonts.cairo(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: GoogleFonts.cairo(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
         indicatorSize: TabBarIndicatorSize.tab,
         indicator: const UnderlineTabIndicator(
           borderSide: BorderSide(color: AppColors.primary, width: 3),
@@ -346,8 +340,10 @@ class PicPosTheme {
         ),
         headerBackgroundColor: AppColors.primaryDark,
         headerForegroundColor: Colors.white,
-        headerHeadlineStyle:
-            GoogleFonts.cairo(fontSize: 19, fontWeight: FontWeight.w700),
+        headerHeadlineStyle: GoogleFonts.cairo(
+          fontSize: 19,
+          fontWeight: FontWeight.w700,
+        ),
         headerHelpStyle: GoogleFonts.cairo(fontSize: 12),
         dayStyle: GoogleFonts.cairo(fontSize: 13),
         weekdayStyle: GoogleFonts.cairo(
@@ -356,17 +352,21 @@ class PicPosTheme {
           color: AppColors.textMuted,
         ),
         yearStyle: GoogleFonts.cairo(fontSize: 14),
-        dayOverlayColor:
-            WidgetStateProperty.all(AppColors.primary.withValues(alpha: 0.08)),
+        dayOverlayColor: WidgetStateProperty.all(
+          AppColors.primary.withValues(alpha: 0.08),
+        ),
         todayBorder: const BorderSide(color: AppColors.primary, width: 1.5),
         todayForegroundColor: WidgetStateProperty.all(AppColors.primary),
         rangePickerHeaderBackgroundColor: AppColors.primaryDark,
         rangePickerHeaderForegroundColor: Colors.white,
-        rangePickerHeaderHeadlineStyle:
-            GoogleFonts.cairo(fontSize: 17, fontWeight: FontWeight.w700),
+        rangePickerHeaderHeadlineStyle: GoogleFonts.cairo(
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+        ),
         rangePickerHeaderHelpStyle: GoogleFonts.cairo(fontSize: 12),
-        rangeSelectionBackgroundColor:
-            AppColors.primary.withValues(alpha: 0.12),
+        rangeSelectionBackgroundColor: AppColors.primary.withValues(
+          alpha: 0.12,
+        ),
         rangePickerSurfaceTintColor: Colors.transparent,
         rangePickerBackgroundColor: Colors.white,
         rangePickerShape: RoundedRectangleBorder(
@@ -396,20 +396,23 @@ class PicPosTheme {
       ),
 
       switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith((s) =>
-            s.contains(WidgetState.selected) ? Colors.white : Colors.white),
-        trackColor: WidgetStateProperty.resolveWith((s) =>
-            s.contains(WidgetState.selected)
-                ? AppColors.primary
-                : const Color(0xFFC7D2E1)),
+        thumbColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? Colors.white : Colors.white,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected)
+              ? AppColors.primary
+              : const Color(0xFFC7D2E1),
+        ),
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
 
       checkboxTheme: CheckboxThemeData(
-        fillColor: WidgetStateProperty.resolveWith((s) =>
-            s.contains(WidgetState.selected)
-                ? AppColors.primary
-                : Colors.transparent),
+        fillColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected)
+              ? AppColors.primary
+              : Colors.transparent,
+        ),
         side: const BorderSide(color: Color(0xFFB6C2D4), width: 1.5),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
       ),
@@ -421,356 +424,119 @@ class PicPosTheme {
     );
   }
 
-  // ── الوضع الداكن ────────────────────────────────────────────────────────
-
-  static ThemeData get darkTheme {
-    final text = _textTheme(Brightness.dark);
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
-        brightness: Brightness.dark,
-        primary: AppColors.primaryLight,
-        secondary: AppColors.primary,
-        error: AppColors.error,
-        surface: _cardDark,
-      ),
-      scaffoldBackgroundColor: _canvasDark,
-      dividerColor: _hairlineDark,
-      textTheme: text,
-
-      appBarTheme: AppBarTheme(
-        backgroundColor: _cardDark,
-        foregroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        toolbarHeight: 54,
-        titleTextStyle: GoogleFonts.cairo(
-          fontSize: 17,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
-        ),
-        iconTheme: const IconThemeData(color: Colors.white, size: 21),
-        shape: const Border(
-          bottom: BorderSide(color: AppColors.primary, width: 2.5),
-        ),
-      ),
-
-      cardTheme: CardThemeData(
-        color: _cardDark,
-        elevation: 0,
-        margin: const EdgeInsets.all(6),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(_radiusCard),
-          side: const BorderSide(color: _hairlineDark),
-        ),
-      ),
-
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          minimumSize: const Size(76, 42),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(_radiusControl),
-          ),
-          textStyle:
-              GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700),
-        ),
-      ),
-
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.white,
-          side: const BorderSide(color: _hairlineDark, width: 1.5),
-          minimumSize: const Size(76, 42),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(_radiusControl),
-          ),
-          textStyle:
-              GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w600),
-        ),
-      ),
-
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: AppColors.primaryLight,
-          minimumSize: const Size(56, 38),
-          textStyle:
-              GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.w700),
-        ),
-      ),
-
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: _fieldFillDark,
-        isDense: true,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_radiusControl),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_radiusControl),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_radiusControl),
-          borderSide: const BorderSide(color: AppColors.primaryLight, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_radiusControl),
-          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
-        ),
-        hintStyle: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 13),
-        labelStyle: GoogleFonts.cairo(color: Colors.white70, fontSize: 13),
-      ),
-
-      dividerTheme: const DividerThemeData(color: _hairlineDark, thickness: 1),
-
-      dialogTheme: DialogThemeData(
-        backgroundColor: _cardDark,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: _hairlineDark),
-        ),
-        titleTextStyle: GoogleFonts.cairo(
-          fontSize: 17,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
-        ),
-        contentTextStyle: GoogleFonts.cairo(
-          fontSize: 14,
-          color: Colors.white70,
-          height: 1.6,
-        ),
-      ),
-
-      snackBarTheme: SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.primary,
-        contentTextStyle: GoogleFonts.cairo(color: Colors.white, fontSize: 13),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(_radiusControl),
-        ),
-      ),
-
-      dataTableTheme: DataTableThemeData(
-        headingTextStyle: GoogleFonts.cairo(
-          fontWeight: FontWeight.w700,
-          fontSize: 13,
-          color: Colors.white,
-        ),
-        dataTextStyle:
-            GoogleFonts.cairo(color: Colors.white, fontSize: 13),
-        headingRowColor: WidgetStateProperty.all(AppColors.primaryDark),
-        dataRowMinHeight: 44,
-        dataRowMaxHeight: 54,
-        columnSpacing: 24,
-        headingRowHeight: 46,
-      ),
-
-      iconTheme: const IconThemeData(size: 21, color: Colors.white),
-
-      listTileTheme: ListTileThemeData(
-        dense: false,
-        minVerticalPadding: 8,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(_radiusControl),
-        ),
-        selectedTileColor: AppColors.primary.withValues(alpha: 0.18),
-        selectedColor: AppColors.primaryLight,
-      ),
-
-      chipTheme: ChipThemeData(
-        labelStyle: GoogleFonts.cairo(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-        backgroundColor: _fieldFillDark,
-        selectedColor: AppColors.primary.withValues(alpha: 0.30),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        side: const BorderSide(color: _hairlineDark),
-        shape: const StadiumBorder(),
-      ),
-
-      tabBarTheme: TabBarThemeData(
-        labelColor: AppColors.primaryLight,
-        unselectedLabelColor: Colors.white54,
-        labelStyle:
-            GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700),
-        unselectedLabelStyle:
-            GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w500),
-        indicatorSize: TabBarIndicatorSize.tab,
-        indicator: const UnderlineTabIndicator(
-          borderSide: BorderSide(color: AppColors.primaryLight, width: 3),
-        ),
-        dividerColor: _hairlineDark,
-      ),
-
-      datePickerTheme: DatePickerThemeData(
-        backgroundColor: _cardDark,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: _hairlineDark),
-        ),
-        headerBackgroundColor: AppColors.primaryDark,
-        headerForegroundColor: Colors.white,
-        headerHeadlineStyle:
-            GoogleFonts.cairo(fontSize: 19, fontWeight: FontWeight.w700),
-        headerHelpStyle: GoogleFonts.cairo(fontSize: 12),
-        dayStyle: GoogleFonts.cairo(fontSize: 13, color: Colors.white),
-        weekdayStyle: GoogleFonts.cairo(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: Colors.white70,
-        ),
-        yearStyle: GoogleFonts.cairo(fontSize: 14, color: Colors.white),
-        dayOverlayColor:
-            WidgetStateProperty.all(AppColors.primary.withValues(alpha: 0.18)),
-        todayBorder:
-            const BorderSide(color: AppColors.primaryLight, width: 1.5),
-        todayForegroundColor: WidgetStateProperty.all(AppColors.primaryLight),
-        rangePickerHeaderBackgroundColor: AppColors.primaryDark,
-        rangePickerHeaderForegroundColor: Colors.white,
-        rangePickerHeaderHeadlineStyle:
-            GoogleFonts.cairo(fontSize: 17, fontWeight: FontWeight.w700),
-        rangePickerHeaderHelpStyle: GoogleFonts.cairo(fontSize: 12),
-        rangeSelectionBackgroundColor:
-            AppColors.primary.withValues(alpha: 0.22),
-        rangePickerSurfaceTintColor: Colors.transparent,
-        rangePickerBackgroundColor: _cardDark,
-        rangePickerShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: _hairlineDark),
-        ),
-      ),
-
-      switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected)
-                ? Colors.white
-                : Colors.white70),
-        trackColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected)
-                ? AppColors.primary
-                : _fieldFillDark),
-        trackOutlineColor: WidgetStateProperty.all(_hairlineDark),
-      ),
-
-      checkboxTheme: CheckboxThemeData(
-        fillColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected)
-                ? AppColors.primary
-                : Colors.transparent),
-        side: const BorderSide(color: _hairlineDark, width: 1.5),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-      ),
-
-      scrollbarTheme: _scrollbar(),
-
-      popupMenuTheme: PopupMenuThemeData(
-        color: _cardDark,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(_radiusControl),
-          side: const BorderSide(color: _hairlineDark),
-        ),
-        textStyle: GoogleFonts.cairo(fontSize: 13, color: Colors.white),
-      ),
-
-      tooltipTheme: TooltipThemeData(
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        textStyle: GoogleFonts.cairo(fontSize: 12, color: Colors.white),
-      ),
-
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.primaryLight,
-        linearMinHeight: 3,
-      ),
-    );
-  }
+  // ── الوضع الداكن ────────────────────────────
+  static ThemeData get darkTheme => _buildPicPosDarkTheme();
 
   // ── مشترك ───────────────────────────────────────────────────────────────
 
   static ScrollbarThemeData _scrollbar() => ScrollbarThemeData(
-        thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.dragged)) {
-            return AppColors.primary;
-          }
-          if (states.contains(WidgetState.hovered)) {
-            return AppColors.primary.withValues(alpha: 0.75);
-          }
-          return AppColors.primary.withValues(alpha: 0.35);
-        }),
-        trackColor: WidgetStateProperty.all(Colors.transparent),
-        trackBorderColor: WidgetStateProperty.all(Colors.transparent),
-        thickness: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.hovered) ||
-                    states.contains(WidgetState.dragged)
-                ? 10.0
-                : 6.0),
-        radius: const Radius.circular(_radiusPill),
-        thumbVisibility: WidgetStateProperty.all(true),
-        trackVisibility: WidgetStateProperty.all(false),
-        interactive: true,
-      );
+    thumbColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.dragged)) {
+        return AppColors.primary;
+      }
+      if (states.contains(WidgetState.hovered)) {
+        return AppColors.primary.withValues(alpha: 0.75);
+      }
+      return AppColors.primary.withValues(alpha: 0.35);
+    }),
+    trackColor: WidgetStateProperty.all(Colors.transparent),
+    trackBorderColor: WidgetStateProperty.all(Colors.transparent),
+    thickness: WidgetStateProperty.resolveWith(
+      (states) =>
+          states.contains(WidgetState.hovered) ||
+              states.contains(WidgetState.dragged)
+          ? 10.0
+          : 6.0,
+    ),
+    radius: const Radius.circular(_radiusPill),
+    thumbVisibility: WidgetStateProperty.all(true),
+    trackVisibility: WidgetStateProperty.all(false),
+    interactive: true,
+  );
 
   /// سلّم بنط أوسع من UralCash بدرجة واحدة تقريباً، و`height` أعلى.
   /// العربي بيحتاج تباعد أسطر أكرم من اللاتيني — التشكيل والنقط بتتقصّ
   /// بصرياً عند `height` منخفض، وده بيتراكم على شاشة مليانة جداول.
   static TextTheme _textTheme(Brightness brightness) {
-    final onSurface =
-        brightness == Brightness.light ? AppColors.textPrimary : Colors.white;
-    final muted = brightness == Brightness.light
-        ? AppColors.textSecondary
-        : Colors.white70;
+    final onSurface = brightness == Brightness.light
+        ? AppColors.textPrimary
+        : Colors.white;
+    final muted = brightness == Brightness.light ? AppColors.textSecondary : _m;
 
     return TextTheme(
       displayLarge: GoogleFonts.cairo(
-          fontSize: 30, fontWeight: headingWeight, color: onSurface),
+        fontSize: 30,
+        fontWeight: headingWeight,
+        color: onSurface,
+      ),
       displayMedium: GoogleFonts.cairo(
-          fontSize: 25, fontWeight: headingWeight, color: onSurface),
+        fontSize: 25,
+        fontWeight: headingWeight,
+        color: onSurface,
+      ),
       displaySmall: GoogleFonts.cairo(
-          fontSize: 21, fontWeight: headingWeight, color: onSurface),
+        fontSize: 21,
+        fontWeight: headingWeight,
+        color: onSurface,
+      ),
       headlineMedium: GoogleFonts.cairo(
-          fontSize: 19, fontWeight: headingWeight, color: onSurface),
+        fontSize: 19,
+        fontWeight: headingWeight,
+        color: onSurface,
+      ),
       headlineSmall: GoogleFonts.cairo(
-          fontSize: 17, fontWeight: headingWeight, color: onSurface),
+        fontSize: 17,
+        fontWeight: headingWeight,
+        color: onSurface,
+      ),
       titleLarge: GoogleFonts.cairo(
-          fontSize: 16, fontWeight: headingWeight, color: onSurface),
+        fontSize: 16,
+        fontWeight: headingWeight,
+        color: onSurface,
+      ),
       titleMedium: GoogleFonts.cairo(
-          fontSize: 15, fontWeight: headingWeight, color: onSurface),
+        fontSize: 15,
+        fontWeight: headingWeight,
+        color: onSurface,
+      ),
       titleSmall: GoogleFonts.cairo(
-          fontSize: 14, fontWeight: headingWeight, color: onSurface),
+        fontSize: 14,
+        fontWeight: headingWeight,
+        color: onSurface,
+      ),
       bodyLarge: GoogleFonts.cairo(
-          fontSize: 15, height: 1.65, fontWeight: bodyWeight, color: onSurface),
+        fontSize: 15,
+        height: 1.65,
+        fontWeight: bodyWeight,
+        color: onSurface,
+      ),
       bodyMedium: GoogleFonts.cairo(
-          fontSize: 14, height: 1.65, fontWeight: bodyWeight, color: onSurface),
+        fontSize: 14,
+        height: 1.65,
+        fontWeight: bodyWeight,
+        color: onSurface,
+      ),
       bodySmall: GoogleFonts.cairo(
-          fontSize: 13, height: 1.6, fontWeight: bodyWeight, color: muted),
+        fontSize: 13,
+        height: 1.6,
+        fontWeight: bodyWeight,
+        color: muted,
+      ),
       labelLarge: GoogleFonts.cairo(
-          fontSize: 14, fontWeight: headingWeight, color: onSurface),
+        fontSize: 14,
+        fontWeight: headingWeight,
+        color: onSurface,
+      ),
       labelMedium: GoogleFonts.cairo(
-          fontSize: 13, fontWeight: headingWeight, color: muted),
+        fontSize: 13,
+        fontWeight: headingWeight,
+        color: muted,
+      ),
       labelSmall: GoogleFonts.cairo(
-          fontSize: 12, fontWeight: headingWeight, color: muted),
+        fontSize: 12,
+        fontWeight: headingWeight,
+        color: muted,
+      ),
     );
   }
 }

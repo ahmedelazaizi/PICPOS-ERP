@@ -55,31 +55,30 @@ Party _party({
   double discPct = 0,
   int discDays = 0,
   int? rating,
-}) =>
-    Party(
-      id: id,
-      code: 'P-$id',
-      name: name,
-      phone: '01000000000',
-      address: 'المعادي',
-      isCustomer: customer,
-      isSupplier: supplier,
-      isDeliveryCompany: false,
-      isFavorite: false,
-      balance: balance,
-      creditLimit: creditLimit,
-      paymentTermsDays: terms,
-      earlyPaymentDiscountPct: discPct,
-      earlyPaymentDiscountDays: discDays,
-      supplierRating: rating,
-      fixedDiscount: 0,
-      priceLevel: 'default',
-      isActive: true,
-      createdAt: DateTime(2026, 1, 1),
-      isGlobal: true,
-      isSystemDefault: false,
-      rowVersion: 0,
-    );
+}) => Party(
+  id: id,
+  code: 'P-$id',
+  name: name,
+  phone: '01000000000',
+  address: 'المعادي',
+  isCustomer: customer,
+  isSupplier: supplier,
+  isDeliveryCompany: false,
+  isFavorite: false,
+  balance: balance,
+  creditLimit: creditLimit,
+  paymentTermsDays: terms,
+  earlyPaymentDiscountPct: discPct,
+  earlyPaymentDiscountDays: discDays,
+  supplierRating: rating,
+  fixedDiscount: 0,
+  priceLevel: 'default',
+  isActive: true,
+  createdAt: DateTime(2026, 1, 1),
+  isGlobal: true,
+  isSystemDefault: false,
+  rowVersion: 0,
+);
 
 PartyStatementEntry _entry(
   String type,
@@ -87,48 +86,45 @@ PartyStatementEntry _entry(
   double credit,
   double balance, {
   String? number,
-}) =>
-    PartyStatementEntry(
-      date: DateTime(2026, 8, 10),
-      description: 'حركة $type',
-      invoiceNumber: number,
-      entryType: type,
-      debit: debit,
-      credit: credit,
-      balance: balance,
-    );
+}) => PartyStatementEntry(
+  date: DateTime(2026, 8, 10),
+  description: 'حركة $type',
+  invoiceNumber: number,
+  entryType: type,
+  debit: debit,
+  credit: credit,
+  balance: balance,
+);
 
 PartyOpenInvoiceRow _open(
   String number,
   double total,
   double paid,
   int daysLate,
-) =>
-    PartyOpenInvoiceRow(
-      invoiceId: number.hashCode,
-      invoiceNumber: number,
-      invoiceDate: DateTime(2026, 7, 1),
-      dueDate: DateTime(2026, 7, 31),
-      total: total,
-      paid: paid,
-      daysLate: daysLate,
-    );
+) => PartyOpenInvoiceRow(
+  invoiceId: number.hashCode,
+  invoiceNumber: number,
+  invoiceDate: DateTime(2026, 7, 1),
+  dueDate: DateTime(2026, 7, 31),
+  total: total,
+  paid: paid,
+  daysLate: daysLate,
+);
 
 PartyPaymentMatchRow _pay(
   String number,
   double amount,
   double allocated,
   int invoiceCount,
-) =>
-    PartyPaymentMatchRow(
-      paymentId: number.hashCode,
-      paymentNumber: number,
-      paymentDate: DateTime(2026, 8, 20),
-      amount: amount,
-      allocated: allocated,
-      method: 'نقدي',
-      invoiceCount: invoiceCount,
-    );
+) => PartyPaymentMatchRow(
+  paymentId: number.hashCode,
+  paymentNumber: number,
+  paymentDate: DateTime(2026, 8, 20),
+  amount: amount,
+  allocated: allocated,
+  method: 'نقدي',
+  invoiceCount: invoiceCount,
+);
 
 PoMatchRow _po(
   String order,
@@ -136,37 +132,35 @@ PoMatchRow _po(
   double ordered,
   double received,
   double invoiced,
-) =>
-    PoMatchRow(
-      orderId: order.hashCode,
-      orderNumber: order,
-      productName: product,
-      ordered: ordered,
-      received: received,
-      invoiced: invoiced,
-      orderDate: DateTime(2026, 8, 1),
-      expectedDate: DateTime(2026, 8, 10),
-      receivedAt: DateTime(2026, 8, 12),
-    );
+) => PoMatchRow(
+  orderId: order.hashCode,
+  orderNumber: order,
+  productName: product,
+  ordered: ordered,
+  received: received,
+  invoiced: invoiced,
+  orderDate: DateTime(2026, 8, 1),
+  expectedDate: DateTime(2026, 8, 10),
+  receivedAt: DateTime(2026, 8, 12),
+);
 
 PartySettlementRow _settle(
   String number,
   double total, {
   required double paid,
   int? paidAfterDays,
-}) =>
-    PartySettlementRow(
-      invoiceId: number.hashCode,
-      invoiceNumber: number,
-      invoiceDate: DateTime(2026, 7, 1),
-      dueDate: DateTime(2026, 7, 31),
-      total: total,
-      paid: paid,
-      lastPaymentDate: paidAfterDays == null
-          ? null
-          : DateTime(2026, 7, 1).add(Duration(days: paidAfterDays)),
-      allocationCount: paidAfterDays == null ? 0 : 1,
-    );
+}) => PartySettlementRow(
+  invoiceId: number.hashCode,
+  invoiceNumber: number,
+  invoiceDate: DateTime(2026, 7, 1),
+  dueDate: DateTime(2026, 7, 31),
+  total: total,
+  paid: paid,
+  lastPaymentDate: paidAfterDays == null
+      ? null
+      : DateTime(2026, 7, 1).add(Duration(days: paidAfterDays)),
+  allocationCount: paidAfterDays == null ? 0 : 1,
+);
 
 CommercialPaperData _paper(int id, String number, String status, double amt) =>
     CommercialPaperData(
@@ -226,9 +220,8 @@ class _FakePartiesRepo implements IPartiesRepository {
       Stream.value(parties);
 
   @override
-  Future<Party?> getPartyById(int id) async => missingParty
-      ? null
-      : parties.where((p) => p.id == id).firstOrNull;
+  Future<Party?> getPartyById(int id) async =>
+      missingParty ? null : parties.where((p) => p.id == id).firstOrNull;
 
   @override
   Future<List<PartyStatementEntry>> getPartyStatement(
@@ -236,32 +229,29 @@ class _FakePartiesRepo implements IPartiesRepository {
     DateTime? fromDate,
     DateTime? toDate,
     int? branchId,
-  }) async =>
-      entries;
+  }) async => entries;
 
   @override
   Future<List<PartyOpenInvoiceRow>> getPartyOpenInvoices({
     required int partyId,
     required bool supplier,
     DateTime? asOf,
-  }) async =>
-      open;
+    int? branchId,
+  }) async => open;
 
   @override
   Future<List<PartyPaymentMatchRow>> getPartyPaymentMatches({
     required int partyId,
     DateTime? from,
     DateTime? to,
-  }) async =>
-      payments;
+  }) async => payments;
 
   @override
   Future<List<PoMatchRow>> getPurchaseOrderMatches({
     required int supplierId,
     DateTime? from,
     DateTime? to,
-  }) async =>
-      poRows;
+  }) async => poRows;
 
   @override
   Future<List<CommercialPaperData>> getPartyPapers(int partyId) async => papers;
@@ -270,16 +260,14 @@ class _FakePartiesRepo implements IPartiesRepository {
   Future<PartyProfileMetrics> getPartyProfileMetrics({
     required int partyId,
     required bool supplier,
-  }) async =>
-      metrics;
+  }) async => metrics;
 
   @override
   Future<List<PartySettlementRow>> getPartySettlementRows({
     required int partyId,
     required bool supplier,
     int limit = 6,
-  }) async =>
-      settlements;
+  }) async => settlements;
 
   // ── v165: سجلّا التواصل ────────────────────────────────────────────────
 
@@ -295,8 +283,7 @@ class _FakePartiesRepo implements IPartiesRepository {
     int partyId, {
     int? invoiceId,
     int limit = 50,
-  }) async =>
-      const [];
+  }) async => const [];
 
   @override
   Future<int> insertPartyFollowUp({
@@ -326,9 +313,10 @@ class _FakePartiesRepo implements IPartiesRepository {
   }
 
   @override
-  Future<List<SupplierClaim>> getSupplierClaims(int supplierId,
-          {int limit = 50}) async =>
-      const [];
+  Future<List<SupplierClaim>> getSupplierClaims(
+    int supplierId, {
+    int limit = 50,
+  }) async => const [];
 
   @override
   Future<List<SupplierClaim>> getOpenSupplierClaims(int supplierId) async =>
@@ -362,8 +350,7 @@ class _FakePartiesRepo implements IPartiesRepository {
   Future<void> updateSupplierClaimStatus(int id, String status) async {}
 
   @override
-  dynamic noSuchMethod(Invocation invocation) =>
-      super.noSuchMethod(invocation);
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {
@@ -425,7 +412,8 @@ void main() {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
-    final r = repo ??
+    final r =
+        repo ??
         _FakePartiesRepo(
           parties: [customer, supplier],
           entries: entries,
@@ -438,8 +426,9 @@ void main() {
       ProviderScope(
         overrides: [
           partiesRepositoryProvider.overrideWithValue(r),
-          branchScopeProvider
-              .overrideWith((ref) async => const BranchScope.fullAccess()),
+          branchScopeProvider.overrideWith(
+            (ref) async => const BranchScope.fullAccess(),
+          ),
         ],
         child: MaterialApp(
           home: PartyStatementPicposScreen(
@@ -463,11 +452,15 @@ void main() {
       ('عرضٌ ضيّق', Size(820, 760)),
     ]) {
       for (final mode in const [('عميل', false), ('مورد', true)]) {
-        testWidgets('${w.$1} — كشفُ ${mode.$1} بلا فيضٍ ولا انهيار',
-            (tester) async {
+        testWidgets('${w.$1} — كشفُ ${mode.$1} بلا فيضٍ ولا انهيار', (
+          tester,
+        ) async {
           await open2(tester, w.$2, asSupplier: mode.$2);
-          expect(tester.takeException(), isNull,
-              reason: 'انهيارُ تخطيطٍ عند العرض ${w.$2.width} لكشف ${mode.$1}');
+          expect(
+            tester.takeException(),
+            isNull,
+            reason: 'انهيارُ تخطيطٍ عند العرض ${w.$2.width} لكشف ${mode.$1}',
+          );
 
           // والمحتوى ظاهرٌ فعلاً — لا شجرةٌ فارغةٌ تمرّ.
           expect(find.text('كشف حساب ${mode.$1}'), findsOneWidget);
@@ -493,12 +486,15 @@ void main() {
     await teardownTree(tester);
   });
 
-  testWidgets('كشفُ المورد يحمل تبويباتِه هو لا تبويباتِ العميل',
-      (tester) async {
+  testWidgets('كشفُ المورد يحمل تبويباتِه هو لا تبويباتِ العميل', (
+    tester,
+  ) async {
     await open2(tester, const Size(1500, 900), asSupplier: true);
     expect(find.text('المستحق والاستحقاق'), findsOneWidget);
-    expect(find.text('أعمار الدين'), findsNothing,
-        reason: 'تبويبةُ العميل انزلقت إلى كشف المورد',
+    expect(
+      find.text('أعمار الدين'),
+      findsNothing,
+      reason: 'تبويبةُ العميل انزلقت إلى كشف المورد',
     );
     expect(find.text('مطابقة الفواتير بالاستلام'), findsOneWidget);
     expect(find.text('ملف المورد والتقييم'), findsOneWidget);
@@ -550,16 +546,22 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('RCP-0498'), findsOneWidget);
-    expect(find.text('INV-0842'), findsNothing,
-        reason: 'البحثُ رُسم ولم يُرشِّح');
+    expect(
+      find.text('INV-0842'),
+      findsNothing,
+      reason: 'البحثُ رُسم ولم يُرشِّح',
+    );
 
     // ومجاميعُ الجدول تتبع البحث — «٥ حركة» فوق صفٍّ واحدٍ رقمٌ يكذب.
     //
     // ⚠️ ولا يُفحَص هنا **شارةُ التبويبة**: هي عددُ حركات **الفترة** لا عددُ
     //    ما يظهر، والبحثُ عدسةٌ عابرةٌ لا يغيّر ما تحمله الفترة. فبقاؤها ٥
     //    صوابٌ لا عطب.
-    expect(find.text('1 حركة'), findsOneWidget,
-        reason: 'مجموعُ الجدول لم يتبع البحث');
+    expect(
+      find.text('1 حركة'),
+      findsOneWidget,
+      reason: 'مجموعُ الجدول لم يتبع البحث',
+    );
     expect(find.text('5 حركة'), findsNothing);
     await teardownTree(tester);
   });
@@ -593,13 +595,15 @@ void main() {
     expect(
       find.textContaining('RCP-0552'),
       findsNothing,
-      reason: 'اللوحةُ لا تسمع البحثَ — فتبويبةٌ كاملةٌ يبدو البحثُ فيها معطَّلاً',
+      reason:
+          'اللوحةُ لا تسمع البحثَ — فتبويبةٌ كاملةٌ يبدو البحثُ فيها معطَّلاً',
     );
     await teardownTree(tester);
   });
 
-  testWidgets('بحثٌ بلا نتيجةٍ يقول ذلك ولا يُرى جدولاً فارغاً',
-      (tester) async {
+  testWidgets('بحثٌ بلا نتيجةٍ يقول ذلك ولا يُرى جدولاً فارغاً', (
+    tester,
+  ) async {
     await open2(tester, const Size(1500, 900), asSupplier: false);
     await tester.enterText(
       find.widgetWithText(TextField, 'ابحث بمستند أو مبلغ داخل الكشف...'),
@@ -624,8 +628,9 @@ void main() {
   // القاعدةُ ثابتةٌ منذ البداية: **زرٌّ يظهر ولا يفعل أسوأُ من زرٍّ غائب.**
   // وقد بُني «تحصيل» و«سداد» على حوارَي الخزينة القائمَين، فعاد العمودُ إلى
   // «أعمار الدين» و«المستحق والاستحقاق». وبقي غائباً حيث الفعلُ لم يُبنَ.
-  testWidgets('زرُّ التحصيل حاضرٌ في «أعمار الدين» وموصولٌ بفعل',
-      (tester) async {
+  testWidgets('زرُّ التحصيل حاضرٌ في «أعمار الدين» وموصولٌ بفعل', (
+    tester,
+  ) async {
     await open2(tester, const Size(1500, 900), asSupplier: false);
     await tester.tap(find.text('أعمار الدين').first);
     await tester.pumpAndSettle();
@@ -637,13 +642,17 @@ void main() {
     final btn = find
         .ancestor(of: find.text('تحصيل').first, matching: find.byType(InkWell))
         .first;
-    expect(tester.widget<InkWell>(btn).onTap, isNotNull,
-        reason: 'الزرُّ مرسومٌ بلا فعل — وهو عينُ ما مُنع');
+    expect(
+      tester.widget<InkWell>(btn).onTap,
+      isNotNull,
+      reason: 'الزرُّ مرسومٌ بلا فعل — وهو عينُ ما مُنع',
+    );
     await teardownTree(tester);
   });
 
-  testWidgets('زرُّ السداد حاضرٌ في «المستحق والاستحقاق» وموصولٌ بفعل',
-      (tester) async {
+  testWidgets('زرُّ السداد حاضرٌ في «المستحق والاستحقاق» وموصولٌ بفعل', (
+    tester,
+  ) async {
     await open2(tester, const Size(1500, 900), asSupplier: true);
     await tester.tap(find.text('المستحق والاستحقاق').first);
     await tester.pumpAndSettle();
@@ -670,10 +679,16 @@ void main() {
       await open2(tester, const Size(1500, 900), asSupplier: c.supplier);
       await tester.tap(find.text(c.tab).first);
       await tester.pumpAndSettle();
-      expect(find.text('الاستحقاق'), findsWidgets,
-          reason: 'الجدولُ لم يُرسَم في «${c.tab}» — فغيابُ «إجراء» بلا دلالة');
-      expect(find.text('إجراء'), findsNothing,
-          reason: 'عمودُ «إجراء» ظهر في «${c.tab}» وفعلُه لم يُبنَ بعد');
+      expect(
+        find.text('الاستحقاق'),
+        findsWidgets,
+        reason: 'الجدولُ لم يُرسَم في «${c.tab}» — فغيابُ «إجراء» بلا دلالة',
+      );
+      expect(
+        find.text('إجراء'),
+        findsNothing,
+        reason: 'عمودُ «إجراء» ظهر في «${c.tab}» وفعلُه لم يُبنَ بعد',
+      );
       await teardownTree(tester);
     }
   });
@@ -698,7 +713,9 @@ void main() {
     //    وهو يسبق الصفوفَ في الشجرة — فـ`.first` كانت تضغط رأسَ عمودٍ لا
     //    يفعل شيئاً، ويمرّ الفحصُ كأنّ الحوارَ لم يُبنَ.
     await tester.tap(
-      find.descendant(of: find.byType(InkWell), matching: find.text('متابعة')).first,
+      find
+          .descendant(of: find.byType(InkWell), matching: find.text('متابعة'))
+          .first,
     );
     await tester.pumpAndSettle();
 
@@ -711,8 +728,11 @@ void main() {
     expect(find.text('تفاصيل الوعد'), findsOneWidget);
     await tester.tap(find.text('لم يُرد'));
     await tester.pumpAndSettle();
-    expect(find.text('تفاصيل الوعد'), findsNothing,
-        reason: 'تفاصيلُ الوعد بقيت مع نتيجةٍ لا وعدَ فيها');
+    expect(
+      find.text('تفاصيل الوعد'),
+      findsNothing,
+      reason: 'تفاصيلُ الوعد بقيت مع نتيجةٍ لا وعدَ فيها',
+    );
 
     await tester.tap(find.text('حفظ المتابعة'));
     await tester.pumpAndSettle();
@@ -729,8 +749,11 @@ void main() {
     expect(row['promisedAmount'], isNull);
     // والمتبقّي **لقطةٌ** من الصفّ لا رقمٌ مخترَع.
     expect(row['amountDue'], open.first.remaining);
-    expect(row['nextActionAt'], isNotNull,
-        reason: 'موعدُ الإجراء التالي لم يُشتقّ من النتيجة');
+    expect(
+      row['nextActionAt'],
+      isNotNull,
+      reason: 'موعدُ الإجراء التالي لم يُشتقّ من النتيجة',
+    );
     await teardownTree(tester);
   });
 
@@ -748,11 +771,16 @@ void main() {
     await tester.pumpAndSettle();
 
     // ⚠️ **السطرُ السليمُ بلا زرّ**: ثلاثةُ أسطرٍ في التجهيزة، اثنان بفروق.
-    expect(find.text('مطالبة'), findsNWidgets(2),
-        reason: 'ظهر زرُّ مطالبةٍ على سطرٍ مطابق');
+    expect(
+      find.text('مطالبة'),
+      findsNWidgets(2),
+      reason: 'ظهر زرُّ مطالبةٍ على سطرٍ مطابق',
+    );
 
     await tester.tap(
-      find.descendant(of: find.byType(InkWell), matching: find.text('مطالبة')).first,
+      find
+          .descendant(of: find.byType(InkWell), matching: find.text('مطالبة'))
+          .first,
     );
     await tester.pumpAndSettle();
     expect(find.text('تسوية ومطالبة المورد'), findsOneWidget);
@@ -767,8 +795,11 @@ void main() {
     expect(row['kind'], 'claim');
     expect(row['settlementKind'], 'credit_note');
     // الفروقُ وحدَها تُطالَب — لا الأسطرُ السليمة.
-    expect(row['lineCount'], 2,
-        reason: 'دخل سطرٌ مطابقٌ في المطالبة أو سقط سطرُ فرق');
+    expect(
+      row['lineCount'],
+      2,
+      reason: 'دخل سطرٌ مطابقٌ في المطالبة أو سقط سطرُ فرق',
+    );
     expect(row['linesJson'], isNotNull);
     // ⚠️ والصافي صفرٌ ما لم يُكتَب — ولا يُشتقّ من كمّيّاتٍ بلا أسعار.
     expect(row['netAmount'], 0);
@@ -784,8 +815,7 @@ void main() {
   //    فالمعيارُ **عنوانُ العمود**: التصميمُ يسمّيه «إجراء» في أربعة جداول.
   //    وعودتُه تعني عودةَ العمود. والمرساةُ عناوينُ الأعمدة الأخرى في نفس
   //    الجدول — إن غابت فالجدولُ لم يُرسَم أصلاً وغيابُ «إجراء» بلا دلالة.
-  testWidgets('الطرفُ المفقودُ يُعلَن ولا يُترَك جسماً فارغاً',
-      (tester) async {
+  testWidgets('الطرفُ المفقودُ يُعلَن ولا يُترَك جسماً فارغاً', (tester) async {
     await open2(
       tester,
       const Size(1200, 800),
@@ -811,8 +841,9 @@ void main() {
   });
 
   // ═══ رسما تبويبة الملفّ — من صفوفٍ لا من متوسّطات ════════════════════════
-  testWidgets('رسمُ سلوك السداد يميّز غيرَ المسدَّدة عن المسدَّدة فوراً',
-      (tester) async {
+  testWidgets('رسمُ سلوك السداد يميّز غيرَ المسدَّدة عن المسدَّدة فوراً', (
+    tester,
+  ) async {
     await open2(tester, const Size(1500, 900), asSupplier: false);
     await tester.tap(find.text('ملف العميل والائتمان').first);
     await tester.pumpAndSettle();
@@ -820,8 +851,10 @@ void main() {
 
     // العنوانُ بالضبط لا `textContaining`: ملاحظةُ التبويبة نفسُها تحوي
     // «سلوك السداد»، فالبحثُ الجزئيُّ يجد اثنين ولا يثبت أنّ الرسمَ رُسم.
-    expect(find.text('سلوك السداد — آخر ${settlements.length} فواتير'),
-        findsOneWidget);
+    expect(
+      find.text('سلوك السداد — آخر ${settlements.length} فواتير'),
+      findsOneWidget,
+    );
     // أربعةُ صفوفٍ في التجهيزة، ثلاثةٌ مسدَّدةٌ وواحدةٌ لا.
     expect(find.text('INV-0710'), findsOneWidget);
     expect(find.text('سُدّدت في 8 يوماً'), findsOneWidget);
@@ -829,8 +862,11 @@ void main() {
 
     // ⚠️ الفاتورةُ غيرُ المسدَّدة تقول ذلك — ولا تُرسَم «سُدّدت في 0 يوماً».
     expect(find.text('لم تُسدَّد بعد'), findsOneWidget);
-    expect(find.text('سُدّدت في 0 يوماً'), findsNothing,
-        reason: '«لم تُسدَّد» رُسمت صفراً — وهو عكسُ الحقيقة');
+    expect(
+      find.text('سُدّدت في 0 يوماً'),
+      findsNothing,
+      reason: '«لم تُسدَّد» رُسمت صفراً — وهو عكسُ الحقيقة',
+    );
 
     // ومهلةُ السداد ٣٠، فـ٤١ يوماً تجاوزٌ و٨ داخلَها.
     expect(find.text('داخل المهلة'), findsWidgets);
@@ -846,16 +882,27 @@ void main() {
 
     // المورّدُ في التجهيزة خصمُه ٢٪ خلال ١٠ أيّام.
     expect(find.textContaining('الخصم النقدي'), findsWidgets);
-    expect(find.text('استُغل الخصم'), findsNWidgets(2),
-        reason: 'فاتورتان سُدّدتا في ٨ و٩ أيّام — داخلَ النافذة');
-    expect(find.text('فات الخصم'), findsOneWidget,
-        reason: 'فاتورةٌ سُدّدت في ٤١ يوماً — خارجَ النافذة');
-    expect(find.text('متاح'), findsOneWidget,
-        reason: 'فاتورةٌ لم تُسدَّد بعد — الخصمُ ما زال ممكناً لا فائتاً');
+    expect(
+      find.text('استُغل الخصم'),
+      findsNWidgets(2),
+      reason: 'فاتورتان سُدّدتا في ٨ و٩ أيّام — داخلَ النافذة',
+    );
+    expect(
+      find.text('فات الخصم'),
+      findsOneWidget,
+      reason: 'فاتورةٌ سُدّدت في ٤١ يوماً — خارجَ النافذة',
+    );
+    expect(
+      find.text('متاح'),
+      findsOneWidget,
+      reason: 'فاتورةٌ لم تُسدَّد بعد — الخصمُ ما زال ممكناً لا فائتاً',
+    );
     await teardownTree(tester);
   });
 
-  testWidgets('بلا شرطِ خصمٍ متفقٍ لا يُتَّهَم المورّدُ بتفويته', (tester) async {
+  testWidgets('بلا شرطِ خصمٍ متفقٍ لا يُتَّهَم المورّدُ بتفويته', (
+    tester,
+  ) async {
     final noDiscount = _party(
       id: 2,
       name: 'مورد بلا خصم',
@@ -885,8 +932,9 @@ void main() {
     await teardownTree(tester);
   });
 
-  testWidgets('ملفُّ المورد يقول «لم يُقيَّم» لا «صفر» حين لا تقييم',
-      (tester) async {
+  testWidgets('ملفُّ المورد يقول «لم يُقيَّم» لا «صفر» حين لا تقييم', (
+    tester,
+  ) async {
     final unrated = _party(
       id: 2,
       name: 'مورد بلا تقييم',

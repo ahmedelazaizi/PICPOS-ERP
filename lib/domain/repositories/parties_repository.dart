@@ -119,6 +119,7 @@ abstract class IPartiesRepository {
     required int partyId,
     required bool supplier,
     DateTime? asOf,
+    int? branchId,
   });
 
   /// دفعاتُ طرفٍ ومقدارُ المربوطِ منها بفواتير — «مطابقةُ الدفعات».

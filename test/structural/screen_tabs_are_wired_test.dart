@@ -22,6 +22,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/library_source.dart';
+
 const _shellPath = 'lib/presentation/shell/app_shell.dart';
 const _barPath = 'lib/presentation/shell/screen_tabs_bar.dart';
 const _mainPath = 'lib/app_main_screen.dart';
@@ -32,7 +34,7 @@ const _deadProviderPath = 'lib/presentation/providers/breadcrumb_provider.dart';
 String _read(String path) {
   final f = File(path);
   expect(f.existsSync(), isTrue, reason: 'ملفٌّ غائب: $path');
-  return f.readAsStringSync();
+  return readLibrarySource(path);
 }
 
 /// النصُّ بلا أسطرِ التعليق.
@@ -45,18 +47,27 @@ String _read(String path) {
 /// وتُحذَف الأسطرُ الكاملةُ وحدَها: قصُّ ما بعد `//` في وسط سطرٍ يبتر
 /// `'https://…'` داخلَ نصٍّ فيُفسد ما يُقاس.
 String _code(String src) => [
-      for (final line in src.split('\n'))
-        if (!line.trimLeft().startsWith('//')) line,
-    ].join('\n');
+  for (final line in src.split('\n'))
+    if (!line.trimLeft().startsWith('//')) line,
+].join('\n');
 
 void main() {
   test('الشريطُ الخاملُ لم يبقَ له أثرٌ يُرسَم', () {
-    expect(File(_deadBarPath).existsSync(), isFalse,
-        reason: 'الشريطُ الخاملُ ما زال موجوداً — ويُغري بإعادة وصله');
-    expect(File(_deadProviderPath).existsSync(), isFalse,
-        reason: 'مزوّدٌ يُكتَب فيه ولا قارئَ له — حالةٌ ميّتةٌ صامتة');
-    expect(_code(_read(_shellPath)).contains('AppBreadcrumbs'), isFalse,
-        reason: 'الشلُّ ما زال يرسم الشريطَ الخامل');
+    expect(
+      File(_deadBarPath).existsSync(),
+      isFalse,
+      reason: 'الشريطُ الخاملُ ما زال موجوداً — ويُغري بإعادة وصله',
+    );
+    expect(
+      File(_deadProviderPath).existsSync(),
+      isFalse,
+      reason: 'مزوّدٌ يُكتَب فيه ولا قارئَ له — حالةٌ ميّتةٌ صامتة',
+    );
+    expect(
+      _code(_read(_shellPath)).contains('AppBreadcrumbs'),
+      isFalse,
+      reason: 'الشلُّ ما زال يرسم الشريطَ الخامل',
+    );
   });
 
   test('ولا نمطَ «الوحيدُ القابلُ للنقر يُلغى نقرُه» في العرض كلِّه', () {
@@ -75,8 +86,11 @@ void main() {
 
   test('والشلُّ يرسم شريطَ التابات ويمرّر كلَّ ما يحتاجه', () {
     final shell = _read(_shellPath);
-    expect(shell.contains('ScreenTabsBar('), isTrue,
-        reason: 'لا شريطَ تاباتٍ مرسومٌ أصلاً');
+    expect(
+      shell.contains('ScreenTabsBar('),
+      isTrue,
+      reason: 'لا شريطَ تاباتٍ مرسومٌ أصلاً',
+    );
     for (final wire in const [
       'tabs: widget.tabs',
       'active: widget.currentIndex',
@@ -102,16 +116,25 @@ void main() {
 
     final gate = shell.indexOf('showTopBarProvider');
     expect(gate, greaterThan(0), reason: 'لا شرطَ ظهورٍ للقشرة العلويّة');
-    expect(RegExp('showTopBarProvider').allMatches(shell).length, 1,
-        reason: 'شرطُ الظهور تكرّر — نسختان تفترقان في أوّل تعديل');
+    expect(
+      RegExp('showTopBarProvider').allMatches(shell).length,
+      1,
+      reason: 'شرطُ الظهور تكرّر — نسختان تفترقان في أوّل تعديل',
+    );
 
     final bar = shell.indexOf('ScreenTabsBar(');
     final crumbs = shell.indexOf('ScreenBreadcrumbs(screenIndex:');
-    expect(crumbs, greaterThan(0),
-        reason: 'المسارُ غيرُ موصولٍ بالقشرة — القاعدةُ ح‑٢ تقول يبقى');
+    expect(
+      crumbs,
+      greaterThan(0),
+      reason: 'المسارُ غيرُ موصولٍ بالقشرة — القاعدةُ ح‑٢ تقول يبقى',
+    );
     expect(bar, greaterThan(gate), reason: 'شريطُ التابات خارجَ شرط الظهور');
-    expect(crumbs, greaterThan(bar),
-        reason: 'المسارُ فوقَ التابات لا تحتها — عكسُ نصّ القرار');
+    expect(
+      crumbs,
+      greaterThan(bar),
+      reason: 'المسارُ فوقَ التابات لا تحتها — عكسُ نصّ القرار',
+    );
   });
 
   test('والمسارُ يُشتقُّ ولا يُدفَع — فلا مزوّدَ يُكتَب فيه', () {
@@ -119,49 +142,80 @@ void main() {
     // **يستبدل** القائمةَ في كلّ تنقّل، فما تراكم مسارٌ قطّ — «ولا يفتح اكثر
     // من تابين». فأيُّ مُحدِّثٍ يُنادى من خارج الشريط يُعيد العطبَ نفسَه.
     final src = _code(_read('lib/presentation/shell/screen_breadcrumbs.dart'));
-    expect(src.contains('ScreenPath? resolveScreenPath(int screenIndex)'),
-        isTrue,
-        reason: 'لا مُشتقٌّ خالصٌ — فالمسارُ يُدفَع من مكانٍ ما');
+    expect(
+      src.contains('ScreenPath? resolveScreenPath(int screenIndex)'),
+      isTrue,
+      reason: 'لا مُشتقٌّ خالصٌ — فالمسارُ يُدفَع من مكانٍ ما',
+    );
     for (final pushed in const ['StateProvider', 'Notifier', 'setBreadcrumb']) {
-      expect(src.contains(pushed), isFalse,
-          reason: 'حالةٌ تُكتَب في المسار ($pushed) — والمكتوبُ يفترق '
-              'عن المعروض');
+      expect(
+        src.contains(pushed),
+        isFalse,
+        reason:
+            'حالةٌ تُكتَب في المسار ($pushed) — والمكتوبُ يفترق '
+            'عن المعروض',
+      );
     }
-    expect(src.contains('firstWhere('), isFalse,
-        reason: '`firstWhere` بلا `orElse` ترمي StateError على شاشةٍ بلا '
-            'مدخلٍ جانبيّ — وتُسقط القشرةَ كلَّها لا الشريطَ وحدَه');
+    expect(
+      src.contains('firstWhere('),
+      isFalse,
+      reason:
+          '`firstWhere` بلا `orElse` ترمي StateError على شاشةٍ بلا '
+          'مدخلٍ جانبيّ — وتُسقط القشرةَ كلَّها لا الشريطَ وحدَه',
+    );
   });
 
   test('والنقرُ في الشريط يُبلِّغ بلا شرطٍ يُبطله', () {
     final bar = _code(_read(_barPath));
-    expect(bar.contains('onTap: widget.onSelect'), isTrue,
-        reason: 'التابُ لا يُبلِّغ نقرَه — وهو عينُ عطبِ فتات الخبز');
-    expect(RegExp(r'onTap:\s*\w+\s*\?\s*null').hasMatch(bar), isFalse,
-        reason: 'نقرٌ مشروطٌ بشرطٍ قد يُبطله دائماً');
+    expect(
+      bar.contains('onTap: widget.onSelect'),
+      isTrue,
+      reason: 'التابُ لا يُبلِّغ نقرَه — وهو عينُ عطبِ فتات الخبز',
+    );
+    expect(
+      RegExp(r'onTap:\s*\w+\s*\?\s*null').hasMatch(bar),
+      isFalse,
+      reason: 'نقرٌ مشروطٌ بشرطٍ قد يُبطله دائماً',
+    );
   });
 
   test('وجرسُ التنبيهات انتقل مع الشريط', () {
-    expect(_read(_barPath).contains('NotificationBell()'), isTrue,
-        reason: 'الجرسُ كان في `AppBreadcrumbs` وسقط مع استبداله');
+    expect(
+      _read(_barPath).contains('NotificationBell()'),
+      isTrue,
+      reason: 'الجرسُ كان في `AppBreadcrumbs` وسقط مع استبداله',
+    );
   });
 
   test('والشاشاتُ المفتوحةُ كلُّها تُبنى — بمفاتيحَ لا بمواضع', () {
     final main = _read(_mainPath);
-    expect(main.contains('IndexedStack('), isTrue,
-        reason: 'شاشةٌ واحدةٌ تُبنى — فالتابُ إشارةٌ لا تابٌ يحفظ حالته');
+    expect(
+      main.contains('IndexedStack('),
+      isTrue,
+      reason: 'شاشةٌ واحدةٌ تُبنى — فالتابُ إشارةٌ لا تابٌ يحفظ حالته',
+    );
     expect(main.contains('KeyedSubtree('), isTrue);
-    expect(main.contains('ValueKey<int>(e.index)'), isTrue,
-        reason: 'مطابقةٌ بالموضع — إغلاقُ تابٍ يُسلِّم حالةَ شاشةٍ لأخرى');
-    expect(main.contains('for (final i in _tabs.order)'), isTrue,
-        reason: 'الكومةُ لا تُبنى من التابات المفتوحة');
+    expect(
+      main.contains('ValueKey<int>(e.index)'),
+      isTrue,
+      reason: 'مطابقةٌ بالموضع — إغلاقُ تابٍ يُسلِّم حالةَ شاشةٍ لأخرى',
+    );
+    expect(
+      main.contains('for (final i in _tabs.order)'),
+      isTrue,
+      reason: 'الكومةُ لا تُبنى من التابات المفتوحة',
+    );
   });
 
   test('والتنقّلُ كلُّه يمرّ بمعبرٍ واحد', () {
     final main = _read(_mainPath);
     // ⚠️ لا كتابةَ مباشرةً على حالة التابات خارجَ الدالّات الثلاث.
     final direct = RegExp(r'_tabs\s*=\s*').allMatches(main).length;
-    expect(direct, lessThanOrEqualTo(6),
-        reason: 'كتاباتٌ مباشرةٌ كثيرةٌ على حالة التابات — $direct موضعاً');
+    expect(
+      direct,
+      lessThanOrEqualTo(6),
+      reason: 'كتاباتٌ مباشرةٌ كثيرةٌ على حالة التابات — $direct موضعاً',
+    );
     expect(main.contains('void _activateScreen(int screenIndex)'), isTrue);
     expect(main.contains('onSelectTab: _activateScreen'), isTrue);
     expect(main.contains('onCloseTab: _closeTab'), isTrue);
@@ -176,31 +230,43 @@ void main() {
     // السطر، لأنّ `onWindowClose` يحمل `popUntil` لغرضٍ آخرَ تماماً. فحصُ
     // وجودِ رمزٍ في ملفٍّ يكذب متى ظهر الرمزُ مرّتَين.
     final main = _read(_mainPath);
-    final at = main.indexOf('void _activateScreen(int screenIndex) {');
+    final at = main.indexOf('void _activateScreenImpl(int screenIndex) {');
     expect(at, greaterThan(0), reason: 'لا معبرَ تنشيطٍ أصلاً');
     final body = main.substring(at, main.indexOf('\n  }', at));
-    expect(body.contains('appShellNestedNavigatorKey'), isTrue,
-        reason: 'تنشيطُ تابٍ لا يلمس مُوجِّهَ الشلّ');
-    expect(body.contains('popUntil('), isTrue,
-        reason: 'تنشيطُ تابٍ لا يُزيل المسارَ الفرعيَّ فوقَه — فالنقرةُ '
-            'تبدو ميّتةً وهي عاملة');
+    expect(
+      body.contains('appShellNestedNavigatorKey'),
+      isTrue,
+      reason: 'تنشيطُ تابٍ لا يلمس مُوجِّهَ الشلّ',
+    );
+    expect(
+      body.contains('popUntil('),
+      isTrue,
+      reason:
+          'تنشيطُ تابٍ لا يُزيل المسارَ الفرعيَّ فوقَه — فالنقرةُ '
+          'تبدو ميّتةً وهي عاملة',
+    );
   });
 
   test('ونقطةُ البيع محصَّنةٌ من الإخلاء التلقائيّ', () {
     final model = _read(_modelPath);
     expect(model.contains('kUnevictableScreenTabs'), isTrue);
-    expect(RegExp(r'kUnevictableScreenTabs\s*=\s*<int>\{1\}').hasMatch(model),
-        isTrue,
-        reason: 'إخلاءُ تابِ البيع يمسح سلّةً غيرَ مُفوتَرةٍ بلا سؤال');
+    expect(
+      RegExp(r'kUnevictableScreenTabs\s*=\s*<int>\{1\}').hasMatch(model),
+      isTrue,
+      reason: 'إخلاءُ تابِ البيع يمسح سلّةً غيرَ مُفوتَرةٍ بلا سؤال',
+    );
   });
 
   test('وإغلاقُ تابِ البيع يسأل عن السلّة', () {
     final main = _read(_mainPath);
-    final at = main.indexOf('Future<void> _closeTab(');
+    final at = main.indexOf('Future<void> _closeTabImpl(');
     expect(at, greaterThan(0), reason: 'لا مُغلِقَ للتابات');
     final body = main.substring(at, at + 2000);
     expect(body.contains('AppScreen.pos.value'), isTrue);
-    expect(body.contains('cartControllerProvider'), isTrue,
-        reason: 'الإغلاقُ يهدم شجرةَ البيع ويمسح السلّةَ بلا سؤال');
+    expect(
+      body.contains('cartControllerProvider'),
+      isTrue,
+      reason: 'الإغلاقُ يهدم شجرةَ البيع ويمسح السلّةَ بلا سؤال',
+    );
   });
 }

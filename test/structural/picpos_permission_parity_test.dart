@@ -26,6 +26,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../helpers/library_source.dart';
 import 'package:ural_erp/core/permissions/permission_enforcement_registry.dart';
 
 /// النظيرُ القديم ↔ توأمُ PicPos. مقيسٌ لا مفترَض: هذه هي المجلداتُ التي
@@ -48,8 +50,9 @@ bool _isDefinitionFile(String p) {
 }
 
 Map<String, String> _constantNameByCode() {
-  final src =
-      File('lib/core/permissions/permission_codes.dart').readAsStringSync();
+  final src = File(
+    'lib/core/permissions/permission_codes.dart',
+  ).readAsStringSync();
   final re = RegExp(r"static const String (\w+) = '([a-z0-9_]+)';");
   return {for (final m in re.allMatches(src)) m.group(2)!: m.group(1)!};
 }
@@ -117,16 +120,15 @@ String stripComments(String src) {
 /// `held_orders_dialog.dart` والاستعمالُ في جزئه `picpos_pos_operations.dart`،
 /// فشرطُ «يذكر رمزاً من المستورَد» يفشل على الأصل وحدَه فتُقطع الحافة.
 final Map<String, String> _withPartsCache = {};
-String _codeOnlyWithParts(String path) =>
-    _withPartsCache.putIfAbsent(path, () {
-      final own = _codeOnly(path);
-      final buf = StringBuffer(own);
-      for (final m in RegExp("part\\s+'([^']+\\.dart)'").allMatches(own)) {
-        final p = _resolveImport(path, m.group(1)!);
-        if (p != null && _sources.containsKey(p)) buf.write(_codeOnly(p));
-      }
-      return buf.toString();
-    });
+String _codeOnlyWithParts(String path) => _withPartsCache.putIfAbsent(path, () {
+  final own = _codeOnly(path);
+  final buf = StringBuffer(own);
+  for (final m in RegExp("part\\s+'([^']+\\.dart)'").allMatches(own)) {
+    final p = _resolveImport(path, m.group(1)!);
+    if (p != null && _sources.containsKey(p)) buf.write(_codeOnly(p));
+  }
+  return buf.toString();
+});
 
 /// كلُّ ملفٍّ **يبلغه** توأمُ PicPos عبر رسم الاستيراد.
 ///
@@ -172,11 +174,11 @@ final Map<String, Set<String>> _declaredCache = {};
 
 /// أسماءُ الأنواع المعرَّفة في ملف — تكفي لحالتنا (كلُّ ما يُرسم ودجت/كلاس).
 Set<String> _declaredTypes(String path) => _declaredCache.putIfAbsent(path, () {
-      final src = _sources[path];
-      if (src == null) return <String>{};
-      final re = RegExp(r'\b(?:class|mixin|enum|extension|typedef)\s+(\w+)');
-      return {for (final m in re.allMatches(src)) m.group(1)!};
-    });
+  final src = _sources[path];
+  if (src == null) return <String>{};
+  final re = RegExp(r'\b(?:class|mixin|enum|extension|typedef)\s+(\w+)');
+  return {for (final m in re.allMatches(src)) m.group(1)!};
+});
 
 bool _referencesSymbolOf(String importerSource, String importedPath) {
   final declared = _declaredTypes(importedPath);
@@ -257,7 +259,7 @@ bool _isEnforcementSurface(String path) =>
 /// وتُعاد **مساراتٍ** لا أسماءَ صفوف: الأصلُ ملفٌّ مفردٌ غالباً والفوركُ
 /// كذلك، و[_reachableFrom] يتبع رسمَ الاستيراد فيبلغ بقيّةَ مجلّد الفورك.
 final List<({String legacy, String fork})> _routerPairs = () {
-  final src = File('lib/app_main_screen.dart').readAsStringSync();
+  final src = readLibrarySource('lib/app_main_screen.dart');
   final re = RegExp(
     r'Brand\.isPicPos[\s\S]{0,80}?\?[\s\S]{0,80}?const\s+(\w+)\(\)'
     r'[\s\S]{0,80}?:[\s\S]{0,80}?const\s+(\w+)\(\)',
@@ -276,7 +278,8 @@ final List<({String legacy, String fork})> _routerPairs = () {
     if (forkFile == null || legacyFile == null) continue;
     // المسارُ نسبيٌّ إلى `lib/presentation/` لأنّ الباقيَ يبنيه المنادي.
     const prefix = 'lib/presentation/';
-    if (!forkFile.startsWith(prefix) || !legacyFile.startsWith(prefix)) continue;
+    if (!forkFile.startsWith(prefix) || !legacyFile.startsWith(prefix))
+      continue;
     out.add((
       legacy: legacyFile.substring(prefix.length),
       fork: forkFile.substring(prefix.length),
@@ -304,9 +307,11 @@ Set<String> _currentGaps() {
     for (final code in byCode.keys) {
       final c = byCode[code];
       final inLegacy = _sources.keys
-          .where((p) =>
-              p == 'lib/presentation/$legacy' ||
-              p.startsWith('lib/presentation/$legacy/'))
+          .where(
+            (p) =>
+                p == 'lib/presentation/$legacy' ||
+                p.startsWith('lib/presentation/$legacy/'),
+          )
           .any((p) => mentionsCode(_codeOnly(p), code, c));
       if (!inLegacy) continue;
       final reaches = reachable
@@ -401,10 +406,7 @@ const _absenceWitness = <String, List<String>>{
 /// المسألة وحدَها). ولا يصلح لهما شاهدٌ نصّيّ بعد: `Notification` يطابق
 /// `PosNotificationType` وهو نظامُ التوست القائم، فالشاهدُ كان سيولد أحمرَ
 /// كاذباً — ومن يضيف شاهداً كاذباً يُدرّب القارئَ على تجاهل الأحمر.
-const _witnessExempt = <String>{
-  'pos_low_stock_alert',
-  'pos_notifications',
-};
+const _witnessExempt = <String>{'pos_low_stock_alert', 'pos_notifications'};
 
 /// المجلدُ الذي **ستهبط فيه** الميزةُ لو وصلت.
 ///
@@ -438,18 +440,28 @@ void main() {
   // يُراجَع، والثاني ثقبٌ يسقط من الرادار. وقد وقع الثاني فعلاً — أربعةُ
   // أكوادٍ مرّت خضراءَ وأفعالُها مفتوحة. فهذه المجموعةُ تثبّت الاتجاه.
   group('قواعدُ المطابقة نفسُها', () {
-    test('اسمُ الثابت بلا بادئةٍ لا يُحتسب — حالةُ `AppColors.posDiscount`', () {
-      const colour = 'static const Color posDiscount = error;';
-      expect(mentionsCode(colour, 'pos_discount', 'posDiscount'), isFalse,
-          reason: 'لونٌ يحمل نفسَ الاسم كان يمرّر `pos_discount` «محروساً» '
-              'وهو مفتوحٌ من ثلاثة أبواب');
-      expect(
-        mentionsCode('permission: PermissionCodes.posDiscount,', 'pos_discount',
-            'posDiscount'),
-        isTrue,
-        reason: 'والحراسةُ الحقيقيةُ يجب أن تبقى معدودة',
-      );
-    });
+    test(
+      'اسمُ الثابت بلا بادئةٍ لا يُحتسب — حالةُ `AppColors.posDiscount`',
+      () {
+        const colour = 'static const Color posDiscount = error;';
+        expect(
+          mentionsCode(colour, 'pos_discount', 'posDiscount'),
+          isFalse,
+          reason:
+              'لونٌ يحمل نفسَ الاسم كان يمرّر `pos_discount` «محروساً» '
+              'وهو مفتوحٌ من ثلاثة أبواب',
+        );
+        expect(
+          mentionsCode(
+            'permission: PermissionCodes.posDiscount,',
+            'pos_discount',
+            'posDiscount',
+          ),
+          isTrue,
+          reason: 'والحراسةُ الحقيقيةُ يجب أن تبقى معدودة',
+        );
+      },
+    );
 
     test('والمرجعُ الملفوفُ على سطرين يبقى معدوداً', () {
       // سببُ إسقاط البادئة أصلاً — فلا يُعاد كسرُه بإصلاح الاصطدام.
@@ -464,14 +476,19 @@ void main() {
     });
 
     test('التعليقُ ليس حراسةً ولا استيراداً', () {
-      const src = "/// permission: PermissionCodes.posExpense,\n"
+      const src =
+          "/// permission: PermissionCodes.posExpense,\n"
           "// import 'x.dart';\n"
           "/* PermissionCodes.posSave */\n"
           "final int x = 1;";
       final stripped = stripComments(src);
-      expect(mentionsCode(stripped, 'pos_expense', 'posExpense'), isFalse,
-          reason: 'مثالٌ توضيحيٌّ في وثيقة `PermissionGuard` كان يُسكت '
-              '`pos_expense` وهو مفتوح');
+      expect(
+        mentionsCode(stripped, 'pos_expense', 'posExpense'),
+        isFalse,
+        reason:
+            'مثالٌ توضيحيٌّ في وثيقة `PermissionGuard` كان يُسكت '
+            '`pos_expense` وهو مفتوح',
+      );
       expect(mentionsCode(stripped, 'pos_save', 'posSave'), isFalse);
       expect(stripped.contains("import 'x.dart'"), isFalse);
       expect(stripped.contains('final int x = 1;'), isTrue);
@@ -480,14 +497,20 @@ void main() {
     test('ولا يُحتسب إنفاذاً ما ليس على سطح العرض', () {
       // `api_sales_handler` و`migrations/epoch_3` كانا يُخفيان
       // `pos_hold_order` — سطحُ HTTP وقائمةُ منحٍ، لا زرَّ شاشة.
-      expect(_isEnforcementSurface('lib/services/api/api_sales_handler.dart'),
-          isFalse);
-      expect(_isEnforcementSurface('lib/data/database/migrations/epoch_3.dart'),
-          isFalse);
       expect(
-          _isEnforcementSurface(
-              'lib/presentation/pos/widgets/held_orders_dialog.dart'),
-          isTrue);
+        _isEnforcementSurface('lib/services/api/api_sales_handler.dart'),
+        isFalse,
+      );
+      expect(
+        _isEnforcementSurface('lib/data/database/migrations/epoch_3.dart'),
+        isFalse,
+      );
+      expect(
+        _isEnforcementSurface(
+          'lib/presentation/pos/widgets/held_orders_dialog.dart',
+        ),
+        isTrue,
+      );
     });
   });
 
@@ -502,23 +525,37 @@ void main() {
   // فلا يبيت بإضافة فوركٍ جديد.
   group('اشتقاقُ الأزواج من الموجّه', () {
     test('الأزواجُ المشتقّةُ تغطّي أغلبَ تفريعات `Brand.isPicPos`', () {
-      final router = File('lib/app_main_screen.dart').readAsStringSync();
+      final router = readLibrarySource('lib/app_main_screen.dart');
       final branches = RegExp(r'Brand\.isPicPos').allMatches(router).length;
 
-      expect(_routerPairs.length, greaterThanOrEqualTo(20),
-          reason: 'الاشتقاقُ أعطى ${_routerPairs.length} زوجاً فقط — النمطُ '
-              'مكسورٌ غالباً، والمدى انكمش إلى خريطة المجلّدات صامتاً.');
-      expect(_routerPairs.length, lessThanOrEqualTo(branches),
-          reason: 'أزواجٌ أكثرُ من تفريعات الموجّه ⇒ النمطُ يلتقط ما ليس '
-              'تفريعَ علامة.');
+      expect(
+        _routerPairs.length,
+        greaterThanOrEqualTo(20),
+        reason:
+            'الاشتقاقُ أعطى ${_routerPairs.length} زوجاً فقط — النمطُ '
+            'مكسورٌ غالباً، والمدى انكمش إلى خريطة المجلّدات صامتاً.',
+      );
+      expect(
+        _routerPairs.length,
+        lessThanOrEqualTo(branches),
+        reason:
+            'أزواجٌ أكثرُ من تفريعات الموجّه ⇒ النمطُ يلتقط ما ليس '
+            'تفريعَ علامة.',
+      );
     });
 
     test('وكلُّ مسارٍ مشتقٍّ موجودٌ فعلاً على القرص', () {
       for (final p in _routerPairs) {
-        expect(_sources.containsKey('lib/presentation/${p.legacy}'), isTrue,
-            reason: 'الأصلُ «${p.legacy}» غيرُ مقروء');
-        expect(_sources.containsKey('lib/presentation/${p.fork}'), isTrue,
-            reason: 'الفوركُ «${p.fork}» غيرُ مقروء');
+        expect(
+          _sources.containsKey('lib/presentation/${p.legacy}'),
+          isTrue,
+          reason: 'الأصلُ «${p.legacy}» غيرُ مقروء',
+        );
+        expect(
+          _sources.containsKey('lib/presentation/${p.fork}'),
+          isTrue,
+          reason: 'الفوركُ «${p.fork}» غيرُ مقروء',
+        );
       }
     });
 
@@ -533,31 +570,42 @@ void main() {
         'analytics_picpos',
         'report_builder_picpos',
       ]) {
-        expect(forks, contains(f),
-            reason: 'الفوركُ «$f» خارجَ مدى حارس التكافؤ.');
+        expect(
+          forks,
+          contains(f),
+          reason: 'الفوركُ «$f» خارجَ مدى حارس التكافؤ.',
+        );
       }
     });
   });
 
   test('كلُّ توأمٍ في المجلدات موجودٌ فعلاً — وإلا فالخريطةُ بائتة', () {
     for (final e in _twins.entries) {
-      expect(Directory('lib/presentation/${e.key}').existsSync(), isTrue,
-          reason: 'النظيرُ «${e.key}» اختفى — حدّث الخريطة');
-      expect(Directory('lib/presentation/${e.value}').existsSync(), isTrue,
-          reason: 'التوأمُ «${e.value}» اختفى — حدّث الخريطة');
+      expect(
+        Directory('lib/presentation/${e.key}').existsSync(),
+        isTrue,
+        reason: 'النظيرُ «${e.key}» اختفى — حدّث الخريطة',
+      );
+      expect(
+        Directory('lib/presentation/${e.value}').existsSync(),
+        isTrue,
+        reason: 'التوأمُ «${e.value}» اختفى — حدّث الخريطة',
+      );
     }
   });
 
   test('لا فجوةَ تكافؤٍ جديدةٍ بلا تسجيل', () {
-    final unregistered = _currentGaps()
-        .difference(PermissionEnforcementRegistry.picposParityGaps)
-        .toList()
-      ..sort();
+    final unregistered =
+        _currentGaps()
+            .difference(PermissionEnforcementRegistry.picposParityGaps)
+            .toList()
+          ..sort();
 
     expect(
       unregistered,
       isEmpty,
-      reason: 'هذه الأكوادُ محروسةٌ في نظيرٍ قديمٍ ولا أثرَ لها في توأم '
+      reason:
+          'هذه الأكوادُ محروسةٌ في نظيرٍ قديمٍ ولا أثرَ لها في توأم '
           'PicPos ⇒ الضابطُ يبدو مفعَّلاً في شاشة الصلاحيات وهو غيرُ موجودٍ '
           'على المسار الحيّ. إمّا تُحرَس في التوأم، أو تُسجَّل في '
           '`picposParityGaps` بسببٍ صريح.',
@@ -566,15 +614,20 @@ void main() {
 
   group('الحارسُ المعاكس: ميزةٌ وصلت وسطرُها ما زال مسجَّلاً «بلا ميزة»', () {
     test('لكلّ مدخلٍ في السجلّ شاهدُ غيابٍ أو إعفاءٌ مُعلَّل', () {
-      final unwitnessed = PermissionEnforcementRegistry.picposParityGaps
-          .where((c) =>
-              !_absenceWitness.containsKey(c) && !_witnessExempt.contains(c))
-          .toList()
-        ..sort();
+      final unwitnessed =
+          PermissionEnforcementRegistry.picposParityGaps
+              .where(
+                (c) =>
+                    !_absenceWitness.containsKey(c) &&
+                    !_witnessExempt.contains(c),
+              )
+              .toList()
+            ..sort();
       expect(
         unwitnessed,
         isEmpty,
-        reason: 'مدخلٌ في `picposParityGaps` بلا شاهدِ غياب. السجلُّ يقول «لا '
+        reason:
+            'مدخلٌ في `picposParityGaps` بلا شاهدِ غياب. السجلُّ يقول «لا '
             'ميزةَ تُحرَس»، وهذا حكمٌ يبطل صامتاً يومَ تصل الميزة. أضِف '
             'عباراتٍ تدلّ على وصولها في `_absenceWitness`، أو أعفِه في '
             '`_witnessExempt` بسببٍ مكتوب.',
@@ -583,25 +636,34 @@ void main() {
 
     test('ولا شاهدَ بائتٌ لمدخلٍ شُطب', () {
       // سجلٌّ يحمل شواهدَ لأكوادٍ لم تعد فيه يضلّل القارئَ ويكذب على الجديد.
-      final orphan = {..._absenceWitness.keys, ..._witnessExempt}
-          .where((c) => !PermissionEnforcementRegistry.picposParityGaps
-              .contains(c))
-          .toList()
-        ..sort();
-      expect(orphan, isEmpty,
-          reason: 'شاهدٌ لكودٍ لم يعد مسجَّلاً فجوةً — احذفه');
+      final orphan =
+          {..._absenceWitness.keys, ..._witnessExempt}
+              .where(
+                (c) =>
+                    !PermissionEnforcementRegistry.picposParityGaps.contains(c),
+              )
+              .toList()
+            ..sort();
+      expect(
+        orphan,
+        isEmpty,
+        reason: 'شاهدٌ لكودٍ لم يعد مسجَّلاً فجوةً — احذفه',
+      );
     });
 
     test('والآليّةُ ترصد فعلاً — ضابطٌ على مصدرٍ صناعيّ', () {
       // بلا هذا قد تمرّ الخريطةُ كلُّها خضراءَ لأن المطابقةَ معطوبة، لا لأن
       // الميزةَ غائبة. وهو الفرقُ بين حارسٍ يعمل وحارسٍ يبدو أنه يعمل.
-      const arrived = "IconButton(icon: Icon(PhosphorIconsBold.plus), "
+      const arrived =
+          "IconButton(icon: Icon(PhosphorIconsBold.plus), "
           "onPressed: () => cart.updateQuantity(i, item.quantity + 1))";
       expect(arrived.contains('IconsBold.plus'), isTrue);
       expect(arrived.contains('quantity + 1'), isTrue);
       // والتعليقُ لا يُرصد — وإلا وُلد الحارسُ أحمرَ على وثائقَ قائمة.
-      expect(stripComments('// زرُّ طاولة TablePos').contains('TablePos'),
-          isFalse);
+      expect(
+        stripComments('// زرُّ طاولة TablePos').contains('TablePos'),
+        isFalse,
+      );
     });
 
     for (final entry in _absenceWitness.entries) {
@@ -611,7 +673,8 @@ void main() {
           expect(
             hits,
             isEmpty,
-            reason: 'الشاهدُ «$marker» ظهر في توأم PicPos ⇒ يبدو أن ميزةَ '
+            reason:
+                'الشاهدُ «$marker» ظهر في توأم PicPos ⇒ يبدو أن ميزةَ '
                 '«${entry.key}» وصلت. والكودُ مسجَّلٌ في `picposParityGaps` '
                 'بوصفه «بلا ميزة»، فحارسُ التكافؤ يمرّ أخضرَ وهو مفتوح.\n'
                 'إمّا تُحرَس الميزةُ ويُشطب السطرُ من السجلّ، وإمّا كانت '
@@ -624,15 +687,17 @@ void main() {
 
   test('والسجلُّ يتقلّص: لا مدخلَ صار منفَّذاً وبقي مكتوباً', () {
     final gaps = _currentGaps();
-    final stale = PermissionEnforcementRegistry.picposParityGaps
-        .where((c) => !gaps.contains(c))
-        .toList()
-      ..sort();
+    final stale =
+        PermissionEnforcementRegistry.picposParityGaps
+            .where((c) => !gaps.contains(c))
+            .toList()
+          ..sort();
 
     expect(
       stale,
       isEmpty,
-      reason: 'هذه صارت محروسةً في توأم PicPos — اشطبها من '
+      reason:
+          'هذه صارت محروسةً في توأم PicPos — اشطبها من '
           '`picposParityGaps`. سجلٌّ لا يتقلّص يكفّ عن كونه مقياسَ تقدّم، '
           'ويُخفي أن الفجوةَ ضاقت.',
     );

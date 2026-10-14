@@ -12,6 +12,7 @@ class InventoryReportTableSource extends DataTableSource {
     required this.stockMap,
     required this.stockScoped,
     required this.currencyFormat,
+    required this.secondaryTextColor,
   });
 
   final List<Product> products;
@@ -20,6 +21,7 @@ class InventoryReportTableSource extends DataTableSource {
   final Map<int, double> stockMap;
   final bool stockScoped;
   final NumberFormat currencyFormat;
+  final Color secondaryTextColor;
 
   @override
   DataRow? getRow(int index) {
@@ -35,21 +37,27 @@ class InventoryReportTableSource extends DataTableSource {
       cells: [
         DataCell(Text(product.code)),
         DataCell(Text(product.name)),
-        DataCell(Text(
-          categoryNames[product.categoryId] ?? tr('غير مصنف'),
-          style: const TextStyle(fontSize: 12),
-        )),
-        DataCell(Text(
-          unitNames[product.id] ?? tr('قطعة'),
-          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-        )),
-        DataCell(Text(
-          stock.toString(),
-          style: TextStyle(
-            color: isLow ? AppColors.error : null,
-            fontWeight: isLow ? FontWeight.bold : null,
+        DataCell(
+          Text(
+            categoryNames[product.categoryId] ?? tr('غير مصنف'),
+            style: const TextStyle(fontSize: 12),
           ),
-        )),
+        ),
+        DataCell(
+          Text(
+            unitNames[product.id] ?? tr('قطعة'),
+            style: TextStyle(fontSize: 12, color: secondaryTextColor),
+          ),
+        ),
+        DataCell(
+          Text(
+            stock.toString(),
+            style: TextStyle(
+              color: isLow ? AppColors.error : null,
+              fontWeight: isLow ? FontWeight.bold : null,
+            ),
+          ),
+        ),
         DataCell(Text(currencyFormat.format(product.costPrice))),
         DataCell(Text(currencyFormat.format(totalCost))),
         DataCell(Text(currencyFormat.format(product.salePrice))),

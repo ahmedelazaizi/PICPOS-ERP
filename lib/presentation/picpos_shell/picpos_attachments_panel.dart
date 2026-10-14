@@ -91,7 +91,9 @@ class _PicPosAttachmentsPanelState
 
     setState(() => _busy = true);
     try {
-      final res = await ref.read(attachmentsRepositoryProvider).addAttachment(
+      final res = await ref
+          .read(attachmentsRepositoryProvider)
+          .addAttachment(
             entityType: widget.entityType,
             entityId: widget.entityId,
             entityGlobalId: entityGlobalId,
@@ -107,7 +109,11 @@ class _PicPosAttachmentsPanelState
       }
     } catch (e) {
       if (mounted) {
-        AppToast.show(context, tr('تعذّر الإرفاق: {e}', {'e': e}), type: ToastType.error);
+        AppToast.show(
+          context,
+          tr('تعذّر الإرفاق: {e}', {'e': e}),
+          type: ToastType.error,
+        );
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -121,7 +127,10 @@ class _PicPosAttachmentsPanelState
       context,
       icon: PhosphorIconsBold.trash,
       title: tr('حذفُ مرفق'),
-      message: tr('يُحذَف «{p0}» ولا يعود ملفُّه. ويبقى في المستند أثرُ أنَّ ورقةً كانت معه.', {'p0': row.fileName}),
+      message: tr(
+        'يُحذَف «{p0}» ولا يعود ملفُّه. ويبقى في المستند أثرُ أنَّ ورقةً كانت معه.',
+        {'p0': row.fileName},
+      ),
       confirmLabel: tr('حذف'),
       danger: true,
     );
@@ -129,8 +138,9 @@ class _PicPosAttachmentsPanelState
 
     setState(() => _busy = true);
     try {
-      final err =
-          await ref.read(attachmentsRepositoryProvider).deleteAttachment(gid);
+      final err = await ref
+          .read(attachmentsRepositoryProvider)
+          .deleteAttachment(gid);
       if (!mounted) return;
       if (err != null) AppToast.show(context, err, type: ToastType.error);
     } finally {
@@ -142,8 +152,9 @@ class _PicPosAttachmentsPanelState
     setState(() => _busy = true);
     Uint8List? bytes;
     try {
-      bytes =
-          await ref.read(attachmentsRepositoryProvider).attachmentBytes(row);
+      bytes = await ref
+          .read(attachmentsRepositoryProvider)
+          .attachmentBytes(row);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -153,8 +164,11 @@ class _PicPosAttachmentsPanelState
       // ⚠️ **ولا يُقال «المرفقُ تالف»**: الأرجحُ أنّ جلبَه من الخادم تعذّر،
       //    والورقةُ سليمةٌ هناك. ورسالةُ عطبٍ كاذبةٌ تدفع المستخدمَ إلى
       //    إعادةِ رفعِ ما هو مرفوعٌ أصلاً.
-      AppToast.show(context, tr('تعذّر جلبُ المرفق من الخادم — جرّب ثانيةً'),
-          type: ToastType.error);
+      AppToast.show(
+        context,
+        tr('تعذّر جلبُ المرفق من الخادم — جرّب ثانيةً'),
+        type: ToastType.error,
+      );
       return;
     }
     await showDialog<void>(
@@ -164,49 +178,54 @@ class _PicPosAttachmentsPanelState
   }
 
   Widget _notice(String text, {required Key key}) => Container(
-        key: key,
-        padding: const EdgeInsets.all(Spacing.md),
-        decoration: BoxDecoration(
-          color: context.picposField,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: context.picposHairline),
-        ),
-        child: Text(
-          text,
-          style:
-              const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-        ),
-      );
+    key: key,
+    padding: const EdgeInsets.all(Spacing.md),
+    decoration: BoxDecoration(
+      color: context.picposField,
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: context.picposHairline),
+    ),
+    child: Text(
+      text,
+      style: TextStyle(fontSize: 12, color: context.picposMuted),
+    ),
+  );
 
   Widget _header(int count, {VoidCallback? onAdd}) => Row(
-        children: [
-          const Icon(PhosphorIconsBold.paperclip,
-              size: 16, color: AppColors.textSecondary),
-          const SizedBox(width: Spacing.xs),
-          Text(
-            tr('المرفقات ({count}/{kAttachmentMaxPerDocument})', {'count': count, 'kAttachmentMaxPerDocument': kAttachmentMaxPerDocument}),
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const Spacer(),
-          TextButton.icon(
-            key: const Key('attachments_add'),
-            onPressed: onAdd,
-            icon: const Icon(PhosphorIconsBold.plus, size: 14),
-            label:  Text(tr('إضافة')),
-          ),
-        ],
-      );
+    children: [
+      Icon(
+        PhosphorIconsBold.paperclip,
+        size: 16,
+        color: context.picposSecondary,
+      ),
+      const SizedBox(width: Spacing.xs),
+      Text(
+        tr('المرفقات ({count}/{kAttachmentMaxPerDocument})', {
+          'count': count,
+          'kAttachmentMaxPerDocument': kAttachmentMaxPerDocument,
+        }),
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: context.picposSecondary,
+        ),
+      ),
+      const Spacer(),
+      TextButton.icon(
+        key: const Key('attachments_add'),
+        onPressed: onAdd,
+        icon: const Icon(PhosphorIconsBold.plus, size: 14),
+        label: Text(tr('إضافة')),
+      ),
+    ],
+  );
 
   Widget _shell(List<Widget> children) => Column(
-        key: const Key('attachments_panel'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: children,
-      );
+    key: const Key('attachments_panel'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    mainAxisSize: MainAxisSize.min,
+    children: children,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -218,8 +237,10 @@ class _PicPosAttachmentsPanelState
       return _shell([
         _header(0),
         const SizedBox(height: Spacing.xs),
-        _notice(tr('نوعُ مستندٍ لا يقبل المرفقات: {p0}', {'p0': widget.entityType}),
-            key: const Key('attachments_unsupported')),
+        _notice(
+          tr('نوعُ مستندٍ لا يقبل المرفقات: {p0}', {'p0': widget.entityType}),
+          key: const Key('attachments_unsupported'),
+        ),
       ]);
     }
 
@@ -227,12 +248,19 @@ class _PicPosAttachmentsPanelState
       return _shell([
         _header(0),
         const SizedBox(height: Spacing.xs),
-        _notice(tr('احفظ {label} أوّلاً — المرفقُ يُربَط بهُويّته لا برقمه على هذا الجهاز.', {'label': label}), key: const Key('attachments_locked')),
+        _notice(
+          tr(
+            'احفظ {label} أوّلاً — المرفقُ يُربَط بهُويّته لا برقمه على هذا الجهاز.',
+            {'label': label},
+          ),
+          key: const Key('attachments_locked'),
+        ),
       ]);
     }
 
     final anchor = ref.watch(
-        attachmentAnchorProvider((entityType: widget.entityType, entityId: id)));
+      attachmentAnchorProvider((entityType: widget.entityType, entityId: id)),
+    );
 
     return anchor.when(
       loading: () => _shell([
@@ -253,8 +281,10 @@ class _PicPosAttachmentsPanelState
       error: (e, _) => _shell([
         _header(0),
         const SizedBox(height: Spacing.xs),
-        _notice(tr('تعذّرت قراءةُ هُويّة {label}: {e}', {'label': label, 'e': e}),
-            key: const Key('attachments_anchor_error')),
+        _notice(
+          tr('تعذّرت قراءةُ هُويّة {label}: {e}', {'label': label, 'e': e}),
+          key: const Key('attachments_anchor_error'),
+        ),
       ]),
       data: (gid) {
         if (gid == null) {
@@ -262,18 +292,25 @@ class _PicPosAttachmentsPanelState
             _header(0),
             const SizedBox(height: Spacing.xs),
             _notice(
-                tr('لم يَنَل {label} هُويّتَه العالميّةَ بعد — يُرفَق بعد أوّل مزامنةٍ أو إعادةِ حفظ.', {'label': label}),
-                key: const Key('attachments_locked')),
+              tr(
+                'لم يَنَل {label} هُويّتَه العالميّةَ بعد — يُرفَق بعد أوّل مزامنةٍ أو إعادةِ حفظ.',
+                {'label': label},
+              ),
+              key: const Key('attachments_locked'),
+            ),
           ]);
         }
 
-        final async = ref.watch(attachmentsStreamProvider((
-          entityType: widget.entityType,
-          entityId: id,
-          entityGlobalId: gid,
-        )));
+        final async = ref.watch(
+          attachmentsStreamProvider((
+            entityType: widget.entityType,
+            entityId: id,
+            entityGlobalId: gid,
+          )),
+        );
         final rows = async.asData?.value ?? const <AttachmentData>[];
-        final canAdd = !widget.readOnly &&
+        final canAdd =
+            !widget.readOnly &&
             !_busy &&
             rows.length < kAttachmentMaxPerDocument;
 
@@ -281,7 +318,7 @@ class _PicPosAttachmentsPanelState
           _header(rows.length, onAdd: canAdd ? () => _add(gid) : null),
           const SizedBox(height: Spacing.xs),
           if (rows.isEmpty)
-             Padding(
+            Padding(
               key: const Key('attachments_empty'),
               padding: const EdgeInsets.symmetric(vertical: Spacing.md),
               child: PicPosEmptyState(
@@ -291,13 +328,15 @@ class _PicPosAttachmentsPanelState
               ),
             )
           else
-            ...rows.map((r) => _AttachmentTile(
-                  row: r,
-                  readOnly: widget.readOnly,
-                  busy: _busy,
-                  onOpen: () => _open(r),
-                  onDelete: () => _delete(r),
-                )),
+            ...rows.map(
+              (r) => _AttachmentTile(
+                row: r,
+                readOnly: widget.readOnly,
+                busy: _busy,
+                onOpen: () => _open(r),
+                onDelete: () => _delete(r),
+              ),
+            ),
         ]);
       },
     );
@@ -334,7 +373,9 @@ class _AttachmentTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: const EdgeInsets.symmetric(
-                horizontal: Spacing.md, vertical: Spacing.sm),
+              horizontal: Spacing.md,
+              vertical: Spacing.sm,
+            ),
             child: Row(
               children: [
                 Icon(
@@ -342,7 +383,7 @@ class _AttachmentTile extends StatelessWidget {
                       ? PhosphorIconsBold.filePdf
                       : PhosphorIconsBold.image,
                   size: 18,
-                  color: AppColors.textSecondary,
+                  color: context.picposSecondary,
                 ),
                 const SizedBox(width: Spacing.sm),
                 Expanded(
@@ -355,13 +396,17 @@ class _AttachmentTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w600),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       Text(
                         '${docType.displayLabel} · '
                         '${formatAttachmentSize(row.byteSize)}',
-                        style: const TextStyle(
-                            fontSize: 11, color: AppColors.textMuted),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: context.picposMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -370,8 +415,11 @@ class _AttachmentTile extends StatelessWidget {
                   IconButton(
                     key: Key('attachment_delete_$gid'),
                     onPressed: busy ? null : onDelete,
-                    icon: const Icon(PhosphorIconsBold.trash,
-                        size: 16, color: AppColors.error),
+                    icon: const Icon(
+                      PhosphorIconsBold.trash,
+                      size: 16,
+                      color: AppColors.error,
+                    ),
                     tooltip: tr('حذف'),
                   ),
               ],
@@ -409,7 +457,9 @@ class _AttachmentPreview extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w700),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   IconButton(
@@ -430,13 +480,18 @@ class _AttachmentPreview extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(PhosphorIconsBold.filePdf,
-                              size: 48, color: AppColors.textMuted),
+                          Icon(
+                            PhosphorIconsBold.filePdf,
+                            size: 48,
+                            color: context.picposMuted,
+                          ),
                           const SizedBox(height: Spacing.md),
                           Text(
                             '${formatAttachmentSize(row.byteSize)} · PDF',
-                            style: const TextStyle(
-                                fontSize: 12, color: AppColors.textSecondary),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: context.picposSecondary,
+                            ),
                           ),
                         ],
                       ),

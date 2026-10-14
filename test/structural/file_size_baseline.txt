@@ -1,4 +1,3 @@
-lib/app_main_screen.dart 105190
 lib/core/permissions/permission_codes.dart 93670
 lib/core/permissions/permission_enforcement_registry.dart 37915
 lib/core/theme/picpos_theme.dart 33947
@@ -67,9 +66,8 @@ lib/presentation/invoice_form_picpos/picpos_invoice_money.dart 39711
 lib/presentation/landed_cost_picpos/screens/landed_cost_picpos_screen.dart 53354
 lib/presentation/offers_picpos/offer_dialogs_picpos.dart 51938
 lib/presentation/opex_picpos/screens/opex_picpos_screen.dart 51409
-lib/presentation/party_statement_picpos/screens/party_statement_picpos_screen.dart 41049
-lib/presentation/party_statement_picpos/screens/party_statement_tabs_picpos.dart 97966
-lib/presentation/picpos_shell/picpos_dialog.dart 33069
+lib/presentation/party_statement_picpos/screens/party_statement_picpos_screen.dart 39906
+lib/presentation/picpos_shell/picpos_dialog.dart 33003
 lib/presentation/picpos_shell/picpos_return_form_kit.dart 42387
 lib/presentation/pos/providers/cart_controller.dart 58671
 lib/presentation/pos/providers/pos_closing_controller.dart 40242
@@ -118,7 +116,7 @@ lib/presentation/screens/purchases/purchase_invoices_controller.dart 32955
 lib/presentation/screens/reports/expenses_report_screen.dart 37256
 lib/presentation/screens/reports/financial_statements_screen.dart 76509
 lib/presentation/screens/reports/purchases_report_screen.dart 33046
-lib/presentation/screens/reports/sales_by_classification_report.dart 38067
+lib/presentation/screens/reports/sales_by_classification_report.dart 36969
 lib/presentation/screens/reports/sales_report_screen.dart 63269
 lib/presentation/screens/reports/shifts_report_screen.dart 35889
 lib/presentation/screens/reports/tax_report_screen.dart 38132
@@ -158,7 +156,6 @@ lib/presentation/widgets/dialogs/add_product_dialog.dart 92193
 lib/presentation/widgets/permission_guard.dart 38472
 lib/presentation/widgets/settings/branch_scope_admin_dialog.dart 70588
 lib/presentation/widgets/settings/permissions_management_widget.dart 41344
-lib/presentation/widgets/settings/pos_settings_widget.dart 93856
 lib/services/aclas_sdk_ffi.dart 36109
 lib/services/api/api_product_handler.dart 40404
 lib/services/api/api_purchase_handler.dart 72909

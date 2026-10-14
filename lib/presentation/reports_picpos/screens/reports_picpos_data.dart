@@ -12,10 +12,7 @@ class _HoverCard extends StatefulWidget {
   // ملحوظة: كان لها `highlighted` يُبرزها حين تكون فئتُها مفتوحةً في
   // الأكورديون. وقد حلّ محلَّ الأكورديون شريطٌ جانبيٌّ يُبرز الفئةَ المختارةَ
   // في مكانه — فلم يبقَ من يمرّر الرايةَ، وبقاؤها معطَّلةً يوهم بخيارٍ لا أثرَ له.
-  const _HoverCard({
-    required this.child,
-    required this.onTap,
-  });
+  const _HoverCard({required this.child, required this.onTap});
 
   @override
   State<_HoverCard> createState() => _HoverCardState();
@@ -35,12 +32,12 @@ class _HoverCardState extends State<_HoverCard> {
         duration: const Duration(milliseconds: 140),
         curve: Curves.easeOut,
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: context.picposCard,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: showActive
                 ? AppColors.primary.withValues(alpha: 0.4)
-                : AppColors.border.withValues(alpha: 0.5),
+                : context.picposHairline,
             width: showActive ? 1.2 : 1,
           ),
           boxShadow: showActive
@@ -49,14 +46,14 @@ class _HoverCardState extends State<_HoverCard> {
                     color: AppColors.primary.withValues(alpha: 0.1),
                     blurRadius: 12,
                     offset: const Offset(0, 3),
-                  )
+                  ),
                 ]
               : [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 3,
                     offset: const Offset(0, 1),
-                  )
+                  ),
                 ],
         ),
         child: Material(
@@ -116,19 +113,33 @@ Map<String, String> get _kCatGroup => {
 /// و«القوائم المالية» فئةٌ مستقلّةٌ في التصميم وهي هنا **تقريرٌ داخل
 /// التحليلات** — فلم تُخترَع فئةٌ جديدةٌ لتطابق الرسم.
 Map<String, String> get _kCatDesc => {
-  'sales': tr('كل ما يخص حركة البيع: الفواتير، الكاشير، الأصناف، المجموعات، وطرق الدفع'),
-  'profit': tr('تكلفة المبيعات وصافي الربح وهامش الربح على مستوى الصنف والتصنيف'),
+  'sales': tr(
+    'كل ما يخص حركة البيع: الفواتير، الكاشير، الأصناف، المجموعات، وطرق الدفع',
+  ),
+  'profit': tr(
+    'تكلفة المبيعات وصافي الربح وهامش الربح على مستوى الصنف والتصنيف',
+  ),
   'returns': tr('مرتجعات المبيعات والمشتريات والمبالغ المستردة'),
   'inventory': tr('أرصدة وقيم المخزون، كرت الصنف، الجرد، والصلاحيات'),
   'purchases': tr('المشتريات بفلاتر كاملة ومتابعة أوامر الشراء المفتوحة'),
-  'customers': tr('كشوف الحساب، تقادم الذمم، سلوك الشراء، وتسوية الذمم مع الأستاذ العام'),
+  'customers': tr(
+    'كشوف الحساب، تقادم الذمم، سلوك الشراء، وتسوية الذمم مع الأستاذ العام',
+  ),
   'suppliers': tr('كشوف حساب الموردين وحجم التعامل'),
-  'reps': tr('مبيعات المناديب وتحصيلاتهم من المستندات المختومة، وتغطية المسارات، ومخزون السيارات'),
-  'cashbox': tr('حركة الخزينة، الورديات وعجز النقدية، التوصيل، والمصروفات التشغيلية'),
-  'taxes': tr('الضريبة المحصلة والمدفوعة وصافي الالتزام وحالة الفاتورة الإلكترونية'),
+  'reps': tr(
+    'مبيعات المناديب وتحصيلاتهم من المستندات المختومة، وتغطية المسارات، ومخزون السيارات',
+  ),
+  'cashbox': tr(
+    'حركة الخزينة، الورديات وعجز النقدية، التوصيل، والمصروفات التشغيلية',
+  ),
+  'taxes': tr(
+    'الضريبة المحصلة والمدفوعة وصافي الالتزام وحالة الفاتورة الإلكترونية',
+  ),
   'users': tr('نشاط المستخدمين وسجل الدخول ومصفوفة الصلاحيات لكل دور'),
   'branches': tr('مقارنة أداء الفروع والتحويلات المخزنية بينها'),
-  'audit': tr('سجل العمليات والتعديلات والطباعة والإلغاءات — أثر كامل لكل حركة'),
+  'audit': tr(
+    'سجل العمليات والتعديلات والطباعة والإلغاءات — أثر كامل لكل حركة',
+  ),
   'analytics': tr('اتجاهات وأنماط المبيعات وتقسيم العملاء ودوران المخزون'),
 };
 
@@ -184,8 +195,12 @@ class PicposReportShortcut {
   /// which read to users as "the report is missing".
   final VoidCallback? action;
 
-  const PicposReportShortcut(this.id, this.title, this.parentReportId,
-      {this.action});
+  const PicposReportShortcut(
+    this.id,
+    this.title,
+    this.parentReportId, {
+    this.action,
+  });
 }
 
 class _FlatItem {
@@ -207,22 +222,26 @@ List<_FlatItem> _flatten(List<PicposReportCategory> cats) {
   final out = <_FlatItem>[];
   for (final cat in cats) {
     for (final r in cat.mainReports) {
-      out.add(_FlatItem(
-        id: r.id,
-        title: r.title,
-        subtitle: r.subtitle,
-        category: cat,
-        isShortcut: false,
-      ));
+      out.add(
+        _FlatItem(
+          id: r.id,
+          title: r.title,
+          subtitle: r.subtitle,
+          category: cat,
+          isShortcut: false,
+        ),
+      );
     }
     for (final s in cat.shortcuts) {
-      out.add(_FlatItem(
-        id: s.id,
-        title: s.title,
-        subtitle: cat.title,
-        category: cat,
-        isShortcut: true,
-      ));
+      out.add(
+        _FlatItem(
+          id: s.id,
+          title: s.title,
+          subtitle: cat.title,
+          category: cat,
+          isShortcut: true,
+        ),
+      );
     }
   }
   return out;

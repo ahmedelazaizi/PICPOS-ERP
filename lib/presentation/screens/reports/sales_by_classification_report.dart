@@ -24,6 +24,8 @@ import '../../widgets/branch_warehouse_filter.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;
 import '../../widgets/report_filter_bar.dart';
 
+part 'sales_by_classification_report_async.dart';
+
 class SalesByClassificationReport extends ConsumerStatefulWidget {
   const SalesByClassificationReport({super.key});
 
@@ -46,6 +48,9 @@ class _SalesByClassificationReportState
   List<SalesByCategoryRow> _categoryData = [];
   List<SalesBySaleTypeRow> _saleTypeData = [];
   bool _isLoading = true;
+  bool _isSaleTypeLoading = true;
+  Object? _saleTypeError;
+  int _loadRequestGeneration = 0;
   int? _selectedRegionId; // Feature 017
   int? _selectedBranchId;
   int? _selectedWarehouseId;
@@ -81,15 +86,21 @@ class _SalesByClassificationReportState
           // `onBranchChanged` فقط، فيفضل `null` على أوّل تحميل.
           _branchWarehouseIds =
               await BranchWarehouseFilterBar.getBranchWarehouseIds(
-                  ref, activeBranchId);
+                ref,
+                activeBranchId,
+              );
         } else if (!_noBranchNoticeShown) {
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar( SnackBar(
-              content: Text(tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع')),
-              duration: const Duration(seconds: 6),
-            ));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  tr('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
+                ),
+                duration: const Duration(seconds: 6),
+              ),
+            );
           });
         }
       }
@@ -97,85 +108,10 @@ class _SalesByClassificationReportState
     });
   }
 
-  Future<void> _loadData() async {
-    if (mounted) setState(() => _isLoading = true);
-    // Spec 149 B12-5b (FIL-2): resolve the auth-level branch scope BEFORE
-    // the report query runs, on every call. _loadData is invoked both from
-    // initState's microtask and from the filter-bar onChanged callbacks, so
-    // re-resolving here (rather than relying solely on build()'s
-    // ref.watch) closes the race where the FIRST load could otherwise run
-    // before build() ever observes branchScopeProvider.
-    final scope = await ref.read(branchScopeProvider.future);
-    if (!mounted) return;
-    _allowedBranchIds = scope.hasFullAccess ? null : scope.allowedBranchIds;
-
-    // Build warehouseIds — Feature 017 added the region branch.
-    List<int>? warehouseIds;
-    if (_selectedWarehouseId != null) {
-      warehouseIds = [_selectedWarehouseId!];
-    } else if (_branchWarehouseIds != null && _branchWarehouseIds!.isNotEmpty) {
-      warehouseIds = _branchWarehouseIds!.toList();
-    } else if (_regionWarehouseIds != null && _regionWarehouseIds!.isNotEmpty) {
-      warehouseIds = _regionWarehouseIds!.toList();
-    }
-
-    final repo = ref.read(reportingRepositoryProvider);
-    _categoryData = await repo.getSalesByCategory(
-      from: _dateRange.start,
-      to: _dateRange.end,
-      warehouseIds: warehouseIds,
-      allowedBranchIds: _allowedBranchIds,
-    );
-    _saleTypeData = await repo.getSalesBySaleType(
-      from: _dateRange.start,
-      to: _dateRange.end,
-      warehouseIds: warehouseIds,
-      allowedBranchIds: _allowedBranchIds,
-    );
-    if (mounted) setState(() => _isLoading = false);
-  }
-
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickDateRange() async {
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
-      initialDateRange: _dateRange,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              surface: AppColors.surface,
-              onSurface: AppColors.textPrimary,
-            ),
-          ),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400, maxHeight: 500),
-              child: child!,
-            ),
-          ),
-        );
-      },
-    );
-
-    if (picked != null) {
-      // H10 · `showDateRangePicker` يرجّع النهايةَ عند **منتصف ليل آخر يوم**،
-      // والاستعلاماتُ تقارن `BETWEEN from AND to`. فأخذُ الناتج خاماً كان
-      // يبتر اليومَ الأخيرَ كلَّه: مقيس ٢٬٠٠٠ ⇒ ١٬٤٠٠. نفسُ التطبيع الذي
-      // تبدأ به الشاشةُ في السطر ٣٧ بالضبط.
-      setState(() => _dateRange =
-          DateRangeFilter.normalizeRange(picked.start, picked.end));
-      _loadData();
-    }
   }
 
   Future<void> _exportToExcel() async {
@@ -185,7 +121,11 @@ class _SalesByClassificationReportState
     final data = isCategory ? _categoryData : _saleTypeData;
     if (data.isEmpty) {
       if (mounted) {
-        AppToast.show(context, tr('لا توجد بيانات للتصدير'), type: ToastType.error);
+        AppToast.show(
+          context,
+          tr('لا توجد بيانات للتصدير'),
+          type: ToastType.error,
+        );
       }
       return;
     }
@@ -194,8 +134,9 @@ class _SalesByClassificationReportState
       periodFrom: _dateRange.start,
       periodTo: _dateRange.end,
       branchId: _selectedBranchId,
-      scopedBranchIds:
-          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+      scopedBranchIds: (await ref.read(
+        branchScopeProvider.future,
+      )).allowedBranchIds,
       title: isCategory
           ? tr('تقرير المبيعات حسب التصنيف')
           : tr('تقرير المبيعات حسب نوع البيع'),
@@ -234,7 +175,11 @@ class _SalesByClassificationReportState
 
     if (printData.isEmpty) {
       if (mounted) {
-        AppToast.show(context, tr('لا توجد بيانات للطباعة'), type: ToastType.error);
+        AppToast.show(
+          context,
+          tr('لا توجد بيانات للطباعة'),
+          type: ToastType.error,
+        );
       }
       return;
     }
@@ -245,8 +190,9 @@ class _SalesByClassificationReportState
 
     // GAP-15: اسم الشركة من إعدادات العميل مش قيمة مكتوبة بالإيد. كان
     // مثبَّت على `MONEXIA Market` — اسم علامة تالتة على رأس تقرير العميل.
-    final receiptSettings =
-        await ref.read(settingsRepositoryProvider).getReceiptSettings();
+    final receiptSettings = await ref
+        .read(settingsRepositoryProvider)
+        .getReceiptSettings();
 
     await InvoiceGenerator.printCategoryReport(
       categories: printData,
@@ -275,7 +221,11 @@ class _SalesByClassificationReportState
       return Directionality(
         textDirection: ui.TextDirection.rtl,
         child: Scaffold(
-          body: Center(child: Text(tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}))),
+          body: Center(
+            child: Text(
+              tr('تعذر تحديد صلاحيات الفرع: {p0}', {'p0': scopeAsync.error}),
+            ),
+          ),
         ),
       );
     }
@@ -296,22 +246,22 @@ class _SalesByClassificationReportState
       // تبويباتُ التصميم لفرع PicPos، وشريطُ UralCash كما هو حرفاً بحرف.
       subHeader: PicPosReportTabs(
         controller: _tabController,
-        tabs:  [
+        tabs: [
           (
             label: tr('حسب تصنيف الأصناف (Categories)'),
             icon: PhosphorIconsBold.tag,
-            badge: null
+            badge: null,
           ),
           (
             label: tr('حسب نوع البيع (Classification)'),
             icon: PhosphorIconsBold.storefront,
-            badge: null
+            badge: null,
           ),
         ],
       ),
       appBarBottom: TabBar(
         controller: _tabController,
-        tabs:  [
+        tabs: [
           Tab(text: tr('حسب تصنيف الأصناف (Categories)')),
           Tab(text: tr('حسب نوع البيع (Classification)')),
         ],
@@ -320,114 +270,118 @@ class _SalesByClassificationReportState
         unselectedLabelColor: AppColors.textPrimary,
       ),
       actions: [
-            buildReportExportAction(onExport: _exportToExcel),
-            IconButton(
-              onPressed: _printReport,
-              icon: const Icon(PhosphorIconsBold.printer),
-              tooltip: tr('طباعة/PDF'),
+        buildReportExportAction(onExport: _exportToExcel),
+        IconButton(
+          onPressed: _printReport,
+          icon: const Icon(PhosphorIconsBold.printer),
+          tooltip: tr('طباعة/PDF'),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: OutlinedButton.icon(
+            onPressed: _pickDateRange,
+            icon: const Icon(PhosphorIconsBold.calendar, size: 18),
+            label: Text(
+              '${dateFormat.format(_dateRange.start)} - ${dateFormat.format(_dateRange.end)}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: OutlinedButton.icon(
-                onPressed: _pickDateRange,
-                icon: const Icon(PhosphorIconsBold.calendar, size: 18),
-                label: Text(
-                  '${dateFormat.format(_dateRange.start)} - ${dateFormat.format(_dateRange.end)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: AppColors.surface,
-                  foregroundColor: AppColors.primary,
-                ),
-              ),
+            style: OutlinedButton.styleFrom(
+              backgroundColor: AppColors.surface,
+              foregroundColor: AppColors.primary,
             ),
-          ],
-        body: Column(
-          children: [
-            // Spec 076: unified two-row filter bar.
-            ReportFilterBar(
-              selectedRange: _dateRange,
-              onRangeChanged: (start, end) {
-                setState(
-                  () => _dateRange = DateTimeRange(start: start, end: end),
-                );
-                _loadData();
-              },
-              trailing: [
-                BranchWarehouseFilterBar(
-                  selectedRegionId: _selectedRegionId,
-                  selectedBranchId: _selectedBranchId,
-                  selectedWarehouseId: _selectedWarehouseId,
-                  onRegionChanged: (v) async {
-                    _selectedRegionId = v;
-                    _selectedBranchId = null;
-                    _selectedWarehouseId = null;
-                    _branchWarehouseIds = null;
-                    if (v != null) {
-                      _regionWarehouseIds =
-                          await BranchWarehouseFilterBar.getRegionWarehouseIds(ref, v);
+          ),
+        ),
+      ],
+      body: Column(
+        children: [
+          // Spec 076: unified two-row filter bar.
+          ReportFilterBar(
+            selectedRange: _dateRange,
+            onRangeChanged: (start, end) {
+              setState(
+                () => _dateRange = DateTimeRange(start: start, end: end),
+              );
+              _loadData();
+            },
+            trailing: [
+              BranchWarehouseFilterBar(
+                selectedRegionId: _selectedRegionId,
+                selectedBranchId: _selectedBranchId,
+                selectedWarehouseId: _selectedWarehouseId,
+                onRegionChanged: (v) async {
+                  _selectedRegionId = v;
+                  _selectedBranchId = null;
+                  _selectedWarehouseId = null;
+                  _branchWarehouseIds = null;
+                  if (v != null) {
+                    _regionWarehouseIds =
+                        await BranchWarehouseFilterBar.getRegionWarehouseIds(
+                          ref,
+                          v,
+                        );
 
-                      // Spec 079 / B1+FR-003: warn when region selection yields zero
+                    // Spec 079 / B1+FR-003: warn when region selection yields zero
 
-                      // warehouses (data-integrity hint for the operator).
+                    // warehouses (data-integrity hint for the operator).
 
-                      final regionIdsCheck = _regionWarehouseIds;
+                    final regionIdsCheck = _regionWarehouseIds;
 
-                      if (regionIdsCheck != null && regionIdsCheck.isEmpty) {
-
-                        unawaited(DiagnosticLogger.log(
-
+                    if (regionIdsCheck != null && regionIdsCheck.isEmpty) {
+                      unawaited(
+                        DiagnosticLogger.log(
                           'FILTER-WARN',
 
                           'Region \$v selected but no warehouses linked. '
-
-                          'Check that branches in this region have a regionId, '
-
-                          'and their warehouses have branchId set.',
-
-                        ));
-
-                      }
-
-                    } else {
-                      _regionWarehouseIds = null;
+                              'Check that branches in this region have a regionId, '
+                              'and their warehouses have branchId set.',
+                        ),
+                      );
                     }
-                    _loadData();
-                  },
-                  onBranchChanged: (v) async {
-                    _selectedBranchId = v;
-                    _selectedWarehouseId = null;
-                    if (v != null) {
-                      _branchWarehouseIds = await BranchWarehouseFilterBar.getBranchWarehouseIds(ref, v);
-                    } else {
-                      _branchWarehouseIds = null;
-                    }
-                    _loadData();
-                  },
-                  onWarehouseChanged: (v) {
-                    setState(() => _selectedWarehouseId = v);
-                    _loadData();
-                  },
+                  } else {
+                    _regionWarehouseIds = null;
+                  }
+                  _loadData();
+                },
+                onBranchChanged: (v) async {
+                  _selectedBranchId = v;
+                  _selectedWarehouseId = null;
+                  if (v != null) {
+                    _branchWarehouseIds =
+                        await BranchWarehouseFilterBar.getBranchWarehouseIds(
+                          ref,
+                          v,
+                        );
+                  } else {
+                    _branchWarehouseIds = null;
+                  }
+                  _loadData();
+                },
+                onWarehouseChanged: (v) {
+                  setState(() => _selectedWarehouseId = v);
+                  _loadData();
+                },
+              ),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildCategoryReport(),
+                PermissionGuard(
+                  permission: PermissionCodes.reportsOrderType,
+                  fallback: Center(
+                    child: Text(
+                      tr('لا تملك صلاحية عرض تقرير المبيعات حسب نوع الطلب'),
+                    ),
+                  ),
+                  child: _buildSaleTypeReport(),
                 ),
               ],
             ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildCategoryReport(),
-                  PermissionGuard(
-                    permission: PermissionCodes.reportsOrderType,
-                    fallback:  Center(
-                      child: Text(tr('لا تملك صلاحية عرض تقرير المبيعات حسب نوع الطلب')),
-                    ),
-                    child: _buildSaleTypeReport(),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -443,12 +397,14 @@ class _SalesByClassificationReportState
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text(tr('حدث خطأ: {p0}', {'p0': snapshot.error})));
+          return Center(
+            child: Text(tr('حدث خطأ: {p0}', {'p0': snapshot.error})),
+          );
         }
 
         final data = snapshot.data ?? [];
         if (data.isEmpty) {
-          return  Center(child: Text(tr('لا توجد بيانات لهذه الفترة')));
+          return Center(child: Text(tr('لا توجد بيانات لهذه الفترة')));
         }
 
         double totalSales = data.fold(0, (sum, item) => sum + item.total);
@@ -469,7 +425,7 @@ class _SalesByClassificationReportState
                 borderRadius: BorderRadius.circular(12),
               ),
               child: DataTable(
-                columns:  [
+                columns: [
                   DataColumn(label: Text(tr('القسم / التصنيف'))),
                   DataColumn(label: Text(tr('الكمية المباعة'))),
                   DataColumn(label: Text(tr('القيمة الإجمالية'))),
@@ -525,23 +481,39 @@ class _SalesByClassificationReportState
 
   Widget _buildSaleTypeReport() {
     final repo = ref.read(reportingRepositoryProvider);
+    if (_isSaleTypeLoading) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: ShimmerLoading.list(itemCount: 6),
+      );
+    }
+
+    if (_saleTypeError != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(tr('حدث خطأ: {p0}', {'p0': _saleTypeError})),
+            const SizedBox(height: 8),
+            TextButton(onPressed: _loadData, child: Text(tr('إعادة المحاولة'))),
+          ],
+        ),
+      );
+    }
+
     return FutureBuilder<List<SalesBySaleTypeRow>>(
-      future: _isLoading ? null : Future.value(_saleTypeData),
+      future: Future.value(_saleTypeData),
       builder: (context, snapshot) {
-        if (_isLoading || snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return Padding(
             padding: const EdgeInsets.all(16),
             child: ShimmerLoading.list(itemCount: 6),
           );
         }
 
-        if (snapshot.hasError) {
-          return Center(child: Text(tr('حدث خطأ: {p0}', {'p0': snapshot.error})));
-        }
-
         final data = snapshot.data ?? [];
         if (data.isEmpty) {
-          return  Center(child: Text(tr('لا توجد بيانات لهذه الفترة')));
+          return Center(child: Text(tr('لا توجد بيانات لهذه الفترة')));
         }
 
         double totalSales = data.fold(0, (sum, item) => sum + item.total);
@@ -626,7 +598,10 @@ class _SalesByClassificationReportState
                     children: [
                       const SizedBox(height: 4),
                       Text(
-                        tr('{count} فاتورة • {p0}%', {'count': count, 'p0': (percentage * 100).toStringAsFixed(1)}),
+                        tr('{count} فاتورة • {p0}%', {
+                          'count': count,
+                          'p0': (percentage * 100).toStringAsFixed(1),
+                        }),
                         style: const TextStyle(
                           color: AppColors.textMuted,
                           fontSize: 12,
@@ -666,15 +641,13 @@ class _SalesByClassificationReportState
                             ConnectionState.waiting) {
                           return const Padding(
                             padding: EdgeInsets.all(16),
-                            child: Center(
-                              child: CircularProgressIndicator(),
-                            ),
+                            child: Center(child: CircularProgressIndicator()),
                           );
                         }
 
                         final invoices = detailSnap.data ?? [];
                         if (invoices.isEmpty) {
-                          return  Padding(
+                          return Padding(
                             padding: const EdgeInsets.all(16),
                             child: Text(tr('لا توجد فواتير')),
                           );
@@ -698,11 +671,7 @@ class _SalesByClassificationReportState
                               color: color.withValues(alpha: 0.05),
                               child: Row(
                                 children: [
-                                  _buildMiniStat(
-                                    tr('الإجمالي'),
-                                    amount,
-                                    color,
-                                  ),
+                                  _buildMiniStat(tr('الإجمالي'), amount, color),
                                   _buildMiniStat(
                                     tr('المحصل'),
                                     totalPaid,
@@ -725,7 +694,7 @@ class _SalesByClassificationReportState
                                 columnSpacing: 16,
                                 dataRowMinHeight: 36,
                                 dataRowMaxHeight: 40,
-                                columns:  [
+                                columns: [
                                   DataColumn(label: Text(tr('رقم الفاتورة'))),
                                   DataColumn(label: Text(tr('التاريخ'))),
                                   DataColumn(label: Text(tr('العميل'))),
@@ -737,8 +706,7 @@ class _SalesByClassificationReportState
                                 rows: invoices.map((inv) {
                                   final invTotal = inv.total;
                                   final invPaid = inv.paid;
-                                  final invRemaining =
-                                      invTotal - invPaid;
+                                  final invRemaining = invTotal - invPaid;
 
                                   // Parse date (invoiceDate may be int unix or DateTime)
                                   String dateStr = '';
@@ -750,8 +718,7 @@ class _SalesByClassificationReportState
                                       ),
                                     );
                                   } else if (rawDate is DateTime) {
-                                    dateStr =
-                                        dateFormat.format(rawDate);
+                                    dateStr = dateFormat.format(rawDate);
                                   }
 
                                   // Payment method label — المصدرُ الواحد.
@@ -760,73 +727,76 @@ class _SalesByClassificationReportState
 
                                   return DataRow(
                                     cells: [
-                                      DataCell(Text(
-                                        inv.invoiceNumber,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12,
+                                      DataCell(
+                                        Text(
+                                          inv.invoiceNumber,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
                                         ),
-                                      )),
-                                      DataCell(Text(
-                                        dateStr,
-                                        style: const TextStyle(
-                                            fontSize: 12),
-                                      )),
-                                      DataCell(Text(
-                                        inv.customerName ?? '—',
-                                        style: const TextStyle(
-                                            fontSize: 12),
-                                      )),
-                                      DataCell(Text(
-                                        invTotal
-                                            .toStringAsFixed(AppConstants.decimalPlaces),
-                                        style: const TextStyle(
-                                            fontSize: 12),
-                                      )),
-                                      DataCell(Text(
-                                        invPaid
-                                            .toStringAsFixed(AppConstants.decimalPlaces),
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color:
-                                              AppColors.success,
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          dateStr,
+                                          style: const TextStyle(fontSize: 12),
                                         ),
-                                      )),
-                                      DataCell(Text(
-                                        invRemaining
-                                            .toStringAsFixed(AppConstants.decimalPlaces),
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: invRemaining > 0
-                                              ? AppColors.error
-                                              : AppColors
-                                                  .textMuted,
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          inv.customerName ?? '—',
+                                          style: const TextStyle(fontSize: 12),
                                         ),
-                                      )),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          invTotal.toStringAsFixed(
+                                            AppConstants.decimalPlaces,
+                                          ),
+                                          style: const TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          invPaid.toStringAsFixed(
+                                            AppConstants.decimalPlaces,
+                                          ),
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.success,
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          invRemaining.toStringAsFixed(
+                                            AppConstants.decimalPlaces,
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: invRemaining > 0
+                                                ? AppColors.error
+                                                : AppColors.textMuted,
+                                          ),
+                                        ),
+                                      ),
                                       DataCell(
                                         Container(
-                                          padding:
-                                              const EdgeInsets
-                                                  .symmetric(
+                                          padding: const EdgeInsets.symmetric(
                                             horizontal: 6,
                                             vertical: 2,
                                           ),
-                                          decoration:
-                                              BoxDecoration(
-                                            color: AppColors
-                                                .info
-                                                .withValues(
-                                                    alpha:
-                                                        0.1),
-                                            borderRadius:
-                                                BorderRadius
-                                                    .circular(
-                                                        4),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.info.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
                                           ),
                                           child: Text(
                                             PaymentMethods.label(pm),
-                                            style:
-                                                const TextStyle(
+                                            style: const TextStyle(
                                               fontSize: 11,
                                             ),
                                           ),

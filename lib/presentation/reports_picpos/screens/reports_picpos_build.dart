@@ -16,21 +16,17 @@ extension _ReportsPicposBuild on _ReportsPicposScreenState {
   Widget _customReportButton() {
     return ElevatedButton.icon(
       onPressed: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => const ReportBuilderScreen(),
-        ),
+        MaterialPageRoute<void>(builder: (_) => const ReportBuilderScreen()),
       ),
       icon: const Icon(PhosphorIconsBold.plus, size: 17),
-      label:  Text(tr('تقرير مخصص')),
+      label: Text(tr('تقرير مخصص')),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         minimumSize: const Size(0, 44),
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
       ),
     );
@@ -64,19 +60,19 @@ extension _ReportsPicposBuild on _ReportsPicposScreenState {
                   },
                 ),
           isDense: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 14,
+          ),
           filled: true,
-          fillColor: Theme.of(context).cardColor,
+          fillColor: context.picposCard,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                BorderSide(color: AppColors.border.withValues(alpha: 0.6)),
+            borderSide: BorderSide(color: context.picposHairline),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                BorderSide(color: AppColors.border.withValues(alpha: 0.6)),
+            borderSide: BorderSide(color: context.picposHairline),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

@@ -27,8 +27,9 @@ void main() {
 
   test('الصلاحيّةُ `distribution_view` في الخريطة وفي المدخل الجانبيّ', () {
     expect(screenPermissionMap[id], PermissionCodes.distributionView);
-    final item =
-        kAllNavItemDefs.where((n) => n.index == id.navigationIndex).toList();
+    final item = kAllNavItemDefs
+        .where((n) => n.index == id.navigationIndex)
+        .toList();
     expect(item, hasLength(1));
     expect(item.single.group, 'sales');
     expect(item.single.permission, screenPermissionMap[id]);
@@ -44,24 +45,36 @@ void main() {
   test('النطاقُ: تحلّ محلَّ «التوزيع» وتظهر في PicPos وحدَها', () {
     // E-fix ٤ب — الشاشةُ القديمة (٢٤) تُستبدَل في PicPos لا تُجاوَر.
     expect(
-        ScreenRegistry.withPicposRepDistribution(
-            [ScreenId.loyalty, ScreenId.distribution, ScreenId.hr]),
-        [ScreenId.loyalty, id, ScreenId.hr]);
+      ScreenRegistry.withPicposRepDistribution([
+        ScreenId.loyalty,
+        ScreenId.distribution,
+        ScreenId.hr,
+      ]),
+      [ScreenId.loyalty, id, ScreenId.hr],
+    );
     const legacy = ScreenId.distribution;
     if (Brand.isPicPos) {
       expect(ScreenRegistry.forProfile(BusinessProfile.unified), contains(id));
       expect(
-          ScreenRegistry.forProfile(BusinessProfile.commercial), contains(id));
+        ScreenRegistry.forProfile(BusinessProfile.commercial),
+        contains(id),
+      );
       expect(navItemVisibleForBrand(id.navigationIndex), isTrue);
-      expect(ScreenRegistry.forProfile(BusinessProfile.unified),
-          isNot(contains(legacy)));
+      expect(
+        ScreenRegistry.forProfile(BusinessProfile.unified),
+        isNot(contains(legacy)),
+      );
       expect(navItemVisibleForBrand(legacy.navigationIndex), isFalse);
     } else {
-      expect(ScreenRegistry.forProfile(BusinessProfile.unified),
-          isNot(contains(id)));
+      expect(
+        ScreenRegistry.forProfile(BusinessProfile.unified),
+        isNot(contains(id)),
+      );
       expect(navItemVisibleForBrand(id.navigationIndex), isFalse);
-      expect(ScreenRegistry.forProfile(BusinessProfile.unified),
-          contains(legacy));
+      expect(
+        ScreenRegistry.forProfile(BusinessProfile.unified),
+        contains(legacy),
+      );
       expect(navItemVisibleForBrand(legacy.navigationIndex), isTrue);
     }
     // الصلاحيةُ باقيةٌ للعلامتَين.
@@ -69,21 +82,27 @@ void main() {
   });
 
   test('`ScreenConfig` يبني الشاشة', () {
-    final src = File('lib/app_main_screen.dart').readAsStringSync();
+    final src = readLibrarySource('lib/app_main_screen.dart');
     expect(src, contains('appScreen: AppScreen.repDistribution'));
     expect(src, contains('const RepDistributionPicPosScreen()'));
   });
 
   test('تقاريرُ المناديب الأربعة في مركز تقارير PicPos بصلاحيّة', () {
     final hub = readLibrarySource(
-        'lib/presentation/reports_picpos/screens/reports_picpos_screen.dart');
+      'lib/presentation/reports_picpos/screens/reports_picpos_screen.dart',
+    );
     expect(hub, contains("id: 'reps'"));
     expect(hub, contains('RepReportKind.values'));
     expect(hub, contains('permission: PermissionCodes.distributionView'));
     final reports = File(
-            'lib/presentation/reports_picpos/screens/rep_reports_picpos_screen.dart')
-        .readAsStringSync();
-    for (final kind in ['rep_summary', 'rep_detail', 'rep_coverage', 'rep_van_stock']) {
+      'lib/presentation/reports_picpos/screens/rep_reports_picpos_screen.dart',
+    ).readAsStringSync();
+    for (final kind in [
+      'rep_summary',
+      'rep_detail',
+      'rep_coverage',
+      'rep_van_stock',
+    ]) {
       expect(reports, contains("'$kind'"));
     }
     expect(reports, contains('ExcelExportHelper.export'));
@@ -91,16 +110,16 @@ void main() {
 
   test('الإدارةُ (إنشاء/إسناد) محروسةٌ بـ`distribution_manage`', () {
     final areas = File(
-            'lib/presentation/distribution_picpos/screens/dm_areas_tab.dart')
-        .readAsStringSync();
+      'lib/presentation/distribution_picpos/screens/dm_areas_tab.dart',
+    ).readAsStringSync();
     expect(areas, contains('PermissionCodes.distributionManage'));
     final parties = File(
-            'lib/presentation/parties_picpos/screens/parties_picpos_screen.dart')
-        .readAsStringSync();
+      'lib/presentation/parties_picpos/screens/parties_picpos_screen.dart',
+    ).readAsStringSync();
     expect(parties, contains('PermissionCodes.distributionManage'));
     final reps = File(
-            'lib/presentation/distribution_picpos/screens/dm_reps_tab.dart')
-        .readAsStringSync();
+      'lib/presentation/distribution_picpos/screens/dm_reps_tab.dart',
+    ).readAsStringSync();
     expect(reps, contains('PermissionCodes.inventoryTransfer'));
     expect(reps, contains('PermissionCodes.treasuryTransfer'));
   });

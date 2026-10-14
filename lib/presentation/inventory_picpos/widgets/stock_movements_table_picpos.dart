@@ -16,6 +16,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../domain/repositories/inventory_repository.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../screens/inventory/inventory_notifier.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 // ─── Column widths (Spec 032 v2 — flex distribution) ─────────────────────
 const double _kDateColWidth = 80;
@@ -32,7 +33,8 @@ const int _kProductFlex = 6;
 const int _kNotesFlex = 4;
 const int _kFlexTotal = _kProductFlex + _kNotesFlex;
 
-const double _kFixedSum = _kDateColWidth +
+const double _kFixedSum =
+    _kDateColWidth +
     _kTypeColWidth +
     _kQtyColWidth +
     _kCostColWidth +
@@ -62,7 +64,8 @@ class StockMovementsTablePicpos extends ConsumerStatefulWidget {
       _StockMovementsTableState();
 }
 
-class _StockMovementsTableState extends ConsumerState<StockMovementsTablePicpos> {
+class _StockMovementsTableState
+    extends ConsumerState<StockMovementsTablePicpos> {
   // Spec 032 — independent scroll controllers. The vertical lives on the
   // ListView.builder; the horizontal on the (conditional) outer
   // SingleChildScrollView. Both surface their scrollbars via Scrollbar
@@ -91,14 +94,14 @@ class _StockMovementsTableState extends ConsumerState<StockMovementsTablePicpos>
                 Icon(
                   PhosphorIconsBold.arrowsLeftRight,
                   size: 64,
-                  color: AppColors.textMuted.withValues(alpha: 0.3),
+                  color: context.picposMuted.withValues(alpha: 0.3),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   state.selectedMovementProductId != null
                       ? tr('لا توجد حركات لهذا الصنف')
                       : tr('لا توجد حركات مخزون'),
-                  style: const TextStyle(color: AppColors.textMuted),
+                  style: TextStyle(color: context.picposMuted),
                 ),
               ],
             ),
@@ -107,7 +110,7 @@ class _StockMovementsTableState extends ConsumerState<StockMovementsTablePicpos>
 
         return Column(
           children: [
-            _buildSummaryBar(mvmts),
+            _buildSummaryBar(context, mvmts),
             const Divider(height: 1),
             Expanded(child: _buildTable(context, mvmts)),
           ],
@@ -121,8 +124,7 @@ class _StockMovementsTableState extends ConsumerState<StockMovementsTablePicpos>
     );
   }
 
-  Widget _buildTable(
-      BuildContext context, List<StockMovementData> movements) {
+  Widget _buildTable(BuildContext context, List<StockMovementData> movements) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final viewportWidth = constraints.maxWidth;
@@ -144,22 +146,22 @@ class _StockMovementsTableState extends ConsumerState<StockMovementsTablePicpos>
             : _kFixedSum + productWidth + notesWidth;
 
         Widget buildRows() => ListView.builder(
-              controller: _vScrollController,
-              itemCount: movements.length,
-              itemExtent: _kRowHeight,
-              itemBuilder: (ctx, i) {
-                final m = movements[i];
-                return _StockMovementRow(
-                  movement: m,
-                  productName: widget.productNameMap[m.productId] ??
-                      '#${m.productId}',
-                  isStriped: i.isOdd,
-                  productWidth: productWidth,
-                  notesWidth: notesWidth,
-                  onNavigateToInvoice: widget.onNavigateToInvoice,
-                );
-              },
+          controller: _vScrollController,
+          itemCount: movements.length,
+          itemExtent: _kRowHeight,
+          itemBuilder: (ctx, i) {
+            final m = movements[i];
+            return _StockMovementRow(
+              movement: m,
+              productName:
+                  widget.productNameMap[m.productId] ?? '#${m.productId}',
+              isStriped: i.isOdd,
+              productWidth: productWidth,
+              notesWidth: notesWidth,
+              onNavigateToInvoice: widget.onNavigateToInvoice,
             );
+          },
+        );
 
         if (useFlex) {
           return Scrollbar(
@@ -208,7 +210,10 @@ class _StockMovementsTableState extends ConsumerState<StockMovementsTablePicpos>
     );
   }
 
-  Widget _buildSummaryBar(List<StockMovementData> movements) {
+  Widget _buildSummaryBar(
+    BuildContext context,
+    List<StockMovementData> movements,
+  ) {
     final totalIn = movements
         .where((m) => m.quantity > 0)
         .fold<double>(0, (s, m) => s + m.quantity);
@@ -222,36 +227,66 @@ class _StockMovementsTableState extends ConsumerState<StockMovementsTablePicpos>
       color: AppColors.primary.withValues(alpha: 0.03),
       child: Row(
         children: [
-          _summaryChip(tr('إجمالي الحركات'), '${movements.length}',
-              PhosphorIconsBold.arrowsLeftRight, AppColors.primary),
-          const SizedBox(width: 16),
-          _summaryChip(tr('وارد'), '+${totalIn.toStringAsFixed(0)}',
-              PhosphorIconsBold.arrowDown, AppColors.success),
-          const SizedBox(width: 16),
-          _summaryChip(tr('صادر'), '-${totalOut.toStringAsFixed(0)}',
-              PhosphorIconsBold.arrowUp, AppColors.error),
+          _summaryChip(
+            context,
+            tr('إجمالي الحركات'),
+            '${movements.length}',
+            PhosphorIconsBold.arrowsLeftRight,
+            context.picposBrandInk,
+          ),
           const SizedBox(width: 16),
           _summaryChip(
-              tr('صافي التغيير'),
-              '${netChange >= 0 ? '+' : ''}${netChange.toStringAsFixed(0)}',
-              PhosphorIconsBold.trendUp,
-              netChange >= 0 ? AppColors.success : AppColors.error),
+            context,
+            tr('وارد'),
+            '+${totalIn.toStringAsFixed(0)}',
+            PhosphorIconsBold.arrowDown,
+            AppColors.success,
+          ),
+          const SizedBox(width: 16),
+          _summaryChip(
+            context,
+            tr('صادر'),
+            '-${totalOut.toStringAsFixed(0)}',
+            PhosphorIconsBold.arrowUp,
+            AppColors.error,
+          ),
+          const SizedBox(width: 16),
+          _summaryChip(
+            context,
+            tr('صافي التغيير'),
+            '${netChange >= 0 ? '+' : ''}${netChange.toStringAsFixed(0)}',
+            PhosphorIconsBold.trendUp,
+            netChange >= 0 ? AppColors.success : AppColors.error,
+          ),
         ],
       ),
     );
   }
 
-  Widget _summaryChip(String label, String value, IconData icon, Color color) {
+  Widget _summaryChip(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 14, color: color),
         const SizedBox(width: 4),
-        Text('$label: ',
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-        Text(value,
-            style: TextStyle(
-                fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+        Text(
+          '$label: ',
+          style: TextStyle(fontSize: 11, color: context.picposMuted),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
       ],
     );
   }
@@ -267,16 +302,15 @@ class _StockMovementsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final headerStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
-        );
+    final headerStyle = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700, fontSize: 12);
     return Container(
       height: _kHeaderHeight,
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border, width: 1),
+        border: Border(
+          bottom: BorderSide(color: context.picposHairline, width: 1),
         ),
       ),
       child: Row(
@@ -294,14 +328,20 @@ class _StockMovementsHeader extends StatelessWidget {
     );
   }
 
-  Widget _cell(String text, double width, TextStyle? style,
-      {bool alignEnd = false}) {
+  Widget _cell(
+    String text,
+    double width,
+    TextStyle? style, {
+    bool alignEnd = false,
+  }) {
     return SizedBox(
       width: width,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Align(
-          alignment: alignEnd ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
+          alignment: alignEnd
+              ? AlignmentDirectional.centerEnd
+              : AlignmentDirectional.centerStart,
           child: Text(text, style: style, overflow: TextOverflow.ellipsis),
         ),
       ),
@@ -341,8 +381,8 @@ class _StockMovementRow extends StatelessWidget {
         color: isStriped
             ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.4)
             : Colors.transparent,
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border, width: 0.5),
+        border: Border(
+          bottom: BorderSide(color: context.picposHairline, width: 0.5),
         ),
       ),
       child: Row(
@@ -359,12 +399,13 @@ class _StockMovementRow extends StatelessWidget {
                   Text(
                     dateText,
                     style: const TextStyle(
-                        fontWeight: FontWeight.w500, fontSize: 12),
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                    ),
                   ),
                   Text(
                     timeText,
-                    style: const TextStyle(
-                        fontSize: 10, color: AppColors.textMuted),
+                    style: TextStyle(fontSize: 10, color: context.picposMuted),
                   ),
                 ],
               ),
@@ -382,7 +423,9 @@ class _StockMovementRow extends StatelessWidget {
                   child: Text(
                     productName,
                     style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 12),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),
@@ -424,7 +467,9 @@ class _StockMovementRow extends StatelessWidget {
                 alignment: AlignmentDirectional.centerEnd,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: (isIn ? AppColors.success : AppColors.error)
                         .withValues(alpha: 0.1),
@@ -452,7 +497,9 @@ class _StockMovementRow extends StatelessWidget {
                 child: Text(
                   m.unitCost.toStringAsFixed(AppConstants.decimalPlaces),
                   style: const TextStyle(
-                      fontWeight: FontWeight.w500, fontSize: 12),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ),
@@ -467,7 +514,9 @@ class _StockMovementRow extends StatelessWidget {
                 child: Text(
                   m.balanceAfter.toStringAsFixed(0),
                   style: const TextStyle(
-                      fontWeight: FontWeight.w500, fontSize: 12),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ),
@@ -482,25 +531,31 @@ class _StockMovementRow extends StatelessWidget {
                 child: m.referenceId != null && m.referenceType != null
                     ? InkWell(
                         onTap: () => onNavigateToInvoice(
-                            m.referenceType!, m.referenceId!),
+                          m.referenceType!,
+                          m.referenceId!,
+                        ),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 3),
+                            horizontal: 6,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
-                            color:
-                                AppColors.primary.withValues(alpha: 0.1),
+                            color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(PhosphorIconsBold.fileText,
-                                  size: 12, color: AppColors.primary),
+                              Icon(
+                                PhosphorIconsBold.fileText,
+                                size: 12,
+                                color: context.picposBrandInk,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 '#${m.referenceId}',
-                                style: const TextStyle(
-                                  color: AppColors.primary,
+                                style: TextStyle(
+                                  color: context.picposBrandInk,
                                   fontWeight: FontWeight.w500,
                                   fontSize: 11,
                                   decoration: TextDecoration.underline,
@@ -510,8 +565,7 @@ class _StockMovementRow extends StatelessWidget {
                           ),
                         ),
                       )
-                    : const Text('-',
-                        style: TextStyle(color: AppColors.textMuted)),
+                    : Text('-', style: TextStyle(color: context.picposMuted)),
               ),
             ),
           ),
@@ -526,8 +580,7 @@ class _StockMovementRow extends StatelessWidget {
                   message: m.notes ?? '',
                   child: Text(
                     m.notes ?? '-',
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 12),
+                    style: TextStyle(color: context.picposMuted, fontSize: 12),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),

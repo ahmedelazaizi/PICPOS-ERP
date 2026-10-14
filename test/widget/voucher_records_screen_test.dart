@@ -20,14 +20,13 @@
 // ⚠️ ولا `AppDatabase` حقيقيّةٌ هنا: المزوِّدُ متجاوَزٌ، وبلا ذلك يتعلّق
 //    `pumpAndSettle` على قاعدةٍ تُفتَح.
 
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/attachments_test_overrides.dart';
+import '../helpers/library_source.dart';
 
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/data/providers/document_record_providers.dart';
@@ -42,21 +41,20 @@ VoucherRecord _rec({
   bool cheque = false,
   String? party,
   DateTime? at,
-}) =>
-    VoucherRecord(
-      id: id,
-      voucherNumber: number,
-      date: at ?? DateTime.now(),
-      amount: amount,
-      discount: 0,
-      category: 'customer_payment',
-      isCheque: cheque,
-      safeId: 1,
-      safeName: 'خزنة رئيسية',
-      partyId: 9,
-      partyName: party ?? 'عميل الجنوب',
-      description: 'تحصيل',
-    );
+}) => VoucherRecord(
+  id: id,
+  voucherNumber: number,
+  date: at ?? DateTime.now(),
+  amount: amount,
+  discount: 0,
+  category: 'customer_payment',
+  isCheque: cheque,
+  safeId: 1,
+  safeName: 'خزنة رئيسية',
+  partyId: 9,
+  partyName: party ?? 'عميل الجنوب',
+  description: 'تحصيل',
+);
 
 /// مفتاحُ الملّاح — يُقرأ به `canPop` بعد الدفع.
 final _nav = GlobalKey<NavigatorState>();
@@ -93,8 +91,9 @@ Future<void> _pump(
         //    واللوحُ يصل `databaseProvider` فتُفتَح قاعدةٌ حقيقيّةٌ ولا
         //    يستقرّ `pumpAndSettle`. راجع رأسَ `attachments_test_overrides`.
         attachmentsRepositoryProvider.overrideWithValue(fakeAttachmentsRepo()),
-        currentUserPermissionsProvider
-            .overrideWith((ref) async => const ['treasury_view']),
+        currentUserPermissionsProvider.overrideWith(
+          (ref) async => const ['treasury_view'],
+        ),
       ],
       child: MaterialApp(
         navigatorKey: _nav,
@@ -114,23 +113,33 @@ void main() {
   testWidgets('مرساةٌ — المدخلُ يفتح السجلَّ لا الاستمارة', (tester) async {
     await _pump(tester, rows: [_rec(id: 1, number: 'RV-1', amount: 100)]);
 
-    expect(find.text('RV-1'), findsOneWidget,
-        reason: 'السجلُّ لم يُرسَم — أو المدخلُ ما زال يفتح الاستمارة');
-    expect(find.byKey(const Key('voucher_records_new')), findsOneWidget,
-        reason: 'لا زرَّ «جديد» ⇒ لا سبيلَ لإنشاء سندٍ إطلاقاً');
+    expect(
+      find.text('RV-1'),
+      findsOneWidget,
+      reason: 'السجلُّ لم يُرسَم — أو المدخلُ ما زال يفتح الاستمارة',
+    );
+    expect(
+      find.byKey(const Key('voucher_records_new')),
+      findsOneWidget,
+      reason: 'لا زرَّ «جديد» ⇒ لا سبيلَ لإنشاء سندٍ إطلاقاً',
+    );
     // والاستمارةُ ليست معروضةً قبل الضغط.
     expect(find.byKey(const Key('voucher_amount')), findsNothing);
   });
 
-  testWidgets('🔴 و«جديد» يدفع الاستمارةَ فوقه — لا يستبدلها به',
-      (tester) async {
+  testWidgets('🔴 و«جديد» يدفع الاستمارةَ فوقه — لا يستبدلها به', (
+    tester,
+  ) async {
     await _pump(tester, rows: [_rec(id: 1, number: 'RV-1', amount: 100)]);
 
     await tester.tap(find.byKey(const Key('voucher_records_new')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('voucher_amount')), findsOneWidget,
-        reason: '🔴 «جديد» لا يفتح الاستمارة');
+    expect(
+      find.byKey(const Key('voucher_amount')),
+      findsOneWidget,
+      reason: '🔴 «جديد» لا يفتح الاستمارة',
+    );
 
     // 🔴 **والدفعُ هو المقيس**: بلا مسارٍ فوق السجلّ تعود
     //    `Navigator.maybePop` في الاستمارة عديمةَ الأثر، فيبقى السندُ
@@ -139,9 +148,13 @@ void main() {
     // ⚠️ **ولا يُقاس ببقاء السجلّ في الشجرة**: `Overlay` لا يبني ما تحت
     //    أوّلِ مسارٍ معتم، فالسجلُّ يغيب عن الشجرة **في الحالتين** —
     //    المدفوعةِ والمستبدَلة. والفاصلُ `canPop`.
-    expect(_nav.currentState!.canPop(), isTrue,
-        reason: '🔴 لا مسارَ تحت الاستمارة ⇒ صارت هي الجذرَ، و«رجوع» '
-            'و«الإغلاق بعد الحفظ» يموتان معاً');
+    expect(
+      _nav.currentState!.canPop(),
+      isTrue,
+      reason:
+          '🔴 لا مسارَ تحت الاستمارة ⇒ صارت هي الجذرَ، و«رجوع» '
+          'و«الإغلاق بعد الحفظ» يموتان معاً',
+    );
 
     // وعودةٌ تُعيد السجلَّ — لا شاشةً بيضاء.
     _nav.currentState!.pop();
@@ -151,16 +164,22 @@ void main() {
   });
 
   testWidgets('🔴 وسندُ الشيك يُوسَم ولا يدخل مجموعَ النقد', (tester) async {
-    await _pump(tester, rows: [
-      _rec(id: 1, number: 'RV-1', amount: 100),
-      _rec(id: 2, number: 'RV-2', amount: 900, cheque: true),
-    ]);
+    await _pump(
+      tester,
+      rows: [
+        _rec(id: 1, number: 'RV-1', amount: 100),
+        _rec(id: 2, number: 'RV-2', amount: 900, cheque: true),
+      ],
+    );
 
     // ⚠️ **بالعدد لا بـ`findsWidgets`**: «شيك» اسمُ شريحةِ المرشِّح أيضاً،
     //    فطفرةٌ تحذف وسمَ الصفّ تُبقي الشريحةَ — ومرّت خضراءَ فعلاً (‏S5).
     //    فالمنتظَرُ اثنان: الشريحةُ ووسمُ الصفّ الواحد.
-    expect(find.text('شيك'), findsNWidgets(2),
-        reason: '🔴 لا وسمَ للشيك على صفّه — فيُقرأ نقداً دخل الخزنة');
+    expect(
+      find.text('شيك'),
+      findsNWidgets(2),
+      reason: '🔴 لا وسمَ للشيك على صفّه — فيُقرأ نقداً دخل الخزنة',
+    );
     expect(find.text('نقديّ'), findsNWidgets(2));
 
     // 🔴 المجموعُ ١٠٠ لا ١٠٠٠: سندُ الشيك مستندٌ بلا أثرٍ ماليّ.
@@ -169,10 +188,16 @@ void main() {
         .map((t) => t.data)
         .whereType<String>()
         .toList();
-    expect(totals.any((t) => t.contains('1,000')), isFalse,
-        reason: '🔴 جُمع الشيكُ مع النقد — فالخزنةُ تُظهر مالاً لم يدخلها');
-    expect(totals.any((t) => t.startsWith('100')), isTrue,
-        reason: 'مجموعُ النقد غاب — فالشريطُ بلا رقمٍ يُقرأ');
+    expect(
+      totals.any((t) => t.contains('1,000')),
+      isFalse,
+      reason: '🔴 جُمع الشيكُ مع النقد — فالخزنةُ تُظهر مالاً لم يدخلها',
+    );
+    expect(
+      totals.any((t) => t.startsWith('100')),
+      isTrue,
+      reason: 'مجموعُ النقد غاب — فالشريطُ بلا رقمٍ يُقرأ',
+    );
   });
 
   testWidgets('🔴 ومدى «إلى اليوم» يشمل سنداتِ اليوم', (tester) async {
@@ -180,9 +205,13 @@ void main() {
     await _pump(tester, rows: const [], seen: seen);
 
     final to = seen.filter!.to!;
-    expect(to.hour, 23,
-        reason: '🔴 `to` عند أوّل اليوم ⇒ كلُّ سندات اليوم تسقط من سجلّ '
-            'اليوم، والشاشةُ تقول «لا سندات» وهي كاذبة');
+    expect(
+      to.hour,
+      23,
+      reason:
+          '🔴 `to` عند أوّل اليوم ⇒ كلُّ سندات اليوم تسقط من سجلّ '
+          'اليوم، والشاشةُ تقول «لا سندات» وهي كاذبة',
+    );
     expect(to.minute, 59);
     expect(seen.direction, VoucherDirection.receipt);
   });
@@ -195,8 +224,11 @@ void main() {
       seen: seen,
       direction: VoucherDirection.payment,
     );
-    expect(seen.direction, VoucherDirection.payment,
-        reason: 'شاشةُ الصرف تقرأ سجلَّ القبض');
+    expect(
+      seen.direction,
+      VoucherDirection.payment,
+      reason: 'شاشةُ الصرف تقرأ سجلَّ القبض',
+    );
     expect(find.text('سند صرف'), findsWidgets);
   });
 
@@ -207,12 +239,18 @@ void main() {
     await _pump(tester, rows: const [], seen: seen);
 
     await tester.enterText(
-        find.byKey(const Key('voucher_records_search')), 'الجنوب');
+      find.byKey(const Key('voucher_records_search')),
+      'الجنوب',
+    );
     await tester.pumpAndSettle();
 
-    expect(seen.filter!.search, 'الجنوب',
-        reason: 'البحثُ لم يصل الاستعلامَ — فهو يرشّح الصفحةَ المحمَّلةَ '
-            'وحدَها ويُخفي ما وراءها');
+    expect(
+      seen.filter!.search,
+      'الجنوب',
+      reason:
+          'البحثُ لم يصل الاستعلامَ — فهو يرشّح الصفحةَ المحمَّلةَ '
+          'وحدَها ويُخفي ما وراءها',
+    );
   });
 
   testWidgets('وفتحُ صفٍّ يعرض المستندَ للقراءة', (tester) async {
@@ -221,25 +259,36 @@ void main() {
     await tester.tap(find.text('RV-1'));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('voucher_document_view')), findsOneWidget,
-        reason: 'فتحُ صفٍّ لا يعرض شيئاً — وهو نصفُ خ‑٩');
+    expect(
+      find.byKey(const Key('voucher_document_view')),
+      findsOneWidget,
+      reason: 'فتحُ صفٍّ لا يعرض شيئاً — وهو نصفُ خ‑٩',
+    );
     expect(find.text('خزنة رئيسية'), findsWidgets);
 
     // 🔴 **ولوحُ المرفقات فيه** (خ‑١٠): كان سندا القبض والصرف موسومَين
     //    «ينتظران شاشةَ عرض» — وهذه هي. وإرفاقٌ بلا مستندٍ محفوظٍ لا
     //    معنى له، فهنا موضعُه لا في الاستمارة.
-    expect(find.byKey(const Key('attachments_panel')), findsOneWidget,
-        reason: '🔴 المستندُ يُعرَض بلا مرفقاته — والوسمُ الذي كان يعِد '
-            'بها حُذف');
+    expect(
+      find.byKey(const Key('attachments_panel')),
+      findsOneWidget,
+      reason:
+          '🔴 المستندُ يُعرَض بلا مرفقاته — والوسمُ الذي كان يعِد '
+          'بها حُذف',
+    );
 
     // 🔴 **والمرساةُ صفُّ السند نفسُه، ونوعُه يتبع الاتّجاه.** الصفّان
     //    يعيشان في `safe_transactions`، فنوعٌ واحدٌ يجعل إيصالَ قبضٍ
     //    يُقرأ على سند صرف.
     final panel = tester.widget<PicPosAttachmentsPanel>(
-        find.byType(PicPosAttachmentsPanel));
+      find.byType(PicPosAttachmentsPanel),
+    );
     expect(panel.entityId, 1);
-    expect(panel.entityType, 'receipt_voucher',
-        reason: '🔴 نوعُ المرفق لا يتبع اتّجاهَ السند');
+    expect(
+      panel.entityType,
+      'receipt_voucher',
+      reason: '🔴 نوعُ المرفق لا يتبع اتّجاهَ السند',
+    );
   });
 
   testWidgets('وسجلٌّ فارغٌ يقول ذلك ولا يبدو معطوباً', (tester) async {
@@ -253,7 +302,7 @@ void main() {
     //    يمرّ أخضرَ ولو بقي `ScreenConfig` يبني الاستمارةَ مباشرةً —
     //    فالشاشةُ سليمةٌ ولا أحدَ يفتحها.
     String config(String screen) {
-      final src = File('lib/app_main_screen.dart').readAsStringSync();
+      final src = readLibrarySource('lib/app_main_screen.dart');
       final at = src.indexOf('appScreen: AppScreen.$screen,');
       expect(at, greaterThan(0), reason: 'لا إعدادَ لـ$screen');
       return src.substring(at, src.indexOf('label:', at));
@@ -261,10 +310,16 @@ void main() {
 
     test('سندُ القبض يبني السجلَّ باتّجاه القبض', () {
       final body = config('receiptVoucher');
-      expect(body, contains('VoucherRecordsPicPosScreen('),
-          reason: 'المدخلُ ما زال يفتح الاستمارةَ مباشرةً');
-      expect(body, contains('VoucherDirection.receipt'),
-          reason: 'بلا اتّجاهٍ مثبَّتٍ ⇒ سجلُّ الصرف تحت اسم «سند قبض»');
+      expect(
+        body,
+        contains('VoucherRecordsPicPosScreen('),
+        reason: 'المدخلُ ما زال يفتح الاستمارةَ مباشرةً',
+      );
+      expect(
+        body,
+        contains('VoucherDirection.receipt'),
+        reason: 'بلا اتّجاهٍ مثبَّتٍ ⇒ سجلُّ الصرف تحت اسم «سند قبض»',
+      );
     });
 
     test('وسندُ الصرف باتّجاه الصرف', () {

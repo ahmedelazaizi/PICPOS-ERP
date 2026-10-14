@@ -18,8 +18,7 @@ extension PicPosSurface on BuildContext {
   bool get picposIsDark => Theme.of(this).brightness == Brightness.dark;
 
   /// خلفيّةُ البطاقة — `--card`.
-  Color get picposCard =>
-      picposIsDark ? AppColors.cardDark : AppColors.card;
+  Color get picposCard => picposIsDark ? AppColors.cardDark : AppColors.card;
 
   /// الخلفيّةُ الخافتةُ داخلَ البطاقة (الحقول والصفوف) — `--field`.
   ///
@@ -38,7 +37,10 @@ extension PicPosSurface on BuildContext {
 
   /// النصُّ الخافت — نفسُ قيمةِ `picposDialogMuted`.
   Color get picposMuted =>
-      picposIsDark ? const Color(0xFF94A3B8) : AppColors.textMuted;
+      picposIsDark ? AppColors.textMutedDark : AppColors.textMuted;
+
+  Color get picposSecondary =>
+      picposIsDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
 
   /// حبرُ العلامة — `--brand-ink` في التصميم.
   ///

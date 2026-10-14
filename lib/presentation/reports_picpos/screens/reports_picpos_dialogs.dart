@@ -71,13 +71,15 @@ extension _ReportsPicposSearch on _ReportsPicposScreenState {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
             decoration: BoxDecoration(
-              border: Border(
-                  bottom: BorderSide(color: context.picposHairline)),
+              border: Border(bottom: BorderSide(color: context.picposHairline)),
             ),
             child: Row(
               children: [
-                const Icon(PhosphorIconsBold.star,
-                    size: 18, color: AppColors.warning),
+                const Icon(
+                  PhosphorIconsBold.star,
+                  size: 18,
+                  color: AppColors.warning,
+                ),
                 const SizedBox(width: 11),
                 Expanded(
                   child: Text(
@@ -105,9 +107,7 @@ extension _ReportsPicposSearch on _ReportsPicposScreenState {
             child: Wrap(
               spacing: 11,
               runSpacing: 11,
-              children: [
-                for (final p in pinned) _pinnedTile(p.item, p.fav),
-              ],
+              children: [for (final p in pinned) _pinnedTile(p.item, p.fav)],
             ),
           ),
         ],
@@ -136,8 +136,11 @@ extension _ReportsPicposSearch on _ReportsPicposScreenState {
               children: [
                 Row(
                   children: [
-                    Icon(item.category.icon,
-                        size: 17, color: item.category.color),
+                    Icon(
+                      item.category.icon,
+                      size: 17,
+                      color: item.category.color,
+                    ),
                     const Spacer(),
                     Icon(
                       fav
@@ -165,7 +168,8 @@ extension _ReportsPicposSearch on _ReportsPicposScreenState {
                   // ⚠️ التصميمُ يكتب «مفضّل · فُتح 14:20»، ولا وقتَ فتحٍ
                   //    مخزَّناً — المحفوظُ ترتيبٌ لا طابعُ وقت. فيُكتب ما
                   //    يُعرَف: أمفضّلٌ هو أم مفتوحٌ مؤخّراً، واسمُ فئته.
-                  fav ? tr('مفضّل · {p0}', {'p0': item.category.title})
+                  fav
+                      ? tr('مفضّل · {p0}', {'p0': item.category.title})
                       : tr('فُتح مؤخّراً · {p0}', {'p0': item.category.title}),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -183,7 +187,10 @@ extension _ReportsPicposSearch on _ReportsPicposScreenState {
     );
   }
 
-  Widget _expandedShortcutChip(PicposReportCategory cat, PicposReportShortcut s) {
+  Widget _expandedShortcutChip(
+    PicposReportCategory cat,
+    PicposReportShortcut s,
+  ) {
     final parent = cat.mainReports.firstWhere(
       (r) => r.id == s.parentReportId,
       orElse: () => cat.mainReports.first,
@@ -206,12 +213,14 @@ extension _ReportsPicposSearch on _ReportsPicposScreenState {
           children: [
             Icon(PhosphorIconsBold.lightning, size: 11, color: cat.color),
             const SizedBox(width: 5),
-            Text(s.title,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: cat.color,
-                )),
+            Text(
+              s.title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: cat.color,
+              ),
+            ),
           ],
         ),
       ),
@@ -239,12 +248,16 @@ extension _ReportsPicposSearch on _ReportsPicposScreenState {
         child: Center(
           child: Column(
             children: [
-              Icon(PhosphorIconsBold.magnifyingGlass,
-                  size: 56,
-                  color: AppColors.textMuted.withValues(alpha: 0.5)),
+              Icon(
+                PhosphorIconsBold.magnifyingGlass,
+                size: 56,
+                color: context.picposMuted.withValues(alpha: 0.5),
+              ),
               const SizedBox(height: 12),
-              Text(tr('لا توجد تقارير مطابقة لـ "{_query}"', {'_query': _query}),
-                  style: const TextStyle(color: AppColors.textMuted)),
+              Text(
+                tr('لا توجد تقارير مطابقة لـ "{_query}"', {'_query': _query}),
+                style: TextStyle(color: context.picposMuted),
+              ),
             ],
           ),
         ),
@@ -255,8 +268,11 @@ extension _ReportsPicposSearch on _ReportsPicposScreenState {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _miniHeader(PhosphorIconsBold.magnifyingGlass,
-              tr('نتائج البحث ({p0})', {'p0': results.length}), AppColors.primary),
+          _miniHeader(
+            PhosphorIconsBold.magnifyingGlass,
+            tr('نتائج البحث ({p0})', {'p0': results.length}),
+            AppColors.primary,
+          ),
           const SizedBox(height: 10),
           GridView.builder(
             shrinkWrap: true,
@@ -290,8 +306,11 @@ extension _ReportsPicposSearch on _ReportsPicposScreenState {
                 color: item.category.color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(item.category.icon,
-                  color: item.category.color, size: 17),
+              child: Icon(
+                item.category.icon,
+                color: item.category.color,
+                size: 17,
+              ),
             ),
             const SizedBox(width: 9),
             Expanded(
@@ -302,42 +321,50 @@ extension _ReportsPicposSearch on _ReportsPicposScreenState {
                   Row(
                     children: [
                       Flexible(
-                        child: Text(item.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            )),
+                        child: Text(
+                          item.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                       if (item.isShortcut) ...[
                         const SizedBox(width: 5),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 4, vertical: 1),
+                            horizontal: 4,
+                            vertical: 1,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.warning.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(5),
                           ),
-                          child:  Text(tr('اختصار'),
-                              style: const TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.warningDark,
-                              )),
+                          child: Text(
+                            tr('اختصار'),
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.warningDark,
+                            ),
+                          ),
                         ),
                       ],
                     ],
                   ),
                   const SizedBox(height: 1),
-                  Text(item.subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 12,
-                        height: 1.25,
-                      )),
+                  Text(
+                    item.subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: context.picposMuted,
+                      fontSize: 12,
+                      height: 1.25,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -345,12 +372,14 @@ extension _ReportsPicposSearch on _ReportsPicposScreenState {
               IconButton(
                 tooltip: isFav ? tr('إزالة من المفضلة') : tr('إضافة للمفضلة'),
                 padding: EdgeInsets.zero,
-                constraints:
-                    const BoxConstraints.tightFor(width: 22, height: 22),
+                constraints: const BoxConstraints.tightFor(
+                  width: 22,
+                  height: 22,
+                ),
                 icon: Icon(
                   isFav ? PhosphorIconsFill.star : PhosphorIconsBold.star,
                   size: 13,
-                  color: isFav ? AppColors.warning : AppColors.textMuted,
+                  color: isFav ? AppColors.warning : context.picposMuted,
                 ),
                 onPressed: () => _toggleFavorite(item.id),
               ),
