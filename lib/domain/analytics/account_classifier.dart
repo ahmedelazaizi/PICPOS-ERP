@@ -127,6 +127,24 @@ const Map<AccountBucket, _Rule> _rules = {
   ),
 };
 
+/// Every mapping-purpose key the classifier reads (for the structural parity
+/// test that checks them against `account_mapping_purposes.dart`).
+Set<String> get classifierPurposeKeys => {
+      for (final r in _rules.values) ...r.purposes,
+    };
+
+/// Every account-code prefix the classifier uses, with the account types the
+/// prefix rule accepts (for the structural test against the seeded chart).
+Map<String, Set<String>> get classifierCodePrefixes => {
+      for (final r in _rules.values)
+        for (final p in r.prefixes)
+          p: switch (r.family) {
+            _Family.asset => const {'asset', 'contra_asset'},
+            _Family.liability => const {'liability'},
+            _Family.expense => const {'expense'},
+          },
+    };
+
 _Family? _familyOf(String type) {
   switch (type) {
     case 'asset':

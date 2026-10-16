@@ -1710,12 +1710,8 @@ extension AccountingDaoWritesExt on AppDatabase {
     );
     // ورقةُ الدفع تُجمَع داخلَ المعاملة وتُرسَل بعد إغلاقها — كما في
     // `createJournalEntry` تماماً، كي لا تحبس زمنُ الشبكة قفلَ الكتابة.
-    String? pushDesc;
-    DateTime? pushDate;
+    JournalEntryData? pushEntry;
     List<Map<String, dynamic>>? pushLines;
-    String? pushGlobalId;
-    int? pushCostCenterId;
-    int? pushBranchId;
 
     await transaction(() async {
       final entry = await (select(
@@ -1793,11 +1789,7 @@ extension AccountingDaoWritesExt on AppDatabase {
         description: 'اعتماد القيد #$entryId',
       );
       if (SyncInterceptor.isClientMode) {
-        pushDesc = entry.description ?? '';
-        pushDate = entry.entryDate;
-        pushGlobalId = entry.globalId;
-        pushCostCenterId = entry.costCenterId;
-        pushBranchId = entry.branchId;
+        pushEntry = entry;
         pushLines = approvalLines
             .map(
               (l) => <String, dynamic>{
@@ -1819,18 +1811,20 @@ extension AccountingDaoWritesExt on AppDatabase {
     //
     //    والـ`globalId` يُمرَّر كما هو، فالخادمُ يخزّنها تحت نفس الهويّة
     //    ولا تعود بالسحب صفّاً مكرَّراً.
-    final desc = pushDesc;
+    final pe = pushEntry;
     final lines = pushLines;
-    if (desc != null && lines != null) {
+    if (pe != null && lines != null) {
       try {
         await SyncInterceptor.instance?.submitJournalEntry(
-          description: desc,
-          date: pushDate!,
+          description: pe.description ?? '',
+          date: pe.entryDate,
           lines: lines,
-          isAutoPosted: false,
-          costCenterId: pushCostCenterId,
-          branchId: pushBranchId,
-          globalId: pushGlobalId,
+          referenceType: pe.referenceType,
+          referenceId: pe.referenceId,
+          isAutoPosted: pe.isAutoPosted,
+          costCenterId: pe.costCenterId,
+          branchId: pe.branchId,
+          globalId: pe.globalId,
         );
       } catch (e) {
         debugPrint(

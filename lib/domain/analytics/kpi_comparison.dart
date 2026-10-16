@@ -56,6 +56,12 @@ Variance computeVariance(
 }
 
 /// A KPI value compared with prior period and budget.
+///
+/// [priorBudget] is the budget of the PRIOR period: [priorVsBudget] answers
+/// "did the prior period meet its own target?" (prior actual vs prior budget),
+/// and [budgetChange] is the planned movement (this budget vs prior budget),
+/// so a UI can tell a target that was raised from an actual that fell short.
+/// All of them are `unknown` when the needed figure is absent (null).
 class KpiComparison {
   KpiComparison({
     required this.key,
@@ -63,12 +69,25 @@ class KpiComparison {
     required this.direction,
     double? prior,
     double? budget,
+    double? priorBudget,
   })  : vsPrior = computeVariance(actual, prior, direction),
-        vsBudget = computeVariance(actual, budget, direction);
+        vsBudget = computeVariance(actual, budget, direction),
+        priorVsBudget = prior == null
+            ? computeVariance(actual, null, direction)
+            : computeVariance(prior, priorBudget, direction),
+        budgetChange = budget == null
+            ? computeVariance(actual, null, direction)
+            : computeVariance(budget, priorBudget, direction);
 
   final String key;
   final double actual;
   final GoodDirection direction;
   final Variance vsPrior;
   final Variance vsBudget;
+
+  /// Prior-period actual against the prior-period budget.
+  final Variance priorVsBudget;
+
+  /// This period's budget against the prior period's budget.
+  final Variance budgetChange;
 }

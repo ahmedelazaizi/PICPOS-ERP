@@ -543,13 +543,8 @@ class _FinancialStatementsPicPosScreenState
           final accountingRepo = ref.read(accountingRepositoryProvider);
           final List<Map<String, dynamic>> agingData;
           final String title;
-          if (_showReceivables) {
-            agingData = await accountingRepo.getAgedReceivables(_toDate, costCenterId: _selectedCostCenterId, allowedBranchIds: _allowedBranchIds);
-            title = tr('تقادم الذمم المدينة (العملاء)');
-          } else {
-            agingData = await accountingRepo.getAgedPayables(_toDate, costCenterId: _selectedCostCenterId, allowedBranchIds: _allowedBranchIds);
-            title = tr('تقادم الذمم الدائنة (الموردين)');
-          }
+          agingData = await (_showReceivables ? accountingRepo.getAgedReceivables : accountingRepo.getAgedPayables)(_toDate, costCenterId: _selectedCostCenterId, branchId: _selectedBranchId, regionId: _selectedRegionId, allowedBranchIds: _allowedBranchIds);
+          title = _showReceivables ? tr('تقادم الذمم المدينة (العملاء)') : tr('تقادم الذمم الدائنة (الموردين)');
           await service.exportReport(
       periodFrom: _fromDate,
       periodTo: _toDate,
@@ -629,13 +624,8 @@ class _FinancialStatementsPicPosScreenState
           final accountingRepo = ref.read(accountingRepositoryProvider);
           final List<Map<String, dynamic>> agingData;
           final String title;
-          if (_showReceivables) {
-            agingData = await accountingRepo.getAgedReceivables(_toDate, costCenterId: _selectedCostCenterId, allowedBranchIds: _allowedBranchIds);
-            title = tr('تقادم الذمم المدينة');
-          } else {
-            agingData = await accountingRepo.getAgedPayables(_toDate, costCenterId: _selectedCostCenterId, allowedBranchIds: _allowedBranchIds);
-            title = tr('تقادم الذمم الدائنة');
-          }
+          agingData = await (_showReceivables ? accountingRepo.getAgedReceivables : accountingRepo.getAgedPayables)(_toDate, costCenterId: _selectedCostCenterId, branchId: _selectedBranchId, regionId: _selectedRegionId, allowedBranchIds: _allowedBranchIds);
+          title = _showReceivables ? tr('تقادم الذمم المدينة') : tr('تقادم الذمم الدائنة');
           await InvoiceGenerator.printFinancialStatement(
             title: title,
             data: agingData,

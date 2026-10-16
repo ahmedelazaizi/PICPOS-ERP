@@ -19,6 +19,9 @@ extension PartyReconciliationDao on AppDatabase {
   /// والأعمار محسوبة منه. لو حصرنا الفواتير بفرع وسبنا الرصيد كلياً، الأعمدة
   /// ما تجمعش على الرصيد المعروض جنبها — نفس فئة العطل اللي في تسوية الضريبة.
   /// فالتقرير بيفضل متّسقاً داخلياً، والمحصور بيشوف أطراف فرعه وحدها.
+  ///
+  /// ⚠️ مختلف عن [getAgedReceivables]/[getAgedPayables]: هنا الحصر **بالطرف**
+  /// (الإجمالي = `parties.balance`)، وهناك **بالفاتورة** (راجع توثيق `_agedBalances`).
   Future<List<ArAgingRow>> getArAgingReport({
     required DateTime asOfDate,
     bool customersOnly = true,
@@ -137,6 +140,122 @@ extension PartyReconciliationDao on AppDatabase {
     }
   }
 
+  // ═══ M-05/M-06: تقادم الذمم (دائنة/مدينة) — مصدرٌ واحد للصيغتين ═══
+  /// Aged payables: supplier balances in 0-30 / 31-60 / 61-90 / 90+ buckets.
+  /// الحصر **بالفاتورة** لا بالطرف (عكس [getArAgingReport]) — راجع `_agedBalances`.
+  Future<List<Map<String, dynamic>>> getAgedPayables(DateTime asOfDate, {int? costCenterId, int? branchId, int? regionId, Set<int>? allowedBranchIds}) =>
+      _agedBalances(asOfDate, receivables: false, costCenterId: costCenterId, branchId: branchId, regionId: regionId, allowedBranchIds: allowedBranchIds);
+
+  /// Aged receivables: customer balances in 0-30 / 31-60 / 61-90 / 90+ buckets.
+  /// الحصر **بالفاتورة** لا بالطرف (عكس [getArAgingReport]) — راجع `_agedBalances`.
+  Future<List<Map<String, dynamic>>> getAgedReceivables(DateTime asOfDate, {int? costCenterId, int? branchId, int? regionId, Set<int>? allowedBranchIds}) =>
+      _agedBalances(asOfDate, receivables: true, costCenterId: costCenterId, branchId: branchId, regionId: regionId, allowedBranchIds: allowedBranchIds);
+
+  /// - [asOfDate] مرجعُ الأعمار **وحدٌّ أعلى** لتاريخ الفاتورة (`invoice_date <= ?`)؛
+  ///   فاتورةٌ بعد التاريخ لم تكن موجودةً بعدُ (نفس إصلاح B2 في [getArAgingReport]).
+  /// - بلا أيِّ مرشّحِ فرع/إقليم/صلاحية: الإجماليُّ = `parties.balance` والباقي
+  ///   غيرُ المرتبط بفواتير (سندات/قيود يدوية) يُضاف إلى `current`.
+  /// - مع أيِّ مرشّح: الإجماليُّ = مجموعُ فواتير النطاق فقط، ولا يُضاف الباقي
+  ///   (رصيدُ الطرف عامٌّ على الشركة، فإضافتُه تُظهر دَينَ الفروع الأخرى «حاليّاً»)،
+  ///   وتُحذف الأطرافُ التي لا فواتيرَ مفتوحةً لها في النطاق (حتى لو رصيدُها العامّ صفر
+  ///   أو دائن). فواتيرُ مستودعاتٍ بلا `branch_id` **مرئيةٌ** في العروض المحصورة (كتقارير الأستاذ).
+  ///   عكسُ [getArAgingReport] الذي يحصر بالطرف والإجماليُّ فيه = `parties.balance`.
+  Future<List<Map<String, dynamic>>> _agedBalances(
+    DateTime asOfDate, {
+    required bool receivables,
+    int? costCenterId,
+    int? branchId,
+    int? regionId,
+    Set<int>? allowedBranchIds,
+  }) async {
+    final a = receivables ? 'si' : 'pi';
+    final cc = await AccountingReportsDao(this)._buildCostCenterFilter(costCenterId, tableAlias: a, entryAlias: a);
+    final boolTrue = sqlBool(true);
+    final boolFalse = sqlBool(false);
+
+    var scopeFilter = '';
+    final scopeVars = <Variable>[];
+    if (branchId != null) {
+      scopeFilter = ' AND $a.warehouse_id IN (SELECT id FROM warehouses WHERE (branch_id = ? OR branch_id IS NULL))';
+      scopeVars.add(Variable(branchId));
+    } else if (regionId != null) {
+      scopeFilter = ' AND $a.warehouse_id IN (SELECT id FROM warehouses WHERE (branch_id IS NULL OR branch_id IN (SELECT id FROM branches WHERE region_id = ?)))';
+      scopeVars.add(Variable(regionId));
+    }
+    // FIL-2: auth-scope filter, ANDed on top of the dropdown branch/region filter.
+    if (allowedBranchIds != null) {
+      if (allowedBranchIds.isEmpty) {
+        scopeFilter += ' AND 1 = 0';
+      } else {
+        scopeFilter += ' AND $a.warehouse_id IN (SELECT id FROM warehouses WHERE (branch_id IS NULL OR branch_id IN (${allowedBranchIds.map((_) => '?').join(', ')})))';
+        scopeVars.addAll(allowedBranchIds.map((id) => Variable<int>(id)));
+      }
+    }
+    final scoped = branchId != null || regionId != null || allowedBranchIds != null || costCenterId != null;
+
+    // Epoch-seconds arithmetic works on both SQLite and PostgreSQL.
+    final remaining = receivables
+        ? 'si.total - si.paid - COALESCE(si.rounding_adjustment, 0)'
+        : 'pi.total - pi.paid';
+    final age = '(? - COALESCE($a.due_date, $a.invoice_date)) / 86400';
+    // الفاتورةُ المرتجعة/الملغاة/المحذوفة ناعماً ليست ديناً (راجع B2/صيغةَ party_dao).
+    final join = receivables
+        ? '''sales_invoices si ON si.customer_id = p.id
+        AND si.status NOT IN ('returned', 'cancelled')
+        AND si.is_deleted = $boolFalse
+        AND (si.sale_type IS NULL OR si.sale_type != 'return')
+        AND si.total > si.paid + COALESCE(si.rounding_adjustment, 0)'''
+        : '''purchase_invoices pi ON pi.supplier_id = p.id
+        AND pi.status NOT IN ('returned', 'cancelled', 'voided')
+        AND pi.is_deleted = $boolFalse
+        AND pi.total > pi.paid''';
+    final results = await customSelect(
+      '''
+      SELECT p.id, p.name, p.balance,
+             COALESCE(SUM(CASE WHEN $age <= 30 THEN $remaining ELSE 0 END), 0) as current_30,
+             COALESCE(SUM(CASE WHEN $age BETWEEN 31 AND 60 THEN $remaining ELSE 0 END), 0) as days_31_60,
+             COALESCE(SUM(CASE WHEN $age BETWEEN 61 AND 90 THEN $remaining ELSE 0 END), 0) as days_61_90,
+             COALESCE(SUM(CASE WHEN $age > 90 THEN $remaining ELSE 0 END), 0) as over_90
+      FROM parties p
+      LEFT JOIN $join${cc.filter}$scopeFilter
+        AND $a.invoice_date <= ?
+      WHERE p.${receivables ? 'is_customer' : 'is_supplier'} = $boolTrue${scoped ? '' : ' AND p.balance > 0.01'}
+      GROUP BY p.id, p.name, p.balance
+      ORDER BY p.balance DESC
+      ''',
+      variables: [
+        for (var i = 0; i < 4; i++) dateVar(asOfDate),
+        ...cc.vars,
+        ...scopeVars,
+        dateVar(asOfDate),
+      ],
+      readsFrom: {parties, receivables ? salesInvoices : purchaseInvoices},
+    ).get();
+
+    final rows = <Map<String, dynamic>>[];
+    for (final r in results) {
+      double n(String k) => (r.data[k] as num?)?.toDouble() ?? 0;
+      final inv30 = n('current_30');
+      final invoiceBased = inv30 + n('days_31_60') + n('days_61_90') + n('over_90');
+      final total = scoped ? invoiceBased : n('balance');
+      if (scoped && total <= 0.01) continue;
+      // Non-invoice remainder (vouchers, manual JEs) → current; company-wide only.
+      final remainder = scoped ? 0.0 : (total - invoiceBased).clamp(0.0, double.infinity);
+      rows.add({
+        'id': r.read<int>('id'),
+        'name': r.read<String>('name'),
+        'totalBalance': total,
+        'current': inv30 + remainder,
+        'days31_60': n('days_31_60'),
+        'days61_90': n('days_61_90'),
+        'over90': n('over_90'),
+      });
+    }
+    if (scoped) {
+      rows.sort((x, y) => (y['totalBalance'] as double).compareTo(x['totalBalance'] as double));
+    }
+    return rows;
+  }
   /// GAP-21: AR Reconciliation — compare parties.balance aggregate with GL
   /// receivables account balance. Returns null if receivables account not mapped.
   ///
