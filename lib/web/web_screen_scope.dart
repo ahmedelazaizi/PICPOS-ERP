@@ -90,6 +90,7 @@ const Set<ScreenId> kWebDeferredScreenIds = {
   ScreenId.hrPayroll,
   ScreenId.hrAdvances,
   ScreenId.hrCommissions,
+  ScreenId.financialIndicators,
   ScreenId.payroll,
   ScreenId.attendance,
   ScreenId.manufacturing,

@@ -251,7 +251,12 @@ enum ScreenId {
 
   /// J4 (الجزء ٣) — «عمولات المندوبين»: الخططُ والكشوف (PicPos).
   /// `hr_payroll_view`.
-  hrCommissions(86);
+  hrCommissions(86),
+
+  /// «المؤشرات والنسب المالية» — PicPos وحدَها (مرحلة ٢ من الذكاء المالي).
+  /// قراءةٌ فقط فوق محرّك `lib/domain/analytics`، وصلاحيّتُها `reports_view`
+  /// كالقوائم المالية (لا كودَ جديد).
+  financialIndicators(87);
 
   const ScreenId(this.navigationIndex);
   final int navigationIndex;

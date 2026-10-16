@@ -507,6 +507,17 @@ extension _MainScreenCatalog on _MainScreenState {
         icon: PhosphorIconsBold.scales,
       ),
       ScreenConfig(
+        appScreen: AppScreen.financialIndicators,
+        // PicPos وحدَها: UralCash لا مدخلَ لها ولا نطاق (انظر
+        // `kPicPosOnlyNavIndexes` و`ScreenRegistry.withPicposFinancialIndicators`)،
+        // وهذا البناءُ تحصينٌ لو بُلغت بالفهرس.
+        builder: (_) => Brand.isPicPos
+            ? const FinancialIndicatorsPicPosScreen()
+            : const FinancialStatementsScreen(),
+        label: tr('المؤشرات والنسب المالية'),
+        icon: PhosphorIconsBold.chartLineUp,
+      ),
+      ScreenConfig(
         appScreen: AppScreen.bankReconciliation,
         builder: (_) => const BankReconciliationPicposScreen(),
         label: tr('المطابقة البنكية'),

@@ -936,10 +936,6 @@ final _kNavItemDefsShared = [
   // حاويةُ «الحسابات» — مدخلٌ واحدٌ يفتح تبويباتِ التصميم السبعة. تظهر في
   // PicPos وحدَها، وتُطوى تحتها مداخلُ [kPicPosFoldedIntoAccountingHub].
   const NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الأصول الثابتة', permission: 'assets_view', index: 35, group: 'accounts'),
-  // ⚠️ مصدرُ توصيلٍ **سادسٌ مستقلٌّ** لا يُشتقّ من الخمسة قبله: شاشةٌ صحيحةٌ
-  //    في `ScreenId` و`AppScreen` وخريطةِ الصلاحيات والنطاقِ و`ScreenConfig`
-  //    تبقى **غائبةً عن القائمة الجانبيّة** بلا هذا السطر. وقع فعلاً مع
-  //    الحجوزات 2026-08-22 وكلُّ الحرّاس خضراء.
   const NavItemDef(icon: PhosphorIconsBold.invoice, label: 'الفوترة الإلكترونية', permission: 'einvoice_view', index: 22, group: 'accounts'),
   const NavItemDef(icon: PhosphorIconsBold.calendar, label: 'السنوات المالية', permission: 'settings_view', index: 28, group: 'accounts'),
   const NavItemDef(icon: PhosphorIconsBold.coins, label: 'المصروفات التشغيلية', permission: 'settings_view', index: 26, group: 'accounts'),
@@ -955,6 +951,7 @@ final _kNavItemDefsShared = [
   // والسيدر عشان محاسب/مدير مالي/مدير فرع/مدير مخزون ما يفقدوش الرابط.
   const NavItemDef(icon: PhosphorIconsBold.chartPie, label: 'التحليلات', permission: PermissionCodes.analyticsView, index: 15, group: 'reports'),
   const NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'أداء الفروع', permission: 'reports_view', index: 39, group: 'reports'),
+  const NavItemDef(icon: PhosphorIconsBold.chartLineUp, label: 'المؤشرات والنسب المالية', permission: 'reports_view', index: 87, group: 'reports'),
   const NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'اعداد وتصميم التقارير', permission: 'reports_view', index: 43, group: 'reports'),
 
   // ═══════════════════════════════════════════
@@ -1035,7 +1032,7 @@ const kPicPosRetiredNavIndexes = <int>{
 };
 
 const kPicPosOnlyNavIndexes = <int>{
-  75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86,
+  75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87,
 };
 // E4 — `70` (دفتر الشيكات) صار تبويباً داخل «إدارة الشيكات» في PicPos.
 // E-fix ٤ب — `24` (التوزيع القديمة) حلّت محلَّها `78` في PicPos.
@@ -1219,6 +1216,7 @@ const screenPermissionMap = <ScreenId, String>{
   //    فعلاً. واختيارُ كودٍ آخرَ يبدّل **مَن يرى القوائمَ المالية** صامتاً
   //    في الاتّجاهين — والنقلُ إعادةُ تصنيفٍ لا إعادةُ تصريح.
   ScreenId.financialStatements: 'reports_view',
+  ScreenId.financialIndicators: 'reports_view',
   // الحاويةُ على 'settings_view' — صلاحيّةُ ستٍّ من تبويباتها السبعة. والسابعُ
   // (‏ميزانُ المراجعة/القوائمُ المالية) يحرسه 'reports_view' داخلَ الحاوية،
   // فلا يوسّع دخولُها دائرةَ مَن يرى القوائمَ المالية.

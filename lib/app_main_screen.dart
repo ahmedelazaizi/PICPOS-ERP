@@ -30,6 +30,7 @@ import 'presentation/accounting_picpos/general_ledger_picpos_screen.dart';
 import 'core/navigation/screen_id.dart';
 import 'presentation/accounting_picpos/journal_entries_picpos_screen.dart';
 import 'presentation/accounting_picpos/financial_statements_picpos_screen.dart';
+import 'presentation/analytics_picpos/financial_indicators_picpos_screen.dart';
 import 'presentation/screens/reports/financial_statements_screen.dart';
 import 'services/shift_dialog_session_guard.dart';
 // Spec 135 NOTE 1 — SessionTimeoutWrapper (POS lock screen, System B) retired;

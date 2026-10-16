@@ -132,7 +132,10 @@ enum AppScreen {
   /// `hrCommissions`.
   hrPayroll(84),
   hrAdvances(85),
-  hrCommissions(86);
+  hrCommissions(86),
+
+  /// يجب أن تطابق `ScreenId.financialIndicators`.
+  financialIndicators(87);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;

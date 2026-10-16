@@ -455,6 +455,20 @@ class ScreenRegistry {
         ],
       ];
 
+  /// «المؤشرات والنسب المالية» تتبع «القوائم المالية» في كلّ نطاقٍ يحملها
+  /// (`unified` وحدَه)، فلا تظهر لنطاقٍ بلا دورة محاسبية. UralCash لا يمرّ
+  /// من هنا.
+  static List<ScreenId> withPicposFinancialIndicators(
+    List<ScreenId> screens,
+  ) =>
+      [
+        for (final screen in screens) ...[
+          screen,
+          if (screen == ScreenId.financialStatements)
+            ScreenId.financialIndicators,
+        ],
+      ];
+
   static List<ScreenId> withPicposPartyScreens(List<ScreenId> screens) => [
         for (final screen in screens) ...[
           if (screen == ScreenId.parties) ...[
@@ -508,7 +522,9 @@ class ScreenRegistry {
     final base = _baseForProfile(profile, features: features);
     if (!Brand.isPicPos) return base;
     return withPicposHr(withPicposRepDistribution(withPicposPartyScreens(
-      withPicposQuotations(withoutPicposRetired(base)),
+      withPicposFinancialIndicators(
+        withPicposQuotations(withoutPicposRetired(base)),
+      ),
     )));
   }
 
