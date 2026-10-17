@@ -19,6 +19,7 @@ import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 import 'bank_statement_row.dart';
 import 'numeric_cell_text.dart';
+import 'xlsx_sanitizer.dart';
 
 /// Excel Import/Export Service for Products, Customers, Suppliers, and Purchase Invoices
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1455,10 +1456,7 @@ class ExcelService {
       allowedExtensions: ['xlsx', 'xls'],
       withData: true,
     );
-    if (result != null) {
-      return result.files.single.bytes;
-    }
-    return null;
+    return sanitizeXlsxBytes(result?.files.single.bytes);
   }
 
   Future<String?> _saveExcel(Excel excel, String prefix) async {
