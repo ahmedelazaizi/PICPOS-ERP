@@ -107,7 +107,7 @@
 ;    detection and it is what Add/Remove Programs shows. A stale number
 ;    means support cannot tell which build a customer is running, and two
 ;    different builds can claim the same version.
-#define AppVersion    "3.9.1.275"
+#define AppVersion    "3.9.1.276"
 
 ; ── Brand-derived paths — no brand names below this line ─────────────────
 #define ReleaseDir    "..\build\windows\x64\runner\Release"
