@@ -10,7 +10,10 @@ import '../../core/utils/uuid_v7.dart';
 
 /// Client-side pairing handshake and device-header source of truth.
 class LanPairingClient {
-  static const deviceNameKey = 'ural_lan_device_name';
+  /// Label only: nothing in the code base reads or writes this key (the device
+  /// name comes from `Platform.localHostname`), so there is no stored value to
+  /// migrate. Renamed to the PicPos name.
+  static const deviceNameKey = 'picpos_lan_device_name';
 
   static Map<String, String> deviceHeaders() {
     final id = DeviceIdentityService.instance.tryGetDeviceId();

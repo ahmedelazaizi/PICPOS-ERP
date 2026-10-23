@@ -6,6 +6,7 @@ import 'package:cryptography/cryptography.dart' as argon_lib;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'db_key_names.dart';
 import 'legacy_device_seed.dart';
+import 'storage_key_migration.dart';
 
 /// Password validation result containing validity, errors, and strength score
 class PasswordValidationResult {
@@ -456,7 +457,13 @@ class SecurityService {
         ),
       );
 
-      final existing = await storage.read(key: _fallbackKeyStorageKey);
+      // الاسم القديم يُنسخ إلى الجديد (ويُتحقَّق منه) قبل حذفه.
+      final existing = await StorageKeyMigration.read(
+        const FlutterSecureSecretStore(storage),
+        newKey: _fallbackKeyStorageKey,
+        oldKey: DbKeyNames.legacyFallbackOld,
+        isValid: (v) => v.length >= 32,
+      );
       if (existing != null && existing.length >= 32) {
         return existing;
       }

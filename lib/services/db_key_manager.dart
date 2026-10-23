@@ -10,6 +10,7 @@ import 'db_keyinfo_file.dart';
 import 'legacy_device_seed.dart';
 import 'secret_store.dart';
 import 'sqlcipher_engine.dart';
+import 'storage_key_migration.dart';
 
 /// محتوى فتحتَي المفتاح في التخزين الآمن (صالحٌ الشكلَ أو `null`).
 class StoredKeys {
@@ -193,7 +194,14 @@ class DbKeyManager {
     }
     // المفتاح الاحتياطيّ القديم: قراءةٌ فقط، **لا يُولَّد أبدًا**.
     try {
-      final fb = await store.read(DbKeyNames.legacyFallback);
+      // الاسم الجديد أوّلًا؛ إن غاب يُقرأ الاسم القديم ويُنسخ (وتُتحقَّق
+      // القراءة) ثم يُحذف القديم — لا تُفقد قيمةٌ في أيّ نقطة انقطاع.
+      final fb = await StorageKeyMigration.read(
+        store,
+        newKey: DbKeyNames.legacyFallback,
+        oldKey: DbKeyNames.legacyFallbackOld,
+        isValid: (v) => v.length >= 32,
+      );
       if (fb != null && fb.length >= 32) {
         out.add(DbKey(DbKeyKind.legacyFallback, fb));
       }

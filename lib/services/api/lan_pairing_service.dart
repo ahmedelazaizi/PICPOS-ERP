@@ -7,12 +7,15 @@ import 'package:drift/drift.dart' show Variable;
 import 'package:flutter/foundation.dart';
 
 import '../../data/database/database.dart';
+import '../legacy_identifiers.dart';
+import '../secret_store.dart';
 import '../secure_storage_service.dart';
 import '../security_service.dart';
+import '../storage_key_migration.dart';
 
 /// Server-side LAN pairing state. The install secret never leaves this process.
 class LanPairingService {
-  static const installSecretStorageKey = 'ural_lan_install_secret_v1';
+  static const installSecretStorageKey = 'picpos_lan_install_secret_v1';
   static const transitionStartedKey = 'lan_legacy_transition_started_at';
   static const transitionDaysKey = 'lan_legacy_transition_days';
   static const transitionEndedKey = 'lan_legacy_transition_ended';
@@ -66,7 +69,13 @@ class LanPairingService {
   Future<void> initialize() async {
     if (_initialized) return;
     try {
-      final stored = await _storage.read(installSecretStorageKey);
+      final secrets = SecureStorageSecretStore(_storage);
+      final stored = await StorageKeyMigration.read(
+        secrets,
+        newKey: installSecretStorageKey,
+        oldKey: LegacyIdentifiers.lanInstallSecretStorageKey,
+        isValid: (v) => v.length >= 43,
+      );
       if (stored != null && stored.length >= 43) {
         _installSecret = stored;
       } else {
@@ -75,7 +84,12 @@ class LanPairingService {
           (_) => Random.secure().nextInt(256),
         );
         final generated = base64UrlEncode(bytes);
-        await _storage.write(installSecretStorageKey, generated);
+        await StorageKeyMigration.write(
+          secrets,
+          newKey: installSecretStorageKey,
+          oldKey: LegacyIdentifiers.lanInstallSecretStorageKey,
+          value: generated,
+        );
         _installSecret = generated;
       }
       _initialized = true;

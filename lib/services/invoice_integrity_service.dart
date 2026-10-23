@@ -3,15 +3,20 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/logging/diagnostic_logger.dart';
+import 'legacy_identifiers.dart';
 import 'security_service.dart';
+import 'storage_key_migration.dart';
 
 /// Computes invoice integrity signatures with a per-install secret.
 class InvoiceIntegrityService {
-  static const _legacySecretKey = 'UralCash-ERP-Integrity-v1';
+  /// HMAC key of the legacy (pre-v2) signatures already stored on invoices.
+  /// Byte-identical to the previous literal (pinned by a test); assembled at
+  /// runtime so the old product name is not in the binary.
+  static String get _legacySecretKey => LegacyIdentifiers.integritySalt;
   static const _secretSetting = 'invoice_integrity_secret_v2';
   static String? _installSecret;
 
-  static const _secretStorageKey = 'ural_invoice_integrity_secret_v2';
+  static const _secretStorageKey = 'picpos_invoice_integrity_secret_v2';
 
   /// Loads the per-install secret from device-local secure storage.
   /// The callbacks remain available for unit tests; production never stores
@@ -24,7 +29,11 @@ class InvoiceIntegrityService {
     try {
       final secureStorage = storage;
       final stored = secureStorage != null
-          ? await secureStorage.read(key: _secretStorageKey)
+          ? await StorageKeyMigration.read(
+              FlutterSecureSecretStore(secureStorage),
+              newKey: _secretStorageKey,
+              oldKey: LegacyIdentifiers.integritySecretStorageKey,
+            )
           : await readSetting!(_secretSetting);
       if (stored != null && stored.isNotEmpty) {
         _installSecret = stored;

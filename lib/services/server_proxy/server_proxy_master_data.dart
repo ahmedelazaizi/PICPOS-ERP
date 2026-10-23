@@ -189,6 +189,15 @@ extension ServerProxyMasterDataWrites on ServerProxy {
     await post('/api/floor-plan', document, idempotencyKey: idempotencyKey);
   }
 
+  /// Audit B DATA-001 — full snapshot of a table reservation (global ids).
+  Future<void> submitTableReservation(
+    Map<String, dynamic> document, {
+    String? idempotencyKey,
+  }) async {
+    await post('/api/table-reservations', document,
+        idempotencyKey: idempotencyKey);
+  }
+
   // ════════════════════════════════════════════════════════════
   // Attachments — مرفقاتُ المستندات (Client ↔ Server) · v176 / §٨
   // ════════════════════════════════════════════════════════════

@@ -25,7 +25,7 @@ Source audit: `axis-C-product-ux-release/FINDINGS-C.md` (BRAND-001..012, REL-001
 | BRAND-002 catalogs | **Fixed** | `catalog_ar.json` not bundled; `en.json` clean. |
 | BRAND-003 CI release publishes wrong brand | **Fixed (not executed)** | `build-windows` now runs `build_picpos.bat`, re-verifies identity / SQLCipher / version, zips `FlavorBuilds\PicPos`. Not run on GitHub. |
 | BRAND-004 defaults | **Partial** | Native defaults → PicPos. Dart default intentionally unchanged (see above). |
-| BRAND-005 salts / keys / env vars | **Partial** | `URAL_*` support env vars → `PICPOS_*` for PicPos (`lib/core/config/support_env.dart`; const fork, alternate brand unchanged) and gone from `app.so`. Salts and secure-storage key names **kept** (see §4). |
+| BRAND-005 salts / keys / env vars | **Fixed (owner decision 2026-10-23)** | `URAL_*` support env vars → `PICPOS_*` for PicPos (`lib/core/config/support_env.dart`; const fork, alternate brand unchanged) and gone from `app.so`. Salts / peppers keep their exact bytes but are assembled at runtime (`lib/services/legacy_identifiers.dart`); secure-storage keys renamed to `picpos_*` with a read-old / copy / verify / delete-old migration (`lib/services/storage_key_migration.dart`). Design, per-literal table, tests: `docs/security/internal-identifier-migration.md` (§4). |
 | BRAND-006 package `ural_erp` | **Not done (by instruction)** | `pubspec.yaml` description is PicPos now. |
 | BRAND-007 installer branch | **Fixed for PicPos** | PicPos has its own script / info text; alternate files untouched. |
 | BRAND-008 icons | **Fixed for PicPos** | `app_icon.ico` is the PicPos icon (guard compares hashes); `build_release.bat` restores it after its build. Alternate icon files kept. |
@@ -44,7 +44,7 @@ Source audit: `axis-C-product-ux-release/FINDINGS-C.md` (BRAND-001..012, REL-001
 | Area | Hits (files) | Class | Action |
 |---|---|---|---|
 | `test/` | ~3,800 (1,237) | internal; `package:ural_erp` imports + tests of the alternate fork | none (package rename later) |
-| `lib/` | ~1,340 (692) | internal; imports, comments, alternate-brand forks in `brand.dart`, `app_theme.dart`, `auth_providers.dart`, `login_screen.dart` footer, `setup_wizard_screen.dart`; deferred salts / key names | allow-listed per file in the guard (new literals fail) |
+| `lib/` | ~1,340 (692) | internal; imports, comments, alternate-brand forks in `brand.dart`, `app_theme.dart`, `auth_providers.dart`, `login_screen.dart` footer, `setup_wizard_screen.dart`. The crypto salts / key names are no longer literals (migrated, §4) | allow-listed per file in the guard (new literals fail); the crypto/storage-literal allow-list is **empty** |
 | `docs/` | ~570 (106) | not shipped | untouched |
 | `patches-for-uralcash/` | 64 (17) | alternate-product patches, not shipped | untouched |
 | `installer/` | 29 (3) | alternate-product installer (`setup.iss`, `info-ar-uralcash.txt`, `make_wizard_images.py`) + 2 alternate BMPs | untouched; **not** referenced by `setup_picpos.iss` |
@@ -56,18 +56,22 @@ Source audit: `axis-C-product-ux-release/FINDINGS-C.md` (BRAND-001..012, REL-001
 
 Also not UralCash but flagged: `web/icons/*` are the stock Flutter icons (not PicPos art).
 
-## 4. Deliberately kept — and the consequence of renaming
+## 4. Internal secret / identifier literals — MIGRATED (owner decision 2026-10-23)
 
-| Item | Where | Why kept | If renamed |
-|---|---|---|---|
-| `UralCash-API-v1`, `UralCash-Session-v1` salts | `lib/services/api/*` (other worker's area) | HMAC salts; also gate LAN pairing / sessions | every session and token invalid; clients must re-pair |
-| `UralCash-ERP-Integrity-v1`, `ural_invoice_integrity_secret_v2` | `invoice_integrity_service.dart` | invoice hash chain | existing invoices fail integrity verification |
-| `ural_db_fallback_enc_key` + pepper (built from char codes in `legacy_device_seed.dart`) | `db_key_names.dart` | legacy DB fallback key | **the owner's existing encrypted DB would not open** |
-| `ural_api_token`, `ural_lan_*`, `ural_*_hmac_v1` | `server_proxy.dart`, `lan_pairing_*`, `server_secrets.dart` | secure-storage names | one-time re-login / re-pair; secrets regenerate |
-| Dart package `ural_erp` | everywhere | out of scope this round | mechanical rename (1,850 files) later |
+This section used to list ten literals that were kept because renaming them would have invalidated sessions, the invoice hash chain, the owner's encrypted DB, etc. The owner decided to migrate them without locking anyone out. Full design (rules a/b/c, per-literal table, risks): **`docs/security/internal-identifier-migration.md`**.
 
-These are listed exactly in `tool/brand_artifact_scan.dart` (`brandDeferredCryptoLiterals`, `brandPackageNameExceptions`) so the list can only shrink. Proposed B5: store each salt as an equal-value byte array (golden tests first) and migrate storage keys read-old/write-new/delete-old.
+| Literal (old) | Now | Strategy |
+|---|---|---|
+| `UralCash-API-v1`, `UralCash-Session-v1`, `UralCash-ERP-Integrity-v1` (+ the legacy device-key pepper) | same bytes, assembled at runtime from masked numbers (`LegacyIdentifiers`) | (b) value unchanged; SHA-256 of each pinned in `test/unit/legacy_identifiers_test.dart` |
+| `ural_db_fallback_enc_key` | `picpos_db_fallback_enc_key` | (a) migration in `DbKeyManager.legacyCandidates` and `SecurityService`; real-SQLCipher test with a DB whose key is pre-seeded under the old name |
+| `ural_invoice_integrity_secret_v2` | `picpos_invoice_integrity_secret_v2` | (a) |
+| `ural_api_session_hmac_v1`, `ural_table_bill_hmac_v1` (+ `_prev`) | `picpos_*` | (a) `ServerSecrets` |
+| `ural_lan_install_secret_v1` | `picpos_lan_install_secret_v1` | (a) `LanPairingService` |
+| `ural_api_token` | `picpos_api_token` | (a) `ServerProxy` |
+| `ural_lan_device_name` | `picpos_lan_device_name` | (c) unused label |
+
+`tool/brand_artifact_scan.dart`: `brandDeferredCryptoLiterals` is now **empty** (a guard test keeps it empty). Still excepted, exactly: the Dart package name `ural_erp` (later mechanical rename, 1,850 files) and ICU's `Uralsk` entry. Left alone: `api_key_dao.dart` generates API keys with an `ural_` prefix in a dead method (data-access code owned by another stream; tree-shaken, scan-clean).
 
 ## 5. Verification (see the task report for command output)
 
-`build_picpos.bat` ends with `tool/brand_artifact_scan.dart` on `build\windows\x64\runner\Release`; the scan found, in the PicPos bundle, only: `package:ural_erp` (~1,510 in `app.so`), the ten deferred literals above, and ICU's `Uralsk` time-zone entry in `icudtl.dat` (Kazakh city, third-party data, exact file-scoped exception).
+`build_picpos.bat` ends with `tool/brand_artifact_scan.dart` on `build\windows\x64\runner\Release`; after the B5 migration the scan finds, in the PicPos bundle, only: `package:ural_erp` (1,518 in `app.so`) and ICU's `Uralsk` time-zone entry in `icudtl.dat` (Kazakh city, third-party data, exact file-scoped exception). **No salt / storage-key literal remains.** Re-run 2026-10-23: `brand scan: build\windows\x64\runner\Release: CLEAN; documented exceptions: {data/app.so :: ural_erp: 1518, data/icudtl.dat :: Uralsk: 1}`, identical for `FlavorBuilds\PicPos`. (Before the migration the same scan listed ten extra literals.)

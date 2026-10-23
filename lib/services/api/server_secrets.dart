@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:math';
 
 import '../../core/logging/diagnostic_logger.dart';
+import '../legacy_identifiers.dart';
 import '../secret_store.dart';
+import '../storage_key_migration.dart';
 import 'api_session_token.dart';
 import 'table_bill_token.dart';
 
@@ -34,9 +36,25 @@ class ServerSecrets {
         _random = random ?? Random.secure(),
         _log = logger ?? DiagnosticLogger.log;
 
-  static const sessionStorageKey = 'ural_api_session_hmac_v1';
-  static const tableBillStorageKey = 'ural_table_bill_hmac_v1';
+  static const sessionStorageKey = 'picpos_api_session_hmac_v1';
+  static const tableBillStorageKey = 'picpos_table_bill_hmac_v1';
   static String previousKeyOf(String key) => '${key}_prev';
+
+  /// الاسمُ الذي كُتب به هذا المفتاح في إصداراتٍ سابقة (مصدرُ ترحيلٍ).
+  /// `<key>_prev` يتبع أصله.
+  static String legacyNameOf(String key) {
+    const prev = '_prev';
+    if (key.endsWith(prev)) {
+      return '${legacyNameOf(key.substring(0, key.length - prev.length))}$prev';
+    }
+    if (key == tableBillStorageKey) {
+      return LegacyIdentifiers.tableBillHmacStorageKey;
+    }
+    if (key == sessionStorageKey) {
+      return LegacyIdentifiers.sessionHmacStorageKey;
+    }
+    return key; // غير مُعاد تسميته: لا مصدر ترحيل
+  }
 
   static String storageKeyFor(ServerSecretKind kind) => switch (kind) {
         ServerSecretKind.session => sessionStorageKey,
@@ -76,7 +94,12 @@ class ServerSecrets {
     final fresh = _generate();
     try {
       if (kind == ServerSecretKind.tableBill) {
-        await _store.write(previousKeyOf(key), base64UrlEncode(_tableBillKey!));
+        await StorageKeyMigration.write(
+          _store,
+          newKey: previousKeyOf(key),
+          oldKey: legacyNameOf(previousKeyOf(key)),
+          value: base64UrlEncode(_tableBillKey!),
+        );
       }
       await _writeVerified(key, fresh);
     } catch (e) {
@@ -122,11 +145,20 @@ class ServerSecrets {
   Future<List<int>?> _readValid(String storageKey) async {
     final String? raw;
     try {
-      raw = await _store.read(storageKey);
+      raw = await StorageKeyMigration.read(
+        _store,
+        newKey: storageKey,
+        oldKey: legacyNameOf(storageKey),
+        isValid: (v) => _decodeValid(v) != null,
+      );
     } catch (e) {
       throw ServerSecretsUnavailableException('read $storageKey: $e');
     }
     if (raw == null) return null;
+    return _decodeValid(raw);
+  }
+
+  static List<int>? _decodeValid(String raw) {
     try {
       final bytes = base64Url.decode(raw);
       return bytes.length >= 32 ? bytes : null;
@@ -138,7 +170,13 @@ class ServerSecrets {
   Future<void> _writeVerified(String storageKey, List<int> bytes) async {
     final encoded = base64UrlEncode(bytes);
     try {
-      await _store.write(storageKey, encoded);
+      // يكتب الاسم الجديد ثم يسقط الاسم القديم المتجاوَز (إن وُجد).
+      await StorageKeyMigration.write(
+        _store,
+        newKey: storageKey,
+        oldKey: legacyNameOf(storageKey),
+        value: encoded,
+      );
     } catch (e) {
       throw ServerSecretsUnavailableException('write $storageKey: $e');
     }

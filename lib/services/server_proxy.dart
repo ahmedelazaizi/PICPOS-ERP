@@ -12,6 +12,8 @@ import 'package:ural_erp/data/database/sync_interceptor.dart';
 import '../core/logging/diagnostic_logger.dart';
 import 'network_service.dart';
 import 'device_identity_service.dart';
+import 'legacy_identifiers.dart';
+import 'storage_key_migration.dart';
 import '../core/config/brand.dart';
 import '../domain/models/voucher_book.dart';
 
@@ -34,7 +36,13 @@ class ServerProxy {
 
   /// PHASE-12 (S4): Secure storage for API token
   static const _storage = FlutterSecureStorage();
-  static const _tokenKey = 'ural_api_token';
+  static const _tokenKey = 'picpos_api_token';
+
+  /// Secure-storage view with the old-name → new-name migration
+  /// (`StorageKeyMigration`): reads fall back to the old key and copy it,
+  /// writes/deletes cover both names so a stale token can't resurrect.
+  static const _tokenStore = FlutterSecureSecretStore(_storage);
+  static String get _oldTokenKey => LegacyIdentifiers.apiTokenStorageKey;
 
   /// API authentication token (received from health check handshake)
   String? _apiToken;
@@ -48,7 +56,12 @@ class ServerProxy {
   void setApiToken(String? token) {
     _apiToken = token;
     if (token != null && token.isNotEmpty) {
-      _storage.write(key: _tokenKey, value: token);
+      unawaited(StorageKeyMigration.write(
+        _tokenStore,
+        newKey: _tokenKey,
+        oldKey: _oldTokenKey,
+        value: token,
+      ).catchError((Object _) {}));
       // Mirror to SharedPreferences with the key NetworkService also writes
       // to. Without this mirror, a token saved by setApiToken() would never
       // appear in prefs, so NetworkService.init() couldn't restore it on the
@@ -57,7 +70,11 @@ class ServerProxy {
       // until the user manually triggered a /api/health handshake.
       unawaited(_writeTokenToPrefs(token));
     } else {
-      _storage.delete(key: _tokenKey);
+      unawaited(StorageKeyMigration.delete(
+        _tokenStore,
+        newKey: _tokenKey,
+        oldKey: _oldTokenKey,
+      ).catchError((Object _) {}));
       unawaited(_clearTokenFromPrefs());
     }
   }
@@ -84,7 +101,11 @@ class ServerProxy {
   Future<void> restoreToken() async {
     if (_apiToken != null && _apiToken!.isNotEmpty) return;
     try {
-      _apiToken = await _storage.read(key: _tokenKey);
+      _apiToken = await StorageKeyMigration.read(
+        _tokenStore,
+        newKey: _tokenKey,
+        oldKey: _oldTokenKey,
+      );
     } catch (_) {}
     if (_apiToken == null || _apiToken!.isEmpty) {
       try {
@@ -93,7 +114,12 @@ class ServerProxy {
         if (fromPrefs != null && fromPrefs.isNotEmpty) {
           _apiToken = fromPrefs;
           // Mirror back into secure storage so both paths converge.
-          unawaited(_storage.write(key: _tokenKey, value: fromPrefs));
+          unawaited(StorageKeyMigration.write(
+            _tokenStore,
+            newKey: _tokenKey,
+            oldKey: _oldTokenKey,
+            value: fromPrefs,
+          ).catchError((Object _) {}));
         }
       } catch (_) {}
     }

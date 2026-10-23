@@ -3,6 +3,8 @@ import 'dart:math' show Random;
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
+import '../legacy_identifiers.dart';
+
 /// Signed per-user session tokens for the embedded LAN server (Spec 151 / P1-8).
 ///
 /// Replaces the forgeable, client-asserted `X-User-Id` header. The server mints
@@ -28,8 +30,9 @@ class ApiSessionToken {
 
   // ⚠ ملح تشفير — ثابت حرفي بشكل مقصود. **ممنوع** يتحول لـ `Brand.name` أو
   // أي قيمة مرتبطة بالعلامة: مفتاح التوقيع مشتق منه، فتغييره بيبطّل كل
-  // جلسات المستخدمين القائمة فوراً. يفضل 'UralCash' مهما كانت العلامة.
-  static const String _salt = 'UralCash-Session-v1';
+  // جلسات المستخدمين القائمة فوراً. البايتات مطابقة للقيمة القديمة (يثبّتها
+  // test/unit/legacy_identifiers_test.dart) وتُركَّب وقت التشغيل.
+  static String get _salt => LegacyIdentifiers.sessionSalt;
   // SEC-003: كانت 30 يوماً. 12 ساعة + إعادة السكّ التلقائية من العميل
   // (ServerProxy يحتفظ بالإثبات في الذاكرة) + إبطال فوري عند التعطيل/القفل/
   // تغيير كلمة المرور (revokeUser) وفحص is_active/is_locked في كل طلب.

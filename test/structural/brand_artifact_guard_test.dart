@@ -16,7 +16,8 @@
 //       PicPos bundle exists, unless PICPOS_REQUIRE_BUNDLE=1 (CI/build script).
 //
 // The policy (forbidden words, the explicit exception list: the Dart package
-// name `ural_erp`, deferred crypto/storage literals, one ICU data entry) and
+// name `ural_erp`, one ICU data entry; the crypto/storage-literal list is now
+// empty) and
 // the scanner live in tool/brand_artifact_scan.dart so build_picpos.bat can run
 // the same scan without starting a second Flutter tool.
 //
@@ -33,8 +34,8 @@ import '../../tool/brand_artifact_scan.dart';
 
 /// `lib/` files allowed to carry a forbidden word inside a STRING LITERAL.
 /// Everything here is either behind a const `Brand.isPicPos` fork (tree-shaken
-/// out of the PicPos binary — proven by the bundle scan below) or a deferred
-/// crypto literal. A NEW file with such a literal fails this test.
+/// out of the PicPos binary — proven by the bundle scan below). The crypto
+/// salts / storage keys that used to be listed here were migrated. A NEW file with such a literal fails this test.
 const Map<String, String> _libLiteralAllowList = {
   'lib/core/config/brand.dart':
       'alternate-brand values behind `isPicPos ?` const forks',
@@ -44,15 +45,6 @@ const Map<String, String> _libLiteralAllowList = {
       'welcome title const fork',
   'lib/services/log_writer_io.dart': 'log prefix const fork',
   'lib/data/database/daos/api_key_dao.dart': 'dead API-key prefix (no callers)',
-  'lib/services/api/api_auth_middleware.dart': 'deferred crypto salt',
-  'lib/services/api/api_session_token.dart': 'deferred crypto salt',
-  'lib/services/api/lan_pairing_client.dart': 'deferred storage key',
-  'lib/services/api/lan_pairing_service.dart': 'deferred storage key',
-  'lib/services/api/server_secrets.dart': 'deferred storage keys',
-  'lib/services/db_key_names.dart': 'deferred storage key',
-  'lib/services/invoice_integrity_service.dart':
-      'deferred crypto salt + storage key',
-  'lib/services/server_proxy.dart': 'deferred storage key',
 };
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -187,6 +179,24 @@ void main() {
           reason: 'New other-brand literal(s) in lib/. Route them through a '
               'const `Brand.isPicPos` fork and add the file to '
               '_libLiteralAllowList with a reason, or remove them.');
+    });
+
+    test('internal secret/identifier allow-list is EMPTY (migrated, '
+        'docs/security/internal-identifier-migration.md)', () {
+      expect(brandDeferredCryptoLiterals, isEmpty);
+      expect(brandPackageNameExceptions, ['ural_erp']);
+      expect(brandThirdPartyDataExceptions, {
+        'data/icudtl.dat': ['Uralsk.meta']
+      });
+    });
+
+    test('lib/: allow-listed files still need their entry (list only shrinks)',
+        () {
+      final stale = <String>[
+        for (final f in _libLiteralAllowList.keys)
+          if (_dartLiteralHits(_readText(f)).isEmpty) f,
+      ];
+      expect(stale, isEmpty, reason: 'remove from _libLiteralAllowList: $stale');
     });
 
     test('native default identity (CMake, Runner.rc, main.cpp) is PicPos', () {

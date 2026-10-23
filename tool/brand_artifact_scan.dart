@@ -12,9 +12,9 @@
 // brand. EXCEPTIONS (exact, each with a reason; the list must only shrink):
 //   * `ural_erp` — the Dart package name (library URIs in the AOT snapshot);
 //     internal only, until the mechanical rename to `picpos_erp` (BRAND-006).
-//   * brandDeferredCryptoLiterals — crypto salts / secure-storage key names.
-//     Renaming invalidates sessions or the invoice hash chain, or makes an
-//     existing encrypted DB unopenable without a migration (BRAND-005, B5).
+//   * brandDeferredCryptoLiterals — now EMPTY: the crypto salts / secure-storage
+//     key names were migrated (BRAND-005, B5; see
+//     docs/security/internal-identifier-migration.md).
 //   * `data/icudtl.dat` "Uralsk.meta" — ICU (Flutter engine) time-zone data for
 //     a Kazakh city; unrelated to the other product. File-scoped and exact.
 //
@@ -36,20 +36,13 @@ final RegExp forbiddenBrandText = RegExp(
 /// Dart package name — internal only (BRAND-006, later mechanical rename).
 const List<String> brandPackageNameExceptions = ['ural_erp'];
 
-/// Deferred: crypto salts and secure-storage key names (BRAND-005 / step B5).
-/// Exact strings; matched case-sensitively at the start of a hit.
-const List<String> brandDeferredCryptoLiterals = [
-  'UralCash-API-v1',
-  'UralCash-Session-v1',
-  'UralCash-ERP-Integrity-v1',
-  'ural_api_session_hmac_v1',
-  'ural_table_bill_hmac_v1',
-  'ural_lan_install_secret_v1',
-  'ural_lan_device_name',
-  'ural_api_token',
-  'ural_invoice_integrity_secret_v2',
-  'ural_db_fallback_enc_key',
-];
+/// Crypto salts and secure-storage key names (BRAND-005 / step B5): MIGRATED
+/// (owner decision 2026-10-23, docs/security/internal-identifier-migration.md)
+/// — storage keys renamed with read-old/write-new/delete-old migration, salts
+/// kept byte-identical but assembled at runtime (`LegacyIdentifiers`). The
+/// allow-list is therefore EMPTY and must stay empty: any `ural` in the PicPos
+/// bundle other than the package name / ICU entry below fails.
+const List<String> brandDeferredCryptoLiterals = <String>[];
 
 /// Third-party data that is not about the other product: ICU's time-zone
 /// metazone list (Flutter engine data) names the Kazakh city "Uralsk".
